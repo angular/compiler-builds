@@ -169,11 +169,6 @@ export class TestComponentBuilder {
     /**
      * Overrides only the html of a {@link ComponentMetadata}.
      * All the other properties of the component's {@link ViewMetadata} are preserved.
-     *
-     * @param {Type} component
-     * @param {string} html
-     *
-     * @return {TestComponentBuilder}
      */
     overrideTemplate(componentType, template) {
         let clone = this._clone();
@@ -182,11 +177,6 @@ export class TestComponentBuilder {
     }
     /**
      * Overrides a component's {@link ViewMetadata}.
-     *
-     * @param {Type} component
-     * @param {view} View
-     *
-     * @return {TestComponentBuilder}
      */
     overrideView(componentType, view) {
         let clone = this._clone();
@@ -195,12 +185,6 @@ export class TestComponentBuilder {
     }
     /**
      * Overrides the directives from the component {@link ViewMetadata}.
-     *
-     * @param {Type} component
-     * @param {Type} from
-     * @param {Type} to
-     *
-     * @return {TestComponentBuilder}
      */
     overrideDirective(componentType, from, to) {
         let clone = this._clone();
@@ -221,11 +205,6 @@ export class TestComponentBuilder {
      * The providers specified via this method are appended to the existing `providers` causing the
      * duplicated providers to
      * be overridden.
-     *
-     * @param {Type} component
-     * @param {any[]} providers
-     *
-     * @return {TestComponentBuilder}
      */
     overrideProviders(type, providers) {
         let clone = this._clone();
@@ -247,11 +226,6 @@ export class TestComponentBuilder {
      * The providers specified via this method are appended to the existing `providers` causing the
      * duplicated providers to
      * be overridden.
-     *
-     * @param {Type} component
-     * @param {any[]} providers
-     *
-     * @return {TestComponentBuilder}
      */
     overrideViewProviders(type, providers) {
         let clone = this._clone();
@@ -274,8 +248,6 @@ export class TestComponentBuilder {
     }
     /**
      * Builds and returns a ComponentFixture.
-     *
-     * @return {Promise<ComponentFixture>}
      */
     createAsync(rootComponentType) {
         let noNgZone = IS_DART || this._injector.get(ComponentFixtureNoNgZone, false);

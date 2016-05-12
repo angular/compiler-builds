@@ -17,9 +17,6 @@ export class MockViewResolver extends ViewResolver {
     }
     /**
      * Overrides the {@link ViewMetadata} for a component.
-     *
-     * @param {Type} component
-     * @param {ViewDefinition} view
      */
     setView(component, view) {
         this._checkOverrideable(component);
@@ -27,9 +24,6 @@ export class MockViewResolver extends ViewResolver {
     }
     /**
      * Overrides the inline template for a component - other configuration remains unchanged.
-     *
-     * @param {Type} component
-     * @param {string} template
      */
     setInlineTemplate(component, template) {
         this._checkOverrideable(component);
@@ -37,10 +31,6 @@ export class MockViewResolver extends ViewResolver {
     }
     /**
      * Overrides a directive from the component {@link ViewMetadata}.
-     *
-     * @param {Type} component
-     * @param {Type} from
-     * @param {Type} to
      */
     overrideViewDirective(component, from, to) {
         this._checkOverrideable(component);
@@ -58,9 +48,6 @@ export class MockViewResolver extends ViewResolver {
      *   see `setView`.
      * - Override the directives, see `overrideViewDirective`.
      * - Override the @View definition, see `setInlineTemplate`.
-     *
-     * @param component
-     * @returns {ViewDefinition}
      */
     resolve(component) {
         var view = this._viewCache.get(component);
@@ -97,8 +84,6 @@ export class MockViewResolver extends ViewResolver {
      *
      * Then it should not be possible to override the component configuration after the component
      * has been compiled.
-     *
-     * @param {Type} component
      */
     _checkOverrideable(component) {
         var cached = this._viewCache.get(component);

@@ -64,6 +64,15 @@ var _TsEmitterVisitor = (function (_super) {
         this._moduleUrl = _moduleUrl;
         this.importsWithPrefixes = new Map();
     }
+    _TsEmitterVisitor.prototype.visitType = function (t, ctx, defaultType) {
+        if (defaultType === void 0) { defaultType = 'any'; }
+        if (lang_1.isPresent(t)) {
+            t.visitType(this, ctx);
+        }
+        else {
+            ctx.print(defaultType);
+        }
+    };
     _TsEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
         this._visitIdentifier(ast.value, ast.typeParams, ctx);
         return null;
@@ -78,11 +87,8 @@ var _TsEmitterVisitor = (function (_super) {
         else {
             ctx.print("var");
         }
-        ctx.print(" " + stmt.name);
-        if (lang_1.isPresent(stmt.type)) {
-            ctx.print(":");
-            stmt.type.visitType(this, ctx);
-        }
+        ctx.print(" " + stmt.name + ":");
+        this.visitType(stmt.type, ctx);
         ctx.print(" = ");
         stmt.value.visitExpression(this, ctx);
         ctx.println(";");
@@ -125,13 +131,8 @@ var _TsEmitterVisitor = (function (_super) {
             ctx.print("private ");
         }
         ctx.print(field.name);
-        if (lang_1.isPresent(field.type)) {
-            ctx.print(":");
-            field.type.visitType(this, ctx);
-        }
-        else {
-            ctx.print(": any");
-        }
+        ctx.print(':');
+        this.visitType(field.type, ctx);
         ctx.println(";");
     };
     _TsEmitterVisitor.prototype._visitClassGetter = function (getter, ctx) {
@@ -139,10 +140,8 @@ var _TsEmitterVisitor = (function (_super) {
             ctx.print("private ");
         }
         ctx.print("get " + getter.name + "()");
-        if (lang_1.isPresent(getter.type)) {
-            ctx.print(":");
-            getter.type.visitType(this, ctx);
-        }
+        ctx.print(':');
+        this.visitType(getter.type, ctx);
         ctx.println(" {");
         ctx.incIndent();
         this.visitAllStatements(getter.body, ctx);
@@ -165,12 +164,7 @@ var _TsEmitterVisitor = (function (_super) {
         ctx.print(method.name + "(");
         this._visitParams(method.params, ctx);
         ctx.print("):");
-        if (lang_1.isPresent(method.type)) {
-            method.type.visitType(this, ctx);
-        }
-        else {
-            ctx.print("void");
-        }
+        this.visitType(method.type, ctx, 'void');
         ctx.println(" {");
         ctx.incIndent();
         this.visitAllStatements(method.body, ctx);
@@ -181,12 +175,7 @@ var _TsEmitterVisitor = (function (_super) {
         ctx.print("(");
         this._visitParams(ast.params, ctx);
         ctx.print("):");
-        if (lang_1.isPresent(ast.type)) {
-            ast.type.visitType(this, ctx);
-        }
-        else {
-            ctx.print("void");
-        }
+        this.visitType(ast.type, ctx, 'void');
         ctx.println(" => {");
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
@@ -201,12 +190,7 @@ var _TsEmitterVisitor = (function (_super) {
         ctx.print("function " + stmt.name + "(");
         this._visitParams(stmt.params, ctx);
         ctx.print("):");
-        if (lang_1.isPresent(stmt.type)) {
-            stmt.type.visitType(this, ctx);
-        }
-        else {
-            ctx.print("void");
-        }
+        this.visitType(stmt.type, ctx, 'void');
         ctx.println(" {");
         ctx.incIndent();
         this.visitAllStatements(stmt.statements, ctx);
@@ -262,23 +246,13 @@ var _TsEmitterVisitor = (function (_super) {
         return null;
     };
     _TsEmitterVisitor.prototype.visitArrayType = function (type, ctx) {
-        if (lang_1.isPresent(type.of)) {
-            type.of.visitType(this, ctx);
-        }
-        else {
-            ctx.print("any");
-        }
+        this.visitType(type.of, ctx);
         ctx.print("[]");
         return null;
     };
     _TsEmitterVisitor.prototype.visitMapType = function (type, ctx) {
         ctx.print("{[key: string]:");
-        if (lang_1.isPresent(type.valueType)) {
-            type.valueType.visitType(this, ctx);
-        }
-        else {
-            ctx.print("any");
-        }
+        this.visitType(type.valueType, ctx);
         ctx.print("}");
         return null;
     };
@@ -303,10 +277,8 @@ var _TsEmitterVisitor = (function (_super) {
         var _this = this;
         this.visitAllObjects(function (param) {
             ctx.print(param.name);
-            if (lang_1.isPresent(param.type)) {
-                ctx.print(":");
-                param.type.visitType(_this, ctx);
-            }
+            ctx.print(':');
+            _this.visitType(param.type, ctx);
         }, params, ctx, ',');
     };
     _TsEmitterVisitor.prototype._visitIdentifier = function (value, typeParams, ctx) {

@@ -180,11 +180,6 @@ var TestComponentBuilder = (function () {
     /**
      * Overrides only the html of a {@link ComponentMetadata}.
      * All the other properties of the component's {@link ViewMetadata} are preserved.
-     *
-     * @param {Type} component
-     * @param {string} html
-     *
-     * @return {TestComponentBuilder}
      */
     TestComponentBuilder.prototype.overrideTemplate = function (componentType, template) {
         var clone = this._clone();
@@ -193,11 +188,6 @@ var TestComponentBuilder = (function () {
     };
     /**
      * Overrides a component's {@link ViewMetadata}.
-     *
-     * @param {Type} component
-     * @param {view} View
-     *
-     * @return {TestComponentBuilder}
      */
     TestComponentBuilder.prototype.overrideView = function (componentType, view) {
         var clone = this._clone();
@@ -206,12 +196,6 @@ var TestComponentBuilder = (function () {
     };
     /**
      * Overrides the directives from the component {@link ViewMetadata}.
-     *
-     * @param {Type} component
-     * @param {Type} from
-     * @param {Type} to
-     *
-     * @return {TestComponentBuilder}
      */
     TestComponentBuilder.prototype.overrideDirective = function (componentType, from, to) {
         var clone = this._clone();
@@ -232,11 +216,6 @@ var TestComponentBuilder = (function () {
      * The providers specified via this method are appended to the existing `providers` causing the
      * duplicated providers to
      * be overridden.
-     *
-     * @param {Type} component
-     * @param {any[]} providers
-     *
-     * @return {TestComponentBuilder}
      */
     TestComponentBuilder.prototype.overrideProviders = function (type, providers) {
         var clone = this._clone();
@@ -258,11 +237,6 @@ var TestComponentBuilder = (function () {
      * The providers specified via this method are appended to the existing `providers` causing the
      * duplicated providers to
      * be overridden.
-     *
-     * @param {Type} component
-     * @param {any[]} providers
-     *
-     * @return {TestComponentBuilder}
      */
     TestComponentBuilder.prototype.overrideViewProviders = function (type, providers) {
         var clone = this._clone();
@@ -285,8 +259,6 @@ var TestComponentBuilder = (function () {
     };
     /**
      * Builds and returns a ComponentFixture.
-     *
-     * @return {Promise<ComponentFixture>}
      */
     TestComponentBuilder.prototype.createAsync = function (rootComponentType) {
         var _this = this;
