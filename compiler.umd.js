@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v2.0.0-a01a54c
+ * @license AngularJS v2.0.0-6e62217
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -280,6 +280,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         function FunctionWrapper() {
         }
         FunctionWrapper.apply = function (fn, posArgs) { return fn.apply(null, posArgs); };
+        FunctionWrapper.bind = function (fn, scope) { return fn.bind(scope); };
         return FunctionWrapper;
     }());
     function normalizeBlank(obj) {
