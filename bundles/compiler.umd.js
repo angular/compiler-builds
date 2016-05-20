@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v2.0.0-68f9aaf
+ * @license AngularJS v2.0.0-165357b
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8145,7 +8145,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     selector =
                         _this._scopeSelector(rule.selector, scopeSelector, hostSelector, _this.strictStyling);
                 }
-                else if (rule.selector.startsWith('@media')) {
+                else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports')) {
                     content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
                 }
                 return new CssRule(selector, content);

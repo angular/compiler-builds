@@ -314,7 +314,7 @@ var ShadowCss = (function () {
                 selector =
                     _this._scopeSelector(rule.selector, scopeSelector, hostSelector, _this.strictStyling);
             }
-            else if (rule.selector.startsWith('@media')) {
+            else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports')) {
                 content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
             }
             return new CssRule(selector, content);

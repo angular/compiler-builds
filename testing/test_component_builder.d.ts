@@ -85,19 +85,7 @@ export declare class ComponentFixture<T> {
  */
 export declare class TestComponentBuilder {
     private _injector;
-    /** @internal */
-    _bindingsOverrides: Map<Type, any[]>;
-    /** @internal */
-    _directiveOverrides: Map<Type, Map<Type, Type>>;
-    /** @internal */
-    _templateOverrides: Map<Type, string>;
-    /** @internal */
-    _viewBindingsOverrides: Map<Type, any[]>;
-    /** @internal */
-    _viewOverrides: Map<Type, ViewMetadata>;
     constructor(_injector: Injector);
-    /** @internal */
-    _clone(): TestComponentBuilder;
     /**
      * Overrides only the html of a {@link ComponentMetadata}.
      * All the other properties of the component's {@link ViewMetadata} are preserved.

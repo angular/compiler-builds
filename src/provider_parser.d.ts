@@ -1,5 +1,5 @@
 import { AttrAst, DirectiveAst, ProviderAst, ReferenceAst } from './template_ast';
-import { CompileTokenMap, CompileQueryMetadata, CompileDirectiveMetadata } from './compile_metadata';
+import { CompileDirectiveMetadata } from './compile_metadata';
 import { ParseSourceSpan, ParseError } from './parse_util';
 export declare class ProviderError extends ParseError {
     constructor(message: string, span: ParseSourceSpan);
@@ -7,14 +7,6 @@ export declare class ProviderError extends ParseError {
 export declare class ProviderViewContext {
     component: CompileDirectiveMetadata;
     sourceSpan: ParseSourceSpan;
-    /**
-     * @internal
-     */
-    viewQueries: CompileTokenMap<CompileQueryMetadata[]>;
-    /**
-     * @internal
-     */
-    viewProviders: CompileTokenMap<boolean>;
     errors: ProviderError[];
     constructor(component: CompileDirectiveMetadata, sourceSpan: ParseSourceSpan);
 }
