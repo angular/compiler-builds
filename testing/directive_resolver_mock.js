@@ -53,18 +53,6 @@ var MockDirectiveResolver = (function (_super) {
             queries: dm.queries
         });
     };
-    /**
-     * @deprecated
-     */
-    MockDirectiveResolver.prototype.setBindingsOverride = function (type, bindings) {
-        this._providerOverrides.set(type, bindings);
-    };
-    /**
-     * @deprecated
-     */
-    MockDirectiveResolver.prototype.setViewBindingsOverride = function (type, viewBindings) {
-        this.viewProviderOverrides.set(type, viewBindings);
-    };
     MockDirectiveResolver.prototype.setProvidersOverride = function (type, providers) {
         this._providerOverrides.set(type, providers);
     };

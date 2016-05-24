@@ -274,8 +274,8 @@ var TestComponentBuilder = (function () {
             _this._directiveOverrides.forEach(function (overrides, component) {
                 overrides.forEach(function (to, from) { mockViewResolver.overrideViewDirective(component, from, to); });
             });
-            _this._bindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setBindingsOverride(type, bindings); });
-            _this._viewBindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setViewBindingsOverride(type, bindings); });
+            _this._bindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setProvidersOverride(type, bindings); });
+            _this._viewBindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setViewProvidersOverride(type, bindings); });
             var promise = _this._injector.get(core_1.ComponentResolver).resolveComponent(rootComponentType);
             return promise.then(function (componentFactory) { return _this._create(ngZone, componentFactory); });
         };

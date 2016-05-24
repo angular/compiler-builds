@@ -260,8 +260,8 @@ export class TestComponentBuilder {
             this._directiveOverrides.forEach((overrides, component) => {
                 overrides.forEach((to, from) => { mockViewResolver.overrideViewDirective(component, from, to); });
             });
-            this._bindingsOverrides.forEach((bindings, type) => mockDirectiveResolver.setBindingsOverride(type, bindings));
-            this._viewBindingsOverrides.forEach((bindings, type) => mockDirectiveResolver.setViewBindingsOverride(type, bindings));
+            this._bindingsOverrides.forEach((bindings, type) => mockDirectiveResolver.setProvidersOverride(type, bindings));
+            this._viewBindingsOverrides.forEach((bindings, type) => mockDirectiveResolver.setViewProvidersOverride(type, bindings));
             let promise = this._injector.get(ComponentResolver).resolveComponent(rootComponentType);
             return promise.then(componentFactory => this._create(ngZone, componentFactory));
         };
