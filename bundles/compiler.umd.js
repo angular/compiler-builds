@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v2.0.0-32b3743
+ * @license AngularJS v2.0.0-e26e4f9
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -6204,7 +6204,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             else if (attr.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
                 var key = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
-                templateBindingsSource = (attr.value.length == 0) ? key : key + ' ' + attr.value;
+                templateBindingsSource = (attr.value.length == 0) ?
+                    key :
+                    key + ' ' + StringWrapper.replaceAll(attr.value, /:/g, ' ');
             }
             if (isPresent(templateBindingsSource)) {
                 var bindings = this._parseTemplateBindings(templateBindingsSource, attr.sourceSpan);
