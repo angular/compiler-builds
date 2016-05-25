@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v2.0.0-a38c9a1
+ * @license AngularJS v2.0.0-60a2ba8
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3223,8 +3223,16 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         _HtmlTokenizer.prototype._attemptStr = function (chars) {
+            var indexBeforeAttempt = this.index;
+            var columnBeforeAttempt = this.column;
+            var lineBeforeAttempt = this.line;
             for (var i = 0; i < chars.length; i++) {
                 if (!this._attemptCharCode(StringWrapper.charCodeAt(chars, i))) {
+                    // If attempting to parse the string fails, we want to reset the parser
+                    // to where it was before the attempt
+                    this.index = indexBeforeAttempt;
+                    this.column = columnBeforeAttempt;
+                    this.line = lineBeforeAttempt;
                     return false;
                 }
             }

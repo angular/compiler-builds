@@ -266,8 +266,16 @@ var _HtmlTokenizer = (function () {
         }
     };
     _HtmlTokenizer.prototype._attemptStr = function (chars) {
+        var indexBeforeAttempt = this.index;
+        var columnBeforeAttempt = this.column;
+        var lineBeforeAttempt = this.line;
         for (var i = 0; i < chars.length; i++) {
             if (!this._attemptCharCode(lang_1.StringWrapper.charCodeAt(chars, i))) {
+                // If attempting to parse the string fails, we want to reset the parser
+                // to where it was before the attempt
+                this.index = indexBeforeAttempt;
+                this.column = columnBeforeAttempt;
+                this.line = lineBeforeAttempt;
                 return false;
             }
         }
