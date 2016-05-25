@@ -1,5 +1,5 @@
-import { Injectable, ViewMetadata, ComponentMetadata, reflector } from '@angular/core';
-import { ReflectorReader } from '../core_private';
+import { Injectable, ViewMetadata, ComponentMetadata } from '@angular/core';
+import { ReflectorReader, reflector } from '../core_private';
 import { stringify, isBlank, isPresent } from '../src/facade/lang';
 import { BaseException } from '../src/facade/exceptions';
 import { Map } from '../src/facade/collection';
@@ -70,7 +70,8 @@ export class ViewResolver {
                     pipes: compMeta.pipes,
                     encapsulation: compMeta.encapsulation,
                     styles: compMeta.styles,
-                    styleUrls: compMeta.styleUrls
+                    styleUrls: compMeta.styleUrls,
+                    animations: compMeta.animations
                 });
             }
         }

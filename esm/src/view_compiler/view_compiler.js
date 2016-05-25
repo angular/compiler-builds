@@ -4,6 +4,7 @@ import { CompileView } from './compile_view';
 import { buildView, finishView } from './view_builder';
 import { bindView } from './view_binder';
 import { CompilerConfig } from '../config';
+import { AnimationCompiler } from '../animation/animation_compiler';
 export class ViewCompileResult {
     constructor(statements, viewFactoryVar, dependencies) {
         this.statements = statements;
@@ -14,11 +15,17 @@ export class ViewCompileResult {
 export class ViewCompiler {
     constructor(_genConfig) {
         this._genConfig = _genConfig;
+        this._animationCompiler = new AnimationCompiler();
     }
     compileComponent(component, template, styles, pipes) {
-        var statements = [];
         var dependencies = [];
-        var view = new CompileView(component, this._genConfig, pipes, styles, 0, CompileElement.createNull(), []);
+        var compiledAnimations = this._animationCompiler.compileComponent(component);
+        var statements = [];
+        compiledAnimations.map(entry => {
+            statements.push(entry.statesMapStatement);
+            statements.push(entry.fnStatement);
+        });
+        var view = new CompileView(component, this._genConfig, pipes, styles, compiledAnimations, 0, CompileElement.createNull(), []);
         buildView(view, template, dependencies);
         // Need to separate binding from creation to be able to refer to
         // variables that have been declared after usage.

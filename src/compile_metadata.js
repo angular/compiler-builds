@@ -6,13 +6,13 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
+var core_private_2 = require('../core_private');
 var lang_1 = require('../src/facade/lang');
 var exceptions_1 = require('../src/facade/exceptions');
 var collection_1 = require('../src/facade/collection');
 var selector_1 = require('./selector');
 var util_1 = require('./util');
 var url_resolver_1 = require('./url_resolver');
-// group 1: "property" from "[property]"
 // group 2: "event" from "(event)"
 var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))$/g;
 var CompileMetadataWithIdentifier = (function () {
@@ -48,6 +48,212 @@ function metadataFromJson(data) {
     return _COMPILE_METADATA_FROM_JSON[data['class']](data);
 }
 exports.metadataFromJson = metadataFromJson;
+var CompileAnimationEntryMetadata = (function () {
+    function CompileAnimationEntryMetadata(name, definitions) {
+        if (name === void 0) { name = null; }
+        if (definitions === void 0) { definitions = null; }
+        this.name = name;
+        this.definitions = definitions;
+    }
+    CompileAnimationEntryMetadata.fromJson = function (data) {
+        var value = data['value'];
+        var defs = _arrayFromJson(value['definitions'], metadataFromJson);
+        return new CompileAnimationEntryMetadata(value['name'], defs);
+    };
+    CompileAnimationEntryMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AnimationEntryMetadata',
+            'value': {
+                'name': this.name,
+                'definitions': _arrayToJson(this.definitions)
+            }
+        };
+    };
+    return CompileAnimationEntryMetadata;
+}());
+exports.CompileAnimationEntryMetadata = CompileAnimationEntryMetadata;
+var CompileAnimationStateMetadata = (function () {
+    function CompileAnimationStateMetadata() {
+    }
+    return CompileAnimationStateMetadata;
+}());
+exports.CompileAnimationStateMetadata = CompileAnimationStateMetadata;
+var CompileAnimationStateDeclarationMetadata = (function (_super) {
+    __extends(CompileAnimationStateDeclarationMetadata, _super);
+    function CompileAnimationStateDeclarationMetadata(stateNameExpr, styles) {
+        _super.call(this);
+        this.stateNameExpr = stateNameExpr;
+        this.styles = styles;
+    }
+    CompileAnimationStateDeclarationMetadata.fromJson = function (data) {
+        var value = data['value'];
+        var styles = _objFromJson(value['styles'], metadataFromJson);
+        return new CompileAnimationStateDeclarationMetadata(value['stateNameExpr'], styles);
+    };
+    CompileAnimationStateDeclarationMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AnimationStateDeclarationMetadata',
+            'value': {
+                'stateNameExpr': this.stateNameExpr,
+                'styles': this.styles.toJson()
+            }
+        };
+    };
+    return CompileAnimationStateDeclarationMetadata;
+}(CompileAnimationStateMetadata));
+exports.CompileAnimationStateDeclarationMetadata = CompileAnimationStateDeclarationMetadata;
+var CompileAnimationStateTransitionMetadata = (function (_super) {
+    __extends(CompileAnimationStateTransitionMetadata, _super);
+    function CompileAnimationStateTransitionMetadata(stateChangeExpr, animation) {
+        _super.call(this);
+        this.stateChangeExpr = stateChangeExpr;
+        this.animation = animation;
+    }
+    CompileAnimationStateTransitionMetadata.fromJson = function (data) {
+        var value = data['value'];
+        var animation = _objFromJson(value['animation'], metadataFromJson);
+        return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], animation);
+    };
+    CompileAnimationStateTransitionMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AnimationStateTransitionMetadata',
+            'value': {
+                'stateChangeExpr': this.stateChangeExpr,
+                'animation': this.animation.toJson()
+            }
+        };
+    };
+    return CompileAnimationStateTransitionMetadata;
+}(CompileAnimationStateMetadata));
+exports.CompileAnimationStateTransitionMetadata = CompileAnimationStateTransitionMetadata;
+var CompileAnimationMetadata = (function () {
+    function CompileAnimationMetadata() {
+    }
+    return CompileAnimationMetadata;
+}());
+exports.CompileAnimationMetadata = CompileAnimationMetadata;
+var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
+    __extends(CompileAnimationKeyframesSequenceMetadata, _super);
+    function CompileAnimationKeyframesSequenceMetadata(steps) {
+        if (steps === void 0) { steps = []; }
+        _super.call(this);
+        this.steps = steps;
+    }
+    CompileAnimationKeyframesSequenceMetadata.fromJson = function (data) {
+        var steps = _arrayFromJson(data['value'], metadataFromJson);
+        return new CompileAnimationKeyframesSequenceMetadata(steps);
+    };
+    CompileAnimationKeyframesSequenceMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AnimationKeyframesSequenceMetadata',
+            'value': _arrayToJson(this.steps)
+        };
+    };
+    return CompileAnimationKeyframesSequenceMetadata;
+}(CompileAnimationMetadata));
+exports.CompileAnimationKeyframesSequenceMetadata = CompileAnimationKeyframesSequenceMetadata;
+var CompileAnimationStyleMetadata = (function (_super) {
+    __extends(CompileAnimationStyleMetadata, _super);
+    function CompileAnimationStyleMetadata(offset, styles) {
+        if (styles === void 0) { styles = null; }
+        _super.call(this);
+        this.offset = offset;
+        this.styles = styles;
+    }
+    CompileAnimationStyleMetadata.fromJson = function (data) {
+        var value = data['value'];
+        var offsetVal = value['offset'];
+        var offset = lang_1.isPresent(offsetVal) ? lang_1.NumberWrapper.parseFloat(offsetVal) : null;
+        var styles = value['styles'];
+        return new CompileAnimationStyleMetadata(offset, styles);
+    };
+    CompileAnimationStyleMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AnimationStyleMetadata',
+            'value': {
+                'offset': this.offset,
+                'styles': this.styles
+            }
+        };
+    };
+    return CompileAnimationStyleMetadata;
+}(CompileAnimationMetadata));
+exports.CompileAnimationStyleMetadata = CompileAnimationStyleMetadata;
+var CompileAnimationAnimateMetadata = (function (_super) {
+    __extends(CompileAnimationAnimateMetadata, _super);
+    function CompileAnimationAnimateMetadata(timings, styles) {
+        if (timings === void 0) { timings = 0; }
+        if (styles === void 0) { styles = null; }
+        _super.call(this);
+        this.timings = timings;
+        this.styles = styles;
+    }
+    CompileAnimationAnimateMetadata.fromJson = function (data) {
+        var value = data['value'];
+        var timings = value['timings'];
+        var styles = _objFromJson(value['styles'], metadataFromJson);
+        return new CompileAnimationAnimateMetadata(timings, styles);
+    };
+    CompileAnimationAnimateMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AnimationAnimateMetadata',
+            'value': {
+                'timings': this.timings,
+                'styles': _objToJson(this.styles)
+            }
+        };
+    };
+    return CompileAnimationAnimateMetadata;
+}(CompileAnimationMetadata));
+exports.CompileAnimationAnimateMetadata = CompileAnimationAnimateMetadata;
+var CompileAnimationWithStepsMetadata = (function (_super) {
+    __extends(CompileAnimationWithStepsMetadata, _super);
+    function CompileAnimationWithStepsMetadata(steps) {
+        if (steps === void 0) { steps = null; }
+        _super.call(this);
+        this.steps = steps;
+    }
+    return CompileAnimationWithStepsMetadata;
+}(CompileAnimationMetadata));
+exports.CompileAnimationWithStepsMetadata = CompileAnimationWithStepsMetadata;
+var CompileAnimationSequenceMetadata = (function (_super) {
+    __extends(CompileAnimationSequenceMetadata, _super);
+    function CompileAnimationSequenceMetadata(steps) {
+        if (steps === void 0) { steps = null; }
+        _super.call(this, steps);
+    }
+    CompileAnimationSequenceMetadata.fromJson = function (data) {
+        var steps = _arrayFromJson(data['value'], metadataFromJson);
+        return new CompileAnimationSequenceMetadata(steps);
+    };
+    CompileAnimationSequenceMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AnimationSequenceMetadata',
+            'value': _arrayToJson(this.steps)
+        };
+    };
+    return CompileAnimationSequenceMetadata;
+}(CompileAnimationWithStepsMetadata));
+exports.CompileAnimationSequenceMetadata = CompileAnimationSequenceMetadata;
+var CompileAnimationGroupMetadata = (function (_super) {
+    __extends(CompileAnimationGroupMetadata, _super);
+    function CompileAnimationGroupMetadata(steps) {
+        if (steps === void 0) { steps = null; }
+        _super.call(this, steps);
+    }
+    CompileAnimationGroupMetadata.fromJson = function (data) {
+        var steps = _arrayFromJson(data["value"], metadataFromJson);
+        return new CompileAnimationGroupMetadata(steps);
+    };
+    CompileAnimationGroupMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AnimationGroupMetadata',
+            'value': _arrayToJson(this.steps)
+        };
+    };
+    return CompileAnimationGroupMetadata;
+}(CompileAnimationWithStepsMetadata));
+exports.CompileAnimationGroupMetadata = CompileAnimationGroupMetadata;
 var CompileIdentifierMetadata = (function () {
     function CompileIdentifierMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
@@ -242,7 +448,7 @@ var CompileTokenMetadata = (function () {
                 if (lang_1.isPresent(this.identifier)) {
                     if (lang_1.isPresent(this.identifier.moduleUrl) &&
                         lang_1.isPresent(url_resolver_1.getUrlScheme(this.identifier.moduleUrl))) {
-                        var uri = core_1.reflector.importUri({
+                        var uri = core_private_1.reflector.importUri({
                             'filePath': this.identifier.moduleUrl,
                             'name': this.identifier.name
                         });
@@ -402,23 +608,26 @@ exports.CompileQueryMetadata = CompileQueryMetadata;
  */
 var CompileTemplateMetadata = (function () {
     function CompileTemplateMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, ngContentSelectors = _b.ngContentSelectors;
+        var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors;
         this.encapsulation = lang_1.isPresent(encapsulation) ? encapsulation : core_1.ViewEncapsulation.Emulated;
         this.template = template;
         this.templateUrl = templateUrl;
         this.styles = lang_1.isPresent(styles) ? styles : [];
         this.styleUrls = lang_1.isPresent(styleUrls) ? styleUrls : [];
+        this.animations = lang_1.isPresent(animations) ? collection_1.ListWrapper.flatten(animations) : [];
         this.ngContentSelectors = lang_1.isPresent(ngContentSelectors) ? ngContentSelectors : [];
     }
     CompileTemplateMetadata.fromJson = function (data) {
+        var animations = _arrayFromJson(data['animations'], metadataFromJson);
         return new CompileTemplateMetadata({
             encapsulation: lang_1.isPresent(data['encapsulation']) ?
-                core_private_1.VIEW_ENCAPSULATION_VALUES[data['encapsulation']] :
+                core_private_2.VIEW_ENCAPSULATION_VALUES[data['encapsulation']] :
                 data['encapsulation'],
             template: data['template'],
             templateUrl: data['templateUrl'],
             styles: data['styles'],
             styleUrls: data['styleUrls'],
+            animations: animations,
             ngContentSelectors: data['ngContentSelectors']
         });
     };
@@ -429,6 +638,7 @@ var CompileTemplateMetadata = (function () {
             'templateUrl': this.templateUrl,
             'styles': this.styles,
             'styleUrls': this.styleUrls,
+            'animations': _objToJson(this.animations),
             'ngContentSelectors': this.ngContentSelectors
         };
     };
@@ -526,14 +736,14 @@ var CompileDirectiveMetadata = (function () {
             exportAs: data['exportAs'],
             type: lang_1.isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
             changeDetection: lang_1.isPresent(data['changeDetection']) ?
-                core_private_1.CHANGE_DETECTION_STRATEGY_VALUES[data['changeDetection']] :
+                core_private_2.CHANGE_DETECTION_STRATEGY_VALUES[data['changeDetection']] :
                 data['changeDetection'],
             inputs: data['inputs'],
             outputs: data['outputs'],
             hostListeners: data['hostListeners'],
             hostProperties: data['hostProperties'],
             hostAttributes: data['hostAttributes'],
-            lifecycleHooks: data['lifecycleHooks'].map(function (hookValue) { return core_private_1.LIFECYCLE_HOOKS_VALUES[hookValue]; }),
+            lifecycleHooks: data['lifecycleHooks'].map(function (hookValue) { return core_private_2.LIFECYCLE_HOOKS_VALUES[hookValue]; }),
             template: lang_1.isPresent(data['template']) ? CompileTemplateMetadata.fromJson(data['template']) :
                 data['template'],
             providers: _arrayFromJson(data['providers'], metadataFromJson),
@@ -579,7 +789,7 @@ function createHostComponentMeta(componentType, componentSelector) {
             moduleUrl: componentType.moduleUrl,
             isHost: true
         }),
-        template: new CompileTemplateMetadata({ template: template, templateUrl: '', styles: [], styleUrls: [], ngContentSelectors: [] }),
+        template: new CompileTemplateMetadata({ template: template, templateUrl: '', styles: [], styleUrls: [], ngContentSelectors: [], animations: [] }),
         changeDetection: core_1.ChangeDetectionStrategy.Default,
         inputs: [],
         outputs: [],
@@ -631,7 +841,15 @@ var _COMPILE_METADATA_FROM_JSON = {
     'Type': CompileTypeMetadata.fromJson,
     'Provider': CompileProviderMetadata.fromJson,
     'Identifier': CompileIdentifierMetadata.fromJson,
-    'Factory': CompileFactoryMetadata.fromJson
+    'Factory': CompileFactoryMetadata.fromJson,
+    'AnimationEntryMetadata': CompileAnimationEntryMetadata.fromJson,
+    'AnimationStateDeclarationMetadata': CompileAnimationStateDeclarationMetadata.fromJson,
+    'AnimationStateTransitionMetadata': CompileAnimationStateTransitionMetadata.fromJson,
+    'AnimationSequenceMetadata': CompileAnimationSequenceMetadata.fromJson,
+    'AnimationGroupMetadata': CompileAnimationGroupMetadata.fromJson,
+    'AnimationAnimateMetadata': CompileAnimationAnimateMetadata.fromJson,
+    'AnimationStyleMetadata': CompileAnimationStyleMetadata.fromJson,
+    'AnimationKeyframesSequenceMetadata': CompileAnimationKeyframesSequenceMetadata.fromJson
 };
 function _arrayFromJson(obj, fn) {
     return lang_1.isBlank(obj) ? null : obj.map(function (o) { return _objFromJson(o, fn); });

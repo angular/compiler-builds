@@ -1,5 +1,5 @@
-import { OnInit, OnDestroy, DoCheck, OnChanges, AfterContentInit, AfterContentChecked, AfterViewInit, AfterViewChecked, reflector } from '@angular/core';
-import { LifecycleHooks } from '../core_private';
+import { OnInit, OnDestroy, DoCheck, OnChanges, AfterContentInit, AfterContentChecked, AfterViewInit, AfterViewChecked } from '@angular/core';
+import { reflector, LifecycleHooks } from '../core_private';
 import { MapWrapper } from '../src/facade/collection';
 const LIFECYCLE_INTERFACES = MapWrapper.createFromPairs([
     [LifecycleHooks.OnInit, OnInit],

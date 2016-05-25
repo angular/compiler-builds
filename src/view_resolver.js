@@ -12,7 +12,7 @@ var ViewResolver = (function () {
             this._reflector = _reflector;
         }
         else {
-            this._reflector = core_1.reflector;
+            this._reflector = core_private_1.reflector;
         }
     }
     ViewResolver.prototype.resolve = function (component) {
@@ -71,7 +71,8 @@ var ViewResolver = (function () {
                     pipes: compMeta.pipes,
                     encapsulation: compMeta.encapsulation,
                     styles: compMeta.styles,
-                    styleUrls: compMeta.styleUrls
+                    styleUrls: compMeta.styleUrls,
+                    animations: compMeta.animations
                 });
             }
         }

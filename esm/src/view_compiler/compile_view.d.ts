@@ -8,6 +8,7 @@ import { CompilePipe } from './compile_pipe';
 import { CompileDirectiveMetadata, CompilePipeMetadata, CompileTokenMap } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import { CompileBinding } from './compile_binding';
+import { CompiledAnimation } from '../animation/animation_compiler';
 export declare class CompileView implements NameResolver {
     component: CompileDirectiveMetadata;
     genConfig: CompilerConfig;
@@ -32,6 +33,7 @@ export declare class CompileView implements NameResolver {
     afterContentLifecycleCallbacksMethod: CompileMethod;
     afterViewLifecycleCallbacksMethod: CompileMethod;
     destroyMethod: CompileMethod;
+    detachMethod: CompileMethod;
     eventHandlerMethods: o.ClassMethod[];
     fields: o.ClassField[];
     getters: o.ClassGetter[];
@@ -47,8 +49,9 @@ export declare class CompileView implements NameResolver {
     literalArrayCount: number;
     literalMapCount: number;
     pipeCount: number;
+    animations: Map<string, CompiledAnimation>;
     componentContext: o.Expression;
-    constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeMetadata[], styles: o.Expression, viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][]);
+    constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeMetadata[], styles: o.Expression, animations: CompiledAnimation[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][]);
     callPipe(name: string, input: o.Expression, args: o.Expression[]): o.Expression;
     getLocal(name: string): o.Expression;
     createLiteralArray(values: o.Expression[]): o.Expression;

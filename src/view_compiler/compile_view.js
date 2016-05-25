@@ -11,7 +11,7 @@ var compile_metadata_1 = require('../compile_metadata');
 var util_1 = require('./util');
 var identifiers_1 = require('../identifiers');
 var CompileView = (function () {
-    function CompileView(component, genConfig, pipeMetas, styles, viewIndex, declarationElement, templateVariableBindings) {
+    function CompileView(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings) {
         var _this = this;
         this.component = component;
         this.genConfig = genConfig;
@@ -36,6 +36,8 @@ var CompileView = (function () {
         this.literalArrayCount = 0;
         this.literalMapCount = 0;
         this.pipeCount = 0;
+        this.animations = new Map();
+        animations.forEach(function (entry) { return _this.animations.set(entry.name, entry); });
         this.createMethod = new compile_method_1.CompileMethod(this);
         this.injectorGetMethod = new compile_method_1.CompileMethod(this);
         this.updateContentQueriesMethod = new compile_method_1.CompileMethod(this);
@@ -46,6 +48,7 @@ var CompileView = (function () {
         this.afterContentLifecycleCallbacksMethod = new compile_method_1.CompileMethod(this);
         this.afterViewLifecycleCallbacksMethod = new compile_method_1.CompileMethod(this);
         this.destroyMethod = new compile_method_1.CompileMethod(this);
+        this.detachMethod = new compile_method_1.CompileMethod(this);
         this.viewType = getViewType(component, viewIndex);
         this.className = "_View_" + component.type.name + viewIndex;
         this.classType = o.importType(new compile_metadata_1.CompileIdentifierMetadata({ name: this.className }));

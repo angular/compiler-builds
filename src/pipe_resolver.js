@@ -12,7 +12,7 @@ var PipeResolver = (function () {
             this._reflector = _reflector;
         }
         else {
-            this._reflector = core_1.reflector;
+            this._reflector = core_private_1.reflector;
         }
     }
     /**
@@ -37,5 +37,5 @@ var PipeResolver = (function () {
     return PipeResolver;
 }());
 exports.PipeResolver = PipeResolver;
-exports.CODEGEN_PIPE_RESOLVER = new PipeResolver(core_1.reflector);
+exports.CODEGEN_PIPE_RESOLVER = new PipeResolver(core_private_1.reflector);
 //# sourceMappingURL=pipe_resolver.js.map

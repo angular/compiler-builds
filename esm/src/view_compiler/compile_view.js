@@ -10,7 +10,7 @@ import { CompileIdentifierMetadata, CompileTokenMap } from '../compile_metadata'
 import { getViewFactoryName, getPropertyInView, createPureProxy } from './util';
 import { Identifiers } from '../identifiers';
 export class CompileView {
-    constructor(component, genConfig, pipeMetas, styles, viewIndex, declarationElement, templateVariableBindings) {
+    constructor(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings) {
         this.component = component;
         this.genConfig = genConfig;
         this.pipeMetas = pipeMetas;
@@ -34,6 +34,8 @@ export class CompileView {
         this.literalArrayCount = 0;
         this.literalMapCount = 0;
         this.pipeCount = 0;
+        this.animations = new Map();
+        animations.forEach(entry => this.animations.set(entry.name, entry));
         this.createMethod = new CompileMethod(this);
         this.injectorGetMethod = new CompileMethod(this);
         this.updateContentQueriesMethod = new CompileMethod(this);
@@ -44,6 +46,7 @@ export class CompileView {
         this.afterContentLifecycleCallbacksMethod = new CompileMethod(this);
         this.afterViewLifecycleCallbacksMethod = new CompileMethod(this);
         this.destroyMethod = new CompileMethod(this);
+        this.detachMethod = new CompileMethod(this);
         this.viewType = getViewType(component, viewIndex);
         this.className = `_View_${component.type.name}${viewIndex}`;
         this.classType = o.importType(new CompileIdentifierMetadata({ name: this.className }));

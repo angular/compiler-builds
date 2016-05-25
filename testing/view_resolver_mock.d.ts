@@ -1,5 +1,6 @@
 import { ViewMetadata, Type } from '@angular/core';
 import { ViewResolver } from '../index';
+import { AnimationEntryMetadata } from '@angular/core';
 export declare class MockViewResolver extends ViewResolver {
     constructor();
     /**
@@ -10,6 +11,7 @@ export declare class MockViewResolver extends ViewResolver {
      * Overrides the inline template for a component - other configuration remains unchanged.
      */
     setInlineTemplate(component: Type, template: string): void;
+    setAnimations(component: Type, animations: AnimationEntryMetadata[]): void;
     /**
      * Overrides a directive from the component {@link ViewMetadata}.
      */

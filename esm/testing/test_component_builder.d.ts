@@ -6,6 +6,7 @@ import { Type } from '../src/facade/lang';
 export declare class TestComponentRenderer {
     insertRootElement(rootElementId: string): void;
 }
+import { AnimationEntryMetadata } from '@angular/core';
 export declare var ComponentFixtureAutoDetect: OpaqueToken;
 export declare var ComponentFixtureNoNgZone: OpaqueToken;
 /**
@@ -91,6 +92,7 @@ export declare class TestComponentBuilder {
      * All the other properties of the component's {@link ViewMetadata} are preserved.
      */
     overrideTemplate(componentType: Type, template: string): TestComponentBuilder;
+    overrideAnimations(componentType: Type, animations: AnimationEntryMetadata[]): TestComponentBuilder;
     /**
      * Overrides a component's {@link ViewMetadata}.
      */

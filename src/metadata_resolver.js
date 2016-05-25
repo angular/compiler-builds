@@ -10,6 +10,7 @@ var lang_1 = require('../src/facade/lang');
 var collection_1 = require('../src/facade/collection');
 var exceptions_1 = require('../src/facade/exceptions');
 var cpl = require('./compile_metadata');
+var anmd = require('@angular/core');
 var directive_resolver_1 = require('./directive_resolver');
 var pipe_resolver_1 = require('./pipe_resolver');
 var view_resolver_1 = require('./view_resolver');
@@ -33,7 +34,7 @@ var CompileMetadataResolver = (function () {
             this._reflector = _reflector;
         }
         else {
-            this._reflector = core_1.reflector;
+            this._reflector = core_private_1.reflector;
         }
     }
     CompileMetadataResolver.prototype.sanitizeTokenName = function (token) {
@@ -49,7 +50,49 @@ var CompileMetadataResolver = (function () {
         }
         return util_1.sanitizeIdentifier(identifier);
     };
+    CompileMetadataResolver.prototype.getAnimationEntryMetadata = function (entry) {
+        var _this = this;
+        var defs = entry.definitions.map(function (def) { return _this.getAnimationStateMetadata(def); });
+        return new cpl.CompileAnimationEntryMetadata(entry.name, defs);
+    };
+    CompileMetadataResolver.prototype.getAnimationStateMetadata = function (value) {
+        if (value instanceof anmd.AnimationStateDeclarationMetadata) {
+            var styles = this.getAnimationStyleMetadata(value.styles);
+            return new cpl.CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
+        }
+        else if (value instanceof anmd.AnimationStateTransitionMetadata) {
+            return new cpl.CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.animation));
+        }
+        return null;
+    };
+    CompileMetadataResolver.prototype.getAnimationStyleMetadata = function (value) {
+        return new cpl.CompileAnimationStyleMetadata(value.offset, value.styles);
+    };
+    CompileMetadataResolver.prototype.getAnimationMetadata = function (value) {
+        var _this = this;
+        if (value instanceof anmd.AnimationStyleMetadata) {
+            return this.getAnimationStyleMetadata(value);
+        }
+        else if (value instanceof anmd.AnimationKeyframesSequenceMetadata) {
+            return new cpl.CompileAnimationKeyframesSequenceMetadata(value.steps.map(function (entry) { return _this.getAnimationStyleMetadata(entry); }));
+        }
+        else if (value instanceof anmd.AnimationAnimateMetadata) {
+            var animateData = this.getAnimationMetadata(value.styles);
+            return new cpl.CompileAnimationAnimateMetadata(value.timings, animateData);
+        }
+        else if (value instanceof anmd.AnimationWithStepsMetadata) {
+            var steps = value.steps.map(function (step) { return _this.getAnimationMetadata(step); });
+            if (value instanceof anmd.AnimationGroupMetadata) {
+                return new cpl.CompileAnimationGroupMetadata(steps);
+            }
+            else {
+                return new cpl.CompileAnimationSequenceMetadata(steps);
+            }
+        }
+        return null;
+    };
     CompileMetadataResolver.prototype.getDirectiveMetadata = function (directiveType) {
+        var _this = this;
         var meta = this._directiveCache.get(directiveType);
         if (lang_1.isBlank(meta)) {
             var dirMeta = this._directiveResolver.resolve(directiveType);
@@ -62,12 +105,16 @@ var CompileMetadataResolver = (function () {
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
                 assertions_1.assertArrayOfStrings('styles', viewMeta.styles);
+                var animations = lang_1.isPresent(viewMeta.animations)
+                    ? viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); })
+                    : null;
                 templateMeta = new cpl.CompileTemplateMetadata({
                     encapsulation: viewMeta.encapsulation,
                     template: viewMeta.template,
                     templateUrl: viewMeta.templateUrl,
                     styles: viewMeta.styles,
-                    styleUrls: viewMeta.styleUrls
+                    styleUrls: viewMeta.styleUrls,
+                    animations: animations
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (lang_1.isPresent(dirMeta.viewProviders)) {

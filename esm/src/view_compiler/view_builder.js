@@ -10,6 +10,7 @@ import { CompileElement, CompileNode } from './compile_element';
 import { templateVisitAll } from '../template_ast';
 import { getViewFactoryName, createFlatArray, createDiTokenExpression } from './util';
 import { CompileIdentifierMetadata } from '../compile_metadata';
+import { AnimationCompiler } from '../animation/animation_compiler';
 const IMPLICIT_TEMPLATE_VAR = '\$implicit';
 const CLASS_ATTR = 'class';
 const STYLE_ATTR = 'style';
@@ -42,6 +43,7 @@ class ViewBuilderVisitor {
         this.view = view;
         this.targetDependencies = targetDependencies;
         this.nestedViewCount = 0;
+        this._animationCompiler = new AnimationCompiler();
     }
     _isRootNode(parent) { return parent.view !== this.view; }
     _addRootNodeAndProject(node, ngContentIndex, parent) {
@@ -195,8 +197,9 @@ class ViewBuilderVisitor {
         var directives = ast.directives.map(directiveAst => directiveAst.directive);
         var compileElement = new CompileElement(parent, this.view, nodeIndex, renderNode, ast, null, directives, ast.providers, ast.hasViewContainer, true, ast.references);
         this.view.nodes.push(compileElement);
+        var compiledAnimations = this._animationCompiler.compileComponent(this.view.component);
         this.nestedViewCount++;
-        var embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, o.NULL_EXPR, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
+        var embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, o.NULL_EXPR, compiledAnimations, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
         this.nestedViewCount += buildView(embeddedView, ast.children, this.targetDependencies);
         compileElement.beforeChildren();
         this._addRootNodeAndProject(compileElement, ast.ngContentIndex, parent);
@@ -314,7 +317,8 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
         ], addReturnValuefNotEmpty(view.injectorGetMethod.finish(), InjectMethodVars.notFoundResult), o.DYNAMIC_TYPE),
         new o.ClassMethod('detectChangesInternal', [new o.FnParam(DetectChangesVars.throwOnChange.name, o.BOOL_TYPE)], generateDetectChangesMethod(view)),
         new o.ClassMethod('dirtyParentQueriesInternal', [], view.dirtyParentQueriesMethod.finish()),
-        new o.ClassMethod('destroyInternal', [], view.destroyMethod.finish())
+        new o.ClassMethod('destroyInternal', [], view.destroyMethod.finish()),
+        new o.ClassMethod('detachInternal', [], view.detachMethod.finish())
     ].concat(view.eventHandlerMethods);
     var superClass = view.genConfig.genDebugInfo ? Identifiers.DebugAppView : Identifiers.AppView;
     var viewClass = new o.ClassStmt(view.className, o.importExpr(superClass, [getContextType(view)]), view.fields, view.getters, viewConstructor, viewMethods.filter((method) => method.body.length > 0));

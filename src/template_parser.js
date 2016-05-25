@@ -29,11 +29,12 @@ var provider_parser_1 = require('./provider_parser');
 // Group 4 = "ref-/#"
 // Group 5 = "on-"
 // Group 6 = "bindon-"
-// Group 7 = the identifier after "bind-", "var-/#", or "on-"
-// Group 8 = identifier inside [()]
-// Group 9 = identifier inside []
-// Group 10 = identifier inside ()
-var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/g;
+// Group 7 = "animate-/@"
+// Group 8 = the identifier after "bind-", "var-/#", or "on-"
+// Group 9 = identifier inside [()]
+// Group 10 = identifier inside []
+// Group 11 = identifier inside ()
+var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/g;
 var TEMPLATE_ELEMENT = 'template';
 var TEMPLATE_ATTR = 'template';
 var TEMPLATE_ATTR_PREFIX = '*';
@@ -253,6 +254,7 @@ var TemplateParseVisitor = (function () {
         var elementOrDirectiveProps = [];
         var elementOrDirectiveRefs = [];
         var elementVars = [];
+        var animationProps = [];
         var events = [];
         var templateElementOrDirectiveProps = [];
         var templateMatchableAttrs = [];
@@ -262,7 +264,7 @@ var TemplateParseVisitor = (function () {
         var lcElName = html_tags_1.splitNsName(nodeName.toLowerCase())[1];
         var isTemplateElement = lcElName == TEMPLATE_ELEMENT;
         element.attrs.forEach(function (attr) {
-            var hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
+            var hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, animationProps, events, elementOrDirectiveRefs, elementVars);
             var hasTemplateBinding = _this._parseInlineTemplateBinding(attr, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
             if (!hasBinding && !hasTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST
@@ -277,7 +279,7 @@ var TemplateParseVisitor = (function () {
         var directiveMetas = this._parseDirectives(this.selectorMatcher, elementCssSelector);
         var references = [];
         var directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references);
-        var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts);
+        var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts).concat(animationProps);
         var isViewRoot = parent.isTemplateElement || hasInlineTemplates;
         var providerContext = new provider_parser_1.ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
         var children = html_ast_1.htmlVisitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
@@ -346,7 +348,7 @@ var TemplateParseVisitor = (function () {
         }
         return false;
     };
-    TemplateParseVisitor.prototype._parseAttr = function (isTemplateElement, attr, targetMatchableAttrs, targetProps, targetEvents, targetRefs, targetVars) {
+    TemplateParseVisitor.prototype._parseAttr = function (isTemplateElement, attr, targetMatchableAttrs, targetProps, targetAnimationProps, targetEvents, targetRefs, targetVars) {
         var attrName = this._normalizeAttributeName(attr.name);
         var attrValue = attr.value;
         var bindParts = lang_1.RegExpWrapper.firstMatch(BIND_NAME_REGEXP, attrName);
@@ -354,10 +356,10 @@ var TemplateParseVisitor = (function () {
         if (lang_1.isPresent(bindParts)) {
             hasBinding = true;
             if (lang_1.isPresent(bindParts[1])) {
-                this._parseProperty(bindParts[7], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
+                this._parseProperty(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
             }
             else if (lang_1.isPresent(bindParts[2])) {
-                var identifier = bindParts[7];
+                var identifier = bindParts[8];
                 if (isTemplateElement) {
                     this._reportError("\"var-\" on <template> elements is deprecated. Use \"let-\" instead!", attr.sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
                     this._parseVariable(identifier, attrValue, attr.sourceSpan, targetVars);
@@ -369,7 +371,7 @@ var TemplateParseVisitor = (function () {
             }
             else if (lang_1.isPresent(bindParts[3])) {
                 if (isTemplateElement) {
-                    var identifier = bindParts[7];
+                    var identifier = bindParts[8];
                     this._parseVariable(identifier, attrValue, attr.sourceSpan, targetVars);
                 }
                 else {
@@ -377,25 +379,28 @@ var TemplateParseVisitor = (function () {
                 }
             }
             else if (lang_1.isPresent(bindParts[4])) {
-                var identifier = bindParts[7];
+                var identifier = bindParts[8];
                 this._parseReference(identifier, attrValue, attr.sourceSpan, targetRefs);
             }
             else if (lang_1.isPresent(bindParts[5])) {
-                this._parseEvent(bindParts[7], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
+                this._parseEvent(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
             }
             else if (lang_1.isPresent(bindParts[6])) {
-                this._parseProperty(bindParts[7], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
-                this._parseAssignmentEvent(bindParts[7], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
-            }
-            else if (lang_1.isPresent(bindParts[8])) {
                 this._parseProperty(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
                 this._parseAssignmentEvent(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
             }
+            else if (lang_1.isPresent(bindParts[7])) {
+                this._parseAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetAnimationProps);
+            }
             else if (lang_1.isPresent(bindParts[9])) {
                 this._parseProperty(bindParts[9], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
+                this._parseAssignmentEvent(bindParts[9], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
             }
             else if (lang_1.isPresent(bindParts[10])) {
-                this._parseEvent(bindParts[10], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
+                this._parseProperty(bindParts[10], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
+            }
+            else if (lang_1.isPresent(bindParts[11])) {
+                this._parseEvent(bindParts[11], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
             }
         }
         else {
@@ -423,6 +428,11 @@ var TemplateParseVisitor = (function () {
     };
     TemplateParseVisitor.prototype._parseProperty = function (name, expression, sourceSpan, targetMatchableAttrs, targetProps) {
         this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
+    };
+    TemplateParseVisitor.prototype._parseAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetAnimationProps) {
+        var ast = this._parseBinding(expression, sourceSpan);
+        targetMatchableAttrs.push([name, ast.source]);
+        targetAnimationProps.push(new template_ast_1.BoundElementPropertyAst(name, template_ast_1.PropertyBindingType.Animation, core_private_1.SecurityContext.NONE, ast, null, sourceSpan));
     };
     TemplateParseVisitor.prototype._parsePropertyInterpolation = function (name, value, sourceSpan, targetMatchableAttrs, targetProps) {
         var expr = this._parseInterpolation(value, sourceSpan);

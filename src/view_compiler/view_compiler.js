@@ -5,6 +5,7 @@ var compile_view_1 = require('./compile_view');
 var view_builder_1 = require('./view_builder');
 var view_binder_1 = require('./view_binder');
 var config_1 = require('../config');
+var animation_compiler_1 = require('../animation/animation_compiler');
 var ViewCompileResult = (function () {
     function ViewCompileResult(statements, viewFactoryVar, dependencies) {
         this.statements = statements;
@@ -17,11 +18,17 @@ exports.ViewCompileResult = ViewCompileResult;
 var ViewCompiler = (function () {
     function ViewCompiler(_genConfig) {
         this._genConfig = _genConfig;
+        this._animationCompiler = new animation_compiler_1.AnimationCompiler();
     }
     ViewCompiler.prototype.compileComponent = function (component, template, styles, pipes) {
-        var statements = [];
         var dependencies = [];
-        var view = new compile_view_1.CompileView(component, this._genConfig, pipes, styles, 0, compile_element_1.CompileElement.createNull(), []);
+        var compiledAnimations = this._animationCompiler.compileComponent(component);
+        var statements = [];
+        compiledAnimations.map(function (entry) {
+            statements.push(entry.statesMapStatement);
+            statements.push(entry.fnStatement);
+        });
+        var view = new compile_view_1.CompileView(component, this._genConfig, pipes, styles, compiledAnimations, 0, compile_element_1.CompileElement.createNull(), []);
         view_builder_1.buildView(view, template, dependencies);
         // Need to separate binding from creation to be able to refer to
         // variables that have been declared after usage.

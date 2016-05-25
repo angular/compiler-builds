@@ -41,6 +41,15 @@ class _InterpretiveAppView extends DebugAppView {
             return super.injectorGet(token, nodeIndex, notFoundResult);
         }
     }
+    detachInternal() {
+        var m = this.methods.get('detachInternal');
+        if (isPresent(m)) {
+            return m();
+        }
+        else {
+            return super.detachInternal();
+        }
+    }
     destroyInternal() {
         var m = this.methods.get('destroyInternal');
         if (isPresent(m)) {

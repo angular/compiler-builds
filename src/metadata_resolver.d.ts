@@ -2,6 +2,7 @@ import { Provider, QueryMetadata } from '@angular/core';
 import { ReflectorReader } from '../core_private';
 import { Type } from '../src/facade/lang';
 import * as cpl from './compile_metadata';
+import * as anmd from '@angular/core';
 import { DirectiveResolver } from './directive_resolver';
 import { PipeResolver } from './pipe_resolver';
 import { ViewResolver } from './view_resolver';
@@ -18,6 +19,10 @@ export declare class CompileMetadataResolver {
     private _reflector;
     constructor(_directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _viewResolver: ViewResolver, _platformDirectives: Type[], _platformPipes: Type[], _reflector?: ReflectorReader);
     private sanitizeTokenName(token);
+    getAnimationEntryMetadata(entry: anmd.AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
+    getAnimationStateMetadata(value: anmd.AnimationStateMetadata): cpl.CompileAnimationStateMetadata;
+    getAnimationStyleMetadata(value: anmd.AnimationStyleMetadata): cpl.CompileAnimationStyleMetadata;
+    getAnimationMetadata(value: anmd.AnimationMetadata): cpl.CompileAnimationMetadata;
     getDirectiveMetadata(directiveType: Type): cpl.CompileDirectiveMetadata;
     /**
      * @param someType a symbol which may or may not be a directive type

@@ -25,7 +25,7 @@ var LIFECYCLE_PROPS = collection_1.MapWrapper.createFromPairs([
 function hasLifecycleHook(hook, token) {
     var lcInterface = LIFECYCLE_INTERFACES.get(hook);
     var lcProp = LIFECYCLE_PROPS.get(hook);
-    return core_1.reflector.hasLifecycleHook(token, lcInterface, lcProp);
+    return core_private_1.reflector.hasLifecycleHook(token, lcInterface, lcProp);
 }
 exports.hasLifecycleHook = hasLifecycleHook;
 //# sourceMappingURL=directive_lifecycle_reflector.js.map

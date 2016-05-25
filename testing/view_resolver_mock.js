@@ -18,6 +18,8 @@ var MockViewResolver = (function (_super) {
         /** @internal */
         this._inlineTemplates = new collection_1.Map();
         /** @internal */
+        this._animations = new collection_1.Map();
+        /** @internal */
         this._viewCache = new collection_1.Map();
         /** @internal */
         this._directiveOverrides = new collection_1.Map();
@@ -35,6 +37,10 @@ var MockViewResolver = (function (_super) {
     MockViewResolver.prototype.setInlineTemplate = function (component, template) {
         this._checkOverrideable(component);
         this._inlineTemplates.set(component, template);
+    };
+    MockViewResolver.prototype.setAnimations = function (component, animations) {
+        this._checkOverrideable(component);
+        this._animations.set(component, animations);
     };
     /**
      * Overrides a directive from the component {@link ViewMetadata}.
@@ -65,9 +71,24 @@ var MockViewResolver = (function (_super) {
             view = _super.prototype.resolve.call(this, component);
         }
         var directives = [];
-        var overrides = this._directiveOverrides.get(component);
-        if (lang_1.isPresent(overrides) && lang_1.isPresent(view.directives)) {
+        if (lang_1.isPresent(view.directives)) {
             flattenArray(view.directives, directives);
+        }
+        var animations = view.animations;
+        var templateUrl = view.templateUrl;
+        var overrides = this._directiveOverrides.get(component);
+        var inlineAnimations = this._animations.get(component);
+        if (lang_1.isPresent(inlineAnimations)) {
+            animations = inlineAnimations;
+        }
+        var inlineTemplate = this._inlineTemplates.get(component);
+        if (lang_1.isPresent(inlineTemplate)) {
+            templateUrl = null;
+        }
+        else {
+            inlineTemplate = view.template;
+        }
+        if (lang_1.isPresent(overrides) && lang_1.isPresent(view.directives)) {
             overrides.forEach(function (to, from) {
                 var srcIndex = directives.indexOf(from);
                 if (srcIndex == -1) {
@@ -75,12 +96,17 @@ var MockViewResolver = (function (_super) {
                 }
                 directives[srcIndex] = to;
             });
-            view = new core_1.ViewMetadata({ template: view.template, templateUrl: view.templateUrl, directives: directives });
         }
-        var inlineTemplate = this._inlineTemplates.get(component);
-        if (lang_1.isPresent(inlineTemplate)) {
-            view = new core_1.ViewMetadata({ template: inlineTemplate, templateUrl: null, directives: view.directives });
-        }
+        view = new core_1.ViewMetadata({
+            template: inlineTemplate,
+            templateUrl: templateUrl,
+            directives: directives.length > 0 ? directives : null,
+            animations: animations,
+            styles: view.styles,
+            styleUrls: view.styleUrls,
+            pipes: view.pipes,
+            encapsulation: view.encapsulation
+        });
         this._viewCache.set(component, view);
         return view;
     };
@@ -106,6 +132,8 @@ var MockViewResolver = (function (_super) {
 }(index_1.ViewResolver));
 exports.MockViewResolver = MockViewResolver;
 function flattenArray(tree, out) {
+    if (!lang_1.isPresent(tree))
+        return;
     for (var i = 0; i < tree.length; i++) {
         var item = core_2.resolveForwardRef(tree[i]);
         if (lang_1.isArray(item)) {

@@ -52,6 +52,15 @@ var _InterpretiveAppView = (function (_super) {
             return _super.prototype.injectorGet.call(this, token, nodeIndex, notFoundResult);
         }
     };
+    _InterpretiveAppView.prototype.detachInternal = function () {
+        var m = this.methods.get('detachInternal');
+        if (lang_1.isPresent(m)) {
+            return m();
+        }
+        else {
+            return _super.prototype.detachInternal.call(this);
+        }
+    };
     _InterpretiveAppView.prototype.destroyInternal = function () {
         var m = this.methods.get('destroyInternal');
         if (lang_1.isPresent(m)) {

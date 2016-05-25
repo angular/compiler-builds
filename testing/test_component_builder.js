@@ -163,6 +163,8 @@ var TestComponentBuilder = (function () {
         /** @internal */
         this._templateOverrides = new Map();
         /** @internal */
+        this._animationOverrides = new Map();
+        /** @internal */
         this._viewBindingsOverrides = new Map();
         /** @internal */
         this._viewOverrides = new Map();
@@ -184,6 +186,11 @@ var TestComponentBuilder = (function () {
     TestComponentBuilder.prototype.overrideTemplate = function (componentType, template) {
         var clone = this._clone();
         clone._templateOverrides.set(componentType, template);
+        return clone;
+    };
+    TestComponentBuilder.prototype.overrideAnimations = function (componentType, animations) {
+        var clone = this._clone();
+        clone._animationOverrides.set(componentType, animations);
         return clone;
     };
     /**
@@ -270,6 +277,9 @@ var TestComponentBuilder = (function () {
             _this._viewOverrides.forEach(function (view, type) { return mockViewResolver.setView(type, view); });
             _this._templateOverrides.forEach(function (template, type) {
                 return mockViewResolver.setInlineTemplate(type, template);
+            });
+            _this._animationOverrides.forEach(function (animationsEntry, type) {
+                return mockViewResolver.setAnimations(type, animationsEntry);
             });
             _this._directiveOverrides.forEach(function (overrides, component) {
                 overrides.forEach(function (to, from) { mockViewResolver.overrideViewDirective(component, from, to); });
