@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v2.0.0-9036f78
+ * @license AngularJS v2.0.0-c3fafa0
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1788,9 +1788,1816 @@ var __extends = (this && this.__extends) || function (d, b) {
         '?.'
     ]);
     var KEYWORDS = SetWrapper.createFromList(['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else']);
+    var _EMPTY_ATTR_VALUE = '';
+    // TODO: Can't use `const` here as
+    // in Dart this is not transpiled into `final` yet...
+    var _SELECTOR_REGEXP = RegExpWrapper.create('(\\:not\\()|' +
+        '([-\\w]+)|' +
+        '(?:\\.([-\\w]+))|' +
+        '(?:\\[([-\\w*]+)(?:=([^\\]]*))?\\])|' +
+        '(\\))|' +
+        '(\\s*,\\s*)'); // ","
+    /**
+     * A css selector contains an element name,
+     * css classes and attribute/value pairs with the purpose
+     * of selecting subsets out of them.
+     */
+    var CssSelector = (function () {
+        function CssSelector() {
+            this.element = null;
+            this.classNames = [];
+            this.attrs = [];
+            this.notSelectors = [];
+        }
+        CssSelector.parse = function (selector) {
+            var results = [];
+            var _addResult = function (res, cssSel) {
+                if (cssSel.notSelectors.length > 0 && isBlank(cssSel.element) &&
+                    ListWrapper.isEmpty(cssSel.classNames) && ListWrapper.isEmpty(cssSel.attrs)) {
+                    cssSel.element = "*";
+                }
+                res.push(cssSel);
+            };
+            var cssSelector = new CssSelector();
+            var matcher = RegExpWrapper.matcher(_SELECTOR_REGEXP, selector);
+            var match;
+            var current = cssSelector;
+            var inNot = false;
+            while (isPresent(match = RegExpMatcherWrapper.next(matcher))) {
+                if (isPresent(match[1])) {
+                    if (inNot) {
+                        throw new BaseException$1('Nesting :not is not allowed in a selector');
+                    }
+                    inNot = true;
+                    current = new CssSelector();
+                    cssSelector.notSelectors.push(current);
+                }
+                if (isPresent(match[2])) {
+                    current.setElement(match[2]);
+                }
+                if (isPresent(match[3])) {
+                    current.addClassName(match[3]);
+                }
+                if (isPresent(match[4])) {
+                    current.addAttribute(match[4], match[5]);
+                }
+                if (isPresent(match[6])) {
+                    inNot = false;
+                    current = cssSelector;
+                }
+                if (isPresent(match[7])) {
+                    if (inNot) {
+                        throw new BaseException$1('Multiple selectors in :not are not supported');
+                    }
+                    _addResult(results, cssSelector);
+                    cssSelector = current = new CssSelector();
+                }
+            }
+            _addResult(results, cssSelector);
+            return results;
+        };
+        CssSelector.prototype.isElementSelector = function () {
+            return isPresent(this.element) && ListWrapper.isEmpty(this.classNames) &&
+                ListWrapper.isEmpty(this.attrs) && this.notSelectors.length === 0;
+        };
+        CssSelector.prototype.setElement = function (element) {
+            if (element === void 0) { element = null; }
+            this.element = element;
+        };
+        /** Gets a template string for an element that matches the selector. */
+        CssSelector.prototype.getMatchingElementTemplate = function () {
+            var tagName = isPresent(this.element) ? this.element : 'div';
+            var classAttr = this.classNames.length > 0 ? " class=\"" + this.classNames.join(' ') + "\"" : '';
+            var attrs = '';
+            for (var i = 0; i < this.attrs.length; i += 2) {
+                var attrName = this.attrs[i];
+                var attrValue = this.attrs[i + 1] !== '' ? "=\"" + this.attrs[i + 1] + "\"" : '';
+                attrs += " " + attrName + attrValue;
+            }
+            return "<" + tagName + classAttr + attrs + "></" + tagName + ">";
+        };
+        CssSelector.prototype.addAttribute = function (name, value) {
+            if (value === void 0) { value = _EMPTY_ATTR_VALUE; }
+            this.attrs.push(name);
+            if (isPresent(value)) {
+                value = value.toLowerCase();
+            }
+            else {
+                value = _EMPTY_ATTR_VALUE;
+            }
+            this.attrs.push(value);
+        };
+        CssSelector.prototype.addClassName = function (name) { this.classNames.push(name.toLowerCase()); };
+        CssSelector.prototype.toString = function () {
+            var res = '';
+            if (isPresent(this.element)) {
+                res += this.element;
+            }
+            if (isPresent(this.classNames)) {
+                for (var i = 0; i < this.classNames.length; i++) {
+                    res += '.' + this.classNames[i];
+                }
+            }
+            if (isPresent(this.attrs)) {
+                for (var i = 0; i < this.attrs.length;) {
+                    var attrName = this.attrs[i++];
+                    var attrValue = this.attrs[i++];
+                    res += '[' + attrName;
+                    if (attrValue.length > 0) {
+                        res += '=' + attrValue;
+                    }
+                    res += ']';
+                }
+            }
+            this.notSelectors.forEach(function (notSelector) { return res += ":not(" + notSelector + ")"; });
+            return res;
+        };
+        return CssSelector;
+    }());
+    /**
+     * Reads a list of CssSelectors and allows to calculate which ones
+     * are contained in a given CssSelector.
+     */
+    var SelectorMatcher = (function () {
+        function SelectorMatcher() {
+            this._elementMap = new Map$1();
+            this._elementPartialMap = new Map$1();
+            this._classMap = new Map$1();
+            this._classPartialMap = new Map$1();
+            this._attrValueMap = new Map$1();
+            this._attrValuePartialMap = new Map$1();
+            this._listContexts = [];
+        }
+        SelectorMatcher.createNotMatcher = function (notSelectors) {
+            var notMatcher = new SelectorMatcher();
+            notMatcher.addSelectables(notSelectors, null);
+            return notMatcher;
+        };
+        SelectorMatcher.prototype.addSelectables = function (cssSelectors, callbackCtxt) {
+            var listContext = null;
+            if (cssSelectors.length > 1) {
+                listContext = new SelectorListContext(cssSelectors);
+                this._listContexts.push(listContext);
+            }
+            for (var i = 0; i < cssSelectors.length; i++) {
+                this._addSelectable(cssSelectors[i], callbackCtxt, listContext);
+            }
+        };
+        /**
+         * Add an object that can be found later on by calling `match`.
+         * @param cssSelector A css selector
+         * @param callbackCtxt An opaque object that will be given to the callback of the `match` function
+         */
+        SelectorMatcher.prototype._addSelectable = function (cssSelector, callbackCtxt, listContext) {
+            var matcher = this;
+            var element = cssSelector.element;
+            var classNames = cssSelector.classNames;
+            var attrs = cssSelector.attrs;
+            var selectable = new SelectorContext(cssSelector, callbackCtxt, listContext);
+            if (isPresent(element)) {
+                var isTerminal = attrs.length === 0 && classNames.length === 0;
+                if (isTerminal) {
+                    this._addTerminal(matcher._elementMap, element, selectable);
+                }
+                else {
+                    matcher = this._addPartial(matcher._elementPartialMap, element);
+                }
+            }
+            if (isPresent(classNames)) {
+                for (var index = 0; index < classNames.length; index++) {
+                    var isTerminal = attrs.length === 0 && index === classNames.length - 1;
+                    var className = classNames[index];
+                    if (isTerminal) {
+                        this._addTerminal(matcher._classMap, className, selectable);
+                    }
+                    else {
+                        matcher = this._addPartial(matcher._classPartialMap, className);
+                    }
+                }
+            }
+            if (isPresent(attrs)) {
+                for (var index = 0; index < attrs.length;) {
+                    var isTerminal = index === attrs.length - 2;
+                    var attrName = attrs[index++];
+                    var attrValue = attrs[index++];
+                    if (isTerminal) {
+                        var terminalMap = matcher._attrValueMap;
+                        var terminalValuesMap = terminalMap.get(attrName);
+                        if (isBlank(terminalValuesMap)) {
+                            terminalValuesMap = new Map$1();
+                            terminalMap.set(attrName, terminalValuesMap);
+                        }
+                        this._addTerminal(terminalValuesMap, attrValue, selectable);
+                    }
+                    else {
+                        var parttialMap = matcher._attrValuePartialMap;
+                        var partialValuesMap = parttialMap.get(attrName);
+                        if (isBlank(partialValuesMap)) {
+                            partialValuesMap = new Map$1();
+                            parttialMap.set(attrName, partialValuesMap);
+                        }
+                        matcher = this._addPartial(partialValuesMap, attrValue);
+                    }
+                }
+            }
+        };
+        SelectorMatcher.prototype._addTerminal = function (map, name, selectable) {
+            var terminalList = map.get(name);
+            if (isBlank(terminalList)) {
+                terminalList = [];
+                map.set(name, terminalList);
+            }
+            terminalList.push(selectable);
+        };
+        SelectorMatcher.prototype._addPartial = function (map, name) {
+            var matcher = map.get(name);
+            if (isBlank(matcher)) {
+                matcher = new SelectorMatcher();
+                map.set(name, matcher);
+            }
+            return matcher;
+        };
+        /**
+         * Find the objects that have been added via `addSelectable`
+         * whose css selector is contained in the given css selector.
+         * @param cssSelector A css selector
+         * @param matchedCallback This callback will be called with the object handed into `addSelectable`
+         * @return boolean true if a match was found
+        */
+        SelectorMatcher.prototype.match = function (cssSelector, matchedCallback) {
+            var result = false;
+            var element = cssSelector.element;
+            var classNames = cssSelector.classNames;
+            var attrs = cssSelector.attrs;
+            for (var i = 0; i < this._listContexts.length; i++) {
+                this._listContexts[i].alreadyMatched = false;
+            }
+            result = this._matchTerminal(this._elementMap, element, cssSelector, matchedCallback) || result;
+            result = this._matchPartial(this._elementPartialMap, element, cssSelector, matchedCallback) ||
+                result;
+            if (isPresent(classNames)) {
+                for (var index = 0; index < classNames.length; index++) {
+                    var className = classNames[index];
+                    result =
+                        this._matchTerminal(this._classMap, className, cssSelector, matchedCallback) || result;
+                    result =
+                        this._matchPartial(this._classPartialMap, className, cssSelector, matchedCallback) ||
+                            result;
+                }
+            }
+            if (isPresent(attrs)) {
+                for (var index = 0; index < attrs.length;) {
+                    var attrName = attrs[index++];
+                    var attrValue = attrs[index++];
+                    var terminalValuesMap = this._attrValueMap.get(attrName);
+                    if (!StringWrapper.equals(attrValue, _EMPTY_ATTR_VALUE)) {
+                        result = this._matchTerminal(terminalValuesMap, _EMPTY_ATTR_VALUE, cssSelector, matchedCallback) ||
+                            result;
+                    }
+                    result = this._matchTerminal(terminalValuesMap, attrValue, cssSelector, matchedCallback) ||
+                        result;
+                    var partialValuesMap = this._attrValuePartialMap.get(attrName);
+                    if (!StringWrapper.equals(attrValue, _EMPTY_ATTR_VALUE)) {
+                        result = this._matchPartial(partialValuesMap, _EMPTY_ATTR_VALUE, cssSelector, matchedCallback) ||
+                            result;
+                    }
+                    result =
+                        this._matchPartial(partialValuesMap, attrValue, cssSelector, matchedCallback) || result;
+                }
+            }
+            return result;
+        };
+        /** @internal */
+        SelectorMatcher.prototype._matchTerminal = function (map, name, cssSelector, matchedCallback) {
+            if (isBlank(map) || isBlank(name)) {
+                return false;
+            }
+            var selectables = map.get(name);
+            var starSelectables = map.get("*");
+            if (isPresent(starSelectables)) {
+                selectables = selectables.concat(starSelectables);
+            }
+            if (isBlank(selectables)) {
+                return false;
+            }
+            var selectable;
+            var result = false;
+            for (var index = 0; index < selectables.length; index++) {
+                selectable = selectables[index];
+                result = selectable.finalize(cssSelector, matchedCallback) || result;
+            }
+            return result;
+        };
+        /** @internal */
+        SelectorMatcher.prototype._matchPartial = function (map, name, cssSelector, matchedCallback /*: (c: CssSelector, a: any) => void*/) {
+            if (isBlank(map) || isBlank(name)) {
+                return false;
+            }
+            var nestedSelector = map.get(name);
+            if (isBlank(nestedSelector)) {
+                return false;
+            }
+            // TODO(perf): get rid of recursion and measure again
+            // TODO(perf): don't pass the whole selector into the recursion,
+            // but only the not processed parts
+            return nestedSelector.match(cssSelector, matchedCallback);
+        };
+        return SelectorMatcher;
+    }());
+    var SelectorListContext = (function () {
+        function SelectorListContext(selectors) {
+            this.selectors = selectors;
+            this.alreadyMatched = false;
+        }
+        return SelectorListContext;
+    }());
+    // Store context to pass back selector and context when a selector is matched
+    var SelectorContext = (function () {
+        function SelectorContext(selector, cbContext, listContext) {
+            this.selector = selector;
+            this.cbContext = cbContext;
+            this.listContext = listContext;
+            this.notSelectors = selector.notSelectors;
+        }
+        SelectorContext.prototype.finalize = function (cssSelector, callback) {
+            var result = true;
+            if (this.notSelectors.length > 0 &&
+                (isBlank(this.listContext) || !this.listContext.alreadyMatched)) {
+                var notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
+                result = !notMatcher.match(cssSelector, null);
+            }
+            if (result && isPresent(callback) &&
+                (isBlank(this.listContext) || !this.listContext.alreadyMatched)) {
+                if (isPresent(this.listContext)) {
+                    this.listContext.alreadyMatched = true;
+                }
+                callback(this.selector, this.cbContext);
+            }
+            return result;
+        };
+        return SelectorContext;
+    }());
+    var MODULE_SUFFIX = IS_DART ? '.dart' : '';
+    var CAMEL_CASE_REGEXP = /([A-Z])/g;
+    function camelCaseToDashCase(input) {
+        return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
+    }
+    function splitAtColon(input, defaultValues) {
+        var parts = StringWrapper.split(input.trim(), /\s*:\s*/g);
+        if (parts.length > 1) {
+            return parts;
+        }
+        else {
+            return defaultValues;
+        }
+    }
+    function sanitizeIdentifier(name) {
+        return StringWrapper.replaceAll(name, /\W/g, '_');
+    }
+    function visitValue(value, visitor, context) {
+        if (isArray(value)) {
+            return visitor.visitArray(value, context);
+        }
+        else if (isStrictStringMap(value)) {
+            return visitor.visitStringMap(value, context);
+        }
+        else if (isBlank(value) || isPrimitive(value)) {
+            return visitor.visitPrimitive(value, context);
+        }
+        else {
+            return visitor.visitOther(value, context);
+        }
+    }
+    var ValueTransformer = (function () {
+        function ValueTransformer() {
+        }
+        ValueTransformer.prototype.visitArray = function (arr, context) {
+            var _this = this;
+            return arr.map(function (value) { return visitValue(value, _this, context); });
+        };
+        ValueTransformer.prototype.visitStringMap = function (map, context) {
+            var _this = this;
+            var result = {};
+            StringMapWrapper.forEach(map, function (value, key) { result[key] = visitValue(value, _this, context); });
+            return result;
+        };
+        ValueTransformer.prototype.visitPrimitive = function (value, context) { return value; };
+        ValueTransformer.prototype.visitOther = function (value, context) { return value; };
+        return ValueTransformer;
+    }());
+    function assetUrl(pkg, path, type) {
+        if (path === void 0) { path = null; }
+        if (type === void 0) { type = 'src'; }
+        if (IS_DART) {
+            if (path == null) {
+                return "asset:angular2/" + pkg + "/" + pkg + ".dart";
+            }
+            else {
+                return "asset:angular2/lib/" + pkg + "/src/" + path + ".dart";
+            }
+        }
+        else {
+            if (path == null) {
+                return "asset:@angular/lib/" + pkg + "/index";
+            }
+            else {
+                return "asset:@angular/lib/" + pkg + "/src/" + path;
+            }
+        }
+    }
+    var _ASSET_SCHEME = 'asset:';
+    function createOfflineCompileUrlResolver() {
+        return new UrlResolver(_ASSET_SCHEME);
+    }
+    /**
+     * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
+     */
+    var DEFAULT_PACKAGE_URL_PROVIDER = {
+        provide: anmd.PACKAGE_ROOT_URL,
+        useValue: "/"
+    };
+    var UrlResolver = (function () {
+        function UrlResolver(_packagePrefix) {
+            if (_packagePrefix === void 0) { _packagePrefix = null; }
+            this._packagePrefix = _packagePrefix;
+        }
+        /**
+         * Resolves the `url` given the `baseUrl`:
+         * - when the `url` is null, the `baseUrl` is returned,
+         * - if `url` is relative ('path/to/here', './path/to/here'), the resolved url is a combination of
+         * `baseUrl` and `url`,
+         * - if `url` is absolute (it has a scheme: 'http://', 'https://' or start with '/'), the `url` is
+         * returned as is (ignoring the `baseUrl`)
+         */
+        UrlResolver.prototype.resolve = function (baseUrl, url) {
+            var resolvedUrl = url;
+            if (isPresent(baseUrl) && baseUrl.length > 0) {
+                resolvedUrl = _resolveUrl(baseUrl, resolvedUrl);
+            }
+            var resolvedParts = _split(resolvedUrl);
+            var prefix = this._packagePrefix;
+            if (isPresent(prefix) && isPresent(resolvedParts) &&
+                resolvedParts[_ComponentIndex.Scheme] == "package") {
+                var path = resolvedParts[_ComponentIndex.Path];
+                if (this._packagePrefix === _ASSET_SCHEME) {
+                    var pathSegements = path.split(/\//);
+                    resolvedUrl = "asset:" + pathSegements[0] + "/lib/" + pathSegements.slice(1).join('/');
+                }
+                else {
+                    prefix = StringWrapper.stripRight(prefix, '/');
+                    path = StringWrapper.stripLeft(path, '/');
+                    return prefix + "/" + path;
+                }
+            }
+            return resolvedUrl;
+        };
+        return UrlResolver;
+    }());
+    UrlResolver.decorators = [
+        { type: anmd.Injectable },
+    ];
+    UrlResolver.ctorParameters = [
+        { type: undefined, decorators: [{ type: anmd.Inject, args: [anmd.PACKAGE_ROOT_URL,] },] },
+    ];
+    /**
+     * Extract the scheme of a URL.
+     */
+    function getUrlScheme(url) {
+        var match = _split(url);
+        return (match && match[_ComponentIndex.Scheme]) || "";
+    }
+    // The code below is adapted from Traceur:
+    // https://github.com/google/traceur-compiler/blob/9511c1dafa972bf0de1202a8a863bad02f0f95a8/src/runtime/url.js
+    /**
+     * Builds a URI string from already-encoded parts.
+     *
+     * No encoding is performed.  Any component may be omitted as either null or
+     * undefined.
+     *
+     * @param opt_scheme The scheme such as 'http'.
+     * @param opt_userInfo The user name before the '@'.
+     * @param opt_domain The domain such as 'www.google.com', already
+     *     URI-encoded.
+     * @param opt_port The port number.
+     * @param opt_path The path, already URI-encoded.  If it is not
+     *     empty, it must begin with a slash.
+     * @param opt_queryData The URI-encoded query data.
+     * @param opt_fragment The URI-encoded fragment identifier.
+     * @return The fully combined URI.
+     */
+    function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, opt_path, opt_queryData, opt_fragment) {
+        var out = [];
+        if (isPresent(opt_scheme)) {
+            out.push(opt_scheme + ':');
+        }
+        if (isPresent(opt_domain)) {
+            out.push('//');
+            if (isPresent(opt_userInfo)) {
+                out.push(opt_userInfo + '@');
+            }
+            out.push(opt_domain);
+            if (isPresent(opt_port)) {
+                out.push(':' + opt_port);
+            }
+        }
+        if (isPresent(opt_path)) {
+            out.push(opt_path);
+        }
+        if (isPresent(opt_queryData)) {
+            out.push('?' + opt_queryData);
+        }
+        if (isPresent(opt_fragment)) {
+            out.push('#' + opt_fragment);
+        }
+        return out.join('');
+    }
+    /**
+     * A regular expression for breaking a URI into its component parts.
+     *
+     * {@link http://www.gbiv.com/protocols/uri/rfc/rfc3986.html#RFC2234} says
+     * As the "first-match-wins" algorithm is identical to the "greedy"
+     * disambiguation method used by POSIX regular expressions, it is natural and
+     * commonplace to use a regular expression for parsing the potential five
+     * components of a URI reference.
+     *
+     * The following line is the regular expression for breaking-down a
+     * well-formed URI reference into its components.
+     *
+     * <pre>
+     * ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?
+     *  12            3  4          5       6  7        8 9
+     * </pre>
+     *
+     * The numbers in the second line above are only to assist readability; they
+     * indicate the reference points for each subexpression (i.e., each paired
+     * parenthesis). We refer to the value matched for subexpression <n> as $<n>.
+     * For example, matching the above expression to
+     * <pre>
+     *     http://www.ics.uci.edu/pub/ietf/uri/#Related
+     * </pre>
+     * results in the following subexpression matches:
+     * <pre>
+     *    $1 = http:
+     *    $2 = http
+     *    $3 = //www.ics.uci.edu
+     *    $4 = www.ics.uci.edu
+     *    $5 = /pub/ietf/uri/
+     *    $6 = <undefined>
+     *    $7 = <undefined>
+     *    $8 = #Related
+     *    $9 = Related
+     * </pre>
+     * where <undefined> indicates that the component is not present, as is the
+     * case for the query component in the above example. Therefore, we can
+     * determine the value of the five components as
+     * <pre>
+     *    scheme    = $2
+     *    authority = $4
+     *    path      = $5
+     *    query     = $7
+     *    fragment  = $9
+     * </pre>
+     *
+     * The regular expression has been modified slightly to expose the
+     * userInfo, domain, and port separately from the authority.
+     * The modified version yields
+     * <pre>
+     *    $1 = http              scheme
+     *    $2 = <undefined>       userInfo -\
+     *    $3 = www.ics.uci.edu   domain     | authority
+     *    $4 = <undefined>       port     -/
+     *    $5 = /pub/ietf/uri/    path
+     *    $6 = <undefined>       query without ?
+     *    $7 = Related           fragment without #
+     * </pre>
+     * @type {!RegExp}
+     * @internal
+     */
+    var _splitRe = RegExpWrapper.create('^' +
+        '(?:' +
+        '([^:/?#.]+)' +
+        // used by other URL parts such as :,
+        // ?, /, #, and .
+        ':)?' +
+        '(?://' +
+        '(?:([^/?#]*)@)?' +
+        '([\\w\\d\\-\\u0100-\\uffff.%]*)' +
+        // digits, dashes, dots, percent
+        // escapes, and unicode characters.
+        '(?::([0-9]+))?' +
+        ')?' +
+        '([^?#]+)?' +
+        '(?:\\?([^#]*))?' +
+        '(?:#(.*))?' +
+        '$');
+    /**
+     * The index of each URI component in the return value of goog.uri.utils.split.
+     * @enum {number}
+     */
+    var _ComponentIndex;
+    (function (_ComponentIndex) {
+        _ComponentIndex[_ComponentIndex["Scheme"] = 1] = "Scheme";
+        _ComponentIndex[_ComponentIndex["UserInfo"] = 2] = "UserInfo";
+        _ComponentIndex[_ComponentIndex["Domain"] = 3] = "Domain";
+        _ComponentIndex[_ComponentIndex["Port"] = 4] = "Port";
+        _ComponentIndex[_ComponentIndex["Path"] = 5] = "Path";
+        _ComponentIndex[_ComponentIndex["QueryData"] = 6] = "QueryData";
+        _ComponentIndex[_ComponentIndex["Fragment"] = 7] = "Fragment";
+    })(_ComponentIndex || (_ComponentIndex = {}));
+    /**
+     * Splits a URI into its component parts.
+     *
+     * Each component can be accessed via the component indices; for example:
+     * <pre>
+     * goog.uri.utils.split(someStr)[goog.uri.utils.CompontentIndex.QUERY_DATA];
+     * </pre>
+     *
+     * @param uri The URI string to examine.
+     * @return Each component still URI-encoded.
+     *     Each component that is present will contain the encoded value, whereas
+     *     components that are not present will be undefined or empty, depending
+     *     on the browser's regular expression implementation.  Never null, since
+     *     arbitrary strings may still look like path names.
+     */
+    function _split(uri) {
+        return RegExpWrapper.firstMatch(_splitRe, uri);
+    }
+    /**
+      * Removes dot segments in given path component, as described in
+      * RFC 3986, section 5.2.4.
+      *
+      * @param path A non-empty path component.
+      * @return Path component with removed dot segments.
+      */
+    function _removeDotSegments(path) {
+        if (path == '/')
+            return '/';
+        var leadingSlash = path[0] == '/' ? '/' : '';
+        var trailingSlash = path[path.length - 1] === '/' ? '/' : '';
+        var segments = path.split('/');
+        var out = [];
+        var up = 0;
+        for (var pos = 0; pos < segments.length; pos++) {
+            var segment = segments[pos];
+            switch (segment) {
+                case '':
+                case '.':
+                    break;
+                case '..':
+                    if (out.length > 0) {
+                        out.pop();
+                    }
+                    else {
+                        up++;
+                    }
+                    break;
+                default:
+                    out.push(segment);
+            }
+        }
+        if (leadingSlash == '') {
+            while (up-- > 0) {
+                out.unshift('..');
+            }
+            if (out.length === 0)
+                out.push('.');
+        }
+        return leadingSlash + out.join('/') + trailingSlash;
+    }
+    /**
+     * Takes an array of the parts from split and canonicalizes the path part
+     * and then joins all the parts.
+     */
+    function _joinAndCanonicalizePath(parts) {
+        var path = parts[_ComponentIndex.Path];
+        path = isBlank(path) ? '' : _removeDotSegments(path);
+        parts[_ComponentIndex.Path] = path;
+        return _buildFromEncodedParts(parts[_ComponentIndex.Scheme], parts[_ComponentIndex.UserInfo], parts[_ComponentIndex.Domain], parts[_ComponentIndex.Port], path, parts[_ComponentIndex.QueryData], parts[_ComponentIndex.Fragment]);
+    }
+    /**
+     * Resolves a URL.
+     * @param base The URL acting as the base URL.
+     * @param to The URL to resolve.
+     */
+    function _resolveUrl(base, url) {
+        var parts = _split(encodeURI(url));
+        var baseParts = _split(base);
+        if (isPresent(parts[_ComponentIndex.Scheme])) {
+            return _joinAndCanonicalizePath(parts);
+        }
+        else {
+            parts[_ComponentIndex.Scheme] = baseParts[_ComponentIndex.Scheme];
+        }
+        for (var i = _ComponentIndex.Scheme; i <= _ComponentIndex.Port; i++) {
+            if (isBlank(parts[i])) {
+                parts[i] = baseParts[i];
+            }
+        }
+        if (parts[_ComponentIndex.Path][0] == '/') {
+            return _joinAndCanonicalizePath(parts);
+        }
+        var path = baseParts[_ComponentIndex.Path];
+        if (isBlank(path))
+            path = '/';
+        var index = path.lastIndexOf('/');
+        path = path.substring(0, index + 1) + parts[_ComponentIndex.Path];
+        parts[_ComponentIndex.Path] = path;
+        return _joinAndCanonicalizePath(parts);
+    }
+    // group 2: "event" from "(event)"
+    var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))$/g;
+    var CompileMetadataWithIdentifier = (function () {
+        function CompileMetadataWithIdentifier() {
+        }
+        Object.defineProperty(CompileMetadataWithIdentifier.prototype, "identifier", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        return CompileMetadataWithIdentifier;
+    }());
+    var CompileMetadataWithType = (function (_super) {
+        __extends(CompileMetadataWithType, _super);
+        function CompileMetadataWithType() {
+            _super.apply(this, arguments);
+        }
+        Object.defineProperty(CompileMetadataWithType.prototype, "type", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(CompileMetadataWithType.prototype, "identifier", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        return CompileMetadataWithType;
+    }(CompileMetadataWithIdentifier));
+    function metadataFromJson(data) {
+        return _COMPILE_METADATA_FROM_JSON[data['class']](data);
+    }
+    var CompileAnimationEntryMetadata = (function () {
+        function CompileAnimationEntryMetadata(name, definitions) {
+            if (name === void 0) { name = null; }
+            if (definitions === void 0) { definitions = null; }
+            this.name = name;
+            this.definitions = definitions;
+        }
+        CompileAnimationEntryMetadata.fromJson = function (data) {
+            var value = data['value'];
+            var defs = _arrayFromJson(value['definitions'], metadataFromJson);
+            return new CompileAnimationEntryMetadata(value['name'], defs);
+        };
+        CompileAnimationEntryMetadata.prototype.toJson = function () {
+            return {
+                'class': 'AnimationEntryMetadata',
+                'value': {
+                    'name': this.name,
+                    'definitions': _arrayToJson(this.definitions)
+                }
+            };
+        };
+        return CompileAnimationEntryMetadata;
+    }());
+    var CompileAnimationStateMetadata = (function () {
+        function CompileAnimationStateMetadata() {
+        }
+        return CompileAnimationStateMetadata;
+    }());
+    var CompileAnimationStateDeclarationMetadata = (function (_super) {
+        __extends(CompileAnimationStateDeclarationMetadata, _super);
+        function CompileAnimationStateDeclarationMetadata(stateNameExpr, styles) {
+            _super.call(this);
+            this.stateNameExpr = stateNameExpr;
+            this.styles = styles;
+        }
+        CompileAnimationStateDeclarationMetadata.fromJson = function (data) {
+            var value = data['value'];
+            var styles = _objFromJson(value['styles'], metadataFromJson);
+            return new CompileAnimationStateDeclarationMetadata(value['stateNameExpr'], styles);
+        };
+        CompileAnimationStateDeclarationMetadata.prototype.toJson = function () {
+            return {
+                'class': 'AnimationStateDeclarationMetadata',
+                'value': {
+                    'stateNameExpr': this.stateNameExpr,
+                    'styles': this.styles.toJson()
+                }
+            };
+        };
+        return CompileAnimationStateDeclarationMetadata;
+    }(CompileAnimationStateMetadata));
+    var CompileAnimationStateTransitionMetadata = (function (_super) {
+        __extends(CompileAnimationStateTransitionMetadata, _super);
+        function CompileAnimationStateTransitionMetadata(stateChangeExpr, animation) {
+            _super.call(this);
+            this.stateChangeExpr = stateChangeExpr;
+            this.animation = animation;
+        }
+        CompileAnimationStateTransitionMetadata.fromJson = function (data) {
+            var value = data['value'];
+            var animation = _objFromJson(value['animation'], metadataFromJson);
+            return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], animation);
+        };
+        CompileAnimationStateTransitionMetadata.prototype.toJson = function () {
+            return {
+                'class': 'AnimationStateTransitionMetadata',
+                'value': {
+                    'stateChangeExpr': this.stateChangeExpr,
+                    'animation': this.animation.toJson()
+                }
+            };
+        };
+        return CompileAnimationStateTransitionMetadata;
+    }(CompileAnimationStateMetadata));
+    var CompileAnimationMetadata = (function () {
+        function CompileAnimationMetadata() {
+        }
+        return CompileAnimationMetadata;
+    }());
+    var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
+        __extends(CompileAnimationKeyframesSequenceMetadata, _super);
+        function CompileAnimationKeyframesSequenceMetadata(steps) {
+            if (steps === void 0) { steps = []; }
+            _super.call(this);
+            this.steps = steps;
+        }
+        CompileAnimationKeyframesSequenceMetadata.fromJson = function (data) {
+            var steps = _arrayFromJson(data['value'], metadataFromJson);
+            return new CompileAnimationKeyframesSequenceMetadata(steps);
+        };
+        CompileAnimationKeyframesSequenceMetadata.prototype.toJson = function () {
+            return {
+                'class': 'AnimationKeyframesSequenceMetadata',
+                'value': _arrayToJson(this.steps)
+            };
+        };
+        return CompileAnimationKeyframesSequenceMetadata;
+    }(CompileAnimationMetadata));
+    var CompileAnimationStyleMetadata = (function (_super) {
+        __extends(CompileAnimationStyleMetadata, _super);
+        function CompileAnimationStyleMetadata(offset, styles) {
+            if (styles === void 0) { styles = null; }
+            _super.call(this);
+            this.offset = offset;
+            this.styles = styles;
+        }
+        CompileAnimationStyleMetadata.fromJson = function (data) {
+            var value = data['value'];
+            var offsetVal = value['offset'];
+            var offset = isPresent(offsetVal) ? NumberWrapper.parseFloat(offsetVal) : null;
+            var styles = value['styles'];
+            return new CompileAnimationStyleMetadata(offset, styles);
+        };
+        CompileAnimationStyleMetadata.prototype.toJson = function () {
+            return {
+                'class': 'AnimationStyleMetadata',
+                'value': {
+                    'offset': this.offset,
+                    'styles': this.styles
+                }
+            };
+        };
+        return CompileAnimationStyleMetadata;
+    }(CompileAnimationMetadata));
+    var CompileAnimationAnimateMetadata = (function (_super) {
+        __extends(CompileAnimationAnimateMetadata, _super);
+        function CompileAnimationAnimateMetadata(timings, styles) {
+            if (timings === void 0) { timings = 0; }
+            if (styles === void 0) { styles = null; }
+            _super.call(this);
+            this.timings = timings;
+            this.styles = styles;
+        }
+        CompileAnimationAnimateMetadata.fromJson = function (data) {
+            var value = data['value'];
+            var timings = value['timings'];
+            var styles = _objFromJson(value['styles'], metadataFromJson);
+            return new CompileAnimationAnimateMetadata(timings, styles);
+        };
+        CompileAnimationAnimateMetadata.prototype.toJson = function () {
+            return {
+                'class': 'AnimationAnimateMetadata',
+                'value': {
+                    'timings': this.timings,
+                    'styles': _objToJson(this.styles)
+                }
+            };
+        };
+        return CompileAnimationAnimateMetadata;
+    }(CompileAnimationMetadata));
+    var CompileAnimationWithStepsMetadata = (function (_super) {
+        __extends(CompileAnimationWithStepsMetadata, _super);
+        function CompileAnimationWithStepsMetadata(steps) {
+            if (steps === void 0) { steps = null; }
+            _super.call(this);
+            this.steps = steps;
+        }
+        return CompileAnimationWithStepsMetadata;
+    }(CompileAnimationMetadata));
+    var CompileAnimationSequenceMetadata = (function (_super) {
+        __extends(CompileAnimationSequenceMetadata, _super);
+        function CompileAnimationSequenceMetadata(steps) {
+            if (steps === void 0) { steps = null; }
+            _super.call(this, steps);
+        }
+        CompileAnimationSequenceMetadata.fromJson = function (data) {
+            var steps = _arrayFromJson(data['value'], metadataFromJson);
+            return new CompileAnimationSequenceMetadata(steps);
+        };
+        CompileAnimationSequenceMetadata.prototype.toJson = function () {
+            return {
+                'class': 'AnimationSequenceMetadata',
+                'value': _arrayToJson(this.steps)
+            };
+        };
+        return CompileAnimationSequenceMetadata;
+    }(CompileAnimationWithStepsMetadata));
+    var CompileAnimationGroupMetadata = (function (_super) {
+        __extends(CompileAnimationGroupMetadata, _super);
+        function CompileAnimationGroupMetadata(steps) {
+            if (steps === void 0) { steps = null; }
+            _super.call(this, steps);
+        }
+        CompileAnimationGroupMetadata.fromJson = function (data) {
+            var steps = _arrayFromJson(data["value"], metadataFromJson);
+            return new CompileAnimationGroupMetadata(steps);
+        };
+        CompileAnimationGroupMetadata.prototype.toJson = function () {
+            return {
+                'class': 'AnimationGroupMetadata',
+                'value': _arrayToJson(this.steps)
+            };
+        };
+        return CompileAnimationGroupMetadata;
+    }(CompileAnimationWithStepsMetadata));
+    var CompileIdentifierMetadata = (function () {
+        function CompileIdentifierMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
+            this.runtime = runtime;
+            this.name = name;
+            this.prefix = prefix;
+            this.moduleUrl = moduleUrl;
+            this.value = value;
+        }
+        CompileIdentifierMetadata.fromJson = function (data) {
+            var value = isArray(data['value']) ? _arrayFromJson(data['value'], metadataFromJson) :
+                _objFromJson(data['value'], metadataFromJson);
+            return new CompileIdentifierMetadata({ name: data['name'], prefix: data['prefix'], moduleUrl: data['moduleUrl'], value: value });
+        };
+        CompileIdentifierMetadata.prototype.toJson = function () {
+            var value = isArray(this.value) ? _arrayToJson(this.value) : _objToJson(this.value);
+            return {
+                // Note: Runtime type can't be serialized...
+                'class': 'Identifier',
+                'name': this.name,
+                'moduleUrl': this.moduleUrl,
+                'prefix': this.prefix,
+                'value': value
+            };
+        };
+        Object.defineProperty(CompileIdentifierMetadata.prototype, "identifier", {
+            get: function () { return this; },
+            enumerable: true,
+            configurable: true
+        });
+        return CompileIdentifierMetadata;
+    }());
+    var CompileDiDependencyMetadata = (function () {
+        function CompileDiDependencyMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, isAttribute = _b.isAttribute, isSelf = _b.isSelf, isHost = _b.isHost, isSkipSelf = _b.isSkipSelf, isOptional = _b.isOptional, isValue = _b.isValue, query = _b.query, viewQuery = _b.viewQuery, token = _b.token, value = _b.value;
+            this.isAttribute = normalizeBool(isAttribute);
+            this.isSelf = normalizeBool(isSelf);
+            this.isHost = normalizeBool(isHost);
+            this.isSkipSelf = normalizeBool(isSkipSelf);
+            this.isOptional = normalizeBool(isOptional);
+            this.isValue = normalizeBool(isValue);
+            this.query = query;
+            this.viewQuery = viewQuery;
+            this.token = token;
+            this.value = value;
+        }
+        CompileDiDependencyMetadata.fromJson = function (data) {
+            return new CompileDiDependencyMetadata({
+                token: _objFromJson(data['token'], CompileTokenMetadata.fromJson),
+                query: _objFromJson(data['query'], CompileQueryMetadata.fromJson),
+                viewQuery: _objFromJson(data['viewQuery'], CompileQueryMetadata.fromJson),
+                value: data['value'],
+                isAttribute: data['isAttribute'],
+                isSelf: data['isSelf'],
+                isHost: data['isHost'],
+                isSkipSelf: data['isSkipSelf'],
+                isOptional: data['isOptional'],
+                isValue: data['isValue']
+            });
+        };
+        CompileDiDependencyMetadata.prototype.toJson = function () {
+            return {
+                'token': _objToJson(this.token),
+                'query': _objToJson(this.query),
+                'viewQuery': _objToJson(this.viewQuery),
+                'value': this.value,
+                'isAttribute': this.isAttribute,
+                'isSelf': this.isSelf,
+                'isHost': this.isHost,
+                'isSkipSelf': this.isSkipSelf,
+                'isOptional': this.isOptional,
+                'isValue': this.isValue
+            };
+        };
+        return CompileDiDependencyMetadata;
+    }());
+    var CompileProviderMetadata = (function () {
+        function CompileProviderMetadata(_a) {
+            var token = _a.token, useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
+            this.token = token;
+            this.useClass = useClass;
+            this.useValue = useValue;
+            this.useExisting = useExisting;
+            this.useFactory = useFactory;
+            this.deps = normalizeBlank(deps);
+            this.multi = normalizeBool(multi);
+        }
+        CompileProviderMetadata.fromJson = function (data) {
+            return new CompileProviderMetadata({
+                token: _objFromJson(data['token'], CompileTokenMetadata.fromJson),
+                useClass: _objFromJson(data['useClass'], CompileTypeMetadata.fromJson),
+                useExisting: _objFromJson(data['useExisting'], CompileTokenMetadata.fromJson),
+                useValue: _objFromJson(data['useValue'], CompileIdentifierMetadata.fromJson),
+                useFactory: _objFromJson(data['useFactory'], CompileFactoryMetadata.fromJson),
+                multi: data['multi'],
+                deps: _arrayFromJson(data['deps'], CompileDiDependencyMetadata.fromJson)
+            });
+        };
+        CompileProviderMetadata.prototype.toJson = function () {
+            return {
+                // Note: Runtime type can't be serialized...
+                'class': 'Provider',
+                'token': _objToJson(this.token),
+                'useClass': _objToJson(this.useClass),
+                'useExisting': _objToJson(this.useExisting),
+                'useValue': _objToJson(this.useValue),
+                'useFactory': _objToJson(this.useFactory),
+                'multi': this.multi,
+                'deps': _arrayToJson(this.deps)
+            };
+        };
+        return CompileProviderMetadata;
+    }());
+    var CompileFactoryMetadata = (function () {
+        function CompileFactoryMetadata(_a) {
+            var runtime = _a.runtime, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
+            this.runtime = runtime;
+            this.name = name;
+            this.prefix = prefix;
+            this.moduleUrl = moduleUrl;
+            this.diDeps = _normalizeArray(diDeps);
+            this.value = value;
+        }
+        Object.defineProperty(CompileFactoryMetadata.prototype, "identifier", {
+            get: function () { return this; },
+            enumerable: true,
+            configurable: true
+        });
+        CompileFactoryMetadata.fromJson = function (data) {
+            return new CompileFactoryMetadata({
+                name: data['name'],
+                prefix: data['prefix'],
+                moduleUrl: data['moduleUrl'],
+                value: data['value'],
+                diDeps: _arrayFromJson(data['diDeps'], CompileDiDependencyMetadata.fromJson)
+            });
+        };
+        CompileFactoryMetadata.prototype.toJson = function () {
+            return {
+                'class': 'Factory',
+                'name': this.name,
+                'prefix': this.prefix,
+                'moduleUrl': this.moduleUrl,
+                'value': this.value,
+                'diDeps': _arrayToJson(this.diDeps)
+            };
+        };
+        return CompileFactoryMetadata;
+    }());
+    var UNDEFINED = new Object();
+    var CompileTokenMetadata = (function () {
+        function CompileTokenMetadata(_a) {
+            var value = _a.value, identifier = _a.identifier, identifierIsInstance = _a.identifierIsInstance;
+            this._assetCacheKey = UNDEFINED;
+            this.value = value;
+            this.identifier = identifier;
+            this.identifierIsInstance = normalizeBool(identifierIsInstance);
+        }
+        CompileTokenMetadata.fromJson = function (data) {
+            return new CompileTokenMetadata({
+                value: data['value'],
+                identifier: _objFromJson(data['identifier'], CompileIdentifierMetadata.fromJson),
+                identifierIsInstance: data['identifierIsInstance']
+            });
+        };
+        CompileTokenMetadata.prototype.toJson = function () {
+            return {
+                'value': this.value,
+                'identifier': _objToJson(this.identifier),
+                'identifierIsInstance': this.identifierIsInstance
+            };
+        };
+        Object.defineProperty(CompileTokenMetadata.prototype, "runtimeCacheKey", {
+            get: function () {
+                if (isPresent(this.identifier)) {
+                    return this.identifier.runtime;
+                }
+                else {
+                    return this.value;
+                }
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(CompileTokenMetadata.prototype, "assetCacheKey", {
+            get: function () {
+                if (this._assetCacheKey === UNDEFINED) {
+                    if (isPresent(this.identifier)) {
+                        if (isPresent(this.identifier.moduleUrl) &&
+                            isPresent(getUrlScheme(this.identifier.moduleUrl))) {
+                            var uri = reflector.importUri({
+                                'filePath': this.identifier.moduleUrl,
+                                'name': this.identifier.name
+                            });
+                            this._assetCacheKey = this.identifier.name + "|" + uri + "|" + this.identifierIsInstance;
+                        }
+                        else {
+                            this._assetCacheKey = null;
+                        }
+                    }
+                    else {
+                        this._assetCacheKey = this.value;
+                    }
+                }
+                return this._assetCacheKey;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        CompileTokenMetadata.prototype.equalsTo = function (token2) {
+            var rk = this.runtimeCacheKey;
+            var ak = this.assetCacheKey;
+            return (isPresent(rk) && rk == token2.runtimeCacheKey) ||
+                (isPresent(ak) && ak == token2.assetCacheKey);
+        };
+        Object.defineProperty(CompileTokenMetadata.prototype, "name", {
+            get: function () {
+                return isPresent(this.value) ? sanitizeIdentifier(this.value) : this.identifier.name;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return CompileTokenMetadata;
+    }());
+    var CompileTokenMap = (function () {
+        function CompileTokenMap() {
+            this._valueMap = new Map();
+            this._values = [];
+        }
+        CompileTokenMap.prototype.add = function (token, value) {
+            var existing = this.get(token);
+            if (isPresent(existing)) {
+                throw new BaseException$1("Can only add to a TokenMap! Token: " + token.name);
+            }
+            this._values.push(value);
+            var rk = token.runtimeCacheKey;
+            if (isPresent(rk)) {
+                this._valueMap.set(rk, value);
+            }
+            var ak = token.assetCacheKey;
+            if (isPresent(ak)) {
+                this._valueMap.set(ak, value);
+            }
+        };
+        CompileTokenMap.prototype.get = function (token) {
+            var rk = token.runtimeCacheKey;
+            var ak = token.assetCacheKey;
+            var result;
+            if (isPresent(rk)) {
+                result = this._valueMap.get(rk);
+            }
+            if (isBlank(result) && isPresent(ak)) {
+                result = this._valueMap.get(ak);
+            }
+            return result;
+        };
+        CompileTokenMap.prototype.values = function () { return this._values; };
+        Object.defineProperty(CompileTokenMap.prototype, "size", {
+            get: function () { return this._values.length; },
+            enumerable: true,
+            configurable: true
+        });
+        return CompileTokenMap;
+    }());
+    /**
+     * Metadata regarding compilation of a type.
+     */
+    var CompileTypeMetadata = (function () {
+        function CompileTypeMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps;
+            this.runtime = runtime;
+            this.name = name;
+            this.moduleUrl = moduleUrl;
+            this.prefix = prefix;
+            this.isHost = normalizeBool(isHost);
+            this.value = value;
+            this.diDeps = _normalizeArray(diDeps);
+        }
+        CompileTypeMetadata.fromJson = function (data) {
+            return new CompileTypeMetadata({
+                name: data['name'],
+                moduleUrl: data['moduleUrl'],
+                prefix: data['prefix'],
+                isHost: data['isHost'],
+                value: data['value'],
+                diDeps: _arrayFromJson(data['diDeps'], CompileDiDependencyMetadata.fromJson)
+            });
+        };
+        Object.defineProperty(CompileTypeMetadata.prototype, "identifier", {
+            get: function () { return this; },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(CompileTypeMetadata.prototype, "type", {
+            get: function () { return this; },
+            enumerable: true,
+            configurable: true
+        });
+        CompileTypeMetadata.prototype.toJson = function () {
+            return {
+                // Note: Runtime type can't be serialized...
+                'class': 'Type',
+                'name': this.name,
+                'moduleUrl': this.moduleUrl,
+                'prefix': this.prefix,
+                'isHost': this.isHost,
+                'value': this.value,
+                'diDeps': _arrayToJson(this.diDeps)
+            };
+        };
+        return CompileTypeMetadata;
+    }());
+    var CompileQueryMetadata = (function () {
+        function CompileQueryMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, selectors = _b.selectors, descendants = _b.descendants, first = _b.first, propertyName = _b.propertyName, read = _b.read;
+            this.selectors = selectors;
+            this.descendants = normalizeBool(descendants);
+            this.first = normalizeBool(first);
+            this.propertyName = propertyName;
+            this.read = read;
+        }
+        CompileQueryMetadata.fromJson = function (data) {
+            return new CompileQueryMetadata({
+                selectors: _arrayFromJson(data['selectors'], CompileTokenMetadata.fromJson),
+                descendants: data['descendants'],
+                first: data['first'],
+                propertyName: data['propertyName'],
+                read: _objFromJson(data['read'], CompileTokenMetadata.fromJson)
+            });
+        };
+        CompileQueryMetadata.prototype.toJson = function () {
+            return {
+                'selectors': _arrayToJson(this.selectors),
+                'descendants': this.descendants,
+                'first': this.first,
+                'propertyName': this.propertyName,
+                'read': _objToJson(this.read)
+            };
+        };
+        return CompileQueryMetadata;
+    }());
+    /**
+     * Metadata regarding compilation of a template.
+     */
+    var CompileTemplateMetadata = (function () {
+        function CompileTemplateMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors;
+            this.encapsulation = isPresent(encapsulation) ? encapsulation : anmd.ViewEncapsulation.Emulated;
+            this.template = template;
+            this.templateUrl = templateUrl;
+            this.styles = isPresent(styles) ? styles : [];
+            this.styleUrls = isPresent(styleUrls) ? styleUrls : [];
+            this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
+            this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
+        }
+        CompileTemplateMetadata.fromJson = function (data) {
+            var animations = _arrayFromJson(data['animations'], metadataFromJson);
+            return new CompileTemplateMetadata({
+                encapsulation: isPresent(data['encapsulation']) ?
+                    VIEW_ENCAPSULATION_VALUES[data['encapsulation']] :
+                    data['encapsulation'],
+                template: data['template'],
+                templateUrl: data['templateUrl'],
+                styles: data['styles'],
+                styleUrls: data['styleUrls'],
+                animations: animations,
+                ngContentSelectors: data['ngContentSelectors']
+            });
+        };
+        CompileTemplateMetadata.prototype.toJson = function () {
+            return {
+                'encapsulation': isPresent(this.encapsulation) ? serializeEnum(this.encapsulation) : this.encapsulation,
+                'template': this.template,
+                'templateUrl': this.templateUrl,
+                'styles': this.styles,
+                'styleUrls': this.styleUrls,
+                'animations': _objToJson(this.animations),
+                'ngContentSelectors': this.ngContentSelectors
+            };
+        };
+        return CompileTemplateMetadata;
+    }());
+    /**
+     * Metadata regarding compilation of a directive.
+     */
+    var CompileDirectiveMetadata = (function () {
+        function CompileDirectiveMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, template = _b.template;
+            this.type = type;
+            this.isComponent = isComponent;
+            this.selector = selector;
+            this.exportAs = exportAs;
+            this.changeDetection = changeDetection;
+            this.inputs = inputs;
+            this.outputs = outputs;
+            this.hostListeners = hostListeners;
+            this.hostProperties = hostProperties;
+            this.hostAttributes = hostAttributes;
+            this.lifecycleHooks = _normalizeArray(lifecycleHooks);
+            this.providers = _normalizeArray(providers);
+            this.viewProviders = _normalizeArray(viewProviders);
+            this.queries = _normalizeArray(queries);
+            this.viewQueries = _normalizeArray(viewQueries);
+            this.template = template;
+        }
+        CompileDirectiveMetadata.create = function (_a) {
+            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, template = _b.template;
+            var hostListeners = {};
+            var hostProperties = {};
+            var hostAttributes = {};
+            if (isPresent(host)) {
+                StringMapWrapper.forEach(host, function (value, key) {
+                    var matches = RegExpWrapper.firstMatch(HOST_REG_EXP, key);
+                    if (isBlank(matches)) {
+                        hostAttributes[key] = value;
+                    }
+                    else if (isPresent(matches[1])) {
+                        hostProperties[matches[1]] = value;
+                    }
+                    else if (isPresent(matches[2])) {
+                        hostListeners[matches[2]] = value;
+                    }
+                });
+            }
+            var inputsMap = {};
+            if (isPresent(inputs)) {
+                inputs.forEach(function (bindConfig) {
+                    // canonical syntax: `dirProp: elProp`
+                    // if there is no `:`, use dirProp = elProp
+                    var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                    inputsMap[parts[0]] = parts[1];
+                });
+            }
+            var outputsMap = {};
+            if (isPresent(outputs)) {
+                outputs.forEach(function (bindConfig) {
+                    // canonical syntax: `dirProp: elProp`
+                    // if there is no `:`, use dirProp = elProp
+                    var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                    outputsMap[parts[0]] = parts[1];
+                });
+            }
+            return new CompileDirectiveMetadata({
+                type: type,
+                isComponent: normalizeBool(isComponent),
+                selector: selector,
+                exportAs: exportAs,
+                changeDetection: changeDetection,
+                inputs: inputsMap,
+                outputs: outputsMap,
+                hostListeners: hostListeners,
+                hostProperties: hostProperties,
+                hostAttributes: hostAttributes,
+                lifecycleHooks: isPresent(lifecycleHooks) ? lifecycleHooks : [],
+                providers: providers,
+                viewProviders: viewProviders,
+                queries: queries,
+                viewQueries: viewQueries,
+                template: template
+            });
+        };
+        Object.defineProperty(CompileDirectiveMetadata.prototype, "identifier", {
+            get: function () { return this.type; },
+            enumerable: true,
+            configurable: true
+        });
+        CompileDirectiveMetadata.fromJson = function (data) {
+            return new CompileDirectiveMetadata({
+                isComponent: data['isComponent'],
+                selector: data['selector'],
+                exportAs: data['exportAs'],
+                type: isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
+                changeDetection: isPresent(data['changeDetection']) ?
+                    CHANGE_DETECTION_STRATEGY_VALUES[data['changeDetection']] :
+                    data['changeDetection'],
+                inputs: data['inputs'],
+                outputs: data['outputs'],
+                hostListeners: data['hostListeners'],
+                hostProperties: data['hostProperties'],
+                hostAttributes: data['hostAttributes'],
+                lifecycleHooks: data['lifecycleHooks'].map(function (hookValue) { return LIFECYCLE_HOOKS_VALUES[hookValue]; }),
+                template: isPresent(data['template']) ? CompileTemplateMetadata.fromJson(data['template']) :
+                    data['template'],
+                providers: _arrayFromJson(data['providers'], metadataFromJson),
+                viewProviders: _arrayFromJson(data['viewProviders'], metadataFromJson),
+                queries: _arrayFromJson(data['queries'], CompileQueryMetadata.fromJson),
+                viewQueries: _arrayFromJson(data['viewQueries'], CompileQueryMetadata.fromJson)
+            });
+        };
+        CompileDirectiveMetadata.prototype.toJson = function () {
+            return {
+                'class': 'Directive',
+                'isComponent': this.isComponent,
+                'selector': this.selector,
+                'exportAs': this.exportAs,
+                'type': isPresent(this.type) ? this.type.toJson() : this.type,
+                'changeDetection': isPresent(this.changeDetection) ? serializeEnum(this.changeDetection) :
+                    this.changeDetection,
+                'inputs': this.inputs,
+                'outputs': this.outputs,
+                'hostListeners': this.hostListeners,
+                'hostProperties': this.hostProperties,
+                'hostAttributes': this.hostAttributes,
+                'lifecycleHooks': this.lifecycleHooks.map(function (hook) { return serializeEnum(hook); }),
+                'template': isPresent(this.template) ? this.template.toJson() : this.template,
+                'providers': _arrayToJson(this.providers),
+                'viewProviders': _arrayToJson(this.viewProviders),
+                'queries': _arrayToJson(this.queries),
+                'viewQueries': _arrayToJson(this.viewQueries)
+            };
+        };
+        return CompileDirectiveMetadata;
+    }());
+    /**
+     * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
+     */
+    function createHostComponentMeta(componentType, componentSelector) {
+        var template = CssSelector.parse(componentSelector)[0].getMatchingElementTemplate();
+        return CompileDirectiveMetadata.create({
+            type: new CompileTypeMetadata({
+                runtime: Object,
+                name: componentType.name + "_Host",
+                moduleUrl: componentType.moduleUrl,
+                isHost: true
+            }),
+            template: new CompileTemplateMetadata({ template: template, templateUrl: '', styles: [], styleUrls: [], ngContentSelectors: [], animations: [] }),
+            changeDetection: anmd.ChangeDetectionStrategy.Default,
+            inputs: [],
+            outputs: [],
+            host: {},
+            lifecycleHooks: [],
+            isComponent: true,
+            selector: '*',
+            providers: [],
+            viewProviders: [],
+            queries: [],
+            viewQueries: []
+        });
+    }
+    var CompilePipeMetadata = (function () {
+        function CompilePipeMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, type = _b.type, name = _b.name, pure = _b.pure, lifecycleHooks = _b.lifecycleHooks;
+            this.type = type;
+            this.name = name;
+            this.pure = normalizeBool(pure);
+            this.lifecycleHooks = _normalizeArray(lifecycleHooks);
+        }
+        Object.defineProperty(CompilePipeMetadata.prototype, "identifier", {
+            get: function () { return this.type; },
+            enumerable: true,
+            configurable: true
+        });
+        CompilePipeMetadata.fromJson = function (data) {
+            return new CompilePipeMetadata({
+                type: isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
+                name: data['name'],
+                pure: data['pure']
+            });
+        };
+        CompilePipeMetadata.prototype.toJson = function () {
+            return {
+                'class': 'Pipe',
+                'type': isPresent(this.type) ? this.type.toJson() : null,
+                'name': this.name,
+                'pure': this.pure
+            };
+        };
+        return CompilePipeMetadata;
+    }());
+    var _COMPILE_METADATA_FROM_JSON = {
+        'Directive': CompileDirectiveMetadata.fromJson,
+        'Pipe': CompilePipeMetadata.fromJson,
+        'Type': CompileTypeMetadata.fromJson,
+        'Provider': CompileProviderMetadata.fromJson,
+        'Identifier': CompileIdentifierMetadata.fromJson,
+        'Factory': CompileFactoryMetadata.fromJson,
+        'AnimationEntryMetadata': CompileAnimationEntryMetadata.fromJson,
+        'AnimationStateDeclarationMetadata': CompileAnimationStateDeclarationMetadata.fromJson,
+        'AnimationStateTransitionMetadata': CompileAnimationStateTransitionMetadata.fromJson,
+        'AnimationSequenceMetadata': CompileAnimationSequenceMetadata.fromJson,
+        'AnimationGroupMetadata': CompileAnimationGroupMetadata.fromJson,
+        'AnimationAnimateMetadata': CompileAnimationAnimateMetadata.fromJson,
+        'AnimationStyleMetadata': CompileAnimationStyleMetadata.fromJson,
+        'AnimationKeyframesSequenceMetadata': CompileAnimationKeyframesSequenceMetadata.fromJson
+    };
+    function _arrayFromJson(obj, fn) {
+        return isBlank(obj) ? null : obj.map(function (o) { return _objFromJson(o, fn); });
+    }
+    function _arrayToJson(obj) {
+        return isBlank(obj) ? null : obj.map(_objToJson);
+    }
+    function _objFromJson(obj, fn) {
+        if (isArray(obj))
+            return _arrayFromJson(obj, fn);
+        if (isString(obj) || isBlank(obj) || isBoolean(obj) || isNumber(obj))
+            return obj;
+        return fn(obj);
+    }
+    function _objToJson(obj) {
+        if (isArray(obj))
+            return _arrayToJson(obj);
+        if (isString(obj) || isBlank(obj) || isBoolean(obj) || isNumber(obj))
+            return obj;
+        return obj.toJson();
+    }
+    function _normalizeArray(obj) {
+        return isPresent(obj) ? obj : [];
+    }
+    var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
+    var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
+    var CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
+    // Reassign the imports to different variables so we can
+    // define static variables with the name of the import.
+    // (only needed for Dart).
+    var impViewUtils = ViewUtils;
+    var impAppView = AppView;
+    var impDebugAppView = DebugAppView;
+    var impDebugContext = DebugContext;
+    var impAppElement = AppElement;
+    var impElementRef = anmd.ElementRef;
+    var impViewContainerRef = anmd.ViewContainerRef;
+    var impChangeDetectorRef = anmd.ChangeDetectorRef;
+    var impRenderComponentType = anmd.RenderComponentType;
+    var impQueryList = anmd.QueryList;
+    var impTemplateRef = anmd.TemplateRef;
+    var impTemplateRef_ = TemplateRef_;
+    var impValueUnwrapper = ValueUnwrapper;
+    var impInjector = anmd.Injector;
+    var impViewEncapsulation = anmd.ViewEncapsulation;
+    var impViewType = ViewType;
+    var impChangeDetectionStrategy = anmd.ChangeDetectionStrategy;
+    var impStaticNodeDebugInfo = StaticNodeDebugInfo;
+    var impRenderer = anmd.Renderer;
+    var impSimpleChange = anmd.SimpleChange;
+    var impUninitialized = uninitialized;
+    var impChangeDetectorState = ChangeDetectorState;
+    var impFlattenNestedViewRenderNodes = flattenNestedViewRenderNodes;
+    var impDevModeEqual = devModeEqual;
+    var impInterpolate = interpolate;
+    var impCheckBinding = checkBinding;
+    var impCastByValue = castByValue;
+    var impEMPTY_ARRAY = EMPTY_ARRAY;
+    var impEMPTY_MAP = EMPTY_MAP;
+    var impAnimationGroupPlayer = AnimationGroupPlayer_;
+    var impAnimationSequencePlayer = AnimationSequencePlayer_;
+    var impAnimationKeyframe = AnimationKeyframe_;
+    var impAnimationStyles = AnimationStyles_;
+    var impNoOpAnimationPlayer = NoOpAnimationPlayer_;
+    var ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
+    var Identifiers = (function () {
+        function Identifiers() {
+        }
+        return Identifiers;
+    }());
+    Identifiers.ViewUtils = new CompileIdentifierMetadata({ name: 'ViewUtils', moduleUrl: assetUrl('core', 'linker/view_utils'), runtime: impViewUtils });
+    Identifiers.AppView = new CompileIdentifierMetadata({ name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impAppView });
+    Identifiers.DebugAppView = new CompileIdentifierMetadata({ name: 'DebugAppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impDebugAppView });
+    Identifiers.AppElement = new CompileIdentifierMetadata({ name: 'AppElement', moduleUrl: assetUrl('core', 'linker/element'), runtime: impAppElement });
+    Identifiers.ElementRef = new CompileIdentifierMetadata({
+        name: 'ElementRef',
+        moduleUrl: assetUrl('core', 'linker/element_ref'),
+        runtime: impElementRef
+    });
+    Identifiers.ViewContainerRef = new CompileIdentifierMetadata({
+        name: 'ViewContainerRef',
+        moduleUrl: assetUrl('core', 'linker/view_container_ref'),
+        runtime: impViewContainerRef
+    });
+    Identifiers.ChangeDetectorRef = new CompileIdentifierMetadata({
+        name: 'ChangeDetectorRef',
+        moduleUrl: assetUrl('core', 'change_detection/change_detector_ref'),
+        runtime: impChangeDetectorRef
+    });
+    Identifiers.RenderComponentType = new CompileIdentifierMetadata({
+        name: 'RenderComponentType',
+        moduleUrl: assetUrl('core', 'render/api'),
+        runtime: impRenderComponentType
+    });
+    Identifiers.QueryList = new CompileIdentifierMetadata({ name: 'QueryList', moduleUrl: assetUrl('core', 'linker/query_list'), runtime: impQueryList });
+    Identifiers.TemplateRef = new CompileIdentifierMetadata({
+        name: 'TemplateRef',
+        moduleUrl: assetUrl('core', 'linker/template_ref'),
+        runtime: impTemplateRef
+    });
+    Identifiers.TemplateRef_ = new CompileIdentifierMetadata({
+        name: 'TemplateRef_',
+        moduleUrl: assetUrl('core', 'linker/template_ref'),
+        runtime: impTemplateRef_
+    });
+    Identifiers.ValueUnwrapper = new CompileIdentifierMetadata({ name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: impValueUnwrapper });
+    Identifiers.Injector = new CompileIdentifierMetadata({ name: 'Injector', moduleUrl: assetUrl('core', 'di/injector'), runtime: impInjector });
+    Identifiers.ViewEncapsulation = new CompileIdentifierMetadata({
+        name: 'ViewEncapsulation',
+        moduleUrl: assetUrl('core', 'metadata/view'),
+        runtime: impViewEncapsulation
+    });
+    Identifiers.ViewType = new CompileIdentifierMetadata({ name: 'ViewType', moduleUrl: assetUrl('core', 'linker/view_type'), runtime: impViewType });
+    Identifiers.ChangeDetectionStrategy = new CompileIdentifierMetadata({
+        name: 'ChangeDetectionStrategy',
+        moduleUrl: CD_MODULE_URL,
+        runtime: impChangeDetectionStrategy
+    });
+    Identifiers.StaticNodeDebugInfo = new CompileIdentifierMetadata({
+        name: 'StaticNodeDebugInfo',
+        moduleUrl: assetUrl('core', 'linker/debug_context'),
+        runtime: impStaticNodeDebugInfo
+    });
+    Identifiers.DebugContext = new CompileIdentifierMetadata({
+        name: 'DebugContext',
+        moduleUrl: assetUrl('core', 'linker/debug_context'),
+        runtime: impDebugContext
+    });
+    Identifiers.Renderer = new CompileIdentifierMetadata({ name: 'Renderer', moduleUrl: assetUrl('core', 'render/api'), runtime: impRenderer });
+    Identifiers.SimpleChange = new CompileIdentifierMetadata({ name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: impSimpleChange });
+    Identifiers.uninitialized = new CompileIdentifierMetadata({ name: 'uninitialized', moduleUrl: CD_MODULE_URL, runtime: impUninitialized });
+    Identifiers.ChangeDetectorState = new CompileIdentifierMetadata({ name: 'ChangeDetectorState', moduleUrl: CD_MODULE_URL, runtime: impChangeDetectorState });
+    Identifiers.checkBinding = new CompileIdentifierMetadata({ name: 'checkBinding', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCheckBinding });
+    Identifiers.flattenNestedViewRenderNodes = new CompileIdentifierMetadata({
+        name: 'flattenNestedViewRenderNodes',
+        moduleUrl: VIEW_UTILS_MODULE_URL,
+        runtime: impFlattenNestedViewRenderNodes
+    });
+    Identifiers.devModeEqual = new CompileIdentifierMetadata({ name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: impDevModeEqual });
+    Identifiers.interpolate = new CompileIdentifierMetadata({ name: 'interpolate', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impInterpolate });
+    Identifiers.castByValue = new CompileIdentifierMetadata({ name: 'castByValue', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCastByValue });
+    Identifiers.EMPTY_ARRAY = new CompileIdentifierMetadata({ name: 'EMPTY_ARRAY', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impEMPTY_ARRAY });
+    Identifiers.EMPTY_MAP = new CompileIdentifierMetadata({ name: 'EMPTY_MAP', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impEMPTY_MAP });
+    Identifiers.pureProxies = [
+        null,
+        new CompileIdentifierMetadata({ name: 'pureProxy1', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy1 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy2 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy3', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy3 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy4', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy4 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy5', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy5 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy6', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy6 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy7', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy7 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy8', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy8 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy9', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy9 }),
+        new CompileIdentifierMetadata({ name: 'pureProxy10', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy10 }),
+    ];
+    Identifiers.SecurityContext = new CompileIdentifierMetadata({
+        name: 'SecurityContext',
+        moduleUrl: assetUrl('core', 'security'),
+        runtime: SecurityContext,
+    });
+    Identifiers.AnimationKeyframe = new CompileIdentifierMetadata({
+        name: 'AnimationKeyframe',
+        moduleUrl: assetUrl('core', 'animation/animation_keyframe'),
+        runtime: impAnimationKeyframe
+    });
+    Identifiers.AnimationStyles = new CompileIdentifierMetadata({
+        name: 'AnimationStyles',
+        moduleUrl: assetUrl('core', 'animation/animation_styles'),
+        runtime: impAnimationStyles
+    });
+    Identifiers.NoOpAnimationPlayer = new CompileIdentifierMetadata({
+        name: 'NoOpAnimationPlayer',
+        moduleUrl: assetUrl('core', 'animation/animation_player'),
+        runtime: impNoOpAnimationPlayer
+    });
+    Identifiers.AnimationGroupPlayer = new CompileIdentifierMetadata({
+        name: 'AnimationGroupPlayer',
+        moduleUrl: assetUrl('core', 'animation/animation_group_player'),
+        runtime: impAnimationGroupPlayer
+    });
+    Identifiers.AnimationSequencePlayer = new CompileIdentifierMetadata({
+        name: 'AnimationSequencePlayer',
+        moduleUrl: assetUrl('core', 'animation/animation_sequence_player'),
+        runtime: impAnimationSequencePlayer
+    });
+    Identifiers.balanceAnimationStyles = new CompileIdentifierMetadata({
+        name: 'balanceAnimationStyles',
+        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+        runtime: AnimationStyleUtil.balanceStyles
+    });
+    Identifiers.balanceAnimationKeyframes = new CompileIdentifierMetadata({
+        name: 'balanceAnimationKeyframes',
+        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+        runtime: AnimationStyleUtil.balanceKeyframes
+    });
+    Identifiers.clearAnimationStyles = new CompileIdentifierMetadata({
+        name: 'clearAnimationStyles',
+        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+        runtime: AnimationStyleUtil.clearStyles
+    });
+    Identifiers.collectAndResolveStyles = new CompileIdentifierMetadata({
+        name: 'collectAndResolveStyles',
+        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+        runtime: AnimationStyleUtil.collectAndResolveStyles
+    });
+    function identifierToken(identifier) {
+        return new CompileTokenMetadata({ identifier: identifier });
+    }
+    var CompilerConfig = (function () {
+        function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes, interpolateRegexp) {
+            if (renderTypes === void 0) { renderTypes = null; }
+            if (interpolateRegexp === void 0) { interpolateRegexp = null; }
+            this.genDebugInfo = genDebugInfo;
+            this.logBindingUpdate = logBindingUpdate;
+            this.useJit = useJit;
+            if (isBlank(renderTypes)) {
+                renderTypes = new DefaultRenderTypes();
+            }
+            this.renderTypes = renderTypes;
+            if (isBlank(interpolateRegexp)) {
+                interpolateRegexp = DEFAULT_INTERPOLATE_REGEXP;
+            }
+            this.interpolateRegexp = interpolateRegexp;
+        }
+        return CompilerConfig;
+    }());
+    /**
+     * Types used for the renderer.
+     * Can be replaced to specialize the generated output to a specific renderer
+     * to help tree shaking.
+     */
+    var RenderTypes = (function () {
+        function RenderTypes() {
+        }
+        Object.defineProperty(RenderTypes.prototype, "renderer", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(RenderTypes.prototype, "renderText", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(RenderTypes.prototype, "renderElement", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(RenderTypes.prototype, "renderComment", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(RenderTypes.prototype, "renderNode", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(RenderTypes.prototype, "renderEvent", {
+            get: function () { return unimplemented(); },
+            enumerable: true,
+            configurable: true
+        });
+        return RenderTypes;
+    }());
+    var DefaultRenderTypes = (function () {
+        function DefaultRenderTypes() {
+            this.renderer = Identifiers.Renderer;
+            this.renderText = null;
+            this.renderElement = null;
+            this.renderComment = null;
+            this.renderNode = null;
+            this.renderEvent = null;
+        }
+        return DefaultRenderTypes;
+    }());
+    /**
+     * A regexp pattern used to interpolate in default.
+     */
+    var DEFAULT_INTERPOLATE_REGEXP = /\{\{([\s\S]*?)\}\}/g;
     var _implicitReceiver = new ImplicitReceiver();
-    // TODO(tbosch): Cannot make this const/final right now because of the transpiler...
-    var INTERPOLATION_REGEXP = /\{\{([\s\S]*?)\}\}/g;
     var ParseException = (function (_super) {
         __extends(ParseException, _super);
         function ParseException(message, input, errLocation, ctxLocation) {
@@ -1813,8 +3620,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         return TemplateBindingParseResult;
     }());
     var Parser = (function () {
-        function Parser(/** @internal */ _lexer) {
+        function Parser(/** @internal */ _lexer, 
+            /** @internal */
+            _config) {
             this._lexer = _lexer;
+            this._config = _config;
         }
         Parser.prototype.parseAction = function (input, location) {
             this._checkNoInterpolation(input, location);
@@ -1873,7 +3683,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return new ASTWithSource(new Interpolation(split.strings, expressions), input, location);
         };
         Parser.prototype.splitInterpolation = function (input, location) {
-            var parts = StringWrapper.split(input, INTERPOLATION_REGEXP);
+            var parts = StringWrapper.split(input, this._config.interpolateRegexp);
             if (parts.length <= 1) {
                 return null;
             }
@@ -1918,7 +3728,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return null;
         };
         Parser.prototype._checkNoInterpolation = function (input, location) {
-            var parts = StringWrapper.split(input, INTERPOLATION_REGEXP);
+            var parts = StringWrapper.split(input, this._config.interpolateRegexp);
             if (parts.length > 1) {
                 throw new ParseException('Got interpolation ({{}}) where expression was expected', input, "at column " + this._findInterpolationErrorColumn(parts, 1) + " in", location);
             }
@@ -1937,6 +3747,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     Parser.ctorParameters = [
         { type: Lexer, },
+        { type: CompilerConfig, },
     ];
     var _ParseAST = (function () {
         function _ParseAST(input, location, tokens, parseAction) {
@@ -3973,355 +5784,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function lastOnStack(stack, element) {
         return stack.length > 0 && stack[stack.length - 1] === element;
     }
-    var _EMPTY_ATTR_VALUE = '';
-    // TODO: Can't use `const` here as
-    // in Dart this is not transpiled into `final` yet...
-    var _SELECTOR_REGEXP = RegExpWrapper.create('(\\:not\\()|' +
-        '([-\\w]+)|' +
-        '(?:\\.([-\\w]+))|' +
-        '(?:\\[([-\\w*]+)(?:=([^\\]]*))?\\])|' +
-        '(\\))|' +
-        '(\\s*,\\s*)'); // ","
-    /**
-     * A css selector contains an element name,
-     * css classes and attribute/value pairs with the purpose
-     * of selecting subsets out of them.
-     */
-    var CssSelector = (function () {
-        function CssSelector() {
-            this.element = null;
-            this.classNames = [];
-            this.attrs = [];
-            this.notSelectors = [];
-        }
-        CssSelector.parse = function (selector) {
-            var results = [];
-            var _addResult = function (res, cssSel) {
-                if (cssSel.notSelectors.length > 0 && isBlank(cssSel.element) &&
-                    ListWrapper.isEmpty(cssSel.classNames) && ListWrapper.isEmpty(cssSel.attrs)) {
-                    cssSel.element = "*";
-                }
-                res.push(cssSel);
-            };
-            var cssSelector = new CssSelector();
-            var matcher = RegExpWrapper.matcher(_SELECTOR_REGEXP, selector);
-            var match;
-            var current = cssSelector;
-            var inNot = false;
-            while (isPresent(match = RegExpMatcherWrapper.next(matcher))) {
-                if (isPresent(match[1])) {
-                    if (inNot) {
-                        throw new BaseException$1('Nesting :not is not allowed in a selector');
-                    }
-                    inNot = true;
-                    current = new CssSelector();
-                    cssSelector.notSelectors.push(current);
-                }
-                if (isPresent(match[2])) {
-                    current.setElement(match[2]);
-                }
-                if (isPresent(match[3])) {
-                    current.addClassName(match[3]);
-                }
-                if (isPresent(match[4])) {
-                    current.addAttribute(match[4], match[5]);
-                }
-                if (isPresent(match[6])) {
-                    inNot = false;
-                    current = cssSelector;
-                }
-                if (isPresent(match[7])) {
-                    if (inNot) {
-                        throw new BaseException$1('Multiple selectors in :not are not supported');
-                    }
-                    _addResult(results, cssSelector);
-                    cssSelector = current = new CssSelector();
-                }
-            }
-            _addResult(results, cssSelector);
-            return results;
-        };
-        CssSelector.prototype.isElementSelector = function () {
-            return isPresent(this.element) && ListWrapper.isEmpty(this.classNames) &&
-                ListWrapper.isEmpty(this.attrs) && this.notSelectors.length === 0;
-        };
-        CssSelector.prototype.setElement = function (element) {
-            if (element === void 0) { element = null; }
-            this.element = element;
-        };
-        /** Gets a template string for an element that matches the selector. */
-        CssSelector.prototype.getMatchingElementTemplate = function () {
-            var tagName = isPresent(this.element) ? this.element : 'div';
-            var classAttr = this.classNames.length > 0 ? " class=\"" + this.classNames.join(' ') + "\"" : '';
-            var attrs = '';
-            for (var i = 0; i < this.attrs.length; i += 2) {
-                var attrName = this.attrs[i];
-                var attrValue = this.attrs[i + 1] !== '' ? "=\"" + this.attrs[i + 1] + "\"" : '';
-                attrs += " " + attrName + attrValue;
-            }
-            return "<" + tagName + classAttr + attrs + "></" + tagName + ">";
-        };
-        CssSelector.prototype.addAttribute = function (name, value) {
-            if (value === void 0) { value = _EMPTY_ATTR_VALUE; }
-            this.attrs.push(name);
-            if (isPresent(value)) {
-                value = value.toLowerCase();
-            }
-            else {
-                value = _EMPTY_ATTR_VALUE;
-            }
-            this.attrs.push(value);
-        };
-        CssSelector.prototype.addClassName = function (name) { this.classNames.push(name.toLowerCase()); };
-        CssSelector.prototype.toString = function () {
-            var res = '';
-            if (isPresent(this.element)) {
-                res += this.element;
-            }
-            if (isPresent(this.classNames)) {
-                for (var i = 0; i < this.classNames.length; i++) {
-                    res += '.' + this.classNames[i];
-                }
-            }
-            if (isPresent(this.attrs)) {
-                for (var i = 0; i < this.attrs.length;) {
-                    var attrName = this.attrs[i++];
-                    var attrValue = this.attrs[i++];
-                    res += '[' + attrName;
-                    if (attrValue.length > 0) {
-                        res += '=' + attrValue;
-                    }
-                    res += ']';
-                }
-            }
-            this.notSelectors.forEach(function (notSelector) { return res += ":not(" + notSelector + ")"; });
-            return res;
-        };
-        return CssSelector;
-    }());
-    /**
-     * Reads a list of CssSelectors and allows to calculate which ones
-     * are contained in a given CssSelector.
-     */
-    var SelectorMatcher = (function () {
-        function SelectorMatcher() {
-            this._elementMap = new Map$1();
-            this._elementPartialMap = new Map$1();
-            this._classMap = new Map$1();
-            this._classPartialMap = new Map$1();
-            this._attrValueMap = new Map$1();
-            this._attrValuePartialMap = new Map$1();
-            this._listContexts = [];
-        }
-        SelectorMatcher.createNotMatcher = function (notSelectors) {
-            var notMatcher = new SelectorMatcher();
-            notMatcher.addSelectables(notSelectors, null);
-            return notMatcher;
-        };
-        SelectorMatcher.prototype.addSelectables = function (cssSelectors, callbackCtxt) {
-            var listContext = null;
-            if (cssSelectors.length > 1) {
-                listContext = new SelectorListContext(cssSelectors);
-                this._listContexts.push(listContext);
-            }
-            for (var i = 0; i < cssSelectors.length; i++) {
-                this._addSelectable(cssSelectors[i], callbackCtxt, listContext);
-            }
-        };
-        /**
-         * Add an object that can be found later on by calling `match`.
-         * @param cssSelector A css selector
-         * @param callbackCtxt An opaque object that will be given to the callback of the `match` function
-         */
-        SelectorMatcher.prototype._addSelectable = function (cssSelector, callbackCtxt, listContext) {
-            var matcher = this;
-            var element = cssSelector.element;
-            var classNames = cssSelector.classNames;
-            var attrs = cssSelector.attrs;
-            var selectable = new SelectorContext(cssSelector, callbackCtxt, listContext);
-            if (isPresent(element)) {
-                var isTerminal = attrs.length === 0 && classNames.length === 0;
-                if (isTerminal) {
-                    this._addTerminal(matcher._elementMap, element, selectable);
-                }
-                else {
-                    matcher = this._addPartial(matcher._elementPartialMap, element);
-                }
-            }
-            if (isPresent(classNames)) {
-                for (var index = 0; index < classNames.length; index++) {
-                    var isTerminal = attrs.length === 0 && index === classNames.length - 1;
-                    var className = classNames[index];
-                    if (isTerminal) {
-                        this._addTerminal(matcher._classMap, className, selectable);
-                    }
-                    else {
-                        matcher = this._addPartial(matcher._classPartialMap, className);
-                    }
-                }
-            }
-            if (isPresent(attrs)) {
-                for (var index = 0; index < attrs.length;) {
-                    var isTerminal = index === attrs.length - 2;
-                    var attrName = attrs[index++];
-                    var attrValue = attrs[index++];
-                    if (isTerminal) {
-                        var terminalMap = matcher._attrValueMap;
-                        var terminalValuesMap = terminalMap.get(attrName);
-                        if (isBlank(terminalValuesMap)) {
-                            terminalValuesMap = new Map$1();
-                            terminalMap.set(attrName, terminalValuesMap);
-                        }
-                        this._addTerminal(terminalValuesMap, attrValue, selectable);
-                    }
-                    else {
-                        var parttialMap = matcher._attrValuePartialMap;
-                        var partialValuesMap = parttialMap.get(attrName);
-                        if (isBlank(partialValuesMap)) {
-                            partialValuesMap = new Map$1();
-                            parttialMap.set(attrName, partialValuesMap);
-                        }
-                        matcher = this._addPartial(partialValuesMap, attrValue);
-                    }
-                }
-            }
-        };
-        SelectorMatcher.prototype._addTerminal = function (map, name, selectable) {
-            var terminalList = map.get(name);
-            if (isBlank(terminalList)) {
-                terminalList = [];
-                map.set(name, terminalList);
-            }
-            terminalList.push(selectable);
-        };
-        SelectorMatcher.prototype._addPartial = function (map, name) {
-            var matcher = map.get(name);
-            if (isBlank(matcher)) {
-                matcher = new SelectorMatcher();
-                map.set(name, matcher);
-            }
-            return matcher;
-        };
-        /**
-         * Find the objects that have been added via `addSelectable`
-         * whose css selector is contained in the given css selector.
-         * @param cssSelector A css selector
-         * @param matchedCallback This callback will be called with the object handed into `addSelectable`
-         * @return boolean true if a match was found
-        */
-        SelectorMatcher.prototype.match = function (cssSelector, matchedCallback) {
-            var result = false;
-            var element = cssSelector.element;
-            var classNames = cssSelector.classNames;
-            var attrs = cssSelector.attrs;
-            for (var i = 0; i < this._listContexts.length; i++) {
-                this._listContexts[i].alreadyMatched = false;
-            }
-            result = this._matchTerminal(this._elementMap, element, cssSelector, matchedCallback) || result;
-            result = this._matchPartial(this._elementPartialMap, element, cssSelector, matchedCallback) ||
-                result;
-            if (isPresent(classNames)) {
-                for (var index = 0; index < classNames.length; index++) {
-                    var className = classNames[index];
-                    result =
-                        this._matchTerminal(this._classMap, className, cssSelector, matchedCallback) || result;
-                    result =
-                        this._matchPartial(this._classPartialMap, className, cssSelector, matchedCallback) ||
-                            result;
-                }
-            }
-            if (isPresent(attrs)) {
-                for (var index = 0; index < attrs.length;) {
-                    var attrName = attrs[index++];
-                    var attrValue = attrs[index++];
-                    var terminalValuesMap = this._attrValueMap.get(attrName);
-                    if (!StringWrapper.equals(attrValue, _EMPTY_ATTR_VALUE)) {
-                        result = this._matchTerminal(terminalValuesMap, _EMPTY_ATTR_VALUE, cssSelector, matchedCallback) ||
-                            result;
-                    }
-                    result = this._matchTerminal(terminalValuesMap, attrValue, cssSelector, matchedCallback) ||
-                        result;
-                    var partialValuesMap = this._attrValuePartialMap.get(attrName);
-                    if (!StringWrapper.equals(attrValue, _EMPTY_ATTR_VALUE)) {
-                        result = this._matchPartial(partialValuesMap, _EMPTY_ATTR_VALUE, cssSelector, matchedCallback) ||
-                            result;
-                    }
-                    result =
-                        this._matchPartial(partialValuesMap, attrValue, cssSelector, matchedCallback) || result;
-                }
-            }
-            return result;
-        };
-        /** @internal */
-        SelectorMatcher.prototype._matchTerminal = function (map, name, cssSelector, matchedCallback) {
-            if (isBlank(map) || isBlank(name)) {
-                return false;
-            }
-            var selectables = map.get(name);
-            var starSelectables = map.get("*");
-            if (isPresent(starSelectables)) {
-                selectables = selectables.concat(starSelectables);
-            }
-            if (isBlank(selectables)) {
-                return false;
-            }
-            var selectable;
-            var result = false;
-            for (var index = 0; index < selectables.length; index++) {
-                selectable = selectables[index];
-                result = selectable.finalize(cssSelector, matchedCallback) || result;
-            }
-            return result;
-        };
-        /** @internal */
-        SelectorMatcher.prototype._matchPartial = function (map, name, cssSelector, matchedCallback /*: (c: CssSelector, a: any) => void*/) {
-            if (isBlank(map) || isBlank(name)) {
-                return false;
-            }
-            var nestedSelector = map.get(name);
-            if (isBlank(nestedSelector)) {
-                return false;
-            }
-            // TODO(perf): get rid of recursion and measure again
-            // TODO(perf): don't pass the whole selector into the recursion,
-            // but only the not processed parts
-            return nestedSelector.match(cssSelector, matchedCallback);
-        };
-        return SelectorMatcher;
-    }());
-    var SelectorListContext = (function () {
-        function SelectorListContext(selectors) {
-            this.selectors = selectors;
-            this.alreadyMatched = false;
-        }
-        return SelectorListContext;
-    }());
-    // Store context to pass back selector and context when a selector is matched
-    var SelectorContext = (function () {
-        function SelectorContext(selector, cbContext, listContext) {
-            this.selector = selector;
-            this.cbContext = cbContext;
-            this.listContext = listContext;
-            this.notSelectors = selector.notSelectors;
-        }
-        SelectorContext.prototype.finalize = function (cssSelector, callback) {
-            var result = true;
-            if (this.notSelectors.length > 0 &&
-                (isBlank(this.listContext) || !this.listContext.alreadyMatched)) {
-                var notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
-                result = !notMatcher.match(cssSelector, null);
-            }
-            if (result && isPresent(callback) &&
-                (isBlank(this.listContext) || !this.listContext.alreadyMatched)) {
-                if (isPresent(this.listContext)) {
-                    this.listContext.alreadyMatched = true;
-                }
-                callback(this.selector, this.cbContext);
-            }
-            return result;
-        };
-        return SelectorContext;
-    }());
     var NG_CONTENT_SELECT_ATTR = 'select';
     var NG_CONTENT_ELEMENT = 'ng-content';
     var LINK_ELEMENT = 'link';
@@ -4433,1393 +5895,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     // TODO: can't use /^[^:/?#.]+:/g due to clang-format bug:
     //       https://github.com/angular/angular/issues/4596
     var _urlWithSchemaRe = /^([a-zA-Z\-\+\.]+):/g;
-    var MODULE_SUFFIX = IS_DART ? '.dart' : '';
-    var CAMEL_CASE_REGEXP = /([A-Z])/g;
-    function camelCaseToDashCase(input) {
-        return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
-    }
-    function splitAtColon(input, defaultValues) {
-        var parts = StringWrapper.split(input.trim(), /\s*:\s*/g);
-        if (parts.length > 1) {
-            return parts;
-        }
-        else {
-            return defaultValues;
-        }
-    }
-    function sanitizeIdentifier(name) {
-        return StringWrapper.replaceAll(name, /\W/g, '_');
-    }
-    function visitValue(value, visitor, context) {
-        if (isArray(value)) {
-            return visitor.visitArray(value, context);
-        }
-        else if (isStrictStringMap(value)) {
-            return visitor.visitStringMap(value, context);
-        }
-        else if (isBlank(value) || isPrimitive(value)) {
-            return visitor.visitPrimitive(value, context);
-        }
-        else {
-            return visitor.visitOther(value, context);
-        }
-    }
-    var ValueTransformer = (function () {
-        function ValueTransformer() {
-        }
-        ValueTransformer.prototype.visitArray = function (arr, context) {
-            var _this = this;
-            return arr.map(function (value) { return visitValue(value, _this, context); });
-        };
-        ValueTransformer.prototype.visitStringMap = function (map, context) {
-            var _this = this;
-            var result = {};
-            StringMapWrapper.forEach(map, function (value, key) { result[key] = visitValue(value, _this, context); });
-            return result;
-        };
-        ValueTransformer.prototype.visitPrimitive = function (value, context) { return value; };
-        ValueTransformer.prototype.visitOther = function (value, context) { return value; };
-        return ValueTransformer;
-    }());
-    function assetUrl(pkg, path, type) {
-        if (path === void 0) { path = null; }
-        if (type === void 0) { type = 'src'; }
-        if (IS_DART) {
-            if (path == null) {
-                return "asset:angular2/" + pkg + "/" + pkg + ".dart";
-            }
-            else {
-                return "asset:angular2/lib/" + pkg + "/src/" + path + ".dart";
-            }
-        }
-        else {
-            if (path == null) {
-                return "asset:@angular/lib/" + pkg + "/index";
-            }
-            else {
-                return "asset:@angular/lib/" + pkg + "/src/" + path;
-            }
-        }
-    }
-    var _ASSET_SCHEME = 'asset:';
-    function createOfflineCompileUrlResolver() {
-        return new UrlResolver(_ASSET_SCHEME);
-    }
-    /**
-     * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
-     */
-    var DEFAULT_PACKAGE_URL_PROVIDER = {
-        provide: anmd.PACKAGE_ROOT_URL,
-        useValue: "/"
-    };
-    var UrlResolver = (function () {
-        function UrlResolver(_packagePrefix) {
-            if (_packagePrefix === void 0) { _packagePrefix = null; }
-            this._packagePrefix = _packagePrefix;
-        }
-        /**
-         * Resolves the `url` given the `baseUrl`:
-         * - when the `url` is null, the `baseUrl` is returned,
-         * - if `url` is relative ('path/to/here', './path/to/here'), the resolved url is a combination of
-         * `baseUrl` and `url`,
-         * - if `url` is absolute (it has a scheme: 'http://', 'https://' or start with '/'), the `url` is
-         * returned as is (ignoring the `baseUrl`)
-         */
-        UrlResolver.prototype.resolve = function (baseUrl, url) {
-            var resolvedUrl = url;
-            if (isPresent(baseUrl) && baseUrl.length > 0) {
-                resolvedUrl = _resolveUrl(baseUrl, resolvedUrl);
-            }
-            var resolvedParts = _split(resolvedUrl);
-            var prefix = this._packagePrefix;
-            if (isPresent(prefix) && isPresent(resolvedParts) &&
-                resolvedParts[_ComponentIndex.Scheme] == "package") {
-                var path = resolvedParts[_ComponentIndex.Path];
-                if (this._packagePrefix === _ASSET_SCHEME) {
-                    var pathSegements = path.split(/\//);
-                    resolvedUrl = "asset:" + pathSegements[0] + "/lib/" + pathSegements.slice(1).join('/');
-                }
-                else {
-                    prefix = StringWrapper.stripRight(prefix, '/');
-                    path = StringWrapper.stripLeft(path, '/');
-                    return prefix + "/" + path;
-                }
-            }
-            return resolvedUrl;
-        };
-        return UrlResolver;
-    }());
-    UrlResolver.decorators = [
-        { type: anmd.Injectable },
-    ];
-    UrlResolver.ctorParameters = [
-        { type: undefined, decorators: [{ type: anmd.Inject, args: [anmd.PACKAGE_ROOT_URL,] },] },
-    ];
-    /**
-     * Extract the scheme of a URL.
-     */
-    function getUrlScheme(url) {
-        var match = _split(url);
-        return (match && match[_ComponentIndex.Scheme]) || "";
-    }
-    // The code below is adapted from Traceur:
-    // https://github.com/google/traceur-compiler/blob/9511c1dafa972bf0de1202a8a863bad02f0f95a8/src/runtime/url.js
-    /**
-     * Builds a URI string from already-encoded parts.
-     *
-     * No encoding is performed.  Any component may be omitted as either null or
-     * undefined.
-     *
-     * @param opt_scheme The scheme such as 'http'.
-     * @param opt_userInfo The user name before the '@'.
-     * @param opt_domain The domain such as 'www.google.com', already
-     *     URI-encoded.
-     * @param opt_port The port number.
-     * @param opt_path The path, already URI-encoded.  If it is not
-     *     empty, it must begin with a slash.
-     * @param opt_queryData The URI-encoded query data.
-     * @param opt_fragment The URI-encoded fragment identifier.
-     * @return The fully combined URI.
-     */
-    function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, opt_path, opt_queryData, opt_fragment) {
-        var out = [];
-        if (isPresent(opt_scheme)) {
-            out.push(opt_scheme + ':');
-        }
-        if (isPresent(opt_domain)) {
-            out.push('//');
-            if (isPresent(opt_userInfo)) {
-                out.push(opt_userInfo + '@');
-            }
-            out.push(opt_domain);
-            if (isPresent(opt_port)) {
-                out.push(':' + opt_port);
-            }
-        }
-        if (isPresent(opt_path)) {
-            out.push(opt_path);
-        }
-        if (isPresent(opt_queryData)) {
-            out.push('?' + opt_queryData);
-        }
-        if (isPresent(opt_fragment)) {
-            out.push('#' + opt_fragment);
-        }
-        return out.join('');
-    }
-    /**
-     * A regular expression for breaking a URI into its component parts.
-     *
-     * {@link http://www.gbiv.com/protocols/uri/rfc/rfc3986.html#RFC2234} says
-     * As the "first-match-wins" algorithm is identical to the "greedy"
-     * disambiguation method used by POSIX regular expressions, it is natural and
-     * commonplace to use a regular expression for parsing the potential five
-     * components of a URI reference.
-     *
-     * The following line is the regular expression for breaking-down a
-     * well-formed URI reference into its components.
-     *
-     * <pre>
-     * ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?
-     *  12            3  4          5       6  7        8 9
-     * </pre>
-     *
-     * The numbers in the second line above are only to assist readability; they
-     * indicate the reference points for each subexpression (i.e., each paired
-     * parenthesis). We refer to the value matched for subexpression <n> as $<n>.
-     * For example, matching the above expression to
-     * <pre>
-     *     http://www.ics.uci.edu/pub/ietf/uri/#Related
-     * </pre>
-     * results in the following subexpression matches:
-     * <pre>
-     *    $1 = http:
-     *    $2 = http
-     *    $3 = //www.ics.uci.edu
-     *    $4 = www.ics.uci.edu
-     *    $5 = /pub/ietf/uri/
-     *    $6 = <undefined>
-     *    $7 = <undefined>
-     *    $8 = #Related
-     *    $9 = Related
-     * </pre>
-     * where <undefined> indicates that the component is not present, as is the
-     * case for the query component in the above example. Therefore, we can
-     * determine the value of the five components as
-     * <pre>
-     *    scheme    = $2
-     *    authority = $4
-     *    path      = $5
-     *    query     = $7
-     *    fragment  = $9
-     * </pre>
-     *
-     * The regular expression has been modified slightly to expose the
-     * userInfo, domain, and port separately from the authority.
-     * The modified version yields
-     * <pre>
-     *    $1 = http              scheme
-     *    $2 = <undefined>       userInfo -\
-     *    $3 = www.ics.uci.edu   domain     | authority
-     *    $4 = <undefined>       port     -/
-     *    $5 = /pub/ietf/uri/    path
-     *    $6 = <undefined>       query without ?
-     *    $7 = Related           fragment without #
-     * </pre>
-     * @type {!RegExp}
-     * @internal
-     */
-    var _splitRe = RegExpWrapper.create('^' +
-        '(?:' +
-        '([^:/?#.]+)' +
-        // used by other URL parts such as :,
-        // ?, /, #, and .
-        ':)?' +
-        '(?://' +
-        '(?:([^/?#]*)@)?' +
-        '([\\w\\d\\-\\u0100-\\uffff.%]*)' +
-        // digits, dashes, dots, percent
-        // escapes, and unicode characters.
-        '(?::([0-9]+))?' +
-        ')?' +
-        '([^?#]+)?' +
-        '(?:\\?([^#]*))?' +
-        '(?:#(.*))?' +
-        '$');
-    /**
-     * The index of each URI component in the return value of goog.uri.utils.split.
-     * @enum {number}
-     */
-    var _ComponentIndex;
-    (function (_ComponentIndex) {
-        _ComponentIndex[_ComponentIndex["Scheme"] = 1] = "Scheme";
-        _ComponentIndex[_ComponentIndex["UserInfo"] = 2] = "UserInfo";
-        _ComponentIndex[_ComponentIndex["Domain"] = 3] = "Domain";
-        _ComponentIndex[_ComponentIndex["Port"] = 4] = "Port";
-        _ComponentIndex[_ComponentIndex["Path"] = 5] = "Path";
-        _ComponentIndex[_ComponentIndex["QueryData"] = 6] = "QueryData";
-        _ComponentIndex[_ComponentIndex["Fragment"] = 7] = "Fragment";
-    })(_ComponentIndex || (_ComponentIndex = {}));
-    /**
-     * Splits a URI into its component parts.
-     *
-     * Each component can be accessed via the component indices; for example:
-     * <pre>
-     * goog.uri.utils.split(someStr)[goog.uri.utils.CompontentIndex.QUERY_DATA];
-     * </pre>
-     *
-     * @param uri The URI string to examine.
-     * @return Each component still URI-encoded.
-     *     Each component that is present will contain the encoded value, whereas
-     *     components that are not present will be undefined or empty, depending
-     *     on the browser's regular expression implementation.  Never null, since
-     *     arbitrary strings may still look like path names.
-     */
-    function _split(uri) {
-        return RegExpWrapper.firstMatch(_splitRe, uri);
-    }
-    /**
-      * Removes dot segments in given path component, as described in
-      * RFC 3986, section 5.2.4.
-      *
-      * @param path A non-empty path component.
-      * @return Path component with removed dot segments.
-      */
-    function _removeDotSegments(path) {
-        if (path == '/')
-            return '/';
-        var leadingSlash = path[0] == '/' ? '/' : '';
-        var trailingSlash = path[path.length - 1] === '/' ? '/' : '';
-        var segments = path.split('/');
-        var out = [];
-        var up = 0;
-        for (var pos = 0; pos < segments.length; pos++) {
-            var segment = segments[pos];
-            switch (segment) {
-                case '':
-                case '.':
-                    break;
-                case '..':
-                    if (out.length > 0) {
-                        out.pop();
-                    }
-                    else {
-                        up++;
-                    }
-                    break;
-                default:
-                    out.push(segment);
-            }
-        }
-        if (leadingSlash == '') {
-            while (up-- > 0) {
-                out.unshift('..');
-            }
-            if (out.length === 0)
-                out.push('.');
-        }
-        return leadingSlash + out.join('/') + trailingSlash;
-    }
-    /**
-     * Takes an array of the parts from split and canonicalizes the path part
-     * and then joins all the parts.
-     */
-    function _joinAndCanonicalizePath(parts) {
-        var path = parts[_ComponentIndex.Path];
-        path = isBlank(path) ? '' : _removeDotSegments(path);
-        parts[_ComponentIndex.Path] = path;
-        return _buildFromEncodedParts(parts[_ComponentIndex.Scheme], parts[_ComponentIndex.UserInfo], parts[_ComponentIndex.Domain], parts[_ComponentIndex.Port], path, parts[_ComponentIndex.QueryData], parts[_ComponentIndex.Fragment]);
-    }
-    /**
-     * Resolves a URL.
-     * @param base The URL acting as the base URL.
-     * @param to The URL to resolve.
-     */
-    function _resolveUrl(base, url) {
-        var parts = _split(encodeURI(url));
-        var baseParts = _split(base);
-        if (isPresent(parts[_ComponentIndex.Scheme])) {
-            return _joinAndCanonicalizePath(parts);
-        }
-        else {
-            parts[_ComponentIndex.Scheme] = baseParts[_ComponentIndex.Scheme];
-        }
-        for (var i = _ComponentIndex.Scheme; i <= _ComponentIndex.Port; i++) {
-            if (isBlank(parts[i])) {
-                parts[i] = baseParts[i];
-            }
-        }
-        if (parts[_ComponentIndex.Path][0] == '/') {
-            return _joinAndCanonicalizePath(parts);
-        }
-        var path = baseParts[_ComponentIndex.Path];
-        if (isBlank(path))
-            path = '/';
-        var index = path.lastIndexOf('/');
-        path = path.substring(0, index + 1) + parts[_ComponentIndex.Path];
-        parts[_ComponentIndex.Path] = path;
-        return _joinAndCanonicalizePath(parts);
-    }
-    // group 2: "event" from "(event)"
-    var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))$/g;
-    var CompileMetadataWithIdentifier = (function () {
-        function CompileMetadataWithIdentifier() {
-        }
-        Object.defineProperty(CompileMetadataWithIdentifier.prototype, "identifier", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        return CompileMetadataWithIdentifier;
-    }());
-    var CompileMetadataWithType = (function (_super) {
-        __extends(CompileMetadataWithType, _super);
-        function CompileMetadataWithType() {
-            _super.apply(this, arguments);
-        }
-        Object.defineProperty(CompileMetadataWithType.prototype, "type", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompileMetadataWithType.prototype, "identifier", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        return CompileMetadataWithType;
-    }(CompileMetadataWithIdentifier));
-    function metadataFromJson(data) {
-        return _COMPILE_METADATA_FROM_JSON[data['class']](data);
-    }
-    var CompileAnimationEntryMetadata = (function () {
-        function CompileAnimationEntryMetadata(name, definitions) {
-            if (name === void 0) { name = null; }
-            if (definitions === void 0) { definitions = null; }
-            this.name = name;
-            this.definitions = definitions;
-        }
-        CompileAnimationEntryMetadata.fromJson = function (data) {
-            var value = data['value'];
-            var defs = _arrayFromJson(value['definitions'], metadataFromJson);
-            return new CompileAnimationEntryMetadata(value['name'], defs);
-        };
-        CompileAnimationEntryMetadata.prototype.toJson = function () {
-            return {
-                'class': 'AnimationEntryMetadata',
-                'value': {
-                    'name': this.name,
-                    'definitions': _arrayToJson(this.definitions)
-                }
-            };
-        };
-        return CompileAnimationEntryMetadata;
-    }());
-    var CompileAnimationStateMetadata = (function () {
-        function CompileAnimationStateMetadata() {
-        }
-        return CompileAnimationStateMetadata;
-    }());
-    var CompileAnimationStateDeclarationMetadata = (function (_super) {
-        __extends(CompileAnimationStateDeclarationMetadata, _super);
-        function CompileAnimationStateDeclarationMetadata(stateNameExpr, styles) {
-            _super.call(this);
-            this.stateNameExpr = stateNameExpr;
-            this.styles = styles;
-        }
-        CompileAnimationStateDeclarationMetadata.fromJson = function (data) {
-            var value = data['value'];
-            var styles = _objFromJson(value['styles'], metadataFromJson);
-            return new CompileAnimationStateDeclarationMetadata(value['stateNameExpr'], styles);
-        };
-        CompileAnimationStateDeclarationMetadata.prototype.toJson = function () {
-            return {
-                'class': 'AnimationStateDeclarationMetadata',
-                'value': {
-                    'stateNameExpr': this.stateNameExpr,
-                    'styles': this.styles.toJson()
-                }
-            };
-        };
-        return CompileAnimationStateDeclarationMetadata;
-    }(CompileAnimationStateMetadata));
-    var CompileAnimationStateTransitionMetadata = (function (_super) {
-        __extends(CompileAnimationStateTransitionMetadata, _super);
-        function CompileAnimationStateTransitionMetadata(stateChangeExpr, animation) {
-            _super.call(this);
-            this.stateChangeExpr = stateChangeExpr;
-            this.animation = animation;
-        }
-        CompileAnimationStateTransitionMetadata.fromJson = function (data) {
-            var value = data['value'];
-            var animation = _objFromJson(value['animation'], metadataFromJson);
-            return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], animation);
-        };
-        CompileAnimationStateTransitionMetadata.prototype.toJson = function () {
-            return {
-                'class': 'AnimationStateTransitionMetadata',
-                'value': {
-                    'stateChangeExpr': this.stateChangeExpr,
-                    'animation': this.animation.toJson()
-                }
-            };
-        };
-        return CompileAnimationStateTransitionMetadata;
-    }(CompileAnimationStateMetadata));
-    var CompileAnimationMetadata = (function () {
-        function CompileAnimationMetadata() {
-        }
-        return CompileAnimationMetadata;
-    }());
-    var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
-        __extends(CompileAnimationKeyframesSequenceMetadata, _super);
-        function CompileAnimationKeyframesSequenceMetadata(steps) {
-            if (steps === void 0) { steps = []; }
-            _super.call(this);
-            this.steps = steps;
-        }
-        CompileAnimationKeyframesSequenceMetadata.fromJson = function (data) {
-            var steps = _arrayFromJson(data['value'], metadataFromJson);
-            return new CompileAnimationKeyframesSequenceMetadata(steps);
-        };
-        CompileAnimationKeyframesSequenceMetadata.prototype.toJson = function () {
-            return {
-                'class': 'AnimationKeyframesSequenceMetadata',
-                'value': _arrayToJson(this.steps)
-            };
-        };
-        return CompileAnimationKeyframesSequenceMetadata;
-    }(CompileAnimationMetadata));
-    var CompileAnimationStyleMetadata = (function (_super) {
-        __extends(CompileAnimationStyleMetadata, _super);
-        function CompileAnimationStyleMetadata(offset, styles) {
-            if (styles === void 0) { styles = null; }
-            _super.call(this);
-            this.offset = offset;
-            this.styles = styles;
-        }
-        CompileAnimationStyleMetadata.fromJson = function (data) {
-            var value = data['value'];
-            var offsetVal = value['offset'];
-            var offset = isPresent(offsetVal) ? NumberWrapper.parseFloat(offsetVal) : null;
-            var styles = value['styles'];
-            return new CompileAnimationStyleMetadata(offset, styles);
-        };
-        CompileAnimationStyleMetadata.prototype.toJson = function () {
-            return {
-                'class': 'AnimationStyleMetadata',
-                'value': {
-                    'offset': this.offset,
-                    'styles': this.styles
-                }
-            };
-        };
-        return CompileAnimationStyleMetadata;
-    }(CompileAnimationMetadata));
-    var CompileAnimationAnimateMetadata = (function (_super) {
-        __extends(CompileAnimationAnimateMetadata, _super);
-        function CompileAnimationAnimateMetadata(timings, styles) {
-            if (timings === void 0) { timings = 0; }
-            if (styles === void 0) { styles = null; }
-            _super.call(this);
-            this.timings = timings;
-            this.styles = styles;
-        }
-        CompileAnimationAnimateMetadata.fromJson = function (data) {
-            var value = data['value'];
-            var timings = value['timings'];
-            var styles = _objFromJson(value['styles'], metadataFromJson);
-            return new CompileAnimationAnimateMetadata(timings, styles);
-        };
-        CompileAnimationAnimateMetadata.prototype.toJson = function () {
-            return {
-                'class': 'AnimationAnimateMetadata',
-                'value': {
-                    'timings': this.timings,
-                    'styles': _objToJson(this.styles)
-                }
-            };
-        };
-        return CompileAnimationAnimateMetadata;
-    }(CompileAnimationMetadata));
-    var CompileAnimationWithStepsMetadata = (function (_super) {
-        __extends(CompileAnimationWithStepsMetadata, _super);
-        function CompileAnimationWithStepsMetadata(steps) {
-            if (steps === void 0) { steps = null; }
-            _super.call(this);
-            this.steps = steps;
-        }
-        return CompileAnimationWithStepsMetadata;
-    }(CompileAnimationMetadata));
-    var CompileAnimationSequenceMetadata = (function (_super) {
-        __extends(CompileAnimationSequenceMetadata, _super);
-        function CompileAnimationSequenceMetadata(steps) {
-            if (steps === void 0) { steps = null; }
-            _super.call(this, steps);
-        }
-        CompileAnimationSequenceMetadata.fromJson = function (data) {
-            var steps = _arrayFromJson(data['value'], metadataFromJson);
-            return new CompileAnimationSequenceMetadata(steps);
-        };
-        CompileAnimationSequenceMetadata.prototype.toJson = function () {
-            return {
-                'class': 'AnimationSequenceMetadata',
-                'value': _arrayToJson(this.steps)
-            };
-        };
-        return CompileAnimationSequenceMetadata;
-    }(CompileAnimationWithStepsMetadata));
-    var CompileAnimationGroupMetadata = (function (_super) {
-        __extends(CompileAnimationGroupMetadata, _super);
-        function CompileAnimationGroupMetadata(steps) {
-            if (steps === void 0) { steps = null; }
-            _super.call(this, steps);
-        }
-        CompileAnimationGroupMetadata.fromJson = function (data) {
-            var steps = _arrayFromJson(data["value"], metadataFromJson);
-            return new CompileAnimationGroupMetadata(steps);
-        };
-        CompileAnimationGroupMetadata.prototype.toJson = function () {
-            return {
-                'class': 'AnimationGroupMetadata',
-                'value': _arrayToJson(this.steps)
-            };
-        };
-        return CompileAnimationGroupMetadata;
-    }(CompileAnimationWithStepsMetadata));
-    var CompileIdentifierMetadata = (function () {
-        function CompileIdentifierMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
-            this.runtime = runtime;
-            this.name = name;
-            this.prefix = prefix;
-            this.moduleUrl = moduleUrl;
-            this.value = value;
-        }
-        CompileIdentifierMetadata.fromJson = function (data) {
-            var value = isArray(data['value']) ? _arrayFromJson(data['value'], metadataFromJson) :
-                _objFromJson(data['value'], metadataFromJson);
-            return new CompileIdentifierMetadata({ name: data['name'], prefix: data['prefix'], moduleUrl: data['moduleUrl'], value: value });
-        };
-        CompileIdentifierMetadata.prototype.toJson = function () {
-            var value = isArray(this.value) ? _arrayToJson(this.value) : _objToJson(this.value);
-            return {
-                // Note: Runtime type can't be serialized...
-                'class': 'Identifier',
-                'name': this.name,
-                'moduleUrl': this.moduleUrl,
-                'prefix': this.prefix,
-                'value': value
-            };
-        };
-        Object.defineProperty(CompileIdentifierMetadata.prototype, "identifier", {
-            get: function () { return this; },
-            enumerable: true,
-            configurable: true
-        });
-        return CompileIdentifierMetadata;
-    }());
-    var CompileDiDependencyMetadata = (function () {
-        function CompileDiDependencyMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, isAttribute = _b.isAttribute, isSelf = _b.isSelf, isHost = _b.isHost, isSkipSelf = _b.isSkipSelf, isOptional = _b.isOptional, isValue = _b.isValue, query = _b.query, viewQuery = _b.viewQuery, token = _b.token, value = _b.value;
-            this.isAttribute = normalizeBool(isAttribute);
-            this.isSelf = normalizeBool(isSelf);
-            this.isHost = normalizeBool(isHost);
-            this.isSkipSelf = normalizeBool(isSkipSelf);
-            this.isOptional = normalizeBool(isOptional);
-            this.isValue = normalizeBool(isValue);
-            this.query = query;
-            this.viewQuery = viewQuery;
-            this.token = token;
-            this.value = value;
-        }
-        CompileDiDependencyMetadata.fromJson = function (data) {
-            return new CompileDiDependencyMetadata({
-                token: _objFromJson(data['token'], CompileTokenMetadata.fromJson),
-                query: _objFromJson(data['query'], CompileQueryMetadata.fromJson),
-                viewQuery: _objFromJson(data['viewQuery'], CompileQueryMetadata.fromJson),
-                value: data['value'],
-                isAttribute: data['isAttribute'],
-                isSelf: data['isSelf'],
-                isHost: data['isHost'],
-                isSkipSelf: data['isSkipSelf'],
-                isOptional: data['isOptional'],
-                isValue: data['isValue']
-            });
-        };
-        CompileDiDependencyMetadata.prototype.toJson = function () {
-            return {
-                'token': _objToJson(this.token),
-                'query': _objToJson(this.query),
-                'viewQuery': _objToJson(this.viewQuery),
-                'value': this.value,
-                'isAttribute': this.isAttribute,
-                'isSelf': this.isSelf,
-                'isHost': this.isHost,
-                'isSkipSelf': this.isSkipSelf,
-                'isOptional': this.isOptional,
-                'isValue': this.isValue
-            };
-        };
-        return CompileDiDependencyMetadata;
-    }());
-    var CompileProviderMetadata = (function () {
-        function CompileProviderMetadata(_a) {
-            var token = _a.token, useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
-            this.token = token;
-            this.useClass = useClass;
-            this.useValue = useValue;
-            this.useExisting = useExisting;
-            this.useFactory = useFactory;
-            this.deps = normalizeBlank(deps);
-            this.multi = normalizeBool(multi);
-        }
-        CompileProviderMetadata.fromJson = function (data) {
-            return new CompileProviderMetadata({
-                token: _objFromJson(data['token'], CompileTokenMetadata.fromJson),
-                useClass: _objFromJson(data['useClass'], CompileTypeMetadata.fromJson),
-                useExisting: _objFromJson(data['useExisting'], CompileTokenMetadata.fromJson),
-                useValue: _objFromJson(data['useValue'], CompileIdentifierMetadata.fromJson),
-                useFactory: _objFromJson(data['useFactory'], CompileFactoryMetadata.fromJson),
-                multi: data['multi'],
-                deps: _arrayFromJson(data['deps'], CompileDiDependencyMetadata.fromJson)
-            });
-        };
-        CompileProviderMetadata.prototype.toJson = function () {
-            return {
-                // Note: Runtime type can't be serialized...
-                'class': 'Provider',
-                'token': _objToJson(this.token),
-                'useClass': _objToJson(this.useClass),
-                'useExisting': _objToJson(this.useExisting),
-                'useValue': _objToJson(this.useValue),
-                'useFactory': _objToJson(this.useFactory),
-                'multi': this.multi,
-                'deps': _arrayToJson(this.deps)
-            };
-        };
-        return CompileProviderMetadata;
-    }());
-    var CompileFactoryMetadata = (function () {
-        function CompileFactoryMetadata(_a) {
-            var runtime = _a.runtime, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
-            this.runtime = runtime;
-            this.name = name;
-            this.prefix = prefix;
-            this.moduleUrl = moduleUrl;
-            this.diDeps = _normalizeArray(diDeps);
-            this.value = value;
-        }
-        Object.defineProperty(CompileFactoryMetadata.prototype, "identifier", {
-            get: function () { return this; },
-            enumerable: true,
-            configurable: true
-        });
-        CompileFactoryMetadata.fromJson = function (data) {
-            return new CompileFactoryMetadata({
-                name: data['name'],
-                prefix: data['prefix'],
-                moduleUrl: data['moduleUrl'],
-                value: data['value'],
-                diDeps: _arrayFromJson(data['diDeps'], CompileDiDependencyMetadata.fromJson)
-            });
-        };
-        CompileFactoryMetadata.prototype.toJson = function () {
-            return {
-                'class': 'Factory',
-                'name': this.name,
-                'prefix': this.prefix,
-                'moduleUrl': this.moduleUrl,
-                'value': this.value,
-                'diDeps': _arrayToJson(this.diDeps)
-            };
-        };
-        return CompileFactoryMetadata;
-    }());
-    var UNDEFINED = new Object();
-    var CompileTokenMetadata = (function () {
-        function CompileTokenMetadata(_a) {
-            var value = _a.value, identifier = _a.identifier, identifierIsInstance = _a.identifierIsInstance;
-            this._assetCacheKey = UNDEFINED;
-            this.value = value;
-            this.identifier = identifier;
-            this.identifierIsInstance = normalizeBool(identifierIsInstance);
-        }
-        CompileTokenMetadata.fromJson = function (data) {
-            return new CompileTokenMetadata({
-                value: data['value'],
-                identifier: _objFromJson(data['identifier'], CompileIdentifierMetadata.fromJson),
-                identifierIsInstance: data['identifierIsInstance']
-            });
-        };
-        CompileTokenMetadata.prototype.toJson = function () {
-            return {
-                'value': this.value,
-                'identifier': _objToJson(this.identifier),
-                'identifierIsInstance': this.identifierIsInstance
-            };
-        };
-        Object.defineProperty(CompileTokenMetadata.prototype, "runtimeCacheKey", {
-            get: function () {
-                if (isPresent(this.identifier)) {
-                    return this.identifier.runtime;
-                }
-                else {
-                    return this.value;
-                }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompileTokenMetadata.prototype, "assetCacheKey", {
-            get: function () {
-                if (this._assetCacheKey === UNDEFINED) {
-                    if (isPresent(this.identifier)) {
-                        if (isPresent(this.identifier.moduleUrl) &&
-                            isPresent(getUrlScheme(this.identifier.moduleUrl))) {
-                            var uri = reflector.importUri({
-                                'filePath': this.identifier.moduleUrl,
-                                'name': this.identifier.name
-                            });
-                            this._assetCacheKey = this.identifier.name + "|" + uri + "|" + this.identifierIsInstance;
-                        }
-                        else {
-                            this._assetCacheKey = null;
-                        }
-                    }
-                    else {
-                        this._assetCacheKey = this.value;
-                    }
-                }
-                return this._assetCacheKey;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        CompileTokenMetadata.prototype.equalsTo = function (token2) {
-            var rk = this.runtimeCacheKey;
-            var ak = this.assetCacheKey;
-            return (isPresent(rk) && rk == token2.runtimeCacheKey) ||
-                (isPresent(ak) && ak == token2.assetCacheKey);
-        };
-        Object.defineProperty(CompileTokenMetadata.prototype, "name", {
-            get: function () {
-                return isPresent(this.value) ? sanitizeIdentifier(this.value) : this.identifier.name;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return CompileTokenMetadata;
-    }());
-    var CompileTokenMap = (function () {
-        function CompileTokenMap() {
-            this._valueMap = new Map();
-            this._values = [];
-        }
-        CompileTokenMap.prototype.add = function (token, value) {
-            var existing = this.get(token);
-            if (isPresent(existing)) {
-                throw new BaseException$1("Can only add to a TokenMap! Token: " + token.name);
-            }
-            this._values.push(value);
-            var rk = token.runtimeCacheKey;
-            if (isPresent(rk)) {
-                this._valueMap.set(rk, value);
-            }
-            var ak = token.assetCacheKey;
-            if (isPresent(ak)) {
-                this._valueMap.set(ak, value);
-            }
-        };
-        CompileTokenMap.prototype.get = function (token) {
-            var rk = token.runtimeCacheKey;
-            var ak = token.assetCacheKey;
-            var result;
-            if (isPresent(rk)) {
-                result = this._valueMap.get(rk);
-            }
-            if (isBlank(result) && isPresent(ak)) {
-                result = this._valueMap.get(ak);
-            }
-            return result;
-        };
-        CompileTokenMap.prototype.values = function () { return this._values; };
-        Object.defineProperty(CompileTokenMap.prototype, "size", {
-            get: function () { return this._values.length; },
-            enumerable: true,
-            configurable: true
-        });
-        return CompileTokenMap;
-    }());
-    /**
-     * Metadata regarding compilation of a type.
-     */
-    var CompileTypeMetadata = (function () {
-        function CompileTypeMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps;
-            this.runtime = runtime;
-            this.name = name;
-            this.moduleUrl = moduleUrl;
-            this.prefix = prefix;
-            this.isHost = normalizeBool(isHost);
-            this.value = value;
-            this.diDeps = _normalizeArray(diDeps);
-        }
-        CompileTypeMetadata.fromJson = function (data) {
-            return new CompileTypeMetadata({
-                name: data['name'],
-                moduleUrl: data['moduleUrl'],
-                prefix: data['prefix'],
-                isHost: data['isHost'],
-                value: data['value'],
-                diDeps: _arrayFromJson(data['diDeps'], CompileDiDependencyMetadata.fromJson)
-            });
-        };
-        Object.defineProperty(CompileTypeMetadata.prototype, "identifier", {
-            get: function () { return this; },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompileTypeMetadata.prototype, "type", {
-            get: function () { return this; },
-            enumerable: true,
-            configurable: true
-        });
-        CompileTypeMetadata.prototype.toJson = function () {
-            return {
-                // Note: Runtime type can't be serialized...
-                'class': 'Type',
-                'name': this.name,
-                'moduleUrl': this.moduleUrl,
-                'prefix': this.prefix,
-                'isHost': this.isHost,
-                'value': this.value,
-                'diDeps': _arrayToJson(this.diDeps)
-            };
-        };
-        return CompileTypeMetadata;
-    }());
-    var CompileQueryMetadata = (function () {
-        function CompileQueryMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, selectors = _b.selectors, descendants = _b.descendants, first = _b.first, propertyName = _b.propertyName, read = _b.read;
-            this.selectors = selectors;
-            this.descendants = normalizeBool(descendants);
-            this.first = normalizeBool(first);
-            this.propertyName = propertyName;
-            this.read = read;
-        }
-        CompileQueryMetadata.fromJson = function (data) {
-            return new CompileQueryMetadata({
-                selectors: _arrayFromJson(data['selectors'], CompileTokenMetadata.fromJson),
-                descendants: data['descendants'],
-                first: data['first'],
-                propertyName: data['propertyName'],
-                read: _objFromJson(data['read'], CompileTokenMetadata.fromJson)
-            });
-        };
-        CompileQueryMetadata.prototype.toJson = function () {
-            return {
-                'selectors': _arrayToJson(this.selectors),
-                'descendants': this.descendants,
-                'first': this.first,
-                'propertyName': this.propertyName,
-                'read': _objToJson(this.read)
-            };
-        };
-        return CompileQueryMetadata;
-    }());
-    /**
-     * Metadata regarding compilation of a template.
-     */
-    var CompileTemplateMetadata = (function () {
-        function CompileTemplateMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors;
-            this.encapsulation = isPresent(encapsulation) ? encapsulation : anmd.ViewEncapsulation.Emulated;
-            this.template = template;
-            this.templateUrl = templateUrl;
-            this.styles = isPresent(styles) ? styles : [];
-            this.styleUrls = isPresent(styleUrls) ? styleUrls : [];
-            this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
-            this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
-        }
-        CompileTemplateMetadata.fromJson = function (data) {
-            var animations = _arrayFromJson(data['animations'], metadataFromJson);
-            return new CompileTemplateMetadata({
-                encapsulation: isPresent(data['encapsulation']) ?
-                    VIEW_ENCAPSULATION_VALUES[data['encapsulation']] :
-                    data['encapsulation'],
-                template: data['template'],
-                templateUrl: data['templateUrl'],
-                styles: data['styles'],
-                styleUrls: data['styleUrls'],
-                animations: animations,
-                ngContentSelectors: data['ngContentSelectors']
-            });
-        };
-        CompileTemplateMetadata.prototype.toJson = function () {
-            return {
-                'encapsulation': isPresent(this.encapsulation) ? serializeEnum(this.encapsulation) : this.encapsulation,
-                'template': this.template,
-                'templateUrl': this.templateUrl,
-                'styles': this.styles,
-                'styleUrls': this.styleUrls,
-                'animations': _objToJson(this.animations),
-                'ngContentSelectors': this.ngContentSelectors
-            };
-        };
-        return CompileTemplateMetadata;
-    }());
-    /**
-     * Metadata regarding compilation of a directive.
-     */
-    var CompileDirectiveMetadata = (function () {
-        function CompileDirectiveMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, template = _b.template;
-            this.type = type;
-            this.isComponent = isComponent;
-            this.selector = selector;
-            this.exportAs = exportAs;
-            this.changeDetection = changeDetection;
-            this.inputs = inputs;
-            this.outputs = outputs;
-            this.hostListeners = hostListeners;
-            this.hostProperties = hostProperties;
-            this.hostAttributes = hostAttributes;
-            this.lifecycleHooks = _normalizeArray(lifecycleHooks);
-            this.providers = _normalizeArray(providers);
-            this.viewProviders = _normalizeArray(viewProviders);
-            this.queries = _normalizeArray(queries);
-            this.viewQueries = _normalizeArray(viewQueries);
-            this.template = template;
-        }
-        CompileDirectiveMetadata.create = function (_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, template = _b.template;
-            var hostListeners = {};
-            var hostProperties = {};
-            var hostAttributes = {};
-            if (isPresent(host)) {
-                StringMapWrapper.forEach(host, function (value, key) {
-                    var matches = RegExpWrapper.firstMatch(HOST_REG_EXP, key);
-                    if (isBlank(matches)) {
-                        hostAttributes[key] = value;
-                    }
-                    else if (isPresent(matches[1])) {
-                        hostProperties[matches[1]] = value;
-                    }
-                    else if (isPresent(matches[2])) {
-                        hostListeners[matches[2]] = value;
-                    }
-                });
-            }
-            var inputsMap = {};
-            if (isPresent(inputs)) {
-                inputs.forEach(function (bindConfig) {
-                    // canonical syntax: `dirProp: elProp`
-                    // if there is no `:`, use dirProp = elProp
-                    var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
-                    inputsMap[parts[0]] = parts[1];
-                });
-            }
-            var outputsMap = {};
-            if (isPresent(outputs)) {
-                outputs.forEach(function (bindConfig) {
-                    // canonical syntax: `dirProp: elProp`
-                    // if there is no `:`, use dirProp = elProp
-                    var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
-                    outputsMap[parts[0]] = parts[1];
-                });
-            }
-            return new CompileDirectiveMetadata({
-                type: type,
-                isComponent: normalizeBool(isComponent),
-                selector: selector,
-                exportAs: exportAs,
-                changeDetection: changeDetection,
-                inputs: inputsMap,
-                outputs: outputsMap,
-                hostListeners: hostListeners,
-                hostProperties: hostProperties,
-                hostAttributes: hostAttributes,
-                lifecycleHooks: isPresent(lifecycleHooks) ? lifecycleHooks : [],
-                providers: providers,
-                viewProviders: viewProviders,
-                queries: queries,
-                viewQueries: viewQueries,
-                template: template
-            });
-        };
-        Object.defineProperty(CompileDirectiveMetadata.prototype, "identifier", {
-            get: function () { return this.type; },
-            enumerable: true,
-            configurable: true
-        });
-        CompileDirectiveMetadata.fromJson = function (data) {
-            return new CompileDirectiveMetadata({
-                isComponent: data['isComponent'],
-                selector: data['selector'],
-                exportAs: data['exportAs'],
-                type: isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
-                changeDetection: isPresent(data['changeDetection']) ?
-                    CHANGE_DETECTION_STRATEGY_VALUES[data['changeDetection']] :
-                    data['changeDetection'],
-                inputs: data['inputs'],
-                outputs: data['outputs'],
-                hostListeners: data['hostListeners'],
-                hostProperties: data['hostProperties'],
-                hostAttributes: data['hostAttributes'],
-                lifecycleHooks: data['lifecycleHooks'].map(function (hookValue) { return LIFECYCLE_HOOKS_VALUES[hookValue]; }),
-                template: isPresent(data['template']) ? CompileTemplateMetadata.fromJson(data['template']) :
-                    data['template'],
-                providers: _arrayFromJson(data['providers'], metadataFromJson),
-                viewProviders: _arrayFromJson(data['viewProviders'], metadataFromJson),
-                queries: _arrayFromJson(data['queries'], CompileQueryMetadata.fromJson),
-                viewQueries: _arrayFromJson(data['viewQueries'], CompileQueryMetadata.fromJson)
-            });
-        };
-        CompileDirectiveMetadata.prototype.toJson = function () {
-            return {
-                'class': 'Directive',
-                'isComponent': this.isComponent,
-                'selector': this.selector,
-                'exportAs': this.exportAs,
-                'type': isPresent(this.type) ? this.type.toJson() : this.type,
-                'changeDetection': isPresent(this.changeDetection) ? serializeEnum(this.changeDetection) :
-                    this.changeDetection,
-                'inputs': this.inputs,
-                'outputs': this.outputs,
-                'hostListeners': this.hostListeners,
-                'hostProperties': this.hostProperties,
-                'hostAttributes': this.hostAttributes,
-                'lifecycleHooks': this.lifecycleHooks.map(function (hook) { return serializeEnum(hook); }),
-                'template': isPresent(this.template) ? this.template.toJson() : this.template,
-                'providers': _arrayToJson(this.providers),
-                'viewProviders': _arrayToJson(this.viewProviders),
-                'queries': _arrayToJson(this.queries),
-                'viewQueries': _arrayToJson(this.viewQueries)
-            };
-        };
-        return CompileDirectiveMetadata;
-    }());
-    /**
-     * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
-     */
-    function createHostComponentMeta(componentType, componentSelector) {
-        var template = CssSelector.parse(componentSelector)[0].getMatchingElementTemplate();
-        return CompileDirectiveMetadata.create({
-            type: new CompileTypeMetadata({
-                runtime: Object,
-                name: componentType.name + "_Host",
-                moduleUrl: componentType.moduleUrl,
-                isHost: true
-            }),
-            template: new CompileTemplateMetadata({ template: template, templateUrl: '', styles: [], styleUrls: [], ngContentSelectors: [], animations: [] }),
-            changeDetection: anmd.ChangeDetectionStrategy.Default,
-            inputs: [],
-            outputs: [],
-            host: {},
-            lifecycleHooks: [],
-            isComponent: true,
-            selector: '*',
-            providers: [],
-            viewProviders: [],
-            queries: [],
-            viewQueries: []
-        });
-    }
-    var CompilePipeMetadata = (function () {
-        function CompilePipeMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, name = _b.name, pure = _b.pure, lifecycleHooks = _b.lifecycleHooks;
-            this.type = type;
-            this.name = name;
-            this.pure = normalizeBool(pure);
-            this.lifecycleHooks = _normalizeArray(lifecycleHooks);
-        }
-        Object.defineProperty(CompilePipeMetadata.prototype, "identifier", {
-            get: function () { return this.type; },
-            enumerable: true,
-            configurable: true
-        });
-        CompilePipeMetadata.fromJson = function (data) {
-            return new CompilePipeMetadata({
-                type: isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
-                name: data['name'],
-                pure: data['pure']
-            });
-        };
-        CompilePipeMetadata.prototype.toJson = function () {
-            return {
-                'class': 'Pipe',
-                'type': isPresent(this.type) ? this.type.toJson() : null,
-                'name': this.name,
-                'pure': this.pure
-            };
-        };
-        return CompilePipeMetadata;
-    }());
-    var _COMPILE_METADATA_FROM_JSON = {
-        'Directive': CompileDirectiveMetadata.fromJson,
-        'Pipe': CompilePipeMetadata.fromJson,
-        'Type': CompileTypeMetadata.fromJson,
-        'Provider': CompileProviderMetadata.fromJson,
-        'Identifier': CompileIdentifierMetadata.fromJson,
-        'Factory': CompileFactoryMetadata.fromJson,
-        'AnimationEntryMetadata': CompileAnimationEntryMetadata.fromJson,
-        'AnimationStateDeclarationMetadata': CompileAnimationStateDeclarationMetadata.fromJson,
-        'AnimationStateTransitionMetadata': CompileAnimationStateTransitionMetadata.fromJson,
-        'AnimationSequenceMetadata': CompileAnimationSequenceMetadata.fromJson,
-        'AnimationGroupMetadata': CompileAnimationGroupMetadata.fromJson,
-        'AnimationAnimateMetadata': CompileAnimationAnimateMetadata.fromJson,
-        'AnimationStyleMetadata': CompileAnimationStyleMetadata.fromJson,
-        'AnimationKeyframesSequenceMetadata': CompileAnimationKeyframesSequenceMetadata.fromJson
-    };
-    function _arrayFromJson(obj, fn) {
-        return isBlank(obj) ? null : obj.map(function (o) { return _objFromJson(o, fn); });
-    }
-    function _arrayToJson(obj) {
-        return isBlank(obj) ? null : obj.map(_objToJson);
-    }
-    function _objFromJson(obj, fn) {
-        if (isArray(obj))
-            return _arrayFromJson(obj, fn);
-        if (isString(obj) || isBlank(obj) || isBoolean(obj) || isNumber(obj))
-            return obj;
-        return fn(obj);
-    }
-    function _objToJson(obj) {
-        if (isArray(obj))
-            return _arrayToJson(obj);
-        if (isString(obj) || isBlank(obj) || isBoolean(obj) || isNumber(obj))
-            return obj;
-        return obj.toJson();
-    }
-    function _normalizeArray(obj) {
-        return isPresent(obj) ? obj : [];
-    }
-    var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
-    var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
-    var CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
-    // Reassign the imports to different variables so we can
-    // define static variables with the name of the import.
-    // (only needed for Dart).
-    var impViewUtils = ViewUtils;
-    var impAppView = AppView;
-    var impDebugAppView = DebugAppView;
-    var impDebugContext = DebugContext;
-    var impAppElement = AppElement;
-    var impElementRef = anmd.ElementRef;
-    var impViewContainerRef = anmd.ViewContainerRef;
-    var impChangeDetectorRef = anmd.ChangeDetectorRef;
-    var impRenderComponentType = anmd.RenderComponentType;
-    var impQueryList = anmd.QueryList;
-    var impTemplateRef = anmd.TemplateRef;
-    var impTemplateRef_ = TemplateRef_;
-    var impValueUnwrapper = ValueUnwrapper;
-    var impInjector = anmd.Injector;
-    var impViewEncapsulation = anmd.ViewEncapsulation;
-    var impViewType = ViewType;
-    var impChangeDetectionStrategy = anmd.ChangeDetectionStrategy;
-    var impStaticNodeDebugInfo = StaticNodeDebugInfo;
-    var impRenderer = anmd.Renderer;
-    var impSimpleChange = anmd.SimpleChange;
-    var impUninitialized = uninitialized;
-    var impChangeDetectorState = ChangeDetectorState;
-    var impFlattenNestedViewRenderNodes = flattenNestedViewRenderNodes;
-    var impDevModeEqual = devModeEqual;
-    var impInterpolate = interpolate;
-    var impCheckBinding = checkBinding;
-    var impCastByValue = castByValue;
-    var impEMPTY_ARRAY = EMPTY_ARRAY;
-    var impEMPTY_MAP = EMPTY_MAP;
-    var impAnimationGroupPlayer = AnimationGroupPlayer_;
-    var impAnimationSequencePlayer = AnimationSequencePlayer_;
-    var impAnimationKeyframe = AnimationKeyframe_;
-    var impAnimationStyles = AnimationStyles_;
-    var impNoOpAnimationPlayer = NoOpAnimationPlayer_;
-    var ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
-    var Identifiers = (function () {
-        function Identifiers() {
-        }
-        return Identifiers;
-    }());
-    Identifiers.ViewUtils = new CompileIdentifierMetadata({ name: 'ViewUtils', moduleUrl: assetUrl('core', 'linker/view_utils'), runtime: impViewUtils });
-    Identifiers.AppView = new CompileIdentifierMetadata({ name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impAppView });
-    Identifiers.DebugAppView = new CompileIdentifierMetadata({ name: 'DebugAppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impDebugAppView });
-    Identifiers.AppElement = new CompileIdentifierMetadata({ name: 'AppElement', moduleUrl: assetUrl('core', 'linker/element'), runtime: impAppElement });
-    Identifiers.ElementRef = new CompileIdentifierMetadata({
-        name: 'ElementRef',
-        moduleUrl: assetUrl('core', 'linker/element_ref'),
-        runtime: impElementRef
-    });
-    Identifiers.ViewContainerRef = new CompileIdentifierMetadata({
-        name: 'ViewContainerRef',
-        moduleUrl: assetUrl('core', 'linker/view_container_ref'),
-        runtime: impViewContainerRef
-    });
-    Identifiers.ChangeDetectorRef = new CompileIdentifierMetadata({
-        name: 'ChangeDetectorRef',
-        moduleUrl: assetUrl('core', 'change_detection/change_detector_ref'),
-        runtime: impChangeDetectorRef
-    });
-    Identifiers.RenderComponentType = new CompileIdentifierMetadata({
-        name: 'RenderComponentType',
-        moduleUrl: assetUrl('core', 'render/api'),
-        runtime: impRenderComponentType
-    });
-    Identifiers.QueryList = new CompileIdentifierMetadata({ name: 'QueryList', moduleUrl: assetUrl('core', 'linker/query_list'), runtime: impQueryList });
-    Identifiers.TemplateRef = new CompileIdentifierMetadata({
-        name: 'TemplateRef',
-        moduleUrl: assetUrl('core', 'linker/template_ref'),
-        runtime: impTemplateRef
-    });
-    Identifiers.TemplateRef_ = new CompileIdentifierMetadata({
-        name: 'TemplateRef_',
-        moduleUrl: assetUrl('core', 'linker/template_ref'),
-        runtime: impTemplateRef_
-    });
-    Identifiers.ValueUnwrapper = new CompileIdentifierMetadata({ name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: impValueUnwrapper });
-    Identifiers.Injector = new CompileIdentifierMetadata({ name: 'Injector', moduleUrl: assetUrl('core', 'di/injector'), runtime: impInjector });
-    Identifiers.ViewEncapsulation = new CompileIdentifierMetadata({
-        name: 'ViewEncapsulation',
-        moduleUrl: assetUrl('core', 'metadata/view'),
-        runtime: impViewEncapsulation
-    });
-    Identifiers.ViewType = new CompileIdentifierMetadata({ name: 'ViewType', moduleUrl: assetUrl('core', 'linker/view_type'), runtime: impViewType });
-    Identifiers.ChangeDetectionStrategy = new CompileIdentifierMetadata({
-        name: 'ChangeDetectionStrategy',
-        moduleUrl: CD_MODULE_URL,
-        runtime: impChangeDetectionStrategy
-    });
-    Identifiers.StaticNodeDebugInfo = new CompileIdentifierMetadata({
-        name: 'StaticNodeDebugInfo',
-        moduleUrl: assetUrl('core', 'linker/debug_context'),
-        runtime: impStaticNodeDebugInfo
-    });
-    Identifiers.DebugContext = new CompileIdentifierMetadata({
-        name: 'DebugContext',
-        moduleUrl: assetUrl('core', 'linker/debug_context'),
-        runtime: impDebugContext
-    });
-    Identifiers.Renderer = new CompileIdentifierMetadata({ name: 'Renderer', moduleUrl: assetUrl('core', 'render/api'), runtime: impRenderer });
-    Identifiers.SimpleChange = new CompileIdentifierMetadata({ name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: impSimpleChange });
-    Identifiers.uninitialized = new CompileIdentifierMetadata({ name: 'uninitialized', moduleUrl: CD_MODULE_URL, runtime: impUninitialized });
-    Identifiers.ChangeDetectorState = new CompileIdentifierMetadata({ name: 'ChangeDetectorState', moduleUrl: CD_MODULE_URL, runtime: impChangeDetectorState });
-    Identifiers.checkBinding = new CompileIdentifierMetadata({ name: 'checkBinding', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCheckBinding });
-    Identifiers.flattenNestedViewRenderNodes = new CompileIdentifierMetadata({
-        name: 'flattenNestedViewRenderNodes',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: impFlattenNestedViewRenderNodes
-    });
-    Identifiers.devModeEqual = new CompileIdentifierMetadata({ name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: impDevModeEqual });
-    Identifiers.interpolate = new CompileIdentifierMetadata({ name: 'interpolate', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impInterpolate });
-    Identifiers.castByValue = new CompileIdentifierMetadata({ name: 'castByValue', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCastByValue });
-    Identifiers.EMPTY_ARRAY = new CompileIdentifierMetadata({ name: 'EMPTY_ARRAY', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impEMPTY_ARRAY });
-    Identifiers.EMPTY_MAP = new CompileIdentifierMetadata({ name: 'EMPTY_MAP', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impEMPTY_MAP });
-    Identifiers.pureProxies = [
-        null,
-        new CompileIdentifierMetadata({ name: 'pureProxy1', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy1 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy2 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy3', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy3 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy4', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy4 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy5', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy5 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy6', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy6 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy7', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy7 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy8', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy8 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy9', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy9 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy10', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy10 }),
-    ];
-    Identifiers.SecurityContext = new CompileIdentifierMetadata({
-        name: 'SecurityContext',
-        moduleUrl: assetUrl('core', 'security'),
-        runtime: SecurityContext,
-    });
-    Identifiers.AnimationKeyframe = new CompileIdentifierMetadata({
-        name: 'AnimationKeyframe',
-        moduleUrl: assetUrl('core', 'animation/animation_keyframe'),
-        runtime: impAnimationKeyframe
-    });
-    Identifiers.AnimationStyles = new CompileIdentifierMetadata({
-        name: 'AnimationStyles',
-        moduleUrl: assetUrl('core', 'animation/animation_styles'),
-        runtime: impAnimationStyles
-    });
-    Identifiers.NoOpAnimationPlayer = new CompileIdentifierMetadata({
-        name: 'NoOpAnimationPlayer',
-        moduleUrl: assetUrl('core', 'animation/animation_player'),
-        runtime: impNoOpAnimationPlayer
-    });
-    Identifiers.AnimationGroupPlayer = new CompileIdentifierMetadata({
-        name: 'AnimationGroupPlayer',
-        moduleUrl: assetUrl('core', 'animation/animation_group_player'),
-        runtime: impAnimationGroupPlayer
-    });
-    Identifiers.AnimationSequencePlayer = new CompileIdentifierMetadata({
-        name: 'AnimationSequencePlayer',
-        moduleUrl: assetUrl('core', 'animation/animation_sequence_player'),
-        runtime: impAnimationSequencePlayer
-    });
-    Identifiers.balanceAnimationStyles = new CompileIdentifierMetadata({
-        name: 'balanceAnimationStyles',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: AnimationStyleUtil.balanceStyles
-    });
-    Identifiers.balanceAnimationKeyframes = new CompileIdentifierMetadata({
-        name: 'balanceAnimationKeyframes',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: AnimationStyleUtil.balanceKeyframes
-    });
-    Identifiers.clearAnimationStyles = new CompileIdentifierMetadata({
-        name: 'clearAnimationStyles',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: AnimationStyleUtil.clearStyles
-    });
-    Identifiers.collectAndResolveStyles = new CompileIdentifierMetadata({
-        name: 'collectAndResolveStyles',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: AnimationStyleUtil.collectAndResolveStyles
-    });
-    function identifierToken(identifier) {
-        return new CompileTokenMetadata({ identifier: identifier });
-    }
     var ProviderError = (function (_super) {
         __extends(ProviderError, _super);
         function ProviderError(message, span) {
@@ -6962,70 +7037,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         return res;
     }
-    var CompilerConfig = (function () {
-        function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes) {
-            if (renderTypes === void 0) { renderTypes = null; }
-            this.genDebugInfo = genDebugInfo;
-            this.logBindingUpdate = logBindingUpdate;
-            this.useJit = useJit;
-            if (isBlank(renderTypes)) {
-                renderTypes = new DefaultRenderTypes();
-            }
-            this.renderTypes = renderTypes;
-        }
-        return CompilerConfig;
-    }());
-    /**
-     * Types used for the renderer.
-     * Can be replaced to specialize the generated output to a specific renderer
-     * to help tree shaking.
-     */
-    var RenderTypes = (function () {
-        function RenderTypes() {
-        }
-        Object.defineProperty(RenderTypes.prototype, "renderer", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderText", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderElement", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderComment", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderNode", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderEvent", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        return RenderTypes;
-    }());
-    var DefaultRenderTypes = (function () {
-        function DefaultRenderTypes() {
-            this.renderer = Identifiers.Renderer;
-            this.renderText = null;
-            this.renderElement = null;
-            this.renderComment = null;
-            this.renderNode = null;
-            this.renderEvent = null;
-        }
-        return DefaultRenderTypes;
-    }());
     //// Types
     var TypeModifier;
     (function (TypeModifier) {
@@ -14783,6 +14794,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var COMPILER_PROVIDERS = 
     /*@ts2dart_const*/ [
+        /*@ts2dart_Provider*/ { provide: CompilerConfig, useFactory: _createCompilerConfig, deps: [] },
         Lexer,
         Parser,
         HtmlParser,
@@ -14792,7 +14804,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         DEFAULT_PACKAGE_URL_PROVIDER,
         StyleCompiler,
         ViewCompiler,
-        /*@ts2dart_Provider*/ { provide: CompilerConfig, useFactory: _createCompilerConfig, deps: [] },
         RuntimeCompiler,
         /*@ts2dart_Provider*/ { provide: anmd.ComponentResolver, useExisting: RuntimeCompiler },
         DomElementSchemaRegistry,

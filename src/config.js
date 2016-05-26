@@ -3,8 +3,9 @@ var lang_1 = require('../src/facade/lang');
 var exceptions_1 = require('../src/facade/exceptions');
 var identifiers_1 = require('./identifiers');
 var CompilerConfig = (function () {
-    function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes) {
+    function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes, interpolateRegexp) {
         if (renderTypes === void 0) { renderTypes = null; }
+        if (interpolateRegexp === void 0) { interpolateRegexp = null; }
         this.genDebugInfo = genDebugInfo;
         this.logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
@@ -12,6 +13,10 @@ var CompilerConfig = (function () {
             renderTypes = new DefaultRenderTypes();
         }
         this.renderTypes = renderTypes;
+        if (lang_1.isBlank(interpolateRegexp)) {
+            interpolateRegexp = exports.DEFAULT_INTERPOLATE_REGEXP;
+        }
+        this.interpolateRegexp = interpolateRegexp;
     }
     return CompilerConfig;
 }());
@@ -69,4 +74,8 @@ var DefaultRenderTypes = (function () {
     return DefaultRenderTypes;
 }());
 exports.DefaultRenderTypes = DefaultRenderTypes;
+/**
+ * A regexp pattern used to interpolate in default.
+ */
+exports.DEFAULT_INTERPOLATE_REGEXP = /\{\{([\s\S]*?)\}\}/g;
 //# sourceMappingURL=config.js.map

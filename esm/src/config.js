@@ -2,7 +2,7 @@ import { isBlank } from '../src/facade/lang';
 import { unimplemented } from '../src/facade/exceptions';
 import { Identifiers } from './identifiers';
 export class CompilerConfig {
-    constructor(genDebugInfo, logBindingUpdate, useJit, renderTypes = null) {
+    constructor(genDebugInfo, logBindingUpdate, useJit, renderTypes = null, interpolateRegexp = null) {
         this.genDebugInfo = genDebugInfo;
         this.logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
@@ -10,6 +10,10 @@ export class CompilerConfig {
             renderTypes = new DefaultRenderTypes();
         }
         this.renderTypes = renderTypes;
+        if (isBlank(interpolateRegexp)) {
+            interpolateRegexp = DEFAULT_INTERPOLATE_REGEXP;
+        }
+        this.interpolateRegexp = interpolateRegexp;
     }
 }
 /**
@@ -35,4 +39,8 @@ export class DefaultRenderTypes {
         this.renderEvent = null;
     }
 }
+/**
+ * A regexp pattern used to interpolate in default.
+ */
+export var DEFAULT_INTERPOLATE_REGEXP = /\{\{([\s\S]*?)\}\}/g;
 //# sourceMappingURL=config.js.map

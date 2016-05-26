@@ -47,6 +47,7 @@ function _createCompilerConfig() {
  */
 exports.COMPILER_PROVIDERS = 
 /*@ts2dart_const*/ [
+    /*@ts2dart_Provider*/ { provide: config_2.CompilerConfig, useFactory: _createCompilerConfig, deps: [] },
     lexer_1.Lexer,
     parser_1.Parser,
     html_parser_1.HtmlParser,
@@ -56,7 +57,6 @@ exports.COMPILER_PROVIDERS =
     url_resolver_2.DEFAULT_PACKAGE_URL_PROVIDER,
     style_compiler_1.StyleCompiler,
     view_compiler_1.ViewCompiler,
-    /*@ts2dart_Provider*/ { provide: config_2.CompilerConfig, useFactory: _createCompilerConfig, deps: [] },
     runtime_compiler_2.RuntimeCompiler,
     /*@ts2dart_Provider*/ { provide: core_1.ComponentResolver, useExisting: runtime_compiler_2.RuntimeCompiler },
     dom_element_schema_registry_1.DomElementSchemaRegistry,

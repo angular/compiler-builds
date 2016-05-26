@@ -4,9 +4,8 @@ import { BaseException } from '../../src/facade/exceptions';
 import { ListWrapper } from '../../src/facade/collection';
 import { Lexer, EOF, isIdentifier, isQuote, $PERIOD, $COLON, $SEMICOLON, $LBRACKET, $RBRACKET, $COMMA, $LBRACE, $RBRACE, $LPAREN, $RPAREN, $SLASH } from './lexer';
 import { EmptyExpr, ImplicitReceiver, PropertyRead, PropertyWrite, SafePropertyRead, LiteralPrimitive, Binary, PrefixNot, Conditional, BindingPipe, Chain, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, Interpolation, MethodCall, SafeMethodCall, FunctionCall, TemplateBinding, ASTWithSource, Quote } from './ast';
+import { CompilerConfig } from '../config';
 var _implicitReceiver = new ImplicitReceiver();
-// TODO(tbosch): Cannot make this const/final right now because of the transpiler...
-var INTERPOLATION_REGEXP = /\{\{([\s\S]*?)\}\}/g;
 class ParseException extends BaseException {
     constructor(message, input, errLocation, ctxLocation) {
         super(`Parser Error: ${message} ${errLocation} [${input}] in ${ctxLocation}`);
@@ -25,8 +24,11 @@ export class TemplateBindingParseResult {
     }
 }
 export class Parser {
-    constructor(/** @internal */ _lexer) {
+    constructor(/** @internal */ _lexer, 
+        /** @internal */
+        _config) {
         this._lexer = _lexer;
+        this._config = _config;
     }
     parseAction(input, location) {
         this._checkNoInterpolation(input, location);
@@ -85,7 +87,7 @@ export class Parser {
         return new ASTWithSource(new Interpolation(split.strings, expressions), input, location);
     }
     splitInterpolation(input, location) {
-        var parts = StringWrapper.split(input, INTERPOLATION_REGEXP);
+        var parts = StringWrapper.split(input, this._config.interpolateRegexp);
         if (parts.length <= 1) {
             return null;
         }
@@ -130,7 +132,7 @@ export class Parser {
         return null;
     }
     _checkNoInterpolation(input, location) {
-        var parts = StringWrapper.split(input, INTERPOLATION_REGEXP);
+        var parts = StringWrapper.split(input, this._config.interpolateRegexp);
         if (parts.length > 1) {
             throw new ParseException('Got interpolation ({{}}) where expression was expected', input, `at column ${this._findInterpolationErrorColumn(parts, 1)} in`, location);
         }
@@ -148,6 +150,7 @@ Parser.decorators = [
 ];
 Parser.ctorParameters = [
     { type: Lexer, },
+    { type: CompilerConfig, },
 ];
 export class _ParseAST {
     constructor(input, location, tokens, parseAction) {

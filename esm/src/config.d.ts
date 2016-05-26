@@ -4,7 +4,8 @@ export declare class CompilerConfig {
     logBindingUpdate: boolean;
     useJit: boolean;
     renderTypes: RenderTypes;
-    constructor(genDebugInfo: boolean, logBindingUpdate: boolean, useJit: boolean, renderTypes?: RenderTypes);
+    interpolateRegexp: RegExp;
+    constructor(genDebugInfo: boolean, logBindingUpdate: boolean, useJit: boolean, renderTypes?: RenderTypes, interpolateRegexp?: RegExp);
 }
 /**
  * Types used for the renderer.
@@ -27,3 +28,7 @@ export declare class DefaultRenderTypes implements RenderTypes {
     renderNode: any;
     renderEvent: any;
 }
+/**
+ * A regexp pattern used to interpolate in default.
+ */
+export declare var DEFAULT_INTERPOLATE_REGEXP: RegExp;
