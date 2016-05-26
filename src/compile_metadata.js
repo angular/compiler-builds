@@ -609,7 +609,7 @@ exports.CompileQueryMetadata = CompileQueryMetadata;
 var CompileTemplateMetadata = (function () {
     function CompileTemplateMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors;
-        this.encapsulation = lang_1.isPresent(encapsulation) ? encapsulation : core_1.ViewEncapsulation.Emulated;
+        this.encapsulation = encapsulation;
         this.template = template;
         this.templateUrl = templateUrl;
         this.styles = lang_1.isPresent(styles) ? styles : [];

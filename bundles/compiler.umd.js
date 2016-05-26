@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v2.0.0-c3fafa0
+ * @license AngularJS v2.0.0-f93512b
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -3078,7 +3078,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var CompileTemplateMetadata = (function () {
         function CompileTemplateMetadata(_a) {
             var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors;
-            this.encapsulation = isPresent(encapsulation) ? encapsulation : anmd.ViewEncapsulation.Emulated;
+            this.encapsulation = encapsulation;
             this.template = template;
             this.templateUrl = templateUrl;
             this.styles = isPresent(styles) ? styles : [];
@@ -3525,9 +3525,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         return new CompileTokenMetadata({ identifier: identifier });
     }
     var CompilerConfig = (function () {
-        function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes, interpolateRegexp) {
+        function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes, interpolateRegexp, defaultEncapsulation) {
             if (renderTypes === void 0) { renderTypes = null; }
             if (interpolateRegexp === void 0) { interpolateRegexp = null; }
+            if (defaultEncapsulation === void 0) { defaultEncapsulation = null; }
             this.genDebugInfo = genDebugInfo;
             this.logBindingUpdate = logBindingUpdate;
             this.useJit = useJit;
@@ -3539,6 +3540,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 interpolateRegexp = DEFAULT_INTERPOLATE_REGEXP;
             }
             this.interpolateRegexp = interpolateRegexp;
+            if (isBlank(defaultEncapsulation)) {
+                defaultEncapsulation = anmd.ViewEncapsulation.Emulated;
+            }
+            this.defaultEncapsulation = defaultEncapsulation;
         }
         return CompilerConfig;
     }());
@@ -11709,10 +11714,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         return XHR;
     }());
     var DirectiveNormalizer = (function () {
-        function DirectiveNormalizer(_xhr, _urlResolver, _htmlParser) {
+        function DirectiveNormalizer(_xhr, _urlResolver, _htmlParser, _config) {
             this._xhr = _xhr;
             this._urlResolver = _urlResolver;
             this._htmlParser = _htmlParser;
+            this._config = _config;
         }
         DirectiveNormalizer.prototype.normalizeDirective = function (directive) {
             if (!directive.isComponent) {
@@ -11773,6 +11779,9 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return styleWithImports.style;
             });
             var encapsulation = templateMeta.encapsulation;
+            if (isBlank(encapsulation)) {
+                encapsulation = this._config.defaultEncapsulation;
+            }
             if (encapsulation === anmd.ViewEncapsulation.Emulated && allResolvedStyles.length === 0 &&
                 allStyleAbsUrls.length === 0) {
                 encapsulation = anmd.ViewEncapsulation.None;
@@ -11796,6 +11805,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: XHR, },
         { type: UrlResolver, },
         { type: HtmlParser, },
+        { type: CompilerConfig, },
     ];
     var TemplatePreparseVisitor = (function () {
         function TemplatePreparseVisitor() {

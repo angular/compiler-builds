@@ -1,11 +1,13 @@
 import { CompileIdentifierMetadata } from './compile_metadata';
+import { ViewEncapsulation } from '@angular/core';
 export declare class CompilerConfig {
     genDebugInfo: boolean;
     logBindingUpdate: boolean;
     useJit: boolean;
     renderTypes: RenderTypes;
     interpolateRegexp: RegExp;
-    constructor(genDebugInfo: boolean, logBindingUpdate: boolean, useJit: boolean, renderTypes?: RenderTypes, interpolateRegexp?: RegExp);
+    defaultEncapsulation: ViewEncapsulation;
+    constructor(genDebugInfo: boolean, logBindingUpdate: boolean, useJit: boolean, renderTypes?: RenderTypes, interpolateRegexp?: RegExp, defaultEncapsulation?: ViewEncapsulation);
 }
 /**
  * Types used for the renderer.

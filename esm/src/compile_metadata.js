@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { reflector } from '../core_private';
 import { CHANGE_DETECTION_STRATEGY_VALUES, VIEW_ENCAPSULATION_VALUES, LIFECYCLE_HOOKS_VALUES } from '../core_private';
 import { isPresent, isBlank, isNumber, isBoolean, normalizeBool, normalizeBlank, serializeEnum, isString, RegExpWrapper, NumberWrapper, isArray } from '../src/facade/lang';
@@ -481,7 +481,7 @@ export class CompileQueryMetadata {
  */
 export class CompileTemplateMetadata {
     constructor({ encapsulation, template, templateUrl, styles, styleUrls, animations, ngContentSelectors } = {}) {
-        this.encapsulation = isPresent(encapsulation) ? encapsulation : ViewEncapsulation.Emulated;
+        this.encapsulation = encapsulation;
         this.template = template;
         this.templateUrl = templateUrl;
         this.styles = isPresent(styles) ? styles : [];

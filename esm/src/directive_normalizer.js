@@ -1,5 +1,5 @@
 import { Injectable, ViewEncapsulation } from '@angular/core';
-import { isPresent } from '../src/facade/lang';
+import { isPresent, isBlank } from '../src/facade/lang';
 import { BaseException } from '../src/facade/exceptions';
 import { PromiseWrapper } from '../src/facade/async';
 import { CompileDirectiveMetadata, CompileTemplateMetadata } from './compile_metadata';
@@ -8,12 +8,14 @@ import { UrlResolver } from './url_resolver';
 import { extractStyleUrls, isStyleUrlResolvable } from './style_url_resolver';
 import { HtmlTextAst, htmlVisitAll } from './html_ast';
 import { HtmlParser } from './html_parser';
+import { CompilerConfig } from './config';
 import { preparseElement, PreparsedElementType } from './template_preparser';
 export class DirectiveNormalizer {
-    constructor(_xhr, _urlResolver, _htmlParser) {
+    constructor(_xhr, _urlResolver, _htmlParser, _config) {
         this._xhr = _xhr;
         this._urlResolver = _urlResolver;
         this._htmlParser = _htmlParser;
+        this._config = _config;
     }
     normalizeDirective(directive) {
         if (!directive.isComponent) {
@@ -72,6 +74,9 @@ export class DirectiveNormalizer {
             return styleWithImports.style;
         });
         var encapsulation = templateMeta.encapsulation;
+        if (isBlank(encapsulation)) {
+            encapsulation = this._config.defaultEncapsulation;
+        }
         if (encapsulation === ViewEncapsulation.Emulated && allResolvedStyles.length === 0 &&
             allStyleAbsUrls.length === 0) {
             encapsulation = ViewEncapsulation.None;
@@ -94,6 +99,7 @@ DirectiveNormalizer.ctorParameters = [
     { type: XHR, },
     { type: UrlResolver, },
     { type: HtmlParser, },
+    { type: CompilerConfig, },
 ];
 class TemplatePreparseVisitor {
     constructor() {

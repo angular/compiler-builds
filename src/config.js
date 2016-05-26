@@ -2,10 +2,12 @@
 var lang_1 = require('../src/facade/lang');
 var exceptions_1 = require('../src/facade/exceptions');
 var identifiers_1 = require('./identifiers');
+var core_1 = require('@angular/core');
 var CompilerConfig = (function () {
-    function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes, interpolateRegexp) {
+    function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes, interpolateRegexp, defaultEncapsulation) {
         if (renderTypes === void 0) { renderTypes = null; }
         if (interpolateRegexp === void 0) { interpolateRegexp = null; }
+        if (defaultEncapsulation === void 0) { defaultEncapsulation = null; }
         this.genDebugInfo = genDebugInfo;
         this.logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
@@ -17,6 +19,10 @@ var CompilerConfig = (function () {
             interpolateRegexp = exports.DEFAULT_INTERPOLATE_REGEXP;
         }
         this.interpolateRegexp = interpolateRegexp;
+        if (lang_1.isBlank(defaultEncapsulation)) {
+            defaultEncapsulation = core_1.ViewEncapsulation.Emulated;
+        }
+        this.defaultEncapsulation = defaultEncapsulation;
     }
     return CompilerConfig;
 }());
