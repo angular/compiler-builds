@@ -93,6 +93,7 @@ export class TemplateParser {
         else {
             result = [];
         }
+        this._assertNoReferenceDuplicationOnTemplate(result, errors);
         if (errors.length > 0) {
             return new TemplateParseResult(result, errors);
         }
@@ -100,6 +101,21 @@ export class TemplateParser {
             this.transforms.forEach((transform) => { result = templateVisitAll(transform, result); });
         }
         return new TemplateParseResult(result, errors);
+    }
+    _assertNoReferenceDuplicationOnTemplate(result, errors) {
+        const existingReferences = [];
+        result
+            .filter(element => !!element.references)
+            .forEach(element => element.references.forEach(reference => {
+            const name = reference.name;
+            if (existingReferences.indexOf(name) < 0) {
+                existingReferences.push(name);
+            }
+            else {
+                const error = new TemplateParseError(`Reference "#${name}" is defined several times`, reference.sourceSpan, ParseErrorLevel.FATAL);
+                errors.push(error);
+            }
+        }));
     }
 }
 TemplateParser.decorators = [

@@ -104,6 +104,7 @@ var TemplateParser = (function () {
         else {
             result = [];
         }
+        this._assertNoReferenceDuplicationOnTemplate(result, errors);
         if (errors.length > 0) {
             return new TemplateParseResult(result, errors);
         }
@@ -111,6 +112,21 @@ var TemplateParser = (function () {
             this.transforms.forEach(function (transform) { result = template_ast_1.templateVisitAll(transform, result); });
         }
         return new TemplateParseResult(result, errors);
+    };
+    TemplateParser.prototype._assertNoReferenceDuplicationOnTemplate = function (result, errors) {
+        var existingReferences = [];
+        result
+            .filter(function (element) { return !!element.references; })
+            .forEach(function (element) { return element.references.forEach(function (reference) {
+            var name = reference.name;
+            if (existingReferences.indexOf(name) < 0) {
+                existingReferences.push(name);
+            }
+            else {
+                var error = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, parse_util_1.ParseErrorLevel.FATAL);
+                errors.push(error);
+            }
+        }); });
     };
     TemplateParser.decorators = [
         { type: core_1.Injectable },
