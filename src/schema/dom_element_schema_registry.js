@@ -9,6 +9,7 @@ var core_private_1 = require('../../core_private');
 var lang_1 = require('../facade/lang');
 var collection_1 = require('../facade/collection');
 var element_schema_registry_1 = require('./element_schema_registry');
+var dom_security_schema_1 = require('./dom_security_schema');
 var EVENT = 'event';
 var BOOLEAN = 'boolean';
 var NUMBER = 'number';
@@ -55,6 +56,18 @@ var OBJECT = 'object';
  * NOTE: This schema is auto extracted from `schema_extractor.ts` located in the test folder,
  *       see dom_element_schema_registry_spec.ts
  */
+// =================================================================================================
+// =================================================================================================
+// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
+// =================================================================================================
+// =================================================================================================
+//
+//                       DO NOT EDIT THIS DOM SCHEMA WITHOUT A SECURITY REVIEW!
+//
+// Newly added properties must be security reviewed and assigned an appropriate SecurityContext in
+// dom_security_schema.ts. Reach out to mprobst for details.
+//
+// =================================================================================================
 var SCHEMA = 
 /*@ts2dart_const*/ ([
     '*|%classList,className,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*copy,*cut,*paste,*search,*selectstart,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerHTML,#scrollLeft,#scrollTop',
@@ -205,58 +218,11 @@ var SCHEMA =
 ]);
 var attrToPropMap = {
     'class': 'className',
+    'formaction': 'formAction',
     'innerHtml': 'innerHTML',
     'readonly': 'readOnly',
     'tabindex': 'tabIndex'
 };
-function registerContext(map, ctx, specs) {
-    for (var _i = 0, specs_1 = specs; _i < specs_1.length; _i++) {
-        var spec = specs_1[_i];
-        map[spec] = ctx;
-    }
-}
-/** Map from tagName|propertyName SecurityContext. Properties applying to all tags use '*'. */
-var SECURITY_SCHEMA = {};
-registerContext(SECURITY_SCHEMA, core_private_1.SecurityContext.HTML, [
-    'iframe|srcdoc',
-    '*|innerHTML',
-    '*|outerHTML',
-]);
-registerContext(SECURITY_SCHEMA, core_private_1.SecurityContext.STYLE, ['*|style']);
-// NB: no SCRIPT contexts here, they are never allowed.
-registerContext(SECURITY_SCHEMA, core_private_1.SecurityContext.URL, [
-    'area|href',
-    'area|ping',
-    'audio|src',
-    'a|href',
-    'a|ping',
-    'blockquote|cite',
-    'body|background',
-    'button|formaction',
-    'del|cite',
-    'form|action',
-    'img|src',
-    'input|formaction',
-    'input|src',
-    'ins|cite',
-    'q|cite',
-    'source|src',
-    'video|poster',
-    'video|src',
-]);
-registerContext(SECURITY_SCHEMA, core_private_1.SecurityContext.RESOURCE_URL, [
-    'applet|code',
-    'applet|codebase',
-    'base|href',
-    'frame|src',
-    'head|profile',
-    'html|manifest',
-    'iframe|src',
-    'object|codebase',
-    'object|data',
-    'script|src',
-    'track|src',
-]);
 var DomElementSchemaRegistry = (function (_super) {
     __extends(DomElementSchemaRegistry, _super);
     function DomElementSchemaRegistry() {
@@ -319,10 +285,14 @@ var DomElementSchemaRegistry = (function (_super) {
      * attack vectors are assigned their appropriate context.
      */
     DomElementSchemaRegistry.prototype.securityContext = function (tagName, propName) {
-        var ctx = SECURITY_SCHEMA[tagName + '|' + propName];
+        // Make sure comparisons are case insensitive, so that case differences between attribute and
+        // property names do not have a security impact.
+        tagName = tagName.toLowerCase();
+        propName = propName.toLowerCase();
+        var ctx = dom_security_schema_1.SECURITY_SCHEMA[tagName + '|' + propName];
         if (ctx !== undefined)
             return ctx;
-        ctx = SECURITY_SCHEMA['*|' + propName];
+        ctx = dom_security_schema_1.SECURITY_SCHEMA['*|' + propName];
         return ctx !== undefined ? ctx : core_private_1.SecurityContext.NONE;
     };
     DomElementSchemaRegistry.prototype.getMappedPropName = function (propName) {
