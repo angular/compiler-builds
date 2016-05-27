@@ -6,7 +6,6 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
-var core_private_2 = require('../core_private');
 var lang_1 = require('../src/facade/lang');
 var exceptions_1 = require('../src/facade/exceptions');
 var collection_1 = require('../src/facade/collection');
@@ -621,7 +620,7 @@ var CompileTemplateMetadata = (function () {
         var animations = _arrayFromJson(data['animations'], metadataFromJson);
         return new CompileTemplateMetadata({
             encapsulation: lang_1.isPresent(data['encapsulation']) ?
-                core_private_2.VIEW_ENCAPSULATION_VALUES[data['encapsulation']] :
+                core_private_1.VIEW_ENCAPSULATION_VALUES[data['encapsulation']] :
                 data['encapsulation'],
             template: data['template'],
             templateUrl: data['templateUrl'],
@@ -736,14 +735,14 @@ var CompileDirectiveMetadata = (function () {
             exportAs: data['exportAs'],
             type: lang_1.isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
             changeDetection: lang_1.isPresent(data['changeDetection']) ?
-                core_private_2.CHANGE_DETECTION_STRATEGY_VALUES[data['changeDetection']] :
+                core_private_1.CHANGE_DETECTION_STRATEGY_VALUES[data['changeDetection']] :
                 data['changeDetection'],
             inputs: data['inputs'],
             outputs: data['outputs'],
             hostListeners: data['hostListeners'],
             hostProperties: data['hostProperties'],
             hostAttributes: data['hostAttributes'],
-            lifecycleHooks: data['lifecycleHooks'].map(function (hookValue) { return core_private_2.LIFECYCLE_HOOKS_VALUES[hookValue]; }),
+            lifecycleHooks: data['lifecycleHooks'].map(function (hookValue) { return core_private_1.LIFECYCLE_HOOKS_VALUES[hookValue]; }),
             template: lang_1.isPresent(data['template']) ? CompileTemplateMetadata.fromJson(data['template']) :
                 data['template'],
             providers: _arrayFromJson(data['providers'], metadataFromJson),

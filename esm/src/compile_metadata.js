@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy } from '@angular/core';
-import { reflector } from '../core_private';
-import { CHANGE_DETECTION_STRATEGY_VALUES, VIEW_ENCAPSULATION_VALUES, LIFECYCLE_HOOKS_VALUES } from '../core_private';
+import { CHANGE_DETECTION_STRATEGY_VALUES, VIEW_ENCAPSULATION_VALUES, LIFECYCLE_HOOKS_VALUES, reflector } from '../core_private';
 import { isPresent, isBlank, isNumber, isBoolean, normalizeBool, normalizeBlank, serializeEnum, isString, RegExpWrapper, NumberWrapper, isArray } from '../src/facade/lang';
 import { unimplemented, BaseException } from '../src/facade/exceptions';
 import { StringMapWrapper, ListWrapper } from '../src/facade/collection';

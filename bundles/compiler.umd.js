@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v2.0.0-307d105
+ * @license AngularJS v2.0.0-ec198b0
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/core'), require('rxjs/Subject'), require('rxjs/observable/PromiseObservable'), require('rxjs/operator/toPromise'), require('rxjs/Observable')) :
         typeof define === 'function' && define.amd ? define(['exports', '@angular/core', 'rxjs/Subject', 'rxjs/observable/PromiseObservable', 'rxjs/operator/toPromise', 'rxjs/Observable'], factory) :
             (factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}), global.ng.core, global.Rx, global.Rx, global.Rx.Observable.prototype, global.Rx));
-}(this, function (exports, anmd, rxjs_Subject, rxjs_observable_PromiseObservable, rxjs_operator_toPromise, rxjs_Observable) {
+}(this, function (exports, _angular_core, rxjs_Subject, rxjs_observable_PromiseObservable, rxjs_operator_toPromise, rxjs_Observable) {
     'use strict';
     var ElementSchemaRegistry = (function () {
         function ElementSchemaRegistry() {
@@ -569,55 +569,55 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         return result;
     }
-    var isDefaultChangeDetectionStrategy = anmd.__core_private__.isDefaultChangeDetectionStrategy;
-    var ChangeDetectorState = anmd.__core_private__.ChangeDetectorState;
-    var CHANGE_DETECTION_STRATEGY_VALUES = anmd.__core_private__.CHANGE_DETECTION_STRATEGY_VALUES;
-    var LifecycleHooks = anmd.__core_private__.LifecycleHooks;
-    var LIFECYCLE_HOOKS_VALUES = anmd.__core_private__.LIFECYCLE_HOOKS_VALUES;
-    var ReflectorReader = anmd.__core_private__.ReflectorReader;
-    var AppElement = anmd.__core_private__.AppElement;
-    var AppView = anmd.__core_private__.AppView;
-    var DebugAppView = anmd.__core_private__.DebugAppView;
-    var ViewType = anmd.__core_private__.ViewType;
-    var MAX_INTERPOLATION_VALUES = anmd.__core_private__.MAX_INTERPOLATION_VALUES;
-    var checkBinding = anmd.__core_private__.checkBinding;
-    var flattenNestedViewRenderNodes = anmd.__core_private__.flattenNestedViewRenderNodes;
-    var interpolate = anmd.__core_private__.interpolate;
-    var ViewUtils = anmd.__core_private__.ViewUtils;
-    var VIEW_ENCAPSULATION_VALUES = anmd.__core_private__.VIEW_ENCAPSULATION_VALUES;
-    var DebugContext = anmd.__core_private__.DebugContext;
-    var StaticNodeDebugInfo = anmd.__core_private__.StaticNodeDebugInfo;
-    var devModeEqual = anmd.__core_private__.devModeEqual;
-    var uninitialized = anmd.__core_private__.uninitialized;
-    var ValueUnwrapper = anmd.__core_private__.ValueUnwrapper;
-    var TemplateRef_ = anmd.__core_private__.TemplateRef_;
-    var SecurityContext = anmd.__core_private__.SecurityContext;
-    var createProvider = anmd.__core_private__.createProvider;
-    var isProviderLiteral = anmd.__core_private__.isProviderLiteral;
-    var EMPTY_ARRAY = anmd.__core_private__.EMPTY_ARRAY;
-    var EMPTY_MAP = anmd.__core_private__.EMPTY_MAP;
-    var pureProxy1 = anmd.__core_private__.pureProxy1;
-    var pureProxy2 = anmd.__core_private__.pureProxy2;
-    var pureProxy3 = anmd.__core_private__.pureProxy3;
-    var pureProxy4 = anmd.__core_private__.pureProxy4;
-    var pureProxy5 = anmd.__core_private__.pureProxy5;
-    var pureProxy6 = anmd.__core_private__.pureProxy6;
-    var pureProxy7 = anmd.__core_private__.pureProxy7;
-    var pureProxy8 = anmd.__core_private__.pureProxy8;
-    var pureProxy9 = anmd.__core_private__.pureProxy9;
-    var pureProxy10 = anmd.__core_private__.pureProxy10;
-    var castByValue = anmd.__core_private__.castByValue;
-    var Console = anmd.__core_private__.Console;
-    var reflector = anmd.__core_private__.reflector;
-    var NoOpAnimationPlayer_ = anmd.__core_private__.NoOpAnimationPlayer;
-    var AnimationSequencePlayer_ = anmd.__core_private__.AnimationSequencePlayer;
-    var AnimationGroupPlayer_ = anmd.__core_private__.AnimationGroupPlayer;
-    var AnimationKeyframe_ = anmd.__core_private__.AnimationKeyframe;
-    var AnimationStyleUtil = anmd.__core_private__.AnimationStyleUtil;
-    var AnimationStyles_ = anmd.__core_private__.AnimationStyles;
-    var ANY_STATE = anmd.__core_private__.ANY_STATE;
-    var EMPTY_ANIMATION_STATE = anmd.__core_private__.EMPTY_STATE;
-    var FILL_STYLE_FLAG = anmd.__core_private__.FILL_STYLE_FLAG;
+    var isDefaultChangeDetectionStrategy = _angular_core.__core_private__.isDefaultChangeDetectionStrategy;
+    var ChangeDetectorState = _angular_core.__core_private__.ChangeDetectorState;
+    var CHANGE_DETECTION_STRATEGY_VALUES = _angular_core.__core_private__.CHANGE_DETECTION_STRATEGY_VALUES;
+    var LifecycleHooks = _angular_core.__core_private__.LifecycleHooks;
+    var LIFECYCLE_HOOKS_VALUES = _angular_core.__core_private__.LIFECYCLE_HOOKS_VALUES;
+    var ReflectorReader = _angular_core.__core_private__.ReflectorReader;
+    var AppElement = _angular_core.__core_private__.AppElement;
+    var AppView = _angular_core.__core_private__.AppView;
+    var DebugAppView = _angular_core.__core_private__.DebugAppView;
+    var ViewType = _angular_core.__core_private__.ViewType;
+    var MAX_INTERPOLATION_VALUES = _angular_core.__core_private__.MAX_INTERPOLATION_VALUES;
+    var checkBinding = _angular_core.__core_private__.checkBinding;
+    var flattenNestedViewRenderNodes = _angular_core.__core_private__.flattenNestedViewRenderNodes;
+    var interpolate = _angular_core.__core_private__.interpolate;
+    var ViewUtils = _angular_core.__core_private__.ViewUtils;
+    var VIEW_ENCAPSULATION_VALUES = _angular_core.__core_private__.VIEW_ENCAPSULATION_VALUES;
+    var DebugContext = _angular_core.__core_private__.DebugContext;
+    var StaticNodeDebugInfo = _angular_core.__core_private__.StaticNodeDebugInfo;
+    var devModeEqual = _angular_core.__core_private__.devModeEqual;
+    var uninitialized = _angular_core.__core_private__.uninitialized;
+    var ValueUnwrapper = _angular_core.__core_private__.ValueUnwrapper;
+    var TemplateRef_ = _angular_core.__core_private__.TemplateRef_;
+    var SecurityContext = _angular_core.__core_private__.SecurityContext;
+    var createProvider = _angular_core.__core_private__.createProvider;
+    var isProviderLiteral = _angular_core.__core_private__.isProviderLiteral;
+    var EMPTY_ARRAY = _angular_core.__core_private__.EMPTY_ARRAY;
+    var EMPTY_MAP = _angular_core.__core_private__.EMPTY_MAP;
+    var pureProxy1 = _angular_core.__core_private__.pureProxy1;
+    var pureProxy2 = _angular_core.__core_private__.pureProxy2;
+    var pureProxy3 = _angular_core.__core_private__.pureProxy3;
+    var pureProxy4 = _angular_core.__core_private__.pureProxy4;
+    var pureProxy5 = _angular_core.__core_private__.pureProxy5;
+    var pureProxy6 = _angular_core.__core_private__.pureProxy6;
+    var pureProxy7 = _angular_core.__core_private__.pureProxy7;
+    var pureProxy8 = _angular_core.__core_private__.pureProxy8;
+    var pureProxy9 = _angular_core.__core_private__.pureProxy9;
+    var pureProxy10 = _angular_core.__core_private__.pureProxy10;
+    var castByValue = _angular_core.__core_private__.castByValue;
+    var Console = _angular_core.__core_private__.Console;
+    var reflector = _angular_core.__core_private__.reflector;
+    var NoOpAnimationPlayer_ = _angular_core.__core_private__.NoOpAnimationPlayer;
+    var AnimationSequencePlayer_ = _angular_core.__core_private__.AnimationSequencePlayer;
+    var AnimationGroupPlayer_ = _angular_core.__core_private__.AnimationGroupPlayer;
+    var AnimationKeyframe_ = _angular_core.__core_private__.AnimationKeyframe;
+    var AnimationStyleUtil = _angular_core.__core_private__.AnimationStyleUtil;
+    var AnimationStyles_ = _angular_core.__core_private__.AnimationStyles;
+    var ANY_STATE = _angular_core.__core_private__.ANY_STATE;
+    var EMPTY_ANIMATION_STATE = _angular_core.__core_private__.EMPTY_STATE;
+    var FILL_STYLE_FLAG = _angular_core.__core_private__.FILL_STYLE_FLAG;
     var Map$1 = global$1.Map;
     var Set$1 = global$1.Set;
     // Safari and Internet Explorer do not support the iterable parameter to the
@@ -1372,7 +1372,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return Lexer;
     }());
     Lexer.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     var Token = (function () {
         function Token(index, type, numValue, strValue) {
@@ -2213,7 +2213,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
      */
     var DEFAULT_PACKAGE_URL_PROVIDER = {
-        provide: anmd.PACKAGE_ROOT_URL,
+        provide: _angular_core.PACKAGE_ROOT_URL,
         useValue: "/"
     };
     var UrlResolver = (function () {
@@ -2254,10 +2254,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         return UrlResolver;
     }());
     UrlResolver.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     UrlResolver.ctorParameters = [
-        { type: undefined, decorators: [{ type: anmd.Inject, args: [anmd.PACKAGE_ROOT_URL,] },] },
+        { type: undefined, decorators: [{ type: _angular_core.Inject, args: [_angular_core.PACKAGE_ROOT_URL,] },] },
     ];
     /**
      * Extract the scheme of a URL.
@@ -3257,7 +3257,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 isHost: true
             }),
             template: new CompileTemplateMetadata({ template: template, templateUrl: '', styles: [], styleUrls: [], ngContentSelectors: [], animations: [] }),
-            changeDetection: anmd.ChangeDetectionStrategy.Default,
+            changeDetection: _angular_core.ChangeDetectionStrategy.Default,
             inputs: [],
             outputs: [],
             host: {},
@@ -3350,21 +3350,21 @@ var __extends = (this && this.__extends) || function (d, b) {
     var impDebugAppView = DebugAppView;
     var impDebugContext = DebugContext;
     var impAppElement = AppElement;
-    var impElementRef = anmd.ElementRef;
-    var impViewContainerRef = anmd.ViewContainerRef;
-    var impChangeDetectorRef = anmd.ChangeDetectorRef;
-    var impRenderComponentType = anmd.RenderComponentType;
-    var impQueryList = anmd.QueryList;
-    var impTemplateRef = anmd.TemplateRef;
+    var impElementRef = _angular_core.ElementRef;
+    var impViewContainerRef = _angular_core.ViewContainerRef;
+    var impChangeDetectorRef = _angular_core.ChangeDetectorRef;
+    var impRenderComponentType = _angular_core.RenderComponentType;
+    var impQueryList = _angular_core.QueryList;
+    var impTemplateRef = _angular_core.TemplateRef;
     var impTemplateRef_ = TemplateRef_;
     var impValueUnwrapper = ValueUnwrapper;
-    var impInjector = anmd.Injector;
-    var impViewEncapsulation = anmd.ViewEncapsulation;
+    var impInjector = _angular_core.Injector;
+    var impViewEncapsulation = _angular_core.ViewEncapsulation;
     var impViewType = ViewType;
-    var impChangeDetectionStrategy = anmd.ChangeDetectionStrategy;
+    var impChangeDetectionStrategy = _angular_core.ChangeDetectionStrategy;
     var impStaticNodeDebugInfo = StaticNodeDebugInfo;
-    var impRenderer = anmd.Renderer;
-    var impSimpleChange = anmd.SimpleChange;
+    var impRenderer = _angular_core.Renderer;
+    var impSimpleChange = _angular_core.SimpleChange;
     var impUninitialized = uninitialized;
     var impChangeDetectorState = ChangeDetectorState;
     var impFlattenNestedViewRenderNodes = flattenNestedViewRenderNodes;
@@ -3541,7 +3541,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             this.interpolateRegexp = interpolateRegexp;
             if (isBlank(defaultEncapsulation)) {
-                defaultEncapsulation = anmd.ViewEncapsulation.Emulated;
+                defaultEncapsulation = _angular_core.ViewEncapsulation.Emulated;
             }
             this.defaultEncapsulation = defaultEncapsulation;
         }
@@ -3748,7 +3748,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return Parser;
     }());
     Parser.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     Parser.ctorParameters = [
         { type: Lexer, },
@@ -5510,7 +5510,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return HtmlParser;
     }());
     HtmlParser.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     var TreeBuilder = (function () {
         function TreeBuilder(tokens) {
@@ -6289,7 +6289,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      *
      * This is currently an internal-only feature and not meant for general use.
      */
-    var TEMPLATE_TRANSFORMS = new anmd.OpaqueToken('TemplateTransforms');
+    var TEMPLATE_TRANSFORMS = new _angular_core.OpaqueToken('TemplateTransforms');
     var TemplateParseError = (function (_super) {
         __extends(TemplateParseError, _super);
         function TemplateParseError(message, span, level) {
@@ -6349,6 +6349,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return new TemplateParseResult(result, errors);
         };
+        /** @internal */
         TemplateParser.prototype._assertNoReferenceDuplicationOnTemplate = function (result, errors) {
             var existingReferences = [];
             result
@@ -6367,14 +6368,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         return TemplateParser;
     }());
     TemplateParser.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     TemplateParser.ctorParameters = [
         { type: Parser, },
         { type: ElementSchemaRegistry, },
         { type: HtmlParser, },
         { type: Console, },
-        { type: undefined, decorators: [{ type: anmd.Optional }, { type: anmd.Inject, args: [TEMPLATE_TRANSFORMS,] },] },
+        { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [TEMPLATE_TRANSFORMS,] },] },
     ];
     var TemplateParseVisitor = (function () {
         function TemplateParseVisitor(providerViewContext, directives, pipes, _exprParser, _schemaRegistry) {
@@ -7957,7 +7958,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var _COMPONENT_FACTORY_IDENTIFIER = new CompileIdentifierMetadata({
         name: 'ComponentFactory',
-        runtime: anmd.ComponentFactory,
+        runtime: _angular_core.ComponentFactory,
         moduleUrl: assetUrl('core', 'linker/component_factory')
     });
     var SourceModule = (function () {
@@ -8675,7 +8676,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._shadowCss = new ShadowCss();
         }
         StyleCompiler.prototype.compileComponent = function (comp) {
-            var shim = comp.template.encapsulation === anmd.ViewEncapsulation.Emulated;
+            var shim = comp.template.encapsulation === _angular_core.ViewEncapsulation.Emulated;
             return this._compileStyles(getStylesVarName(comp), comp.template.styles, comp.template.styleUrls, shim);
         };
         StyleCompiler.prototype.compileStylesheet = function (stylesheetUrl, cssText, isShimmed) {
@@ -8704,7 +8705,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return StyleCompiler;
     }());
     StyleCompiler.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     StyleCompiler.ctorParameters = [
         { type: UrlResolver, },
@@ -8745,9 +8746,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return ViewEncapsulationEnum;
     }());
-    ViewEncapsulationEnum.Emulated = ViewEncapsulationEnum.fromValue(anmd.ViewEncapsulation.Emulated);
-    ViewEncapsulationEnum.Native = ViewEncapsulationEnum.fromValue(anmd.ViewEncapsulation.Native);
-    ViewEncapsulationEnum.None = ViewEncapsulationEnum.fromValue(anmd.ViewEncapsulation.None);
+    ViewEncapsulationEnum.Emulated = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Emulated);
+    ViewEncapsulationEnum.Native = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Native);
+    ViewEncapsulationEnum.None = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.None);
     var ChangeDetectorStateEnum = (function () {
         function ChangeDetectorStateEnum() {
         }
@@ -8767,12 +8768,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return ChangeDetectionStrategyEnum;
     }());
-    ChangeDetectionStrategyEnum.CheckOnce = ChangeDetectionStrategyEnum.fromValue(anmd.ChangeDetectionStrategy.CheckOnce);
-    ChangeDetectionStrategyEnum.Checked = ChangeDetectionStrategyEnum.fromValue(anmd.ChangeDetectionStrategy.Checked);
-    ChangeDetectionStrategyEnum.CheckAlways = ChangeDetectionStrategyEnum.fromValue(anmd.ChangeDetectionStrategy.CheckAlways);
-    ChangeDetectionStrategyEnum.Detached = ChangeDetectionStrategyEnum.fromValue(anmd.ChangeDetectionStrategy.Detached);
-    ChangeDetectionStrategyEnum.OnPush = ChangeDetectionStrategyEnum.fromValue(anmd.ChangeDetectionStrategy.OnPush);
-    ChangeDetectionStrategyEnum.Default = ChangeDetectionStrategyEnum.fromValue(anmd.ChangeDetectionStrategy.Default);
+    ChangeDetectionStrategyEnum.CheckOnce = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.CheckOnce);
+    ChangeDetectionStrategyEnum.Checked = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Checked);
+    ChangeDetectionStrategyEnum.CheckAlways = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.CheckAlways);
+    ChangeDetectionStrategyEnum.Detached = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Detached);
+    ChangeDetectionStrategyEnum.OnPush = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.OnPush);
+    ChangeDetectionStrategyEnum.Default = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Default);
     var ViewConstructorVars = (function () {
         function ViewConstructorVars() {
         }
@@ -9390,7 +9391,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return value;
             }
             else {
-                throw new anmd.BaseException("Illegal state: Don't now how to compile value " + value);
+                throw new _angular_core.BaseException("Illegal state: Don't now how to compile value " + value);
             }
         };
         return _ValueOutputAstTransformer;
@@ -10332,6 +10333,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var keyframeExpressions = ast.keyframes.map(function (keyframeEntry) { return keyframeEntry.visit(_this, context); });
             return this._callAnimateMethod(ast, startingStylesExpr, literalArr(keyframeExpressions));
         };
+        /** @internal */
         _AnimationBuilder.prototype._visitEndStateAnimation = function (ast, context) {
             var _this = this;
             var startingStylesExpr = ast.startingStyles.visit(this, context);
@@ -10343,6 +10345,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             ]);
             return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
         };
+        /** @internal */
         _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr) {
             return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
                 _ANIMATION_FACTORY_ELEMENT_VAR,
@@ -10591,7 +10594,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             else {
                 return isPresent(parent.component) &&
-                    parent.component.template.encapsulation !== anmd.ViewEncapsulation.Native ?
+                    parent.component.template.encapsulation !== _angular_core.ViewEncapsulation.Native ?
                     NULL_EXPR :
                     parent.renderNode;
             }
@@ -10967,11 +10970,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         var mode;
         if (view.viewType === ViewType.COMPONENT) {
             mode = isDefaultChangeDetectionStrategy(view.component.changeDetection) ?
-                anmd.ChangeDetectionStrategy.CheckAlways :
-                anmd.ChangeDetectionStrategy.CheckOnce;
+                _angular_core.ChangeDetectionStrategy.CheckAlways :
+                _angular_core.ChangeDetectionStrategy.CheckOnce;
         }
         else {
-            mode = anmd.ChangeDetectionStrategy.CheckAlways;
+            mode = _angular_core.ChangeDetectionStrategy.CheckAlways;
         }
         return mode;
     }
@@ -11297,7 +11300,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     var animationName = boundProp.name;
                     var animation = view.componentView.animations.get(animationName);
                     if (!isPresent(animation)) {
-                        throw new anmd.BaseException("Internal Error: couldn't find an animation entry for " + boundProp.name);
+                        throw new _angular_core.BaseException("Internal Error: couldn't find an animation entry for " + boundProp.name);
                     }
                     // it's important to normalize the void value as `void` explicitly
                     // so that the styles data can be obtained from the stringmap
@@ -11697,7 +11700,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return ViewCompiler;
     }());
     ViewCompiler.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     ViewCompiler.ctorParameters = [
         { type: CompilerConfig, },
@@ -11782,9 +11785,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (isBlank(encapsulation)) {
                 encapsulation = this._config.defaultEncapsulation;
             }
-            if (encapsulation === anmd.ViewEncapsulation.Emulated && allResolvedStyles.length === 0 &&
+            if (encapsulation === _angular_core.ViewEncapsulation.Emulated && allResolvedStyles.length === 0 &&
                 allStyleAbsUrls.length === 0) {
-                encapsulation = anmd.ViewEncapsulation.None;
+                encapsulation = _angular_core.ViewEncapsulation.None;
             }
             return new CompileTemplateMetadata({
                 encapsulation: encapsulation,
@@ -11799,7 +11802,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return DirectiveNormalizer;
     }());
     DirectiveNormalizer.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     DirectiveNormalizer.ctorParameters = [
         { type: XHR, },
@@ -11856,7 +11859,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return TemplatePreparseVisitor;
     }());
     function _isDirectiveMetadata(type) {
-        return type instanceof anmd.DirectiveMetadata;
+        return type instanceof _angular_core.DirectiveMetadata;
     }
     var DirectiveResolver = (function () {
         function DirectiveResolver(_reflector) {
@@ -11871,7 +11874,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Return {@link DirectiveMetadata} for a given `Type`.
          */
         DirectiveResolver.prototype.resolve = function (type) {
-            var typeMetadata = this._reflector.annotations(anmd.resolveForwardRef(type));
+            var typeMetadata = this._reflector.annotations(_angular_core.resolveForwardRef(type));
             if (isPresent(typeMetadata)) {
                 var metadata = typeMetadata.find(_isDirectiveMetadata);
                 if (isPresent(metadata)) {
@@ -11888,7 +11891,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var queries = {};
             StringMapWrapper.forEach(propertyMetadata, function (metadata, propName) {
                 metadata.forEach(function (a) {
-                    if (a instanceof anmd.InputMetadata) {
+                    if (a instanceof _angular_core.InputMetadata) {
                         if (isPresent(a.bindingPropertyName)) {
                             inputs.push(propName + ": " + a.bindingPropertyName);
                         }
@@ -11896,7 +11899,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             inputs.push(propName);
                         }
                     }
-                    if (a instanceof anmd.OutputMetadata) {
+                    if (a instanceof _angular_core.OutputMetadata) {
                         if (isPresent(a.bindingPropertyName)) {
                             outputs.push(propName + ": " + a.bindingPropertyName);
                         }
@@ -11904,7 +11907,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             outputs.push(propName);
                         }
                     }
-                    if (a instanceof anmd.HostBindingMetadata) {
+                    if (a instanceof _angular_core.HostBindingMetadata) {
                         if (isPresent(a.hostPropertyName)) {
                             host[("[" + a.hostPropertyName + "]")] = propName;
                         }
@@ -11912,20 +11915,20 @@ var __extends = (this && this.__extends) || function (d, b) {
                             host[("[" + propName + "]")] = propName;
                         }
                     }
-                    if (a instanceof anmd.HostListenerMetadata) {
+                    if (a instanceof _angular_core.HostListenerMetadata) {
                         var args = isPresent(a.args) ? a.args.join(', ') : '';
                         host[("(" + a.eventName + ")")] = propName + "(" + args + ")";
                     }
-                    if (a instanceof anmd.ContentChildrenMetadata) {
+                    if (a instanceof _angular_core.ContentChildrenMetadata) {
                         queries[propName] = a;
                     }
-                    if (a instanceof anmd.ViewChildrenMetadata) {
+                    if (a instanceof _angular_core.ViewChildrenMetadata) {
                         queries[propName] = a;
                     }
-                    if (a instanceof anmd.ContentChildMetadata) {
+                    if (a instanceof _angular_core.ContentChildMetadata) {
                         queries[propName] = a;
                     }
-                    if (a instanceof anmd.ViewChildMetadata) {
+                    if (a instanceof _angular_core.ViewChildMetadata) {
                         queries[propName] = a;
                     }
                 });
@@ -11948,8 +11951,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             var mergedHost = isPresent(dm.host) ? StringMapWrapper.merge(dm.host, host) : host;
             var mergedQueries = isPresent(dm.queries) ? StringMapWrapper.merge(dm.queries, queries) : queries;
-            if (dm instanceof anmd.ComponentMetadata) {
-                return new anmd.ComponentMetadata({
+            if (dm instanceof _angular_core.ComponentMetadata) {
+                return new _angular_core.ComponentMetadata({
                     selector: dm.selector,
                     inputs: mergedInputs,
                     outputs: mergedOutputs,
@@ -11963,7 +11966,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 });
             }
             else {
-                return new anmd.DirectiveMetadata({
+                return new _angular_core.DirectiveMetadata({
                     selector: dm.selector,
                     inputs: mergedInputs,
                     outputs: mergedOutputs,
@@ -11977,14 +11980,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         return DirectiveResolver;
     }());
     DirectiveResolver.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     DirectiveResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
     var CODEGEN_DIRECTIVE_RESOLVER = new DirectiveResolver(reflector);
     function _isPipeMetadata(type) {
-        return type instanceof anmd.PipeMetadata;
+        return type instanceof _angular_core.PipeMetadata;
     }
     var PipeResolver = (function () {
         function PipeResolver(_reflector) {
@@ -11999,7 +12002,7 @@ var __extends = (this && this.__extends) || function (d, b) {
          * Return {@link PipeMetadata} for a given `Type`.
          */
         PipeResolver.prototype.resolve = function (type) {
-            var metas = this._reflector.annotations(anmd.resolveForwardRef(type));
+            var metas = this._reflector.annotations(_angular_core.resolveForwardRef(type));
             if (isPresent(metas)) {
                 var annotation = metas.find(_isPipeMetadata);
                 if (isPresent(annotation)) {
@@ -12011,7 +12014,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return PipeResolver;
     }());
     PipeResolver.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     PipeResolver.ctorParameters = [
         { type: ReflectorReader, },
@@ -12041,10 +12044,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             var compMeta;
             var viewMeta;
             this._reflector.annotations(component).forEach(function (m) {
-                if (m instanceof anmd.ViewMetadata) {
+                if (m instanceof _angular_core.ViewMetadata) {
                     viewMeta = m;
                 }
-                if (m instanceof anmd.ComponentMetadata) {
+                if (m instanceof _angular_core.ComponentMetadata) {
                     compMeta = m;
                 }
             });
@@ -12077,7 +12080,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     return viewMeta;
                 }
                 else {
-                    return new anmd.ViewMetadata({
+                    return new _angular_core.ViewMetadata({
                         templateUrl: compMeta.templateUrl,
                         template: compMeta.template,
                         directives: compMeta.directives,
@@ -12106,20 +12109,20 @@ var __extends = (this && this.__extends) || function (d, b) {
         return ViewResolver;
     }());
     ViewResolver.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     ViewResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
     var LIFECYCLE_INTERFACES = MapWrapper.createFromPairs([
-        [LifecycleHooks.OnInit, anmd.OnInit],
-        [LifecycleHooks.OnDestroy, anmd.OnDestroy],
-        [LifecycleHooks.DoCheck, anmd.DoCheck],
-        [LifecycleHooks.OnChanges, anmd.OnChanges],
-        [LifecycleHooks.AfterContentInit, anmd.AfterContentInit],
-        [LifecycleHooks.AfterContentChecked, anmd.AfterContentChecked],
-        [LifecycleHooks.AfterViewInit, anmd.AfterViewInit],
-        [LifecycleHooks.AfterViewChecked, anmd.AfterViewChecked],
+        [LifecycleHooks.OnInit, _angular_core.OnInit],
+        [LifecycleHooks.OnDestroy, _angular_core.OnDestroy],
+        [LifecycleHooks.DoCheck, _angular_core.DoCheck],
+        [LifecycleHooks.OnChanges, _angular_core.OnChanges],
+        [LifecycleHooks.AfterContentInit, _angular_core.AfterContentInit],
+        [LifecycleHooks.AfterContentChecked, _angular_core.AfterContentChecked],
+        [LifecycleHooks.AfterViewInit, _angular_core.AfterViewInit],
+        [LifecycleHooks.AfterViewChecked, _angular_core.AfterViewChecked],
     ]);
     var LIFECYCLE_PROPS = MapWrapper.createFromPairs([
         [LifecycleHooks.OnInit, 'ngOnInit'],
@@ -12186,11 +12189,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             return new CompileAnimationEntryMetadata(entry.name, defs);
         };
         CompileMetadataResolver.prototype.getAnimationStateMetadata = function (value) {
-            if (value instanceof anmd.AnimationStateDeclarationMetadata) {
+            if (value instanceof _angular_core.AnimationStateDeclarationMetadata) {
                 var styles = this.getAnimationStyleMetadata(value.styles);
                 return new CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
             }
-            else if (value instanceof anmd.AnimationStateTransitionMetadata) {
+            else if (value instanceof _angular_core.AnimationStateTransitionMetadata) {
                 return new CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.animation));
             }
             return null;
@@ -12200,19 +12203,19 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileMetadataResolver.prototype.getAnimationMetadata = function (value) {
             var _this = this;
-            if (value instanceof anmd.AnimationStyleMetadata) {
+            if (value instanceof _angular_core.AnimationStyleMetadata) {
                 return this.getAnimationStyleMetadata(value);
             }
-            else if (value instanceof anmd.AnimationKeyframesSequenceMetadata) {
+            else if (value instanceof _angular_core.AnimationKeyframesSequenceMetadata) {
                 return new CompileAnimationKeyframesSequenceMetadata(value.steps.map(function (entry) { return _this.getAnimationStyleMetadata(entry); }));
             }
-            else if (value instanceof anmd.AnimationAnimateMetadata) {
+            else if (value instanceof _angular_core.AnimationAnimateMetadata) {
                 var animateData = this.getAnimationMetadata(value.styles);
                 return new CompileAnimationAnimateMetadata(value.timings, animateData);
             }
-            else if (value instanceof anmd.AnimationWithStepsMetadata) {
+            else if (value instanceof _angular_core.AnimationWithStepsMetadata) {
                 var steps = value.steps.map(function (step) { return _this.getAnimationMetadata(step); });
-                if (value instanceof anmd.AnimationGroupMetadata) {
+                if (value instanceof _angular_core.AnimationGroupMetadata) {
                     return new CompileAnimationGroupMetadata(steps);
                 }
                 else {
@@ -12230,7 +12233,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var changeDetectionStrategy = null;
                 var viewProviders = [];
                 var moduleUrl = staticTypeModuleUrl(directiveType);
-                if (dirMeta instanceof anmd.ComponentMetadata) {
+                if (dirMeta instanceof _angular_core.ComponentMetadata) {
                     assertArrayOfStrings('styles', dirMeta.styles);
                     var cmpMeta = dirMeta;
                     var viewMeta = this._viewResolver.resolve(directiveType);
@@ -12370,23 +12373,23 @@ var __extends = (this && this.__extends) || function (d, b) {
                 if (isArray(param)) {
                     param
                         .forEach(function (paramEntry) {
-                        if (paramEntry instanceof anmd.HostMetadata) {
+                        if (paramEntry instanceof _angular_core.HostMetadata) {
                             isHost = true;
                         }
-                        else if (paramEntry instanceof anmd.SelfMetadata) {
+                        else if (paramEntry instanceof _angular_core.SelfMetadata) {
                             isSelf = true;
                         }
-                        else if (paramEntry instanceof anmd.SkipSelfMetadata) {
+                        else if (paramEntry instanceof _angular_core.SkipSelfMetadata) {
                             isSkipSelf = true;
                         }
-                        else if (paramEntry instanceof anmd.OptionalMetadata) {
+                        else if (paramEntry instanceof _angular_core.OptionalMetadata) {
                             isOptional = true;
                         }
-                        else if (paramEntry instanceof anmd.AttributeMetadata) {
+                        else if (paramEntry instanceof _angular_core.AttributeMetadata) {
                             isAttribute = true;
                             token = paramEntry.attributeName;
                         }
-                        else if (paramEntry instanceof anmd.QueryMetadata) {
+                        else if (paramEntry instanceof _angular_core.QueryMetadata) {
                             if (paramEntry.isViewQuery) {
                                 viewQuery = paramEntry;
                             }
@@ -12394,7 +12397,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                                 query = paramEntry;
                             }
                         }
-                        else if (paramEntry instanceof anmd.InjectMetadata) {
+                        else if (paramEntry instanceof _angular_core.InjectMetadata) {
                             token = paramEntry.token;
                         }
                         else if (isValidType(paramEntry) && isBlank(token)) {
@@ -12421,7 +12424,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
         };
         CompileMetadataResolver.prototype.getTokenMetadata = function (token) {
-            token = anmd.resolveForwardRef(token);
+            token = _angular_core.resolveForwardRef(token);
             var compileToken;
             if (isString(token)) {
                 compileToken = new CompileTokenMetadata({ value: token });
@@ -12440,11 +12443,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype.getProvidersMetadata = function (providers) {
             var _this = this;
             return providers.map(function (provider) {
-                provider = anmd.resolveForwardRef(provider);
+                provider = _angular_core.resolveForwardRef(provider);
                 if (isArray(provider)) {
                     return _this.getProvidersMetadata(provider);
                 }
-                else if (provider instanceof anmd.Provider) {
+                else if (provider instanceof _angular_core.Provider) {
                     return _this.getProviderMetadata(provider);
                 }
                 else if (isProviderLiteral(provider)) {
@@ -12508,14 +12511,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         return CompileMetadataResolver;
     }());
     CompileMetadataResolver.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     CompileMetadataResolver.ctorParameters = [
         { type: DirectiveResolver, },
         { type: PipeResolver, },
         { type: ViewResolver, },
-        { type: undefined, decorators: [{ type: anmd.Optional }, { type: anmd.Inject, args: [anmd.PLATFORM_DIRECTIVES,] },] },
-        { type: undefined, decorators: [{ type: anmd.Optional }, { type: anmd.Inject, args: [anmd.PLATFORM_PIPES,] },] },
+        { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [_angular_core.PLATFORM_DIRECTIVES,] },] },
+        { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [_angular_core.PLATFORM_PIPES,] },] },
         { type: ReflectorReader, },
     ];
     function flattenDirectives(view, platformDirectives) {
@@ -12540,7 +12543,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function flattenArray(tree, out) {
         for (var i = 0; i < tree.length; i++) {
-            var item = anmd.resolveForwardRef(tree[i]);
+            var item = _angular_core.resolveForwardRef(tree[i]);
             if (isArray(item)) {
                 flattenArray(item, out);
             }
@@ -14346,7 +14349,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this._loadAndCompileComponent(hostCacheKey, hostMeta, [compMeta], [], []);
             }
             return this._compiledTemplateDone.get(hostCacheKey)
-                .then(function (compiledTemplate) { return new anmd.ComponentFactory(compMeta.selector, compiledTemplate.viewFactory, componentType); });
+                .then(function (compiledTemplate) { return new _angular_core.ComponentFactory(compMeta.selector, compiledTemplate.viewFactory, componentType); });
         };
         RuntimeCompiler.prototype.clearCache = function () {
             this._styleCache.clear();
@@ -14446,7 +14449,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return RuntimeCompiler;
     }());
     RuntimeCompiler.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     RuntimeCompiler.ctorParameters = [
         { type: CompileMetadataResolver, },
@@ -14793,7 +14796,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return DomElementSchemaRegistry;
     }(ElementSchemaRegistry));
     DomElementSchemaRegistry.decorators = [
-        { type: anmd.Injectable },
+        { type: _angular_core.Injectable },
     ];
     DomElementSchemaRegistry.ctorParameters = [];
     function _createCompilerConfig() {
@@ -14816,7 +14819,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         StyleCompiler,
         ViewCompiler,
         RuntimeCompiler,
-        /*@ts2dart_Provider*/ { provide: anmd.ComponentResolver, useExisting: RuntimeCompiler },
+        /*@ts2dart_Provider*/ { provide: _angular_core.ComponentResolver, useExisting: RuntimeCompiler },
         DomElementSchemaRegistry,
         /*@ts2dart_Provider*/ { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
         UrlResolver,

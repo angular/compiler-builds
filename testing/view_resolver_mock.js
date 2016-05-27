@@ -8,7 +8,6 @@ var core_1 = require('@angular/core');
 var index_1 = require('../index');
 var collection_1 = require('../src/facade/collection');
 var lang_1 = require('../src/facade/lang');
-var core_2 = require('@angular/core');
 var MockViewResolver = (function (_super) {
     __extends(MockViewResolver, _super);
     function MockViewResolver() {
@@ -135,7 +134,7 @@ function flattenArray(tree, out) {
     if (!lang_1.isPresent(tree))
         return;
     for (var i = 0; i < tree.length; i++) {
-        var item = core_2.resolveForwardRef(tree[i]);
+        var item = core_1.resolveForwardRef(tree[i]);
         if (lang_1.isArray(item)) {
             flattenArray(item, out);
         }

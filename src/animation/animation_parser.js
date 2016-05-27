@@ -8,7 +8,6 @@ var collection_1 = require('../facade/collection');
 var math_1 = require('../facade/math');
 var core_private_1 = require('../../core_private');
 var lang_1 = require('../facade/lang');
-var core_private_2 = require('../../core_private');
 var compile_metadata_1 = require('../compile_metadata');
 var animation_ast_1 = require('./animation_ast');
 var styles_collection_1 = require('./styles_collection');
@@ -292,7 +291,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
         var styles = entry[1];
         collection_1.StringMapWrapper.forEach(styles, function (value, prop) {
             if (!lang_1.isPresent(firstKeyframeStyles[prop])) {
-                firstKeyframeStyles[prop] = core_private_2.FILL_STYLE_FLAG;
+                firstKeyframeStyles[prop] = core_private_1.FILL_STYLE_FLAG;
             }
         });
     }
@@ -464,7 +463,7 @@ function _createStartKeyframeFromEndKeyframe(endKeyframe, startTime, duration, c
                 // this is a flag that the runtime code uses to pass
                 // in a value either from the state declaration styles
                 // or using the AUTO_STYLE value (e.g. getComputedStyle)
-                value = core_private_2.FILL_STYLE_FLAG;
+                value = core_private_1.FILL_STYLE_FLAG;
             }
             if (lang_1.isPresent(nextEntry) && !nextEntry.matches(endTime, val)) {
                 errors.push(new AnimationParseError("The animated CSS property \"" + prop + "\" unexpectedly changes between steps \"" + resultEntry.time + "ms\" and \"" + endTime + "ms\" at \"" + nextEntry.time + "ms\""));

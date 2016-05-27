@@ -31,7 +31,6 @@ export declare class TemplateParser {
     constructor(_exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
     parse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[], templateUrl: string): TemplateAst[];
     tryParse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[], templateUrl: string): TemplateParseResult;
-    _assertNoReferenceDuplicationOnTemplate(result: any[], errors: TemplateParseError[]): void;
 }
 export declare function splitClasses(classAttrValue: string): string[];
 export declare class PipeCollector extends RecursiveAstVisitor {

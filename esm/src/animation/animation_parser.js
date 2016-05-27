@@ -1,8 +1,7 @@
 import { ListWrapper, StringMapWrapper } from '../facade/collection';
 import { Math } from '../facade/math';
-import { ANY_STATE } from '../../core_private';
+import { ANY_STATE, FILL_STYLE_FLAG } from '../../core_private';
 import { RegExpWrapper, isArray, isPresent, isBlank, isString, isStringMap, NumberWrapper } from '../facade/lang';
-import { FILL_STYLE_FLAG } from '../../core_private';
 import { CompileAnimationStateDeclarationMetadata, CompileAnimationWithStepsMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationGroupMetadata, CompileAnimationSequenceMetadata, CompileAnimationKeyframesSequenceMetadata } from '../compile_metadata';
 import { AnimationEntryAst, AnimationStateTransitionAst, AnimationStateDeclarationAst, AnimationKeyframeAst, AnimationStylesAst, AnimationWithStepsAst, AnimationSequenceAst, AnimationGroupAst, AnimationStepAst, AnimationStateTransitionExpression } from './animation_ast';
 import { StylesCollection } from './styles_collection';

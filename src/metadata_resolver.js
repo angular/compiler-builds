@@ -10,7 +10,6 @@ var lang_1 = require('../src/facade/lang');
 var collection_1 = require('../src/facade/collection');
 var exceptions_1 = require('../src/facade/exceptions');
 var cpl = require('./compile_metadata');
-var anmd = require('@angular/core');
 var directive_resolver_1 = require('./directive_resolver');
 var pipe_resolver_1 = require('./pipe_resolver');
 var view_resolver_1 = require('./view_resolver');
@@ -56,11 +55,11 @@ var CompileMetadataResolver = (function () {
         return new cpl.CompileAnimationEntryMetadata(entry.name, defs);
     };
     CompileMetadataResolver.prototype.getAnimationStateMetadata = function (value) {
-        if (value instanceof anmd.AnimationStateDeclarationMetadata) {
+        if (value instanceof core_1.AnimationStateDeclarationMetadata) {
             var styles = this.getAnimationStyleMetadata(value.styles);
             return new cpl.CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
         }
-        else if (value instanceof anmd.AnimationStateTransitionMetadata) {
+        else if (value instanceof core_1.AnimationStateTransitionMetadata) {
             return new cpl.CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.animation));
         }
         return null;
@@ -70,19 +69,19 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype.getAnimationMetadata = function (value) {
         var _this = this;
-        if (value instanceof anmd.AnimationStyleMetadata) {
+        if (value instanceof core_1.AnimationStyleMetadata) {
             return this.getAnimationStyleMetadata(value);
         }
-        else if (value instanceof anmd.AnimationKeyframesSequenceMetadata) {
+        else if (value instanceof core_1.AnimationKeyframesSequenceMetadata) {
             return new cpl.CompileAnimationKeyframesSequenceMetadata(value.steps.map(function (entry) { return _this.getAnimationStyleMetadata(entry); }));
         }
-        else if (value instanceof anmd.AnimationAnimateMetadata) {
+        else if (value instanceof core_1.AnimationAnimateMetadata) {
             var animateData = this.getAnimationMetadata(value.styles);
             return new cpl.CompileAnimationAnimateMetadata(value.timings, animateData);
         }
-        else if (value instanceof anmd.AnimationWithStepsMetadata) {
+        else if (value instanceof core_1.AnimationWithStepsMetadata) {
             var steps = value.steps.map(function (step) { return _this.getAnimationMetadata(step); });
-            if (value instanceof anmd.AnimationGroupMetadata) {
+            if (value instanceof core_1.AnimationGroupMetadata) {
                 return new cpl.CompileAnimationGroupMetadata(steps);
             }
             else {

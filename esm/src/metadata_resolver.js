@@ -1,10 +1,9 @@
-import { AttributeMetadata, OptionalMetadata, ComponentMetadata, SelfMetadata, HostMetadata, SkipSelfMetadata, Provider, PLATFORM_DIRECTIVES, PLATFORM_PIPES, Injectable, Inject, Optional, QueryMetadata, resolveForwardRef, InjectMetadata } from '@angular/core';
+import { AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationKeyframesSequenceMetadata, AnimationAnimateMetadata, AnimationWithStepsMetadata, AnimationGroupMetadata, AttributeMetadata, OptionalMetadata, ComponentMetadata, SelfMetadata, HostMetadata, SkipSelfMetadata, Provider, PLATFORM_DIRECTIVES, PLATFORM_PIPES, Injectable, Inject, Optional, QueryMetadata, resolveForwardRef, InjectMetadata } from '@angular/core';
 import { LIFECYCLE_HOOKS_VALUES, ReflectorReader, reflector } from '../core_private';
 import { Type, isBlank, isPresent, isArray, stringify, isString, isStringMap } from '../src/facade/lang';
 import { StringMapWrapper } from '../src/facade/collection';
 import { BaseException } from '../src/facade/exceptions';
 import * as cpl from './compile_metadata';
-import * as anmd from '@angular/core';
 import { DirectiveResolver } from './directive_resolver';
 import { PipeResolver } from './pipe_resolver';
 import { ViewResolver } from './view_resolver';
@@ -49,11 +48,11 @@ export class CompileMetadataResolver {
         return new cpl.CompileAnimationEntryMetadata(entry.name, defs);
     }
     getAnimationStateMetadata(value) {
-        if (value instanceof anmd.AnimationStateDeclarationMetadata) {
+        if (value instanceof AnimationStateDeclarationMetadata) {
             var styles = this.getAnimationStyleMetadata(value.styles);
             return new cpl.CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
         }
-        else if (value instanceof anmd.AnimationStateTransitionMetadata) {
+        else if (value instanceof AnimationStateTransitionMetadata) {
             return new cpl.CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.animation));
         }
         return null;
@@ -62,19 +61,19 @@ export class CompileMetadataResolver {
         return new cpl.CompileAnimationStyleMetadata(value.offset, value.styles);
     }
     getAnimationMetadata(value) {
-        if (value instanceof anmd.AnimationStyleMetadata) {
+        if (value instanceof AnimationStyleMetadata) {
             return this.getAnimationStyleMetadata(value);
         }
-        else if (value instanceof anmd.AnimationKeyframesSequenceMetadata) {
+        else if (value instanceof AnimationKeyframesSequenceMetadata) {
             return new cpl.CompileAnimationKeyframesSequenceMetadata(value.steps.map(entry => this.getAnimationStyleMetadata(entry)));
         }
-        else if (value instanceof anmd.AnimationAnimateMetadata) {
+        else if (value instanceof AnimationAnimateMetadata) {
             let animateData = this.getAnimationMetadata(value.styles);
             return new cpl.CompileAnimationAnimateMetadata(value.timings, animateData);
         }
-        else if (value instanceof anmd.AnimationWithStepsMetadata) {
+        else if (value instanceof AnimationWithStepsMetadata) {
             var steps = value.steps.map(step => this.getAnimationMetadata(step));
-            if (value instanceof anmd.AnimationGroupMetadata) {
+            if (value instanceof AnimationGroupMetadata) {
                 return new cpl.CompileAnimationGroupMetadata(steps);
             }
             else {

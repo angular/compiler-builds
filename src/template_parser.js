@@ -113,6 +113,7 @@ var TemplateParser = (function () {
         }
         return new TemplateParseResult(result, errors);
     };
+    /** @internal */
     TemplateParser.prototype._assertNoReferenceDuplicationOnTemplate = function (result, errors) {
         var existingReferences = [];
         result

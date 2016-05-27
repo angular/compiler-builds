@@ -83,6 +83,7 @@ class _AnimationBuilder {
         var keyframeExpressions = ast.keyframes.map(keyframeEntry => keyframeEntry.visit(this, context));
         return this._callAnimateMethod(ast, startingStylesExpr, o.literalArr(keyframeExpressions));
     }
+    /** @internal */
     _visitEndStateAnimation(ast, context) {
         var startingStylesExpr = ast.startingStyles.visit(this, context);
         var keyframeExpressions = ast.keyframes.map(keyframe => keyframe.visit(this, context));
@@ -93,6 +94,7 @@ class _AnimationBuilder {
         ]);
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
     }
+    /** @internal */
     _callAnimateMethod(ast, startingStylesExpr, keyframesExpr) {
         return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
             _ANIMATION_FACTORY_ELEMENT_VAR,

@@ -102,6 +102,7 @@ export class TemplateParser {
         }
         return new TemplateParseResult(result, errors);
     }
+    /** @internal */
     _assertNoReferenceDuplicationOnTemplate(result, errors) {
         const existingReferences = [];
         result

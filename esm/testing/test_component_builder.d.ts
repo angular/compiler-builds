@@ -1,4 +1,4 @@
-import { OpaqueToken, ComponentRef, ComponentFactory, Injector, ViewMetadata, ElementRef, ChangeDetectorRef, NgZone, DebugElement } from '@angular/core';
+import { AnimationEntryMetadata, OpaqueToken, ComponentRef, ComponentFactory, Injector, ViewMetadata, ElementRef, ChangeDetectorRef, NgZone, DebugElement } from '@angular/core';
 import { Type } from '../src/facade/lang';
 /**
  * An abstract class for inserting the root test component element in a platform independent way.
@@ -6,7 +6,6 @@ import { Type } from '../src/facade/lang';
 export declare class TestComponentRenderer {
     insertRootElement(rootElementId: string): void;
 }
-import { AnimationEntryMetadata } from '@angular/core';
 export declare var ComponentFixtureAutoDetect: OpaqueToken;
 export declare var ComponentFixtureNoNgZone: OpaqueToken;
 /**

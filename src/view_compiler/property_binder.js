@@ -1,6 +1,5 @@
 "use strict";
 var core_private_1 = require('../../core_private');
-var core_private_2 = require('../../core_private');
 var lang_1 = require('../../src/facade/lang');
 var o = require('../output/output_ast');
 var identifiers_1 = require('../identifiers');
@@ -101,7 +100,7 @@ function bindAndWriteToRenderer(boundProps, context, compileElement) {
                 }
                 // it's important to normalize the void value as `void` explicitly
                 // so that the styles data can be obtained from the stringmap
-                var emptyStateValue = o.literal(core_private_2.EMPTY_STATE);
+                var emptyStateValue = o.literal(core_private_1.EMPTY_STATE);
                 // void => ...
                 var oldRenderVar = o.variable('oldRenderVar');
                 updateStmts.push(oldRenderVar.set(oldRenderValue).toDeclStmt());
@@ -174,9 +173,9 @@ function bindDirectiveInputs(directiveAst, directiveInstance, compileElement) {
     var detectChangesInInputsMethod = view.detectChangesInInputsMethod;
     detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
     var lifecycleHooks = directiveAst.directive.lifecycleHooks;
-    var calcChangesMap = lifecycleHooks.indexOf(core_private_2.LifecycleHooks.OnChanges) !== -1;
+    var calcChangesMap = lifecycleHooks.indexOf(core_private_1.LifecycleHooks.OnChanges) !== -1;
     var isOnPushComp = directiveAst.directive.isComponent &&
-        !core_private_2.isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
+        !core_private_1.isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
     if (calcChangesMap) {
         detectChangesInInputsMethod.addStmt(constants_1.DetectChangesVars.changes.set(o.NULL_EXPR).toStmt());
     }
