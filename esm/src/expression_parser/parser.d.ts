@@ -1,6 +1,5 @@
 import { Lexer, Token } from './lexer';
 import { AST, BindingPipe, LiteralMap, TemplateBinding, ASTWithSource } from './ast';
-import { CompilerConfig } from '../config';
 export declare class SplitInterpolation {
     strings: string[];
     expressions: string[];
@@ -13,11 +12,7 @@ export declare class TemplateBindingParseResult {
 }
 export declare class Parser {
     /** @internal */ _lexer: Lexer;
-    /** @internal */
-    _config: CompilerConfig;
-    constructor(/** @internal */ _lexer: Lexer, 
-        /** @internal */
-        _config: CompilerConfig);
+    constructor(/** @internal */ _lexer: Lexer);
     parseAction(input: string, location: any): ASTWithSource;
     parseBinding(input: string, location: any): ASTWithSource;
     parseSimpleBinding(input: string, location: string): ASTWithSource;

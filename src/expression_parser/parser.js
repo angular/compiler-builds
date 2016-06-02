@@ -10,8 +10,9 @@ var exceptions_1 = require('../../src/facade/exceptions');
 var collection_1 = require('../../src/facade/collection');
 var lexer_1 = require('./lexer');
 var ast_1 = require('./ast');
-var config_1 = require('../config');
 var _implicitReceiver = new ast_1.ImplicitReceiver();
+// TODO(tbosch): Cannot make this const/final right now because of the transpiler...
+var INTERPOLATION_REGEXP = /\{\{([\s\S]*?)\}\}/g;
 var ParseException = (function (_super) {
     __extends(ParseException, _super);
     function ParseException(message, input, errLocation, ctxLocation) {
@@ -36,11 +37,8 @@ var TemplateBindingParseResult = (function () {
 }());
 exports.TemplateBindingParseResult = TemplateBindingParseResult;
 var Parser = (function () {
-    function Parser(/** @internal */ _lexer, 
-        /** @internal */
-        _config) {
+    function Parser(/** @internal */ _lexer) {
         this._lexer = _lexer;
-        this._config = _config;
     }
     Parser.prototype.parseAction = function (input, location) {
         this._checkNoInterpolation(input, location);
@@ -99,7 +97,7 @@ var Parser = (function () {
         return new ast_1.ASTWithSource(new ast_1.Interpolation(split.strings, expressions), input, location);
     };
     Parser.prototype.splitInterpolation = function (input, location) {
-        var parts = lang_1.StringWrapper.split(input, this._config.interpolateRegexp);
+        var parts = lang_1.StringWrapper.split(input, INTERPOLATION_REGEXP);
         if (parts.length <= 1) {
             return null;
         }
@@ -144,7 +142,7 @@ var Parser = (function () {
         return null;
     };
     Parser.prototype._checkNoInterpolation = function (input, location) {
-        var parts = lang_1.StringWrapper.split(input, this._config.interpolateRegexp);
+        var parts = lang_1.StringWrapper.split(input, INTERPOLATION_REGEXP);
         if (parts.length > 1) {
             throw new ParseException('Got interpolation ({{}}) where expression was expected', input, "at column " + this._findInterpolationErrorColumn(parts, 1) + " in", location);
         }
@@ -161,7 +159,6 @@ var Parser = (function () {
     ];
     Parser.ctorParameters = [
         { type: lexer_1.Lexer, },
-        { type: config_1.CompilerConfig, },
     ];
     return Parser;
 }());
