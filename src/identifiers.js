@@ -166,22 +166,22 @@ var Identifiers = (function () {
     Identifiers.balanceAnimationStyles = new compile_metadata_1.CompileIdentifierMetadata({
         name: 'balanceAnimationStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.AnimationStyleUtil.balanceStyles
+        runtime: core_private_1.balanceAnimationStyles
     });
     Identifiers.balanceAnimationKeyframes = new compile_metadata_1.CompileIdentifierMetadata({
         name: 'balanceAnimationKeyframes',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.AnimationStyleUtil.balanceKeyframes
+        runtime: core_private_1.balanceAnimationKeyframes
     });
-    Identifiers.clearAnimationStyles = new compile_metadata_1.CompileIdentifierMetadata({
-        name: 'clearAnimationStyles',
+    Identifiers.clearStyles = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'clearStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.AnimationStyleUtil.clearStyles
+        runtime: core_private_1.clearStyles
     });
     Identifiers.collectAndResolveStyles = new compile_metadata_1.CompileIdentifierMetadata({
         name: 'collectAndResolveStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.AnimationStyleUtil.collectAndResolveStyles
+        runtime: core_private_1.collectAndResolveStyles
     });
     return Identifiers;
 }());

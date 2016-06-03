@@ -173,7 +173,7 @@ class _AnimationBuilder {
         // there at the end of the last animation
         statements.push(_ANIMATION_FACTORY_RENDERER_VAR.callMethod('setElementStyles', [
             _ANIMATION_FACTORY_ELEMENT_VAR,
-            o.importExpr(Identifiers.clearAnimationStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
+            o.importExpr(Identifiers.clearStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
         ]).toStmt());
         ast.stateTransitions.forEach(transAst => statements.push(transAst.visit(this, context)));
         // this check ensures that the animation factory always returns a player
@@ -201,7 +201,7 @@ class _AnimationBuilder {
             _ANIMATION_PLAYER_VAR
         ]).toStmt());
         return o.fn([
-            new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(Identifiers.AppView)),
+            new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(Identifiers.AppView, [o.DYNAMIC_TYPE])),
             new o.FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_CURRENT_STATE_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_NEXT_STATE_VAR.name, o.DYNAMIC_TYPE)

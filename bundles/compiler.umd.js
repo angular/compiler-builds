@@ -613,11 +613,14 @@ var __extends = (this && this.__extends) || function (d, b) {
     var AnimationSequencePlayer_ = _angular_core.__core_private__.AnimationSequencePlayer;
     var AnimationGroupPlayer_ = _angular_core.__core_private__.AnimationGroupPlayer;
     var AnimationKeyframe_ = _angular_core.__core_private__.AnimationKeyframe;
-    var AnimationStyleUtil = _angular_core.__core_private__.AnimationStyleUtil;
     var AnimationStyles_ = _angular_core.__core_private__.AnimationStyles;
     var ANY_STATE = _angular_core.__core_private__.ANY_STATE;
     var EMPTY_ANIMATION_STATE = _angular_core.__core_private__.EMPTY_STATE;
     var FILL_STYLE_FLAG = _angular_core.__core_private__.FILL_STYLE_FLAG;
+    var impBalanceAnimationStyles = _angular_core.__core_private__.balanceAnimationStyles;
+    var impBalanceAnimationKeyframes = _angular_core.__core_private__.balanceAnimationKeyframes;
+    var impClearStyles = _angular_core.__core_private__.clearStyles;
+    var impCollectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
     var Map$1 = global$1.Map;
     var Set$1 = global$1.Set;
     // Safari and Internet Explorer do not support the iterable parameter to the
@@ -5802,22 +5805,22 @@ var __extends = (this && this.__extends) || function (d, b) {
     Identifiers.balanceAnimationStyles = new CompileIdentifierMetadata({
         name: 'balanceAnimationStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: AnimationStyleUtil.balanceStyles
+        runtime: impBalanceAnimationStyles
     });
     Identifiers.balanceAnimationKeyframes = new CompileIdentifierMetadata({
         name: 'balanceAnimationKeyframes',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: AnimationStyleUtil.balanceKeyframes
+        runtime: impBalanceAnimationKeyframes
     });
-    Identifiers.clearAnimationStyles = new CompileIdentifierMetadata({
-        name: 'clearAnimationStyles',
+    Identifiers.clearStyles = new CompileIdentifierMetadata({
+        name: 'clearStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: AnimationStyleUtil.clearStyles
+        runtime: impClearStyles
     });
     Identifiers.collectAndResolveStyles = new CompileIdentifierMetadata({
         name: 'collectAndResolveStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: AnimationStyleUtil.collectAndResolveStyles
+        runtime: impCollectAndResolveStyles
     });
     function identifierToken(identifier) {
         return new CompileTokenMetadata({ identifier: identifier });
@@ -10418,7 +10421,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             // there at the end of the last animation
             statements.push(_ANIMATION_FACTORY_RENDERER_VAR.callMethod('setElementStyles', [
                 _ANIMATION_FACTORY_ELEMENT_VAR,
-                importExpr(Identifiers.clearAnimationStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
+                importExpr(Identifiers.clearStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
             ]).toStmt());
             ast.stateTransitions.forEach(function (transAst) { return statements.push(transAst.visit(_this, context)); });
             // this check ensures that the animation factory always returns a player
@@ -10446,7 +10449,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 _ANIMATION_PLAYER_VAR
             ]).toStmt());
             return fn([
-                new FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, importType(Identifiers.AppView)),
+                new FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, importType(Identifiers.AppView, [DYNAMIC_TYPE])),
                 new FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, DYNAMIC_TYPE),
                 new FnParam(_ANIMATION_CURRENT_STATE_VAR.name, DYNAMIC_TYPE),
                 new FnParam(_ANIMATION_NEXT_STATE_VAR.name, DYNAMIC_TYPE)

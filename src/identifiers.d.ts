@@ -38,7 +38,7 @@ export declare class Identifiers {
     static AnimationSequencePlayer: CompileIdentifierMetadata;
     static balanceAnimationStyles: CompileIdentifierMetadata;
     static balanceAnimationKeyframes: CompileIdentifierMetadata;
-    static clearAnimationStyles: CompileIdentifierMetadata;
+    static clearStyles: CompileIdentifierMetadata;
     static collectAndResolveStyles: CompileIdentifierMetadata;
 }
 export declare function identifierToken(identifier: CompileIdentifierMetadata): CompileTokenMetadata;
