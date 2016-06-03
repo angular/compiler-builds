@@ -1,5 +1,5 @@
 import { SimpleChange, ChangeDetectorRef, ChangeDetectionStrategy, ElementRef, ViewContainerRef, Renderer, RenderComponentType, Injector, QueryList, ViewEncapsulation, TemplateRef } from '@angular/core';
-import { AppElement, AppView, DebugAppView, ChangeDetectorState, checkBinding, DebugContext, devModeEqual, flattenNestedViewRenderNodes, interpolate, StaticNodeDebugInfo, TemplateRef_, uninitialized, ValueUnwrapper, ViewType, ViewUtils, castByValue, EMPTY_ARRAY, EMPTY_MAP, pureProxy1, pureProxy2, pureProxy3, pureProxy4, pureProxy5, pureProxy6, pureProxy7, pureProxy8, pureProxy9, pureProxy10, AnimationKeyframe as AnimationKeyframe_, AnimationStyles as AnimationStyles_, NoOpAnimationPlayer as NoOpAnimationPlayer_, AnimationGroupPlayer as AnimationGroupPlayer_, AnimationSequencePlayer as AnimationSequencePlayer_, balanceAnimationStyles as impBalanceAnimationStyles, balanceAnimationKeyframes as impBalanceAnimationKeyframes, clearStyles as impClearStyles, collectAndResolveStyles as impCollectAndResolveStyles, SecurityContext } from '../core_private';
+import { AppElement, AppView, DebugAppView, ChangeDetectorState, checkBinding, DebugContext, devModeEqual, flattenNestedViewRenderNodes, interpolate, StaticNodeDebugInfo, TemplateRef_, uninitialized, ValueUnwrapper, ViewType, ViewUtils, castByValue, EMPTY_ARRAY, EMPTY_MAP, pureProxy1, pureProxy2, pureProxy3, pureProxy4, pureProxy5, pureProxy6, pureProxy7, pureProxy8, pureProxy9, pureProxy10, AnimationKeyframe as AnimationKeyframe_, AnimationStyles as AnimationStyles_, NoOpAnimationPlayer as NoOpAnimationPlayer_, AnimationGroupPlayer as AnimationGroupPlayer_, AnimationSequencePlayer as AnimationSequencePlayer_, balanceAnimationStyles as impBalanceAnimationStyles, balanceAnimationKeyframes as impBalanceAnimationKeyframes, clearStyles as impClearStyles, collectAndResolveStyles as impCollectAndResolveStyles, renderStyles as impRenderStyles, SecurityContext } from '../core_private';
 import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
 import { assetUrl } from './util';
 var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
@@ -175,6 +175,11 @@ Identifiers.clearStyles = new CompileIdentifierMetadata({
     name: 'clearStyles',
     moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
     runtime: impClearStyles
+});
+Identifiers.renderStyles = new CompileIdentifierMetadata({
+    name: 'renderStyles',
+    moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+    runtime: impRenderStyles
 });
 Identifiers.collectAndResolveStyles = new CompileIdentifierMetadata({
     name: 'collectAndResolveStyles',

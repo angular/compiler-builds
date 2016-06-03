@@ -60,4 +60,5 @@ exports.balanceAnimationKeyframes = core_1.__core_private__.balanceAnimationKeyf
 exports.flattenStyles = core_1.__core_private__.flattenStyles;
 exports.clearStyles = core_1.__core_private__.clearStyles;
 exports.collectAndResolveStyles = core_1.__core_private__.collectAndResolveStyles;
+exports.renderStyles = core_1.__core_private__.renderStyles;
 //# sourceMappingURL=core_private.js.map

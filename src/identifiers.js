@@ -178,6 +178,11 @@ var Identifiers = (function () {
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
         runtime: core_private_1.clearStyles
     });
+    Identifiers.renderStyles = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'renderStyles',
+        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+        runtime: core_private_1.renderStyles
+    });
     Identifiers.collectAndResolveStyles = new compile_metadata_1.CompileIdentifierMetadata({
         name: 'collectAndResolveStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,

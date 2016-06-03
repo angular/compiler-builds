@@ -621,6 +621,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var impBalanceAnimationKeyframes = _angular_core.__core_private__.balanceAnimationKeyframes;
     var impClearStyles = _angular_core.__core_private__.clearStyles;
     var impCollectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
+    var impRenderStyles = _angular_core.__core_private__.renderStyles;
     var Map$1 = global$1.Map;
     var Set$1 = global$1.Set;
     // Safari and Internet Explorer do not support the iterable parameter to the
@@ -5817,6 +5818,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
         runtime: impClearStyles
     });
+    Identifiers.renderStyles = new CompileIdentifierMetadata({
+        name: 'renderStyles',
+        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+        runtime: impRenderStyles
+    });
     Identifiers.collectAndResolveStyles = new CompileIdentifierMetadata({
         name: 'collectAndResolveStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
@@ -10416,11 +10422,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             statements.push(new IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(NULL_EXPR), [
                 _ANIMATION_END_STATE_STYLES_VAR.set(EMPTY_MAP$1).toStmt()
             ]));
+            var RENDER_STYLES_FN = importExpr(Identifiers.renderStyles);
             // before we start any animation we want to clear out the starting
             // styles from the element's style property (since they were placed
             // there at the end of the last animation
-            statements.push(_ANIMATION_FACTORY_RENDERER_VAR.callMethod('setElementStyles', [
+            statements.push(RENDER_STYLES_FN.callFn([
                 _ANIMATION_FACTORY_ELEMENT_VAR,
+                _ANIMATION_FACTORY_RENDERER_VAR,
                 importExpr(Identifiers.clearStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
             ]).toStmt());
             ast.stateTransitions.forEach(function (transAst) { return statements.push(transAst.visit(_this, context)); });
@@ -10434,8 +10442,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             // the animation sequence has completed.
             statements.push(_ANIMATION_PLAYER_VAR.callMethod('onDone', [
                 fn([], [
-                    _ANIMATION_FACTORY_RENDERER_VAR.callMethod('setElementStyles', [
+                    RENDER_STYLES_FN.callFn([
                         _ANIMATION_FACTORY_ELEMENT_VAR,
+                        _ANIMATION_FACTORY_RENDERER_VAR,
                         importExpr(Identifiers.balanceAnimationStyles).callFn([
                             _ANIMATION_START_STATE_STYLES_VAR,
                             _ANIMATION_END_STATE_STYLES_VAR

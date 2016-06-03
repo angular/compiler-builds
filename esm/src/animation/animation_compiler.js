@@ -168,11 +168,13 @@ class _AnimationBuilder {
         statements.push(new o.IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(o.NULL_EXPR), [
             _ANIMATION_END_STATE_STYLES_VAR.set(EMPTY_MAP).toStmt()
         ]));
+        var RENDER_STYLES_FN = o.importExpr(Identifiers.renderStyles);
         // before we start any animation we want to clear out the starting
         // styles from the element's style property (since they were placed
         // there at the end of the last animation
-        statements.push(_ANIMATION_FACTORY_RENDERER_VAR.callMethod('setElementStyles', [
+        statements.push(RENDER_STYLES_FN.callFn([
             _ANIMATION_FACTORY_ELEMENT_VAR,
+            _ANIMATION_FACTORY_RENDERER_VAR,
             o.importExpr(Identifiers.clearStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
         ]).toStmt());
         ast.stateTransitions.forEach(transAst => statements.push(transAst.visit(this, context)));
@@ -186,8 +188,9 @@ class _AnimationBuilder {
         // the animation sequence has completed.
         statements.push(_ANIMATION_PLAYER_VAR.callMethod('onDone', [
             o.fn([], [
-                _ANIMATION_FACTORY_RENDERER_VAR.callMethod('setElementStyles', [
+                RENDER_STYLES_FN.callFn([
                     _ANIMATION_FACTORY_ELEMENT_VAR,
+                    _ANIMATION_FACTORY_RENDERER_VAR,
                     o.importExpr(Identifiers.balanceAnimationStyles).callFn([
                         _ANIMATION_START_STATE_STYLES_VAR,
                         _ANIMATION_END_STATE_STYLES_VAR
