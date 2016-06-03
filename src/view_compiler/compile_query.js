@@ -1,6 +1,6 @@
 "use strict";
-var lang_1 = require('../../src/facade/lang');
-var collection_1 = require('../../src/facade/collection');
+var lang_1 = require('../facade/lang');
+var collection_1 = require('../facade/collection');
 var o = require('../output/output_ast');
 var identifiers_1 = require('../identifiers');
 var util_1 = require('./util');

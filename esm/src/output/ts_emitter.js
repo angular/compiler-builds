@@ -1,6 +1,6 @@
 import * as o from './output_ast';
-import { isPresent, isBlank, isArray } from '../../src/facade/lang';
-import { BaseException } from '../../src/facade/exceptions';
+import { isPresent, isBlank, isArray } from '../facade/lang';
+import { BaseException } from '../facade/exceptions';
 import { EmitterVisitorContext, AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR } from './abstract_emitter';
 var _debugModuleUrl = 'asset://debug/lib';
 export function debugOutputAstAsTypeScript(ast) {

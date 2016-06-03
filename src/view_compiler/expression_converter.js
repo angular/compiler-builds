@@ -1,6 +1,6 @@
 "use strict";
-var exceptions_1 = require('../../src/facade/exceptions');
-var lang_1 = require('../../src/facade/lang');
+var exceptions_1 = require('../facade/exceptions');
+var lang_1 = require('../facade/lang');
 var o = require('../output/output_ast');
 var identifiers_1 = require('../identifiers');
 var IMPLICIT_RECEIVER = o.variable('#implicit');

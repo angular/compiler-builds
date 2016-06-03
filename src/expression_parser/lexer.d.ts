@@ -1,4 +1,4 @@
-import { BaseException } from '../../src/facade/exceptions';
+import { BaseException } from '../facade/exceptions';
 export declare enum TokenType {
     Character = 0,
     Identifier = 1,

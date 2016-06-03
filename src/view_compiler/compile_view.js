@@ -1,7 +1,7 @@
 "use strict";
 var core_private_1 = require('../../core_private');
-var lang_1 = require('../../src/facade/lang');
-var collection_1 = require('../../src/facade/collection');
+var lang_1 = require('../facade/lang');
+var collection_1 = require('../facade/collection');
 var o = require('../output/output_ast');
 var constants_1 = require('./constants');
 var compile_query_1 = require('./compile_query');

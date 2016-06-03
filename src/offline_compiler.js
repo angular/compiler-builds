@@ -1,8 +1,8 @@
 "use strict";
 var core_1 = require('@angular/core');
 var compile_metadata_1 = require('./compile_metadata');
-var exceptions_1 = require('../src/facade/exceptions');
-var collection_1 = require('../src/facade/collection');
+var exceptions_1 = require('./facade/exceptions');
+var collection_1 = require('./facade/collection');
 var o = require('./output/output_ast');
 var util_1 = require('./util');
 var _COMPONENT_FACTORY_IDENTIFIER = new compile_metadata_1.CompileIdentifierMetadata({

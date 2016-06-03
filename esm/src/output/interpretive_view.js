@@ -1,6 +1,6 @@
 import { AppView, DebugAppView } from '../../core_private';
-import { isPresent } from '../../src/facade/lang';
-import { BaseException } from '../../src/facade/exceptions';
+import { isPresent } from '../facade/lang';
+import { BaseException } from '../facade/exceptions';
 export class InterpretiveAppViewInstanceFactory {
     createInstance(superClass, clazz, args, props, getters, methods) {
         if (superClass === AppView) {

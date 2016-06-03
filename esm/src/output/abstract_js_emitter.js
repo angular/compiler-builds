@@ -1,5 +1,5 @@
-import { isPresent } from '../../src/facade/lang';
-import { BaseException } from '../../src/facade/exceptions';
+import { isPresent } from '../facade/lang';
+import { BaseException } from '../facade/exceptions';
 import * as o from './output_ast';
 import { AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR } from './abstract_emitter';
 export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {

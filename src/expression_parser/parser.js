@@ -5,9 +5,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var core_1 = require('@angular/core');
-var lang_1 = require('../../src/facade/lang');
-var exceptions_1 = require('../../src/facade/exceptions');
-var collection_1 = require('../../src/facade/collection');
+var lang_1 = require('../facade/lang');
+var exceptions_1 = require('../facade/exceptions');
+var collection_1 = require('../facade/collection');
 var lexer_1 = require('./lexer');
 var ast_1 = require('./ast');
 var _implicitReceiver = new ast_1.ImplicitReceiver();

@@ -1,9 +1,9 @@
 "use strict";
 var core_private_1 = require('../../core_private');
-var lang_1 = require('../../src/facade/lang');
-var async_1 = require('../../src/facade/async');
-var exceptions_1 = require('../../src/facade/exceptions');
-var collection_1 = require('../../src/facade/collection');
+var lang_1 = require('../facade/lang');
+var async_1 = require('../facade/async');
+var exceptions_1 = require('../facade/exceptions');
+var collection_1 = require('../facade/collection');
 var o = require('./output_ast');
 var dart_emitter_1 = require('./dart_emitter');
 var ts_emitter_1 = require('./ts_emitter');

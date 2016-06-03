@@ -1,4 +1,4 @@
-import { isString, isPresent, isBlank } from '../../src/facade/lang';
+import { isString, isPresent, isBlank } from '../facade/lang';
 //// Types
 export var TypeModifier;
 (function (TypeModifier) {

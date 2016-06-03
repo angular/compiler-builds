@@ -3,7 +3,7 @@ function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 var core_1 = require('@angular/core');
-var lang_1 = require('../src/facade/lang');
+var lang_1 = require('./facade/lang');
 __export(require('./template_ast'));
 var template_parser_1 = require('./template_parser');
 exports.TEMPLATE_TRANSFORMS = template_parser_1.TEMPLATE_TRANSFORMS;

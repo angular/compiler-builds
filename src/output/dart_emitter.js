@@ -4,8 +4,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var lang_1 = require('../../src/facade/lang');
-var exceptions_1 = require('../../src/facade/exceptions');
+var lang_1 = require('../facade/lang');
+var exceptions_1 = require('../facade/exceptions');
 var o = require('./output_ast');
 var abstract_emitter_1 = require('./abstract_emitter');
 var _debugModuleUrl = 'asset://debug/lib';

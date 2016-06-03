@@ -5,8 +5,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var core_1 = require('@angular/core');
-var lang_1 = require('../../src/facade/lang');
-var collection_1 = require('../../src/facade/collection');
+var lang_1 = require('../facade/lang');
+var collection_1 = require('../facade/collection');
 var o = require('../output/output_ast');
 var identifiers_1 = require('../identifiers');
 var constants_1 = require('./constants');

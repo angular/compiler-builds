@@ -1,5 +1,5 @@
 import { EMPTY_STATE as EMPTY_ANIMATION_STATE, LifecycleHooks, isDefaultChangeDetectionStrategy, SecurityContext } from '../../core_private';
-import { isBlank, isPresent } from '../../src/facade/lang';
+import { isBlank, isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
 import { Identifiers } from '../identifiers';
 import { DetectChangesVars, ViewProperties } from './constants';

@@ -1,5 +1,5 @@
-import { BaseException } from '../../src/facade/exceptions';
-import { isBlank, isPresent, isArray } from '../../src/facade/lang';
+import { BaseException } from '../facade/exceptions';
+import { isBlank, isPresent, isArray } from '../facade/lang';
 import * as o from '../output/output_ast';
 import { Identifiers } from '../identifiers';
 var IMPLICIT_RECEIVER = o.variable('#implicit');

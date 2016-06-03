@@ -1,7 +1,7 @@
 import { ComponentFactory } from '@angular/core';
 import { CompileIdentifierMetadata, createHostComponentMeta } from './compile_metadata';
-import { BaseException } from '../src/facade/exceptions';
-import { ListWrapper } from '../src/facade/collection';
+import { BaseException } from './facade/exceptions';
+import { ListWrapper } from './facade/collection';
 import * as o from './output/output_ast';
 import { assetUrl } from './util';
 var _COMPONENT_FACTORY_IDENTIFIER = new CompileIdentifierMetadata({

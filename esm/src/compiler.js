@@ -1,5 +1,5 @@
 import { ComponentResolver } from '@angular/core';
-import { assertionsEnabled } from '../src/facade/lang';
+import { assertionsEnabled } from './facade/lang';
 export * from './template_ast';
 export { TEMPLATE_TRANSFORMS } from './template_parser';
 export { CompilerConfig, RenderTypes } from './config';

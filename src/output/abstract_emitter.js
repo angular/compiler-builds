@@ -1,6 +1,6 @@
 "use strict";
-var lang_1 = require('../../src/facade/lang');
-var exceptions_1 = require('../../src/facade/exceptions');
+var lang_1 = require('../facade/lang');
+var exceptions_1 = require('../facade/exceptions');
 var o = require('./output_ast');
 var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
 exports.CATCH_ERROR_VAR = o.variable('error');

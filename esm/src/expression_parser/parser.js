@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { isBlank, isPresent, StringWrapper } from '../../src/facade/lang';
-import { BaseException } from '../../src/facade/exceptions';
-import { ListWrapper } from '../../src/facade/collection';
+import { isBlank, isPresent, StringWrapper } from '../facade/lang';
+import { BaseException } from '../facade/exceptions';
+import { ListWrapper } from '../facade/collection';
 import { Lexer, EOF, isIdentifier, isQuote, $PERIOD, $COLON, $SEMICOLON, $LBRACKET, $RBRACKET, $COMMA, $LBRACE, $RBRACE, $LPAREN, $RPAREN, $SLASH } from './lexer';
 import { EmptyExpr, ImplicitReceiver, PropertyRead, PropertyWrite, SafePropertyRead, LiteralPrimitive, Binary, PrefixNot, Conditional, BindingPipe, Chain, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, Interpolation, MethodCall, SafeMethodCall, FunctionCall, TemplateBinding, ASTWithSource, Quote } from './ast';
 var _implicitReceiver = new ImplicitReceiver();

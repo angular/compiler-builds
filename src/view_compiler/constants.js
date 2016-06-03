@@ -1,7 +1,7 @@
 "use strict";
 var core_1 = require('@angular/core');
 var core_private_1 = require('../../core_private');
-var lang_1 = require('../../src/facade/lang');
+var lang_1 = require('../facade/lang');
 var compile_metadata_1 = require('../compile_metadata');
 var o = require('../output/output_ast');
 var identifiers_1 = require('../identifiers');
