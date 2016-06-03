@@ -266,7 +266,9 @@ var TreeBuilder = (function () {
     };
     TreeBuilder.prototype._consumeEndTag = function (endTagToken) {
         var fullName = getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
-        this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
+        if (this._getParentElement()) {
+            this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
+        }
         if (html_tags_1.getHtmlTagDefinition(fullName).isVoid) {
             this.errors.push(HtmlTreeError.create(fullName, endTagToken.sourceSpan, "Void elements do not have end tags \"" + endTagToken.parts[1] + "\""));
         }
