@@ -43,11 +43,11 @@ export declare class CompileAnimationStateDeclarationMetadata extends CompileAni
 }
 export declare class CompileAnimationStateTransitionMetadata extends CompileAnimationStateMetadata {
     stateChangeExpr: string;
-    animation: CompileAnimationMetadata;
+    steps: CompileAnimationMetadata;
     static fromJson(data: {
         [key: string]: any;
     }): CompileAnimationStateTransitionMetadata;
-    constructor(stateChangeExpr: string, animation: CompileAnimationMetadata);
+    constructor(stateChangeExpr: string, steps: CompileAnimationMetadata);
     toJson(): {
         [key: string]: any;
     };

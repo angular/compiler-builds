@@ -4891,22 +4891,22 @@ var __extends = (this && this.__extends) || function (d, b) {
     }(CompileAnimationStateMetadata));
     var CompileAnimationStateTransitionMetadata = (function (_super) {
         __extends(CompileAnimationStateTransitionMetadata, _super);
-        function CompileAnimationStateTransitionMetadata(stateChangeExpr, animation) {
+        function CompileAnimationStateTransitionMetadata(stateChangeExpr, steps) {
             _super.call(this);
             this.stateChangeExpr = stateChangeExpr;
-            this.animation = animation;
+            this.steps = steps;
         }
         CompileAnimationStateTransitionMetadata.fromJson = function (data) {
             var value = data['value'];
-            var animation = _objFromJson(value['animation'], metadataFromJson);
-            return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], animation);
+            var steps = _objFromJson(value['steps'], metadataFromJson);
+            return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], steps);
         };
         CompileAnimationStateTransitionMetadata.prototype.toJson = function () {
             return {
                 'class': 'AnimationStateTransitionMetadata',
                 'value': {
                     'stateChangeExpr': this.stateChangeExpr,
-                    'animation': this.animation.toJson()
+                    'steps': this.steps.toJson()
                 }
             };
         };
@@ -9871,7 +9871,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 transitionExprs.push(transExpr);
             });
         });
-        var entry = _normalizeAnimationEntry(transitionStateMetadata.animation);
+        var entry = _normalizeAnimationEntry(transitionStateMetadata.steps);
         var animation = _normalizeStyleSteps(entry, stateStyles, errors);
         var animationAst = _parseTransitionAnimation(animation, 0, styles, stateStyles, errors);
         if (errors.length == 0) {
@@ -12197,7 +12197,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return new CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
             }
             else if (value instanceof _angular_core.AnimationStateTransitionMetadata) {
-                return new CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.animation));
+                return new CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.steps));
             }
             return null;
         };

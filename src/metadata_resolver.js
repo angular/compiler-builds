@@ -60,7 +60,7 @@ var CompileMetadataResolver = (function () {
             return new cpl.CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
         }
         else if (value instanceof core_1.AnimationStateTransitionMetadata) {
-            return new cpl.CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.animation));
+            return new cpl.CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.steps));
         }
         return null;
     };

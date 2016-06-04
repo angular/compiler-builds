@@ -103,22 +103,22 @@ var CompileAnimationStateDeclarationMetadata = (function (_super) {
 exports.CompileAnimationStateDeclarationMetadata = CompileAnimationStateDeclarationMetadata;
 var CompileAnimationStateTransitionMetadata = (function (_super) {
     __extends(CompileAnimationStateTransitionMetadata, _super);
-    function CompileAnimationStateTransitionMetadata(stateChangeExpr, animation) {
+    function CompileAnimationStateTransitionMetadata(stateChangeExpr, steps) {
         _super.call(this);
         this.stateChangeExpr = stateChangeExpr;
-        this.animation = animation;
+        this.steps = steps;
     }
     CompileAnimationStateTransitionMetadata.fromJson = function (data) {
         var value = data['value'];
-        var animation = _objFromJson(value['animation'], metadataFromJson);
-        return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], animation);
+        var steps = _objFromJson(value['steps'], metadataFromJson);
+        return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], steps);
     };
     CompileAnimationStateTransitionMetadata.prototype.toJson = function () {
         return {
             'class': 'AnimationStateTransitionMetadata',
             'value': {
                 'stateChangeExpr': this.stateChangeExpr,
-                'animation': this.animation.toJson()
+                'steps': this.steps.toJson()
             }
         };
     };

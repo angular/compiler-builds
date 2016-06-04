@@ -53,7 +53,7 @@ export class CompileMetadataResolver {
             return new cpl.CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
         }
         else if (value instanceof AnimationStateTransitionMetadata) {
-            return new cpl.CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.animation));
+            return new cpl.CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this.getAnimationMetadata(value.steps));
         }
         return null;
     }

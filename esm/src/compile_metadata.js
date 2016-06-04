@@ -62,22 +62,22 @@ export class CompileAnimationStateDeclarationMetadata extends CompileAnimationSt
     }
 }
 export class CompileAnimationStateTransitionMetadata extends CompileAnimationStateMetadata {
-    constructor(stateChangeExpr, animation) {
+    constructor(stateChangeExpr, steps) {
         super();
         this.stateChangeExpr = stateChangeExpr;
-        this.animation = animation;
+        this.steps = steps;
     }
     static fromJson(data) {
         var value = data['value'];
-        var animation = _objFromJson(value['animation'], metadataFromJson);
-        return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], animation);
+        var steps = _objFromJson(value['steps'], metadataFromJson);
+        return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], steps);
     }
     toJson() {
         return {
             'class': 'AnimationStateTransitionMetadata',
             'value': {
                 'stateChangeExpr': this.stateChangeExpr,
-                'animation': this.animation.toJson()
+                'steps': this.steps.toJson()
             }
         };
     }
