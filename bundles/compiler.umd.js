@@ -12045,42 +12045,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         /** @internal */
         ViewResolver.prototype._resolve = function (component) {
             var compMeta;
-            var viewMeta;
             this._reflector.annotations(component).forEach(function (m) {
-                if (m instanceof _angular_core.ViewMetadata) {
-                    viewMeta = m;
-                }
                 if (m instanceof _angular_core.ComponentMetadata) {
                     compMeta = m;
                 }
             });
             if (isPresent(compMeta)) {
-                if (isBlank(compMeta.template) && isBlank(compMeta.templateUrl) && isBlank(viewMeta)) {
+                if (isBlank(compMeta.template) && isBlank(compMeta.templateUrl)) {
                     throw new BaseException$1("Component '" + stringify(component) + "' must have either 'template' or 'templateUrl' set.");
-                }
-                else if (isPresent(compMeta.template) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("template", component);
-                }
-                else if (isPresent(compMeta.templateUrl) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("templateUrl", component);
-                }
-                else if (isPresent(compMeta.directives) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("directives", component);
-                }
-                else if (isPresent(compMeta.pipes) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("pipes", component);
-                }
-                else if (isPresent(compMeta.encapsulation) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("encapsulation", component);
-                }
-                else if (isPresent(compMeta.styles) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("styles", component);
-                }
-                else if (isPresent(compMeta.styleUrls) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("styleUrls", component);
-                }
-                else if (isPresent(viewMeta)) {
-                    return viewMeta;
                 }
                 else {
                     return new _angular_core.ViewMetadata({
@@ -12096,18 +12068,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             else {
-                if (isBlank(viewMeta)) {
-                    throw new BaseException$1("Could not compile '" + stringify(component) + "' because it is not a component.");
-                }
-                else {
-                    return viewMeta;
-                }
+                throw new BaseException$1("Could not compile '" + stringify(component) + "' because it is not a component.");
             }
-            return null;
-        };
-        /** @internal */
-        ViewResolver.prototype._throwMixingViewAndComponent = function (propertyName, component) {
-            throw new BaseException$1("Component '" + stringify(component) + "' cannot have both '" + propertyName + "' and '@View' set at the same time\"");
         };
         return ViewResolver;
     }());
