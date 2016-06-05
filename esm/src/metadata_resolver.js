@@ -119,8 +119,8 @@ export class CompileMetadataResolver {
             var queries = [];
             var viewQueries = [];
             if (isPresent(dirMeta.queries)) {
-                queries = this.getQueriesMetadata(dirMeta.queries, false);
-                viewQueries = this.getQueriesMetadata(dirMeta.queries, true);
+                queries = this.getQueriesMetadata(dirMeta.queries, false, directiveType);
+                viewQueries = this.getQueriesMetadata(dirMeta.queries, true, directiveType);
             }
             meta = cpl.CompileDirectiveMetadata.create({
                 selector: dirMeta.selector,
@@ -271,8 +271,8 @@ export class CompileMetadataResolver {
                 isSelf: isSelf,
                 isSkipSelf: isSkipSelf,
                 isOptional: isOptional,
-                query: isPresent(query) ? this.getQueryMetadata(query, null) : null,
-                viewQuery: isPresent(viewQuery) ? this.getQueryMetadata(viewQuery, null) : null,
+                query: isPresent(query) ? this.getQueryMetadata(query, null, typeOrFunc) : null,
+                viewQuery: isPresent(viewQuery) ? this.getQueryMetadata(viewQuery, null, typeOrFunc) : null,
                 token: this.getTokenMetadata(token)
             });
         });
@@ -334,21 +334,24 @@ export class CompileMetadataResolver {
             multi: provider.multi
         });
     }
-    getQueriesMetadata(queries, isViewQuery) {
+    getQueriesMetadata(queries, isViewQuery, directiveType) {
         var compileQueries = [];
         StringMapWrapper.forEach(queries, (query, propertyName) => {
             if (query.isViewQuery === isViewQuery) {
-                compileQueries.push(this.getQueryMetadata(query, propertyName));
+                compileQueries.push(this.getQueryMetadata(query, propertyName, directiveType));
             }
         });
         return compileQueries;
     }
-    getQueryMetadata(q, propertyName) {
+    getQueryMetadata(q, propertyName, typeOrFunc) {
         var selectors;
         if (q.isVarBindingQuery) {
             selectors = q.varBindings.map(varName => this.getTokenMetadata(varName));
         }
         else {
+            if (!isPresent(q.selector)) {
+                throw new BaseException(`Can't construct a query for the property "${propertyName}" of "${stringify(typeOrFunc)}" since the query selector wasn't defined.`);
+            }
             selectors = [this.getTokenMetadata(q.selector)];
         }
         return new cpl.CompileQueryMetadata({

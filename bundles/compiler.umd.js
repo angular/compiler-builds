@@ -12045,42 +12045,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         /** @internal */
         ViewResolver.prototype._resolve = function (component) {
             var compMeta;
-            var viewMeta;
             this._reflector.annotations(component).forEach(function (m) {
-                if (m instanceof _angular_core.ViewMetadata) {
-                    viewMeta = m;
-                }
                 if (m instanceof _angular_core.ComponentMetadata) {
                     compMeta = m;
                 }
             });
             if (isPresent(compMeta)) {
-                if (isBlank(compMeta.template) && isBlank(compMeta.templateUrl) && isBlank(viewMeta)) {
+                if (isBlank(compMeta.template) && isBlank(compMeta.templateUrl)) {
                     throw new BaseException$1("Component '" + stringify(component) + "' must have either 'template' or 'templateUrl' set.");
-                }
-                else if (isPresent(compMeta.template) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("template", component);
-                }
-                else if (isPresent(compMeta.templateUrl) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("templateUrl", component);
-                }
-                else if (isPresent(compMeta.directives) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("directives", component);
-                }
-                else if (isPresent(compMeta.pipes) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("pipes", component);
-                }
-                else if (isPresent(compMeta.encapsulation) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("encapsulation", component);
-                }
-                else if (isPresent(compMeta.styles) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("styles", component);
-                }
-                else if (isPresent(compMeta.styleUrls) && isPresent(viewMeta)) {
-                    this._throwMixingViewAndComponent("styleUrls", component);
-                }
-                else if (isPresent(viewMeta)) {
-                    return viewMeta;
                 }
                 else {
                     return new _angular_core.ViewMetadata({
@@ -12096,18 +12068,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             else {
-                if (isBlank(viewMeta)) {
-                    throw new BaseException$1("Could not compile '" + stringify(component) + "' because it is not a component.");
-                }
-                else {
-                    return viewMeta;
-                }
+                throw new BaseException$1("Could not compile '" + stringify(component) + "' because it is not a component.");
             }
-            return null;
-        };
-        /** @internal */
-        ViewResolver.prototype._throwMixingViewAndComponent = function (propertyName, component) {
-            throw new BaseException$1("Component '" + stringify(component) + "' cannot have both '" + propertyName + "' and '@View' set at the same time\"");
         };
         return ViewResolver;
     }());
@@ -12265,8 +12227,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var queries = [];
                 var viewQueries = [];
                 if (isPresent(dirMeta.queries)) {
-                    queries = this.getQueriesMetadata(dirMeta.queries, false);
-                    viewQueries = this.getQueriesMetadata(dirMeta.queries, true);
+                    queries = this.getQueriesMetadata(dirMeta.queries, false, directiveType);
+                    viewQueries = this.getQueriesMetadata(dirMeta.queries, true, directiveType);
                 }
                 meta = CompileDirectiveMetadata.create({
                     selector: dirMeta.selector,
@@ -12420,8 +12382,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     isSelf: isSelf,
                     isSkipSelf: isSkipSelf,
                     isOptional: isOptional,
-                    query: isPresent(query) ? _this.getQueryMetadata(query, null) : null,
-                    viewQuery: isPresent(viewQuery) ? _this.getQueryMetadata(viewQuery, null) : null,
+                    query: isPresent(query) ? _this.getQueryMetadata(query, null, typeOrFunc) : null,
+                    viewQuery: isPresent(viewQuery) ? _this.getQueryMetadata(viewQuery, null, typeOrFunc) : null,
                     token: _this.getTokenMetadata(token)
                 });
             });
@@ -12484,23 +12446,26 @@ var __extends = (this && this.__extends) || function (d, b) {
                 multi: provider.multi
             });
         };
-        CompileMetadataResolver.prototype.getQueriesMetadata = function (queries, isViewQuery) {
+        CompileMetadataResolver.prototype.getQueriesMetadata = function (queries, isViewQuery, directiveType) {
             var _this = this;
             var compileQueries = [];
             StringMapWrapper.forEach(queries, function (query, propertyName) {
                 if (query.isViewQuery === isViewQuery) {
-                    compileQueries.push(_this.getQueryMetadata(query, propertyName));
+                    compileQueries.push(_this.getQueryMetadata(query, propertyName, directiveType));
                 }
             });
             return compileQueries;
         };
-        CompileMetadataResolver.prototype.getQueryMetadata = function (q, propertyName) {
+        CompileMetadataResolver.prototype.getQueryMetadata = function (q, propertyName, typeOrFunc) {
             var _this = this;
             var selectors;
             if (q.isVarBindingQuery) {
                 selectors = q.varBindings.map(function (varName) { return _this.getTokenMetadata(varName); });
             }
             else {
+                if (!isPresent(q.selector)) {
+                    throw new BaseException$1("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringify(typeOrFunc) + "\" since the query selector wasn't defined.");
+                }
                 selectors = [this.getTokenMetadata(q.selector)];
             }
             return new CompileQueryMetadata({

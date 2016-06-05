@@ -39,6 +39,6 @@ export declare class CompileMetadataResolver {
     getProviderMetadata(provider: Provider): cpl.CompileProviderMetadata;
     getQueriesMetadata(queries: {
         [key: string]: QueryMetadata;
-    }, isViewQuery: boolean): cpl.CompileQueryMetadata[];
-    getQueryMetadata(q: QueryMetadata, propertyName: string): cpl.CompileQueryMetadata;
+    }, isViewQuery: boolean, directiveType: Type): cpl.CompileQueryMetadata[];
+    getQueryMetadata(q: QueryMetadata, propertyName: string, typeOrFunc: Type | Function): cpl.CompileQueryMetadata;
 }
