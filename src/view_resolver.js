@@ -26,14 +26,42 @@ var ViewResolver = (function () {
     /** @internal */
     ViewResolver.prototype._resolve = function (component) {
         var compMeta;
+        var viewMeta;
         this._reflector.annotations(component).forEach(function (m) {
+            if (m instanceof core_1.ViewMetadata) {
+                viewMeta = m;
+            }
             if (m instanceof core_1.ComponentMetadata) {
                 compMeta = m;
             }
         });
         if (lang_1.isPresent(compMeta)) {
-            if (lang_1.isBlank(compMeta.template) && lang_1.isBlank(compMeta.templateUrl)) {
+            if (lang_1.isBlank(compMeta.template) && lang_1.isBlank(compMeta.templateUrl) && lang_1.isBlank(viewMeta)) {
                 throw new exceptions_1.BaseException("Component '" + lang_1.stringify(component) + "' must have either 'template' or 'templateUrl' set.");
+            }
+            else if (lang_1.isPresent(compMeta.template) && lang_1.isPresent(viewMeta)) {
+                this._throwMixingViewAndComponent("template", component);
+            }
+            else if (lang_1.isPresent(compMeta.templateUrl) && lang_1.isPresent(viewMeta)) {
+                this._throwMixingViewAndComponent("templateUrl", component);
+            }
+            else if (lang_1.isPresent(compMeta.directives) && lang_1.isPresent(viewMeta)) {
+                this._throwMixingViewAndComponent("directives", component);
+            }
+            else if (lang_1.isPresent(compMeta.pipes) && lang_1.isPresent(viewMeta)) {
+                this._throwMixingViewAndComponent("pipes", component);
+            }
+            else if (lang_1.isPresent(compMeta.encapsulation) && lang_1.isPresent(viewMeta)) {
+                this._throwMixingViewAndComponent("encapsulation", component);
+            }
+            else if (lang_1.isPresent(compMeta.styles) && lang_1.isPresent(viewMeta)) {
+                this._throwMixingViewAndComponent("styles", component);
+            }
+            else if (lang_1.isPresent(compMeta.styleUrls) && lang_1.isPresent(viewMeta)) {
+                this._throwMixingViewAndComponent("styleUrls", component);
+            }
+            else if (lang_1.isPresent(viewMeta)) {
+                return viewMeta;
             }
             else {
                 return new core_1.ViewMetadata({
@@ -49,8 +77,18 @@ var ViewResolver = (function () {
             }
         }
         else {
-            throw new exceptions_1.BaseException("Could not compile '" + lang_1.stringify(component) + "' because it is not a component.");
+            if (lang_1.isBlank(viewMeta)) {
+                throw new exceptions_1.BaseException("Could not compile '" + lang_1.stringify(component) + "' because it is not a component.");
+            }
+            else {
+                return viewMeta;
+            }
         }
+        return null;
+    };
+    /** @internal */
+    ViewResolver.prototype._throwMixingViewAndComponent = function (propertyName, component) {
+        throw new exceptions_1.BaseException("Component '" + lang_1.stringify(component) + "' cannot have both '" + propertyName + "' and '@View' set at the same time\"");
     };
     ViewResolver.decorators = [
         { type: core_1.Injectable },
