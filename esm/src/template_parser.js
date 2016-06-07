@@ -324,9 +324,7 @@ class TemplateParseVisitor {
         }
         else if (attr.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
             var key = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
-            templateBindingsSource = (attr.value.length == 0) ?
-                key :
-                key + ' ' + StringWrapper.replaceAll(attr.value, /:/g, ' ');
+            templateBindingsSource = (attr.value.length == 0) ? key : key + ' ' + attr.value;
         }
         if (isPresent(templateBindingsSource)) {
             var bindings = this._parseTemplateBindings(templateBindingsSource, attr.sourceSpan);
