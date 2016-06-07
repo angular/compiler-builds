@@ -53,6 +53,7 @@ exports.AnimationGroupPlayer = core_1.__core_private__.AnimationGroupPlayer;
 exports.AnimationKeyframe = core_1.__core_private__.AnimationKeyframe;
 exports.AnimationStyles = core_1.__core_private__.AnimationStyles;
 exports.ANY_STATE = core_1.__core_private__.ANY_STATE;
+exports.DEFAULT_STATE = core_1.__core_private__.DEFAULT_STATE;
 exports.EMPTY_STATE = core_1.__core_private__.EMPTY_STATE;
 exports.FILL_STYLE_FLAG = core_1.__core_private__.FILL_STYLE_FLAG;
 exports.balanceAnimationStyles = core_1.__core_private__.balanceAnimationStyles;

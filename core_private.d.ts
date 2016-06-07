@@ -71,6 +71,7 @@ export declare var AnimationKeyframe: typeof t.AnimationKeyframe;
 export declare type AnimationStyles = t.AnimationStyles;
 export declare var AnimationStyles: typeof t.AnimationStyles;
 export declare var ANY_STATE: string;
+export declare var DEFAULT_STATE: string;
 export declare var EMPTY_STATE: string;
 export declare var FILL_STYLE_FLAG: string;
 export declare var balanceAnimationStyles: typeof t.balanceAnimationStyles;

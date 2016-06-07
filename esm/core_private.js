@@ -52,6 +52,7 @@ export var AnimationGroupPlayer = r.AnimationGroupPlayer;
 export var AnimationKeyframe = r.AnimationKeyframe;
 export var AnimationStyles = r.AnimationStyles;
 export var ANY_STATE = r.ANY_STATE;
+export var DEFAULT_STATE = r.DEFAULT_STATE;
 export var EMPTY_STATE = r.EMPTY_STATE;
 export var FILL_STYLE_FLAG = r.FILL_STYLE_FLAG;
 export var balanceAnimationStyles = r.balanceAnimationStyles;

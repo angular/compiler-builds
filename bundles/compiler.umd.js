@@ -615,6 +615,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var AnimationKeyframe_ = _angular_core.__core_private__.AnimationKeyframe;
     var AnimationStyles_ = _angular_core.__core_private__.AnimationStyles;
     var ANY_STATE = _angular_core.__core_private__.ANY_STATE;
+    var DEFAULT_STATE = _angular_core.__core_private__.DEFAULT_STATE;
     var EMPTY_ANIMATION_STATE = _angular_core.__core_private__.EMPTY_STATE;
     var FILL_STYLE_FLAG = _angular_core.__core_private__.FILL_STYLE_FLAG;
     var impBalanceAnimationStyles = _angular_core.__core_private__.balanceAnimationStyles;
@@ -10296,6 +10297,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return AnimationCompiler;
     }());
     var _ANIMATION_FACTORY_ELEMENT_VAR = variable('element');
+    var _ANIMATION_DEFAULT_STATE_VAR = variable('defaultStateStyles');
     var _ANIMATION_FACTORY_VIEW_VAR = variable('view');
     var _ANIMATION_FACTORY_RENDERER_VAR = _ANIMATION_FACTORY_VIEW_VAR.prop('renderer');
     var _ANIMATION_CURRENT_STATE_VAR = variable('currentState');
@@ -10416,6 +10418,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             //visit each of the declarations first to build the context state map
             ast.stateDeclarations.forEach(function (def) { return def.visit(_this, context); });
+            //this should always be defined even if the user overrides it
+            context.stateMap.registerState(DEFAULT_STATE, {});
             var statements = [];
             statements.push(_ANIMATION_FACTORY_VIEW_VAR.callMethod('cancelActiveAnimation', [
                 _ANIMATION_FACTORY_ELEMENT_VAR,
@@ -10424,13 +10428,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             ]).toStmt());
             statements.push(_ANIMATION_COLLECTED_STYLES.set(EMPTY_MAP$1).toDeclStmt());
             statements.push(_ANIMATION_PLAYER_VAR.set(NULL_EXPR).toDeclStmt());
+            statements.push(_ANIMATION_DEFAULT_STATE_VAR.set(this._statesMapVar.key(literal(DEFAULT_STATE))).toDeclStmt());
             statements.push(_ANIMATION_START_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_CURRENT_STATE_VAR)).toDeclStmt());
             statements.push(new IfStmt(_ANIMATION_START_STATE_STYLES_VAR.equals(NULL_EXPR), [
-                _ANIMATION_START_STATE_STYLES_VAR.set(EMPTY_MAP$1).toStmt()
+                _ANIMATION_START_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()
             ]));
             statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR)).toDeclStmt());
             statements.push(new IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(NULL_EXPR), [
-                _ANIMATION_END_STATE_STYLES_VAR.set(EMPTY_MAP$1).toStmt()
+                _ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()
             ]));
             var RENDER_STYLES_FN = importExpr(Identifiers.renderStyles);
             // before we start any animation we want to clear out the starting
