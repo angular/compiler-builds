@@ -184,7 +184,7 @@ export class CompileElement extends CompileNode {
             var providerChildNodeCount = resolvedProvider.providerType === ProviderAstType.PrivateService ? 0 : childNodeCount;
             this.view.injectorGetMethod.addStmt(createInjectInternalCondition(this.nodeIndex, providerChildNodeCount, resolvedProvider, providerExpr));
         });
-        this._queries.values().forEach((queries) => queries.forEach((query) => query.afterChildren(this.view.updateContentQueriesMethod)));
+        this._queries.values().forEach((queries) => queries.forEach((query) => query.afterChildren(this.view.createMethod, this.view.updateContentQueriesMethod)));
     }
     addContentNode(ngContentIndex, nodeExpr) {
         this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);

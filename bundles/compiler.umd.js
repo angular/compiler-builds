@@ -8930,7 +8930,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 view.dirtyParentQueriesMethod.addStmt(queryListForDirtyExpr.callMethod('setDirty', []).toStmt());
             }
         };
-        CompileQuery.prototype.afterChildren = function (targetMethod) {
+        CompileQuery.prototype._isStatic = function () {
+            return !this._values.values.some(function (value) { return value instanceof ViewQueryValues; });
+        };
+        CompileQuery.prototype.afterChildren = function (targetStaticMethod, targetDynamicMethod) {
             var values = createQueryValues(this._values);
             var updateStmts = [this.queryList.callMethod('reset', [literalArr(values)]).toStmt()];
             if (isPresent(this.ownerDirectiveExpression)) {
@@ -8940,7 +8943,16 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (!this.meta.first) {
                 updateStmts.push(this.queryList.callMethod('notifyOnChanges', []).toStmt());
             }
-            targetMethod.addStmt(new IfStmt(this.queryList.prop('dirty'), updateStmts));
+            if (this.meta.first && this._isStatic()) {
+                // for queries that don't change and the user asked for a single element,
+                // set it immediately. That is e.g. needed for querying for ViewContainerRefs, ...
+                // we don't do this for QueryLists for now as this would break the timing when
+                // we call QueryList listeners...
+                targetStaticMethod.addStmts(updateStmts);
+            }
+            else {
+                targetDynamicMethod.addStmt(new IfStmt(this.queryList.prop('dirty'), updateStmts));
+            }
         };
         return CompileQuery;
     }());
@@ -9218,7 +9230,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var providerChildNodeCount = resolvedProvider.providerType === exports.ProviderAstType.PrivateService ? 0 : childNodeCount;
                 _this.view.injectorGetMethod.addStmt(createInjectInternalCondition(_this.nodeIndex, providerChildNodeCount, resolvedProvider, providerExpr));
             });
-            this._queries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.view.updateContentQueriesMethod); }); });
+            this._queries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.view.createMethod, _this.view.updateContentQueriesMethod); }); });
         };
         CompileElement.prototype.addContentNode = function (ngContentIndex, nodeExpr) {
             this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);
@@ -9617,7 +9629,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileView.prototype.afterNodes = function () {
             var _this = this;
             this.pipes.forEach(function (pipe) { return pipe.create(); });
-            this.viewQueries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.updateViewQueriesMethod); }); });
+            this.viewQueries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
         };
         return CompileView;
     }());

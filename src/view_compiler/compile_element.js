@@ -199,7 +199,7 @@ var CompileElement = (function (_super) {
             _this.view.injectorGetMethod.addStmt(createInjectInternalCondition(_this.nodeIndex, providerChildNodeCount, resolvedProvider, providerExpr));
         });
         this._queries.values().forEach(function (queries) {
-            return queries.forEach(function (query) { return query.afterChildren(_this.view.updateContentQueriesMethod); });
+            return queries.forEach(function (query) { return query.afterChildren(_this.view.createMethod, _this.view.updateContentQueriesMethod); });
         });
     };
     CompileElement.prototype.addContentNode = function (ngContentIndex, nodeExpr) {

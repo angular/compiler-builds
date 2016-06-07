@@ -139,7 +139,7 @@ export class CompileView {
     }
     afterNodes() {
         this.pipes.forEach((pipe) => pipe.create());
-        this.viewQueries.values().forEach((queries) => queries.forEach((query) => query.afterChildren(this.updateViewQueriesMethod)));
+        this.viewQueries.values().forEach((queries) => queries.forEach((query) => query.afterChildren(this.createMethod, this.updateViewQueriesMethod)));
     }
 }
 function getViewType(component, embeddedTemplateIndex) {

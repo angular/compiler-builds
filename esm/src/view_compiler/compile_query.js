@@ -43,7 +43,10 @@ export class CompileQuery {
             view.dirtyParentQueriesMethod.addStmt(queryListForDirtyExpr.callMethod('setDirty', []).toStmt());
         }
     }
-    afterChildren(targetMethod) {
+    _isStatic() {
+        return !this._values.values.some(value => value instanceof ViewQueryValues);
+    }
+    afterChildren(targetStaticMethod, targetDynamicMethod) {
         var values = createQueryValues(this._values);
         var updateStmts = [this.queryList.callMethod('reset', [o.literalArr(values)]).toStmt()];
         if (isPresent(this.ownerDirectiveExpression)) {
@@ -53,7 +56,16 @@ export class CompileQuery {
         if (!this.meta.first) {
             updateStmts.push(this.queryList.callMethod('notifyOnChanges', []).toStmt());
         }
-        targetMethod.addStmt(new o.IfStmt(this.queryList.prop('dirty'), updateStmts));
+        if (this.meta.first && this._isStatic()) {
+            // for queries that don't change and the user asked for a single element,
+            // set it immediately. That is e.g. needed for querying for ViewContainerRefs, ...
+            // we don't do this for QueryLists for now as this would break the timing when
+            // we call QueryList listeners...
+            targetStaticMethod.addStmts(updateStmts);
+        }
+        else {
+            targetDynamicMethod.addStmt(new o.IfStmt(this.queryList.prop('dirty'), updateStmts));
+        }
     }
 }
 function createQueryValues(viewValues) {
