@@ -305,6 +305,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     function isPrimitive(obj) {
         return !isJsObject(obj);
     }
+    function escape(s) {
+        return global$1.encodeURI(s);
+    }
     /**
      * A segment of text within the template.
      */
@@ -14872,6 +14875,844 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return AssetUrl;
     }());
+    /**
+     * A message extracted from a template.
+     *
+     * The identity of a message is comprised of `content` and `meaning`.
+     *
+     * `description` is additional information provided to the translator.
+     */
+    var Message = (function () {
+        function Message(content, meaning, description) {
+            if (description === void 0) { description = null; }
+            this.content = content;
+            this.meaning = meaning;
+            this.description = description;
+        }
+        return Message;
+    }());
+    /**
+     * Computes the id of a message
+     */
+    function id(m) {
+        var meaning = isPresent(m.meaning) ? m.meaning : "";
+        var content = isPresent(m.content) ? m.content : "";
+        return escape("$ng|" + meaning + "|" + content);
+    }
+    /**
+     * Expands special forms into elements.
+     *
+     * For example,
+     *
+     * ```
+     * { messages.length, plural,
+     *   =0 {zero}
+     *   =1 {one}
+     *   =other {more than one}
+     * }
+     * ```
+     *
+     * will be expanded into
+     *
+     * ```
+     * <ul [ngPlural]="messages.length">
+     *   <template [ngPluralCase]="0"><li i18n="plural_0">zero</li></template>
+     *   <template [ngPluralCase]="1"><li i18n="plural_1">one</li></template>
+     *   <template [ngPluralCase]="other"><li i18n="plural_other">more than one</li></template>
+     * </ul>
+     * ```
+     */
+    function expandNodes(nodes) {
+        var e = new _Expander();
+        var n = htmlVisitAll(e, nodes);
+        return new ExpansionResult(n, e.expanded);
+    }
+    var ExpansionResult = (function () {
+        function ExpansionResult(nodes, expanded) {
+            this.nodes = nodes;
+            this.expanded = expanded;
+        }
+        return ExpansionResult;
+    }());
+    var _Expander = (function () {
+        function _Expander() {
+            this.expanded = false;
+        }
+        _Expander.prototype.visitElement = function (ast, context) {
+            return new HtmlElementAst(ast.name, ast.attrs, htmlVisitAll(this, ast.children), ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+        };
+        _Expander.prototype.visitAttr = function (ast, context) { return ast; };
+        _Expander.prototype.visitText = function (ast, context) { return ast; };
+        _Expander.prototype.visitComment = function (ast, context) { return ast; };
+        _Expander.prototype.visitExpansion = function (ast, context) {
+            this.expanded = true;
+            return ast.type == "plural" ? _expandPluralForm(ast) : _expandDefaultForm(ast);
+        };
+        _Expander.prototype.visitExpansionCase = function (ast, context) {
+            throw new BaseException$1("Should not be reached");
+        };
+        return _Expander;
+    }());
+    function _expandPluralForm(ast) {
+        var children = ast.cases.map(function (c) {
+            var expansionResult = expandNodes(c.expression);
+            var i18nAttrs = expansionResult.expanded ?
+                [] :
+                [new HtmlAttrAst("i18n", ast.type + "_" + c.value, c.valueSourceSpan)];
+            return new HtmlElementAst("template", [
+                new HtmlAttrAst("ngPluralCase", c.value, c.valueSourceSpan),
+            ], [
+                new HtmlElementAst("li", i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)
+            ], c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        });
+        var switchAttr = new HtmlAttrAst("[ngPlural]", ast.switchValue, ast.switchValueSourceSpan);
+        return new HtmlElementAst("ul", [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    }
+    function _expandDefaultForm(ast) {
+        var children = ast.cases.map(function (c) {
+            var expansionResult = expandNodes(c.expression);
+            var i18nAttrs = expansionResult.expanded ?
+                [] :
+                [new HtmlAttrAst("i18n", ast.type + "_" + c.value, c.valueSourceSpan)];
+            return new HtmlElementAst("template", [
+                new HtmlAttrAst("ngSwitchWhen", c.value, c.valueSourceSpan),
+            ], [
+                new HtmlElementAst("li", i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)
+            ], c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        });
+        var switchAttr = new HtmlAttrAst("[ngSwitch]", ast.switchValue, ast.switchValueSourceSpan);
+        return new HtmlElementAst("ul", [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    }
+    var I18N_ATTR = "i18n";
+    var I18N_ATTR_PREFIX = "i18n-";
+    var CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
+    /**
+     * An i18n error.
+     */
+    var I18nError = (function (_super) {
+        __extends(I18nError, _super);
+        function I18nError(span, msg) {
+            _super.call(this, span, msg);
+        }
+        return I18nError;
+    }(ParseError));
+    // Man, this is so ugly!
+    function partition(nodes, errors, implicitTags) {
+        var res = [];
+        for (var i = 0; i < nodes.length; ++i) {
+            var n = nodes[i];
+            var temp = [];
+            if (_isOpeningComment(n)) {
+                var i18n = n.value.substring(5).trim();
+                i++;
+                while (!_isClosingComment(nodes[i])) {
+                    temp.push(nodes[i++]);
+                    if (i === nodes.length) {
+                        errors.push(new I18nError(n.sourceSpan, "Missing closing 'i18n' comment."));
+                        break;
+                    }
+                }
+                res.push(new Part(null, null, temp, i18n, true));
+            }
+            else if (n instanceof HtmlElementAst) {
+                var i18n = _findI18nAttr(n);
+                var hasI18n = isPresent(i18n) || implicitTags.indexOf(n.name) > -1;
+                res.push(new Part(n, null, n.children, isPresent(i18n) ? i18n.value : null, hasI18n));
+            }
+            else if (n instanceof HtmlTextAst) {
+                res.push(new Part(null, n, null, null, false));
+            }
+        }
+        return res;
+    }
+    var Part = (function () {
+        function Part(rootElement, rootTextNode, children, i18n, hasI18n) {
+            this.rootElement = rootElement;
+            this.rootTextNode = rootTextNode;
+            this.children = children;
+            this.i18n = i18n;
+            this.hasI18n = hasI18n;
+        }
+        Object.defineProperty(Part.prototype, "sourceSpan", {
+            get: function () {
+                if (isPresent(this.rootElement))
+                    return this.rootElement.sourceSpan;
+                else if (isPresent(this.rootTextNode))
+                    return this.rootTextNode.sourceSpan;
+                else
+                    return this.children[0].sourceSpan;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Part.prototype.createMessage = function (parser) {
+            return new Message(stringifyNodes(this.children, parser), meaning(this.i18n), description(this.i18n));
+        };
+        return Part;
+    }());
+    function _isOpeningComment(n) {
+        return n instanceof HtmlCommentAst && isPresent(n.value) && n.value.startsWith("i18n:");
+    }
+    function _isClosingComment(n) {
+        return n instanceof HtmlCommentAst && isPresent(n.value) && n.value == "/i18n";
+    }
+    function _findI18nAttr(p) {
+        var i18n = p.attrs.filter(function (a) { return a.name == I18N_ATTR; });
+        return i18n.length == 0 ? null : i18n[0];
+    }
+    function meaning(i18n) {
+        if (isBlank(i18n) || i18n == "")
+            return null;
+        return i18n.split("|")[0];
+    }
+    function description(i18n) {
+        if (isBlank(i18n) || i18n == "")
+            return null;
+        var parts = i18n.split("|");
+        return parts.length > 1 ? parts[1] : null;
+    }
+    /**
+     * Extract a translation string given an `i18n-` prefixed attribute.
+     *
+     * @internal
+     */
+    function messageFromI18nAttribute(parser, p, i18nAttr) {
+        var expectedName = i18nAttr.name.substring(5);
+        var matching = p.attrs.filter(function (a) { return a.name == expectedName; });
+        if (matching.length > 0) {
+            return messageFromAttribute(parser, matching[0], meaning(i18nAttr.value), description(i18nAttr.value));
+        }
+        throw new I18nError(p.sourceSpan, "Missing attribute '" + expectedName + "'.");
+    }
+    function messageFromAttribute(parser, attr, meaning, description) {
+        if (meaning === void 0) { meaning = null; }
+        if (description === void 0) { description = null; }
+        var value = removeInterpolation(attr.value, attr.sourceSpan, parser);
+        return new Message(value, meaning, description);
+    }
+    function removeInterpolation(value, source, parser) {
+        try {
+            var parsed = parser.splitInterpolation(value, source.toString());
+            var usedNames = new Map();
+            if (isPresent(parsed)) {
+                var res = "";
+                for (var i = 0; i < parsed.strings.length; ++i) {
+                    res += parsed.strings[i];
+                    if (i != parsed.strings.length - 1) {
+                        var customPhName = getPhNameFromBinding(parsed.expressions[i], i);
+                        customPhName = dedupePhName(usedNames, customPhName);
+                        res += "<ph name=\"" + customPhName + "\"/>";
+                    }
+                }
+                return res;
+            }
+            else {
+                return value;
+            }
+        }
+        catch (e) {
+            return value;
+        }
+    }
+    function getPhNameFromBinding(input, index) {
+        var customPhMatch = StringWrapper.split(input, CUSTOM_PH_EXP);
+        return customPhMatch.length > 1 ? customPhMatch[1] : "" + index;
+    }
+    function dedupePhName(usedNames, name) {
+        var duplicateNameCount = usedNames.get(name);
+        if (isPresent(duplicateNameCount)) {
+            usedNames.set(name, duplicateNameCount + 1);
+            return name + "_" + duplicateNameCount;
+        }
+        else {
+            usedNames.set(name, 1);
+            return name;
+        }
+    }
+    function stringifyNodes(nodes, parser) {
+        var visitor = new _StringifyVisitor(parser);
+        return htmlVisitAll(visitor, nodes).join("");
+    }
+    var _StringifyVisitor = (function () {
+        function _StringifyVisitor(_parser) {
+            this._parser = _parser;
+            this._index = 0;
+        }
+        _StringifyVisitor.prototype.visitElement = function (ast, context) {
+            var name = this._index++;
+            var children = this._join(htmlVisitAll(this, ast.children), "");
+            return "<ph name=\"e" + name + "\">" + children + "</ph>";
+        };
+        _StringifyVisitor.prototype.visitAttr = function (ast, context) { return null; };
+        _StringifyVisitor.prototype.visitText = function (ast, context) {
+            var index = this._index++;
+            var noInterpolation = removeInterpolation(ast.value, ast.sourceSpan, this._parser);
+            if (noInterpolation != ast.value) {
+                return "<ph name=\"t" + index + "\">" + noInterpolation + "</ph>";
+            }
+            else {
+                return ast.value;
+            }
+        };
+        _StringifyVisitor.prototype.visitComment = function (ast, context) { return ""; };
+        _StringifyVisitor.prototype.visitExpansion = function (ast, context) { return null; };
+        _StringifyVisitor.prototype.visitExpansionCase = function (ast, context) { return null; };
+        _StringifyVisitor.prototype._join = function (strs, str) {
+            return strs.filter(function (s) { return s.length > 0; }).join(str);
+        };
+        return _StringifyVisitor;
+    }());
+    var _PLACEHOLDER_ELEMENT = "ph";
+    var _NAME_ATTR = "name";
+    var _PLACEHOLDER_EXPANDED_REGEXP = /<ph(\s)+name=("(\w)+")><\/ph>/gi;
+    /**
+     * Creates an i18n-ed version of the parsed template.
+     *
+     * Algorithm:
+     *
+     * To understand the algorithm, you need to know how partitioning works.
+     * Partitioning is required as we can use two i18n comments to group node siblings together.
+     * That is why we cannot just use nodes.
+     *
+     * Partitioning transforms an array of HtmlAst into an array of Part.
+     * A part can optionally contain a root element or a root text node. And it can also contain
+     * children.
+     * A part can contain i18n property, in which case it needs to be translated.
+     *
+     * Example:
+     *
+     * The following array of nodes will be split into four parts:
+     *
+     * ```
+     * <a>A</a>
+     * <b i18n>B</b>
+     * <!-- i18n -->
+     * <c>C</c>
+     * D
+     * <!-- /i18n -->
+     * E
+     * ```
+     *
+     * Part 1 containing the a tag. It should not be translated.
+     * Part 2 containing the b tag. It should be translated.
+     * Part 3 containing the c tag and the D text node. It should be translated.
+     * Part 4 containing the E text node. It should not be translated.
+     *
+     *
+     * It is also important to understand how we stringify nodes to create a message.
+     *
+     * We walk the tree and replace every element node with a placeholder. We also replace
+     * all expressions in interpolation with placeholders. We also insert a placeholder element
+     * to wrap a text node containing interpolation.
+     *
+     * Example:
+     *
+     * The following tree:
+     *
+     * ```
+     * <a>A{{I}}</a><b>B</b>
+     * ```
+     *
+     * will be stringified into:
+     * ```
+     * <ph name="e0"><ph name="t1">A<ph name="0"/></ph></ph><ph name="e2">B</ph>
+     * ```
+     *
+     * This is what the algorithm does:
+     *
+     * 1. Use the provided html parser to get the html AST of the template.
+     * 2. Partition the root nodes, and process each part separately.
+     * 3. If a part does not have the i18n attribute, recurse to process children and attributes.
+     * 4. If a part has the i18n attribute, merge the translated i18n part with the original tree.
+     *
+     * This is how the merging works:
+     *
+     * 1. Use the stringify function to get the message id. Look up the message in the map.
+     * 2. Get the translated message. At this point we have two trees: the original tree
+     * and the translated tree, where all the elements are replaced with placeholders.
+     * 3. Use the original tree to create a mapping Index:number -> HtmlAst.
+     * 4. Walk the translated tree.
+     * 5. If we encounter a placeholder element, get is name property.
+     * 6. Get the type and the index of the node using the name property.
+     * 7. If the type is 'e', which means element, then:
+     *     - translate the attributes of the original element
+     *     - recurse to merge the children
+     *     - create a new element using the original element name, original position,
+     *     and translated children and attributes
+     * 8. If the type if 't', which means text, then:
+     *     - get the list of expressions from the original node.
+     *     - get the string version of the interpolation subtree
+     *     - find all the placeholders in the translated message, and replace them with the
+     *     corresponding original expressions
+     */
+    var I18nHtmlParser = (function () {
+        function I18nHtmlParser(_htmlParser, _parser, _messagesContent, _messages, _implicitTags, _implicitAttrs) {
+            this._htmlParser = _htmlParser;
+            this._parser = _parser;
+            this._messagesContent = _messagesContent;
+            this._messages = _messages;
+            this._implicitTags = _implicitTags;
+            this._implicitAttrs = _implicitAttrs;
+        }
+        I18nHtmlParser.prototype.parse = function (sourceContent, sourceUrl, parseExpansionForms) {
+            if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+            this.errors = [];
+            var res = this._htmlParser.parse(sourceContent, sourceUrl, true);
+            if (res.errors.length > 0) {
+                return res;
+            }
+            else {
+                var nodes = this._recurse(expandNodes(res.rootNodes).nodes);
+                return this.errors.length > 0 ? new HtmlParseTreeResult([], this.errors) :
+                    new HtmlParseTreeResult(nodes, []);
+            }
+        };
+        I18nHtmlParser.prototype._processI18nPart = function (p) {
+            try {
+                return p.hasI18n ? this._mergeI18Part(p) : this._recurseIntoI18nPart(p);
+            }
+            catch (e) {
+                if (e instanceof I18nError) {
+                    this.errors.push(e);
+                    return [];
+                }
+                else {
+                    throw e;
+                }
+            }
+        };
+        I18nHtmlParser.prototype._mergeI18Part = function (p) {
+            var message = p.createMessage(this._parser);
+            var messageId = id(message);
+            if (!StringMapWrapper.contains(this._messages, messageId)) {
+                throw new I18nError(p.sourceSpan, "Cannot find message for id '" + messageId + "', content '" + message.content + "'.");
+            }
+            var parsedMessage = this._messages[messageId];
+            return this._mergeTrees(p, parsedMessage, p.children);
+        };
+        I18nHtmlParser.prototype._recurseIntoI18nPart = function (p) {
+            // we found an element without an i18n attribute
+            // we need to recurse in cause its children may have i18n set
+            // we also need to translate its attributes
+            if (isPresent(p.rootElement)) {
+                var root = p.rootElement;
+                var children = this._recurse(p.children);
+                var attrs = this._i18nAttributes(root);
+                return [
+                    new HtmlElementAst(root.name, attrs, children, root.sourceSpan, root.startSourceSpan, root.endSourceSpan)
+                ];
+            }
+            else if (isPresent(p.rootTextNode)) {
+                return [p.rootTextNode];
+            }
+            else {
+                return this._recurse(p.children);
+            }
+        };
+        I18nHtmlParser.prototype._recurse = function (nodes) {
+            var _this = this;
+            var ps = partition(nodes, this.errors, this._implicitTags);
+            return ListWrapper.flatten(ps.map(function (p) { return _this._processI18nPart(p); }));
+        };
+        I18nHtmlParser.prototype._mergeTrees = function (p, translated, original) {
+            var l = new _CreateNodeMapping();
+            htmlVisitAll(l, original);
+            // merge the translated tree with the original tree.
+            // we do it by preserving the source code position of the original tree
+            var merged = this._mergeTreesHelper(translated, l.mapping);
+            // if the root element is present, we need to create a new root element with its attributes
+            // translated
+            if (isPresent(p.rootElement)) {
+                var root = p.rootElement;
+                var attrs = this._i18nAttributes(root);
+                return [
+                    new HtmlElementAst(root.name, attrs, merged, root.sourceSpan, root.startSourceSpan, root.endSourceSpan)
+                ];
+            }
+            else if (isPresent(p.rootTextNode)) {
+                throw new BaseException$1("should not be reached");
+            }
+            else {
+                return merged;
+            }
+        };
+        I18nHtmlParser.prototype._mergeTreesHelper = function (translated, mapping) {
+            var _this = this;
+            return translated.map(function (t) {
+                if (t instanceof HtmlElementAst) {
+                    return _this._mergeElementOrInterpolation(t, translated, mapping);
+                }
+                else if (t instanceof HtmlTextAst) {
+                    return t;
+                }
+                else {
+                    throw new BaseException$1("should not be reached");
+                }
+            });
+        };
+        I18nHtmlParser.prototype._mergeElementOrInterpolation = function (t, translated, mapping) {
+            var name = this._getName(t);
+            var type = name[0];
+            var index = NumberWrapper.parseInt(name.substring(1), 10);
+            var originalNode = mapping[index];
+            if (type == "t") {
+                return this._mergeTextInterpolation(t, originalNode);
+            }
+            else if (type == "e") {
+                return this._mergeElement(t, originalNode, mapping);
+            }
+            else {
+                throw new BaseException$1("should not be reached");
+            }
+        };
+        I18nHtmlParser.prototype._getName = function (t) {
+            if (t.name != _PLACEHOLDER_ELEMENT) {
+                throw new I18nError(t.sourceSpan, "Unexpected tag \"" + t.name + "\". Only \"" + _PLACEHOLDER_ELEMENT + "\" tags are allowed.");
+            }
+            var names = t.attrs.filter(function (a) { return a.name == _NAME_ATTR; });
+            if (names.length == 0) {
+                throw new I18nError(t.sourceSpan, "Missing \"" + _NAME_ATTR + "\" attribute.");
+            }
+            return names[0].value;
+        };
+        I18nHtmlParser.prototype._mergeTextInterpolation = function (t, originalNode) {
+            var split = this._parser.splitInterpolation(originalNode.value, originalNode.sourceSpan.toString());
+            var exps = isPresent(split) ? split.expressions : [];
+            var messageSubstring = this._messagesContent.substring(t.startSourceSpan.end.offset, t.endSourceSpan.start.offset);
+            var translated = this._replacePlaceholdersWithExpressions(messageSubstring, exps, originalNode.sourceSpan);
+            return new HtmlTextAst(translated, originalNode.sourceSpan);
+        };
+        I18nHtmlParser.prototype._mergeElement = function (t, originalNode, mapping) {
+            var children = this._mergeTreesHelper(t.children, mapping);
+            return new HtmlElementAst(originalNode.name, this._i18nAttributes(originalNode), children, originalNode.sourceSpan, originalNode.startSourceSpan, originalNode.endSourceSpan);
+        };
+        I18nHtmlParser.prototype._i18nAttributes = function (el) {
+            var _this = this;
+            var res = [];
+            var implicitAttrs = isPresent(this._implicitAttrs[el.name]) ? this._implicitAttrs[el.name] : [];
+            el.attrs.forEach(function (attr) {
+                if (attr.name.startsWith(I18N_ATTR_PREFIX) || attr.name == I18N_ATTR)
+                    return;
+                var message;
+                var i18ns = el.attrs.filter(function (a) { return a.name == "" + I18N_ATTR_PREFIX + attr.name; });
+                if (i18ns.length == 0) {
+                    if (implicitAttrs.indexOf(attr.name) == -1) {
+                        res.push(attr);
+                        return;
+                    }
+                    message = messageFromAttribute(_this._parser, attr);
+                }
+                else {
+                    message = messageFromI18nAttribute(_this._parser, el, i18ns[0]);
+                }
+                var messageId = id(message);
+                if (StringMapWrapper.contains(_this._messages, messageId)) {
+                    var updatedMessage = _this._replaceInterpolationInAttr(attr, _this._messages[messageId]);
+                    res.push(new HtmlAttrAst(attr.name, updatedMessage, attr.sourceSpan));
+                }
+                else {
+                    throw new I18nError(attr.sourceSpan, "Cannot find message for id '" + messageId + "', content '" + message.content + "'.");
+                }
+            });
+            return res;
+        };
+        I18nHtmlParser.prototype._replaceInterpolationInAttr = function (attr, msg) {
+            var split = this._parser.splitInterpolation(attr.value, attr.sourceSpan.toString());
+            var exps = isPresent(split) ? split.expressions : [];
+            var first = msg[0];
+            var last = msg[msg.length - 1];
+            var start = first.sourceSpan.start.offset;
+            var end = last instanceof HtmlElementAst ? last.endSourceSpan.end.offset : last.sourceSpan.end.offset;
+            var messageSubstring = this._messagesContent.substring(start, end);
+            return this._replacePlaceholdersWithExpressions(messageSubstring, exps, attr.sourceSpan);
+        };
+        ;
+        I18nHtmlParser.prototype._replacePlaceholdersWithExpressions = function (message, exps, sourceSpan) {
+            var _this = this;
+            var expMap = this._buildExprMap(exps);
+            return RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, function (match) {
+                var nameWithQuotes = match[2];
+                var name = nameWithQuotes.substring(1, nameWithQuotes.length - 1);
+                return _this._convertIntoExpression(name, expMap, sourceSpan);
+            });
+        };
+        I18nHtmlParser.prototype._buildExprMap = function (exps) {
+            var expMap = new Map();
+            var usedNames = new Map();
+            for (var i = 0; i < exps.length; i++) {
+                var phName = getPhNameFromBinding(exps[i], i);
+                expMap.set(dedupePhName(usedNames, phName), exps[i]);
+            }
+            return expMap;
+        };
+        I18nHtmlParser.prototype._convertIntoExpression = function (name, expMap, sourceSpan) {
+            if (expMap.has(name)) {
+                return "{{" + expMap.get(name) + "}}";
+            }
+            else {
+                throw new I18nError(sourceSpan, "Invalid interpolation name '" + name + "'");
+            }
+        };
+        return I18nHtmlParser;
+    }());
+    var _CreateNodeMapping = (function () {
+        function _CreateNodeMapping() {
+            this.mapping = [];
+        }
+        _CreateNodeMapping.prototype.visitElement = function (ast, context) {
+            this.mapping.push(ast);
+            htmlVisitAll(this, ast.children);
+            return null;
+        };
+        _CreateNodeMapping.prototype.visitAttr = function (ast, context) { return null; };
+        _CreateNodeMapping.prototype.visitText = function (ast, context) {
+            this.mapping.push(ast);
+            return null;
+        };
+        _CreateNodeMapping.prototype.visitExpansion = function (ast, context) { return null; };
+        _CreateNodeMapping.prototype.visitExpansionCase = function (ast, context) { return null; };
+        _CreateNodeMapping.prototype.visitComment = function (ast, context) { return ""; };
+        return _CreateNodeMapping;
+    }());
+    /**
+     * All messages extracted from a template.
+     */
+    var ExtractionResult = (function () {
+        function ExtractionResult(messages, errors) {
+            this.messages = messages;
+            this.errors = errors;
+        }
+        return ExtractionResult;
+    }());
+    /**
+     * Removes duplicate messages.
+     *
+     * E.g.
+     *
+     * ```
+     *  var m = [new Message("message", "meaning", "desc1"), new Message("message", "meaning",
+     * "desc2")];
+     *  expect(removeDuplicates(m)).toEqual([new Message("message", "meaning", "desc1")]);
+     * ```
+     */
+    function removeDuplicates$1(messages) {
+        var uniq = {};
+        messages.forEach(function (m) {
+            if (!StringMapWrapper.contains(uniq, id(m))) {
+                uniq[id(m)] = m;
+            }
+        });
+        return StringMapWrapper.values(uniq);
+    }
+    /**
+     * Extracts all messages from a template.
+     *
+     * Algorithm:
+     *
+     * To understand the algorithm, you need to know how partitioning works.
+     * Partitioning is required as we can use two i18n comments to group node siblings together.
+     * That is why we cannot just use nodes.
+     *
+     * Partitioning transforms an array of HtmlAst into an array of Part.
+     * A part can optionally contain a root element or a root text node. And it can also contain
+     * children.
+     * A part can contain i18n property, in which case it needs to be extracted.
+     *
+     * Example:
+     *
+     * The following array of nodes will be split into four parts:
+     *
+     * ```
+     * <a>A</a>
+     * <b i18n>B</b>
+     * <!-- i18n -->
+     * <c>C</c>
+     * D
+     * <!-- /i18n -->
+     * E
+     * ```
+     *
+     * Part 1 containing the a tag. It should not be translated.
+     * Part 2 containing the b tag. It should be translated.
+     * Part 3 containing the c tag and the D text node. It should be translated.
+     * Part 4 containing the E text node. It should not be translated..
+     *
+     * It is also important to understand how we stringify nodes to create a message.
+     *
+     * We walk the tree and replace every element node with a placeholder. We also replace
+     * all expressions in interpolation with placeholders. We also insert a placeholder element
+     * to wrap a text node containing interpolation.
+     *
+     * Example:
+     *
+     * The following tree:
+     *
+     * ```
+     * <a>A{{I}}</a><b>B</b>
+     * ```
+     *
+     * will be stringified into:
+     * ```
+     * <ph name="e0"><ph name="t1">A<ph name="0"/></ph></ph><ph name="e2">B</ph>
+     * ```
+     *
+     * This is what the algorithm does:
+     *
+     * 1. Use the provided html parser to get the html AST of the template.
+     * 2. Partition the root nodes, and process each part separately.
+     * 3. If a part does not have the i18n attribute, recurse to process children and attributes.
+     * 4. If a part has the i18n attribute, stringify the nodes to create a Message.
+     */
+    var MessageExtractor = (function () {
+        function MessageExtractor(_htmlParser, _parser, _implicitTags, _implicitAttrs) {
+            this._htmlParser = _htmlParser;
+            this._parser = _parser;
+            this._implicitTags = _implicitTags;
+            this._implicitAttrs = _implicitAttrs;
+        }
+        MessageExtractor.prototype.extract = function (template, sourceUrl) {
+            this.messages = [];
+            this.errors = [];
+            var res = this._htmlParser.parse(template, sourceUrl, true);
+            if (res.errors.length > 0) {
+                return new ExtractionResult([], res.errors);
+            }
+            else {
+                this._recurse(expandNodes(res.rootNodes).nodes);
+                return new ExtractionResult(this.messages, this.errors);
+            }
+        };
+        MessageExtractor.prototype._extractMessagesFromPart = function (p) {
+            if (p.hasI18n) {
+                this.messages.push(p.createMessage(this._parser));
+                this._recurseToExtractMessagesFromAttributes(p.children);
+            }
+            else {
+                this._recurse(p.children);
+            }
+            if (isPresent(p.rootElement)) {
+                this._extractMessagesFromAttributes(p.rootElement);
+            }
+        };
+        MessageExtractor.prototype._recurse = function (nodes) {
+            var _this = this;
+            if (isPresent(nodes)) {
+                var ps = partition(nodes, this.errors, this._implicitTags);
+                ps.forEach(function (p) { return _this._extractMessagesFromPart(p); });
+            }
+        };
+        MessageExtractor.prototype._recurseToExtractMessagesFromAttributes = function (nodes) {
+            var _this = this;
+            nodes.forEach(function (n) {
+                if (n instanceof HtmlElementAst) {
+                    _this._extractMessagesFromAttributes(n);
+                    _this._recurseToExtractMessagesFromAttributes(n.children);
+                }
+            });
+        };
+        MessageExtractor.prototype._extractMessagesFromAttributes = function (p) {
+            var _this = this;
+            var transAttrs = isPresent(this._implicitAttrs[p.name]) ? this._implicitAttrs[p.name] : [];
+            var explicitAttrs = [];
+            p.attrs.forEach(function (attr) {
+                if (attr.name.startsWith(I18N_ATTR_PREFIX)) {
+                    try {
+                        explicitAttrs.push(attr.name.substring(I18N_ATTR_PREFIX.length));
+                        _this.messages.push(messageFromI18nAttribute(_this._parser, p, attr));
+                    }
+                    catch (e) {
+                        if (e instanceof I18nError) {
+                            _this.errors.push(e);
+                        }
+                        else {
+                            throw e;
+                        }
+                    }
+                }
+            });
+            p.attrs.filter(function (attr) { return !attr.name.startsWith(I18N_ATTR_PREFIX); })
+                .filter(function (attr) { return explicitAttrs.indexOf(attr.name) == -1; })
+                .filter(function (attr) { return transAttrs.indexOf(attr.name) > -1; })
+                .forEach(function (attr) { return _this.messages.push(messageFromAttribute(_this._parser, attr)); });
+        };
+        return MessageExtractor;
+    }());
+    var _PLACEHOLDER_REGEXP = RegExpWrapper.create("\\<ph(\\s)+name=(\"(\\w)+\")\\/\\>");
+    var _ID_ATTR = "id";
+    var _MSG_ELEMENT = "msg";
+    var _BUNDLE_ELEMENT = "message-bundle";
+    function serializeXmb(messages) {
+        var ms = messages.map(function (m) { return _serializeMessage(m); }).join("");
+        return "<message-bundle>" + ms + "</message-bundle>";
+    }
+    var XmbDeserializationResult = (function () {
+        function XmbDeserializationResult(content, messages, errors) {
+            this.content = content;
+            this.messages = messages;
+            this.errors = errors;
+        }
+        return XmbDeserializationResult;
+    }());
+    var XmbDeserializationError = (function (_super) {
+        __extends(XmbDeserializationError, _super);
+        function XmbDeserializationError(span, msg) {
+            _super.call(this, span, msg);
+        }
+        return XmbDeserializationError;
+    }(ParseError));
+    function deserializeXmb(content, url) {
+        var parser = new HtmlParser();
+        var normalizedContent = _expandPlaceholder(content.trim());
+        var parsed = parser.parse(normalizedContent, url);
+        if (parsed.errors.length > 0) {
+            return new XmbDeserializationResult(null, {}, parsed.errors);
+        }
+        if (_checkRootElement(parsed.rootNodes)) {
+            return new XmbDeserializationResult(null, {}, [new XmbDeserializationError(null, "Missing element \"" + _BUNDLE_ELEMENT + "\"")]);
+        }
+        var bundleEl = parsed.rootNodes[0]; // test this
+        var errors = [];
+        var messages = {};
+        _createMessages(bundleEl.children, messages, errors);
+        return (errors.length == 0) ?
+            new XmbDeserializationResult(normalizedContent, messages, []) :
+            new XmbDeserializationResult(null, {}, errors);
+    }
+    function _checkRootElement(nodes) {
+        return nodes.length < 1 || !(nodes[0] instanceof HtmlElementAst) ||
+            nodes[0].name != _BUNDLE_ELEMENT;
+    }
+    function _createMessages(nodes, messages, errors) {
+        nodes.forEach(function (item) {
+            if (item instanceof HtmlElementAst) {
+                var msg = item;
+                if (msg.name != _MSG_ELEMENT) {
+                    errors.push(new XmbDeserializationError(item.sourceSpan, "Unexpected element \"" + msg.name + "\""));
+                    return;
+                }
+                var id_1 = _id(msg);
+                if (isBlank(id_1)) {
+                    errors.push(new XmbDeserializationError(item.sourceSpan, "\"" + _ID_ATTR + "\" attribute is missing"));
+                    return;
+                }
+                messages[id_1] = msg.children;
+            }
+        });
+    }
+    function _id(el) {
+        var ids = el.attrs.filter(function (a) { return a.name == _ID_ATTR; });
+        return ids.length > 0 ? ids[0].value : null;
+    }
+    function _serializeMessage(m) {
+        var desc = isPresent(m.description) ? " desc='" + m.description + "'" : "";
+        return "<msg id='" + id(m) + "'" + desc + ">" + m.content + "</msg>";
+    }
+    function _expandPlaceholder(input) {
+        return RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, function (match) {
+            var nameWithQuotes = match[2];
+            return "<ph name=" + nameWithQuotes + "></ph>";
+        });
+    }
     exports.__compiler_private__;
     (function (__compiler_private__) {
         __compiler_private__.SelectorMatcher = SelectorMatcher;
@@ -14880,6 +15721,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         __compiler_private__.ImportGenerator = ImportGenerator;
         __compiler_private__.CompileMetadataResolver = CompileMetadataResolver;
         __compiler_private__.HtmlParser = HtmlParser;
+        __compiler_private__.I18nHtmlParser = I18nHtmlParser;
+        __compiler_private__.ExtractionResult = ExtractionResult;
+        __compiler_private__.Message = Message;
+        __compiler_private__.MessageExtractor = MessageExtractor;
+        __compiler_private__.removeDuplicates = removeDuplicates$1;
+        __compiler_private__.serializeXmb = serializeXmb;
+        __compiler_private__.deserializeXmb = deserializeXmb;
         __compiler_private__.DirectiveNormalizer = DirectiveNormalizer;
         __compiler_private__.Lexer = Lexer;
         __compiler_private__.Parser = Parser;
