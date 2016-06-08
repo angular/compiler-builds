@@ -10,7 +10,7 @@ const _INITIAL_KEYFRAME = 0;
 const _TERMINAL_KEYFRAME = 1;
 const _ONE_SECOND = 1000;
 export class AnimationParseError extends ParseError {
-    constructor(message) {
+    constructor(message /** TODO #9100 */) {
         super(null, message);
     }
     toString() { return `${this.msg}`; }
@@ -239,7 +239,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
         var offset = styleMetadata.offset;
         var keyframeStyles = {};
         styleMetadata.styles.forEach(entry => {
-            StringMapWrapper.forEach(entry, (value, prop) => {
+            StringMapWrapper.forEach(entry, (value /** TODO #9100 */, prop /** TODO #9100 */) => {
                 if (prop != 'offset') {
                     keyframeStyles[prop] = value;
                 }
@@ -274,7 +274,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
     for (i = 1; i <= limit; i++) {
         let entry = rawKeyframes[i];
         let styles = entry[1];
-        StringMapWrapper.forEach(styles, (value, prop) => {
+        StringMapWrapper.forEach(styles, (value /** TODO #9100 */, prop /** TODO #9100 */) => {
             if (!isPresent(firstKeyframeStyles[prop])) {
                 firstKeyframeStyles[prop] = FILL_STYLE_FLAG;
             }
@@ -283,7 +283,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
     for (i = limit - 1; i >= 0; i--) {
         let entry = rawKeyframes[i];
         let styles = entry[1];
-        StringMapWrapper.forEach(styles, (value, prop) => {
+        StringMapWrapper.forEach(styles, (value /** TODO #9100 */, prop /** TODO #9100 */) => {
             if (!isPresent(lastKeyframeStyles[prop])) {
                 lastKeyframeStyles[prop] = value;
             }
@@ -307,7 +307,7 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
                 entry.styles.forEach(stylesEntry => {
                     // by this point we know that we only have stringmap values
                     var map = stylesEntry;
-                    StringMapWrapper.forEach(map, (value, prop) => {
+                    StringMapWrapper.forEach(map, (value /** TODO #9100 */, prop /** TODO #9100 */) => {
                         collectedStyles.insertAtTime(prop, time, value);
                     });
                 });
@@ -362,7 +362,7 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
         ast = new AnimationStepAst(new AnimationStylesAst([]), keyframes, timings.duration, timings.delay, timings.easing);
         playTime = timings.duration + timings.delay;
         currentTime += playTime;
-        keyframes.forEach(keyframe => keyframe.styles.styles.forEach(entry => StringMapWrapper.forEach(entry, (value, prop) => collectedStyles.insertAtTime(prop, currentTime, value))));
+        keyframes.forEach((keyframe /** TODO #9100 */) => keyframe.styles.styles.forEach((entry /** TODO #9100 */) => StringMapWrapper.forEach(entry, (value /** TODO #9100 */, prop /** TODO #9100 */) => collectedStyles.insertAtTime(prop, currentTime, value))));
     }
     else {
         // if the code reaches this stage then an error
@@ -428,11 +428,11 @@ function _createStartKeyframeFromEndKeyframe(endKeyframe, startTime, duration, c
     var values = {};
     var endTime = startTime + duration;
     endKeyframe.styles.styles.forEach((styleData) => {
-        StringMapWrapper.forEach(styleData, (val, prop) => {
+        StringMapWrapper.forEach(styleData, (val /** TODO #9100 */, prop /** TODO #9100 */) => {
             if (prop == 'offset')
                 return;
             var resultIndex = collectedStyles.indexOfAtOrBeforeTime(prop, startTime);
-            var resultEntry, nextEntry, value;
+            var resultEntry /** TODO #9100 */, nextEntry /** TODO #9100 */, value;
             if (isPresent(resultIndex)) {
                 resultEntry = collectedStyles.getByIndex(prop, resultIndex);
                 value = resultEntry.value;

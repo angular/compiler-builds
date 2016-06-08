@@ -105,7 +105,7 @@ var _AnimationBuilder = (function () {
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
     };
     /** @internal */
-    _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr) {
+    _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr /** TODO #9100 */, keyframesExpr /** TODO #9100 */) {
         return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
             _ANIMATION_FACTORY_ELEMENT_VAR,
             startingStylesExpr,
@@ -129,8 +129,8 @@ var _AnimationBuilder = (function () {
     };
     _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
         var flatStyles = {};
-        _getStylesArray(ast).forEach(function (entry) {
-            collection_1.StringMapWrapper.forEach(entry, function (value, key) {
+        _getStylesArray(ast).forEach(function (entry /** TODO #9100 */) {
+            collection_1.StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, key /** TODO #9100 */) {
                 flatStyles[key] = value;
             });
         });
@@ -231,11 +231,11 @@ var _AnimationBuilder = (function () {
         var fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
         var fnVariable = o.variable(this._fnVarName);
         var lookupMap = [];
-        collection_1.StringMapWrapper.forEach(context.stateMap.states, function (value, stateName) {
+        collection_1.StringMapWrapper.forEach(context.stateMap.states, function (value /** TODO #9100 */, stateName /** TODO #9100 */) {
             var variableValue = EMPTY_MAP;
             if (lang_1.isPresent(value)) {
                 var styleMap_1 = [];
-                collection_1.StringMapWrapper.forEach(value, function (value, key) {
+                collection_1.StringMapWrapper.forEach(value, function (value /** TODO #9100 */, key /** TODO #9100 */) {
                     styleMap_1.push([key, o.literal(value)]);
                 });
                 variableValue = o.literalMap(styleMap_1);

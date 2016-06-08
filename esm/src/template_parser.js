@@ -107,7 +107,7 @@ export class TemplateParser {
         const existingReferences = [];
         result
             .filter(element => !!element.references)
-            .forEach(element => element.references.forEach(reference => {
+            .forEach(element => element.references.forEach((reference /** TODO #???? */) => {
             const name = reference.name;
             if (existingReferences.indexOf(name) < 0) {
                 existingReferences.push(name);
@@ -636,7 +636,7 @@ class TemplateParseVisitor {
     _assertAllEventsPublishedByDirectives(directives, events) {
         var allDirectiveEvents = new Set();
         directives.forEach(directive => {
-            StringMapWrapper.forEach(directive.directive.outputs, (eventName, _) => { allDirectiveEvents.add(eventName); });
+            StringMapWrapper.forEach(directive.directive.outputs, (eventName, _ /** TODO #???? */) => { allDirectiveEvents.add(eventName); });
         });
         events.forEach(event => {
             if (isPresent(event.target) || !SetWrapper.has(allDirectiveEvents, event.name)) {

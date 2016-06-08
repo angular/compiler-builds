@@ -275,7 +275,7 @@ var _TsEmitterVisitor = (function (_super) {
     };
     _TsEmitterVisitor.prototype._visitParams = function (params, ctx) {
         var _this = this;
-        this.visitAllObjects(function (param) {
+        this.visitAllObjects(function (param /** TODO #9100 */) {
             ctx.print(param.name);
             ctx.print(':');
             _this.visitType(param.type, ctx);
@@ -297,7 +297,7 @@ var _TsEmitterVisitor = (function (_super) {
         ctx.print(value.name);
         if (lang_1.isPresent(typeParams) && typeParams.length > 0) {
             ctx.print("<");
-            this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
+            this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
             ctx.print(">");
         }
     };

@@ -218,9 +218,9 @@ class ViewBuilderVisitor {
 }
 function _mergeHtmlAndDirectiveAttrs(declaredHtmlAttrs, directives) {
     var result = {};
-    StringMapWrapper.forEach(declaredHtmlAttrs, (value, key) => { result[key] = value; });
+    StringMapWrapper.forEach(declaredHtmlAttrs, (value /** TODO #9100 */, key /** TODO #9100 */) => { result[key] = value; });
     directives.forEach(directiveMeta => {
-        StringMapWrapper.forEach(directiveMeta.hostAttributes, (value, name) => {
+        StringMapWrapper.forEach(directiveMeta.hostAttributes, (value /** TODO #9100 */, name /** TODO #9100 */) => {
             var prevValue = result[name];
             result[name] = isPresent(prevValue) ? mergeAttributeValue(name, prevValue, value) : value;
         });
@@ -242,7 +242,7 @@ function mergeAttributeValue(attrName, attrValue1, attrValue2) {
 }
 function mapToKeyValueArray(data) {
     var entryArray = [];
-    StringMapWrapper.forEach(data, (value, name) => { entryArray.push([name, value]); });
+    StringMapWrapper.forEach(data, (value /** TODO #9100 */, name /** TODO #9100 */) => { entryArray.push([name, value]); });
     // We need to sort to get a defined output order
     // for tests and for caching generated artifacts...
     ListWrapper.sort(entryArray, (entry1, entry2) => StringWrapper.compare(entry1[0], entry2[0]));
@@ -277,7 +277,7 @@ function createStaticNodeDebugInfo(node) {
         if (isPresent(compileElement.component)) {
             componentToken = createDiTokenExpression(identifierToken(compileElement.component.type));
         }
-        StringMapWrapper.forEach(compileElement.referenceTokens, (token, varName) => {
+        StringMapWrapper.forEach(compileElement.referenceTokens, (token /** TODO #9100 */, varName /** TODO #9100 */) => {
             varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : o.NULL_EXPR]);
         });
     }

@@ -25,7 +25,7 @@ var CssSelector = (function () {
     }
     CssSelector.parse = function (selector) {
         var results = [];
-        var _addResult = function (res, cssSel) {
+        var _addResult = function (res, cssSel /** TODO #9100 */) {
             if (cssSel.notSelectors.length > 0 && lang_1.isBlank(cssSel.element) &&
                 collection_1.ListWrapper.isEmpty(cssSel.classNames) && collection_1.ListWrapper.isEmpty(cssSel.attrs)) {
                 cssSel.element = "*";
@@ -283,7 +283,7 @@ var SelectorMatcher = (function () {
         return result;
     };
     /** @internal */
-    SelectorMatcher.prototype._matchTerminal = function (map, name, cssSelector, matchedCallback) {
+    SelectorMatcher.prototype._matchTerminal = function (map, name /** TODO #9100 */, cssSelector, matchedCallback) {
         if (lang_1.isBlank(map) || lang_1.isBlank(name)) {
             return false;
         }
@@ -304,7 +304,7 @@ var SelectorMatcher = (function () {
         return result;
     };
     /** @internal */
-    SelectorMatcher.prototype._matchPartial = function (map, name, cssSelector, matchedCallback /*: (c: CssSelector, a: any) => void*/) {
+    SelectorMatcher.prototype._matchPartial = function (map, name /** TODO #9100 */, cssSelector, matchedCallback /** TODO #9100 */ /*: (c: CssSelector, a: any) => void*/) {
         if (lang_1.isBlank(map) || lang_1.isBlank(name)) {
             return false;
         }

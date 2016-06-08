@@ -161,7 +161,7 @@ var CompiledTemplate = (function () {
     function CompiledTemplate() {
         var _this = this;
         this.viewFactory = null;
-        this.proxyViewFactory = function (viewUtils, childInjector, contextEl) {
+        this.proxyViewFactory = function (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) {
             return _this.viewFactory(viewUtils, childInjector, contextEl);
         };
     }

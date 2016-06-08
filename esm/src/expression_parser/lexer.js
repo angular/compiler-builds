@@ -135,7 +135,7 @@ export const $BAR = 124;
 export const $RBRACE = 125;
 const $NBSP = 160;
 export class ScannerError extends BaseException {
-    constructor(message) {
+    constructor(message /** TODO #9100 */) {
         super();
         this.message = message;
     }

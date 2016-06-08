@@ -269,7 +269,7 @@ export class I18nHtmlParser {
     ;
     _replacePlaceholdersWithExpressions(message, exps, sourceSpan) {
         let expMap = this._buildExprMap(exps);
-        return RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, (match) => {
+        return RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, (match /** TODO #9100 */) => {
             let nameWithQuotes = match[2];
             let name = nameWithQuotes.substring(1, nameWithQuotes.length - 1);
             return this._convertIntoExpression(name, expMap, sourceSpan);

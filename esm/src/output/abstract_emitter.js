@@ -326,7 +326,7 @@ export class AbstractEmitterVisitor {
         var useNewLine = ast.entries.length > 1;
         ctx.print(`{`, useNewLine);
         ctx.incIndent();
-        this.visitAllObjects((entry) => {
+        this.visitAllObjects((entry /** TODO #9100 */) => {
             ctx.print(`${escapeSingleQuoteString(entry[0], this._escapeDollarInStrings)}: `);
             entry[1].visitExpression(this, ctx);
         }, ast.entries, ctx, ',', useNewLine);
@@ -335,7 +335,7 @@ export class AbstractEmitterVisitor {
         return null;
     }
     visitAllExpressions(expressions, ctx, separator, newLine = false) {
-        this.visitAllObjects((expr) => expr.visitExpression(this, ctx), expressions, ctx, separator, newLine);
+        this.visitAllObjects((expr /** TODO #9100 */) => expr.visitExpression(this, ctx), expressions, ctx, separator, newLine);
     }
     visitAllObjects(handler, expressions, ctx, separator, newLine = false) {
         for (var i = 0; i < expressions.length; i++) {
@@ -356,7 +356,7 @@ export function escapeSingleQuoteString(input, escapeDollar) {
     if (isBlank(input)) {
         return null;
     }
-    var body = StringWrapper.replaceAllMapped(input, _SINGLE_QUOTE_ESCAPE_STRING_RE, (match) => {
+    var body = StringWrapper.replaceAllMapped(input, _SINGLE_QUOTE_ESCAPE_STRING_RE, (match /** TODO #9100 */) => {
         if (match[0] == '$') {
             return escapeDollar ? '\\$' : '$';
         }

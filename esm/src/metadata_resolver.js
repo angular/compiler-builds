@@ -336,7 +336,7 @@ export class CompileMetadataResolver {
     }
     getQueriesMetadata(queries, isViewQuery, directiveType) {
         var compileQueries = [];
-        StringMapWrapper.forEach(queries, (query, propertyName) => {
+        StringMapWrapper.forEach(queries, (query /** TODO #9100 */, propertyName /** TODO #9100 */) => {
             if (query.isViewQuery === isViewQuery) {
                 compileQueries.push(this.getQueryMetadata(query, propertyName, directiveType));
             }

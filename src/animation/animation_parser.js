@@ -17,7 +17,7 @@ var _TERMINAL_KEYFRAME = 1;
 var _ONE_SECOND = 1000;
 var AnimationParseError = (function (_super) {
     __extends(AnimationParseError, _super);
-    function AnimationParseError(message) {
+    function AnimationParseError(message /** TODO #9100 */) {
         _super.call(this, null, message);
     }
     AnimationParseError.prototype.toString = function () { return "" + this.msg; };
@@ -254,7 +254,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
         var offset = styleMetadata.offset;
         var keyframeStyles = {};
         styleMetadata.styles.forEach(function (entry) {
-            collection_1.StringMapWrapper.forEach(entry, function (value, prop) {
+            collection_1.StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
                 if (prop != 'offset') {
                     keyframeStyles[prop] = value;
                 }
@@ -289,7 +289,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
     for (i = 1; i <= limit; i++) {
         var entry = rawKeyframes[i];
         var styles = entry[1];
-        collection_1.StringMapWrapper.forEach(styles, function (value, prop) {
+        collection_1.StringMapWrapper.forEach(styles, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
             if (!lang_1.isPresent(firstKeyframeStyles[prop])) {
                 firstKeyframeStyles[prop] = core_private_1.FILL_STYLE_FLAG;
             }
@@ -298,7 +298,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
     for (i = limit - 1; i >= 0; i--) {
         var entry = rawKeyframes[i];
         var styles = entry[1];
-        collection_1.StringMapWrapper.forEach(styles, function (value, prop) {
+        collection_1.StringMapWrapper.forEach(styles, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
             if (!lang_1.isPresent(lastKeyframeStyles[prop])) {
                 lastKeyframeStyles[prop] = value;
             }
@@ -322,7 +322,7 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
                 entry.styles.forEach(function (stylesEntry) {
                     // by this point we know that we only have stringmap values
                     var map = stylesEntry;
-                    collection_1.StringMapWrapper.forEach(map, function (value, prop) {
+                    collection_1.StringMapWrapper.forEach(map, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
                         collectedStyles.insertAtTime(prop, time, value);
                     });
                 });
@@ -377,9 +377,9 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
         ast = new animation_ast_1.AnimationStepAst(new animation_ast_1.AnimationStylesAst([]), keyframes, timings.duration, timings.delay, timings.easing);
         playTime = timings.duration + timings.delay;
         currentTime += playTime;
-        keyframes.forEach(function (keyframe) {
-            return keyframe.styles.styles.forEach(function (entry) {
-                return collection_1.StringMapWrapper.forEach(entry, function (value, prop) {
+        keyframes.forEach(function (keyframe /** TODO #9100 */) {
+            return keyframe.styles.styles.forEach(function (entry /** TODO #9100 */) {
+                return collection_1.StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
                     return collectedStyles.insertAtTime(prop, currentTime, value);
                 });
             });
@@ -449,11 +449,11 @@ function _createStartKeyframeFromEndKeyframe(endKeyframe, startTime, duration, c
     var values = {};
     var endTime = startTime + duration;
     endKeyframe.styles.styles.forEach(function (styleData) {
-        collection_1.StringMapWrapper.forEach(styleData, function (val, prop) {
+        collection_1.StringMapWrapper.forEach(styleData, function (val /** TODO #9100 */, prop /** TODO #9100 */) {
             if (prop == 'offset')
                 return;
             var resultIndex = collectedStyles.indexOfAtOrBeforeTime(prop, startTime);
-            var resultEntry, nextEntry, value;
+            var resultEntry /** TODO #9100 */, nextEntry /** TODO #9100 */, value;
             if (lang_1.isPresent(resultIndex)) {
                 resultEntry = collectedStyles.getByIndex(prop, resultIndex);
                 value = resultEntry.value;

@@ -238,7 +238,7 @@ var DomElementSchemaRegistry = (function (_super) {
             typeName.split(',').forEach(function (tag) { return _this.schema[tag] = type; });
             var superType = _this.schema[typeParts[1]];
             if (lang_1.isPresent(superType)) {
-                collection_1.StringMapWrapper.forEach(superType, function (v, k) { return type[k] = v; });
+                collection_1.StringMapWrapper.forEach(superType, function (v /** TODO #9100 */, k /** TODO #9100 */) { return type[k] = v; });
             }
             properties.forEach(function (property) {
                 if (property == '') {

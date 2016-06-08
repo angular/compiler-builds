@@ -23,7 +23,7 @@ exports.isStyleUrlResolvable = isStyleUrlResolvable;
  */
 function extractStyleUrls(resolver, baseUrl, cssText) {
     var foundUrls = [];
-    var modifiedCssText = lang_1.StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m) {
+    var modifiedCssText = lang_1.StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m /** TODO #9100 */) {
         var url = lang_1.isPresent(m[1]) ? m[1] : m[2];
         if (!isStyleUrlResolvable(url)) {
             // Do not attempt to resolve non-package absolute URLs with URI scheme

@@ -224,9 +224,9 @@ var ViewBuilderVisitor = (function () {
 }());
 function _mergeHtmlAndDirectiveAttrs(declaredHtmlAttrs, directives) {
     var result = {};
-    collection_1.StringMapWrapper.forEach(declaredHtmlAttrs, function (value, key) { result[key] = value; });
+    collection_1.StringMapWrapper.forEach(declaredHtmlAttrs, function (value /** TODO #9100 */, key /** TODO #9100 */) { result[key] = value; });
     directives.forEach(function (directiveMeta) {
-        collection_1.StringMapWrapper.forEach(directiveMeta.hostAttributes, function (value, name) {
+        collection_1.StringMapWrapper.forEach(directiveMeta.hostAttributes, function (value /** TODO #9100 */, name /** TODO #9100 */) {
             var prevValue = result[name];
             result[name] = lang_1.isPresent(prevValue) ? mergeAttributeValue(name, prevValue, value) : value;
         });
@@ -248,7 +248,7 @@ function mergeAttributeValue(attrName, attrValue1, attrValue2) {
 }
 function mapToKeyValueArray(data) {
     var entryArray = [];
-    collection_1.StringMapWrapper.forEach(data, function (value, name) { entryArray.push([name, value]); });
+    collection_1.StringMapWrapper.forEach(data, function (value /** TODO #9100 */, name /** TODO #9100 */) { entryArray.push([name, value]); });
     // We need to sort to get a defined output order
     // for tests and for caching generated artifacts...
     collection_1.ListWrapper.sort(entryArray, function (entry1, entry2) { return lang_1.StringWrapper.compare(entry1[0], entry2[0]); });
@@ -283,7 +283,7 @@ function createStaticNodeDebugInfo(node) {
         if (lang_1.isPresent(compileElement.component)) {
             componentToken = util_1.createDiTokenExpression(identifiers_1.identifierToken(compileElement.component.type));
         }
-        collection_1.StringMapWrapper.forEach(compileElement.referenceTokens, function (token, varName) {
+        collection_1.StringMapWrapper.forEach(compileElement.referenceTokens, function (token /** TODO #9100 */, varName /** TODO #9100 */) {
             varTokenEntries.push([varName, lang_1.isPresent(token) ? util_1.createDiTokenExpression(token) : o.NULL_EXPR]);
         });
     }

@@ -347,7 +347,7 @@ var AbstractEmitterVisitor = (function () {
         var useNewLine = ast.entries.length > 1;
         ctx.print("{", useNewLine);
         ctx.incIndent();
-        this.visitAllObjects(function (entry) {
+        this.visitAllObjects(function (entry /** TODO #9100 */) {
             ctx.print(escapeSingleQuoteString(entry[0], _this._escapeDollarInStrings) + ": ");
             entry[1].visitExpression(_this, ctx);
         }, ast.entries, ctx, ',', useNewLine);
@@ -358,7 +358,7 @@ var AbstractEmitterVisitor = (function () {
     AbstractEmitterVisitor.prototype.visitAllExpressions = function (expressions, ctx, separator, newLine) {
         var _this = this;
         if (newLine === void 0) { newLine = false; }
-        this.visitAllObjects(function (expr) { return expr.visitExpression(_this, ctx); }, expressions, ctx, separator, newLine);
+        this.visitAllObjects(function (expr /** TODO #9100 */) { return expr.visitExpression(_this, ctx); }, expressions, ctx, separator, newLine);
     };
     AbstractEmitterVisitor.prototype.visitAllObjects = function (handler, expressions, ctx, separator, newLine) {
         if (newLine === void 0) { newLine = false; }
@@ -383,7 +383,7 @@ function escapeSingleQuoteString(input, escapeDollar) {
     if (lang_1.isBlank(input)) {
         return null;
     }
-    var body = lang_1.StringWrapper.replaceAllMapped(input, _SINGLE_QUOTE_ESCAPE_STRING_RE, function (match) {
+    var body = lang_1.StringWrapper.replaceAllMapped(input, _SINGLE_QUOTE_ESCAPE_STRING_RE, function (match /** TODO #9100 */) {
         if (match[0] == '$') {
             return escapeDollar ? '\\$' : '$';
         }

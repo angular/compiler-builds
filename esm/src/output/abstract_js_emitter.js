@@ -132,7 +132,7 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
         return null;
     }
     _visitParams(params, ctx) {
-        this.visitAllObjects((param) => ctx.print(param.name), params, ctx, ',');
+        this.visitAllObjects((param /** TODO #9100 */) => ctx.print(param.name), params, ctx, ',');
     }
     getBuiltinMethodName(method) {
         var name;

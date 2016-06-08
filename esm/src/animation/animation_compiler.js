@@ -96,7 +96,7 @@ class _AnimationBuilder {
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
     }
     /** @internal */
-    _callAnimateMethod(ast, startingStylesExpr, keyframesExpr) {
+    _callAnimateMethod(ast, startingStylesExpr /** TODO #9100 */, keyframesExpr /** TODO #9100 */) {
         return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
             _ANIMATION_FACTORY_ELEMENT_VAR,
             startingStylesExpr,
@@ -118,8 +118,8 @@ class _AnimationBuilder {
     }
     visitAnimationStateDeclaration(ast, context) {
         var flatStyles = {};
-        _getStylesArray(ast).forEach(entry => {
-            StringMapWrapper.forEach(entry, (value, key) => {
+        _getStylesArray(ast).forEach((entry /** TODO #9100 */) => {
+            StringMapWrapper.forEach(entry, (value /** TODO #9100 */, key /** TODO #9100 */) => {
                 flatStyles[key] = value;
             });
         });
@@ -219,11 +219,11 @@ class _AnimationBuilder {
         var fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
         var fnVariable = o.variable(this._fnVarName);
         var lookupMap = [];
-        StringMapWrapper.forEach(context.stateMap.states, (value, stateName) => {
+        StringMapWrapper.forEach(context.stateMap.states, (value /** TODO #9100 */, stateName /** TODO #9100 */) => {
             var variableValue = EMPTY_MAP;
             if (isPresent(value)) {
                 let styleMap = [];
-                StringMapWrapper.forEach(value, (value, key) => {
+                StringMapWrapper.forEach(value, (value /** TODO #9100 */, key /** TODO #9100 */) => {
                     styleMap.push([key, o.literal(value)]);
                 });
                 variableValue = o.literalMap(styleMap);

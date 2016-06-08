@@ -73,7 +73,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return Array.isArray(obj);
     }
     function noop() { }
-    function stringify(token) {
+    function stringify(token /** TODO #9100 */) {
         if (typeof token === 'string') {
             return token;
         }
@@ -92,10 +92,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     // serialize / deserialize enum exist only for consistency with dart API
     // enums in typescript don't need to be serialized
-    function serializeEnum(val) {
+    function serializeEnum(val /** TODO #9100 */) {
         return val;
     }
-    function resolveEnumToken(enumValue, val) {
+    function resolveEnumToken(enumValue /** TODO #9100 */, val /** TODO #9100 */) {
         return enumValue[val];
     }
     var StringWrapper = (function () {
@@ -142,7 +142,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         StringWrapper.replaceAllMapped = function (s, from, cb) {
             return s.replace(from, function () {
-                var matches = [];
+                var matches = []; /** TODO #9100 */
                 for (var _i = 0; _i < arguments.length; _i++) {
                     matches[_i - 0] = arguments[_i];
                 }
@@ -1138,7 +1138,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }(AST));
     var LiteralPrimitive = (function (_super) {
         __extends(LiteralPrimitive, _super);
-        function LiteralPrimitive(value) {
+        function LiteralPrimitive(value /** TODO #9100 */) {
             _super.call(this);
             this.value = value;
         }
@@ -1502,7 +1502,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var $NBSP = 160;
     var ScannerError = (function (_super) {
         __extends(ScannerError, _super);
-        function ScannerError(message) {
+        function ScannerError(message /** TODO #9100 */) {
             _super.call(this);
             this.message = message;
         }
@@ -4006,7 +4006,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         CssSelector.parse = function (selector) {
             var results = [];
-            var _addResult = function (res, cssSel) {
+            var _addResult = function (res, cssSel /** TODO #9100 */) {
                 if (cssSel.notSelectors.length > 0 && isBlank(cssSel.element) &&
                     ListWrapper.isEmpty(cssSel.classNames) && ListWrapper.isEmpty(cssSel.attrs)) {
                     cssSel.element = "*";
@@ -4263,7 +4263,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return result;
         };
         /** @internal */
-        SelectorMatcher.prototype._matchTerminal = function (map, name, cssSelector, matchedCallback) {
+        SelectorMatcher.prototype._matchTerminal = function (map, name /** TODO #9100 */, cssSelector, matchedCallback) {
             if (isBlank(map) || isBlank(name)) {
                 return false;
             }
@@ -4284,7 +4284,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return result;
         };
         /** @internal */
-        SelectorMatcher.prototype._matchPartial = function (map, name, cssSelector, matchedCallback /*: (c: CssSelector, a: any) => void*/) {
+        SelectorMatcher.prototype._matchPartial = function (map, name /** TODO #9100 */, cssSelector, matchedCallback /** TODO #9100 */ /*: (c: CssSelector, a: any) => void*/) {
             if (isBlank(map) || isBlank(name)) {
                 return false;
             }
@@ -4428,7 +4428,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     function extractStyleUrls(resolver, baseUrl, cssText) {
         var foundUrls = [];
-        var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m) {
+        var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m /** TODO #9100 */) {
             var url = isPresent(m[1]) ? m[1] : m[2];
             if (!isStyleUrlResolvable(url)) {
                 // Do not attempt to resolve non-package absolute URLs with URI scheme
@@ -4446,7 +4446,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var MODULE_SUFFIX = IS_DART ? '.dart' : '';
     var CAMEL_CASE_REGEXP = /([A-Z])/g;
     function camelCaseToDashCase(input) {
-        return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
+        return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m /** TODO #9100 */) { return '-' + m[1].toLowerCase(); });
     }
     function splitAtColon(input, defaultValues) {
         var parts = StringWrapper.split(input.trim(), /\s*:\s*/g);
@@ -4484,7 +4484,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         ValueTransformer.prototype.visitStringMap = function (map, context) {
             var _this = this;
             var result = {};
-            StringMapWrapper.forEach(map, function (value, key) { result[key] = visitValue(value, _this, context); });
+            StringMapWrapper.forEach(map, function (value /** TODO #9100 */, key /** TODO #9100 */) { result[key] = visitValue(value, _this, context); });
             return result;
         };
         ValueTransformer.prototype.visitPrimitive = function (value, context) { return value; };
@@ -6289,7 +6289,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var existingReferences = [];
             result
                 .filter(function (element) { return !!element.references; })
-                .forEach(function (element) { return element.references.forEach(function (reference) {
+                .forEach(function (element) { return element.references.forEach(function (reference /** TODO #???? */) {
                 var name = reference.name;
                 if (existingReferences.indexOf(name) < 0) {
                     existingReferences.push(name);
@@ -6831,7 +6831,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             var allDirectiveEvents = new Set();
             directives.forEach(function (directive) {
-                StringMapWrapper.forEach(directive.directive.outputs, function (eventName, _) { allDirectiveEvents.add(eventName); });
+                StringMapWrapper.forEach(directive.directive.outputs, function (eventName, _ /** TODO #???? */) { allDirectiveEvents.add(eventName); });
             });
             events.forEach(function (event) {
                 if (isPresent(event.target) || !SetWrapper.has(allDirectiveEvents, event.name)) {
@@ -8101,7 +8101,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         function PromiseWrapper() {
         }
         PromiseWrapper.resolve = function (obj) { return Promise.resolve(obj); };
-        PromiseWrapper.reject = function (obj, _) { return Promise.reject(obj); };
+        PromiseWrapper.reject = function (obj, _ /** TODO #9100 */) { return Promise.reject(obj); };
         // Note: We can't rename this method into `catch`, as this is not a valid
         // method name in Dart.
         PromiseWrapper.catchError = function (promise, onError) {
@@ -8323,7 +8323,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         **/
         ShadowCss.prototype._insertPolyfillDirectivesInCssText = function (cssText) {
             // Difference with webcomponents.js: does not handle comments
-            return StringWrapper.replaceAllMapped(cssText, _cssContentNextSelectorRe, function (m) { return m[1] + '{'; });
+            return StringWrapper.replaceAllMapped(cssText, _cssContentNextSelectorRe, function (m /** TODO #9100 */) { return m[1] + '{'; });
         };
         /*
          * Process styles to add rules which will only apply under the polyfill
@@ -8342,7 +8342,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         **/
         ShadowCss.prototype._insertPolyfillRulesInCssText = function (cssText) {
             // Difference with webcomponents.js: does not handle comments
-            return StringWrapper.replaceAllMapped(cssText, _cssContentRuleRe, function (m) {
+            return StringWrapper.replaceAllMapped(cssText, _cssContentRuleRe, function (m /** TODO #9100 */) {
                 var rule = m[0];
                 rule = StringWrapper.replace(rule, m[1], '');
                 rule = StringWrapper.replace(rule, m[2], '');
@@ -8426,7 +8426,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         ShadowCss.prototype._convertColonRule = function (cssText, regExp, partReplacer) {
             // p1 = :host, p2 = contents of (), p3 rest of rule
-            return StringWrapper.replaceAllMapped(cssText, regExp, function (m) {
+            return StringWrapper.replaceAllMapped(cssText, regExp, function (m /** TODO #9100 */) {
                 if (isPresent(m[2])) {
                     var parts = m[2].split(','), r = [];
                     for (var i = 0; i < parts.length; i++) {
@@ -8526,7 +8526,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         // e.g. .foo.bar > .zot becomes .foo[name].bar[name] > .zot[name]  /** @internal */
         ShadowCss.prototype._applyStrictSelectorScope = function (selector, scopeSelector) {
             var isRe = /\[is=([^\]]*)\]/g;
-            scopeSelector = StringWrapper.replaceAllMapped(scopeSelector, isRe, function (m) { return m[1]; });
+            scopeSelector = StringWrapper.replaceAllMapped(scopeSelector, isRe, function (m /** TODO #9100 */) { return m[1]; });
             var splits = [' ', '>', '+', '~'], scoped = selector, attrName = '[' + scopeSelector + ']';
             for (var i = 0; i < splits.length; i++) {
                 var sep = splits[i];
@@ -8583,7 +8583,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var _colonHostContextRe = /:host-context/gim;
     var _commentRe = /\/\*[\s\S]*?\*\//g;
     function stripComments(input) {
-        return StringWrapper.replaceAllMapped(input, _commentRe, function (_) { return ''; });
+        return StringWrapper.replaceAllMapped(input, _commentRe, function (_ /** TODO #9100 */) { return ''; });
     }
     var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
     var _curlyRe = /([{}])/g;
@@ -8600,7 +8600,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function processRules(input, ruleCallback) {
         var inputWithEscapedBlocks = escapeBlocks(input);
         var nextBlockIndex = 0;
-        return StringWrapper.replaceAllMapped(inputWithEscapedBlocks.escapedString, _ruleRe, function (m) {
+        return StringWrapper.replaceAllMapped(inputWithEscapedBlocks.escapedString, _ruleRe, function (m /** TODO #9100 */) {
             var selector = m[2];
             var content = '';
             var suffix = m[4];
@@ -8937,7 +8937,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileQuery.prototype._isStatic = function () {
             return !this._values.values.some(function (value) { return value instanceof ViewQueryValues; });
         };
-        CompileQuery.prototype.afterChildren = function (targetStaticMethod, targetDynamicMethod) {
+        CompileQuery.prototype.afterChildren = function (targetStaticMethod /** TODO #9100 */, targetDynamicMethod) {
             var values = createQueryValues(this._values);
             var updateStmts = [this.queryList.callMethod('reset', [literalArr(values)]).toStmt()];
             if (isPresent(this.ownerDirectiveExpression)) {
@@ -9178,7 +9178,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var queriesForProvider = _this._getQueriesFor(resolvedProvider.token);
                 ListWrapper.addAll(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
             });
-            StringMapWrapper.forEach(this.referenceTokens, function (_, varName) {
+            StringMapWrapper.forEach(this.referenceTokens, function (_ /** TODO #9100 */, varName /** TODO #9100 */) {
                 var token = _this.referenceTokens[varName];
                 var varValue;
                 if (isPresent(token)) {
@@ -9393,7 +9393,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _ValueOutputAstTransformer.prototype.visitStringMap = function (map, context) {
             var _this = this;
             var entries = [];
-            StringMapWrapper.forEach(map, function (value, key) { entries.push([key, visitValue(value, _this, context)]); });
+            StringMapWrapper.forEach(map, function (value /** TODO #9100 */, key /** TODO #9100 */) { entries.push([key, visitValue(value, _this, context)]); });
             return literalMap(entries);
         };
         _ValueOutputAstTransformer.prototype.visitPrimitive = function (value, context) { return literal(value); };
@@ -9828,7 +9828,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var _ONE_SECOND = 1000;
     var AnimationParseError = (function (_super) {
         __extends(AnimationParseError, _super);
-        function AnimationParseError(message) {
+        function AnimationParseError(message /** TODO #9100 */) {
             _super.call(this, null, message);
         }
         AnimationParseError.prototype.toString = function () { return "" + this.msg; };
@@ -10052,7 +10052,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var offset = styleMetadata.offset;
             var keyframeStyles = {};
             styleMetadata.styles.forEach(function (entry) {
-                StringMapWrapper.forEach(entry, function (value, prop) {
+                StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
                     if (prop != 'offset') {
                         keyframeStyles[prop] = value;
                     }
@@ -10087,7 +10087,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         for (i = 1; i <= limit; i++) {
             var entry = rawKeyframes[i];
             var styles = entry[1];
-            StringMapWrapper.forEach(styles, function (value, prop) {
+            StringMapWrapper.forEach(styles, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
                 if (!isPresent(firstKeyframeStyles[prop])) {
                     firstKeyframeStyles[prop] = FILL_STYLE_FLAG;
                 }
@@ -10096,7 +10096,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         for (i = limit - 1; i >= 0; i--) {
             var entry = rawKeyframes[i];
             var styles = entry[1];
-            StringMapWrapper.forEach(styles, function (value, prop) {
+            StringMapWrapper.forEach(styles, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
                 if (!isPresent(lastKeyframeStyles[prop])) {
                     lastKeyframeStyles[prop] = value;
                 }
@@ -10120,7 +10120,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     entry.styles.forEach(function (stylesEntry) {
                         // by this point we know that we only have stringmap values
                         var map = stylesEntry;
-                        StringMapWrapper.forEach(map, function (value, prop) {
+                        StringMapWrapper.forEach(map, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
                             collectedStyles.insertAtTime(prop, time, value);
                         });
                     });
@@ -10175,7 +10175,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             ast = new AnimationStepAst(new AnimationStylesAst([]), keyframes, timings.duration, timings.delay, timings.easing);
             playTime = timings.duration + timings.delay;
             currentTime += playTime;
-            keyframes.forEach(function (keyframe) { return keyframe.styles.styles.forEach(function (entry) { return StringMapWrapper.forEach(entry, function (value, prop) { return collectedStyles.insertAtTime(prop, currentTime, value); }); }); });
+            keyframes.forEach(function (keyframe /** TODO #9100 */) { return keyframe.styles.styles.forEach(function (entry /** TODO #9100 */) { return StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) { return collectedStyles.insertAtTime(prop, currentTime, value); }); }); });
         }
         else {
             // if the code reaches this stage then an error
@@ -10241,11 +10241,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         var values = {};
         var endTime = startTime + duration;
         endKeyframe.styles.styles.forEach(function (styleData) {
-            StringMapWrapper.forEach(styleData, function (val, prop) {
+            StringMapWrapper.forEach(styleData, function (val /** TODO #9100 */, prop /** TODO #9100 */) {
                 if (prop == 'offset')
                     return;
                 var resultIndex = collectedStyles.indexOfAtOrBeforeTime(prop, startTime);
-                var resultEntry, nextEntry, value;
+                var resultEntry /** TODO #9100 */, nextEntry /** TODO #9100 */, value;
                 if (isPresent(resultIndex)) {
                     resultEntry = collectedStyles.getByIndex(prop, resultIndex);
                     value = resultEntry.value;
@@ -10361,7 +10361,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
         };
         /** @internal */
-        _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr) {
+        _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr /** TODO #9100 */, keyframesExpr /** TODO #9100 */) {
             return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
                 _ANIMATION_FACTORY_ELEMENT_VAR,
                 startingStylesExpr,
@@ -10385,8 +10385,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
             var flatStyles = {};
-            _getStylesArray(ast).forEach(function (entry) {
-                StringMapWrapper.forEach(entry, function (value, key) {
+            _getStylesArray(ast).forEach(function (entry /** TODO #9100 */) {
+                StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, key /** TODO #9100 */) {
                     flatStyles[key] = value;
                 });
             });
@@ -10487,11 +10487,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             var fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
             var fnVariable = variable(this._fnVarName);
             var lookupMap = [];
-            StringMapWrapper.forEach(context.stateMap.states, function (value, stateName) {
+            StringMapWrapper.forEach(context.stateMap.states, function (value /** TODO #9100 */, stateName /** TODO #9100 */) {
                 var variableValue = EMPTY_MAP$1;
                 if (isPresent(value)) {
                     var styleMap_1 = [];
-                    StringMapWrapper.forEach(value, function (value, key) {
+                    StringMapWrapper.forEach(value, function (value /** TODO #9100 */, key /** TODO #9100 */) {
                         styleMap_1.push([key, literal(value)]);
                     });
                     variableValue = literalMap(styleMap_1);
@@ -10764,9 +10764,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     }());
     function _mergeHtmlAndDirectiveAttrs(declaredHtmlAttrs, directives) {
         var result = {};
-        StringMapWrapper.forEach(declaredHtmlAttrs, function (value, key) { result[key] = value; });
+        StringMapWrapper.forEach(declaredHtmlAttrs, function (value /** TODO #9100 */, key /** TODO #9100 */) { result[key] = value; });
         directives.forEach(function (directiveMeta) {
-            StringMapWrapper.forEach(directiveMeta.hostAttributes, function (value, name) {
+            StringMapWrapper.forEach(directiveMeta.hostAttributes, function (value /** TODO #9100 */, name /** TODO #9100 */) {
                 var prevValue = result[name];
                 result[name] = isPresent(prevValue) ? mergeAttributeValue(name, prevValue, value) : value;
             });
@@ -10788,7 +10788,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function mapToKeyValueArray(data) {
         var entryArray = [];
-        StringMapWrapper.forEach(data, function (value, name) { entryArray.push([name, value]); });
+        StringMapWrapper.forEach(data, function (value /** TODO #9100 */, name /** TODO #9100 */) { entryArray.push([name, value]); });
         // We need to sort to get a defined output order
         // for tests and for caching generated artifacts...
         ListWrapper.sort(entryArray, function (entry1, entry2) { return StringWrapper.compare(entry1[0], entry2[0]); });
@@ -10823,7 +10823,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (isPresent(compileElement.component)) {
                 componentToken = createDiTokenExpression(identifierToken(compileElement.component.type));
             }
-            StringMapWrapper.forEach(compileElement.referenceTokens, function (token, varName) {
+            StringMapWrapper.forEach(compileElement.referenceTokens, function (token /** TODO #9100 */, varName /** TODO #9100 */) {
                 varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : NULL_EXPR]);
             });
         }
@@ -11547,7 +11547,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return eventListeners;
     }
     function bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners) {
-        StringMapWrapper.forEach(directiveAst.directive.outputs, function (eventName, observablePropName) {
+        StringMapWrapper.forEach(directiveAst.directive.outputs, function (eventName /** TODO #9100 */, observablePropName /** TODO #9100 */) {
             eventListeners.filter(function (listener) { return listener.eventName == eventName; })
                 .forEach(function (listener) { listener.listenToDirective(directiveInstance, observablePropName); });
         });
@@ -12117,7 +12117,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         [LifecycleHooks.AfterViewInit, 'ngAfterViewInit'],
         [LifecycleHooks.AfterViewChecked, 'ngAfterViewChecked'],
     ]);
-    function hasLifecycleHook(hook, token) {
+    function hasLifecycleHook(hook, token /** TODO #9100 */) {
         var lcInterface = LIFECYCLE_INTERFACES.get(hook);
         var lcProp = LIFECYCLE_PROPS.get(hook);
         return reflector.hasLifecycleHook(token, lcInterface, lcProp);
@@ -12467,7 +12467,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype.getQueriesMetadata = function (queries, isViewQuery, directiveType) {
             var _this = this;
             var compileQueries = [];
-            StringMapWrapper.forEach(queries, function (query, propertyName) {
+            StringMapWrapper.forEach(queries, function (query /** TODO #9100 */, propertyName /** TODO #9100 */) {
                 if (query.isViewQuery === isViewQuery) {
                     compileQueries.push(_this.getQueryMetadata(query, propertyName, directiveType));
                 }
@@ -12916,7 +12916,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var useNewLine = ast.entries.length > 1;
             ctx.print("{", useNewLine);
             ctx.incIndent();
-            this.visitAllObjects(function (entry) {
+            this.visitAllObjects(function (entry /** TODO #9100 */) {
                 ctx.print(escapeSingleQuoteString(entry[0], _this._escapeDollarInStrings) + ": ");
                 entry[1].visitExpression(_this, ctx);
             }, ast.entries, ctx, ',', useNewLine);
@@ -12927,7 +12927,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         AbstractEmitterVisitor.prototype.visitAllExpressions = function (expressions, ctx, separator, newLine) {
             var _this = this;
             if (newLine === void 0) { newLine = false; }
-            this.visitAllObjects(function (expr) { return expr.visitExpression(_this, ctx); }, expressions, ctx, separator, newLine);
+            this.visitAllObjects(function (expr /** TODO #9100 */) { return expr.visitExpression(_this, ctx); }, expressions, ctx, separator, newLine);
         };
         AbstractEmitterVisitor.prototype.visitAllObjects = function (handler, expressions, ctx, separator, newLine) {
             if (newLine === void 0) { newLine = false; }
@@ -12951,7 +12951,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         if (isBlank(input)) {
             return null;
         }
-        var body = StringWrapper.replaceAllMapped(input, _SINGLE_QUOTE_ESCAPE_STRING_RE, function (match) {
+        var body = StringWrapper.replaceAllMapped(input, _SINGLE_QUOTE_ESCAPE_STRING_RE, function (match /** TODO #9100 */) {
             if (match[0] == '$') {
                 return escapeDollar ? '\\$' : '$';
             }
@@ -13106,7 +13106,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return null;
         };
         AbstractJsEmitterVisitor.prototype._visitParams = function (params, ctx) {
-            this.visitAllObjects(function (param) { return ctx.print(param.name); }, params, ctx, ',');
+            this.visitAllObjects(function (param /** TODO #9100 */) { return ctx.print(param.name); }, params, ctx, ',');
         };
         AbstractJsEmitterVisitor.prototype.getBuiltinMethodName = function (method) {
             var name;
@@ -13466,7 +13466,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _DartEmitterVisitor.prototype._visitParams = function (params, ctx) {
             var _this = this;
-            this.visitAllObjects(function (param) {
+            this.visitAllObjects(function (param /** TODO #9100 */) {
                 if (isPresent(param.type)) {
                     param.type.visitType(_this, ctx);
                     ctx.print(' ');
@@ -13490,7 +13490,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             ctx.print(value.name);
             if (isPresent(typeParams) && typeParams.length > 0) {
                 ctx.print("<");
-                this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
+                this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
                 ctx.print(">");
             }
         };
@@ -13778,7 +13778,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _TsEmitterVisitor.prototype._visitParams = function (params, ctx) {
             var _this = this;
-            this.visitAllObjects(function (param) {
+            this.visitAllObjects(function (param /** TODO #9100 */) {
                 ctx.print(param.name);
                 ctx.print(':');
                 _this.visitType(param.type, ctx);
@@ -13800,7 +13800,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             ctx.print(value.name);
             if (isPresent(typeParams) && typeParams.length > 0) {
                 ctx.print("<");
-                this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
+                this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
                 ctx.print(">");
             }
         };
@@ -14199,25 +14199,25 @@ var __extends = (this && this.__extends) || function (d, b) {
             case 0:
                 return function () { return _executeFunctionStatements(varNames, [], statements, ctx, visitor); };
             case 1:
-                return function (d0) { return _executeFunctionStatements(varNames, [d0], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0], statements, ctx, visitor); };
             case 2:
-                return function (d0, d1) { return _executeFunctionStatements(varNames, [d0, d1], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1], statements, ctx, visitor); };
             case 3:
-                return function (d0, d1, d2) { return _executeFunctionStatements(varNames, [d0, d1, d2], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2], statements, ctx, visitor); };
             case 4:
-                return function (d0, d1, d2, d3) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3], statements, ctx, visitor); };
             case 5:
-                return function (d0, d1, d2, d3, d4) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4], statements, ctx, visitor); };
             case 6:
-                return function (d0, d1, d2, d3, d4, d5) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5], statements, ctx, visitor); };
             case 7:
-                return function (d0, d1, d2, d3, d4, d5, d6) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6], statements, ctx, visitor); };
             case 8:
-                return function (d0, d1, d2, d3, d4, d5, d6, d7) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7], statements, ctx, visitor); };
             case 9:
-                return function (d0, d1, d2, d3, d4, d5, d6, d7, d8) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7, d8], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */, d8 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7, d8], statements, ctx, visitor); };
             case 10:
-                return function (d0, d1, d2, d3, d4, d5, d6, d7, d8, d9) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7, d8, d9], statements, ctx, visitor); };
+                return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */, d8 /** TODO #9100 */, d9 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7, d8, d9], statements, ctx, visitor); };
             default:
                 throw new BaseException$1('Declaring functions with more than 10 arguments is not supported right now');
         }
@@ -14450,7 +14450,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         function CompiledTemplate() {
             var _this = this;
             this.viewFactory = null;
-            this.proxyViewFactory = function (viewUtils, childInjector, contextEl) { return _this.viewFactory(viewUtils, childInjector, contextEl); };
+            this.proxyViewFactory = function (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) { return _this.viewFactory(viewUtils, childInjector, contextEl); };
         }
         CompiledTemplate.prototype.init = function (viewFactory) { this.viewFactory = viewFactory; };
         return CompiledTemplate;
@@ -14750,7 +14750,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 typeName.split(',').forEach(function (tag) { return _this.schema[tag] = type; });
                 var superType = _this.schema[typeParts[1]];
                 if (isPresent(superType)) {
-                    StringMapWrapper.forEach(superType, function (v, k) { return type[k] = v; });
+                    StringMapWrapper.forEach(superType, function (v /** TODO #9100 */, k /** TODO #9100 */) { return type[k] = v; });
                 }
                 properties.forEach(function (property) {
                     if (property == '') {
@@ -15430,7 +15430,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         I18nHtmlParser.prototype._replacePlaceholdersWithExpressions = function (message, exps, sourceSpan) {
             var _this = this;
             var expMap = this._buildExprMap(exps);
-            return RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, function (match) {
+            return RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, function (match /** TODO #9100 */) {
                 var nameWithQuotes = match[2];
                 var name = nameWithQuotes.substring(1, nameWithQuotes.length - 1);
                 return _this._convertIntoExpression(name, expMap, sourceSpan);
@@ -15708,7 +15708,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return "<msg id='" + id(m) + "'" + desc + ">" + m.content + "</msg>";
     }
     function _expandPlaceholder(input) {
-        return RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, function (match) {
+        return RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, function (match /** TODO #9100 */) {
             var nameWithQuotes = match[2];
             return "<ph name=" + nameWithQuotes + "></ph>";
         });

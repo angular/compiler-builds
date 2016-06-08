@@ -109,7 +109,7 @@ function collectEventListeners(hostEvents, dirs, compileElement) {
 }
 exports.collectEventListeners = collectEventListeners;
 function bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners) {
-    collection_1.StringMapWrapper.forEach(directiveAst.directive.outputs, function (eventName, observablePropName) {
+    collection_1.StringMapWrapper.forEach(directiveAst.directive.outputs, function (eventName /** TODO #9100 */, observablePropName /** TODO #9100 */) {
         eventListeners.filter(function (listener) { return listener.eventName == eventName; })
             .forEach(function (listener) { listener.listenToDirective(directiveInstance, observablePropName); });
     });

@@ -350,7 +350,7 @@ var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getQueriesMetadata = function (queries, isViewQuery, directiveType) {
         var _this = this;
         var compileQueries = [];
-        collection_1.StringMapWrapper.forEach(queries, function (query, propertyName) {
+        collection_1.StringMapWrapper.forEach(queries, function (query /** TODO #9100 */, propertyName /** TODO #9100 */) {
             if (query.isViewQuery === isViewQuery) {
                 compileQueries.push(_this.getQueryMetadata(query, propertyName, directiveType));
             }

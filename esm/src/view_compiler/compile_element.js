@@ -129,7 +129,7 @@ export class CompileElement extends CompileNode {
             var queriesForProvider = this._getQueriesFor(resolvedProvider.token);
             ListWrapper.addAll(queriesWithReads, queriesForProvider.map(query => new _QueryWithRead(query, resolvedProvider.token)));
         });
-        StringMapWrapper.forEach(this.referenceTokens, (_, varName) => {
+        StringMapWrapper.forEach(this.referenceTokens, (_ /** TODO #9100 */, varName /** TODO #9100 */) => {
             var token = this.referenceTokens[varName];
             var varValue;
             if (isPresent(token)) {
@@ -335,7 +335,7 @@ class _ValueOutputAstTransformer extends ValueTransformer {
     }
     visitStringMap(map, context) {
         var entries = [];
-        StringMapWrapper.forEach(map, (value, key) => { entries.push([key, visitValue(value, this, context)]); });
+        StringMapWrapper.forEach(map, (value /** TODO #9100 */, key /** TODO #9100 */) => { entries.push([key, visitValue(value, this, context)]); });
         return o.literalMap(entries);
     }
     visitPrimitive(value, context) { return o.literal(value); }

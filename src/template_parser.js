@@ -118,7 +118,7 @@ var TemplateParser = (function () {
         var existingReferences = [];
         result
             .filter(function (element) { return !!element.references; })
-            .forEach(function (element) { return element.references.forEach(function (reference) {
+            .forEach(function (element) { return element.references.forEach(function (reference /** TODO #???? */) {
             var name = reference.name;
             if (existingReferences.indexOf(name) < 0) {
                 existingReferences.push(name);
@@ -661,7 +661,7 @@ var TemplateParseVisitor = (function () {
         var _this = this;
         var allDirectiveEvents = new Set();
         directives.forEach(function (directive) {
-            collection_1.StringMapWrapper.forEach(directive.directive.outputs, function (eventName, _) { allDirectiveEvents.add(eventName); });
+            collection_1.StringMapWrapper.forEach(directive.directive.outputs, function (eventName, _ /** TODO #???? */) { allDirectiveEvents.add(eventName); });
         });
         events.forEach(function (event) {
             if (lang_1.isPresent(event.target) || !collection_1.SetWrapper.has(allDirectiveEvents, event.name)) {

@@ -82,7 +82,7 @@ export class MockXHR extends XHR {
     }
 }
 class _PendingRequest {
-    constructor(url) {
+    constructor(url /** TODO #9100 */) {
         this.url = url;
         this.completer = PromiseWrapper.completer();
     }

@@ -261,7 +261,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         return name;
     }
     _visitParams(params, ctx) {
-        this.visitAllObjects((param) => {
+        this.visitAllObjects((param /** TODO #9100 */) => {
             ctx.print(param.name);
             ctx.print(':');
             this.visitType(param.type, ctx);
@@ -282,7 +282,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         ctx.print(value.name);
         if (isPresent(typeParams) && typeParams.length > 0) {
             ctx.print(`<`);
-            this.visitAllObjects((type) => type.visitType(this, ctx), typeParams, ctx, ',');
+            this.visitAllObjects((type /** TODO #9100 */) => type.visitType(this, ctx), typeParams, ctx, ',');
             ctx.print(`>`);
         }
     }

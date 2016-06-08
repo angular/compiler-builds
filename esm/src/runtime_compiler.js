@@ -154,7 +154,7 @@ RuntimeCompiler.ctorParameters = [
 class CompiledTemplate {
     constructor() {
         this.viewFactory = null;
-        this.proxyViewFactory = (viewUtils, childInjector, contextEl) => this.viewFactory(viewUtils, childInjector, contextEl);
+        this.proxyViewFactory = (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) => this.viewFactory(viewUtils, childInjector, contextEl);
     }
     init(viewFactory) { this.viewFactory = viewFactory; }
 }

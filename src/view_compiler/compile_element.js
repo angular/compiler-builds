@@ -142,7 +142,7 @@ var CompileElement = (function (_super) {
             var queriesForProvider = _this._getQueriesFor(resolvedProvider.token);
             collection_1.ListWrapper.addAll(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
         });
-        collection_1.StringMapWrapper.forEach(this.referenceTokens, function (_, varName) {
+        collection_1.StringMapWrapper.forEach(this.referenceTokens, function (_ /** TODO #9100 */, varName /** TODO #9100 */) {
             var token = _this.referenceTokens[varName];
             var varValue;
             if (lang_1.isPresent(token)) {
@@ -360,7 +360,7 @@ var _ValueOutputAstTransformer = (function (_super) {
     _ValueOutputAstTransformer.prototype.visitStringMap = function (map, context) {
         var _this = this;
         var entries = [];
-        collection_1.StringMapWrapper.forEach(map, function (value, key) { entries.push([key, util_2.visitValue(value, _this, context)]); });
+        collection_1.StringMapWrapper.forEach(map, function (value /** TODO #9100 */, key /** TODO #9100 */) { entries.push([key, util_2.visitValue(value, _this, context)]); });
         return o.literalMap(entries);
     };
     _ValueOutputAstTransformer.prototype.visitPrimitive = function (value, context) { return o.literal(value); };

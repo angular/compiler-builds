@@ -4,10 +4,10 @@ export var MODULE_SUFFIX = IS_DART ? '.dart' : '';
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 var DASH_CASE_REGEXP = /-([a-z])/g;
 export function camelCaseToDashCase(input) {
-    return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, (m) => { return '-' + m[1].toLowerCase(); });
+    return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, (m /** TODO #9100 */) => { return '-' + m[1].toLowerCase(); });
 }
 export function dashCaseToCamelCase(input) {
-    return StringWrapper.replaceAllMapped(input, DASH_CASE_REGEXP, (m) => { return m[1].toUpperCase(); });
+    return StringWrapper.replaceAllMapped(input, DASH_CASE_REGEXP, (m /** TODO #9100 */) => { return m[1].toUpperCase(); });
 }
 export function splitAtColon(input, defaultValues) {
     var parts = StringWrapper.split(input.trim(), /\s*:\s*/g);
@@ -41,7 +41,7 @@ export class ValueTransformer {
     }
     visitStringMap(map, context) {
         var result = {};
-        StringMapWrapper.forEach(map, (value, key) => { result[key] = visitValue(value, this, context); });
+        StringMapWrapper.forEach(map, (value /** TODO #9100 */, key /** TODO #9100 */) => { result[key] = visitValue(value, this, context); });
         return result;
     }
     visitPrimitive(value, context) { return value; }

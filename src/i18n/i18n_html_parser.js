@@ -275,7 +275,7 @@ var I18nHtmlParser = (function () {
     I18nHtmlParser.prototype._replacePlaceholdersWithExpressions = function (message, exps, sourceSpan) {
         var _this = this;
         var expMap = this._buildExprMap(exps);
-        return lang_1.RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, function (match) {
+        return lang_1.RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, function (match /** TODO #9100 */) {
             var nameWithQuotes = match[2];
             var name = nameWithQuotes.substring(1, nameWithQuotes.length - 1);
             return _this._convertIntoExpression(name, expMap, sourceSpan);

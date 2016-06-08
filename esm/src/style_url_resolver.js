@@ -19,7 +19,7 @@ export function isStyleUrlResolvable(url) {
  */
 export function extractStyleUrls(resolver, baseUrl, cssText) {
     var foundUrls = [];
-    var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, (m) => {
+    var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, (m /** TODO #9100 */) => {
         var url = isPresent(m[1]) ? m[1] : m[2];
         if (!isStyleUrlResolvable(url)) {
             // Do not attempt to resolve non-package absolute URLs with URI scheme
