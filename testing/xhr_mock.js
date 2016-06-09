@@ -91,7 +91,7 @@ var MockXHR = (function (_super) {
 }(index_1.XHR));
 exports.MockXHR = MockXHR;
 var _PendingRequest = (function () {
-    function _PendingRequest(url /** TODO #9100 */) {
+    function _PendingRequest(url) {
         this.url = url;
         this.completer = async_1.PromiseWrapper.completer();
     }
