@@ -41,6 +41,7 @@ var HtmlParser = (function () {
         return new HtmlParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors
             .concat(treeAndErrors.errors));
     };
+    /** @nocollapse */
     HtmlParser.decorators = [
         { type: core_1.Injectable },
     ];

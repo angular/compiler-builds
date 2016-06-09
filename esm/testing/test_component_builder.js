@@ -292,9 +292,11 @@ export class TestComponentBuilder {
         return ngZone == null ? initComponent() : ngZone.run(initComponent);
     }
 }
+/** @nocollapse */
 TestComponentBuilder.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 TestComponentBuilder.ctorParameters = [
     { type: Injector, },
 ];

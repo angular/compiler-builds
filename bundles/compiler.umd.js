@@ -1379,6 +1379,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return Lexer;
     }());
+    /** @nocollapse */
     Lexer.decorators = [
         { type: _angular_core.Injectable },
     ];
@@ -1940,9 +1941,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return Parser;
     }());
+    /** @nocollapse */
     Parser.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     Parser.ctorParameters = [
         { type: Lexer, },
     ];
@@ -3701,6 +3704,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return HtmlParser;
     }());
+    /** @nocollapse */
     HtmlParser.decorators = [
         { type: _angular_core.Injectable },
     ];
@@ -4559,9 +4563,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return UrlResolver;
     }());
+    /** @nocollapse */
     UrlResolver.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     UrlResolver.ctorParameters = [
         { type: undefined, decorators: [{ type: _angular_core.Inject, args: [_angular_core.PACKAGE_ROOT_URL,] },] },
     ];
@@ -6302,15 +6308,17 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return TemplateParser;
     }());
+    /** @nocollapse */
     TemplateParser.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     TemplateParser.ctorParameters = [
         { type: Parser, },
         { type: ElementSchemaRegistry, },
         { type: HtmlParser, },
         { type: Console, },
-        { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [TEMPLATE_TRANSFORMS,] },] },
+        { type: Array, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [TEMPLATE_TRANSFORMS,] },] },
     ];
     var TemplateParseVisitor = (function () {
         function TemplateParseVisitor(providerViewContext, directives, pipes, _exprParser, _schemaRegistry) {
@@ -8706,9 +8714,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return StyleCompiler;
     }());
+    /** @nocollapse */
     StyleCompiler.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     StyleCompiler.ctorParameters = [
         { type: UrlResolver, },
     ];
@@ -11720,9 +11730,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return ViewCompiler;
     }());
+    /** @nocollapse */
     ViewCompiler.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     ViewCompiler.ctorParameters = [
         { type: CompilerConfig, },
     ];
@@ -11822,9 +11834,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return DirectiveNormalizer;
     }());
+    /** @nocollapse */
     DirectiveNormalizer.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     DirectiveNormalizer.ctorParameters = [
         { type: XHR, },
         { type: UrlResolver, },
@@ -12000,9 +12014,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return DirectiveResolver;
     }());
+    /** @nocollapse */
     DirectiveResolver.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     DirectiveResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
@@ -12034,9 +12050,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return PipeResolver;
     }());
+    /** @nocollapse */
     PipeResolver.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     PipeResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
@@ -12091,9 +12109,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return ViewResolver;
     }());
+    /** @nocollapse */
     ViewResolver.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     ViewResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
@@ -12505,15 +12525,17 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return CompileMetadataResolver;
     }());
+    /** @nocollapse */
     CompileMetadataResolver.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     CompileMetadataResolver.ctorParameters = [
         { type: DirectiveResolver, },
         { type: PipeResolver, },
         { type: ViewResolver, },
-        { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [_angular_core.PLATFORM_DIRECTIVES,] },] },
-        { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [_angular_core.PLATFORM_PIPES,] },] },
+        { type: Array, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [_angular_core.PLATFORM_DIRECTIVES,] },] },
+        { type: Array, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [_angular_core.PLATFORM_PIPES,] },] },
         { type: ReflectorReader, },
     ];
     function flattenDirectives(view, platformDirectives) {
@@ -14443,9 +14465,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return RuntimeCompiler;
     }());
+    /** @nocollapse */
     RuntimeCompiler.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     RuntimeCompiler.ctorParameters = [
         { type: CompileMetadataResolver, },
         { type: DirectiveNormalizer, },
@@ -14822,9 +14846,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return DomElementSchemaRegistry;
     }(ElementSchemaRegistry));
+    /** @nocollapse */
     DomElementSchemaRegistry.decorators = [
         { type: _angular_core.Injectable },
     ];
+    /** @nocollapse */
     DomElementSchemaRegistry.ctorParameters = [];
     function _createCompilerConfig() {
         return new CompilerConfig(assertionsEnabled(), false, true);

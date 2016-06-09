@@ -54,9 +54,11 @@ export class StyleCompiler {
         return shim ? this._shadowCss.shimCssText(style, CONTENT_ATTR, HOST_ATTR) : style;
     }
 }
+/** @nocollapse */
 StyleCompiler.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 StyleCompiler.ctorParameters = [
     { type: UrlResolver, },
 ];

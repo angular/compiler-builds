@@ -139,9 +139,11 @@ export class RuntimeCompiler {
         return cssTextPromise;
     }
 }
+/** @nocollapse */
 RuntimeCompiler.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 RuntimeCompiler.ctorParameters = [
     { type: CompileMetadataResolver, },
     { type: DirectiveNormalizer, },

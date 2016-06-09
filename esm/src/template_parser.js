@@ -119,15 +119,17 @@ export class TemplateParser {
         }));
     }
 }
+/** @nocollapse */
 TemplateParser.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 TemplateParser.ctorParameters = [
     { type: Parser, },
     { type: ElementSchemaRegistry, },
     { type: HtmlParser, },
     { type: Console, },
-    { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [TEMPLATE_TRANSFORMS,] },] },
+    { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [TEMPLATE_TRANSFORMS,] },] },
 ];
 class TemplateParseVisitor {
     constructor(providerViewContext, directives, pipes, _exprParser, _schemaRegistry) {

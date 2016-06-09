@@ -36,9 +36,11 @@ var ViewCompiler = (function () {
         view_builder_1.finishView(view, statements);
         return new ViewCompileResult(statements, view.viewFactory.name, dependencies);
     };
+    /** @nocollapse */
     ViewCompiler.decorators = [
         { type: core_1.Injectable },
     ];
+    /** @nocollapse */
     ViewCompiler.ctorParameters = [
         { type: config_1.CompilerConfig, },
     ];

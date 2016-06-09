@@ -143,9 +143,11 @@ export class Parser {
         return errLocation.length;
     }
 }
+/** @nocollapse */
 Parser.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 Parser.ctorParameters = [
     { type: Lexer, },
 ];

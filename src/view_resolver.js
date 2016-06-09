@@ -52,9 +52,11 @@ var ViewResolver = (function () {
             throw new exceptions_1.BaseException("Could not compile '" + lang_1.stringify(component) + "' because it is not a component.");
         }
     };
+    /** @nocollapse */
     ViewResolver.decorators = [
         { type: core_1.Injectable },
     ];
+    /** @nocollapse */
     ViewResolver.ctorParameters = [
         { type: core_private_1.ReflectorReader, },
     ];

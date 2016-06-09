@@ -34,9 +34,11 @@ export class ViewCompiler {
         return new ViewCompileResult(statements, view.viewFactory.name, dependencies);
     }
 }
+/** @nocollapse */
 ViewCompiler.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 ViewCompiler.ctorParameters = [
     { type: CompilerConfig, },
 ];

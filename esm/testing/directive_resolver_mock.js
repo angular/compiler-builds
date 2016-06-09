@@ -53,6 +53,7 @@ export class MockDirectiveResolver extends DirectiveResolver {
         this.viewProviderOverrides.set(type, viewProviders);
     }
 }
+/** @nocollapse */
 MockDirectiveResolver.decorators = [
     { type: Injectable },
 ];

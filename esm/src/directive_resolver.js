@@ -123,9 +123,11 @@ export class DirectiveResolver {
         }
     }
 }
+/** @nocollapse */
 DirectiveResolver.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 DirectiveResolver.ctorParameters = [
     { type: ReflectorReader, },
 ];

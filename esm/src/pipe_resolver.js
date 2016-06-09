@@ -28,9 +28,11 @@ export class PipeResolver {
         throw new BaseException(`No Pipe decorator found on ${stringify(type)}`);
     }
 }
+/** @nocollapse */
 PipeResolver.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 PipeResolver.ctorParameters = [
     { type: ReflectorReader, },
 ];

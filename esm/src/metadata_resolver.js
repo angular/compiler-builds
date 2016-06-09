@@ -372,15 +372,17 @@ export class CompileMetadataResolver {
         });
     }
 }
+/** @nocollapse */
 CompileMetadataResolver.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 CompileMetadataResolver.ctorParameters = [
     { type: DirectiveResolver, },
     { type: PipeResolver, },
     { type: ViewResolver, },
-    { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [PLATFORM_DIRECTIVES,] },] },
-    { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [PLATFORM_PIPES,] },] },
+    { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [PLATFORM_DIRECTIVES,] },] },
+    { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [PLATFORM_PIPES,] },] },
     { type: ReflectorReader, },
 ];
 function flattenDirectives(view, platformDirectives) {

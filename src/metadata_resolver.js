@@ -386,15 +386,17 @@ var CompileMetadataResolver = (function () {
             read: lang_1.isPresent(q.read) ? this.getTokenMetadata(q.read) : null
         });
     };
+    /** @nocollapse */
     CompileMetadataResolver.decorators = [
         { type: core_1.Injectable },
     ];
+    /** @nocollapse */
     CompileMetadataResolver.ctorParameters = [
         { type: directive_resolver_1.DirectiveResolver, },
         { type: pipe_resolver_1.PipeResolver, },
         { type: view_resolver_1.ViewResolver, },
-        { type: undefined, decorators: [{ type: core_1.Optional }, { type: core_1.Inject, args: [core_1.PLATFORM_DIRECTIVES,] },] },
-        { type: undefined, decorators: [{ type: core_1.Optional }, { type: core_1.Inject, args: [core_1.PLATFORM_PIPES,] },] },
+        { type: Array, decorators: [{ type: core_1.Optional }, { type: core_1.Inject, args: [core_1.PLATFORM_DIRECTIVES,] },] },
+        { type: Array, decorators: [{ type: core_1.Optional }, { type: core_1.Inject, args: [core_1.PLATFORM_PIPES,] },] },
         { type: core_private_1.ReflectorReader, },
     ];
     return CompileMetadataResolver;

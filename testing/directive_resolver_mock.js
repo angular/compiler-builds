@@ -59,6 +59,7 @@ var MockDirectiveResolver = (function (_super) {
     MockDirectiveResolver.prototype.setViewProvidersOverride = function (type, viewProviders) {
         this.viewProviderOverrides.set(type, viewProviders);
     };
+    /** @nocollapse */
     MockDirectiveResolver.decorators = [
         { type: core_1.Injectable },
     ];

@@ -123,9 +123,11 @@ var DirectiveResolver = (function () {
             });
         }
     };
+    /** @nocollapse */
     DirectiveResolver.decorators = [
         { type: core_1.Injectable },
     ];
+    /** @nocollapse */
     DirectiveResolver.ctorParameters = [
         { type: core_private_1.ReflectorReader, },
     ];

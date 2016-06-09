@@ -28,6 +28,7 @@ export class HtmlParser {
             .concat(treeAndErrors.errors));
     }
 }
+/** @nocollapse */
 HtmlParser.decorators = [
     { type: Injectable },
 ];

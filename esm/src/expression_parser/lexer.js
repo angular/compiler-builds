@@ -23,6 +23,7 @@ export class Lexer {
         return tokens;
     }
 }
+/** @nocollapse */
 Lexer.decorators = [
     { type: Injectable },
 ];

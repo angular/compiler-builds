@@ -94,9 +94,11 @@ var DirectiveNormalizer = (function () {
             animations: templateMeta.animations
         });
     };
+    /** @nocollapse */
     DirectiveNormalizer.decorators = [
         { type: core_1.Injectable },
     ];
+    /** @nocollapse */
     DirectiveNormalizer.ctorParameters = [
         { type: xhr_1.XHR, },
         { type: url_resolver_1.UrlResolver, },

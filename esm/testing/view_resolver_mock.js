@@ -117,9 +117,11 @@ export class MockViewResolver extends ViewResolver {
         }
     }
 }
+/** @nocollapse */
 MockViewResolver.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 MockViewResolver.ctorParameters = [];
 function flattenArray(tree, out) {
     if (!isPresent(tree))

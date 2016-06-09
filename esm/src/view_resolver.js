@@ -52,9 +52,11 @@ export class ViewResolver {
         }
     }
 }
+/** @nocollapse */
 ViewResolver.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 ViewResolver.ctorParameters = [
     { type: ReflectorReader, },
 ];

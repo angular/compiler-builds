@@ -92,9 +92,11 @@ export class DirectiveNormalizer {
         });
     }
 }
+/** @nocollapse */
 DirectiveNormalizer.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 DirectiveNormalizer.ctorParameters = [
     { type: XHR, },
     { type: UrlResolver, },

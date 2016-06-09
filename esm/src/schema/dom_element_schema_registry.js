@@ -292,8 +292,10 @@ export class DomElementSchemaRegistry extends ElementSchemaRegistry {
         return isPresent(mappedPropName) ? mappedPropName : propName;
     }
 }
+/** @nocollapse */
 DomElementSchemaRegistry.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 DomElementSchemaRegistry.ctorParameters = [];
 //# sourceMappingURL=dom_element_schema_registry.js.map

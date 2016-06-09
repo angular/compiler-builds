@@ -55,9 +55,11 @@ var UrlResolver = (function () {
         }
         return resolvedUrl;
     };
+    /** @nocollapse */
     UrlResolver.decorators = [
         { type: core_1.Injectable },
     ];
+    /** @nocollapse */
     UrlResolver.ctorParameters = [
         { type: undefined, decorators: [{ type: core_1.Inject, args: [core_1.PACKAGE_ROOT_URL,] },] },
     ];

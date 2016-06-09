@@ -308,9 +308,11 @@ var TestComponentBuilder = (function () {
         var initComponent = function () { return _this._create(ngZone, componentFactory); };
         return ngZone == null ? initComponent() : ngZone.run(initComponent);
     };
+    /** @nocollapse */
     TestComponentBuilder.decorators = [
         { type: core_1.Injectable },
     ];
+    /** @nocollapse */
     TestComponentBuilder.ctorParameters = [
         { type: core_1.Injector, },
     ];

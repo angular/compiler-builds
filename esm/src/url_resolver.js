@@ -52,9 +52,11 @@ export class UrlResolver {
         return resolvedUrl;
     }
 }
+/** @nocollapse */
 UrlResolver.decorators = [
     { type: Injectable },
 ];
+/** @nocollapse */
 UrlResolver.ctorParameters = [
     { type: undefined, decorators: [{ type: Inject, args: [PACKAGE_ROOT_URL,] },] },
 ];
