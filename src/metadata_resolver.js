@@ -220,11 +220,12 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype.getDependenciesMetadata = function (typeOrFunc, dependencies) {
         var _this = this;
+        var hasUnknownDeps = false;
         var params = lang_1.isPresent(dependencies) ? dependencies : this._reflector.parameters(typeOrFunc);
         if (lang_1.isBlank(params)) {
             params = [];
         }
-        return params.map(function (param) {
+        var dependenciesMetadata = params.map(function (param) {
             if (lang_1.isBlank(param)) {
                 return null;
             }
@@ -275,6 +276,7 @@ var CompileMetadataResolver = (function () {
                 token = param;
             }
             if (lang_1.isBlank(token)) {
+                hasUnknownDeps = true;
                 return null;
             }
             return new cpl.CompileDiDependencyMetadata({
@@ -288,6 +290,13 @@ var CompileMetadataResolver = (function () {
                 token: _this.getTokenMetadata(token)
             });
         });
+        if (hasUnknownDeps) {
+            var depsTokens = dependenciesMetadata.map(function (dep) {
+                return dep ? lang_1.stringify(dep.token) : '?';
+            }).join(', ');
+            throw new exceptions_1.BaseException("Can't resolve all parameters for " + lang_1.stringify(typeOrFunc) + ": (" + depsTokens + ").");
+        }
+        return dependenciesMetadata;
     };
     CompileMetadataResolver.prototype.getTokenMetadata = function (token) {
         token = core_1.resolveForwardRef(token);

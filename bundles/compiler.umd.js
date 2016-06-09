@@ -12337,11 +12337,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileMetadataResolver.prototype.getDependenciesMetadata = function (typeOrFunc, dependencies) {
             var _this = this;
+            var hasUnknownDeps = false;
             var params = isPresent(dependencies) ? dependencies : this._reflector.parameters(typeOrFunc);
             if (isBlank(params)) {
                 params = [];
             }
-            return params.map(function (param) {
+            var dependenciesMetadata = params.map(function (param) {
                 if (isBlank(param)) {
                     return null;
                 }
@@ -12392,6 +12393,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     token = param;
                 }
                 if (isBlank(token)) {
+                    hasUnknownDeps = true;
                     return null;
                 }
                 return new CompileDiDependencyMetadata({
@@ -12405,6 +12407,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                     token: _this.getTokenMetadata(token)
                 });
             });
+            if (hasUnknownDeps) {
+                var depsTokens = dependenciesMetadata.map(function (dep) {
+                    return dep ? stringify(dep.token) : '?';
+                }).join(', ');
+                throw new BaseException$1("Can't resolve all parameters for " + stringify(typeOrFunc) + ": (" + depsTokens + ").");
+            }
+            return dependenciesMetadata;
         };
         CompileMetadataResolver.prototype.getTokenMetadata = function (token) {
             token = _angular_core.resolveForwardRef(token);

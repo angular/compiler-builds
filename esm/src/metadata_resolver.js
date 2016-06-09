@@ -208,11 +208,12 @@ export class CompileMetadataResolver {
         return pipes.map(type => this.getPipeMetadata(type));
     }
     getDependenciesMetadata(typeOrFunc, dependencies) {
+        let hasUnknownDeps = false;
         let params = isPresent(dependencies) ? dependencies : this._reflector.parameters(typeOrFunc);
         if (isBlank(params)) {
             params = [];
         }
-        return params.map((param) => {
+        let dependenciesMetadata = params.map((param) => {
             if (isBlank(param)) {
                 return null;
             }
@@ -263,6 +264,7 @@ export class CompileMetadataResolver {
                 token = param;
             }
             if (isBlank(token)) {
+                hasUnknownDeps = true;
                 return null;
             }
             return new cpl.CompileDiDependencyMetadata({
@@ -276,6 +278,13 @@ export class CompileMetadataResolver {
                 token: this.getTokenMetadata(token)
             });
         });
+        if (hasUnknownDeps) {
+            let depsTokens = dependenciesMetadata.map((dep) => {
+                return dep ? stringify(dep.token) : '?';
+            }).join(', ');
+            throw new BaseException(`Can't resolve all parameters for ${stringify(typeOrFunc)}: (${depsTokens}).`);
+        }
+        return dependenciesMetadata;
     }
     getTokenMetadata(token) {
         token = resolveForwardRef(token);
