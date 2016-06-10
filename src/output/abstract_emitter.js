@@ -1,6 +1,6 @@
 "use strict";
-var lang_1 = require('../facade/lang');
 var exceptions_1 = require('../facade/exceptions');
+var lang_1 = require('../facade/lang');
 var o = require('./output_ast');
 var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
 exports.CATCH_ERROR_VAR = o.variable('error');
@@ -75,7 +75,8 @@ var EmitterVisitorContext = (function () {
         if (lines[lines.length - 1].parts.length === 0) {
             lines = lines.slice(0, lines.length - 1);
         }
-        return lines.map(function (line) {
+        return lines
+            .map(function (line) {
             if (line.parts.length > 0) {
                 return _createIndent(line.indent) + line.parts.join('');
             }

@@ -1,4 +1,4 @@
-import { AnimationEntryMetadata, OpaqueToken, ComponentRef, ComponentFactory, Injector, ViewMetadata, ElementRef, ChangeDetectorRef, NgZone, DebugElement } from '@angular/core';
+import { AnimationEntryMetadata, ChangeDetectorRef, ComponentFactory, ComponentRef, DebugElement, ElementRef, Injector, NgZone, OpaqueToken, ViewMetadata } from '@angular/core';
 import { Type } from '../src/facade/lang';
 /**
  * An abstract class for inserting the root test component element in a platform independent way.

@@ -1,5 +1,5 @@
-import { isPresent, isBlank, isArray } from '../facade/lang';
 import { BaseException } from '../facade/exceptions';
+import { isArray, isBlank, isPresent } from '../facade/lang';
 import * as o from './output_ast';
 import { EmitterVisitorContext, AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR } from './abstract_emitter';
 var _debugModuleUrl = 'asset://debug/lib';

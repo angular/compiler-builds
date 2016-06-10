@@ -1,7 +1,7 @@
-import { resolveForwardRef, Injectable, PipeMetadata } from '@angular/core';
+import { Injectable, PipeMetadata, resolveForwardRef } from '@angular/core';
 import { ReflectorReader, reflector } from '../core_private';
-import { isPresent, stringify } from '../src/facade/lang';
 import { BaseException } from '../src/facade/exceptions';
+import { isPresent, stringify } from '../src/facade/lang';
 function _isPipeMetadata(type) {
     return type instanceof PipeMetadata;
 }

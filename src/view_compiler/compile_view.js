@@ -1,15 +1,15 @@
 "use strict";
 var core_private_1 = require('../../core_private');
-var lang_1 = require('../facade/lang');
+var compile_metadata_1 = require('../compile_metadata');
 var collection_1 = require('../facade/collection');
+var lang_1 = require('../facade/lang');
+var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
-var constants_1 = require('./constants');
-var compile_query_1 = require('./compile_query');
 var compile_method_1 = require('./compile_method');
 var compile_pipe_1 = require('./compile_pipe');
-var compile_metadata_1 = require('../compile_metadata');
+var compile_query_1 = require('./compile_query');
+var constants_1 = require('./constants');
 var util_1 = require('./util');
-var identifiers_1 = require('../identifiers');
 var CompileView = (function () {
     function CompileView(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings) {
         var _this = this;

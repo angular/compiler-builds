@@ -1,10 +1,10 @@
-import { ViewEncapsulation, Injectable } from '@angular/core';
+import { Injectable, ViewEncapsulation } from '@angular/core';
+import { isPresent } from '../src/facade/lang';
 import { CompileIdentifierMetadata } from './compile_metadata';
 import * as o from './output/output_ast';
 import { ShadowCss } from './shadow_css';
-import { UrlResolver } from './url_resolver';
 import { extractStyleUrls } from './style_url_resolver';
-import { isPresent } from '../src/facade/lang';
+import { UrlResolver } from './url_resolver';
 const COMPONENT_VARIABLE = '%COMP%';
 const HOST_ATTR = `_nghost-${COMPONENT_VARIABLE}`;
 const CONTENT_ATTR = `_ngcontent-${COMPONENT_VARIABLE}`;

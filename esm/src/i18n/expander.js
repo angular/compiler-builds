@@ -1,5 +1,5 @@
-import { HtmlElementAst, HtmlAttrAst, htmlVisitAll } from '../html_ast';
 import { BaseException } from '../facade/exceptions';
+import { HtmlAttrAst, HtmlElementAst, htmlVisitAll } from '../html_ast';
 /**
  * Expands special forms into elements.
  *
@@ -46,10 +46,10 @@ class _Expander {
     visitComment(ast, context) { return ast; }
     visitExpansion(ast, context) {
         this.expanded = true;
-        return ast.type == "plural" ? _expandPluralForm(ast) : _expandDefaultForm(ast);
+        return ast.type == 'plural' ? _expandPluralForm(ast) : _expandDefaultForm(ast);
     }
     visitExpansionCase(ast, context) {
-        throw new BaseException("Should not be reached");
+        throw new BaseException('Should not be reached');
     }
 }
 function _expandPluralForm(ast) {
@@ -57,29 +57,25 @@ function _expandPluralForm(ast) {
         let expansionResult = expandNodes(c.expression);
         let i18nAttrs = expansionResult.expanded ?
             [] :
-            [new HtmlAttrAst("i18n", `${ast.type}_${c.value}`, c.valueSourceSpan)];
+            [new HtmlAttrAst('i18n', `${ast.type}_${c.value}`, c.valueSourceSpan)];
         return new HtmlElementAst(`template`, [
-            new HtmlAttrAst("ngPluralCase", c.value, c.valueSourceSpan),
-        ], [
-            new HtmlElementAst(`li`, i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)
-        ], c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            new HtmlAttrAst('ngPluralCase', c.value, c.valueSourceSpan),
+        ], [new HtmlElementAst(`li`, i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)], c.sourceSpan, c.sourceSpan, c.sourceSpan);
     });
-    let switchAttr = new HtmlAttrAst("[ngPlural]", ast.switchValue, ast.switchValueSourceSpan);
-    return new HtmlElementAst("ul", [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    let switchAttr = new HtmlAttrAst('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
+    return new HtmlElementAst('ul', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
 }
 function _expandDefaultForm(ast) {
     let children = ast.cases.map(c => {
         let expansionResult = expandNodes(c.expression);
         let i18nAttrs = expansionResult.expanded ?
             [] :
-            [new HtmlAttrAst("i18n", `${ast.type}_${c.value}`, c.valueSourceSpan)];
+            [new HtmlAttrAst('i18n', `${ast.type}_${c.value}`, c.valueSourceSpan)];
         return new HtmlElementAst(`template`, [
-            new HtmlAttrAst("ngSwitchWhen", c.value, c.valueSourceSpan),
-        ], [
-            new HtmlElementAst(`li`, i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)
-        ], c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            new HtmlAttrAst('ngSwitchWhen', c.value, c.valueSourceSpan),
+        ], [new HtmlElementAst(`li`, i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)], c.sourceSpan, c.sourceSpan, c.sourceSpan);
     });
-    let switchAttr = new HtmlAttrAst("[ngSwitch]", ast.switchValue, ast.switchValueSourceSpan);
-    return new HtmlElementAst("ul", [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    let switchAttr = new HtmlAttrAst('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
+    return new HtmlElementAst('ul', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
 }
 //# sourceMappingURL=expander.js.map

@@ -1,5 +1,5 @@
+import { CompileDirectiveMetadata } from '../compile_metadata';
 import * as o from '../output/output_ast';
-import { CompileDirectiveMetadata } from "../compile_metadata";
 export declare class CompiledAnimation {
     name: string;
     statesMapStatement: o.Statement;

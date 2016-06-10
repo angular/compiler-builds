@@ -1,11 +1,11 @@
-import { ListWrapper, StringMapWrapper } from '../facade/collection';
-import { Math } from '../facade/math';
 import { ANY_STATE, FILL_STYLE_FLAG } from '../../core_private';
-import { RegExpWrapper, isArray, isPresent, isBlank, isString, isStringMap, NumberWrapper } from '../facade/lang';
-import { CompileAnimationStateDeclarationMetadata, CompileAnimationWithStepsMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationGroupMetadata, CompileAnimationSequenceMetadata, CompileAnimationKeyframesSequenceMetadata } from '../compile_metadata';
-import { AnimationEntryAst, AnimationStateTransitionAst, AnimationStateDeclarationAst, AnimationKeyframeAst, AnimationStylesAst, AnimationWithStepsAst, AnimationSequenceAst, AnimationGroupAst, AnimationStepAst, AnimationStateTransitionExpression } from './animation_ast';
-import { StylesCollection } from './styles_collection';
+import { CompileAnimationAnimateMetadata, CompileAnimationGroupMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationSequenceMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStyleMetadata, CompileAnimationWithStepsMetadata } from '../compile_metadata';
+import { ListWrapper, StringMapWrapper } from '../facade/collection';
+import { NumberWrapper, RegExpWrapper, isArray, isBlank, isPresent, isString, isStringMap } from '../facade/lang';
+import { Math } from '../facade/math';
 import { ParseError } from '../parse_util';
+import { AnimationEntryAst, AnimationGroupAst, AnimationKeyframeAst, AnimationSequenceAst, AnimationStateDeclarationAst, AnimationStateTransitionAst, AnimationStateTransitionExpression, AnimationStepAst, AnimationStylesAst, AnimationWithStepsAst } from './animation_ast';
+import { StylesCollection } from './styles_collection';
 const _INITIAL_KEYFRAME = 0;
 const _TERMINAL_KEYFRAME = 1;
 const _ONE_SECOND = 1000;
@@ -71,9 +71,9 @@ function _parseAnimationStateTransition(transitionStateMetadata, stateStyles, er
     if (errors.length == 0) {
         _fillAnimationAstStartingKeyframes(animationAst, styles, errors);
     }
-    var sequenceAst = (animationAst instanceof AnimationSequenceAst)
-        ? animationAst
-        : new AnimationSequenceAst([animationAst]);
+    var sequenceAst = (animationAst instanceof AnimationSequenceAst) ?
+        animationAst :
+        new AnimationSequenceAst([animationAst]);
     return new AnimationStateTransitionAst(transitionExprs, sequenceAst);
 }
 function _parseAnimationTransitionExpr(eventStr, errors) {
@@ -102,9 +102,8 @@ function _fetchSylesFromState(stateName, stateStyles) {
     return null;
 }
 function _normalizeAnimationEntry(entry) {
-    return isArray(entry)
-        ? new CompileAnimationSequenceMetadata(entry)
-        : entry;
+    return isArray(entry) ? new CompileAnimationSequenceMetadata(entry) :
+        entry;
 }
 function _normalizeStyleMetadata(entry, stateStyles, errors) {
     var normalizedStyles = [];
@@ -152,9 +151,8 @@ function _normalizeStyleStepEntry(entry, stateStyles, errors) {
             if (!isPresent(combinedStyles)) {
                 combinedStyles = [];
             }
-            _normalizeStyleMetadata(step, stateStyles, errors).forEach(entry => {
-                _mergeAnimationStyles(combinedStyles, entry);
-            });
+            _normalizeStyleMetadata(step, stateStyles, errors)
+                .forEach(entry => { _mergeAnimationStyles(combinedStyles, entry); });
         }
         else {
             // it is important that we create a metadata entry of the combined styles
@@ -170,19 +168,18 @@ function _normalizeStyleStepEntry(entry, stateStyles, errors) {
                 // those style steps are not going to be squashed
                 var animateStyleValue = step.styles;
                 if (animateStyleValue instanceof CompileAnimationStyleMetadata) {
-                    animateStyleValue.styles = _normalizeStyleMetadata(animateStyleValue, stateStyles, errors);
+                    animateStyleValue.styles =
+                        _normalizeStyleMetadata(animateStyleValue, stateStyles, errors);
                 }
                 else if (animateStyleValue instanceof CompileAnimationKeyframesSequenceMetadata) {
-                    animateStyleValue.steps.forEach(step => {
-                        step.styles = _normalizeStyleMetadata(step, stateStyles, errors);
-                    });
+                    animateStyleValue.steps.forEach(step => { step.styles = _normalizeStyleMetadata(step, stateStyles, errors); });
                 }
             }
             else if (step instanceof CompileAnimationWithStepsMetadata) {
                 let innerSteps = _normalizeStyleStepEntry(step, stateStyles, errors);
-                step = step instanceof CompileAnimationGroupMetadata
-                    ? new CompileAnimationGroupMetadata(innerSteps)
-                    : new CompileAnimationSequenceMetadata(innerSteps);
+                step = step instanceof CompileAnimationGroupMetadata ?
+                    new CompileAnimationGroupMetadata(innerSteps) :
+                    new CompileAnimationSequenceMetadata(innerSteps);
             }
             newSteps.push(step);
         }
@@ -350,7 +347,8 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
         var styles = entry.styles;
         var keyframes;
         if (styles instanceof CompileAnimationKeyframesSequenceMetadata) {
-            keyframes = _parseAnimationKeyframes(styles, currentTime, collectedStyles, stateStyles, errors);
+            keyframes =
+                _parseAnimationKeyframes(styles, currentTime, collectedStyles, stateStyles, errors);
         }
         else {
             let styleData = styles;

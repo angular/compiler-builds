@@ -1,7 +1,7 @@
-import { isBlank } from '../src/facade/lang';
-import { unimplemented } from '../src/facade/exceptions';
-import { Identifiers } from './identifiers';
 import { ViewEncapsulation } from '@angular/core';
+import { unimplemented } from '../src/facade/exceptions';
+import { isBlank } from '../src/facade/lang';
+import { Identifiers } from './identifiers';
 export class CompilerConfig {
     constructor(genDebugInfo, logBindingUpdate, useJit, renderTypes = null, defaultEncapsulation = null) {
         this.genDebugInfo = genDebugInfo;

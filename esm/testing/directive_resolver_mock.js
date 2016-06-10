@@ -1,7 +1,7 @@
+import { ComponentMetadata, DirectiveMetadata, Injectable } from '@angular/core';
+import { DirectiveResolver } from '../src/directive_resolver';
 import { Map } from '../src/facade/collection';
 import { isPresent } from '../src/facade/lang';
-import { DirectiveMetadata, ComponentMetadata, Injectable } from '@angular/core';
-import { DirectiveResolver } from '../src/directive_resolver';
 export class MockDirectiveResolver extends DirectiveResolver {
     constructor(...args) {
         super(...args);

@@ -18,7 +18,7 @@ exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;
  */
 exports.DEFAULT_PACKAGE_URL_PROVIDER = {
     provide: core_1.PACKAGE_ROOT_URL,
-    useValue: "/"
+    useValue: '/'
 };
 var UrlResolver = (function () {
     function UrlResolver(_packagePrefix) {
@@ -41,7 +41,7 @@ var UrlResolver = (function () {
         var resolvedParts = _split(resolvedUrl);
         var prefix = this._packagePrefix;
         if (lang_1.isPresent(prefix) && lang_1.isPresent(resolvedParts) &&
-            resolvedParts[_ComponentIndex.Scheme] == "package") {
+            resolvedParts[_ComponentIndex.Scheme] == 'package') {
             var path = resolvedParts[_ComponentIndex.Path];
             if (this._packagePrefix === _ASSET_SCHEME) {
                 var pathSegements = path.split(/\//);
@@ -71,7 +71,7 @@ exports.UrlResolver = UrlResolver;
  */
 function getUrlScheme(url) {
     var match = _split(url);
-    return (match && match[_ComponentIndex.Scheme]) || "";
+    return (match && match[_ComponentIndex.Scheme]) || '';
 }
 exports.getUrlScheme = getUrlScheme;
 // The code below is adapted from Traceur:

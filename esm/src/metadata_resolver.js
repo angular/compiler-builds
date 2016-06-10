@@ -1,17 +1,16 @@
-import { AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationKeyframesSequenceMetadata, AnimationAnimateMetadata, AnimationWithStepsMetadata, AnimationGroupMetadata, AttributeMetadata, OptionalMetadata, ComponentMetadata, SelfMetadata, HostMetadata, SkipSelfMetadata, Provider, PLATFORM_DIRECTIVES, PLATFORM_PIPES, Injectable, Inject, Optional, QueryMetadata, resolveForwardRef, InjectMetadata } from '@angular/core';
-import { LIFECYCLE_HOOKS_VALUES, ReflectorReader, reflector } from '../core_private';
-import { Type, isBlank, isPresent, isArray, stringify, isString, isStringMap } from '../src/facade/lang';
+import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, AttributeMetadata, ComponentMetadata, HostMetadata, Inject, InjectMetadata, Injectable, Optional, OptionalMetadata, PLATFORM_DIRECTIVES, PLATFORM_PIPES, Provider, QueryMetadata, SelfMetadata, SkipSelfMetadata, resolveForwardRef } from '@angular/core';
+import { LIFECYCLE_HOOKS_VALUES, ReflectorReader, createProvider, isProviderLiteral, reflector } from '../core_private';
 import { StringMapWrapper } from '../src/facade/collection';
 import { BaseException } from '../src/facade/exceptions';
+import { Type, isArray, isBlank, isPresent, isString, isStringMap, stringify } from '../src/facade/lang';
+import { assertArrayOfStrings } from './assertions';
 import * as cpl from './compile_metadata';
+import { hasLifecycleHook } from './directive_lifecycle_reflector';
 import { DirectiveResolver } from './directive_resolver';
 import { PipeResolver } from './pipe_resolver';
-import { ViewResolver } from './view_resolver';
-import { hasLifecycleHook } from './directive_lifecycle_reflector';
-import { MODULE_SUFFIX, sanitizeIdentifier, ValueTransformer, visitValue } from './util';
-import { assertArrayOfStrings } from './assertions';
 import { getUrlScheme } from './url_resolver';
-import { createProvider, isProviderLiteral } from "../core_private";
+import { MODULE_SUFFIX, ValueTransformer, sanitizeIdentifier, visitValue } from './util';
+import { ViewResolver } from './view_resolver';
 export class CompileMetadataResolver {
     constructor(_directiveResolver, _pipeResolver, _viewResolver, _platformDirectives, _platformPipes, _reflector) {
         this._directiveResolver = _directiveResolver;
@@ -68,7 +67,8 @@ export class CompileMetadataResolver {
             return new cpl.CompileAnimationKeyframesSequenceMetadata(value.steps.map(entry => this.getAnimationStyleMetadata(entry)));
         }
         else if (value instanceof AnimationAnimateMetadata) {
-            let animateData = this.getAnimationMetadata(value.styles);
+            let animateData = this
+                .getAnimationMetadata(value.styles);
             return new cpl.CompileAnimationAnimateMetadata(value.timings, animateData);
         }
         else if (value instanceof AnimationWithStepsMetadata) {
@@ -95,9 +95,9 @@ export class CompileMetadataResolver {
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
                 assertArrayOfStrings('styles', viewMeta.styles);
-                var animations = isPresent(viewMeta.animations)
-                    ? viewMeta.animations.map(e => this.getAnimationEntryMetadata(e))
-                    : null;
+                var animations = isPresent(viewMeta.animations) ?
+                    viewMeta.animations.map(e => this.getAnimationEntryMetadata(e)) :
+                    null;
                 templateMeta = new cpl.CompileTemplateMetadata({
                     encapsulation: viewMeta.encapsulation,
                     template: viewMeta.template,
@@ -226,8 +226,7 @@ export class CompileMetadataResolver {
             let viewQuery = null;
             var token = null;
             if (isArray(param)) {
-                param
-                    .forEach((paramEntry) => {
+                param.forEach((paramEntry) => {
                     if (paramEntry instanceof HostMetadata) {
                         isHost = true;
                     }
@@ -279,9 +278,8 @@ export class CompileMetadataResolver {
             });
         });
         if (hasUnknownDeps) {
-            let depsTokens = dependenciesMetadata.map((dep) => {
-                return dep ? stringify(dep.token) : '?';
-            }).join(', ');
+            let depsTokens = dependenciesMetadata.map((dep) => { return dep ? stringify(dep.token) : '?'; })
+                .join(', ');
             throw new BaseException(`Can't resolve all parameters for ${stringify(typeOrFunc)}: (${depsTokens}).`);
         }
         return dependenciesMetadata;

@@ -1,6 +1,6 @@
 import { CompileAnimationEntryMetadata } from '../compile_metadata';
-import { AnimationEntryAst } from './animation_ast';
 import { ParseError } from '../parse_util';
+import { AnimationEntryAst } from './animation_ast';
 export declare class AnimationParseError extends ParseError {
     constructor(message: any);
     toString(): string;

@@ -1,11 +1,11 @@
-import { BaseException } from '../facade/exceptions';
+import { ANY_STATE, DEFAULT_STATE, EMPTY_STATE } from '../../core_private';
 import { StringMapWrapper } from '../facade/collection';
-import { isPresent, isBlank } from '../facade/lang';
+import { BaseException } from '../facade/exceptions';
+import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
-import { DEFAULT_STATE, ANY_STATE, EMPTY_STATE } from '../../core_private';
-import { parseAnimationEntry } from './animation_parser';
 import { AnimationStepAst } from './animation_ast';
+import { parseAnimationEntry } from './animation_parser';
 export class CompiledAnimation {
     constructor(name, statesMapStatement, statesVariableName, fnStatement, fnVariable) {
         this.name = name;
@@ -23,7 +23,7 @@ export class AnimationCompiler {
             var result = parseAnimationEntry(entry);
             if (result.errors.length > 0) {
                 var errorMessage = '';
-                result.errors.forEach((error) => { errorMessage += "\n- " + error.msg; });
+                result.errors.forEach((error) => { errorMessage += '\n- ' + error.msg; });
                 // todo (matsko): include the component name when throwing
                 throw new BaseException(`Unable to parse the animation sequence for "${entry.name}" due to the following errors: ` +
                     errorMessage);
@@ -65,15 +65,13 @@ class _AnimationBuilder {
         });
         return o.importExpr(Identifiers.AnimationStyles).instantiate([
             o.importExpr(Identifiers.collectAndResolveStyles).callFn([
-                _ANIMATION_COLLECTED_STYLES,
-                o.literalArr(stylesArr)
+                _ANIMATION_COLLECTED_STYLES, o.literalArr(stylesArr)
             ])
         ]);
     }
     visitAnimationKeyframe(ast, context) {
         return o.importExpr(Identifiers.AnimationKeyframe).instantiate([
-            o.literal(ast.offset),
-            ast.styles.visit(this, context)
+            o.literal(ast.offset), ast.styles.visit(this, context)
         ]);
     }
     visitAnimationStep(ast, context) {
@@ -89,8 +87,7 @@ class _AnimationBuilder {
         var startingStylesExpr = ast.startingStyles.visit(this, context);
         var keyframeExpressions = ast.keyframes.map(keyframe => keyframe.visit(this, context));
         var keyframesExpr = o.importExpr(Identifiers.balanceAnimationKeyframes).callFn([
-            _ANIMATION_COLLECTED_STYLES,
-            _ANIMATION_END_STATE_STYLES_VAR,
+            _ANIMATION_COLLECTED_STYLES, _ANIMATION_END_STATE_STYLES_VAR,
             o.literalArr(keyframeExpressions)
         ]);
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
@@ -98,23 +95,17 @@ class _AnimationBuilder {
     /** @internal */
     _callAnimateMethod(ast, startingStylesExpr /** TODO #9100 */, keyframesExpr /** TODO #9100 */) {
         return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
-            _ANIMATION_FACTORY_ELEMENT_VAR,
-            startingStylesExpr,
-            keyframesExpr,
-            o.literal(ast.duration),
-            o.literal(ast.delay),
-            o.literal(ast.easing)
+            _ANIMATION_FACTORY_ELEMENT_VAR, startingStylesExpr, keyframesExpr, o.literal(ast.duration),
+            o.literal(ast.delay), o.literal(ast.easing)
         ]);
     }
     visitAnimationSequence(ast, context) {
         var playerExprs = ast.steps.map(step => step.visit(this, context));
-        return o.importExpr(Identifiers.AnimationSequencePlayer).instantiate([
-            o.literalArr(playerExprs)]);
+        return o.importExpr(Identifiers.AnimationSequencePlayer).instantiate([o.literalArr(playerExprs)]);
     }
     visitAnimationGroup(ast, context) {
         var playerExprs = ast.steps.map(step => step.visit(this, context));
-        return o.importExpr(Identifiers.AnimationGroupPlayer).instantiate([
-            o.literalArr(playerExprs)]);
+        return o.importExpr(Identifiers.AnimationGroupPlayer).instantiate([o.literalArr(playerExprs)]);
     }
     visitAnimationStateDeclaration(ast, context) {
         var flatStyles = {};
@@ -146,67 +137,64 @@ class _AnimationBuilder {
         var animationPlayerExpr = ast.animation.visit(this, context);
         var reducedStateChangesPrecondition = stateChangePreconditions.reduce((a, b) => a.or(b));
         var precondition = _ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR).and(reducedStateChangesPrecondition);
-        return new o.IfStmt(precondition, [
-            _ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt()
-        ]);
+        return new o.IfStmt(precondition, [_ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt()]);
     }
     visitAnimationEntry(ast, context) {
-        //visit each of the declarations first to build the context state map
+        // visit each of the declarations first to build the context state map
         ast.stateDeclarations.forEach(def => def.visit(this, context));
-        //this should always be defined even if the user overrides it
+        // this should always be defined even if the user overrides it
         context.stateMap.registerState(DEFAULT_STATE, {});
         var statements = [];
-        statements.push(_ANIMATION_FACTORY_VIEW_VAR.callMethod('cancelActiveAnimation', [
-            _ANIMATION_FACTORY_ELEMENT_VAR,
-            o.literal(this.animationName),
+        statements.push(_ANIMATION_FACTORY_VIEW_VAR
+            .callMethod('cancelActiveAnimation', [
+            _ANIMATION_FACTORY_ELEMENT_VAR, o.literal(this.animationName),
             _ANIMATION_NEXT_STATE_VAR.equals(o.literal(EMPTY_STATE))
-        ]).toStmt());
+        ])
+            .toStmt());
         statements.push(_ANIMATION_COLLECTED_STYLES.set(EMPTY_MAP).toDeclStmt());
         statements.push(_ANIMATION_PLAYER_VAR.set(o.NULL_EXPR).toDeclStmt());
-        statements.push(_ANIMATION_DEFAULT_STATE_VAR.set(this._statesMapVar.key(o.literal(DEFAULT_STATE))).toDeclStmt());
-        statements.push(_ANIMATION_START_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_CURRENT_STATE_VAR)).toDeclStmt());
-        statements.push(new o.IfStmt(_ANIMATION_START_STATE_STYLES_VAR.equals(o.NULL_EXPR), [
-            _ANIMATION_START_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()
-        ]));
-        statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR)).toDeclStmt());
-        statements.push(new o.IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(o.NULL_EXPR), [
-            _ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()
-        ]));
+        statements.push(_ANIMATION_DEFAULT_STATE_VAR.set(this._statesMapVar.key(o.literal(DEFAULT_STATE)))
+            .toDeclStmt());
+        statements.push(_ANIMATION_START_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_CURRENT_STATE_VAR))
+            .toDeclStmt());
+        statements.push(new o.IfStmt(_ANIMATION_START_STATE_STYLES_VAR.equals(o.NULL_EXPR), [_ANIMATION_START_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
+        statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR))
+            .toDeclStmt());
+        statements.push(new o.IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(o.NULL_EXPR), [_ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
         var RENDER_STYLES_FN = o.importExpr(Identifiers.renderStyles);
         // before we start any animation we want to clear out the starting
         // styles from the element's style property (since they were placed
         // there at the end of the last animation
-        statements.push(RENDER_STYLES_FN.callFn([
-            _ANIMATION_FACTORY_ELEMENT_VAR,
-            _ANIMATION_FACTORY_RENDERER_VAR,
+        statements.push(RENDER_STYLES_FN
+            .callFn([
+            _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
             o.importExpr(Identifiers.clearStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
-        ]).toStmt());
+        ])
+            .toStmt());
         ast.stateTransitions.forEach(transAst => statements.push(transAst.visit(this, context)));
         // this check ensures that the animation factory always returns a player
         // so that the onDone callback can be used for tracking
-        statements.push(new o.IfStmt(_ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR), [
-            _ANIMATION_PLAYER_VAR.set(o.importExpr(Identifiers.NoOpAnimationPlayer).instantiate([])).toStmt()
-        ]));
+        statements.push(new o.IfStmt(_ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR), [_ANIMATION_PLAYER_VAR.set(o.importExpr(Identifiers.NoOpAnimationPlayer).instantiate([]))
+                .toStmt()]));
         // once complete we want to apply the styles on the element
         // since the destination state's values should persist once
         // the animation sequence has completed.
-        statements.push(_ANIMATION_PLAYER_VAR.callMethod('onDone', [
-            o.fn([], [
-                RENDER_STYLES_FN.callFn([
-                    _ANIMATION_FACTORY_ELEMENT_VAR,
-                    _ANIMATION_FACTORY_RENDERER_VAR,
+        statements.push(_ANIMATION_PLAYER_VAR
+            .callMethod('onDone', [o.fn([], [RENDER_STYLES_FN
+                    .callFn([
+                    _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
                     o.importExpr(Identifiers.balanceAnimationStyles).callFn([
-                        _ANIMATION_START_STATE_STYLES_VAR,
-                        _ANIMATION_END_STATE_STYLES_VAR
+                        _ANIMATION_START_STATE_STYLES_VAR, _ANIMATION_END_STATE_STYLES_VAR
                     ])
-                ]).toStmt()
-            ])
-        ]).toStmt());
-        statements.push(_ANIMATION_FACTORY_VIEW_VAR.callMethod('registerAndStartAnimation', [
-            _ANIMATION_FACTORY_ELEMENT_VAR,
-            o.literal(this.animationName),
+                ])
+                    .toStmt()])])
+            .toStmt());
+        statements.push(_ANIMATION_FACTORY_VIEW_VAR
+            .callMethod('registerAndStartAnimation', [
+            _ANIMATION_FACTORY_ELEMENT_VAR, o.literal(this.animationName),
             _ANIMATION_PLAYER_VAR
-        ]).toStmt());
+        ])
+            .toStmt());
         return o.fn([
             new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(Identifiers.AppView, [o.DYNAMIC_TYPE])),
             new o.FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, o.DYNAMIC_TYPE),
@@ -267,9 +255,7 @@ function _compareToAnimationStateExpr(value, animationState) {
 function _isEndStateAnimateStep(step) {
     // the final animation step is characterized by having only TWO
     // keyframe values and it must have zero styles for both keyframes
-    if (step instanceof AnimationStepAst
-        && step.duration > 0
-        && step.keyframes.length == 2) {
+    if (step instanceof AnimationStepAst && step.duration > 0 && step.keyframes.length == 2) {
         var styles1 = _getStylesArray(step.keyframes[0])[0];
         var styles2 = _getStylesArray(step.keyframes[1])[0];
         return StringMapWrapper.isEmpty(styles1) && StringMapWrapper.isEmpty(styles2);

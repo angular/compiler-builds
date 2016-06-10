@@ -1,5 +1,5 @@
-import { isPresent } from '../facade/lang';
 import { ListWrapper } from '../facade/collection';
+import { isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
 class _DebugState {
     constructor(nodeIndex, sourceAst) {

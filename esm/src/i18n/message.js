@@ -1,4 +1,4 @@
-import { isPresent, escape } from '../facade/lang';
+import { escape, isPresent } from '../facade/lang';
 /**
  * A message extracted from a template.
  *
@@ -17,8 +17,8 @@ export class Message {
  * Computes the id of a message
  */
 export function id(m) {
-    let meaning = isPresent(m.meaning) ? m.meaning : "";
-    let content = isPresent(m.content) ? m.content : "";
+    let meaning = isPresent(m.meaning) ? m.meaning : '';
+    let content = isPresent(m.content) ? m.content : '';
     return escape(`$ng|${meaning}|${content}`);
 }
 //# sourceMappingURL=message.js.map

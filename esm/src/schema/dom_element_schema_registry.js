@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { SecurityContext } from '../../core_private';
-import { isPresent } from '../facade/lang';
 import { StringMapWrapper } from '../facade/collection';
-import { ElementSchemaRegistry } from './element_schema_registry';
+import { isPresent } from '../facade/lang';
 import { SECURITY_SCHEMA } from './dom_security_schema';
+import { ElementSchemaRegistry } from './element_schema_registry';
 const EVENT = 'event';
 const BOOLEAN = 'boolean';
 const NUMBER = 'number';

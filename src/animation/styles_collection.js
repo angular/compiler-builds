@@ -1,6 +1,6 @@
 "use strict";
-var lang_1 = require('../facade/lang');
 var collection_1 = require('../facade/collection');
+var lang_1 = require('../facade/lang');
 var StylesCollectionEntry = (function () {
     function StylesCollectionEntry(time, value) {
         this.time = time;

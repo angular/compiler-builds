@@ -1,7 +1,7 @@
-import { isPresent, isBlank } from '../facade/lang';
 import { ListWrapper } from '../facade/collection';
-import * as o from '../output/output_ast';
+import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
+import * as o from '../output/output_ast';
 import { getPropertyInView } from './util';
 class ViewQueryValues {
     constructor(view, values) {
@@ -83,8 +83,7 @@ function mapNestedViews(declarationAppElement, view, expressions) {
         return o.replaceVarInExpression(o.THIS_EXPR.name, o.variable('nestedView'), expr);
     });
     return declarationAppElement.callMethod('mapNestedViews', [
-        o.variable(view.className),
-        o.fn([new o.FnParam('nestedView', view.classType)], [new o.ReturnStatement(o.literalArr(adjustedExpressions))])
+        o.variable(view.className), o.fn([new o.FnParam('nestedView', view.classType)], [new o.ReturnStatement(o.literalArr(adjustedExpressions))])
     ]);
 }
 export function createQueryList(query, directiveInstance, propertyName, compileView) {

@@ -6,12 +6,12 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
-var lang_1 = require('../src/facade/lang');
-var exceptions_1 = require('../src/facade/exceptions');
 var collection_1 = require('../src/facade/collection');
+var exceptions_1 = require('../src/facade/exceptions');
+var lang_1 = require('../src/facade/lang');
 var selector_1 = require('./selector');
-var util_1 = require('./util');
 var url_resolver_1 = require('./url_resolver');
+var util_1 = require('./util');
 // group 2: "event" from "(event)"
 var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))$/g;
 var CompileMetadataWithIdentifier = (function () {
@@ -62,10 +62,7 @@ var CompileAnimationEntryMetadata = (function () {
     CompileAnimationEntryMetadata.prototype.toJson = function () {
         return {
             'class': 'AnimationEntryMetadata',
-            'value': {
-                'name': this.name,
-                'definitions': _arrayToJson(this.definitions)
-            }
+            'value': { 'name': this.name, 'definitions': _arrayToJson(this.definitions) }
         };
     };
     return CompileAnimationEntryMetadata;
@@ -92,10 +89,7 @@ var CompileAnimationStateDeclarationMetadata = (function (_super) {
     CompileAnimationStateDeclarationMetadata.prototype.toJson = function () {
         return {
             'class': 'AnimationStateDeclarationMetadata',
-            'value': {
-                'stateNameExpr': this.stateNameExpr,
-                'styles': this.styles.toJson()
-            }
+            'value': { 'stateNameExpr': this.stateNameExpr, 'styles': this.styles.toJson() }
         };
     };
     return CompileAnimationStateDeclarationMetadata;
@@ -116,10 +110,7 @@ var CompileAnimationStateTransitionMetadata = (function (_super) {
     CompileAnimationStateTransitionMetadata.prototype.toJson = function () {
         return {
             'class': 'AnimationStateTransitionMetadata',
-            'value': {
-                'stateChangeExpr': this.stateChangeExpr,
-                'steps': this.steps.toJson()
-            }
+            'value': { 'stateChangeExpr': this.stateChangeExpr, 'steps': this.steps.toJson() }
         };
     };
     return CompileAnimationStateTransitionMetadata;
@@ -143,10 +134,7 @@ var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
         return new CompileAnimationKeyframesSequenceMetadata(steps);
     };
     CompileAnimationKeyframesSequenceMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AnimationKeyframesSequenceMetadata',
-            'value': _arrayToJson(this.steps)
-        };
+        return { 'class': 'AnimationKeyframesSequenceMetadata', 'value': _arrayToJson(this.steps) };
     };
     return CompileAnimationKeyframesSequenceMetadata;
 }(CompileAnimationMetadata));
@@ -169,10 +157,7 @@ var CompileAnimationStyleMetadata = (function (_super) {
     CompileAnimationStyleMetadata.prototype.toJson = function () {
         return {
             'class': 'AnimationStyleMetadata',
-            'value': {
-                'offset': this.offset,
-                'styles': this.styles
-            }
+            'value': { 'offset': this.offset, 'styles': this.styles }
         };
     };
     return CompileAnimationStyleMetadata;
@@ -196,10 +181,7 @@ var CompileAnimationAnimateMetadata = (function (_super) {
     CompileAnimationAnimateMetadata.prototype.toJson = function () {
         return {
             'class': 'AnimationAnimateMetadata',
-            'value': {
-                'timings': this.timings,
-                'styles': _objToJson(this.styles)
-            }
+            'value': { 'timings': this.timings, 'styles': _objToJson(this.styles) }
         };
     };
     return CompileAnimationAnimateMetadata;
@@ -226,10 +208,7 @@ var CompileAnimationSequenceMetadata = (function (_super) {
         return new CompileAnimationSequenceMetadata(steps);
     };
     CompileAnimationSequenceMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AnimationSequenceMetadata',
-            'value': _arrayToJson(this.steps)
-        };
+        return { 'class': 'AnimationSequenceMetadata', 'value': _arrayToJson(this.steps) };
     };
     return CompileAnimationSequenceMetadata;
 }(CompileAnimationWithStepsMetadata));
@@ -241,14 +220,11 @@ var CompileAnimationGroupMetadata = (function (_super) {
         _super.call(this, steps);
     }
     CompileAnimationGroupMetadata.fromJson = function (data) {
-        var steps = _arrayFromJson(data["value"], metadataFromJson);
+        var steps = _arrayFromJson(data['value'], metadataFromJson);
         return new CompileAnimationGroupMetadata(steps);
     };
     CompileAnimationGroupMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AnimationGroupMetadata',
-            'value': _arrayToJson(this.steps)
-        };
+        return { 'class': 'AnimationGroupMetadata', 'value': _arrayToJson(this.steps) };
     };
     return CompileAnimationGroupMetadata;
 }(CompileAnimationWithStepsMetadata));
@@ -447,10 +423,7 @@ var CompileTokenMetadata = (function () {
                 if (lang_1.isPresent(this.identifier)) {
                     if (lang_1.isPresent(this.identifier.moduleUrl) &&
                         lang_1.isPresent(url_resolver_1.getUrlScheme(this.identifier.moduleUrl))) {
-                        var uri = core_private_1.reflector.importUri({
-                            'filePath': this.identifier.moduleUrl,
-                            'name': this.identifier.name
-                        });
+                        var uri = core_private_1.reflector.importUri({ 'filePath': this.identifier.moduleUrl, 'name': this.identifier.name });
                         this._assetCacheKey = this.identifier.name + "|" + uri + "|" + this.identifierIsInstance;
                     }
                     else {
@@ -632,7 +605,8 @@ var CompileTemplateMetadata = (function () {
     };
     CompileTemplateMetadata.prototype.toJson = function () {
         return {
-            'encapsulation': lang_1.isPresent(this.encapsulation) ? lang_1.serializeEnum(this.encapsulation) : this.encapsulation,
+            'encapsulation': lang_1.isPresent(this.encapsulation) ? lang_1.serializeEnum(this.encapsulation) :
+                this.encapsulation,
             'template': this.template,
             'templateUrl': this.templateUrl,
             'styles': this.styles,
@@ -788,7 +762,14 @@ function createHostComponentMeta(componentType, componentSelector) {
             moduleUrl: componentType.moduleUrl,
             isHost: true
         }),
-        template: new CompileTemplateMetadata({ template: template, templateUrl: '', styles: [], styleUrls: [], ngContentSelectors: [], animations: [] }),
+        template: new CompileTemplateMetadata({
+            template: template,
+            templateUrl: '',
+            styles: [],
+            styleUrls: [],
+            ngContentSelectors: [],
+            animations: []
+        }),
         changeDetection: core_1.ChangeDetectionStrategy.Default,
         inputs: [],
         outputs: [],

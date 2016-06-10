@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy } from '@angular/core';
-import { CHANGE_DETECTION_STRATEGY_VALUES, VIEW_ENCAPSULATION_VALUES, LIFECYCLE_HOOKS_VALUES, reflector } from '../core_private';
-import { isPresent, isBlank, isNumber, isBoolean, normalizeBool, normalizeBlank, serializeEnum, isString, RegExpWrapper, NumberWrapper, isArray } from '../src/facade/lang';
-import { unimplemented, BaseException } from '../src/facade/exceptions';
-import { StringMapWrapper, ListWrapper } from '../src/facade/collection';
+import { CHANGE_DETECTION_STRATEGY_VALUES, LIFECYCLE_HOOKS_VALUES, VIEW_ENCAPSULATION_VALUES, reflector } from '../core_private';
+import { ListWrapper, StringMapWrapper } from '../src/facade/collection';
+import { BaseException, unimplemented } from '../src/facade/exceptions';
+import { NumberWrapper, RegExpWrapper, isArray, isBlank, isBoolean, isNumber, isPresent, isString, normalizeBlank, normalizeBool, serializeEnum } from '../src/facade/lang';
 import { CssSelector } from './selector';
-import { splitAtColon, sanitizeIdentifier } from './util';
 import { getUrlScheme } from './url_resolver';
+import { sanitizeIdentifier, splitAtColon } from './util';
 // group 2: "event" from "(event)"
 var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))$/g;
 export class CompileMetadataWithIdentifier {
@@ -31,10 +31,7 @@ export class CompileAnimationEntryMetadata {
     toJson() {
         return {
             'class': 'AnimationEntryMetadata',
-            'value': {
-                'name': this.name,
-                'definitions': _arrayToJson(this.definitions)
-            }
+            'value': { 'name': this.name, 'definitions': _arrayToJson(this.definitions) }
         };
     }
 }
@@ -54,10 +51,7 @@ export class CompileAnimationStateDeclarationMetadata extends CompileAnimationSt
     toJson() {
         return {
             'class': 'AnimationStateDeclarationMetadata',
-            'value': {
-                'stateNameExpr': this.stateNameExpr,
-                'styles': this.styles.toJson()
-            }
+            'value': { 'stateNameExpr': this.stateNameExpr, 'styles': this.styles.toJson() }
         };
     }
 }
@@ -75,10 +69,7 @@ export class CompileAnimationStateTransitionMetadata extends CompileAnimationSta
     toJson() {
         return {
             'class': 'AnimationStateTransitionMetadata',
-            'value': {
-                'stateChangeExpr': this.stateChangeExpr,
-                'steps': this.steps.toJson()
-            }
+            'value': { 'stateChangeExpr': this.stateChangeExpr, 'steps': this.steps.toJson() }
         };
     }
 }
@@ -94,10 +85,7 @@ export class CompileAnimationKeyframesSequenceMetadata extends CompileAnimationM
         return new CompileAnimationKeyframesSequenceMetadata(steps);
     }
     toJson() {
-        return {
-            'class': 'AnimationKeyframesSequenceMetadata',
-            'value': _arrayToJson(this.steps)
-        };
+        return { 'class': 'AnimationKeyframesSequenceMetadata', 'value': _arrayToJson(this.steps) };
     }
 }
 export class CompileAnimationStyleMetadata extends CompileAnimationMetadata {
@@ -116,10 +104,7 @@ export class CompileAnimationStyleMetadata extends CompileAnimationMetadata {
     toJson() {
         return {
             'class': 'AnimationStyleMetadata',
-            'value': {
-                'offset': this.offset,
-                'styles': this.styles
-            }
+            'value': { 'offset': this.offset, 'styles': this.styles }
         };
     }
 }
@@ -138,10 +123,7 @@ export class CompileAnimationAnimateMetadata extends CompileAnimationMetadata {
     toJson() {
         return {
             'class': 'AnimationAnimateMetadata',
-            'value': {
-                'timings': this.timings,
-                'styles': _objToJson(this.styles)
-            }
+            'value': { 'timings': this.timings, 'styles': _objToJson(this.styles) }
         };
     }
 }
@@ -160,10 +142,7 @@ export class CompileAnimationSequenceMetadata extends CompileAnimationWithStepsM
         return new CompileAnimationSequenceMetadata(steps);
     }
     toJson() {
-        return {
-            'class': 'AnimationSequenceMetadata',
-            'value': _arrayToJson(this.steps)
-        };
+        return { 'class': 'AnimationSequenceMetadata', 'value': _arrayToJson(this.steps) };
     }
 }
 export class CompileAnimationGroupMetadata extends CompileAnimationWithStepsMetadata {
@@ -171,14 +150,11 @@ export class CompileAnimationGroupMetadata extends CompileAnimationWithStepsMeta
         super(steps);
     }
     static fromJson(data) {
-        var steps = _arrayFromJson(data["value"], metadataFromJson);
+        var steps = _arrayFromJson(data['value'], metadataFromJson);
         return new CompileAnimationGroupMetadata(steps);
     }
     toJson() {
-        return {
-            'class': 'AnimationGroupMetadata',
-            'value': _arrayToJson(this.steps)
-        };
+        return { 'class': 'AnimationGroupMetadata', 'value': _arrayToJson(this.steps) };
     }
 }
 export class CompileIdentifierMetadata {
@@ -349,10 +325,7 @@ export class CompileTokenMetadata {
             if (isPresent(this.identifier)) {
                 if (isPresent(this.identifier.moduleUrl) &&
                     isPresent(getUrlScheme(this.identifier.moduleUrl))) {
-                    var uri = reflector.importUri({
-                        'filePath': this.identifier.moduleUrl,
-                        'name': this.identifier.name
-                    });
+                    var uri = reflector.importUri({ 'filePath': this.identifier.moduleUrl, 'name': this.identifier.name });
                     this._assetCacheKey = `${this.identifier.name}|${uri}|${this.identifierIsInstance}`;
                 }
                 else {
@@ -504,7 +477,8 @@ export class CompileTemplateMetadata {
     }
     toJson() {
         return {
-            'encapsulation': isPresent(this.encapsulation) ? serializeEnum(this.encapsulation) : this.encapsulation,
+            'encapsulation': isPresent(this.encapsulation) ? serializeEnum(this.encapsulation) :
+                this.encapsulation,
             'template': this.template,
             'templateUrl': this.templateUrl,
             'styles': this.styles,
@@ -650,7 +624,14 @@ export function createHostComponentMeta(componentType, componentSelector) {
             moduleUrl: componentType.moduleUrl,
             isHost: true
         }),
-        template: new CompileTemplateMetadata({ template: template, templateUrl: '', styles: [], styleUrls: [], ngContentSelectors: [], animations: [] }),
+        template: new CompileTemplateMetadata({
+            template: template,
+            templateUrl: '',
+            styles: [],
+            styleUrls: [],
+            ngContentSelectors: [],
+            animations: []
+        }),
         changeDetection: ChangeDetectionStrategy.Default,
         inputs: [],
         outputs: [],

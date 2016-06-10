@@ -1,7 +1,7 @@
-import { Injectable, ViewMetadata, BaseException, resolveForwardRef } from '@angular/core';
+import { BaseException, Injectable, ViewMetadata, resolveForwardRef } from '@angular/core';
 import { ViewResolver } from '../index';
 import { Map } from '../src/facade/collection';
-import { isPresent, stringify, isBlank, isArray } from '../src/facade/lang';
+import { isArray, isBlank, isPresent, stringify } from '../src/facade/lang';
 export class MockViewResolver extends ViewResolver {
     constructor() {
         super();

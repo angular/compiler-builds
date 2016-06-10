@@ -1,5 +1,5 @@
-import { isPresent } from '../facade/lang';
 import { ListWrapper } from '../facade/collection';
+import { isPresent } from '../facade/lang';
 export class StylesCollectionEntry {
     constructor(time, value) {
         this.time = time;

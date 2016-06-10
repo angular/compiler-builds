@@ -1,11 +1,11 @@
 "use strict";
 var core_private_1 = require('../../core_private');
-var lang_1 = require('../facade/lang');
 var async_1 = require('../facade/async');
-var exceptions_1 = require('../facade/exceptions');
 var collection_1 = require('../facade/collection');
-var o = require('./output_ast');
+var exceptions_1 = require('../facade/exceptions');
+var lang_1 = require('../facade/lang');
 var dart_emitter_1 = require('./dart_emitter');
+var o = require('./output_ast');
 var ts_emitter_1 = require('./ts_emitter');
 function interpretStatements(statements, resultVar, instanceFactory) {
     var stmtsWithReturn = statements.concat([new o.ReturnStatement(o.variable(resultVar))]);
@@ -402,9 +402,13 @@ function _declareFn(varNames, statements, ctx, visitor) {
         case 0:
             return function () { return _executeFunctionStatements(varNames, [], statements, ctx, visitor); };
         case 1:
-            return function (d0 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0], statements, ctx, visitor); };
+            return function (d0 /** TODO #9100 */) {
+                return _executeFunctionStatements(varNames, [d0], statements, ctx, visitor);
+            };
         case 2:
-            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1], statements, ctx, visitor); };
+            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */) {
+                return _executeFunctionStatements(varNames, [d0, d1], statements, ctx, visitor);
+            };
         case 3:
             return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */) {
                 return _executeFunctionStatements(varNames, [d0, d1, d2], statements, ctx, visitor);
@@ -414,17 +418,29 @@ function _declareFn(varNames, statements, ctx, visitor) {
                 return _executeFunctionStatements(varNames, [d0, d1, d2, d3], statements, ctx, visitor);
             };
         case 5:
-            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4], statements, ctx, visitor); };
+            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */) {
+                return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4], statements, ctx, visitor);
+            };
         case 6:
-            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5], statements, ctx, visitor); };
+            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */) {
+                return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5], statements, ctx, visitor);
+            };
         case 7:
-            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6], statements, ctx, visitor); };
+            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */) {
+                return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6], statements, ctx, visitor);
+            };
         case 8:
-            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7], statements, ctx, visitor); };
+            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */) {
+                return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7], statements, ctx, visitor);
+            };
         case 9:
-            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */, d8 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7, d8], statements, ctx, visitor); };
+            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */, d8 /** TODO #9100 */) {
+                return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7, d8], statements, ctx, visitor);
+            };
         case 10:
-            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */, d8 /** TODO #9100 */, d9 /** TODO #9100 */) { return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7, d8, d9], statements, ctx, visitor); };
+            return function (d0 /** TODO #9100 */, d1 /** TODO #9100 */, d2 /** TODO #9100 */, d3 /** TODO #9100 */, d4 /** TODO #9100 */, d5 /** TODO #9100 */, d6 /** TODO #9100 */, d7 /** TODO #9100 */, d8 /** TODO #9100 */, d9 /** TODO #9100 */) {
+                return _executeFunctionStatements(varNames, [d0, d1, d2, d3, d4, d5, d6, d7, d8, d9], statements, ctx, visitor);
+            };
         default:
             throw new exceptions_1.BaseException('Declaring functions with more than 10 arguments is not supported right now');
     }

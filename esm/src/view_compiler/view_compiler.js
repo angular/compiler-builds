@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
+import { AnimationCompiler } from '../animation/animation_compiler';
+import { CompilerConfig } from '../config';
 import { CompileElement } from './compile_element';
 import { CompileView } from './compile_view';
-import { buildView, finishView } from './view_builder';
 import { bindView } from './view_binder';
-import { CompilerConfig } from '../config';
-import { AnimationCompiler } from '../animation/animation_compiler';
+import { buildView, finishView } from './view_builder';
 export class ViewCompileResult {
     constructor(statements, viewFactoryVar, dependencies) {
         this.statements = statements;

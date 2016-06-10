@@ -1,10 +1,10 @@
 "use strict";
-var html_ast_1 = require("../html_ast");
-var lang_1 = require("../facade/lang");
-var collection_1 = require("../facade/collection");
-var message_1 = require("./message");
-var expander_1 = require("./expander");
-var shared_1 = require("./shared");
+var collection_1 = require('../facade/collection');
+var lang_1 = require('../facade/lang');
+var html_ast_1 = require('../html_ast');
+var expander_1 = require('./expander');
+var message_1 = require('./message');
+var shared_1 = require('./shared');
 /**
  * All messages extracted from a template.
  */

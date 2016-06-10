@@ -4,14 +4,14 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var collection_1 = require('../facade/collection');
-var math_1 = require('../facade/math');
 var core_private_1 = require('../../core_private');
-var lang_1 = require('../facade/lang');
 var compile_metadata_1 = require('../compile_metadata');
+var collection_1 = require('../facade/collection');
+var lang_1 = require('../facade/lang');
+var math_1 = require('../facade/math');
+var parse_util_1 = require('../parse_util');
 var animation_ast_1 = require('./animation_ast');
 var styles_collection_1 = require('./styles_collection');
-var parse_util_1 = require('../parse_util');
 var _INITIAL_KEYFRAME = 0;
 var _TERMINAL_KEYFRAME = 1;
 var _ONE_SECOND = 1000;
@@ -48,9 +48,7 @@ function parseAnimationEntry(entry) {
             transitions.push(def);
         }
     });
-    var stateTransitionAsts = transitions.map(function (transDef) {
-        return _parseAnimationStateTransition(transDef, stateStyles, errors);
-    });
+    var stateTransitionAsts = transitions.map(function (transDef) { return _parseAnimationStateTransition(transDef, stateStyles, errors); });
     var ast = new animation_ast_1.AnimationEntryAst(entry.name, stateDeclarationAsts, stateTransitionAsts);
     return new ParsedAnimationResult(ast, errors);
 }
@@ -85,9 +83,9 @@ function _parseAnimationStateTransition(transitionStateMetadata, stateStyles, er
     if (errors.length == 0) {
         _fillAnimationAstStartingKeyframes(animationAst, styles, errors);
     }
-    var sequenceAst = (animationAst instanceof animation_ast_1.AnimationSequenceAst)
-        ? animationAst
-        : new animation_ast_1.AnimationSequenceAst([animationAst]);
+    var sequenceAst = (animationAst instanceof animation_ast_1.AnimationSequenceAst) ?
+        animationAst :
+        new animation_ast_1.AnimationSequenceAst([animationAst]);
     return new animation_ast_1.AnimationStateTransitionAst(transitionExprs, sequenceAst);
 }
 function _parseAnimationTransitionExpr(eventStr, errors) {
@@ -116,9 +114,8 @@ function _fetchSylesFromState(stateName, stateStyles) {
     return null;
 }
 function _normalizeAnimationEntry(entry) {
-    return lang_1.isArray(entry)
-        ? new compile_metadata_1.CompileAnimationSequenceMetadata(entry)
-        : entry;
+    return lang_1.isArray(entry) ? new compile_metadata_1.CompileAnimationSequenceMetadata(entry) :
+        entry;
 }
 function _normalizeStyleMetadata(entry, stateStyles, errors) {
     var normalizedStyles = [];
@@ -166,9 +163,8 @@ function _normalizeStyleStepEntry(entry, stateStyles, errors) {
             if (!lang_1.isPresent(combinedStyles)) {
                 combinedStyles = [];
             }
-            _normalizeStyleMetadata(step, stateStyles, errors).forEach(function (entry) {
-                _mergeAnimationStyles(combinedStyles, entry);
-            });
+            _normalizeStyleMetadata(step, stateStyles, errors)
+                .forEach(function (entry) { _mergeAnimationStyles(combinedStyles, entry); });
         }
         else {
             // it is important that we create a metadata entry of the combined styles
@@ -184,19 +180,18 @@ function _normalizeStyleStepEntry(entry, stateStyles, errors) {
                 // those style steps are not going to be squashed
                 var animateStyleValue = step.styles;
                 if (animateStyleValue instanceof compile_metadata_1.CompileAnimationStyleMetadata) {
-                    animateStyleValue.styles = _normalizeStyleMetadata(animateStyleValue, stateStyles, errors);
+                    animateStyleValue.styles =
+                        _normalizeStyleMetadata(animateStyleValue, stateStyles, errors);
                 }
                 else if (animateStyleValue instanceof compile_metadata_1.CompileAnimationKeyframesSequenceMetadata) {
-                    animateStyleValue.steps.forEach(function (step) {
-                        step.styles = _normalizeStyleMetadata(step, stateStyles, errors);
-                    });
+                    animateStyleValue.steps.forEach(function (step) { step.styles = _normalizeStyleMetadata(step, stateStyles, errors); });
                 }
             }
             else if (step instanceof compile_metadata_1.CompileAnimationWithStepsMetadata) {
                 var innerSteps = _normalizeStyleStepEntry(step, stateStyles, errors);
-                step = step instanceof compile_metadata_1.CompileAnimationGroupMetadata
-                    ? new compile_metadata_1.CompileAnimationGroupMetadata(innerSteps)
-                    : new compile_metadata_1.CompileAnimationSequenceMetadata(innerSteps);
+                step = step instanceof compile_metadata_1.CompileAnimationGroupMetadata ?
+                    new compile_metadata_1.CompileAnimationGroupMetadata(innerSteps) :
+                    new compile_metadata_1.CompileAnimationSequenceMetadata(innerSteps);
             }
             newSteps.push(step);
         }
@@ -365,7 +360,8 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
         var styles = entry.styles;
         var keyframes;
         if (styles instanceof compile_metadata_1.CompileAnimationKeyframesSequenceMetadata) {
-            keyframes = _parseAnimationKeyframes(styles, currentTime, collectedStyles, stateStyles, errors);
+            keyframes =
+                _parseAnimationKeyframes(styles, currentTime, collectedStyles, stateStyles, errors);
         }
         else {
             var styleData = styles;
@@ -377,13 +373,9 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
         ast = new animation_ast_1.AnimationStepAst(new animation_ast_1.AnimationStylesAst([]), keyframes, timings.duration, timings.delay, timings.easing);
         playTime = timings.duration + timings.delay;
         currentTime += playTime;
-        keyframes.forEach(function (keyframe /** TODO #9100 */) {
-            return keyframe.styles.styles.forEach(function (entry /** TODO #9100 */) {
-                return collection_1.StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
-                    return collectedStyles.insertAtTime(prop, currentTime, value);
-                });
-            });
-        });
+        keyframes.forEach(function (keyframe /** TODO #9100 */) { return keyframe.styles.styles.forEach(function (entry /** TODO #9100 */) { return collection_1.StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
+            return collectedStyles.insertAtTime(prop, currentTime, value);
+        }); }); });
     }
     else {
         // if the code reaches this stage then an error

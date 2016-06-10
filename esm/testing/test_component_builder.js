@@ -1,18 +1,18 @@
-import { OpaqueToken, ComponentResolver, Injector, Injectable, NgZone, getDebugNode } from '@angular/core';
-import { DirectiveResolver, ViewResolver } from '../index';
-import { BaseException } from '../src/facade/exceptions';
-import { isPresent, IS_DART, scheduleMicroTask } from '../src/facade/lang';
-import { PromiseWrapper, ObservableWrapper, PromiseCompleter } from '../src/facade/async';
-import { MapWrapper } from '../src/facade/collection';
+import { ComponentResolver, Injectable, Injector, NgZone, OpaqueToken, getDebugNode } from '@angular/core';
 import { tick } from '@angular/core/testing';
+import { DirectiveResolver, ViewResolver } from '../index';
+import { ObservableWrapper, PromiseCompleter, PromiseWrapper } from '../src/facade/async';
+import { MapWrapper } from '../src/facade/collection';
+import { BaseException } from '../src/facade/exceptions';
+import { IS_DART, isPresent, scheduleMicroTask } from '../src/facade/lang';
 /**
  * An abstract class for inserting the root test component element in a platform independent way.
  */
 export class TestComponentRenderer {
     insertRootElement(rootElementId) { }
 }
-export var ComponentFixtureAutoDetect = new OpaqueToken("ComponentFixtureAutoDetect");
-export var ComponentFixtureNoNgZone = new OpaqueToken("ComponentFixtureNoNgZone");
+export var ComponentFixtureAutoDetect = new OpaqueToken('ComponentFixtureAutoDetect');
+export var ComponentFixtureNoNgZone = new OpaqueToken('ComponentFixtureNoNgZone');
 /**
  * Fixture for debugging and testing a component.
  */

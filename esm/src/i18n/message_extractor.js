@@ -1,9 +1,9 @@
-import { HtmlElementAst } from "../html_ast";
-import { isPresent } from "../facade/lang";
-import { StringMapWrapper } from "../facade/collection";
-import { id } from "./message";
-import { expandNodes } from "./expander";
-import { I18nError, I18N_ATTR_PREFIX, partition, messageFromI18nAttribute, messageFromAttribute } from "./shared";
+import { StringMapWrapper } from '../facade/collection';
+import { isPresent } from '../facade/lang';
+import { HtmlElementAst } from '../html_ast';
+import { expandNodes } from './expander';
+import { id } from './message';
+import { I18N_ATTR_PREFIX, I18nError, messageFromAttribute, messageFromI18nAttribute, partition } from './shared';
 /**
  * All messages extracted from a template.
  */

@@ -1,11 +1,11 @@
 "use strict";
 var core_1 = require('@angular/core');
+var testing_1 = require('@angular/core/testing');
 var index_1 = require('../index');
-var exceptions_1 = require('../src/facade/exceptions');
-var lang_1 = require('../src/facade/lang');
 var async_1 = require('../src/facade/async');
 var collection_1 = require('../src/facade/collection');
-var testing_1 = require('@angular/core/testing');
+var exceptions_1 = require('../src/facade/exceptions');
+var lang_1 = require('../src/facade/lang');
 /**
  * An abstract class for inserting the root test component element in a platform independent way.
  */
@@ -16,8 +16,8 @@ var TestComponentRenderer = (function () {
     return TestComponentRenderer;
 }());
 exports.TestComponentRenderer = TestComponentRenderer;
-exports.ComponentFixtureAutoDetect = new core_1.OpaqueToken("ComponentFixtureAutoDetect");
-exports.ComponentFixtureNoNgZone = new core_1.OpaqueToken("ComponentFixtureNoNgZone");
+exports.ComponentFixtureAutoDetect = new core_1.OpaqueToken('ComponentFixtureAutoDetect');
+exports.ComponentFixtureNoNgZone = new core_1.OpaqueToken('ComponentFixtureNoNgZone');
 /**
  * Fixture for debugging and testing a component.
  */
@@ -275,12 +275,8 @@ var TestComponentBuilder = (function () {
             var mockDirectiveResolver = _this._injector.get(index_1.DirectiveResolver);
             var mockViewResolver = _this._injector.get(index_1.ViewResolver);
             _this._viewOverrides.forEach(function (view, type) { return mockViewResolver.setView(type, view); });
-            _this._templateOverrides.forEach(function (template, type) {
-                return mockViewResolver.setInlineTemplate(type, template);
-            });
-            _this._animationOverrides.forEach(function (animationsEntry, type) {
-                return mockViewResolver.setAnimations(type, animationsEntry);
-            });
+            _this._templateOverrides.forEach(function (template, type) { return mockViewResolver.setInlineTemplate(type, template); });
+            _this._animationOverrides.forEach(function (animationsEntry, type) { return mockViewResolver.setAnimations(type, animationsEntry); });
             _this._directiveOverrides.forEach(function (overrides, component) {
                 overrides.forEach(function (to, from) { mockViewResolver.overrideViewDirective(component, from, to); });
             });

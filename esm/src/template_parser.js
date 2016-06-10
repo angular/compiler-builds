@@ -1,5 +1,5 @@
-import { Injectable, Inject, OpaqueToken, Optional } from '@angular/core';
-import { MAX_INTERPOLATION_VALUES, Console, SecurityContext } from '../core_private';
+import { Inject, Injectable, OpaqueToken, Optional } from '@angular/core';
+import { Console, MAX_INTERPOLATION_VALUES, SecurityContext } from '../core_private';
 import { ListWrapper, StringMapWrapper, SetWrapper } from '../src/facade/collection';
 import { RegExpWrapper, isPresent, StringWrapper, isBlank } from '../src/facade/lang';
 import { BaseException } from '../src/facade/exceptions';
@@ -105,8 +105,7 @@ export class TemplateParser {
     /** @internal */
     _assertNoReferenceDuplicationOnTemplate(result, errors) {
         const existingReferences = [];
-        result
-            .filter(element => !!element.references)
+        result.filter(element => !!element.references)
             .forEach(element => element.references.forEach((reference /** TODO #???? */) => {
             const name = reference.name;
             if (existingReferences.indexOf(name) < 0) {
@@ -280,7 +279,8 @@ class TemplateParseVisitor {
         var directiveMetas = this._parseDirectives(this.selectorMatcher, elementCssSelector);
         var references = [];
         var directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references);
-        var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts).concat(animationProps);
+        var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts)
+            .concat(animationProps);
         var isViewRoot = parent.isTemplateElement || hasInlineTemplates;
         var providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
         var children = htmlVisitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));

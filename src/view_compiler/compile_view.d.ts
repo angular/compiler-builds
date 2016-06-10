@@ -1,14 +1,14 @@
 import { ViewType } from '../../core_private';
+import { CompiledAnimation } from '../animation/animation_compiler';
+import { CompileDirectiveMetadata, CompilePipeMetadata, CompileTokenMap } from '../compile_metadata';
+import { CompilerConfig } from '../config';
 import * as o from '../output/output_ast';
-import { CompileQuery } from './compile_query';
-import { NameResolver } from './expression_converter';
+import { CompileBinding } from './compile_binding';
 import { CompileElement, CompileNode } from './compile_element';
 import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
-import { CompileDirectiveMetadata, CompilePipeMetadata, CompileTokenMap } from '../compile_metadata';
-import { CompilerConfig } from '../config';
-import { CompileBinding } from './compile_binding';
-import { CompiledAnimation } from '../animation/animation_compiler';
+import { CompileQuery } from './compile_query';
+import { NameResolver } from './expression_converter';
 export declare class CompileView implements NameResolver {
     component: CompileDirectiveMetadata;
     genConfig: CompilerConfig;

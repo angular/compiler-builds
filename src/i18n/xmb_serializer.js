@@ -6,15 +6,15 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var lang_1 = require('../facade/lang');
 var html_ast_1 = require('../html_ast');
-var message_1 = require('./message');
 var html_parser_1 = require('../html_parser');
 var parse_util_1 = require('../parse_util');
+var message_1 = require('./message');
 var _PLACEHOLDER_REGEXP = lang_1.RegExpWrapper.create("\\<ph(\\s)+name=(\"(\\w)+\")\\/\\>");
-var _ID_ATTR = "id";
-var _MSG_ELEMENT = "msg";
-var _BUNDLE_ELEMENT = "message-bundle";
+var _ID_ATTR = 'id';
+var _MSG_ELEMENT = 'msg';
+var _BUNDLE_ELEMENT = 'message-bundle';
 function serializeXmb(messages) {
-    var ms = messages.map(function (m) { return _serializeMessage(m); }).join("");
+    var ms = messages.map(function (m) { return _serializeMessage(m); }).join('');
     return "<message-bundle>" + ms + "</message-bundle>";
 }
 exports.serializeXmb = serializeXmb;
@@ -80,7 +80,7 @@ function _id(el) {
     return ids.length > 0 ? ids[0].value : null;
 }
 function _serializeMessage(m) {
-    var desc = lang_1.isPresent(m.description) ? " desc='" + m.description + "'" : "";
+    var desc = lang_1.isPresent(m.description) ? " desc='" + m.description + "'" : '';
     return "<msg id='" + message_1.id(m) + "'" + desc + ">" + m.content + "</msg>";
 }
 function _expandPlaceholder(input) {

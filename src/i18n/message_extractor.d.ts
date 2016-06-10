@@ -1,7 +1,7 @@
-import { HtmlParser } from "../html_parser";
-import { ParseError } from "../parse_util";
-import { Parser } from "../expression_parser/parser";
-import { Message } from "./message";
+import { Parser } from '../expression_parser/parser';
+import { HtmlParser } from '../html_parser';
+import { ParseError } from '../parse_util';
+import { Message } from './message';
 /**
  * All messages extracted from a template.
  */

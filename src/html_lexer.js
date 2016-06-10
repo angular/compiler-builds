@@ -4,10 +4,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var lang_1 = require('./facade/lang');
 var collection_1 = require('./facade/collection');
-var parse_util_1 = require('./parse_util');
+var lang_1 = require('./facade/lang');
 var html_tags_1 = require('./html_tags');
+var parse_util_1 = require('./parse_util');
 (function (HtmlTokenType) {
     HtmlTokenType[HtmlTokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
     HtmlTokenType[HtmlTokenType["TAG_OPEN_END"] = 1] = "TAG_OPEN_END";
@@ -167,12 +167,10 @@ var _HtmlTokenizer = (function () {
                 else if (this.peek === $EQ && this.tokenizeExpansionForms) {
                     this._consumeExpansionCaseStart();
                 }
-                else if (this.peek === $RBRACE && this.isInExpansionCase() &&
-                    this.tokenizeExpansionForms) {
+                else if (this.peek === $RBRACE && this.isInExpansionCase() && this.tokenizeExpansionForms) {
                     this._consumeExpansionCaseEnd();
                 }
-                else if (this.peek === $RBRACE && this.isInExpansionForm() &&
-                    this.tokenizeExpansionForms) {
+                else if (this.peek === $RBRACE && this.isInExpansionForm() && this.tokenizeExpansionForms) {
                     this._consumeExpansionFormEnd();
                 }
                 else {

@@ -1,8 +1,8 @@
 "use strict";
 var core_1 = require('@angular/core');
-var lang_1 = require('../src/facade/lang');
-var exceptions_1 = require('../src/facade/exceptions');
 var async_1 = require('../src/facade/async');
+var exceptions_1 = require('../src/facade/exceptions');
+var lang_1 = require('../src/facade/lang');
 var compile_metadata_1 = require('./compile_metadata');
 var xhr_1 = require('./xhr');
 var url_resolver_1 = require('./url_resolver');

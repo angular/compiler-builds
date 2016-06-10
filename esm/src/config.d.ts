@@ -1,5 +1,5 @@
-import { CompileIdentifierMetadata } from './compile_metadata';
 import { ViewEncapsulation } from '@angular/core';
+import { CompileIdentifierMetadata } from './compile_metadata';
 export declare class CompilerConfig {
     genDebugInfo: boolean;
     logBindingUpdate: boolean;

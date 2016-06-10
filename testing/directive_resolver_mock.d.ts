@@ -1,6 +1,6 @@
-import { Type } from '../src/facade/lang';
 import { DirectiveMetadata } from '@angular/core';
 import { DirectiveResolver } from '../src/directive_resolver';
+import { Type } from '../src/facade/lang';
 /**
  * An implementation of {@link DirectiveResolver} that allows overriding
  * various properties of directives.

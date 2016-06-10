@@ -1,5 +1,5 @@
-import { isPresent, isBlank, isString, StringWrapper } from '../facade/lang';
 import { BaseException } from '../facade/exceptions';
+import { StringWrapper, isBlank, isPresent, isString } from '../facade/lang';
 import * as o from './output_ast';
 var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
 export var CATCH_ERROR_VAR = o.variable('error');
@@ -57,7 +57,8 @@ export class EmitterVisitorContext {
         if (lines[lines.length - 1].parts.length === 0) {
             lines = lines.slice(0, lines.length - 1);
         }
-        return lines.map((line) => {
+        return lines
+            .map((line) => {
             if (line.parts.length > 0) {
                 return _createIndent(line.indent) + line.parts.join('');
             }

@@ -21,8 +21,8 @@ exports.Message = Message;
  * Computes the id of a message
  */
 function id(m) {
-    var meaning = lang_1.isPresent(m.meaning) ? m.meaning : "";
-    var content = lang_1.isPresent(m.content) ? m.content : "";
+    var meaning = lang_1.isPresent(m.meaning) ? m.meaning : '';
+    var content = lang_1.isPresent(m.content) ? m.content : '';
     return lang_1.escape("$ng|" + meaning + "|" + content);
 }
 exports.id = id;

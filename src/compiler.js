@@ -47,23 +47,13 @@ function _createCompilerConfig() {
  */
 exports.COMPILER_PROVIDERS = 
 /*@ts2dart_const*/ [
-    lexer_1.Lexer,
-    parser_1.Parser,
-    html_parser_1.HtmlParser,
-    template_parser_2.TemplateParser,
-    directive_normalizer_1.DirectiveNormalizer,
-    metadata_resolver_1.CompileMetadataResolver,
-    url_resolver_2.DEFAULT_PACKAGE_URL_PROVIDER,
-    style_compiler_1.StyleCompiler,
-    view_compiler_1.ViewCompiler,
+    lexer_1.Lexer, parser_1.Parser, html_parser_1.HtmlParser, template_parser_2.TemplateParser, directive_normalizer_1.DirectiveNormalizer, metadata_resolver_1.CompileMetadataResolver,
+    url_resolver_2.DEFAULT_PACKAGE_URL_PROVIDER, style_compiler_1.StyleCompiler, view_compiler_1.ViewCompiler,
     /*@ts2dart_Provider*/ { provide: config_2.CompilerConfig, useFactory: _createCompilerConfig, deps: [] },
     runtime_compiler_2.RuntimeCompiler,
     /*@ts2dart_Provider*/ { provide: core_1.ComponentResolver, useExisting: runtime_compiler_2.RuntimeCompiler },
     dom_element_schema_registry_1.DomElementSchemaRegistry,
     /*@ts2dart_Provider*/ { provide: element_schema_registry_1.ElementSchemaRegistry, useExisting: dom_element_schema_registry_1.DomElementSchemaRegistry },
-    url_resolver_2.UrlResolver,
-    view_resolver_2.ViewResolver,
-    directive_resolver_2.DirectiveResolver,
-    pipe_resolver_2.PipeResolver
+    url_resolver_2.UrlResolver, view_resolver_2.ViewResolver, directive_resolver_2.DirectiveResolver, pipe_resolver_2.PipeResolver
 ];
 //# sourceMappingURL=compiler.js.map

@@ -1,4 +1,4 @@
-import { AnimationMetadata, AnimationEntryMetadata, AnimationStateMetadata, AnimationStyleMetadata, Provider, QueryMetadata } from '@angular/core';
+import { AnimationEntryMetadata, AnimationMetadata, AnimationStateMetadata, AnimationStyleMetadata, Provider, QueryMetadata } from '@angular/core';
 import { ReflectorReader } from '../core_private';
 import { Type } from '../src/facade/lang';
 import * as cpl from './compile_metadata';

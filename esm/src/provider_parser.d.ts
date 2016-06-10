@@ -1,6 +1,6 @@
-import { AttrAst, DirectiveAst, ProviderAst, ReferenceAst } from './template_ast';
 import { CompileDirectiveMetadata } from './compile_metadata';
-import { ParseSourceSpan, ParseError } from './parse_util';
+import { ParseError, ParseSourceSpan } from './parse_util';
+import { AttrAst, DirectiveAst, ProviderAst, ReferenceAst } from './template_ast';
 export declare class ProviderError extends ParseError {
     constructor(message: string, span: ParseSourceSpan);
 }

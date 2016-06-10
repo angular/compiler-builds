@@ -1,7 +1,7 @@
 "use strict";
 var core_1 = require('@angular/core');
-var lang_1 = require('../src/facade/lang');
 var exceptions_1 = require('../src/facade/exceptions');
+var lang_1 = require('../src/facade/lang');
 var collection_1 = require('../src/facade/collection');
 var async_1 = require('../src/facade/async');
 var compile_metadata_1 = require('./compile_metadata');
@@ -61,7 +61,8 @@ var RuntimeCompiler = (function () {
             compiledTemplate = new CompiledTemplate();
             this._compiledTemplateCache.set(cacheKey, compiledTemplate);
             done =
-                async_1.PromiseWrapper.all([this._compileComponentStyles(compMeta)].concat(viewDirectives.map(function (dirMeta) { return _this._templateNormalizer.normalizeDirective(dirMeta); })))
+                async_1.PromiseWrapper
+                    .all([this._compileComponentStyles(compMeta)].concat(viewDirectives.map(function (dirMeta) { return _this._templateNormalizer.normalizeDirective(dirMeta); })))
                     .then(function (stylesAndNormalizedViewDirMetas) {
                     var normalizedViewDirMetas = stylesAndNormalizedViewDirMetas.slice(1);
                     var styles = stylesAndNormalizedViewDirMetas[0];
@@ -163,9 +164,10 @@ var CompiledTemplate = (function () {
     function CompiledTemplate() {
         var _this = this;
         this.viewFactory = null;
-        this.proxyViewFactory = function (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) {
-            return _this.viewFactory(viewUtils, childInjector, contextEl);
-        };
+        this.proxyViewFactory =
+            function (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) {
+                return _this.viewFactory(viewUtils, childInjector, contextEl);
+            };
     }
     CompiledTemplate.prototype.init = function (viewFactory) { this.viewFactory = viewFactory; };
     return CompiledTemplate;

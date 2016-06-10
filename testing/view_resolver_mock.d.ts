@@ -1,4 +1,4 @@
-import { ViewMetadata, Type, AnimationEntryMetadata } from '@angular/core';
+import { AnimationEntryMetadata, Type, ViewMetadata } from '@angular/core';
 import { ViewResolver } from '../index';
 export declare class MockViewResolver extends ViewResolver {
     constructor();

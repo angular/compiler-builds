@@ -1,12 +1,12 @@
 "use strict";
-var exceptions_1 = require('../facade/exceptions');
+var core_private_1 = require('../../core_private');
 var collection_1 = require('../facade/collection');
+var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
-var core_private_1 = require('../../core_private');
-var animation_parser_1 = require('./animation_parser');
 var animation_ast_1 = require('./animation_ast');
+var animation_parser_1 = require('./animation_parser');
 var CompiledAnimation = (function () {
     function CompiledAnimation(name, statesMapStatement, statesVariableName, fnStatement, fnVariable) {
         this.name = name;
@@ -28,7 +28,7 @@ var AnimationCompiler = (function () {
             var result = animation_parser_1.parseAnimationEntry(entry);
             if (result.errors.length > 0) {
                 var errorMessage = '';
-                result.errors.forEach(function (error) { errorMessage += "\n- " + error.msg; });
+                result.errors.forEach(function (error) { errorMessage += '\n- ' + error.msg; });
                 // todo (matsko): include the component name when throwing
                 throw new exceptions_1.BaseException(("Unable to parse the animation sequence for \"" + entry.name + "\" due to the following errors: ") +
                     errorMessage);
@@ -72,15 +72,13 @@ var _AnimationBuilder = (function () {
         });
         return o.importExpr(identifiers_1.Identifiers.AnimationStyles).instantiate([
             o.importExpr(identifiers_1.Identifiers.collectAndResolveStyles).callFn([
-                _ANIMATION_COLLECTED_STYLES,
-                o.literalArr(stylesArr)
+                _ANIMATION_COLLECTED_STYLES, o.literalArr(stylesArr)
             ])
         ]);
     };
     _AnimationBuilder.prototype.visitAnimationKeyframe = function (ast, context) {
         return o.importExpr(identifiers_1.Identifiers.AnimationKeyframe).instantiate([
-            o.literal(ast.offset),
-            ast.styles.visit(this, context)
+            o.literal(ast.offset), ast.styles.visit(this, context)
         ]);
     };
     _AnimationBuilder.prototype.visitAnimationStep = function (ast, context) {
@@ -98,8 +96,7 @@ var _AnimationBuilder = (function () {
         var startingStylesExpr = ast.startingStyles.visit(this, context);
         var keyframeExpressions = ast.keyframes.map(function (keyframe) { return keyframe.visit(_this, context); });
         var keyframesExpr = o.importExpr(identifiers_1.Identifiers.balanceAnimationKeyframes).callFn([
-            _ANIMATION_COLLECTED_STYLES,
-            _ANIMATION_END_STATE_STYLES_VAR,
+            _ANIMATION_COLLECTED_STYLES, _ANIMATION_END_STATE_STYLES_VAR,
             o.literalArr(keyframeExpressions)
         ]);
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
@@ -107,25 +104,19 @@ var _AnimationBuilder = (function () {
     /** @internal */
     _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr /** TODO #9100 */, keyframesExpr /** TODO #9100 */) {
         return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
-            _ANIMATION_FACTORY_ELEMENT_VAR,
-            startingStylesExpr,
-            keyframesExpr,
-            o.literal(ast.duration),
-            o.literal(ast.delay),
-            o.literal(ast.easing)
+            _ANIMATION_FACTORY_ELEMENT_VAR, startingStylesExpr, keyframesExpr, o.literal(ast.duration),
+            o.literal(ast.delay), o.literal(ast.easing)
         ]);
     };
     _AnimationBuilder.prototype.visitAnimationSequence = function (ast, context) {
         var _this = this;
         var playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
-        return o.importExpr(identifiers_1.Identifiers.AnimationSequencePlayer).instantiate([
-            o.literalArr(playerExprs)]);
+        return o.importExpr(identifiers_1.Identifiers.AnimationSequencePlayer).instantiate([o.literalArr(playerExprs)]);
     };
     _AnimationBuilder.prototype.visitAnimationGroup = function (ast, context) {
         var _this = this;
         var playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
-        return o.importExpr(identifiers_1.Identifiers.AnimationGroupPlayer).instantiate([
-            o.literalArr(playerExprs)]);
+        return o.importExpr(identifiers_1.Identifiers.AnimationGroupPlayer).instantiate([o.literalArr(playerExprs)]);
     };
     _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
         var flatStyles = {};
@@ -157,68 +148,65 @@ var _AnimationBuilder = (function () {
         var animationPlayerExpr = ast.animation.visit(this, context);
         var reducedStateChangesPrecondition = stateChangePreconditions.reduce(function (a, b) { return a.or(b); });
         var precondition = _ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR).and(reducedStateChangesPrecondition);
-        return new o.IfStmt(precondition, [
-            _ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt()
-        ]);
+        return new o.IfStmt(precondition, [_ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt()]);
     };
     _AnimationBuilder.prototype.visitAnimationEntry = function (ast, context) {
         var _this = this;
-        //visit each of the declarations first to build the context state map
+        // visit each of the declarations first to build the context state map
         ast.stateDeclarations.forEach(function (def) { return def.visit(_this, context); });
-        //this should always be defined even if the user overrides it
+        // this should always be defined even if the user overrides it
         context.stateMap.registerState(core_private_1.DEFAULT_STATE, {});
         var statements = [];
-        statements.push(_ANIMATION_FACTORY_VIEW_VAR.callMethod('cancelActiveAnimation', [
-            _ANIMATION_FACTORY_ELEMENT_VAR,
-            o.literal(this.animationName),
+        statements.push(_ANIMATION_FACTORY_VIEW_VAR
+            .callMethod('cancelActiveAnimation', [
+            _ANIMATION_FACTORY_ELEMENT_VAR, o.literal(this.animationName),
             _ANIMATION_NEXT_STATE_VAR.equals(o.literal(core_private_1.EMPTY_STATE))
-        ]).toStmt());
+        ])
+            .toStmt());
         statements.push(_ANIMATION_COLLECTED_STYLES.set(EMPTY_MAP).toDeclStmt());
         statements.push(_ANIMATION_PLAYER_VAR.set(o.NULL_EXPR).toDeclStmt());
-        statements.push(_ANIMATION_DEFAULT_STATE_VAR.set(this._statesMapVar.key(o.literal(core_private_1.DEFAULT_STATE))).toDeclStmt());
-        statements.push(_ANIMATION_START_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_CURRENT_STATE_VAR)).toDeclStmt());
-        statements.push(new o.IfStmt(_ANIMATION_START_STATE_STYLES_VAR.equals(o.NULL_EXPR), [
-            _ANIMATION_START_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()
-        ]));
-        statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR)).toDeclStmt());
-        statements.push(new o.IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(o.NULL_EXPR), [
-            _ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()
-        ]));
+        statements.push(_ANIMATION_DEFAULT_STATE_VAR.set(this._statesMapVar.key(o.literal(core_private_1.DEFAULT_STATE)))
+            .toDeclStmt());
+        statements.push(_ANIMATION_START_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_CURRENT_STATE_VAR))
+            .toDeclStmt());
+        statements.push(new o.IfStmt(_ANIMATION_START_STATE_STYLES_VAR.equals(o.NULL_EXPR), [_ANIMATION_START_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
+        statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR))
+            .toDeclStmt());
+        statements.push(new o.IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(o.NULL_EXPR), [_ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
         var RENDER_STYLES_FN = o.importExpr(identifiers_1.Identifiers.renderStyles);
         // before we start any animation we want to clear out the starting
         // styles from the element's style property (since they were placed
         // there at the end of the last animation
-        statements.push(RENDER_STYLES_FN.callFn([
-            _ANIMATION_FACTORY_ELEMENT_VAR,
-            _ANIMATION_FACTORY_RENDERER_VAR,
+        statements.push(RENDER_STYLES_FN
+            .callFn([
+            _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
             o.importExpr(identifiers_1.Identifiers.clearStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
-        ]).toStmt());
+        ])
+            .toStmt());
         ast.stateTransitions.forEach(function (transAst) { return statements.push(transAst.visit(_this, context)); });
         // this check ensures that the animation factory always returns a player
         // so that the onDone callback can be used for tracking
-        statements.push(new o.IfStmt(_ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR), [
-            _ANIMATION_PLAYER_VAR.set(o.importExpr(identifiers_1.Identifiers.NoOpAnimationPlayer).instantiate([])).toStmt()
-        ]));
+        statements.push(new o.IfStmt(_ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR), [_ANIMATION_PLAYER_VAR.set(o.importExpr(identifiers_1.Identifiers.NoOpAnimationPlayer).instantiate([]))
+                .toStmt()]));
         // once complete we want to apply the styles on the element
         // since the destination state's values should persist once
         // the animation sequence has completed.
-        statements.push(_ANIMATION_PLAYER_VAR.callMethod('onDone', [
-            o.fn([], [
-                RENDER_STYLES_FN.callFn([
-                    _ANIMATION_FACTORY_ELEMENT_VAR,
-                    _ANIMATION_FACTORY_RENDERER_VAR,
+        statements.push(_ANIMATION_PLAYER_VAR
+            .callMethod('onDone', [o.fn([], [RENDER_STYLES_FN
+                    .callFn([
+                    _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
                     o.importExpr(identifiers_1.Identifiers.balanceAnimationStyles).callFn([
-                        _ANIMATION_START_STATE_STYLES_VAR,
-                        _ANIMATION_END_STATE_STYLES_VAR
+                        _ANIMATION_START_STATE_STYLES_VAR, _ANIMATION_END_STATE_STYLES_VAR
                     ])
-                ]).toStmt()
-            ])
-        ]).toStmt());
-        statements.push(_ANIMATION_FACTORY_VIEW_VAR.callMethod('registerAndStartAnimation', [
-            _ANIMATION_FACTORY_ELEMENT_VAR,
-            o.literal(this.animationName),
+                ])
+                    .toStmt()])])
+            .toStmt());
+        statements.push(_ANIMATION_FACTORY_VIEW_VAR
+            .callMethod('registerAndStartAnimation', [
+            _ANIMATION_FACTORY_ELEMENT_VAR, o.literal(this.animationName),
             _ANIMATION_PLAYER_VAR
-        ]).toStmt());
+        ])
+            .toStmt());
         return o.fn([
             new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(identifiers_1.Identifiers.AppView, [o.DYNAMIC_TYPE])),
             new o.FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, o.DYNAMIC_TYPE),
@@ -287,9 +275,7 @@ function _compareToAnimationStateExpr(value, animationState) {
 function _isEndStateAnimateStep(step) {
     // the final animation step is characterized by having only TWO
     // keyframe values and it must have zero styles for both keyframes
-    if (step instanceof animation_ast_1.AnimationStepAst
-        && step.duration > 0
-        && step.keyframes.length == 2) {
+    if (step instanceof animation_ast_1.AnimationStepAst && step.duration > 0 && step.keyframes.length == 2) {
         var styles1 = _getStylesArray(step.keyframes[0])[0];
         var styles2 = _getStylesArray(step.keyframes[1])[0];
         return collection_1.StringMapWrapper.isEmpty(styles1) && collection_1.StringMapWrapper.isEmpty(styles2);

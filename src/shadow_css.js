@@ -366,12 +366,14 @@ var ShadowCss = (function () {
     // e.g. .foo.bar > .zot becomes .foo[name].bar[name] > .zot[name]  /** @internal */
     ShadowCss.prototype._applyStrictSelectorScope = function (selector, scopeSelector) {
         var isRe = /\[is=([^\]]*)\]/g;
-        scopeSelector = lang_1.StringWrapper.replaceAllMapped(scopeSelector, isRe, function (m /** TODO #9100 */) { return m[1]; });
+        scopeSelector =
+            lang_1.StringWrapper.replaceAllMapped(scopeSelector, isRe, function (m /** TODO #9100 */) { return m[1]; });
         var splits = [' ', '>', '+', '~'], scoped = selector, attrName = '[' + scopeSelector + ']';
         for (var i = 0; i < splits.length; i++) {
             var sep = splits[i];
             var parts = scoped.split(sep);
-            scoped = parts.map(function (p) {
+            scoped = parts
+                .map(function (p) {
                 // remove :host since it should be unnecessary
                 var t = lang_1.StringWrapper.replaceAll(p.trim(), _polyfillHostRe, '');
                 if (t.length > 0 && !collection_1.ListWrapper.contains(splits, t) &&
@@ -409,8 +411,7 @@ var _cssColonHostRe = lang_1.RegExpWrapper.create('(' + _polyfillHost + _parenSu
 var _cssColonHostContextRe = lang_1.RegExpWrapper.create('(' + _polyfillHostContext + _parenSuffix, 'im');
 var _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
 var _shadowDOMSelectorsRe = [
-    /::shadow/g,
-    /::content/g,
+    /::shadow/g, /::content/g,
     // Deprecated selectors
     // TODO(vicb): see https://github.com/angular/clang-format/issues/16
     // clang-format off

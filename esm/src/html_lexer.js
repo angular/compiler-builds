@@ -1,7 +1,7 @@
-import { StringWrapper, NumberWrapper, isPresent, isBlank } from './facade/lang';
 import { ListWrapper } from './facade/collection';
-import { ParseLocation, ParseError, ParseSourceFile, ParseSourceSpan } from './parse_util';
-import { getHtmlTagDefinition, HtmlTagContentType, NAMED_ENTITIES } from './html_tags';
+import { NumberWrapper, StringWrapper, isBlank, isPresent } from './facade/lang';
+import { HtmlTagContentType, NAMED_ENTITIES, getHtmlTagDefinition } from './html_tags';
+import { ParseError, ParseLocation, ParseSourceFile, ParseSourceSpan } from './parse_util';
 export var HtmlTokenType;
 (function (HtmlTokenType) {
     HtmlTokenType[HtmlTokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
@@ -151,12 +151,10 @@ class _HtmlTokenizer {
                 else if (this.peek === $EQ && this.tokenizeExpansionForms) {
                     this._consumeExpansionCaseStart();
                 }
-                else if (this.peek === $RBRACE && this.isInExpansionCase() &&
-                    this.tokenizeExpansionForms) {
+                else if (this.peek === $RBRACE && this.isInExpansionCase() && this.tokenizeExpansionForms) {
                     this._consumeExpansionCaseEnd();
                 }
-                else if (this.peek === $RBRACE && this.isInExpansionForm() &&
-                    this.tokenizeExpansionForms) {
+                else if (this.peek === $RBRACE && this.isInExpansionForm() && this.tokenizeExpansionForms) {
                     this._consumeExpansionFormEnd();
                 }
                 else {

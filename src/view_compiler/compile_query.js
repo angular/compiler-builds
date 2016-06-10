@@ -1,8 +1,8 @@
 "use strict";
-var lang_1 = require('../facade/lang');
 var collection_1 = require('../facade/collection');
-var o = require('../output/output_ast');
+var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
+var o = require('../output/output_ast');
 var util_1 = require('./util');
 var ViewQueryValues = (function () {
     function ViewQueryValues(view, values) {
@@ -87,8 +87,7 @@ function mapNestedViews(declarationAppElement, view, expressions) {
         return o.replaceVarInExpression(o.THIS_EXPR.name, o.variable('nestedView'), expr);
     });
     return declarationAppElement.callMethod('mapNestedViews', [
-        o.variable(view.className),
-        o.fn([new o.FnParam('nestedView', view.classType)], [new o.ReturnStatement(o.literalArr(adjustedExpressions))])
+        o.variable(view.className), o.fn([new o.FnParam('nestedView', view.classType)], [new o.ReturnStatement(o.literalArr(adjustedExpressions))])
     ]);
 }
 function createQueryList(query, directiveInstance, propertyName, compileView) {

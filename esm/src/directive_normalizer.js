@@ -1,7 +1,7 @@
 import { Injectable, ViewEncapsulation } from '@angular/core';
-import { isPresent, isBlank } from '../src/facade/lang';
-import { BaseException } from '../src/facade/exceptions';
 import { PromiseWrapper } from '../src/facade/async';
+import { BaseException } from '../src/facade/exceptions';
+import { isBlank, isPresent } from '../src/facade/lang';
 import { CompileDirectiveMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { XHR } from './xhr';
 import { UrlResolver } from './url_resolver';

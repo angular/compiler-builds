@@ -1,5 +1,5 @@
+import { AST, ASTWithSource, BindingPipe, LiteralMap, TemplateBinding } from './ast';
 import { Lexer, Token } from './lexer';
-import { AST, BindingPipe, LiteralMap, TemplateBinding, ASTWithSource } from './ast';
 export declare class SplitInterpolation {
     strings: string[];
     expressions: string[];

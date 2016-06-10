@@ -1,6 +1,6 @@
 import { HtmlAst } from '../html_ast';
+import { ParseError, ParseSourceSpan } from '../parse_util';
 import { Message } from './message';
-import { ParseSourceSpan, ParseError } from '../parse_util';
 export declare function serializeXmb(messages: Message[]): string;
 export declare class XmbDeserializationResult {
     content: string;

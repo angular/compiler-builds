@@ -1,4 +1,4 @@
-import { Injectable, Inject, PACKAGE_ROOT_URL } from '@angular/core';
+import { Inject, Injectable, PACKAGE_ROOT_URL } from '@angular/core';
 import { StringWrapper, isPresent, isBlank, RegExpWrapper } from '../src/facade/lang';
 const _ASSET_SCHEME = 'asset:';
 /**
@@ -15,7 +15,7 @@ export function createOfflineCompileUrlResolver() {
  */
 export var DEFAULT_PACKAGE_URL_PROVIDER = {
     provide: PACKAGE_ROOT_URL,
-    useValue: "/"
+    useValue: '/'
 };
 export class UrlResolver {
     constructor(_packagePrefix = null) {
@@ -37,7 +37,7 @@ export class UrlResolver {
         var resolvedParts = _split(resolvedUrl);
         var prefix = this._packagePrefix;
         if (isPresent(prefix) && isPresent(resolvedParts) &&
-            resolvedParts[_ComponentIndex.Scheme] == "package") {
+            resolvedParts[_ComponentIndex.Scheme] == 'package') {
             var path = resolvedParts[_ComponentIndex.Path];
             if (this._packagePrefix === _ASSET_SCHEME) {
                 var pathSegements = path.split(/\//);
@@ -65,7 +65,7 @@ UrlResolver.ctorParameters = [
  */
 export function getUrlScheme(url) {
     var match = _split(url);
-    return (match && match[_ComponentIndex.Scheme]) || "";
+    return (match && match[_ComponentIndex.Scheme]) || '';
 }
 // The code below is adapted from Traceur:
 // https://github.com/google/traceur-compiler/blob/9511c1dafa972bf0de1202a8a863bad02f0f95a8/src/runtime/url.js

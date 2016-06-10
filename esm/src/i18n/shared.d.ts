@@ -1,7 +1,7 @@
-import { ParseSourceSpan, ParseError } from '../parse_util';
-import { HtmlAst, HtmlElementAst, HtmlAttrAst, HtmlTextAst } from '../html_ast';
-import { Message } from './message';
 import { Parser } from '../expression_parser/parser';
+import { HtmlAst, HtmlAttrAst, HtmlElementAst, HtmlTextAst } from '../html_ast';
+import { ParseError, ParseSourceSpan } from '../parse_util';
+import { Message } from './message';
 export declare const I18N_ATTR: string;
 export declare const I18N_ATTR_PREFIX: string;
 /**

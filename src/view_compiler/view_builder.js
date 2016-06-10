@@ -1,13 +1,13 @@
 "use strict";
 var core_1 = require('@angular/core');
 var core_private_1 = require('../../core_private');
-var lang_1 = require('../facade/lang');
 var collection_1 = require('../facade/collection');
-var o = require('../output/output_ast');
+var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
-var constants_1 = require('./constants');
-var compile_view_1 = require('./compile_view');
+var o = require('../output/output_ast');
 var compile_element_1 = require('./compile_element');
+var compile_view_1 = require('./compile_view');
+var constants_1 = require('./constants');
 var template_ast_1 = require('../template_ast');
 var util_1 = require('./util');
 var compile_metadata_1 = require('../compile_metadata');
@@ -27,9 +27,7 @@ var ViewCompileDependency = (function () {
 exports.ViewCompileDependency = ViewCompileDependency;
 function buildView(view, template, targetDependencies) {
     var builderVisitor = new ViewBuilderVisitor(view, targetDependencies);
-    template_ast_1.templateVisitAll(builderVisitor, template, view.declarationElement.isNull() ?
-        view.declarationElement :
-        view.declarationElement.parent);
+    template_ast_1.templateVisitAll(builderVisitor, template, view.declarationElement.isNull() ? view.declarationElement : view.declarationElement.parent);
     return builderVisitor.nestedViewCount;
 }
 exports.buildView = buildView;
@@ -93,8 +91,7 @@ var ViewBuilderVisitor = (function () {
         var compileNode = new compile_element_1.CompileNode(parent, this.view, this.view.nodes.length, renderNode, ast);
         var createRenderNode = o.THIS_EXPR.prop(fieldName)
             .set(constants_1.ViewProperties.renderer.callMethod('createText', [
-            this._getParentRenderNode(parent),
-            o.literal(value),
+            this._getParentRenderNode(parent), o.literal(value),
             this.view.createMethod.resetDebugInfoExpr(this.view.nodes.length, ast)
         ]))
             .toStmt();
@@ -110,10 +107,10 @@ var ViewBuilderVisitor = (function () {
         var parentRenderNode = this._getParentRenderNode(parent);
         var nodesExpression = constants_1.ViewProperties.projectableNodes.key(o.literal(ast.index), new o.ArrayType(o.importType(this.view.genConfig.renderTypes.renderNode)));
         if (parentRenderNode !== o.NULL_EXPR) {
-            this.view.createMethod.addStmt(constants_1.ViewProperties.renderer.callMethod('projectNodes', [
+            this.view.createMethod.addStmt(constants_1.ViewProperties.renderer
+                .callMethod('projectNodes', [
                 parentRenderNode,
-                o.importExpr(identifiers_1.Identifiers.flattenNestedViewRenderNodes)
-                    .callFn([nodesExpression])
+                o.importExpr(identifiers_1.Identifiers.flattenNestedViewRenderNodes).callFn([nodesExpression])
             ])
                 .toStmt());
         }
@@ -151,7 +148,8 @@ var ViewBuilderVisitor = (function () {
         for (var i = 0; i < attrNameAndValues.length; i++) {
             var attrName = attrNameAndValues[i][0];
             var attrValue = attrNameAndValues[i][1];
-            this.view.createMethod.addStmt(constants_1.ViewProperties.renderer.callMethod('setElementAttribute', [renderNode, o.literal(attrName), o.literal(attrValue)])
+            this.view.createMethod.addStmt(constants_1.ViewProperties.renderer
+                .callMethod('setElementAttribute', [renderNode, o.literal(attrName), o.literal(attrValue)])
                 .toStmt());
         }
         var compileElement = new compile_element_1.CompileElement(parent, this.view, nodeIndex, renderNode, ast, component, directives, ast.providers, ast.hasViewContainer, false, ast.references);
@@ -162,11 +160,9 @@ var ViewBuilderVisitor = (function () {
             this.targetDependencies.push(new ViewCompileDependency(component, nestedComponentIdentifier));
             compViewExpr = o.variable("compView_" + nodeIndex); // fix highlighting: `
             compileElement.setComponentView(compViewExpr);
-            this.view.createMethod.addStmt(compViewExpr.set(o.importExpr(nestedComponentIdentifier)
-                .callFn([
-                constants_1.ViewProperties.viewUtils,
-                compileElement.injector,
-                compileElement.appElement
+            this.view.createMethod.addStmt(compViewExpr
+                .set(o.importExpr(nestedComponentIdentifier).callFn([
+                constants_1.ViewProperties.viewUtils, compileElement.injector, compileElement.appElement
             ]))
                 .toDeclStmt());
         }
@@ -182,7 +178,8 @@ var ViewBuilderVisitor = (function () {
             else {
                 codeGenContentNodes = o.literalArr(compileElement.contentNodesByNgContentIndex.map(function (nodes) { return util_1.createFlatArray(nodes); }));
             }
-            this.view.createMethod.addStmt(compViewExpr.callMethod('create', [compileElement.getComponent(), codeGenContentNodes, o.NULL_EXPR])
+            this.view.createMethod.addStmt(compViewExpr
+                .callMethod('create', [compileElement.getComponent(), codeGenContentNodes, o.NULL_EXPR])
                 .toStmt());
         }
         return null;
@@ -248,7 +245,9 @@ function mergeAttributeValue(attrName, attrValue1, attrValue2) {
 }
 function mapToKeyValueArray(data) {
     var entryArray = [];
-    collection_1.StringMapWrapper.forEach(data, function (value /** TODO #9100 */, name /** TODO #9100 */) { entryArray.push([name, value]); });
+    collection_1.StringMapWrapper.forEach(data, function (value /** TODO #9100 */, name /** TODO #9100 */) {
+        entryArray.push([name, value]);
+    });
     // We need to sort to get a defined output order
     // for tests and for caching generated artifacts...
     collection_1.ListWrapper.sort(entryArray, function (entry1, entry2) { return lang_1.StringWrapper.compare(entry1[0], entry2[0]); });
@@ -301,11 +300,8 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
         new o.FnParam(constants_1.ViewConstructorVars.declarationEl.name, o.importType(identifiers_1.Identifiers.AppElement))
     ];
     var superConstructorArgs = [
-        o.variable(view.className),
-        renderCompTypeVar,
-        constants_1.ViewTypeEnum.fromValue(view.viewType),
-        constants_1.ViewConstructorVars.viewUtils,
-        constants_1.ViewConstructorVars.parentInjector,
+        o.variable(view.className), renderCompTypeVar, constants_1.ViewTypeEnum.fromValue(view.viewType),
+        constants_1.ViewConstructorVars.viewUtils, constants_1.ViewConstructorVars.parentInjector,
         constants_1.ViewConstructorVars.declarationEl,
         constants_1.ChangeDetectionStrategyEnum.fromValue(getChangeDetectionMode(view))
     ];
@@ -346,25 +342,19 @@ function createViewFactory(view, viewClass, renderCompTypeVar) {
         templateUrlInfo = view.component.template.templateUrl;
     }
     if (view.viewIndex === 0) {
-        initRenderCompTypeStmts = [
-            new o.IfStmt(renderCompTypeVar.identical(o.NULL_EXPR), [
-                renderCompTypeVar.set(constants_1.ViewConstructorVars
-                    .viewUtils.callMethod('createRenderComponentType', [
+        initRenderCompTypeStmts = [new o.IfStmt(renderCompTypeVar.identical(o.NULL_EXPR), [
+                renderCompTypeVar
+                    .set(constants_1.ViewConstructorVars.viewUtils.callMethod('createRenderComponentType', [
                     o.literal(templateUrlInfo),
-                    o.literal(view.component
-                        .template.ngContentSelectors.length),
-                    constants_1.ViewEncapsulationEnum
-                        .fromValue(view.component.template.encapsulation),
-                    view.styles
+                    o.literal(view.component.template.ngContentSelectors.length),
+                    constants_1.ViewEncapsulationEnum.fromValue(view.component.template.encapsulation), view.styles
                 ]))
                     .toStmt()
-            ])
-        ];
+            ])];
     }
-    return o.fn(viewFactoryArgs, initRenderCompTypeStmts.concat([
-        new o.ReturnStatement(o.variable(viewClass.name)
-            .instantiate(viewClass.constructorMethod.params.map(function (param) { return o.variable(param.name); })))
-    ]), o.importType(identifiers_1.Identifiers.AppView, [getContextType(view)]))
+    return o
+        .fn(viewFactoryArgs, initRenderCompTypeStmts.concat([new o.ReturnStatement(o.variable(viewClass.name)
+            .instantiate(viewClass.constructorMethod.params.map(function (param) { return o.variable(param.name); })))]), o.importType(identifiers_1.Identifiers.AppView, [getContextType(view)]))
         .toDeclStmt(view.viewFactory.name, [o.StmtModifier.Final]);
 }
 function generateCreateMethod(view) {
@@ -372,10 +362,9 @@ function generateCreateMethod(view) {
     var parentRenderNodeStmts = [];
     if (view.viewType === core_private_1.ViewType.COMPONENT) {
         parentRenderNodeExpr = constants_1.ViewProperties.renderer.callMethod('createViewRoot', [o.THIS_EXPR.prop('declarationAppElement').prop('nativeElement')]);
-        parentRenderNodeStmts = [
-            parentRenderNodeVar.set(parentRenderNodeExpr)
-                .toDeclStmt(o.importType(view.genConfig.renderTypes.renderNode), [o.StmtModifier.Final])
-        ];
+        parentRenderNodeStmts =
+            [parentRenderNodeVar.set(parentRenderNodeExpr)
+                    .toDeclStmt(o.importType(view.genConfig.renderTypes.renderNode), [o.StmtModifier.Final])];
     }
     var resultExpr;
     if (view.viewType === core_private_1.ViewType.HOST) {
@@ -384,12 +373,11 @@ function generateCreateMethod(view) {
     else {
         resultExpr = o.NULL_EXPR;
     }
-    return parentRenderNodeStmts.concat(view.createMethod.finish())
-        .concat([
-        o.THIS_EXPR.callMethod('init', [
+    return parentRenderNodeStmts.concat(view.createMethod.finish()).concat([
+        o.THIS_EXPR
+            .callMethod('init', [
             util_1.createFlatArray(view.rootNodesOrAppElements),
-            o.literalArr(view.nodes.map(function (node) { return node.renderNode; })),
-            o.literalArr(view.disposables),
+            o.literalArr(view.nodes.map(function (node) { return node.renderNode; })), o.literalArr(view.disposables),
             o.literalArr(view.subscriptions)
         ])
             .toStmt(),

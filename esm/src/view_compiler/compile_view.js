@@ -1,14 +1,14 @@
 import { ViewType } from '../../core_private';
-import { isPresent, isBlank } from '../facade/lang';
+import { CompileIdentifierMetadata, CompileTokenMap } from '../compile_metadata';
 import { ListWrapper } from '../facade/collection';
+import { isBlank, isPresent } from '../facade/lang';
+import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
-import { EventHandlerVars } from './constants';
-import { CompileQuery, createQueryList, addQueryToTokenMap } from './compile_query';
 import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
-import { CompileIdentifierMetadata, CompileTokenMap } from '../compile_metadata';
-import { getViewFactoryName, getPropertyInView, createPureProxy } from './util';
-import { Identifiers } from '../identifiers';
+import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
+import { EventHandlerVars } from './constants';
+import { createPureProxy, getPropertyInView, getViewFactoryName } from './util';
 export class CompileView {
     constructor(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings) {
         this.component = component;

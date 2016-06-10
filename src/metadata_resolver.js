@@ -6,18 +6,17 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
-var lang_1 = require('../src/facade/lang');
 var collection_1 = require('../src/facade/collection');
 var exceptions_1 = require('../src/facade/exceptions');
+var lang_1 = require('../src/facade/lang');
+var assertions_1 = require('./assertions');
 var cpl = require('./compile_metadata');
+var directive_lifecycle_reflector_1 = require('./directive_lifecycle_reflector');
 var directive_resolver_1 = require('./directive_resolver');
 var pipe_resolver_1 = require('./pipe_resolver');
-var view_resolver_1 = require('./view_resolver');
-var directive_lifecycle_reflector_1 = require('./directive_lifecycle_reflector');
-var util_1 = require('./util');
-var assertions_1 = require('./assertions');
 var url_resolver_1 = require('./url_resolver');
-var core_private_2 = require("../core_private");
+var util_1 = require('./util');
+var view_resolver_1 = require('./view_resolver');
 var CompileMetadataResolver = (function () {
     function CompileMetadataResolver(_directiveResolver, _pipeResolver, _viewResolver, _platformDirectives, _platformPipes, _reflector) {
         this._directiveResolver = _directiveResolver;
@@ -76,7 +75,8 @@ var CompileMetadataResolver = (function () {
             return new cpl.CompileAnimationKeyframesSequenceMetadata(value.steps.map(function (entry) { return _this.getAnimationStyleMetadata(entry); }));
         }
         else if (value instanceof core_1.AnimationAnimateMetadata) {
-            var animateData = this.getAnimationMetadata(value.styles);
+            var animateData = this
+                .getAnimationMetadata(value.styles);
             return new cpl.CompileAnimationAnimateMetadata(value.timings, animateData);
         }
         else if (value instanceof core_1.AnimationWithStepsMetadata) {
@@ -104,9 +104,9 @@ var CompileMetadataResolver = (function () {
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
                 assertions_1.assertArrayOfStrings('styles', viewMeta.styles);
-                var animations = lang_1.isPresent(viewMeta.animations)
-                    ? viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); })
-                    : null;
+                var animations = lang_1.isPresent(viewMeta.animations) ?
+                    viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
+                    null;
                 templateMeta = new cpl.CompileTemplateMetadata({
                     encapsulation: viewMeta.encapsulation,
                     template: viewMeta.template,
@@ -238,8 +238,7 @@ var CompileMetadataResolver = (function () {
             var viewQuery = null;
             var token = null;
             if (lang_1.isArray(param)) {
-                param
-                    .forEach(function (paramEntry) {
+                param.forEach(function (paramEntry) {
                     if (paramEntry instanceof core_1.HostMetadata) {
                         isHost = true;
                     }
@@ -291,9 +290,8 @@ var CompileMetadataResolver = (function () {
             });
         });
         if (hasUnknownDeps) {
-            var depsTokens = dependenciesMetadata.map(function (dep) {
-                return dep ? lang_1.stringify(dep.token) : '?';
-            }).join(', ');
+            var depsTokens = dependenciesMetadata.map(function (dep) { return dep ? lang_1.stringify(dep.token) : '?'; })
+                .join(', ');
             throw new exceptions_1.BaseException("Can't resolve all parameters for " + lang_1.stringify(typeOrFunc) + ": (" + depsTokens + ").");
         }
         return dependenciesMetadata;
@@ -325,8 +323,8 @@ var CompileMetadataResolver = (function () {
             else if (provider instanceof core_1.Provider) {
                 return _this.getProviderMetadata(provider);
             }
-            else if (core_private_2.isProviderLiteral(provider)) {
-                return _this.getProviderMetadata(core_private_2.createProvider(provider));
+            else if (core_private_1.isProviderLiteral(provider)) {
+                return _this.getProviderMetadata(core_private_1.createProvider(provider));
             }
             else {
                 return _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));

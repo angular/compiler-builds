@@ -38,8 +38,7 @@ var HtmlParser = (function () {
         if (parseExpansionForms === void 0) { parseExpansionForms = false; }
         var tokensAndErrors = html_lexer_1.tokenizeHtml(sourceContent, sourceUrl, parseExpansionForms);
         var treeAndErrors = new TreeBuilder(tokensAndErrors.tokens).build();
-        return new HtmlParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors
-            .concat(treeAndErrors.errors));
+        return new HtmlParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
     };
     /** @nocollapse */
     HtmlParser.decorators = [
@@ -73,8 +72,7 @@ var TreeBuilder = (function () {
                 this._closeVoidElement();
                 this._consumeComment(this._advance());
             }
-            else if (this.peek.type === html_lexer_1.HtmlTokenType.TEXT ||
-                this.peek.type === html_lexer_1.HtmlTokenType.RAW_TEXT ||
+            else if (this.peek.type === html_lexer_1.HtmlTokenType.TEXT || this.peek.type === html_lexer_1.HtmlTokenType.RAW_TEXT ||
                 this.peek.type === html_lexer_1.HtmlTokenType.ESCAPABLE_RAW_TEXT) {
                 this._closeVoidElement();
                 this._consumeText(this._advance());

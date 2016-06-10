@@ -1,8 +1,8 @@
 "use strict";
-var lang_1 = require('../src/facade/lang');
-var exceptions_1 = require('../src/facade/exceptions');
-var identifiers_1 = require('./identifiers');
 var core_1 = require('@angular/core');
+var exceptions_1 = require('../src/facade/exceptions');
+var lang_1 = require('../src/facade/lang');
+var identifiers_1 = require('./identifiers');
 var CompilerConfig = (function () {
     function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes, defaultEncapsulation) {
         if (renderTypes === void 0) { renderTypes = null; }

@@ -4,12 +4,12 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var parse_util_1 = require('../parse_util');
-var html_ast_1 = require('../html_ast');
 var lang_1 = require('../facade/lang');
+var html_ast_1 = require('../html_ast');
+var parse_util_1 = require('../parse_util');
 var message_1 = require('./message');
-exports.I18N_ATTR = "i18n";
-exports.I18N_ATTR_PREFIX = "i18n-";
+exports.I18N_ATTR = 'i18n';
+exports.I18N_ATTR_PREFIX = 'i18n-';
 var CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
 /**
  * An i18n error.
@@ -34,7 +34,7 @@ function partition(nodes, errors, implicitTags) {
             while (!_isClosingComment(nodes[i])) {
                 temp.push(nodes[i++]);
                 if (i === nodes.length) {
-                    errors.push(new I18nError(n.sourceSpan, "Missing closing 'i18n' comment."));
+                    errors.push(new I18nError(n.sourceSpan, 'Missing closing \'i18n\' comment.'));
                     break;
                 }
             }
@@ -79,25 +79,25 @@ var Part = (function () {
 }());
 exports.Part = Part;
 function _isOpeningComment(n) {
-    return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value.startsWith("i18n:");
+    return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value.startsWith('i18n:');
 }
 function _isClosingComment(n) {
-    return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value == "/i18n";
+    return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value == '/i18n';
 }
 function _findI18nAttr(p) {
     var i18n = p.attrs.filter(function (a) { return a.name == exports.I18N_ATTR; });
     return i18n.length == 0 ? null : i18n[0];
 }
 function meaning(i18n) {
-    if (lang_1.isBlank(i18n) || i18n == "")
+    if (lang_1.isBlank(i18n) || i18n == '')
         return null;
-    return i18n.split("|")[0];
+    return i18n.split('|')[0];
 }
 exports.meaning = meaning;
 function description(i18n) {
-    if (lang_1.isBlank(i18n) || i18n == "")
+    if (lang_1.isBlank(i18n) || i18n == '')
         return null;
-    var parts = i18n.split("|");
+    var parts = i18n.split('|');
     return parts.length > 1 ? parts[1] : null;
 }
 exports.description = description;
@@ -127,7 +127,7 @@ function removeInterpolation(value, source, parser) {
         var parsed = parser.splitInterpolation(value, source.toString());
         var usedNames = new Map();
         if (lang_1.isPresent(parsed)) {
-            var res = "";
+            var res = '';
             for (var i = 0; i < parsed.strings.length; ++i) {
                 res += parsed.strings[i];
                 if (i != parsed.strings.length - 1) {
@@ -166,7 +166,7 @@ function dedupePhName(usedNames, name) {
 exports.dedupePhName = dedupePhName;
 function stringifyNodes(nodes, parser) {
     var visitor = new _StringifyVisitor(parser);
-    return html_ast_1.htmlVisitAll(visitor, nodes).join("");
+    return html_ast_1.htmlVisitAll(visitor, nodes).join('');
 }
 exports.stringifyNodes = stringifyNodes;
 var _StringifyVisitor = (function () {
@@ -176,7 +176,7 @@ var _StringifyVisitor = (function () {
     }
     _StringifyVisitor.prototype.visitElement = function (ast, context) {
         var name = this._index++;
-        var children = this._join(html_ast_1.htmlVisitAll(this, ast.children), "");
+        var children = this._join(html_ast_1.htmlVisitAll(this, ast.children), '');
         return "<ph name=\"e" + name + "\">" + children + "</ph>";
     };
     _StringifyVisitor.prototype.visitAttr = function (ast, context) { return null; };
@@ -190,7 +190,7 @@ var _StringifyVisitor = (function () {
             return ast.value;
         }
     };
-    _StringifyVisitor.prototype.visitComment = function (ast, context) { return ""; };
+    _StringifyVisitor.prototype.visitComment = function (ast, context) { return ''; };
     _StringifyVisitor.prototype.visitExpansion = function (ast, context) { return null; };
     _StringifyVisitor.prototype.visitExpansionCase = function (ast, context) { return null; };
     _StringifyVisitor.prototype._join = function (strs, str) {

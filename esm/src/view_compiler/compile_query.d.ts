@@ -1,7 +1,7 @@
-import * as o from '../output/output_ast';
 import { CompileQueryMetadata, CompileTokenMap } from '../compile_metadata';
-import { CompileView } from './compile_view';
+import * as o from '../output/output_ast';
 import { CompileMethod } from './compile_method';
+import { CompileView } from './compile_view';
 export declare class CompileQuery {
     meta: CompileQueryMetadata;
     queryList: o.Expression;

@@ -36,23 +36,13 @@ function _createCompilerConfig() {
  */
 export const COMPILER_PROVIDERS = 
 /*@ts2dart_const*/ [
-    Lexer,
-    Parser,
-    HtmlParser,
-    TemplateParser,
-    DirectiveNormalizer,
-    CompileMetadataResolver,
-    DEFAULT_PACKAGE_URL_PROVIDER,
-    StyleCompiler,
-    ViewCompiler,
+    Lexer, Parser, HtmlParser, TemplateParser, DirectiveNormalizer, CompileMetadataResolver,
+    DEFAULT_PACKAGE_URL_PROVIDER, StyleCompiler, ViewCompiler,
     /*@ts2dart_Provider*/ { provide: CompilerConfig, useFactory: _createCompilerConfig, deps: [] },
     RuntimeCompiler,
     /*@ts2dart_Provider*/ { provide: ComponentResolver, useExisting: RuntimeCompiler },
     DomElementSchemaRegistry,
     /*@ts2dart_Provider*/ { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
-    UrlResolver,
-    ViewResolver,
-    DirectiveResolver,
-    PipeResolver
+    UrlResolver, ViewResolver, DirectiveResolver, PipeResolver
 ];
 //# sourceMappingURL=compiler.js.map

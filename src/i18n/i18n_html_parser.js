@@ -1,14 +1,14 @@
 "use strict";
-var html_parser_1 = require("../html_parser");
-var html_ast_1 = require("../html_ast");
-var collection_1 = require("../facade/collection");
-var lang_1 = require("../facade/lang");
-var exceptions_1 = require("../facade/exceptions");
-var message_1 = require("./message");
-var expander_1 = require("./expander");
-var shared_1 = require("./shared");
-var _PLACEHOLDER_ELEMENT = "ph";
-var _NAME_ATTR = "name";
+var collection_1 = require('../facade/collection');
+var exceptions_1 = require('../facade/exceptions');
+var lang_1 = require('../facade/lang');
+var html_ast_1 = require('../html_ast');
+var html_parser_1 = require('../html_parser');
+var expander_1 = require('./expander');
+var message_1 = require('./message');
+var shared_1 = require('./shared');
+var _PLACEHOLDER_ELEMENT = 'ph';
+var _NAME_ATTR = 'name';
 var _PLACEHOLDER_EXPANDED_REGEXP = /<ph(\s)+name=("(\w)+")><\/ph>/gi;
 /**
  * Creates an i18n-ed version of the parsed template.
@@ -143,9 +143,7 @@ var I18nHtmlParser = (function () {
             var root = p.rootElement;
             var children = this._recurse(p.children);
             var attrs = this._i18nAttributes(root);
-            return [
-                new html_ast_1.HtmlElementAst(root.name, attrs, children, root.sourceSpan, root.startSourceSpan, root.endSourceSpan)
-            ];
+            return [new html_ast_1.HtmlElementAst(root.name, attrs, children, root.sourceSpan, root.startSourceSpan, root.endSourceSpan)];
         }
         else if (lang_1.isPresent(p.rootTextNode)) {
             return [p.rootTextNode];
@@ -170,12 +168,10 @@ var I18nHtmlParser = (function () {
         if (lang_1.isPresent(p.rootElement)) {
             var root = p.rootElement;
             var attrs = this._i18nAttributes(root);
-            return [
-                new html_ast_1.HtmlElementAst(root.name, attrs, merged, root.sourceSpan, root.startSourceSpan, root.endSourceSpan)
-            ];
+            return [new html_ast_1.HtmlElementAst(root.name, attrs, merged, root.sourceSpan, root.startSourceSpan, root.endSourceSpan)];
         }
         else if (lang_1.isPresent(p.rootTextNode)) {
-            throw new exceptions_1.BaseException("should not be reached");
+            throw new exceptions_1.BaseException('should not be reached');
         }
         else {
             return merged;
@@ -191,7 +187,7 @@ var I18nHtmlParser = (function () {
                 return t;
             }
             else {
-                throw new exceptions_1.BaseException("should not be reached");
+                throw new exceptions_1.BaseException('should not be reached');
             }
         });
     };
@@ -200,14 +196,14 @@ var I18nHtmlParser = (function () {
         var type = name[0];
         var index = lang_1.NumberWrapper.parseInt(name.substring(1), 10);
         var originalNode = mapping[index];
-        if (type == "t") {
+        if (type == 't') {
             return this._mergeTextInterpolation(t, originalNode);
         }
-        else if (type == "e") {
+        else if (type == 'e') {
             return this._mergeElement(t, originalNode, mapping);
         }
         else {
-            throw new exceptions_1.BaseException("should not be reached");
+            throw new exceptions_1.BaseException('should not be reached');
         }
     };
     I18nHtmlParser.prototype._getName = function (t) {
@@ -317,7 +313,7 @@ var _CreateNodeMapping = (function () {
     };
     _CreateNodeMapping.prototype.visitExpansion = function (ast, context) { return null; };
     _CreateNodeMapping.prototype.visitExpansionCase = function (ast, context) { return null; };
-    _CreateNodeMapping.prototype.visitComment = function (ast, context) { return ""; };
+    _CreateNodeMapping.prototype.visitComment = function (ast, context) { return ''; };
     return _CreateNodeMapping;
 }());
 //# sourceMappingURL=i18n_html_parser.js.map

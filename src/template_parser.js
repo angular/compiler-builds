@@ -116,8 +116,7 @@ var TemplateParser = (function () {
     /** @internal */
     TemplateParser.prototype._assertNoReferenceDuplicationOnTemplate = function (result, errors) {
         var existingReferences = [];
-        result
-            .filter(function (element) { return !!element.references; })
+        result.filter(function (element) { return !!element.references; })
             .forEach(function (element) { return element.references.forEach(function (reference /** TODO #???? */) {
             var name = reference.name;
             if (existingReferences.indexOf(name) < 0) {
@@ -298,7 +297,8 @@ var TemplateParseVisitor = (function () {
         var directiveMetas = this._parseDirectives(this.selectorMatcher, elementCssSelector);
         var references = [];
         var directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references);
-        var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts).concat(animationProps);
+        var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts)
+            .concat(animationProps);
         var isViewRoot = parent.isTemplateElement || hasInlineTemplates;
         var providerContext = new provider_parser_1.ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
         var children = html_ast_1.htmlVisitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));

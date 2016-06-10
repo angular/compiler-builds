@@ -4,10 +4,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var o = require('./output_ast');
-var lang_1 = require('../facade/lang');
 var exceptions_1 = require('../facade/exceptions');
+var lang_1 = require('../facade/lang');
 var abstract_emitter_1 = require('./abstract_emitter');
+var o = require('./output_ast');
 var _debugModuleUrl = 'asset://debug/lib';
 function debugOutputAstAsTypeScript(ast) {
     var converter = new _TsEmitterVisitor(_debugModuleUrl);
@@ -205,10 +205,9 @@ var _TsEmitterVisitor = (function (_super) {
         ctx.decIndent();
         ctx.println("} catch (" + abstract_emitter_1.CATCH_ERROR_VAR.name + ") {");
         ctx.incIndent();
-        var catchStmts = [
-            abstract_emitter_1.CATCH_STACK_VAR.set(abstract_emitter_1.CATCH_ERROR_VAR.prop('stack'))
-                .toDeclStmt(null, [o.StmtModifier.Final])
-        ].concat(stmt.catchStmts);
+        var catchStmts = [abstract_emitter_1.CATCH_STACK_VAR.set(abstract_emitter_1.CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
+                o.StmtModifier.Final
+            ])].concat(stmt.catchStmts);
         this.visitAllStatements(catchStmts, ctx);
         ctx.decIndent();
         ctx.println("}");

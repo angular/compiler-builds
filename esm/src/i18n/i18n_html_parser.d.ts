@@ -1,7 +1,7 @@
-import { HtmlParser, HtmlParseTreeResult } from "../html_parser";
-import { ParseError } from "../parse_util";
-import { HtmlAst } from "../html_ast";
-import { Parser } from "../expression_parser/parser";
+import { Parser } from '../expression_parser/parser';
+import { HtmlAst } from '../html_ast';
+import { HtmlParseTreeResult, HtmlParser } from '../html_parser';
+import { ParseError } from '../parse_util';
 /**
  * Creates an i18n-ed version of the parsed template.
  *

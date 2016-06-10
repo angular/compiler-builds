@@ -12,7 +12,7 @@ var AST = (function () {
         if (context === void 0) { context = null; }
         return null;
     };
-    AST.prototype.toString = function () { return "AST"; };
+    AST.prototype.toString = function () { return 'AST'; };
     return AST;
 }());
 exports.AST = AST;
@@ -41,7 +41,7 @@ var Quote = (function (_super) {
         if (context === void 0) { context = null; }
         return visitor.visitQuote(this, context);
     };
-    Quote.prototype.toString = function () { return "Quote"; };
+    Quote.prototype.toString = function () { return 'Quote'; };
     return Quote;
 }(AST));
 exports.Quote = Quote;

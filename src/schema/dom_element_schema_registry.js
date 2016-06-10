@@ -6,10 +6,10 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var core_1 = require('@angular/core');
 var core_private_1 = require('../../core_private');
-var lang_1 = require('../facade/lang');
 var collection_1 = require('../facade/collection');
-var element_schema_registry_1 = require('./element_schema_registry');
+var lang_1 = require('../facade/lang');
 var dom_security_schema_1 = require('./dom_security_schema');
+var element_schema_registry_1 = require('./element_schema_registry');
 var EVENT = 'event';
 var BOOLEAN = 'boolean';
 var NUMBER = 'number';

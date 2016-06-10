@@ -1,11 +1,11 @@
 "use strict";
 var core_1 = require('@angular/core');
+var animation_compiler_1 = require('../animation/animation_compiler');
+var config_1 = require('../config');
 var compile_element_1 = require('./compile_element');
 var compile_view_1 = require('./compile_view');
-var view_builder_1 = require('./view_builder');
 var view_binder_1 = require('./view_binder');
-var config_1 = require('../config');
-var animation_compiler_1 = require('../animation/animation_compiler');
+var view_builder_1 = require('./view_builder');
 var ViewCompileResult = (function () {
     function ViewCompileResult(statements, viewFactoryVar, dependencies) {
         this.statements = statements;
