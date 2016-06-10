@@ -3054,16 +3054,16 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.file = file;
             this.tokenizeExpansionForms = tokenizeExpansionForms;
             // Note: this is always lowercase!
-            this.peek = -1;
-            this.nextPeek = -1;
-            this.index = -1;
-            this.line = 0;
-            this.column = -1;
-            this.expansionCaseStack = [];
+            this._peek = -1;
+            this._nextPeek = -1;
+            this._index = -1;
+            this._line = 0;
+            this._column = -1;
+            this._expansionCaseStack = [];
             this.tokens = [];
             this.errors = [];
-            this.input = file.content;
-            this.length = file.content.length;
+            this._input = file.content;
+            this._length = file.content.length;
             this._advance();
         }
         _HtmlTokenizer.prototype._processCarriageReturns = function (content) {
@@ -3074,7 +3074,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return StringWrapper.replaceAll(content, CR_OR_CRLF_REGEXP, '\n');
         };
         _HtmlTokenizer.prototype.tokenize = function () {
-            while (this.peek !== $EOF$1) {
+            while (this._peek !== $EOF$1) {
                 var start = this._getLocation();
                 try {
                     if (this._attemptCharCode($LT$1)) {
@@ -3096,16 +3096,17 @@ var __extends = (this && this.__extends) || function (d, b) {
                             this._consumeTagOpen(start);
                         }
                     }
-                    else if (isSpecialFormStart(this.peek, this.nextPeek) && this.tokenizeExpansionForms) {
+                    else if (isExpansionFormStart(this._peek, this._nextPeek) && this.tokenizeExpansionForms) {
                         this._consumeExpansionFormStart();
                     }
-                    else if (this.peek === $EQ$1 && this.tokenizeExpansionForms) {
+                    else if (isExpansionCaseStart(this._peek) && this._isInExpansionForm() &&
+                        this.tokenizeExpansionForms) {
                         this._consumeExpansionCaseStart();
                     }
-                    else if (this.peek === $RBRACE$1 && this.isInExpansionCase() && this.tokenizeExpansionForms) {
+                    else if (this._peek === $RBRACE$1 && this._isInExpansionCase() && this.tokenizeExpansionForms) {
                         this._consumeExpansionCaseEnd();
                     }
-                    else if (this.peek === $RBRACE$1 && this.isInExpansionForm() && this.tokenizeExpansionForms) {
+                    else if (this._peek === $RBRACE$1 && this._isInExpansionForm() && this.tokenizeExpansionForms) {
                         this._consumeExpansionFormEnd();
                     }
                     else {
@@ -3126,7 +3127,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return new HtmlTokenizeResult(mergeTextTokens(this.tokens), this.errors);
         };
         _HtmlTokenizer.prototype._getLocation = function () {
-            return new ParseLocation(this.file, this.index, this.line, this.column);
+            return new ParseLocation(this.file, this._index, this._line, this._column);
         };
         _HtmlTokenizer.prototype._getSpan = function (start, end) {
             if (isBlank(start)) {
@@ -3142,51 +3143,53 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (isBlank(start)) {
                 start = this._getLocation();
             }
-            this.currentTokenStart = start;
-            this.currentTokenType = type;
+            this._currentTokenStart = start;
+            this._currentTokenType = type;
         };
         _HtmlTokenizer.prototype._endToken = function (parts, end) {
             if (end === void 0) { end = null; }
             if (isBlank(end)) {
                 end = this._getLocation();
             }
-            var token = new HtmlToken(this.currentTokenType, parts, new ParseSourceSpan(this.currentTokenStart, end));
+            var token = new HtmlToken(this._currentTokenType, parts, new ParseSourceSpan(this._currentTokenStart, end));
             this.tokens.push(token);
-            this.currentTokenStart = null;
-            this.currentTokenType = null;
+            this._currentTokenStart = null;
+            this._currentTokenType = null;
             return token;
         };
         _HtmlTokenizer.prototype._createError = function (msg, span) {
-            var error = new HtmlTokenError(msg, this.currentTokenType, span);
-            this.currentTokenStart = null;
-            this.currentTokenType = null;
+            var error = new HtmlTokenError(msg, this._currentTokenType, span);
+            this._currentTokenStart = null;
+            this._currentTokenType = null;
             return new ControlFlowError(error);
         };
         _HtmlTokenizer.prototype._advance = function () {
-            if (this.index >= this.length) {
+            if (this._index >= this._length) {
                 throw this._createError(unexpectedCharacterErrorMsg($EOF$1), this._getSpan());
             }
-            if (this.peek === $LF$1) {
-                this.line++;
-                this.column = 0;
+            if (this._peek === $LF$1) {
+                this._line++;
+                this._column = 0;
             }
-            else if (this.peek !== $LF$1 && this.peek !== $CR$1) {
-                this.column++;
+            else if (this._peek !== $LF$1 && this._peek !== $CR$1) {
+                this._column++;
             }
-            this.index++;
-            this.peek = this.index >= this.length ? $EOF$1 : StringWrapper.charCodeAt(this.input, this.index);
-            this.nextPeek =
-                this.index + 1 >= this.length ? $EOF$1 : StringWrapper.charCodeAt(this.input, this.index + 1);
+            this._index++;
+            this._peek =
+                this._index >= this._length ? $EOF$1 : StringWrapper.charCodeAt(this._input, this._index);
+            this._nextPeek = this._index + 1 >= this._length ?
+                $EOF$1 :
+                StringWrapper.charCodeAt(this._input, this._index + 1);
         };
         _HtmlTokenizer.prototype._attemptCharCode = function (charCode) {
-            if (this.peek === charCode) {
+            if (this._peek === charCode) {
                 this._advance();
                 return true;
             }
             return false;
         };
         _HtmlTokenizer.prototype._attemptCharCodeCaseInsensitive = function (charCode) {
-            if (compareCharCodeCaseInsensitive(this.peek, charCode)) {
+            if (compareCharCodeCaseInsensitive(this._peek, charCode)) {
                 this._advance();
                 return true;
             }
@@ -3195,20 +3198,20 @@ var __extends = (this && this.__extends) || function (d, b) {
         _HtmlTokenizer.prototype._requireCharCode = function (charCode) {
             var location = this._getLocation();
             if (!this._attemptCharCode(charCode)) {
-                throw this._createError(unexpectedCharacterErrorMsg(this.peek), this._getSpan(location, location));
+                throw this._createError(unexpectedCharacterErrorMsg(this._peek), this._getSpan(location, location));
             }
         };
         _HtmlTokenizer.prototype._attemptStr = function (chars) {
-            var indexBeforeAttempt = this.index;
-            var columnBeforeAttempt = this.column;
-            var lineBeforeAttempt = this.line;
+            var indexBeforeAttempt = this._index;
+            var columnBeforeAttempt = this._column;
+            var lineBeforeAttempt = this._line;
             for (var i = 0; i < chars.length; i++) {
                 if (!this._attemptCharCode(StringWrapper.charCodeAt(chars, i))) {
                     // If attempting to parse the string fails, we want to reset the parser
                     // to where it was before the attempt
-                    this.index = indexBeforeAttempt;
-                    this.column = columnBeforeAttempt;
-                    this.line = lineBeforeAttempt;
+                    this._index = indexBeforeAttempt;
+                    this._column = columnBeforeAttempt;
+                    this._line = lineBeforeAttempt;
                     return false;
                 }
             }
@@ -3225,34 +3228,34 @@ var __extends = (this && this.__extends) || function (d, b) {
         _HtmlTokenizer.prototype._requireStr = function (chars) {
             var location = this._getLocation();
             if (!this._attemptStr(chars)) {
-                throw this._createError(unexpectedCharacterErrorMsg(this.peek), this._getSpan(location));
+                throw this._createError(unexpectedCharacterErrorMsg(this._peek), this._getSpan(location));
             }
         };
         _HtmlTokenizer.prototype._attemptCharCodeUntilFn = function (predicate) {
-            while (!predicate(this.peek)) {
+            while (!predicate(this._peek)) {
                 this._advance();
             }
         };
         _HtmlTokenizer.prototype._requireCharCodeUntilFn = function (predicate, len) {
             var start = this._getLocation();
             this._attemptCharCodeUntilFn(predicate);
-            if (this.index - start.offset < len) {
-                throw this._createError(unexpectedCharacterErrorMsg(this.peek), this._getSpan(start, start));
+            if (this._index - start.offset < len) {
+                throw this._createError(unexpectedCharacterErrorMsg(this._peek), this._getSpan(start, start));
             }
         };
         _HtmlTokenizer.prototype._attemptUntilChar = function (char) {
-            while (this.peek !== char) {
+            while (this._peek !== char) {
                 this._advance();
             }
         };
         _HtmlTokenizer.prototype._readChar = function (decodeEntities) {
-            if (decodeEntities && this.peek === $AMPERSAND$1) {
+            if (decodeEntities && this._peek === $AMPERSAND$1) {
                 return this._decodeEntity();
             }
             else {
-                var index = this.index;
+                var index = this._index;
                 this._advance();
-                return this.input[index];
+                return this._input[index];
             }
         };
         _HtmlTokenizer.prototype._decodeEntity = function () {
@@ -3262,29 +3265,29 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var isHex = this._attemptCharCode($x) || this._attemptCharCode($X);
                 var numberStart = this._getLocation().offset;
                 this._attemptCharCodeUntilFn(isDigitEntityEnd);
-                if (this.peek != $SEMICOLON$1) {
-                    throw this._createError(unexpectedCharacterErrorMsg(this.peek), this._getSpan());
+                if (this._peek != $SEMICOLON$1) {
+                    throw this._createError(unexpectedCharacterErrorMsg(this._peek), this._getSpan());
                 }
                 this._advance();
-                var strNum = this.input.substring(numberStart, this.index - 1);
+                var strNum = this._input.substring(numberStart, this._index - 1);
                 try {
                     var charCode = NumberWrapper.parseInt(strNum, isHex ? 16 : 10);
                     return StringWrapper.fromCharCode(charCode);
                 }
                 catch (e) {
-                    var entity = this.input.substring(start.offset + 1, this.index - 1);
+                    var entity = this._input.substring(start.offset + 1, this._index - 1);
                     throw this._createError(unknownEntityErrorMsg(entity), this._getSpan(start));
                 }
             }
             else {
                 var startPosition = this._savePosition();
                 this._attemptCharCodeUntilFn(isNamedEntityEnd);
-                if (this.peek != $SEMICOLON$1) {
+                if (this._peek != $SEMICOLON$1) {
                     this._restorePosition(startPosition);
                     return '&';
                 }
                 this._advance();
-                var name_1 = this.input.substring(start.offset + 1, this.index - 1);
+                var name_1 = this._input.substring(start.offset + 1, this._index - 1);
                 var char = NAMED_ENTITIES[name_1];
                 if (isBlank(char)) {
                     throw this._createError(unknownEntityErrorMsg(name_1), this._getSpan(start));
@@ -3302,10 +3305,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 if (this._attemptCharCode(firstCharOfEnd) && attemptEndRest()) {
                     break;
                 }
-                if (this.index > tagCloseStart.offset) {
-                    parts.push(this.input.substring(tagCloseStart.offset, this.index));
+                if (this._index > tagCloseStart.offset) {
+                    parts.push(this._input.substring(tagCloseStart.offset, this._index));
                 }
-                while (this.peek !== firstCharOfEnd) {
+                while (this._peek !== firstCharOfEnd) {
                     parts.push(this._readChar(decodeEntities));
                 }
             }
@@ -3333,39 +3336,39 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._beginToken(HtmlTokenType.DOC_TYPE, start);
             this._attemptUntilChar($GT$1);
             this._advance();
-            this._endToken([this.input.substring(start.offset + 2, this.index - 1)]);
+            this._endToken([this._input.substring(start.offset + 2, this._index - 1)]);
         };
         _HtmlTokenizer.prototype._consumePrefixAndName = function () {
-            var nameOrPrefixStart = this.index;
+            var nameOrPrefixStart = this._index;
             var prefix = null;
-            while (this.peek !== $COLON$1 && !isPrefixEnd(this.peek)) {
+            while (this._peek !== $COLON$1 && !isPrefixEnd(this._peek)) {
                 this._advance();
             }
             var nameStart;
-            if (this.peek === $COLON$1) {
+            if (this._peek === $COLON$1) {
                 this._advance();
-                prefix = this.input.substring(nameOrPrefixStart, this.index - 1);
-                nameStart = this.index;
+                prefix = this._input.substring(nameOrPrefixStart, this._index - 1);
+                nameStart = this._index;
             }
             else {
                 nameStart = nameOrPrefixStart;
             }
-            this._requireCharCodeUntilFn(isNameEnd, this.index === nameStart ? 1 : 0);
-            var name = this.input.substring(nameStart, this.index);
+            this._requireCharCodeUntilFn(isNameEnd, this._index === nameStart ? 1 : 0);
+            var name = this._input.substring(nameStart, this._index);
             return [prefix, name];
         };
         _HtmlTokenizer.prototype._consumeTagOpen = function (start) {
             var savedPos = this._savePosition();
             var lowercaseTagName;
             try {
-                if (!isAsciiLetter(this.peek)) {
-                    throw this._createError(unexpectedCharacterErrorMsg(this.peek), this._getSpan());
+                if (!isAsciiLetter(this._peek)) {
+                    throw this._createError(unexpectedCharacterErrorMsg(this._peek), this._getSpan());
                 }
-                var nameStart = this.index;
+                var nameStart = this._index;
                 this._consumeTagOpenStart(start);
-                lowercaseTagName = this.input.substring(nameStart, this.index).toLowerCase();
+                lowercaseTagName = this._input.substring(nameStart, this._index).toLowerCase();
                 this._attemptCharCodeUntilFn(isNotWhitespace);
-                while (this.peek !== $SLASH$1 && this.peek !== $GT$1) {
+                while (this._peek !== $SLASH$1 && this._peek !== $GT$1) {
                     this._consumeAttributeName();
                     this._attemptCharCodeUntilFn(isNotWhitespace);
                     if (this._attemptCharCode($EQ$1)) {
@@ -3424,20 +3427,20 @@ var __extends = (this && this.__extends) || function (d, b) {
         _HtmlTokenizer.prototype._consumeAttributeValue = function () {
             this._beginToken(HtmlTokenType.ATTR_VALUE);
             var value;
-            if (this.peek === $SQ$1 || this.peek === $DQ$1) {
-                var quoteChar = this.peek;
+            if (this._peek === $SQ$1 || this._peek === $DQ$1) {
+                var quoteChar = this._peek;
                 this._advance();
                 var parts = [];
-                while (this.peek !== quoteChar) {
+                while (this._peek !== quoteChar) {
                     parts.push(this._readChar(true));
                 }
                 value = parts.join('');
                 this._advance();
             }
             else {
-                var valueStart = this.index;
+                var valueStart = this._index;
                 this._requireCharCodeUntilFn(isNameEnd, 1);
-                value = this.input.substring(valueStart, this.index);
+                value = this._input.substring(valueStart, this._index);
             }
             this._endToken([this._processCarriageReturns(value)]);
         };
@@ -3471,10 +3474,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._endToken([type], this._getLocation());
             this._requireCharCode($COMMA$1);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this.expansionCaseStack.push(HtmlTokenType.EXPANSION_FORM_START);
+            this._expansionCaseStack.push(HtmlTokenType.EXPANSION_FORM_START);
         };
         _HtmlTokenizer.prototype._consumeExpansionCaseStart = function () {
-            this._requireCharCode($EQ$1);
             this._beginToken(HtmlTokenType.EXPANSION_CASE_VALUE, this._getLocation());
             var value = this._readUntil($LBRACE$1).trim();
             this._endToken([value], this._getLocation());
@@ -3483,27 +3485,27 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._requireCharCode($LBRACE$1);
             this._endToken([], this._getLocation());
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this.expansionCaseStack.push(HtmlTokenType.EXPANSION_CASE_EXP_START);
+            this._expansionCaseStack.push(HtmlTokenType.EXPANSION_CASE_EXP_START);
         };
         _HtmlTokenizer.prototype._consumeExpansionCaseEnd = function () {
             this._beginToken(HtmlTokenType.EXPANSION_CASE_EXP_END, this._getLocation());
             this._requireCharCode($RBRACE$1);
             this._endToken([], this._getLocation());
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this.expansionCaseStack.pop();
+            this._expansionCaseStack.pop();
         };
         _HtmlTokenizer.prototype._consumeExpansionFormEnd = function () {
             this._beginToken(HtmlTokenType.EXPANSION_FORM_END, this._getLocation());
             this._requireCharCode($RBRACE$1);
             this._endToken([]);
-            this.expansionCaseStack.pop();
+            this._expansionCaseStack.pop();
         };
         _HtmlTokenizer.prototype._consumeText = function () {
             var start = this._getLocation();
             this._beginToken(HtmlTokenType.TEXT, start);
             var parts = [];
             var interpolation = false;
-            if (this.peek === $LBRACE$1 && this.nextPeek === $LBRACE$1) {
+            if (this._peek === $LBRACE$1 && this._nextPeek === $LBRACE$1) {
                 parts.push(this._readChar(true));
                 parts.push(this._readChar(true));
                 interpolation = true;
@@ -3511,13 +3513,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             else {
                 parts.push(this._readChar(true));
             }
-            while (!this.isTextEnd(interpolation)) {
-                if (this.peek === $LBRACE$1 && this.nextPeek === $LBRACE$1) {
+            while (!this._isTextEnd(interpolation)) {
+                if (this._peek === $LBRACE$1 && this._nextPeek === $LBRACE$1) {
                     parts.push(this._readChar(true));
                     parts.push(this._readChar(true));
                     interpolation = true;
                 }
-                else if (this.peek === $RBRACE$1 && this.nextPeek === $RBRACE$1 && interpolation) {
+                else if (this._peek === $RBRACE$1 && this._nextPeek === $RBRACE$1 && interpolation) {
                     parts.push(this._readChar(true));
                     parts.push(this._readChar(true));
                     interpolation = false;
@@ -3528,45 +3530,45 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
-        _HtmlTokenizer.prototype.isTextEnd = function (interpolation) {
-            if (this.peek === $LT$1 || this.peek === $EOF$1)
+        _HtmlTokenizer.prototype._isTextEnd = function (interpolation) {
+            if (this._peek === $LT$1 || this._peek === $EOF$1)
                 return true;
             if (this.tokenizeExpansionForms) {
-                if (isSpecialFormStart(this.peek, this.nextPeek))
+                if (isExpansionFormStart(this._peek, this._nextPeek))
                     return true;
-                if (this.peek === $RBRACE$1 && !interpolation &&
-                    (this.isInExpansionCase() || this.isInExpansionForm()))
+                if (this._peek === $RBRACE$1 && !interpolation &&
+                    (this._isInExpansionCase() || this._isInExpansionForm()))
                     return true;
             }
             return false;
         };
         _HtmlTokenizer.prototype._savePosition = function () {
-            return [this.peek, this.index, this.column, this.line, this.tokens.length];
+            return [this._peek, this._index, this._column, this._line, this.tokens.length];
         };
         _HtmlTokenizer.prototype._readUntil = function (char) {
-            var start = this.index;
+            var start = this._index;
             this._attemptUntilChar(char);
-            return this.input.substring(start, this.index);
+            return this._input.substring(start, this._index);
         };
         _HtmlTokenizer.prototype._restorePosition = function (position) {
-            this.peek = position[0];
-            this.index = position[1];
-            this.column = position[2];
-            this.line = position[3];
+            this._peek = position[0];
+            this._index = position[1];
+            this._column = position[2];
+            this._line = position[3];
             var nbTokens = position[4];
             if (nbTokens < this.tokens.length) {
                 // remove any extra tokens
                 this.tokens = ListWrapper.slice(this.tokens, 0, nbTokens);
             }
         };
-        _HtmlTokenizer.prototype.isInExpansionCase = function () {
-            return this.expansionCaseStack.length > 0 &&
-                this.expansionCaseStack[this.expansionCaseStack.length - 1] ===
+        _HtmlTokenizer.prototype._isInExpansionCase = function () {
+            return this._expansionCaseStack.length > 0 &&
+                this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
                     HtmlTokenType.EXPANSION_CASE_EXP_START;
         };
-        _HtmlTokenizer.prototype.isInExpansionForm = function () {
-            return this.expansionCaseStack.length > 0 &&
-                this.expansionCaseStack[this.expansionCaseStack.length - 1] ===
+        _HtmlTokenizer.prototype._isInExpansionForm = function () {
+            return this._expansionCaseStack.length > 0 &&
+                this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
                     HtmlTokenType.EXPANSION_FORM_START;
         };
         return _HtmlTokenizer;
@@ -3590,8 +3592,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     function isNamedEntityEnd(code) {
         return code == $SEMICOLON$1 || code == $EOF$1 || !isAsciiLetter(code);
     }
-    function isSpecialFormStart(peek, nextPeek) {
+    function isExpansionFormStart(peek, nextPeek) {
         return peek === $LBRACE$1 && nextPeek != $LBRACE$1;
+    }
+    function isExpansionCaseStart(peek) {
+        return peek === $EQ$1 || isAsciiLetter(peek);
     }
     function isAsciiLetter(code) {
         return code >= $a$1 && code <= $z$1 || code >= $A$1 && code <= $Z$1;
@@ -14733,86 +14738,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         UrlResolver, ViewResolver, DirectiveResolver, PipeResolver
     ];
     /**
-     * Expands special forms into elements.
-     *
-     * For example,
-     *
-     * ```
-     * { messages.length, plural,
-     *   =0 {zero}
-     *   =1 {one}
-     *   =other {more than one}
-     * }
-     * ```
-     *
-     * will be expanded into
-     *
-     * ```
-     * <ul [ngPlural]="messages.length">
-     *   <template [ngPluralCase]="0"><li i18n="plural_0">zero</li></template>
-     *   <template [ngPluralCase]="1"><li i18n="plural_1">one</li></template>
-     *   <template [ngPluralCase]="other"><li i18n="plural_other">more than one</li></template>
-     * </ul>
-     * ```
-     */
-    function expandNodes(nodes) {
-        var e = new _Expander();
-        var n = htmlVisitAll(e, nodes);
-        return new ExpansionResult(n, e.expanded);
-    }
-    var ExpansionResult = (function () {
-        function ExpansionResult(nodes, expanded) {
-            this.nodes = nodes;
-            this.expanded = expanded;
-        }
-        return ExpansionResult;
-    }());
-    var _Expander = (function () {
-        function _Expander() {
-            this.expanded = false;
-        }
-        _Expander.prototype.visitElement = function (ast, context) {
-            return new HtmlElementAst(ast.name, ast.attrs, htmlVisitAll(this, ast.children), ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
-        };
-        _Expander.prototype.visitAttr = function (ast, context) { return ast; };
-        _Expander.prototype.visitText = function (ast, context) { return ast; };
-        _Expander.prototype.visitComment = function (ast, context) { return ast; };
-        _Expander.prototype.visitExpansion = function (ast, context) {
-            this.expanded = true;
-            return ast.type == 'plural' ? _expandPluralForm(ast) : _expandDefaultForm(ast);
-        };
-        _Expander.prototype.visitExpansionCase = function (ast, context) {
-            throw new BaseException$1('Should not be reached');
-        };
-        return _Expander;
-    }());
-    function _expandPluralForm(ast) {
-        var children = ast.cases.map(function (c) {
-            var expansionResult = expandNodes(c.expression);
-            var i18nAttrs = expansionResult.expanded ?
-                [] :
-                [new HtmlAttrAst('i18n', ast.type + "_" + c.value, c.valueSourceSpan)];
-            return new HtmlElementAst("template", [
-                new HtmlAttrAst('ngPluralCase', c.value, c.valueSourceSpan),
-            ], [new HtmlElementAst("li", i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)], c.sourceSpan, c.sourceSpan, c.sourceSpan);
-        });
-        var switchAttr = new HtmlAttrAst('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
-        return new HtmlElementAst('ul', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
-    }
-    function _expandDefaultForm(ast) {
-        var children = ast.cases.map(function (c) {
-            var expansionResult = expandNodes(c.expression);
-            var i18nAttrs = expansionResult.expanded ?
-                [] :
-                [new HtmlAttrAst('i18n', ast.type + "_" + c.value, c.valueSourceSpan)];
-            return new HtmlElementAst("template", [
-                new HtmlAttrAst('ngSwitchWhen', c.value, c.valueSourceSpan),
-            ], [new HtmlElementAst("li", i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)], c.sourceSpan, c.sourceSpan, c.sourceSpan);
-        });
-        var switchAttr = new HtmlAttrAst('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
-        return new HtmlElementAst('ul', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
-    }
-    /**
      * A message extracted from a template.
      *
      * The identity of a message is comprised of `content` and `meaning`.
@@ -15015,6 +14940,94 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return _StringifyVisitor;
     }());
+    // http://cldr.unicode.org/index/cldr-spec/plural-rules
+    var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
+    /**
+     * Expands special forms into elements.
+     *
+     * For example,
+     *
+     * ```
+     * { messages.length, plural,
+     *   =0 {zero}
+     *   =1 {one}
+     *   other {more than one}
+     * }
+     * ```
+     *
+     * will be expanded into
+     *
+     * ```
+     * <ul [ngPlural]="messages.length">
+     *   <template [ngPluralCase]="'=0'"><li i18n="plural_=0">zero</li></template>
+     *   <template [ngPluralCase]="'=1'"><li i18n="plural_=1">one</li></template>
+     *   <template [ngPluralCase]="'other'"><li i18n="plural_other">more than one</li></template>
+     * </ul>
+     * ```
+     */
+    function expandNodes(nodes) {
+        var e = new _Expander();
+        var n = htmlVisitAll(e, nodes);
+        return new ExpansionResult(n, e.expanded, e.errors);
+    }
+    var ExpansionResult = (function () {
+        function ExpansionResult(nodes, expanded, errors) {
+            this.nodes = nodes;
+            this.expanded = expanded;
+            this.errors = errors;
+        }
+        return ExpansionResult;
+    }());
+    var _Expander = (function () {
+        function _Expander() {
+            this.expanded = false;
+            this.errors = [];
+        }
+        _Expander.prototype.visitElement = function (ast, context) {
+            return new HtmlElementAst(ast.name, ast.attrs, htmlVisitAll(this, ast.children), ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+        };
+        _Expander.prototype.visitAttr = function (ast, context) { return ast; };
+        _Expander.prototype.visitText = function (ast, context) { return ast; };
+        _Expander.prototype.visitComment = function (ast, context) { return ast; };
+        _Expander.prototype.visitExpansion = function (ast, context) {
+            this.expanded = true;
+            return ast.type == 'plural' ? _expandPluralForm(ast, this.errors) : _expandDefaultForm(ast);
+        };
+        _Expander.prototype.visitExpansionCase = function (ast, context) {
+            throw new BaseException$1('Should not be reached');
+        };
+        return _Expander;
+    }());
+    function _expandPluralForm(ast, errors) {
+        var children = ast.cases.map(function (c) {
+            if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
+                errors.push(new I18nError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(", ")));
+            }
+            var expansionResult = expandNodes(c.expression);
+            expansionResult.errors.forEach(function (e) { return errors.push(e); });
+            var i18nAttrs = expansionResult.expanded ?
+                [] :
+                [new HtmlAttrAst('i18n', ast.type + "_" + c.value, c.valueSourceSpan)];
+            return new HtmlElementAst("template", [
+                new HtmlAttrAst('ngPluralCase', c.value, c.valueSourceSpan),
+            ], [new HtmlElementAst("li", i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)], c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        });
+        var switchAttr = new HtmlAttrAst('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
+        return new HtmlElementAst('ul', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    }
+    function _expandDefaultForm(ast) {
+        var children = ast.cases.map(function (c) {
+            var expansionResult = expandNodes(c.expression);
+            var i18nAttrs = expansionResult.expanded ?
+                [] :
+                [new HtmlAttrAst('i18n', ast.type + "_" + c.value, c.valueSourceSpan)];
+            return new HtmlElementAst("template", [
+                new HtmlAttrAst('ngSwitchWhen', c.value, c.valueSourceSpan),
+            ], [new HtmlElementAst("li", i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)], c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        });
+        var switchAttr = new HtmlAttrAst('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
+        return new HtmlElementAst('ul', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    }
     var _PLACEHOLDER_ELEMENT = 'ph';
     var _NAME_ATTR = 'name';
     var _PLACEHOLDER_EXPANDED_REGEXP = /<ph(\s)+name=("(\w)+")><\/ph>/gi;
@@ -15115,7 +15128,9 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return res;
             }
             else {
-                var nodes = this._recurse(expandNodes(res.rootNodes).nodes);
+                var expanded = expandNodes(res.rootNodes);
+                var nodes = this._recurse(expanded.nodes);
+                this.errors = this.errors.concat(expanded.errors);
                 return this.errors.length > 0 ? new HtmlParseTreeResult([], this.errors) :
                     new HtmlParseTreeResult(nodes, []);
             }
@@ -15335,14 +15350,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     }());
     /**
      * Removes duplicate messages.
-     *
-     * E.g.
-     *
-     * ```
-     *  var m = [new Message("message", "meaning", "desc1"), new Message("message", "meaning",
-     * "desc2")];
-     *  expect(removeDuplicates(m)).toEqual([new Message("message", "meaning", "desc1")]);
-     * ```
      */
     function removeDuplicates$1(messages) {
         var uniq = {};
@@ -15427,8 +15434,9 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return new ExtractionResult([], res.errors);
             }
             else {
-                this._recurse(expandNodes(res.rootNodes).nodes);
-                return new ExtractionResult(this.messages, this.errors);
+                var expanded = expandNodes(res.rootNodes);
+                this._recurse(expanded.nodes);
+                return new ExtractionResult(this.messages, this.errors.concat(expanded.errors));
             }
         };
         MessageExtractor.prototype._extractMessagesFromPart = function (p) {

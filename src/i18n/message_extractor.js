@@ -18,14 +18,6 @@ var ExtractionResult = (function () {
 exports.ExtractionResult = ExtractionResult;
 /**
  * Removes duplicate messages.
- *
- * E.g.
- *
- * ```
- *  var m = [new Message("message", "meaning", "desc1"), new Message("message", "meaning",
- * "desc2")];
- *  expect(removeDuplicates(m)).toEqual([new Message("message", "meaning", "desc1")]);
- * ```
  */
 function removeDuplicates(messages) {
     var uniq = {};
@@ -111,8 +103,9 @@ var MessageExtractor = (function () {
             return new ExtractionResult([], res.errors);
         }
         else {
-            this._recurse(expander_1.expandNodes(res.rootNodes).nodes);
-            return new ExtractionResult(this.messages, this.errors);
+            var expanded = expander_1.expandNodes(res.rootNodes);
+            this._recurse(expanded.nodes);
+            return new ExtractionResult(this.messages, this.errors.concat(expanded.errors));
         }
     };
     MessageExtractor.prototype._extractMessagesFromPart = function (p) {

@@ -1,5 +1,8 @@
 import { BaseException } from '../facade/exceptions';
 import { HtmlAttrAst, HtmlElementAst, htmlVisitAll } from '../html_ast';
+import { I18nError } from './shared';
+// http://cldr.unicode.org/index/cldr-spec/plural-rules
+const PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
 /**
  * Expands special forms into elements.
  *
@@ -9,7 +12,7 @@ import { HtmlAttrAst, HtmlElementAst, htmlVisitAll } from '../html_ast';
  * { messages.length, plural,
  *   =0 {zero}
  *   =1 {one}
- *   =other {more than one}
+ *   other {more than one}
  * }
  * ```
  *
@@ -17,26 +20,28 @@ import { HtmlAttrAst, HtmlElementAst, htmlVisitAll } from '../html_ast';
  *
  * ```
  * <ul [ngPlural]="messages.length">
- *   <template [ngPluralCase]="0"><li i18n="plural_0">zero</li></template>
- *   <template [ngPluralCase]="1"><li i18n="plural_1">one</li></template>
- *   <template [ngPluralCase]="other"><li i18n="plural_other">more than one</li></template>
+ *   <template [ngPluralCase]="'=0'"><li i18n="plural_=0">zero</li></template>
+ *   <template [ngPluralCase]="'=1'"><li i18n="plural_=1">one</li></template>
+ *   <template [ngPluralCase]="'other'"><li i18n="plural_other">more than one</li></template>
  * </ul>
  * ```
  */
 export function expandNodes(nodes) {
     let e = new _Expander();
     let n = htmlVisitAll(e, nodes);
-    return new ExpansionResult(n, e.expanded);
+    return new ExpansionResult(n, e.expanded, e.errors);
 }
 export class ExpansionResult {
-    constructor(nodes, expanded) {
+    constructor(nodes, expanded, errors) {
         this.nodes = nodes;
         this.expanded = expanded;
+        this.errors = errors;
     }
 }
 class _Expander {
     constructor() {
         this.expanded = false;
+        this.errors = [];
     }
     visitElement(ast, context) {
         return new HtmlElementAst(ast.name, ast.attrs, htmlVisitAll(this, ast.children), ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
@@ -46,15 +51,19 @@ class _Expander {
     visitComment(ast, context) { return ast; }
     visitExpansion(ast, context) {
         this.expanded = true;
-        return ast.type == 'plural' ? _expandPluralForm(ast) : _expandDefaultForm(ast);
+        return ast.type == 'plural' ? _expandPluralForm(ast, this.errors) : _expandDefaultForm(ast);
     }
     visitExpansionCase(ast, context) {
         throw new BaseException('Should not be reached');
     }
 }
-function _expandPluralForm(ast) {
+function _expandPluralForm(ast, errors) {
     let children = ast.cases.map(c => {
+        if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
+            errors.push(new I18nError(c.valueSourceSpan, `Plural cases should be "=<number>" or one of ${PLURAL_CASES.join(", ")}`));
+        }
         let expansionResult = expandNodes(c.expression);
+        expansionResult.errors.forEach(e => errors.push(e));
         let i18nAttrs = expansionResult.expanded ?
             [] :
             [new HtmlAttrAst('i18n', `${ast.type}_${c.value}`, c.valueSourceSpan)];

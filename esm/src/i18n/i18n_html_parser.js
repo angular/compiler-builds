@@ -105,7 +105,9 @@ export class I18nHtmlParser {
             return res;
         }
         else {
-            let nodes = this._recurse(expandNodes(res.rootNodes).nodes);
+            let expanded = expandNodes(res.rootNodes);
+            let nodes = this._recurse(expanded.nodes);
+            this.errors = this.errors.concat(expanded.errors);
             return this.errors.length > 0 ? new HtmlParseTreeResult([], this.errors) :
                 new HtmlParseTreeResult(nodes, []);
         }

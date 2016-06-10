@@ -15,14 +15,6 @@ export class ExtractionResult {
 }
 /**
  * Removes duplicate messages.
- *
- * E.g.
- *
- * ```
- *  var m = [new Message("message", "meaning", "desc1"), new Message("message", "meaning",
- * "desc2")];
- *  expect(removeDuplicates(m)).toEqual([new Message("message", "meaning", "desc1")]);
- * ```
  */
 export function removeDuplicates(messages) {
     let uniq = {};
@@ -107,8 +99,9 @@ export class MessageExtractor {
             return new ExtractionResult([], res.errors);
         }
         else {
-            this._recurse(expandNodes(res.rootNodes).nodes);
-            return new ExtractionResult(this.messages, this.errors);
+            let expanded = expandNodes(res.rootNodes);
+            this._recurse(expanded.nodes);
+            return new ExtractionResult(this.messages, this.errors.concat(expanded.errors));
         }
     }
     _extractMessagesFromPart(p) {

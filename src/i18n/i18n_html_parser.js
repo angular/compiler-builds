@@ -107,7 +107,9 @@ var I18nHtmlParser = (function () {
             return res;
         }
         else {
-            var nodes = this._recurse(expander_1.expandNodes(res.rootNodes).nodes);
+            var expanded = expander_1.expandNodes(res.rootNodes);
+            var nodes = this._recurse(expanded.nodes);
+            this.errors = this.errors.concat(expanded.errors);
             return this.errors.length > 0 ? new html_parser_1.HtmlParseTreeResult([], this.errors) :
                 new html_parser_1.HtmlParseTreeResult(nodes, []);
         }

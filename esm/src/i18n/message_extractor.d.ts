@@ -12,14 +12,6 @@ export declare class ExtractionResult {
 }
 /**
  * Removes duplicate messages.
- *
- * E.g.
- *
- * ```
- *  var m = [new Message("message", "meaning", "desc1"), new Message("message", "meaning",
- * "desc2")];
- *  expect(removeDuplicates(m)).toEqual([new Message("message", "meaning", "desc1")]);
- * ```
  */
 export declare function removeDuplicates(messages: Message[]): Message[];
 /**
