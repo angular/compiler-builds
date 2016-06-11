@@ -93,7 +93,7 @@ class _AnimationBuilder {
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
     }
     /** @internal */
-    _callAnimateMethod(ast, startingStylesExpr /** TODO #9100 */, keyframesExpr /** TODO #9100 */) {
+    _callAnimateMethod(ast, startingStylesExpr, keyframesExpr) {
         return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
             _ANIMATION_FACTORY_ELEMENT_VAR, startingStylesExpr, keyframesExpr, o.literal(ast.duration),
             o.literal(ast.delay), o.literal(ast.easing)
@@ -109,10 +109,8 @@ class _AnimationBuilder {
     }
     visitAnimationStateDeclaration(ast, context) {
         var flatStyles = {};
-        _getStylesArray(ast).forEach((entry /** TODO #9100 */) => {
-            StringMapWrapper.forEach(entry, (value /** TODO #9100 */, key /** TODO #9100 */) => {
-                flatStyles[key] = value;
-            });
+        _getStylesArray(ast).forEach(entry => {
+            StringMapWrapper.forEach(entry, (value, key) => { flatStyles[key] = value; });
         });
         context.stateMap.registerState(ast.stateName, flatStyles);
     }
@@ -183,7 +181,7 @@ class _AnimationBuilder {
             .callMethod('onDone', [o.fn([], [RENDER_STYLES_FN
                     .callFn([
                     _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-                    o.importExpr(Identifiers.balanceAnimationStyles).callFn([
+                    o.importExpr(Identifiers.prepareFinalAnimationStyles).callFn([
                         _ANIMATION_START_STATE_STYLES_VAR, _ANIMATION_END_STATE_STYLES_VAR
                     ])
                 ])
@@ -207,11 +205,11 @@ class _AnimationBuilder {
         var fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
         var fnVariable = o.variable(this._fnVarName);
         var lookupMap = [];
-        StringMapWrapper.forEach(context.stateMap.states, (value /** TODO #9100 */, stateName /** TODO #9100 */) => {
+        StringMapWrapper.forEach(context.stateMap.states, (value, stateName) => {
             var variableValue = EMPTY_MAP;
             if (isPresent(value)) {
                 let styleMap = [];
-                StringMapWrapper.forEach(value, (value /** TODO #9100 */, key /** TODO #9100 */) => {
+                StringMapWrapper.forEach(value, (value, key) => {
                     styleMap.push([key, o.literal(value)]);
                 });
                 variableValue = o.literalMap(styleMap);

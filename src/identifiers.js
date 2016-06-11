@@ -163,10 +163,10 @@ var Identifiers = (function () {
         moduleUrl: util_1.assetUrl('core', 'animation/animation_sequence_player'),
         runtime: impAnimationSequencePlayer
     });
-    Identifiers.balanceAnimationStyles = new compile_metadata_1.CompileIdentifierMetadata({
-        name: 'balanceAnimationStyles',
+    Identifiers.prepareFinalAnimationStyles = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'prepareFinalAnimationStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.balanceAnimationStyles
+        runtime: core_private_1.prepareFinalAnimationStyles
     });
     Identifiers.balanceAnimationKeyframes = new compile_metadata_1.CompileIdentifierMetadata({
         name: 'balanceAnimationKeyframes',

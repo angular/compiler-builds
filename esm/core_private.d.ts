@@ -74,7 +74,7 @@ export declare var ANY_STATE: string;
 export declare var DEFAULT_STATE: string;
 export declare var EMPTY_STATE: string;
 export declare var FILL_STYLE_FLAG: string;
-export declare var balanceAnimationStyles: typeof t.balanceAnimationStyles;
+export declare var prepareFinalAnimationStyles: typeof t.prepareFinalAnimationStyles;
 export declare var balanceAnimationKeyframes: typeof t.balanceAnimationKeyframes;
 export declare var flattenStyles: typeof t.flattenStyles;
 export declare var clearStyles: typeof t.clearStyles;

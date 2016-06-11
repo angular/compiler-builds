@@ -36,7 +36,7 @@ export declare class Identifiers {
     static NoOpAnimationPlayer: CompileIdentifierMetadata;
     static AnimationGroupPlayer: CompileIdentifierMetadata;
     static AnimationSequencePlayer: CompileIdentifierMetadata;
-    static balanceAnimationStyles: CompileIdentifierMetadata;
+    static prepareFinalAnimationStyles: CompileIdentifierMetadata;
     static balanceAnimationKeyframes: CompileIdentifierMetadata;
     static clearStyles: CompileIdentifierMetadata;
     static renderStyles: CompileIdentifierMetadata;

@@ -615,7 +615,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var DEFAULT_STATE = _angular_core.__core_private__.DEFAULT_STATE;
     var EMPTY_ANIMATION_STATE = _angular_core.__core_private__.EMPTY_STATE;
     var FILL_STYLE_FLAG = _angular_core.__core_private__.FILL_STYLE_FLAG;
-    var impBalanceAnimationStyles = _angular_core.__core_private__.balanceAnimationStyles;
+    var impBalanceAnimationStyles = _angular_core.__core_private__.prepareFinalAnimationStyles;
     var impBalanceAnimationKeyframes = _angular_core.__core_private__.balanceAnimationKeyframes;
     var impClearStyles = _angular_core.__core_private__.clearStyles;
     var impCollectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
@@ -5752,8 +5752,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         moduleUrl: assetUrl('core', 'animation/animation_sequence_player'),
         runtime: impAnimationSequencePlayer
     });
-    Identifiers.balanceAnimationStyles = new CompileIdentifierMetadata({
-        name: 'balanceAnimationStyles',
+    Identifiers.prepareFinalAnimationStyles = new CompileIdentifierMetadata({
+        name: 'prepareFinalAnimationStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
         runtime: impBalanceAnimationStyles
     });
@@ -9366,7 +9366,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
         };
         /** @internal */
-        _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr /** TODO #9100 */, keyframesExpr /** TODO #9100 */) {
+        _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr) {
             return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
                 _ANIMATION_FACTORY_ELEMENT_VAR, startingStylesExpr, keyframesExpr, literal(ast.duration),
                 literal(ast.delay), literal(ast.easing)
@@ -9384,10 +9384,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
             var flatStyles = {};
-            _getStylesArray(ast).forEach(function (entry /** TODO #9100 */) {
-                StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, key /** TODO #9100 */) {
-                    flatStyles[key] = value;
-                });
+            _getStylesArray(ast).forEach(function (entry) {
+                StringMapWrapper.forEach(entry, function (value, key) { flatStyles[key] = value; });
             });
             context.stateMap.registerState(ast.stateName, flatStyles);
         };
@@ -9459,7 +9457,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .callMethod('onDone', [fn([], [RENDER_STYLES_FN
                         .callFn([
                         _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-                        importExpr(Identifiers.balanceAnimationStyles).callFn([
+                        importExpr(Identifiers.prepareFinalAnimationStyles).callFn([
                             _ANIMATION_START_STATE_STYLES_VAR, _ANIMATION_END_STATE_STYLES_VAR
                         ])
                     ])
@@ -9483,11 +9481,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             var fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
             var fnVariable = variable(this._fnVarName);
             var lookupMap = [];
-            StringMapWrapper.forEach(context.stateMap.states, function (value /** TODO #9100 */, stateName /** TODO #9100 */) {
+            StringMapWrapper.forEach(context.stateMap.states, function (value, stateName) {
                 var variableValue = EMPTY_MAP$1;
                 if (isPresent(value)) {
                     var styleMap_1 = [];
-                    StringMapWrapper.forEach(value, function (value /** TODO #9100 */, key /** TODO #9100 */) {
+                    StringMapWrapper.forEach(value, function (value, key) {
                         styleMap_1.push([key, literal(value)]);
                     });
                     variableValue = literalMap(styleMap_1);

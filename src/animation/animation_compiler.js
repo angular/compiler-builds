@@ -102,7 +102,7 @@ var _AnimationBuilder = (function () {
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
     };
     /** @internal */
-    _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr /** TODO #9100 */, keyframesExpr /** TODO #9100 */) {
+    _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr) {
         return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
             _ANIMATION_FACTORY_ELEMENT_VAR, startingStylesExpr, keyframesExpr, o.literal(ast.duration),
             o.literal(ast.delay), o.literal(ast.easing)
@@ -120,10 +120,8 @@ var _AnimationBuilder = (function () {
     };
     _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
         var flatStyles = {};
-        _getStylesArray(ast).forEach(function (entry /** TODO #9100 */) {
-            collection_1.StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, key /** TODO #9100 */) {
-                flatStyles[key] = value;
-            });
+        _getStylesArray(ast).forEach(function (entry) {
+            collection_1.StringMapWrapper.forEach(entry, function (value, key) { flatStyles[key] = value; });
         });
         context.stateMap.registerState(ast.stateName, flatStyles);
     };
@@ -195,7 +193,7 @@ var _AnimationBuilder = (function () {
             .callMethod('onDone', [o.fn([], [RENDER_STYLES_FN
                     .callFn([
                     _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-                    o.importExpr(identifiers_1.Identifiers.balanceAnimationStyles).callFn([
+                    o.importExpr(identifiers_1.Identifiers.prepareFinalAnimationStyles).callFn([
                         _ANIMATION_START_STATE_STYLES_VAR, _ANIMATION_END_STATE_STYLES_VAR
                     ])
                 ])
@@ -219,11 +217,11 @@ var _AnimationBuilder = (function () {
         var fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
         var fnVariable = o.variable(this._fnVarName);
         var lookupMap = [];
-        collection_1.StringMapWrapper.forEach(context.stateMap.states, function (value /** TODO #9100 */, stateName /** TODO #9100 */) {
+        collection_1.StringMapWrapper.forEach(context.stateMap.states, function (value, stateName) {
             var variableValue = EMPTY_MAP;
             if (lang_1.isPresent(value)) {
                 var styleMap_1 = [];
-                collection_1.StringMapWrapper.forEach(value, function (value /** TODO #9100 */, key /** TODO #9100 */) {
+                collection_1.StringMapWrapper.forEach(value, function (value, key) {
                     styleMap_1.push([key, o.literal(value)]);
                 });
                 variableValue = o.literalMap(styleMap_1);
