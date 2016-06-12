@@ -60,11 +60,10 @@ export declare class _ParseAST {
     parsePrefix(): AST;
     parseCallChain(): AST;
     parsePrimary(): AST;
-    parseExpressionList(terminator: number): any[];
+    parseExpressionList(terminator: number): AST[];
     parseLiteralMap(): LiteralMap;
     parseAccessMemberOrMethodCall(receiver: AST, isSafe?: boolean): AST;
     parseCallArguments(): BindingPipe[];
-    parseBlockContent(): AST;
     /**
      * An identifier, a keyword, a string with an optional `-` inbetween.
      */

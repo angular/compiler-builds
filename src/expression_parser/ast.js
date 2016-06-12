@@ -189,7 +189,7 @@ var BindingPipe = (function (_super) {
 exports.BindingPipe = BindingPipe;
 var LiteralPrimitive = (function (_super) {
     __extends(LiteralPrimitive, _super);
-    function LiteralPrimitive(value /** TODO #9100 */) {
+    function LiteralPrimitive(value) {
         _super.call(this);
         this.value = value;
     }

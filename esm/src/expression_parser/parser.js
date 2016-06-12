@@ -519,25 +519,6 @@ export class _ParseAST {
         } while (this.optionalCharacter($COMMA));
         return positionals;
     }
-    parseBlockContent() {
-        if (!this.parseAction) {
-            this.error('Binding expression cannot contain chained expression');
-        }
-        var exprs = [];
-        while (this.index < this.tokens.length && !this.next.isCharacter($RBRACE)) {
-            var expr = this.parseExpression();
-            exprs.push(expr);
-            if (this.optionalCharacter($SEMICOLON)) {
-                while (this.optionalCharacter($SEMICOLON)) {
-                } // read all semicolons
-            }
-        }
-        if (exprs.length == 0)
-            return new EmptyExpr();
-        if (exprs.length == 1)
-            return exprs[0];
-        return new Chain(exprs);
-    }
     /**
      * An identifier, a keyword, a string with an optional `-` inbetween.
      */

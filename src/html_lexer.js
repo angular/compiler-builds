@@ -519,8 +519,7 @@ var _HtmlTokenizer = (function () {
     _HtmlTokenizer.prototype._consumeTagClose = function (start) {
         this._beginToken(HtmlTokenType.TAG_CLOSE, start);
         this._attemptCharCodeUntilFn(isNotWhitespace);
-        var prefixAndName;
-        prefixAndName = this._consumePrefixAndName();
+        var prefixAndName = this._consumePrefixAndName();
         this._attemptCharCodeUntilFn(isNotWhitespace);
         this._requireCharCode($GT);
         this._endToken(prefixAndName);

@@ -149,7 +149,7 @@ exports.$RBRACE = 125;
 var $NBSP = 160;
 var ScannerError = (function (_super) {
     __extends(ScannerError, _super);
-    function ScannerError(message /** TODO #9100 */) {
+    function ScannerError(message) {
         _super.call(this);
         this.message = message;
     }

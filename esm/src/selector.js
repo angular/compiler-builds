@@ -24,7 +24,7 @@ export class CssSelector {
     }
     static parse(selector) {
         var results = [];
-        var _addResult = (res, cssSel /** TODO #9100 */) => {
+        var _addResult = (res, cssSel) => {
             if (cssSel.notSelectors.length > 0 && isBlank(cssSel.element) &&
                 ListWrapper.isEmpty(cssSel.classNames) && ListWrapper.isEmpty(cssSel.attrs)) {
                 cssSel.element = '*';
@@ -276,7 +276,7 @@ export class SelectorMatcher {
         return result;
     }
     /** @internal */
-    _matchTerminal(map, name /** TODO #9100 */, cssSelector, matchedCallback) {
+    _matchTerminal(map, name, cssSelector, matchedCallback) {
         if (isBlank(map) || isBlank(name)) {
             return false;
         }
@@ -297,7 +297,7 @@ export class SelectorMatcher {
         return result;
     }
     /** @internal */
-    _matchPartial(map, name /** TODO #9100 */, cssSelector, matchedCallback /** TODO #9100 */ /*: (c: CssSelector, a: any) => void*/) {
+    _matchPartial(map, name, cssSelector, matchedCallback) {
         if (isBlank(map) || isBlank(name)) {
             return false;
         }

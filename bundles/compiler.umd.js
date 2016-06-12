@@ -68,7 +68,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return Array.isArray(obj);
     }
     function noop() { }
-    function stringify(token /** TODO #9100 */) {
+    function stringify(token) {
         if (typeof token === 'string') {
             return token;
         }
@@ -87,10 +87,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     // serialize / deserialize enum exist only for consistency with dart API
     // enums in typescript don't need to be serialized
-    function serializeEnum(val /** TODO #9100 */) {
+    function serializeEnum(val) {
         return val;
     }
-    function resolveEnumToken(enumValue /** TODO #9100 */, val /** TODO #9100 */) {
+    function resolveEnumToken(enumValue, val) {
         return enumValue[val];
     }
     var StringWrapper = (function () {
@@ -137,7 +137,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         StringWrapper.replaceAllMapped = function (s, from, cb) {
             return s.replace(from, function () {
-                var matches = []; /** TODO #9100 */
+                var matches = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
                     matches[_i - 0] = arguments[_i];
                 }
@@ -1132,7 +1132,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }(AST));
     var LiteralPrimitive = (function (_super) {
         __extends(LiteralPrimitive, _super);
-        function LiteralPrimitive(value /** TODO #9100 */) {
+        function LiteralPrimitive(value) {
             _super.call(this);
             this.value = value;
         }
@@ -1497,7 +1497,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var $NBSP = 160;
     var ScannerError = (function (_super) {
         __extends(ScannerError, _super);
-        function ScannerError(message /** TODO #9100 */) {
+        function ScannerError(message) {
             _super.call(this);
             this.message = message;
         }
@@ -2298,25 +2298,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                 positionals.push(this.parsePipe());
             } while (this.optionalCharacter($COMMA));
             return positionals;
-        };
-        _ParseAST.prototype.parseBlockContent = function () {
-            if (!this.parseAction) {
-                this.error('Binding expression cannot contain chained expression');
-            }
-            var exprs = [];
-            while (this.index < this.tokens.length && !this.next.isCharacter($RBRACE)) {
-                var expr = this.parseExpression();
-                exprs.push(expr);
-                if (this.optionalCharacter($SEMICOLON)) {
-                    while (this.optionalCharacter($SEMICOLON)) {
-                    } // read all semicolons
-                }
-            }
-            if (exprs.length == 0)
-                return new EmptyExpr();
-            if (exprs.length == 1)
-                return exprs[0];
-            return new Chain(exprs);
         };
         /**
          * An identifier, a keyword, a string with an optional `-` inbetween.
@@ -3454,8 +3435,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _HtmlTokenizer.prototype._consumeTagClose = function (start) {
             this._beginToken(HtmlTokenType.TAG_CLOSE, start);
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            var prefixAndName;
-            prefixAndName = this._consumePrefixAndName();
+            var prefixAndName = this._consumePrefixAndName();
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._requireCharCode($GT$1);
             this._endToken(prefixAndName);
@@ -3961,7 +3941,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         CssSelector.parse = function (selector) {
             var results = [];
-            var _addResult = function (res, cssSel /** TODO #9100 */) {
+            var _addResult = function (res, cssSel) {
                 if (cssSel.notSelectors.length > 0 && isBlank(cssSel.element) &&
                     ListWrapper.isEmpty(cssSel.classNames) && ListWrapper.isEmpty(cssSel.attrs)) {
                     cssSel.element = '*';
@@ -4218,7 +4198,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return result;
         };
         /** @internal */
-        SelectorMatcher.prototype._matchTerminal = function (map, name /** TODO #9100 */, cssSelector, matchedCallback) {
+        SelectorMatcher.prototype._matchTerminal = function (map, name, cssSelector, matchedCallback) {
             if (isBlank(map) || isBlank(name)) {
                 return false;
             }
@@ -4239,7 +4219,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return result;
         };
         /** @internal */
-        SelectorMatcher.prototype._matchPartial = function (map, name /** TODO #9100 */, cssSelector, matchedCallback /** TODO #9100 */ /*: (c: CssSelector, a: any) => void*/) {
+        SelectorMatcher.prototype._matchPartial = function (map, name, cssSelector, matchedCallback) {
             if (isBlank(map) || isBlank(name)) {
                 return false;
             }
@@ -4388,7 +4368,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     function extractStyleUrls(resolver, baseUrl, cssText) {
         var foundUrls = [];
-        var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m /** TODO #9100 */) {
+        var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m) {
             var url = isPresent(m[1]) ? m[1] : m[2];
             if (!isStyleUrlResolvable(url)) {
                 // Do not attempt to resolve non-package absolute URLs with URI scheme
@@ -4406,7 +4386,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var MODULE_SUFFIX = IS_DART ? '.dart' : '';
     var CAMEL_CASE_REGEXP = /([A-Z])/g;
     function camelCaseToDashCase(input) {
-        return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m /** TODO #9100 */) { return '-' + m[1].toLowerCase(); });
+        return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
     }
     function splitAtColon(input, defaultValues) {
         var parts = StringWrapper.split(input.trim(), /\s*:\s*/g);
@@ -8037,7 +8017,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         function PromiseWrapper() {
         }
         PromiseWrapper.resolve = function (obj) { return Promise.resolve(obj); };
-        PromiseWrapper.reject = function (obj, _ /** TODO #9100 */) { return Promise.reject(obj); };
+        PromiseWrapper.reject = function (obj, _) { return Promise.reject(obj); };
         // Note: We can't rename this method into `catch`, as this is not a valid
         // method name in Dart.
         PromiseWrapper.catchError = function (promise, onError) {
@@ -15292,7 +15272,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         I18nHtmlParser.prototype._replacePlaceholdersWithExpressions = function (message, exps, sourceSpan) {
             var _this = this;
             var expMap = this._buildExprMap(exps);
-            return RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, function (match /** TODO #9100 */) {
+            return RegExpWrapper.replaceAll(_PLACEHOLDER_EXPANDED_REGEXP, message, function (match) {
                 var nameWithQuotes = match[2];
                 var name = nameWithQuotes.substring(1, nameWithQuotes.length - 1);
                 return _this._convertIntoExpression(name, expMap, sourceSpan);
@@ -15563,7 +15543,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return "<msg id='" + id(m) + "'" + desc + ">" + m.content + "</msg>";
     }
     function _expandPlaceholder(input) {
-        return RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, function (match /** TODO #9100 */) {
+        return RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, function (match) {
             var nameWithQuotes = match[2];
             return "<ph name=" + nameWithQuotes + "></ph>";
         });

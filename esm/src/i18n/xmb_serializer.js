@@ -71,7 +71,7 @@ function _serializeMessage(m) {
     return `<msg id='${id(m)}'${desc}>${m.content}</msg>`;
 }
 function _expandPlaceholder(input) {
-    return RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, (match /** TODO #9100 */) => {
+    return RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, (match) => {
         let nameWithQuotes = match[2];
         return `<ph name=${nameWithQuotes}></ph>`;
     });

@@ -84,7 +84,7 @@ function _serializeMessage(m) {
     return "<msg id='" + message_1.id(m) + "'" + desc + ">" + m.content + "</msg>";
 }
 function _expandPlaceholder(input) {
-    return lang_1.RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, function (match /** TODO #9100 */) {
+    return lang_1.RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, function (match) {
         var nameWithQuotes = match[2];
         return "<ph name=" + nameWithQuotes + "></ph>";
     });

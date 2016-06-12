@@ -542,25 +542,6 @@ var _ParseAST = (function () {
         } while (this.optionalCharacter(lexer_1.$COMMA));
         return positionals;
     };
-    _ParseAST.prototype.parseBlockContent = function () {
-        if (!this.parseAction) {
-            this.error('Binding expression cannot contain chained expression');
-        }
-        var exprs = [];
-        while (this.index < this.tokens.length && !this.next.isCharacter(lexer_1.$RBRACE)) {
-            var expr = this.parseExpression();
-            exprs.push(expr);
-            if (this.optionalCharacter(lexer_1.$SEMICOLON)) {
-                while (this.optionalCharacter(lexer_1.$SEMICOLON)) {
-                } // read all semicolons
-            }
-        }
-        if (exprs.length == 0)
-            return new ast_1.EmptyExpr();
-        if (exprs.length == 1)
-            return exprs[0];
-        return new ast_1.Chain(exprs);
-    };
     /**
      * An identifier, a keyword, a string with an optional `-` inbetween.
      */
