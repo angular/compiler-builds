@@ -1,10 +1,11 @@
-import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, AttributeMetadata, ComponentMetadata, HostMetadata, Inject, InjectMetadata, Injectable, Optional, OptionalMetadata, PLATFORM_DIRECTIVES, PLATFORM_PIPES, Provider, QueryMetadata, SelfMetadata, SkipSelfMetadata, resolveForwardRef } from '@angular/core';
+import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, AttributeMetadata, ComponentMetadata, HostMetadata, InjectMetadata, Injectable, OptionalMetadata, Provider, QueryMetadata, SelfMetadata, SkipSelfMetadata, resolveForwardRef } from '@angular/core';
 import { LIFECYCLE_HOOKS_VALUES, ReflectorReader, createProvider, isProviderLiteral, reflector } from '../core_private';
 import { StringMapWrapper } from '../src/facade/collection';
 import { BaseException } from '../src/facade/exceptions';
 import { Type, isArray, isBlank, isPresent, isString, isStringMap, stringify } from '../src/facade/lang';
 import { assertArrayOfStrings } from './assertions';
 import * as cpl from './compile_metadata';
+import { CompilerConfig } from './config';
 import { hasLifecycleHook } from './directive_lifecycle_reflector';
 import { DirectiveResolver } from './directive_resolver';
 import { PipeResolver } from './pipe_resolver';
@@ -12,12 +13,11 @@ import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, ValueTransformer, sanitizeIdentifier, visitValue } from './util';
 import { ViewResolver } from './view_resolver';
 export class CompileMetadataResolver {
-    constructor(_directiveResolver, _pipeResolver, _viewResolver, _platformDirectives, _platformPipes, _reflector) {
+    constructor(_directiveResolver, _pipeResolver, _viewResolver, _config, _reflector) {
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
         this._viewResolver = _viewResolver;
-        this._platformDirectives = _platformDirectives;
-        this._platformPipes = _platformPipes;
+        this._config = _config;
         this._directiveCache = new Map();
         this._pipeCache = new Map();
         this._anonymousTypes = new Map();
@@ -189,7 +189,7 @@ export class CompileMetadataResolver {
     }
     getViewDirectivesMetadata(component) {
         var view = this._viewResolver.resolve(component);
-        var directives = flattenDirectives(view, this._platformDirectives);
+        var directives = flattenDirectives(view, this._config.platformDirectives);
         for (var i = 0; i < directives.length; i++) {
             if (!isValidType(directives[i])) {
                 throw new BaseException(`Unexpected directive value '${stringify(directives[i])}' on the View of component '${stringify(component)}'`);
@@ -199,7 +199,7 @@ export class CompileMetadataResolver {
     }
     getViewPipesMetadata(component) {
         var view = this._viewResolver.resolve(component);
-        var pipes = flattenPipes(view, this._platformPipes);
+        var pipes = flattenPipes(view, this._config.platformPipes);
         for (var i = 0; i < pipes.length; i++) {
             if (!isValidType(pipes[i])) {
                 throw new BaseException(`Unexpected piped value '${stringify(pipes[i])}' on the View of component '${stringify(component)}'`);
@@ -379,8 +379,7 @@ CompileMetadataResolver.ctorParameters = [
     { type: DirectiveResolver, },
     { type: PipeResolver, },
     { type: ViewResolver, },
-    { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [PLATFORM_DIRECTIVES,] },] },
-    { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [PLATFORM_PIPES,] },] },
+    { type: CompilerConfig, },
     { type: ReflectorReader, },
 ];
 function flattenDirectives(view, platformDirectives) {

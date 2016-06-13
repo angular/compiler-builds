@@ -11,6 +11,7 @@ var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('../src/facade/lang');
 var assertions_1 = require('./assertions');
 var cpl = require('./compile_metadata');
+var config_1 = require('./config');
 var directive_lifecycle_reflector_1 = require('./directive_lifecycle_reflector');
 var directive_resolver_1 = require('./directive_resolver');
 var pipe_resolver_1 = require('./pipe_resolver');
@@ -18,12 +19,11 @@ var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
 var view_resolver_1 = require('./view_resolver');
 var CompileMetadataResolver = (function () {
-    function CompileMetadataResolver(_directiveResolver, _pipeResolver, _viewResolver, _platformDirectives, _platformPipes, _reflector) {
+    function CompileMetadataResolver(_directiveResolver, _pipeResolver, _viewResolver, _config, _reflector) {
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
         this._viewResolver = _viewResolver;
-        this._platformDirectives = _platformDirectives;
-        this._platformPipes = _platformPipes;
+        this._config = _config;
         this._directiveCache = new Map();
         this._pipeCache = new Map();
         this._anonymousTypes = new Map();
@@ -199,7 +199,7 @@ var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getViewDirectivesMetadata = function (component) {
         var _this = this;
         var view = this._viewResolver.resolve(component);
-        var directives = flattenDirectives(view, this._platformDirectives);
+        var directives = flattenDirectives(view, this._config.platformDirectives);
         for (var i = 0; i < directives.length; i++) {
             if (!isValidType(directives[i])) {
                 throw new exceptions_1.BaseException("Unexpected directive value '" + lang_1.stringify(directives[i]) + "' on the View of component '" + lang_1.stringify(component) + "'");
@@ -210,7 +210,7 @@ var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getViewPipesMetadata = function (component) {
         var _this = this;
         var view = this._viewResolver.resolve(component);
-        var pipes = flattenPipes(view, this._platformPipes);
+        var pipes = flattenPipes(view, this._config.platformPipes);
         for (var i = 0; i < pipes.length; i++) {
             if (!isValidType(pipes[i])) {
                 throw new exceptions_1.BaseException("Unexpected piped value '" + lang_1.stringify(pipes[i]) + "' on the View of component '" + lang_1.stringify(component) + "'");
@@ -393,8 +393,7 @@ var CompileMetadataResolver = (function () {
         { type: directive_resolver_1.DirectiveResolver, },
         { type: pipe_resolver_1.PipeResolver, },
         { type: view_resolver_1.ViewResolver, },
-        { type: Array, decorators: [{ type: core_1.Optional }, { type: core_1.Inject, args: [core_1.PLATFORM_DIRECTIVES,] },] },
-        { type: Array, decorators: [{ type: core_1.Optional }, { type: core_1.Inject, args: [core_1.PLATFORM_PIPES,] },] },
+        { type: config_1.CompilerConfig, },
         { type: core_private_1.ReflectorReader, },
     ];
     return CompileMetadataResolver;

@@ -6895,20 +6895,15 @@ var __extends = (this && this.__extends) || function (d, b) {
         return res;
     }
     var CompilerConfig = (function () {
-        function CompilerConfig(genDebugInfo, logBindingUpdate, useJit, renderTypes, defaultEncapsulation) {
-            if (renderTypes === void 0) { renderTypes = null; }
-            if (defaultEncapsulation === void 0) { defaultEncapsulation = null; }
+        function CompilerConfig(_a) {
+            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, _e = _b.genDebugInfo, genDebugInfo = _e === void 0 ? assertionsEnabled() : _e, _f = _b.logBindingUpdate, logBindingUpdate = _f === void 0 ? assertionsEnabled() : _f, _g = _b.useJit, useJit = _g === void 0 ? true : _g, _h = _b.platformDirectives, platformDirectives = _h === void 0 ? [] : _h, _j = _b.platformPipes, platformPipes = _j === void 0 ? [] : _j;
+            this.renderTypes = renderTypes;
+            this.defaultEncapsulation = defaultEncapsulation;
             this.genDebugInfo = genDebugInfo;
             this.logBindingUpdate = logBindingUpdate;
             this.useJit = useJit;
-            if (isBlank(renderTypes)) {
-                renderTypes = new DefaultRenderTypes();
-            }
-            this.renderTypes = renderTypes;
-            if (isBlank(defaultEncapsulation)) {
-                defaultEncapsulation = _angular_core.ViewEncapsulation.Emulated;
-            }
-            this.defaultEncapsulation = defaultEncapsulation;
+            this.platformDirectives = platformDirectives;
+            this.platformPipes = platformPipes;
         }
         return CompilerConfig;
     }());
@@ -12016,12 +12011,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: ReflectorReader, },
     ];
     var CompileMetadataResolver = (function () {
-        function CompileMetadataResolver(_directiveResolver, _pipeResolver, _viewResolver, _platformDirectives, _platformPipes, _reflector) {
+        function CompileMetadataResolver(_directiveResolver, _pipeResolver, _viewResolver, _config, _reflector) {
             this._directiveResolver = _directiveResolver;
             this._pipeResolver = _pipeResolver;
             this._viewResolver = _viewResolver;
-            this._platformDirectives = _platformDirectives;
-            this._platformPipes = _platformPipes;
+            this._config = _config;
             this._directiveCache = new Map();
             this._pipeCache = new Map();
             this._anonymousTypes = new Map();
@@ -12197,7 +12191,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype.getViewDirectivesMetadata = function (component) {
             var _this = this;
             var view = this._viewResolver.resolve(component);
-            var directives = flattenDirectives(view, this._platformDirectives);
+            var directives = flattenDirectives(view, this._config.platformDirectives);
             for (var i = 0; i < directives.length; i++) {
                 if (!isValidType(directives[i])) {
                     throw new BaseException$1("Unexpected directive value '" + stringify(directives[i]) + "' on the View of component '" + stringify(component) + "'");
@@ -12208,7 +12202,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype.getViewPipesMetadata = function (component) {
             var _this = this;
             var view = this._viewResolver.resolve(component);
-            var pipes = flattenPipes(view, this._platformPipes);
+            var pipes = flattenPipes(view, this._config.platformPipes);
             for (var i = 0; i < pipes.length; i++) {
                 if (!isValidType(pipes[i])) {
                     throw new BaseException$1("Unexpected piped value '" + stringify(pipes[i]) + "' on the View of component '" + stringify(component) + "'");
@@ -12393,8 +12387,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: DirectiveResolver, },
         { type: PipeResolver, },
         { type: ViewResolver, },
-        { type: Array, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [_angular_core.PLATFORM_DIRECTIVES,] },] },
-        { type: Array, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [_angular_core.PLATFORM_PIPES,] },] },
+        { type: CompilerConfig, },
         { type: ReflectorReader, },
     ];
     function flattenDirectives(view, platformDirectives) {
@@ -14697,9 +14690,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     DomElementSchemaRegistry.ctorParameters = [];
-    function _createCompilerConfig() {
-        return new CompilerConfig(assertionsEnabled(), false, true);
-    }
     /**
      * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
      * template compilation.
@@ -14708,7 +14698,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     /*@ts2dart_const*/ [
         Lexer, Parser, HtmlParser, TemplateParser, DirectiveNormalizer, CompileMetadataResolver,
         DEFAULT_PACKAGE_URL_PROVIDER, StyleCompiler, ViewCompiler,
-        /*@ts2dart_Provider*/ { provide: CompilerConfig, useFactory: _createCompilerConfig, deps: [] },
+        /*@ts2dart_Provider*/ { provide: CompilerConfig, useValue: new CompilerConfig() },
         RuntimeCompiler,
         /*@ts2dart_Provider*/ { provide: _angular_core.ComponentResolver, useExisting: RuntimeCompiler },
         DomElementSchemaRegistry,
