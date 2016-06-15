@@ -14742,14 +14742,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return I18nError;
     }(ParseError));
-    // Man, this is so ugly!
     function partition(nodes, errors, implicitTags) {
-        var res = [];
+        var parts = [];
         for (var i = 0; i < nodes.length; ++i) {
             var n = nodes[i];
             var temp = [];
             if (_isOpeningComment(n)) {
-                var i18n = n.value.substring(5).trim();
+                var i18n = n.value.replace(/^i18n:?/, '').trim();
                 i++;
                 while (!_isClosingComment(nodes[i])) {
                     temp.push(nodes[i++]);
@@ -14758,18 +14757,18 @@ var __extends = (this && this.__extends) || function (d, b) {
                         break;
                     }
                 }
-                res.push(new Part(null, null, temp, i18n, true));
+                parts.push(new Part(null, null, temp, i18n, true));
             }
             else if (n instanceof HtmlElementAst) {
                 var i18n = _findI18nAttr(n);
                 var hasI18n = isPresent(i18n) || implicitTags.indexOf(n.name) > -1;
-                res.push(new Part(n, null, n.children, isPresent(i18n) ? i18n.value : null, hasI18n));
+                parts.push(new Part(n, null, n.children, isPresent(i18n) ? i18n.value : null, hasI18n));
             }
             else if (n instanceof HtmlTextAst) {
-                res.push(new Part(null, n, null, null, false));
+                parts.push(new Part(null, n, null, null, false));
             }
         }
-        return res;
+        return parts;
     }
     var Part = (function () {
         function Part(rootElement, rootTextNode, children, i18n, hasI18n) {
@@ -14781,12 +14780,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         Object.defineProperty(Part.prototype, "sourceSpan", {
             get: function () {
-                if (isPresent(this.rootElement))
+                if (isPresent(this.rootElement)) {
                     return this.rootElement.sourceSpan;
-                else if (isPresent(this.rootTextNode))
+                }
+                if (isPresent(this.rootTextNode)) {
                     return this.rootTextNode.sourceSpan;
-                else
-                    return this.children[0].sourceSpan;
+                }
+                return this.children[0].sourceSpan;
             },
             enumerable: true,
             configurable: true
@@ -14797,14 +14797,19 @@ var __extends = (this && this.__extends) || function (d, b) {
         return Part;
     }());
     function _isOpeningComment(n) {
-        return n instanceof HtmlCommentAst && isPresent(n.value) && n.value.startsWith('i18n:');
+        return n instanceof HtmlCommentAst && isPresent(n.value) && n.value.startsWith('i18n');
     }
     function _isClosingComment(n) {
         return n instanceof HtmlCommentAst && isPresent(n.value) && n.value == '/i18n';
     }
     function _findI18nAttr(p) {
-        var i18n = p.attrs.filter(function (a) { return a.name == I18N_ATTR; });
-        return i18n.length == 0 ? null : i18n[0];
+        var attrs = p.attrs;
+        for (var i = 0; i < attrs.length; i++) {
+            if (attrs[i].name === I18N_ATTR) {
+                return attrs[i];
+            }
+        }
+        return null;
     }
     function meaning(i18n) {
         if (isBlank(i18n) || i18n == '')
@@ -14814,7 +14819,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function description(i18n) {
         if (isBlank(i18n) || i18n == '')
             return null;
-        var parts = i18n.split('|');
+        var parts = i18n.split('|', 2);
         return parts.length > 1 ? parts[1] : null;
     }
     /**
@@ -14824,9 +14829,9 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     function messageFromI18nAttribute(parser, p, i18nAttr) {
         var expectedName = i18nAttr.name.substring(5);
-        var matching = p.attrs.filter(function (a) { return a.name == expectedName; });
-        if (matching.length > 0) {
-            return messageFromAttribute(parser, matching[0], meaning(i18nAttr.value), description(i18nAttr.value));
+        var attr = p.attrs.find(function (a) { return a.name == expectedName; });
+        if (attr) {
+            return messageFromAttribute(parser, attr, meaning(i18nAttr.value), description(i18nAttr.value));
         }
         throw new I18nError(p.sourceSpan, "Missing attribute '" + expectedName + "'.");
     }
@@ -14896,9 +14901,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (noInterpolation != ast.value) {
                 return "<ph name=\"t" + index + "\">" + noInterpolation + "</ph>";
             }
-            else {
-                return ast.value;
-            }
+            return ast.value;
         };
         _StringifyVisitor.prototype.visitComment = function (ast, context) { return ''; };
         _StringifyVisitor.prototype.visitExpansion = function (ast, context) { return null; };
@@ -14927,9 +14930,9 @@ var __extends = (this && this.__extends) || function (d, b) {
      *
      * ```
      * <ul [ngPlural]="messages.length">
-     *   <template [ngPluralCase]="'=0'"><li i18n="plural_=0">zero</li></template>
-     *   <template [ngPluralCase]="'=1'"><li i18n="plural_=1">one</li></template>
-     *   <template [ngPluralCase]="'other'"><li i18n="plural_other">more than one</li></template>
+     *   <template ngPluralCase="=0"><li i18n="plural_=0">zero</li></template>
+     *   <template ngPluralCase="=1"><li i18n="plural_=1">one</li></template>
+     *   <template ngPluralCase="other"><li i18n="plural_other">more than one</li></template>
      * </ul>
      * ```
      */
@@ -14946,6 +14949,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return ExpansionResult;
     }());
+    /**
+     * Expand expansion forms (plural, select) to directives
+     *
+     * @internal
+     */
     var _Expander = (function () {
         function _Expander() {
             this.expanded = false;
@@ -14972,7 +14980,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 errors.push(new I18nError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(", ")));
             }
             var expansionResult = expandNodes(c.expression);
-            expansionResult.errors.forEach(function (e) { return errors.push(e); });
+            errors.push.apply(errors, expansionResult.errors);
             var i18nAttrs = expansionResult.expanded ?
                 [] :
                 [new HtmlAttrAst('i18n', ast.type + "_" + c.value, c.valueSourceSpan)];
@@ -15098,14 +15106,15 @@ var __extends = (this && this.__extends) || function (d, b) {
             else {
                 var expanded = expandNodes(res.rootNodes);
                 var nodes = this._recurse(expanded.nodes);
-                this.errors = this.errors.concat(expanded.errors);
+                (_a = this.errors).push.apply(_a, expanded.errors);
                 return this.errors.length > 0 ? new HtmlParseTreeResult([], this.errors) :
                     new HtmlParseTreeResult(nodes, []);
             }
+            var _a;
         };
-        I18nHtmlParser.prototype._processI18nPart = function (p) {
+        I18nHtmlParser.prototype._processI18nPart = function (part) {
             try {
-                return p.hasI18n ? this._mergeI18Part(p) : this._recurseIntoI18nPart(p);
+                return part.hasI18n ? this._mergeI18Part(part) : this._recurseIntoI18nPart(part);
             }
             catch (e) {
                 if (e instanceof I18nError) {
@@ -15117,14 +15126,14 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
         };
-        I18nHtmlParser.prototype._mergeI18Part = function (p) {
-            var message = p.createMessage(this._parser);
+        I18nHtmlParser.prototype._mergeI18Part = function (part) {
+            var message = part.createMessage(this._parser);
             var messageId = id(message);
             if (!StringMapWrapper.contains(this._messages, messageId)) {
-                throw new I18nError(p.sourceSpan, "Cannot find message for id '" + messageId + "', content '" + message.content + "'.");
+                throw new I18nError(part.sourceSpan, "Cannot find message for id '" + messageId + "', content '" + message.content + "'.");
             }
             var parsedMessage = this._messages[messageId];
-            return this._mergeTrees(p, parsedMessage, p.children);
+            return this._mergeTrees(part, parsedMessage, part.children);
         };
         I18nHtmlParser.prototype._recurseIntoI18nPart = function (p) {
             // we found an element without an i18n attribute
@@ -15145,8 +15154,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         I18nHtmlParser.prototype._recurse = function (nodes) {
             var _this = this;
-            var ps = partition(nodes, this.errors, this._implicitTags);
-            return ListWrapper.flatten(ps.map(function (p) { return _this._processI18nPart(p); }));
+            var parts = partition(nodes, this.errors, this._implicitTags);
+            return ListWrapper.flatten(parts.map(function (p) { return _this._processI18nPart(p); }));
         };
         I18nHtmlParser.prototype._mergeTrees = function (p, translated, original) {
             var l = new _CreateNodeMapping();
@@ -15395,8 +15404,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._implicitAttrs = _implicitAttrs;
         }
         MessageExtractor.prototype.extract = function (template, sourceUrl) {
-            this.messages = [];
-            this.errors = [];
+            this._messages = [];
+            this._errors = [];
             var res = this._htmlParser.parse(template, sourceUrl, true);
             if (res.errors.length > 0) {
                 return new ExtractionResult([], res.errors);
@@ -15404,26 +15413,26 @@ var __extends = (this && this.__extends) || function (d, b) {
             else {
                 var expanded = expandNodes(res.rootNodes);
                 this._recurse(expanded.nodes);
-                return new ExtractionResult(this.messages, this.errors.concat(expanded.errors));
+                return new ExtractionResult(this._messages, this._errors.concat(expanded.errors));
             }
         };
-        MessageExtractor.prototype._extractMessagesFromPart = function (p) {
-            if (p.hasI18n) {
-                this.messages.push(p.createMessage(this._parser));
-                this._recurseToExtractMessagesFromAttributes(p.children);
+        MessageExtractor.prototype._extractMessagesFromPart = function (part) {
+            if (part.hasI18n) {
+                this._messages.push(part.createMessage(this._parser));
+                this._recurseToExtractMessagesFromAttributes(part.children);
             }
             else {
-                this._recurse(p.children);
+                this._recurse(part.children);
             }
-            if (isPresent(p.rootElement)) {
-                this._extractMessagesFromAttributes(p.rootElement);
+            if (isPresent(part.rootElement)) {
+                this._extractMessagesFromAttributes(part.rootElement);
             }
         };
         MessageExtractor.prototype._recurse = function (nodes) {
             var _this = this;
             if (isPresent(nodes)) {
-                var ps = partition(nodes, this.errors, this._implicitTags);
-                ps.forEach(function (p) { return _this._extractMessagesFromPart(p); });
+                var parts = partition(nodes, this._errors, this._implicitTags);
+                parts.forEach(function (part) { return _this._extractMessagesFromPart(part); });
             }
         };
         MessageExtractor.prototype._recurseToExtractMessagesFromAttributes = function (nodes) {
@@ -15439,26 +15448,24 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             var transAttrs = isPresent(this._implicitAttrs[p.name]) ? this._implicitAttrs[p.name] : [];
             var explicitAttrs = [];
-            p.attrs.forEach(function (attr) {
-                if (attr.name.startsWith(I18N_ATTR_PREFIX)) {
-                    try {
-                        explicitAttrs.push(attr.name.substring(I18N_ATTR_PREFIX.length));
-                        _this.messages.push(messageFromI18nAttribute(_this._parser, p, attr));
+            p.attrs.filter(function (attr) { return attr.name.startsWith(I18N_ATTR_PREFIX); }).forEach(function (attr) {
+                try {
+                    explicitAttrs.push(attr.name.substring(I18N_ATTR_PREFIX.length));
+                    _this._messages.push(messageFromI18nAttribute(_this._parser, p, attr));
+                }
+                catch (e) {
+                    if (e instanceof I18nError) {
+                        _this._errors.push(e);
                     }
-                    catch (e) {
-                        if (e instanceof I18nError) {
-                            _this.errors.push(e);
-                        }
-                        else {
-                            throw e;
-                        }
+                    else {
+                        throw e;
                     }
                 }
             });
             p.attrs.filter(function (attr) { return !attr.name.startsWith(I18N_ATTR_PREFIX); })
                 .filter(function (attr) { return explicitAttrs.indexOf(attr.name) == -1; })
                 .filter(function (attr) { return transAttrs.indexOf(attr.name) > -1; })
-                .forEach(function (attr) { return _this.messages.push(messageFromAttribute(_this._parser, attr)); });
+                .forEach(function (attr) { return _this._messages.push(messageFromAttribute(_this._parser, attr)); });
         };
         return MessageExtractor;
     }());

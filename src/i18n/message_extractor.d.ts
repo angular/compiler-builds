@@ -78,13 +78,13 @@ export declare class MessageExtractor {
     private _parser;
     private _implicitTags;
     private _implicitAttrs;
-    messages: Message[];
-    errors: ParseError[];
+    private _messages;
+    private _errors;
     constructor(_htmlParser: HtmlParser, _parser: Parser, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
     });
     extract(template: string, sourceUrl: string): ExtractionResult;
-    private _extractMessagesFromPart(p);
+    private _extractMessagesFromPart(part);
     private _recurse(nodes);
     private _recurseToExtractMessagesFromAttributes(nodes);
     private _extractMessagesFromAttributes(p);

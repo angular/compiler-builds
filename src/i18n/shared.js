@@ -22,14 +22,13 @@ var I18nError = (function (_super) {
     return I18nError;
 }(parse_util_1.ParseError));
 exports.I18nError = I18nError;
-// Man, this is so ugly!
 function partition(nodes, errors, implicitTags) {
-    var res = [];
+    var parts = [];
     for (var i = 0; i < nodes.length; ++i) {
         var n = nodes[i];
         var temp = [];
         if (_isOpeningComment(n)) {
-            var i18n = n.value.substring(5).trim();
+            var i18n = n.value.replace(/^i18n:?/, '').trim();
             i++;
             while (!_isClosingComment(nodes[i])) {
                 temp.push(nodes[i++]);
@@ -38,18 +37,18 @@ function partition(nodes, errors, implicitTags) {
                     break;
                 }
             }
-            res.push(new Part(null, null, temp, i18n, true));
+            parts.push(new Part(null, null, temp, i18n, true));
         }
         else if (n instanceof html_ast_1.HtmlElementAst) {
             var i18n = _findI18nAttr(n);
             var hasI18n = lang_1.isPresent(i18n) || implicitTags.indexOf(n.name) > -1;
-            res.push(new Part(n, null, n.children, lang_1.isPresent(i18n) ? i18n.value : null, hasI18n));
+            parts.push(new Part(n, null, n.children, lang_1.isPresent(i18n) ? i18n.value : null, hasI18n));
         }
         else if (n instanceof html_ast_1.HtmlTextAst) {
-            res.push(new Part(null, n, null, null, false));
+            parts.push(new Part(null, n, null, null, false));
         }
     }
-    return res;
+    return parts;
 }
 exports.partition = partition;
 var Part = (function () {
@@ -62,12 +61,13 @@ var Part = (function () {
     }
     Object.defineProperty(Part.prototype, "sourceSpan", {
         get: function () {
-            if (lang_1.isPresent(this.rootElement))
+            if (lang_1.isPresent(this.rootElement)) {
                 return this.rootElement.sourceSpan;
-            else if (lang_1.isPresent(this.rootTextNode))
+            }
+            if (lang_1.isPresent(this.rootTextNode)) {
                 return this.rootTextNode.sourceSpan;
-            else
-                return this.children[0].sourceSpan;
+            }
+            return this.children[0].sourceSpan;
         },
         enumerable: true,
         configurable: true
@@ -79,14 +79,19 @@ var Part = (function () {
 }());
 exports.Part = Part;
 function _isOpeningComment(n) {
-    return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value.startsWith('i18n:');
+    return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value.startsWith('i18n');
 }
 function _isClosingComment(n) {
     return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value == '/i18n';
 }
 function _findI18nAttr(p) {
-    var i18n = p.attrs.filter(function (a) { return a.name == exports.I18N_ATTR; });
-    return i18n.length == 0 ? null : i18n[0];
+    var attrs = p.attrs;
+    for (var i = 0; i < attrs.length; i++) {
+        if (attrs[i].name === exports.I18N_ATTR) {
+            return attrs[i];
+        }
+    }
+    return null;
 }
 function meaning(i18n) {
     if (lang_1.isBlank(i18n) || i18n == '')
@@ -97,7 +102,7 @@ exports.meaning = meaning;
 function description(i18n) {
     if (lang_1.isBlank(i18n) || i18n == '')
         return null;
-    var parts = i18n.split('|');
+    var parts = i18n.split('|', 2);
     return parts.length > 1 ? parts[1] : null;
 }
 exports.description = description;
@@ -108,9 +113,9 @@ exports.description = description;
  */
 function messageFromI18nAttribute(parser, p, i18nAttr) {
     var expectedName = i18nAttr.name.substring(5);
-    var matching = p.attrs.filter(function (a) { return a.name == expectedName; });
-    if (matching.length > 0) {
-        return messageFromAttribute(parser, matching[0], meaning(i18nAttr.value), description(i18nAttr.value));
+    var attr = p.attrs.find(function (a) { return a.name == expectedName; });
+    if (attr) {
+        return messageFromAttribute(parser, attr, meaning(i18nAttr.value), description(i18nAttr.value));
     }
     throw new I18nError(p.sourceSpan, "Missing attribute '" + expectedName + "'.");
 }
@@ -186,9 +191,7 @@ var _StringifyVisitor = (function () {
         if (noInterpolation != ast.value) {
             return "<ph name=\"t" + index + "\">" + noInterpolation + "</ph>";
         }
-        else {
-            return ast.value;
-        }
+        return ast.value;
     };
     _StringifyVisitor.prototype.visitComment = function (ast, context) { return ''; };
     _StringifyVisitor.prototype.visitExpansion = function (ast, context) { return null; };

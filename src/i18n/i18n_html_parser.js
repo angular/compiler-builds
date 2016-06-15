@@ -109,14 +109,15 @@ var I18nHtmlParser = (function () {
         else {
             var expanded = expander_1.expandNodes(res.rootNodes);
             var nodes = this._recurse(expanded.nodes);
-            this.errors = this.errors.concat(expanded.errors);
+            (_a = this.errors).push.apply(_a, expanded.errors);
             return this.errors.length > 0 ? new html_parser_1.HtmlParseTreeResult([], this.errors) :
                 new html_parser_1.HtmlParseTreeResult(nodes, []);
         }
+        var _a;
     };
-    I18nHtmlParser.prototype._processI18nPart = function (p) {
+    I18nHtmlParser.prototype._processI18nPart = function (part) {
         try {
-            return p.hasI18n ? this._mergeI18Part(p) : this._recurseIntoI18nPart(p);
+            return part.hasI18n ? this._mergeI18Part(part) : this._recurseIntoI18nPart(part);
         }
         catch (e) {
             if (e instanceof shared_1.I18nError) {
@@ -128,14 +129,14 @@ var I18nHtmlParser = (function () {
             }
         }
     };
-    I18nHtmlParser.prototype._mergeI18Part = function (p) {
-        var message = p.createMessage(this._parser);
+    I18nHtmlParser.prototype._mergeI18Part = function (part) {
+        var message = part.createMessage(this._parser);
         var messageId = message_1.id(message);
         if (!collection_1.StringMapWrapper.contains(this._messages, messageId)) {
-            throw new shared_1.I18nError(p.sourceSpan, "Cannot find message for id '" + messageId + "', content '" + message.content + "'.");
+            throw new shared_1.I18nError(part.sourceSpan, "Cannot find message for id '" + messageId + "', content '" + message.content + "'.");
         }
         var parsedMessage = this._messages[messageId];
-        return this._mergeTrees(p, parsedMessage, p.children);
+        return this._mergeTrees(part, parsedMessage, part.children);
     };
     I18nHtmlParser.prototype._recurseIntoI18nPart = function (p) {
         // we found an element without an i18n attribute
@@ -156,8 +157,8 @@ var I18nHtmlParser = (function () {
     };
     I18nHtmlParser.prototype._recurse = function (nodes) {
         var _this = this;
-        var ps = shared_1.partition(nodes, this.errors, this._implicitTags);
-        return collection_1.ListWrapper.flatten(ps.map(function (p) { return _this._processI18nPart(p); }));
+        var parts = shared_1.partition(nodes, this.errors, this._implicitTags);
+        return collection_1.ListWrapper.flatten(parts.map(function (p) { return _this._processI18nPart(p); }));
     };
     I18nHtmlParser.prototype._mergeTrees = function (p, translated, original) {
         var l = new _CreateNodeMapping();

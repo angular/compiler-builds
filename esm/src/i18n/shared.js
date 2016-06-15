@@ -13,14 +13,13 @@ export class I18nError extends ParseError {
         super(span, msg);
     }
 }
-// Man, this is so ugly!
 export function partition(nodes, errors, implicitTags) {
-    let res = [];
+    let parts = [];
     for (let i = 0; i < nodes.length; ++i) {
         let n = nodes[i];
         let temp = [];
         if (_isOpeningComment(n)) {
-            let i18n = n.value.substring(5).trim();
+            let i18n = n.value.replace(/^i18n:?/, '').trim();
             i++;
             while (!_isClosingComment(nodes[i])) {
                 temp.push(nodes[i++]);
@@ -29,18 +28,18 @@ export function partition(nodes, errors, implicitTags) {
                     break;
                 }
             }
-            res.push(new Part(null, null, temp, i18n, true));
+            parts.push(new Part(null, null, temp, i18n, true));
         }
         else if (n instanceof HtmlElementAst) {
             let i18n = _findI18nAttr(n);
             let hasI18n = isPresent(i18n) || implicitTags.indexOf(n.name) > -1;
-            res.push(new Part(n, null, n.children, isPresent(i18n) ? i18n.value : null, hasI18n));
+            parts.push(new Part(n, null, n.children, isPresent(i18n) ? i18n.value : null, hasI18n));
         }
         else if (n instanceof HtmlTextAst) {
-            res.push(new Part(null, n, null, null, false));
+            parts.push(new Part(null, n, null, null, false));
         }
     }
-    return res;
+    return parts;
 }
 export class Part {
     constructor(rootElement, rootTextNode, children, i18n, hasI18n) {
@@ -51,26 +50,32 @@ export class Part {
         this.hasI18n = hasI18n;
     }
     get sourceSpan() {
-        if (isPresent(this.rootElement))
+        if (isPresent(this.rootElement)) {
             return this.rootElement.sourceSpan;
-        else if (isPresent(this.rootTextNode))
+        }
+        if (isPresent(this.rootTextNode)) {
             return this.rootTextNode.sourceSpan;
-        else
-            return this.children[0].sourceSpan;
+        }
+        return this.children[0].sourceSpan;
     }
     createMessage(parser) {
         return new Message(stringifyNodes(this.children, parser), meaning(this.i18n), description(this.i18n));
     }
 }
 function _isOpeningComment(n) {
-    return n instanceof HtmlCommentAst && isPresent(n.value) && n.value.startsWith('i18n:');
+    return n instanceof HtmlCommentAst && isPresent(n.value) && n.value.startsWith('i18n');
 }
 function _isClosingComment(n) {
     return n instanceof HtmlCommentAst && isPresent(n.value) && n.value == '/i18n';
 }
 function _findI18nAttr(p) {
-    let i18n = p.attrs.filter(a => a.name == I18N_ATTR);
-    return i18n.length == 0 ? null : i18n[0];
+    let attrs = p.attrs;
+    for (let i = 0; i < attrs.length; i++) {
+        if (attrs[i].name === I18N_ATTR) {
+            return attrs[i];
+        }
+    }
+    return null;
 }
 export function meaning(i18n) {
     if (isBlank(i18n) || i18n == '')
@@ -80,7 +85,7 @@ export function meaning(i18n) {
 export function description(i18n) {
     if (isBlank(i18n) || i18n == '')
         return null;
-    let parts = i18n.split('|');
+    let parts = i18n.split('|', 2);
     return parts.length > 1 ? parts[1] : null;
 }
 /**
@@ -90,9 +95,9 @@ export function description(i18n) {
  */
 export function messageFromI18nAttribute(parser, p, i18nAttr) {
     let expectedName = i18nAttr.name.substring(5);
-    let matching = p.attrs.filter(a => a.name == expectedName);
-    if (matching.length > 0) {
-        return messageFromAttribute(parser, matching[0], meaning(i18nAttr.value), description(i18nAttr.value));
+    let attr = p.attrs.find(a => a.name == expectedName);
+    if (attr) {
+        return messageFromAttribute(parser, attr, meaning(i18nAttr.value), description(i18nAttr.value));
     }
     throw new I18nError(p.sourceSpan, `Missing attribute '${expectedName}'.`);
 }
@@ -160,9 +165,7 @@ class _StringifyVisitor {
         if (noInterpolation != ast.value) {
             return `<ph name="t${index}">${noInterpolation}</ph>`;
         }
-        else {
-            return ast.value;
-        }
+        return ast.value;
     }
     visitComment(ast, context) { return ''; }
     visitExpansion(ast, context) { return null; }

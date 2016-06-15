@@ -17,9 +17,9 @@ import { ParseError } from '../parse_util';
  *
  * ```
  * <ul [ngPlural]="messages.length">
- *   <template [ngPluralCase]="'=0'"><li i18n="plural_=0">zero</li></template>
- *   <template [ngPluralCase]="'=1'"><li i18n="plural_=1">one</li></template>
- *   <template [ngPluralCase]="'other'"><li i18n="plural_other">more than one</li></template>
+ *   <template ngPluralCase="=0"><li i18n="plural_=0">zero</li></template>
+ *   <template ngPluralCase="=1"><li i18n="plural_=1">one</li></template>
+ *   <template ngPluralCase="other"><li i18n="plural_other">more than one</li></template>
  * </ul>
  * ```
  */

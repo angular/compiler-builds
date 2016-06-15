@@ -107,14 +107,14 @@ export class I18nHtmlParser {
         else {
             let expanded = expandNodes(res.rootNodes);
             let nodes = this._recurse(expanded.nodes);
-            this.errors = this.errors.concat(expanded.errors);
+            this.errors.push(...expanded.errors);
             return this.errors.length > 0 ? new HtmlParseTreeResult([], this.errors) :
                 new HtmlParseTreeResult(nodes, []);
         }
     }
-    _processI18nPart(p) {
+    _processI18nPart(part) {
         try {
-            return p.hasI18n ? this._mergeI18Part(p) : this._recurseIntoI18nPart(p);
+            return part.hasI18n ? this._mergeI18Part(part) : this._recurseIntoI18nPart(part);
         }
         catch (e) {
             if (e instanceof I18nError) {
@@ -126,14 +126,14 @@ export class I18nHtmlParser {
             }
         }
     }
-    _mergeI18Part(p) {
-        let message = p.createMessage(this._parser);
+    _mergeI18Part(part) {
+        let message = part.createMessage(this._parser);
         let messageId = id(message);
         if (!StringMapWrapper.contains(this._messages, messageId)) {
-            throw new I18nError(p.sourceSpan, `Cannot find message for id '${messageId}', content '${message.content}'.`);
+            throw new I18nError(part.sourceSpan, `Cannot find message for id '${messageId}', content '${message.content}'.`);
         }
         let parsedMessage = this._messages[messageId];
-        return this._mergeTrees(p, parsedMessage, p.children);
+        return this._mergeTrees(part, parsedMessage, part.children);
     }
     _recurseIntoI18nPart(p) {
         // we found an element without an i18n attribute
@@ -153,8 +153,8 @@ export class I18nHtmlParser {
         }
     }
     _recurse(nodes) {
-        let ps = partition(nodes, this.errors, this._implicitTags);
-        return ListWrapper.flatten(ps.map(p => this._processI18nPart(p)));
+        let parts = partition(nodes, this.errors, this._implicitTags);
+        return ListWrapper.flatten(parts.map(p => this._processI18nPart(p)));
     }
     _mergeTrees(p, translated, original) {
         let l = new _CreateNodeMapping();

@@ -96,8 +96,8 @@ export declare class I18nHtmlParser implements HtmlParser {
         [k: string]: string[];
     });
     parse(sourceContent: string, sourceUrl: string, parseExpansionForms?: boolean): HtmlParseTreeResult;
-    private _processI18nPart(p);
-    private _mergeI18Part(p);
+    private _processI18nPart(part);
+    private _mergeI18Part(part);
     private _recurseIntoI18nPart(p);
     private _recurse(nodes);
     private _mergeTrees(p, translated, original);

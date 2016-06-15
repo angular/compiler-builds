@@ -92,8 +92,8 @@ export class MessageExtractor {
         this._implicitAttrs = _implicitAttrs;
     }
     extract(template, sourceUrl) {
-        this.messages = [];
-        this.errors = [];
+        this._messages = [];
+        this._errors = [];
         let res = this._htmlParser.parse(template, sourceUrl, true);
         if (res.errors.length > 0) {
             return new ExtractionResult([], res.errors);
@@ -101,25 +101,25 @@ export class MessageExtractor {
         else {
             let expanded = expandNodes(res.rootNodes);
             this._recurse(expanded.nodes);
-            return new ExtractionResult(this.messages, this.errors.concat(expanded.errors));
+            return new ExtractionResult(this._messages, this._errors.concat(expanded.errors));
         }
     }
-    _extractMessagesFromPart(p) {
-        if (p.hasI18n) {
-            this.messages.push(p.createMessage(this._parser));
-            this._recurseToExtractMessagesFromAttributes(p.children);
+    _extractMessagesFromPart(part) {
+        if (part.hasI18n) {
+            this._messages.push(part.createMessage(this._parser));
+            this._recurseToExtractMessagesFromAttributes(part.children);
         }
         else {
-            this._recurse(p.children);
+            this._recurse(part.children);
         }
-        if (isPresent(p.rootElement)) {
-            this._extractMessagesFromAttributes(p.rootElement);
+        if (isPresent(part.rootElement)) {
+            this._extractMessagesFromAttributes(part.rootElement);
         }
     }
     _recurse(nodes) {
         if (isPresent(nodes)) {
-            let ps = partition(nodes, this.errors, this._implicitTags);
-            ps.forEach(p => this._extractMessagesFromPart(p));
+            let parts = partition(nodes, this._errors, this._implicitTags);
+            parts.forEach(part => this._extractMessagesFromPart(part));
         }
     }
     _recurseToExtractMessagesFromAttributes(nodes) {
@@ -133,26 +133,24 @@ export class MessageExtractor {
     _extractMessagesFromAttributes(p) {
         let transAttrs = isPresent(this._implicitAttrs[p.name]) ? this._implicitAttrs[p.name] : [];
         let explicitAttrs = [];
-        p.attrs.forEach(attr => {
-            if (attr.name.startsWith(I18N_ATTR_PREFIX)) {
-                try {
-                    explicitAttrs.push(attr.name.substring(I18N_ATTR_PREFIX.length));
-                    this.messages.push(messageFromI18nAttribute(this._parser, p, attr));
+        p.attrs.filter(attr => attr.name.startsWith(I18N_ATTR_PREFIX)).forEach(attr => {
+            try {
+                explicitAttrs.push(attr.name.substring(I18N_ATTR_PREFIX.length));
+                this._messages.push(messageFromI18nAttribute(this._parser, p, attr));
+            }
+            catch (e) {
+                if (e instanceof I18nError) {
+                    this._errors.push(e);
                 }
-                catch (e) {
-                    if (e instanceof I18nError) {
-                        this.errors.push(e);
-                    }
-                    else {
-                        throw e;
-                    }
+                else {
+                    throw e;
                 }
             }
         });
         p.attrs.filter(attr => !attr.name.startsWith(I18N_ATTR_PREFIX))
             .filter(attr => explicitAttrs.indexOf(attr.name) == -1)
             .filter(attr => transAttrs.indexOf(attr.name) > -1)
-            .forEach(attr => this.messages.push(messageFromAttribute(this._parser, attr)));
+            .forEach(attr => this._messages.push(messageFromAttribute(this._parser, attr)));
     }
 }
 //# sourceMappingURL=message_extractor.js.map

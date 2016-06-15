@@ -20,9 +20,9 @@ const PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
  *
  * ```
  * <ul [ngPlural]="messages.length">
- *   <template [ngPluralCase]="'=0'"><li i18n="plural_=0">zero</li></template>
- *   <template [ngPluralCase]="'=1'"><li i18n="plural_=1">one</li></template>
- *   <template [ngPluralCase]="'other'"><li i18n="plural_other">more than one</li></template>
+ *   <template ngPluralCase="=0"><li i18n="plural_=0">zero</li></template>
+ *   <template ngPluralCase="=1"><li i18n="plural_=1">one</li></template>
+ *   <template ngPluralCase="other"><li i18n="plural_other">more than one</li></template>
  * </ul>
  * ```
  */
@@ -38,6 +38,11 @@ export class ExpansionResult {
         this.errors = errors;
     }
 }
+/**
+ * Expand expansion forms (plural, select) to directives
+ *
+ * @internal
+ */
 class _Expander {
     constructor() {
         this.expanded = false;
@@ -63,7 +68,7 @@ function _expandPluralForm(ast, errors) {
             errors.push(new I18nError(c.valueSourceSpan, `Plural cases should be "=<number>" or one of ${PLURAL_CASES.join(", ")}`));
         }
         let expansionResult = expandNodes(c.expression);
-        expansionResult.errors.forEach(e => errors.push(e));
+        errors.push(...expansionResult.errors);
         let i18nAttrs = expansionResult.expanded ?
             [] :
             [new HtmlAttrAst('i18n', `${ast.type}_${c.value}`, c.valueSourceSpan)];
