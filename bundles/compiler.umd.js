@@ -11126,6 +11126,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var IMPLICIT_TEMPLATE_VAR = '\$implicit';
     var CLASS_ATTR$1 = 'class';
     var STYLE_ATTR = 'style';
+    var NG_CONTAINER_TAG = 'ng-container';
     var parentRenderNodeVar = variable('parentRenderNode');
     var rootSelectorVar = variable('rootSelector');
     var ViewCompileDependency = (function () {
@@ -11157,7 +11158,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._animationCompiler = new AnimationCompiler();
         }
         ViewBuilderVisitor.prototype._isRootNode = function (parent) { return parent.view !== this.view; };
-        ViewBuilderVisitor.prototype._addRootNodeAndProject = function (node, ngContentIndex, parent) {
+        ViewBuilderVisitor.prototype._addRootNodeAndProject = function (node) {
+            var projectedNode = _getOuterContainerOrSelf(node);
+            var parent = projectedNode.parent;
+            var ngContentIndex = projectedNode.sourceAst.ngContentIndex;
             var vcAppEl = (node instanceof CompileElement && node.hasViewContainer) ? node.appElement : null;
             if (this._isRootNode(parent)) {
                 // store appElement as root node only for ViewContainers
@@ -11170,6 +11174,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         ViewBuilderVisitor.prototype._getParentRenderNode = function (parent) {
+            parent = _getOuterContainerParentOrSelf(parent);
             if (this._isRootNode(parent)) {
                 if (this.view.viewType === ViewType.COMPONENT) {
                     return parentRenderNodeVar;
@@ -11187,12 +11192,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         ViewBuilderVisitor.prototype.visitBoundText = function (ast, parent) {
-            return this._visitText(ast, '', ast.ngContentIndex, parent);
+            return this._visitText(ast, '', parent);
         };
         ViewBuilderVisitor.prototype.visitText = function (ast, parent) {
-            return this._visitText(ast, ast.value, ast.ngContentIndex, parent);
+            return this._visitText(ast, ast.value, parent);
         };
-        ViewBuilderVisitor.prototype._visitText = function (ast, value, ngContentIndex, parent) {
+        ViewBuilderVisitor.prototype._visitText = function (ast, value, parent) {
             var fieldName = "_text_" + this.view.nodes.length;
             this.view.fields.push(new ClassField(fieldName, importType(this.view.genConfig.renderTypes.renderText)));
             var renderNode = THIS_EXPR.prop(fieldName);
@@ -11205,7 +11210,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .toStmt();
             this.view.nodes.push(compileNode);
             this.view.createMethod.addStmt(createRenderNode);
-            this._addRootNodeAndProject(compileNode, ngContentIndex, parent);
+            this._addRootNodeAndProject(compileNode);
             return renderNode;
         };
         ViewBuilderVisitor.prototype.visitNgContent = function (ast, parent) {
@@ -11243,7 +11248,12 @@ var __extends = (this && this.__extends) || function (d, b) {
                 createRenderNodeExpr = THIS_EXPR.callMethod('selectOrCreateHostElement', [literal(ast.name), rootSelectorVar, debugContextExpr]);
             }
             else {
-                createRenderNodeExpr = ViewProperties.renderer.callMethod('createElement', [this._getParentRenderNode(parent), literal(ast.name), debugContextExpr]);
+                if (ast.name === NG_CONTAINER_TAG) {
+                    createRenderNodeExpr = ViewProperties.renderer.callMethod('createTemplateAnchor', [this._getParentRenderNode(parent), debugContextExpr]);
+                }
+                else {
+                    createRenderNodeExpr = ViewProperties.renderer.callMethod('createElement', [this._getParentRenderNode(parent), literal(ast.name), debugContextExpr]);
+                }
             }
             var fieldName = "_el_" + nodeIndex;
             this.view.fields.push(new ClassField(fieldName, importType(this.view.genConfig.renderTypes.renderElement)));
@@ -11275,7 +11285,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     .toDeclStmt());
             }
             compileElement.beforeChildren();
-            this._addRootNodeAndProject(compileElement, ast.ngContentIndex, parent);
+            this._addRootNodeAndProject(compileElement);
             templateVisitAll(this, ast.children, compileElement);
             compileElement.afterChildren(this.view.nodes.length - nodeIndex - 1);
             if (isPresent(compViewExpr)) {
@@ -11312,7 +11322,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, NULL_EXPR, compiledAnimations, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
             this.nestedViewCount += buildView(embeddedView, ast.children, this.targetDependencies);
             compileElement.beforeChildren();
-            this._addRootNodeAndProject(compileElement, ast.ngContentIndex, parent);
+            this._addRootNodeAndProject(compileElement);
             compileElement.afterChildren(0);
             return null;
         };
@@ -11327,11 +11337,43 @@ var __extends = (this && this.__extends) || function (d, b) {
         ViewBuilderVisitor.prototype.visitElementProperty = function (ast, context) { return null; };
         return ViewBuilderVisitor;
     }());
+    /**
+     * Walks up the nodes while the direct parent is a container.
+     *
+     * Returns the outer container or the node itself when it is not a direct child of a container.
+     *
+     * @internal
+     */
+    function _getOuterContainerOrSelf(node) {
+        var view = node.view;
+        while (_isNgContainer(node.parent, view)) {
+            node = node.parent;
+        }
+        return node;
+    }
+    /**
+     * Walks up the nodes while they are container and returns the first parent which is not.
+     *
+     * Returns the parent of the outer container or the node itself when it is not a container.
+     *
+     * @internal
+     */
+    function _getOuterContainerParentOrSelf(el) {
+        var view = el.view;
+        while (_isNgContainer(el, view)) {
+            el = el.parent;
+        }
+        return el;
+    }
+    function _isNgContainer(node, view) {
+        return !node.isNull() && node.sourceAst.name === NG_CONTAINER_TAG &&
+            node.view === view;
+    }
     function _mergeHtmlAndDirectiveAttrs(declaredHtmlAttrs, directives) {
         var result = {};
-        StringMapWrapper.forEach(declaredHtmlAttrs, function (value /** TODO #9100 */, key /** TODO #9100 */) { result[key] = value; });
+        StringMapWrapper.forEach(declaredHtmlAttrs, function (value, key) { result[key] = value; });
         directives.forEach(function (directiveMeta) {
-            StringMapWrapper.forEach(directiveMeta.hostAttributes, function (value /** TODO #9100 */, name /** TODO #9100 */) {
+            StringMapWrapper.forEach(directiveMeta.hostAttributes, function (value, name) {
                 var prevValue = result[name];
                 result[name] = isPresent(prevValue) ? mergeAttributeValue(name, prevValue, value) : value;
             });
@@ -11353,15 +11395,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function mapToKeyValueArray(data) {
         var entryArray = [];
-        StringMapWrapper.forEach(data, function (value /** TODO #9100 */, name /** TODO #9100 */) {
+        StringMapWrapper.forEach(data, function (value, name) {
             entryArray.push([name, value]);
         });
         // We need to sort to get a defined output order
         // for tests and for caching generated artifacts...
         ListWrapper.sort(entryArray, function (entry1, entry2) { return StringWrapper.compare(entry1[0], entry2[0]); });
-        var keyValueArray = [];
-        entryArray.forEach(function (entry) { keyValueArray.push([entry[0], entry[1]]); });
-        return keyValueArray;
+        return entryArray;
     }
     function createViewTopLevelStmts(view, targetStatements) {
         var nodeDebugInfosVar = NULL_EXPR;
@@ -11390,7 +11430,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (isPresent(compileElement.component)) {
                 componentToken = createDiTokenExpression(identifierToken(compileElement.component.type));
             }
-            StringMapWrapper.forEach(compileElement.referenceTokens, function (token /** TODO #9100 */, varName /** TODO #9100 */) {
+            StringMapWrapper.forEach(compileElement.referenceTokens, function (token, varName) {
                 varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : NULL_EXPR]);
             });
         }
@@ -11480,7 +11520,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         else {
             resultExpr = NULL_EXPR;
         }
-        return parentRenderNodeStmts.concat(view.createMethod.finish()).concat([
+        return parentRenderNodeStmts.concat(view.createMethod.finish(), [
             THIS_EXPR
                 .callMethod('init', [
                 createFlatArray(view.rootNodesOrAppElements),

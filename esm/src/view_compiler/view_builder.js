@@ -14,6 +14,7 @@ import { AnimationCompiler } from '../animation/animation_compiler';
 const IMPLICIT_TEMPLATE_VAR = '\$implicit';
 const CLASS_ATTR = 'class';
 const STYLE_ATTR = 'style';
+const NG_CONTAINER_TAG = 'ng-container';
 var parentRenderNodeVar = o.variable('parentRenderNode');
 var rootSelectorVar = o.variable('rootSelector');
 export class ViewCompileDependency {
@@ -44,7 +45,10 @@ class ViewBuilderVisitor {
         this._animationCompiler = new AnimationCompiler();
     }
     _isRootNode(parent) { return parent.view !== this.view; }
-    _addRootNodeAndProject(node, ngContentIndex, parent) {
+    _addRootNodeAndProject(node) {
+        var projectedNode = _getOuterContainerOrSelf(node);
+        var parent = projectedNode.parent;
+        var ngContentIndex = projectedNode.sourceAst.ngContentIndex;
         var vcAppEl = (node instanceof CompileElement && node.hasViewContainer) ? node.appElement : null;
         if (this._isRootNode(parent)) {
             // store appElement as root node only for ViewContainers
@@ -57,6 +61,7 @@ class ViewBuilderVisitor {
         }
     }
     _getParentRenderNode(parent) {
+        parent = _getOuterContainerParentOrSelf(parent);
         if (this._isRootNode(parent)) {
             if (this.view.viewType === ViewType.COMPONENT) {
                 return parentRenderNodeVar;
@@ -74,12 +79,12 @@ class ViewBuilderVisitor {
         }
     }
     visitBoundText(ast, parent) {
-        return this._visitText(ast, '', ast.ngContentIndex, parent);
+        return this._visitText(ast, '', parent);
     }
     visitText(ast, parent) {
-        return this._visitText(ast, ast.value, ast.ngContentIndex, parent);
+        return this._visitText(ast, ast.value, parent);
     }
-    _visitText(ast, value, ngContentIndex, parent) {
+    _visitText(ast, value, parent) {
         var fieldName = `_text_${this.view.nodes.length}`;
         this.view.fields.push(new o.ClassField(fieldName, o.importType(this.view.genConfig.renderTypes.renderText)));
         var renderNode = o.THIS_EXPR.prop(fieldName);
@@ -92,7 +97,7 @@ class ViewBuilderVisitor {
             .toStmt();
         this.view.nodes.push(compileNode);
         this.view.createMethod.addStmt(createRenderNode);
-        this._addRootNodeAndProject(compileNode, ngContentIndex, parent);
+        this._addRootNodeAndProject(compileNode);
         return renderNode;
     }
     visitNgContent(ast, parent) {
@@ -130,7 +135,12 @@ class ViewBuilderVisitor {
             createRenderNodeExpr = o.THIS_EXPR.callMethod('selectOrCreateHostElement', [o.literal(ast.name), rootSelectorVar, debugContextExpr]);
         }
         else {
-            createRenderNodeExpr = ViewProperties.renderer.callMethod('createElement', [this._getParentRenderNode(parent), o.literal(ast.name), debugContextExpr]);
+            if (ast.name === NG_CONTAINER_TAG) {
+                createRenderNodeExpr = ViewProperties.renderer.callMethod('createTemplateAnchor', [this._getParentRenderNode(parent), debugContextExpr]);
+            }
+            else {
+                createRenderNodeExpr = ViewProperties.renderer.callMethod('createElement', [this._getParentRenderNode(parent), o.literal(ast.name), debugContextExpr]);
+            }
         }
         var fieldName = `_el_${nodeIndex}`;
         this.view.fields.push(new o.ClassField(fieldName, o.importType(this.view.genConfig.renderTypes.renderElement)));
@@ -162,7 +172,7 @@ class ViewBuilderVisitor {
                 .toDeclStmt());
         }
         compileElement.beforeChildren();
-        this._addRootNodeAndProject(compileElement, ast.ngContentIndex, parent);
+        this._addRootNodeAndProject(compileElement);
         templateVisitAll(this, ast.children, compileElement);
         compileElement.afterChildren(this.view.nodes.length - nodeIndex - 1);
         if (isPresent(compViewExpr)) {
@@ -199,7 +209,7 @@ class ViewBuilderVisitor {
         var embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, o.NULL_EXPR, compiledAnimations, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
         this.nestedViewCount += buildView(embeddedView, ast.children, this.targetDependencies);
         compileElement.beforeChildren();
-        this._addRootNodeAndProject(compileElement, ast.ngContentIndex, parent);
+        this._addRootNodeAndProject(compileElement);
         compileElement.afterChildren(0);
         return null;
     }
@@ -213,11 +223,43 @@ class ViewBuilderVisitor {
     visitDirectiveProperty(ast, context) { return null; }
     visitElementProperty(ast, context) { return null; }
 }
+/**
+ * Walks up the nodes while the direct parent is a container.
+ *
+ * Returns the outer container or the node itself when it is not a direct child of a container.
+ *
+ * @internal
+ */
+function _getOuterContainerOrSelf(node) {
+    const view = node.view;
+    while (_isNgContainer(node.parent, view)) {
+        node = node.parent;
+    }
+    return node;
+}
+/**
+ * Walks up the nodes while they are container and returns the first parent which is not.
+ *
+ * Returns the parent of the outer container or the node itself when it is not a container.
+ *
+ * @internal
+ */
+function _getOuterContainerParentOrSelf(el) {
+    const view = el.view;
+    while (_isNgContainer(el, view)) {
+        el = el.parent;
+    }
+    return el;
+}
+function _isNgContainer(node, view) {
+    return !node.isNull() && node.sourceAst.name === NG_CONTAINER_TAG &&
+        node.view === view;
+}
 function _mergeHtmlAndDirectiveAttrs(declaredHtmlAttrs, directives) {
     var result = {};
-    StringMapWrapper.forEach(declaredHtmlAttrs, (value /** TODO #9100 */, key /** TODO #9100 */) => { result[key] = value; });
+    StringMapWrapper.forEach(declaredHtmlAttrs, (value, key) => { result[key] = value; });
     directives.forEach(directiveMeta => {
-        StringMapWrapper.forEach(directiveMeta.hostAttributes, (value /** TODO #9100 */, name /** TODO #9100 */) => {
+        StringMapWrapper.forEach(directiveMeta.hostAttributes, (value, name) => {
             var prevValue = result[name];
             result[name] = isPresent(prevValue) ? mergeAttributeValue(name, prevValue, value) : value;
         });
@@ -239,15 +281,13 @@ function mergeAttributeValue(attrName, attrValue1, attrValue2) {
 }
 function mapToKeyValueArray(data) {
     var entryArray = [];
-    StringMapWrapper.forEach(data, (value /** TODO #9100 */, name /** TODO #9100 */) => {
+    StringMapWrapper.forEach(data, (value, name) => {
         entryArray.push([name, value]);
     });
     // We need to sort to get a defined output order
     // for tests and for caching generated artifacts...
     ListWrapper.sort(entryArray, (entry1, entry2) => StringWrapper.compare(entry1[0], entry2[0]));
-    var keyValueArray = [];
-    entryArray.forEach((entry) => { keyValueArray.push([entry[0], entry[1]]); });
-    return keyValueArray;
+    return entryArray;
 }
 function createViewTopLevelStmts(view, targetStatements) {
     var nodeDebugInfosVar = o.NULL_EXPR;
@@ -276,7 +316,7 @@ function createStaticNodeDebugInfo(node) {
         if (isPresent(compileElement.component)) {
             componentToken = createDiTokenExpression(identifierToken(compileElement.component.type));
         }
-        StringMapWrapper.forEach(compileElement.referenceTokens, (token /** TODO #9100 */, varName /** TODO #9100 */) => {
+        StringMapWrapper.forEach(compileElement.referenceTokens, (token, varName) => {
             varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : o.NULL_EXPR]);
         });
     }
@@ -367,7 +407,7 @@ function generateCreateMethod(view) {
     else {
         resultExpr = o.NULL_EXPR;
     }
-    return parentRenderNodeStmts.concat(view.createMethod.finish()).concat([
+    return parentRenderNodeStmts.concat(view.createMethod.finish(), [
         o.THIS_EXPR
             .callMethod('init', [
             createFlatArray(view.rootNodesOrAppElements),
