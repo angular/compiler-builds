@@ -3844,17 +3844,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             var tagDef = getHtmlTagDefinition(el.name);
-            var parentEl = this._getParentElement();
-            if (tagDef.requireExtraParent(isPresent(parentEl) ? parentEl.name : null)) {
-                var newParent = new HtmlElementAst(tagDef.parentToAdd, [], [el], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
-                this._addToParent(newParent);
-                this.elementStack.push(newParent);
-                this.elementStack.push(el);
+            var _a = this._getParentElementSkippingContainers(), parent = _a.parent, container = _a.container;
+            if (isPresent(parent) && tagDef.requireExtraParent(parent.name)) {
+                var newParent = new HtmlElementAst(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
+                this._insertBeforeContainer(parent, container, newParent);
             }
-            else {
-                this._addToParent(el);
-                this.elementStack.push(el);
-            }
+            this._addToParent(el);
+            this.elementStack.push(el);
         };
         TreeBuilder.prototype._consumeEndTag = function (endTagToken) {
             var fullName = getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
@@ -3895,6 +3891,21 @@ var __extends = (this && this.__extends) || function (d, b) {
         TreeBuilder.prototype._getParentElement = function () {
             return this.elementStack.length > 0 ? ListWrapper.last(this.elementStack) : null;
         };
+        /**
+         * Returns the parent in the DOM and the container.
+         *
+         * `<ng-container>` elements are skipped as they are not rendered as DOM element.
+         */
+        TreeBuilder.prototype._getParentElementSkippingContainers = function () {
+            var container = null;
+            for (var i = this.elementStack.length - 1; i >= 0; i--) {
+                if (this.elementStack[i].name !== 'ng-container') {
+                    return { parent: this.elementStack[i], container: container };
+                }
+                container = this.elementStack[i];
+            }
+            return { parent: ListWrapper.last(this.elementStack), container: container };
+        };
         TreeBuilder.prototype._addToParent = function (node) {
             var parent = this._getParentElement();
             if (isPresent(parent)) {
@@ -3902,6 +3913,31 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             else {
                 this.rootNodes.push(node);
+            }
+        };
+        /**
+         * Insert a node between the parent and the container.
+         * When no container is given, the node is appended as a child of the parent.
+         * Also updates the element stack accordingly.
+         *
+         * @internal
+         */
+        TreeBuilder.prototype._insertBeforeContainer = function (parent, container, node) {
+            if (!container) {
+                this._addToParent(node);
+                this.elementStack.push(node);
+            }
+            else {
+                if (parent) {
+                    // replace the container with the new node in the children
+                    var index = parent.children.indexOf(container);
+                    parent.children[index] = node;
+                }
+                else {
+                    this.rootNodes.push(node);
+                }
+                node.children.push(container);
+                this.elementStack.splice(this.elementStack.indexOf(container), 0, node);
             }
         };
         return TreeBuilder;
@@ -14685,7 +14721,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         DomElementSchemaRegistry.prototype.hasProperty = function (tagName, propName) {
             if (tagName.indexOf('-') !== -1) {
-                // can't tell now as we don't know which properties a custom element will get
+                if (tagName === 'ng-container' || tagName === 'ng-content') {
+                    return false;
+                }
+                // Can't tell now as we don't know which properties a custom element will get
                 // once it is instantiated
                 return true;
             }
