@@ -14986,17 +14986,16 @@ var __extends = (this && this.__extends) || function (d, b) {
      * will be expanded into
      *
      * ```
-     * <ul [ngPlural]="messages.length">
-     *   <template ngPluralCase="=0"><li i18n="plural_=0">zero</li></template>
-     *   <template ngPluralCase="=1"><li i18n="plural_=1">one</li></template>
-     *   <template ngPluralCase="other"><li i18n="plural_other">more than one</li></template>
-     * </ul>
+     * <ng-container [ngPlural]="messages.length">
+     *   <template ngPluralCase="=0">zero</ng-container>
+     *   <template ngPluralCase="=1">one</ng-container>
+     *   <template ngPluralCase="other">more than one</ng-container>
+     * </ng-container>
      * ```
      */
     function expandNodes(nodes) {
-        var e = new _Expander();
-        var n = htmlVisitAll(e, nodes);
-        return new ExpansionResult(n, e.expanded, e.errors);
+        var expander = new _Expander();
+        return new ExpansionResult(htmlVisitAll(expander, nodes), expander.isExpanded, expander.errors);
     }
     var ExpansionResult = (function () {
         function ExpansionResult(nodes, expanded, errors) {
@@ -15013,7 +15012,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var _Expander = (function () {
         function _Expander() {
-            this.expanded = false;
+            this.isExpanded = false;
             this.errors = [];
         }
         _Expander.prototype.visitElement = function (ast, context) {
@@ -15023,8 +15022,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         _Expander.prototype.visitText = function (ast, context) { return ast; };
         _Expander.prototype.visitComment = function (ast, context) { return ast; };
         _Expander.prototype.visitExpansion = function (ast, context) {
-            this.expanded = true;
-            return ast.type == 'plural' ? _expandPluralForm(ast, this.errors) : _expandDefaultForm(ast);
+            this.isExpanded = true;
+            return ast.type == 'plural' ? _expandPluralForm(ast, this.errors) :
+                _expandDefaultForm(ast, this.errors);
         };
         _Expander.prototype.visitExpansionCase = function (ast, context) {
             throw new BaseException$1('Should not be reached');
@@ -15038,28 +15038,19 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             var expansionResult = expandNodes(c.expression);
             errors.push.apply(errors, expansionResult.errors);
-            var i18nAttrs = expansionResult.expanded ?
-                [] :
-                [new HtmlAttrAst('i18n', ast.type + "_" + c.value, c.valueSourceSpan)];
-            return new HtmlElementAst("template", [
-                new HtmlAttrAst('ngPluralCase', c.value, c.valueSourceSpan),
-            ], [new HtmlElementAst("li", i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)], c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new HtmlElementAst("template", [new HtmlAttrAst('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
         var switchAttr = new HtmlAttrAst('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
-        return new HtmlElementAst('ul', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+        return new HtmlElementAst('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
-    function _expandDefaultForm(ast) {
+    function _expandDefaultForm(ast, errors) {
         var children = ast.cases.map(function (c) {
             var expansionResult = expandNodes(c.expression);
-            var i18nAttrs = expansionResult.expanded ?
-                [] :
-                [new HtmlAttrAst('i18n', ast.type + "_" + c.value, c.valueSourceSpan)];
-            return new HtmlElementAst("template", [
-                new HtmlAttrAst('ngSwitchWhen', c.value, c.valueSourceSpan),
-            ], [new HtmlElementAst("li", i18nAttrs, expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan)], c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            errors.push.apply(errors, expansionResult.errors);
+            return new HtmlElementAst("template", [new HtmlAttrAst('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
         var switchAttr = new HtmlAttrAst('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
-        return new HtmlElementAst('ul', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+        return new HtmlElementAst('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
     var _PLACEHOLDER_ELEMENT = 'ph';
     var _NAME_ATTR = 'name';
