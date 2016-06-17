@@ -32,10 +32,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     // exports the original value of the symbol.
     var global$1 = globalScope;
     var Type = Function;
-    var _devMode = true;
-    function assertionsEnabled() {
-        return _devMode;
-    }
     // TODO: remove calls to assert in production environment
     // Note: Can't just export this and import in in other files
     // as `assert` is a reserved keyword in Dart
@@ -6937,15 +6933,29 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var CompilerConfig = (function () {
         function CompilerConfig(_a) {
-            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, _e = _b.genDebugInfo, genDebugInfo = _e === void 0 ? assertionsEnabled() : _e, _f = _b.logBindingUpdate, logBindingUpdate = _f === void 0 ? assertionsEnabled() : _f, _g = _b.useJit, useJit = _g === void 0 ? true : _g, _h = _b.platformDirectives, platformDirectives = _h === void 0 ? [] : _h, _j = _b.platformPipes, platformPipes = _j === void 0 ? [] : _j;
+            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, _f = _b.platformDirectives, platformDirectives = _f === void 0 ? [] : _f, _g = _b.platformPipes, platformPipes = _g === void 0 ? [] : _g;
             this.renderTypes = renderTypes;
             this.defaultEncapsulation = defaultEncapsulation;
-            this.genDebugInfo = genDebugInfo;
-            this.logBindingUpdate = logBindingUpdate;
+            this._genDebugInfo = genDebugInfo;
+            this._logBindingUpdate = logBindingUpdate;
             this.useJit = useJit;
             this.platformDirectives = platformDirectives;
             this.platformPipes = platformPipes;
         }
+        Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
+            get: function () {
+                return this._genDebugInfo === void 0 ? _angular_core.isDevMode() : this._genDebugInfo;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(CompilerConfig.prototype, "logBindingUpdate", {
+            get: function () {
+                return this._logBindingUpdate === void 0 ? _angular_core.isDevMode() : this._logBindingUpdate;
+            },
+            enumerable: true,
+            configurable: true
+        });
         return CompilerConfig;
     }());
     /**
@@ -11830,7 +11840,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return TemplatePreparseVisitor;
     }());
     function assertArrayOfStrings(identifier, value) {
-        if (!assertionsEnabled() || isBlank(value)) {
+        if (!_angular_core.isDevMode() || isBlank(value)) {
             return;
         }
         if (!isArray(value)) {

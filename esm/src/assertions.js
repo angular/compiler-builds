@@ -1,7 +1,8 @@
+import { isDevMode } from '@angular/core';
 import { BaseException } from '../src/facade/exceptions';
-import { assertionsEnabled, isArray, isBlank, isString } from '../src/facade/lang';
+import { isArray, isBlank, isString } from '../src/facade/lang';
 export function assertArrayOfStrings(identifier, value) {
-    if (!assertionsEnabled() || isBlank(value)) {
+    if (!isDevMode() || isBlank(value)) {
         return;
     }
     if (!isArray(value)) {

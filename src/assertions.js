@@ -1,8 +1,9 @@
 "use strict";
+var core_1 = require('@angular/core');
 var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('../src/facade/lang');
 function assertArrayOfStrings(identifier, value) {
-    if (!lang_1.assertionsEnabled() || lang_1.isBlank(value)) {
+    if (!core_1.isDevMode() || lang_1.isBlank(value)) {
         return;
     }
     if (!lang_1.isArray(value)) {
