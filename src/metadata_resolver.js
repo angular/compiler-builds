@@ -20,20 +20,16 @@ var util_1 = require('./util');
 var view_resolver_1 = require('./view_resolver');
 var CompileMetadataResolver = (function () {
     function CompileMetadataResolver(_directiveResolver, _pipeResolver, _viewResolver, _config, _reflector) {
+        if (_reflector === void 0) { _reflector = core_private_1.reflector; }
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
         this._viewResolver = _viewResolver;
         this._config = _config;
+        this._reflector = _reflector;
         this._directiveCache = new Map();
         this._pipeCache = new Map();
         this._anonymousTypes = new Map();
         this._anonymousTypeIndex = 0;
-        if (lang_1.isPresent(_reflector)) {
-            this._reflector = _reflector;
-        }
-        else {
-            this._reflector = core_private_1.reflector;
-        }
     }
     CompileMetadataResolver.prototype.sanitizeTokenName = function (token) {
         var identifier = lang_1.stringify(token);

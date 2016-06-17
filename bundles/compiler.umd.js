@@ -2486,6 +2486,39 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         return result;
     }
+    var $EOF$1 = 0;
+    var $TAB$1 = 9;
+    var $LF$1 = 10;
+    var $CR$1 = 13;
+    var $SPACE$1 = 32;
+    var $BANG$1 = 33;
+    var $DQ$1 = 34;
+    var $HASH$1 = 35;
+    var $AMPERSAND$1 = 38;
+    var $SQ$1 = 39;
+    var $COMMA$1 = 44;
+    var $MINUS$1 = 45;
+    var $SLASH$1 = 47;
+    var $COLON$1 = 58;
+    var $SEMICOLON$1 = 59;
+    var $LT$1 = 60;
+    var $EQ$1 = 61;
+    var $GT$1 = 62;
+    var $0$1 = 48;
+    var $9$1 = 57;
+    var $A$1 = 65;
+    var $F = 70;
+    var $X = 88;
+    var $Z$1 = 90;
+    var $LBRACKET$1 = 91;
+    var $RBRACKET$1 = 93;
+    var $a$1 = 97;
+    var $f$1 = 102;
+    var $x = 120;
+    var $z$1 = 122;
+    var $LBRACE$1 = 123;
+    var $RBRACE$1 = 125;
+    var $NBSP$1 = 160;
     // see http://www.w3.org/TR/html51/syntax.html#named-character-references
     // see https://html.spec.whatwg.org/multipage/entities.json
     // This list is not exhaustive to keep the compiler footprint low.
@@ -2982,39 +3015,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         return new _HtmlTokenizer(new ParseSourceFile(sourceContent, sourceUrl), tokenizeExpansionForms)
             .tokenize();
     }
-    var $EOF$1 = 0;
-    var $TAB$1 = 9;
-    var $LF$1 = 10;
-    var $CR$1 = 13;
-    var $SPACE$1 = 32;
-    var $BANG$1 = 33;
-    var $DQ$1 = 34;
-    var $HASH$1 = 35;
-    var $AMPERSAND$1 = 38;
-    var $SQ$1 = 39;
-    var $MINUS$1 = 45;
-    var $SLASH$1 = 47;
-    var $0$1 = 48;
-    var $SEMICOLON$1 = 59;
-    var $9$1 = 57;
-    var $COLON$1 = 58;
-    var $LT$1 = 60;
-    var $EQ$1 = 61;
-    var $GT$1 = 62;
-    var $LBRACKET$1 = 91;
-    var $RBRACKET$1 = 93;
-    var $LBRACE$1 = 123;
-    var $RBRACE$1 = 125;
-    var $COMMA$1 = 44;
-    var $A$1 = 65;
-    var $F = 70;
-    var $X = 88;
-    var $Z$1 = 90;
-    var $a$1 = 97;
-    var $f$1 = 102;
-    var $z$1 = 122;
-    var $x = 120;
-    var $NBSP$1 = 160;
     var CR_OR_CRLF_REGEXP = /\r\n?/g;
     function unexpectedCharacterErrorMsg(charCode) {
         var char = charCode === $EOF$1 ? 'EOF' : StringWrapper.fromCharCode(charCode);
@@ -3084,10 +3084,12 @@ var __extends = (this && this.__extends) || function (d, b) {
                         this.tokenizeExpansionForms) {
                         this._consumeExpansionCaseStart();
                     }
-                    else if (this._peek === $RBRACE$1 && this._isInExpansionCase() && this.tokenizeExpansionForms) {
+                    else if (this._peek === $RBRACE$1 && this._isInExpansionCase() &&
+                        this.tokenizeExpansionForms) {
                         this._consumeExpansionCaseEnd();
                     }
-                    else if (this._peek === $RBRACE$1 && this._isInExpansionForm() && this.tokenizeExpansionForms) {
+                    else if (this._peek === $RBRACE$1 && this._isInExpansionForm() &&
+                        this.tokenizeExpansionForms) {
                         this._consumeExpansionFormEnd();
                     }
                     else {
@@ -3156,8 +3158,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this._column++;
             }
             this._index++;
-            this._peek =
-                this._index >= this._length ? $EOF$1 : StringWrapper.charCodeAt(this._input, this._index);
+            this._peek = this._index >= this._length ? $EOF$1 :
+                StringWrapper.charCodeAt(this._input, this._index);
             this._nextPeek = this._index + 1 >= this._length ?
                 $EOF$1 :
                 StringWrapper.charCodeAt(this._input, this._index + 1);
@@ -3560,11 +3562,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         return (code >= $TAB$1 && code <= $SPACE$1) || (code === $NBSP$1);
     }
     function isNameEnd(code) {
-        return isWhitespace$1(code) || code === $GT$1 || code === $SLASH$1 || code === $SQ$1 || code === $DQ$1 ||
-            code === $EQ$1;
+        return isWhitespace$1(code) || code === $GT$1 || code === $SLASH$1 || code === $SQ$1 ||
+            code === $DQ$1 || code === $EQ$1;
     }
     function isPrefixEnd(code) {
-        return (code < $a$1 || $z$1 < code) && (code < $A$1 || $Z$1 < code) && (code < $0$1 || code > $9$1);
+        return (code < $a$1 || $z$1 < code) && (code < $A$1 || $Z$1 < code) &&
+            (code < $0$1 || code > $9$1);
     }
     function isDigitEntityEnd(code) {
         return code == $SEMICOLON$1 || code == $EOF$1 || !isAsciiHexDigit(code);
@@ -3582,7 +3585,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         return code >= $a$1 && code <= $z$1 || code >= $A$1 && code <= $Z$1;
     }
     function isAsciiHexDigit(code) {
-        return code >= $a$1 && code <= $f$1 || code >= $A$1 && code <= $F || code >= $0$1 && code <= $9$1;
+        return code >= $a$1 && code <= $f$1 || code >= $A$1 && code <= $F ||
+            code >= $0$1 && code <= $9$1;
     }
     function compareCharCodeCaseInsensitive(code1, code2) {
         return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
@@ -11867,12 +11871,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var DirectiveResolver = (function () {
         function DirectiveResolver(_reflector) {
-            if (isPresent(_reflector)) {
-                this._reflector = _reflector;
-            }
-            else {
-                this._reflector = reflector;
-            }
+            if (_reflector === void 0) { _reflector = reflector; }
+            this._reflector = _reflector;
         }
         /**
          * Return {@link DirectiveMetadata} for a given `Type`.
@@ -11923,16 +11923,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         var args = isPresent(a.args) ? a.args.join(', ') : '';
                         host[("(" + a.eventName + ")")] = propName + "(" + args + ")";
                     }
-                    if (a instanceof _angular_core.ContentChildrenMetadata) {
-                        queries[propName] = a;
-                    }
-                    if (a instanceof _angular_core.ViewChildrenMetadata) {
-                        queries[propName] = a;
-                    }
-                    if (a instanceof _angular_core.ContentChildMetadata) {
-                        queries[propName] = a;
-                    }
-                    if (a instanceof _angular_core.ViewChildMetadata) {
+                    if (a instanceof _angular_core.QueryMetadata) {
                         queries[propName] = a;
                     }
                 });
@@ -11997,12 +11988,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var PipeResolver = (function () {
         function PipeResolver(_reflector) {
-            if (isPresent(_reflector)) {
-                this._reflector = _reflector;
-            }
-            else {
-                this._reflector = reflector;
-            }
+            if (_reflector === void 0) { _reflector = reflector; }
+            this._reflector = _reflector;
         }
         /**
          * Return {@link PipeMetadata} for a given `Type`.
@@ -12027,17 +12014,12 @@ var __extends = (this && this.__extends) || function (d, b) {
     PipeResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
-    var CODEGEN_PIPE_RESOLVER = new PipeResolver(reflector);
     var ViewResolver = (function () {
         function ViewResolver(_reflector) {
+            if (_reflector === void 0) { _reflector = reflector; }
+            this._reflector = _reflector;
             /** @internal */
             this._cache = new Map$1();
-            if (isPresent(_reflector)) {
-                this._reflector = _reflector;
-            }
-            else {
-                this._reflector = reflector;
-            }
         }
         ViewResolver.prototype.resolve = function (component) {
             var view = this._cache.get(component);
@@ -12088,20 +12070,16 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     var CompileMetadataResolver = (function () {
         function CompileMetadataResolver(_directiveResolver, _pipeResolver, _viewResolver, _config, _reflector) {
+            if (_reflector === void 0) { _reflector = reflector; }
             this._directiveResolver = _directiveResolver;
             this._pipeResolver = _pipeResolver;
             this._viewResolver = _viewResolver;
             this._config = _config;
+            this._reflector = _reflector;
             this._directiveCache = new Map();
             this._pipeCache = new Map();
             this._anonymousTypes = new Map();
             this._anonymousTypeIndex = 0;
-            if (isPresent(_reflector)) {
-                this._reflector = _reflector;
-            }
-            else {
-                this._reflector = reflector;
-            }
         }
         CompileMetadataResolver.prototype.sanitizeTokenName = function (token) {
             var identifier = stringify(token);

@@ -11,11 +11,11 @@ export declare class CompileMetadataResolver {
     private _pipeResolver;
     private _viewResolver;
     private _config;
+    private _reflector;
     private _directiveCache;
     private _pipeCache;
     private _anonymousTypes;
     private _anonymousTypeIndex;
-    private _reflector;
     constructor(_directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _viewResolver: ViewResolver, _config: CompilerConfig, _reflector?: ReflectorReader);
     private sanitizeTokenName(token);
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;

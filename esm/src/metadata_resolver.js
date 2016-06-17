@@ -13,21 +13,16 @@ import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, ValueTransformer, sanitizeIdentifier, visitValue } from './util';
 import { ViewResolver } from './view_resolver';
 export class CompileMetadataResolver {
-    constructor(_directiveResolver, _pipeResolver, _viewResolver, _config, _reflector) {
+    constructor(_directiveResolver, _pipeResolver, _viewResolver, _config, _reflector = reflector) {
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
         this._viewResolver = _viewResolver;
         this._config = _config;
+        this._reflector = _reflector;
         this._directiveCache = new Map();
         this._pipeCache = new Map();
         this._anonymousTypes = new Map();
         this._anonymousTypeIndex = 0;
-        if (isPresent(_reflector)) {
-            this._reflector = _reflector;
-        }
-        else {
-            this._reflector = reflector;
-        }
     }
     sanitizeTokenName(token) {
         let identifier = stringify(token);
