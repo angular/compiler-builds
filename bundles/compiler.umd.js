@@ -8126,7 +8126,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         PromiseWrapper.scheduleMicrotask = function (computation) {
             PromiseWrapper.then(PromiseWrapper.resolve(null), computation, function (_) { });
         };
-        PromiseWrapper.isPromise = function (obj) { return obj instanceof Promise; };
         PromiseWrapper.completer = function () { return new PromiseCompleter(); };
         return PromiseWrapper;
     }());
@@ -8149,7 +8148,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * @deprecated - use callEmit() instead
          */
-        ObservableWrapper.callNext = function (emitter, value) { emitter.next(value); };
+        ObservableWrapper.callNext = function (emitter, value) { emitter.emit(value); };
         ObservableWrapper.callEmit = function (emitter, value) { emitter.emit(value); };
         ObservableWrapper.callError = function (emitter, error) { emitter.error(error); };
         ObservableWrapper.callComplete = function (emitter) { emitter.complete(); };
