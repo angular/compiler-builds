@@ -58,8 +58,8 @@ export class Part {
         }
         return this.children[0].sourceSpan;
     }
-    createMessage(parser) {
-        return new Message(stringifyNodes(this.children, parser), meaning(this.i18n), description(this.i18n));
+    createMessage(parser, interpolationConfig) {
+        return new Message(stringifyNodes(this.children, parser, interpolationConfig), meaning(this.i18n), description(this.i18n));
     }
 }
 function _isOpeningComment(n) {
@@ -93,21 +93,21 @@ export function description(i18n) {
  *
  * @internal
  */
-export function messageFromI18nAttribute(parser, p, i18nAttr) {
+export function messageFromI18nAttribute(parser, interpolationConfig, p, i18nAttr) {
     let expectedName = i18nAttr.name.substring(5);
     let attr = p.attrs.find(a => a.name == expectedName);
     if (attr) {
-        return messageFromAttribute(parser, attr, meaning(i18nAttr.value), description(i18nAttr.value));
+        return messageFromAttribute(parser, interpolationConfig, attr, meaning(i18nAttr.value), description(i18nAttr.value));
     }
     throw new I18nError(p.sourceSpan, `Missing attribute '${expectedName}'.`);
 }
-export function messageFromAttribute(parser, attr, meaning = null, description = null) {
-    let value = removeInterpolation(attr.value, attr.sourceSpan, parser);
+export function messageFromAttribute(parser, interpolationConfig, attr, meaning = null, description = null) {
+    let value = removeInterpolation(attr.value, attr.sourceSpan, parser, interpolationConfig);
     return new Message(value, meaning, description);
 }
-export function removeInterpolation(value, source, parser) {
+export function removeInterpolation(value, source, parser, interpolationConfig) {
     try {
-        let parsed = parser.splitInterpolation(value, source.toString());
+        let parsed = parser.splitInterpolation(value, source.toString(), interpolationConfig);
         let usedNames = new Map();
         if (isPresent(parsed)) {
             let res = '';
@@ -144,13 +144,14 @@ export function dedupePhName(usedNames, name) {
         return name;
     }
 }
-export function stringifyNodes(nodes, parser) {
-    let visitor = new _StringifyVisitor(parser);
+export function stringifyNodes(nodes, parser, interpolationConfig) {
+    let visitor = new _StringifyVisitor(parser, interpolationConfig);
     return htmlVisitAll(visitor, nodes).join('');
 }
 class _StringifyVisitor {
-    constructor(_parser) {
+    constructor(_parser, _interpolationConfig) {
         this._parser = _parser;
+        this._interpolationConfig = _interpolationConfig;
         this._index = 0;
     }
     visitElement(ast, context) {
@@ -161,7 +162,7 @@ class _StringifyVisitor {
     visitAttr(ast, context) { return null; }
     visitText(ast, context) {
         let index = this._index++;
-        let noInterpolation = removeInterpolation(ast.value, ast.sourceSpan, this._parser);
+        let noInterpolation = removeInterpolation(ast.value, ast.sourceSpan, this._parser, this._interpolationConfig);
         if (noInterpolation != ast.value) {
             return `<ph name="t${index}">${noInterpolation}</ph>`;
         }

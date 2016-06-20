@@ -1,5 +1,6 @@
 import { Parser } from '../expression_parser/parser';
 import { HtmlParser } from '../html_parser';
+import { InterpolationConfig } from '../interpolation_config';
 import { ParseError } from '../parse_util';
 import { Message } from './message';
 /**
@@ -80,10 +81,11 @@ export declare class MessageExtractor {
     private _implicitAttrs;
     private _messages;
     private _errors;
+    private _interpolationConfig;
     constructor(_htmlParser: HtmlParser, _parser: Parser, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
     });
-    extract(template: string, sourceUrl: string): ExtractionResult;
+    extract(template: string, sourceUrl: string, interpolationConfig?: InterpolationConfig): ExtractionResult;
     private _extractMessagesFromPart(part);
     private _recurse(nodes);
     private _recurseToExtractMessagesFromAttributes(nodes);

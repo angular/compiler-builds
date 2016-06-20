@@ -14,4 +14,24 @@ export function assertArrayOfStrings(identifier, value) {
         }
     }
 }
+const INTERPOLATION_BLACKLIST_REGEXPS = [
+    /^\s*$/g,
+    /[<>]/g,
+    /^[\{\}]$/g,
+];
+export function assertInterpolationSymbols(identifier, value) {
+    if (isDevMode() && !isBlank(value) && (!isArray(value) || value.length != 2)) {
+        throw new BaseException(`Expected '${identifier}' to be an array, [start, end].`);
+    }
+    else if (isDevMode() && !isBlank(value)) {
+        const start = value[0];
+        const end = value[1];
+        // black list checking
+        INTERPOLATION_BLACKLIST_REGEXPS.forEach(regexp => {
+            if (regexp.test(start) || regexp.test(end)) {
+                throw new BaseException(`['${start}', '${end}'] contains unusable interpolation symbol.`);
+            }
+        });
+    }
+}
 //# sourceMappingURL=assertions.js.map

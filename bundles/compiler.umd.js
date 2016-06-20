@@ -299,6 +299,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     function escape(s) {
         return global$1.encodeURI(s);
     }
+    function escapeRegExp(s) {
+        return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+    }
     /**
      * A segment of text within the template.
      */
@@ -1346,6 +1349,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { return null; };
         return RecursiveAstVisitor;
     }());
+    var DEFAULT_INTERPOLATION_CONFIG = {
+        start: '{{',
+        end: '}}'
+    };
     var TokenType;
     (function (TokenType) {
         TokenType[TokenType["Character"] = 0] = "Character";
@@ -1768,8 +1775,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     ]);
     var KEYWORDS = SetWrapper.createFromList(['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else']);
     var _implicitReceiver = new ImplicitReceiver();
-    // TODO(tbosch): Cannot make this const/final right now because of the transpiler...
-    var INTERPOLATION_REGEXP = /\{\{([\s\S]*?)\}\}/g;
     var ParseException = (function (_super) {
         __extends(ParseException, _super);
         function ParseException(message, input, errLocation, ctxLocation) {
@@ -1791,35 +1796,42 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return TemplateBindingParseResult;
     }());
+    function _createInterpolateRegExp(config) {
+        var regexp = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
+        return RegExpWrapper.create(regexp, 'g');
+    }
     var Parser = (function () {
         function Parser(/** @internal */ _lexer) {
             this._lexer = _lexer;
         }
-        Parser.prototype.parseAction = function (input, location) {
-            this._checkNoInterpolation(input, location);
+        Parser.prototype.parseAction = function (input, location, interpolationConfig) {
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            this._checkNoInterpolation(input, location, interpolationConfig);
             var tokens = this._lexer.tokenize(this._stripComments(input));
             var ast = new _ParseAST(input, location, tokens, true).parseChain();
             return new ASTWithSource(ast, input, location);
         };
-        Parser.prototype.parseBinding = function (input, location) {
-            var ast = this._parseBindingAst(input, location);
+        Parser.prototype.parseBinding = function (input, location, interpolationConfig) {
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            var ast = this._parseBindingAst(input, location, interpolationConfig);
             return new ASTWithSource(ast, input, location);
         };
-        Parser.prototype.parseSimpleBinding = function (input, location) {
-            var ast = this._parseBindingAst(input, location);
+        Parser.prototype.parseSimpleBinding = function (input, location, interpolationConfig) {
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            var ast = this._parseBindingAst(input, location, interpolationConfig);
             if (!SimpleExpressionChecker.check(ast)) {
                 throw new ParseException('Host binding expression can only contain field access and constants', input, location);
             }
             return new ASTWithSource(ast, input, location);
         };
-        Parser.prototype._parseBindingAst = function (input, location) {
+        Parser.prototype._parseBindingAst = function (input, location, interpolationConfig) {
             // Quotes expressions use 3rd-party expression language. We don't want to use
             // our lexer or parser for that, so we check for that ahead of time.
             var quote = this._parseQuote(input, location);
             if (isPresent(quote)) {
                 return quote;
             }
-            this._checkNoInterpolation(input, location);
+            this._checkNoInterpolation(input, location, interpolationConfig);
             var tokens = this._lexer.tokenize(this._stripComments(input));
             return new _ParseAST(input, location, tokens, false).parseChain();
         };
@@ -1839,8 +1851,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             var tokens = this._lexer.tokenize(input);
             return new _ParseAST(input, location, tokens, false).parseTemplateBindings();
         };
-        Parser.prototype.parseInterpolation = function (input, location) {
-            var split = this.splitInterpolation(input, location);
+        Parser.prototype.parseInterpolation = function (input, location, interpolationConfig) {
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            var split = this.splitInterpolation(input, location, interpolationConfig);
             if (split == null)
                 return null;
             var expressions = [];
@@ -1851,8 +1864,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return new ASTWithSource(new Interpolation(split.strings, expressions), input, location);
         };
-        Parser.prototype.splitInterpolation = function (input, location) {
-            var parts = StringWrapper.split(input, INTERPOLATION_REGEXP);
+        Parser.prototype.splitInterpolation = function (input, location, interpolationConfig) {
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            var regexp = _createInterpolateRegExp(interpolationConfig);
+            var parts = StringWrapper.split(input, regexp);
             if (parts.length <= 1) {
                 return null;
             }
@@ -1868,7 +1883,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     expressions.push(part);
                 }
                 else {
-                    throw new ParseException('Blank expressions are not allowed in interpolated strings', input, "at column " + this._findInterpolationErrorColumn(parts, i) + " in", location);
+                    throw new ParseException('Blank expressions are not allowed in interpolated strings', input, "at column " + this._findInterpolationErrorColumn(parts, i, interpolationConfig) + " in", location);
                 }
             }
             return new SplitInterpolation(strings, expressions);
@@ -1896,16 +1911,19 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return null;
         };
-        Parser.prototype._checkNoInterpolation = function (input, location) {
-            var parts = StringWrapper.split(input, INTERPOLATION_REGEXP);
+        Parser.prototype._checkNoInterpolation = function (input, location, interpolationConfig) {
+            var regexp = _createInterpolateRegExp(interpolationConfig);
+            var parts = StringWrapper.split(input, regexp);
             if (parts.length > 1) {
-                throw new ParseException('Got interpolation ({{}}) where expression was expected', input, "at column " + this._findInterpolationErrorColumn(parts, 1) + " in", location);
+                throw new ParseException("Got interpolation (" + interpolationConfig.start + interpolationConfig.end + ") where expression was expected", input, "at column " + this._findInterpolationErrorColumn(parts, 1, interpolationConfig) + " in", location);
             }
         };
-        Parser.prototype._findInterpolationErrorColumn = function (parts, partInErrIdx) {
+        Parser.prototype._findInterpolationErrorColumn = function (parts, partInErrIdx, interpolationConfig) {
             var errLocation = '';
             for (var j = 0; j < partInErrIdx; j++) {
-                errLocation += j % 2 === 0 ? parts[j] : "{{" + parts[j] + "}}";
+                errLocation += j % 2 === 0 ?
+                    parts[j] :
+                    "" + interpolationConfig.start + parts[j] + interpolationConfig.end;
             }
             return errLocation.length;
         };
@@ -3007,9 +3025,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return HtmlTokenizeResult;
     }());
-    function tokenizeHtml(sourceContent, sourceUrl, tokenizeExpansionForms) {
+    function tokenizeHtml(sourceContent, sourceUrl, tokenizeExpansionForms, interpolationConfig) {
         if (tokenizeExpansionForms === void 0) { tokenizeExpansionForms = false; }
-        return new _HtmlTokenizer(new ParseSourceFile(sourceContent, sourceUrl), tokenizeExpansionForms)
+        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+        return new _HtmlTokenizer(new ParseSourceFile(sourceContent, sourceUrl), tokenizeExpansionForms, interpolationConfig)
             .tokenize();
     }
     var CR_OR_CRLF_REGEXP = /\r\n?/g;
@@ -3028,9 +3047,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     }());
     // See http://www.w3.org/TR/html51/syntax.html#writing
     var _HtmlTokenizer = (function () {
-        function _HtmlTokenizer(file, tokenizeExpansionForms) {
+        function _HtmlTokenizer(file, tokenizeExpansionForms, interpolationConfig) {
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             this.file = file;
             this.tokenizeExpansionForms = tokenizeExpansionForms;
+            this.interpolationConfig = interpolationConfig;
             // Note: this is always lowercase!
             this._peek = -1;
             this._nextPeek = -1;
@@ -3074,7 +3095,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                             this._consumeTagOpen(start);
                         }
                     }
-                    else if (isExpansionFormStart(this._peek, this._nextPeek) && this.tokenizeExpansionForms) {
+                    else if (isExpansionFormStart(this._input, this._index, this.interpolationConfig.start) &&
+                        this.tokenizeExpansionForms) {
                         this._consumeExpansionFormStart();
                     }
                     else if (isExpansionCaseStart(this._peek) && this._isInExpansionForm() &&
@@ -3182,16 +3204,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         _HtmlTokenizer.prototype._attemptStr = function (chars) {
-            var indexBeforeAttempt = this._index;
-            var columnBeforeAttempt = this._column;
-            var lineBeforeAttempt = this._line;
+            var initialPosition = this._savePosition();
             for (var i = 0; i < chars.length; i++) {
                 if (!this._attemptCharCode(StringWrapper.charCodeAt(chars, i))) {
                     // If attempting to parse the string fails, we want to reset the parser
                     // to where it was before the attempt
-                    this._index = indexBeforeAttempt;
-                    this._column = columnBeforeAttempt;
-                    this._line = lineBeforeAttempt;
+                    this._restorePosition(initialPosition);
                     return false;
                 }
             }
@@ -3484,37 +3502,39 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._beginToken(HtmlTokenType.TEXT, start);
             var parts = [];
             var interpolation = false;
-            if (this._peek === $LBRACE$1 && this._nextPeek === $LBRACE$1) {
-                parts.push(this._readChar(true));
-                parts.push(this._readChar(true));
-                interpolation = true;
-            }
-            else {
-                parts.push(this._readChar(true));
-            }
-            while (!this._isTextEnd(interpolation)) {
-                if (this._peek === $LBRACE$1 && this._nextPeek === $LBRACE$1) {
-                    parts.push(this._readChar(true));
-                    parts.push(this._readChar(true));
+            do {
+                var savedPos = this._savePosition();
+                // _attemptStr advances the position when it is true.
+                // To push interpolation symbols, we have to reset it.
+                if (this._attemptStr(this.interpolationConfig.start)) {
+                    this._restorePosition(savedPos);
+                    for (var i = 0; i < this.interpolationConfig.start.length; i++) {
+                        parts.push(this._readChar(true));
+                    }
                     interpolation = true;
                 }
-                else if (this._peek === $RBRACE$1 && this._nextPeek === $RBRACE$1 && interpolation) {
-                    parts.push(this._readChar(true));
-                    parts.push(this._readChar(true));
+                else if (this._attemptStr(this.interpolationConfig.end) && interpolation) {
+                    this._restorePosition(savedPos);
+                    for (var i = 0; i < this.interpolationConfig.end.length; i++) {
+                        parts.push(this._readChar(true));
+                    }
                     interpolation = false;
                 }
                 else {
+                    this._restorePosition(savedPos);
                     parts.push(this._readChar(true));
                 }
-            }
+            } while (!this._isTextEnd(interpolation));
             this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
         _HtmlTokenizer.prototype._isTextEnd = function (interpolation) {
             if (this._peek === $LT$1 || this._peek === $EOF$1)
                 return true;
             if (this.tokenizeExpansionForms) {
-                if (isExpansionFormStart(this._peek, this._nextPeek))
+                var savedPos = this._savePosition();
+                if (isExpansionFormStart(this._input, this._index, this.interpolationConfig.start))
                     return true;
+                this._restorePosition(savedPos);
                 if (this._peek === $RBRACE$1 && !interpolation &&
                     (this._isInExpansionCase() || this._isInExpansionForm()))
                     return true;
@@ -3572,8 +3592,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     function isNamedEntityEnd(code) {
         return code == $SEMICOLON$1 || code == $EOF$1 || !isAsciiLetter(code);
     }
-    function isExpansionFormStart(peek, nextPeek) {
-        return peek === $LBRACE$1 && nextPeek != $LBRACE$1;
+    function isExpansionFormStart(input, offset, interpolationStart) {
+        var substr = input.substring(offset);
+        return StringWrapper.charCodeAt(substr, 0) === $LBRACE$1 &&
+            StringWrapper.charCodeAt(substr, 1) !== $LBRACE$1 &&
+            !substr.startsWith(interpolationStart);
     }
     function isExpansionCaseStart(peek) {
         return peek === $EQ$1 || isAsciiLetter(peek);
@@ -5337,7 +5360,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var CompileTemplateMetadata = (function () {
         function CompileTemplateMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors;
+            var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors, interpolation = _b.interpolation;
             this.encapsulation = encapsulation;
             this.template = template;
             this.templateUrl = templateUrl;
@@ -5345,6 +5368,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.styleUrls = isPresent(styleUrls) ? styleUrls : [];
             this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
             this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
+            if (isPresent(interpolation) && interpolation.length != 2) {
+                throw new BaseException$1("'interpolation' should have a start and an end symbol.");
+            }
+            this.interpolation = interpolation;
         }
         CompileTemplateMetadata.fromJson = function (data) {
             var animations = _arrayFromJson(data['animations'], metadataFromJson);
@@ -5357,7 +5384,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 styles: data['styles'],
                 styleUrls: data['styleUrls'],
                 animations: animations,
-                ngContentSelectors: data['ngContentSelectors']
+                ngContentSelectors: data['ngContentSelectors'],
+                interpolation: data['interpolation']
             });
         };
         CompileTemplateMetadata.prototype.toJson = function () {
@@ -5369,7 +5397,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 'styles': this.styles,
                 'styleUrls': this.styleUrls,
                 'animations': _objToJson(this.animations),
-                'ngContentSelectors': this.ngContentSelectors
+                'ngContentSelectors': this.ngContentSelectors,
+                'interpolation': this.interpolation
             };
         };
         return CompileTemplateMetadata;
@@ -6276,6 +6305,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.directivesIndex = new Map();
             this.ngContentCount = 0;
             this.selectorMatcher = new SelectorMatcher();
+            var tempMeta = providerViewContext.component.template;
+            if (isPresent(tempMeta) && isPresent(tempMeta.interpolation)) {
+                this._interpolationConfig = {
+                    start: tempMeta.interpolation[0],
+                    end: tempMeta.interpolation[1]
+                };
+            }
             ListWrapper.forEachWithIndex(directives, function (directive, index) {
                 var selector = CssSelector.parse(directive.selector);
                 _this.selectorMatcher.addSelectables(selector, directive);
@@ -6291,7 +6327,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         TemplateParseVisitor.prototype._parseInterpolation = function (value, sourceSpan) {
             var sourceInfo = sourceSpan.start.toString();
             try {
-                var ast = this._exprParser.parseInterpolation(value, sourceInfo);
+                var ast = this._exprParser.parseInterpolation(value, sourceInfo, this._interpolationConfig);
                 this._checkPipes(ast, sourceSpan);
                 if (isPresent(ast) &&
                     ast.ast.expressions.length > MAX_INTERPOLATION_VALUES) {
@@ -6307,7 +6343,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         TemplateParseVisitor.prototype._parseAction = function (value, sourceSpan) {
             var sourceInfo = sourceSpan.start.toString();
             try {
-                var ast = this._exprParser.parseAction(value, sourceInfo);
+                var ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
                 this._checkPipes(ast, sourceSpan);
                 return ast;
             }
@@ -6319,7 +6355,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         TemplateParseVisitor.prototype._parseBinding = function (value, sourceSpan) {
             var sourceInfo = sourceSpan.start.toString();
             try {
-                var ast = this._exprParser.parseBinding(value, sourceInfo);
+                var ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
                 this._checkPipes(ast, sourceSpan);
                 return ast;
             }
@@ -11775,7 +11811,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 styles: allResolvedStyles,
                 styleUrls: allStyleAbsUrls,
                 ngContentSelectors: visitor.ngContentSelectors,
-                animations: templateMeta.animations
+                animations: templateMeta.animations,
+                interpolation: templateMeta.interpolation
             });
         };
         return DirectiveNormalizer;
@@ -11850,6 +11887,26 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (!isString(value[i])) {
                 throw new BaseException$1("Expected '" + identifier + "' to be an array of strings.");
             }
+        }
+    }
+    var INTERPOLATION_BLACKLIST_REGEXPS = [
+        /^\s*$/g,
+        /[<>]/g,
+        /^[\{\}]$/g,
+    ];
+    function assertInterpolationSymbols(identifier, value) {
+        if (_angular_core.isDevMode() && !isBlank(value) && (!isArray(value) || value.length != 2)) {
+            throw new BaseException$1("Expected '" + identifier + "' to be an array, [start, end].");
+        }
+        else if (_angular_core.isDevMode() && !isBlank(value)) {
+            var start_1 = value[0];
+            var end_1 = value[1];
+            // black list checking
+            INTERPOLATION_BLACKLIST_REGEXPS.forEach(function (regexp) {
+                if (regexp.test(start_1) || regexp.test(end_1)) {
+                    throw new BaseException$1("['" + start_1 + "', '" + end_1 + "'] contains unusable interpolation symbol.");
+                }
+            });
         }
     }
     var LIFECYCLE_INTERFACES = MapWrapper.createFromPairs([
@@ -12061,7 +12118,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                         encapsulation: compMeta.encapsulation,
                         styles: compMeta.styles,
                         styleUrls: compMeta.styleUrls,
-                        animations: compMeta.animations
+                        animations: compMeta.animations,
+                        interpolation: compMeta.interpolation
                     });
                 }
             }
@@ -12161,6 +12219,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     var cmpMeta = dirMeta;
                     var viewMeta = this._viewResolver.resolve(directiveType);
                     assertArrayOfStrings('styles', viewMeta.styles);
+                    assertInterpolationSymbols('interpolation', viewMeta.interpolation);
                     var animations = isPresent(viewMeta.animations) ?
                         viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
                         null;
@@ -12170,7 +12229,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                         templateUrl: viewMeta.templateUrl,
                         styles: viewMeta.styles,
                         styleUrls: viewMeta.styleUrls,
-                        animations: animations
+                        animations: animations,
+                        interpolation: viewMeta.interpolation
                     });
                     changeDetectionStrategy = cmpMeta.changeDetection;
                     if (isPresent(dirMeta.viewProviders)) {
@@ -14859,8 +14919,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             enumerable: true,
             configurable: true
         });
-        Part.prototype.createMessage = function (parser) {
-            return new Message(stringifyNodes(this.children, parser), meaning(this.i18n), description(this.i18n));
+        Part.prototype.createMessage = function (parser, interpolationConfig) {
+            return new Message(stringifyNodes(this.children, parser, interpolationConfig), meaning(this.i18n), description(this.i18n));
         };
         return Part;
     }());
@@ -14895,23 +14955,23 @@ var __extends = (this && this.__extends) || function (d, b) {
      *
      * @internal
      */
-    function messageFromI18nAttribute(parser, p, i18nAttr) {
+    function messageFromI18nAttribute(parser, interpolationConfig, p, i18nAttr) {
         var expectedName = i18nAttr.name.substring(5);
         var attr = p.attrs.find(function (a) { return a.name == expectedName; });
         if (attr) {
-            return messageFromAttribute(parser, attr, meaning(i18nAttr.value), description(i18nAttr.value));
+            return messageFromAttribute(parser, interpolationConfig, attr, meaning(i18nAttr.value), description(i18nAttr.value));
         }
         throw new I18nError(p.sourceSpan, "Missing attribute '" + expectedName + "'.");
     }
-    function messageFromAttribute(parser, attr, meaning, description) {
+    function messageFromAttribute(parser, interpolationConfig, attr, meaning, description) {
         if (meaning === void 0) { meaning = null; }
         if (description === void 0) { description = null; }
-        var value = removeInterpolation(attr.value, attr.sourceSpan, parser);
+        var value = removeInterpolation(attr.value, attr.sourceSpan, parser, interpolationConfig);
         return new Message(value, meaning, description);
     }
-    function removeInterpolation(value, source, parser) {
+    function removeInterpolation(value, source, parser, interpolationConfig) {
         try {
-            var parsed = parser.splitInterpolation(value, source.toString());
+            var parsed = parser.splitInterpolation(value, source.toString(), interpolationConfig);
             var usedNames = new Map();
             if (isPresent(parsed)) {
                 var res = '';
@@ -14948,13 +15008,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             return name;
         }
     }
-    function stringifyNodes(nodes, parser) {
-        var visitor = new _StringifyVisitor(parser);
+    function stringifyNodes(nodes, parser, interpolationConfig) {
+        var visitor = new _StringifyVisitor(parser, interpolationConfig);
         return htmlVisitAll(visitor, nodes).join('');
     }
     var _StringifyVisitor = (function () {
-        function _StringifyVisitor(_parser) {
+        function _StringifyVisitor(_parser, _interpolationConfig) {
             this._parser = _parser;
+            this._interpolationConfig = _interpolationConfig;
             this._index = 0;
         }
         _StringifyVisitor.prototype.visitElement = function (ast, context) {
@@ -14965,7 +15026,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _StringifyVisitor.prototype.visitAttr = function (ast, context) { return null; };
         _StringifyVisitor.prototype.visitText = function (ast, context) {
             var index = this._index++;
-            var noInterpolation = removeInterpolation(ast.value, ast.sourceSpan, this._parser);
+            var noInterpolation = removeInterpolation(ast.value, ast.sourceSpan, this._parser, this._interpolationConfig);
             if (noInterpolation != ast.value) {
                 return "<ph name=\"t" + index + "\">" + noInterpolation + "</ph>";
             }
@@ -15155,9 +15216,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._implicitTags = _implicitTags;
             this._implicitAttrs = _implicitAttrs;
         }
-        I18nHtmlParser.prototype.parse = function (sourceContent, sourceUrl, parseExpansionForms) {
+        I18nHtmlParser.prototype.parse = function (sourceContent, sourceUrl, parseExpansionForms, interpolationConfig) {
             if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             this.errors = [];
+            this._interpolationConfig = interpolationConfig;
             var res = this._htmlParser.parse(sourceContent, sourceUrl, true);
             if (res.errors.length > 0) {
                 return res;
@@ -15186,7 +15249,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         I18nHtmlParser.prototype._mergeI18Part = function (part) {
-            var message = part.createMessage(this._parser);
+            var message = part.createMessage(this._parser, this._interpolationConfig);
             var messageId = id(message);
             if (!StringMapWrapper.contains(this._messages, messageId)) {
                 throw new I18nError(part.sourceSpan, "Cannot find message for id '" + messageId + "', content '" + message.content + "'.");
@@ -15276,7 +15339,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return names[0].value;
         };
         I18nHtmlParser.prototype._mergeTextInterpolation = function (t, originalNode) {
-            var split = this._parser.splitInterpolation(originalNode.value, originalNode.sourceSpan.toString());
+            var split = this._parser.splitInterpolation(originalNode.value, originalNode.sourceSpan.toString(), this._interpolationConfig);
             var exps = isPresent(split) ? split.expressions : [];
             var messageSubstring = this._messagesContent.substring(t.startSourceSpan.end.offset, t.endSourceSpan.start.offset);
             var translated = this._replacePlaceholdersWithExpressions(messageSubstring, exps, originalNode.sourceSpan);
@@ -15300,10 +15363,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                         res.push(attr);
                         return;
                     }
-                    message = messageFromAttribute(_this._parser, attr);
+                    message = messageFromAttribute(_this._parser, _this._interpolationConfig, attr);
                 }
                 else {
-                    message = messageFromI18nAttribute(_this._parser, el, i18ns[0]);
+                    message = messageFromI18nAttribute(_this._parser, _this._interpolationConfig, el, i18ns[0]);
                 }
                 var messageId = id(message);
                 if (StringMapWrapper.contains(_this._messages, messageId)) {
@@ -15317,7 +15380,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return res;
         };
         I18nHtmlParser.prototype._replaceInterpolationInAttr = function (attr, msg) {
-            var split = this._parser.splitInterpolation(attr.value, attr.sourceSpan.toString());
+            var split = this._parser.splitInterpolation(attr.value, attr.sourceSpan.toString(), this._interpolationConfig);
             var exps = isPresent(split) ? split.expressions : [];
             var first = msg[0];
             var last = msg[msg.length - 1];
@@ -15347,7 +15410,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         I18nHtmlParser.prototype._convertIntoExpression = function (name, expMap, sourceSpan) {
             if (expMap.has(name)) {
-                return "{{" + expMap.get(name) + "}}";
+                return "" + this._interpolationConfig.start + expMap.get(name) + this._interpolationConfig.end;
             }
             else {
                 throw new I18nError(sourceSpan, "Invalid interpolation name '" + name + "'");
@@ -15462,9 +15525,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._implicitTags = _implicitTags;
             this._implicitAttrs = _implicitAttrs;
         }
-        MessageExtractor.prototype.extract = function (template, sourceUrl) {
+        MessageExtractor.prototype.extract = function (template, sourceUrl, interpolationConfig) {
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             this._messages = [];
             this._errors = [];
+            this._interpolationConfig = interpolationConfig;
             var res = this._htmlParser.parse(template, sourceUrl, true);
             if (res.errors.length > 0) {
                 return new ExtractionResult([], res.errors);
@@ -15477,7 +15542,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         MessageExtractor.prototype._extractMessagesFromPart = function (part) {
             if (part.hasI18n) {
-                this._messages.push(part.createMessage(this._parser));
+                this._messages.push(part.createMessage(this._parser, this._interpolationConfig));
                 this._recurseToExtractMessagesFromAttributes(part.children);
             }
             else {
@@ -15510,7 +15575,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             p.attrs.filter(function (attr) { return attr.name.startsWith(I18N_ATTR_PREFIX); }).forEach(function (attr) {
                 try {
                     explicitAttrs.push(attr.name.substring(I18N_ATTR_PREFIX.length));
-                    _this._messages.push(messageFromI18nAttribute(_this._parser, p, attr));
+                    _this._messages.push(messageFromI18nAttribute(_this._parser, _this._interpolationConfig, p, attr));
                 }
                 catch (e) {
                     if (e instanceof I18nError) {
@@ -15524,7 +15589,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             p.attrs.filter(function (attr) { return !attr.name.startsWith(I18N_ATTR_PREFIX); })
                 .filter(function (attr) { return explicitAttrs.indexOf(attr.name) == -1; })
                 .filter(function (attr) { return transAttrs.indexOf(attr.name) > -1; })
-                .forEach(function (attr) { return _this._messages.push(messageFromAttribute(_this._parser, attr)); });
+                .forEach(function (attr) { return _this._messages.push(messageFromAttribute(_this._parser, _this._interpolationConfig, attr)); });
         };
         return MessageExtractor;
     }());

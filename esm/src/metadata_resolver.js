@@ -3,7 +3,7 @@ import { LIFECYCLE_HOOKS_VALUES, ReflectorReader, createProvider, isProviderLite
 import { StringMapWrapper } from '../src/facade/collection';
 import { BaseException } from '../src/facade/exceptions';
 import { Type, isArray, isBlank, isPresent, isString, isStringMap, stringify } from '../src/facade/lang';
-import { assertArrayOfStrings } from './assertions';
+import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { CompilerConfig } from './config';
 import { hasLifecycleHook } from './directive_lifecycle_reflector';
@@ -90,6 +90,7 @@ export class CompileMetadataResolver {
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
                 assertArrayOfStrings('styles', viewMeta.styles);
+                assertInterpolationSymbols('interpolation', viewMeta.interpolation);
                 var animations = isPresent(viewMeta.animations) ?
                     viewMeta.animations.map(e => this.getAnimationEntryMetadata(e)) :
                     null;
@@ -99,7 +100,8 @@ export class CompileMetadataResolver {
                     templateUrl: viewMeta.templateUrl,
                     styles: viewMeta.styles,
                     styleUrls: viewMeta.styleUrls,
-                    animations: animations
+                    animations: animations,
+                    interpolation: viewMeta.interpolation
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (isPresent(dirMeta.viewProviders)) {

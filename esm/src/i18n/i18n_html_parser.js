@@ -3,6 +3,7 @@ import { BaseException } from '../facade/exceptions';
 import { NumberWrapper, RegExpWrapper, isPresent } from '../facade/lang';
 import { HtmlAttrAst, HtmlElementAst, HtmlTextAst, htmlVisitAll } from '../html_ast';
 import { HtmlParseTreeResult } from '../html_parser';
+import { DEFAULT_INTERPOLATION_CONFIG } from '../interpolation_config';
 import { expandNodes } from './expander';
 import { id } from './message';
 import { I18N_ATTR, I18N_ATTR_PREFIX, I18nError, dedupePhName, getPhNameFromBinding, messageFromAttribute, messageFromI18nAttribute, partition } from './shared';
@@ -98,8 +99,9 @@ export class I18nHtmlParser {
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
     }
-    parse(sourceContent, sourceUrl, parseExpansionForms = false) {
+    parse(sourceContent, sourceUrl, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this.errors = [];
+        this._interpolationConfig = interpolationConfig;
         let res = this._htmlParser.parse(sourceContent, sourceUrl, true);
         if (res.errors.length > 0) {
             return res;
@@ -127,7 +129,7 @@ export class I18nHtmlParser {
         }
     }
     _mergeI18Part(part) {
-        let message = part.createMessage(this._parser);
+        let message = part.createMessage(this._parser, this._interpolationConfig);
         let messageId = id(message);
         if (!StringMapWrapper.contains(this._messages, messageId)) {
             throw new I18nError(part.sourceSpan, `Cannot find message for id '${messageId}', content '${message.content}'.`);
@@ -215,7 +217,7 @@ export class I18nHtmlParser {
         return names[0].value;
     }
     _mergeTextInterpolation(t, originalNode) {
-        let split = this._parser.splitInterpolation(originalNode.value, originalNode.sourceSpan.toString());
+        let split = this._parser.splitInterpolation(originalNode.value, originalNode.sourceSpan.toString(), this._interpolationConfig);
         let exps = isPresent(split) ? split.expressions : [];
         let messageSubstring = this._messagesContent.substring(t.startSourceSpan.end.offset, t.endSourceSpan.start.offset);
         let translated = this._replacePlaceholdersWithExpressions(messageSubstring, exps, originalNode.sourceSpan);
@@ -238,10 +240,10 @@ export class I18nHtmlParser {
                     res.push(attr);
                     return;
                 }
-                message = messageFromAttribute(this._parser, attr);
+                message = messageFromAttribute(this._parser, this._interpolationConfig, attr);
             }
             else {
-                message = messageFromI18nAttribute(this._parser, el, i18ns[0]);
+                message = messageFromI18nAttribute(this._parser, this._interpolationConfig, el, i18ns[0]);
             }
             let messageId = id(message);
             if (StringMapWrapper.contains(this._messages, messageId)) {
@@ -255,7 +257,7 @@ export class I18nHtmlParser {
         return res;
     }
     _replaceInterpolationInAttr(attr, msg) {
-        let split = this._parser.splitInterpolation(attr.value, attr.sourceSpan.toString());
+        let split = this._parser.splitInterpolation(attr.value, attr.sourceSpan.toString(), this._interpolationConfig);
         let exps = isPresent(split) ? split.expressions : [];
         let first = msg[0];
         let last = msg[msg.length - 1];
@@ -284,7 +286,7 @@ export class I18nHtmlParser {
     }
     _convertIntoExpression(name, expMap, sourceSpan) {
         if (expMap.has(name)) {
-            return `{{${expMap.get(name)}}}`;
+            return `${this._interpolationConfig.start}${expMap.get(name)}${this._interpolationConfig.end}`;
         }
         else {
             throw new I18nError(sourceSpan, `Invalid interpolation name '${name}'`);

@@ -72,8 +72,8 @@ var Part = (function () {
         enumerable: true,
         configurable: true
     });
-    Part.prototype.createMessage = function (parser) {
-        return new message_1.Message(stringifyNodes(this.children, parser), meaning(this.i18n), description(this.i18n));
+    Part.prototype.createMessage = function (parser, interpolationConfig) {
+        return new message_1.Message(stringifyNodes(this.children, parser, interpolationConfig), meaning(this.i18n), description(this.i18n));
     };
     return Part;
 }());
@@ -111,25 +111,25 @@ exports.description = description;
  *
  * @internal
  */
-function messageFromI18nAttribute(parser, p, i18nAttr) {
+function messageFromI18nAttribute(parser, interpolationConfig, p, i18nAttr) {
     var expectedName = i18nAttr.name.substring(5);
     var attr = p.attrs.find(function (a) { return a.name == expectedName; });
     if (attr) {
-        return messageFromAttribute(parser, attr, meaning(i18nAttr.value), description(i18nAttr.value));
+        return messageFromAttribute(parser, interpolationConfig, attr, meaning(i18nAttr.value), description(i18nAttr.value));
     }
     throw new I18nError(p.sourceSpan, "Missing attribute '" + expectedName + "'.");
 }
 exports.messageFromI18nAttribute = messageFromI18nAttribute;
-function messageFromAttribute(parser, attr, meaning, description) {
+function messageFromAttribute(parser, interpolationConfig, attr, meaning, description) {
     if (meaning === void 0) { meaning = null; }
     if (description === void 0) { description = null; }
-    var value = removeInterpolation(attr.value, attr.sourceSpan, parser);
+    var value = removeInterpolation(attr.value, attr.sourceSpan, parser, interpolationConfig);
     return new message_1.Message(value, meaning, description);
 }
 exports.messageFromAttribute = messageFromAttribute;
-function removeInterpolation(value, source, parser) {
+function removeInterpolation(value, source, parser, interpolationConfig) {
     try {
-        var parsed = parser.splitInterpolation(value, source.toString());
+        var parsed = parser.splitInterpolation(value, source.toString(), interpolationConfig);
         var usedNames = new Map();
         if (lang_1.isPresent(parsed)) {
             var res = '';
@@ -169,14 +169,15 @@ function dedupePhName(usedNames, name) {
     }
 }
 exports.dedupePhName = dedupePhName;
-function stringifyNodes(nodes, parser) {
-    var visitor = new _StringifyVisitor(parser);
+function stringifyNodes(nodes, parser, interpolationConfig) {
+    var visitor = new _StringifyVisitor(parser, interpolationConfig);
     return html_ast_1.htmlVisitAll(visitor, nodes).join('');
 }
 exports.stringifyNodes = stringifyNodes;
 var _StringifyVisitor = (function () {
-    function _StringifyVisitor(_parser) {
+    function _StringifyVisitor(_parser, _interpolationConfig) {
         this._parser = _parser;
+        this._interpolationConfig = _interpolationConfig;
         this._index = 0;
     }
     _StringifyVisitor.prototype.visitElement = function (ast, context) {
@@ -187,7 +188,7 @@ var _StringifyVisitor = (function () {
     _StringifyVisitor.prototype.visitAttr = function (ast, context) { return null; };
     _StringifyVisitor.prototype.visitText = function (ast, context) {
         var index = this._index++;
-        var noInterpolation = removeInterpolation(ast.value, ast.sourceSpan, this._parser);
+        var noInterpolation = removeInterpolation(ast.value, ast.sourceSpan, this._parser, this._interpolationConfig);
         if (noInterpolation != ast.value) {
             return "<ph name=\"t" + index + "\">" + noInterpolation + "</ph>";
         }

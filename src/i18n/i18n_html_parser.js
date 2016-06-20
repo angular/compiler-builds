@@ -4,6 +4,7 @@ var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
 var html_ast_1 = require('../html_ast');
 var html_parser_1 = require('../html_parser');
+var interpolation_config_1 = require('../interpolation_config');
 var expander_1 = require('./expander');
 var message_1 = require('./message');
 var shared_1 = require('./shared');
@@ -99,9 +100,11 @@ var I18nHtmlParser = (function () {
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
     }
-    I18nHtmlParser.prototype.parse = function (sourceContent, sourceUrl, parseExpansionForms) {
+    I18nHtmlParser.prototype.parse = function (sourceContent, sourceUrl, parseExpansionForms, interpolationConfig) {
         if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+        if (interpolationConfig === void 0) { interpolationConfig = interpolation_config_1.DEFAULT_INTERPOLATION_CONFIG; }
         this.errors = [];
+        this._interpolationConfig = interpolationConfig;
         var res = this._htmlParser.parse(sourceContent, sourceUrl, true);
         if (res.errors.length > 0) {
             return res;
@@ -130,7 +133,7 @@ var I18nHtmlParser = (function () {
         }
     };
     I18nHtmlParser.prototype._mergeI18Part = function (part) {
-        var message = part.createMessage(this._parser);
+        var message = part.createMessage(this._parser, this._interpolationConfig);
         var messageId = message_1.id(message);
         if (!collection_1.StringMapWrapper.contains(this._messages, messageId)) {
             throw new shared_1.I18nError(part.sourceSpan, "Cannot find message for id '" + messageId + "', content '" + message.content + "'.");
@@ -220,7 +223,7 @@ var I18nHtmlParser = (function () {
         return names[0].value;
     };
     I18nHtmlParser.prototype._mergeTextInterpolation = function (t, originalNode) {
-        var split = this._parser.splitInterpolation(originalNode.value, originalNode.sourceSpan.toString());
+        var split = this._parser.splitInterpolation(originalNode.value, originalNode.sourceSpan.toString(), this._interpolationConfig);
         var exps = lang_1.isPresent(split) ? split.expressions : [];
         var messageSubstring = this._messagesContent.substring(t.startSourceSpan.end.offset, t.endSourceSpan.start.offset);
         var translated = this._replacePlaceholdersWithExpressions(messageSubstring, exps, originalNode.sourceSpan);
@@ -244,10 +247,10 @@ var I18nHtmlParser = (function () {
                     res.push(attr);
                     return;
                 }
-                message = shared_1.messageFromAttribute(_this._parser, attr);
+                message = shared_1.messageFromAttribute(_this._parser, _this._interpolationConfig, attr);
             }
             else {
-                message = shared_1.messageFromI18nAttribute(_this._parser, el, i18ns[0]);
+                message = shared_1.messageFromI18nAttribute(_this._parser, _this._interpolationConfig, el, i18ns[0]);
             }
             var messageId = message_1.id(message);
             if (collection_1.StringMapWrapper.contains(_this._messages, messageId)) {
@@ -261,7 +264,7 @@ var I18nHtmlParser = (function () {
         return res;
     };
     I18nHtmlParser.prototype._replaceInterpolationInAttr = function (attr, msg) {
-        var split = this._parser.splitInterpolation(attr.value, attr.sourceSpan.toString());
+        var split = this._parser.splitInterpolation(attr.value, attr.sourceSpan.toString(), this._interpolationConfig);
         var exps = lang_1.isPresent(split) ? split.expressions : [];
         var first = msg[0];
         var last = msg[msg.length - 1];
@@ -291,7 +294,7 @@ var I18nHtmlParser = (function () {
     };
     I18nHtmlParser.prototype._convertIntoExpression = function (name, expMap, sourceSpan) {
         if (expMap.has(name)) {
-            return "{{" + expMap.get(name) + "}}";
+            return "" + this._interpolationConfig.start + expMap.get(name) + this._interpolationConfig.end;
         }
         else {
             throw new shared_1.I18nError(sourceSpan, "Invalid interpolation name '" + name + "'");

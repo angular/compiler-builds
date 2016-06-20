@@ -100,6 +100,7 @@ var CompileMetadataResolver = (function () {
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
                 assertions_1.assertArrayOfStrings('styles', viewMeta.styles);
+                assertions_1.assertInterpolationSymbols('interpolation', viewMeta.interpolation);
                 var animations = lang_1.isPresent(viewMeta.animations) ?
                     viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
                     null;
@@ -109,7 +110,8 @@ var CompileMetadataResolver = (function () {
                     templateUrl: viewMeta.templateUrl,
                     styles: viewMeta.styles,
                     styleUrls: viewMeta.styleUrls,
-                    animations: animations
+                    animations: animations,
+                    interpolation: viewMeta.interpolation
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (lang_1.isPresent(dirMeta.viewProviders)) {

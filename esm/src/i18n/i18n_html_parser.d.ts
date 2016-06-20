@@ -1,6 +1,7 @@
 import { Parser } from '../expression_parser/parser';
 import { HtmlAst } from '../html_ast';
 import { HtmlParseTreeResult, HtmlParser } from '../html_parser';
+import { InterpolationConfig } from '../interpolation_config';
 import { ParseError } from '../parse_util';
 /**
  * Creates an i18n-ed version of the parsed template.
@@ -90,12 +91,13 @@ export declare class I18nHtmlParser implements HtmlParser {
     private _implicitTags;
     private _implicitAttrs;
     errors: ParseError[];
+    private _interpolationConfig;
     constructor(_htmlParser: HtmlParser, _parser: Parser, _messagesContent: string, _messages: {
         [key: string]: HtmlAst[];
     }, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
     });
-    parse(sourceContent: string, sourceUrl: string, parseExpansionForms?: boolean): HtmlParseTreeResult;
+    parse(sourceContent: string, sourceUrl: string, parseExpansionForms?: boolean, interpolationConfig?: InterpolationConfig): HtmlParseTreeResult;
     private _processI18nPart(part);
     private _mergeI18Part(part);
     private _recurseIntoI18nPart(p);
