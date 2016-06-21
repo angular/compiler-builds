@@ -154,20 +154,20 @@ export class CompileMetadataResolver {
             throw e;
         }
     }
-    getTypeMetadata(type, moduleUrl) {
+    getTypeMetadata(type, moduleUrl, dependencies = null) {
         return new cpl.CompileTypeMetadata({
             name: this.sanitizeTokenName(type),
             moduleUrl: moduleUrl,
             runtime: type,
-            diDeps: this.getDependenciesMetadata(type, null)
+            diDeps: this.getDependenciesMetadata(type, dependencies)
         });
     }
-    getFactoryMetadata(factory, moduleUrl) {
+    getFactoryMetadata(factory, moduleUrl, dependencies = null) {
         return new cpl.CompileFactoryMetadata({
             name: this.sanitizeTokenName(factory),
             moduleUrl: moduleUrl,
             runtime: factory,
-            diDeps: this.getDependenciesMetadata(factory, null)
+            diDeps: this.getDependenciesMetadata(factory, dependencies)
         });
     }
     getPipeMetadata(pipeType) {
@@ -211,9 +211,6 @@ export class CompileMetadataResolver {
             params = [];
         }
         let dependenciesMetadata = params.map((param) => {
-            if (isBlank(param)) {
-                return null;
-            }
             let isAttribute = false;
             let isHost = false;
             let isSelf = false;
@@ -317,21 +314,21 @@ export class CompileMetadataResolver {
     }
     getProviderMetadata(provider) {
         var compileDeps;
+        var compileTypeMetadata = null;
+        var compileFactoryMetadata = null;
         if (isPresent(provider.useClass)) {
-            compileDeps = this.getDependenciesMetadata(provider.useClass, provider.dependencies);
+            compileTypeMetadata = this.getTypeMetadata(provider.useClass, staticTypeModuleUrl(provider.useClass), provider.dependencies);
+            compileDeps = compileTypeMetadata.diDeps;
         }
         else if (isPresent(provider.useFactory)) {
-            compileDeps = this.getDependenciesMetadata(provider.useFactory, provider.dependencies);
+            compileFactoryMetadata = this.getFactoryMetadata(provider.useFactory, staticTypeModuleUrl(provider.useFactory), provider.dependencies);
+            compileDeps = compileFactoryMetadata.diDeps;
         }
         return new cpl.CompileProviderMetadata({
             token: this.getTokenMetadata(provider.token),
-            useClass: isPresent(provider.useClass) ?
-                this.getTypeMetadata(provider.useClass, staticTypeModuleUrl(provider.useClass)) :
-                null,
+            useClass: compileTypeMetadata,
             useValue: convertToCompileValue(provider.useValue),
-            useFactory: isPresent(provider.useFactory) ?
-                this.getFactoryMetadata(provider.useFactory, staticTypeModuleUrl(provider.useFactory)) :
-                null,
+            useFactory: compileFactoryMetadata,
             useExisting: isPresent(provider.useExisting) ? this.getTokenMetadata(provider.useExisting) :
                 null,
             deps: compileDeps,

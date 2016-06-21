@@ -28,8 +28,8 @@ export declare class CompileMetadataResolver {
      * @returns {cpl.CompileDirectiveMetadata} if possible, otherwise null.
      */
     maybeGetDirectiveMetadata(someType: Type): cpl.CompileDirectiveMetadata;
-    getTypeMetadata(type: Type, moduleUrl: string): cpl.CompileTypeMetadata;
-    getFactoryMetadata(factory: Function, moduleUrl: string): cpl.CompileFactoryMetadata;
+    getTypeMetadata(type: Type, moduleUrl: string, dependencies?: any[]): cpl.CompileTypeMetadata;
+    getFactoryMetadata(factory: Function, moduleUrl: string, dependencies?: any[]): cpl.CompileFactoryMetadata;
     getPipeMetadata(pipeType: Type): cpl.CompilePipeMetadata;
     getViewDirectivesMetadata(component: Type): cpl.CompileDirectiveMetadata[];
     getViewPipesMetadata(component: Type): cpl.CompilePipeMetadata[];

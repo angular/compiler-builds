@@ -12282,20 +12282,22 @@ var __extends = (this && this.__extends) || function (d, b) {
                 throw e;
             }
         };
-        CompileMetadataResolver.prototype.getTypeMetadata = function (type, moduleUrl) {
+        CompileMetadataResolver.prototype.getTypeMetadata = function (type, moduleUrl, dependencies) {
+            if (dependencies === void 0) { dependencies = null; }
             return new CompileTypeMetadata({
                 name: this.sanitizeTokenName(type),
                 moduleUrl: moduleUrl,
                 runtime: type,
-                diDeps: this.getDependenciesMetadata(type, null)
+                diDeps: this.getDependenciesMetadata(type, dependencies)
             });
         };
-        CompileMetadataResolver.prototype.getFactoryMetadata = function (factory, moduleUrl) {
+        CompileMetadataResolver.prototype.getFactoryMetadata = function (factory, moduleUrl, dependencies) {
+            if (dependencies === void 0) { dependencies = null; }
             return new CompileFactoryMetadata({
                 name: this.sanitizeTokenName(factory),
                 moduleUrl: moduleUrl,
                 runtime: factory,
-                diDeps: this.getDependenciesMetadata(factory, null)
+                diDeps: this.getDependenciesMetadata(factory, dependencies)
             });
         };
         CompileMetadataResolver.prototype.getPipeMetadata = function (pipeType) {
@@ -12342,9 +12344,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                 params = [];
             }
             var dependenciesMetadata = params.map(function (param) {
-                if (isBlank(param)) {
-                    return null;
-                }
                 var isAttribute = false;
                 var isHost = false;
                 var isSelf = false;
@@ -12449,21 +12448,21 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileMetadataResolver.prototype.getProviderMetadata = function (provider) {
             var compileDeps;
+            var compileTypeMetadata = null;
+            var compileFactoryMetadata = null;
             if (isPresent(provider.useClass)) {
-                compileDeps = this.getDependenciesMetadata(provider.useClass, provider.dependencies);
+                compileTypeMetadata = this.getTypeMetadata(provider.useClass, staticTypeModuleUrl(provider.useClass), provider.dependencies);
+                compileDeps = compileTypeMetadata.diDeps;
             }
             else if (isPresent(provider.useFactory)) {
-                compileDeps = this.getDependenciesMetadata(provider.useFactory, provider.dependencies);
+                compileFactoryMetadata = this.getFactoryMetadata(provider.useFactory, staticTypeModuleUrl(provider.useFactory), provider.dependencies);
+                compileDeps = compileFactoryMetadata.diDeps;
             }
             return new CompileProviderMetadata({
                 token: this.getTokenMetadata(provider.token),
-                useClass: isPresent(provider.useClass) ?
-                    this.getTypeMetadata(provider.useClass, staticTypeModuleUrl(provider.useClass)) :
-                    null,
+                useClass: compileTypeMetadata,
                 useValue: convertToCompileValue(provider.useValue),
-                useFactory: isPresent(provider.useFactory) ?
-                    this.getFactoryMetadata(provider.useFactory, staticTypeModuleUrl(provider.useFactory)) :
-                    null,
+                useFactory: compileFactoryMetadata,
                 useExisting: isPresent(provider.useExisting) ? this.getTokenMetadata(provider.useExisting) :
                     null,
                 deps: compileDeps,
