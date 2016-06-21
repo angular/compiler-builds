@@ -9868,10 +9868,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         ]);
     }
     function createQueryList(query, directiveInstance, propertyName, compileView) {
-        compileView.fields.push(new ClassField(propertyName, importType(Identifiers.QueryList)));
+        compileView.fields.push(new ClassField(propertyName, importType(Identifiers.QueryList, [DYNAMIC_TYPE])));
         var expr = THIS_EXPR.prop(propertyName);
         compileView.createMethod.addStmt(THIS_EXPR.prop(propertyName)
-            .set(importExpr(Identifiers.QueryList).instantiate([]))
+            .set(importExpr(Identifiers.QueryList, [DYNAMIC_TYPE]).instantiate([]))
             .toStmt());
         return expr;
     }
@@ -14871,27 +14871,28 @@ var __extends = (this && this.__extends) || function (d, b) {
     function partition(nodes, errors, implicitTags) {
         var parts = [];
         for (var i = 0; i < nodes.length; ++i) {
-            var n = nodes[i];
-            var temp = [];
-            if (_isOpeningComment(n)) {
-                var i18n = n.value.replace(/^i18n:?/, '').trim();
-                i++;
-                while (!_isClosingComment(nodes[i])) {
-                    temp.push(nodes[i++]);
-                    if (i === nodes.length) {
-                        errors.push(new I18nError(n.sourceSpan, 'Missing closing \'i18n\' comment.'));
-                        break;
-                    }
+            var node = nodes[i];
+            var msgNodes = [];
+            // Nodes between `<!-- i18n -->` and `<!-- /i18n -->`
+            if (_isOpeningComment(node)) {
+                var i18n = node.value.replace(/^i18n:?/, '').trim();
+                while (++i < nodes.length && !_isClosingComment(nodes[i])) {
+                    msgNodes.push(nodes[i]);
                 }
-                parts.push(new Part(null, null, temp, i18n, true));
+                if (i === nodes.length) {
+                    errors.push(new I18nError(node.sourceSpan, 'Missing closing \'i18n\' comment.'));
+                    break;
+                }
+                parts.push(new Part(null, null, msgNodes, i18n, true));
             }
-            else if (n instanceof HtmlElementAst) {
-                var i18n = _findI18nAttr(n);
-                var hasI18n = isPresent(i18n) || implicitTags.indexOf(n.name) > -1;
-                parts.push(new Part(n, null, n.children, isPresent(i18n) ? i18n.value : null, hasI18n));
+            else if (node instanceof HtmlElementAst) {
+                // Node with an `i18n` attribute
+                var i18n = _findI18nAttr(node);
+                var hasI18n = isPresent(i18n) || implicitTags.indexOf(node.name) > -1;
+                parts.push(new Part(node, null, node.children, isPresent(i18n) ? i18n.value : null, hasI18n));
             }
-            else if (n instanceof HtmlTextAst) {
-                parts.push(new Part(null, n, null, null, false));
+            else if (node instanceof HtmlTextAst) {
+                parts.push(new Part(null, node, null, null, false));
             }
         }
         return parts;
@@ -14926,7 +14927,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return n instanceof HtmlCommentAst && isPresent(n.value) && n.value.startsWith('i18n');
     }
     function _isClosingComment(n) {
-        return n instanceof HtmlCommentAst && isPresent(n.value) && n.value == '/i18n';
+        return n instanceof HtmlCommentAst && isPresent(n.value) && n.value === '/i18n';
     }
     function _findI18nAttr(p) {
         var attrs = p.attrs;
@@ -15130,60 +15131,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      *
      * Algorithm:
      *
-     * To understand the algorithm, you need to know how partitioning works.
-     * Partitioning is required as we can use two i18n comments to group node siblings together.
-     * That is why we cannot just use nodes.
-     *
-     * Partitioning transforms an array of HtmlAst into an array of Part.
-     * A part can optionally contain a root element or a root text node. And it can also contain
-     * children.
-     * A part can contain i18n property, in which case it needs to be translated.
-     *
-     * Example:
-     *
-     * The following array of nodes will be split into four parts:
-     *
-     * ```
-     * <a>A</a>
-     * <b i18n>B</b>
-     * <!-- i18n -->
-     * <c>C</c>
-     * D
-     * <!-- /i18n -->
-     * E
-     * ```
-     *
-     * Part 1 containing the a tag. It should not be translated.
-     * Part 2 containing the b tag. It should be translated.
-     * Part 3 containing the c tag and the D text node. It should be translated.
-     * Part 4 containing the E text node. It should not be translated.
-     *
-     *
-     * It is also important to understand how we stringify nodes to create a message.
-     *
-     * We walk the tree and replace every element node with a placeholder. We also replace
-     * all expressions in interpolation with placeholders. We also insert a placeholder element
-     * to wrap a text node containing interpolation.
-     *
-     * Example:
-     *
-     * The following tree:
-     *
-     * ```
-     * <a>A{{I}}</a><b>B</b>
-     * ```
-     *
-     * will be stringified into:
-     * ```
-     * <ph name="e0"><ph name="t1">A<ph name="0"/></ph></ph><ph name="e2">B</ph>
-     * ```
-     *
-     * This is what the algorithm does:
-     *
-     * 1. Use the provided html parser to get the html AST of the template.
-     * 2. Partition the root nodes, and process each part separately.
-     * 3. If a part does not have the i18n attribute, recurse to process children and attributes.
-     * 4. If a part has the i18n attribute, merge the translated i18n part with the original tree.
+     * See `message_extractor.ts` for details on the partitioning algorithm.
      *
      * This is how the merging works:
      *
@@ -15527,53 +15475,49 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             this._messages = [];
             this._errors = [];
-            this._interpolationConfig = interpolationConfig;
             var res = this._htmlParser.parse(template, sourceUrl, true);
-            if (res.errors.length > 0) {
-                return new ExtractionResult([], res.errors);
+            if (res.errors.length == 0) {
+                this._recurse(res.rootNodes, interpolationConfig);
             }
-            else {
-                var expanded = expandNodes(res.rootNodes);
-                this._recurse(expanded.nodes);
-                return new ExtractionResult(this._messages, this._errors.concat(expanded.errors));
-            }
+            return new ExtractionResult(this._messages, this._errors.concat(res.errors));
         };
-        MessageExtractor.prototype._extractMessagesFromPart = function (part) {
+        MessageExtractor.prototype._extractMessagesFromPart = function (part, interpolationConfig) {
             if (part.hasI18n) {
-                this._messages.push(part.createMessage(this._parser, this._interpolationConfig));
-                this._recurseToExtractMessagesFromAttributes(part.children);
+                this._messages.push(part.createMessage(this._parser, interpolationConfig));
+                this._recurseToExtractMessagesFromAttributes(part.children, interpolationConfig);
             }
             else {
-                this._recurse(part.children);
+                this._recurse(part.children, interpolationConfig);
             }
             if (isPresent(part.rootElement)) {
-                this._extractMessagesFromAttributes(part.rootElement);
+                this._extractMessagesFromAttributes(part.rootElement, interpolationConfig);
             }
         };
-        MessageExtractor.prototype._recurse = function (nodes) {
+        MessageExtractor.prototype._recurse = function (nodes, interpolationConfig) {
             var _this = this;
             if (isPresent(nodes)) {
                 var parts = partition(nodes, this._errors, this._implicitTags);
-                parts.forEach(function (part) { return _this._extractMessagesFromPart(part); });
+                parts.forEach(function (part) { return _this._extractMessagesFromPart(part, interpolationConfig); });
             }
         };
-        MessageExtractor.prototype._recurseToExtractMessagesFromAttributes = function (nodes) {
+        MessageExtractor.prototype._recurseToExtractMessagesFromAttributes = function (nodes, interpolationConfig) {
             var _this = this;
             nodes.forEach(function (n) {
                 if (n instanceof HtmlElementAst) {
-                    _this._extractMessagesFromAttributes(n);
-                    _this._recurseToExtractMessagesFromAttributes(n.children);
+                    _this._extractMessagesFromAttributes(n, interpolationConfig);
+                    _this._recurseToExtractMessagesFromAttributes(n.children, interpolationConfig);
                 }
             });
         };
-        MessageExtractor.prototype._extractMessagesFromAttributes = function (p) {
+        MessageExtractor.prototype._extractMessagesFromAttributes = function (p, interpolationConfig) {
             var _this = this;
             var transAttrs = isPresent(this._implicitAttrs[p.name]) ? this._implicitAttrs[p.name] : [];
             var explicitAttrs = [];
+            // `i18n-` prefixed attributes should be translated
             p.attrs.filter(function (attr) { return attr.name.startsWith(I18N_ATTR_PREFIX); }).forEach(function (attr) {
                 try {
                     explicitAttrs.push(attr.name.substring(I18N_ATTR_PREFIX.length));
-                    _this._messages.push(messageFromI18nAttribute(_this._parser, _this._interpolationConfig, p, attr));
+                    _this._messages.push(messageFromI18nAttribute(_this._parser, interpolationConfig, p, attr));
                 }
                 catch (e) {
                     if (e instanceof I18nError) {
@@ -15584,10 +15528,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                     }
                 }
             });
+            // implicit attributes should also be translated
             p.attrs.filter(function (attr) { return !attr.name.startsWith(I18N_ATTR_PREFIX); })
                 .filter(function (attr) { return explicitAttrs.indexOf(attr.name) == -1; })
                 .filter(function (attr) { return transAttrs.indexOf(attr.name) > -1; })
-                .forEach(function (attr) { return _this._messages.push(messageFromAttribute(_this._parser, _this._interpolationConfig, attr)); });
+                .forEach(function (attr) { return _this._messages.push(messageFromAttribute(_this._parser, interpolationConfig, attr)); });
         };
         return MessageExtractor;
     }());
@@ -15658,14 +15603,25 @@ var __extends = (this && this.__extends) || function (d, b) {
         return ids.length > 0 ? ids[0].value : null;
     }
     function _serializeMessage(m) {
-        var desc = isPresent(m.description) ? " desc='" + m.description + "'" : '';
-        return "<msg id='" + id(m) + "'" + desc + ">" + m.content + "</msg>";
+        var desc = isPresent(m.description) ? " desc='" + _escapeXml(m.description) + "'" : '';
+        var meaning = isPresent(m.meaning) ? " meaning='" + _escapeXml(m.meaning) + "'" : '';
+        return "<msg id='" + id(m) + "'" + desc + meaning + ">" + m.content + "</msg>";
     }
     function _expandPlaceholder(input) {
         return RegExpWrapper.replaceAll(_PLACEHOLDER_REGEXP, input, function (match) {
             var nameWithQuotes = match[2];
             return "<ph name=" + nameWithQuotes + "></ph>";
         });
+    }
+    var _XML_ESCAPED_CHARS = [
+        [/&/g, '&amp;'],
+        [/"/g, '&quot;'],
+        [/'/g, '&apos;'],
+        [/</g, '&lt;'],
+        [/>/g, '&gt;'],
+    ];
+    function _escapeXml(value) {
+        return _XML_ESCAPED_CHARS.reduce(function (value, escape) { return value.replace(escape[0], escape[1]); }, value);
     }
     // asset:<package-name>/<realm>/<path-to-module>
     var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/g;

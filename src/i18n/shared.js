@@ -25,27 +25,28 @@ exports.I18nError = I18nError;
 function partition(nodes, errors, implicitTags) {
     var parts = [];
     for (var i = 0; i < nodes.length; ++i) {
-        var n = nodes[i];
-        var temp = [];
-        if (_isOpeningComment(n)) {
-            var i18n = n.value.replace(/^i18n:?/, '').trim();
-            i++;
-            while (!_isClosingComment(nodes[i])) {
-                temp.push(nodes[i++]);
-                if (i === nodes.length) {
-                    errors.push(new I18nError(n.sourceSpan, 'Missing closing \'i18n\' comment.'));
-                    break;
-                }
+        var node = nodes[i];
+        var msgNodes = [];
+        // Nodes between `<!-- i18n -->` and `<!-- /i18n -->`
+        if (_isOpeningComment(node)) {
+            var i18n = node.value.replace(/^i18n:?/, '').trim();
+            while (++i < nodes.length && !_isClosingComment(nodes[i])) {
+                msgNodes.push(nodes[i]);
             }
-            parts.push(new Part(null, null, temp, i18n, true));
+            if (i === nodes.length) {
+                errors.push(new I18nError(node.sourceSpan, 'Missing closing \'i18n\' comment.'));
+                break;
+            }
+            parts.push(new Part(null, null, msgNodes, i18n, true));
         }
-        else if (n instanceof html_ast_1.HtmlElementAst) {
-            var i18n = _findI18nAttr(n);
-            var hasI18n = lang_1.isPresent(i18n) || implicitTags.indexOf(n.name) > -1;
-            parts.push(new Part(n, null, n.children, lang_1.isPresent(i18n) ? i18n.value : null, hasI18n));
+        else if (node instanceof html_ast_1.HtmlElementAst) {
+            // Node with an `i18n` attribute
+            var i18n = _findI18nAttr(node);
+            var hasI18n = lang_1.isPresent(i18n) || implicitTags.indexOf(node.name) > -1;
+            parts.push(new Part(node, null, node.children, lang_1.isPresent(i18n) ? i18n.value : null, hasI18n));
         }
-        else if (n instanceof html_ast_1.HtmlTextAst) {
-            parts.push(new Part(null, n, null, null, false));
+        else if (node instanceof html_ast_1.HtmlTextAst) {
+            parts.push(new Part(null, node, null, null, false));
         }
     }
     return parts;
@@ -82,7 +83,7 @@ function _isOpeningComment(n) {
     return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value.startsWith('i18n');
 }
 function _isClosingComment(n) {
-    return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value == '/i18n';
+    return n instanceof html_ast_1.HtmlCommentAst && lang_1.isPresent(n.value) && n.value === '/i18n';
 }
 function _findI18nAttr(p) {
     var attrs = p.attrs;
