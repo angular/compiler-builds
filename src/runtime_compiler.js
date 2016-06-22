@@ -83,7 +83,8 @@ var RuntimeCompiler = (function () {
             var childCacheKey = dep.comp.type.runtime;
             var childViewDirectives = _this._metadataResolver.getViewDirectivesMetadata(dep.comp.type.runtime);
             var childViewPipes = _this._metadataResolver.getViewPipesMetadata(dep.comp.type.runtime);
-            var childIsRecursive = collection_1.ListWrapper.contains(childCompilingComponentsPath, childCacheKey);
+            var childIsRecursive = childCompilingComponentsPath.indexOf(childCacheKey) > -1 ||
+                childViewDirectives.some(function (dir) { return childCompilingComponentsPath.indexOf(dir.type.runtime) > -1; });
             childCompilingComponentsPath.push(childCacheKey);
             var childComp = _this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath);
             dep.factoryPlaceholder.runtime = childComp.proxyViewFactory;
