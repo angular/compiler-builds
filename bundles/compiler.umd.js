@@ -1349,6 +1349,73 @@ var __extends = (this && this.__extends) || function (d, b) {
         RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { return null; };
         return RecursiveAstVisitor;
     }());
+    var $EOF = 0;
+    var $TAB = 9;
+    var $LF = 10;
+    var $VTAB = 11;
+    var $FF = 12;
+    var $CR = 13;
+    var $SPACE = 32;
+    var $BANG = 33;
+    var $DQ = 34;
+    var $HASH = 35;
+    var $$ = 36;
+    var $PERCENT = 37;
+    var $AMPERSAND = 38;
+    var $SQ = 39;
+    var $LPAREN = 40;
+    var $RPAREN = 41;
+    var $STAR = 42;
+    var $PLUS = 43;
+    var $COMMA = 44;
+    var $MINUS = 45;
+    var $PERIOD = 46;
+    var $SLASH = 47;
+    var $COLON = 58;
+    var $SEMICOLON = 59;
+    var $LT = 60;
+    var $EQ = 61;
+    var $GT = 62;
+    var $QUESTION = 63;
+    var $0 = 48;
+    var $9 = 57;
+    var $A = 65;
+    var $E = 69;
+    var $F = 70;
+    var $X = 88;
+    var $Z = 90;
+    var $LBRACKET = 91;
+    var $BACKSLASH = 92;
+    var $RBRACKET = 93;
+    var $CARET = 94;
+    var $_ = 95;
+    var $a = 97;
+    var $e = 101;
+    var $f = 102;
+    var $n = 110;
+    var $r = 114;
+    var $t = 116;
+    var $u = 117;
+    var $v = 118;
+    var $x = 120;
+    var $z = 122;
+    var $LBRACE = 123;
+    var $BAR = 124;
+    var $RBRACE = 125;
+    var $NBSP = 160;
+    var $BT = 96;
+    function isWhitespace(code) {
+        return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
+    }
+    function isDigit(code) {
+        return $0 <= code && code <= $9;
+    }
+    function isAsciiLetter(code) {
+        return code >= $a && code <= $z || code >= $A && code <= $Z;
+    }
+    function isAsciiHexDigit(code) {
+        return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
+    }
     var DEFAULT_INTERPOLATION_CONFIG = {
         start: '{{',
         end: '}}'
@@ -1362,6 +1429,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         TokenType[TokenType["Operator"] = 4] = "Operator";
         TokenType[TokenType["Number"] = 5] = "Number";
     })(TokenType || (TokenType = {}));
+    var KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else'];
     var Lexer = (function () {
         function Lexer() {
         }
@@ -1447,58 +1515,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         return new Token(index, TokenType.Number, n, '');
     }
     var EOF = new Token(-1, TokenType.Character, 0, '');
-    var $EOF = 0;
-    var $TAB = 9;
-    var $LF = 10;
-    var $VTAB = 11;
-    var $FF = 12;
-    var $CR = 13;
-    var $SPACE = 32;
-    var $BANG = 33;
-    var $DQ = 34;
-    var $HASH = 35;
-    var $$ = 36;
-    var $PERCENT = 37;
-    var $AMPERSAND = 38;
-    var $SQ = 39;
-    var $LPAREN = 40;
-    var $RPAREN = 41;
-    var $STAR = 42;
-    var $PLUS = 43;
-    var $COMMA = 44;
-    var $MINUS = 45;
-    var $PERIOD = 46;
-    var $SLASH = 47;
-    var $COLON = 58;
-    var $SEMICOLON = 59;
-    var $LT = 60;
-    var $EQ = 61;
-    var $GT = 62;
-    var $QUESTION = 63;
-    var $0 = 48;
-    var $9 = 57;
-    var $A = 65;
-    var $E = 69;
-    var $Z = 90;
-    var $LBRACKET = 91;
-    var $BACKSLASH = 92;
-    var $RBRACKET = 93;
-    var $CARET = 94;
-    var $_ = 95;
-    var $BT = 96;
-    var $a = 97;
-    var $e = 101;
-    var $f = 102;
-    var $n = 110;
-    var $r = 114;
-    var $t = 116;
-    var $u = 117;
-    var $v = 118;
-    var $z = 122;
-    var $LBRACE = 123;
-    var $BAR = 124;
-    var $RBRACE = 125;
-    var $NBSP = 160;
     var ScannerError = (function (_super) {
         __extends(ScannerError, _super);
         function ScannerError(message) {
@@ -1546,7 +1562,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             switch (peek) {
                 case $PERIOD:
                     this.advance();
-                    return isDigit(this.peek) ? this.scanNumber(start) : newCharacterToken(start, $PERIOD);
+                    return isDigit(this.peek) ? this.scanNumber(start) :
+                        newCharacterToken(start, $PERIOD);
                 case $LPAREN:
                 case $RPAREN:
                 case $LBRACE:
@@ -1626,12 +1643,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             while (isIdentifierPart(this.peek))
                 this.advance();
             var str = this.input.substring(start, this.index);
-            if (SetWrapper.has(KEYWORDS, str)) {
-                return newKeywordToken(start, str);
-            }
-            else {
-                return newIdentifierToken(start, str);
-            }
+            return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, str) :
+                newIdentifierToken(start, str);
         };
         _Scanner.prototype.scanNumber = function (start) {
             var simple = (this.index === start);
@@ -1656,7 +1669,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this.advance();
             }
             var str = this.input.substring(start, this.index);
-            // TODO
             var value = simple ? NumberWrapper.parseIntAutoRadix(str) : NumberWrapper.parseFloat(str);
             return newNumberToken(start, value);
         };
@@ -1717,11 +1729,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return _Scanner;
     }());
-    function isWhitespace(code) {
-        return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
-    }
     function isIdentifierStart(code) {
-        return ($a <= code && code <= $z) || ($A <= code && code <= $Z) || (code == $_) || (code == $$);
+        return ($a <= code && code <= $z) || ($A <= code && code <= $Z) ||
+            (code == $_) || (code == $$);
     }
     function isIdentifier(input) {
         if (input.length == 0)
@@ -1738,11 +1748,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         return true;
     }
     function isIdentifierPart(code) {
-        return ($a <= code && code <= $z) || ($A <= code && code <= $Z) || ($0 <= code && code <= $9) ||
-            (code == $_) || (code == $$);
-    }
-    function isDigit(code) {
-        return $0 <= code && code <= $9;
+        return isAsciiLetter(code) || isDigit(code) || (code == $_) ||
+            (code == $$);
     }
     function isExponentStart(code) {
         return code == $e || code == $E;
@@ -1769,11 +1776,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return code;
         }
     }
-    var OPERATORS = SetWrapper.createFromList([
-        '+', '-', '*', '/', '%', '^', '=', '==', '!=', '===', '!==', '<',
-        '>', '<=', '>=', '&&', '||', '&', '|', '!', '?', '#', '?.'
-    ]);
-    var KEYWORDS = SetWrapper.createFromList(['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else']);
     var _implicitReceiver = new ImplicitReceiver();
     var ParseException = (function (_super) {
         __extends(ParseException, _super);
@@ -2501,39 +2503,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         return result;
     }
-    var $EOF$1 = 0;
-    var $TAB$1 = 9;
-    var $LF$1 = 10;
-    var $CR$1 = 13;
-    var $SPACE$1 = 32;
-    var $BANG$1 = 33;
-    var $DQ$1 = 34;
-    var $HASH$1 = 35;
-    var $AMPERSAND$1 = 38;
-    var $SQ$1 = 39;
-    var $COMMA$1 = 44;
-    var $MINUS$1 = 45;
-    var $SLASH$1 = 47;
-    var $COLON$1 = 58;
-    var $SEMICOLON$1 = 59;
-    var $LT$1 = 60;
-    var $EQ$1 = 61;
-    var $GT$1 = 62;
-    var $0$1 = 48;
-    var $9$1 = 57;
-    var $A$1 = 65;
-    var $F = 70;
-    var $X = 88;
-    var $Z$1 = 90;
-    var $LBRACKET$1 = 91;
-    var $RBRACKET$1 = 93;
-    var $a$1 = 97;
-    var $f$1 = 102;
-    var $x = 120;
-    var $z$1 = 122;
-    var $LBRACE$1 = 123;
-    var $RBRACE$1 = 125;
-    var $NBSP$1 = 160;
     // see http://www.w3.org/TR/html51/syntax.html#named-character-references
     // see https://html.spec.whatwg.org/multipage/entities.json
     // This list is not exhaustive to keep the compiler footprint low.
@@ -3033,7 +3002,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var CR_OR_CRLF_REGEXP = /\r\n?/g;
     function unexpectedCharacterErrorMsg(charCode) {
-        var char = charCode === $EOF$1 ? 'EOF' : StringWrapper.fromCharCode(charCode);
+        var char = charCode === $EOF ? 'EOF' : StringWrapper.fromCharCode(charCode);
         return "Unexpected character \"" + char + "\"";
     }
     function unknownEntityErrorMsg(entitySrc) {
@@ -3059,6 +3028,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._line = 0;
             this._column = -1;
             this._expansionCaseStack = [];
+            this._inInterpolation = false;
             this.tokens = [];
             this.errors = [];
             this._input = file.content;
@@ -3073,22 +3043,22 @@ var __extends = (this && this.__extends) || function (d, b) {
             return StringWrapper.replaceAll(content, CR_OR_CRLF_REGEXP, '\n');
         };
         _HtmlTokenizer.prototype.tokenize = function () {
-            while (this._peek !== $EOF$1) {
+            while (this._peek !== $EOF) {
                 var start = this._getLocation();
                 try {
-                    if (this._attemptCharCode($LT$1)) {
-                        if (this._attemptCharCode($BANG$1)) {
-                            if (this._attemptCharCode($LBRACKET$1)) {
+                    if (this._attemptCharCode($LT)) {
+                        if (this._attemptCharCode($BANG)) {
+                            if (this._attemptCharCode($LBRACKET)) {
                                 this._consumeCdata(start);
                             }
-                            else if (this._attemptCharCode($MINUS$1)) {
+                            else if (this._attemptCharCode($MINUS)) {
                                 this._consumeComment(start);
                             }
                             else {
                                 this._consumeDocType(start);
                             }
                         }
-                        else if (this._attemptCharCode($SLASH$1)) {
+                        else if (this._attemptCharCode($SLASH)) {
                             this._consumeTagClose(start);
                         }
                         else {
@@ -3103,11 +3073,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                         this.tokenizeExpansionForms) {
                         this._consumeExpansionCaseStart();
                     }
-                    else if (this._peek === $RBRACE$1 && this._isInExpansionCase() &&
+                    else if (this._peek === $RBRACE && this._isInExpansionCase() &&
                         this.tokenizeExpansionForms) {
                         this._consumeExpansionCaseEnd();
                     }
-                    else if (this._peek === $RBRACE$1 && this._isInExpansionForm() &&
+                    else if (this._peek === $RBRACE && this._isInExpansionForm() &&
                         this.tokenizeExpansionForms) {
                         this._consumeExpansionFormEnd();
                     }
@@ -3167,20 +3137,20 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _HtmlTokenizer.prototype._advance = function () {
             if (this._index >= this._length) {
-                throw this._createError(unexpectedCharacterErrorMsg($EOF$1), this._getSpan());
+                throw this._createError(unexpectedCharacterErrorMsg($EOF), this._getSpan());
             }
-            if (this._peek === $LF$1) {
+            if (this._peek === $LF) {
                 this._line++;
                 this._column = 0;
             }
-            else if (this._peek !== $LF$1 && this._peek !== $CR$1) {
+            else if (this._peek !== $LF && this._peek !== $CR) {
                 this._column++;
             }
             this._index++;
-            this._peek = this._index >= this._length ? $EOF$1 :
+            this._peek = this._index >= this._length ? $EOF :
                 StringWrapper.charCodeAt(this._input, this._index);
             this._nextPeek = this._index + 1 >= this._length ?
-                $EOF$1 :
+                $EOF :
                 StringWrapper.charCodeAt(this._input, this._index + 1);
         };
         _HtmlTokenizer.prototype._attemptCharCode = function (charCode) {
@@ -3204,8 +3174,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         _HtmlTokenizer.prototype._attemptStr = function (chars) {
+            var len = chars.length;
+            if (this._index + len > this._length) {
+                return false;
+            }
             var initialPosition = this._savePosition();
-            for (var i = 0; i < chars.length; i++) {
+            for (var i = 0; i < len; i++) {
                 if (!this._attemptCharCode(StringWrapper.charCodeAt(chars, i))) {
                     // If attempting to parse the string fails, we want to reset the parser
                     // to where it was before the attempt
@@ -3247,7 +3221,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         };
         _HtmlTokenizer.prototype._readChar = function (decodeEntities) {
-            if (decodeEntities && this._peek === $AMPERSAND$1) {
+            if (decodeEntities && this._peek === $AMPERSAND) {
                 return this._decodeEntity();
             }
             else {
@@ -3259,11 +3233,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         _HtmlTokenizer.prototype._decodeEntity = function () {
             var start = this._getLocation();
             this._advance();
-            if (this._attemptCharCode($HASH$1)) {
+            if (this._attemptCharCode($HASH)) {
                 var isHex = this._attemptCharCode($x) || this._attemptCharCode($X);
                 var numberStart = this._getLocation().offset;
                 this._attemptCharCodeUntilFn(isDigitEntityEnd);
-                if (this._peek != $SEMICOLON$1) {
+                if (this._peek != $SEMICOLON) {
                     throw this._createError(unexpectedCharacterErrorMsg(this._peek), this._getSpan());
                 }
                 this._advance();
@@ -3280,7 +3254,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             else {
                 var startPosition = this._savePosition();
                 this._attemptCharCodeUntilFn(isNamedEntityEnd);
-                if (this._peek != $SEMICOLON$1) {
+                if (this._peek != $SEMICOLON) {
                     this._restorePosition(startPosition);
                     return '&';
                 }
@@ -3304,6 +3278,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     break;
                 }
                 if (this._index > tagCloseStart.offset) {
+                    // add the characters consumed by the previous if statement to the output
                     parts.push(this._input.substring(tagCloseStart.offset, this._index));
                 }
                 while (this._peek !== firstCharOfEnd) {
@@ -3315,9 +3290,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         _HtmlTokenizer.prototype._consumeComment = function (start) {
             var _this = this;
             this._beginToken(HtmlTokenType.COMMENT_START, start);
-            this._requireCharCode($MINUS$1);
+            this._requireCharCode($MINUS);
             this._endToken([]);
-            var textToken = this._consumeRawText(false, $MINUS$1, function () { return _this._attemptStr('->'); });
+            var textToken = this._consumeRawText(false, $MINUS, function () { return _this._attemptStr('->'); });
             this._beginToken(HtmlTokenType.COMMENT_END, textToken.sourceSpan.end);
             this._endToken([]);
         };
@@ -3326,24 +3301,24 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._beginToken(HtmlTokenType.CDATA_START, start);
             this._requireStr('CDATA[');
             this._endToken([]);
-            var textToken = this._consumeRawText(false, $RBRACKET$1, function () { return _this._attemptStr(']>'); });
+            var textToken = this._consumeRawText(false, $RBRACKET, function () { return _this._attemptStr(']>'); });
             this._beginToken(HtmlTokenType.CDATA_END, textToken.sourceSpan.end);
             this._endToken([]);
         };
         _HtmlTokenizer.prototype._consumeDocType = function (start) {
             this._beginToken(HtmlTokenType.DOC_TYPE, start);
-            this._attemptUntilChar($GT$1);
+            this._attemptUntilChar($GT);
             this._advance();
             this._endToken([this._input.substring(start.offset + 2, this._index - 1)]);
         };
         _HtmlTokenizer.prototype._consumePrefixAndName = function () {
             var nameOrPrefixStart = this._index;
             var prefix = null;
-            while (this._peek !== $COLON$1 && !isPrefixEnd(this._peek)) {
+            while (this._peek !== $COLON && !isPrefixEnd(this._peek)) {
                 this._advance();
             }
             var nameStart;
-            if (this._peek === $COLON$1) {
+            if (this._peek === $COLON) {
                 this._advance();
                 prefix = this._input.substring(nameOrPrefixStart, this._index - 1);
                 nameStart = this._index;
@@ -3366,10 +3341,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this._consumeTagOpenStart(start);
                 lowercaseTagName = this._input.substring(nameStart, this._index).toLowerCase();
                 this._attemptCharCodeUntilFn(isNotWhitespace);
-                while (this._peek !== $SLASH$1 && this._peek !== $GT$1) {
+                while (this._peek !== $SLASH && this._peek !== $GT) {
                     this._consumeAttributeName();
                     this._attemptCharCodeUntilFn(isNotWhitespace);
-                    if (this._attemptCharCode($EQ$1)) {
+                    if (this._attemptCharCode($EQ)) {
                         this._attemptCharCodeUntilFn(isNotWhitespace);
                         this._consumeAttributeValue();
                     }
@@ -3398,14 +3373,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _HtmlTokenizer.prototype._consumeRawTextWithTagClose = function (lowercaseTagName, decodeEntities) {
             var _this = this;
-            var textToken = this._consumeRawText(decodeEntities, $LT$1, function () {
-                if (!_this._attemptCharCode($SLASH$1))
+            var textToken = this._consumeRawText(decodeEntities, $LT, function () {
+                if (!_this._attemptCharCode($SLASH))
                     return false;
                 _this._attemptCharCodeUntilFn(isNotWhitespace);
                 if (!_this._attemptStrCaseInsensitive(lowercaseTagName))
                     return false;
                 _this._attemptCharCodeUntilFn(isNotWhitespace);
-                if (!_this._attemptCharCode($GT$1))
+                if (!_this._attemptCharCode($GT))
                     return false;
                 return true;
             });
@@ -3425,7 +3400,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _HtmlTokenizer.prototype._consumeAttributeValue = function () {
             this._beginToken(HtmlTokenType.ATTR_VALUE);
             var value;
-            if (this._peek === $SQ$1 || this._peek === $DQ$1) {
+            if (this._peek === $SQ || this._peek === $DQ) {
                 var quoteChar = this._peek;
                 this._advance();
                 var parts = [];
@@ -3443,10 +3418,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._endToken([this._processCarriageReturns(value)]);
         };
         _HtmlTokenizer.prototype._consumeTagOpenEnd = function () {
-            var tokenType = this._attemptCharCode($SLASH$1) ? HtmlTokenType.TAG_OPEN_END_VOID :
+            var tokenType = this._attemptCharCode($SLASH) ? HtmlTokenType.TAG_OPEN_END_VOID :
                 HtmlTokenType.TAG_OPEN_END;
             this._beginToken(tokenType);
-            this._requireCharCode($GT$1);
+            this._requireCharCode($GT);
             this._endToken([]);
         };
         _HtmlTokenizer.prototype._consumeTagClose = function (start) {
@@ -3454,46 +3429,46 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._attemptCharCodeUntilFn(isNotWhitespace);
             var prefixAndName = this._consumePrefixAndName();
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._requireCharCode($GT$1);
+            this._requireCharCode($GT);
             this._endToken(prefixAndName);
         };
         _HtmlTokenizer.prototype._consumeExpansionFormStart = function () {
             this._beginToken(HtmlTokenType.EXPANSION_FORM_START, this._getLocation());
-            this._requireCharCode($LBRACE$1);
+            this._requireCharCode($LBRACE);
             this._endToken([]);
             this._beginToken(HtmlTokenType.RAW_TEXT, this._getLocation());
-            var condition = this._readUntil($COMMA$1);
+            var condition = this._readUntil($COMMA);
             this._endToken([condition], this._getLocation());
-            this._requireCharCode($COMMA$1);
+            this._requireCharCode($COMMA);
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._beginToken(HtmlTokenType.RAW_TEXT, this._getLocation());
-            var type = this._readUntil($COMMA$1);
+            var type = this._readUntil($COMMA);
             this._endToken([type], this._getLocation());
-            this._requireCharCode($COMMA$1);
+            this._requireCharCode($COMMA);
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._expansionCaseStack.push(HtmlTokenType.EXPANSION_FORM_START);
         };
         _HtmlTokenizer.prototype._consumeExpansionCaseStart = function () {
             this._beginToken(HtmlTokenType.EXPANSION_CASE_VALUE, this._getLocation());
-            var value = this._readUntil($LBRACE$1).trim();
+            var value = this._readUntil($LBRACE).trim();
             this._endToken([value], this._getLocation());
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._beginToken(HtmlTokenType.EXPANSION_CASE_EXP_START, this._getLocation());
-            this._requireCharCode($LBRACE$1);
+            this._requireCharCode($LBRACE);
             this._endToken([], this._getLocation());
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._expansionCaseStack.push(HtmlTokenType.EXPANSION_CASE_EXP_START);
         };
         _HtmlTokenizer.prototype._consumeExpansionCaseEnd = function () {
             this._beginToken(HtmlTokenType.EXPANSION_CASE_EXP_END, this._getLocation());
-            this._requireCharCode($RBRACE$1);
+            this._requireCharCode($RBRACE);
             this._endToken([], this._getLocation());
             this._attemptCharCodeUntilFn(isNotWhitespace);
             this._expansionCaseStack.pop();
         };
         _HtmlTokenizer.prototype._consumeExpansionFormEnd = function () {
             this._beginToken(HtmlTokenType.EXPANSION_FORM_END, this._getLocation());
-            this._requireCharCode($RBRACE$1);
+            this._requireCharCode($RBRACE);
             this._endToken([]);
             this._expansionCaseStack.pop();
         };
@@ -3501,43 +3476,34 @@ var __extends = (this && this.__extends) || function (d, b) {
             var start = this._getLocation();
             this._beginToken(HtmlTokenType.TEXT, start);
             var parts = [];
-            var interpolation = false;
             do {
-                var savedPos = this._savePosition();
-                // _attemptStr advances the position when it is true.
-                // To push interpolation symbols, we have to reset it.
                 if (this._attemptStr(this.interpolationConfig.start)) {
-                    this._restorePosition(savedPos);
-                    for (var i = 0; i < this.interpolationConfig.start.length; i++) {
-                        parts.push(this._readChar(true));
-                    }
-                    interpolation = true;
+                    parts.push(this.interpolationConfig.start);
+                    this._inInterpolation = true;
                 }
-                else if (this._attemptStr(this.interpolationConfig.end) && interpolation) {
-                    this._restorePosition(savedPos);
-                    for (var i = 0; i < this.interpolationConfig.end.length; i++) {
-                        parts.push(this._readChar(true));
-                    }
-                    interpolation = false;
+                else if (this._attemptStr(this.interpolationConfig.end) && this._inInterpolation) {
+                    parts.push(this.interpolationConfig.end);
+                    this._inInterpolation = false;
                 }
                 else {
-                    this._restorePosition(savedPos);
                     parts.push(this._readChar(true));
                 }
-            } while (!this._isTextEnd(interpolation));
+            } while (!this._isTextEnd());
             this._endToken([this._processCarriageReturns(parts.join(''))]);
         };
-        _HtmlTokenizer.prototype._isTextEnd = function (interpolation) {
-            if (this._peek === $LT$1 || this._peek === $EOF$1)
+        _HtmlTokenizer.prototype._isTextEnd = function () {
+            if (this._peek === $LT || this._peek === $EOF) {
                 return true;
+            }
             if (this.tokenizeExpansionForms) {
-                var savedPos = this._savePosition();
-                if (isExpansionFormStart(this._input, this._index, this.interpolationConfig.start))
+                if (isExpansionFormStart(this._input, this._index, this.interpolationConfig.start)) {
+                    // start of an expansion form
                     return true;
-                this._restorePosition(savedPos);
-                if (this._peek === $RBRACE$1 && !interpolation &&
-                    (this._isInExpansionCase() || this._isInExpansionForm()))
+                }
+                if (this._peek === $RBRACE && !this._inInterpolation && this._isInExpansionCase()) {
+                    // end of and expansion case
                     return true;
+                }
             }
             return false;
         };
@@ -3557,7 +3523,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var nbTokens = position[4];
             if (nbTokens < this.tokens.length) {
                 // remove any extra tokens
-                this.tokens = ListWrapper.slice(this.tokens, 0, nbTokens);
+                this.tokens = this.tokens.slice(0, nbTokens);
             }
         };
         _HtmlTokenizer.prototype._isInExpansionCase = function () {
@@ -3573,46 +3539,34 @@ var __extends = (this && this.__extends) || function (d, b) {
         return _HtmlTokenizer;
     }());
     function isNotWhitespace(code) {
-        return !isWhitespace$1(code) || code === $EOF$1;
-    }
-    function isWhitespace$1(code) {
-        return (code >= $TAB$1 && code <= $SPACE$1) || (code === $NBSP$1);
+        return !isWhitespace(code) || code === $EOF;
     }
     function isNameEnd(code) {
-        return isWhitespace$1(code) || code === $GT$1 || code === $SLASH$1 || code === $SQ$1 ||
-            code === $DQ$1 || code === $EQ$1;
+        return isWhitespace(code) || code === $GT || code === $SLASH ||
+            code === $SQ || code === $DQ || code === $EQ;
     }
     function isPrefixEnd(code) {
-        return (code < $a$1 || $z$1 < code) && (code < $A$1 || $Z$1 < code) &&
-            (code < $0$1 || code > $9$1);
+        return (code < $a || $z < code) && (code < $A || $Z < code) &&
+            (code < $0 || code > $9);
     }
     function isDigitEntityEnd(code) {
-        return code == $SEMICOLON$1 || code == $EOF$1 || !isAsciiHexDigit(code);
+        return code == $SEMICOLON || code == $EOF || !isAsciiHexDigit(code);
     }
     function isNamedEntityEnd(code) {
-        return code == $SEMICOLON$1 || code == $EOF$1 || !isAsciiLetter(code);
+        return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
     }
     function isExpansionFormStart(input, offset, interpolationStart) {
-        var substr = input.substring(offset);
-        return StringWrapper.charCodeAt(substr, 0) === $LBRACE$1 &&
-            StringWrapper.charCodeAt(substr, 1) !== $LBRACE$1 &&
-            !substr.startsWith(interpolationStart);
+        return input.charCodeAt(offset) == $LBRACE &&
+            input.indexOf(interpolationStart, offset) != offset;
     }
     function isExpansionCaseStart(peek) {
-        return peek === $EQ$1 || isAsciiLetter(peek);
-    }
-    function isAsciiLetter(code) {
-        return code >= $a$1 && code <= $z$1 || code >= $A$1 && code <= $Z$1;
-    }
-    function isAsciiHexDigit(code) {
-        return code >= $a$1 && code <= $f$1 || code >= $A$1 && code <= $F ||
-            code >= $0$1 && code <= $9$1;
+        return peek === $EQ || isAsciiLetter(peek);
     }
     function compareCharCodeCaseInsensitive(code1, code2) {
         return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
     }
     function toUpperCaseCharCode(code) {
-        return code >= $a$1 && code <= $z$1 ? code - $a$1 + $A$1 : code;
+        return code >= $a && code <= $z ? code - $a + $A : code;
     }
     function mergeTextTokens(srcTokens) {
         var dstTokens = [];
@@ -11889,9 +11843,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
     }
     var INTERPOLATION_BLACKLIST_REGEXPS = [
-        /^\s*$/g,
-        /[<>]/g,
-        /^[\{\}]$/g,
+        /^\s*$/,
+        /[<>]/,
+        /^[{}]$/,
+        /&(#|[a-z])/i,
     ];
     function assertInterpolationSymbols(identifier, value) {
         if (_angular_core.isDevMode() && !isBlank(value) && (!isArray(value) || value.length != 2)) {

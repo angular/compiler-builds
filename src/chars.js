@@ -56,8 +56,21 @@ exports.$NBSP = 160;
 exports.$PIPE = 124;
 exports.$TILDA = 126;
 exports.$AT = 64;
+exports.$BT = 96;
 function isWhitespace(code) {
     return (code >= exports.$TAB && code <= exports.$SPACE) || (code == exports.$NBSP);
 }
 exports.isWhitespace = isWhitespace;
+function isDigit(code) {
+    return exports.$0 <= code && code <= exports.$9;
+}
+exports.isDigit = isDigit;
+function isAsciiLetter(code) {
+    return code >= exports.$a && code <= exports.$z || code >= exports.$A && code <= exports.$Z;
+}
+exports.isAsciiLetter = isAsciiLetter;
+function isAsciiHexDigit(code) {
+    return code >= exports.$a && code <= exports.$f || code >= exports.$A && code <= exports.$F || isDigit(code);
+}
+exports.isAsciiHexDigit = isAsciiHexDigit;
 //# sourceMappingURL=chars.js.map

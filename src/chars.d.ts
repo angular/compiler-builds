@@ -55,4 +55,8 @@ export declare const $NBSP: number;
 export declare const $PIPE: number;
 export declare const $TILDA: number;
 export declare const $AT: number;
+export declare const $BT: number;
 export declare function isWhitespace(code: number): boolean;
+export declare function isDigit(code: number): boolean;
+export declare function isAsciiLetter(code: number): boolean;
+export declare function isAsciiHexDigit(code: number): boolean;

@@ -17,9 +17,10 @@ function assertArrayOfStrings(identifier, value) {
 }
 exports.assertArrayOfStrings = assertArrayOfStrings;
 var INTERPOLATION_BLACKLIST_REGEXPS = [
-    /^\s*$/g,
-    /[<>]/g,
-    /^[\{\}]$/g,
+    /^\s*$/,
+    /[<>]/,
+    /^[{}]$/,
+    /&(#|[a-z])/i,
 ];
 function assertInterpolationSymbols(identifier, value) {
     if (core_1.isDevMode() && !lang_1.isBlank(value) && (!lang_1.isArray(value) || value.length != 2)) {

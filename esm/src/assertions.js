@@ -15,9 +15,10 @@ export function assertArrayOfStrings(identifier, value) {
     }
 }
 const INTERPOLATION_BLACKLIST_REGEXPS = [
-    /^\s*$/g,
-    /[<>]/g,
-    /^[\{\}]$/g,
+    /^\s*$/,
+    /[<>]/,
+    /^[{}]$/,
+    /&(#|[a-z])/i,
 ];
 export function assertInterpolationSymbols(identifier, value) {
     if (isDevMode() && !isBlank(value) && (!isArray(value) || value.length != 2)) {
