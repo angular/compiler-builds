@@ -12233,13 +12233,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                     });
                     changeDetectionStrategy = cmpMeta.changeDetection;
                     if (isPresent(dirMeta.viewProviders)) {
-                        viewProviders = this.getProvidersMetadata(dirMeta.viewProviders);
+                        viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'));
                     }
                     moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
                 }
                 var providers = [];
                 if (isPresent(dirMeta.providers)) {
-                    providers = this.getProvidersMetadata(dirMeta.providers);
+                    providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'));
                 }
                 var queries = [];
                 var viewQueries = [];
@@ -12543,6 +12543,18 @@ var __extends = (this && this.__extends) || function (d, b) {
                 out.push(item);
             }
         }
+    }
+    function verifyNonBlankProviders(directiveType, providersTree, providersType) {
+        var flat = [];
+        var errMsg;
+        flattenArray(providersTree, flat);
+        for (var i = 0; i < flat.length; i++) {
+            if (isBlank(flat[i])) {
+                errMsg = flat.map(function (provider) { return isBlank(provider) ? '?' : stringify(provider); }).join(', ');
+                throw new BaseException$1("One or more of " + providersType + " for \"" + stringify(directiveType) + "\" were not defined: [" + errMsg + "].");
+            }
+        }
+        return providersTree;
     }
     function isStaticType(value) {
         return isStringMap(value) && isPresent(value['name']) && isPresent(value['filePath']);
