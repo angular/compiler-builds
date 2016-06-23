@@ -14,6 +14,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             (factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}), global.ng.core, global.Rx, global.Rx, global.Rx.Observable.prototype, global.Rx));
 }(this, function (exports, _angular_core, rxjs_Subject, rxjs_observable_PromiseObservable, rxjs_operator_toPromise, rxjs_Observable) {
     'use strict';
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var globalScope;
     if (typeof window === 'undefined') {
         if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
@@ -1349,6 +1356,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { return null; };
         return RecursiveAstVisitor;
     }());
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var $EOF = 0;
     var $TAB = 9;
     var $LF = 10;
@@ -1416,6 +1430,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     function isAsciiHexDigit(code) {
         return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
     }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var DEFAULT_INTERPOLATION_CONFIG = {
         start: '{{',
         end: '}}'
@@ -2874,6 +2895,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     function mergeNsAndName(prefix, localName) {
         return isPresent(prefix) ? ":" + prefix + ":" + localName : localName;
     }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var ParseLocation = (function () {
         function ParseLocation(file, offset, line, col) {
             this.file = file;
@@ -4281,6 +4309,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return SelectorContext;
     }());
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var ElementSchemaRegistry = (function () {
         function ElementSchemaRegistry() {
         }
@@ -8047,6 +8082,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             return [path, ''];
         }
     }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var PromiseCompleter = (function () {
         function PromiseCompleter() {
             var _this = this;
@@ -8681,6 +8723,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return result;
     }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var AnimationAst = (function () {
         function AnimationAst() {
             this.startTime = 0;
@@ -10726,6 +10775,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             output.push(arg);
         }
     }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var CompileBinding = (function () {
         function CompileBinding(node, sourceAst) {
             this.node = node;
@@ -11681,6 +11737,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     ViewCompiler.ctorParameters = [
         { type: CompilerConfig, },
     ];
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     // TODO: vsavkin rename it into TemplateLoader
     /**
      * An interface for retrieving documents by URL that the compiler uses
