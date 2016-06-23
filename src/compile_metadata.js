@@ -636,7 +636,7 @@ exports.CompileTemplateMetadata = CompileTemplateMetadata;
  */
 var CompileDirectiveMetadata = (function () {
     function CompileDirectiveMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, template = _b.template;
+        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, precompile = _b.precompile, template = _b.template;
         this.type = type;
         this.isComponent = isComponent;
         this.selector = selector;
@@ -652,10 +652,11 @@ var CompileDirectiveMetadata = (function () {
         this.viewProviders = _normalizeArray(viewProviders);
         this.queries = _normalizeArray(queries);
         this.viewQueries = _normalizeArray(viewQueries);
+        this.precompile = _normalizeArray(precompile);
         this.template = template;
     }
     CompileDirectiveMetadata.create = function (_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, template = _b.template;
+        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, precompile = _b.precompile, template = _b.template;
         var hostListeners = {};
         var hostProperties = {};
         var hostAttributes = {};
@@ -707,6 +708,7 @@ var CompileDirectiveMetadata = (function () {
             viewProviders: viewProviders,
             queries: queries,
             viewQueries: viewQueries,
+            precompile: precompile,
             template: template
         });
     };
@@ -735,7 +737,8 @@ var CompileDirectiveMetadata = (function () {
             providers: _arrayFromJson(data['providers'], metadataFromJson),
             viewProviders: _arrayFromJson(data['viewProviders'], metadataFromJson),
             queries: _arrayFromJson(data['queries'], CompileQueryMetadata.fromJson),
-            viewQueries: _arrayFromJson(data['viewQueries'], CompileQueryMetadata.fromJson)
+            viewQueries: _arrayFromJson(data['viewQueries'], CompileQueryMetadata.fromJson),
+            precompile: _arrayFromJson(data['precompile'], CompileTypeMetadata.fromJson)
         });
     };
     CompileDirectiveMetadata.prototype.toJson = function () {
@@ -757,7 +760,8 @@ var CompileDirectiveMetadata = (function () {
             'providers': _arrayToJson(this.providers),
             'viewProviders': _arrayToJson(this.viewProviders),
             'queries': _arrayToJson(this.queries),
-            'viewQueries': _arrayToJson(this.viewQueries)
+            'viewQueries': _arrayToJson(this.viewQueries),
+            'precompile': _arrayToJson(this.precompile)
         };
     };
     return CompileDirectiveMetadata;

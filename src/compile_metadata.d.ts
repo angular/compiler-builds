@@ -331,7 +331,7 @@ export declare class CompileTemplateMetadata {
  * Metadata regarding compilation of a directive.
  */
 export declare class CompileDirectiveMetadata implements CompileMetadataWithType {
-    static create({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, template}?: {
+    static create({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, precompile, template}?: {
         type?: CompileTypeMetadata;
         isComponent?: boolean;
         selector?: string;
@@ -347,6 +347,7 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithType
         viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
+        precompile?: CompileTypeMetadata[];
         template?: CompileTemplateMetadata;
     }): CompileDirectiveMetadata;
     type: CompileTypeMetadata;
@@ -374,8 +375,9 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithType
     viewProviders: CompileProviderMetadata[];
     queries: CompileQueryMetadata[];
     viewQueries: CompileQueryMetadata[];
+    precompile: CompileTypeMetadata[];
     template: CompileTemplateMetadata;
-    constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, template}?: {
+    constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, precompile, template}?: {
         type?: CompileTypeMetadata;
         isComponent?: boolean;
         selector?: string;
@@ -401,6 +403,7 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithType
         viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
+        precompile?: CompileTypeMetadata[];
         template?: CompileTemplateMetadata;
     });
     identifier: CompileIdentifierMetadata;

@@ -580,6 +580,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var LIFECYCLE_HOOKS_VALUES = _angular_core.__core_private__.LIFECYCLE_HOOKS_VALUES;
     var ReflectorReader = _angular_core.__core_private__.ReflectorReader;
     var AppElement = _angular_core.__core_private__.AppElement;
+    var CodegenComponentFactoryResolver = _angular_core.__core_private__.CodegenComponentFactoryResolver;
     var AppView = _angular_core.__core_private__.AppView;
     var DebugAppView = _angular_core.__core_private__.DebugAppView;
     var ViewType = _angular_core.__core_private__.ViewType;
@@ -5397,7 +5398,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var CompileDirectiveMetadata = (function () {
         function CompileDirectiveMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, template = _b.template;
+            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, precompile = _b.precompile, template = _b.template;
             this.type = type;
             this.isComponent = isComponent;
             this.selector = selector;
@@ -5413,10 +5414,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.viewProviders = _normalizeArray(viewProviders);
             this.queries = _normalizeArray(queries);
             this.viewQueries = _normalizeArray(viewQueries);
+            this.precompile = _normalizeArray(precompile);
             this.template = template;
         }
         CompileDirectiveMetadata.create = function (_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, template = _b.template;
+            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, precompile = _b.precompile, template = _b.template;
             var hostListeners = {};
             var hostProperties = {};
             var hostAttributes = {};
@@ -5468,6 +5470,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 viewProviders: viewProviders,
                 queries: queries,
                 viewQueries: viewQueries,
+                precompile: precompile,
                 template: template
             });
         };
@@ -5496,7 +5499,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 providers: _arrayFromJson(data['providers'], metadataFromJson),
                 viewProviders: _arrayFromJson(data['viewProviders'], metadataFromJson),
                 queries: _arrayFromJson(data['queries'], CompileQueryMetadata.fromJson),
-                viewQueries: _arrayFromJson(data['viewQueries'], CompileQueryMetadata.fromJson)
+                viewQueries: _arrayFromJson(data['viewQueries'], CompileQueryMetadata.fromJson),
+                precompile: _arrayFromJson(data['precompile'], CompileTypeMetadata.fromJson)
             });
         };
         CompileDirectiveMetadata.prototype.toJson = function () {
@@ -5518,7 +5522,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 'providers': _arrayToJson(this.providers),
                 'viewProviders': _arrayToJson(this.viewProviders),
                 'queries': _arrayToJson(this.queries),
-                'viewQueries': _arrayToJson(this.viewQueries)
+                'viewQueries': _arrayToJson(this.viewQueries),
+                'precompile': _arrayToJson(this.precompile)
             };
         };
         return CompileDirectiveMetadata;
@@ -5705,6 +5710,16 @@ var __extends = (this && this.__extends) || function (d, b) {
         name: 'TemplateRef_',
         moduleUrl: assetUrl('core', 'linker/template_ref'),
         runtime: impTemplateRef_
+    });
+    Identifiers.CodegenComponentFactoryResolver = new CompileIdentifierMetadata({
+        name: 'CodegenComponentFactoryResolver',
+        moduleUrl: assetUrl('core', 'linker/component_factory_resolver'),
+        runtime: CodegenComponentFactoryResolver
+    });
+    Identifiers.ComponentFactoryResolver = new CompileIdentifierMetadata({
+        name: 'ComponentFactoryResolver',
+        moduleUrl: assetUrl('core', 'linker/component_factory_resolver'),
+        runtime: _angular_core.ComponentFactoryResolver
     });
     Identifiers.ValueUnwrapper = new CompileIdentifierMetadata({ name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: impValueUnwrapper });
     Identifiers.Injector = new CompileIdentifierMetadata({ name: 'Injector', moduleUrl: assetUrl('core', 'di/injector'), runtime: impInjector });
@@ -7955,774 +7970,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         if (type === void 0) { type = null; }
         return new FunctionExpr(params, body, type);
     }
-    var _COMPONENT_FACTORY_IDENTIFIER = new CompileIdentifierMetadata({
-        name: 'ComponentFactory',
-        runtime: _angular_core.ComponentFactory,
-        moduleUrl: assetUrl('core', 'linker/component_factory')
-    });
-    var SourceModule = (function () {
-        function SourceModule(moduleUrl, source) {
-            this.moduleUrl = moduleUrl;
-            this.source = source;
-        }
-        return SourceModule;
-    }());
-    var StyleSheetSourceWithImports = (function () {
-        function StyleSheetSourceWithImports(source, importedUrls) {
-            this.source = source;
-            this.importedUrls = importedUrls;
-        }
-        return StyleSheetSourceWithImports;
-    }());
-    var NormalizedComponentWithViewDirectives = (function () {
-        function NormalizedComponentWithViewDirectives(component, directives, pipes) {
-            this.component = component;
-            this.directives = directives;
-            this.pipes = pipes;
-        }
-        return NormalizedComponentWithViewDirectives;
-    }());
-    var OfflineCompiler = (function () {
-        function OfflineCompiler(_directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _outputEmitter, _xhr) {
-            this._directiveNormalizer = _directiveNormalizer;
-            this._templateParser = _templateParser;
-            this._styleCompiler = _styleCompiler;
-            this._viewCompiler = _viewCompiler;
-            this._outputEmitter = _outputEmitter;
-            this._xhr = _xhr;
-        }
-        OfflineCompiler.prototype.normalizeDirectiveMetadata = function (directive) {
-            return this._directiveNormalizer.normalizeDirective(directive);
-        };
-        OfflineCompiler.prototype.compileTemplates = function (components) {
-            var _this = this;
-            if (components.length === 0) {
-                throw new BaseException$1('No components given');
-            }
-            var statements = [];
-            var exportedVars = [];
-            var moduleUrl = _templateModuleUrl(components[0].component);
-            components.forEach(function (componentWithDirs) {
-                var compMeta = componentWithDirs.component;
-                _assertComponent(compMeta);
-                var compViewFactoryVar = _this._compileComponent(compMeta, componentWithDirs.directives, componentWithDirs.pipes, statements);
-                exportedVars.push(compViewFactoryVar);
-                var hostMeta = createHostComponentMeta(compMeta.type, compMeta.selector);
-                var hostViewFactoryVar = _this._compileComponent(hostMeta, [compMeta], [], statements);
-                var compFactoryVar = compMeta.type.name + "NgFactory";
-                statements.push(variable(compFactoryVar)
-                    .set(importExpr(_COMPONENT_FACTORY_IDENTIFIER, [importType(compMeta.type)])
-                    .instantiate([
-                    literal(compMeta.selector), variable(hostViewFactoryVar),
-                    importExpr(compMeta.type)
-                ], importType(_COMPONENT_FACTORY_IDENTIFIER, [importType(compMeta.type)], [TypeModifier.Const])))
-                    .toDeclStmt(null, [StmtModifier.Final]));
-                exportedVars.push(compFactoryVar);
-            });
-            return this._codegenSourceModule(moduleUrl, statements, exportedVars);
-        };
-        OfflineCompiler.prototype.loadAndCompileStylesheet = function (stylesheetUrl, shim, suffix) {
-            var _this = this;
-            return this._xhr.get(stylesheetUrl).then(function (cssText) {
-                var compileResult = _this._styleCompiler.compileStylesheet(stylesheetUrl, cssText, shim);
-                var importedUrls = [];
-                compileResult.dependencies.forEach(function (dep) {
-                    importedUrls.push(dep.moduleUrl);
-                    dep.valuePlaceholder.moduleUrl = _stylesModuleUrl(dep.moduleUrl, dep.isShimmed, suffix);
-                });
-                return new StyleSheetSourceWithImports(_this._codgenStyles(stylesheetUrl, shim, suffix, compileResult), importedUrls);
-            });
-        };
-        OfflineCompiler.prototype._compileComponent = function (compMeta, directives, pipes, targetStatements) {
-            var styleResult = this._styleCompiler.compileComponent(compMeta);
-            var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, compMeta.type.name);
-            var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(styleResult.stylesVar), pipes);
-            ListWrapper.addAll(targetStatements, _resolveStyleStatements(compMeta.type.moduleUrl, styleResult));
-            ListWrapper.addAll(targetStatements, _resolveViewStatements(viewResult));
-            return viewResult.viewFactoryVar;
-        };
-        OfflineCompiler.prototype._codgenStyles = function (inputUrl, shim, suffix, stylesCompileResult) {
-            return this._codegenSourceModule(_stylesModuleUrl(inputUrl, shim, suffix), stylesCompileResult.statements, [stylesCompileResult.stylesVar]);
-        };
-        OfflineCompiler.prototype._codegenSourceModule = function (moduleUrl, statements, exportedVars) {
-            return new SourceModule(moduleUrl, this._outputEmitter.emitStatements(moduleUrl, statements, exportedVars));
-        };
-        return OfflineCompiler;
-    }());
-    function _resolveViewStatements(compileResult) {
-        compileResult.dependencies.forEach(function (dep) { dep.factoryPlaceholder.moduleUrl = _templateModuleUrl(dep.comp); });
-        return compileResult.statements;
-    }
-    function _resolveStyleStatements(containingModuleUrl, compileResult) {
-        var containingSuffix = _splitSuffix(containingModuleUrl)[1];
-        compileResult.dependencies.forEach(function (dep) {
-            dep.valuePlaceholder.moduleUrl =
-                _stylesModuleUrl(dep.moduleUrl, dep.isShimmed, containingSuffix);
-        });
-        return compileResult.statements;
-    }
-    function _templateModuleUrl(comp) {
-        var urlWithSuffix = _splitSuffix(comp.type.moduleUrl);
-        return urlWithSuffix[0] + ".ngfactory" + urlWithSuffix[1];
-    }
-    function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
-        return shim ? stylesheetUrl + ".shim" + suffix : "" + stylesheetUrl + suffix;
-    }
-    function _assertComponent(meta) {
-        if (!meta.isComponent) {
-            throw new BaseException$1("Could not compile '" + meta.type.name + "' because it is not a component.");
-        }
-    }
-    function _splitSuffix(path) {
-        var lastDot = path.lastIndexOf('.');
-        if (lastDot !== -1) {
-            return [path.substring(0, lastDot), path.substring(lastDot)];
-        }
-        else {
-            return [path, ''];
-        }
-    }
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var PromiseCompleter = (function () {
-        function PromiseCompleter() {
-            var _this = this;
-            this.promise = new Promise(function (res, rej) {
-                _this.resolve = res;
-                _this.reject = rej;
-            });
-        }
-        return PromiseCompleter;
-    }());
-    var PromiseWrapper = (function () {
-        function PromiseWrapper() {
-        }
-        PromiseWrapper.resolve = function (obj) { return Promise.resolve(obj); };
-        PromiseWrapper.reject = function (obj, _) { return Promise.reject(obj); };
-        // Note: We can't rename this method into `catch`, as this is not a valid
-        // method name in Dart.
-        PromiseWrapper.catchError = function (promise, onError) {
-            return promise.catch(onError);
-        };
-        PromiseWrapper.all = function (promises) {
-            if (promises.length == 0)
-                return Promise.resolve([]);
-            return Promise.all(promises);
-        };
-        PromiseWrapper.then = function (promise, success, rejection) {
-            return promise.then(success, rejection);
-        };
-        PromiseWrapper.wrap = function (computation) {
-            return new Promise(function (res, rej) {
-                try {
-                    res(computation());
-                }
-                catch (e) {
-                    rej(e);
-                }
-            });
-        };
-        PromiseWrapper.scheduleMicrotask = function (computation) {
-            PromiseWrapper.then(PromiseWrapper.resolve(null), computation, function (_) { });
-        };
-        PromiseWrapper.completer = function () { return new PromiseCompleter(); };
-        return PromiseWrapper;
-    }());
-    var ObservableWrapper = (function () {
-        function ObservableWrapper() {
-        }
-        // TODO(vsavkin): when we use rxnext, try inferring the generic type from the first arg
-        ObservableWrapper.subscribe = function (emitter, onNext, onError, onComplete) {
-            if (onComplete === void 0) { onComplete = function () { }; }
-            onError = (typeof onError === 'function') && onError || noop;
-            onComplete = (typeof onComplete === 'function') && onComplete || noop;
-            return emitter.subscribe({ next: onNext, error: onError, complete: onComplete });
-        };
-        ObservableWrapper.isObservable = function (obs) { return !!obs.subscribe; };
-        /**
-         * Returns whether `obs` has any subscribers listening to events.
-         */
-        ObservableWrapper.hasSubscribers = function (obs) { return obs.observers.length > 0; };
-        ObservableWrapper.dispose = function (subscription) { subscription.unsubscribe(); };
-        /**
-         * @deprecated - use callEmit() instead
-         */
-        ObservableWrapper.callNext = function (emitter, value) { emitter.emit(value); };
-        ObservableWrapper.callEmit = function (emitter, value) { emitter.emit(value); };
-        ObservableWrapper.callError = function (emitter, error) { emitter.error(error); };
-        ObservableWrapper.callComplete = function (emitter) { emitter.complete(); };
-        ObservableWrapper.fromPromise = function (promise) {
-            return rxjs_observable_PromiseObservable.PromiseObservable.create(promise);
-        };
-        ObservableWrapper.toPromise = function (obj) { return rxjs_operator_toPromise.toPromise.call(obj); };
-        return ObservableWrapper;
-    }());
-    /**
-     * This file is a port of shadowCSS from webcomponents.js to TypeScript.
-     *
-     * Please make sure to keep to edits in sync with the source file.
-     *
-     * Source:
-     * https://github.com/webcomponents/webcomponentsjs/blob/4efecd7e0e/src/ShadowCSS/ShadowCSS.js
-     *
-     * The original file level comment is reproduced below
-     */
-    /*
-      This is a limited shim for ShadowDOM css styling.
-      https://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/shadow/index.html#styles
-  
-      The intention here is to support only the styling features which can be
-      relatively simply implemented. The goal is to allow users to avoid the
-      most obvious pitfalls and do so without compromising performance significantly.
-      For ShadowDOM styling that's not covered here, a set of best practices
-      can be provided that should allow users to accomplish more complex styling.
-  
-      The following is a list of specific ShadowDOM styling features and a brief
-      discussion of the approach used to shim.
-  
-      Shimmed features:
-  
-      * :host, :host-context: ShadowDOM allows styling of the shadowRoot's host
-      element using the :host rule. To shim this feature, the :host styles are
-      reformatted and prefixed with a given scope name and promoted to a
-      document level stylesheet.
-      For example, given a scope name of .foo, a rule like this:
-  
-        :host {
-            background: red;
-          }
-        }
-  
-      becomes:
-  
-        .foo {
-          background: red;
-        }
-  
-      * encapsultion: Styles defined within ShadowDOM, apply only to
-      dom inside the ShadowDOM. Polymer uses one of two techniques to implement
-      this feature.
-  
-      By default, rules are prefixed with the host element tag name
-      as a descendant selector. This ensures styling does not leak out of the 'top'
-      of the element's ShadowDOM. For example,
-  
-      div {
-          font-weight: bold;
-        }
-  
-      becomes:
-  
-      x-foo div {
-          font-weight: bold;
-        }
-  
-      becomes:
-  
-  
-      Alternatively, if WebComponents.ShadowCSS.strictStyling is set to true then
-      selectors are scoped by adding an attribute selector suffix to each
-      simple selector that contains the host element tag name. Each element
-      in the element's ShadowDOM template is also given the scope attribute.
-      Thus, these rules match only elements that have the scope attribute.
-      For example, given a scope name of x-foo, a rule like this:
-  
-        div {
-          font-weight: bold;
-        }
-  
-      becomes:
-  
-        div[x-foo] {
-          font-weight: bold;
-        }
-  
-      Note that elements that are dynamically added to a scope must have the scope
-      selector added to them manually.
-  
-      * upper/lower bound encapsulation: Styles which are defined outside a
-      shadowRoot should not cross the ShadowDOM boundary and should not apply
-      inside a shadowRoot.
-  
-      This styling behavior is not emulated. Some possible ways to do this that
-      were rejected due to complexity and/or performance concerns include: (1) reset
-      every possible property for every possible selector for a given scope name;
-      (2) re-implement css in javascript.
-  
-      As an alternative, users should make sure to use selectors
-      specific to the scope in which they are working.
-  
-      * ::distributed: This behavior is not emulated. It's often not necessary
-      to style the contents of a specific insertion point and instead, descendants
-      of the host element can be styled selectively. Users can also create an
-      extra node around an insertion point and style that node's contents
-      via descendent selectors. For example, with a shadowRoot like this:
-  
-        <style>
-          ::content(div) {
-            background: red;
-          }
-        </style>
-        <content></content>
-  
-      could become:
-  
-        <style>
-          / *@polyfill .content-container div * /
-          ::content(div) {
-            background: red;
-          }
-        </style>
-        <div class="content-container">
-          <content></content>
-        </div>
-  
-      Note the use of @polyfill in the comment above a ShadowDOM specific style
-      declaration. This is a directive to the styling shim to use the selector
-      in comments in lieu of the next selector when running under polyfill.
-    */
-    var ShadowCss = (function () {
-        function ShadowCss() {
-            this.strictStyling = true;
-        }
-        /*
-        * Shim some cssText with the given selector. Returns cssText that can
-        * be included in the document via WebComponents.ShadowCSS.addCssToDocument(css).
-        *
-        * When strictStyling is true:
-        * - selector is the attribute added to all elements inside the host,
-        * - hostSelector is the attribute added to the host itself.
-        */
-        ShadowCss.prototype.shimCssText = function (cssText, selector, hostSelector) {
-            if (hostSelector === void 0) { hostSelector = ''; }
-            cssText = stripComments(cssText);
-            cssText = this._insertDirectives(cssText);
-            return this._scopeCssText(cssText, selector, hostSelector);
-        };
-        ShadowCss.prototype._insertDirectives = function (cssText) {
-            cssText = this._insertPolyfillDirectivesInCssText(cssText);
-            return this._insertPolyfillRulesInCssText(cssText);
-        };
-        /*
-         * Process styles to convert native ShadowDOM rules that will trip
-         * up the css parser; we rely on decorating the stylesheet with inert rules.
-         *
-         * For example, we convert this rule:
-         *
-         * polyfill-next-selector { content: ':host menu-item'; }
-         * ::content menu-item {
-         *
-         * to this:
-         *
-         * scopeName menu-item {
-         *
-        **/
-        ShadowCss.prototype._insertPolyfillDirectivesInCssText = function (cssText) {
-            // Difference with webcomponents.js: does not handle comments
-            return StringWrapper.replaceAllMapped(cssText, _cssContentNextSelectorRe, function (m /** TODO #9100 */) { return m[1] + '{'; });
-        };
-        /*
-         * Process styles to add rules which will only apply under the polyfill
-         *
-         * For example, we convert this rule:
-         *
-         * polyfill-rule {
-         *   content: ':host menu-item';
-         * ...
-         * }
-         *
-         * to this:
-         *
-         * scopeName menu-item {...}
-         *
-        **/
-        ShadowCss.prototype._insertPolyfillRulesInCssText = function (cssText) {
-            // Difference with webcomponents.js: does not handle comments
-            return StringWrapper.replaceAllMapped(cssText, _cssContentRuleRe, function (m /** TODO #9100 */) {
-                var rule = m[0];
-                rule = StringWrapper.replace(rule, m[1], '');
-                rule = StringWrapper.replace(rule, m[2], '');
-                return m[3] + rule;
-            });
-        };
-        /* Ensure styles are scoped. Pseudo-scoping takes a rule like:
-         *
-         *  .foo {... }
-         *
-         *  and converts this to
-         *
-         *  scopeName .foo { ... }
-        */
-        ShadowCss.prototype._scopeCssText = function (cssText, scopeSelector, hostSelector) {
-            var unscoped = this._extractUnscopedRulesFromCssText(cssText);
-            cssText = this._insertPolyfillHostInCssText(cssText);
-            cssText = this._convertColonHost(cssText);
-            cssText = this._convertColonHostContext(cssText);
-            cssText = this._convertShadowDOMSelectors(cssText);
-            if (isPresent(scopeSelector)) {
-                cssText = this._scopeSelectors(cssText, scopeSelector, hostSelector);
-            }
-            cssText = cssText + '\n' + unscoped;
-            return cssText.trim();
-        };
-        /*
-         * Process styles to add rules which will only apply under the polyfill
-         * and do not process via CSSOM. (CSSOM is destructive to rules on rare
-         * occasions, e.g. -webkit-calc on Safari.)
-         * For example, we convert this rule:
-         *
-         * @polyfill-unscoped-rule {
-         *   content: 'menu-item';
-         * ... }
-         *
-         * to this:
-         *
-         * menu-item {...}
-         *
-        **/
-        ShadowCss.prototype._extractUnscopedRulesFromCssText = function (cssText) {
-            // Difference with webcomponents.js: does not handle comments
-            var r = '', m;
-            var matcher = RegExpWrapper.matcher(_cssContentUnscopedRuleRe, cssText);
-            while (isPresent(m = RegExpMatcherWrapper.next(matcher))) {
-                var rule = m[0];
-                rule = StringWrapper.replace(rule, m[2], '');
-                rule = StringWrapper.replace(rule, m[1], m[3]);
-                r += rule + '\n\n';
-            }
-            return r;
-        };
-        /*
-         * convert a rule like :host(.foo) > .bar { }
-         *
-         * to
-         *
-         * scopeName.foo > .bar
-        */
-        ShadowCss.prototype._convertColonHost = function (cssText) {
-            return this._convertColonRule(cssText, _cssColonHostRe, this._colonHostPartReplacer);
-        };
-        /*
-         * convert a rule like :host-context(.foo) > .bar { }
-         *
-         * to
-         *
-         * scopeName.foo > .bar, .foo scopeName > .bar { }
-         *
-         * and
-         *
-         * :host-context(.foo:host) .bar { ... }
-         *
-         * to
-         *
-         * scopeName.foo .bar { ... }
-        */
-        ShadowCss.prototype._convertColonHostContext = function (cssText) {
-            return this._convertColonRule(cssText, _cssColonHostContextRe, this._colonHostContextPartReplacer);
-        };
-        ShadowCss.prototype._convertColonRule = function (cssText, regExp, partReplacer) {
-            // p1 = :host, p2 = contents of (), p3 rest of rule
-            return StringWrapper.replaceAllMapped(cssText, regExp, function (m /** TODO #9100 */) {
-                if (isPresent(m[2])) {
-                    var parts = m[2].split(','), r = [];
-                    for (var i = 0; i < parts.length; i++) {
-                        var p = parts[i];
-                        if (isBlank(p))
-                            break;
-                        p = p.trim();
-                        r.push(partReplacer(_polyfillHostNoCombinator, p, m[3]));
-                    }
-                    return r.join(',');
-                }
-                else {
-                    return _polyfillHostNoCombinator + m[3];
-                }
-            });
-        };
-        ShadowCss.prototype._colonHostContextPartReplacer = function (host, part, suffix) {
-            if (StringWrapper.contains(part, _polyfillHost)) {
-                return this._colonHostPartReplacer(host, part, suffix);
-            }
-            else {
-                return host + part + suffix + ', ' + part + ' ' + host + suffix;
-            }
-        };
-        ShadowCss.prototype._colonHostPartReplacer = function (host, part, suffix) {
-            return host + StringWrapper.replace(part, _polyfillHost, '') + suffix;
-        };
-        /*
-         * Convert combinators like ::shadow and pseudo-elements like ::content
-         * by replacing with space.
-        */
-        ShadowCss.prototype._convertShadowDOMSelectors = function (cssText) {
-            for (var i = 0; i < _shadowDOMSelectorsRe.length; i++) {
-                cssText = StringWrapper.replaceAll(cssText, _shadowDOMSelectorsRe[i], ' ');
-            }
-            return cssText;
-        };
-        // change a selector like 'div' to 'name div'
-        ShadowCss.prototype._scopeSelectors = function (cssText, scopeSelector, hostSelector) {
-            var _this = this;
-            return processRules(cssText, function (rule) {
-                var selector = rule.selector;
-                var content = rule.content;
-                if (rule.selector[0] != '@' || rule.selector.startsWith('@page')) {
-                    selector =
-                        _this._scopeSelector(rule.selector, scopeSelector, hostSelector, _this.strictStyling);
-                }
-                else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports')) {
-                    content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
-                }
-                return new CssRule(selector, content);
-            });
-        };
-        ShadowCss.prototype._scopeSelector = function (selector, scopeSelector, hostSelector, strict) {
-            var r = [], parts = selector.split(',');
-            for (var i = 0; i < parts.length; i++) {
-                var p = parts[i].trim();
-                var deepParts = StringWrapper.split(p, _shadowDeepSelectors);
-                var shallowPart = deepParts[0];
-                if (this._selectorNeedsScoping(shallowPart, scopeSelector)) {
-                    deepParts[0] = strict && !StringWrapper.contains(shallowPart, _polyfillHostNoCombinator) ?
-                        this._applyStrictSelectorScope(shallowPart, scopeSelector) :
-                        this._applySelectorScope(shallowPart, scopeSelector, hostSelector);
-                }
-                // replace /deep/ with a space for child selectors
-                r.push(deepParts.join(' '));
-            }
-            return r.join(', ');
-        };
-        ShadowCss.prototype._selectorNeedsScoping = function (selector, scopeSelector) {
-            var re = this._makeScopeMatcher(scopeSelector);
-            return !isPresent(RegExpWrapper.firstMatch(re, selector));
-        };
-        ShadowCss.prototype._makeScopeMatcher = function (scopeSelector) {
-            var lre = /\[/g;
-            var rre = /\]/g;
-            scopeSelector = StringWrapper.replaceAll(scopeSelector, lre, '\\[');
-            scopeSelector = StringWrapper.replaceAll(scopeSelector, rre, '\\]');
-            return RegExpWrapper.create('^(' + scopeSelector + ')' + _selectorReSuffix, 'm');
-        };
-        ShadowCss.prototype._applySelectorScope = function (selector, scopeSelector, hostSelector) {
-            // Difference from webcomponentsjs: scopeSelector could not be an array
-            return this._applySimpleSelectorScope(selector, scopeSelector, hostSelector);
-        };
-        // scope via name and [is=name]
-        ShadowCss.prototype._applySimpleSelectorScope = function (selector, scopeSelector, hostSelector) {
-            if (isPresent(RegExpWrapper.firstMatch(_polyfillHostRe, selector))) {
-                var replaceBy = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
-                selector = StringWrapper.replace(selector, _polyfillHostNoCombinator, replaceBy);
-                return StringWrapper.replaceAll(selector, _polyfillHostRe, replaceBy + ' ');
-            }
-            else {
-                return scopeSelector + ' ' + selector;
-            }
-        };
-        // return a selector with [name] suffix on each simple selector
-        // e.g. .foo.bar > .zot becomes .foo[name].bar[name] > .zot[name]  /** @internal */
-        ShadowCss.prototype._applyStrictSelectorScope = function (selector, scopeSelector) {
-            var isRe = /\[is=([^\]]*)\]/g;
-            scopeSelector =
-                StringWrapper.replaceAllMapped(scopeSelector, isRe, function (m /** TODO #9100 */) { return m[1]; });
-            var splits = [' ', '>', '+', '~'], scoped = selector, attrName = '[' + scopeSelector + ']';
-            for (var i = 0; i < splits.length; i++) {
-                var sep = splits[i];
-                var parts = scoped.split(sep);
-                scoped = parts
-                    .map(function (p) {
-                    // remove :host since it should be unnecessary
-                    var t = StringWrapper.replaceAll(p.trim(), _polyfillHostRe, '');
-                    if (t.length > 0 && !ListWrapper.contains(splits, t) &&
-                        !StringWrapper.contains(t, attrName)) {
-                        var re = /([^:]*)(:*)(.*)/g;
-                        var m = RegExpWrapper.firstMatch(re, t);
-                        if (isPresent(m)) {
-                            p = m[1] + attrName + m[2] + m[3];
-                        }
-                    }
-                    return p;
-                })
-                    .join(sep);
-            }
-            return scoped;
-        };
-        ShadowCss.prototype._insertPolyfillHostInCssText = function (selector) {
-            selector = StringWrapper.replaceAll(selector, _colonHostContextRe, _polyfillHostContext);
-            selector = StringWrapper.replaceAll(selector, _colonHostRe, _polyfillHost);
-            return selector;
-        };
-        return ShadowCss;
-    }());
-    var _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?['"](.*?)['"][;\s]*}([^{]*?){/gim;
-    var _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
-    var _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
-    var _polyfillHost = '-shadowcsshost';
-    // note: :host-context pre-processed to -shadowcsshostcontext.
-    var _polyfillHostContext = '-shadowcsscontext';
-    var _parenSuffix = ')(?:\\((' +
-        '(?:\\([^)(]*\\)|[^)(]*)+?' +
-        ')\\))?([^,{]*)';
-    var _cssColonHostRe = RegExpWrapper.create('(' + _polyfillHost + _parenSuffix, 'im');
-    var _cssColonHostContextRe = RegExpWrapper.create('(' + _polyfillHostContext + _parenSuffix, 'im');
-    var _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
-    var _shadowDOMSelectorsRe = [
-        /::shadow/g, /::content/g,
-        // Deprecated selectors
-        // TODO(vicb): see https://github.com/angular/clang-format/issues/16
-        // clang-format off
-        /\/shadow-deep\//g,
-        /\/shadow\//g,
-    ];
-    var _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
-    var _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
-    var _polyfillHostRe = RegExpWrapper.create(_polyfillHost, 'im');
-    var _colonHostRe = /:host/gim;
-    var _colonHostContextRe = /:host-context/gim;
-    var _commentRe = /\/\*[\s\S]*?\*\//g;
-    function stripComments(input) {
-        return StringWrapper.replaceAllMapped(input, _commentRe, function (_ /** TODO #9100 */) { return ''; });
-    }
-    var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
-    var _curlyRe = /([{}])/g;
-    var OPEN_CURLY = '{';
-    var CLOSE_CURLY = '}';
-    var BLOCK_PLACEHOLDER = '%BLOCK%';
-    var CssRule = (function () {
-        function CssRule(selector, content) {
-            this.selector = selector;
-            this.content = content;
-        }
-        return CssRule;
-    }());
-    function processRules(input, ruleCallback) {
-        var inputWithEscapedBlocks = escapeBlocks(input);
-        var nextBlockIndex = 0;
-        return StringWrapper.replaceAllMapped(inputWithEscapedBlocks.escapedString, _ruleRe, function (m /** TODO #9100 */) {
-            var selector = m[2];
-            var content = '';
-            var suffix = m[4];
-            var contentPrefix = '';
-            if (isPresent(m[4]) && m[4].startsWith('{' + BLOCK_PLACEHOLDER)) {
-                content = inputWithEscapedBlocks.blocks[nextBlockIndex++];
-                suffix = m[4].substring(BLOCK_PLACEHOLDER.length + 1);
-                contentPrefix = '{';
-            }
-            var rule = ruleCallback(new CssRule(selector, content));
-            return "" + m[1] + rule.selector + m[3] + contentPrefix + rule.content + suffix;
-        });
-    }
-    var StringWithEscapedBlocks = (function () {
-        function StringWithEscapedBlocks(escapedString, blocks) {
-            this.escapedString = escapedString;
-            this.blocks = blocks;
-        }
-        return StringWithEscapedBlocks;
-    }());
-    function escapeBlocks(input) {
-        var inputParts = StringWrapper.split(input, _curlyRe);
-        var resultParts = [];
-        var escapedBlocks = [];
-        var bracketCount = 0;
-        var currentBlockParts = [];
-        for (var partIndex = 0; partIndex < inputParts.length; partIndex++) {
-            var part = inputParts[partIndex];
-            if (part == CLOSE_CURLY) {
-                bracketCount--;
-            }
-            if (bracketCount > 0) {
-                currentBlockParts.push(part);
-            }
-            else {
-                if (currentBlockParts.length > 0) {
-                    escapedBlocks.push(currentBlockParts.join(''));
-                    resultParts.push(BLOCK_PLACEHOLDER);
-                    currentBlockParts = [];
-                }
-                resultParts.push(part);
-            }
-            if (part == OPEN_CURLY) {
-                bracketCount++;
-            }
-        }
-        if (currentBlockParts.length > 0) {
-            escapedBlocks.push(currentBlockParts.join(''));
-            resultParts.push(BLOCK_PLACEHOLDER);
-        }
-        return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
-    }
-    var COMPONENT_VARIABLE = '%COMP%';
-    var HOST_ATTR = "_nghost-" + COMPONENT_VARIABLE;
-    var CONTENT_ATTR = "_ngcontent-" + COMPONENT_VARIABLE;
-    var StylesCompileDependency = (function () {
-        function StylesCompileDependency(moduleUrl, isShimmed, valuePlaceholder) {
-            this.moduleUrl = moduleUrl;
-            this.isShimmed = isShimmed;
-            this.valuePlaceholder = valuePlaceholder;
-        }
-        return StylesCompileDependency;
-    }());
-    var StylesCompileResult = (function () {
-        function StylesCompileResult(statements, stylesVar, dependencies) {
-            this.statements = statements;
-            this.stylesVar = stylesVar;
-            this.dependencies = dependencies;
-        }
-        return StylesCompileResult;
-    }());
-    var StyleCompiler = (function () {
-        function StyleCompiler(_urlResolver) {
-            this._urlResolver = _urlResolver;
-            this._shadowCss = new ShadowCss();
-        }
-        StyleCompiler.prototype.compileComponent = function (comp) {
-            var shim = comp.template.encapsulation === _angular_core.ViewEncapsulation.Emulated;
-            return this._compileStyles(getStylesVarName(comp), comp.template.styles, comp.template.styleUrls, shim);
-        };
-        StyleCompiler.prototype.compileStylesheet = function (stylesheetUrl, cssText, isShimmed) {
-            var styleWithImports = extractStyleUrls(this._urlResolver, stylesheetUrl, cssText);
-            return this._compileStyles(getStylesVarName(null), [styleWithImports.style], styleWithImports.styleUrls, isShimmed);
-        };
-        StyleCompiler.prototype._compileStyles = function (stylesVar, plainStyles, absUrls, shim) {
-            var _this = this;
-            var styleExpressions = plainStyles.map(function (plainStyle) { return literal(_this._shimIfNeeded(plainStyle, shim)); });
-            var dependencies = [];
-            for (var i = 0; i < absUrls.length; i++) {
-                var identifier = new CompileIdentifierMetadata({ name: getStylesVarName(null) });
-                dependencies.push(new StylesCompileDependency(absUrls[i], shim, identifier));
-                styleExpressions.push(new ExternalExpr(identifier));
-            }
-            // styles variable contains plain strings and arrays of other styles arrays (recursive),
-            // so we set its type to dynamic.
-            var stmt = variable(stylesVar)
-                .set(literalArr(styleExpressions, new ArrayType(DYNAMIC_TYPE, [TypeModifier.Const])))
-                .toDeclStmt(null, [StmtModifier.Final]);
-            return new StylesCompileResult([stmt], stylesVar, dependencies);
-        };
-        StyleCompiler.prototype._shimIfNeeded = function (style, shim) {
-            return shim ? this._shadowCss.shimCssText(style, CONTENT_ATTR, HOST_ATTR) : style;
-        };
-        return StyleCompiler;
-    }());
-    /** @nocollapse */
-    StyleCompiler.decorators = [
-        { type: _angular_core.Injectable },
-    ];
-    /** @nocollapse */
-    StyleCompiler.ctorParameters = [
-        { type: UrlResolver, },
-    ];
-    function getStylesVarName(component) {
-        var result = "styles";
-        if (isPresent(component)) {
-            result += "_" + component.type.name;
-        }
-        return result;
-    }
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -10010,6 +9257,23 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.appElement = THIS_EXPR.prop(fieldName);
             this._instances.add(identifierToken(Identifiers.AppElement), this.appElement);
         };
+        CompileElement.prototype.createComponentFactoryResolver = function (precompileComponent) {
+            if (!precompileComponent || precompileComponent.length === 0) {
+                return;
+            }
+            var createComponentFactoryResolverExpr = importExpr(Identifiers.CodegenComponentFactoryResolver).instantiate([
+                literalArr(precompileComponent.map(function (precompiledComponent) { return importExpr(precompiledComponent); })),
+                injectFromViewParentInjector(identifierToken(Identifiers.ComponentFactoryResolver), false)
+            ]);
+            var provider = new CompileProviderMetadata({
+                token: identifierToken(Identifiers.ComponentFactoryResolver),
+                useValue: createComponentFactoryResolverExpr
+            });
+            // Add ComponentFactoryResolver as first provider as it does not have deps on other providers
+            // ProviderAstType.PrivateService as only the component and its view can see it,
+            // but nobody else
+            this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], exports.ProviderAstType.PrivateService, this.sourceAst.sourceSpan));
+        };
         CompileElement.prototype.setComponentView = function (compViewExpr) {
             this._compViewExpr = compViewExpr;
             this.contentNodesByNgContentIndex =
@@ -10074,7 +9338,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var queriesForProvider = _this._getQueriesFor(resolvedProvider.token);
                 ListWrapper.addAll(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
             });
-            StringMapWrapper.forEach(this.referenceTokens, function (_ /** TODO #9100 */, varName /** TODO #9100 */) {
+            StringMapWrapper.forEach(this.referenceTokens, function (_, varName) {
                 var token = _this.referenceTokens[varName];
                 var varValue;
                 if (isPresent(token)) {
@@ -10196,6 +9460,14 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 // access regular providers on the element
                 if (isBlank(result)) {
+                    var resolvedProvider = this._resolvedProviders.get(dep.token);
+                    // don't allow directives / public services to access private services.
+                    // only components and private services can access private services.
+                    if (resolvedProvider && (requestingProviderType === exports.ProviderAstType.Directive ||
+                        requestingProviderType === exports.ProviderAstType.PublicService) &&
+                        resolvedProvider.providerType === exports.ProviderAstType.PrivateService) {
+                        return null;
+                    }
                     result = this._instances.get(dep.token);
                 }
             }
@@ -10290,7 +9562,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _ValueOutputAstTransformer.prototype.visitStringMap = function (map, context) {
             var _this = this;
             var entries = [];
-            StringMapWrapper.forEach(map, function (value /** TODO #9100 */, key /** TODO #9100 */) {
+            StringMapWrapper.forEach(map, function (value, key) {
                 entries.push([key, visitValue(value, _this, context)]);
             });
             return literalMap(entries);
@@ -11233,12 +10505,19 @@ var __extends = (this && this.__extends) || function (d, b) {
     var NG_CONTAINER_TAG = 'ng-container';
     var parentRenderNodeVar = variable('parentRenderNode');
     var rootSelectorVar = variable('rootSelector');
-    var ViewCompileDependency = (function () {
-        function ViewCompileDependency(comp, factoryPlaceholder) {
+    var ViewFactoryDependency = (function () {
+        function ViewFactoryDependency(comp, placeholder) {
             this.comp = comp;
-            this.factoryPlaceholder = factoryPlaceholder;
+            this.placeholder = placeholder;
         }
-        return ViewCompileDependency;
+        return ViewFactoryDependency;
+    }());
+    var ComponentFactoryDependency = (function () {
+        function ComponentFactoryDependency(comp, placeholder) {
+            this.comp = comp;
+            this.placeholder = placeholder;
+        }
+        return ComponentFactoryDependency;
     }());
     function buildView(view, template, targetDependencies) {
         var builderVisitor = new ViewBuilderVisitor(view, targetDependencies);
@@ -11345,6 +10624,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return null;
         };
         ViewBuilderVisitor.prototype.visitElement = function (ast, parent) {
+            var _this = this;
             var nodeIndex = this.view.nodes.length;
             var createRenderNodeExpr;
             var debugContextExpr = this.view.createMethod.resetDebugInfoExpr(nodeIndex, ast);
@@ -11379,7 +10659,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             var compViewExpr = null;
             if (isPresent(component)) {
                 var nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewFactoryName(component, 0) });
-                this.targetDependencies.push(new ViewCompileDependency(component, nestedComponentIdentifier));
+                this.targetDependencies.push(new ViewFactoryDependency(component, nestedComponentIdentifier));
+                var precompileComponentIdentifiers = component.precompile.map(function (precompileComp) {
+                    var id = new CompileIdentifierMetadata({ name: precompileComp.name });
+                    _this.targetDependencies.push(new ComponentFactoryDependency(precompileComp, id));
+                    return id;
+                });
+                compileElement.createComponentFactoryResolver(precompileComponentIdentifiers);
                 compViewExpr = variable("compView_" + nodeIndex); // fix highlighting: `
                 compileElement.setComponentView(compViewExpr);
                 this.view.createMethod.addStmt(compViewExpr
@@ -11737,6 +11023,785 @@ var __extends = (this && this.__extends) || function (d, b) {
     ViewCompiler.ctorParameters = [
         { type: CompilerConfig, },
     ];
+    var _COMPONENT_FACTORY_IDENTIFIER = new CompileIdentifierMetadata({
+        name: 'ComponentFactory',
+        runtime: _angular_core.ComponentFactory,
+        moduleUrl: assetUrl('core', 'linker/component_factory')
+    });
+    var SourceModule = (function () {
+        function SourceModule(moduleUrl, source) {
+            this.moduleUrl = moduleUrl;
+            this.source = source;
+        }
+        return SourceModule;
+    }());
+    var StyleSheetSourceWithImports = (function () {
+        function StyleSheetSourceWithImports(source, importedUrls) {
+            this.source = source;
+            this.importedUrls = importedUrls;
+        }
+        return StyleSheetSourceWithImports;
+    }());
+    var NormalizedComponentWithViewDirectives = (function () {
+        function NormalizedComponentWithViewDirectives(component, directives, pipes) {
+            this.component = component;
+            this.directives = directives;
+            this.pipes = pipes;
+        }
+        return NormalizedComponentWithViewDirectives;
+    }());
+    var OfflineCompiler = (function () {
+        function OfflineCompiler(_directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _outputEmitter, _xhr) {
+            this._directiveNormalizer = _directiveNormalizer;
+            this._templateParser = _templateParser;
+            this._styleCompiler = _styleCompiler;
+            this._viewCompiler = _viewCompiler;
+            this._outputEmitter = _outputEmitter;
+            this._xhr = _xhr;
+        }
+        OfflineCompiler.prototype.normalizeDirectiveMetadata = function (directive) {
+            return this._directiveNormalizer.normalizeDirective(directive);
+        };
+        OfflineCompiler.prototype.compileTemplates = function (components) {
+            var _this = this;
+            if (components.length === 0) {
+                throw new BaseException$1('No components given');
+            }
+            var statements = [];
+            var exportedVars = [];
+            var moduleUrl = _ngfactoryModuleUrl(components[0].component.type);
+            components.forEach(function (componentWithDirs) {
+                var compMeta = componentWithDirs.component;
+                _assertComponent(compMeta);
+                var compViewFactoryVar = _this._compileComponent(compMeta, componentWithDirs.directives, componentWithDirs.pipes, statements);
+                exportedVars.push(compViewFactoryVar);
+                var hostMeta = createHostComponentMeta(compMeta.type, compMeta.selector);
+                var hostViewFactoryVar = _this._compileComponent(hostMeta, [compMeta], [], statements);
+                var compFactoryVar = _componentFactoryName(compMeta.type);
+                statements.push(variable(compFactoryVar)
+                    .set(importExpr(_COMPONENT_FACTORY_IDENTIFIER, [importType(compMeta.type)])
+                    .instantiate([
+                    literal(compMeta.selector), variable(hostViewFactoryVar),
+                    importExpr(compMeta.type)
+                ], importType(_COMPONENT_FACTORY_IDENTIFIER, [importType(compMeta.type)], [TypeModifier.Const])))
+                    .toDeclStmt(null, [StmtModifier.Final]));
+                exportedVars.push(compFactoryVar);
+            });
+            return this._codegenSourceModule(moduleUrl, statements, exportedVars);
+        };
+        OfflineCompiler.prototype.loadAndCompileStylesheet = function (stylesheetUrl, shim, suffix) {
+            var _this = this;
+            return this._xhr.get(stylesheetUrl).then(function (cssText) {
+                var compileResult = _this._styleCompiler.compileStylesheet(stylesheetUrl, cssText, shim);
+                var importedUrls = [];
+                compileResult.dependencies.forEach(function (dep) {
+                    importedUrls.push(dep.moduleUrl);
+                    dep.valuePlaceholder.moduleUrl = _stylesModuleUrl(dep.moduleUrl, dep.isShimmed, suffix);
+                });
+                return new StyleSheetSourceWithImports(_this._codgenStyles(stylesheetUrl, shim, suffix, compileResult), importedUrls);
+            });
+        };
+        OfflineCompiler.prototype._compileComponent = function (compMeta, directives, pipes, targetStatements) {
+            var styleResult = this._styleCompiler.compileComponent(compMeta);
+            var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, compMeta.type.name);
+            var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(styleResult.stylesVar), pipes);
+            ListWrapper.addAll(targetStatements, _resolveStyleStatements(compMeta.type.moduleUrl, styleResult));
+            ListWrapper.addAll(targetStatements, _resolveViewStatements(viewResult));
+            return viewResult.viewFactoryVar;
+        };
+        OfflineCompiler.prototype._codgenStyles = function (inputUrl, shim, suffix, stylesCompileResult) {
+            return this._codegenSourceModule(_stylesModuleUrl(inputUrl, shim, suffix), stylesCompileResult.statements, [stylesCompileResult.stylesVar]);
+        };
+        OfflineCompiler.prototype._codegenSourceModule = function (moduleUrl, statements, exportedVars) {
+            return new SourceModule(moduleUrl, this._outputEmitter.emitStatements(moduleUrl, statements, exportedVars));
+        };
+        return OfflineCompiler;
+    }());
+    function _resolveViewStatements(compileResult) {
+        compileResult.dependencies.forEach(function (dep) {
+            if (dep instanceof ViewFactoryDependency) {
+                dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.type);
+            }
+            else if (dep instanceof ComponentFactoryDependency) {
+                dep.placeholder.name = _componentFactoryName(dep.comp);
+                dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
+            }
+        });
+        return compileResult.statements;
+    }
+    function _resolveStyleStatements(containingModuleUrl, compileResult) {
+        var containingSuffix = _splitSuffix(containingModuleUrl)[1];
+        compileResult.dependencies.forEach(function (dep) {
+            dep.valuePlaceholder.moduleUrl =
+                _stylesModuleUrl(dep.moduleUrl, dep.isShimmed, containingSuffix);
+        });
+        return compileResult.statements;
+    }
+    function _ngfactoryModuleUrl(comp) {
+        var urlWithSuffix = _splitSuffix(comp.moduleUrl);
+        return urlWithSuffix[0] + ".ngfactory" + urlWithSuffix[1];
+    }
+    function _componentFactoryName(comp) {
+        return comp.name + "NgFactory";
+    }
+    function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
+        return shim ? stylesheetUrl + ".shim" + suffix : "" + stylesheetUrl + suffix;
+    }
+    function _assertComponent(meta) {
+        if (!meta.isComponent) {
+            throw new BaseException$1("Could not compile '" + meta.type.name + "' because it is not a component.");
+        }
+    }
+    function _splitSuffix(path) {
+        var lastDot = path.lastIndexOf('.');
+        if (lastDot !== -1) {
+            return [path.substring(0, lastDot), path.substring(lastDot)];
+        }
+        else {
+            return [path, ''];
+        }
+    }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var PromiseCompleter = (function () {
+        function PromiseCompleter() {
+            var _this = this;
+            this.promise = new Promise(function (res, rej) {
+                _this.resolve = res;
+                _this.reject = rej;
+            });
+        }
+        return PromiseCompleter;
+    }());
+    var PromiseWrapper = (function () {
+        function PromiseWrapper() {
+        }
+        PromiseWrapper.resolve = function (obj) { return Promise.resolve(obj); };
+        PromiseWrapper.reject = function (obj, _) { return Promise.reject(obj); };
+        // Note: We can't rename this method into `catch`, as this is not a valid
+        // method name in Dart.
+        PromiseWrapper.catchError = function (promise, onError) {
+            return promise.catch(onError);
+        };
+        PromiseWrapper.all = function (promises) {
+            if (promises.length == 0)
+                return Promise.resolve([]);
+            return Promise.all(promises);
+        };
+        PromiseWrapper.then = function (promise, success, rejection) {
+            return promise.then(success, rejection);
+        };
+        PromiseWrapper.wrap = function (computation) {
+            return new Promise(function (res, rej) {
+                try {
+                    res(computation());
+                }
+                catch (e) {
+                    rej(e);
+                }
+            });
+        };
+        PromiseWrapper.scheduleMicrotask = function (computation) {
+            PromiseWrapper.then(PromiseWrapper.resolve(null), computation, function (_) { });
+        };
+        PromiseWrapper.completer = function () { return new PromiseCompleter(); };
+        return PromiseWrapper;
+    }());
+    var ObservableWrapper = (function () {
+        function ObservableWrapper() {
+        }
+        // TODO(vsavkin): when we use rxnext, try inferring the generic type from the first arg
+        ObservableWrapper.subscribe = function (emitter, onNext, onError, onComplete) {
+            if (onComplete === void 0) { onComplete = function () { }; }
+            onError = (typeof onError === 'function') && onError || noop;
+            onComplete = (typeof onComplete === 'function') && onComplete || noop;
+            return emitter.subscribe({ next: onNext, error: onError, complete: onComplete });
+        };
+        ObservableWrapper.isObservable = function (obs) { return !!obs.subscribe; };
+        /**
+         * Returns whether `obs` has any subscribers listening to events.
+         */
+        ObservableWrapper.hasSubscribers = function (obs) { return obs.observers.length > 0; };
+        ObservableWrapper.dispose = function (subscription) { subscription.unsubscribe(); };
+        /**
+         * @deprecated - use callEmit() instead
+         */
+        ObservableWrapper.callNext = function (emitter, value) { emitter.emit(value); };
+        ObservableWrapper.callEmit = function (emitter, value) { emitter.emit(value); };
+        ObservableWrapper.callError = function (emitter, error) { emitter.error(error); };
+        ObservableWrapper.callComplete = function (emitter) { emitter.complete(); };
+        ObservableWrapper.fromPromise = function (promise) {
+            return rxjs_observable_PromiseObservable.PromiseObservable.create(promise);
+        };
+        ObservableWrapper.toPromise = function (obj) { return rxjs_operator_toPromise.toPromise.call(obj); };
+        return ObservableWrapper;
+    }());
+    /**
+     * This file is a port of shadowCSS from webcomponents.js to TypeScript.
+     *
+     * Please make sure to keep to edits in sync with the source file.
+     *
+     * Source:
+     * https://github.com/webcomponents/webcomponentsjs/blob/4efecd7e0e/src/ShadowCSS/ShadowCSS.js
+     *
+     * The original file level comment is reproduced below
+     */
+    /*
+      This is a limited shim for ShadowDOM css styling.
+      https://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/shadow/index.html#styles
+  
+      The intention here is to support only the styling features which can be
+      relatively simply implemented. The goal is to allow users to avoid the
+      most obvious pitfalls and do so without compromising performance significantly.
+      For ShadowDOM styling that's not covered here, a set of best practices
+      can be provided that should allow users to accomplish more complex styling.
+  
+      The following is a list of specific ShadowDOM styling features and a brief
+      discussion of the approach used to shim.
+  
+      Shimmed features:
+  
+      * :host, :host-context: ShadowDOM allows styling of the shadowRoot's host
+      element using the :host rule. To shim this feature, the :host styles are
+      reformatted and prefixed with a given scope name and promoted to a
+      document level stylesheet.
+      For example, given a scope name of .foo, a rule like this:
+  
+        :host {
+            background: red;
+          }
+        }
+  
+      becomes:
+  
+        .foo {
+          background: red;
+        }
+  
+      * encapsultion: Styles defined within ShadowDOM, apply only to
+      dom inside the ShadowDOM. Polymer uses one of two techniques to implement
+      this feature.
+  
+      By default, rules are prefixed with the host element tag name
+      as a descendant selector. This ensures styling does not leak out of the 'top'
+      of the element's ShadowDOM. For example,
+  
+      div {
+          font-weight: bold;
+        }
+  
+      becomes:
+  
+      x-foo div {
+          font-weight: bold;
+        }
+  
+      becomes:
+  
+  
+      Alternatively, if WebComponents.ShadowCSS.strictStyling is set to true then
+      selectors are scoped by adding an attribute selector suffix to each
+      simple selector that contains the host element tag name. Each element
+      in the element's ShadowDOM template is also given the scope attribute.
+      Thus, these rules match only elements that have the scope attribute.
+      For example, given a scope name of x-foo, a rule like this:
+  
+        div {
+          font-weight: bold;
+        }
+  
+      becomes:
+  
+        div[x-foo] {
+          font-weight: bold;
+        }
+  
+      Note that elements that are dynamically added to a scope must have the scope
+      selector added to them manually.
+  
+      * upper/lower bound encapsulation: Styles which are defined outside a
+      shadowRoot should not cross the ShadowDOM boundary and should not apply
+      inside a shadowRoot.
+  
+      This styling behavior is not emulated. Some possible ways to do this that
+      were rejected due to complexity and/or performance concerns include: (1) reset
+      every possible property for every possible selector for a given scope name;
+      (2) re-implement css in javascript.
+  
+      As an alternative, users should make sure to use selectors
+      specific to the scope in which they are working.
+  
+      * ::distributed: This behavior is not emulated. It's often not necessary
+      to style the contents of a specific insertion point and instead, descendants
+      of the host element can be styled selectively. Users can also create an
+      extra node around an insertion point and style that node's contents
+      via descendent selectors. For example, with a shadowRoot like this:
+  
+        <style>
+          ::content(div) {
+            background: red;
+          }
+        </style>
+        <content></content>
+  
+      could become:
+  
+        <style>
+          / *@polyfill .content-container div * /
+          ::content(div) {
+            background: red;
+          }
+        </style>
+        <div class="content-container">
+          <content></content>
+        </div>
+  
+      Note the use of @polyfill in the comment above a ShadowDOM specific style
+      declaration. This is a directive to the styling shim to use the selector
+      in comments in lieu of the next selector when running under polyfill.
+    */
+    var ShadowCss = (function () {
+        function ShadowCss() {
+            this.strictStyling = true;
+        }
+        /*
+        * Shim some cssText with the given selector. Returns cssText that can
+        * be included in the document via WebComponents.ShadowCSS.addCssToDocument(css).
+        *
+        * When strictStyling is true:
+        * - selector is the attribute added to all elements inside the host,
+        * - hostSelector is the attribute added to the host itself.
+        */
+        ShadowCss.prototype.shimCssText = function (cssText, selector, hostSelector) {
+            if (hostSelector === void 0) { hostSelector = ''; }
+            cssText = stripComments(cssText);
+            cssText = this._insertDirectives(cssText);
+            return this._scopeCssText(cssText, selector, hostSelector);
+        };
+        ShadowCss.prototype._insertDirectives = function (cssText) {
+            cssText = this._insertPolyfillDirectivesInCssText(cssText);
+            return this._insertPolyfillRulesInCssText(cssText);
+        };
+        /*
+         * Process styles to convert native ShadowDOM rules that will trip
+         * up the css parser; we rely on decorating the stylesheet with inert rules.
+         *
+         * For example, we convert this rule:
+         *
+         * polyfill-next-selector { content: ':host menu-item'; }
+         * ::content menu-item {
+         *
+         * to this:
+         *
+         * scopeName menu-item {
+         *
+        **/
+        ShadowCss.prototype._insertPolyfillDirectivesInCssText = function (cssText) {
+            // Difference with webcomponents.js: does not handle comments
+            return StringWrapper.replaceAllMapped(cssText, _cssContentNextSelectorRe, function (m /** TODO #9100 */) { return m[1] + '{'; });
+        };
+        /*
+         * Process styles to add rules which will only apply under the polyfill
+         *
+         * For example, we convert this rule:
+         *
+         * polyfill-rule {
+         *   content: ':host menu-item';
+         * ...
+         * }
+         *
+         * to this:
+         *
+         * scopeName menu-item {...}
+         *
+        **/
+        ShadowCss.prototype._insertPolyfillRulesInCssText = function (cssText) {
+            // Difference with webcomponents.js: does not handle comments
+            return StringWrapper.replaceAllMapped(cssText, _cssContentRuleRe, function (m /** TODO #9100 */) {
+                var rule = m[0];
+                rule = StringWrapper.replace(rule, m[1], '');
+                rule = StringWrapper.replace(rule, m[2], '');
+                return m[3] + rule;
+            });
+        };
+        /* Ensure styles are scoped. Pseudo-scoping takes a rule like:
+         *
+         *  .foo {... }
+         *
+         *  and converts this to
+         *
+         *  scopeName .foo { ... }
+        */
+        ShadowCss.prototype._scopeCssText = function (cssText, scopeSelector, hostSelector) {
+            var unscoped = this._extractUnscopedRulesFromCssText(cssText);
+            cssText = this._insertPolyfillHostInCssText(cssText);
+            cssText = this._convertColonHost(cssText);
+            cssText = this._convertColonHostContext(cssText);
+            cssText = this._convertShadowDOMSelectors(cssText);
+            if (isPresent(scopeSelector)) {
+                cssText = this._scopeSelectors(cssText, scopeSelector, hostSelector);
+            }
+            cssText = cssText + '\n' + unscoped;
+            return cssText.trim();
+        };
+        /*
+         * Process styles to add rules which will only apply under the polyfill
+         * and do not process via CSSOM. (CSSOM is destructive to rules on rare
+         * occasions, e.g. -webkit-calc on Safari.)
+         * For example, we convert this rule:
+         *
+         * @polyfill-unscoped-rule {
+         *   content: 'menu-item';
+         * ... }
+         *
+         * to this:
+         *
+         * menu-item {...}
+         *
+        **/
+        ShadowCss.prototype._extractUnscopedRulesFromCssText = function (cssText) {
+            // Difference with webcomponents.js: does not handle comments
+            var r = '', m;
+            var matcher = RegExpWrapper.matcher(_cssContentUnscopedRuleRe, cssText);
+            while (isPresent(m = RegExpMatcherWrapper.next(matcher))) {
+                var rule = m[0];
+                rule = StringWrapper.replace(rule, m[2], '');
+                rule = StringWrapper.replace(rule, m[1], m[3]);
+                r += rule + '\n\n';
+            }
+            return r;
+        };
+        /*
+         * convert a rule like :host(.foo) > .bar { }
+         *
+         * to
+         *
+         * scopeName.foo > .bar
+        */
+        ShadowCss.prototype._convertColonHost = function (cssText) {
+            return this._convertColonRule(cssText, _cssColonHostRe, this._colonHostPartReplacer);
+        };
+        /*
+         * convert a rule like :host-context(.foo) > .bar { }
+         *
+         * to
+         *
+         * scopeName.foo > .bar, .foo scopeName > .bar { }
+         *
+         * and
+         *
+         * :host-context(.foo:host) .bar { ... }
+         *
+         * to
+         *
+         * scopeName.foo .bar { ... }
+        */
+        ShadowCss.prototype._convertColonHostContext = function (cssText) {
+            return this._convertColonRule(cssText, _cssColonHostContextRe, this._colonHostContextPartReplacer);
+        };
+        ShadowCss.prototype._convertColonRule = function (cssText, regExp, partReplacer) {
+            // p1 = :host, p2 = contents of (), p3 rest of rule
+            return StringWrapper.replaceAllMapped(cssText, regExp, function (m /** TODO #9100 */) {
+                if (isPresent(m[2])) {
+                    var parts = m[2].split(','), r = [];
+                    for (var i = 0; i < parts.length; i++) {
+                        var p = parts[i];
+                        if (isBlank(p))
+                            break;
+                        p = p.trim();
+                        r.push(partReplacer(_polyfillHostNoCombinator, p, m[3]));
+                    }
+                    return r.join(',');
+                }
+                else {
+                    return _polyfillHostNoCombinator + m[3];
+                }
+            });
+        };
+        ShadowCss.prototype._colonHostContextPartReplacer = function (host, part, suffix) {
+            if (StringWrapper.contains(part, _polyfillHost)) {
+                return this._colonHostPartReplacer(host, part, suffix);
+            }
+            else {
+                return host + part + suffix + ', ' + part + ' ' + host + suffix;
+            }
+        };
+        ShadowCss.prototype._colonHostPartReplacer = function (host, part, suffix) {
+            return host + StringWrapper.replace(part, _polyfillHost, '') + suffix;
+        };
+        /*
+         * Convert combinators like ::shadow and pseudo-elements like ::content
+         * by replacing with space.
+        */
+        ShadowCss.prototype._convertShadowDOMSelectors = function (cssText) {
+            for (var i = 0; i < _shadowDOMSelectorsRe.length; i++) {
+                cssText = StringWrapper.replaceAll(cssText, _shadowDOMSelectorsRe[i], ' ');
+            }
+            return cssText;
+        };
+        // change a selector like 'div' to 'name div'
+        ShadowCss.prototype._scopeSelectors = function (cssText, scopeSelector, hostSelector) {
+            var _this = this;
+            return processRules(cssText, function (rule) {
+                var selector = rule.selector;
+                var content = rule.content;
+                if (rule.selector[0] != '@' || rule.selector.startsWith('@page')) {
+                    selector =
+                        _this._scopeSelector(rule.selector, scopeSelector, hostSelector, _this.strictStyling);
+                }
+                else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports')) {
+                    content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
+                }
+                return new CssRule(selector, content);
+            });
+        };
+        ShadowCss.prototype._scopeSelector = function (selector, scopeSelector, hostSelector, strict) {
+            var r = [], parts = selector.split(',');
+            for (var i = 0; i < parts.length; i++) {
+                var p = parts[i].trim();
+                var deepParts = StringWrapper.split(p, _shadowDeepSelectors);
+                var shallowPart = deepParts[0];
+                if (this._selectorNeedsScoping(shallowPart, scopeSelector)) {
+                    deepParts[0] = strict && !StringWrapper.contains(shallowPart, _polyfillHostNoCombinator) ?
+                        this._applyStrictSelectorScope(shallowPart, scopeSelector) :
+                        this._applySelectorScope(shallowPart, scopeSelector, hostSelector);
+                }
+                // replace /deep/ with a space for child selectors
+                r.push(deepParts.join(' '));
+            }
+            return r.join(', ');
+        };
+        ShadowCss.prototype._selectorNeedsScoping = function (selector, scopeSelector) {
+            var re = this._makeScopeMatcher(scopeSelector);
+            return !isPresent(RegExpWrapper.firstMatch(re, selector));
+        };
+        ShadowCss.prototype._makeScopeMatcher = function (scopeSelector) {
+            var lre = /\[/g;
+            var rre = /\]/g;
+            scopeSelector = StringWrapper.replaceAll(scopeSelector, lre, '\\[');
+            scopeSelector = StringWrapper.replaceAll(scopeSelector, rre, '\\]');
+            return RegExpWrapper.create('^(' + scopeSelector + ')' + _selectorReSuffix, 'm');
+        };
+        ShadowCss.prototype._applySelectorScope = function (selector, scopeSelector, hostSelector) {
+            // Difference from webcomponentsjs: scopeSelector could not be an array
+            return this._applySimpleSelectorScope(selector, scopeSelector, hostSelector);
+        };
+        // scope via name and [is=name]
+        ShadowCss.prototype._applySimpleSelectorScope = function (selector, scopeSelector, hostSelector) {
+            if (isPresent(RegExpWrapper.firstMatch(_polyfillHostRe, selector))) {
+                var replaceBy = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
+                selector = StringWrapper.replace(selector, _polyfillHostNoCombinator, replaceBy);
+                return StringWrapper.replaceAll(selector, _polyfillHostRe, replaceBy + ' ');
+            }
+            else {
+                return scopeSelector + ' ' + selector;
+            }
+        };
+        // return a selector with [name] suffix on each simple selector
+        // e.g. .foo.bar > .zot becomes .foo[name].bar[name] > .zot[name]  /** @internal */
+        ShadowCss.prototype._applyStrictSelectorScope = function (selector, scopeSelector) {
+            var isRe = /\[is=([^\]]*)\]/g;
+            scopeSelector =
+                StringWrapper.replaceAllMapped(scopeSelector, isRe, function (m /** TODO #9100 */) { return m[1]; });
+            var splits = [' ', '>', '+', '~'], scoped = selector, attrName = '[' + scopeSelector + ']';
+            for (var i = 0; i < splits.length; i++) {
+                var sep = splits[i];
+                var parts = scoped.split(sep);
+                scoped = parts
+                    .map(function (p) {
+                    // remove :host since it should be unnecessary
+                    var t = StringWrapper.replaceAll(p.trim(), _polyfillHostRe, '');
+                    if (t.length > 0 && !ListWrapper.contains(splits, t) &&
+                        !StringWrapper.contains(t, attrName)) {
+                        var re = /([^:]*)(:*)(.*)/g;
+                        var m = RegExpWrapper.firstMatch(re, t);
+                        if (isPresent(m)) {
+                            p = m[1] + attrName + m[2] + m[3];
+                        }
+                    }
+                    return p;
+                })
+                    .join(sep);
+            }
+            return scoped;
+        };
+        ShadowCss.prototype._insertPolyfillHostInCssText = function (selector) {
+            selector = StringWrapper.replaceAll(selector, _colonHostContextRe, _polyfillHostContext);
+            selector = StringWrapper.replaceAll(selector, _colonHostRe, _polyfillHost);
+            return selector;
+        };
+        return ShadowCss;
+    }());
+    var _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?['"](.*?)['"][;\s]*}([^{]*?){/gim;
+    var _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
+    var _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
+    var _polyfillHost = '-shadowcsshost';
+    // note: :host-context pre-processed to -shadowcsshostcontext.
+    var _polyfillHostContext = '-shadowcsscontext';
+    var _parenSuffix = ')(?:\\((' +
+        '(?:\\([^)(]*\\)|[^)(]*)+?' +
+        ')\\))?([^,{]*)';
+    var _cssColonHostRe = RegExpWrapper.create('(' + _polyfillHost + _parenSuffix, 'im');
+    var _cssColonHostContextRe = RegExpWrapper.create('(' + _polyfillHostContext + _parenSuffix, 'im');
+    var _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
+    var _shadowDOMSelectorsRe = [
+        /::shadow/g, /::content/g,
+        // Deprecated selectors
+        // TODO(vicb): see https://github.com/angular/clang-format/issues/16
+        // clang-format off
+        /\/shadow-deep\//g,
+        /\/shadow\//g,
+    ];
+    var _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
+    var _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
+    var _polyfillHostRe = RegExpWrapper.create(_polyfillHost, 'im');
+    var _colonHostRe = /:host/gim;
+    var _colonHostContextRe = /:host-context/gim;
+    var _commentRe = /\/\*[\s\S]*?\*\//g;
+    function stripComments(input) {
+        return StringWrapper.replaceAllMapped(input, _commentRe, function (_ /** TODO #9100 */) { return ''; });
+    }
+    var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
+    var _curlyRe = /([{}])/g;
+    var OPEN_CURLY = '{';
+    var CLOSE_CURLY = '}';
+    var BLOCK_PLACEHOLDER = '%BLOCK%';
+    var CssRule = (function () {
+        function CssRule(selector, content) {
+            this.selector = selector;
+            this.content = content;
+        }
+        return CssRule;
+    }());
+    function processRules(input, ruleCallback) {
+        var inputWithEscapedBlocks = escapeBlocks(input);
+        var nextBlockIndex = 0;
+        return StringWrapper.replaceAllMapped(inputWithEscapedBlocks.escapedString, _ruleRe, function (m /** TODO #9100 */) {
+            var selector = m[2];
+            var content = '';
+            var suffix = m[4];
+            var contentPrefix = '';
+            if (isPresent(m[4]) && m[4].startsWith('{' + BLOCK_PLACEHOLDER)) {
+                content = inputWithEscapedBlocks.blocks[nextBlockIndex++];
+                suffix = m[4].substring(BLOCK_PLACEHOLDER.length + 1);
+                contentPrefix = '{';
+            }
+            var rule = ruleCallback(new CssRule(selector, content));
+            return "" + m[1] + rule.selector + m[3] + contentPrefix + rule.content + suffix;
+        });
+    }
+    var StringWithEscapedBlocks = (function () {
+        function StringWithEscapedBlocks(escapedString, blocks) {
+            this.escapedString = escapedString;
+            this.blocks = blocks;
+        }
+        return StringWithEscapedBlocks;
+    }());
+    function escapeBlocks(input) {
+        var inputParts = StringWrapper.split(input, _curlyRe);
+        var resultParts = [];
+        var escapedBlocks = [];
+        var bracketCount = 0;
+        var currentBlockParts = [];
+        for (var partIndex = 0; partIndex < inputParts.length; partIndex++) {
+            var part = inputParts[partIndex];
+            if (part == CLOSE_CURLY) {
+                bracketCount--;
+            }
+            if (bracketCount > 0) {
+                currentBlockParts.push(part);
+            }
+            else {
+                if (currentBlockParts.length > 0) {
+                    escapedBlocks.push(currentBlockParts.join(''));
+                    resultParts.push(BLOCK_PLACEHOLDER);
+                    currentBlockParts = [];
+                }
+                resultParts.push(part);
+            }
+            if (part == OPEN_CURLY) {
+                bracketCount++;
+            }
+        }
+        if (currentBlockParts.length > 0) {
+            escapedBlocks.push(currentBlockParts.join(''));
+            resultParts.push(BLOCK_PLACEHOLDER);
+        }
+        return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
+    }
+    var COMPONENT_VARIABLE = '%COMP%';
+    var HOST_ATTR = "_nghost-" + COMPONENT_VARIABLE;
+    var CONTENT_ATTR = "_ngcontent-" + COMPONENT_VARIABLE;
+    var StylesCompileDependency = (function () {
+        function StylesCompileDependency(moduleUrl, isShimmed, valuePlaceholder) {
+            this.moduleUrl = moduleUrl;
+            this.isShimmed = isShimmed;
+            this.valuePlaceholder = valuePlaceholder;
+        }
+        return StylesCompileDependency;
+    }());
+    var StylesCompileResult = (function () {
+        function StylesCompileResult(statements, stylesVar, dependencies) {
+            this.statements = statements;
+            this.stylesVar = stylesVar;
+            this.dependencies = dependencies;
+        }
+        return StylesCompileResult;
+    }());
+    var StyleCompiler = (function () {
+        function StyleCompiler(_urlResolver) {
+            this._urlResolver = _urlResolver;
+            this._shadowCss = new ShadowCss();
+        }
+        StyleCompiler.prototype.compileComponent = function (comp) {
+            var shim = comp.template.encapsulation === _angular_core.ViewEncapsulation.Emulated;
+            return this._compileStyles(getStylesVarName(comp), comp.template.styles, comp.template.styleUrls, shim);
+        };
+        StyleCompiler.prototype.compileStylesheet = function (stylesheetUrl, cssText, isShimmed) {
+            var styleWithImports = extractStyleUrls(this._urlResolver, stylesheetUrl, cssText);
+            return this._compileStyles(getStylesVarName(null), [styleWithImports.style], styleWithImports.styleUrls, isShimmed);
+        };
+        StyleCompiler.prototype._compileStyles = function (stylesVar, plainStyles, absUrls, shim) {
+            var _this = this;
+            var styleExpressions = plainStyles.map(function (plainStyle) { return literal(_this._shimIfNeeded(plainStyle, shim)); });
+            var dependencies = [];
+            for (var i = 0; i < absUrls.length; i++) {
+                var identifier = new CompileIdentifierMetadata({ name: getStylesVarName(null) });
+                dependencies.push(new StylesCompileDependency(absUrls[i], shim, identifier));
+                styleExpressions.push(new ExternalExpr(identifier));
+            }
+            // styles variable contains plain strings and arrays of other styles arrays (recursive),
+            // so we set its type to dynamic.
+            var stmt = variable(stylesVar)
+                .set(literalArr(styleExpressions, new ArrayType(DYNAMIC_TYPE, [TypeModifier.Const])))
+                .toDeclStmt(null, [StmtModifier.Final]);
+            return new StylesCompileResult([stmt], stylesVar, dependencies);
+        };
+        StyleCompiler.prototype._shimIfNeeded = function (style, shim) {
+            return shim ? this._shadowCss.shimCssText(style, CONTENT_ATTR, HOST_ATTR) : style;
+        };
+        return StyleCompiler;
+    }());
+    /** @nocollapse */
+    StyleCompiler.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    /** @nocollapse */
+    StyleCompiler.ctorParameters = [
+        { type: UrlResolver, },
+    ];
+    function getStylesVarName(component) {
+        var result = "styles";
+        if (isPresent(component)) {
+            result += "_" + component.type.name;
+        }
+        return result;
+    }
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -11784,6 +11849,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 viewProviders: directive.viewProviders,
                 queries: directive.queries,
                 viewQueries: directive.viewQueries,
+                precompile: directive.precompile,
                 template: normalizedTemplate
             }); });
         };
@@ -12050,7 +12116,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     queries: mergedQueries,
                     changeDetection: dm.changeDetection,
                     providers: dm.providers,
-                    viewProviders: dm.viewProviders
+                    viewProviders: dm.viewProviders,
+                    precompile: dm.precompile
                 });
             }
             else {
@@ -12239,6 +12306,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var changeDetectionStrategy = null;
                 var viewProviders = [];
                 var moduleUrl = staticTypeModuleUrl(directiveType);
+                var precompileTypes = [];
                 if (dirMeta instanceof _angular_core.ComponentMetadata) {
                     assertArrayOfStrings('styles', dirMeta.styles);
                     var cmpMeta = dirMeta;
@@ -12262,6 +12330,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                         viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'));
                     }
                     moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
+                    if (cmpMeta.precompile) {
+                        precompileTypes = flattenArray(cmpMeta.precompile)
+                            .map(function (cmp) { return _this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)); });
+                    }
                 }
                 var providers = [];
                 if (isPresent(dirMeta.providers)) {
@@ -12287,7 +12359,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     providers: providers,
                     viewProviders: viewProviders,
                     queries: queries,
-                    viewQueries: viewQueries
+                    viewQueries: viewQueries,
+                    precompile: precompileTypes
                 });
                 this._directiveCache.set(directiveType, meta);
             }
@@ -12560,6 +12633,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return pipes;
     }
     function flattenArray(tree, out) {
+        if (out === void 0) { out = []; }
         for (var i = 0; i < tree.length; i++) {
             var item = _angular_core.resolveForwardRef(tree[i]);
             if (isArray(item)) {
@@ -12569,6 +12643,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 out.push(item);
             }
         }
+        return out;
     }
     function verifyNonBlankProviders(directiveType, providersTree, providersType) {
         var flat = [];
@@ -14361,50 +14436,47 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._styleCache = new Map();
             this._hostCacheKeys = new Map();
             this._compiledTemplateCache = new Map();
-            this._compiledTemplateDone = new Map();
         }
         RuntimeCompiler.prototype.resolveComponent = function (component) {
             if (isString(component)) {
                 return PromiseWrapper.reject(new BaseException$1("Cannot resolve component using '" + component + "'."), null);
             }
-            var componentType = component;
-            var compMeta = this._metadataResolver.getDirectiveMetadata(componentType);
-            var hostCacheKey = this._hostCacheKeys.get(componentType);
-            if (isBlank(hostCacheKey)) {
-                hostCacheKey = new Object();
-                this._hostCacheKeys.set(componentType, hostCacheKey);
-                assertComponent(compMeta);
-                var hostMeta = createHostComponentMeta(compMeta.type, compMeta.selector);
-                this._loadAndCompileComponent(hostCacheKey, hostMeta, [compMeta], [], []);
-            }
-            return this._compiledTemplateDone.get(hostCacheKey)
-                .then(function (compiledTemplate) { return new _angular_core.ComponentFactory(compMeta.selector, compiledTemplate.viewFactory, componentType); });
+            return this._loadAndCompileHostComponent(component).done;
         };
         RuntimeCompiler.prototype.clearCache = function () {
             this._styleCache.clear();
             this._compiledTemplateCache.clear();
-            this._compiledTemplateDone.clear();
             this._hostCacheKeys.clear();
+        };
+        RuntimeCompiler.prototype._loadAndCompileHostComponent = function (componentType) {
+            var compMeta = this._metadataResolver.getDirectiveMetadata(componentType);
+            var hostCacheKey = this._hostCacheKeys.get(compMeta.type.runtime);
+            if (isBlank(hostCacheKey)) {
+                hostCacheKey = new Object();
+                this._hostCacheKeys.set(compMeta.type.runtime, hostCacheKey);
+                assertComponent(compMeta);
+                var hostMeta = createHostComponentMeta(compMeta.type, compMeta.selector);
+                this._loadAndCompileComponent(hostCacheKey, hostMeta, [compMeta], [], []);
+            }
+            var compTemplate = this._compiledTemplateCache.get(hostCacheKey);
+            return new CompileHostTemplate(compTemplate, compMeta);
         };
         RuntimeCompiler.prototype._loadAndCompileComponent = function (cacheKey, compMeta, viewDirectives, pipes, compilingComponentsPath) {
             var _this = this;
             var compiledTemplate = this._compiledTemplateCache.get(cacheKey);
-            var done = this._compiledTemplateDone.get(cacheKey);
             if (isBlank(compiledTemplate)) {
-                compiledTemplate = new CompiledTemplate();
+                var done = PromiseWrapper
+                    .all([this._compileComponentStyles(compMeta)].concat(viewDirectives.map(function (dirMeta) { return _this._templateNormalizer.normalizeDirective(dirMeta); })))
+                    .then(function (stylesAndNormalizedViewDirMetas) {
+                    var normalizedViewDirMetas = stylesAndNormalizedViewDirMetas.slice(1);
+                    var styles = stylesAndNormalizedViewDirMetas[0];
+                    var parsedTemplate = _this._templateParser.parse(compMeta, compMeta.template.template, normalizedViewDirMetas, pipes, compMeta.type.name);
+                    var childPromises = [];
+                    compiledTemplate.init(_this._compileComponent(compMeta, parsedTemplate, styles, pipes, compilingComponentsPath, childPromises));
+                    return PromiseWrapper.all(childPromises).then(function (_) { return compiledTemplate; });
+                });
+                compiledTemplate = new CompiledTemplate(done);
                 this._compiledTemplateCache.set(cacheKey, compiledTemplate);
-                done =
-                    PromiseWrapper
-                        .all([this._compileComponentStyles(compMeta)].concat(viewDirectives.map(function (dirMeta) { return _this._templateNormalizer.normalizeDirective(dirMeta); })))
-                        .then(function (stylesAndNormalizedViewDirMetas) {
-                        var normalizedViewDirMetas = stylesAndNormalizedViewDirMetas.slice(1);
-                        var styles = stylesAndNormalizedViewDirMetas[0];
-                        var parsedTemplate = _this._templateParser.parse(compMeta, compMeta.template.template, normalizedViewDirMetas, pipes, compMeta.type.name);
-                        var childPromises = [];
-                        compiledTemplate.init(_this._compileComponent(compMeta, parsedTemplate, styles, pipes, compilingComponentsPath, childPromises));
-                        return PromiseWrapper.all(childPromises).then(function (_) { return compiledTemplate; });
-                    });
-                this._compiledTemplateDone.set(cacheKey, done);
             }
             return compiledTemplate;
         };
@@ -14412,19 +14484,27 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, new ExternalExpr(new CompileIdentifierMetadata({ runtime: styles })), pipes);
             compileResult.dependencies.forEach(function (dep) {
-                var childCompilingComponentsPath = ListWrapper.clone(compilingComponentsPath);
-                var childCacheKey = dep.comp.type.runtime;
-                var childViewDirectives = _this._metadataResolver.getViewDirectivesMetadata(dep.comp.type.runtime);
-                var childViewPipes = _this._metadataResolver.getViewPipesMetadata(dep.comp.type.runtime);
-                var childIsRecursive = childCompilingComponentsPath.indexOf(childCacheKey) > -1 ||
-                    childViewDirectives.some(function (dir) { return childCompilingComponentsPath.indexOf(dir.type.runtime) > -1; });
-                childCompilingComponentsPath.push(childCacheKey);
-                var childComp = _this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath);
-                dep.factoryPlaceholder.runtime = childComp.proxyViewFactory;
-                dep.factoryPlaceholder.name = "viewFactory_" + dep.comp.type.name;
-                if (!childIsRecursive) {
-                    // Only wait for a child if it is not a cycle
-                    childPromises.push(_this._compiledTemplateDone.get(childCacheKey));
+                if (dep instanceof ViewFactoryDependency) {
+                    var childCompilingComponentsPath_1 = ListWrapper.clone(compilingComponentsPath);
+                    var childCacheKey = dep.comp.type.runtime;
+                    var childViewDirectives = _this._metadataResolver.getViewDirectivesMetadata(dep.comp.type.runtime);
+                    var childViewPipes = _this._metadataResolver.getViewPipesMetadata(dep.comp.type.runtime);
+                    var childIsRecursive = childCompilingComponentsPath_1.indexOf(childCacheKey) > -1 ||
+                        childViewDirectives.some(function (dir) { return childCompilingComponentsPath_1.indexOf(dir.type.runtime) > -1; });
+                    childCompilingComponentsPath_1.push(childCacheKey);
+                    var childComp = _this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath_1);
+                    dep.placeholder.runtime = childComp.proxyViewFactory;
+                    dep.placeholder.name = "viewFactory_" + dep.comp.type.name;
+                    if (!childIsRecursive) {
+                        // Only wait for a child if it is not a cycle
+                        childPromises.push(childComp.done);
+                    }
+                }
+                else if (dep instanceof ComponentFactoryDependency) {
+                    var childComp = _this._loadAndCompileHostComponent(dep.comp.runtime);
+                    dep.placeholder.runtime = childComp.componentFactory;
+                    dep.placeholder.name = "compFactory_" + dep.comp.name;
+                    childPromises.push(childComp.done);
                 }
             });
             var factory;
@@ -14493,14 +14573,23 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: XHR, },
         { type: CompilerConfig, },
     ];
-    var CompiledTemplate = (function () {
-        function CompiledTemplate() {
+    var CompileHostTemplate = (function () {
+        function CompileHostTemplate(_template, compMeta) {
             var _this = this;
-            this.viewFactory = null;
-            this.proxyViewFactory =
-                function (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) { return _this.viewFactory(viewUtils, childInjector, contextEl); };
+            this.componentFactory = new _angular_core.ComponentFactory(compMeta.selector, _template.proxyViewFactory, compMeta.type.runtime);
+            this.done = _template.done.then(function (_) { return _this.componentFactory; });
         }
-        CompiledTemplate.prototype.init = function (viewFactory) { this.viewFactory = viewFactory; };
+        return CompileHostTemplate;
+    }());
+    var CompiledTemplate = (function () {
+        function CompiledTemplate(done) {
+            var _this = this;
+            this.done = done;
+            this._viewFactory = null;
+            this.proxyViewFactory =
+                function (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) { return _this._viewFactory(viewUtils, childInjector, contextEl); };
+        }
+        CompiledTemplate.prototype.init = function (viewFactory) { this._viewFactory = viewFactory; };
         return CompiledTemplate;
     }());
     function assertComponent(meta) {

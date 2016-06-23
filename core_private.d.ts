@@ -19,6 +19,7 @@ export declare var ReflectorReader: typeof t.ReflectorReader;
 export declare var ReflectorComponentResolver: typeof t.ReflectorComponentResolver;
 export declare type AppElement = t.AppElement;
 export declare var AppElement: typeof t.AppElement;
+export declare var CodegenComponentFactoryResolver: typeof t.CodegenComponentFactoryResolver;
 export declare var AppView: typeof t.AppView;
 export declare type DebugAppView<T> = t.DebugAppView<T>;
 export declare var DebugAppView: typeof t.DebugAppView;

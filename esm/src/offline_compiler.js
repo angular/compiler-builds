@@ -11,6 +11,7 @@ import { ListWrapper } from './facade/collection';
 import { BaseException } from './facade/exceptions';
 import * as o from './output/output_ast';
 import { assetUrl } from './util';
+import { ComponentFactoryDependency, ViewFactoryDependency } from './view_compiler/view_compiler';
 var _COMPONENT_FACTORY_IDENTIFIER = new CompileIdentifierMetadata({
     name: 'ComponentFactory',
     runtime: ComponentFactory,
@@ -53,7 +54,7 @@ export class OfflineCompiler {
         }
         var statements = [];
         var exportedVars = [];
-        var moduleUrl = _templateModuleUrl(components[0].component);
+        var moduleUrl = _ngfactoryModuleUrl(components[0].component.type);
         components.forEach(componentWithDirs => {
             var compMeta = componentWithDirs.component;
             _assertComponent(compMeta);
@@ -61,7 +62,7 @@ export class OfflineCompiler {
             exportedVars.push(compViewFactoryVar);
             var hostMeta = createHostComponentMeta(compMeta.type, compMeta.selector);
             var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], statements);
-            var compFactoryVar = `${compMeta.type.name}NgFactory`;
+            var compFactoryVar = _componentFactoryName(compMeta.type);
             statements.push(o.variable(compFactoryVar)
                 .set(o.importExpr(_COMPONENT_FACTORY_IDENTIFIER, [o.importType(compMeta.type)])
                 .instantiate([
@@ -100,7 +101,15 @@ export class OfflineCompiler {
     }
 }
 function _resolveViewStatements(compileResult) {
-    compileResult.dependencies.forEach((dep) => { dep.factoryPlaceholder.moduleUrl = _templateModuleUrl(dep.comp); });
+    compileResult.dependencies.forEach((dep) => {
+        if (dep instanceof ViewFactoryDependency) {
+            dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.type);
+        }
+        else if (dep instanceof ComponentFactoryDependency) {
+            dep.placeholder.name = _componentFactoryName(dep.comp);
+            dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
+        }
+    });
     return compileResult.statements;
 }
 function _resolveStyleStatements(containingModuleUrl, compileResult) {
@@ -111,9 +120,12 @@ function _resolveStyleStatements(containingModuleUrl, compileResult) {
     });
     return compileResult.statements;
 }
-function _templateModuleUrl(comp) {
-    var urlWithSuffix = _splitSuffix(comp.type.moduleUrl);
+function _ngfactoryModuleUrl(comp) {
+    var urlWithSuffix = _splitSuffix(comp.moduleUrl);
     return `${urlWithSuffix[0]}.ngfactory${urlWithSuffix[1]}`;
+}
+function _componentFactoryName(comp) {
+    return `${comp.name}NgFactory`;
 }
 function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
     return shim ? `${stylesheetUrl}.shim${suffix}` : `${stylesheetUrl}${suffix}`;

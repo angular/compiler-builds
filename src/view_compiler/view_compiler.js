@@ -13,6 +13,9 @@ var compile_element_1 = require('./compile_element');
 var compile_view_1 = require('./compile_view');
 var view_binder_1 = require('./view_binder');
 var view_builder_1 = require('./view_builder');
+var view_builder_2 = require('./view_builder');
+exports.ComponentFactoryDependency = view_builder_2.ComponentFactoryDependency;
+exports.ViewFactoryDependency = view_builder_2.ViewFactoryDependency;
 var ViewCompileResult = (function () {
     function ViewCompileResult(statements, viewFactoryVar, dependencies) {
         this.statements = statements;

@@ -92,6 +92,7 @@ export class CompileMetadataResolver {
             var changeDetectionStrategy = null;
             var viewProviders = [];
             var moduleUrl = staticTypeModuleUrl(directiveType);
+            var precompileTypes = [];
             if (dirMeta instanceof ComponentMetadata) {
                 assertArrayOfStrings('styles', dirMeta.styles);
                 var cmpMeta = dirMeta;
@@ -115,6 +116,10 @@ export class CompileMetadataResolver {
                     viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'));
                 }
                 moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
+                if (cmpMeta.precompile) {
+                    precompileTypes = flattenArray(cmpMeta.precompile)
+                        .map((cmp) => this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)));
+                }
             }
             var providers = [];
             if (isPresent(dirMeta.providers)) {
@@ -140,7 +145,8 @@ export class CompileMetadataResolver {
                 providers: providers,
                 viewProviders: viewProviders,
                 queries: queries,
-                viewQueries: viewQueries
+                viewQueries: viewQueries,
+                precompile: precompileTypes
             });
             this._directiveCache.set(directiveType, meta);
         }
@@ -403,7 +409,7 @@ function flattenPipes(view, platformPipes) {
     }
     return pipes;
 }
-function flattenArray(tree, out) {
+function flattenArray(tree, out = []) {
     for (var i = 0; i < tree.length; i++) {
         var item = resolveForwardRef(tree[i]);
         if (isArray(item)) {
@@ -413,6 +419,7 @@ function flattenArray(tree, out) {
             out.push(item);
         }
     }
+    return out;
 }
 function verifyNonBlankProviders(directiveType, providersTree, providersType) {
     var flat = [];

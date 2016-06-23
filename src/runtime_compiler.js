@@ -35,50 +35,47 @@ var RuntimeCompiler = (function () {
         this._styleCache = new Map();
         this._hostCacheKeys = new Map();
         this._compiledTemplateCache = new Map();
-        this._compiledTemplateDone = new Map();
     }
     RuntimeCompiler.prototype.resolveComponent = function (component) {
         if (lang_1.isString(component)) {
             return async_1.PromiseWrapper.reject(new exceptions_1.BaseException("Cannot resolve component using '" + component + "'."), null);
         }
-        var componentType = component;
-        var compMeta = this._metadataResolver.getDirectiveMetadata(componentType);
-        var hostCacheKey = this._hostCacheKeys.get(componentType);
-        if (lang_1.isBlank(hostCacheKey)) {
-            hostCacheKey = new Object();
-            this._hostCacheKeys.set(componentType, hostCacheKey);
-            assertComponent(compMeta);
-            var hostMeta = compile_metadata_1.createHostComponentMeta(compMeta.type, compMeta.selector);
-            this._loadAndCompileComponent(hostCacheKey, hostMeta, [compMeta], [], []);
-        }
-        return this._compiledTemplateDone.get(hostCacheKey)
-            .then(function (compiledTemplate) { return new core_1.ComponentFactory(compMeta.selector, compiledTemplate.viewFactory, componentType); });
+        return this._loadAndCompileHostComponent(component).done;
     };
     RuntimeCompiler.prototype.clearCache = function () {
         this._styleCache.clear();
         this._compiledTemplateCache.clear();
-        this._compiledTemplateDone.clear();
         this._hostCacheKeys.clear();
+    };
+    RuntimeCompiler.prototype._loadAndCompileHostComponent = function (componentType) {
+        var compMeta = this._metadataResolver.getDirectiveMetadata(componentType);
+        var hostCacheKey = this._hostCacheKeys.get(compMeta.type.runtime);
+        if (lang_1.isBlank(hostCacheKey)) {
+            hostCacheKey = new Object();
+            this._hostCacheKeys.set(compMeta.type.runtime, hostCacheKey);
+            assertComponent(compMeta);
+            var hostMeta = compile_metadata_1.createHostComponentMeta(compMeta.type, compMeta.selector);
+            this._loadAndCompileComponent(hostCacheKey, hostMeta, [compMeta], [], []);
+        }
+        var compTemplate = this._compiledTemplateCache.get(hostCacheKey);
+        return new CompileHostTemplate(compTemplate, compMeta);
     };
     RuntimeCompiler.prototype._loadAndCompileComponent = function (cacheKey, compMeta, viewDirectives, pipes, compilingComponentsPath) {
         var _this = this;
         var compiledTemplate = this._compiledTemplateCache.get(cacheKey);
-        var done = this._compiledTemplateDone.get(cacheKey);
         if (lang_1.isBlank(compiledTemplate)) {
-            compiledTemplate = new CompiledTemplate();
+            var done = async_1.PromiseWrapper
+                .all([this._compileComponentStyles(compMeta)].concat(viewDirectives.map(function (dirMeta) { return _this._templateNormalizer.normalizeDirective(dirMeta); })))
+                .then(function (stylesAndNormalizedViewDirMetas) {
+                var normalizedViewDirMetas = stylesAndNormalizedViewDirMetas.slice(1);
+                var styles = stylesAndNormalizedViewDirMetas[0];
+                var parsedTemplate = _this._templateParser.parse(compMeta, compMeta.template.template, normalizedViewDirMetas, pipes, compMeta.type.name);
+                var childPromises = [];
+                compiledTemplate.init(_this._compileComponent(compMeta, parsedTemplate, styles, pipes, compilingComponentsPath, childPromises));
+                return async_1.PromiseWrapper.all(childPromises).then(function (_) { return compiledTemplate; });
+            });
+            compiledTemplate = new CompiledTemplate(done);
             this._compiledTemplateCache.set(cacheKey, compiledTemplate);
-            done =
-                async_1.PromiseWrapper
-                    .all([this._compileComponentStyles(compMeta)].concat(viewDirectives.map(function (dirMeta) { return _this._templateNormalizer.normalizeDirective(dirMeta); })))
-                    .then(function (stylesAndNormalizedViewDirMetas) {
-                    var normalizedViewDirMetas = stylesAndNormalizedViewDirMetas.slice(1);
-                    var styles = stylesAndNormalizedViewDirMetas[0];
-                    var parsedTemplate = _this._templateParser.parse(compMeta, compMeta.template.template, normalizedViewDirMetas, pipes, compMeta.type.name);
-                    var childPromises = [];
-                    compiledTemplate.init(_this._compileComponent(compMeta, parsedTemplate, styles, pipes, compilingComponentsPath, childPromises));
-                    return async_1.PromiseWrapper.all(childPromises).then(function (_) { return compiledTemplate; });
-                });
-            this._compiledTemplateDone.set(cacheKey, done);
         }
         return compiledTemplate;
     };
@@ -86,19 +83,27 @@ var RuntimeCompiler = (function () {
         var _this = this;
         var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, new ir.ExternalExpr(new compile_metadata_1.CompileIdentifierMetadata({ runtime: styles })), pipes);
         compileResult.dependencies.forEach(function (dep) {
-            var childCompilingComponentsPath = collection_1.ListWrapper.clone(compilingComponentsPath);
-            var childCacheKey = dep.comp.type.runtime;
-            var childViewDirectives = _this._metadataResolver.getViewDirectivesMetadata(dep.comp.type.runtime);
-            var childViewPipes = _this._metadataResolver.getViewPipesMetadata(dep.comp.type.runtime);
-            var childIsRecursive = childCompilingComponentsPath.indexOf(childCacheKey) > -1 ||
-                childViewDirectives.some(function (dir) { return childCompilingComponentsPath.indexOf(dir.type.runtime) > -1; });
-            childCompilingComponentsPath.push(childCacheKey);
-            var childComp = _this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath);
-            dep.factoryPlaceholder.runtime = childComp.proxyViewFactory;
-            dep.factoryPlaceholder.name = "viewFactory_" + dep.comp.type.name;
-            if (!childIsRecursive) {
-                // Only wait for a child if it is not a cycle
-                childPromises.push(_this._compiledTemplateDone.get(childCacheKey));
+            if (dep instanceof view_compiler_1.ViewFactoryDependency) {
+                var childCompilingComponentsPath_1 = collection_1.ListWrapper.clone(compilingComponentsPath);
+                var childCacheKey = dep.comp.type.runtime;
+                var childViewDirectives = _this._metadataResolver.getViewDirectivesMetadata(dep.comp.type.runtime);
+                var childViewPipes = _this._metadataResolver.getViewPipesMetadata(dep.comp.type.runtime);
+                var childIsRecursive = childCompilingComponentsPath_1.indexOf(childCacheKey) > -1 ||
+                    childViewDirectives.some(function (dir) { return childCompilingComponentsPath_1.indexOf(dir.type.runtime) > -1; });
+                childCompilingComponentsPath_1.push(childCacheKey);
+                var childComp = _this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath_1);
+                dep.placeholder.runtime = childComp.proxyViewFactory;
+                dep.placeholder.name = "viewFactory_" + dep.comp.type.name;
+                if (!childIsRecursive) {
+                    // Only wait for a child if it is not a cycle
+                    childPromises.push(childComp.done);
+                }
+            }
+            else if (dep instanceof view_compiler_1.ComponentFactoryDependency) {
+                var childComp = _this._loadAndCompileHostComponent(dep.comp.runtime);
+                dep.placeholder.runtime = childComp.componentFactory;
+                dep.placeholder.name = "compFactory_" + dep.comp.name;
+                childPromises.push(childComp.done);
             }
         });
         var factory;
@@ -168,16 +173,25 @@ var RuntimeCompiler = (function () {
     return RuntimeCompiler;
 }());
 exports.RuntimeCompiler = RuntimeCompiler;
-var CompiledTemplate = (function () {
-    function CompiledTemplate() {
+var CompileHostTemplate = (function () {
+    function CompileHostTemplate(_template, compMeta) {
         var _this = this;
-        this.viewFactory = null;
+        this.componentFactory = new core_1.ComponentFactory(compMeta.selector, _template.proxyViewFactory, compMeta.type.runtime);
+        this.done = _template.done.then(function (_) { return _this.componentFactory; });
+    }
+    return CompileHostTemplate;
+}());
+var CompiledTemplate = (function () {
+    function CompiledTemplate(done) {
+        var _this = this;
+        this.done = done;
+        this._viewFactory = null;
         this.proxyViewFactory =
             function (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) {
-                return _this.viewFactory(viewUtils, childInjector, contextEl);
+                return _this._viewFactory(viewUtils, childInjector, contextEl);
             };
     }
-    CompiledTemplate.prototype.init = function (viewFactory) { this.viewFactory = viewFactory; };
+    CompiledTemplate.prototype.init = function (viewFactory) { this._viewFactory = viewFactory; };
     return CompiledTemplate;
 }());
 function assertComponent(meta) {

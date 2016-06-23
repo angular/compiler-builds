@@ -7,27 +7,33 @@
  */
 import { ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { ViewType, isDefaultChangeDetectionStrategy } from '../../core_private';
+import { AnimationCompiler } from '../animation/animation_compiler';
+import { CompileIdentifierMetadata } from '../compile_metadata';
 import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection';
 import { StringWrapper, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
+import { templateVisitAll } from '../template_ast';
 import { CompileElement, CompileNode } from './compile_element';
 import { CompileView } from './compile_view';
 import { ChangeDetectionStrategyEnum, DetectChangesVars, InjectMethodVars, ViewConstructorVars, ViewEncapsulationEnum, ViewProperties, ViewTypeEnum } from './constants';
-import { templateVisitAll } from '../template_ast';
-import { getViewFactoryName, createFlatArray, createDiTokenExpression } from './util';
-import { CompileIdentifierMetadata } from '../compile_metadata';
-import { AnimationCompiler } from '../animation/animation_compiler';
+import { createDiTokenExpression, createFlatArray, getViewFactoryName } from './util';
 const IMPLICIT_TEMPLATE_VAR = '\$implicit';
 const CLASS_ATTR = 'class';
 const STYLE_ATTR = 'style';
 const NG_CONTAINER_TAG = 'ng-container';
 var parentRenderNodeVar = o.variable('parentRenderNode');
 var rootSelectorVar = o.variable('rootSelector');
-export class ViewCompileDependency {
-    constructor(comp, factoryPlaceholder) {
+export class ViewFactoryDependency {
+    constructor(comp, placeholder) {
         this.comp = comp;
-        this.factoryPlaceholder = factoryPlaceholder;
+        this.placeholder = placeholder;
+    }
+}
+export class ComponentFactoryDependency {
+    constructor(comp, placeholder) {
+        this.comp = comp;
+        this.placeholder = placeholder;
     }
 }
 export function buildView(view, template, targetDependencies) {
@@ -168,8 +174,14 @@ class ViewBuilderVisitor {
         this.view.nodes.push(compileElement);
         var compViewExpr = null;
         if (isPresent(component)) {
-            var nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewFactoryName(component, 0) });
-            this.targetDependencies.push(new ViewCompileDependency(component, nestedComponentIdentifier));
+            let nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewFactoryName(component, 0) });
+            this.targetDependencies.push(new ViewFactoryDependency(component, nestedComponentIdentifier));
+            let precompileComponentIdentifiers = component.precompile.map((precompileComp) => {
+                var id = new CompileIdentifierMetadata({ name: precompileComp.name });
+                this.targetDependencies.push(new ComponentFactoryDependency(precompileComp, id));
+                return id;
+            });
+            compileElement.createComponentFactoryResolver(precompileComponentIdentifiers);
             compViewExpr = o.variable(`compView_${nodeIndex}`); // fix highlighting: `
             compileElement.setComponentView(compViewExpr);
             this.view.createMethod.addStmt(compViewExpr

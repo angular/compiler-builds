@@ -12,6 +12,7 @@ import { CompileElement } from './compile_element';
 import { CompileView } from './compile_view';
 import { bindView } from './view_binder';
 import { buildView, finishView } from './view_builder';
+export { ComponentFactoryDependency, ViewFactoryDependency } from './view_builder';
 export class ViewCompileResult {
     constructor(statements, viewFactoryVar, dependencies) {
         this.statements = statements;

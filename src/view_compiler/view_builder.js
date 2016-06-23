@@ -8,31 +8,39 @@
 "use strict";
 var core_1 = require('@angular/core');
 var core_private_1 = require('../../core_private');
+var animation_compiler_1 = require('../animation/animation_compiler');
+var compile_metadata_1 = require('../compile_metadata');
 var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
+var template_ast_1 = require('../template_ast');
 var compile_element_1 = require('./compile_element');
 var compile_view_1 = require('./compile_view');
 var constants_1 = require('./constants');
-var template_ast_1 = require('../template_ast');
 var util_1 = require('./util');
-var compile_metadata_1 = require('../compile_metadata');
-var animation_compiler_1 = require('../animation/animation_compiler');
 var IMPLICIT_TEMPLATE_VAR = '\$implicit';
 var CLASS_ATTR = 'class';
 var STYLE_ATTR = 'style';
 var NG_CONTAINER_TAG = 'ng-container';
 var parentRenderNodeVar = o.variable('parentRenderNode');
 var rootSelectorVar = o.variable('rootSelector');
-var ViewCompileDependency = (function () {
-    function ViewCompileDependency(comp, factoryPlaceholder) {
+var ViewFactoryDependency = (function () {
+    function ViewFactoryDependency(comp, placeholder) {
         this.comp = comp;
-        this.factoryPlaceholder = factoryPlaceholder;
+        this.placeholder = placeholder;
     }
-    return ViewCompileDependency;
+    return ViewFactoryDependency;
 }());
-exports.ViewCompileDependency = ViewCompileDependency;
+exports.ViewFactoryDependency = ViewFactoryDependency;
+var ComponentFactoryDependency = (function () {
+    function ComponentFactoryDependency(comp, placeholder) {
+        this.comp = comp;
+        this.placeholder = placeholder;
+    }
+    return ComponentFactoryDependency;
+}());
+exports.ComponentFactoryDependency = ComponentFactoryDependency;
 function buildView(view, template, targetDependencies) {
     var builderVisitor = new ViewBuilderVisitor(view, targetDependencies);
     template_ast_1.templateVisitAll(builderVisitor, template, view.declarationElement.isNull() ? view.declarationElement : view.declarationElement.parent);
@@ -140,6 +148,7 @@ var ViewBuilderVisitor = (function () {
         return null;
     };
     ViewBuilderVisitor.prototype.visitElement = function (ast, parent) {
+        var _this = this;
         var nodeIndex = this.view.nodes.length;
         var createRenderNodeExpr;
         var debugContextExpr = this.view.createMethod.resetDebugInfoExpr(nodeIndex, ast);
@@ -174,7 +183,13 @@ var ViewBuilderVisitor = (function () {
         var compViewExpr = null;
         if (lang_1.isPresent(component)) {
             var nestedComponentIdentifier = new compile_metadata_1.CompileIdentifierMetadata({ name: util_1.getViewFactoryName(component, 0) });
-            this.targetDependencies.push(new ViewCompileDependency(component, nestedComponentIdentifier));
+            this.targetDependencies.push(new ViewFactoryDependency(component, nestedComponentIdentifier));
+            var precompileComponentIdentifiers = component.precompile.map(function (precompileComp) {
+                var id = new compile_metadata_1.CompileIdentifierMetadata({ name: precompileComp.name });
+                _this.targetDependencies.push(new ComponentFactoryDependency(precompileComp, id));
+                return id;
+            });
+            compileElement.createComponentFactoryResolver(precompileComponentIdentifiers);
             compViewExpr = o.variable("compView_" + nodeIndex); // fix highlighting: `
             compileElement.setComponentView(compViewExpr);
             this.view.createMethod.addStmt(compViewExpr

@@ -47,6 +47,7 @@ var DirectiveNormalizer = (function () {
             viewProviders: directive.viewProviders,
             queries: directive.queries,
             viewQueries: directive.viewQueries,
+            precompile: directive.precompile,
             template: normalizedTemplate
         }); });
     };

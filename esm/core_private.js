@@ -15,6 +15,7 @@ export var LIFECYCLE_HOOKS_VALUES = r.LIFECYCLE_HOOKS_VALUES;
 export var ReflectorReader = r.ReflectorReader;
 export var ReflectorComponentResolver = r.ReflectorComponentResolver;
 export var AppElement = r.AppElement;
+export var CodegenComponentFactoryResolver = r.CodegenComponentFactoryResolver;
 export var AppView = r.AppView;
 export var DebugAppView = r.DebugAppView;
 export var ViewType = r.ViewType;
