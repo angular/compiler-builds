@@ -6397,6 +6397,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             element.attrs.forEach(function (attr) {
                 var hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, animationProps, events, elementOrDirectiveRefs, elementVars);
                 var hasTemplateBinding = _this._parseInlineTemplateBinding(attr, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
+                if (hasTemplateBinding && isTemplateElement) {
+                    _this._reportError("Can't have template bindings on a <template> element but the '" + attr.name + "' attribute was used", attr.sourceSpan);
+                }
+                if (hasTemplateBinding && hasInlineTemplates) {
+                    _this._reportError("Can't have multiple template bindings on one element. Use only one attribute named 'template' or prefixed with *", attr.sourceSpan);
+                }
                 if (!hasBinding && !hasTemplateBinding) {
                     // don't include the bindings as attributes as well in the AST
                     attrs.push(_this.visitAttr(attr, null));
@@ -6776,7 +6782,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             var allDirectiveEvents = new Set();
             directives.forEach(function (directive) {
-                StringMapWrapper.forEach(directive.directive.outputs, function (eventName, _ /** TODO #???? */) { allDirectiveEvents.add(eventName); });
+                StringMapWrapper.forEach(directive.directive.outputs, function (eventName) {
+                    allDirectiveEvents.add(eventName);
+                });
             });
             events.forEach(function (event) {
                 if (isPresent(event.target) || !SetWrapper.has(allDirectiveEvents, event.name)) {
