@@ -676,7 +676,7 @@ var TemplateParseVisitor = (function () {
             this._reportError("Components on an embedded template: " + componentTypeNames.join(','), sourceSpan);
         }
         elementProps.forEach(function (prop) {
-            _this._reportError("Property binding " + prop.name + " not used by any directive on an embedded template", sourceSpan);
+            _this._reportError("Property binding " + prop.name + " not used by any directive on an embedded template. Make sure that the property name is spelled correctly and all directives are listed in the \"directives\" section.", sourceSpan);
         });
     };
     TemplateParseVisitor.prototype._assertAllEventsPublishedByDirectives = function (directives, events) {
@@ -689,7 +689,7 @@ var TemplateParseVisitor = (function () {
         });
         events.forEach(function (event) {
             if (lang_1.isPresent(event.target) || !collection_1.SetWrapper.has(allDirectiveEvents, event.name)) {
-                _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template", event.sourceSpan);
+                _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the \"directives\" section.", event.sourceSpan);
             }
         });
     };

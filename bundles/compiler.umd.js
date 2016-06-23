@@ -6810,7 +6810,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this._reportError("Components on an embedded template: " + componentTypeNames.join(','), sourceSpan);
             }
             elementProps.forEach(function (prop) {
-                _this._reportError("Property binding " + prop.name + " not used by any directive on an embedded template", sourceSpan);
+                _this._reportError("Property binding " + prop.name + " not used by any directive on an embedded template. Make sure that the property name is spelled correctly and all directives are listed in the \"directives\" section.", sourceSpan);
             });
         };
         TemplateParseVisitor.prototype._assertAllEventsPublishedByDirectives = function (directives, events) {
@@ -6823,7 +6823,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
             events.forEach(function (event) {
                 if (isPresent(event.target) || !SetWrapper.has(allDirectiveEvents, event.name)) {
-                    _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template", event.sourceSpan);
+                    _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the \"directives\" section.", event.sourceSpan);
                 }
             });
         };

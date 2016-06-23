@@ -652,7 +652,7 @@ class TemplateParseVisitor {
             this._reportError(`Components on an embedded template: ${componentTypeNames.join(',')}`, sourceSpan);
         }
         elementProps.forEach(prop => {
-            this._reportError(`Property binding ${prop.name} not used by any directive on an embedded template`, sourceSpan);
+            this._reportError(`Property binding ${prop.name} not used by any directive on an embedded template. Make sure that the property name is spelled correctly and all directives are listed in the "directives" section.`, sourceSpan);
         });
     }
     _assertAllEventsPublishedByDirectives(directives, events) {
@@ -664,7 +664,7 @@ class TemplateParseVisitor {
         });
         events.forEach(event => {
             if (isPresent(event.target) || !SetWrapper.has(allDirectiveEvents, event.name)) {
-                this._reportError(`Event binding ${event.fullName} not emitted by any directive on an embedded template`, event.sourceSpan);
+                this._reportError(`Event binding ${event.fullName} not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the "directives" section.`, event.sourceSpan);
             }
         });
     }
