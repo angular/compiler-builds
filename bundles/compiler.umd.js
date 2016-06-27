@@ -14485,14 +14485,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, new ExternalExpr(new CompileIdentifierMetadata({ runtime: styles })), pipes);
             compileResult.dependencies.forEach(function (dep) {
                 if (dep instanceof ViewFactoryDependency) {
-                    var childCompilingComponentsPath_1 = ListWrapper.clone(compilingComponentsPath);
+                    var childCompilingComponentsPath = ListWrapper.clone(compilingComponentsPath);
                     var childCacheKey = dep.comp.type.runtime;
                     var childViewDirectives = _this._metadataResolver.getViewDirectivesMetadata(dep.comp.type.runtime);
                     var childViewPipes = _this._metadataResolver.getViewPipesMetadata(dep.comp.type.runtime);
-                    var childIsRecursive = childCompilingComponentsPath_1.indexOf(childCacheKey) > -1 ||
-                        childViewDirectives.some(function (dir) { return childCompilingComponentsPath_1.indexOf(dir.type.runtime) > -1; });
-                    childCompilingComponentsPath_1.push(childCacheKey);
-                    var childComp = _this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath_1);
+                    var childIsRecursive = childCompilingComponentsPath.indexOf(childCacheKey) > -1;
+                    childCompilingComponentsPath.push(childCacheKey);
+                    var childComp = _this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath);
                     dep.placeholder.runtime = childComp.proxyViewFactory;
                     dep.placeholder.name = "viewFactory_" + dep.comp.type.name;
                     if (!childIsRecursive) {

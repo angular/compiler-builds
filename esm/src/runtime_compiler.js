@@ -85,8 +85,7 @@ export class RuntimeCompiler {
                 let childCacheKey = dep.comp.type.runtime;
                 let childViewDirectives = this._metadataResolver.getViewDirectivesMetadata(dep.comp.type.runtime);
                 let childViewPipes = this._metadataResolver.getViewPipesMetadata(dep.comp.type.runtime);
-                let childIsRecursive = childCompilingComponentsPath.indexOf(childCacheKey) > -1 ||
-                    childViewDirectives.some(dir => childCompilingComponentsPath.indexOf(dir.type.runtime) > -1);
+                let childIsRecursive = childCompilingComponentsPath.indexOf(childCacheKey) > -1;
                 childCompilingComponentsPath.push(childCacheKey);
                 let childComp = this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath);
                 dep.placeholder.runtime = childComp.proxyViewFactory;
