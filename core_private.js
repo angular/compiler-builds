@@ -8,7 +8,7 @@
 "use strict";
 var core_1 = require('@angular/core');
 exports.isDefaultChangeDetectionStrategy = core_1.__core_private__.isDefaultChangeDetectionStrategy;
-exports.ChangeDetectorState = core_1.__core_private__.ChangeDetectorState;
+exports.ChangeDetectorStatus = core_1.__core_private__.ChangeDetectorStatus;
 exports.CHANGE_DETECTION_STRATEGY_VALUES = core_1.__core_private__.CHANGE_DETECTION_STRATEGY_VALUES;
 exports.constructDependencies = core_1.__core_private__.constructDependencies;
 exports.LifecycleHooks = core_1.__core_private__.LifecycleHooks;

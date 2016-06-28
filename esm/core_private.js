@@ -7,7 +7,7 @@
  */
 import { __core_private__ as r } from '@angular/core';
 export var isDefaultChangeDetectionStrategy = r.isDefaultChangeDetectionStrategy;
-export var ChangeDetectorState = r.ChangeDetectorState;
+export var ChangeDetectorStatus = r.ChangeDetectorStatus;
 export var CHANGE_DETECTION_STRATEGY_VALUES = r.CHANGE_DETECTION_STRATEGY_VALUES;
 export var constructDependencies = r.constructDependencies;
 export var LifecycleHooks = r.LifecycleHooks;

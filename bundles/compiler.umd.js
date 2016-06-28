@@ -574,7 +574,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return result;
     }
     var isDefaultChangeDetectionStrategy = _angular_core.__core_private__.isDefaultChangeDetectionStrategy;
-    var ChangeDetectorState = _angular_core.__core_private__.ChangeDetectorState;
+    var ChangeDetectorStatus = _angular_core.__core_private__.ChangeDetectorStatus;
     var CHANGE_DETECTION_STRATEGY_VALUES = _angular_core.__core_private__.CHANGE_DETECTION_STRATEGY_VALUES;
     var LifecycleHooks = _angular_core.__core_private__.LifecycleHooks;
     var LIFECYCLE_HOOKS_VALUES = _angular_core.__core_private__.LIFECYCLE_HOOKS_VALUES;
@@ -5657,7 +5657,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var impRenderer = _angular_core.Renderer;
     var impSimpleChange = _angular_core.SimpleChange;
     var impUninitialized = uninitialized;
-    var impChangeDetectorState = ChangeDetectorState;
+    var impChangeDetectorStatus = ChangeDetectorStatus;
     var impFlattenNestedViewRenderNodes = flattenNestedViewRenderNodes;
     var impDevModeEqual = devModeEqual;
     var impInterpolate = interpolate;
@@ -5747,7 +5747,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     Identifiers.Renderer = new CompileIdentifierMetadata({ name: 'Renderer', moduleUrl: assetUrl('core', 'render/api'), runtime: impRenderer });
     Identifiers.SimpleChange = new CompileIdentifierMetadata({ name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: impSimpleChange });
     Identifiers.uninitialized = new CompileIdentifierMetadata({ name: 'uninitialized', moduleUrl: CD_MODULE_URL, runtime: impUninitialized });
-    Identifiers.ChangeDetectorState = new CompileIdentifierMetadata({ name: 'ChangeDetectorState', moduleUrl: CD_MODULE_URL, runtime: impChangeDetectorState });
+    Identifiers.ChangeDetectorStatus = new CompileIdentifierMetadata({ name: 'ChangeDetectorStatus', moduleUrl: CD_MODULE_URL, runtime: impChangeDetectorStatus });
     Identifiers.checkBinding = new CompileIdentifierMetadata({ name: 'checkBinding', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCheckBinding });
     Identifiers.flattenNestedViewRenderNodes = new CompileIdentifierMetadata({
         name: 'flattenNestedViewRenderNodes',
@@ -8904,17 +8904,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     ViewEncapsulationEnum.Emulated = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Emulated);
     ViewEncapsulationEnum.Native = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Native);
     ViewEncapsulationEnum.None = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.None);
-    var ChangeDetectorStateEnum = (function () {
-        function ChangeDetectorStateEnum() {
-        }
-        ChangeDetectorStateEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ChangeDetectorState, value);
-        };
-        return ChangeDetectorStateEnum;
-    }());
-    ChangeDetectorStateEnum.NeverChecked = ChangeDetectorStateEnum.fromValue(ChangeDetectorState.NeverChecked);
-    ChangeDetectorStateEnum.CheckedBefore = ChangeDetectorStateEnum.fromValue(ChangeDetectorState.CheckedBefore);
-    ChangeDetectorStateEnum.Errored = ChangeDetectorStateEnum.fromValue(ChangeDetectorState.Errored);
     var ChangeDetectionStrategyEnum = (function () {
         function ChangeDetectionStrategyEnum() {
         }
@@ -8923,12 +8912,22 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return ChangeDetectionStrategyEnum;
     }());
-    ChangeDetectionStrategyEnum.CheckOnce = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.CheckOnce);
-    ChangeDetectionStrategyEnum.Checked = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Checked);
-    ChangeDetectionStrategyEnum.CheckAlways = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.CheckAlways);
-    ChangeDetectionStrategyEnum.Detached = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Detached);
     ChangeDetectionStrategyEnum.OnPush = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.OnPush);
     ChangeDetectionStrategyEnum.Default = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Default);
+    var ChangeDetectorStatusEnum = (function () {
+        function ChangeDetectorStatusEnum() {
+        }
+        ChangeDetectorStatusEnum.fromValue = function (value) {
+            return _enumExpression(Identifiers.ChangeDetectorStatus, value);
+        };
+        return ChangeDetectorStatusEnum;
+    }());
+    ChangeDetectorStatusEnum.CheckOnce = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.CheckOnce);
+    ChangeDetectorStatusEnum.Checked = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Checked);
+    ChangeDetectorStatusEnum.CheckAlways = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.CheckAlways);
+    ChangeDetectorStatusEnum.Detached = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Detached);
+    ChangeDetectorStatusEnum.Errored = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Errored);
+    ChangeDetectorStatusEnum.Destroyed = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Destroyed);
     var ViewConstructorVars = (function () {
         function ViewConstructorVars() {
         }
@@ -10383,7 +10382,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function santitizeEventName(name) {
         return StringWrapper.replaceAll(name, /[^a-zA-Z_]/g, '_');
     }
-    var STATE_IS_NEVER_CHECKED = THIS_EXPR.prop('cdState').identical(ChangeDetectorStateEnum.NeverChecked);
+    var STATE_IS_NEVER_CHECKED = THIS_EXPR.prop('numberOfChecks').identical(new LiteralExpr(0));
     var NOT_THROW_ON_CHANGES = not(DetectChangesVars.throwOnChange);
     function bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement) {
         var view = compileElement.view;
@@ -10847,7 +10846,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             variable(view.className), renderCompTypeVar, ViewTypeEnum.fromValue(view.viewType),
             ViewConstructorVars.viewUtils, ViewConstructorVars.parentInjector,
             ViewConstructorVars.declarationEl,
-            ChangeDetectionStrategyEnum.fromValue(getChangeDetectionMode(view))
+            ChangeDetectorStatusEnum.fromValue(getChangeDetectionMode(view))
         ];
         if (view.genConfig.genDebugInfo) {
             superConstructorArgs.push(nodeDebugInfosVar);
@@ -10982,11 +10981,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         var mode;
         if (view.viewType === ViewType.COMPONENT) {
             mode = isDefaultChangeDetectionStrategy(view.component.changeDetection) ?
-                _angular_core.ChangeDetectionStrategy.CheckAlways :
-                _angular_core.ChangeDetectionStrategy.CheckOnce;
+                ChangeDetectorStatus.CheckAlways :
+                ChangeDetectorStatus.CheckOnce;
         }
         else {
-            mode = _angular_core.ChangeDetectionStrategy.CheckAlways;
+            mode = ChangeDetectorStatus.CheckAlways;
         }
         return mode;
     }

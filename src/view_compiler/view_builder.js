@@ -365,7 +365,7 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
         o.variable(view.className), renderCompTypeVar, constants_1.ViewTypeEnum.fromValue(view.viewType),
         constants_1.ViewConstructorVars.viewUtils, constants_1.ViewConstructorVars.parentInjector,
         constants_1.ViewConstructorVars.declarationEl,
-        constants_1.ChangeDetectionStrategyEnum.fromValue(getChangeDetectionMode(view))
+        constants_1.ChangeDetectorStatusEnum.fromValue(getChangeDetectionMode(view))
     ];
     if (view.genConfig.genDebugInfo) {
         superConstructorArgs.push(nodeDebugInfosVar);
@@ -501,11 +501,11 @@ function getChangeDetectionMode(view) {
     var mode;
     if (view.viewType === core_private_1.ViewType.COMPONENT) {
         mode = core_private_1.isDefaultChangeDetectionStrategy(view.component.changeDetection) ?
-            core_1.ChangeDetectionStrategy.CheckAlways :
-            core_1.ChangeDetectionStrategy.CheckOnce;
+            core_private_1.ChangeDetectorStatus.CheckAlways :
+            core_private_1.ChangeDetectorStatus.CheckOnce;
     }
     else {
-        mode = core_1.ChangeDetectionStrategy.CheckAlways;
+        mode = core_private_1.ChangeDetectorStatus.CheckAlways;
     }
     return mode;
 }

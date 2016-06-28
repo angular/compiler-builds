@@ -7,8 +7,8 @@
  */
 import { __core_private__ as r, __core_private_types__ as t } from '@angular/core';
 export declare var isDefaultChangeDetectionStrategy: typeof t.isDefaultChangeDetectionStrategy;
-export declare type ChangeDetectorState = t.ChangeDetectorState;
-export declare var ChangeDetectorState: typeof t.ChangeDetectorState;
+export declare type ChangeDetectorStatus = t.ChangeDetectorStatus;
+export declare var ChangeDetectorStatus: typeof t.ChangeDetectorStatus;
 export declare var CHANGE_DETECTION_STRATEGY_VALUES: typeof t.CHANGE_DETECTION_STRATEGY_VALUES;
 export declare var constructDependencies: typeof t.constructDependencies;
 export declare type LifecycleHooks = t.LifecycleHooks;

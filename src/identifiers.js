@@ -37,7 +37,7 @@ var impStaticNodeDebugInfo = core_private_1.StaticNodeDebugInfo;
 var impRenderer = core_1.Renderer;
 var impSimpleChange = core_1.SimpleChange;
 var impUninitialized = core_private_1.uninitialized;
-var impChangeDetectorState = core_private_1.ChangeDetectorState;
+var impChangeDetectorStatus = core_private_1.ChangeDetectorStatus;
 var impFlattenNestedViewRenderNodes = core_private_1.flattenNestedViewRenderNodes;
 var impDevModeEqual = core_private_1.devModeEqual;
 var impInterpolate = core_private_1.interpolate;
@@ -125,7 +125,7 @@ var Identifiers = (function () {
     Identifiers.Renderer = new compile_metadata_1.CompileIdentifierMetadata({ name: 'Renderer', moduleUrl: util_1.assetUrl('core', 'render/api'), runtime: impRenderer });
     Identifiers.SimpleChange = new compile_metadata_1.CompileIdentifierMetadata({ name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: impSimpleChange });
     Identifiers.uninitialized = new compile_metadata_1.CompileIdentifierMetadata({ name: 'uninitialized', moduleUrl: CD_MODULE_URL, runtime: impUninitialized });
-    Identifiers.ChangeDetectorState = new compile_metadata_1.CompileIdentifierMetadata({ name: 'ChangeDetectorState', moduleUrl: CD_MODULE_URL, runtime: impChangeDetectorState });
+    Identifiers.ChangeDetectorStatus = new compile_metadata_1.CompileIdentifierMetadata({ name: 'ChangeDetectorStatus', moduleUrl: CD_MODULE_URL, runtime: impChangeDetectorStatus });
     Identifiers.checkBinding = new compile_metadata_1.CompileIdentifierMetadata({ name: 'checkBinding', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCheckBinding });
     Identifiers.flattenNestedViewRenderNodes = new compile_metadata_1.CompileIdentifierMetadata({
         name: 'flattenNestedViewRenderNodes',

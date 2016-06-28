@@ -7,8 +7,8 @@
  */
 import { LifecycleHooks } from '../../core_private';
 import * as o from '../output/output_ast';
-import { ChangeDetectorStateEnum, DetectChangesVars } from './constants';
-var STATE_IS_NEVER_CHECKED = o.THIS_EXPR.prop('cdState').identical(ChangeDetectorStateEnum.NeverChecked);
+import { DetectChangesVars } from './constants';
+var STATE_IS_NEVER_CHECKED = o.THIS_EXPR.prop('numberOfChecks').identical(new o.LiteralExpr(0));
 var NOT_THROW_ON_CHANGES = o.not(DetectChangesVars.throwOnChange);
 export function bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement) {
     var view = compileElement.view;
