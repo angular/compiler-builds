@@ -38,6 +38,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     // Need to declare a new variable for global here since TypeScript
     // exports the original value of the symbol.
     var global$1 = globalScope;
+    /**
+     * @stable
+     */
     var Type = Function;
     // TODO: remove calls to assert in production environment
     // Note: Can't just export this and import in in other files
