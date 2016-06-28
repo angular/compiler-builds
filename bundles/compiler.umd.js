@@ -6616,6 +6616,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
         };
         TemplateParseVisitor.prototype._parseAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetAnimationProps) {
+            // This will occur when a @trigger is not paired with an expression.
+            // For animations it is valid to not have an expression since */void
+            // states will be applied by angular when the element is attached/detached
+            if (!isPresent(expression) || expression.length == 0) {
+                expression = 'null';
+            }
             var ast = this._parseBinding(expression, sourceSpan);
             targetMatchableAttrs.push([name, ast.source]);
             targetAnimationProps.push(new BoundElementPropertyAst(name, exports.PropertyBindingType.Animation, SecurityContext.NONE, ast, null, sourceSpan));

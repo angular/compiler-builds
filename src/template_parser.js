@@ -467,6 +467,12 @@ var TemplateParseVisitor = (function () {
         this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
     };
     TemplateParseVisitor.prototype._parseAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetAnimationProps) {
+        // This will occur when a @trigger is not paired with an expression.
+        // For animations it is valid to not have an expression since */void
+        // states will be applied by angular when the element is attached/detached
+        if (!lang_1.isPresent(expression) || expression.length == 0) {
+            expression = 'null';
+        }
         var ast = this._parseBinding(expression, sourceSpan);
         targetMatchableAttrs.push([name, ast.source]);
         targetAnimationProps.push(new template_ast_1.BoundElementPropertyAst(name, template_ast_1.PropertyBindingType.Animation, core_private_1.SecurityContext.NONE, ast, null, sourceSpan));
