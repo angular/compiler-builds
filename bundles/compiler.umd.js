@@ -12135,7 +12135,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         [LifecycleHooks.AfterViewInit, 'ngAfterViewInit'],
         [LifecycleHooks.AfterViewChecked, 'ngAfterViewChecked'],
     ]);
-    function hasLifecycleHook(hook, token /** TODO #9100 */) {
+    function hasLifecycleHook(hook, token) {
         var lcInterface = LIFECYCLE_INTERFACES.get(hook);
         var lcProp = LIFECYCLE_PROPS.get(hook);
         return reflector.hasLifecycleHook(token, lcInterface, lcProp);

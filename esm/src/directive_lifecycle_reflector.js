@@ -28,7 +28,7 @@ const LIFECYCLE_PROPS = MapWrapper.createFromPairs([
     [LifecycleHooks.AfterViewInit, 'ngAfterViewInit'],
     [LifecycleHooks.AfterViewChecked, 'ngAfterViewChecked'],
 ]);
-export function hasLifecycleHook(hook, token /** TODO #9100 */) {
+export function hasLifecycleHook(hook, token) {
     var lcInterface = LIFECYCLE_INTERFACES.get(hook);
     var lcProp = LIFECYCLE_PROPS.get(hook);
     return reflector.hasLifecycleHook(token, lcInterface, lcProp);
