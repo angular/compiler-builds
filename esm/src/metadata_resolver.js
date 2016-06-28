@@ -44,6 +44,14 @@ export class CompileMetadataResolver {
         }
         return sanitizeIdentifier(identifier);
     }
+    clearCacheFor(compType) {
+        this._directiveCache.delete(compType);
+        this._pipeCache.delete(compType);
+    }
+    clearCache() {
+        this._directiveCache.clear();
+        this._pipeCache.clear();
+    }
     getAnimationEntryMetadata(entry) {
         var defs = entry.definitions.map(def => this.getAnimationStateMetadata(def));
         return new cpl.CompileAnimationEntryMetadata(entry.name, defs);
@@ -94,7 +102,6 @@ export class CompileMetadataResolver {
             var moduleUrl = staticTypeModuleUrl(directiveType);
             var precompileTypes = [];
             if (dirMeta instanceof ComponentMetadata) {
-                assertArrayOfStrings('styles', dirMeta.styles);
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
                 assertArrayOfStrings('styles', viewMeta.styles);
@@ -102,6 +109,8 @@ export class CompileMetadataResolver {
                 var animations = isPresent(viewMeta.animations) ?
                     viewMeta.animations.map(e => this.getAnimationEntryMetadata(e)) :
                     null;
+                assertArrayOfStrings('styles', viewMeta.styles);
+                assertArrayOfStrings('styleUrls', viewMeta.styleUrls);
                 templateMeta = new cpl.CompileTemplateMetadata({
                     encapsulation: viewMeta.encapsulation,
                     template: viewMeta.template,

@@ -583,16 +583,36 @@ var CompileQueryMetadata = (function () {
 }());
 exports.CompileQueryMetadata = CompileQueryMetadata;
 /**
+ * Metadata about a stylesheet
+ */
+var CompileStylesheetMetadata = (function () {
+    function CompileStylesheetMetadata(_a) {
+        var _b = _a === void 0 ? {} : _a, moduleUrl = _b.moduleUrl, styles = _b.styles, styleUrls = _b.styleUrls;
+        this.moduleUrl = moduleUrl;
+        this.styles = _normalizeArray(styles);
+        this.styleUrls = _normalizeArray(styleUrls);
+    }
+    CompileStylesheetMetadata.fromJson = function (data) {
+        return new CompileStylesheetMetadata({ moduleUrl: data['moduleUrl'], styles: data['styles'], styleUrls: data['styleUrls'] });
+    };
+    CompileStylesheetMetadata.prototype.toJson = function () {
+        return { 'moduleUrl': this.moduleUrl, 'styles': this.styles, 'styleUrls': this.styleUrls };
+    };
+    return CompileStylesheetMetadata;
+}());
+exports.CompileStylesheetMetadata = CompileStylesheetMetadata;
+/**
  * Metadata regarding compilation of a template.
  */
 var CompileTemplateMetadata = (function () {
     function CompileTemplateMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors, interpolation = _b.interpolation;
+        var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, externalStylesheets = _b.externalStylesheets, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors, interpolation = _b.interpolation;
         this.encapsulation = encapsulation;
         this.template = template;
         this.templateUrl = templateUrl;
-        this.styles = lang_1.isPresent(styles) ? styles : [];
-        this.styleUrls = lang_1.isPresent(styleUrls) ? styleUrls : [];
+        this.styles = _normalizeArray(styles);
+        this.styleUrls = _normalizeArray(styleUrls);
+        this.externalStylesheets = _normalizeArray(externalStylesheets);
         this.animations = lang_1.isPresent(animations) ? collection_1.ListWrapper.flatten(animations) : [];
         this.ngContentSelectors = lang_1.isPresent(ngContentSelectors) ? ngContentSelectors : [];
         if (lang_1.isPresent(interpolation) && interpolation.length != 2) {
@@ -610,6 +630,7 @@ var CompileTemplateMetadata = (function () {
             templateUrl: data['templateUrl'],
             styles: data['styles'],
             styleUrls: data['styleUrls'],
+            externalStylesheets: _arrayFromJson(data['externalStylesheets'], CompileStylesheetMetadata.fromJson),
             animations: animations,
             ngContentSelectors: data['ngContentSelectors'],
             interpolation: data['interpolation']
@@ -623,6 +644,7 @@ var CompileTemplateMetadata = (function () {
             'templateUrl': this.templateUrl,
             'styles': this.styles,
             'styleUrls': this.styleUrls,
+            'externalStylesheets': _objToJson(this.externalStylesheets),
             'animations': _objToJson(this.animations),
             'ngContentSelectors': this.ngContentSelectors,
             'interpolation': this.interpolation

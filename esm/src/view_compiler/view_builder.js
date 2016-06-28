@@ -175,7 +175,7 @@ class ViewBuilderVisitor {
         var compViewExpr = null;
         if (isPresent(component)) {
             let nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewFactoryName(component, 0) });
-            this.targetDependencies.push(new ViewFactoryDependency(component, nestedComponentIdentifier));
+            this.targetDependencies.push(new ViewFactoryDependency(component.type, nestedComponentIdentifier));
             let precompileComponentIdentifiers = component.precompile.map((precompileComp) => {
                 var id = new CompileIdentifierMetadata({ name: precompileComp.name });
                 this.targetDependencies.push(new ComponentFactoryDependency(precompileComp, id));

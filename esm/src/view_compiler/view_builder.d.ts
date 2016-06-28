@@ -1,11 +1,11 @@
-import { CompileDirectiveMetadata, CompileIdentifierMetadata } from '../compile_metadata';
+import { CompileIdentifierMetadata } from '../compile_metadata';
 import * as o from '../output/output_ast';
 import { TemplateAst } from '../template_ast';
 import { CompileView } from './compile_view';
 export declare class ViewFactoryDependency {
-    comp: CompileDirectiveMetadata;
+    comp: CompileIdentifierMetadata;
     placeholder: CompileIdentifierMetadata;
-    constructor(comp: CompileDirectiveMetadata, placeholder: CompileIdentifierMetadata);
+    constructor(comp: CompileIdentifierMetadata, placeholder: CompileIdentifierMetadata);
 }
 export declare class ComponentFactoryDependency {
     comp: CompileIdentifierMetadata;

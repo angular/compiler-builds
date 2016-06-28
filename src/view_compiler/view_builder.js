@@ -183,7 +183,7 @@ var ViewBuilderVisitor = (function () {
         var compViewExpr = null;
         if (lang_1.isPresent(component)) {
             var nestedComponentIdentifier = new compile_metadata_1.CompileIdentifierMetadata({ name: util_1.getViewFactoryName(component, 0) });
-            this.targetDependencies.push(new ViewFactoryDependency(component, nestedComponentIdentifier));
+            this.targetDependencies.push(new ViewFactoryDependency(component.type, nestedComponentIdentifier));
             var precompileComponentIdentifiers = component.precompile.map(function (precompileComp) {
                 var id = new compile_metadata_1.CompileIdentifierMetadata({ name: precompileComp.name });
                 _this.targetDependencies.push(new ComponentFactoryDependency(precompileComp, id));

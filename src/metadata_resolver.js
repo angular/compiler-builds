@@ -51,6 +51,14 @@ var CompileMetadataResolver = (function () {
         }
         return util_1.sanitizeIdentifier(identifier);
     };
+    CompileMetadataResolver.prototype.clearCacheFor = function (compType) {
+        this._directiveCache.delete(compType);
+        this._pipeCache.delete(compType);
+    };
+    CompileMetadataResolver.prototype.clearCache = function () {
+        this._directiveCache.clear();
+        this._pipeCache.clear();
+    };
     CompileMetadataResolver.prototype.getAnimationEntryMetadata = function (entry) {
         var _this = this;
         var defs = entry.definitions.map(function (def) { return _this.getAnimationStateMetadata(def); });
@@ -104,7 +112,6 @@ var CompileMetadataResolver = (function () {
             var moduleUrl = staticTypeModuleUrl(directiveType);
             var precompileTypes = [];
             if (dirMeta instanceof core_1.ComponentMetadata) {
-                assertions_1.assertArrayOfStrings('styles', dirMeta.styles);
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
                 assertions_1.assertArrayOfStrings('styles', viewMeta.styles);
@@ -112,6 +119,8 @@ var CompileMetadataResolver = (function () {
                 var animations = lang_1.isPresent(viewMeta.animations) ?
                     viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
                     null;
+                assertions_1.assertArrayOfStrings('styles', viewMeta.styles);
+                assertions_1.assertArrayOfStrings('styleUrls', viewMeta.styleUrls);
                 templateMeta = new cpl.CompileTemplateMetadata({
                     encapsulation: viewMeta.encapsulation,
                     template: viewMeta.template,

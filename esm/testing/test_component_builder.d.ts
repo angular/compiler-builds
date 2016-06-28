@@ -7,7 +7,7 @@
  */
 import { AnimationEntryMetadata, Injector, ViewMetadata } from '@angular/core';
 import { ComponentFixture, TestComponentBuilder } from '@angular/core/testing';
-import { Type } from '../src/facade/lang';
+import { ConcreteType, Type } from '../src/facade/lang';
 /**
  * @deprecated Import TestComponentRenderer from @angular/core/testing
  */
@@ -39,5 +39,7 @@ export declare class OverridingTestComponentBuilder extends TestComponentBuilder
     overrideDirective(componentType: Type, from: Type, to: Type): OverridingTestComponentBuilder;
     overrideProviders(type: Type, providers: any[]): OverridingTestComponentBuilder;
     overrideViewProviders(type: Type, providers: any[]): OverridingTestComponentBuilder;
-    createAsync(rootComponentType: Type): Promise<ComponentFixture<any>>;
+    createAsync<T>(rootComponentType: ConcreteType<T>): Promise<ComponentFixture<T>>;
+    createSync<T>(rootComponentType: ConcreteType<T>): ComponentFixture<T>;
+    private _applyMetadataOverrides();
 }

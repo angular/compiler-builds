@@ -25,6 +25,8 @@ export declare class CompileMetadataResolver {
     private _anonymousTypeIndex;
     constructor(_directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _viewResolver: ViewResolver, _config: CompilerConfig, _reflector?: ReflectorReader);
     private sanitizeTokenName(token);
+    clearCacheFor(compType: Type): void;
+    clearCache(): void;
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
     getAnimationStateMetadata(value: AnimationStateMetadata): cpl.CompileAnimationStateMetadata;
     getAnimationStyleMetadata(value: AnimationStyleMetadata): cpl.CompileAnimationStyleMetadata;

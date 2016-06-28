@@ -456,15 +456,32 @@ export class CompileQueryMetadata {
     }
 }
 /**
+ * Metadata about a stylesheet
+ */
+export class CompileStylesheetMetadata {
+    constructor({ moduleUrl, styles, styleUrls } = {}) {
+        this.moduleUrl = moduleUrl;
+        this.styles = _normalizeArray(styles);
+        this.styleUrls = _normalizeArray(styleUrls);
+    }
+    static fromJson(data) {
+        return new CompileStylesheetMetadata({ moduleUrl: data['moduleUrl'], styles: data['styles'], styleUrls: data['styleUrls'] });
+    }
+    toJson() {
+        return { 'moduleUrl': this.moduleUrl, 'styles': this.styles, 'styleUrls': this.styleUrls };
+    }
+}
+/**
  * Metadata regarding compilation of a template.
  */
 export class CompileTemplateMetadata {
-    constructor({ encapsulation, template, templateUrl, styles, styleUrls, animations, ngContentSelectors, interpolation } = {}) {
+    constructor({ encapsulation, template, templateUrl, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation } = {}) {
         this.encapsulation = encapsulation;
         this.template = template;
         this.templateUrl = templateUrl;
-        this.styles = isPresent(styles) ? styles : [];
-        this.styleUrls = isPresent(styleUrls) ? styleUrls : [];
+        this.styles = _normalizeArray(styles);
+        this.styleUrls = _normalizeArray(styleUrls);
+        this.externalStylesheets = _normalizeArray(externalStylesheets);
         this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
         this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
         if (isPresent(interpolation) && interpolation.length != 2) {
@@ -482,6 +499,7 @@ export class CompileTemplateMetadata {
             templateUrl: data['templateUrl'],
             styles: data['styles'],
             styleUrls: data['styleUrls'],
+            externalStylesheets: _arrayFromJson(data['externalStylesheets'], CompileStylesheetMetadata.fromJson),
             animations: animations,
             ngContentSelectors: data['ngContentSelectors'],
             interpolation: data['interpolation']
@@ -495,6 +513,7 @@ export class CompileTemplateMetadata {
             'templateUrl': this.templateUrl,
             'styles': this.styles,
             'styleUrls': this.styleUrls,
+            'externalStylesheets': _objToJson(this.externalStylesheets),
             'animations': _objToJson(this.animations),
             'ngContentSelectors': this.ngContentSelectors,
             'interpolation': this.interpolation

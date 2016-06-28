@@ -5349,16 +5349,35 @@ var __extends = (this && this.__extends) || function (d, b) {
         return CompileQueryMetadata;
     }());
     /**
+     * Metadata about a stylesheet
+     */
+    var CompileStylesheetMetadata = (function () {
+        function CompileStylesheetMetadata(_a) {
+            var _b = _a === void 0 ? {} : _a, moduleUrl = _b.moduleUrl, styles = _b.styles, styleUrls = _b.styleUrls;
+            this.moduleUrl = moduleUrl;
+            this.styles = _normalizeArray(styles);
+            this.styleUrls = _normalizeArray(styleUrls);
+        }
+        CompileStylesheetMetadata.fromJson = function (data) {
+            return new CompileStylesheetMetadata({ moduleUrl: data['moduleUrl'], styles: data['styles'], styleUrls: data['styleUrls'] });
+        };
+        CompileStylesheetMetadata.prototype.toJson = function () {
+            return { 'moduleUrl': this.moduleUrl, 'styles': this.styles, 'styleUrls': this.styleUrls };
+        };
+        return CompileStylesheetMetadata;
+    }());
+    /**
      * Metadata regarding compilation of a template.
      */
     var CompileTemplateMetadata = (function () {
         function CompileTemplateMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors, interpolation = _b.interpolation;
+            var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, externalStylesheets = _b.externalStylesheets, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors, interpolation = _b.interpolation;
             this.encapsulation = encapsulation;
             this.template = template;
             this.templateUrl = templateUrl;
-            this.styles = isPresent(styles) ? styles : [];
-            this.styleUrls = isPresent(styleUrls) ? styleUrls : [];
+            this.styles = _normalizeArray(styles);
+            this.styleUrls = _normalizeArray(styleUrls);
+            this.externalStylesheets = _normalizeArray(externalStylesheets);
             this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
             this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
             if (isPresent(interpolation) && interpolation.length != 2) {
@@ -5376,6 +5395,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 templateUrl: data['templateUrl'],
                 styles: data['styles'],
                 styleUrls: data['styleUrls'],
+                externalStylesheets: _arrayFromJson(data['externalStylesheets'], CompileStylesheetMetadata.fromJson),
                 animations: animations,
                 ngContentSelectors: data['ngContentSelectors'],
                 interpolation: data['interpolation']
@@ -5389,6 +5409,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 'templateUrl': this.templateUrl,
                 'styles': this.styles,
                 'styleUrls': this.styleUrls,
+                'externalStylesheets': _objToJson(this.externalStylesheets),
                 'animations': _objToJson(this.animations),
                 'ngContentSelectors': this.ngContentSelectors,
                 'interpolation': this.interpolation
@@ -10667,7 +10688,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var compViewExpr = null;
             if (isPresent(component)) {
                 var nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewFactoryName(component, 0) });
-                this.targetDependencies.push(new ViewFactoryDependency(component, nestedComponentIdentifier));
+                this.targetDependencies.push(new ViewFactoryDependency(component.type, nestedComponentIdentifier));
                 var precompileComponentIdentifiers = component.precompile.map(function (precompileComp) {
                     var id = new CompileIdentifierMetadata({ name: precompileComp.name });
                     _this.targetDependencies.push(new ComponentFactoryDependency(precompileComp, id));
@@ -11043,13 +11064,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return SourceModule;
     }());
-    var StyleSheetSourceWithImports = (function () {
-        function StyleSheetSourceWithImports(source, importedUrls) {
-            this.source = source;
-            this.importedUrls = importedUrls;
-        }
-        return StyleSheetSourceWithImports;
-    }());
     var NormalizedComponentWithViewDirectives = (function () {
         function NormalizedComponentWithViewDirectives(component, directives, pipes) {
             this.component = component;
@@ -11059,16 +11073,15 @@ var __extends = (this && this.__extends) || function (d, b) {
         return NormalizedComponentWithViewDirectives;
     }());
     var OfflineCompiler = (function () {
-        function OfflineCompiler(_directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _outputEmitter, _xhr) {
+        function OfflineCompiler(_directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _outputEmitter) {
             this._directiveNormalizer = _directiveNormalizer;
             this._templateParser = _templateParser;
             this._styleCompiler = _styleCompiler;
             this._viewCompiler = _viewCompiler;
             this._outputEmitter = _outputEmitter;
-            this._xhr = _xhr;
         }
         OfflineCompiler.prototype.normalizeDirectiveMetadata = function (directive) {
-            return this._directiveNormalizer.normalizeDirective(directive);
+            return this._directiveNormalizer.normalizeDirective(directive).asyncResult;
         };
         OfflineCompiler.prototype.compileTemplates = function (components) {
             var _this = this;
@@ -11078,13 +11091,19 @@ var __extends = (this && this.__extends) || function (d, b) {
             var statements = [];
             var exportedVars = [];
             var moduleUrl = _ngfactoryModuleUrl(components[0].component.type);
+            var outputSourceModules = [];
             components.forEach(function (componentWithDirs) {
                 var compMeta = componentWithDirs.component;
                 _assertComponent(compMeta);
-                var compViewFactoryVar = _this._compileComponent(compMeta, componentWithDirs.directives, componentWithDirs.pipes, statements);
+                var fileSuffix = _splitLastSuffix(compMeta.type.moduleUrl)[1];
+                var stylesCompileResults = _this._styleCompiler.compileComponent(compMeta);
+                stylesCompileResults.externalStylesheets.forEach(function (compiledStyleSheet) {
+                    outputSourceModules.push(_this._codgenStyles(compiledStyleSheet, fileSuffix));
+                });
+                var compViewFactoryVar = _this._compileComponent(compMeta, componentWithDirs.directives, componentWithDirs.pipes, stylesCompileResults.componentStylesheet, fileSuffix, statements);
                 exportedVars.push(compViewFactoryVar);
                 var hostMeta = createHostComponentMeta(compMeta.type, compMeta.selector);
-                var hostViewFactoryVar = _this._compileComponent(hostMeta, [compMeta], [], statements);
+                var hostViewFactoryVar = _this._compileComponent(hostMeta, [compMeta], [], null, fileSuffix, statements);
                 var compFactoryVar = _componentFactoryName(compMeta.type);
                 statements.push(variable(compFactoryVar)
                     .set(importExpr(_COMPONENT_FACTORY_IDENTIFIER, [importType(compMeta.type)])
@@ -11095,30 +11114,22 @@ var __extends = (this && this.__extends) || function (d, b) {
                     .toDeclStmt(null, [StmtModifier.Final]));
                 exportedVars.push(compFactoryVar);
             });
-            return this._codegenSourceModule(moduleUrl, statements, exportedVars);
+            outputSourceModules.unshift(this._codegenSourceModule(moduleUrl, statements, exportedVars));
+            return outputSourceModules;
         };
-        OfflineCompiler.prototype.loadAndCompileStylesheet = function (stylesheetUrl, shim, suffix) {
-            var _this = this;
-            return this._xhr.get(stylesheetUrl).then(function (cssText) {
-                var compileResult = _this._styleCompiler.compileStylesheet(stylesheetUrl, cssText, shim);
-                var importedUrls = [];
-                compileResult.dependencies.forEach(function (dep) {
-                    importedUrls.push(dep.moduleUrl);
-                    dep.valuePlaceholder.moduleUrl = _stylesModuleUrl(dep.moduleUrl, dep.isShimmed, suffix);
-                });
-                return new StyleSheetSourceWithImports(_this._codgenStyles(stylesheetUrl, shim, suffix, compileResult), importedUrls);
-            });
-        };
-        OfflineCompiler.prototype._compileComponent = function (compMeta, directives, pipes, targetStatements) {
-            var styleResult = this._styleCompiler.compileComponent(compMeta);
+        OfflineCompiler.prototype._compileComponent = function (compMeta, directives, pipes, componentStyles, fileSuffix, targetStatements) {
             var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, compMeta.type.name);
-            var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(styleResult.stylesVar), pipes);
-            ListWrapper.addAll(targetStatements, _resolveStyleStatements(compMeta.type.moduleUrl, styleResult));
+            var stylesExpr = componentStyles ? variable(componentStyles.stylesVar) : literalArr([]);
+            var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, pipes);
+            if (componentStyles) {
+                ListWrapper.addAll(targetStatements, _resolveStyleStatements(componentStyles, fileSuffix));
+            }
             ListWrapper.addAll(targetStatements, _resolveViewStatements(viewResult));
             return viewResult.viewFactoryVar;
         };
-        OfflineCompiler.prototype._codgenStyles = function (inputUrl, shim, suffix, stylesCompileResult) {
-            return this._codegenSourceModule(_stylesModuleUrl(inputUrl, shim, suffix), stylesCompileResult.statements, [stylesCompileResult.stylesVar]);
+        OfflineCompiler.prototype._codgenStyles = function (stylesCompileResult, fileSuffix) {
+            _resolveStyleStatements(stylesCompileResult, fileSuffix);
+            return this._codegenSourceModule(_stylesModuleUrl(stylesCompileResult.meta.moduleUrl, stylesCompileResult.isShimmed, fileSuffix), stylesCompileResult.statements, [stylesCompileResult.stylesVar]);
         };
         OfflineCompiler.prototype._codegenSourceModule = function (moduleUrl, statements, exportedVars) {
             return new SourceModule(moduleUrl, this._outputEmitter.emitStatements(moduleUrl, statements, exportedVars));
@@ -11128,7 +11139,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function _resolveViewStatements(compileResult) {
         compileResult.dependencies.forEach(function (dep) {
             if (dep instanceof ViewFactoryDependency) {
-                dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.type);
+                dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
             }
             else if (dep instanceof ComponentFactoryDependency) {
                 dep.placeholder.name = _componentFactoryName(dep.comp);
@@ -11137,16 +11148,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         return compileResult.statements;
     }
-    function _resolveStyleStatements(containingModuleUrl, compileResult) {
-        var containingSuffix = _splitSuffix(containingModuleUrl)[1];
+    function _resolveStyleStatements(compileResult, fileSuffix) {
         compileResult.dependencies.forEach(function (dep) {
-            dep.valuePlaceholder.moduleUrl =
-                _stylesModuleUrl(dep.moduleUrl, dep.isShimmed, containingSuffix);
+            dep.valuePlaceholder.moduleUrl = _stylesModuleUrl(dep.moduleUrl, dep.isShimmed, fileSuffix);
         });
         return compileResult.statements;
     }
     function _ngfactoryModuleUrl(comp) {
-        var urlWithSuffix = _splitSuffix(comp.moduleUrl);
+        var urlWithSuffix = _splitLastSuffix(comp.moduleUrl);
         return urlWithSuffix[0] + ".ngfactory" + urlWithSuffix[1];
     }
     function _componentFactoryName(comp) {
@@ -11160,7 +11169,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             throw new BaseException$1("Could not compile '" + meta.type.name + "' because it is not a component.");
         }
     }
-    function _splitSuffix(path) {
+    function _splitLastSuffix(path) {
         var lastDot = path.lastIndexOf('.');
         if (lastDot !== -1) {
             return [path.substring(0, lastDot), path.substring(lastDot)];
@@ -11754,12 +11763,21 @@ var __extends = (this && this.__extends) || function (d, b) {
         return StylesCompileDependency;
     }());
     var StylesCompileResult = (function () {
-        function StylesCompileResult(statements, stylesVar, dependencies) {
+        function StylesCompileResult(componentStylesheet, externalStylesheets) {
+            this.componentStylesheet = componentStylesheet;
+            this.externalStylesheets = externalStylesheets;
+        }
+        return StylesCompileResult;
+    }());
+    var CompiledStylesheet = (function () {
+        function CompiledStylesheet(statements, stylesVar, dependencies, isShimmed, meta) {
             this.statements = statements;
             this.stylesVar = stylesVar;
             this.dependencies = dependencies;
+            this.isShimmed = isShimmed;
+            this.meta = meta;
         }
-        return StylesCompileResult;
+        return CompiledStylesheet;
     }());
     var StyleCompiler = (function () {
         function StyleCompiler(_urlResolver) {
@@ -11767,28 +11785,37 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._shadowCss = new ShadowCss();
         }
         StyleCompiler.prototype.compileComponent = function (comp) {
-            var shim = comp.template.encapsulation === _angular_core.ViewEncapsulation.Emulated;
-            return this._compileStyles(getStylesVarName(comp), comp.template.styles, comp.template.styleUrls, shim);
-        };
-        StyleCompiler.prototype.compileStylesheet = function (stylesheetUrl, cssText, isShimmed) {
-            var styleWithImports = extractStyleUrls(this._urlResolver, stylesheetUrl, cssText);
-            return this._compileStyles(getStylesVarName(null), [styleWithImports.style], styleWithImports.styleUrls, isShimmed);
-        };
-        StyleCompiler.prototype._compileStyles = function (stylesVar, plainStyles, absUrls, shim) {
             var _this = this;
-            var styleExpressions = plainStyles.map(function (plainStyle) { return literal(_this._shimIfNeeded(plainStyle, shim)); });
+            var shim = comp.template.encapsulation === _angular_core.ViewEncapsulation.Emulated;
+            var externalStylesheets = [];
+            var componentStylesheet = this._compileStyles(comp, new CompileStylesheetMetadata({
+                styles: comp.template.styles,
+                styleUrls: comp.template.styleUrls,
+                moduleUrl: comp.type.moduleUrl
+            }), true);
+            comp.template.externalStylesheets.forEach(function (stylesheetMeta) {
+                var compiledStylesheet = _this._compileStyles(comp, stylesheetMeta, false);
+                externalStylesheets.push(compiledStylesheet);
+            });
+            return new StylesCompileResult(componentStylesheet, externalStylesheets);
+        };
+        StyleCompiler.prototype._compileStyles = function (comp, stylesheet, isComponentStylesheet) {
+            var _this = this;
+            var shim = comp.template.encapsulation === _angular_core.ViewEncapsulation.Emulated;
+            var styleExpressions = stylesheet.styles.map(function (plainStyle) { return literal(_this._shimIfNeeded(plainStyle, shim)); });
             var dependencies = [];
-            for (var i = 0; i < absUrls.length; i++) {
+            for (var i = 0; i < stylesheet.styleUrls.length; i++) {
                 var identifier = new CompileIdentifierMetadata({ name: getStylesVarName(null) });
-                dependencies.push(new StylesCompileDependency(absUrls[i], shim, identifier));
+                dependencies.push(new StylesCompileDependency(stylesheet.styleUrls[i], shim, identifier));
                 styleExpressions.push(new ExternalExpr(identifier));
             }
             // styles variable contains plain strings and arrays of other styles arrays (recursive),
             // so we set its type to dynamic.
+            var stylesVar = getStylesVarName(isComponentStylesheet ? comp : null);
             var stmt = variable(stylesVar)
                 .set(literalArr(styleExpressions, new ArrayType(DYNAMIC_TYPE, [TypeModifier.Const])))
                 .toDeclStmt(null, [StmtModifier.Final]);
-            return new StylesCompileResult([stmt], stylesVar, dependencies);
+            return new CompiledStylesheet([stmt], stylesVar, dependencies, shim, stylesheet);
         };
         StyleCompiler.prototype._shimIfNeeded = function (style, shim) {
             return shim ? this._shadowCss.shimCssText(style, CONTENT_ATTR, HOST_ATTR) : style;
@@ -11805,7 +11832,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     function getStylesVarName(component) {
         var result = "styles";
-        if (isPresent(component)) {
+        if (component) {
             result += "_" + component.type.name;
         }
         return result;
@@ -11828,90 +11855,149 @@ var __extends = (this && this.__extends) || function (d, b) {
         XHR.prototype.get = function (url) { return null; };
         return XHR;
     }());
+    var NormalizeDirectiveResult = (function () {
+        function NormalizeDirectiveResult(syncResult, asyncResult) {
+            this.syncResult = syncResult;
+            this.asyncResult = asyncResult;
+        }
+        return NormalizeDirectiveResult;
+    }());
     var DirectiveNormalizer = (function () {
         function DirectiveNormalizer(_xhr, _urlResolver, _htmlParser, _config) {
             this._xhr = _xhr;
             this._urlResolver = _urlResolver;
             this._htmlParser = _htmlParser;
             this._config = _config;
+            this._xhrCache = new Map();
         }
+        DirectiveNormalizer.prototype.clearCache = function () { this._xhrCache.clear(); };
+        DirectiveNormalizer.prototype.clearCacheFor = function (normalizedDirective) {
+            var _this = this;
+            if (!normalizedDirective.isComponent) {
+                return;
+            }
+            this._xhrCache.delete(normalizedDirective.template.templateUrl);
+            normalizedDirective.template.externalStylesheets.forEach(function (stylesheet) { _this._xhrCache.delete(stylesheet.moduleUrl); });
+        };
+        DirectiveNormalizer.prototype._fetch = function (url) {
+            var result = this._xhrCache.get(url);
+            if (!result) {
+                result = this._xhr.get(url);
+                this._xhrCache.set(url, result);
+            }
+            return result;
+        };
         DirectiveNormalizer.prototype.normalizeDirective = function (directive) {
+            var _this = this;
             if (!directive.isComponent) {
                 // For non components there is nothing to be normalized yet.
-                return PromiseWrapper.resolve(directive);
+                return new NormalizeDirectiveResult(directive, Promise.resolve(directive));
             }
-            return this.normalizeTemplate(directive.type, directive.template)
-                .then(function (normalizedTemplate) { return new CompileDirectiveMetadata({
-                type: directive.type,
-                isComponent: directive.isComponent,
-                selector: directive.selector,
-                exportAs: directive.exportAs,
-                changeDetection: directive.changeDetection,
-                inputs: directive.inputs,
-                outputs: directive.outputs,
-                hostListeners: directive.hostListeners,
-                hostProperties: directive.hostProperties,
-                hostAttributes: directive.hostAttributes,
-                lifecycleHooks: directive.lifecycleHooks,
-                providers: directive.providers,
-                viewProviders: directive.viewProviders,
-                queries: directive.queries,
-                viewQueries: directive.viewQueries,
-                precompile: directive.precompile,
-                template: normalizedTemplate
-            }); });
-        };
-        DirectiveNormalizer.prototype.normalizeTemplate = function (directiveType, template) {
-            var _this = this;
-            if (isPresent(template.template)) {
-                return PromiseWrapper.resolve(this.normalizeLoadedTemplate(directiveType, template, template.template, directiveType.moduleUrl));
+            var normalizedTemplateSync = null;
+            var normalizedTemplateAsync;
+            if (isPresent(directive.template.template)) {
+                normalizedTemplateSync = this.normalizeTemplateSync(directive.type, directive.template);
+                normalizedTemplateAsync = Promise.resolve(normalizedTemplateSync);
             }
-            else if (isPresent(template.templateUrl)) {
-                var sourceAbsUrl = this._urlResolver.resolve(directiveType.moduleUrl, template.templateUrl);
-                return this._xhr.get(sourceAbsUrl)
-                    .then(function (templateContent) { return _this.normalizeLoadedTemplate(directiveType, template, templateContent, sourceAbsUrl); });
+            else if (directive.template.templateUrl) {
+                normalizedTemplateAsync = this.normalizeTemplateAsync(directive.type, directive.template);
             }
             else {
-                throw new BaseException$1("No template specified for component " + directiveType.name);
+                throw new BaseException$1("No template specified for component " + directive.type.name);
+            }
+            if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
+                // sync case
+                var normalizedDirective = _cloneDirectiveWithTemplate(directive, normalizedTemplateSync);
+                return new NormalizeDirectiveResult(normalizedDirective, Promise.resolve(normalizedDirective));
+            }
+            else {
+                // async case
+                return new NormalizeDirectiveResult(null, normalizedTemplateAsync
+                    .then(function (normalizedTemplate) { return _this.normalizeExternalStylesheets(normalizedTemplate); })
+                    .then(function (normalizedTemplate) { return _cloneDirectiveWithTemplate(directive, normalizedTemplate); }));
             }
         };
-        DirectiveNormalizer.prototype.normalizeLoadedTemplate = function (directiveType, templateMeta, template, templateAbsUrl) {
+        DirectiveNormalizer.prototype.normalizeTemplateSync = function (directiveType, template) {
+            return this.normalizeLoadedTemplate(directiveType, template, template.template, directiveType.moduleUrl);
+        };
+        DirectiveNormalizer.prototype.normalizeTemplateAsync = function (directiveType, template) {
             var _this = this;
+            var templateUrl = this._urlResolver.resolve(directiveType.moduleUrl, template.templateUrl);
+            return this._fetch(templateUrl)
+                .then(function (value) { return _this.normalizeLoadedTemplate(directiveType, template, value, templateUrl); });
+        };
+        DirectiveNormalizer.prototype.normalizeLoadedTemplate = function (directiveType, templateMeta, template, templateAbsUrl) {
             var rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name);
             if (rootNodesAndErrors.errors.length > 0) {
                 var errorString = rootNodesAndErrors.errors.join('\n');
                 throw new BaseException$1("Template parse errors:\n" + errorString);
             }
+            var templateMetadataStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({
+                styles: templateMeta.styles,
+                styleUrls: templateMeta.styleUrls,
+                moduleUrl: directiveType.moduleUrl
+            }));
             var visitor = new TemplatePreparseVisitor();
             htmlVisitAll(visitor, rootNodesAndErrors.rootNodes);
-            var allStyles = templateMeta.styles.concat(visitor.styles);
-            var allStyleAbsUrls = visitor.styleUrls.filter(isStyleUrlResolvable)
-                .map(function (url) { return _this._urlResolver.resolve(templateAbsUrl, url); })
-                .concat(templateMeta.styleUrls.filter(isStyleUrlResolvable)
-                .map(function (url) { return _this._urlResolver.resolve(directiveType.moduleUrl, url); }));
-            var allResolvedStyles = allStyles.map(function (style) {
-                var styleWithImports = extractStyleUrls(_this._urlResolver, templateAbsUrl, style);
-                styleWithImports.styleUrls.forEach(function (styleUrl) { return allStyleAbsUrls.push(styleUrl); });
-                return styleWithImports.style;
-            });
+            var templateStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({ styles: visitor.styles, styleUrls: visitor.styleUrls, moduleUrl: templateAbsUrl }));
+            var allStyles = templateMetadataStyles.styles.concat(templateStyles.styles);
+            var allStyleUrls = templateMetadataStyles.styleUrls.concat(templateStyles.styleUrls);
             var encapsulation = templateMeta.encapsulation;
             if (isBlank(encapsulation)) {
                 encapsulation = this._config.defaultEncapsulation;
             }
-            if (encapsulation === _angular_core.ViewEncapsulation.Emulated && allResolvedStyles.length === 0 &&
-                allStyleAbsUrls.length === 0) {
+            if (encapsulation === _angular_core.ViewEncapsulation.Emulated && allStyles.length === 0 &&
+                allStyleUrls.length === 0) {
                 encapsulation = _angular_core.ViewEncapsulation.None;
             }
             return new CompileTemplateMetadata({
                 encapsulation: encapsulation,
                 template: template,
                 templateUrl: templateAbsUrl,
-                styles: allResolvedStyles,
-                styleUrls: allStyleAbsUrls,
+                styles: allStyles,
+                styleUrls: allStyleUrls,
+                externalStylesheets: templateMeta.externalStylesheets,
                 ngContentSelectors: visitor.ngContentSelectors,
                 animations: templateMeta.animations,
                 interpolation: templateMeta.interpolation
             });
+        };
+        DirectiveNormalizer.prototype.normalizeExternalStylesheets = function (templateMeta) {
+            return this._loadMissingExternalStylesheets(templateMeta.styleUrls)
+                .then(function (externalStylesheets) { return new CompileTemplateMetadata({
+                encapsulation: templateMeta.encapsulation,
+                template: templateMeta.template,
+                templateUrl: templateMeta.templateUrl,
+                styles: templateMeta.styles,
+                styleUrls: templateMeta.styleUrls,
+                externalStylesheets: externalStylesheets,
+                ngContentSelectors: templateMeta.ngContentSelectors,
+                animations: templateMeta.animations,
+                interpolation: templateMeta.interpolation
+            }); });
+        };
+        DirectiveNormalizer.prototype._loadMissingExternalStylesheets = function (styleUrls, loadedStylesheets) {
+            var _this = this;
+            if (loadedStylesheets === void 0) { loadedStylesheets = new Map(); }
+            return Promise
+                .all(styleUrls.filter(function (styleUrl) { return !loadedStylesheets.has(styleUrl); })
+                .map(function (styleUrl) { return _this._fetch(styleUrl).then(function (loadedStyle) {
+                var stylesheet = _this.normalizeStylesheet(new CompileStylesheetMetadata({ styles: [loadedStyle], moduleUrl: styleUrl }));
+                loadedStylesheets.set(styleUrl, stylesheet);
+                return _this._loadMissingExternalStylesheets(stylesheet.styleUrls, loadedStylesheets);
+            }); }))
+                .then(function (_) { return Array.from(loadedStylesheets.values()); });
+        };
+        DirectiveNormalizer.prototype.normalizeStylesheet = function (stylesheet) {
+            var _this = this;
+            var allStyleUrls = stylesheet.styleUrls.filter(isStyleUrlResolvable)
+                .map(function (url) { return _this._urlResolver.resolve(stylesheet.moduleUrl, url); });
+            var allStyles = stylesheet.styles.map(function (style) {
+                var styleWithImports = extractStyleUrls(_this._urlResolver, stylesheet.moduleUrl, style);
+                allStyleUrls.push.apply(allStyleUrls, styleWithImports.styleUrls);
+                return styleWithImports.style;
+            });
+            return new CompileStylesheetMetadata({ styles: allStyles, styleUrls: allStyleUrls, moduleUrl: stylesheet.moduleUrl });
         };
         return DirectiveNormalizer;
     }());
@@ -11974,6 +12060,27 @@ var __extends = (this && this.__extends) || function (d, b) {
         TemplatePreparseVisitor.prototype.visitExpansionCase = function (ast, context) { return null; };
         return TemplatePreparseVisitor;
     }());
+    function _cloneDirectiveWithTemplate(directive, template) {
+        return new CompileDirectiveMetadata({
+            type: directive.type,
+            isComponent: directive.isComponent,
+            selector: directive.selector,
+            exportAs: directive.exportAs,
+            changeDetection: directive.changeDetection,
+            inputs: directive.inputs,
+            outputs: directive.outputs,
+            hostListeners: directive.hostListeners,
+            hostProperties: directive.hostProperties,
+            hostAttributes: directive.hostAttributes,
+            lifecycleHooks: directive.lifecycleHooks,
+            providers: directive.providers,
+            viewProviders: directive.viewProviders,
+            queries: directive.queries,
+            viewQueries: directive.viewQueries,
+            precompile: directive.precompile,
+            template: template
+        });
+    }
     function assertArrayOfStrings(identifier, value) {
         if (!_angular_core.isDevMode() || isBlank(value)) {
             return;
@@ -12186,19 +12293,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         function ViewResolver(_reflector) {
             if (_reflector === void 0) { _reflector = reflector; }
             this._reflector = _reflector;
-            /** @internal */
-            this._cache = new Map$1();
         }
         ViewResolver.prototype.resolve = function (component) {
-            var view = this._cache.get(component);
-            if (isBlank(view)) {
-                view = this._resolve(component);
-                this._cache.set(component, view);
-            }
-            return view;
-        };
-        /** @internal */
-        ViewResolver.prototype._resolve = function (component) {
             var compMeta;
             this._reflector.annotations(component).forEach(function (m) {
                 if (m instanceof _angular_core.ComponentMetadata) {
@@ -12263,6 +12359,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return sanitizeIdentifier(identifier);
         };
+        CompileMetadataResolver.prototype.clearCacheFor = function (compType) {
+            this._directiveCache.delete(compType);
+            this._pipeCache.delete(compType);
+        };
+        CompileMetadataResolver.prototype.clearCache = function () {
+            this._directiveCache.clear();
+            this._pipeCache.clear();
+        };
         CompileMetadataResolver.prototype.getAnimationEntryMetadata = function (entry) {
             var _this = this;
             var defs = entry.definitions.map(function (def) { return _this.getAnimationStateMetadata(def); });
@@ -12316,7 +12420,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var moduleUrl = staticTypeModuleUrl(directiveType);
                 var precompileTypes = [];
                 if (dirMeta instanceof _angular_core.ComponentMetadata) {
-                    assertArrayOfStrings('styles', dirMeta.styles);
                     var cmpMeta = dirMeta;
                     var viewMeta = this._viewResolver.resolve(directiveType);
                     assertArrayOfStrings('styles', viewMeta.styles);
@@ -12324,6 +12427,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     var animations = isPresent(viewMeta.animations) ?
                         viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
                         null;
+                    assertArrayOfStrings('styles', viewMeta.styles);
+                    assertArrayOfStrings('styleUrls', viewMeta.styleUrls);
                     templateMeta = new CompileTemplateMetadata({
                         encapsulation: viewMeta.encapsulation,
                         template: viewMeta.template,
@@ -14433,136 +14538,160 @@ var __extends = (this && this.__extends) || function (d, b) {
         return _InterpretiveAppView;
     }(DebugAppView));
     var RuntimeCompiler = (function () {
-        function RuntimeCompiler(_metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _xhr, _genConfig) {
+        function RuntimeCompiler(_metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _genConfig) {
             this._metadataResolver = _metadataResolver;
             this._templateNormalizer = _templateNormalizer;
             this._templateParser = _templateParser;
             this._styleCompiler = _styleCompiler;
             this._viewCompiler = _viewCompiler;
-            this._xhr = _xhr;
             this._genConfig = _genConfig;
-            this._styleCache = new Map();
-            this._hostCacheKeys = new Map();
             this._compiledTemplateCache = new Map();
+            this._compiledHostTemplateCache = new Map();
         }
         RuntimeCompiler.prototype.resolveComponent = function (component) {
             if (isString(component)) {
                 return PromiseWrapper.reject(new BaseException$1("Cannot resolve component using '" + component + "'."), null);
             }
-            return this._loadAndCompileHostComponent(component).done;
+            return this.compileComponentAsync(component);
+        };
+        RuntimeCompiler.prototype.compileComponentAsync = function (compType) {
+            var _this = this;
+            var templates = this._getTransitiveCompiledTemplates(compType, true);
+            var loadingPromises = [];
+            templates.forEach(function (template) {
+                if (template.loading) {
+                    loadingPromises.push(template.loading);
+                }
+            });
+            return Promise.all(loadingPromises).then(function () {
+                templates.forEach(function (template) { _this._compileTemplate(template); });
+                return _this._getCompiledHostTemplate(compType).proxyComponentFactory;
+            });
+        };
+        RuntimeCompiler.prototype.compileComponentSync = function (compType) {
+            var _this = this;
+            var templates = this._getTransitiveCompiledTemplates(compType, true);
+            templates.forEach(function (template) {
+                if (template.loading) {
+                    throw new BaseException$1("Can't compile synchronously as " + template.compType.name + " is still being loaded!");
+                }
+            });
+            templates.forEach(function (template) { _this._compileTemplate(template); });
+            return this._getCompiledHostTemplate(compType).proxyComponentFactory;
+        };
+        RuntimeCompiler.prototype.clearCacheFor = function (compType) {
+            this._metadataResolver.clearCacheFor(compType);
+            this._compiledHostTemplateCache.delete(compType);
+            var compiledTemplate = this._compiledTemplateCache.get(compType);
+            if (compiledTemplate) {
+                this._templateNormalizer.clearCacheFor(compiledTemplate.normalizedCompMeta);
+                this._compiledTemplateCache.delete(compType);
+            }
         };
         RuntimeCompiler.prototype.clearCache = function () {
-            this._styleCache.clear();
+            this._metadataResolver.clearCache();
             this._compiledTemplateCache.clear();
-            this._hostCacheKeys.clear();
+            this._compiledHostTemplateCache.clear();
+            this._templateNormalizer.clearCache();
         };
-        RuntimeCompiler.prototype._loadAndCompileHostComponent = function (componentType) {
-            var compMeta = this._metadataResolver.getDirectiveMetadata(componentType);
-            var hostCacheKey = this._hostCacheKeys.get(compMeta.type.runtime);
-            if (isBlank(hostCacheKey)) {
-                hostCacheKey = new Object();
-                this._hostCacheKeys.set(compMeta.type.runtime, hostCacheKey);
+        RuntimeCompiler.prototype._getCompiledHostTemplate = function (type) {
+            var compiledTemplate = this._compiledHostTemplateCache.get(type);
+            if (isBlank(compiledTemplate)) {
+                var compMeta = this._metadataResolver.getDirectiveMetadata(type);
                 assertComponent(compMeta);
                 var hostMeta = createHostComponentMeta(compMeta.type, compMeta.selector);
-                this._loadAndCompileComponent(hostCacheKey, hostMeta, [compMeta], [], []);
-            }
-            var compTemplate = this._compiledTemplateCache.get(hostCacheKey);
-            return new CompileHostTemplate(compTemplate, compMeta);
-        };
-        RuntimeCompiler.prototype._loadAndCompileComponent = function (cacheKey, compMeta, viewDirectives, pipes, compilingComponentsPath) {
-            var _this = this;
-            var compiledTemplate = this._compiledTemplateCache.get(cacheKey);
-            if (isBlank(compiledTemplate)) {
-                var done = PromiseWrapper
-                    .all([this._compileComponentStyles(compMeta)].concat(viewDirectives.map(function (dirMeta) { return _this._templateNormalizer.normalizeDirective(dirMeta); })))
-                    .then(function (stylesAndNormalizedViewDirMetas) {
-                    var normalizedViewDirMetas = stylesAndNormalizedViewDirMetas.slice(1);
-                    var styles = stylesAndNormalizedViewDirMetas[0];
-                    var parsedTemplate = _this._templateParser.parse(compMeta, compMeta.template.template, normalizedViewDirMetas, pipes, compMeta.type.name);
-                    var childPromises = [];
-                    compiledTemplate.init(_this._compileComponent(compMeta, parsedTemplate, styles, pipes, compilingComponentsPath, childPromises));
-                    return PromiseWrapper.all(childPromises).then(function (_) { return compiledTemplate; });
-                });
-                compiledTemplate = new CompiledTemplate(done);
-                this._compiledTemplateCache.set(cacheKey, compiledTemplate);
+                compiledTemplate = new CompiledTemplate(true, compMeta.selector, compMeta.type, [], [type], [], [], this._templateNormalizer.normalizeDirective(hostMeta));
+                this._compiledHostTemplateCache.set(type, compiledTemplate);
             }
             return compiledTemplate;
         };
-        RuntimeCompiler.prototype._compileComponent = function (compMeta, parsedTemplate, styles, pipes, compilingComponentsPath, childPromises) {
-            var _this = this;
-            var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, new ExternalExpr(new CompileIdentifierMetadata({ runtime: styles })), pipes);
-            compileResult.dependencies.forEach(function (dep) {
-                if (dep instanceof ViewFactoryDependency) {
-                    var childCompilingComponentsPath = ListWrapper.clone(compilingComponentsPath);
-                    var childCacheKey = dep.comp.type.runtime;
-                    var childViewDirectives = _this._metadataResolver.getViewDirectivesMetadata(dep.comp.type.runtime);
-                    var childViewPipes = _this._metadataResolver.getViewPipesMetadata(dep.comp.type.runtime);
-                    var childIsRecursive = childCompilingComponentsPath.indexOf(childCacheKey) > -1;
-                    childCompilingComponentsPath.push(childCacheKey);
-                    var childComp = _this._loadAndCompileComponent(dep.comp.type.runtime, dep.comp, childViewDirectives, childViewPipes, childCompilingComponentsPath);
-                    dep.placeholder.runtime = childComp.proxyViewFactory;
-                    dep.placeholder.name = "viewFactory_" + dep.comp.type.name;
-                    if (!childIsRecursive) {
-                        // Only wait for a child if it is not a cycle
-                        childPromises.push(childComp.done);
+        RuntimeCompiler.prototype._getCompiledTemplate = function (type) {
+            var compiledTemplate = this._compiledTemplateCache.get(type);
+            if (isBlank(compiledTemplate)) {
+                var compMeta = this._metadataResolver.getDirectiveMetadata(type);
+                assertComponent(compMeta);
+                var viewDirectives = [];
+                var viewComponentTypes = [];
+                this._metadataResolver.getViewDirectivesMetadata(type).forEach(function (dirOrComp) {
+                    if (dirOrComp.isComponent) {
+                        viewComponentTypes.push(dirOrComp.type.runtime);
                     }
+                    else {
+                        viewDirectives.push(dirOrComp);
+                    }
+                });
+                var precompileComponentTypes = compMeta.precompile.map(function (typeMeta) { return typeMeta.runtime; });
+                var pipes = this._metadataResolver.getViewPipesMetadata(type);
+                compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, viewDirectives, viewComponentTypes, precompileComponentTypes, pipes, this._templateNormalizer.normalizeDirective(compMeta));
+                this._compiledTemplateCache.set(type, compiledTemplate);
+            }
+            return compiledTemplate;
+        };
+        RuntimeCompiler.prototype._getTransitiveCompiledTemplates = function (compType, isHost, target) {
+            var _this = this;
+            if (target === void 0) { target = new Set(); }
+            var template = isHost ? this._getCompiledHostTemplate(compType) : this._getCompiledTemplate(compType);
+            if (!target.has(template)) {
+                target.add(template);
+                template.viewComponentTypes.forEach(function (compType) { _this._getTransitiveCompiledTemplates(compType, false, target); });
+                template.precompileHostComponentTypes.forEach(function (compType) { _this._getTransitiveCompiledTemplates(compType, true, target); });
+            }
+            return target;
+        };
+        RuntimeCompiler.prototype._compileTemplate = function (template) {
+            var _this = this;
+            if (template.isCompiled) {
+                return;
+            }
+            var compMeta = template.normalizedCompMeta;
+            var externalStylesheetsByModuleUrl = new Map();
+            var stylesCompileResult = this._styleCompiler.compileComponent(compMeta);
+            stylesCompileResult.externalStylesheets.forEach(function (r) { externalStylesheetsByModuleUrl.set(r.meta.moduleUrl, r); });
+            this._resolveStylesCompileResult(stylesCompileResult.componentStylesheet, externalStylesheetsByModuleUrl);
+            var viewCompMetas = template.viewComponentTypes.map(function (compType) { return _this._getCompiledTemplate(compType).normalizedCompMeta; });
+            var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, template.viewDirectives.concat(viewCompMetas), template.viewPipes, compMeta.type.name);
+            var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), template.viewPipes);
+            var depTemplates = compileResult.dependencies.map(function (dep) {
+                var depTemplate;
+                if (dep instanceof ViewFactoryDependency) {
+                    depTemplate = _this._getCompiledTemplate(dep.comp.runtime);
+                    dep.placeholder.runtime = depTemplate.proxyViewFactory;
+                    dep.placeholder.name = "viewFactory_" + dep.comp.name;
                 }
                 else if (dep instanceof ComponentFactoryDependency) {
-                    var childComp = _this._loadAndCompileHostComponent(dep.comp.runtime);
-                    dep.placeholder.runtime = childComp.componentFactory;
+                    depTemplate = _this._getCompiledHostTemplate(dep.comp.runtime);
+                    dep.placeholder.runtime = depTemplate.proxyComponentFactory;
                     dep.placeholder.name = "compFactory_" + dep.comp.name;
-                    childPromises.push(childComp.done);
                 }
+                return depTemplate;
             });
+            var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
             var factory;
             if (IS_DART || !this._genConfig.useJit) {
-                factory = interpretStatements(compileResult.statements, compileResult.viewFactoryVar, new InterpretiveAppViewInstanceFactory());
+                factory = interpretStatements(statements, compileResult.viewFactoryVar, new InterpretiveAppViewInstanceFactory());
             }
             else {
-                factory = jitStatements(compMeta.type.name + ".template.js", compileResult.statements, compileResult.viewFactoryVar);
+                factory = jitStatements(template.compType.name + ".template.js", statements, compileResult.viewFactoryVar);
             }
-            return factory;
+            template.compiled(factory);
         };
-        RuntimeCompiler.prototype._compileComponentStyles = function (compMeta) {
-            var compileResult = this._styleCompiler.compileComponent(compMeta);
-            return this._resolveStylesCompileResult(compMeta.type.name, compileResult);
-        };
-        RuntimeCompiler.prototype._resolveStylesCompileResult = function (sourceUrl, result) {
+        RuntimeCompiler.prototype._resolveStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
             var _this = this;
-            var promises = result.dependencies.map(function (dep) { return _this._loadStylesheetDep(dep); });
-            return PromiseWrapper.all(promises)
-                .then(function (cssTexts) {
-                var nestedCompileResultPromises = [];
-                for (var i = 0; i < result.dependencies.length; i++) {
-                    var dep = result.dependencies[i];
-                    var cssText = cssTexts[i];
-                    var nestedCompileResult = _this._styleCompiler.compileStylesheet(dep.moduleUrl, cssText, dep.isShimmed);
-                    nestedCompileResultPromises.push(_this._resolveStylesCompileResult(dep.moduleUrl, nestedCompileResult));
-                }
-                return PromiseWrapper.all(nestedCompileResultPromises);
-            })
-                .then(function (nestedStylesArr) {
-                for (var i = 0; i < result.dependencies.length; i++) {
-                    var dep = result.dependencies[i];
-                    dep.valuePlaceholder.runtime = nestedStylesArr[i];
-                    dep.valuePlaceholder.name = "importedStyles" + i;
-                }
-                if (IS_DART || !_this._genConfig.useJit) {
-                    return interpretStatements(result.statements, result.stylesVar, new InterpretiveAppViewInstanceFactory());
-                }
-                else {
-                    return jitStatements(sourceUrl + ".css.js", result.statements, result.stylesVar);
-                }
+            result.dependencies.forEach(function (dep, i) {
+                var nestedCompileResult = externalStylesheetsByModuleUrl.get(dep.moduleUrl);
+                var nestedStylesArr = _this._resolveAndEvalStylesCompileResult(nestedCompileResult, externalStylesheetsByModuleUrl);
+                dep.valuePlaceholder.runtime = nestedStylesArr;
+                dep.valuePlaceholder.name = "importedStyles" + i;
             });
         };
-        RuntimeCompiler.prototype._loadStylesheetDep = function (dep) {
-            var cacheKey = "" + dep.moduleUrl + (dep.isShimmed ? '.shim' : '');
-            var cssTextPromise = this._styleCache.get(cacheKey);
-            if (isBlank(cssTextPromise)) {
-                cssTextPromise = this._xhr.get(dep.moduleUrl);
-                this._styleCache.set(cacheKey, cssTextPromise);
+        RuntimeCompiler.prototype._resolveAndEvalStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
+            this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
+            if (IS_DART || !this._genConfig.useJit) {
+                return interpretStatements(result.statements, result.stylesVar, new InterpretiveAppViewInstanceFactory());
             }
-            return cssTextPromise;
+            else {
+                return jitStatements(result.meta.moduleUrl + ".css.js", result.statements, result.stylesVar);
+            }
         };
         return RuntimeCompiler;
     }());
@@ -14577,26 +14706,58 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: TemplateParser, },
         { type: StyleCompiler, },
         { type: ViewCompiler, },
-        { type: XHR, },
         { type: CompilerConfig, },
     ];
-    var CompileHostTemplate = (function () {
-        function CompileHostTemplate(_template, compMeta) {
-            var _this = this;
-            this.componentFactory = new _angular_core.ComponentFactory(compMeta.selector, _template.proxyViewFactory, compMeta.type.runtime);
-            this.done = _template.done.then(function (_) { return _this.componentFactory; });
-        }
-        return CompileHostTemplate;
-    }());
     var CompiledTemplate = (function () {
-        function CompiledTemplate(done) {
+        function CompiledTemplate(isHost, selector, compType, viewDirectives, viewComponentTypes, precompileHostComponentTypes, viewPipes, _normalizeResult) {
             var _this = this;
-            this.done = done;
+            this.isHost = isHost;
+            this.compType = compType;
+            this.viewDirectives = viewDirectives;
+            this.viewComponentTypes = viewComponentTypes;
+            this.precompileHostComponentTypes = precompileHostComponentTypes;
+            this.viewPipes = viewPipes;
+            this._normalizeResult = _normalizeResult;
             this._viewFactory = null;
-            this.proxyViewFactory =
-                function (viewUtils /** TODO #9100 */, childInjector /** TODO #9100 */, contextEl /** TODO #9100 */) { return _this._viewFactory(viewUtils, childInjector, contextEl); };
+            this.loading = null;
+            this._normalizedCompMeta = null;
+            this.isCompiled = false;
+            this.isCompiledWithDeps = false;
+            this.proxyViewFactory = function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i - 0] = arguments[_i];
+                }
+                return _this._viewFactory.apply(null, args);
+            };
+            this.proxyComponentFactory = isHost ?
+                new _angular_core.ComponentFactory(selector, this.proxyViewFactory, compType.runtime) :
+                null;
+            if (_normalizeResult.syncResult) {
+                this._normalizedCompMeta = _normalizeResult.syncResult;
+            }
+            else {
+                this.loading = _normalizeResult.asyncResult.then(function (normalizedCompMeta) {
+                    _this._normalizedCompMeta = normalizedCompMeta;
+                    _this.loading = null;
+                });
+            }
         }
-        CompiledTemplate.prototype.init = function (viewFactory) { this._viewFactory = viewFactory; };
+        Object.defineProperty(CompiledTemplate.prototype, "normalizedCompMeta", {
+            get: function () {
+                if (this.loading) {
+                    throw new BaseException$1("Template is still loading for " + this.compType.name + "!");
+                }
+                return this._normalizedCompMeta;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        CompiledTemplate.prototype.compiled = function (viewFactory) {
+            this._viewFactory = viewFactory;
+            this.isCompiled = true;
+        };
+        CompiledTemplate.prototype.depsCompiled = function () { this.isCompiledWithDeps = true; };
         return CompiledTemplate;
     }());
     function assertComponent(meta) {
@@ -14962,6 +15123,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /*@ts2dart_Provider*/ { provide: CompilerConfig, useValue: new CompilerConfig() },
         RuntimeCompiler,
         /*@ts2dart_Provider*/ { provide: _angular_core.ComponentResolver, useExisting: RuntimeCompiler },
+        /*@ts2dart_Provider*/ { provide: _angular_core.Compiler, useExisting: RuntimeCompiler },
         DomElementSchemaRegistry,
         /*@ts2dart_Provider*/ { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
         UrlResolver, ViewResolver, DirectiveResolver, PipeResolver

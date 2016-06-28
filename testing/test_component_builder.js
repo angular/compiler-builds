@@ -104,24 +104,24 @@ var OverridingTestComponentBuilder = (function (_super) {
         return clone;
     };
     OverridingTestComponentBuilder.prototype.createAsync = function (rootComponentType) {
-        var _this = this;
-        var noNgZone = lang_1.IS_DART || this._injector.get(testing_1.ComponentFixtureNoNgZone, false);
-        var ngZone = noNgZone ? null : this._injector.get(core_1.NgZone, null);
-        var initComponent = function () {
-            var mockDirectiveResolver = _this._injector.get(index_1.DirectiveResolver);
-            var mockViewResolver = _this._injector.get(index_1.ViewResolver);
-            _this._viewOverrides.forEach(function (view, type) { return mockViewResolver.setView(type, view); });
-            _this._templateOverrides.forEach(function (template, type) { return mockViewResolver.setInlineTemplate(type, template); });
-            _this._animationOverrides.forEach(function (animationsEntry, type) { return mockViewResolver.setAnimations(type, animationsEntry); });
-            _this._directiveOverrides.forEach(function (overrides, component) {
-                overrides.forEach(function (to, from) { mockViewResolver.overrideViewDirective(component, from, to); });
-            });
-            _this._bindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setProvidersOverride(type, bindings); });
-            _this._viewBindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setViewProvidersOverride(type, bindings); });
-            var promise = _this._injector.get(core_1.ComponentResolver).resolveComponent(rootComponentType);
-            return promise.then(function (componentFactory) { return _this.createFromFactory(ngZone, componentFactory); });
-        };
-        return ngZone == null ? initComponent() : ngZone.run(initComponent);
+        this._applyMetadataOverrides();
+        return _super.prototype.createAsync.call(this, rootComponentType);
+    };
+    OverridingTestComponentBuilder.prototype.createSync = function (rootComponentType) {
+        this._applyMetadataOverrides();
+        return _super.prototype.createSync.call(this, rootComponentType);
+    };
+    OverridingTestComponentBuilder.prototype._applyMetadataOverrides = function () {
+        var mockDirectiveResolver = this._injector.get(index_1.DirectiveResolver);
+        var mockViewResolver = this._injector.get(index_1.ViewResolver);
+        this._viewOverrides.forEach(function (view, type) { mockViewResolver.setView(type, view); });
+        this._templateOverrides.forEach(function (template, type) { return mockViewResolver.setInlineTemplate(type, template); });
+        this._animationOverrides.forEach(function (animationsEntry, type) { return mockViewResolver.setAnimations(type, animationsEntry); });
+        this._directiveOverrides.forEach(function (overrides, component) {
+            overrides.forEach(function (to, from) { mockViewResolver.overrideViewDirective(component, from, to); });
+        });
+        this._bindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setProvidersOverride(type, bindings); });
+        this._viewBindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setViewProvidersOverride(type, bindings); });
     };
     /** @nocollapse */
     OverridingTestComponentBuilder.decorators = [

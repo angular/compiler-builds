@@ -299,6 +299,25 @@ export declare class CompileQueryMetadata {
     };
 }
 /**
+ * Metadata about a stylesheet
+ */
+export declare class CompileStylesheetMetadata {
+    moduleUrl: string;
+    styles: string[];
+    styleUrls: string[];
+    constructor({moduleUrl, styles, styleUrls}?: {
+        moduleUrl?: string;
+        styles?: string[];
+        styleUrls?: string[];
+    });
+    static fromJson(data: {
+        [key: string]: any;
+    }): CompileStylesheetMetadata;
+    toJson(): {
+        [key: string]: any;
+    };
+}
+/**
  * Metadata regarding compilation of a template.
  */
 export declare class CompileTemplateMetadata {
@@ -307,15 +326,17 @@ export declare class CompileTemplateMetadata {
     templateUrl: string;
     styles: string[];
     styleUrls: string[];
+    externalStylesheets: CompileStylesheetMetadata[];
     animations: CompileAnimationEntryMetadata[];
     ngContentSelectors: string[];
     interpolation: [string, string];
-    constructor({encapsulation, template, templateUrl, styles, styleUrls, animations, ngContentSelectors, interpolation}?: {
+    constructor({encapsulation, template, templateUrl, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation}?: {
         encapsulation?: ViewEncapsulation;
         template?: string;
         templateUrl?: string;
         styles?: string[];
         styleUrls?: string[];
+        externalStylesheets?: CompileStylesheetMetadata[];
         ngContentSelectors?: string[];
         animations?: CompileAnimationEntryMetadata[];
         interpolation?: [string, string];

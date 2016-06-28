@@ -9,23 +9,11 @@ import { Injectable, ViewMetadata, ComponentMetadata } from '@angular/core';
 import { ReflectorReader, reflector } from '../core_private';
 import { stringify, isBlank, isPresent } from '../src/facade/lang';
 import { BaseException } from '../src/facade/exceptions';
-import { Map } from '../src/facade/collection';
 export class ViewResolver {
     constructor(_reflector = reflector) {
         this._reflector = _reflector;
-        /** @internal */
-        this._cache = new Map();
     }
     resolve(component) {
-        var view = this._cache.get(component);
-        if (isBlank(view)) {
-            view = this._resolve(component);
-            this._cache.set(component, view);
-        }
-        return view;
-    }
-    /** @internal */
-    _resolve(component) {
         var compMeta;
         this._reflector.annotations(component).forEach(m => {
             if (m instanceof ComponentMetadata) {
