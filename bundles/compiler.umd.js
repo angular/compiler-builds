@@ -39,6 +39,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     // exports the original value of the symbol.
     var global$1 = globalScope;
     /**
+     * Runtime representation a type that a Component or other object is instances of.
+     *
+     * An example of a `Type` is `MyCustomComponent` class, which in JavaScript is be represented by
+     * the `MyCustomComponent` constructor function.
+     *
      * @stable
      */
     var Type = Function;
