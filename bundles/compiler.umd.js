@@ -6476,9 +6476,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             element.attrs.forEach(function (attr) {
                 var hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, animationProps, events, elementOrDirectiveRefs, elementVars);
                 var hasTemplateBinding = _this._parseInlineTemplateBinding(attr, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
-                if (hasTemplateBinding && isTemplateElement) {
-                    _this._reportError("Can't have template bindings on a <template> element but the '" + attr.name + "' attribute was used", attr.sourceSpan);
-                }
                 if (hasTemplateBinding && hasInlineTemplates) {
                     _this._reportError("Can't have multiple template bindings on one element. Use only one attribute named 'template' or prefixed with *", attr.sourceSpan);
                 }

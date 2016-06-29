@@ -280,9 +280,6 @@ class TemplateParseVisitor {
         element.attrs.forEach(attr => {
             var hasBinding = this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, animationProps, events, elementOrDirectiveRefs, elementVars);
             var hasTemplateBinding = this._parseInlineTemplateBinding(attr, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
-            if (hasTemplateBinding && isTemplateElement) {
-                this._reportError(`Can't have template bindings on a <template> element but the '${attr.name}' attribute was used`, attr.sourceSpan);
-            }
             if (hasTemplateBinding && hasInlineTemplates) {
                 this._reportError(`Can't have multiple template bindings on one element. Use only one attribute named 'template' or prefixed with *`, attr.sourceSpan);
             }
