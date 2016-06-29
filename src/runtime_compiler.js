@@ -138,14 +138,16 @@ var RuntimeCompiler = (function () {
         var depTemplates = compileResult.dependencies.map(function (dep) {
             var depTemplate;
             if (dep instanceof view_compiler_1.ViewFactoryDependency) {
-                depTemplate = _this._getCompiledTemplate(dep.comp.runtime);
-                dep.placeholder.runtime = depTemplate.proxyViewFactory;
-                dep.placeholder.name = "viewFactory_" + dep.comp.name;
+                var vfd = dep;
+                depTemplate = _this._getCompiledTemplate(vfd.comp.runtime);
+                vfd.placeholder.runtime = depTemplate.proxyViewFactory;
+                vfd.placeholder.name = "viewFactory_" + vfd.comp.name;
             }
             else if (dep instanceof view_compiler_1.ComponentFactoryDependency) {
-                depTemplate = _this._getCompiledHostTemplate(dep.comp.runtime);
-                dep.placeholder.runtime = depTemplate.proxyComponentFactory;
-                dep.placeholder.name = "compFactory_" + dep.comp.name;
+                var cfd = dep;
+                depTemplate = _this._getCompiledHostTemplate(cfd.comp.runtime);
+                cfd.placeholder.runtime = depTemplate.proxyComponentFactory;
+                cfd.placeholder.name = "compFactory_" + cfd.comp.name;
             }
             return depTemplate;
         });

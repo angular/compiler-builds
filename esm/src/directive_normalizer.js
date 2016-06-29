@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable, ViewEncapsulation } from '@angular/core';
+import { MapWrapper } from '../src/facade/collection';
 import { BaseException } from '../src/facade/exceptions';
 import { isBlank, isPresent } from '../src/facade/lang';
 import { CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
@@ -141,7 +142,7 @@ export class DirectiveNormalizer {
             loadedStylesheets.set(styleUrl, stylesheet);
             return this._loadMissingExternalStylesheets(stylesheet.styleUrls, loadedStylesheets);
         })))
-            .then((_) => Array.from(loadedStylesheets.values()));
+            .then((_) => MapWrapper.values(loadedStylesheets));
     }
     normalizeStylesheet(stylesheet) {
         var allStyleUrls = stylesheet.styleUrls.filter(isStyleUrlResolvable)

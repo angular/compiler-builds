@@ -111,11 +111,13 @@ exports.OfflineCompiler = OfflineCompiler;
 function _resolveViewStatements(compileResult) {
     compileResult.dependencies.forEach(function (dep) {
         if (dep instanceof view_compiler_1.ViewFactoryDependency) {
-            dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
+            var vfd = dep;
+            vfd.placeholder.moduleUrl = _ngfactoryModuleUrl(vfd.comp);
         }
         else if (dep instanceof view_compiler_1.ComponentFactoryDependency) {
-            dep.placeholder.name = _componentFactoryName(dep.comp);
-            dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
+            var cfd = dep;
+            cfd.placeholder.name = _componentFactoryName(cfd.comp);
+            cfd.placeholder.moduleUrl = _ngfactoryModuleUrl(cfd.comp);
         }
     });
     return compileResult.statements;

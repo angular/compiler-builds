@@ -7,6 +7,7 @@
  */
 "use strict";
 var core_1 = require('@angular/core');
+var collection_1 = require('../src/facade/collection');
 var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('../src/facade/lang');
 var compile_metadata_1 = require('./compile_metadata');
@@ -151,7 +152,7 @@ var DirectiveNormalizer = (function () {
             loadedStylesheets.set(styleUrl, stylesheet);
             return _this._loadMissingExternalStylesheets(stylesheet.styleUrls, loadedStylesheets);
         }); }))
-            .then(function (_) { return Array.from(loadedStylesheets.values()); });
+            .then(function (_) { return collection_1.MapWrapper.values(loadedStylesheets); });
     };
     DirectiveNormalizer.prototype.normalizeStylesheet = function (stylesheet) {
         var _this = this;

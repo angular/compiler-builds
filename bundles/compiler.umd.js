@@ -11141,11 +11141,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     function _resolveViewStatements(compileResult) {
         compileResult.dependencies.forEach(function (dep) {
             if (dep instanceof ViewFactoryDependency) {
-                dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
+                var vfd = dep;
+                vfd.placeholder.moduleUrl = _ngfactoryModuleUrl(vfd.comp);
             }
             else if (dep instanceof ComponentFactoryDependency) {
-                dep.placeholder.name = _componentFactoryName(dep.comp);
-                dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
+                var cfd = dep;
+                cfd.placeholder.name = _componentFactoryName(cfd.comp);
+                cfd.placeholder.moduleUrl = _ngfactoryModuleUrl(cfd.comp);
             }
         });
         return compileResult.statements;
@@ -11988,7 +11990,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 loadedStylesheets.set(styleUrl, stylesheet);
                 return _this._loadMissingExternalStylesheets(stylesheet.styleUrls, loadedStylesheets);
             }); }))
-                .then(function (_) { return Array.from(loadedStylesheets.values()); });
+                .then(function (_) { return MapWrapper.values(loadedStylesheets); });
         };
         DirectiveNormalizer.prototype.normalizeStylesheet = function (stylesheet) {
             var _this = this;
@@ -14656,14 +14658,16 @@ var __extends = (this && this.__extends) || function (d, b) {
             var depTemplates = compileResult.dependencies.map(function (dep) {
                 var depTemplate;
                 if (dep instanceof ViewFactoryDependency) {
-                    depTemplate = _this._getCompiledTemplate(dep.comp.runtime);
-                    dep.placeholder.runtime = depTemplate.proxyViewFactory;
-                    dep.placeholder.name = "viewFactory_" + dep.comp.name;
+                    var vfd = dep;
+                    depTemplate = _this._getCompiledTemplate(vfd.comp.runtime);
+                    vfd.placeholder.runtime = depTemplate.proxyViewFactory;
+                    vfd.placeholder.name = "viewFactory_" + vfd.comp.name;
                 }
                 else if (dep instanceof ComponentFactoryDependency) {
-                    depTemplate = _this._getCompiledHostTemplate(dep.comp.runtime);
-                    dep.placeholder.runtime = depTemplate.proxyComponentFactory;
-                    dep.placeholder.name = "compFactory_" + dep.comp.name;
+                    var cfd = dep;
+                    depTemplate = _this._getCompiledHostTemplate(cfd.comp.runtime);
+                    cfd.placeholder.runtime = depTemplate.proxyComponentFactory;
+                    cfd.placeholder.name = "compFactory_" + cfd.comp.name;
                 }
                 return depTemplate;
             });

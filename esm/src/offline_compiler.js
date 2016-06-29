@@ -101,11 +101,13 @@ export class OfflineCompiler {
 function _resolveViewStatements(compileResult) {
     compileResult.dependencies.forEach((dep) => {
         if (dep instanceof ViewFactoryDependency) {
-            dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
+            let vfd = dep;
+            vfd.placeholder.moduleUrl = _ngfactoryModuleUrl(vfd.comp);
         }
         else if (dep instanceof ComponentFactoryDependency) {
-            dep.placeholder.name = _componentFactoryName(dep.comp);
-            dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp);
+            let cfd = dep;
+            cfd.placeholder.name = _componentFactoryName(cfd.comp);
+            cfd.placeholder.moduleUrl = _ngfactoryModuleUrl(cfd.comp);
         }
     });
     return compileResult.statements;
