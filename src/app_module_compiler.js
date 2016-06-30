@@ -11,6 +11,7 @@ var compile_metadata_1 = require('./compile_metadata');
 var lang_1 = require('./facade/lang');
 var identifiers_1 = require('./identifiers');
 var o = require('./output/output_ast');
+var value_util_1 = require('./output/value_util');
 var parse_util_1 = require('./parse_util');
 var provider_parser_1 = require('./provider_parser');
 var util_1 = require('./util');
@@ -121,7 +122,7 @@ var _InjectorBuilder = (function () {
                 o.importExpr(provider.useClass).instantiate(depsExpr, o.importType(provider.useClass));
         }
         else {
-            result = o.literal(provider.useValue);
+            result = value_util_1.convertValueToOutputAst(provider.useValue);
         }
         return result;
     };

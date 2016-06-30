@@ -10,6 +10,7 @@ import { CompileDiDependencyMetadata, CompileIdentifierMetadata, CompileTokenMap
 import { isBlank, isPresent } from './facade/lang';
 import { Identifiers, identifierToken } from './identifiers';
 import * as o from './output/output_ast';
+import { convertValueToOutputAst } from './output/value_util';
 import { ParseLocation, ParseSourceFile, ParseSourceSpan } from './parse_util';
 import { AppModuleProviderParser } from './provider_parser';
 import { createDiTokenExpression } from './util';
@@ -109,7 +110,7 @@ class _InjectorBuilder {
                 o.importExpr(provider.useClass).instantiate(depsExpr, o.importType(provider.useClass));
         }
         else {
-            result = o.literal(provider.useValue);
+            result = convertValueToOutputAst(provider.useValue);
         }
         return result;
     }

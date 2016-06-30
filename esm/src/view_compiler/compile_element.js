@@ -9,6 +9,7 @@ import { ListWrapper, StringMapWrapper } from '../facade/collection';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
+import { convertValueToOutputAst } from '../output/value_util';
 import { ProviderAst, ProviderAstType } from '../template_ast';
 import { InjectMethodVars } from './constants';
 import { CompileTokenMap, CompileTokenMetadata, CompileProviderMetadata, CompileDiDependencyMetadata } from '../compile_metadata';
@@ -130,7 +131,7 @@ export class CompileElement extends CompileNode {
                         .instantiate(depsExpr, o.importType(provider.useClass));
                 }
                 else {
-                    return o.literal(provider.useValue);
+                    return convertValueToOutputAst(provider.useValue);
                 }
             });
             var propName = `_${resolvedProvider.token.name}_${this.nodeIndex}_${this._instances.size}`;

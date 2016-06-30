@@ -15,6 +15,7 @@ var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
+var value_util_1 = require('../output/value_util');
 var template_ast_1 = require('../template_ast');
 var constants_1 = require('./constants');
 var compile_metadata_1 = require('../compile_metadata');
@@ -141,7 +142,7 @@ var CompileElement = (function (_super) {
                         .instantiate(depsExpr, o.importType(provider.useClass));
                 }
                 else {
-                    return o.literal(provider.useValue);
+                    return value_util_1.convertValueToOutputAst(provider.useValue);
                 }
             });
             var propName = "_" + resolvedProvider.token.name + "_" + _this.nodeIndex + "_" + _this._instances.size;

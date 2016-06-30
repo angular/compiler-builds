@@ -429,4 +429,4 @@ export declare function literalArr(values: Expression[], type?: Type): LiteralAr
 export declare function literalMap(values: Array<Array<string | Expression>>, type?: MapType): LiteralMapExpr;
 export declare function not(expr: Expression): NotExpr;
 export declare function fn(params: FnParam[], body: Statement[], type?: Type): FunctionExpr;
-export declare function literal(value: any, type?: Type): Expression;
+export declare function literal(value: any, type?: Type): LiteralExpr;
