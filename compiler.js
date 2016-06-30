@@ -31,7 +31,6 @@ exports.CompileTypeMetadata = compiler_1.CompileTypeMetadata;
 exports.CompilerConfig = compiler_1.CompilerConfig;
 exports.DEFAULT_PACKAGE_URL_PROVIDER = compiler_1.DEFAULT_PACKAGE_URL_PROVIDER;
 exports.DirectiveResolver = compiler_1.DirectiveResolver;
-exports.NormalizedComponentWithViewDirectives = compiler_1.NormalizedComponentWithViewDirectives;
 exports.OfflineCompiler = compiler_1.OfflineCompiler;
 exports.PipeResolver = compiler_1.PipeResolver;
 exports.RenderTypes = compiler_1.RenderTypes;

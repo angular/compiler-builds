@@ -5,18 +5,17 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { ListWrapper, StringMapWrapper } from '../facade/collection';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { ProviderAst, ProviderAstType } from '../template_ast';
 import { InjectMethodVars } from './constants';
-import { CompileTokenMap, CompileTokenMetadata, CompileProviderMetadata, CompileDiDependencyMetadata, CompileIdentifierMetadata } from '../compile_metadata';
-import { getPropertyInView, createDiTokenExpression, injectFromViewParentInjector } from './util';
+import { CompileTokenMap, CompileTokenMetadata, CompileProviderMetadata, CompileDiDependencyMetadata } from '../compile_metadata';
+import { getPropertyInView, injectFromViewParentInjector } from './util';
 import { CompileQuery, createQueryList, addQueryToTokenMap } from './compile_query';
 import { CompileMethod } from './compile_method';
-import { ValueTransformer, visitValue } from '../util';
+import { createDiTokenExpression } from '../util';
 export class CompileNode {
     constructor(parent, view, nodeIndex, renderNode, sourceAst) {
         this.parent = parent;
@@ -131,7 +130,7 @@ export class CompileElement extends CompileNode {
                         .instantiate(depsExpr, o.importType(provider.useClass));
                 }
                 else {
-                    return _convertValueToOutputAst(provider.useValue);
+                    return o.literal(provider.useValue);
                 }
             });
             var propName = `_${resolvedProvider.token.name}_${this.nodeIndex}_${this._instances.size}`;
@@ -354,33 +353,6 @@ class _QueryWithRead {
     constructor(query, match) {
         this.query = query;
         this.read = isPresent(query.meta.read) ? query.meta.read : match;
-    }
-}
-function _convertValueToOutputAst(value) {
-    return visitValue(value, new _ValueOutputAstTransformer(), null);
-}
-class _ValueOutputAstTransformer extends ValueTransformer {
-    visitArray(arr, context) {
-        return o.literalArr(arr.map(value => visitValue(value, this, context)));
-    }
-    visitStringMap(map, context) {
-        var entries = [];
-        StringMapWrapper.forEach(map, (value, key) => {
-            entries.push([key, visitValue(value, this, context)]);
-        });
-        return o.literalMap(entries);
-    }
-    visitPrimitive(value, context) { return o.literal(value); }
-    visitOther(value, context) {
-        if (value instanceof CompileIdentifierMetadata) {
-            return o.importExpr(value);
-        }
-        else if (value instanceof o.Expression) {
-            return value;
-        }
-        else {
-            throw new BaseException(`Illegal state: Don't now how to compile value ${value}`);
-        }
     }
 }
 //# sourceMappingURL=compile_element.js.map

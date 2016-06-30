@@ -244,8 +244,10 @@ export declare class CompileTokenMetadata implements CompileMetadataWithIdentifi
 export declare class CompileTokenMap<VALUE> {
     private _valueMap;
     private _values;
+    private _tokens;
     add(token: CompileTokenMetadata, value: VALUE): void;
     get(token: CompileTokenMetadata): VALUE;
+    keys(): CompileTokenMetadata[];
     values(): VALUE[];
     size: number;
 }
@@ -457,4 +459,35 @@ export declare class CompilePipeMetadata implements CompileMetadataWithType {
     toJson(): {
         [key: string]: any;
     };
+}
+/**
+ * Metadata regarding compilation of a directive.
+ */
+export declare class CompileAppModuleMetadata implements CompileMetadataWithType {
+    type: CompileTypeMetadata;
+    providers: CompileProviderMetadata[];
+    directives: CompileTypeMetadata[];
+    pipes: CompileTypeMetadata[];
+    precompile: CompileTypeMetadata[];
+    modules: CompileTypeMetadata[];
+    constructor({type, providers, directives, pipes, precompile, modules}?: {
+        type?: CompileTypeMetadata;
+        providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
+        directives?: CompileTypeMetadata[];
+        pipes?: CompileTypeMetadata[];
+        precompile?: CompileTypeMetadata[];
+        modules?: CompileTypeMetadata[];
+    });
+    identifier: CompileIdentifierMetadata;
+    static fromJson(data: {
+        [key: string]: any;
+    }): CompileAppModuleMetadata;
+    toJson(): {
+        [key: string]: any;
+    };
+}
+export declare function isStaticSymbol(value: any): value is StaticSymbol;
+export interface StaticSymbol {
+    name: string;
+    filePath: string;
 }

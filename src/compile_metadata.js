@@ -466,12 +466,14 @@ var CompileTokenMap = (function () {
     function CompileTokenMap() {
         this._valueMap = new Map();
         this._values = [];
+        this._tokens = [];
     }
     CompileTokenMap.prototype.add = function (token, value) {
         var existing = this.get(token);
         if (lang_1.isPresent(existing)) {
             throw new exceptions_1.BaseException("Can only add to a TokenMap! Token: " + token.name);
         }
+        this._tokens.push(token);
         this._values.push(value);
         var rk = token.runtimeCacheKey;
         if (lang_1.isPresent(rk)) {
@@ -494,6 +496,7 @@ var CompileTokenMap = (function () {
         }
         return result;
     };
+    CompileTokenMap.prototype.keys = function () { return this._tokens; };
     CompileTokenMap.prototype.values = function () { return this._values; };
     Object.defineProperty(CompileTokenMap.prototype, "size", {
         get: function () { return this._values.length; },
@@ -854,7 +857,50 @@ var CompilePipeMetadata = (function () {
     return CompilePipeMetadata;
 }());
 exports.CompilePipeMetadata = CompilePipeMetadata;
+/**
+ * Metadata regarding compilation of a directive.
+ */
+var CompileAppModuleMetadata = (function () {
+    function CompileAppModuleMetadata(_a) {
+        var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, directives = _b.directives, pipes = _b.pipes, precompile = _b.precompile, modules = _b.modules;
+        this.type = type;
+        this.directives = _normalizeArray(directives);
+        this.pipes = _normalizeArray(pipes);
+        this.providers = _normalizeArray(providers);
+        this.precompile = _normalizeArray(precompile);
+        this.modules = _normalizeArray(modules);
+    }
+    Object.defineProperty(CompileAppModuleMetadata.prototype, "identifier", {
+        get: function () { return this.type; },
+        enumerable: true,
+        configurable: true
+    });
+    CompileAppModuleMetadata.fromJson = function (data) {
+        return new CompileAppModuleMetadata({
+            type: lang_1.isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
+            providers: _arrayFromJson(data['providers'], metadataFromJson),
+            directives: _arrayFromJson(data['directives'], metadataFromJson),
+            pipes: _arrayFromJson(data['pipes'], metadataFromJson),
+            precompile: _arrayFromJson(data['precompile'], CompileTypeMetadata.fromJson),
+            modules: _arrayFromJson(data['modules'], CompileTypeMetadata.fromJson)
+        });
+    };
+    CompileAppModuleMetadata.prototype.toJson = function () {
+        return {
+            'class': 'AppModule',
+            'type': lang_1.isPresent(this.type) ? this.type.toJson() : this.type,
+            'providers': _arrayToJson(this.providers),
+            'directives': _arrayToJson(this.directives),
+            'pipes': _arrayToJson(this.pipes),
+            'precompile': _arrayToJson(this.precompile),
+            'modules': _arrayToJson(this.modules)
+        };
+    };
+    return CompileAppModuleMetadata;
+}());
+exports.CompileAppModuleMetadata = CompileAppModuleMetadata;
 var _COMPILE_METADATA_FROM_JSON = {
+    'AppModule': CompileAppModuleMetadata.fromJson,
     'Directive': CompileDirectiveMetadata.fromJson,
     'Pipe': CompilePipeMetadata.fromJson,
     'Type': CompileTypeMetadata.fromJson,
@@ -893,4 +939,8 @@ function _objToJson(obj) {
 function _normalizeArray(obj) {
     return lang_1.isPresent(obj) ? obj : [];
 }
+function isStaticSymbol(value) {
+    return lang_1.isStringMap(value) && lang_1.isPresent(value['name']) && lang_1.isPresent(value['filePath']);
+}
+exports.isStaticSymbol = isStaticSymbol;
 //# sourceMappingURL=compile_metadata.js.map

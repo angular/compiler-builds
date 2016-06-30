@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import * as app_module_compiler from './src/app_module_compiler';
 import * as directive_normalizer from './src/directive_normalizer';
 import * as lexer from './src/expression_parser/lexer';
 import * as parser from './src/expression_parser/parser';
@@ -49,6 +50,7 @@ export var __compiler_private__;
     __compiler_private__.DomElementSchemaRegistry = dom_element_schema_registry.DomElementSchemaRegistry;
     __compiler_private__.StyleCompiler = style_compiler.StyleCompiler;
     __compiler_private__.ViewCompiler = view_compiler.ViewCompiler;
+    __compiler_private__.AppModuleCompiler = app_module_compiler.AppModuleCompiler;
     __compiler_private__.TypeScriptEmitter = ts_emitter.TypeScriptEmitter;
 })(__compiler_private__ || (__compiler_private__ = {}));
 //# sourceMappingURL=private_export.js.map

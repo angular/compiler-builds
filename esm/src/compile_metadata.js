@@ -9,7 +9,7 @@ import { ChangeDetectionStrategy } from '@angular/core';
 import { CHANGE_DETECTION_STRATEGY_VALUES, LIFECYCLE_HOOKS_VALUES, VIEW_ENCAPSULATION_VALUES, reflector } from '../core_private';
 import { ListWrapper, StringMapWrapper } from '../src/facade/collection';
 import { BaseException, unimplemented } from '../src/facade/exceptions';
-import { NumberWrapper, RegExpWrapper, isArray, isBlank, isBoolean, isNumber, isPresent, isString, normalizeBlank, normalizeBool, serializeEnum } from '../src/facade/lang';
+import { NumberWrapper, RegExpWrapper, isArray, isBlank, isBoolean, isNumber, isPresent, isString, isStringMap, normalizeBlank, normalizeBool, serializeEnum } from '../src/facade/lang';
 import { CssSelector } from './selector';
 import { getUrlScheme } from './url_resolver';
 import { sanitizeIdentifier, splitAtColon } from './util';
@@ -359,12 +359,14 @@ export class CompileTokenMap {
     constructor() {
         this._valueMap = new Map();
         this._values = [];
+        this._tokens = [];
     }
     add(token, value) {
         var existing = this.get(token);
         if (isPresent(existing)) {
             throw new BaseException(`Can only add to a TokenMap! Token: ${token.name}`);
         }
+        this._tokens.push(token);
         this._values.push(value);
         var rk = token.runtimeCacheKey;
         if (isPresent(rk)) {
@@ -387,6 +389,7 @@ export class CompileTokenMap {
         }
         return result;
     }
+    keys() { return this._tokens; }
     values() { return this._values; }
     get size() { return this._values.length; }
 }
@@ -705,7 +708,43 @@ export class CompilePipeMetadata {
         };
     }
 }
+/**
+ * Metadata regarding compilation of a directive.
+ */
+export class CompileAppModuleMetadata {
+    constructor({ type, providers, directives, pipes, precompile, modules } = {}) {
+        this.type = type;
+        this.directives = _normalizeArray(directives);
+        this.pipes = _normalizeArray(pipes);
+        this.providers = _normalizeArray(providers);
+        this.precompile = _normalizeArray(precompile);
+        this.modules = _normalizeArray(modules);
+    }
+    get identifier() { return this.type; }
+    static fromJson(data) {
+        return new CompileAppModuleMetadata({
+            type: isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
+            providers: _arrayFromJson(data['providers'], metadataFromJson),
+            directives: _arrayFromJson(data['directives'], metadataFromJson),
+            pipes: _arrayFromJson(data['pipes'], metadataFromJson),
+            precompile: _arrayFromJson(data['precompile'], CompileTypeMetadata.fromJson),
+            modules: _arrayFromJson(data['modules'], CompileTypeMetadata.fromJson)
+        });
+    }
+    toJson() {
+        return {
+            'class': 'AppModule',
+            'type': isPresent(this.type) ? this.type.toJson() : this.type,
+            'providers': _arrayToJson(this.providers),
+            'directives': _arrayToJson(this.directives),
+            'pipes': _arrayToJson(this.pipes),
+            'precompile': _arrayToJson(this.precompile),
+            'modules': _arrayToJson(this.modules)
+        };
+    }
+}
 var _COMPILE_METADATA_FROM_JSON = {
+    'AppModule': CompileAppModuleMetadata.fromJson,
     'Directive': CompileDirectiveMetadata.fromJson,
     'Pipe': CompilePipeMetadata.fromJson,
     'Type': CompileTypeMetadata.fromJson,
@@ -743,5 +782,8 @@ function _objToJson(obj) {
 }
 function _normalizeArray(obj) {
     return isPresent(obj) ? obj : [];
+}
+export function isStaticSymbol(value) {
+    return isStringMap(value) && isPresent(value['name']) && isPresent(value['filePath']);
 }
 //# sourceMappingURL=compile_metadata.js.map

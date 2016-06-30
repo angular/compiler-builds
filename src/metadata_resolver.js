@@ -35,6 +35,7 @@ var CompileMetadataResolver = (function () {
         this._reflector = _reflector;
         this._directiveCache = new Map();
         this._pipeCache = new Map();
+        this._appModuleCache = new Map();
         this._anonymousTypes = new Map();
         this._anonymousTypeIndex = 0;
     }
@@ -51,13 +52,15 @@ var CompileMetadataResolver = (function () {
         }
         return util_1.sanitizeIdentifier(identifier);
     };
-    CompileMetadataResolver.prototype.clearCacheFor = function (compType) {
-        this._directiveCache.delete(compType);
-        this._pipeCache.delete(compType);
+    CompileMetadataResolver.prototype.clearCacheFor = function (type) {
+        this._directiveCache.delete(type);
+        this._pipeCache.delete(type);
+        this._appModuleCache.delete(type);
     };
     CompileMetadataResolver.prototype.clearCache = function () {
         this._directiveCache.clear();
         this._pipeCache.clear();
+        this._appModuleCache.clear();
     };
     CompileMetadataResolver.prototype.getAnimationEntryMetadata = function (entry) {
         var _this = this;
@@ -103,6 +106,7 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype.getDirectiveMetadata = function (directiveType) {
         var _this = this;
+        directiveType = core_1.resolveForwardRef(directiveType);
         var meta = this._directiveCache.get(directiveType);
         if (lang_1.isBlank(meta)) {
             var dirMeta = this._directiveResolver.resolve(directiveType);
@@ -171,6 +175,67 @@ var CompileMetadataResolver = (function () {
         }
         return meta;
     };
+    CompileMetadataResolver.prototype.getAppModuleMetadata = function (moduleType, meta) {
+        var _this = this;
+        if (meta === void 0) { meta = null; }
+        // Only cache if we read the metadata via the reflector,
+        // as we use the moduleType as cache key.
+        var useCache = !meta;
+        moduleType = core_1.resolveForwardRef(moduleType);
+        var compileMeta = this._appModuleCache.get(moduleType);
+        if (lang_1.isBlank(compileMeta) || !useCache) {
+            if (!meta) {
+                meta = this._reflector.annotations(moduleType)
+                    .find(function (meta) { return meta instanceof core_1.AppModuleMetadata; });
+            }
+            if (!meta) {
+                throw new exceptions_1.BaseException("Could not compile '" + lang_1.stringify(moduleType) + "' because it is not an AppModule.");
+            }
+            var providers_1 = [];
+            if (meta.providers) {
+                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers));
+            }
+            var directives_1 = [];
+            if (meta.directives) {
+                directives_1.push.apply(directives_1, flattenArray(meta.directives)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+            }
+            var pipes_1 = [];
+            if (meta.pipes) {
+                pipes_1.push.apply(pipes_1, flattenArray(meta.pipes)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+            }
+            var precompile_1 = [];
+            if (meta.precompile) {
+                precompile_1.push.apply(precompile_1, flattenArray(meta.precompile)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+            }
+            var modules_1 = [];
+            if (meta.modules) {
+                flattenArray(meta.modules).forEach(function (moduleType) {
+                    var meta = _this.getAppModuleMetadata(moduleType);
+                    providers_1.push.apply(providers_1, meta.providers);
+                    directives_1.push.apply(directives_1, meta.directives);
+                    pipes_1.push.apply(pipes_1, meta.pipes);
+                    precompile_1.push.apply(precompile_1, meta.precompile);
+                    modules_1.push(meta.type);
+                    modules_1.push.apply(modules_1, meta.modules);
+                });
+            }
+            compileMeta = new cpl.CompileAppModuleMetadata({
+                type: this.getTypeMetadata(moduleType, staticTypeModuleUrl(moduleType)),
+                providers: providers_1,
+                directives: directives_1,
+                pipes: pipes_1,
+                precompile: precompile_1,
+                modules: modules_1
+            });
+            if (useCache) {
+                this._appModuleCache.set(moduleType, compileMeta);
+            }
+        }
+        return compileMeta;
+    };
     /**
      * @param someType a symbol which may or may not be a directive type
      * @returns {cpl.CompileDirectiveMetadata} if possible, otherwise null.
@@ -188,6 +253,7 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype.getTypeMetadata = function (type, moduleUrl, dependencies) {
         if (dependencies === void 0) { dependencies = null; }
+        type = core_1.resolveForwardRef(type);
         return new cpl.CompileTypeMetadata({
             name: this.sanitizeTokenName(type),
             moduleUrl: moduleUrl,
@@ -197,6 +263,7 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype.getFactoryMetadata = function (factory, moduleUrl, dependencies) {
         if (dependencies === void 0) { dependencies = null; }
+        factory = core_1.resolveForwardRef(factory);
         return new cpl.CompileFactoryMetadata({
             name: this.sanitizeTokenName(factory),
             moduleUrl: moduleUrl,
@@ -205,6 +272,7 @@ var CompileMetadataResolver = (function () {
         });
     };
     CompileMetadataResolver.prototype.getPipeMetadata = function (pipeType) {
+        pipeType = core_1.resolveForwardRef(pipeType);
         var meta = this._pipeCache.get(pipeType);
         if (lang_1.isBlank(meta)) {
             var pipeMeta = this._pipeResolver.resolve(pipeType);
@@ -345,8 +413,11 @@ var CompileMetadataResolver = (function () {
             else if (core_private_1.isProviderLiteral(provider)) {
                 return _this.getProviderMetadata(core_private_1.createProvider(provider));
             }
-            else {
+            else if (isValidType(provider)) {
                 return _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
+            }
+            else {
+                throw new exceptions_1.BaseException("Invalid provider - only instances of Provider and Type are allowed, got: " + lang_1.stringify(provider));
             }
         });
     };
@@ -463,17 +534,14 @@ function verifyNonBlankProviders(directiveType, providersTree, providersType) {
     }
     return providersTree;
 }
-function isStaticType(value) {
-    return lang_1.isStringMap(value) && lang_1.isPresent(value['name']) && lang_1.isPresent(value['filePath']);
-}
 function isValidType(value) {
-    return isStaticType(value) || (value instanceof lang_1.Type);
+    return cpl.isStaticSymbol(value) || (value instanceof lang_1.Type);
 }
 function staticTypeModuleUrl(value) {
-    return isStaticType(value) ? value['filePath'] : null;
+    return cpl.isStaticSymbol(value) ? value.filePath : null;
 }
 function componentModuleUrl(reflector, type, cmpMetadata) {
-    if (isStaticType(type)) {
+    if (cpl.isStaticSymbol(type)) {
         return staticTypeModuleUrl(type);
     }
     if (lang_1.isPresent(cmpMetadata.moduleId)) {
@@ -494,8 +562,8 @@ var _CompileValueConverter = (function (_super) {
         _super.apply(this, arguments);
     }
     _CompileValueConverter.prototype.visitOther = function (value, context) {
-        if (isStaticType(value)) {
-            return new cpl.CompileIdentifierMetadata({ name: value['name'], moduleUrl: staticTypeModuleUrl(value) });
+        if (cpl.isStaticSymbol(value)) {
+            return new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath });
         }
         else {
             return new cpl.CompileIdentifierMetadata({ runtime: value });

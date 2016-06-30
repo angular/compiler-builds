@@ -12,6 +12,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var collection_1 = require('../src/facade/collection');
+var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('../src/facade/lang');
 var compile_metadata_1 = require('./compile_metadata');
 var identifiers_1 = require('./identifiers');
@@ -267,6 +268,106 @@ var ProviderElementContext = (function () {
     return ProviderElementContext;
 }());
 exports.ProviderElementContext = ProviderElementContext;
+var AppModuleProviderParser = (function () {
+    function AppModuleProviderParser(appModule, sourceSpan) {
+        var _this = this;
+        this._transformedProviders = new compile_metadata_1.CompileTokenMap();
+        this._seenProviders = new compile_metadata_1.CompileTokenMap();
+        this._unparsedProviders = [];
+        this._errors = [];
+        this._allProviders = new compile_metadata_1.CompileTokenMap();
+        [appModule.type].concat(appModule.modules).forEach(function (appModuleType) {
+            var appModuleProvider = new compile_metadata_1.CompileProviderMetadata({ token: new compile_metadata_1.CompileTokenMetadata({ identifier: appModuleType }), useClass: appModuleType });
+            _resolveProviders([appModuleProvider], template_ast_1.ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders);
+        });
+        _resolveProviders(_normalizeProviders(appModule.providers, sourceSpan, this._errors), template_ast_1.ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
+    }
+    AppModuleProviderParser.prototype.parse = function () {
+        var _this = this;
+        this._allProviders.values().forEach(function (provider) { _this._getOrCreateLocalProvider(provider.token, provider.eager); });
+        if (this._errors.length > 0) {
+            var errorString = this._errors.join('\n');
+            throw new exceptions_1.BaseException("Provider parse errors:\n" + errorString);
+        }
+        return this._transformedProviders.values();
+    };
+    AppModuleProviderParser.prototype._getOrCreateLocalProvider = function (token, eager) {
+        var _this = this;
+        var resolvedProvider = this._allProviders.get(token);
+        if (lang_1.isBlank(resolvedProvider)) {
+            return null;
+        }
+        var transformedProviderAst = this._transformedProviders.get(token);
+        if (lang_1.isPresent(transformedProviderAst)) {
+            return transformedProviderAst;
+        }
+        if (lang_1.isPresent(this._seenProviders.get(token))) {
+            this._errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, resolvedProvider.sourceSpan));
+            return null;
+        }
+        this._seenProviders.add(token, true);
+        var transformedProviders = resolvedProvider.providers.map(function (provider) {
+            var transformedUseValue = provider.useValue;
+            var transformedUseExisting = provider.useExisting;
+            var transformedDeps;
+            if (lang_1.isPresent(provider.useExisting)) {
+                var existingDiDep = _this._getDependency(new compile_metadata_1.CompileDiDependencyMetadata({ token: provider.useExisting }), eager, resolvedProvider.sourceSpan);
+                if (lang_1.isPresent(existingDiDep.token)) {
+                    transformedUseExisting = existingDiDep.token;
+                }
+                else {
+                    transformedUseExisting = null;
+                    transformedUseValue = existingDiDep.value;
+                }
+            }
+            else if (lang_1.isPresent(provider.useFactory)) {
+                var deps = lang_1.isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+                transformedDeps =
+                    deps.map(function (dep) { return _this._getDependency(dep, eager, resolvedProvider.sourceSpan); });
+            }
+            else if (lang_1.isPresent(provider.useClass)) {
+                var deps = lang_1.isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+                transformedDeps =
+                    deps.map(function (dep) { return _this._getDependency(dep, eager, resolvedProvider.sourceSpan); });
+            }
+            return _transformProvider(provider, {
+                useExisting: transformedUseExisting,
+                useValue: transformedUseValue,
+                deps: transformedDeps
+            });
+        });
+        transformedProviderAst =
+            _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
+        this._transformedProviders.add(token, transformedProviderAst);
+        return transformedProviderAst;
+    };
+    AppModuleProviderParser.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
+        if (eager === void 0) { eager = null; }
+        var foundLocal = false;
+        if (!dep.isSkipSelf && lang_1.isPresent(dep.token)) {
+            // access the injector
+            if (dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.Injector)) ||
+                dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ComponentFactoryResolver))) {
+                foundLocal = true;
+            }
+            else if (lang_1.isPresent(this._getOrCreateLocalProvider(dep.token, eager))) {
+                foundLocal = true;
+            }
+        }
+        var result = dep;
+        if (dep.isSelf && !foundLocal) {
+            if (dep.isOptional) {
+                result = new compile_metadata_1.CompileDiDependencyMetadata({ isValue: true, value: null });
+            }
+            else {
+                this._errors.push(new ProviderError("No provider for " + dep.token.name, requestorSourceSpan));
+            }
+        }
+        return result;
+    };
+    return AppModuleProviderParser;
+}());
+exports.AppModuleProviderParser = AppModuleProviderParser;
 function _transformProvider(provider, _a) {
     var useExisting = _a.useExisting, useValue = _a.useValue, deps = _a.deps;
     return new compile_metadata_1.CompileProviderMetadata({

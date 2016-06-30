@@ -18,6 +18,7 @@ export var AppElement = r.AppElement;
 export var CodegenComponentFactoryResolver = r.CodegenComponentFactoryResolver;
 export var AppView = r.AppView;
 export var DebugAppView = r.DebugAppView;
+export var AppModuleInjector = r.AppModuleInjector;
 export var ViewType = r.ViewType;
 export var MAX_INTERPOLATION_VALUES = r.MAX_INTERPOLATION_VALUES;
 export var checkBinding = r.checkBinding;

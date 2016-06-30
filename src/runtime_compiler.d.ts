@@ -5,10 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, ComponentFactory, ComponentResolver } from '@angular/core';
+import { AppModuleFactory, AppModuleMetadata, Compiler, ComponentFactory, ComponentResolver } from '@angular/core';
 import { ConcreteType, Type } from '../src/facade/lang';
 import { StyleCompiler } from './style_compiler';
 import { ViewCompiler } from './view_compiler/view_compiler';
+import { AppModuleCompiler } from './app_module_compiler';
 import { TemplateParser } from './template_parser';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { CompileMetadataResolver } from './metadata_resolver';
@@ -28,18 +29,30 @@ export declare class RuntimeCompiler implements ComponentResolver, Compiler {
     private _templateParser;
     private _styleCompiler;
     private _viewCompiler;
+    private _appModuleCompiler;
     private _genConfig;
     private _compiledTemplateCache;
     private _compiledHostTemplateCache;
-    constructor(_metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _genConfig: CompilerConfig);
+    private _compiledAppModuleCache;
+    constructor(_metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _appModuleCompiler: AppModuleCompiler, _genConfig: CompilerConfig);
     resolveComponent(component: Type | string): Promise<ComponentFactory<any>>;
-    compileComponentAsync<T>(compType: ConcreteType<T>): Promise<ComponentFactory<T>>;
-    compileComponentSync<T>(compType: ConcreteType<T>): ComponentFactory<T>;
-    clearCacheFor(compType: Type): void;
+    compileAppModuleSync<T>(moduleType: ConcreteType<T>, metadata?: AppModuleMetadata): AppModuleFactory<T>;
+    compileAppModuleAsync<T>(moduleType: ConcreteType<T>, metadata?: AppModuleMetadata): Promise<AppModuleFactory<T>>;
+    private _compileAppModule<T>(moduleType, isSync, metadata?);
+    compileComponentAsync<T>(compType: ConcreteType<T>, {moduleDirectives, modulePipes}?: {
+        moduleDirectives?: ConcreteType<any>[];
+        modulePipes?: ConcreteType<any>[];
+    }): Promise<ComponentFactory<T>>;
+    compileComponentSync<T>(compType: ConcreteType<T>, {moduleDirectives, modulePipes}?: {
+        moduleDirectives?: ConcreteType<any>[];
+        modulePipes?: ConcreteType<any>[];
+    }): ComponentFactory<T>;
+    private _compileComponent<T>(compType, isSync, moduleDirectives, modulePipes);
+    clearCacheFor(type: Type): void;
     clearCache(): void;
-    private _getCompiledHostTemplate(type);
-    private _getCompiledTemplate(type);
-    private _getTransitiveCompiledTemplates(compType, isHost, target?);
+    private _createCompiledHostTemplate(type);
+    private _createCompiledTemplate(type, moduleDirectives, modulePipes);
+    private _getTransitiveCompiledTemplates(compType, isHost, moduleDirectives, modulePipes, target?);
     private _compileTemplate(template);
     private _resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
     private _resolveAndEvalStylesCompileResult(result, externalStylesheetsByModuleUrl);

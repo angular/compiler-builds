@@ -11,7 +11,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+var compile_metadata_1 = require('../compile_metadata');
+var collection_1 = require('../facade/collection');
+var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
+var util_1 = require('../util');
 //// Types
 (function (TypeModifier) {
     TypeModifier[TypeModifier["Const"] = 0] = "Const";
@@ -959,11 +963,6 @@ function importType(id, typeParams, typeModifiers) {
     return lang_1.isPresent(id) ? new ExternalType(id, typeParams, typeModifiers) : null;
 }
 exports.importType = importType;
-function literal(value, type) {
-    if (type === void 0) { type = null; }
-    return new LiteralExpr(value, type);
-}
-exports.literal = literal;
 function literalArr(values, type) {
     if (type === void 0) { type = null; }
     return new LiteralArrayExpr(values, type);
@@ -983,4 +982,38 @@ function fn(params, body, type) {
     return new FunctionExpr(params, body, type);
 }
 exports.fn = fn;
+function literal(value, type) {
+    if (type === void 0) { type = null; }
+    return util_1.visitValue(value, new _ValueOutputAstTransformer(), type);
+}
+exports.literal = literal;
+var _ValueOutputAstTransformer = (function () {
+    function _ValueOutputAstTransformer() {
+    }
+    _ValueOutputAstTransformer.prototype.visitArray = function (arr, type) {
+        var _this = this;
+        return literalArr(arr.map(function (value) { return util_1.visitValue(value, _this, null); }), type);
+    };
+    _ValueOutputAstTransformer.prototype.visitStringMap = function (map, type) {
+        var _this = this;
+        var entries = [];
+        collection_1.StringMapWrapper.forEach(map, function (value, key) {
+            entries.push([key, util_1.visitValue(value, _this, null)]);
+        });
+        return literalMap(entries, type);
+    };
+    _ValueOutputAstTransformer.prototype.visitPrimitive = function (value, type) { return new LiteralExpr(value, type); };
+    _ValueOutputAstTransformer.prototype.visitOther = function (value, type) {
+        if (value instanceof compile_metadata_1.CompileIdentifierMetadata) {
+            return importExpr(value);
+        }
+        else if (value instanceof Expression) {
+            return value;
+        }
+        else {
+            throw new exceptions_1.BaseException("Illegal state: Don't now how to compile value " + value);
+        }
+    };
+    return _ValueOutputAstTransformer;
+}());
 //# sourceMappingURL=output_ast.js.map

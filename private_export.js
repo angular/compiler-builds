@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
+var app_module_compiler = require('./src/app_module_compiler');
 var directive_normalizer = require('./src/directive_normalizer');
 var lexer = require('./src/expression_parser/lexer');
 var parser = require('./src/expression_parser/parser');
@@ -50,6 +51,7 @@ var __compiler_private__;
     __compiler_private__.DomElementSchemaRegistry = dom_element_schema_registry.DomElementSchemaRegistry;
     __compiler_private__.StyleCompiler = style_compiler.StyleCompiler;
     __compiler_private__.ViewCompiler = view_compiler.ViewCompiler;
+    __compiler_private__.AppModuleCompiler = app_module_compiler.AppModuleCompiler;
     __compiler_private__.TypeScriptEmitter = ts_emitter.TypeScriptEmitter;
 })(__compiler_private__ = exports.__compiler_private__ || (exports.__compiler_private__ = {}));
 //# sourceMappingURL=private_export.js.map

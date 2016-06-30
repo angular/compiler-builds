@@ -23,6 +23,7 @@ export declare var CodegenComponentFactoryResolver: typeof t.CodegenComponentFac
 export declare var AppView: typeof t.AppView;
 export declare type DebugAppView<T> = t.DebugAppView<T>;
 export declare var DebugAppView: typeof t.DebugAppView;
+export declare var AppModuleInjector: typeof t.AppModuleInjector;
 export declare type ViewType = t.ViewType;
 export declare var ViewType: typeof t.ViewType;
 export declare var MAX_INTERPOLATION_VALUES: typeof t.MAX_INTERPOLATION_VALUES;

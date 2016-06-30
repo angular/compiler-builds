@@ -13,6 +13,9 @@ export declare class Identifiers {
     static TemplateRef_: CompileIdentifierMetadata;
     static CodegenComponentFactoryResolver: CompileIdentifierMetadata;
     static ComponentFactoryResolver: CompileIdentifierMetadata;
+    static ComponentFactory: CompileIdentifierMetadata;
+    static AppModuleFactory: CompileIdentifierMetadata;
+    static AppModuleInjector: CompileIdentifierMetadata;
     static ValueUnwrapper: CompileIdentifierMetadata;
     static Injector: CompileIdentifierMetadata;
     static ViewEncapsulation: CompileIdentifierMetadata;

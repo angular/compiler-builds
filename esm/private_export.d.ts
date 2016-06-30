@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import * as app_module_compiler from './src/app_module_compiler';
 import * as directive_normalizer from './src/directive_normalizer';
 import * as lexer from './src/expression_parser/lexer';
 import * as parser from './src/expression_parser/parser';
@@ -71,6 +72,8 @@ export declare namespace __compiler_private__ {
     var StyleCompiler: typeof style_compiler.StyleCompiler;
     type ViewCompiler = view_compiler.ViewCompiler;
     var ViewCompiler: typeof view_compiler.ViewCompiler;
+    type AppModuleCompiler = app_module_compiler.AppModuleCompiler;
+    var AppModuleCompiler: typeof app_module_compiler.AppModuleCompiler;
     type TypeScriptEmitter = ts_emitter.TypeScriptEmitter;
     var TypeScriptEmitter: typeof ts_emitter.TypeScriptEmitter;
 }

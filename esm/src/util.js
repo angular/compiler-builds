@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { StringMapWrapper } from './facade/collection';
-import { IS_DART, StringWrapper, isArray, isBlank, isPrimitive, isStrictStringMap } from './facade/lang';
+import { IS_DART, StringWrapper, isArray, isBlank, isPresent, isPrimitive, isStrictStringMap } from './facade/lang';
+import * as o from './output/output_ast';
 export var MODULE_SUFFIX = IS_DART ? '.dart' : '';
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 export function camelCaseToDashCase(input) {
@@ -67,6 +68,27 @@ export function assetUrl(pkg, path = null, type = 'src') {
         }
         else {
             return `asset:@angular/lib/${pkg}/src/${path}`;
+        }
+    }
+}
+export function createDiTokenExpression(token) {
+    if (isPresent(token.value)) {
+        return o.literal(token.value);
+    }
+    else if (token.identifierIsInstance) {
+        return o.importExpr(token.identifier)
+            .instantiate([], o.importType(token.identifier, [], [o.TypeModifier.Const]));
+    }
+    else {
+        return o.importExpr(token.identifier);
+    }
+}
+export class SyncAsyncResult {
+    constructor(syncResult, asyncResult = null) {
+        this.syncResult = syncResult;
+        this.asyncResult = asyncResult;
+        if (!asyncResult) {
+            asyncResult = Promise.resolve(syncResult);
         }
     }
 }

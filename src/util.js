@@ -8,6 +8,7 @@
 "use strict";
 var collection_1 = require('./facade/collection');
 var lang_1 = require('./facade/lang');
+var o = require('./output/output_ast');
 exports.MODULE_SUFFIX = lang_1.IS_DART ? '.dart' : '';
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 function camelCaseToDashCase(input) {
@@ -84,4 +85,29 @@ function assetUrl(pkg, path, type) {
     }
 }
 exports.assetUrl = assetUrl;
+function createDiTokenExpression(token) {
+    if (lang_1.isPresent(token.value)) {
+        return o.literal(token.value);
+    }
+    else if (token.identifierIsInstance) {
+        return o.importExpr(token.identifier)
+            .instantiate([], o.importType(token.identifier, [], [o.TypeModifier.Const]));
+    }
+    else {
+        return o.importExpr(token.identifier);
+    }
+}
+exports.createDiTokenExpression = createDiTokenExpression;
+var SyncAsyncResult = (function () {
+    function SyncAsyncResult(syncResult, asyncResult) {
+        if (asyncResult === void 0) { asyncResult = null; }
+        this.syncResult = syncResult;
+        this.asyncResult = asyncResult;
+        if (!asyncResult) {
+            asyncResult = Promise.resolve(syncResult);
+        }
+    }
+    return SyncAsyncResult;
+}());
+exports.SyncAsyncResult = SyncAsyncResult;
 //# sourceMappingURL=util.js.map

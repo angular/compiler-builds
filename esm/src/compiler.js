@@ -23,6 +23,7 @@ import { DirectiveNormalizer } from './directive_normalizer';
 import { CompileMetadataResolver } from './metadata_resolver';
 import { StyleCompiler } from './style_compiler';
 import { ViewCompiler } from './view_compiler/view_compiler';
+import { AppModuleCompiler } from './app_module_compiler';
 import { CompilerConfig } from './config';
 import { RuntimeCompiler } from './runtime_compiler';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
@@ -39,14 +40,25 @@ import { PipeResolver } from './pipe_resolver';
  */
 export const COMPILER_PROVIDERS = 
 /*@ts2dart_const*/ [
-    Lexer, Parser, HtmlParser, TemplateParser, DirectiveNormalizer, CompileMetadataResolver,
-    DEFAULT_PACKAGE_URL_PROVIDER, StyleCompiler, ViewCompiler,
+    Lexer,
+    Parser,
+    HtmlParser,
+    TemplateParser,
+    DirectiveNormalizer,
+    CompileMetadataResolver,
+    DEFAULT_PACKAGE_URL_PROVIDER,
+    StyleCompiler,
+    ViewCompiler,
+    AppModuleCompiler,
     /*@ts2dart_Provider*/ { provide: CompilerConfig, useValue: new CompilerConfig() },
     RuntimeCompiler,
     /*@ts2dart_Provider*/ { provide: ComponentResolver, useExisting: RuntimeCompiler },
     /*@ts2dart_Provider*/ { provide: Compiler, useExisting: RuntimeCompiler },
     DomElementSchemaRegistry,
     /*@ts2dart_Provider*/ { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
-    UrlResolver, ViewResolver, DirectiveResolver, PipeResolver
+    UrlResolver,
+    ViewResolver,
+    DirectiveResolver,
+    PipeResolver
 ];
 //# sourceMappingURL=compiler.js.map

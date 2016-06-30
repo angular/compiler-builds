@@ -99,6 +99,21 @@ var Identifiers = (function () {
         moduleUrl: util_1.assetUrl('core', 'linker/component_factory_resolver'),
         runtime: core_1.ComponentFactoryResolver
     });
+    Identifiers.ComponentFactory = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'ComponentFactory',
+        runtime: core_1.ComponentFactory,
+        moduleUrl: util_1.assetUrl('core', 'linker/component_factory')
+    });
+    Identifiers.AppModuleFactory = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'AppModuleFactory',
+        runtime: core_1.AppModuleFactory,
+        moduleUrl: util_1.assetUrl('core', 'linker/app_module_factory')
+    });
+    Identifiers.AppModuleInjector = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'AppModuleInjector',
+        runtime: core_private_1.AppModuleInjector,
+        moduleUrl: util_1.assetUrl('core', 'linker/app_module_factory')
+    });
     Identifiers.ValueUnwrapper = new compile_metadata_1.CompileIdentifierMetadata({ name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: impValueUnwrapper });
     Identifiers.Injector = new compile_metadata_1.CompileIdentifierMetadata({ name: 'Injector', moduleUrl: util_1.assetUrl('core', 'di/injector'), runtime: impInjector });
     Identifiers.ViewEncapsulation = new compile_metadata_1.CompileIdentifierMetadata({

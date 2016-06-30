@@ -11,7 +11,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var core_1 = require('@angular/core');
 var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
@@ -142,7 +141,7 @@ var CompileElement = (function (_super) {
                         .instantiate(depsExpr, o.importType(provider.useClass));
                 }
                 else {
-                    return _convertValueToOutputAst(provider.useValue);
+                    return o.literal(provider.useValue);
                 }
             });
             var propName = "_" + resolvedProvider.token.name + "_" + _this.nodeIndex + "_" + _this._instances.size;
@@ -230,7 +229,7 @@ var CompileElement = (function (_super) {
             null;
     };
     CompileElement.prototype.getProviderTokens = function () {
-        return this._resolvedProviders.values().map(function (resolvedProvider) { return util_1.createDiTokenExpression(resolvedProvider.token); });
+        return this._resolvedProviders.values().map(function (resolvedProvider) { return util_2.createDiTokenExpression(resolvedProvider.token); });
     };
     CompileElement.prototype._getQueriesFor = function (token) {
         var result = [];
@@ -333,7 +332,7 @@ function createInjectInternalCondition(nodeIndex, childNodeCount, provider, prov
     else {
         indexCondition = o.literal(nodeIndex).identical(constants_1.InjectMethodVars.requestNodeIndex);
     }
-    return new o.IfStmt(constants_1.InjectMethodVars.token.identical(util_1.createDiTokenExpression(provider.token)).and(indexCondition), [new o.ReturnStatement(providerExpr)]);
+    return new o.IfStmt(constants_1.InjectMethodVars.token.identical(util_2.createDiTokenExpression(provider.token)).and(indexCondition), [new o.ReturnStatement(providerExpr)]);
 }
 function createProviderProperty(propName, provider, providerValueExpressions, isMulti, isEager, compileElement) {
     var view = compileElement.view;
@@ -373,38 +372,4 @@ var _QueryWithRead = (function () {
     }
     return _QueryWithRead;
 }());
-function _convertValueToOutputAst(value) {
-    return util_2.visitValue(value, new _ValueOutputAstTransformer(), null);
-}
-var _ValueOutputAstTransformer = (function (_super) {
-    __extends(_ValueOutputAstTransformer, _super);
-    function _ValueOutputAstTransformer() {
-        _super.apply(this, arguments);
-    }
-    _ValueOutputAstTransformer.prototype.visitArray = function (arr, context) {
-        var _this = this;
-        return o.literalArr(arr.map(function (value) { return util_2.visitValue(value, _this, context); }));
-    };
-    _ValueOutputAstTransformer.prototype.visitStringMap = function (map, context) {
-        var _this = this;
-        var entries = [];
-        collection_1.StringMapWrapper.forEach(map, function (value, key) {
-            entries.push([key, util_2.visitValue(value, _this, context)]);
-        });
-        return o.literalMap(entries);
-    };
-    _ValueOutputAstTransformer.prototype.visitPrimitive = function (value, context) { return o.literal(value); };
-    _ValueOutputAstTransformer.prototype.visitOther = function (value, context) {
-        if (value instanceof compile_metadata_1.CompileIdentifierMetadata) {
-            return o.importExpr(value);
-        }
-        else if (value instanceof o.Expression) {
-            return value;
-        }
-        else {
-            throw new core_1.BaseException("Illegal state: Don't now how to compile value " + value);
-        }
-    };
-    return _ValueOutputAstTransformer;
-}(util_2.ValueTransformer));
 //# sourceMappingURL=compile_element.js.map

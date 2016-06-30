@@ -1,10 +1,4 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
+import { isPresent } from './facade/lang';
 export class ParseLocation {
     constructor(file, offset, line, col) {
         this.file = file;
@@ -12,7 +6,9 @@ export class ParseLocation {
         this.line = line;
         this.col = col;
     }
-    toString() { return `${this.file.url}@${this.line}:${this.col}`; }
+    toString() {
+        return isPresent(this.offset) ? `${this.file.url}@${this.line}:${this.col}` : this.file.url;
+    }
 }
 export class ParseSourceFile {
     constructor(content, url) {
@@ -43,35 +39,39 @@ export class ParseError {
     toString() {
         var source = this.span.start.file.content;
         var ctxStart = this.span.start.offset;
-        if (ctxStart > source.length - 1) {
-            ctxStart = source.length - 1;
-        }
-        var ctxEnd = ctxStart;
-        var ctxLen = 0;
-        var ctxLines = 0;
-        while (ctxLen < 100 && ctxStart > 0) {
-            ctxStart--;
-            ctxLen++;
-            if (source[ctxStart] == '\n') {
-                if (++ctxLines == 3) {
-                    break;
+        var contextStr = '';
+        if (isPresent(ctxStart)) {
+            if (ctxStart > source.length - 1) {
+                ctxStart = source.length - 1;
+            }
+            var ctxEnd = ctxStart;
+            var ctxLen = 0;
+            var ctxLines = 0;
+            while (ctxLen < 100 && ctxStart > 0) {
+                ctxStart--;
+                ctxLen++;
+                if (source[ctxStart] == '\n') {
+                    if (++ctxLines == 3) {
+                        break;
+                    }
                 }
             }
-        }
-        ctxLen = 0;
-        ctxLines = 0;
-        while (ctxLen < 100 && ctxEnd < source.length - 1) {
-            ctxEnd++;
-            ctxLen++;
-            if (source[ctxEnd] == '\n') {
-                if (++ctxLines == 3) {
-                    break;
+            ctxLen = 0;
+            ctxLines = 0;
+            while (ctxLen < 100 && ctxEnd < source.length - 1) {
+                ctxEnd++;
+                ctxLen++;
+                if (source[ctxEnd] == '\n') {
+                    if (++ctxLines == 3) {
+                        break;
+                    }
                 }
             }
+            let context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
+                source.substring(this.span.start.offset, ctxEnd + 1);
+            contextStr = ` ("${context}")`;
         }
-        let context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
-            source.substring(this.span.start.offset, ctxEnd + 1);
-        return `${this.msg} ("${context}"): ${this.span.start}`;
+        return `${this.msg}${contextStr}: ${this.span.start}`;
     }
 }
 //# sourceMappingURL=parse_util.js.map

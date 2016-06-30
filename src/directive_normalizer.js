@@ -17,15 +17,8 @@ var html_parser_1 = require('./html_parser');
 var style_url_resolver_1 = require('./style_url_resolver');
 var template_preparser_1 = require('./template_preparser');
 var url_resolver_1 = require('./url_resolver');
+var util_1 = require('./util');
 var xhr_1 = require('./xhr');
-var NormalizeDirectiveResult = (function () {
-    function NormalizeDirectiveResult(syncResult, asyncResult) {
-        this.syncResult = syncResult;
-        this.asyncResult = asyncResult;
-    }
-    return NormalizeDirectiveResult;
-}());
-exports.NormalizeDirectiveResult = NormalizeDirectiveResult;
 var DirectiveNormalizer = (function () {
     function DirectiveNormalizer(_xhr, _urlResolver, _htmlParser, _config) {
         this._xhr = _xhr;
@@ -55,7 +48,7 @@ var DirectiveNormalizer = (function () {
         var _this = this;
         if (!directive.isComponent) {
             // For non components there is nothing to be normalized yet.
-            return new NormalizeDirectiveResult(directive, Promise.resolve(directive));
+            return new util_1.SyncAsyncResult(directive, Promise.resolve(directive));
         }
         var normalizedTemplateSync = null;
         var normalizedTemplateAsync;
@@ -72,11 +65,11 @@ var DirectiveNormalizer = (function () {
         if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
             // sync case
             var normalizedDirective = _cloneDirectiveWithTemplate(directive, normalizedTemplateSync);
-            return new NormalizeDirectiveResult(normalizedDirective, Promise.resolve(normalizedDirective));
+            return new util_1.SyncAsyncResult(normalizedDirective, Promise.resolve(normalizedDirective));
         }
         else {
             // async case
-            return new NormalizeDirectiveResult(null, normalizedTemplateAsync
+            return new util_1.SyncAsyncResult(null, normalizedTemplateAsync
                 .then(function (normalizedTemplate) { return _this.normalizeExternalStylesheets(normalizedTemplate); })
                 .then(function (normalizedTemplate) {
                 return _cloneDirectiveWithTemplate(directive, normalizedTemplate);

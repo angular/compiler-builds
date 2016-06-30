@@ -12,6 +12,7 @@ import { PromiseWrapper } from '../src/facade/async';
 import { createHostComponentMeta } from './compile_metadata';
 import { StyleCompiler } from './style_compiler';
 import { ViewCompiler, ViewFactoryDependency, ComponentFactoryDependency } from './view_compiler/view_compiler';
+import { AppModuleCompiler } from './app_module_compiler';
 import { TemplateParser } from './template_parser';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { CompileMetadataResolver } from './metadata_resolver';
@@ -19,17 +20,19 @@ import { CompilerConfig } from './config';
 import * as ir from './output/output_ast';
 import { jitStatements } from './output/output_jit';
 import { interpretStatements } from './output/output_interpreter';
-import { InterpretiveAppViewInstanceFactory } from './output/interpretive_view';
+import { SyncAsyncResult } from './util';
 export class RuntimeCompiler {
-    constructor(_metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _genConfig) {
+    constructor(_metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig) {
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
         this._viewCompiler = _viewCompiler;
+        this._appModuleCompiler = _appModuleCompiler;
         this._genConfig = _genConfig;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
+        this._compiledAppModuleCache = new Map();
     }
     resolveComponent(component) {
         if (isString(component)) {
@@ -37,36 +40,77 @@ export class RuntimeCompiler {
         }
         return this.compileComponentAsync(component);
     }
-    compileComponentAsync(compType) {
-        var templates = this._getTransitiveCompiledTemplates(compType, true);
+    compileAppModuleSync(moduleType, metadata = null) {
+        return this._compileAppModule(moduleType, true, metadata).syncResult;
+    }
+    compileAppModuleAsync(moduleType, metadata = null) {
+        return this._compileAppModule(moduleType, false, metadata).asyncResult;
+    }
+    _compileAppModule(moduleType, isSync, metadata = null) {
+        // Only cache if we read the metadata via the reflector,
+        // as we use the moduleType as cache key.
+        let useCache = !metadata;
+        let appModuleFactory = this._compiledAppModuleCache.get(moduleType);
+        let componentCompilePromises = [];
+        if (!appModuleFactory || !useCache) {
+            var compileModuleMeta = this._metadataResolver.getAppModuleMetadata(moduleType, metadata);
+            var compileResult = this._appModuleCompiler.compile(compileModuleMeta);
+            compileResult.dependencies.forEach((dep) => {
+                let compileResult = this._compileComponent(dep.comp.runtime, isSync, compileModuleMeta.directives.map(compileType => compileType.runtime), compileModuleMeta.pipes.map(compileType => compileType.runtime));
+                dep.placeholder.runtime = compileResult.syncResult;
+                componentCompilePromises.push(compileResult.asyncResult);
+                dep.placeholder.name = `compFactory_${dep.comp.name}`;
+            });
+            if (IS_DART || !this._genConfig.useJit) {
+                appModuleFactory =
+                    interpretStatements(compileResult.statements, compileResult.appModuleFactoryVar);
+            }
+            else {
+                appModuleFactory = jitStatements(`${compileModuleMeta.type.name}.ngfactory.js`, compileResult.statements, compileResult.appModuleFactoryVar);
+            }
+            if (useCache) {
+                this._compiledAppModuleCache.set(moduleType, appModuleFactory);
+            }
+        }
+        return new SyncAsyncResult(appModuleFactory, Promise.all(componentCompilePromises).then(() => appModuleFactory));
+    }
+    compileComponentAsync(compType, { moduleDirectives = [], modulePipes = [] } = {}) {
+        return this._compileComponent(compType, false, moduleDirectives, modulePipes).asyncResult;
+    }
+    compileComponentSync(compType, { moduleDirectives = [], modulePipes = [] } = {}) {
+        return this._compileComponent(compType, true, moduleDirectives, modulePipes).syncResult;
+    }
+    _compileComponent(compType, isSync, moduleDirectives, modulePipes) {
+        var templates = this._getTransitiveCompiledTemplates(compType, true, moduleDirectives, modulePipes);
         var loadingPromises = [];
         templates.forEach((template) => {
             if (template.loading) {
-                loadingPromises.push(template.loading);
+                if (isSync) {
+                    throw new BaseException(`Can't compile synchronously as ${template.compType.name} is still being loaded!`);
+                }
+                else {
+                    loadingPromises.push(template.loading);
+                }
             }
         });
-        return Promise.all(loadingPromises).then(() => {
-            templates.forEach((template) => { this._compileTemplate(template); });
-            return this._getCompiledHostTemplate(compType).proxyComponentFactory;
-        });
+        let compile = () => { templates.forEach((template) => { this._compileTemplate(template); }); };
+        if (isSync) {
+            compile();
+        }
+        let result = this._compiledHostTemplateCache.get(compType).proxyComponentFactory;
+        return new SyncAsyncResult(result, Promise.all(loadingPromises).then(() => {
+            compile();
+            return result;
+        }));
     }
-    compileComponentSync(compType) {
-        var templates = this._getTransitiveCompiledTemplates(compType, true);
-        templates.forEach((template) => {
-            if (template.loading) {
-                throw new BaseException(`Can't compile synchronously as ${template.compType.name} is still being loaded!`);
-            }
-        });
-        templates.forEach((template) => { this._compileTemplate(template); });
-        return this._getCompiledHostTemplate(compType).proxyComponentFactory;
-    }
-    clearCacheFor(compType) {
-        this._metadataResolver.clearCacheFor(compType);
-        this._compiledHostTemplateCache.delete(compType);
-        var compiledTemplate = this._compiledTemplateCache.get(compType);
+    clearCacheFor(type) {
+        this._compiledAppModuleCache.delete(type);
+        this._metadataResolver.clearCacheFor(type);
+        this._compiledHostTemplateCache.delete(type);
+        var compiledTemplate = this._compiledTemplateCache.get(type);
         if (compiledTemplate) {
             this._templateNormalizer.clearCacheFor(compiledTemplate.normalizedCompMeta);
-            this._compiledTemplateCache.delete(compType);
+            this._compiledTemplateCache.delete(type);
         }
     }
     clearCache() {
@@ -74,8 +118,9 @@ export class RuntimeCompiler {
         this._compiledTemplateCache.clear();
         this._compiledHostTemplateCache.clear();
         this._templateNormalizer.clearCache();
+        this._compiledAppModuleCache.clear();
     }
-    _getCompiledHostTemplate(type) {
+    _createCompiledHostTemplate(type) {
         var compiledTemplate = this._compiledHostTemplateCache.get(type);
         if (isBlank(compiledTemplate)) {
             var compMeta = this._metadataResolver.getDirectiveMetadata(type);
@@ -86,12 +131,13 @@ export class RuntimeCompiler {
         }
         return compiledTemplate;
     }
-    _getCompiledTemplate(type) {
+    _createCompiledTemplate(type, moduleDirectives, modulePipes) {
         var compiledTemplate = this._compiledTemplateCache.get(type);
         if (isBlank(compiledTemplate)) {
             var compMeta = this._metadataResolver.getDirectiveMetadata(type);
             assertComponent(compMeta);
             var viewDirectives = [];
+            moduleDirectives.forEach((type) => viewDirectives.push(this._metadataResolver.getDirectiveMetadata(type)));
             var viewComponentTypes = [];
             this._metadataResolver.getViewDirectivesMetadata(type).forEach(dirOrComp => {
                 if (dirOrComp.isComponent) {
@@ -102,18 +148,26 @@ export class RuntimeCompiler {
                 }
             });
             var precompileComponentTypes = compMeta.precompile.map((typeMeta) => typeMeta.runtime);
-            var pipes = this._metadataResolver.getViewPipesMetadata(type);
+            var pipes = [
+                ...modulePipes.map((type) => this._metadataResolver.getPipeMetadata(type)),
+                ...this._metadataResolver.getViewPipesMetadata(type)
+            ];
             compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, viewDirectives, viewComponentTypes, precompileComponentTypes, pipes, this._templateNormalizer.normalizeDirective(compMeta));
             this._compiledTemplateCache.set(type, compiledTemplate);
         }
         return compiledTemplate;
     }
-    _getTransitiveCompiledTemplates(compType, isHost, target = new Set()) {
-        var template = isHost ? this._getCompiledHostTemplate(compType) : this._getCompiledTemplate(compType);
+    _getTransitiveCompiledTemplates(compType, isHost, moduleDirectives, modulePipes, target = new Set()) {
+        var template = isHost ? this._createCompiledHostTemplate(compType) :
+            this._createCompiledTemplate(compType, moduleDirectives, modulePipes);
         if (!target.has(template)) {
             target.add(template);
-            template.viewComponentTypes.forEach((compType) => { this._getTransitiveCompiledTemplates(compType, false, target); });
-            template.precompileHostComponentTypes.forEach((compType) => { this._getTransitiveCompiledTemplates(compType, true, target); });
+            template.viewComponentTypes.forEach((compType) => {
+                this._getTransitiveCompiledTemplates(compType, false, moduleDirectives, modulePipes, target);
+            });
+            template.precompileHostComponentTypes.forEach((compType) => {
+                this._getTransitiveCompiledTemplates(compType, true, moduleDirectives, modulePipes, target);
+            });
         }
         return target;
     }
@@ -126,20 +180,20 @@ export class RuntimeCompiler {
         var stylesCompileResult = this._styleCompiler.compileComponent(compMeta);
         stylesCompileResult.externalStylesheets.forEach((r) => { externalStylesheetsByModuleUrl.set(r.meta.moduleUrl, r); });
         this._resolveStylesCompileResult(stylesCompileResult.componentStylesheet, externalStylesheetsByModuleUrl);
-        var viewCompMetas = template.viewComponentTypes.map((compType) => this._getCompiledTemplate(compType).normalizedCompMeta);
+        var viewCompMetas = template.viewComponentTypes.map((compType) => this._compiledTemplateCache.get(compType).normalizedCompMeta);
         var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, template.viewDirectives.concat(viewCompMetas), template.viewPipes, compMeta.type.name);
         var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), template.viewPipes);
         var depTemplates = compileResult.dependencies.map((dep) => {
             let depTemplate;
             if (dep instanceof ViewFactoryDependency) {
                 let vfd = dep;
-                depTemplate = this._getCompiledTemplate(vfd.comp.runtime);
+                depTemplate = this._compiledTemplateCache.get(vfd.comp.runtime);
                 vfd.placeholder.runtime = depTemplate.proxyViewFactory;
                 vfd.placeholder.name = `viewFactory_${vfd.comp.name}`;
             }
             else if (dep instanceof ComponentFactoryDependency) {
                 let cfd = dep;
-                depTemplate = this._getCompiledHostTemplate(cfd.comp.runtime);
+                depTemplate = this._compiledHostTemplateCache.get(cfd.comp.runtime);
                 cfd.placeholder.runtime = depTemplate.proxyComponentFactory;
                 cfd.placeholder.name = `compFactory_${cfd.comp.name}`;
             }
@@ -148,10 +202,10 @@ export class RuntimeCompiler {
         var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
         var factory;
         if (IS_DART || !this._genConfig.useJit) {
-            factory = interpretStatements(statements, compileResult.viewFactoryVar, new InterpretiveAppViewInstanceFactory());
+            factory = interpretStatements(statements, compileResult.viewFactoryVar);
         }
         else {
-            factory = jitStatements(`${template.compType.name}.template.js`, statements, compileResult.viewFactoryVar);
+            factory = jitStatements(`${template.compType.name}.ngfactory.js`, statements, compileResult.viewFactoryVar);
         }
         template.compiled(factory);
     }
@@ -166,7 +220,7 @@ export class RuntimeCompiler {
     _resolveAndEvalStylesCompileResult(result, externalStylesheetsByModuleUrl) {
         this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
         if (IS_DART || !this._genConfig.useJit) {
-            return interpretStatements(result.statements, result.stylesVar, new InterpretiveAppViewInstanceFactory());
+            return interpretStatements(result.statements, result.stylesVar);
         }
         else {
             return jitStatements(`${result.meta.moduleUrl}.css.js`, result.statements, result.stylesVar);
@@ -184,6 +238,7 @@ RuntimeCompiler.ctorParameters = [
     { type: TemplateParser, },
     { type: StyleCompiler, },
     { type: ViewCompiler, },
+    { type: AppModuleCompiler, },
     { type: CompilerConfig, },
 ];
 class CompiledTemplate {
@@ -194,7 +249,6 @@ class CompiledTemplate {
         this.viewComponentTypes = viewComponentTypes;
         this.precompileHostComponentTypes = precompileHostComponentTypes;
         this.viewPipes = viewPipes;
-        this._normalizeResult = _normalizeResult;
         this._viewFactory = null;
         this.loading = null;
         this._normalizedCompMeta = null;

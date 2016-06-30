@@ -19,6 +19,7 @@ exports.AppElement = core_1.__core_private__.AppElement;
 exports.CodegenComponentFactoryResolver = core_1.__core_private__.CodegenComponentFactoryResolver;
 exports.AppView = core_1.__core_private__.AppView;
 exports.DebugAppView = core_1.__core_private__.DebugAppView;
+exports.AppModuleInjector = core_1.__core_private__.AppModuleInjector;
 exports.ViewType = core_1.__core_private__.ViewType;
 exports.MAX_INTERPOLATION_VALUES = core_1.__core_private__.MAX_INTERPOLATION_VALUES;
 exports.checkBinding = core_1.__core_private__.checkBinding;

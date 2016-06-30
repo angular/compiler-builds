@@ -34,6 +34,7 @@ var directive_normalizer_1 = require('./directive_normalizer');
 var metadata_resolver_1 = require('./metadata_resolver');
 var style_compiler_1 = require('./style_compiler');
 var view_compiler_1 = require('./view_compiler/view_compiler');
+var app_module_compiler_1 = require('./app_module_compiler');
 var config_2 = require('./config');
 var runtime_compiler_2 = require('./runtime_compiler');
 var element_schema_registry_1 = require('./schema/element_schema_registry');
@@ -50,14 +51,25 @@ var pipe_resolver_2 = require('./pipe_resolver');
  */
 exports.COMPILER_PROVIDERS = 
 /*@ts2dart_const*/ [
-    lexer_1.Lexer, parser_1.Parser, html_parser_1.HtmlParser, template_parser_2.TemplateParser, directive_normalizer_1.DirectiveNormalizer, metadata_resolver_1.CompileMetadataResolver,
-    url_resolver_2.DEFAULT_PACKAGE_URL_PROVIDER, style_compiler_1.StyleCompiler, view_compiler_1.ViewCompiler,
+    lexer_1.Lexer,
+    parser_1.Parser,
+    html_parser_1.HtmlParser,
+    template_parser_2.TemplateParser,
+    directive_normalizer_1.DirectiveNormalizer,
+    metadata_resolver_1.CompileMetadataResolver,
+    url_resolver_2.DEFAULT_PACKAGE_URL_PROVIDER,
+    style_compiler_1.StyleCompiler,
+    view_compiler_1.ViewCompiler,
+    app_module_compiler_1.AppModuleCompiler,
     /*@ts2dart_Provider*/ { provide: config_2.CompilerConfig, useValue: new config_2.CompilerConfig() },
     runtime_compiler_2.RuntimeCompiler,
     /*@ts2dart_Provider*/ { provide: core_1.ComponentResolver, useExisting: runtime_compiler_2.RuntimeCompiler },
     /*@ts2dart_Provider*/ { provide: core_1.Compiler, useExisting: runtime_compiler_2.RuntimeCompiler },
     dom_element_schema_registry_1.DomElementSchemaRegistry,
     /*@ts2dart_Provider*/ { provide: element_schema_registry_1.ElementSchemaRegistry, useExisting: dom_element_schema_registry_1.DomElementSchemaRegistry },
-    url_resolver_2.UrlResolver, view_resolver_2.ViewResolver, directive_resolver_2.DirectiveResolver, pipe_resolver_2.PipeResolver
+    url_resolver_2.UrlResolver,
+    view_resolver_2.ViewResolver,
+    directive_resolver_2.DirectiveResolver,
+    pipe_resolver_2.PipeResolver
 ];
 //# sourceMappingURL=compiler.js.map

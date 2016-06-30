@@ -5,11 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, AttributeMetadata, ComponentMetadata, HostMetadata, InjectMetadata, Injectable, OptionalMetadata, Provider, QueryMetadata, SelfMetadata, SkipSelfMetadata, resolveForwardRef } from '@angular/core';
+import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, AppModuleMetadata, AttributeMetadata, ComponentMetadata, HostMetadata, InjectMetadata, Injectable, OptionalMetadata, Provider, QueryMetadata, SelfMetadata, SkipSelfMetadata, resolveForwardRef } from '@angular/core';
 import { LIFECYCLE_HOOKS_VALUES, ReflectorReader, createProvider, isProviderLiteral, reflector } from '../core_private';
 import { StringMapWrapper } from '../src/facade/collection';
 import { BaseException } from '../src/facade/exceptions';
-import { Type, isArray, isBlank, isPresent, isString, isStringMap, stringify } from '../src/facade/lang';
+import { Type, isArray, isBlank, isPresent, isString, stringify } from '../src/facade/lang';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { CompilerConfig } from './config';
@@ -28,6 +28,7 @@ export class CompileMetadataResolver {
         this._reflector = _reflector;
         this._directiveCache = new Map();
         this._pipeCache = new Map();
+        this._appModuleCache = new Map();
         this._anonymousTypes = new Map();
         this._anonymousTypeIndex = 0;
     }
@@ -44,13 +45,15 @@ export class CompileMetadataResolver {
         }
         return sanitizeIdentifier(identifier);
     }
-    clearCacheFor(compType) {
-        this._directiveCache.delete(compType);
-        this._pipeCache.delete(compType);
+    clearCacheFor(type) {
+        this._directiveCache.delete(type);
+        this._pipeCache.delete(type);
+        this._appModuleCache.delete(type);
     }
     clearCache() {
         this._directiveCache.clear();
         this._pipeCache.clear();
+        this._appModuleCache.clear();
     }
     getAnimationEntryMetadata(entry) {
         var defs = entry.definitions.map(def => this.getAnimationStateMetadata(def));
@@ -93,6 +96,7 @@ export class CompileMetadataResolver {
         return null;
     }
     getDirectiveMetadata(directiveType) {
+        directiveType = resolveForwardRef(directiveType);
         var meta = this._directiveCache.get(directiveType);
         if (isBlank(meta)) {
             var dirMeta = this._directiveResolver.resolve(directiveType);
@@ -161,6 +165,65 @@ export class CompileMetadataResolver {
         }
         return meta;
     }
+    getAppModuleMetadata(moduleType, meta = null) {
+        // Only cache if we read the metadata via the reflector,
+        // as we use the moduleType as cache key.
+        let useCache = !meta;
+        moduleType = resolveForwardRef(moduleType);
+        var compileMeta = this._appModuleCache.get(moduleType);
+        if (isBlank(compileMeta) || !useCache) {
+            if (!meta) {
+                meta = this._reflector.annotations(moduleType)
+                    .find((meta) => meta instanceof AppModuleMetadata);
+            }
+            if (!meta) {
+                throw new BaseException(`Could not compile '${stringify(moduleType)}' because it is not an AppModule.`);
+            }
+            let providers = [];
+            if (meta.providers) {
+                providers.push(...this.getProvidersMetadata(meta.providers));
+            }
+            let directives = [];
+            if (meta.directives) {
+                directives.push(...flattenArray(meta.directives)
+                    .map(type => this.getTypeMetadata(type, staticTypeModuleUrl(type))));
+            }
+            let pipes = [];
+            if (meta.pipes) {
+                pipes.push(...flattenArray(meta.pipes)
+                    .map(type => this.getTypeMetadata(type, staticTypeModuleUrl(type))));
+            }
+            let precompile = [];
+            if (meta.precompile) {
+                precompile.push(...flattenArray(meta.precompile)
+                    .map(type => this.getTypeMetadata(type, staticTypeModuleUrl(type))));
+            }
+            let modules = [];
+            if (meta.modules) {
+                flattenArray(meta.modules).forEach((moduleType) => {
+                    var meta = this.getAppModuleMetadata(moduleType);
+                    providers.push(...meta.providers);
+                    directives.push(...meta.directives);
+                    pipes.push(...meta.pipes);
+                    precompile.push(...meta.precompile);
+                    modules.push(meta.type);
+                    modules.push(...meta.modules);
+                });
+            }
+            compileMeta = new cpl.CompileAppModuleMetadata({
+                type: this.getTypeMetadata(moduleType, staticTypeModuleUrl(moduleType)),
+                providers: providers,
+                directives: directives,
+                pipes: pipes,
+                precompile: precompile,
+                modules: modules
+            });
+            if (useCache) {
+                this._appModuleCache.set(moduleType, compileMeta);
+            }
+        }
+        return compileMeta;
+    }
     /**
      * @param someType a symbol which may or may not be a directive type
      * @returns {cpl.CompileDirectiveMetadata} if possible, otherwise null.
@@ -177,6 +240,7 @@ export class CompileMetadataResolver {
         }
     }
     getTypeMetadata(type, moduleUrl, dependencies = null) {
+        type = resolveForwardRef(type);
         return new cpl.CompileTypeMetadata({
             name: this.sanitizeTokenName(type),
             moduleUrl: moduleUrl,
@@ -185,6 +249,7 @@ export class CompileMetadataResolver {
         });
     }
     getFactoryMetadata(factory, moduleUrl, dependencies = null) {
+        factory = resolveForwardRef(factory);
         return new cpl.CompileFactoryMetadata({
             name: this.sanitizeTokenName(factory),
             moduleUrl: moduleUrl,
@@ -193,6 +258,7 @@ export class CompileMetadataResolver {
         });
     }
     getPipeMetadata(pipeType) {
+        pipeType = resolveForwardRef(pipeType);
         var meta = this._pipeCache.get(pipeType);
         if (isBlank(meta)) {
             var pipeMeta = this._pipeResolver.resolve(pipeType);
@@ -329,8 +395,11 @@ export class CompileMetadataResolver {
             else if (isProviderLiteral(provider)) {
                 return this.getProviderMetadata(createProvider(provider));
             }
-            else {
+            else if (isValidType(provider)) {
                 return this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
+            }
+            else {
+                throw new BaseException(`Invalid provider - only instances of Provider and Type are allowed, got: ${stringify(provider)}`);
             }
         });
     }
@@ -442,17 +511,14 @@ function verifyNonBlankProviders(directiveType, providersTree, providersType) {
     }
     return providersTree;
 }
-function isStaticType(value) {
-    return isStringMap(value) && isPresent(value['name']) && isPresent(value['filePath']);
-}
 function isValidType(value) {
-    return isStaticType(value) || (value instanceof Type);
+    return cpl.isStaticSymbol(value) || (value instanceof Type);
 }
 function staticTypeModuleUrl(value) {
-    return isStaticType(value) ? value['filePath'] : null;
+    return cpl.isStaticSymbol(value) ? value.filePath : null;
 }
 function componentModuleUrl(reflector, type, cmpMetadata) {
-    if (isStaticType(type)) {
+    if (cpl.isStaticSymbol(type)) {
         return staticTypeModuleUrl(type);
     }
     if (isPresent(cmpMetadata.moduleId)) {
@@ -469,8 +535,8 @@ function convertToCompileValue(value) {
 }
 class _CompileValueConverter extends ValueTransformer {
     visitOther(value, context) {
-        if (isStaticType(value)) {
-            return new cpl.CompileIdentifierMetadata({ name: value['name'], moduleUrl: staticTypeModuleUrl(value) });
+        if (cpl.isStaticSymbol(value)) {
+            return new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath });
         }
         else {
             return new cpl.CompileIdentifierMetadata({ runtime: value });
