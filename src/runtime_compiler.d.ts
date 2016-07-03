@@ -39,15 +39,8 @@ export declare class RuntimeCompiler implements ComponentResolver, Compiler {
     compileAppModuleSync<T>(moduleType: ConcreteType<T>, metadata?: AppModuleMetadata): AppModuleFactory<T>;
     compileAppModuleAsync<T>(moduleType: ConcreteType<T>, metadata?: AppModuleMetadata): Promise<AppModuleFactory<T>>;
     private _compileAppModule<T>(moduleType, isSync, metadata?);
-    compileComponentAsync<T>(compType: ConcreteType<T>, {moduleDirectives, modulePipes}?: {
-        moduleDirectives?: ConcreteType<any>[];
-        modulePipes?: ConcreteType<any>[];
-    }): Promise<ComponentFactory<T>>;
-    compileComponentSync<T>(compType: ConcreteType<T>, {moduleDirectives, modulePipes}?: {
-        moduleDirectives?: ConcreteType<any>[];
-        modulePipes?: ConcreteType<any>[];
-    }): ComponentFactory<T>;
-    private _compileComponent<T>(compType, isSync, moduleDirectives, modulePipes);
+    compileComponentAsync<T>(compType: ConcreteType<T>): Promise<ComponentFactory<T>>;
+    compileComponentSync<T>(compType: ConcreteType<T>): ComponentFactory<T>;
     clearCacheFor(type: Type): void;
     clearCache(): void;
     private _createCompiledHostTemplate(type);

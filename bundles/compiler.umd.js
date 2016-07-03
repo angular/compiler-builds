@@ -598,7 +598,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     var uninitialized = _angular_core.__core_private__.uninitialized;
     var ValueUnwrapper = _angular_core.__core_private__.ValueUnwrapper;
     var TemplateRef_ = _angular_core.__core_private__.TemplateRef_;
-    var SecurityContext = _angular_core.__core_private__.SecurityContext;
     var createProvider = _angular_core.__core_private__.createProvider;
     var isProviderLiteral = _angular_core.__core_private__.isProviderLiteral;
     var EMPTY_ARRAY = _angular_core.__core_private__.EMPTY_ARRAY;
@@ -616,6 +615,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var castByValue = _angular_core.__core_private__.castByValue;
     var Console = _angular_core.__core_private__.Console;
     var reflector = _angular_core.__core_private__.reflector;
+    var Reflector = _angular_core.__core_private__.Reflector;
     var NoOpAnimationPlayer_ = _angular_core.__core_private__.NoOpAnimationPlayer;
     var AnimationSequencePlayer_ = _angular_core.__core_private__.AnimationSequencePlayer;
     var AnimationGroupPlayer_ = _angular_core.__core_private__.AnimationGroupPlayer;
@@ -6796,7 +6796,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     Identifiers.SecurityContext = new CompileIdentifierMetadata({
         name: 'SecurityContext',
         moduleUrl: assetUrl('core', 'security'),
-        runtime: SecurityContext,
+        runtime: _angular_core.SecurityContext,
     });
     Identifiers.AnimationKeyframe = new CompileIdentifierMetadata({
         name: 'AnimationKeyframe',
@@ -7741,7 +7741,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             var ast = this._parseBinding(expression, sourceSpan);
             targetMatchableAttrs.push([name, ast.source]);
-            targetAnimationProps.push(new BoundElementPropertyAst(name, exports.PropertyBindingType.Animation, SecurityContext.NONE, ast, null, sourceSpan));
+            targetAnimationProps.push(new BoundElementPropertyAst(name, exports.PropertyBindingType.Animation, _angular_core.SecurityContext.NONE, ast, null, sourceSpan));
         };
         TemplateParseVisitor.prototype._parsePropertyInterpolation = function (name, value, sourceSpan, targetMatchableAttrs, targetProps) {
             var expr = this._parseInterpolation(value, sourceSpan);
@@ -7909,13 +7909,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                 else if (parts[0] == CLASS_PREFIX) {
                     boundPropertyName = parts[1];
                     bindingType = exports.PropertyBindingType.Class;
-                    securityContext = SecurityContext.NONE;
+                    securityContext = _angular_core.SecurityContext.NONE;
                 }
                 else if (parts[0] == STYLE_PREFIX) {
                     unit = parts.length > 2 ? parts[2] : null;
                     boundPropertyName = parts[1];
                     bindingType = exports.PropertyBindingType.Style;
-                    securityContext = SecurityContext.STYLE;
+                    securityContext = _angular_core.SecurityContext.STYLE;
                 }
                 else {
                     this._reportError("Invalid property name '" + name + "'", sourceSpan);
@@ -10368,21 +10368,21 @@ var __extends = (this && this.__extends) || function (d, b) {
     function sanitizedValue(boundProp, renderValue) {
         var enumValue;
         switch (boundProp.securityContext) {
-            case SecurityContext.NONE:
+            case _angular_core.SecurityContext.NONE:
                 return renderValue; // No sanitization needed.
-            case SecurityContext.HTML:
+            case _angular_core.SecurityContext.HTML:
                 enumValue = 'HTML';
                 break;
-            case SecurityContext.STYLE:
+            case _angular_core.SecurityContext.STYLE:
                 enumValue = 'STYLE';
                 break;
-            case SecurityContext.SCRIPT:
+            case _angular_core.SecurityContext.SCRIPT:
                 enumValue = 'SCRIPT';
                 break;
-            case SecurityContext.URL:
+            case _angular_core.SecurityContext.URL:
                 enumValue = 'URL';
                 break;
-            case SecurityContext.RESOURCE_URL:
+            case _angular_core.SecurityContext.RESOURCE_URL:
                 enumValue = 'RESOURCE_URL';
                 break;
             default:
@@ -12909,26 +12909,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                 if (!meta) {
                     throw new BaseException$1("Could not compile '" + stringify(moduleType) + "' because it is not an AppModule.");
                 }
-                var providers_1 = [];
-                if (meta.providers) {
-                    providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers));
-                }
-                var directives_1 = [];
-                if (meta.directives) {
-                    directives_1.push.apply(directives_1, flattenArray(meta.directives)
-                        .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
-                }
-                var pipes_1 = [];
-                if (meta.pipes) {
-                    pipes_1.push.apply(pipes_1, flattenArray(meta.pipes)
-                        .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
-                }
-                var precompile_1 = [];
-                if (meta.precompile) {
-                    precompile_1.push.apply(precompile_1, flattenArray(meta.precompile)
-                        .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
-                }
                 var modules_1 = [];
+                var providers_1 = [];
+                var directives_1 = [];
+                var pipes_1 = [];
+                var precompile_1 = [];
                 if (meta.modules) {
                     flattenArray(meta.modules).forEach(function (moduleType) {
                         var meta = _this.getAppModuleMetadata(moduleType);
@@ -12939,6 +12924,21 @@ var __extends = (this && this.__extends) || function (d, b) {
                         modules_1.push(meta.type);
                         modules_1.push.apply(modules_1, meta.modules);
                     });
+                }
+                if (meta.providers) {
+                    providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers));
+                }
+                if (meta.directives) {
+                    directives_1.push.apply(directives_1, flattenArray(meta.directives)
+                        .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+                }
+                if (meta.pipes) {
+                    pipes_1.push.apply(pipes_1, flattenArray(meta.pipes)
+                        .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+                }
+                if (meta.precompile) {
+                    precompile_1.push.apply(precompile_1, flattenArray(meta.precompile)
+                        .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
                 }
                 compileMeta = new CompileAppModuleMetadata({
                     type: this.getTypeMetadata(moduleType, staticTypeModuleUrl(moduleType)),
@@ -14886,6 +14886,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             var componentCompilePromises = [];
             if (!appModuleFactory || !useCache) {
                 var compileModuleMeta = this._metadataResolver.getAppModuleMetadata(moduleType, metadata);
+                var boundCompiler = new BoundCompiler(this, compileModuleMeta.directives.map(function (dir) { return dir.type.runtime; }), compileModuleMeta.pipes.map(function (pipe) { return pipe.type.runtime; }));
+                // Always provide a bound Compiler / ComponentResolver
+                compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new _angular_core.Provider(_angular_core.Compiler, { useValue: boundCompiler })));
+                compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new _angular_core.Provider(_angular_core.ComponentResolver, { useExisting: _angular_core.Compiler })));
                 var compileResult = this._appModuleCompiler.compile(compileModuleMeta);
                 compileResult.dependencies.forEach(function (dep) {
                     var compileResult = _this._compileComponent(dep.comp.runtime, isSync, compileModuleMeta.directives.map(function (compileType) { return compileType.runtime; }), compileModuleMeta.pipes.map(function (compileType) { return compileType.runtime; }));
@@ -14906,14 +14910,15 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return new SyncAsyncResult(appModuleFactory, Promise.all(componentCompilePromises).then(function () { return appModuleFactory; }));
         };
-        RuntimeCompiler.prototype.compileComponentAsync = function (compType, _a) {
-            var _b = _a === void 0 ? {} : _a, _c = _b.moduleDirectives, moduleDirectives = _c === void 0 ? [] : _c, _d = _b.modulePipes, modulePipes = _d === void 0 ? [] : _d;
-            return this._compileComponent(compType, false, moduleDirectives, modulePipes).asyncResult;
+        RuntimeCompiler.prototype.compileComponentAsync = function (compType) {
+            return this._compileComponent(compType, false, [], []).asyncResult;
         };
-        RuntimeCompiler.prototype.compileComponentSync = function (compType, _a) {
-            var _b = _a === void 0 ? {} : _a, _c = _b.moduleDirectives, moduleDirectives = _c === void 0 ? [] : _c, _d = _b.modulePipes, modulePipes = _d === void 0 ? [] : _d;
-            return this._compileComponent(compType, true, moduleDirectives, modulePipes).syncResult;
+        RuntimeCompiler.prototype.compileComponentSync = function (compType) {
+            return this._compileComponent(compType, true, [], []).syncResult;
         };
+        /**
+         * @internal
+         */
         RuntimeCompiler.prototype._compileComponent = function (compType, isSync, moduleDirectives, modulePipes) {
             var _this = this;
             var templates = this._getTransitiveCompiledTemplates(compType, true, moduleDirectives, modulePipes);
@@ -15135,6 +15140,48 @@ var __extends = (this && this.__extends) || function (d, b) {
             throw new BaseException$1("Could not compile '" + meta.type.name + "' because it is not a component.");
         }
     }
+    /**
+     * A wrapper around `Compiler` and `ComponentResolver` that
+     * provides default patform directives / pipes.
+     */
+    var BoundCompiler = (function () {
+        function BoundCompiler(_delegate, _directives, _pipes) {
+            this._delegate = _delegate;
+            this._directives = _directives;
+            this._pipes = _pipes;
+        }
+        BoundCompiler.prototype.resolveComponent = function (component) {
+            if (isString(component)) {
+                return PromiseWrapper.reject(new BaseException$1("Cannot resolve component using '" + component + "'."), null);
+            }
+            return this.compileComponentAsync(component);
+        };
+        BoundCompiler.prototype.compileComponentAsync = function (compType) {
+            return this._delegate._compileComponent(compType, false, this._directives, this._pipes)
+                .asyncResult;
+        };
+        BoundCompiler.prototype.compileComponentSync = function (compType) {
+            return this._delegate._compileComponent(compType, true, this._directives, this._pipes)
+                .syncResult;
+        };
+        BoundCompiler.prototype.compileAppModuleSync = function (moduleType, metadata) {
+            if (metadata === void 0) { metadata = null; }
+            return this._delegate.compileAppModuleSync(moduleType, metadata);
+        };
+        BoundCompiler.prototype.compileAppModuleAsync = function (moduleType, metadata) {
+            if (metadata === void 0) { metadata = null; }
+            return this._delegate.compileAppModuleAsync(moduleType, metadata);
+        };
+        /**
+         * Clears all caches
+         */
+        BoundCompiler.prototype.clearCache = function () { this._delegate.clearCache(); };
+        /**
+         * Clears the cache for the given component/appModule.
+         */
+        BoundCompiler.prototype.clearCacheFor = function (type) { this._delegate.clearCacheFor(type); };
+        return BoundCompiler;
+    }());
     // =================================================================================================
     // =================================================================================================
     // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -15154,20 +15201,20 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
     }
     // Case is insignificant below, all element and attribute names are lower-cased for lookup.
-    registerContext(SecurityContext.HTML, [
+    registerContext(_angular_core.SecurityContext.HTML, [
         'iframe|srcdoc',
         '*|innerHTML',
         '*|outerHTML',
     ]);
-    registerContext(SecurityContext.STYLE, ['*|style']);
+    registerContext(_angular_core.SecurityContext.STYLE, ['*|style']);
     // NB: no SCRIPT contexts here, they are never allowed due to the parser stripping them.
-    registerContext(SecurityContext.URL, [
+    registerContext(_angular_core.SecurityContext.URL, [
         '*|formAction', 'area|href', 'area|ping', 'audio|src', 'a|href',
         'a|ping', 'blockquote|cite', 'body|background', 'del|cite', 'form|action',
         'img|src', 'img|srcset', 'input|src', 'ins|cite', 'q|cite',
         'source|src', 'source|srcset', 'video|poster', 'video|src',
     ]);
-    registerContext(SecurityContext.RESOURCE_URL, [
+    registerContext(_angular_core.SecurityContext.RESOURCE_URL, [
         'applet|code',
         'applet|codebase',
         'base|href',
@@ -15468,7 +15515,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (ctx !== undefined)
                 return ctx;
             ctx = SECURITY_SCHEMA['*|' + propName];
-            return ctx !== undefined ? ctx : SecurityContext.NONE;
+            return ctx !== undefined ? ctx : _angular_core.SecurityContext.NONE;
         };
         DomElementSchemaRegistry.prototype.getMappedPropName = function (propName) {
             var mappedPropName = StringMapWrapper.get(attrToPropMap, propName);
@@ -15488,6 +15535,9 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var COMPILER_PROVIDERS = 
     /*@ts2dart_const*/ [
+        { provide: Reflector, useValue: reflector },
+        { provide: ReflectorReader, useExisting: Reflector },
+        Console,
         Lexer,
         Parser,
         HtmlParser,

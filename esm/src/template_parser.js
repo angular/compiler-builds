@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Inject, Injectable, OpaqueToken, Optional } from '@angular/core';
-import { Console, MAX_INTERPOLATION_VALUES, SecurityContext } from '../core_private';
+import { Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@angular/core';
+import { Console, MAX_INTERPOLATION_VALUES } from '../core_private';
 import { ListWrapper, StringMapWrapper, SetWrapper } from '../src/facade/collection';
 import { RegExpWrapper, isPresent, StringWrapper, isBlank } from '../src/facade/lang';
 import { BaseException } from '../src/facade/exceptions';

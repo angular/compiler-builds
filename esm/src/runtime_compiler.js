@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ComponentFactory, Injectable } from '@angular/core';
+import { Compiler, ComponentFactory, ComponentResolver, Injectable, Provider } from '@angular/core';
 import { BaseException } from '../src/facade/exceptions';
 import { IS_DART, isBlank, isString } from '../src/facade/lang';
 import { PromiseWrapper } from '../src/facade/async';
@@ -54,6 +54,10 @@ export class RuntimeCompiler {
         let componentCompilePromises = [];
         if (!appModuleFactory || !useCache) {
             var compileModuleMeta = this._metadataResolver.getAppModuleMetadata(moduleType, metadata);
+            let boundCompiler = new BoundCompiler(this, compileModuleMeta.directives.map(dir => dir.type.runtime), compileModuleMeta.pipes.map((pipe) => pipe.type.runtime));
+            // Always provide a bound Compiler / ComponentResolver
+            compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new Provider(Compiler, { useValue: boundCompiler })));
+            compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new Provider(ComponentResolver, { useExisting: Compiler })));
             var compileResult = this._appModuleCompiler.compile(compileModuleMeta);
             compileResult.dependencies.forEach((dep) => {
                 let compileResult = this._compileComponent(dep.comp.runtime, isSync, compileModuleMeta.directives.map(compileType => compileType.runtime), compileModuleMeta.pipes.map(compileType => compileType.runtime));
@@ -74,12 +78,15 @@ export class RuntimeCompiler {
         }
         return new SyncAsyncResult(appModuleFactory, Promise.all(componentCompilePromises).then(() => appModuleFactory));
     }
-    compileComponentAsync(compType, { moduleDirectives = [], modulePipes = [] } = {}) {
-        return this._compileComponent(compType, false, moduleDirectives, modulePipes).asyncResult;
+    compileComponentAsync(compType) {
+        return this._compileComponent(compType, false, [], []).asyncResult;
     }
-    compileComponentSync(compType, { moduleDirectives = [], modulePipes = [] } = {}) {
-        return this._compileComponent(compType, true, moduleDirectives, modulePipes).syncResult;
+    compileComponentSync(compType) {
+        return this._compileComponent(compType, true, [], []).syncResult;
     }
+    /**
+     * @internal
+     */
     _compileComponent(compType, isSync, moduleDirectives, modulePipes) {
         var templates = this._getTransitiveCompiledTemplates(compType, true, moduleDirectives, modulePipes);
         var loadingPromises = [];
@@ -284,5 +291,44 @@ function assertComponent(meta) {
     if (!meta.isComponent) {
         throw new BaseException(`Could not compile '${meta.type.name}' because it is not a component.`);
     }
+}
+/**
+ * A wrapper around `Compiler` and `ComponentResolver` that
+ * provides default patform directives / pipes.
+ */
+class BoundCompiler {
+    constructor(_delegate, _directives, _pipes) {
+        this._delegate = _delegate;
+        this._directives = _directives;
+        this._pipes = _pipes;
+    }
+    resolveComponent(component) {
+        if (isString(component)) {
+            return PromiseWrapper.reject(new BaseException(`Cannot resolve component using '${component}'.`), null);
+        }
+        return this.compileComponentAsync(component);
+    }
+    compileComponentAsync(compType) {
+        return this._delegate._compileComponent(compType, false, this._directives, this._pipes)
+            .asyncResult;
+    }
+    compileComponentSync(compType) {
+        return this._delegate._compileComponent(compType, true, this._directives, this._pipes)
+            .syncResult;
+    }
+    compileAppModuleSync(moduleType, metadata = null) {
+        return this._delegate.compileAppModuleSync(moduleType, metadata);
+    }
+    compileAppModuleAsync(moduleType, metadata = null) {
+        return this._delegate.compileAppModuleAsync(moduleType, metadata);
+    }
+    /**
+     * Clears all caches
+     */
+    clearCache() { this._delegate.clearCache(); }
+    /**
+     * Clears the cache for the given component/appModule.
+     */
+    clearCacheFor(type) { this._delegate.clearCacheFor(type); }
 }
 //# sourceMappingURL=runtime_compiler.js.map

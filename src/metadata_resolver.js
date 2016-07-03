@@ -191,26 +191,11 @@ var CompileMetadataResolver = (function () {
             if (!meta) {
                 throw new exceptions_1.BaseException("Could not compile '" + lang_1.stringify(moduleType) + "' because it is not an AppModule.");
             }
-            var providers_1 = [];
-            if (meta.providers) {
-                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers));
-            }
-            var directives_1 = [];
-            if (meta.directives) {
-                directives_1.push.apply(directives_1, flattenArray(meta.directives)
-                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
-            }
-            var pipes_1 = [];
-            if (meta.pipes) {
-                pipes_1.push.apply(pipes_1, flattenArray(meta.pipes)
-                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
-            }
-            var precompile_1 = [];
-            if (meta.precompile) {
-                precompile_1.push.apply(precompile_1, flattenArray(meta.precompile)
-                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
-            }
             var modules_1 = [];
+            var providers_1 = [];
+            var directives_1 = [];
+            var pipes_1 = [];
+            var precompile_1 = [];
             if (meta.modules) {
                 flattenArray(meta.modules).forEach(function (moduleType) {
                     var meta = _this.getAppModuleMetadata(moduleType);
@@ -221,6 +206,21 @@ var CompileMetadataResolver = (function () {
                     modules_1.push(meta.type);
                     modules_1.push.apply(modules_1, meta.modules);
                 });
+            }
+            if (meta.providers) {
+                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers));
+            }
+            if (meta.directives) {
+                directives_1.push.apply(directives_1, flattenArray(meta.directives)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+            }
+            if (meta.pipes) {
+                pipes_1.push.apply(pipes_1, flattenArray(meta.pipes)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+            }
+            if (meta.precompile) {
+                precompile_1.push.apply(precompile_1, flattenArray(meta.precompile)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
             }
             compileMeta = new cpl.CompileAppModuleMetadata({
                 type: this.getTypeMetadata(moduleType, staticTypeModuleUrl(moduleType)),

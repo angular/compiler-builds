@@ -45,12 +45,16 @@ var lexer_1 = require('./expression_parser/lexer');
 var view_resolver_2 = require('./view_resolver');
 var directive_resolver_2 = require('./directive_resolver');
 var pipe_resolver_2 = require('./pipe_resolver');
+var core_private_1 = require('../core_private');
 /**
  * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
  * template compilation.
  */
 exports.COMPILER_PROVIDERS = 
 /*@ts2dart_const*/ [
+    { provide: core_private_1.Reflector, useValue: core_private_1.reflector },
+    { provide: core_private_1.ReflectorReader, useExisting: core_private_1.Reflector },
+    core_private_1.Console,
     lexer_1.Lexer,
     parser_1.Parser,
     html_parser_1.HtmlParser,

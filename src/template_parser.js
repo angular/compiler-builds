@@ -472,7 +472,7 @@ var TemplateParseVisitor = (function () {
         }
         var ast = this._parseBinding(expression, sourceSpan);
         targetMatchableAttrs.push([name, ast.source]);
-        targetAnimationProps.push(new template_ast_1.BoundElementPropertyAst(name, template_ast_1.PropertyBindingType.Animation, core_private_1.SecurityContext.NONE, ast, null, sourceSpan));
+        targetAnimationProps.push(new template_ast_1.BoundElementPropertyAst(name, template_ast_1.PropertyBindingType.Animation, core_1.SecurityContext.NONE, ast, null, sourceSpan));
     };
     TemplateParseVisitor.prototype._parsePropertyInterpolation = function (name, value, sourceSpan, targetMatchableAttrs, targetProps) {
         var expr = this._parseInterpolation(value, sourceSpan);
@@ -640,13 +640,13 @@ var TemplateParseVisitor = (function () {
             else if (parts[0] == CLASS_PREFIX) {
                 boundPropertyName = parts[1];
                 bindingType = template_ast_1.PropertyBindingType.Class;
-                securityContext = core_private_1.SecurityContext.NONE;
+                securityContext = core_1.SecurityContext.NONE;
             }
             else if (parts[0] == STYLE_PREFIX) {
                 unit = parts.length > 2 ? parts[2] : null;
                 boundPropertyName = parts[1];
                 bindingType = template_ast_1.PropertyBindingType.Style;
-                securityContext = core_private_1.SecurityContext.STYLE;
+                securityContext = core_1.SecurityContext.STYLE;
             }
             else {
                 this._reportError("Invalid property name '" + name + "'", sourceSpan);

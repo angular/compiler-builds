@@ -168,7 +168,7 @@ var Identifiers = (function () {
     Identifiers.SecurityContext = new compile_metadata_1.CompileIdentifierMetadata({
         name: 'SecurityContext',
         moduleUrl: util_1.assetUrl('core', 'security'),
-        runtime: core_private_1.SecurityContext,
+        runtime: core_1.SecurityContext,
     });
     Identifiers.AnimationKeyframe = new compile_metadata_1.CompileIdentifierMetadata({
         name: 'AnimationKeyframe',

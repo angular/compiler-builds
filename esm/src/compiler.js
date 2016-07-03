@@ -34,12 +34,16 @@ import { Lexer } from './expression_parser/lexer';
 import { ViewResolver } from './view_resolver';
 import { DirectiveResolver } from './directive_resolver';
 import { PipeResolver } from './pipe_resolver';
+import { Console, Reflector, reflector, ReflectorReader } from '../core_private';
 /**
  * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
  * template compilation.
  */
 export const COMPILER_PROVIDERS = 
 /*@ts2dart_const*/ [
+    { provide: Reflector, useValue: reflector },
+    { provide: ReflectorReader, useExisting: Reflector },
+    Console,
     Lexer,
     Parser,
     HtmlParser,

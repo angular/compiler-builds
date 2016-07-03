@@ -59,6 +59,10 @@ var RuntimeCompiler = (function () {
         var componentCompilePromises = [];
         if (!appModuleFactory || !useCache) {
             var compileModuleMeta = this._metadataResolver.getAppModuleMetadata(moduleType, metadata);
+            var boundCompiler = new BoundCompiler(this, compileModuleMeta.directives.map(function (dir) { return dir.type.runtime; }), compileModuleMeta.pipes.map(function (pipe) { return pipe.type.runtime; }));
+            // Always provide a bound Compiler / ComponentResolver
+            compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new core_1.Provider(core_1.Compiler, { useValue: boundCompiler })));
+            compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new core_1.Provider(core_1.ComponentResolver, { useExisting: core_1.Compiler })));
             var compileResult = this._appModuleCompiler.compile(compileModuleMeta);
             compileResult.dependencies.forEach(function (dep) {
                 var compileResult = _this._compileComponent(dep.comp.runtime, isSync, compileModuleMeta.directives.map(function (compileType) { return compileType.runtime; }), compileModuleMeta.pipes.map(function (compileType) { return compileType.runtime; }));
@@ -79,14 +83,15 @@ var RuntimeCompiler = (function () {
         }
         return new util_1.SyncAsyncResult(appModuleFactory, Promise.all(componentCompilePromises).then(function () { return appModuleFactory; }));
     };
-    RuntimeCompiler.prototype.compileComponentAsync = function (compType, _a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.moduleDirectives, moduleDirectives = _c === void 0 ? [] : _c, _d = _b.modulePipes, modulePipes = _d === void 0 ? [] : _d;
-        return this._compileComponent(compType, false, moduleDirectives, modulePipes).asyncResult;
+    RuntimeCompiler.prototype.compileComponentAsync = function (compType) {
+        return this._compileComponent(compType, false, [], []).asyncResult;
     };
-    RuntimeCompiler.prototype.compileComponentSync = function (compType, _a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.moduleDirectives, moduleDirectives = _c === void 0 ? [] : _c, _d = _b.modulePipes, modulePipes = _d === void 0 ? [] : _d;
-        return this._compileComponent(compType, true, moduleDirectives, modulePipes).syncResult;
+    RuntimeCompiler.prototype.compileComponentSync = function (compType) {
+        return this._compileComponent(compType, true, [], []).syncResult;
     };
+    /**
+     * @internal
+     */
     RuntimeCompiler.prototype._compileComponent = function (compType, isSync, moduleDirectives, modulePipes) {
         var _this = this;
         var templates = this._getTransitiveCompiledTemplates(compType, true, moduleDirectives, modulePipes);
@@ -309,4 +314,46 @@ function assertComponent(meta) {
         throw new exceptions_1.BaseException("Could not compile '" + meta.type.name + "' because it is not a component.");
     }
 }
+/**
+ * A wrapper around `Compiler` and `ComponentResolver` that
+ * provides default patform directives / pipes.
+ */
+var BoundCompiler = (function () {
+    function BoundCompiler(_delegate, _directives, _pipes) {
+        this._delegate = _delegate;
+        this._directives = _directives;
+        this._pipes = _pipes;
+    }
+    BoundCompiler.prototype.resolveComponent = function (component) {
+        if (lang_1.isString(component)) {
+            return async_1.PromiseWrapper.reject(new exceptions_1.BaseException("Cannot resolve component using '" + component + "'."), null);
+        }
+        return this.compileComponentAsync(component);
+    };
+    BoundCompiler.prototype.compileComponentAsync = function (compType) {
+        return this._delegate._compileComponent(compType, false, this._directives, this._pipes)
+            .asyncResult;
+    };
+    BoundCompiler.prototype.compileComponentSync = function (compType) {
+        return this._delegate._compileComponent(compType, true, this._directives, this._pipes)
+            .syncResult;
+    };
+    BoundCompiler.prototype.compileAppModuleSync = function (moduleType, metadata) {
+        if (metadata === void 0) { metadata = null; }
+        return this._delegate.compileAppModuleSync(moduleType, metadata);
+    };
+    BoundCompiler.prototype.compileAppModuleAsync = function (moduleType, metadata) {
+        if (metadata === void 0) { metadata = null; }
+        return this._delegate.compileAppModuleAsync(moduleType, metadata);
+    };
+    /**
+     * Clears all caches
+     */
+    BoundCompiler.prototype.clearCache = function () { this._delegate.clearCache(); };
+    /**
+     * Clears the cache for the given component/appModule.
+     */
+    BoundCompiler.prototype.clearCacheFor = function (type) { this._delegate.clearCacheFor(type); };
+    return BoundCompiler;
+}());
 //# sourceMappingURL=runtime_compiler.js.map

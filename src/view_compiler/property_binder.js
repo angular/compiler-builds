@@ -128,21 +128,21 @@ function bindAndWriteToRenderer(boundProps, context, compileElement) {
 function sanitizedValue(boundProp, renderValue) {
     var enumValue;
     switch (boundProp.securityContext) {
-        case core_private_1.SecurityContext.NONE:
+        case core_1.SecurityContext.NONE:
             return renderValue; // No sanitization needed.
-        case core_private_1.SecurityContext.HTML:
+        case core_1.SecurityContext.HTML:
             enumValue = 'HTML';
             break;
-        case core_private_1.SecurityContext.STYLE:
+        case core_1.SecurityContext.STYLE:
             enumValue = 'STYLE';
             break;
-        case core_private_1.SecurityContext.SCRIPT:
+        case core_1.SecurityContext.SCRIPT:
             enumValue = 'SCRIPT';
             break;
-        case core_private_1.SecurityContext.URL:
+        case core_1.SecurityContext.URL:
             enumValue = 'URL';
             break;
-        case core_private_1.SecurityContext.RESOURCE_URL:
+        case core_1.SecurityContext.RESOURCE_URL:
             enumValue = 'RESOURCE_URL';
             break;
         default:

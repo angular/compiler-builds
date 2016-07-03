@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { EMPTY_STATE as EMPTY_ANIMATION_STATE, LifecycleHooks, SecurityContext, isDefaultChangeDetectionStrategy } from '../../core_private';
+import { EMPTY_STATE as EMPTY_ANIMATION_STATE, LifecycleHooks, isDefaultChangeDetectionStrategy } from '../../core_private';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -14,7 +14,7 @@ import { PropertyBindingType } from '../template_ast';
 import { camelCaseToDashCase } from '../util';
 import { convertCdExpressionToIr } from './expression_converter';
 import { CompileBinding } from './compile_binding';
-import { BaseException } from '@angular/core';
+import { BaseException, SecurityContext } from '@angular/core';
 function createBindFieldExpr(exprIndex) {
     return o.THIS_EXPR.prop(`_expr_${exprIndex}`);
 }

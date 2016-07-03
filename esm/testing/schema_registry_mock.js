@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { SecurityContext } from '../core_private';
+import { SecurityContext } from '@angular/core';
 import { isPresent } from '../src/facade/lang';
 export class MockSchemaRegistry {
     constructor(existingProperties, attrPropMapping) {
