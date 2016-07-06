@@ -179,10 +179,18 @@ var TemplateParseVisitor = (function () {
         if (level === void 0) { level = parse_util_1.ParseErrorLevel.FATAL; }
         this.errors.push(new TemplateParseError(message, sourceSpan, level));
     };
+    TemplateParseVisitor.prototype._reportParserErors = function (errors, sourceSpan) {
+        for (var _i = 0, errors_1 = errors; _i < errors_1.length; _i++) {
+            var error = errors_1[_i];
+            this._reportError(error.message, sourceSpan);
+        }
+    };
     TemplateParseVisitor.prototype._parseInterpolation = function (value, sourceSpan) {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var ast = this._exprParser.parseInterpolation(value, sourceInfo, this._interpolationConfig);
+            if (ast)
+                this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
             if (lang_1.isPresent(ast) &&
                 ast.ast.expressions.length > core_private_1.MAX_INTERPOLATION_VALUES) {
@@ -199,6 +207,8 @@ var TemplateParseVisitor = (function () {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
+            if (ast)
+                this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
             return ast;
         }
@@ -211,6 +221,8 @@ var TemplateParseVisitor = (function () {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
+            if (ast)
+                this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
             return ast;
         }
@@ -224,6 +236,7 @@ var TemplateParseVisitor = (function () {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var bindingsResult = this._exprParser.parseTemplateBindings(value, sourceInfo);
+            this._reportParserErors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach(function (binding) {
                 if (lang_1.isPresent(binding.expression)) {
                     _this._checkPipes(binding.expression, sourceSpan);

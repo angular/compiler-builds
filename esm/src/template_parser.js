@@ -164,10 +164,17 @@ class TemplateParseVisitor {
     _reportError(message, sourceSpan, level = ParseErrorLevel.FATAL) {
         this.errors.push(new TemplateParseError(message, sourceSpan, level));
     }
+    _reportParserErors(errors, sourceSpan) {
+        for (let error of errors) {
+            this._reportError(error.message, sourceSpan);
+        }
+    }
     _parseInterpolation(value, sourceSpan) {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var ast = this._exprParser.parseInterpolation(value, sourceInfo, this._interpolationConfig);
+            if (ast)
+                this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
             if (isPresent(ast) &&
                 ast.ast.expressions.length > MAX_INTERPOLATION_VALUES) {
@@ -184,6 +191,8 @@ class TemplateParseVisitor {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
+            if (ast)
+                this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
             return ast;
         }
@@ -196,6 +205,8 @@ class TemplateParseVisitor {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
+            if (ast)
+                this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
             return ast;
         }
@@ -208,6 +219,7 @@ class TemplateParseVisitor {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var bindingsResult = this._exprParser.parseTemplateBindings(value, sourceInfo);
+            this._reportParserErors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach((binding) => {
                 if (isPresent(binding.expression)) {
                     this._checkPipes(binding.expression, sourceSpan);

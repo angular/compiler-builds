@@ -6,14 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
 var core_1 = require('@angular/core');
 var chars = require('../chars');
-var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
 (function (TokenType) {
     TokenType[TokenType["Character"] = 0] = "Character";
@@ -22,6 +16,7 @@ var lang_1 = require('../facade/lang');
     TokenType[TokenType["String"] = 3] = "String";
     TokenType[TokenType["Operator"] = 4] = "Operator";
     TokenType[TokenType["Number"] = 5] = "Number";
+    TokenType[TokenType["Error"] = 6] = "Error";
 })(exports.TokenType || (exports.TokenType = {}));
 var TokenType = exports.TokenType;
 var KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else'];
@@ -72,6 +67,7 @@ var Token = (function () {
     };
     Token.prototype.isKeywordTrue = function () { return (this.type == TokenType.Keyword && this.strValue == 'true'); };
     Token.prototype.isKeywordFalse = function () { return (this.type == TokenType.Keyword && this.strValue == 'false'); };
+    Token.prototype.isError = function () { return this.type == TokenType.Error; };
     Token.prototype.toNumber = function () {
         // -1 instead of NULL ok?
         return (this.type == TokenType.Number) ? this.numValue : -1;
@@ -83,6 +79,7 @@ var Token = (function () {
             case TokenType.Keyword:
             case TokenType.Operator:
             case TokenType.String:
+            case TokenType.Error:
                 return this.strValue;
             case TokenType.Number:
                 return this.numValue.toString();
@@ -111,17 +108,10 @@ function newStringToken(index, text) {
 function newNumberToken(index, n) {
     return new Token(index, TokenType.Number, n, '');
 }
+function newErrorToken(index, message) {
+    return new Token(index, TokenType.Error, 0, message);
+}
 exports.EOF = new Token(-1, TokenType.Character, 0, '');
-var ScannerError = (function (_super) {
-    __extends(ScannerError, _super);
-    function ScannerError(message) {
-        _super.call(this);
-        this.message = message;
-    }
-    ScannerError.prototype.toString = function () { return this.message; };
-    return ScannerError;
-}(exceptions_1.BaseException));
-exports.ScannerError = ScannerError;
 var _Scanner = (function () {
     function _Scanner(input) {
         this.input = input;
@@ -200,8 +190,8 @@ var _Scanner = (function () {
                     this.advance();
                 return this.scanToken();
         }
-        this.error("Unexpected character [" + lang_1.StringWrapper.fromCharCode(peek) + "]", 0);
-        return null;
+        this.advance();
+        return this.error("Unexpected character [" + lang_1.StringWrapper.fromCharCode(peek) + "]", 0);
     };
     _Scanner.prototype.scanCharacter = function (start, code) {
         this.advance();
@@ -258,7 +248,7 @@ var _Scanner = (function () {
                 if (isExponentSign(this.peek))
                     this.advance();
                 if (!chars.isDigit(this.peek))
-                    this.error('Invalid exponent', -1);
+                    return this.error('Invalid exponent', -1);
                 simple = false;
             }
             else {
@@ -291,7 +281,7 @@ var _Scanner = (function () {
                         unescapedCode = lang_1.NumberWrapper.parseInt(hex, 16);
                     }
                     catch (e) {
-                        this.error("Invalid unicode escape [\\u" + hex + "]", 0);
+                        return this.error("Invalid unicode escape [\\u" + hex + "]", 0);
                     }
                     for (var i = 0; i < 5; i++) {
                         this.advance();
@@ -305,7 +295,7 @@ var _Scanner = (function () {
                 marker = this.index;
             }
             else if (this.peek == chars.$EOF) {
-                this.error('Unterminated quote', 0);
+                return this.error('Unterminated quote', 0);
             }
             else {
                 this.advance();
@@ -323,7 +313,7 @@ var _Scanner = (function () {
     };
     _Scanner.prototype.error = function (message, offset) {
         var position = this.index + offset;
-        throw new ScannerError("Lexer Error: " + message + " at column " + position + " in expression [" + this.input + "]");
+        return newErrorToken(position, "Lexer Error: " + message + " at column " + position + " in expression [" + this.input + "]");
     };
     return _Scanner;
 }());
