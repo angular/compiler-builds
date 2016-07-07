@@ -7,6 +7,7 @@
  */
 "use strict";
 var core_private_1 = require('../../core_private');
+var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
@@ -22,6 +23,7 @@ function createBindFieldExpr(exprIndex) {
 function createCurrValueExpr(exprIndex) {
     return o.variable("currVal_" + exprIndex); // fix syntax highlighting: `
 }
+var _animationViewCheckedFlagMap = new collection_1.Map();
 function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method) {
     var checkExpression = expression_converter_1.convertCdExpressionToIr(view, context, parsedExpression, constants_1.DetectChangesVars.valUnwrapper);
     if (lang_1.isBlank(checkExpression.expression)) {
@@ -120,6 +122,10 @@ function bindAndWriteToRenderer(boundProps, context, compileElement) {
                     .toStmt());
                 view.detachMethod.addStmt(animation.fnVariable.callFn([o.THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])
                     .toStmt());
+                if (!_animationViewCheckedFlagMap.get(view)) {
+                    _animationViewCheckedFlagMap.set(view, true);
+                    view.afterViewLifecycleCallbacksMethod.addStmt(o.THIS_EXPR.callMethod('triggerQueuedAnimations', []).toStmt());
+                }
                 break;
         }
         bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod);

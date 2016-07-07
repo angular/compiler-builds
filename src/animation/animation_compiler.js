@@ -207,7 +207,7 @@ var _AnimationBuilder = (function () {
                     .toStmt()])])
             .toStmt());
         statements.push(_ANIMATION_FACTORY_VIEW_VAR
-            .callMethod('registerAndStartAnimation', [
+            .callMethod('queueAnimation', [
             _ANIMATION_FACTORY_ELEMENT_VAR, o.literal(this.animationName),
             _ANIMATION_PLAYER_VAR
         ])
