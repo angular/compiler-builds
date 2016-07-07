@@ -1,5 +1,6 @@
 import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
 export declare class Identifiers {
+    static ANALYZE_FOR_PRECOMPILE: CompileIdentifierMetadata;
     static ViewUtils: CompileIdentifierMetadata;
     static AppView: CompileIdentifierMetadata;
     static DebugAppView: CompileIdentifierMetadata;

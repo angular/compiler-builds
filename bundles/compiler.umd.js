@@ -6759,6 +6759,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return Identifiers;
     }());
+    Identifiers.ANALYZE_FOR_PRECOMPILE = new CompileIdentifierMetadata({
+        name: 'ANALYZE_FOR_PRECOMPILE',
+        moduleUrl: assetUrl('core', 'metadata/di'),
+        runtime: _angular_core.ANALYZE_FOR_PRECOMPILE
+    });
     Identifiers.ViewUtils = new CompileIdentifierMetadata({ name: 'ViewUtils', moduleUrl: assetUrl('core', 'linker/view_utils'), runtime: impViewUtils });
     Identifiers.AppView = new CompileIdentifierMetadata({ name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impAppView });
     Identifiers.DebugAppView = new CompileIdentifierMetadata({ name: 'DebugAppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impDebugAppView });
@@ -12944,7 +12949,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     });
                     changeDetectionStrategy = cmpMeta.changeDetection;
                     if (isPresent(dirMeta.viewProviders)) {
-                        viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'));
+                        viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'), []);
                     }
                     moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
                     if (cmpMeta.precompile) {
@@ -12954,7 +12959,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 var providers = [];
                 if (isPresent(dirMeta.providers)) {
-                    providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'));
+                    providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'), precompileTypes);
                 }
                 var queries = [];
                 var viewQueries = [];
@@ -13016,7 +13021,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     });
                 }
                 if (meta.providers) {
-                    providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers));
+                    providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, precompile_1));
                 }
                 if (meta.directives) {
                     directives_1.push.apply(directives_1, flattenArray(meta.directives)
@@ -13208,26 +13213,57 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return compileToken;
         };
-        CompileMetadataResolver.prototype.getProvidersMetadata = function (providers) {
+        CompileMetadataResolver.prototype.getProvidersMetadata = function (providers, targetPrecompileComponents) {
             var _this = this;
-            return providers.map(function (provider) {
+            var compileProviders = [];
+            providers.forEach(function (provider) {
                 provider = _angular_core.resolveForwardRef(provider);
+                if (isProviderLiteral(provider)) {
+                    provider = createProvider(provider);
+                }
+                var compileProvider;
                 if (isArray(provider)) {
-                    return _this.getProvidersMetadata(provider);
+                    compileProvider = _this.getProvidersMetadata(provider, targetPrecompileComponents);
                 }
                 else if (provider instanceof _angular_core.Provider) {
-                    return _this.getProviderMetadata(provider);
-                }
-                else if (isProviderLiteral(provider)) {
-                    return _this.getProviderMetadata(createProvider(provider));
+                    var tokenMeta = _this.getTokenMetadata(provider.token);
+                    if (tokenMeta.equalsTo(identifierToken(Identifiers.ANALYZE_FOR_PRECOMPILE))) {
+                        targetPrecompileComponents.push.apply(targetPrecompileComponents, _this.getPrecompileComponentsFromProvider(provider));
+                    }
+                    else {
+                        compileProvider = _this.getProviderMetadata(provider);
+                    }
                 }
                 else if (isValidType(provider)) {
-                    return _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
+                    compileProvider = _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
                 }
                 else {
                     throw new BaseException$1("Invalid provider - only instances of Provider and Type are allowed, got: " + stringify(provider));
                 }
+                if (compileProvider) {
+                    compileProviders.push(compileProvider);
+                }
             });
+            return compileProviders;
+        };
+        CompileMetadataResolver.prototype.getPrecompileComponentsFromProvider = function (provider) {
+            var _this = this;
+            var components = [];
+            var collectedIdentifiers = [];
+            if (provider.useFactory || provider.useExisting || provider.useClass) {
+                throw new BaseException$1("The ANALYZE_FOR_PRECOMPILE token only supports useValue!");
+            }
+            if (!provider.multi) {
+                throw new BaseException$1("The ANALYZE_FOR_PRECOMPILE token only supports 'multi = true'!");
+            }
+            convertToCompileValue(provider.useValue, collectedIdentifiers);
+            collectedIdentifiers.forEach(function (identifier) {
+                var dirMeta = _this.maybeGetDirectiveMetadata(identifier.runtime);
+                if (dirMeta) {
+                    components.push(dirMeta.type);
+                }
+            });
+            return components;
         };
         CompileMetadataResolver.prototype.getProviderMetadata = function (provider) {
             var compileDeps;
@@ -13244,7 +13280,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return new CompileProviderMetadata({
                 token: this.getTokenMetadata(provider.token),
                 useClass: compileTypeMetadata,
-                useValue: convertToCompileValue(provider.useValue),
+                useValue: convertToCompileValue(provider.useValue, []),
                 useFactory: compileFactoryMetadata,
                 useExisting: isPresent(provider.useExisting) ? this.getTokenMetadata(provider.useExisting) :
                     null,
@@ -13359,22 +13395,24 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return reflector.importUri(type);
     }
-    // Only fill CompileIdentifierMetadata.runtime if needed...
-    function convertToCompileValue(value) {
-        return visitValue(value, new _CompileValueConverter(), null);
+    function convertToCompileValue(value, targetIdentifiers) {
+        return visitValue(value, new _CompileValueConverter(), targetIdentifiers);
     }
     var _CompileValueConverter = (function (_super) {
         __extends(_CompileValueConverter, _super);
         function _CompileValueConverter() {
             _super.apply(this, arguments);
         }
-        _CompileValueConverter.prototype.visitOther = function (value, context) {
+        _CompileValueConverter.prototype.visitOther = function (value, targetIdentifiers) {
+            var identifier;
             if (isStaticSymbol(value)) {
-                return new CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath });
+                identifier = new CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, runtime: value });
             }
             else {
-                return new CompileIdentifierMetadata({ runtime: value });
+                identifier = new CompileIdentifierMetadata({ runtime: value });
             }
+            targetIdentifiers.push(identifier);
+            return identifier;
         };
         return _CompileValueConverter;
     }(ValueTransformer));

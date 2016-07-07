@@ -15,6 +15,7 @@ import * as cpl from './compile_metadata';
 import { CompilerConfig } from './config';
 import { hasLifecycleHook } from './directive_lifecycle_reflector';
 import { DirectiveResolver } from './directive_resolver';
+import { Identifiers, identifierToken } from './identifiers';
 import { PipeResolver } from './pipe_resolver';
 import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, ValueTransformer, sanitizeIdentifier, visitValue } from './util';
@@ -126,7 +127,7 @@ export class CompileMetadataResolver {
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (isPresent(dirMeta.viewProviders)) {
-                    viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'));
+                    viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'), []);
                 }
                 moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
                 if (cmpMeta.precompile) {
@@ -136,7 +137,7 @@ export class CompileMetadataResolver {
             }
             var providers = [];
             if (isPresent(dirMeta.providers)) {
-                providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'));
+                providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'), precompileTypes);
             }
             var queries = [];
             var viewQueries = [];
@@ -196,7 +197,7 @@ export class CompileMetadataResolver {
                 });
             }
             if (meta.providers) {
-                providers.push(...this.getProvidersMetadata(meta.providers));
+                providers.push(...this.getProvidersMetadata(meta.providers, precompile));
             }
             if (meta.directives) {
                 directives.push(...flattenArray(meta.directives)
@@ -383,25 +384,55 @@ export class CompileMetadataResolver {
         }
         return compileToken;
     }
-    getProvidersMetadata(providers) {
-        return providers.map((provider) => {
+    getProvidersMetadata(providers, targetPrecompileComponents) {
+        const compileProviders = [];
+        providers.forEach((provider) => {
             provider = resolveForwardRef(provider);
+            if (isProviderLiteral(provider)) {
+                provider = createProvider(provider);
+            }
+            let compileProvider;
             if (isArray(provider)) {
-                return this.getProvidersMetadata(provider);
+                compileProvider = this.getProvidersMetadata(provider, targetPrecompileComponents);
             }
             else if (provider instanceof Provider) {
-                return this.getProviderMetadata(provider);
-            }
-            else if (isProviderLiteral(provider)) {
-                return this.getProviderMetadata(createProvider(provider));
+                let tokenMeta = this.getTokenMetadata(provider.token);
+                if (tokenMeta.equalsTo(identifierToken(Identifiers.ANALYZE_FOR_PRECOMPILE))) {
+                    targetPrecompileComponents.push(...this.getPrecompileComponentsFromProvider(provider));
+                }
+                else {
+                    compileProvider = this.getProviderMetadata(provider);
+                }
             }
             else if (isValidType(provider)) {
-                return this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
+                compileProvider = this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
             }
             else {
                 throw new BaseException(`Invalid provider - only instances of Provider and Type are allowed, got: ${stringify(provider)}`);
             }
+            if (compileProvider) {
+                compileProviders.push(compileProvider);
+            }
         });
+        return compileProviders;
+    }
+    getPrecompileComponentsFromProvider(provider) {
+        let components = [];
+        let collectedIdentifiers = [];
+        if (provider.useFactory || provider.useExisting || provider.useClass) {
+            throw new BaseException(`The ANALYZE_FOR_PRECOMPILE token only supports useValue!`);
+        }
+        if (!provider.multi) {
+            throw new BaseException(`The ANALYZE_FOR_PRECOMPILE token only supports 'multi = true'!`);
+        }
+        convertToCompileValue(provider.useValue, collectedIdentifiers);
+        collectedIdentifiers.forEach((identifier) => {
+            let dirMeta = this.maybeGetDirectiveMetadata(identifier.runtime);
+            if (dirMeta) {
+                components.push(dirMeta.type);
+            }
+        });
+        return components;
     }
     getProviderMetadata(provider) {
         var compileDeps;
@@ -418,7 +449,7 @@ export class CompileMetadataResolver {
         return new cpl.CompileProviderMetadata({
             token: this.getTokenMetadata(provider.token),
             useClass: compileTypeMetadata,
-            useValue: convertToCompileValue(provider.useValue),
+            useValue: convertToCompileValue(provider.useValue, []),
             useFactory: compileFactoryMetadata,
             useExisting: isPresent(provider.useExisting) ? this.getTokenMetadata(provider.useExisting) :
                 null,
@@ -529,18 +560,20 @@ function componentModuleUrl(reflector, type, cmpMetadata) {
     }
     return reflector.importUri(type);
 }
-// Only fill CompileIdentifierMetadata.runtime if needed...
-function convertToCompileValue(value) {
-    return visitValue(value, new _CompileValueConverter(), null);
+function convertToCompileValue(value, targetIdentifiers) {
+    return visitValue(value, new _CompileValueConverter(), targetIdentifiers);
 }
 class _CompileValueConverter extends ValueTransformer {
-    visitOther(value, context) {
+    visitOther(value, targetIdentifiers) {
+        let identifier;
         if (cpl.isStaticSymbol(value)) {
-            return new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath });
+            identifier = new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, runtime: value });
         }
         else {
-            return new cpl.CompileIdentifierMetadata({ runtime: value });
+            identifier = new cpl.CompileIdentifierMetadata({ runtime: value });
         }
+        targetIdentifiers.push(identifier);
+        return identifier;
     }
 }
 //# sourceMappingURL=metadata_resolver.js.map

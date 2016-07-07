@@ -21,6 +21,7 @@ var cpl = require('./compile_metadata');
 var config_1 = require('./config');
 var directive_lifecycle_reflector_1 = require('./directive_lifecycle_reflector');
 var directive_resolver_1 = require('./directive_resolver');
+var identifiers_1 = require('./identifiers');
 var pipe_resolver_1 = require('./pipe_resolver');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
@@ -136,7 +137,7 @@ var CompileMetadataResolver = (function () {
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (lang_1.isPresent(dirMeta.viewProviders)) {
-                    viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'));
+                    viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'), []);
                 }
                 moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
                 if (cmpMeta.precompile) {
@@ -146,7 +147,7 @@ var CompileMetadataResolver = (function () {
             }
             var providers = [];
             if (lang_1.isPresent(dirMeta.providers)) {
-                providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'));
+                providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'), precompileTypes);
             }
             var queries = [];
             var viewQueries = [];
@@ -208,7 +209,7 @@ var CompileMetadataResolver = (function () {
                 });
             }
             if (meta.providers) {
-                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers));
+                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, precompile_1));
             }
             if (meta.directives) {
                 directives_1.push.apply(directives_1, flattenArray(meta.directives)
@@ -400,26 +401,57 @@ var CompileMetadataResolver = (function () {
         }
         return compileToken;
     };
-    CompileMetadataResolver.prototype.getProvidersMetadata = function (providers) {
+    CompileMetadataResolver.prototype.getProvidersMetadata = function (providers, targetPrecompileComponents) {
         var _this = this;
-        return providers.map(function (provider) {
+        var compileProviders = [];
+        providers.forEach(function (provider) {
             provider = core_1.resolveForwardRef(provider);
+            if (core_private_1.isProviderLiteral(provider)) {
+                provider = core_private_1.createProvider(provider);
+            }
+            var compileProvider;
             if (lang_1.isArray(provider)) {
-                return _this.getProvidersMetadata(provider);
+                compileProvider = _this.getProvidersMetadata(provider, targetPrecompileComponents);
             }
             else if (provider instanceof core_1.Provider) {
-                return _this.getProviderMetadata(provider);
-            }
-            else if (core_private_1.isProviderLiteral(provider)) {
-                return _this.getProviderMetadata(core_private_1.createProvider(provider));
+                var tokenMeta = _this.getTokenMetadata(provider.token);
+                if (tokenMeta.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ANALYZE_FOR_PRECOMPILE))) {
+                    targetPrecompileComponents.push.apply(targetPrecompileComponents, _this.getPrecompileComponentsFromProvider(provider));
+                }
+                else {
+                    compileProvider = _this.getProviderMetadata(provider);
+                }
             }
             else if (isValidType(provider)) {
-                return _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
+                compileProvider = _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
             }
             else {
                 throw new exceptions_1.BaseException("Invalid provider - only instances of Provider and Type are allowed, got: " + lang_1.stringify(provider));
             }
+            if (compileProvider) {
+                compileProviders.push(compileProvider);
+            }
         });
+        return compileProviders;
+    };
+    CompileMetadataResolver.prototype.getPrecompileComponentsFromProvider = function (provider) {
+        var _this = this;
+        var components = [];
+        var collectedIdentifiers = [];
+        if (provider.useFactory || provider.useExisting || provider.useClass) {
+            throw new exceptions_1.BaseException("The ANALYZE_FOR_PRECOMPILE token only supports useValue!");
+        }
+        if (!provider.multi) {
+            throw new exceptions_1.BaseException("The ANALYZE_FOR_PRECOMPILE token only supports 'multi = true'!");
+        }
+        convertToCompileValue(provider.useValue, collectedIdentifiers);
+        collectedIdentifiers.forEach(function (identifier) {
+            var dirMeta = _this.maybeGetDirectiveMetadata(identifier.runtime);
+            if (dirMeta) {
+                components.push(dirMeta.type);
+            }
+        });
+        return components;
     };
     CompileMetadataResolver.prototype.getProviderMetadata = function (provider) {
         var compileDeps;
@@ -436,7 +468,7 @@ var CompileMetadataResolver = (function () {
         return new cpl.CompileProviderMetadata({
             token: this.getTokenMetadata(provider.token),
             useClass: compileTypeMetadata,
-            useValue: convertToCompileValue(provider.useValue),
+            useValue: convertToCompileValue(provider.useValue, []),
             useFactory: compileFactoryMetadata,
             useExisting: lang_1.isPresent(provider.useExisting) ? this.getTokenMetadata(provider.useExisting) :
                 null,
@@ -552,22 +584,24 @@ function componentModuleUrl(reflector, type, cmpMetadata) {
     }
     return reflector.importUri(type);
 }
-// Only fill CompileIdentifierMetadata.runtime if needed...
-function convertToCompileValue(value) {
-    return util_1.visitValue(value, new _CompileValueConverter(), null);
+function convertToCompileValue(value, targetIdentifiers) {
+    return util_1.visitValue(value, new _CompileValueConverter(), targetIdentifiers);
 }
 var _CompileValueConverter = (function (_super) {
     __extends(_CompileValueConverter, _super);
     function _CompileValueConverter() {
         _super.apply(this, arguments);
     }
-    _CompileValueConverter.prototype.visitOther = function (value, context) {
+    _CompileValueConverter.prototype.visitOther = function (value, targetIdentifiers) {
+        var identifier;
         if (cpl.isStaticSymbol(value)) {
-            return new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath });
+            identifier = new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, runtime: value });
         }
         else {
-            return new cpl.CompileIdentifierMetadata({ runtime: value });
+            identifier = new cpl.CompileIdentifierMetadata({ runtime: value });
         }
+        targetIdentifiers.push(identifier);
+        return identifier;
     };
     return _CompileValueConverter;
 }(util_1.ValueTransformer));

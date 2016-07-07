@@ -54,6 +54,11 @@ var ANIMATION_STYLE_UTIL_ASSET_URL = util_1.assetUrl('core', 'animation/animatio
 var Identifiers = (function () {
     function Identifiers() {
     }
+    Identifiers.ANALYZE_FOR_PRECOMPILE = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'ANALYZE_FOR_PRECOMPILE',
+        moduleUrl: util_1.assetUrl('core', 'metadata/di'),
+        runtime: core_1.ANALYZE_FOR_PRECOMPILE
+    });
     Identifiers.ViewUtils = new compile_metadata_1.CompileIdentifierMetadata({ name: 'ViewUtils', moduleUrl: util_1.assetUrl('core', 'linker/view_utils'), runtime: impViewUtils });
     Identifiers.AppView = new compile_metadata_1.CompileIdentifierMetadata({ name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impAppView });
     Identifiers.DebugAppView = new compile_metadata_1.CompileIdentifierMetadata({ name: 'DebugAppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impDebugAppView });
