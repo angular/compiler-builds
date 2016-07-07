@@ -9088,7 +9088,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         .toStmt()])])
                 .toStmt());
             statements.push(_ANIMATION_FACTORY_VIEW_VAR
-                .callMethod('queueAnimation', [
+                .callMethod('registerAndStartAnimation', [
                 _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
                 _ANIMATION_PLAYER_VAR
             ])
@@ -10358,7 +10358,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function createCurrValueExpr(exprIndex) {
         return variable("currVal_" + exprIndex); // fix syntax highlighting: `
     }
-    var _animationViewCheckedFlagMap = new Map$1();
     function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method) {
         var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper);
         if (isBlank(checkExpression.expression)) {
@@ -10456,10 +10455,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                         .toStmt());
                     view.detachMethod.addStmt(animation.fnVariable.callFn([THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])
                         .toStmt());
-                    if (!_animationViewCheckedFlagMap.get(view)) {
-                        _animationViewCheckedFlagMap.set(view, true);
-                        view.afterViewLifecycleCallbacksMethod.addStmt(THIS_EXPR.callMethod('triggerQueuedAnimations', []).toStmt());
-                    }
                     break;
             }
             bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod);
