@@ -7754,7 +7754,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (isPresent(bindParts)) {
                 hasBinding = true;
                 if (isPresent(bindParts[1])) {
-                    this._parseProperty(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
+                    this._parsePropertyOrAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
                 }
                 else if (isPresent(bindParts[2])) {
                     var identifier = bindParts[8];
@@ -7784,18 +7784,21 @@ var __extends = (this && this.__extends) || function (d, b) {
                     this._parseEvent(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
                 }
                 else if (isPresent(bindParts[6])) {
-                    this._parseProperty(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
+                    this._parsePropertyOrAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
                     this._parseAssignmentEvent(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
                 }
                 else if (isPresent(bindParts[7])) {
+                    if (attrName[0] == '@' && isPresent(attrValue) && attrValue.length > 0) {
+                        this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is deprecated. Use [@prop]=\"exp\" instead!", attr.sourceSpan, ParseErrorLevel.WARNING);
+                    }
                     this._parseAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetAnimationProps);
                 }
                 else if (isPresent(bindParts[9])) {
-                    this._parseProperty(bindParts[9], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
+                    this._parsePropertyOrAnimation(bindParts[9], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
                     this._parseAssignmentEvent(bindParts[9], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
                 }
                 else if (isPresent(bindParts[10])) {
-                    this._parseProperty(bindParts[10], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
+                    this._parsePropertyOrAnimation(bindParts[10], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
                 }
                 else if (isPresent(bindParts[11])) {
                     this._parseEvent(bindParts[11], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
@@ -7824,8 +7827,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             targetRefs.push(new ElementOrDirectiveRef(identifier, value, sourceSpan));
         };
-        TemplateParseVisitor.prototype._parseProperty = function (name, expression, sourceSpan, targetMatchableAttrs, targetProps) {
-            this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
+        TemplateParseVisitor.prototype._parsePropertyOrAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps) {
+            if (name[0] == '@') {
+                this._parseAnimation(name.substr(1), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
+            }
+            else {
+                this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
+            }
         };
         TemplateParseVisitor.prototype._parseAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetAnimationProps) {
             // This will occur when a @trigger is not paired with an expression.
