@@ -14940,7 +14940,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     var CATCH_ERROR_VAR$2 = 'error';
     var CATCH_STACK_VAR$2 = 'stack';
     var RuntimeCompiler = (function () {
-        function RuntimeCompiler(_metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig) {
+        function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig) {
+            this._injector = _injector;
             this._metadataResolver = _metadataResolver;
             this._templateNormalizer = _templateNormalizer;
             this._templateParser = _templateParser;
@@ -14952,6 +14953,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._compiledHostTemplateCache = new Map();
             this._compiledAppModuleCache = new Map();
         }
+        Object.defineProperty(RuntimeCompiler.prototype, "injector", {
+            get: function () { return this._injector; },
+            enumerable: true,
+            configurable: true
+        });
         RuntimeCompiler.prototype.resolveComponent = function (component) {
             if (isString(component)) {
                 return PromiseWrapper.reject(new BaseException$1("Cannot resolve component using '" + component + "'."), null);
@@ -14976,9 +14982,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             var componentCompilePromises = [];
             if (!appModuleFactory || !useCache) {
                 var compileModuleMeta = this._metadataResolver.getAppModuleMetadata(moduleType, metadata);
-                var boundCompiler = new BoundCompiler(this, compileModuleMeta.directives.map(function (dir) { return dir.type.runtime; }), compileModuleMeta.pipes.map(function (pipe) { return pipe.type.runtime; }));
-                // Always provide a bound Compiler / ComponentResolver
-                compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new _angular_core.Provider(_angular_core.Compiler, { useValue: boundCompiler })));
+                var boundCompilerFactory = function (parentResolver) { return new BoundCompiler(_this, compileModuleMeta.directives.map(function (dir) { return dir.type.runtime; }), compileModuleMeta.pipes.map(function (pipe) { return pipe.type.runtime; }), parentResolver); };
+                // Always provide a bound Compiler and ComponentResolver
+                compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new _angular_core.Provider(_angular_core.Compiler, {
+                    useFactory: boundCompilerFactory,
+                    deps: [[new _angular_core.OptionalMetadata(), new _angular_core.SkipSelfMetadata(), _angular_core.ComponentResolver]]
+                })));
                 compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new _angular_core.Provider(_angular_core.ComponentResolver, { useExisting: _angular_core.Compiler })));
                 var compileResult = this._appModuleCompiler.compile(compileModuleMeta);
                 compileResult.dependencies.forEach(function (dep) {
@@ -15016,7 +15025,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             templates.forEach(function (template) {
                 if (template.loading) {
                     if (isSync) {
-                        throw new BaseException$1("Can't compile synchronously as " + template.compType.name + " is still being loaded!");
+                        throw new _angular_core.ComponentStillLoadingError(template.compType.runtime);
                     }
                     else {
                         loadingPromises.push(template.loading);
@@ -15166,6 +15175,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     RuntimeCompiler.ctorParameters = [
+        { type: _angular_core.Injector, },
         { type: CompileMetadataResolver, },
         { type: DirectiveNormalizer, },
         { type: TemplateParser, },
@@ -15235,14 +15245,25 @@ var __extends = (this && this.__extends) || function (d, b) {
      * provides default patform directives / pipes.
      */
     var BoundCompiler = (function () {
-        function BoundCompiler(_delegate, _directives, _pipes) {
+        function BoundCompiler(_delegate, _directives, _pipes, _parentComponentResolver) {
             this._delegate = _delegate;
             this._directives = _directives;
             this._pipes = _pipes;
+            this._parentComponentResolver = _parentComponentResolver;
         }
+        Object.defineProperty(BoundCompiler.prototype, "injector", {
+            get: function () { return this._delegate.injector; },
+            enumerable: true,
+            configurable: true
+        });
         BoundCompiler.prototype.resolveComponent = function (component) {
             if (isString(component)) {
-                return PromiseWrapper.reject(new BaseException$1("Cannot resolve component using '" + component + "'."), null);
+                if (this._parentComponentResolver) {
+                    return this._parentComponentResolver.resolveComponent(component);
+                }
+                else {
+                    return PromiseWrapper.reject(new BaseException$1("Cannot resolve component using '" + component + "'."), null);
+                }
             }
             return this.compileComponentAsync(component);
         };
@@ -15265,7 +15286,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * Clears all caches
          */
-        BoundCompiler.prototype.clearCache = function () { this._delegate.clearCache(); };
+        BoundCompiler.prototype.clearCache = function () {
+            this._delegate.clearCache();
+            if (this._parentComponentResolver) {
+                this._parentComponentResolver.clearCache();
+            }
+        };
         /**
          * Clears the cache for the given component/appModule.
          */

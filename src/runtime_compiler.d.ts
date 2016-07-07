@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AppModuleFactory, AppModuleMetadata, Compiler, ComponentFactory, ComponentResolver } from '@angular/core';
+import { AppModuleFactory, AppModuleMetadata, Compiler, ComponentFactory, ComponentResolver, Injector } from '@angular/core';
 import { ConcreteType, Type } from '../src/facade/lang';
 import { StyleCompiler } from './style_compiler';
 import { ViewCompiler } from './view_compiler/view_compiler';
@@ -24,6 +24,7 @@ import { CompilerConfig } from './config';
  * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
  */
 export declare class RuntimeCompiler implements ComponentResolver, Compiler {
+    private _injector;
     private _metadataResolver;
     private _templateNormalizer;
     private _templateParser;
@@ -34,7 +35,8 @@ export declare class RuntimeCompiler implements ComponentResolver, Compiler {
     private _compiledTemplateCache;
     private _compiledHostTemplateCache;
     private _compiledAppModuleCache;
-    constructor(_metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _appModuleCompiler: AppModuleCompiler, _genConfig: CompilerConfig);
+    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _appModuleCompiler: AppModuleCompiler, _genConfig: CompilerConfig);
+    injector: Injector;
     resolveComponent(component: Type | string): Promise<ComponentFactory<any>>;
     compileAppModuleSync<T>(moduleType: ConcreteType<T>, metadata?: AppModuleMetadata): AppModuleFactory<T>;
     compileAppModuleAsync<T>(moduleType: ConcreteType<T>, metadata?: AppModuleMetadata): Promise<AppModuleFactory<T>>;

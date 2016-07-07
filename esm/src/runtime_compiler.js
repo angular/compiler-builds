@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, ComponentFactory, ComponentResolver, Injectable, Provider } from '@angular/core';
+import { Compiler, ComponentFactory, ComponentResolver, ComponentStillLoadingError, Injectable, Injector, OptionalMetadata, Provider, SkipSelfMetadata } from '@angular/core';
 import { BaseException } from '../src/facade/exceptions';
 import { IS_DART, isBlank, isString } from '../src/facade/lang';
 import { PromiseWrapper } from '../src/facade/async';
@@ -22,7 +22,8 @@ import { jitStatements } from './output/output_jit';
 import { interpretStatements } from './output/output_interpreter';
 import { SyncAsyncResult } from './util';
 export class RuntimeCompiler {
-    constructor(_metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig) {
+    constructor(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig) {
+        this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
         this._templateParser = _templateParser;
@@ -34,6 +35,7 @@ export class RuntimeCompiler {
         this._compiledHostTemplateCache = new Map();
         this._compiledAppModuleCache = new Map();
     }
+    get injector() { return this._injector; }
     resolveComponent(component) {
         if (isString(component)) {
             return PromiseWrapper.reject(new BaseException(`Cannot resolve component using '${component}'.`), null);
@@ -54,9 +56,12 @@ export class RuntimeCompiler {
         let componentCompilePromises = [];
         if (!appModuleFactory || !useCache) {
             var compileModuleMeta = this._metadataResolver.getAppModuleMetadata(moduleType, metadata);
-            let boundCompiler = new BoundCompiler(this, compileModuleMeta.directives.map(dir => dir.type.runtime), compileModuleMeta.pipes.map((pipe) => pipe.type.runtime));
-            // Always provide a bound Compiler / ComponentResolver
-            compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new Provider(Compiler, { useValue: boundCompiler })));
+            let boundCompilerFactory = (parentResolver) => new BoundCompiler(this, compileModuleMeta.directives.map(dir => dir.type.runtime), compileModuleMeta.pipes.map((pipe) => pipe.type.runtime), parentResolver);
+            // Always provide a bound Compiler and ComponentResolver
+            compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new Provider(Compiler, {
+                useFactory: boundCompilerFactory,
+                deps: [[new OptionalMetadata(), new SkipSelfMetadata(), ComponentResolver]]
+            })));
             compileModuleMeta.providers.push(this._metadataResolver.getProviderMetadata(new Provider(ComponentResolver, { useExisting: Compiler })));
             var compileResult = this._appModuleCompiler.compile(compileModuleMeta);
             compileResult.dependencies.forEach((dep) => {
@@ -93,7 +98,7 @@ export class RuntimeCompiler {
         templates.forEach((template) => {
             if (template.loading) {
                 if (isSync) {
-                    throw new BaseException(`Can't compile synchronously as ${template.compType.name} is still being loaded!`);
+                    throw new ComponentStillLoadingError(template.compType.runtime);
                 }
                 else {
                     loadingPromises.push(template.loading);
@@ -240,6 +245,7 @@ RuntimeCompiler.decorators = [
 ];
 /** @nocollapse */
 RuntimeCompiler.ctorParameters = [
+    { type: Injector, },
     { type: CompileMetadataResolver, },
     { type: DirectiveNormalizer, },
     { type: TemplateParser, },
@@ -297,14 +303,21 @@ function assertComponent(meta) {
  * provides default patform directives / pipes.
  */
 class BoundCompiler {
-    constructor(_delegate, _directives, _pipes) {
+    constructor(_delegate, _directives, _pipes, _parentComponentResolver) {
         this._delegate = _delegate;
         this._directives = _directives;
         this._pipes = _pipes;
+        this._parentComponentResolver = _parentComponentResolver;
     }
+    get injector() { return this._delegate.injector; }
     resolveComponent(component) {
         if (isString(component)) {
-            return PromiseWrapper.reject(new BaseException(`Cannot resolve component using '${component}'.`), null);
+            if (this._parentComponentResolver) {
+                return this._parentComponentResolver.resolveComponent(component);
+            }
+            else {
+                return PromiseWrapper.reject(new BaseException(`Cannot resolve component using '${component}'.`), null);
+            }
         }
         return this.compileComponentAsync(component);
     }
@@ -325,7 +338,12 @@ class BoundCompiler {
     /**
      * Clears all caches
      */
-    clearCache() { this._delegate.clearCache(); }
+    clearCache() {
+        this._delegate.clearCache();
+        if (this._parentComponentResolver) {
+            this._parentComponentResolver.clearCache();
+        }
+    }
     /**
      * Clears the cache for the given component/appModule.
      */

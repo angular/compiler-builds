@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Injectable, Injector } from '@angular/core';
-import { TestComponentBuilder } from '@angular/core/testing';
+import { Inject, Injectable, Injector } from '@angular/core';
+import { TestComponentBuilder, TestInjector } from '@angular/core/testing';
 import { DirectiveResolver, ViewResolver } from '../index';
 import { MapWrapper } from '../src/facade/collection';
 import { isPresent } from '../src/facade/lang';
@@ -118,6 +118,6 @@ OverridingTestComponentBuilder.decorators = [
 ];
 /** @nocollapse */
 OverridingTestComponentBuilder.ctorParameters = [
-    { type: Injector, },
+    { type: Injector, decorators: [{ type: Inject, args: [TestInjector,] },] },
 ];
 //# sourceMappingURL=test_component_builder.js.map
