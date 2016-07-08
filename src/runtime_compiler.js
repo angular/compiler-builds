@@ -7,8 +7,10 @@
  */
 "use strict";
 var core_1 = require('@angular/core');
+var core_private_1 = require('../core_private');
 var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('../src/facade/lang');
+var collection_1 = require('../src/facade/collection');
 var async_1 = require('../src/facade/async');
 var compile_metadata_1 = require('./compile_metadata');
 var style_compiler_1 = require('./style_compiler');
@@ -23,7 +25,7 @@ var output_jit_1 = require('./output/output_jit');
 var output_interpreter_1 = require('./output/output_interpreter');
 var util_1 = require('./util');
 var RuntimeCompiler = (function () {
-    function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig) {
+    function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig, _console) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
@@ -32,9 +34,21 @@ var RuntimeCompiler = (function () {
         this._viewCompiler = _viewCompiler;
         this._appModuleCompiler = _appModuleCompiler;
         this._genConfig = _genConfig;
+        this._console = _console;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledAppModuleCache = new Map();
+        this._warnOnComponentResolver = true;
+        var flatDeprecatedPlatformDirectives = collection_1.ListWrapper.flatten(_genConfig.deprecatedPlatformDirectives);
+        if (flatDeprecatedPlatformDirectives.length > 0) {
+            this._console.warn("Providing platform directives via the PLATFORM_DIRECTIVES provider or the \"CompilerConfig\" is deprecated. Provide platform directives via an @AppModule instead. Directives: " +
+                flatDeprecatedPlatformDirectives.map(lang_1.stringify));
+        }
+        var flatDeprecatedPlatformPipes = collection_1.ListWrapper.flatten(_genConfig.deprecatedPlatformPipes);
+        if (flatDeprecatedPlatformPipes.length > 0) {
+            this._console.warn("Providing platform pipes via the PLATFORM_PIPES provider or the \"CompilerConfig\" is deprecated. Provide platform pipes via an @AppModule instead. Pipes: " +
+                flatDeprecatedPlatformPipes.map(lang_1.stringify));
+        }
     }
     Object.defineProperty(RuntimeCompiler.prototype, "injector", {
         get: function () { return this._injector; },
@@ -44,6 +58,10 @@ var RuntimeCompiler = (function () {
     RuntimeCompiler.prototype.resolveComponent = function (component) {
         if (lang_1.isString(component)) {
             return async_1.PromiseWrapper.reject(new exceptions_1.BaseException("Cannot resolve component using '" + component + "'."), null);
+        }
+        if (this._warnOnComponentResolver) {
+            this._console.warn(core_1.ComponentResolver.DynamicCompilationDeprecationMsg);
+            this._warnOnComponentResolver = false;
         }
         return this.compileComponentAsync(component);
     };
@@ -264,6 +282,7 @@ var RuntimeCompiler = (function () {
         { type: view_compiler_1.ViewCompiler, },
         { type: app_module_compiler_1.AppModuleCompiler, },
         { type: config_1.CompilerConfig, },
+        { type: core_private_1.Console, },
     ];
     return RuntimeCompiler;
 }());

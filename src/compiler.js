@@ -104,8 +104,8 @@ var _RuntimeCompilerFactory = (function (_super) {
             var inj = core_1.ReflectiveInjector.resolveAndCreate(options.deprecatedAppProviders);
             var compilerConfig = inj.get(config_2.CompilerConfig, null);
             if (compilerConfig) {
-                platformDirectivesFromAppProviders = compilerConfig.platformDirectives;
-                platformPipesFromAppProviders = compilerConfig.platformPipes;
+                platformDirectivesFromAppProviders = compilerConfig.deprecatedPlatformDirectives;
+                platformPipesFromAppProviders = compilerConfig.deprecatedPlatformPipes;
                 useJitFromAppProviders = compilerConfig.useJit;
                 useDebugFromAppProviders = compilerConfig.genDebugInfo;
                 defaultEncapsulationFromAppProviders = compilerConfig.defaultEncapsulation;
@@ -141,8 +141,8 @@ var _RuntimeCompilerFactory = (function (_super) {
                 provide: config_2.CompilerConfig,
                 useFactory: function (platformDirectives, platformPipes) {
                     return new config_2.CompilerConfig({
-                        platformDirectives: _mergeArrays(platformDirectivesFromAppProviders, platformDirectives),
-                        platformPipes: _mergeArrays(platformPipesFromAppProviders, platformPipes),
+                        deprecatedPlatformDirectives: _mergeArrays(platformDirectivesFromAppProviders, platformDirectives),
+                        deprecatedPlatformPipes: _mergeArrays(platformPipesFromAppProviders, platformPipes),
                         // let explicit values from the compiler options overwrite options
                         // from the app providers. E.g. important for the testing platform.
                         genDebugInfo: _firstDefined(options.useDebug, useDebugFromAppProviders, core_1.isDevMode()),

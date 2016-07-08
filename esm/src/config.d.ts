@@ -13,16 +13,26 @@ export declare class CompilerConfig {
     private _genDebugInfo;
     private _logBindingUpdate;
     useJit: boolean;
-    platformDirectives: any[];
-    platformPipes: any[];
-    constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, platformDirectives, platformPipes}?: {
+    /**
+     * @deprecated Providing platform directives via the {@link CompilerConfig} deprecated. Provide
+     * platform
+     * directives via an {@link AppModule} instead.
+     */
+    deprecatedPlatformDirectives: any[];
+    /**
+     * @deprecated Providing platform pipes via the {@link CompilerConfig} deprecated. Provide
+     * platform pipes
+     * via an {@link AppModule} instead.
+     */
+    deprecatedPlatformPipes: any[];
+    constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, deprecatedPlatformDirectives, deprecatedPlatformPipes}?: {
         renderTypes?: RenderTypes;
         defaultEncapsulation?: ViewEncapsulation;
         genDebugInfo?: boolean;
         logBindingUpdate?: boolean;
         useJit?: boolean;
-        platformDirectives?: any[];
-        platformPipes?: any[];
+        deprecatedPlatformDirectives?: any[];
+        deprecatedPlatformPipes?: any[];
     });
     readonly genDebugInfo: boolean;
     readonly logBindingUpdate: boolean;

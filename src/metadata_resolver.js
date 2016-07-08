@@ -290,7 +290,7 @@ var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getViewDirectivesMetadata = function (component) {
         var _this = this;
         var view = this._viewResolver.resolve(component);
-        var directives = flattenDirectives(view, this._config.platformDirectives);
+        var directives = flattenDirectives(view, this._config.deprecatedPlatformDirectives);
         for (var i = 0; i < directives.length; i++) {
             if (!isValidType(directives[i])) {
                 throw new exceptions_1.BaseException("Unexpected directive value '" + lang_1.stringify(directives[i]) + "' on the View of component '" + lang_1.stringify(component) + "'");
@@ -301,7 +301,7 @@ var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getViewPipesMetadata = function (component) {
         var _this = this;
         var view = this._viewResolver.resolve(component);
-        var pipes = flattenPipes(view, this._config.platformPipes);
+        var pipes = flattenPipes(view, this._config.deprecatedPlatformPipes);
         for (var i = 0; i < pipes.length; i++) {
             if (!isValidType(pipes[i])) {
                 throw new exceptions_1.BaseException("Unexpected piped value '" + lang_1.stringify(pipes[i]) + "' on the View of component '" + lang_1.stringify(component) + "'");

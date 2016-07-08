@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AppModuleFactory, AppModuleMetadata, Compiler, ComponentFactory, ComponentResolver, Injector } from '@angular/core';
+import { Console } from '../core_private';
 import { ConcreteType, Type } from '../src/facade/lang';
 import { StyleCompiler } from './style_compiler';
 import { ViewCompiler } from './view_compiler/view_compiler';
@@ -32,10 +33,12 @@ export declare class RuntimeCompiler implements ComponentResolver, Compiler {
     private _viewCompiler;
     private _appModuleCompiler;
     private _genConfig;
+    private _console;
     private _compiledTemplateCache;
     private _compiledHostTemplateCache;
     private _compiledAppModuleCache;
-    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _appModuleCompiler: AppModuleCompiler, _genConfig: CompilerConfig);
+    private _warnOnComponentResolver;
+    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _appModuleCompiler: AppModuleCompiler, _genConfig: CompilerConfig, _console: Console);
     readonly injector: Injector;
     resolveComponent(component: Type | string): Promise<ComponentFactory<any>>;
     compileAppModuleSync<T>(moduleType: ConcreteType<T>, metadata?: AppModuleMetadata): AppModuleFactory<T>;

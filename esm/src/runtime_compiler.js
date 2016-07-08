@@ -6,8 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Compiler, ComponentFactory, ComponentResolver, ComponentStillLoadingError, Injectable, Injector, OptionalMetadata, Provider, SkipSelfMetadata } from '@angular/core';
+import { Console } from '../core_private';
 import { BaseException } from '../src/facade/exceptions';
-import { IS_DART, isBlank, isString } from '../src/facade/lang';
+import { IS_DART, isBlank, isString, stringify } from '../src/facade/lang';
+import { ListWrapper } from '../src/facade/collection';
 import { PromiseWrapper } from '../src/facade/async';
 import { createHostComponentMeta } from './compile_metadata';
 import { StyleCompiler } from './style_compiler';
@@ -22,7 +24,7 @@ import { jitStatements } from './output/output_jit';
 import { interpretStatements } from './output/output_interpreter';
 import { SyncAsyncResult } from './util';
 export class RuntimeCompiler {
-    constructor(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig) {
+    constructor(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig, _console) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
@@ -31,14 +33,30 @@ export class RuntimeCompiler {
         this._viewCompiler = _viewCompiler;
         this._appModuleCompiler = _appModuleCompiler;
         this._genConfig = _genConfig;
+        this._console = _console;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledAppModuleCache = new Map();
+        this._warnOnComponentResolver = true;
+        const flatDeprecatedPlatformDirectives = ListWrapper.flatten(_genConfig.deprecatedPlatformDirectives);
+        if (flatDeprecatedPlatformDirectives.length > 0) {
+            this._console.warn(`Providing platform directives via the PLATFORM_DIRECTIVES provider or the "CompilerConfig" is deprecated. Provide platform directives via an @AppModule instead. Directives: ` +
+                flatDeprecatedPlatformDirectives.map(stringify));
+        }
+        const flatDeprecatedPlatformPipes = ListWrapper.flatten(_genConfig.deprecatedPlatformPipes);
+        if (flatDeprecatedPlatformPipes.length > 0) {
+            this._console.warn(`Providing platform pipes via the PLATFORM_PIPES provider or the "CompilerConfig" is deprecated. Provide platform pipes via an @AppModule instead. Pipes: ` +
+                flatDeprecatedPlatformPipes.map(stringify));
+        }
     }
     get injector() { return this._injector; }
     resolveComponent(component) {
         if (isString(component)) {
             return PromiseWrapper.reject(new BaseException(`Cannot resolve component using '${component}'.`), null);
+        }
+        if (this._warnOnComponentResolver) {
+            this._console.warn(ComponentResolver.DynamicCompilationDeprecationMsg);
+            this._warnOnComponentResolver = false;
         }
         return this.compileComponentAsync(component);
     }
@@ -253,6 +271,7 @@ RuntimeCompiler.ctorParameters = [
     { type: ViewCompiler, },
     { type: AppModuleCompiler, },
     { type: CompilerConfig, },
+    { type: Console, },
 ];
 class CompiledTemplate {
     constructor(isHost, selector, compType, viewDirectives, viewComponentTypes, precompileHostComponentTypes, viewPipes, _normalizeResult) {

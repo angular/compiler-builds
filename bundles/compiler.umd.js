@@ -8206,14 +8206,14 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var CompilerConfig = (function () {
         function CompilerConfig(_a) {
-            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, _f = _b.platformDirectives, platformDirectives = _f === void 0 ? [] : _f, _g = _b.platformPipes, platformPipes = _g === void 0 ? [] : _g;
+            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, _f = _b.deprecatedPlatformDirectives, deprecatedPlatformDirectives = _f === void 0 ? [] : _f, _g = _b.deprecatedPlatformPipes, deprecatedPlatformPipes = _g === void 0 ? [] : _g;
             this.renderTypes = renderTypes;
             this.defaultEncapsulation = defaultEncapsulation;
             this._genDebugInfo = genDebugInfo;
             this._logBindingUpdate = logBindingUpdate;
             this.useJit = useJit;
-            this.platformDirectives = platformDirectives;
-            this.platformPipes = platformPipes;
+            this.deprecatedPlatformDirectives = deprecatedPlatformDirectives;
+            this.deprecatedPlatformPipes = deprecatedPlatformPipes;
         }
         Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
             get: function () {
@@ -13109,7 +13109,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype.getViewDirectivesMetadata = function (component) {
             var _this = this;
             var view = this._viewResolver.resolve(component);
-            var directives = flattenDirectives(view, this._config.platformDirectives);
+            var directives = flattenDirectives(view, this._config.deprecatedPlatformDirectives);
             for (var i = 0; i < directives.length; i++) {
                 if (!isValidType(directives[i])) {
                     throw new BaseException$1("Unexpected directive value '" + stringify(directives[i]) + "' on the View of component '" + stringify(component) + "'");
@@ -13120,7 +13120,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype.getViewPipesMetadata = function (component) {
             var _this = this;
             var view = this._viewResolver.resolve(component);
-            var pipes = flattenPipes(view, this._config.platformPipes);
+            var pipes = flattenPipes(view, this._config.deprecatedPlatformPipes);
             for (var i = 0; i < pipes.length; i++) {
                 if (!isValidType(pipes[i])) {
                     throw new BaseException$1("Unexpected piped value '" + stringify(pipes[i]) + "' on the View of component '" + stringify(component) + "'");
@@ -14985,7 +14985,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var CATCH_ERROR_VAR$2 = 'error';
     var CATCH_STACK_VAR$2 = 'stack';
     var RuntimeCompiler = (function () {
-        function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig) {
+        function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _genConfig, _console) {
             this._injector = _injector;
             this._metadataResolver = _metadataResolver;
             this._templateNormalizer = _templateNormalizer;
@@ -14994,9 +14994,21 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._viewCompiler = _viewCompiler;
             this._appModuleCompiler = _appModuleCompiler;
             this._genConfig = _genConfig;
+            this._console = _console;
             this._compiledTemplateCache = new Map();
             this._compiledHostTemplateCache = new Map();
             this._compiledAppModuleCache = new Map();
+            this._warnOnComponentResolver = true;
+            var flatDeprecatedPlatformDirectives = ListWrapper.flatten(_genConfig.deprecatedPlatformDirectives);
+            if (flatDeprecatedPlatformDirectives.length > 0) {
+                this._console.warn("Providing platform directives via the PLATFORM_DIRECTIVES provider or the \"CompilerConfig\" is deprecated. Provide platform directives via an @AppModule instead. Directives: " +
+                    flatDeprecatedPlatformDirectives.map(stringify));
+            }
+            var flatDeprecatedPlatformPipes = ListWrapper.flatten(_genConfig.deprecatedPlatformPipes);
+            if (flatDeprecatedPlatformPipes.length > 0) {
+                this._console.warn("Providing platform pipes via the PLATFORM_PIPES provider or the \"CompilerConfig\" is deprecated. Provide platform pipes via an @AppModule instead. Pipes: " +
+                    flatDeprecatedPlatformPipes.map(stringify));
+            }
         }
         Object.defineProperty(RuntimeCompiler.prototype, "injector", {
             get: function () { return this._injector; },
@@ -15006,6 +15018,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         RuntimeCompiler.prototype.resolveComponent = function (component) {
             if (isString(component)) {
                 return PromiseWrapper.reject(new BaseException$1("Cannot resolve component using '" + component + "'."), null);
+            }
+            if (this._warnOnComponentResolver) {
+                this._console.warn(_angular_core.ComponentResolver.DynamicCompilationDeprecationMsg);
+                this._warnOnComponentResolver = false;
             }
             return this.compileComponentAsync(component);
         };
@@ -15228,6 +15244,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: ViewCompiler, },
         { type: AppModuleCompiler, },
         { type: CompilerConfig, },
+        { type: Console, },
     ];
     var CompiledTemplate = (function () {
         function CompiledTemplate(isHost, selector, compType, viewDirectives, viewComponentTypes, precompileHostComponentTypes, viewPipes, _normalizeResult) {
@@ -15742,8 +15759,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var inj = _angular_core.ReflectiveInjector.resolveAndCreate(options.deprecatedAppProviders);
                 var compilerConfig = inj.get(CompilerConfig, null);
                 if (compilerConfig) {
-                    platformDirectivesFromAppProviders = compilerConfig.platformDirectives;
-                    platformPipesFromAppProviders = compilerConfig.platformPipes;
+                    platformDirectivesFromAppProviders = compilerConfig.deprecatedPlatformDirectives;
+                    platformPipesFromAppProviders = compilerConfig.deprecatedPlatformPipes;
                     useJitFromAppProviders = compilerConfig.useJit;
                     useDebugFromAppProviders = compilerConfig.genDebugInfo;
                     defaultEncapsulationFromAppProviders = compilerConfig.defaultEncapsulation;
@@ -15779,8 +15796,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     provide: CompilerConfig,
                     useFactory: function (platformDirectives, platformPipes) {
                         return new CompilerConfig({
-                            platformDirectives: _mergeArrays(platformDirectivesFromAppProviders, platformDirectives),
-                            platformPipes: _mergeArrays(platformPipesFromAppProviders, platformPipes),
+                            deprecatedPlatformDirectives: _mergeArrays(platformDirectivesFromAppProviders, platformDirectives),
+                            deprecatedPlatformPipes: _mergeArrays(platformPipesFromAppProviders, platformPipes),
                             // let explicit values from the compiler options overwrite options
                             // from the app providers. E.g. important for the testing platform.
                             genDebugInfo: _firstDefined(options.useDebug, useDebugFromAppProviders, _angular_core.isDevMode()),

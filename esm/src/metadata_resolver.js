@@ -275,7 +275,7 @@ export class CompileMetadataResolver {
     }
     getViewDirectivesMetadata(component) {
         var view = this._viewResolver.resolve(component);
-        var directives = flattenDirectives(view, this._config.platformDirectives);
+        var directives = flattenDirectives(view, this._config.deprecatedPlatformDirectives);
         for (var i = 0; i < directives.length; i++) {
             if (!isValidType(directives[i])) {
                 throw new BaseException(`Unexpected directive value '${stringify(directives[i])}' on the View of component '${stringify(component)}'`);
@@ -285,7 +285,7 @@ export class CompileMetadataResolver {
     }
     getViewPipesMetadata(component) {
         var view = this._viewResolver.resolve(component);
-        var pipes = flattenPipes(view, this._config.platformPipes);
+        var pipes = flattenPipes(view, this._config.deprecatedPlatformPipes);
         for (var i = 0; i < pipes.length; i++) {
             if (!isValidType(pipes[i])) {
                 throw new BaseException(`Unexpected piped value '${stringify(pipes[i])}' on the View of component '${stringify(component)}'`);
