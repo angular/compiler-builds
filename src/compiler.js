@@ -6,6 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
@@ -46,12 +51,15 @@ var view_resolver_2 = require('./view_resolver');
 var directive_resolver_2 = require('./directive_resolver');
 var pipe_resolver_2 = require('./pipe_resolver');
 var core_private_1 = require('../core_private');
+var xhr_2 = require('./xhr');
 /**
  * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
  * template compilation.
  */
 exports.COMPILER_PROVIDERS = 
 /*@ts2dart_const*/ [
+    { provide: core_1.PLATFORM_DIRECTIVES, useValue: [], multi: true },
+    { provide: core_1.PLATFORM_PIPES, useValue: [], multi: true },
     { provide: core_private_1.Reflector, useValue: core_private_1.reflector },
     { provide: core_private_1.ReflectorReader, useExisting: core_private_1.Reflector },
     core_private_1.Console,
@@ -76,4 +84,113 @@ exports.COMPILER_PROVIDERS =
     directive_resolver_2.DirectiveResolver,
     pipe_resolver_2.PipeResolver
 ];
+var _RuntimeCompilerFactory = (function (_super) {
+    __extends(_RuntimeCompilerFactory, _super);
+    function _RuntimeCompilerFactory() {
+        _super.apply(this, arguments);
+    }
+    _RuntimeCompilerFactory.prototype.createCompiler = function (options) {
+        var deprecationMessages = [];
+        var platformDirectivesFromAppProviders = [];
+        var platformPipesFromAppProviders = [];
+        var compilerProvidersFromAppProviders = [];
+        var useDebugFromAppProviders;
+        var useJitFromAppProviders;
+        var defaultEncapsulationFromAppProviders;
+        if (options.deprecatedAppProviders && options.deprecatedAppProviders.length > 0) {
+            // Note: This is a hack to still support the old way
+            // of configuring platform directives / pipes and the compiler xhr.
+            // This will soon be deprecated!
+            var inj = core_1.ReflectiveInjector.resolveAndCreate(options.deprecatedAppProviders);
+            var compilerConfig = inj.get(config_2.CompilerConfig, null);
+            if (compilerConfig) {
+                platformDirectivesFromAppProviders = compilerConfig.platformDirectives;
+                platformPipesFromAppProviders = compilerConfig.platformPipes;
+                useJitFromAppProviders = compilerConfig.useJit;
+                useDebugFromAppProviders = compilerConfig.genDebugInfo;
+                defaultEncapsulationFromAppProviders = compilerConfig.defaultEncapsulation;
+                deprecationMessages.push("Passing a CompilerConfig to \"bootstrap()\" as provider is deprecated. Pass the provider via the new parameter \"compilerOptions\" of \"bootstrap()\" instead.");
+            }
+            else {
+                // If nobody provided a CompilerConfig, use the
+                // PLATFORM_DIRECTIVES / PLATFORM_PIPES values directly if existing
+                platformDirectivesFromAppProviders = inj.get(core_1.PLATFORM_DIRECTIVES, []);
+                if (platformDirectivesFromAppProviders.length > 0) {
+                    deprecationMessages.push("Passing PLATFORM_DIRECTIVES to \"bootstrap()\" as provider is deprecated. Use the new parameter \"directives\" of \"bootstrap()\" instead.");
+                }
+                platformPipesFromAppProviders = inj.get(core_1.PLATFORM_PIPES, []);
+                if (platformPipesFromAppProviders.length > 0) {
+                    deprecationMessages.push("Passing PLATFORM_PIPES to \"bootstrap()\" as provider is deprecated. Use the new parameter \"pipes\" of \"bootstrap()\" instead.");
+                }
+            }
+            var xhr = inj.get(xhr_2.XHR, null);
+            if (xhr) {
+                compilerProvidersFromAppProviders.push([{ provide: xhr_2.XHR, useValue: xhr }]);
+                deprecationMessages.push("Passing an instance of XHR to \"bootstrap()\" as provider is deprecated. Pass the provider via the new parameter \"compilerOptions\" of \"bootstrap()\" instead.");
+            }
+            // Need to copy console from deprecatedAppProviders to compiler providers
+            // as well so that we can test the above deprecation messages in old style bootstrap
+            // where we only have app providers!
+            var console_1 = inj.get(core_private_1.Console, null);
+            if (console_1) {
+                compilerProvidersFromAppProviders.push([{ provide: core_private_1.Console, useValue: console_1 }]);
+            }
+        }
+        var injector = core_1.ReflectiveInjector.resolveAndCreate([
+            exports.COMPILER_PROVIDERS, {
+                provide: config_2.CompilerConfig,
+                useFactory: function (platformDirectives, platformPipes) {
+                    return new config_2.CompilerConfig({
+                        platformDirectives: _mergeArrays(platformDirectivesFromAppProviders, platformDirectives),
+                        platformPipes: _mergeArrays(platformPipesFromAppProviders, platformPipes),
+                        // let explicit values from the compiler options overwrite options
+                        // from the app providers. E.g. important for the testing platform.
+                        genDebugInfo: _firstDefined(options.useDebug, useDebugFromAppProviders, core_1.isDevMode()),
+                        // let explicit values from the compiler options overwrite options
+                        // from the app providers
+                        useJit: _firstDefined(options.useJit, useJitFromAppProviders, true),
+                        // let explicit values from the compiler options overwrite options
+                        // from the app providers
+                        defaultEncapsulation: _firstDefined(options.defaultEncapsulation, defaultEncapsulationFromAppProviders, core_1.ViewEncapsulation.Emulated)
+                    });
+                },
+                deps: [core_1.PLATFORM_DIRECTIVES, core_1.PLATFORM_PIPES]
+            },
+            // options.providers will always contain a provider for XHR as well
+            // (added by platforms). So allow compilerProvidersFromAppProviders to overwrite this
+            _mergeArrays(options.providers, compilerProvidersFromAppProviders)
+        ]);
+        var console = injector.get(core_private_1.Console);
+        deprecationMessages.forEach(function (msg) { console.warn(msg); });
+        return injector.get(core_1.Compiler);
+    };
+    /** @nocollapse */
+    _RuntimeCompilerFactory.decorators = [
+        { type: core_1.Injectable },
+    ];
+    return _RuntimeCompilerFactory;
+}(core_1.CompilerFactory));
+exports._RuntimeCompilerFactory = _RuntimeCompilerFactory;
+exports.RUNTIME_COMPILER_FACTORY = new _RuntimeCompilerFactory();
+function _firstDefined() {
+    var args = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i - 0] = arguments[_i];
+    }
+    for (var i = 0; i < args.length; i++) {
+        if (args[i] !== undefined) {
+            return args[i];
+        }
+    }
+    return undefined;
+}
+function _mergeArrays() {
+    var parts = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        parts[_i - 0] = arguments[_i];
+    }
+    var result = [];
+    parts.forEach(function (part) { return result.push.apply(result, part); });
+    return result;
+}
 //# sourceMappingURL=compiler.js.map

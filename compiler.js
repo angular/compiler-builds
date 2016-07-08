@@ -33,6 +33,7 @@ exports.DEFAULT_PACKAGE_URL_PROVIDER = compiler_1.DEFAULT_PACKAGE_URL_PROVIDER;
 exports.DirectiveResolver = compiler_1.DirectiveResolver;
 exports.OfflineCompiler = compiler_1.OfflineCompiler;
 exports.PipeResolver = compiler_1.PipeResolver;
+exports.RUNTIME_COMPILER_FACTORY = compiler_1.RUNTIME_COMPILER_FACTORY;
 exports.RenderTypes = compiler_1.RenderTypes;
 exports.RuntimeCompiler = compiler_1.RuntimeCompiler;
 exports.SourceModule = compiler_1.SourceModule;

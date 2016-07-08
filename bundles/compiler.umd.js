@@ -15696,6 +15696,8 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var COMPILER_PROVIDERS = 
     /*@ts2dart_const*/ [
+        { provide: _angular_core.PLATFORM_DIRECTIVES, useValue: [], multi: true },
+        { provide: _angular_core.PLATFORM_PIPES, useValue: [], multi: true },
         { provide: Reflector, useValue: reflector },
         { provide: ReflectorReader, useExisting: Reflector },
         Console,
@@ -15720,6 +15722,114 @@ var __extends = (this && this.__extends) || function (d, b) {
         DirectiveResolver,
         PipeResolver
     ];
+    var _RuntimeCompilerFactory = (function (_super) {
+        __extends(_RuntimeCompilerFactory, _super);
+        function _RuntimeCompilerFactory() {
+            _super.apply(this, arguments);
+        }
+        _RuntimeCompilerFactory.prototype.createCompiler = function (options) {
+            var deprecationMessages = [];
+            var platformDirectivesFromAppProviders = [];
+            var platformPipesFromAppProviders = [];
+            var compilerProvidersFromAppProviders = [];
+            var useDebugFromAppProviders;
+            var useJitFromAppProviders;
+            var defaultEncapsulationFromAppProviders;
+            if (options.deprecatedAppProviders && options.deprecatedAppProviders.length > 0) {
+                // Note: This is a hack to still support the old way
+                // of configuring platform directives / pipes and the compiler xhr.
+                // This will soon be deprecated!
+                var inj = _angular_core.ReflectiveInjector.resolveAndCreate(options.deprecatedAppProviders);
+                var compilerConfig = inj.get(CompilerConfig, null);
+                if (compilerConfig) {
+                    platformDirectivesFromAppProviders = compilerConfig.platformDirectives;
+                    platformPipesFromAppProviders = compilerConfig.platformPipes;
+                    useJitFromAppProviders = compilerConfig.useJit;
+                    useDebugFromAppProviders = compilerConfig.genDebugInfo;
+                    defaultEncapsulationFromAppProviders = compilerConfig.defaultEncapsulation;
+                    deprecationMessages.push("Passing a CompilerConfig to \"bootstrap()\" as provider is deprecated. Pass the provider via the new parameter \"compilerOptions\" of \"bootstrap()\" instead.");
+                }
+                else {
+                    // If nobody provided a CompilerConfig, use the
+                    // PLATFORM_DIRECTIVES / PLATFORM_PIPES values directly if existing
+                    platformDirectivesFromAppProviders = inj.get(_angular_core.PLATFORM_DIRECTIVES, []);
+                    if (platformDirectivesFromAppProviders.length > 0) {
+                        deprecationMessages.push("Passing PLATFORM_DIRECTIVES to \"bootstrap()\" as provider is deprecated. Use the new parameter \"directives\" of \"bootstrap()\" instead.");
+                    }
+                    platformPipesFromAppProviders = inj.get(_angular_core.PLATFORM_PIPES, []);
+                    if (platformPipesFromAppProviders.length > 0) {
+                        deprecationMessages.push("Passing PLATFORM_PIPES to \"bootstrap()\" as provider is deprecated. Use the new parameter \"pipes\" of \"bootstrap()\" instead.");
+                    }
+                }
+                var xhr = inj.get(XHR, null);
+                if (xhr) {
+                    compilerProvidersFromAppProviders.push([{ provide: XHR, useValue: xhr }]);
+                    deprecationMessages.push("Passing an instance of XHR to \"bootstrap()\" as provider is deprecated. Pass the provider via the new parameter \"compilerOptions\" of \"bootstrap()\" instead.");
+                }
+                // Need to copy console from deprecatedAppProviders to compiler providers
+                // as well so that we can test the above deprecation messages in old style bootstrap
+                // where we only have app providers!
+                var console_1 = inj.get(Console, null);
+                if (console_1) {
+                    compilerProvidersFromAppProviders.push([{ provide: Console, useValue: console_1 }]);
+                }
+            }
+            var injector = _angular_core.ReflectiveInjector.resolveAndCreate([
+                COMPILER_PROVIDERS, {
+                    provide: CompilerConfig,
+                    useFactory: function (platformDirectives, platformPipes) {
+                        return new CompilerConfig({
+                            platformDirectives: _mergeArrays(platformDirectivesFromAppProviders, platformDirectives),
+                            platformPipes: _mergeArrays(platformPipesFromAppProviders, platformPipes),
+                            // let explicit values from the compiler options overwrite options
+                            // from the app providers. E.g. important for the testing platform.
+                            genDebugInfo: _firstDefined(options.useDebug, useDebugFromAppProviders, _angular_core.isDevMode()),
+                            // let explicit values from the compiler options overwrite options
+                            // from the app providers
+                            useJit: _firstDefined(options.useJit, useJitFromAppProviders, true),
+                            // let explicit values from the compiler options overwrite options
+                            // from the app providers
+                            defaultEncapsulation: _firstDefined(options.defaultEncapsulation, defaultEncapsulationFromAppProviders, _angular_core.ViewEncapsulation.Emulated)
+                        });
+                    },
+                    deps: [_angular_core.PLATFORM_DIRECTIVES, _angular_core.PLATFORM_PIPES]
+                },
+                // options.providers will always contain a provider for XHR as well
+                // (added by platforms). So allow compilerProvidersFromAppProviders to overwrite this
+                _mergeArrays(options.providers, compilerProvidersFromAppProviders)
+            ]);
+            var console = injector.get(Console);
+            deprecationMessages.forEach(function (msg) { console.warn(msg); });
+            return injector.get(_angular_core.Compiler);
+        };
+        return _RuntimeCompilerFactory;
+    }(_angular_core.CompilerFactory));
+    /** @nocollapse */
+    _RuntimeCompilerFactory.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    var RUNTIME_COMPILER_FACTORY = new _RuntimeCompilerFactory();
+    function _firstDefined() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        for (var i = 0; i < args.length; i++) {
+            if (args[i] !== undefined) {
+                return args[i];
+            }
+        }
+        return undefined;
+    }
+    function _mergeArrays() {
+        var parts = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            parts[_i - 0] = arguments[_i];
+        }
+        var result = [];
+        parts.forEach(function (part) { return result.push.apply(result, part); });
+        return result;
+    }
     /**
      * A message extracted from a template.
      *
@@ -16590,6 +16700,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     exports.DirectiveResolver = DirectiveResolver;
     exports.OfflineCompiler = OfflineCompiler;
     exports.PipeResolver = PipeResolver;
+    exports.RUNTIME_COMPILER_FACTORY = RUNTIME_COMPILER_FACTORY;
     exports.RenderTypes = RenderTypes;
     exports.RuntimeCompiler = RuntimeCompiler;
     exports.SourceModule = SourceModule;
