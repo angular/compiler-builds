@@ -595,7 +595,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var DebugContext = _angular_core.__core_private__.DebugContext;
     var StaticNodeDebugInfo = _angular_core.__core_private__.StaticNodeDebugInfo;
     var devModeEqual = _angular_core.__core_private__.devModeEqual;
-    var uninitialized = _angular_core.__core_private__.uninitialized;
+    var UNINITIALIZED = _angular_core.__core_private__.UNINITIALIZED;
     var ValueUnwrapper = _angular_core.__core_private__.ValueUnwrapper;
     var TemplateRef_ = _angular_core.__core_private__.TemplateRef_;
     var createProvider = _angular_core.__core_private__.createProvider;
@@ -6739,7 +6739,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var impStaticNodeDebugInfo = StaticNodeDebugInfo;
     var impRenderer = _angular_core.Renderer;
     var impSimpleChange = _angular_core.SimpleChange;
-    var impUninitialized = uninitialized;
+    var impUNINITIALIZED = UNINITIALIZED;
     var impChangeDetectorStatus = ChangeDetectorStatus;
     var impFlattenNestedViewRenderNodes = flattenNestedViewRenderNodes;
     var impDevModeEqual = devModeEqual;
@@ -6849,7 +6849,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     });
     Identifiers.Renderer = new CompileIdentifierMetadata({ name: 'Renderer', moduleUrl: assetUrl('core', 'render/api'), runtime: impRenderer });
     Identifiers.SimpleChange = new CompileIdentifierMetadata({ name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: impSimpleChange });
-    Identifiers.uninitialized = new CompileIdentifierMetadata({ name: 'uninitialized', moduleUrl: CD_MODULE_URL, runtime: impUninitialized });
+    Identifiers.UNINITIALIZED = new CompileIdentifierMetadata({ name: 'UNINITIALIZED', moduleUrl: CD_MODULE_URL, runtime: impUNINITIALIZED });
     Identifiers.ChangeDetectorStatus = new CompileIdentifierMetadata({ name: 'ChangeDetectorStatus', moduleUrl: CD_MODULE_URL, runtime: impChangeDetectorStatus });
     Identifiers.checkBinding = new CompileIdentifierMetadata({ name: 'checkBinding', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCheckBinding });
     Identifiers.flattenNestedViewRenderNodes = new CompileIdentifierMetadata({
@@ -10374,7 +10374,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         // private is fine here as no child view will reference the cached value...
         view.fields.push(new ClassField(fieldExpr.name, null, [StmtModifier.Private]));
-        view.createMethod.addStmt(THIS_EXPR.prop(fieldExpr.name).set(importExpr(Identifiers.uninitialized)).toStmt());
+        view.createMethod.addStmt(THIS_EXPR.prop(fieldExpr.name).set(importExpr(Identifiers.UNINITIALIZED)).toStmt());
         if (checkExpression.needsValueUnwrapper) {
             var initValueUnwrapperStmt = DetectChangesVars.valUnwrapper.callMethod('reset', []).toStmt();
             method.addStmt(initValueUnwrapperStmt);
@@ -10454,11 +10454,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                     // void => ...
                     var oldRenderVar = variable('oldRenderVar');
                     updateStmts.push(oldRenderVar.set(oldRenderValue).toDeclStmt());
-                    updateStmts.push(new IfStmt(oldRenderVar.equals(importExpr(Identifiers.uninitialized)), [oldRenderVar.set(emptyStateValue).toStmt()]));
+                    updateStmts.push(new IfStmt(oldRenderVar.equals(importExpr(Identifiers.UNINITIALIZED)), [oldRenderVar.set(emptyStateValue).toStmt()]));
                     // ... => void
                     var newRenderVar = variable('newRenderVar');
                     updateStmts.push(newRenderVar.set(renderValue).toDeclStmt());
-                    updateStmts.push(new IfStmt(newRenderVar.equals(importExpr(Identifiers.uninitialized)), [newRenderVar.set(emptyStateValue).toStmt()]));
+                    updateStmts.push(new IfStmt(newRenderVar.equals(importExpr(Identifiers.UNINITIALIZED)), [newRenderVar.set(emptyStateValue).toStmt()]));
                     updateStmts.push(animation.fnVariable.callFn([THIS_EXPR, renderNode, oldRenderVar, newRenderVar])
                         .toStmt());
                     view.detachMethod.addStmt(animation.fnVariable.callFn([THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])

@@ -35,7 +35,7 @@ export declare var VIEW_ENCAPSULATION_VALUES: typeof t.VIEW_ENCAPSULATION_VALUES
 export declare var DebugContext: typeof t.DebugContext;
 export declare var StaticNodeDebugInfo: typeof t.StaticNodeDebugInfo;
 export declare var devModeEqual: typeof t.devModeEqual;
-export declare var uninitialized: typeof t.uninitialized;
+export declare var UNINITIALIZED: typeof t.UNINITIALIZED;
 export declare var ValueUnwrapper: typeof t.ValueUnwrapper;
 export declare var TemplateRef_: typeof t.TemplateRef_;
 export declare type RenderDebugInfo = t.RenderDebugInfo;

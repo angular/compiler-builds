@@ -26,7 +26,7 @@ export declare class Identifiers {
     static DebugContext: CompileIdentifierMetadata;
     static Renderer: CompileIdentifierMetadata;
     static SimpleChange: CompileIdentifierMetadata;
-    static uninitialized: CompileIdentifierMetadata;
+    static UNINITIALIZED: CompileIdentifierMetadata;
     static ChangeDetectorStatus: CompileIdentifierMetadata;
     static checkBinding: CompileIdentifierMetadata;
     static flattenNestedViewRenderNodes: CompileIdentifierMetadata;
