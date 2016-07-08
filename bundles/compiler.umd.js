@@ -7458,7 +7458,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var providerViewContext = new ProviderViewContext(component, htmlAstWithErrors.rootNodes[0].sourceSpan);
                 var parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, uniqPipes, this._exprParser, this._schemaRegistry);
                 result = htmlVisitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
-                errors = errors.concat(parseVisitor.errors).concat(providerViewContext.errors);
+                errors.push.apply(errors, parseVisitor.errors.concat(providerViewContext.errors));
             }
             else {
                 result = [];
@@ -7720,7 +7720,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         TemplateParseVisitor.prototype._parseInlineTemplateBinding = function (attr, targetMatchableAttrs, targetProps, targetVars) {
             var templateBindingsSource = null;
-            if (attr.name == TEMPLATE_ATTR) {
+            if (this._normalizeAttributeName(attr.name) == TEMPLATE_ATTR) {
                 templateBindingsSource = attr.value;
             }
             else if (attr.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
@@ -7914,7 +7914,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                     if (!SetWrapper.has(matchedReferences, elOrDirRef.name)) {
                         _this._reportError("There is no directive with \"exportAs\" set to \"" + elOrDirRef.value + "\"", elOrDirRef.sourceSpan);
                     }
-                    ;
                 }
                 else if (isBlank(component)) {
                     var refToken = null;
@@ -7945,16 +7944,16 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         TemplateParseVisitor.prototype._createDirectivePropertyAsts = function (directiveProperties, boundProps, targetBoundDirectiveProps) {
             if (isPresent(directiveProperties)) {
-                var boundPropsByName = new Map();
+                var boundPropsByName_1 = new Map();
                 boundProps.forEach(function (boundProp) {
-                    var prevValue = boundPropsByName.get(boundProp.name);
+                    var prevValue = boundPropsByName_1.get(boundProp.name);
                     if (isBlank(prevValue) || prevValue.isLiteral) {
                         // give [a]="b" a higher precedence than a="b" on the same element
-                        boundPropsByName.set(boundProp.name, boundProp);
+                        boundPropsByName_1.set(boundProp.name, boundProp);
                     }
                 });
                 StringMapWrapper.forEach(directiveProperties, function (elProp, dirProp) {
-                    var boundProp = boundPropsByName.get(elProp);
+                    var boundProp = boundPropsByName_1.get(elProp);
                     // Bindings are optional, so this binding only needs to be set up if an expression is given.
                     if (isPresent(boundProp)) {
                         targetBoundDirectiveProps.push(new BoundDirectivePropertyAst(dirProp, boundProp.name, boundProp.expression, boundProp.sourceSpan));

@@ -35,16 +35,16 @@ import { ProviderElementContext, ProviderViewContext } from './provider_parser';
 // Group 9 = identifier inside [()]
 // Group 10 = identifier inside []
 // Group 11 = identifier inside ()
-var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/g;
+const BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/g;
 const TEMPLATE_ELEMENT = 'template';
 const TEMPLATE_ATTR = 'template';
 const TEMPLATE_ATTR_PREFIX = '*';
 const CLASS_ATTR = 'class';
-var PROPERTY_PARTS_SEPARATOR = '.';
+const PROPERTY_PARTS_SEPARATOR = '.';
 const ATTRIBUTE_PREFIX = 'attr';
 const CLASS_PREFIX = 'class';
 const STYLE_PREFIX = 'style';
-var TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
+const TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
 /**
  * Provides an array of {@link TemplateAstVisitor}s which will be used to transform
  * parsed templates before compilation is invoked, allowing custom expression syntax
@@ -73,29 +73,29 @@ export class TemplateParser {
         this.transforms = transforms;
     }
     parse(component, template, directives, pipes, templateUrl) {
-        var result = this.tryParse(component, template, directives, pipes, templateUrl);
-        var warnings = result.errors.filter(error => error.level === ParseErrorLevel.WARNING);
-        var errors = result.errors.filter(error => error.level === ParseErrorLevel.FATAL);
+        const result = this.tryParse(component, template, directives, pipes, templateUrl);
+        const warnings = result.errors.filter(error => error.level === ParseErrorLevel.WARNING);
+        const errors = result.errors.filter(error => error.level === ParseErrorLevel.FATAL);
         if (warnings.length > 0) {
             this._console.warn(`Template parse warnings:\n${warnings.join('\n')}`);
         }
         if (errors.length > 0) {
-            var errorString = errors.join('\n');
+            const errorString = errors.join('\n');
             throw new BaseException(`Template parse errors:\n${errorString}`);
         }
         return result.templateAst;
     }
     tryParse(component, template, directives, pipes, templateUrl) {
-        var htmlAstWithErrors = this._htmlParser.parse(template, templateUrl);
-        var errors = htmlAstWithErrors.errors;
-        var result;
+        const htmlAstWithErrors = this._htmlParser.parse(template, templateUrl);
+        const errors = htmlAstWithErrors.errors;
+        let result;
         if (htmlAstWithErrors.rootNodes.length > 0) {
-            var uniqDirectives = removeDuplicates(directives);
-            var uniqPipes = removeDuplicates(pipes);
-            var providerViewContext = new ProviderViewContext(component, htmlAstWithErrors.rootNodes[0].sourceSpan);
-            var parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, uniqPipes, this._exprParser, this._schemaRegistry);
+            const uniqDirectives = removeDuplicates(directives);
+            const uniqPipes = removeDuplicates(pipes);
+            const providerViewContext = new ProviderViewContext(component, htmlAstWithErrors.rootNodes[0].sourceSpan);
+            const parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, uniqPipes, this._exprParser, this._schemaRegistry);
             result = htmlVisitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
-            errors = errors.concat(parseVisitor.errors).concat(providerViewContext.errors);
+            errors.push(...parseVisitor.errors, ...providerViewContext.errors);
         }
         else {
             result = [];
@@ -154,7 +154,7 @@ class TemplateParseVisitor {
             };
         }
         ListWrapper.forEachWithIndex(directives, (directive, index) => {
-            var selector = CssSelector.parse(directive.selector);
+            const selector = CssSelector.parse(directive.selector);
             this.selectorMatcher.addSelectables(selector, directive);
             this.directivesIndex.set(directive, index);
         });
@@ -170,9 +170,9 @@ class TemplateParseVisitor {
         }
     }
     _parseInterpolation(value, sourceSpan) {
-        var sourceInfo = sourceSpan.start.toString();
+        const sourceInfo = sourceSpan.start.toString();
         try {
-            var ast = this._exprParser.parseInterpolation(value, sourceInfo, this._interpolationConfig);
+            const ast = this._exprParser.parseInterpolation(value, sourceInfo, this._interpolationConfig);
             if (ast)
                 this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
@@ -188,9 +188,9 @@ class TemplateParseVisitor {
         }
     }
     _parseAction(value, sourceSpan) {
-        var sourceInfo = sourceSpan.start.toString();
+        const sourceInfo = sourceSpan.start.toString();
         try {
-            var ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
+            const ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
             if (ast)
                 this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
@@ -202,9 +202,9 @@ class TemplateParseVisitor {
         }
     }
     _parseBinding(value, sourceSpan) {
-        var sourceInfo = sourceSpan.start.toString();
+        const sourceInfo = sourceSpan.start.toString();
         try {
-            var ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
+            const ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
             if (ast)
                 this._reportParserErors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
@@ -216,9 +216,9 @@ class TemplateParseVisitor {
         }
     }
     _parseTemplateBindings(value, sourceSpan) {
-        var sourceInfo = sourceSpan.start.toString();
+        const sourceInfo = sourceSpan.start.toString();
         try {
-            var bindingsResult = this._exprParser.parseTemplateBindings(value, sourceInfo);
+            const bindingsResult = this._exprParser.parseTemplateBindings(value, sourceInfo);
             this._reportParserErors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach((binding) => {
                 if (isPresent(binding.expression)) {
@@ -235,7 +235,7 @@ class TemplateParseVisitor {
     }
     _checkPipes(ast, sourceSpan) {
         if (isPresent(ast)) {
-            var collector = new PipeCollector();
+            const collector = new PipeCollector();
             ast.visit(collector);
             collector.pipes.forEach((pipeName) => {
                 if (!this.pipesByName.has(pipeName)) {
@@ -247,8 +247,8 @@ class TemplateParseVisitor {
     visitExpansion(ast, context) { return null; }
     visitExpansionCase(ast, context) { return null; }
     visitText(ast, parent) {
-        var ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
-        var expr = this._parseInterpolation(ast.value, ast.sourceSpan);
+        const ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
+        const expr = this._parseInterpolation(ast.value, ast.sourceSpan);
         if (isPresent(expr)) {
             return new BoundTextAst(expr, ngContentIndex, ast.sourceSpan);
         }
@@ -261,8 +261,8 @@ class TemplateParseVisitor {
     }
     visitComment(ast, context) { return null; }
     visitElement(element, parent) {
-        var nodeName = element.name;
-        var preparsedElement = preparseElement(element);
+        const nodeName = element.name;
+        const preparsedElement = preparseElement(element);
         if (preparsedElement.type === PreparsedElementType.SCRIPT ||
             preparsedElement.type === PreparsedElementType.STYLE) {
             // Skipping <script> for security reasons
@@ -276,22 +276,22 @@ class TemplateParseVisitor {
             // them in the StyleCompiler
             return null;
         }
-        var matchableAttrs = [];
-        var elementOrDirectiveProps = [];
-        var elementOrDirectiveRefs = [];
-        var elementVars = [];
-        var animationProps = [];
-        var events = [];
-        var templateElementOrDirectiveProps = [];
-        var templateMatchableAttrs = [];
-        var templateElementVars = [];
-        var hasInlineTemplates = false;
-        var attrs = [];
-        var lcElName = splitNsName(nodeName.toLowerCase())[1];
-        var isTemplateElement = lcElName == TEMPLATE_ELEMENT;
+        const matchableAttrs = [];
+        const elementOrDirectiveProps = [];
+        const elementOrDirectiveRefs = [];
+        const elementVars = [];
+        const animationProps = [];
+        const events = [];
+        const templateElementOrDirectiveProps = [];
+        const templateMatchableAttrs = [];
+        const templateElementVars = [];
+        let hasInlineTemplates = false;
+        const attrs = [];
+        const lcElName = splitNsName(nodeName.toLowerCase())[1];
+        const isTemplateElement = lcElName == TEMPLATE_ELEMENT;
         element.attrs.forEach(attr => {
-            var hasBinding = this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, animationProps, events, elementOrDirectiveRefs, elementVars);
-            var hasTemplateBinding = this._parseInlineTemplateBinding(attr, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
+            const hasBinding = this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, animationProps, events, elementOrDirectiveRefs, elementVars);
+            const hasTemplateBinding = this._parseInlineTemplateBinding(attr, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
             if (hasTemplateBinding && hasInlineTemplates) {
                 this._reportError(`Can't have multiple template bindings on one element. Use only one attribute named 'template' or prefixed with *`, attr.sourceSpan);
             }
@@ -304,22 +304,22 @@ class TemplateParseVisitor {
                 hasInlineTemplates = true;
             }
         });
-        var elementCssSelector = createElementCssSelector(nodeName, matchableAttrs);
-        var directiveMetas = this._parseDirectives(this.selectorMatcher, elementCssSelector);
-        var references = [];
-        var directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references);
-        var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts)
+        const elementCssSelector = createElementCssSelector(nodeName, matchableAttrs);
+        const directiveMetas = this._parseDirectives(this.selectorMatcher, elementCssSelector);
+        const references = [];
+        const directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references);
+        const elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts)
             .concat(animationProps);
-        var isViewRoot = parent.isTemplateElement || hasInlineTemplates;
-        var providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
-        var children = htmlVisitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
+        const isViewRoot = parent.isTemplateElement || hasInlineTemplates;
+        const providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
+        const children = htmlVisitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
         providerContext.afterElement();
         // Override the actual selector when the `ngProjectAs` attribute is provided
-        var projectionSelector = isPresent(preparsedElement.projectAs) ?
+        const projectionSelector = isPresent(preparsedElement.projectAs) ?
             CssSelector.parse(preparsedElement.projectAs)[0] :
             elementCssSelector;
-        var ngContentIndex = parent.findNgContentIndex(projectionSelector);
-        var parsedElement;
+        const ngContentIndex = parent.findNgContentIndex(projectionSelector);
+        let parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
             if (isPresent(element.children) && element.children.length > 0) {
                 this._reportError(`<ng-content> element cannot have content. <ng-content> must be immediately followed by </ng-content>`, element.sourceSpan);
@@ -333,34 +333,34 @@ class TemplateParseVisitor {
         }
         else {
             this._assertOnlyOneComponent(directiveAsts, element.sourceSpan);
-            let ngContentIndex = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
+            const ngContentIndex = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
             parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan);
         }
         if (hasInlineTemplates) {
-            var templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
-            var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateCssSelector);
-            var templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, []);
-            var templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateDirectiveAsts);
+            const templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
+            const templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateCssSelector);
+            const templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, []);
+            const templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateDirectiveAsts);
             this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, element.sourceSpan);
-            var templateProviderContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], element.sourceSpan);
+            const templateProviderContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], element.sourceSpan);
             templateProviderContext.afterElement();
             parsedElement = new EmbeddedTemplateAst([], [], [], templateElementVars, templateProviderContext.transformedDirectiveAsts, templateProviderContext.transformProviders, templateProviderContext.transformedHasViewContainer, [parsedElement], ngContentIndex, element.sourceSpan);
         }
         return parsedElement;
     }
     _parseInlineTemplateBinding(attr, targetMatchableAttrs, targetProps, targetVars) {
-        var templateBindingsSource = null;
-        if (attr.name == TEMPLATE_ATTR) {
+        let templateBindingsSource = null;
+        if (this._normalizeAttributeName(attr.name) == TEMPLATE_ATTR) {
             templateBindingsSource = attr.value;
         }
         else if (attr.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
-            var key = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
+            const key = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
             templateBindingsSource = (attr.value.length == 0) ? key : key + ' ' + attr.value;
         }
         if (isPresent(templateBindingsSource)) {
-            var bindings = this._parseTemplateBindings(templateBindingsSource, attr.sourceSpan);
-            for (var i = 0; i < bindings.length; i++) {
-                var binding = bindings[i];
+            const bindings = this._parseTemplateBindings(templateBindingsSource, attr.sourceSpan);
+            for (let i = 0; i < bindings.length; i++) {
+                const binding = bindings[i];
                 if (binding.keyIsVar) {
                     targetVars.push(new VariableAst(binding.key, binding.name, attr.sourceSpan));
                 }
@@ -377,17 +377,17 @@ class TemplateParseVisitor {
         return false;
     }
     _parseAttr(isTemplateElement, attr, targetMatchableAttrs, targetProps, targetAnimationProps, targetEvents, targetRefs, targetVars) {
-        var attrName = this._normalizeAttributeName(attr.name);
-        var attrValue = attr.value;
-        var bindParts = RegExpWrapper.firstMatch(BIND_NAME_REGEXP, attrName);
-        var hasBinding = false;
+        const attrName = this._normalizeAttributeName(attr.name);
+        const attrValue = attr.value;
+        const bindParts = RegExpWrapper.firstMatch(BIND_NAME_REGEXP, attrName);
+        let hasBinding = false;
         if (isPresent(bindParts)) {
             hasBinding = true;
             if (isPresent(bindParts[1])) {
                 this._parsePropertyOrAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
             }
             else if (isPresent(bindParts[2])) {
-                var identifier = bindParts[8];
+                const identifier = bindParts[8];
                 if (isTemplateElement) {
                     this._reportError(`"var-" on <template> elements is deprecated. Use "let-" instead!`, attr.sourceSpan, ParseErrorLevel.WARNING);
                     this._parseVariable(identifier, attrValue, attr.sourceSpan, targetVars);
@@ -399,7 +399,7 @@ class TemplateParseVisitor {
             }
             else if (isPresent(bindParts[3])) {
                 if (isTemplateElement) {
-                    var identifier = bindParts[8];
+                    const identifier = bindParts[8];
                     this._parseVariable(identifier, attrValue, attr.sourceSpan, targetVars);
                 }
                 else {
@@ -407,7 +407,7 @@ class TemplateParseVisitor {
                 }
             }
             else if (isPresent(bindParts[4])) {
-                var identifier = bindParts[8];
+                const identifier = bindParts[8];
                 this._parseReference(identifier, attrValue, attr.sourceSpan, targetRefs);
             }
             else if (isPresent(bindParts[5])) {
@@ -472,12 +472,12 @@ class TemplateParseVisitor {
         if (!isPresent(expression) || expression.length == 0) {
             expression = 'null';
         }
-        var ast = this._parseBinding(expression, sourceSpan);
+        const ast = this._parseBinding(expression, sourceSpan);
         targetMatchableAttrs.push([name, ast.source]);
         targetAnimationProps.push(new BoundElementPropertyAst(name, PropertyBindingType.Animation, SecurityContext.NONE, ast, null, sourceSpan));
     }
     _parsePropertyInterpolation(name, value, sourceSpan, targetMatchableAttrs, targetProps) {
-        var expr = this._parseInterpolation(value, sourceSpan);
+        const expr = this._parseInterpolation(value, sourceSpan);
         if (isPresent(expr)) {
             this._parsePropertyAst(name, expr, sourceSpan, targetMatchableAttrs, targetProps);
             return true;
@@ -493,10 +493,10 @@ class TemplateParseVisitor {
     }
     _parseEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
         // long format: 'target: eventName'
-        var parts = splitAtColon(name, [null, name]);
-        var target = parts[0];
-        var eventName = parts[1];
-        var ast = this._parseAction(expression, sourceSpan);
+        const parts = splitAtColon(name, [null, name]);
+        const target = parts[0];
+        const eventName = parts[1];
+        const ast = this._parseAction(expression, sourceSpan);
         targetMatchableAttrs.push([name, ast.source]);
         targetEvents.push(new BoundEventAst(eventName, target, ast, sourceSpan));
         // Don't detect directives for event names for now,
@@ -509,22 +509,22 @@ class TemplateParseVisitor {
         // Need to sort the directives so that we get consistent results throughout,
         // as selectorMatcher uses Maps inside.
         // Also dedupe directives as they might match more than one time!
-        var directives = ListWrapper.createFixedSize(this.directivesIndex.size);
+        const directives = ListWrapper.createFixedSize(this.directivesIndex.size);
         selectorMatcher.match(elementCssSelector, (selector, directive) => {
             directives[this.directivesIndex.get(directive)] = directive;
         });
         return directives.filter(dir => isPresent(dir));
     }
     _createDirectiveAsts(isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, sourceSpan, targetReferences) {
-        var matchedReferences = new Set();
-        var component = null;
-        var directiveAsts = directives.map((directive) => {
+        const matchedReferences = new Set();
+        let component = null;
+        const directiveAsts = directives.map((directive) => {
             if (directive.isComponent) {
                 component = directive;
             }
-            var hostProperties = [];
-            var hostEvents = [];
-            var directiveProperties = [];
+            const hostProperties = [];
+            const hostEvents = [];
+            const directiveProperties = [];
             this._createDirectiveHostPropertyAsts(elementName, directive.hostProperties, sourceSpan, hostProperties);
             this._createDirectiveHostEventAsts(directive.hostListeners, sourceSpan, hostEvents);
             this._createDirectivePropertyAsts(directive.inputs, props, directiveProperties);
@@ -542,10 +542,9 @@ class TemplateParseVisitor {
                 if (!SetWrapper.has(matchedReferences, elOrDirRef.name)) {
                     this._reportError(`There is no directive with "exportAs" set to "${elOrDirRef.value}"`, elOrDirRef.sourceSpan);
                 }
-                ;
             }
             else if (isBlank(component)) {
-                var refToken = null;
+                let refToken = null;
                 if (isTemplateElement) {
                     refToken = identifierToken(Identifiers.TemplateRef);
                 }
@@ -557,7 +556,7 @@ class TemplateParseVisitor {
     _createDirectiveHostPropertyAsts(elementName, hostProps, sourceSpan, targetPropertyAsts) {
         if (isPresent(hostProps)) {
             StringMapWrapper.forEach(hostProps, (expression, propName) => {
-                var exprAst = this._parseBinding(expression, sourceSpan);
+                const exprAst = this._parseBinding(expression, sourceSpan);
                 targetPropertyAsts.push(this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
             });
         }
@@ -571,16 +570,16 @@ class TemplateParseVisitor {
     }
     _createDirectivePropertyAsts(directiveProperties, boundProps, targetBoundDirectiveProps) {
         if (isPresent(directiveProperties)) {
-            var boundPropsByName = new Map();
+            const boundPropsByName = new Map();
             boundProps.forEach(boundProp => {
-                var prevValue = boundPropsByName.get(boundProp.name);
+                const prevValue = boundPropsByName.get(boundProp.name);
                 if (isBlank(prevValue) || prevValue.isLiteral) {
                     // give [a]="b" a higher precedence than a="b" on the same element
                     boundPropsByName.set(boundProp.name, boundProp);
                 }
             });
             StringMapWrapper.forEach(directiveProperties, (elProp, dirProp) => {
-                var boundProp = boundPropsByName.get(elProp);
+                const boundProp = boundPropsByName.get(elProp);
                 // Bindings are optional, so this binding only needs to be set up if an expression is given.
                 if (isPresent(boundProp)) {
                     targetBoundDirectiveProps.push(new BoundDirectivePropertyAst(dirProp, boundProp.name, boundProp.expression, boundProp.sourceSpan));
@@ -589,8 +588,8 @@ class TemplateParseVisitor {
         }
     }
     _createElementPropertyAsts(elementName, props, directives) {
-        var boundElementProps = [];
-        var boundDirectivePropsIndex = new Map();
+        const boundElementProps = [];
+        const boundDirectivePropsIndex = new Map();
         directives.forEach((directive) => {
             directive.inputs.forEach((prop) => {
                 boundDirectivePropsIndex.set(prop.templateName, prop);
@@ -604,10 +603,10 @@ class TemplateParseVisitor {
         return boundElementProps;
     }
     _createElementPropertyAst(elementName, name, ast, sourceSpan) {
-        var unit = null;
-        var bindingType;
-        var boundPropertyName;
-        var parts = name.split(PROPERTY_PARTS_SEPARATOR);
+        let unit = null;
+        let bindingType;
+        let boundPropertyName;
+        const parts = name.split(PROPERTY_PARTS_SEPARATOR);
         let securityContext;
         if (parts.length === 1) {
             boundPropertyName = this._schemaRegistry.getMappedPropName(parts[0]);
@@ -654,9 +653,9 @@ class TemplateParseVisitor {
         return new BoundElementPropertyAst(boundPropertyName, bindingType, securityContext, ast, unit, sourceSpan);
     }
     _findComponentDirectiveNames(directives) {
-        var componentTypeNames = [];
+        const componentTypeNames = [];
         directives.forEach(directive => {
-            var typeName = directive.directive.type.name;
+            const typeName = directive.directive.type.name;
             if (directive.directive.isComponent) {
                 componentTypeNames.push(typeName);
             }
@@ -664,13 +663,13 @@ class TemplateParseVisitor {
         return componentTypeNames;
     }
     _assertOnlyOneComponent(directives, sourceSpan) {
-        var componentTypeNames = this._findComponentDirectiveNames(directives);
+        const componentTypeNames = this._findComponentDirectiveNames(directives);
         if (componentTypeNames.length > 1) {
             this._reportError(`More than one component: ${componentTypeNames.join(',')}`, sourceSpan);
         }
     }
     _assertNoComponentsNorElementBindingsOnTemplate(directives, elementProps, sourceSpan) {
-        var componentTypeNames = this._findComponentDirectiveNames(directives);
+        const componentTypeNames = this._findComponentDirectiveNames(directives);
         if (componentTypeNames.length > 0) {
             this._reportError(`Components on an embedded template: ${componentTypeNames.join(',')}`, sourceSpan);
         }
@@ -679,7 +678,7 @@ class TemplateParseVisitor {
         });
     }
     _assertAllEventsPublishedByDirectives(directives, events) {
-        var allDirectiveEvents = new Set();
+        const allDirectiveEvents = new Set();
         directives.forEach(directive => {
             StringMapWrapper.forEach(directive.directive.outputs, (eventName) => {
                 allDirectiveEvents.add(eventName);
@@ -694,7 +693,7 @@ class TemplateParseVisitor {
 }
 class NonBindableVisitor {
     visitElement(ast, parent) {
-        var preparsedElement = preparseElement(ast);
+        const preparsedElement = preparseElement(ast);
         if (preparsedElement.type === PreparsedElementType.SCRIPT ||
             preparsedElement.type === PreparsedElementType.STYLE ||
             preparsedElement.type === PreparsedElementType.STYLESHEET) {
@@ -703,10 +702,10 @@ class NonBindableVisitor {
             // in the StyleCompiler
             return null;
         }
-        var attrNameAndValues = ast.attrs.map(attrAst => [attrAst.name, attrAst.value]);
-        var selector = createElementCssSelector(ast.name, attrNameAndValues);
-        var ngContentIndex = parent.findNgContentIndex(selector);
-        var children = htmlVisitAll(this, ast.children, EMPTY_ELEMENT_CONTEXT);
+        const attrNameAndValues = ast.attrs.map(attrAst => [attrAst.name, attrAst.value]);
+        const selector = createElementCssSelector(ast.name, attrNameAndValues);
+        const ngContentIndex = parent.findNgContentIndex(selector);
+        const children = htmlVisitAll(this, ast.children, EMPTY_ELEMENT_CONTEXT);
         return new ElementAst(ast.name, htmlVisitAll(this, ast.attrs), [], [], [], [], [], false, children, ngContentIndex, ast.sourceSpan);
     }
     visitComment(ast, context) { return null; }
@@ -714,7 +713,7 @@ class NonBindableVisitor {
         return new AttrAst(ast.name, ast.value, ast.sourceSpan);
     }
     visitText(ast, parent) {
-        var ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
+        const ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
         return new TextAst(ast.value, ngContentIndex, ast.sourceSpan);
     }
     visitExpansion(ast, context) { return ast; }
@@ -746,13 +745,13 @@ class ElementContext {
         this.providerContext = providerContext;
     }
     static create(isTemplateElement, directives, providerContext) {
-        var matcher = new SelectorMatcher();
-        var wildcardNgContentIndex = null;
-        var component = directives.find(directive => directive.directive.isComponent);
+        const matcher = new SelectorMatcher();
+        let wildcardNgContentIndex = null;
+        const component = directives.find(directive => directive.directive.isComponent);
         if (isPresent(component)) {
-            var ngContentSelectors = component.directive.template.ngContentSelectors;
-            for (var i = 0; i < ngContentSelectors.length; i++) {
-                var selector = ngContentSelectors[i];
+            const ngContentSelectors = component.directive.template.ngContentSelectors;
+            for (let i = 0; i < ngContentSelectors.length; i++) {
+                const selector = ngContentSelectors[i];
                 if (StringWrapper.equals(selector, '*')) {
                     wildcardNgContentIndex = i;
                 }
@@ -764,7 +763,7 @@ class ElementContext {
         return new ElementContext(isTemplateElement, matcher, wildcardNgContentIndex, providerContext);
     }
     findNgContentIndex(selector) {
-        var ngContentIndices = [];
+        const ngContentIndices = [];
         this._ngContentIndexMatcher.match(selector, (selector, ngContentIndex) => { ngContentIndices.push(ngContentIndex); });
         ListWrapper.sort(ngContentIndices);
         if (isPresent(this._wildcardNgContentIndex)) {
@@ -774,23 +773,23 @@ class ElementContext {
     }
 }
 function createElementCssSelector(elementName, matchableAttrs) {
-    var cssSelector = new CssSelector();
+    const cssSelector = new CssSelector();
     let elNameNoNs = splitNsName(elementName)[1];
     cssSelector.setElement(elNameNoNs);
-    for (var i = 0; i < matchableAttrs.length; i++) {
+    for (let i = 0; i < matchableAttrs.length; i++) {
         let attrName = matchableAttrs[i][0];
         let attrNameNoNs = splitNsName(attrName)[1];
         let attrValue = matchableAttrs[i][1];
         cssSelector.addAttribute(attrNameNoNs, attrValue);
         if (attrName.toLowerCase() == CLASS_ATTR) {
-            var classes = splitClasses(attrValue);
+            const classes = splitClasses(attrValue);
             classes.forEach(className => cssSelector.addClassName(className));
         }
     }
     return cssSelector;
 }
-var EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null, null);
-var NON_BINDABLE_VISITOR = new NonBindableVisitor();
+const EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null, null);
+const NON_BINDABLE_VISITOR = new NonBindableVisitor();
 export class PipeCollector extends RecursiveAstVisitor {
     constructor(...args) {
         super(...args);
