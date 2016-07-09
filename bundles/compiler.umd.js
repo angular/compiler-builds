@@ -12135,7 +12135,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         StyleCompiler.prototype.compileComponent = function (comp) {
             var _this = this;
-            var shim = comp.template.encapsulation === _angular_core.ViewEncapsulation.Emulated;
             var externalStylesheets = [];
             var componentStylesheet = this._compileStyles(comp, new CompileStylesheetMetadata({
                 styles: comp.template.styles,
