@@ -21,6 +21,7 @@ function createBindFieldExpr(exprIndex) {
 function createCurrValueExpr(exprIndex) {
     return o.variable(`currVal_${exprIndex}`); // fix syntax highlighting: `
 }
+const _animationViewCheckedFlagMap = new Map();
 function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method) {
     var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper);
     if (isBlank(checkExpression.expression)) {
@@ -118,6 +119,12 @@ function bindAndWriteToRenderer(boundProps, context, compileElement) {
                     .toStmt());
                 view.detachMethod.addStmt(animation.fnVariable.callFn([o.THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])
                     .toStmt());
+                if (!_animationViewCheckedFlagMap.get(view)) {
+                    _animationViewCheckedFlagMap.set(view, true);
+                    var triggerStmt = o.THIS_EXPR.callMethod('triggerQueuedAnimations', []).toStmt();
+                    view.afterViewLifecycleCallbacksMethod.addStmt(triggerStmt);
+                    view.detachMethod.addStmt(triggerStmt);
+                }
                 break;
         }
         bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod);
