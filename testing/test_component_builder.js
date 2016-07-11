@@ -16,31 +16,6 @@ var testing_1 = require('@angular/core/testing');
 var index_1 = require('../index');
 var collection_1 = require('../src/facade/collection');
 var lang_1 = require('../src/facade/lang');
-/**
- * @deprecated Import TestComponentRenderer from @angular/core/testing
- */
-var testing_2 = require('@angular/core/testing');
-exports.TestComponentRenderer = testing_2.TestComponentRenderer;
-/**
- * @deprecated Import TestComponentBuilder from @angular/core/testing
- */
-var testing_3 = require('@angular/core/testing');
-exports.TestComponentBuilder = testing_3.TestComponentBuilder;
-/**
- * @deprecated Import ComponentFixture from @angular/core/testing
- */
-var testing_4 = require('@angular/core/testing');
-exports.ComponentFixture = testing_4.ComponentFixture;
-/**
- * @deprecated Import ComponentFixtureNoNgZone from @angular/core/testing
- */
-var testing_5 = require('@angular/core/testing');
-exports.ComponentFixtureNoNgZone = testing_5.ComponentFixtureNoNgZone;
-/**
- * @deprecated Import ComponentFixtureAutoDetect from @angular/core/testing
- */
-var testing_6 = require('@angular/core/testing');
-exports.ComponentFixtureAutoDetect = testing_6.ComponentFixtureAutoDetect;
 var OverridingTestComponentBuilder = (function (_super) {
     __extends(OverridingTestComponentBuilder, _super);
     function OverridingTestComponentBuilder(injector) {

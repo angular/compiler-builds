@@ -10,26 +10,6 @@ import { TestComponentBuilder, TestInjector } from '@angular/core/testing';
 import { DirectiveResolver, ViewResolver } from '../index';
 import { MapWrapper } from '../src/facade/collection';
 import { isPresent } from '../src/facade/lang';
-/**
- * @deprecated Import TestComponentRenderer from @angular/core/testing
- */
-export { TestComponentRenderer } from '@angular/core/testing';
-/**
- * @deprecated Import TestComponentBuilder from @angular/core/testing
- */
-export { TestComponentBuilder } from '@angular/core/testing';
-/**
- * @deprecated Import ComponentFixture from @angular/core/testing
- */
-export { ComponentFixture } from '@angular/core/testing';
-/**
- * @deprecated Import ComponentFixtureNoNgZone from @angular/core/testing
- */
-export { ComponentFixtureNoNgZone } from '@angular/core/testing';
-/**
- * @deprecated Import ComponentFixtureAutoDetect from @angular/core/testing
- */
-export { ComponentFixtureAutoDetect } from '@angular/core/testing';
 export class OverridingTestComponentBuilder extends TestComponentBuilder {
     constructor(injector) {
         super(injector);
