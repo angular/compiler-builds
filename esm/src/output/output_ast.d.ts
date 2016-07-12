@@ -109,7 +109,7 @@ export declare enum BuiltinVar {
     CatchStack = 3,
 }
 export declare class ReadVarExpr extends Expression {
-    name: any;
+    name: string;
     builtin: BuiltinVar;
     constructor(name: string | BuiltinVar, type?: Type);
     visitExpression(visitor: ExpressionVisitor, context: any): any;

@@ -210,11 +210,18 @@ export function bindDirectiveInputs(directiveAst, directiveInstance, compileElem
     }
 }
 function logBindingUpdateStmt(renderNode, propName, value) {
-    return o.THIS_EXPR.prop('renderer')
+    const tryStmt = o.THIS_EXPR.prop('renderer')
         .callMethod('setBindingDebugInfo', [
         renderNode, o.literal(`ng-reflect-${camelCaseToDashCase(propName)}`),
         value.isBlank().conditional(o.NULL_EXPR, value.callMethod('toString', []))
     ])
         .toStmt();
+    const catchStmt = o.THIS_EXPR.prop('renderer')
+        .callMethod('setBindingDebugInfo', [
+        renderNode, o.literal(`ng-reflect-${camelCaseToDashCase(propName)}`),
+        o.literal('[ERROR] Exception while trying to serialize the value')
+    ])
+        .toStmt();
+    return new o.TryCatchStmt([tryStmt], [catchStmt]);
 }
 //# sourceMappingURL=property_binder.js.map

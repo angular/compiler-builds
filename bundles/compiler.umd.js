@@ -10651,12 +10651,19 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
     }
     function logBindingUpdateStmt(renderNode, propName, value) {
-        return THIS_EXPR.prop('renderer')
+        var tryStmt = THIS_EXPR.prop('renderer')
             .callMethod('setBindingDebugInfo', [
             renderNode, literal("ng-reflect-" + camelCaseToDashCase(propName)),
             value.isBlank().conditional(NULL_EXPR, value.callMethod('toString', []))
         ])
             .toStmt();
+        var catchStmt = THIS_EXPR.prop('renderer')
+            .callMethod('setBindingDebugInfo', [
+            renderNode, literal("ng-reflect-" + camelCaseToDashCase(propName)),
+            literal('[ERROR] Exception while trying to serialize the value')
+        ])
+            .toStmt();
+        return new TryCatchStmt([tryStmt], [catchStmt]);
     }
     var CompileEventListener = (function () {
         function CompileEventListener(compileElement, eventTarget, eventName, listenerIndex) {
