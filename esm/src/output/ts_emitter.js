@@ -169,7 +169,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         ctx.print(`(`);
         this._visitParams(ast.params, ctx);
         ctx.print(`):`);
-        this.visitType(ast.type, ctx, 'void');
+        this.visitType(ast.type, ctx);
         ctx.println(` => {`);
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
