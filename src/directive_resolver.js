@@ -8,9 +8,10 @@
 "use strict";
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
-var collection_1 = require('../src/facade/collection');
-var exceptions_1 = require('../src/facade/exceptions');
-var lang_1 = require('../src/facade/lang');
+var collection_1 = require('./facade/collection');
+var exceptions_1 = require('./facade/exceptions');
+var lang_1 = require('./facade/lang');
+var util_1 = require('./util');
 function _isDirectiveMetadata(type) {
     return type instanceof core_1.DirectiveMetadata;
 }
@@ -75,16 +76,33 @@ var DirectiveResolver = (function () {
         });
         return this._merge(dm, inputs, outputs, host, queries, directiveType);
     };
+    DirectiveResolver.prototype._extractPublicName = function (def) { return util_1.splitAtColon(def, [null, def])[1].trim(); };
     DirectiveResolver.prototype._merge = function (dm, inputs, outputs, host, queries, directiveType) {
-        var mergedInputs = lang_1.isPresent(dm.inputs) ? collection_1.ListWrapper.concat(dm.inputs, inputs) : inputs;
-        var mergedOutputs;
-        if (lang_1.isPresent(dm.outputs)) {
-            dm.outputs.forEach(function (propName) {
-                if (collection_1.ListWrapper.contains(outputs, propName)) {
-                    throw new exceptions_1.BaseException("Output event '" + propName + "' defined multiple times in '" + lang_1.stringify(directiveType) + "'");
+        var _this = this;
+        var mergedInputs;
+        if (lang_1.isPresent(dm.inputs)) {
+            var inputNames_1 = dm.inputs.map(function (def) { return _this._extractPublicName(def); });
+            inputs.forEach(function (inputDef) {
+                var publicName = _this._extractPublicName(inputDef);
+                if (inputNames_1.indexOf(publicName) > -1) {
+                    throw new exceptions_1.BaseException("Input '" + publicName + "' defined multiple times in '" + lang_1.stringify(directiveType) + "'");
                 }
             });
-            mergedOutputs = collection_1.ListWrapper.concat(dm.outputs, outputs);
+            mergedInputs = dm.inputs.concat(inputs);
+        }
+        else {
+            mergedInputs = inputs;
+        }
+        var mergedOutputs;
+        if (lang_1.isPresent(dm.outputs)) {
+            var outputNames_1 = dm.outputs.map(function (def) { return _this._extractPublicName(def); });
+            outputs.forEach(function (outputDef) {
+                var publicName = _this._extractPublicName(outputDef);
+                if (outputNames_1.indexOf(publicName) > -1) {
+                    throw new exceptions_1.BaseException("Output event '" + publicName + "' defined multiple times in '" + lang_1.stringify(directiveType) + "'");
+                }
+            });
+            mergedOutputs = dm.outputs.concat(outputs);
         }
         else {
             mergedOutputs = outputs;
@@ -129,5 +147,4 @@ var DirectiveResolver = (function () {
     return DirectiveResolver;
 }());
 exports.DirectiveResolver = DirectiveResolver;
-exports.CODEGEN_DIRECTIVE_RESOLVER = new DirectiveResolver(core_private_1.reflector);
 //# sourceMappingURL=directive_resolver.js.map

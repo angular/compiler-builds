@@ -14,13 +14,8 @@ export function camelCaseToDashCase(input) {
     return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, (m) => { return '-' + m[1].toLowerCase(); });
 }
 export function splitAtColon(input, defaultValues) {
-    var parts = StringWrapper.split(input.trim(), /\s*:\s*/g);
-    if (parts.length > 1) {
-        return parts;
-    }
-    else {
-        return defaultValues;
-    }
+    var parts = input.split(':', 2).map((s) => s.trim());
+    return parts.length > 1 ? parts : defaultValues;
 }
 export function sanitizeIdentifier(name) {
     return StringWrapper.replaceAll(name, /\W/g, '_');

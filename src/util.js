@@ -16,13 +16,8 @@ function camelCaseToDashCase(input) {
 }
 exports.camelCaseToDashCase = camelCaseToDashCase;
 function splitAtColon(input, defaultValues) {
-    var parts = lang_1.StringWrapper.split(input.trim(), /\s*:\s*/g);
-    if (parts.length > 1) {
-        return parts;
-    }
-    else {
-        return defaultValues;
-    }
+    var parts = input.split(':', 2).map(function (s) { return s.trim(); });
+    return parts.length > 1 ? parts : defaultValues;
 }
 exports.splitAtColon = splitAtColon;
 function sanitizeIdentifier(name) {

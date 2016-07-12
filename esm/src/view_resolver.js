@@ -9,17 +9,15 @@ import { Injectable, ViewMetadata, ComponentMetadata } from '@angular/core';
 import { ReflectorReader, reflector } from '../core_private';
 import { stringify, isBlank, isPresent } from '../src/facade/lang';
 import { BaseException } from '../src/facade/exceptions';
+function _isComponentMetadata(obj) {
+    return obj instanceof ComponentMetadata;
+}
 export class ViewResolver {
     constructor(_reflector = reflector) {
         this._reflector = _reflector;
     }
     resolve(component) {
-        var compMeta;
-        this._reflector.annotations(component).forEach(m => {
-            if (m instanceof ComponentMetadata) {
-                compMeta = m;
-            }
-        });
+        const compMeta = this._reflector.annotations(component).find(_isComponentMetadata);
         if (isPresent(compMeta)) {
             if (isBlank(compMeta.template) && isBlank(compMeta.templateUrl)) {
                 throw new BaseException(`Component '${stringify(component)}' must have either 'template' or 'templateUrl' set.`);

@@ -5430,13 +5430,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
     }
     function splitAtColon(input, defaultValues) {
-        var parts = StringWrapper.split(input.trim(), /\s*:\s*/g);
-        if (parts.length > 1) {
-            return parts;
-        }
-        else {
-            return defaultValues;
-        }
+        var parts = input.split(':', 2).map(function (s) { return s.trim(); });
+        return parts.length > 1 ? parts : defaultValues;
     }
     function sanitizeIdentifier(name) {
         return StringWrapper.replaceAll(name, /\W/g, '_');
@@ -12824,16 +12819,33 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
             return this._merge(dm, inputs, outputs, host, queries, directiveType);
         };
+        DirectiveResolver.prototype._extractPublicName = function (def) { return splitAtColon(def, [null, def])[1].trim(); };
         DirectiveResolver.prototype._merge = function (dm, inputs, outputs, host, queries, directiveType) {
-            var mergedInputs = isPresent(dm.inputs) ? ListWrapper.concat(dm.inputs, inputs) : inputs;
-            var mergedOutputs;
-            if (isPresent(dm.outputs)) {
-                dm.outputs.forEach(function (propName) {
-                    if (ListWrapper.contains(outputs, propName)) {
-                        throw new BaseException$1("Output event '" + propName + "' defined multiple times in '" + stringify(directiveType) + "'");
+            var _this = this;
+            var mergedInputs;
+            if (isPresent(dm.inputs)) {
+                var inputNames_1 = dm.inputs.map(function (def) { return _this._extractPublicName(def); });
+                inputs.forEach(function (inputDef) {
+                    var publicName = _this._extractPublicName(inputDef);
+                    if (inputNames_1.indexOf(publicName) > -1) {
+                        throw new BaseException$1("Input '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                     }
                 });
-                mergedOutputs = ListWrapper.concat(dm.outputs, outputs);
+                mergedInputs = dm.inputs.concat(inputs);
+            }
+            else {
+                mergedInputs = inputs;
+            }
+            var mergedOutputs;
+            if (isPresent(dm.outputs)) {
+                var outputNames_1 = dm.outputs.map(function (def) { return _this._extractPublicName(def); });
+                outputs.forEach(function (outputDef) {
+                    var publicName = _this._extractPublicName(outputDef);
+                    if (outputNames_1.indexOf(publicName) > -1) {
+                        throw new BaseException$1("Output event '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
+                    }
+                });
+                mergedOutputs = dm.outputs.concat(outputs);
             }
             else {
                 mergedOutputs = outputs;
@@ -12877,7 +12889,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     DirectiveResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
-    var CODEGEN_DIRECTIVE_RESOLVER = new DirectiveResolver(reflector);
     function _isPipeMetadata(type) {
         return type instanceof _angular_core.PipeMetadata;
     }
@@ -12909,18 +12920,16 @@ var __extends = (this && this.__extends) || function (d, b) {
     PipeResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
+    function _isComponentMetadata(obj) {
+        return obj instanceof _angular_core.ComponentMetadata;
+    }
     var ViewResolver = (function () {
         function ViewResolver(_reflector) {
             if (_reflector === void 0) { _reflector = reflector; }
             this._reflector = _reflector;
         }
         ViewResolver.prototype.resolve = function (component) {
-            var compMeta;
-            this._reflector.annotations(component).forEach(function (m) {
-                if (m instanceof _angular_core.ComponentMetadata) {
-                    compMeta = m;
-                }
-            });
+            var compMeta = this._reflector.annotations(component).find(_isComponentMetadata);
             if (isPresent(compMeta)) {
                 if (isBlank(compMeta.template) && isBlank(compMeta.templateUrl)) {
                     throw new BaseException$1("Component '" + stringify(component) + "' must have either 'template' or 'templateUrl' set.");
