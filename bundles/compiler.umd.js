@@ -5507,7 +5507,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.syncResult = syncResult;
             this.asyncResult = asyncResult;
             if (!asyncResult) {
-                asyncResult = Promise.resolve(syncResult);
+                this.asyncResult = Promise.resolve(syncResult);
             }
         }
         return SyncAsyncResult;

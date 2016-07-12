@@ -99,7 +99,7 @@ var SyncAsyncResult = (function () {
         this.syncResult = syncResult;
         this.asyncResult = asyncResult;
         if (!asyncResult) {
-            asyncResult = Promise.resolve(syncResult);
+            this.asyncResult = Promise.resolve(syncResult);
         }
     }
     return SyncAsyncResult;
