@@ -232,7 +232,7 @@ var ViewBuilderVisitor = (function () {
         var directives = ast.directives.map(function (directiveAst) { return directiveAst.directive; });
         var compileElement = new compile_element_1.CompileElement(parent, this.view, nodeIndex, renderNode, ast, null, directives, ast.providers, ast.hasViewContainer, true, ast.references);
         this.view.nodes.push(compileElement);
-        var compiledAnimations = this._animationCompiler.compileComponent(this.view.component);
+        var compiledAnimations = this._animationCompiler.compileComponent(this.view.component, [ast]);
         this.nestedViewCount++;
         var embeddedView = new compile_view_1.CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, o.NULL_EXPR, compiledAnimations, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
         this.nestedViewCount += buildView(embeddedView, ast.children, this.targetDependencies);
@@ -405,12 +405,14 @@ function createViewFactory(view, viewClass, renderCompTypeVar) {
         templateUrlInfo = view.component.template.templateUrl;
     }
     if (view.viewIndex === 0) {
+        var animationsExpr = o.literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnVariable]; }));
         initRenderCompTypeStmts = [new o.IfStmt(renderCompTypeVar.identical(o.NULL_EXPR), [
                 renderCompTypeVar
                     .set(constants_1.ViewConstructorVars.viewUtils.callMethod('createRenderComponentType', [
                     o.literal(templateUrlInfo),
                     o.literal(view.component.template.ngContentSelectors.length),
-                    constants_1.ViewEncapsulationEnum.fromValue(view.component.template.encapsulation), view.styles
+                    constants_1.ViewEncapsulationEnum.fromValue(view.component.template.encapsulation), view.styles,
+                    animationsExpr
                 ]))
                     .toStmt()
             ])];

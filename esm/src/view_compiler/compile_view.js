@@ -22,6 +22,7 @@ export class CompileView {
         this.genConfig = genConfig;
         this.pipeMetas = pipeMetas;
         this.styles = styles;
+        this.animations = animations;
         this.viewIndex = viewIndex;
         this.declarationElement = declarationElement;
         this.templateVariableBindings = templateVariableBindings;
@@ -41,8 +42,6 @@ export class CompileView {
         this.literalArrayCount = 0;
         this.literalMapCount = 0;
         this.pipeCount = 0;
-        this.animations = new Map();
-        animations.forEach(entry => this.animations.set(entry.name, entry));
         this.createMethod = new CompileMethod(this);
         this.injectorGetMethod = new CompileMethod(this);
         this.updateContentQueriesMethod = new CompileMethod(this);

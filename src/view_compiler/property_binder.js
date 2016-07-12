@@ -56,7 +56,7 @@ function bindRenderText(boundText, compileNode, view) {
             .toStmt()], view.detectChangesRenderPropertiesMethod);
 }
 exports.bindRenderText = bindRenderText;
-function bindAndWriteToRenderer(boundProps, context, compileElement) {
+function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp) {
     var view = compileElement.view;
     var renderNode = compileElement.renderNode;
     boundProps.forEach(function (boundProp) {
@@ -102,10 +102,11 @@ function bindAndWriteToRenderer(boundProps, context, compileElement) {
                 break;
             case template_ast_1.PropertyBindingType.Animation:
                 var animationName = boundProp.name;
-                var animation = view.componentView.animations.get(animationName);
-                if (!lang_1.isPresent(animation)) {
-                    throw new core_1.BaseException("Internal Error: couldn't find an animation entry for " + boundProp.name);
+                var targetViewExpr = o.THIS_EXPR;
+                if (isHostProp) {
+                    targetViewExpr = compileElement.appElement.prop('componentView');
                 }
+                var animationFnExpr = targetViewExpr.prop('componentType').prop('animations').key(o.literal(animationName));
                 // it's important to normalize the void value as `void` explicitly
                 // so that the styles data can be obtained from the stringmap
                 var emptyStateValue = o.literal(core_private_1.EMPTY_STATE);
@@ -117,9 +118,8 @@ function bindAndWriteToRenderer(boundProps, context, compileElement) {
                 var newRenderVar = o.variable('newRenderVar');
                 updateStmts.push(newRenderVar.set(renderValue).toDeclStmt());
                 updateStmts.push(new o.IfStmt(newRenderVar.equals(o.importExpr(identifiers_1.Identifiers.UNINITIALIZED)), [newRenderVar.set(emptyStateValue).toStmt()]));
-                updateStmts.push(animation.fnVariable.callFn([o.THIS_EXPR, renderNode, oldRenderVar, newRenderVar])
-                    .toStmt());
-                view.detachMethod.addStmt(animation.fnVariable.callFn([o.THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])
+                updateStmts.push(animationFnExpr.callFn([o.THIS_EXPR, renderNode, oldRenderVar, newRenderVar]).toStmt());
+                view.detachMethod.addStmt(animationFnExpr.callFn([o.THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])
                     .toStmt());
                 if (!_animationViewCheckedFlagMap.get(view)) {
                     _animationViewCheckedFlagMap.set(view, true);
@@ -160,11 +160,11 @@ function sanitizedValue(boundProp, renderValue) {
     return ctx.callMethod('sanitize', args);
 }
 function bindRenderInputs(boundProps, compileElement) {
-    bindAndWriteToRenderer(boundProps, compileElement.view.componentContext, compileElement);
+    bindAndWriteToRenderer(boundProps, compileElement.view.componentContext, compileElement, false);
 }
 exports.bindRenderInputs = bindRenderInputs;
 function bindDirectiveHostProps(directiveAst, directiveInstance, compileElement) {
-    bindAndWriteToRenderer(directiveAst.hostProperties, directiveInstance, compileElement);
+    bindAndWriteToRenderer(directiveAst.hostProperties, directiveInstance, compileElement, true);
 }
 exports.bindDirectiveHostProps = bindDirectiveHostProps;
 function bindDirectiveInputs(directiveAst, directiveInstance, compileElement) {

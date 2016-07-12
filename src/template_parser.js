@@ -633,11 +633,20 @@ var TemplateParseVisitor = (function () {
         var parts = name.split(PROPERTY_PARTS_SEPARATOR);
         var securityContext;
         if (parts.length === 1) {
-            boundPropertyName = this._schemaRegistry.getMappedPropName(parts[0]);
-            securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
-            bindingType = template_ast_1.PropertyBindingType.Property;
-            if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName)) {
-                this._reportError("Can't bind to '" + boundPropertyName + "' since it isn't a known native property", sourceSpan);
+            var partValue = parts[0];
+            if (partValue[0] == '@') {
+                boundPropertyName = partValue.substr(1);
+                bindingType = template_ast_1.PropertyBindingType.Animation;
+                securityContext = core_1.SecurityContext.NONE;
+                this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is deprecated. Use \"[@prop]\": \"exp\" instead!", sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
+            }
+            else {
+                boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);
+                securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
+                bindingType = template_ast_1.PropertyBindingType.Property;
+                if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName)) {
+                    this._reportError("Can't bind to '" + boundPropertyName + "' since it isn't a known native property", sourceSpan);
+                }
             }
         }
         else {

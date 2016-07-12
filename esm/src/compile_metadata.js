@@ -13,8 +13,11 @@ import { NumberWrapper, RegExpWrapper, isArray, isBlank, isBoolean, isNumber, is
 import { CssSelector } from './selector';
 import { getUrlScheme } from './url_resolver';
 import { sanitizeIdentifier, splitAtColon } from './util';
+// group 0: "[prop] or (event) or @trigger"
+// group 1: "prop" from "[prop]"
 // group 2: "event" from "(event)"
-var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))$/g;
+// group 3: "@trigger" from "@trigger"
+var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/g;
 export class CompileMetadataWithIdentifier {
     get identifier() { return unimplemented(); }
 }
@@ -561,6 +564,9 @@ export class CompileDirectiveMetadata {
                 }
                 else if (isPresent(matches[2])) {
                     hostListeners[matches[2]] = value;
+                }
+                else if (isPresent(matches[3])) {
+                    hostProperties[matches[3]] = value;
                 }
             });
         }

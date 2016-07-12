@@ -21,6 +21,7 @@ export declare class CompileView implements NameResolver {
     genConfig: CompilerConfig;
     pipeMetas: CompilePipeMetadata[];
     styles: o.Expression;
+    animations: CompiledAnimation[];
     viewIndex: number;
     declarationElement: CompileElement;
     templateVariableBindings: string[][];
@@ -56,7 +57,6 @@ export declare class CompileView implements NameResolver {
     literalArrayCount: number;
     literalMapCount: number;
     pipeCount: number;
-    animations: Map<string, CompiledAnimation>;
     componentContext: o.Expression;
     constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeMetadata[], styles: o.Expression, animations: CompiledAnimation[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][]);
     callPipe(name: string, input: o.Expression, args: o.Expression[]): o.Expression;

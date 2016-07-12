@@ -19,8 +19,11 @@ var lang_1 = require('../src/facade/lang');
 var selector_1 = require('./selector');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
+// group 0: "[prop] or (event) or @trigger"
+// group 1: "prop" from "[prop]"
 // group 2: "event" from "(event)"
-var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))$/g;
+// group 3: "@trigger" from "@trigger"
+var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/g;
 var CompileMetadataWithIdentifier = (function () {
     function CompileMetadataWithIdentifier() {
     }
@@ -696,6 +699,9 @@ var CompileDirectiveMetadata = (function () {
                 }
                 else if (lang_1.isPresent(matches[2])) {
                     hostListeners[matches[2]] = value;
+                }
+                else if (lang_1.isPresent(matches[3])) {
+                    hostProperties[matches[3]] = value;
                 }
             });
         }

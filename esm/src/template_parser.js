@@ -609,11 +609,20 @@ class TemplateParseVisitor {
         const parts = name.split(PROPERTY_PARTS_SEPARATOR);
         let securityContext;
         if (parts.length === 1) {
-            boundPropertyName = this._schemaRegistry.getMappedPropName(parts[0]);
-            securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
-            bindingType = PropertyBindingType.Property;
-            if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName)) {
-                this._reportError(`Can't bind to '${boundPropertyName}' since it isn't a known native property`, sourceSpan);
+            var partValue = parts[0];
+            if (partValue[0] == '@') {
+                boundPropertyName = partValue.substr(1);
+                bindingType = PropertyBindingType.Animation;
+                securityContext = SecurityContext.NONE;
+                this._reportError(`Assigning animation triggers within host data as attributes such as "@prop": "exp" is deprecated. Use "[@prop]": "exp" instead!`, sourceSpan, ParseErrorLevel.WARNING);
+            }
+            else {
+                boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);
+                securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
+                bindingType = PropertyBindingType.Property;
+                if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName)) {
+                    this._reportError(`Can't bind to '${boundPropertyName}' since it isn't a known native property`, sourceSpan);
+                }
             }
         }
         else {

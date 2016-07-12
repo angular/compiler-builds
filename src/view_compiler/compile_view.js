@@ -24,6 +24,7 @@ var CompileView = (function () {
         this.genConfig = genConfig;
         this.pipeMetas = pipeMetas;
         this.styles = styles;
+        this.animations = animations;
         this.viewIndex = viewIndex;
         this.declarationElement = declarationElement;
         this.templateVariableBindings = templateVariableBindings;
@@ -43,8 +44,6 @@ var CompileView = (function () {
         this.literalArrayCount = 0;
         this.literalMapCount = 0;
         this.pipeCount = 0;
-        this.animations = new Map();
-        animations.forEach(function (entry) { return _this.animations.set(entry.name, entry); });
         this.createMethod = new compile_method_1.CompileMethod(this);
         this.injectorGetMethod = new compile_method_1.CompileMethod(this);
         this.updateContentQueriesMethod = new compile_method_1.CompileMethod(this);
