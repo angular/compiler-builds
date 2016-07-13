@@ -725,22 +725,16 @@ var CompileDirectiveMetadata = (function () {
         }
         return new CompileDirectiveMetadata({
             type: type,
-            isComponent: lang_1.normalizeBool(isComponent),
-            selector: selector,
-            exportAs: exportAs,
-            changeDetection: changeDetection,
+            isComponent: lang_1.normalizeBool(isComponent), selector: selector, exportAs: exportAs, changeDetection: changeDetection,
             inputs: inputsMap,
-            outputs: outputsMap,
-            hostListeners: hostListeners,
-            hostProperties: hostProperties,
-            hostAttributes: hostAttributes,
+            outputs: outputsMap, hostListeners: hostListeners, hostProperties: hostProperties, hostAttributes: hostAttributes,
             lifecycleHooks: lang_1.isPresent(lifecycleHooks) ? lifecycleHooks : [],
             providers: providers,
             viewProviders: viewProviders,
             queries: queries,
             viewQueries: viewQueries,
             precompile: precompile,
-            template: template
+            template: template,
         });
     };
     Object.defineProperty(CompileDirectiveMetadata.prototype, "identifier", {

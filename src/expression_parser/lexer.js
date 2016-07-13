@@ -48,30 +48,27 @@ var Token = (function () {
         this.strValue = strValue;
     }
     Token.prototype.isCharacter = function (code) {
-        return (this.type == TokenType.Character && this.numValue == code);
+        return this.type == TokenType.Character && this.numValue == code;
     };
-    Token.prototype.isNumber = function () { return (this.type == TokenType.Number); };
-    Token.prototype.isString = function () { return (this.type == TokenType.String); };
+    Token.prototype.isNumber = function () { return this.type == TokenType.Number; };
+    Token.prototype.isString = function () { return this.type == TokenType.String; };
     Token.prototype.isOperator = function (operater) {
-        return (this.type == TokenType.Operator && this.strValue == operater);
+        return this.type == TokenType.Operator && this.strValue == operater;
     };
-    Token.prototype.isIdentifier = function () { return (this.type == TokenType.Identifier); };
-    Token.prototype.isKeyword = function () { return (this.type == TokenType.Keyword); };
+    Token.prototype.isIdentifier = function () { return this.type == TokenType.Identifier; };
+    Token.prototype.isKeyword = function () { return this.type == TokenType.Keyword; };
     Token.prototype.isKeywordDeprecatedVar = function () {
-        return (this.type == TokenType.Keyword && this.strValue == 'var');
+        return this.type == TokenType.Keyword && this.strValue == 'var';
     };
-    Token.prototype.isKeywordLet = function () { return (this.type == TokenType.Keyword && this.strValue == 'let'); };
-    Token.prototype.isKeywordNull = function () { return (this.type == TokenType.Keyword && this.strValue == 'null'); };
+    Token.prototype.isKeywordLet = function () { return this.type == TokenType.Keyword && this.strValue == 'let'; };
+    Token.prototype.isKeywordNull = function () { return this.type == TokenType.Keyword && this.strValue == 'null'; };
     Token.prototype.isKeywordUndefined = function () {
-        return (this.type == TokenType.Keyword && this.strValue == 'undefined');
+        return this.type == TokenType.Keyword && this.strValue == 'undefined';
     };
-    Token.prototype.isKeywordTrue = function () { return (this.type == TokenType.Keyword && this.strValue == 'true'); };
-    Token.prototype.isKeywordFalse = function () { return (this.type == TokenType.Keyword && this.strValue == 'false'); };
+    Token.prototype.isKeywordTrue = function () { return this.type == TokenType.Keyword && this.strValue == 'true'; };
+    Token.prototype.isKeywordFalse = function () { return this.type == TokenType.Keyword && this.strValue == 'false'; };
     Token.prototype.isError = function () { return this.type == TokenType.Error; };
-    Token.prototype.toNumber = function () {
-        // -1 instead of NULL ok?
-        return (this.type == TokenType.Number) ? this.numValue : -1;
-    };
+    Token.prototype.toNumber = function () { return this.type == TokenType.Number ? this.numValue : -1; };
     Token.prototype.toString = function () {
         switch (this.type) {
             case TokenType.Character:

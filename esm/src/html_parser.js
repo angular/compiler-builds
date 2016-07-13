@@ -12,6 +12,7 @@ import { HtmlAttrAst, HtmlTextAst, HtmlCommentAst, HtmlElementAst, HtmlExpansion
 import { HtmlToken, HtmlTokenType, tokenizeHtml } from './html_lexer';
 import { ParseError, ParseSourceSpan } from './parse_util';
 import { getHtmlTagDefinition, getNsPrefix, mergeNsAndName } from './html_tags';
+import { DEFAULT_INTERPOLATION_CONFIG } from './interpolation_config';
 export class HtmlTreeError extends ParseError {
     constructor(elementName, span, msg) {
         super(span, msg);
@@ -28,9 +29,9 @@ export class HtmlParseTreeResult {
     }
 }
 export class HtmlParser {
-    parse(sourceContent, sourceUrl, parseExpansionForms = false) {
-        var tokensAndErrors = tokenizeHtml(sourceContent, sourceUrl, parseExpansionForms);
-        var treeAndErrors = new TreeBuilder(tokensAndErrors.tokens).build();
+    parse(sourceContent, sourceUrl, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const tokensAndErrors = tokenizeHtml(sourceContent, sourceUrl, parseExpansionForms, interpolationConfig);
+        const treeAndErrors = new TreeBuilder(tokensAndErrors.tokens).build();
         return new HtmlParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
     }
 }
@@ -79,7 +80,7 @@ class TreeBuilder {
         return new HtmlParseTreeResult(this.rootNodes, this.errors);
     }
     _advance() {
-        var prev = this.peek;
+        const prev = this.peek;
         if (this.index < this.tokens.length - 1) {
             // Note: there is always an EOF token at the end
             this.index++;
@@ -98,15 +99,15 @@ class TreeBuilder {
         this._advanceIf(HtmlTokenType.CDATA_END);
     }
     _consumeComment(token) {
-        var text = this._advanceIf(HtmlTokenType.RAW_TEXT);
+        const text = this._advanceIf(HtmlTokenType.RAW_TEXT);
         this._advanceIf(HtmlTokenType.COMMENT_END);
-        var value = isPresent(text) ? text.parts[0].trim() : null;
+        const value = isPresent(text) ? text.parts[0].trim() : null;
         this._addToParent(new HtmlCommentAst(value, token.sourceSpan));
     }
     _consumeExpansion(token) {
-        let switchValue = this._advance();
-        let type = this._advance();
-        let cases = [];
+        const switchValue = this._advance();
+        const type = this._advance();
+        const cases = [];
         // read =
         while (this.peek.type === HtmlTokenType.EXPANSION_CASE_VALUE) {
             let expCase = this._parseExpansionCase();
@@ -120,36 +121,36 @@ class TreeBuilder {
             return;
         }
         this._advance();
-        let mainSourceSpan = new ParseSourceSpan(token.sourceSpan.start, this.peek.sourceSpan.end);
+        const mainSourceSpan = new ParseSourceSpan(token.sourceSpan.start, this.peek.sourceSpan.end);
         this._addToParent(new HtmlExpansionAst(switchValue.parts[0], type.parts[0], cases, mainSourceSpan, switchValue.sourceSpan));
     }
     _parseExpansionCase() {
-        let value = this._advance();
+        const value = this._advance();
         // read {
         if (this.peek.type !== HtmlTokenType.EXPANSION_CASE_EXP_START) {
             this.errors.push(HtmlTreeError.create(null, this.peek.sourceSpan, `Invalid expansion form. Missing '{'.,`));
             return null;
         }
         // read until }
-        let start = this._advance();
-        let exp = this._collectExpansionExpTokens(start);
+        const start = this._advance();
+        const exp = this._collectExpansionExpTokens(start);
         if (isBlank(exp))
             return null;
-        let end = this._advance();
+        const end = this._advance();
         exp.push(new HtmlToken(HtmlTokenType.EOF, [], end.sourceSpan));
         // parse everything in between { and }
-        let parsedExp = new TreeBuilder(exp).build();
+        const parsedExp = new TreeBuilder(exp).build();
         if (parsedExp.errors.length > 0) {
             this.errors = this.errors.concat(parsedExp.errors);
             return null;
         }
-        let sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end);
-        let expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end);
+        const sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end);
+        const expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end);
         return new HtmlExpansionCaseAst(value.parts[0], parsedExp.rootNodes, sourceSpan, value.sourceSpan, expSourceSpan);
     }
     _collectExpansionExpTokens(start) {
-        let exp = [];
-        let expansionFormStack = [HtmlTokenType.EXPANSION_CASE_EXP_START];
+        const exp = [];
+        const expansionFormStack = [HtmlTokenType.EXPANSION_CASE_EXP_START];
         while (true) {
             if (this.peek.type === HtmlTokenType.EXPANSION_FORM_START ||
                 this.peek.type === HtmlTokenType.EXPANSION_CASE_EXP_START) {
@@ -185,7 +186,7 @@ class TreeBuilder {
     _consumeText(token) {
         let text = token.parts[0];
         if (text.length > 0 && text[0] == '\n') {
-            let parent = this._getParentElement();
+            const parent = this._getParentElement();
             if (isPresent(parent) && parent.children.length == 0 &&
                 getHtmlTagDefinition(parent.name).ignoreFirstLf) {
                 text = text.substring(1);
@@ -197,21 +198,21 @@ class TreeBuilder {
     }
     _closeVoidElement() {
         if (this.elementStack.length > 0) {
-            let el = ListWrapper.last(this.elementStack);
+            const el = ListWrapper.last(this.elementStack);
             if (getHtmlTagDefinition(el.name).isVoid) {
                 this.elementStack.pop();
             }
         }
     }
     _consumeStartTag(startTagToken) {
-        var prefix = startTagToken.parts[0];
-        var name = startTagToken.parts[1];
-        var attrs = [];
+        const prefix = startTagToken.parts[0];
+        const name = startTagToken.parts[1];
+        const attrs = [];
         while (this.peek.type === HtmlTokenType.ATTR_NAME) {
             attrs.push(this._consumeAttr(this._advance()));
         }
-        var fullName = getElementFullName(prefix, name, this._getParentElement());
-        var selfClosing = false;
+        const fullName = getElementFullName(prefix, name, this._getParentElement());
+        let selfClosing = false;
         // Note: There could have been a tokenizer error
         // so that we don't get a token for the end tag...
         if (this.peek.type === HtmlTokenType.TAG_OPEN_END_VOID) {
@@ -225,9 +226,9 @@ class TreeBuilder {
             this._advance();
             selfClosing = false;
         }
-        var end = this.peek.sourceSpan.start;
-        let span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
-        var el = new HtmlElementAst(fullName, attrs, [], span, span, null);
+        const end = this.peek.sourceSpan.start;
+        const span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
+        const el = new HtmlElementAst(fullName, attrs, [], span, span, null);
         this._pushElement(el);
         if (selfClosing) {
             this._popElement(fullName);
@@ -236,7 +237,7 @@ class TreeBuilder {
     }
     _pushElement(el) {
         if (this.elementStack.length > 0) {
-            var parentEl = ListWrapper.last(this.elementStack);
+            const parentEl = ListWrapper.last(this.elementStack);
             if (getHtmlTagDefinition(parentEl.name).isClosedByChild(el.name)) {
                 this.elementStack.pop();
             }
@@ -244,14 +245,14 @@ class TreeBuilder {
         const tagDef = getHtmlTagDefinition(el.name);
         const { parent, container } = this._getParentElementSkippingContainers();
         if (isPresent(parent) && tagDef.requireExtraParent(parent.name)) {
-            var newParent = new HtmlElementAst(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
+            const newParent = new HtmlElementAst(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
             this._insertBeforeContainer(parent, container, newParent);
         }
         this._addToParent(el);
         this.elementStack.push(el);
     }
     _consumeEndTag(endTagToken) {
-        var fullName = getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
+        const fullName = getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
         if (this._getParentElement()) {
             this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
         }
@@ -264,7 +265,7 @@ class TreeBuilder {
     }
     _popElement(fullName) {
         for (let stackIndex = this.elementStack.length - 1; stackIndex >= 0; stackIndex--) {
-            let el = this.elementStack[stackIndex];
+            const el = this.elementStack[stackIndex];
             if (el.name == fullName) {
                 ListWrapper.splice(this.elementStack, stackIndex, this.elementStack.length - stackIndex);
                 return true;
@@ -276,11 +277,11 @@ class TreeBuilder {
         return false;
     }
     _consumeAttr(attrName) {
-        var fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
-        var end = attrName.sourceSpan.end;
-        var value = '';
+        const fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
+        let end = attrName.sourceSpan.end;
+        let value = '';
         if (this.peek.type === HtmlTokenType.ATTR_VALUE) {
-            var valueToken = this._advance();
+            const valueToken = this._advance();
             value = valueToken.parts[0];
             end = valueToken.sourceSpan.end;
         }
@@ -305,7 +306,7 @@ class TreeBuilder {
         return { parent: ListWrapper.last(this.elementStack), container };
     }
     _addToParent(node) {
-        var parent = this._getParentElement();
+        const parent = this._getParentElement();
         if (isPresent(parent)) {
             parent.children.push(node);
         }
@@ -328,7 +329,7 @@ class TreeBuilder {
         else {
             if (parent) {
                 // replace the container with the new node in the children
-                let index = parent.children.indexOf(container);
+                const index = parent.children.indexOf(container);
                 parent.children[index] = node;
             }
             else {

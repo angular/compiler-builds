@@ -13,9 +13,9 @@ export declare class TemplateBindingParseResult {
     constructor(templateBindings: TemplateBinding[], warnings: string[], errors: ParserError[]);
 }
 export declare class Parser {
-    /** @internal */ _lexer: Lexer;
+    private _lexer;
     private errors;
-    constructor(/** @internal */ _lexer: Lexer);
+    constructor(_lexer: Lexer);
     parseAction(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseBinding(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseSimpleBinding(input: string, location: string, interpolationConfig?: InterpolationConfig): ASTWithSource;

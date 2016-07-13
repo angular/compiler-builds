@@ -5,11 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Parser } from '../expression_parser/parser';
+import { Parser as ExpressionParser } from '../expression_parser/parser';
 import { HtmlAst } from '../html_ast';
 import { HtmlParseTreeResult, HtmlParser } from '../html_parser';
 import { InterpolationConfig } from '../interpolation_config';
-import { ParseError } from '../parse_util';
 /**
  * Creates an i18n-ed version of the parsed template.
  *
@@ -39,32 +38,35 @@ import { ParseError } from '../parse_util';
  */
 export declare class I18nHtmlParser implements HtmlParser {
     private _htmlParser;
-    private _parser;
+    _expressionParser: ExpressionParser;
     private _messagesContent;
     private _messages;
     private _implicitTags;
     private _implicitAttrs;
-    errors: ParseError[];
+    private _errors;
     private _interpolationConfig;
-    constructor(_htmlParser: HtmlParser, _parser: Parser, _messagesContent: string, _messages: {
+    constructor(_htmlParser: HtmlParser, _expressionParser: ExpressionParser, _messagesContent: string, _messages: {
         [key: string]: HtmlAst[];
     }, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
     });
     parse(sourceContent: string, sourceUrl: string, parseExpansionForms?: boolean, interpolationConfig?: InterpolationConfig): HtmlParseTreeResult;
     private _processI18nPart(part);
-    private _mergeI18Part(part);
     private _recurseIntoI18nPart(p);
     private _recurse(nodes);
-    private _mergeTrees(p, translated, original);
-    private _mergeTreesHelper(translated, mapping);
-    private _mergeElementOrInterpolation(t, translated, mapping);
-    private _getName(t);
-    private _mergeTextInterpolation(t, originalNode);
-    private _mergeElement(t, originalNode, mapping);
+    private _mergeI18Part(part);
+    private _mergeTrees(part, translation);
+    /**
+     * The translation AST is composed on text nodes and placeholder elements
+     */
+    private _expandPlaceholders(translation, mapping);
+    private _expandPlaceholdersInNode(node, mapping);
+    private _getName(node);
+    private _mergeTextInterpolation(node, originalNode);
+    private _mergeElement(node, originalNode, mapping);
     private _i18nAttributes(el);
     private _replaceInterpolationInAttr(attr, msg);
-    private _replacePlaceholdersWithExpressions(message, exps, sourceSpan);
+    private _replacePlaceholdersWithInterpolations(message, exps, sourceSpan);
     private _buildExprMap(exps);
     private _convertIntoExpression(name, expMap, sourceSpan);
 }

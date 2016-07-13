@@ -8,7 +8,7 @@ export declare enum TokenType {
     Error = 6,
 }
 export declare class Lexer {
-    tokenize(text: string): any[];
+    tokenize(text: string): Token[];
 }
 export declare class Token {
     index: number;

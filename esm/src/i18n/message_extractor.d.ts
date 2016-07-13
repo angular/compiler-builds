@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Parser } from '../expression_parser/parser';
+import { Parser as ExpressionParser } from '../expression_parser/parser';
 import { HtmlParser } from '../html_parser';
 import { InterpolationConfig } from '../interpolation_config';
 import { ParseError } from '../parse_util';
@@ -83,12 +83,12 @@ export declare function removeDuplicates(messages: Message[]): Message[];
  */
 export declare class MessageExtractor {
     private _htmlParser;
-    private _parser;
+    private _expressionParser;
     private _implicitTags;
     private _implicitAttrs;
     private _messages;
     private _errors;
-    constructor(_htmlParser: HtmlParser, _parser: Parser, _implicitTags: string[], _implicitAttrs: {
+    constructor(_htmlParser: HtmlParser, _expressionParser: ExpressionParser, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
     });
     extract(template: string, sourceUrl: string, interpolationConfig?: InterpolationConfig): ExtractionResult;

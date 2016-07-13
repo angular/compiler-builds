@@ -43,9 +43,8 @@ var XmbDeserializationError = (function (_super) {
 }(parse_util_1.ParseError));
 exports.XmbDeserializationError = XmbDeserializationError;
 function deserializeXmb(content, url) {
-    var parser = new html_parser_1.HtmlParser();
     var normalizedContent = _expandPlaceholder(content.trim());
-    var parsed = parser.parse(normalizedContent, url);
+    var parsed = new html_parser_1.HtmlParser().parse(normalizedContent, url);
     if (parsed.errors.length > 0) {
         return new XmbDeserializationResult(null, {}, parsed.errors);
     }
@@ -66,25 +65,22 @@ function _checkRootElement(nodes) {
         nodes[0].name != _BUNDLE_ELEMENT;
 }
 function _createMessages(nodes, messages, errors) {
-    nodes.forEach(function (item) {
-        if (item instanceof html_ast_1.HtmlElementAst) {
-            var msg = item;
+    nodes.forEach(function (node) {
+        if (node instanceof html_ast_1.HtmlElementAst) {
+            var msg = node;
             if (msg.name != _MSG_ELEMENT) {
-                errors.push(new XmbDeserializationError(item.sourceSpan, "Unexpected element \"" + msg.name + "\""));
+                errors.push(new XmbDeserializationError(node.sourceSpan, "Unexpected element \"" + msg.name + "\""));
                 return;
             }
-            var id_1 = _id(msg);
-            if (lang_1.isBlank(id_1)) {
-                errors.push(new XmbDeserializationError(item.sourceSpan, "\"" + _ID_ATTR + "\" attribute is missing"));
-                return;
+            var idAttr = msg.attrs.find(function (a) { return a.name == _ID_ATTR; });
+            if (idAttr) {
+                messages[idAttr.value] = msg.children;
             }
-            messages[id_1] = msg.children;
+            else {
+                errors.push(new XmbDeserializationError(node.sourceSpan, "\"" + _ID_ATTR + "\" attribute is missing"));
+            }
         }
     });
-}
-function _id(el) {
-    var ids = el.attrs.filter(function (a) { return a.name == _ID_ATTR; });
-    return ids.length > 0 ? ids[0].value : null;
 }
 function _serializeMessage(m) {
     var desc = lang_1.isPresent(m.description) ? " desc='" + _escapeXml(m.description) + "'" : '';

@@ -18,6 +18,7 @@ var html_ast_1 = require('./html_ast');
 var html_lexer_1 = require('./html_lexer');
 var parse_util_1 = require('./parse_util');
 var html_tags_1 = require('./html_tags');
+var interpolation_config_1 = require('./interpolation_config');
 var HtmlTreeError = (function (_super) {
     __extends(HtmlTreeError, _super);
     function HtmlTreeError(elementName, span, msg) {
@@ -41,9 +42,10 @@ exports.HtmlParseTreeResult = HtmlParseTreeResult;
 var HtmlParser = (function () {
     function HtmlParser() {
     }
-    HtmlParser.prototype.parse = function (sourceContent, sourceUrl, parseExpansionForms) {
+    HtmlParser.prototype.parse = function (sourceContent, sourceUrl, parseExpansionForms, interpolationConfig) {
         if (parseExpansionForms === void 0) { parseExpansionForms = false; }
-        var tokensAndErrors = html_lexer_1.tokenizeHtml(sourceContent, sourceUrl, parseExpansionForms);
+        if (interpolationConfig === void 0) { interpolationConfig = interpolation_config_1.DEFAULT_INTERPOLATION_CONFIG; }
+        var tokensAndErrors = html_lexer_1.tokenizeHtml(sourceContent, sourceUrl, parseExpansionForms, interpolationConfig);
         var treeAndErrors = new TreeBuilder(tokensAndErrors.tokens).build();
         return new HtmlParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
     };

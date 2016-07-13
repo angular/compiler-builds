@@ -17,7 +17,7 @@ var parse_util_1 = require('../parse_util');
 var message_1 = require('./message');
 exports.I18N_ATTR = 'i18n';
 exports.I18N_ATTR_PREFIX = 'i18n-';
-var CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
+var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
 /**
  * An i18n error.
  */
@@ -75,7 +75,7 @@ var Part = (function () {
             if (lang_1.isPresent(this.rootTextNode)) {
                 return this.rootTextNode.sourceSpan;
             }
-            return this.children[0].sourceSpan;
+            return new parse_util_1.ParseSourceSpan(this.children[0].sourceSpan.start, this.children[this.children.length - 1].sourceSpan.end);
         },
         enumerable: true,
         configurable: true
@@ -135,50 +135,62 @@ function messageFromAttribute(parser, interpolationConfig, attr, meaning, descri
     return new message_1.Message(value, meaning, description);
 }
 exports.messageFromAttribute = messageFromAttribute;
-function removeInterpolation(value, source, parser, interpolationConfig) {
+/**
+ * Replace interpolation in the `value` string with placeholders
+ */
+function removeInterpolation(value, source, expressionParser, interpolationConfig) {
     try {
-        var parsed = parser.splitInterpolation(value, source.toString(), interpolationConfig);
+        var parsed = expressionParser.splitInterpolation(value, source.toString(), interpolationConfig);
         var usedNames = new Map();
         if (lang_1.isPresent(parsed)) {
             var res = '';
             for (var i = 0; i < parsed.strings.length; ++i) {
                 res += parsed.strings[i];
                 if (i != parsed.strings.length - 1) {
-                    var customPhName = getPhNameFromBinding(parsed.expressions[i], i);
+                    var customPhName = extractPhNameFromInterpolation(parsed.expressions[i], i);
                     customPhName = dedupePhName(usedNames, customPhName);
                     res += "<ph name=\"" + customPhName + "\"/>";
                 }
             }
             return res;
         }
-        else {
-            return value;
-        }
+        return value;
     }
     catch (e) {
         return value;
     }
 }
 exports.removeInterpolation = removeInterpolation;
-function getPhNameFromBinding(input, index) {
-    var customPhMatch = lang_1.StringWrapper.split(input, CUSTOM_PH_EXP);
-    return customPhMatch.length > 1 ? customPhMatch[1] : "" + index;
+/**
+ * Extract the placeholder name from the interpolation.
+ *
+ * Use a custom name when specified (ie: `{{<expression> //i18n(ph="FIRST")}}`) otherwise generate a
+ * unique name.
+ */
+function extractPhNameFromInterpolation(input, index) {
+    var customPhMatch = lang_1.StringWrapper.split(input, _CUSTOM_PH_EXP);
+    return customPhMatch.length > 1 ? customPhMatch[1] : "INTERPOLATION_" + index;
 }
-exports.getPhNameFromBinding = getPhNameFromBinding;
+exports.extractPhNameFromInterpolation = extractPhNameFromInterpolation;
+/**
+ * Return a unique placeholder name based on the given name
+ */
 function dedupePhName(usedNames, name) {
     var duplicateNameCount = usedNames.get(name);
-    if (lang_1.isPresent(duplicateNameCount)) {
+    if (duplicateNameCount) {
         usedNames.set(name, duplicateNameCount + 1);
         return name + "_" + duplicateNameCount;
     }
-    else {
-        usedNames.set(name, 1);
-        return name;
-    }
+    usedNames.set(name, 1);
+    return name;
 }
 exports.dedupePhName = dedupePhName;
-function stringifyNodes(nodes, parser, interpolationConfig) {
-    var visitor = new _StringifyVisitor(parser, interpolationConfig);
+/**
+ * Convert a list of nodes to a string message.
+ *
+ */
+function stringifyNodes(nodes, expressionParser, interpolationConfig) {
+    var visitor = new _StringifyVisitor(expressionParser, interpolationConfig);
     return html_ast_1.htmlVisitAll(visitor, nodes).join('');
 }
 exports.stringifyNodes = stringifyNodes;

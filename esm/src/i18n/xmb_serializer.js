@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { RegExpWrapper, isBlank, isPresent } from '../facade/lang';
+import { RegExpWrapper, isPresent } from '../facade/lang';
 import { HtmlElementAst } from '../html_ast';
 import { HtmlParser } from '../html_parser';
 import { ParseError } from '../parse_util';
@@ -31,18 +31,17 @@ export class XmbDeserializationError extends ParseError {
     }
 }
 export function deserializeXmb(content, url) {
-    let parser = new HtmlParser();
-    let normalizedContent = _expandPlaceholder(content.trim());
-    let parsed = parser.parse(normalizedContent, url);
+    const normalizedContent = _expandPlaceholder(content.trim());
+    const parsed = new HtmlParser().parse(normalizedContent, url);
     if (parsed.errors.length > 0) {
         return new XmbDeserializationResult(null, {}, parsed.errors);
     }
     if (_checkRootElement(parsed.rootNodes)) {
         return new XmbDeserializationResult(null, {}, [new XmbDeserializationError(null, `Missing element "${_BUNDLE_ELEMENT}"`)]);
     }
-    let bundleEl = parsed.rootNodes[0]; // test this
-    let errors = [];
-    let messages = {};
+    const bundleEl = parsed.rootNodes[0]; // test this
+    const errors = [];
+    const messages = {};
     _createMessages(bundleEl.children, messages, errors);
     return (errors.length == 0) ?
         new XmbDeserializationResult(normalizedContent, messages, []) :
@@ -53,25 +52,22 @@ function _checkRootElement(nodes) {
         nodes[0].name != _BUNDLE_ELEMENT;
 }
 function _createMessages(nodes, messages, errors) {
-    nodes.forEach((item) => {
-        if (item instanceof HtmlElementAst) {
-            let msg = item;
+    nodes.forEach((node) => {
+        if (node instanceof HtmlElementAst) {
+            let msg = node;
             if (msg.name != _MSG_ELEMENT) {
-                errors.push(new XmbDeserializationError(item.sourceSpan, `Unexpected element "${msg.name}"`));
+                errors.push(new XmbDeserializationError(node.sourceSpan, `Unexpected element "${msg.name}"`));
                 return;
             }
-            let id = _id(msg);
-            if (isBlank(id)) {
-                errors.push(new XmbDeserializationError(item.sourceSpan, `"${_ID_ATTR}" attribute is missing`));
-                return;
+            let idAttr = msg.attrs.find(a => a.name == _ID_ATTR);
+            if (idAttr) {
+                messages[idAttr.value] = msg.children;
             }
-            messages[id] = msg.children;
+            else {
+                errors.push(new XmbDeserializationError(node.sourceSpan, `"${_ID_ATTR}" attribute is missing`));
+            }
         }
     });
-}
-function _id(el) {
-    let ids = el.attrs.filter(a => a.name == _ID_ATTR);
-    return ids.length > 0 ? ids[0].value : null;
 }
 function _serializeMessage(m) {
     const desc = isPresent(m.description) ? ` desc='${_escapeXml(m.description)}'` : '';

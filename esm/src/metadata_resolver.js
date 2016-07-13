@@ -458,13 +458,13 @@ export class CompileMetadataResolver {
         });
     }
     getQueriesMetadata(queries, isViewQuery, directiveType) {
-        var compileQueries = [];
-        StringMapWrapper.forEach(queries, (query /** TODO #9100 */, propertyName /** TODO #9100 */) => {
+        var res = [];
+        StringMapWrapper.forEach(queries, (query, propertyName) => {
             if (query.isViewQuery === isViewQuery) {
-                compileQueries.push(this.getQueryMetadata(query, propertyName, directiveType));
+                res.push(this.getQueryMetadata(query, propertyName, directiveType));
             }
         });
-        return compileQueries;
+        return res;
     }
     getQueryMetadata(q, propertyName, typeOrFunc) {
         var selectors;

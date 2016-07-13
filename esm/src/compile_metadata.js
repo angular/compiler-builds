@@ -589,23 +589,17 @@ export class CompileDirectiveMetadata {
             });
         }
         return new CompileDirectiveMetadata({
-            type: type,
-            isComponent: normalizeBool(isComponent),
-            selector: selector,
-            exportAs: exportAs,
-            changeDetection: changeDetection,
+            type,
+            isComponent: normalizeBool(isComponent), selector, exportAs, changeDetection,
             inputs: inputsMap,
-            outputs: outputsMap,
-            hostListeners: hostListeners,
-            hostProperties: hostProperties,
-            hostAttributes: hostAttributes,
+            outputs: outputsMap, hostListeners, hostProperties, hostAttributes,
             lifecycleHooks: isPresent(lifecycleHooks) ? lifecycleHooks : [],
-            providers: providers,
-            viewProviders: viewProviders,
-            queries: queries,
-            viewQueries: viewQueries,
-            precompile: precompile,
-            template: template
+            providers,
+            viewProviders,
+            queries,
+            viewQueries,
+            precompile,
+            template,
         });
     }
     get identifier() { return this.type; }

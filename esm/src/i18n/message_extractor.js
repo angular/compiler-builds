@@ -92,16 +92,16 @@ export function removeDuplicates(messages) {
  * 4. If a part has the i18n attribute, stringify the nodes to create a Message.
  */
 export class MessageExtractor {
-    constructor(_htmlParser, _parser, _implicitTags, _implicitAttrs) {
+    constructor(_htmlParser, _expressionParser, _implicitTags, _implicitAttrs) {
         this._htmlParser = _htmlParser;
-        this._parser = _parser;
+        this._expressionParser = _expressionParser;
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
     }
     extract(template, sourceUrl, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this._messages = [];
         this._errors = [];
-        const res = this._htmlParser.parse(template, sourceUrl, true);
+        const res = this._htmlParser.parse(template, sourceUrl, true, interpolationConfig);
         if (res.errors.length == 0) {
             this._recurse(res.rootNodes, interpolationConfig);
         }
@@ -109,7 +109,7 @@ export class MessageExtractor {
     }
     _extractMessagesFromPart(part, interpolationConfig) {
         if (part.hasI18n) {
-            this._messages.push(part.createMessage(this._parser, interpolationConfig));
+            this._messages.push(part.createMessage(this._expressionParser, interpolationConfig));
             this._recurseToExtractMessagesFromAttributes(part.children, interpolationConfig);
         }
         else {
@@ -140,7 +140,7 @@ export class MessageExtractor {
         p.attrs.filter(attr => attr.name.startsWith(I18N_ATTR_PREFIX)).forEach(attr => {
             try {
                 explicitAttrs.push(attr.name.substring(I18N_ATTR_PREFIX.length));
-                this._messages.push(messageFromI18nAttribute(this._parser, interpolationConfig, p, attr));
+                this._messages.push(messageFromI18nAttribute(this._expressionParser, interpolationConfig, p, attr));
             }
             catch (e) {
                 if (e instanceof I18nError) {
@@ -155,7 +155,7 @@ export class MessageExtractor {
         p.attrs.filter(attr => !attr.name.startsWith(I18N_ATTR_PREFIX))
             .filter(attr => explicitAttrs.indexOf(attr.name) == -1)
             .filter(attr => transAttrs.indexOf(attr.name) > -1)
-            .forEach(attr => this._messages.push(messageFromAttribute(this._parser, interpolationConfig, attr)));
+            .forEach(attr => this._messages.push(messageFromAttribute(this._expressionParser, interpolationConfig, attr)));
     }
 }
 //# sourceMappingURL=message_extractor.js.map

@@ -35,7 +35,7 @@ function _createInterpolateRegExp(config) {
     return lang_1.RegExpWrapper.create(regexp, 'g');
 }
 var Parser = (function () {
-    function Parser(/** @internal */ _lexer) {
+    function Parser(_lexer) {
         this._lexer = _lexer;
         this.errors = [];
     }

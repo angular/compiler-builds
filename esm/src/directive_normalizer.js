@@ -13,6 +13,7 @@ import { CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMet
 import { CompilerConfig } from './config';
 import { HtmlTextAst, htmlVisitAll } from './html_ast';
 import { HtmlParser } from './html_parser';
+import { InterpolationConfig } from './interpolation_config';
 import { extractStyleUrls, isStyleUrlResolvable } from './style_url_resolver';
 import { PreparsedElementType, preparseElement } from './template_preparser';
 import { UrlResolver } from './url_resolver';
@@ -80,7 +81,8 @@ export class DirectiveNormalizer {
             .then((value) => this.normalizeLoadedTemplate(directiveType, template, value, templateUrl));
     }
     normalizeLoadedTemplate(directiveType, templateMeta, template, templateAbsUrl) {
-        const rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name);
+        const interpolationConfig = InterpolationConfig.fromArray(templateMeta.interpolation);
+        const rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name, false, interpolationConfig);
         if (rootNodesAndErrors.errors.length > 0) {
             const errorString = rootNodesAndErrors.errors.join('\n');
             throw new BaseException(`Template parse errors:\n${errorString}`);
@@ -104,7 +106,7 @@ export class DirectiveNormalizer {
             encapsulation = ViewEncapsulation.None;
         }
         return new CompileTemplateMetadata({
-            encapsulation: encapsulation,
+            encapsulation,
             template: template,
             templateUrl: templateAbsUrl,
             styles: allStyles,

@@ -7,11 +7,11 @@
  */
 import { StringWrapper, isBlank, isPresent } from '../facade/lang';
 import { HtmlCommentAst, HtmlElementAst, HtmlTextAst, htmlVisitAll } from '../html_ast';
-import { ParseError } from '../parse_util';
+import { ParseError, ParseSourceSpan } from '../parse_util';
 import { Message } from './message';
 export const I18N_ATTR = 'i18n';
 export const I18N_ATTR_PREFIX = 'i18n-';
-var CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
+const _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
 /**
  * An i18n error.
  */
@@ -64,7 +64,7 @@ export class Part {
         if (isPresent(this.rootTextNode)) {
             return this.rootTextNode.sourceSpan;
         }
-        return this.children[0].sourceSpan;
+        return new ParseSourceSpan(this.children[0].sourceSpan.start, this.children[this.children.length - 1].sourceSpan.end);
     }
     createMessage(parser, interpolationConfig) {
         return new Message(stringifyNodes(this.children, parser, interpolationConfig), meaning(this.i18n), description(this.i18n));
@@ -102,58 +102,70 @@ export function description(i18n) {
  * @internal
  */
 export function messageFromI18nAttribute(parser, interpolationConfig, p, i18nAttr) {
-    let expectedName = i18nAttr.name.substring(5);
-    let attr = p.attrs.find(a => a.name == expectedName);
+    const expectedName = i18nAttr.name.substring(5);
+    const attr = p.attrs.find(a => a.name == expectedName);
     if (attr) {
         return messageFromAttribute(parser, interpolationConfig, attr, meaning(i18nAttr.value), description(i18nAttr.value));
     }
     throw new I18nError(p.sourceSpan, `Missing attribute '${expectedName}'.`);
 }
 export function messageFromAttribute(parser, interpolationConfig, attr, meaning = null, description = null) {
-    let value = removeInterpolation(attr.value, attr.sourceSpan, parser, interpolationConfig);
+    const value = removeInterpolation(attr.value, attr.sourceSpan, parser, interpolationConfig);
     return new Message(value, meaning, description);
 }
-export function removeInterpolation(value, source, parser, interpolationConfig) {
+/**
+ * Replace interpolation in the `value` string with placeholders
+ */
+export function removeInterpolation(value, source, expressionParser, interpolationConfig) {
     try {
-        let parsed = parser.splitInterpolation(value, source.toString(), interpolationConfig);
-        let usedNames = new Map();
+        const parsed = expressionParser.splitInterpolation(value, source.toString(), interpolationConfig);
+        const usedNames = new Map();
         if (isPresent(parsed)) {
             let res = '';
             for (let i = 0; i < parsed.strings.length; ++i) {
                 res += parsed.strings[i];
                 if (i != parsed.strings.length - 1) {
-                    let customPhName = getPhNameFromBinding(parsed.expressions[i], i);
+                    let customPhName = extractPhNameFromInterpolation(parsed.expressions[i], i);
                     customPhName = dedupePhName(usedNames, customPhName);
                     res += `<ph name="${customPhName}"/>`;
                 }
             }
             return res;
         }
-        else {
-            return value;
-        }
+        return value;
     }
     catch (e) {
         return value;
     }
 }
-export function getPhNameFromBinding(input, index) {
-    let customPhMatch = StringWrapper.split(input, CUSTOM_PH_EXP);
-    return customPhMatch.length > 1 ? customPhMatch[1] : `${index}`;
+/**
+ * Extract the placeholder name from the interpolation.
+ *
+ * Use a custom name when specified (ie: `{{<expression> //i18n(ph="FIRST")}}`) otherwise generate a
+ * unique name.
+ */
+export function extractPhNameFromInterpolation(input, index) {
+    let customPhMatch = StringWrapper.split(input, _CUSTOM_PH_EXP);
+    return customPhMatch.length > 1 ? customPhMatch[1] : `INTERPOLATION_${index}`;
 }
+/**
+ * Return a unique placeholder name based on the given name
+ */
 export function dedupePhName(usedNames, name) {
-    let duplicateNameCount = usedNames.get(name);
-    if (isPresent(duplicateNameCount)) {
+    const duplicateNameCount = usedNames.get(name);
+    if (duplicateNameCount) {
         usedNames.set(name, duplicateNameCount + 1);
         return `${name}_${duplicateNameCount}`;
     }
-    else {
-        usedNames.set(name, 1);
-        return name;
-    }
+    usedNames.set(name, 1);
+    return name;
 }
-export function stringifyNodes(nodes, parser, interpolationConfig) {
-    let visitor = new _StringifyVisitor(parser, interpolationConfig);
+/**
+ * Convert a list of nodes to a string message.
+ *
+ */
+export function stringifyNodes(nodes, expressionParser, interpolationConfig) {
+    const visitor = new _StringifyVisitor(expressionParser, interpolationConfig);
     return htmlVisitAll(visitor, nodes).join('');
 }
 class _StringifyVisitor {

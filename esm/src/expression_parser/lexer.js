@@ -21,9 +21,9 @@ export var TokenType;
 const KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else'];
 export class Lexer {
     tokenize(text) {
-        var scanner = new _Scanner(text);
-        var tokens = [];
-        var token = scanner.scanToken();
+        const scanner = new _Scanner(text);
+        const tokens = [];
+        let token = scanner.scanToken();
         while (token != null) {
             tokens.push(token);
             token = scanner.scanToken();
@@ -43,30 +43,27 @@ export class Token {
         this.strValue = strValue;
     }
     isCharacter(code) {
-        return (this.type == TokenType.Character && this.numValue == code);
+        return this.type == TokenType.Character && this.numValue == code;
     }
-    isNumber() { return (this.type == TokenType.Number); }
-    isString() { return (this.type == TokenType.String); }
+    isNumber() { return this.type == TokenType.Number; }
+    isString() { return this.type == TokenType.String; }
     isOperator(operater) {
-        return (this.type == TokenType.Operator && this.strValue == operater);
+        return this.type == TokenType.Operator && this.strValue == operater;
     }
-    isIdentifier() { return (this.type == TokenType.Identifier); }
-    isKeyword() { return (this.type == TokenType.Keyword); }
+    isIdentifier() { return this.type == TokenType.Identifier; }
+    isKeyword() { return this.type == TokenType.Keyword; }
     isKeywordDeprecatedVar() {
-        return (this.type == TokenType.Keyword && this.strValue == 'var');
+        return this.type == TokenType.Keyword && this.strValue == 'var';
     }
-    isKeywordLet() { return (this.type == TokenType.Keyword && this.strValue == 'let'); }
-    isKeywordNull() { return (this.type == TokenType.Keyword && this.strValue == 'null'); }
+    isKeywordLet() { return this.type == TokenType.Keyword && this.strValue == 'let'; }
+    isKeywordNull() { return this.type == TokenType.Keyword && this.strValue == 'null'; }
     isKeywordUndefined() {
-        return (this.type == TokenType.Keyword && this.strValue == 'undefined');
+        return this.type == TokenType.Keyword && this.strValue == 'undefined';
     }
-    isKeywordTrue() { return (this.type == TokenType.Keyword && this.strValue == 'true'); }
-    isKeywordFalse() { return (this.type == TokenType.Keyword && this.strValue == 'false'); }
+    isKeywordTrue() { return this.type == TokenType.Keyword && this.strValue == 'true'; }
+    isKeywordFalse() { return this.type == TokenType.Keyword && this.strValue == 'false'; }
     isError() { return this.type == TokenType.Error; }
-    toNumber() {
-        // -1 instead of NULL ok?
-        return (this.type == TokenType.Number) ? this.numValue : -1;
-    }
+    toNumber() { return this.type == TokenType.Number ? this.numValue : -1; }
     toString() {
         switch (this.type) {
             case TokenType.Character:

@@ -12,9 +12,10 @@ import { RegExpWrapper, isPresent, StringWrapper, isBlank } from '../src/facade/
 import { BaseException } from '../src/facade/exceptions';
 import { RecursiveAstVisitor } from './expression_parser/ast';
 import { Parser } from './expression_parser/parser';
-import { HtmlParser } from './html_parser';
+import { HtmlParser, HtmlParseTreeResult } from './html_parser';
 import { splitNsName, mergeNsAndName } from './html_tags';
 import { ParseError, ParseErrorLevel } from './parse_util';
+import { InterpolationConfig } from './interpolation_config';
 import { ElementAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, templateVisitAll, TextAst, BoundTextAst, EmbeddedTemplateAst, AttrAst, NgContentAst, PropertyBindingType, DirectiveAst, BoundDirectivePropertyAst, VariableAst } from './template_ast';
 import { CssSelector, SelectorMatcher } from './selector';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
@@ -23,6 +24,7 @@ import { isStyleUrlResolvable } from './style_url_resolver';
 import { htmlVisitAll } from './html_ast';
 import { splitAtColon } from './util';
 import { identifierToken, Identifiers } from './identifiers';
+import { expandNodes } from './expander';
 import { ProviderElementContext, ProviderViewContext } from './provider_parser';
 // Group 1 = "bind-"
 // Group 2 = "var-"
@@ -86,9 +88,19 @@ export class TemplateParser {
         return result.templateAst;
     }
     tryParse(component, template, directives, pipes, templateUrl) {
-        const htmlAstWithErrors = this._htmlParser.parse(template, templateUrl);
+        let interpolationConfig;
+        if (component.template) {
+            interpolationConfig = InterpolationConfig.fromArray(component.template.interpolation);
+        }
+        let htmlAstWithErrors = this._htmlParser.parse(template, templateUrl, true, interpolationConfig);
         const errors = htmlAstWithErrors.errors;
         let result;
+        if (errors.length == 0) {
+            // Transform ICU messages to angular directives
+            const expandedHtmlAst = expandNodes(htmlAstWithErrors.rootNodes);
+            errors.push(...expandedHtmlAst.errors);
+            htmlAstWithErrors = new HtmlParseTreeResult(expandedHtmlAst.nodes, errors);
+        }
         if (htmlAstWithErrors.rootNodes.length > 0) {
             const uniqDirectives = removeDuplicates(directives);
             const uniqPipes = removeDuplicates(pipes);
@@ -113,7 +125,7 @@ export class TemplateParser {
     _assertNoReferenceDuplicationOnTemplate(result, errors) {
         const existingReferences = [];
         result.filter(element => !!element.references)
-            .forEach(element => element.references.forEach((reference /** TODO #???? */) => {
+            .forEach(element => element.references.forEach((reference) => {
             const name = reference.name;
             if (existingReferences.indexOf(name) < 0) {
                 existingReferences.push(name);
@@ -147,6 +159,7 @@ class TemplateParseVisitor {
         this.ngContentCount = 0;
         this.selectorMatcher = new SelectorMatcher();
         const tempMeta = providerViewContext.component.template;
+        // TODO
         if (isPresent(tempMeta) && isPresent(tempMeta.interpolation)) {
             this._interpolationConfig = {
                 start: tempMeta.interpolation[0],

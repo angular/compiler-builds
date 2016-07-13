@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Parser } from '../expression_parser/parser';
+import { Parser as ExpressionParser } from '../expression_parser/parser';
 import { HtmlAst, HtmlAttrAst, HtmlElementAst, HtmlTextAst } from '../html_ast';
 import { InterpolationConfig } from '../interpolation_config';
 import { ParseError, ParseSourceSpan } from '../parse_util';
@@ -27,12 +27,28 @@ export declare class Part {
     hasI18n: boolean;
     constructor(rootElement: HtmlElementAst, rootTextNode: HtmlTextAst, children: HtmlAst[], i18n: string, hasI18n: boolean);
     readonly sourceSpan: ParseSourceSpan;
-    createMessage(parser: Parser, interpolationConfig: InterpolationConfig): Message;
+    createMessage(parser: ExpressionParser, interpolationConfig: InterpolationConfig): Message;
 }
 export declare function meaning(i18n: string): string;
 export declare function description(i18n: string): string;
-export declare function messageFromAttribute(parser: Parser, interpolationConfig: InterpolationConfig, attr: HtmlAttrAst, meaning?: string, description?: string): Message;
-export declare function removeInterpolation(value: string, source: ParseSourceSpan, parser: Parser, interpolationConfig: InterpolationConfig): string;
-export declare function getPhNameFromBinding(input: string, index: number): string;
+export declare function messageFromAttribute(parser: ExpressionParser, interpolationConfig: InterpolationConfig, attr: HtmlAttrAst, meaning?: string, description?: string): Message;
+/**
+ * Replace interpolation in the `value` string with placeholders
+ */
+export declare function removeInterpolation(value: string, source: ParseSourceSpan, expressionParser: ExpressionParser, interpolationConfig: InterpolationConfig): string;
+/**
+ * Extract the placeholder name from the interpolation.
+ *
+ * Use a custom name when specified (ie: `{{<expression> //i18n(ph="FIRST")}}`) otherwise generate a
+ * unique name.
+ */
+export declare function extractPhNameFromInterpolation(input: string, index: number): string;
+/**
+ * Return a unique placeholder name based on the given name
+ */
 export declare function dedupePhName(usedNames: Map<string, number>, name: string): string;
-export declare function stringifyNodes(nodes: HtmlAst[], parser: Parser, interpolationConfig: InterpolationConfig): string;
+/**
+ * Convert a list of nodes to a string message.
+ *
+ */
+export declare function stringifyNodes(nodes: HtmlAst[], expressionParser: ExpressionParser, interpolationConfig: InterpolationConfig): string;

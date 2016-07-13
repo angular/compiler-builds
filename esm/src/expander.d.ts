@@ -1,5 +1,12 @@
-import { HtmlAst } from '../html_ast';
-import { ParseError } from '../parse_util';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+import { HtmlAst } from './html_ast';
+import { ParseError, ParseSourceSpan } from './parse_util';
 /**
  * Expands special forms into elements.
  *
@@ -29,4 +36,7 @@ export declare class ExpansionResult {
     expanded: boolean;
     errors: ParseError[];
     constructor(nodes: HtmlAst[], expanded: boolean, errors: ParseError[]);
+}
+export declare class ExpansionError extends ParseError {
+    constructor(span: ParseSourceSpan, errorMsg: string);
 }

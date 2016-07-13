@@ -478,13 +478,13 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype.getQueriesMetadata = function (queries, isViewQuery, directiveType) {
         var _this = this;
-        var compileQueries = [];
-        collection_1.StringMapWrapper.forEach(queries, function (query /** TODO #9100 */, propertyName /** TODO #9100 */) {
+        var res = [];
+        collection_1.StringMapWrapper.forEach(queries, function (query, propertyName) {
             if (query.isViewQuery === isViewQuery) {
-                compileQueries.push(_this.getQueryMetadata(query, propertyName, directiveType));
+                res.push(_this.getQueryMetadata(query, propertyName, directiveType));
             }
         });
-        return compileQueries;
+        return res;
     };
     CompileMetadataResolver.prototype.getQueryMetadata = function (q, propertyName, typeOrFunc) {
         var _this = this;

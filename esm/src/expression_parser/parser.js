@@ -30,7 +30,7 @@ function _createInterpolateRegExp(config) {
     return RegExpWrapper.create(regexp, 'g');
 }
 export class Parser {
-    constructor(/** @internal */ _lexer) {
+    constructor(_lexer) {
         this._lexer = _lexer;
         this.errors = [];
     }

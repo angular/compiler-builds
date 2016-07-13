@@ -14,6 +14,7 @@ var compile_metadata_1 = require('./compile_metadata');
 var config_1 = require('./config');
 var html_ast_1 = require('./html_ast');
 var html_parser_1 = require('./html_parser');
+var interpolation_config_1 = require('./interpolation_config');
 var style_url_resolver_1 = require('./style_url_resolver');
 var template_preparser_1 = require('./template_preparser');
 var url_resolver_1 = require('./url_resolver');
@@ -86,7 +87,8 @@ var DirectiveNormalizer = (function () {
             .then(function (value) { return _this.normalizeLoadedTemplate(directiveType, template, value, templateUrl); });
     };
     DirectiveNormalizer.prototype.normalizeLoadedTemplate = function (directiveType, templateMeta, template, templateAbsUrl) {
-        var rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name);
+        var interpolationConfig = interpolation_config_1.InterpolationConfig.fromArray(templateMeta.interpolation);
+        var rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name, false, interpolationConfig);
         if (rootNodesAndErrors.errors.length > 0) {
             var errorString = rootNodesAndErrors.errors.join('\n');
             throw new exceptions_1.BaseException("Template parse errors:\n" + errorString);

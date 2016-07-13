@@ -6,9 +6,13 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var exceptions_1 = require('../facade/exceptions');
-var html_ast_1 = require('../html_ast');
-var shared_1 = require('./shared');
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var html_ast_1 = require('./html_ast');
+var parse_util_1 = require('./parse_util');
 // http://cldr.unicode.org/index/cldr-spec/plural-rules
 var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
 /**
@@ -48,6 +52,14 @@ var ExpansionResult = (function () {
     return ExpansionResult;
 }());
 exports.ExpansionResult = ExpansionResult;
+var ExpansionError = (function (_super) {
+    __extends(ExpansionError, _super);
+    function ExpansionError(span, errorMsg) {
+        _super.call(this, span, errorMsg);
+    }
+    return ExpansionError;
+}(parse_util_1.ParseError));
+exports.ExpansionError = ExpansionError;
 /**
  * Expand expansion forms (plural, select) to directives
  *
@@ -70,14 +82,14 @@ var _Expander = (function () {
             _expandDefaultForm(ast, this.errors);
     };
     _Expander.prototype.visitExpansionCase = function (ast, context) {
-        throw new exceptions_1.BaseException('Should not be reached');
+        throw new Error('Should not be reached');
     };
     return _Expander;
 }());
 function _expandPluralForm(ast, errors) {
     var children = ast.cases.map(function (c) {
         if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
-            errors.push(new shared_1.I18nError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(", ")));
+            errors.push(new ExpansionError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(", ")));
         }
         var expansionResult = expandNodes(c.expression);
         errors.push.apply(errors, expansionResult.errors);

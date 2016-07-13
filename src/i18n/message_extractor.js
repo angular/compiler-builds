@@ -96,9 +96,9 @@ exports.removeDuplicates = removeDuplicates;
  * 4. If a part has the i18n attribute, stringify the nodes to create a Message.
  */
 var MessageExtractor = (function () {
-    function MessageExtractor(_htmlParser, _parser, _implicitTags, _implicitAttrs) {
+    function MessageExtractor(_htmlParser, _expressionParser, _implicitTags, _implicitAttrs) {
         this._htmlParser = _htmlParser;
-        this._parser = _parser;
+        this._expressionParser = _expressionParser;
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
     }
@@ -106,7 +106,7 @@ var MessageExtractor = (function () {
         if (interpolationConfig === void 0) { interpolationConfig = interpolation_config_1.DEFAULT_INTERPOLATION_CONFIG; }
         this._messages = [];
         this._errors = [];
-        var res = this._htmlParser.parse(template, sourceUrl, true);
+        var res = this._htmlParser.parse(template, sourceUrl, true, interpolationConfig);
         if (res.errors.length == 0) {
             this._recurse(res.rootNodes, interpolationConfig);
         }
@@ -114,7 +114,7 @@ var MessageExtractor = (function () {
     };
     MessageExtractor.prototype._extractMessagesFromPart = function (part, interpolationConfig) {
         if (part.hasI18n) {
-            this._messages.push(part.createMessage(this._parser, interpolationConfig));
+            this._messages.push(part.createMessage(this._expressionParser, interpolationConfig));
             this._recurseToExtractMessagesFromAttributes(part.children, interpolationConfig);
         }
         else {
@@ -148,7 +148,7 @@ var MessageExtractor = (function () {
         p.attrs.filter(function (attr) { return attr.name.startsWith(shared_1.I18N_ATTR_PREFIX); }).forEach(function (attr) {
             try {
                 explicitAttrs.push(attr.name.substring(shared_1.I18N_ATTR_PREFIX.length));
-                _this._messages.push(shared_1.messageFromI18nAttribute(_this._parser, interpolationConfig, p, attr));
+                _this._messages.push(shared_1.messageFromI18nAttribute(_this._expressionParser, interpolationConfig, p, attr));
             }
             catch (e) {
                 if (e instanceof shared_1.I18nError) {
@@ -163,9 +163,7 @@ var MessageExtractor = (function () {
         p.attrs.filter(function (attr) { return !attr.name.startsWith(shared_1.I18N_ATTR_PREFIX); })
             .filter(function (attr) { return explicitAttrs.indexOf(attr.name) == -1; })
             .filter(function (attr) { return transAttrs.indexOf(attr.name) > -1; })
-            .forEach(function (attr) {
-            return _this._messages.push(shared_1.messageFromAttribute(_this._parser, interpolationConfig, attr));
-        });
+            .forEach(function (attr) { return _this._messages.push(shared_1.messageFromAttribute(_this._expressionParser, interpolationConfig, attr)); });
     };
     return MessageExtractor;
 }());

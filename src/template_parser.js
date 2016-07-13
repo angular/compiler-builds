@@ -21,6 +21,7 @@ var parser_1 = require('./expression_parser/parser');
 var html_parser_1 = require('./html_parser');
 var html_tags_1 = require('./html_tags');
 var parse_util_1 = require('./parse_util');
+var interpolation_config_1 = require('./interpolation_config');
 var template_ast_1 = require('./template_ast');
 var selector_1 = require('./selector');
 var element_schema_registry_1 = require('./schema/element_schema_registry');
@@ -29,6 +30,7 @@ var style_url_resolver_1 = require('./style_url_resolver');
 var html_ast_1 = require('./html_ast');
 var util_1 = require('./util');
 var identifiers_1 = require('./identifiers');
+var expander_1 = require('./expander');
 var provider_parser_1 = require('./provider_parser');
 // Group 1 = "bind-"
 // Group 2 = "var-"
@@ -97,9 +99,19 @@ var TemplateParser = (function () {
         return result.templateAst;
     };
     TemplateParser.prototype.tryParse = function (component, template, directives, pipes, templateUrl) {
-        var htmlAstWithErrors = this._htmlParser.parse(template, templateUrl);
+        var interpolationConfig;
+        if (component.template) {
+            interpolationConfig = interpolation_config_1.InterpolationConfig.fromArray(component.template.interpolation);
+        }
+        var htmlAstWithErrors = this._htmlParser.parse(template, templateUrl, true, interpolationConfig);
         var errors = htmlAstWithErrors.errors;
         var result;
+        if (errors.length == 0) {
+            // Transform ICU messages to angular directives
+            var expandedHtmlAst = expander_1.expandNodes(htmlAstWithErrors.rootNodes);
+            errors.push.apply(errors, expandedHtmlAst.errors);
+            htmlAstWithErrors = new html_parser_1.HtmlParseTreeResult(expandedHtmlAst.nodes, errors);
+        }
         if (htmlAstWithErrors.rootNodes.length > 0) {
             var uniqDirectives = removeDuplicates(directives);
             var uniqPipes = removeDuplicates(pipes);
@@ -124,7 +136,7 @@ var TemplateParser = (function () {
     TemplateParser.prototype._assertNoReferenceDuplicationOnTemplate = function (result, errors) {
         var existingReferences = [];
         result.filter(function (element) { return !!element.references; })
-            .forEach(function (element) { return element.references.forEach(function (reference /** TODO #???? */) {
+            .forEach(function (element) { return element.references.forEach(function (reference) {
             var name = reference.name;
             if (existingReferences.indexOf(name) < 0) {
                 existingReferences.push(name);
@@ -161,6 +173,7 @@ var TemplateParseVisitor = (function () {
         this.ngContentCount = 0;
         this.selectorMatcher = new selector_1.SelectorMatcher();
         var tempMeta = providerViewContext.component.template;
+        // TODO
         if (lang_1.isPresent(tempMeta) && lang_1.isPresent(tempMeta.interpolation)) {
             this._interpolationConfig = {
                 start: tempMeta.interpolation[0],
