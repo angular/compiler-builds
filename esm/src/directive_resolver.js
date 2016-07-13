@@ -47,7 +47,7 @@ export class DirectiveResolver {
                         inputs.push(propName);
                     }
                 }
-                if (a instanceof OutputMetadata) {
+                else if (a instanceof OutputMetadata) {
                     if (isPresent(a.bindingPropertyName)) {
                         outputs.push(`${propName}: ${a.bindingPropertyName}`);
                     }
@@ -55,7 +55,7 @@ export class DirectiveResolver {
                         outputs.push(propName);
                     }
                 }
-                if (a instanceof HostBindingMetadata) {
+                else if (a instanceof HostBindingMetadata) {
                     if (isPresent(a.hostPropertyName)) {
                         host[`[${a.hostPropertyName}]`] = propName;
                     }
@@ -63,11 +63,11 @@ export class DirectiveResolver {
                         host[`[${propName}]`] = propName;
                     }
                 }
-                if (a instanceof HostListenerMetadata) {
+                else if (a instanceof HostListenerMetadata) {
                     var args = isPresent(a.args) ? a.args.join(', ') : '';
                     host[`(${a.eventName})`] = `${propName}(${args})`;
                 }
-                if (a instanceof QueryMetadata) {
+                else if (a instanceof QueryMetadata) {
                     queries[propName] = a;
                 }
             });

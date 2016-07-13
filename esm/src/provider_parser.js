@@ -57,7 +57,7 @@ export class ProviderElementContext {
         }
         // create the providers that we know are eager first
         this._allProviders.values().forEach((provider) => {
-            var eager = provider.eager || isPresent(queriedTokens.get(provider.token));
+            const eager = provider.eager || isPresent(queriedTokens.get(provider.token));
             if (eager) {
                 this._getOrCreateLocalProvider(provider.providerType, provider.token, true);
             }
@@ -80,7 +80,7 @@ export class ProviderElementContext {
     get transformedHasViewContainer() { return this._hasViewContainer; }
     _addQueryReadsTo(token, queryReadTokens) {
         this._getQueriesFor(token).forEach((query) => {
-            var queryReadToken = isPresent(query.read) ? query.read : token;
+            const queryReadToken = isPresent(query.read) ? query.read : token;
             if (isBlank(queryReadTokens.get(queryReadToken))) {
                 queryReadTokens.add(queryReadToken, true);
             }
@@ -245,7 +245,7 @@ export class AppModuleProviderParser {
         this._errors = [];
         this._allProviders = new CompileTokenMap();
         [appModule.type].concat(appModule.modules).forEach((appModuleType) => {
-            var appModuleProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: appModuleType }), useClass: appModuleType });
+            const appModuleProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: appModuleType }), useClass: appModuleType });
             _resolveProviders([appModuleProvider], ProviderAstType.PublicService, true, sourceSpan, this._errors, this._allProviders);
         });
         _resolveProviders(_normalizeProviders(appModule.providers, sourceSpan, this._errors), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
@@ -253,7 +253,7 @@ export class AppModuleProviderParser {
     parse() {
         this._allProviders.values().forEach((provider) => { this._getOrCreateLocalProvider(provider.token, provider.eager); });
         if (this._errors.length > 0) {
-            var errorString = this._errors.join('\n');
+            const errorString = this._errors.join('\n');
             throw new BaseException(`Provider parse errors:\n${errorString}`);
         }
         return this._transformedProviders.values();
@@ -355,7 +355,7 @@ function _normalizeProviders(providers, sourceSpan, targetErrors, targetProvider
                 _normalizeProviders(provider, sourceSpan, targetErrors, targetProviders);
             }
             else {
-                var normalizeProvider;
+                let normalizeProvider;
                 if (provider instanceof CompileProviderMetadata) {
                     normalizeProvider = provider;
                 }

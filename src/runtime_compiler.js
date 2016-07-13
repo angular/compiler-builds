@@ -177,20 +177,20 @@ var RuntimeCompiler = (function () {
         if (lang_1.isBlank(compiledTemplate)) {
             var compMeta = this._metadataResolver.getDirectiveMetadata(type);
             assertComponent(compMeta);
-            var viewDirectives = [];
-            moduleDirectives.forEach(function (type) { return viewDirectives.push(_this._metadataResolver.getDirectiveMetadata(type)); });
-            var viewComponentTypes = [];
+            var viewDirectives_1 = [];
+            moduleDirectives.forEach(function (type) { return viewDirectives_1.push(_this._metadataResolver.getDirectiveMetadata(type)); });
+            var viewComponentTypes_1 = [];
             this._metadataResolver.getViewDirectivesMetadata(type).forEach(function (dirOrComp) {
                 if (dirOrComp.isComponent) {
-                    viewComponentTypes.push(dirOrComp.type.runtime);
+                    viewComponentTypes_1.push(dirOrComp.type.runtime);
                 }
                 else {
-                    viewDirectives.push(dirOrComp);
+                    viewDirectives_1.push(dirOrComp);
                 }
             });
             var precompileComponentTypes = compMeta.precompile.map(function (typeMeta) { return typeMeta.runtime; });
             var pipes = modulePipes.map(function (type) { return _this._metadataResolver.getPipeMetadata(type); }).concat(this._metadataResolver.getViewPipesMetadata(type));
-            compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, viewDirectives, viewComponentTypes, precompileComponentTypes, pipes, this._templateNormalizer.normalizeDirective(compMeta));
+            compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, viewDirectives_1, viewComponentTypes_1, precompileComponentTypes, pipes, this._templateNormalizer.normalizeDirective(compMeta));
             this._compiledTemplateCache.set(type, compiledTemplate);
         }
         return compiledTemplate;
@@ -224,7 +224,7 @@ var RuntimeCompiler = (function () {
         var viewCompMetas = template.viewComponentTypes.map(function (compType) { return _this._compiledTemplateCache.get(compType).normalizedCompMeta; });
         var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, template.viewDirectives.concat(viewCompMetas), template.viewPipes, compMeta.type.name);
         var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), template.viewPipes);
-        var depTemplates = compileResult.dependencies.map(function (dep) {
+        compileResult.dependencies.forEach(function (dep) {
             var depTemplate;
             if (dep instanceof view_compiler_1.ViewFactoryDependency) {
                 var vfd = dep;
@@ -238,7 +238,6 @@ var RuntimeCompiler = (function () {
                 cfd.placeholder.runtime = depTemplate.proxyComponentFactory;
                 cfd.placeholder.name = "compFactory_" + cfd.comp.name;
             }
-            return depTemplate;
         });
         var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
         var factory;

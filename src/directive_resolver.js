@@ -49,7 +49,7 @@ var DirectiveResolver = (function () {
                         inputs.push(propName);
                     }
                 }
-                if (a instanceof core_1.OutputMetadata) {
+                else if (a instanceof core_1.OutputMetadata) {
                     if (lang_1.isPresent(a.bindingPropertyName)) {
                         outputs.push(propName + ": " + a.bindingPropertyName);
                     }
@@ -57,7 +57,7 @@ var DirectiveResolver = (function () {
                         outputs.push(propName);
                     }
                 }
-                if (a instanceof core_1.HostBindingMetadata) {
+                else if (a instanceof core_1.HostBindingMetadata) {
                     if (lang_1.isPresent(a.hostPropertyName)) {
                         host[("[" + a.hostPropertyName + "]")] = propName;
                     }
@@ -65,11 +65,11 @@ var DirectiveResolver = (function () {
                         host[("[" + propName + "]")] = propName;
                     }
                 }
-                if (a instanceof core_1.HostListenerMetadata) {
+                else if (a instanceof core_1.HostListenerMetadata) {
                     var args = lang_1.isPresent(a.args) ? a.args.join(', ') : '';
                     host[("(" + a.eventName + ")")] = propName + "(" + args + ")";
                 }
-                if (a instanceof core_1.QueryMetadata) {
+                else if (a instanceof core_1.QueryMetadata) {
                     queries[propName] = a;
                 }
             });

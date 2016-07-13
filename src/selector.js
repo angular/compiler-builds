@@ -142,12 +142,12 @@ exports.CssSelector = CssSelector;
  */
 var SelectorMatcher = (function () {
     function SelectorMatcher() {
-        this._elementMap = new collection_1.Map();
-        this._elementPartialMap = new collection_1.Map();
-        this._classMap = new collection_1.Map();
-        this._classPartialMap = new collection_1.Map();
-        this._attrValueMap = new collection_1.Map();
-        this._attrValuePartialMap = new collection_1.Map();
+        this._elementMap = new Map();
+        this._elementPartialMap = new Map();
+        this._classMap = new Map();
+        this._classPartialMap = new Map();
+        this._attrValueMap = new Map();
+        this._attrValuePartialMap = new Map();
         this._listContexts = [];
     }
     SelectorMatcher.createNotMatcher = function (notSelectors) {
@@ -206,7 +206,7 @@ var SelectorMatcher = (function () {
                     var terminalMap = matcher._attrValueMap;
                     var terminalValuesMap = terminalMap.get(attrName);
                     if (lang_1.isBlank(terminalValuesMap)) {
-                        terminalValuesMap = new collection_1.Map();
+                        terminalValuesMap = new Map();
                         terminalMap.set(attrName, terminalValuesMap);
                     }
                     this._addTerminal(terminalValuesMap, attrValue, selectable);
@@ -215,7 +215,7 @@ var SelectorMatcher = (function () {
                     var parttialMap = matcher._attrValuePartialMap;
                     var partialValuesMap = parttialMap.get(attrName);
                     if (lang_1.isBlank(partialValuesMap)) {
-                        partialValuesMap = new collection_1.Map();
+                        partialValuesMap = new Map();
                         parttialMap.set(attrName, partialValuesMap);
                     }
                     matcher = this._addPartial(partialValuesMap, attrValue);

@@ -4209,12 +4209,12 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var SelectorMatcher = (function () {
         function SelectorMatcher() {
-            this._elementMap = new Map$1();
-            this._elementPartialMap = new Map$1();
-            this._classMap = new Map$1();
-            this._classPartialMap = new Map$1();
-            this._attrValueMap = new Map$1();
-            this._attrValuePartialMap = new Map$1();
+            this._elementMap = new Map();
+            this._elementPartialMap = new Map();
+            this._classMap = new Map();
+            this._classPartialMap = new Map();
+            this._attrValueMap = new Map();
+            this._attrValuePartialMap = new Map();
             this._listContexts = [];
         }
         SelectorMatcher.createNotMatcher = function (notSelectors) {
@@ -4273,7 +4273,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         var terminalMap = matcher._attrValueMap;
                         var terminalValuesMap = terminalMap.get(attrName);
                         if (isBlank(terminalValuesMap)) {
-                            terminalValuesMap = new Map$1();
+                            terminalValuesMap = new Map();
                             terminalMap.set(attrName, terminalValuesMap);
                         }
                         this._addTerminal(terminalValuesMap, attrValue, selectable);
@@ -4282,7 +4282,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         var parttialMap = matcher._attrValuePartialMap;
                         var partialValuesMap = parttialMap.get(attrName);
                         if (isBlank(partialValuesMap)) {
-                            partialValuesMap = new Map$1();
+                            partialValuesMap = new Map();
                             parttialMap.set(attrName, partialValuesMap);
                         }
                         matcher = this._addPartial(partialValuesMap, attrValue);
@@ -7422,7 +7422,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     _normalizeProviders(provider, sourceSpan, targetErrors, targetProviders);
                 }
                 else {
-                    var normalizeProvider;
+                    var normalizeProvider = void 0;
                     if (provider instanceof CompileProviderMetadata) {
                         normalizeProvider = provider;
                     }
@@ -12968,7 +12968,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             inputs.push(propName);
                         }
                     }
-                    if (a instanceof _angular_core.OutputMetadata) {
+                    else if (a instanceof _angular_core.OutputMetadata) {
                         if (isPresent(a.bindingPropertyName)) {
                             outputs.push(propName + ": " + a.bindingPropertyName);
                         }
@@ -12976,7 +12976,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             outputs.push(propName);
                         }
                     }
-                    if (a instanceof _angular_core.HostBindingMetadata) {
+                    else if (a instanceof _angular_core.HostBindingMetadata) {
                         if (isPresent(a.hostPropertyName)) {
                             host[("[" + a.hostPropertyName + "]")] = propName;
                         }
@@ -12984,11 +12984,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                             host[("[" + propName + "]")] = propName;
                         }
                     }
-                    if (a instanceof _angular_core.HostListenerMetadata) {
+                    else if (a instanceof _angular_core.HostListenerMetadata) {
                         var args = isPresent(a.args) ? a.args.join(', ') : '';
                         host[("(" + a.eventName + ")")] = propName + "(" + args + ")";
                     }
-                    if (a instanceof _angular_core.QueryMetadata) {
+                    else if (a instanceof _angular_core.QueryMetadata) {
                         queries[propName] = a;
                     }
                 });
@@ -15430,20 +15430,20 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (isBlank(compiledTemplate)) {
                 var compMeta = this._metadataResolver.getDirectiveMetadata(type);
                 assertComponent(compMeta);
-                var viewDirectives = [];
-                moduleDirectives.forEach(function (type) { return viewDirectives.push(_this._metadataResolver.getDirectiveMetadata(type)); });
-                var viewComponentTypes = [];
+                var viewDirectives_1 = [];
+                moduleDirectives.forEach(function (type) { return viewDirectives_1.push(_this._metadataResolver.getDirectiveMetadata(type)); });
+                var viewComponentTypes_1 = [];
                 this._metadataResolver.getViewDirectivesMetadata(type).forEach(function (dirOrComp) {
                     if (dirOrComp.isComponent) {
-                        viewComponentTypes.push(dirOrComp.type.runtime);
+                        viewComponentTypes_1.push(dirOrComp.type.runtime);
                     }
                     else {
-                        viewDirectives.push(dirOrComp);
+                        viewDirectives_1.push(dirOrComp);
                     }
                 });
                 var precompileComponentTypes = compMeta.precompile.map(function (typeMeta) { return typeMeta.runtime; });
                 var pipes = modulePipes.map(function (type) { return _this._metadataResolver.getPipeMetadata(type); }).concat(this._metadataResolver.getViewPipesMetadata(type));
-                compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, viewDirectives, viewComponentTypes, precompileComponentTypes, pipes, this._templateNormalizer.normalizeDirective(compMeta));
+                compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, viewDirectives_1, viewComponentTypes_1, precompileComponentTypes, pipes, this._templateNormalizer.normalizeDirective(compMeta));
                 this._compiledTemplateCache.set(type, compiledTemplate);
             }
             return compiledTemplate;
@@ -15477,7 +15477,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var viewCompMetas = template.viewComponentTypes.map(function (compType) { return _this._compiledTemplateCache.get(compType).normalizedCompMeta; });
             var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, template.viewDirectives.concat(viewCompMetas), template.viewPipes, compMeta.type.name);
             var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), template.viewPipes);
-            var depTemplates = compileResult.dependencies.map(function (dep) {
+            compileResult.dependencies.forEach(function (dep) {
                 var depTemplate;
                 if (dep instanceof ViewFactoryDependency) {
                     var vfd = dep;
@@ -15491,7 +15491,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                     cfd.placeholder.runtime = depTemplate.proxyComponentFactory;
                     cfd.placeholder.name = "compFactory_" + cfd.comp.name;
                 }
-                return depTemplate;
             });
             var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
             var factory;

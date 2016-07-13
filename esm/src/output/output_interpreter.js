@@ -56,7 +56,7 @@ function createDynamicClass(_classStmt, _ctx, _visitor) {
         };
     });
     _classStmt.methods.forEach(function (method) {
-        var paramNames = method.params.map(param => param.name);
+        const paramNames = method.params.map(param => param.name);
         // Note: use `function` instead of arrow function to capture `this`
         propertyDescriptors[method.name] = {
             writable: false,

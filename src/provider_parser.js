@@ -395,7 +395,7 @@ function _normalizeProviders(providers, sourceSpan, targetErrors, targetProvider
                 _normalizeProviders(provider, sourceSpan, targetErrors, targetProviders);
             }
             else {
-                var normalizeProvider;
+                var normalizeProvider = void 0;
                 if (provider instanceof compile_metadata_1.CompileProviderMetadata) {
                     normalizeProvider = provider;
                 }
