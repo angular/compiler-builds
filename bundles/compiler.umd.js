@@ -9651,7 +9651,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             return replaceVarInExpression(THIS_EXPR.name, variable('nestedView'), expr);
         });
         return declarationAppElement.callMethod('mapNestedViews', [
-            variable(view.className), fn([new FnParam('nestedView', view.classType)], [new ReturnStatement(literalArr(adjustedExpressions))])
+            variable(view.className),
+            fn([new FnParam('nestedView', view.classType)], [new ReturnStatement(literalArr(adjustedExpressions))], DYNAMIC_TYPE)
         ]);
     }
     function createQueryList(query, directiveInstance, propertyName, compileView) {
@@ -14817,7 +14818,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             ctx.print("(");
             this._visitParams(ast.params, ctx);
             ctx.print("):");
-            this.visitType(ast.type, ctx);
+            this.visitType(ast.type, ctx, 'void');
             ctx.println(" => {");
             ctx.incIndent();
             this.visitAllStatements(ast.statements, ctx);

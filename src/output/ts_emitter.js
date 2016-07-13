@@ -182,7 +182,7 @@ var _TsEmitterVisitor = (function (_super) {
         ctx.print("(");
         this._visitParams(ast.params, ctx);
         ctx.print("):");
-        this.visitType(ast.type, ctx);
+        this.visitType(ast.type, ctx, 'void');
         ctx.println(" => {");
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
