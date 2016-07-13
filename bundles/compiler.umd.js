@@ -2248,17 +2248,18 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (this.next.type == TokenType.Operator) {
                 var start = this.inputIndex;
                 var operator = this.next.strValue;
+                var result = void 0;
                 switch (operator) {
                     case '+':
                         this.advance();
                         return this.parsePrefix();
                     case '-':
                         this.advance();
-                        var result = this.parsePrefix();
+                        result = this.parsePrefix();
                         return new Binary(this.span(start), operator, new LiteralPrimitive(new ParseSpan(start, start), 0), result);
                     case '!':
                         this.advance();
-                        var result = this.parsePrefix();
+                        result = this.parsePrefix();
                         return new PrefixNot(this.span(start), result);
                 }
             }
@@ -8859,7 +8860,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             ListWrapper.insert(rawKeyframes, 0, firstKeyframe = [_INITIAL_KEYFRAME, {}]);
         }
         var firstKeyframeStyles = firstKeyframe[1];
-        var limit = rawKeyframes.length - 1;
+        limit = rawKeyframes.length - 1;
         var lastKeyframe = rawKeyframes[limit];
         if (lastKeyframe[0] != _TERMINAL_KEYFRAME) {
             rawKeyframes.push(lastKeyframe = [_TERMINAL_KEYFRAME, {}]);

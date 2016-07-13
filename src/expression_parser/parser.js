@@ -412,17 +412,18 @@ var _ParseAST = (function () {
         if (this.next.type == lexer_1.TokenType.Operator) {
             var start = this.inputIndex;
             var operator = this.next.strValue;
+            var result = void 0;
             switch (operator) {
                 case '+':
                     this.advance();
                     return this.parsePrefix();
                 case '-':
                     this.advance();
-                    var result = this.parsePrefix();
+                    result = this.parsePrefix();
                     return new ast_1.Binary(this.span(start), operator, new ast_1.LiteralPrimitive(new ast_1.ParseSpan(start, start), 0), result);
                 case '!':
                     this.advance();
-                    var result = this.parsePrefix();
+                    result = this.parsePrefix();
                     return new ast_1.PrefixNot(this.span(start), result);
             }
         }
