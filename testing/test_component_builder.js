@@ -104,7 +104,7 @@ var OverridingTestComponentBuilder = (function (_super) {
     ];
     /** @nocollapse */
     OverridingTestComponentBuilder.ctorParameters = [
-        { type: core_1.Injector, decorators: [{ type: core_1.Inject, args: [testing_1.TestInjector,] },] },
+        { type: core_1.Injector, decorators: [{ type: core_1.Inject, args: [testing_1.TestBed,] },] },
     ];
     return OverridingTestComponentBuilder;
 }(testing_1.TestComponentBuilder));
