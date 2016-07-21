@@ -15678,7 +15678,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         '*|formAction', 'area|href', 'area|ping', 'audio|src', 'a|href',
         'a|ping', 'blockquote|cite', 'body|background', 'del|cite', 'form|action',
         'img|src', 'img|srcset', 'input|src', 'ins|cite', 'q|cite',
-        'source|src', 'source|srcset', 'video|poster', 'video|src',
+        'source|src', 'source|srcset', 'track|src', 'video|poster', 'video|src',
     ]);
     registerContext(_angular_core.SecurityContext.RESOURCE_URL, [
         'applet|code',
@@ -15694,7 +15694,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         'object|codebase',
         'object|data',
         'script|src',
-        'track|src',
     ]);
     var BOOLEAN = 'boolean';
     var NUMBER = 'number';
