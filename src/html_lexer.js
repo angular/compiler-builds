@@ -206,6 +206,9 @@ var _HtmlTokenizer = (function () {
         return token;
     };
     _HtmlTokenizer.prototype._createError = function (msg, span) {
+        if (this._isInExpansionForm()) {
+            msg += ' (Do you have an unescaped "{" in your template?).';
+        }
         var error = new HtmlTokenError(msg, this._currentTokenType, span);
         this._currentTokenStart = null;
         this._currentTokenType = null;
@@ -508,6 +511,7 @@ var _HtmlTokenizer = (function () {
         this._beginToken(HtmlTokenType.EXPANSION_FORM_START, this._getLocation());
         this._requireCharCode(chars.$LBRACE);
         this._endToken([]);
+        this._expansionCaseStack.push(HtmlTokenType.EXPANSION_FORM_START);
         this._beginToken(HtmlTokenType.RAW_TEXT, this._getLocation());
         var condition = this._readUntil(chars.$COMMA);
         this._endToken([condition], this._getLocation());
@@ -518,7 +522,6 @@ var _HtmlTokenizer = (function () {
         this._endToken([type], this._getLocation());
         this._requireCharCode(chars.$COMMA);
         this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._expansionCaseStack.push(HtmlTokenType.EXPANSION_FORM_START);
     };
     _HtmlTokenizer.prototype._consumeExpansionCaseStart = function () {
         this._beginToken(HtmlTokenType.EXPANSION_CASE_VALUE, this._getLocation());
