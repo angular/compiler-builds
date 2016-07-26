@@ -50,8 +50,8 @@ export declare class CompileMetadataResolver {
     getPipeMetadata(pipeType: Type, throwIfNotFound?: boolean): cpl.CompilePipeMetadata;
     getDependenciesMetadata(typeOrFunc: Type | Function, dependencies: any[]): cpl.CompileDiDependencyMetadata[];
     getTokenMetadata(token: any): cpl.CompileTokenMetadata;
-    getProvidersMetadata(providers: any[], targetPrecompileComponents: cpl.CompileTypeMetadata[]): Array<cpl.CompileProviderMetadata | cpl.CompileTypeMetadata | any[]>;
-    getPrecompileComponentsFromProvider(provider: Provider): cpl.CompileTypeMetadata[];
+    getProvidersMetadata(providers: any[], targetEntryComponents: cpl.CompileTypeMetadata[]): Array<cpl.CompileProviderMetadata | cpl.CompileTypeMetadata | any[]>;
+    private _getEntryComponentsFromProvider(provider);
     getProviderMetadata(provider: Provider): cpl.CompileProviderMetadata;
     getQueriesMetadata(queries: {
         [key: string]: QueryMetadata;

@@ -206,7 +206,7 @@ function _initReflector() {
  *
  * @experimental
  */
-exports.coreDynamicPlatform = core_1.createPlatformFactory(core_1.corePlatform, 'coreDynamic', [
+exports.platformCoreDynamic = core_1.createPlatformFactory(core_1.platformCore, 'coreDynamic', [
     { provide: core_1.CompilerOptions, useValue: {}, multi: true },
     { provide: core_1.CompilerFactory, useClass: RuntimeCompilerFactory },
     { provide: core_1.PLATFORM_INITIALIZER, useValue: _initReflector, multi: true },

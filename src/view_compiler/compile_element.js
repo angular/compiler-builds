@@ -80,12 +80,12 @@ var CompileElement = (function (_super) {
         this.appElement = o.THIS_EXPR.prop(fieldName);
         this._instances.add(identifiers_1.identifierToken(identifiers_1.Identifiers.AppElement), this.appElement);
     };
-    CompileElement.prototype.createComponentFactoryResolver = function (precompileComponent) {
-        if (!precompileComponent || precompileComponent.length === 0) {
+    CompileElement.prototype.createComponentFactoryResolver = function (entryComponents) {
+        if (!entryComponents || entryComponents.length === 0) {
             return;
         }
         var createComponentFactoryResolverExpr = o.importExpr(identifiers_1.Identifiers.CodegenComponentFactoryResolver).instantiate([
-            o.literalArr(precompileComponent.map(function (precompiledComponent) { return o.importExpr(precompiledComponent); })),
+            o.literalArr(entryComponents.map(function (entryComponent) { return o.importExpr(entryComponent); })),
             util_1.injectFromViewParentInjector(identifiers_1.identifierToken(identifiers_1.Identifiers.ComponentFactoryResolver), false)
         ]);
         var provider = new compile_metadata_1.CompileProviderMetadata({

@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ANALYZE_FOR_PRECOMPILE, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ElementRef, Injector, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
+import { ANALYZE_FOR_ENTRY_COMPONENTS, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ElementRef, Injector, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
 import { AnimationGroupPlayer as AnimationGroupPlayer_, AnimationKeyframe as AnimationKeyframe_, AnimationSequencePlayer as AnimationSequencePlayer_, AnimationStyles as AnimationStyles_, AppElement, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, DebugAppView, DebugContext, EMPTY_ARRAY, EMPTY_MAP, NgModuleInjector, NoOpAnimationPlayer as NoOpAnimationPlayer_, StaticNodeDebugInfo, TemplateRef_, UNINITIALIZED, ValueUnwrapper, ViewType, ViewUtils, balanceAnimationKeyframes as impBalanceAnimationKeyframes, castByValue, checkBinding, clearStyles as impClearStyles, collectAndResolveStyles as impCollectAndResolveStyles, devModeEqual, flattenNestedViewRenderNodes, interpolate, prepareFinalAnimationStyles as impBalanceAnimationStyles, pureProxy1, pureProxy10, pureProxy2, pureProxy3, pureProxy4, pureProxy5, pureProxy6, pureProxy7, pureProxy8, pureProxy9, renderStyles as impRenderStyles } from '../core_private';
 import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
 import { assetUrl } from './util';
@@ -52,10 +52,10 @@ var impNoOpAnimationPlayer = NoOpAnimationPlayer_;
 var ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
 export class Identifiers {
 }
-Identifiers.ANALYZE_FOR_PRECOMPILE = new CompileIdentifierMetadata({
-    name: 'ANALYZE_FOR_PRECOMPILE',
+Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = new CompileIdentifierMetadata({
+    name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
     moduleUrl: assetUrl('core', 'metadata/di'),
-    runtime: ANALYZE_FOR_PRECOMPILE
+    runtime: ANALYZE_FOR_ENTRY_COMPONENTS
 });
 Identifiers.ViewUtils = new CompileIdentifierMetadata({ name: 'ViewUtils', moduleUrl: assetUrl('core', 'linker/view_utils'), runtime: impViewUtils });
 Identifiers.AppView = new CompileIdentifierMetadata({ name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impAppView });

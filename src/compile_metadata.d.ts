@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, SchemaMetadata, ViewEncapsulation } from '@angular/core';
 import { LifecycleHooks } from '../core_private';
 import { Type } from '../src/facade/lang';
 export declare abstract class CompileMetadataWithIdentifier {
@@ -237,7 +237,7 @@ export declare class CompileTemplateMetadata {
  * Metadata regarding compilation of a directive.
  */
 export declare class CompileDirectiveMetadata implements CompileMetadataWithIdentifier {
-    static create({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, precompile, template}?: {
+    static create({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, template}?: {
         type?: CompileTypeMetadata;
         isComponent?: boolean;
         selector?: string;
@@ -253,7 +253,7 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
-        precompile?: CompileTypeMetadata[];
+        entryComponents?: CompileTypeMetadata[];
         template?: CompileTemplateMetadata;
     }): CompileDirectiveMetadata;
     type: CompileTypeMetadata;
@@ -281,9 +281,9 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
     viewProviders: CompileProviderMetadata[];
     queries: CompileQueryMetadata[];
     viewQueries: CompileQueryMetadata[];
-    precompile: CompileTypeMetadata[];
+    entryComponents: CompileTypeMetadata[];
     template: CompileTemplateMetadata;
-    constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, precompile, template}?: {
+    constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, template}?: {
         type?: CompileTypeMetadata;
         isComponent?: boolean;
         selector?: string;
@@ -309,7 +309,7 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
-        precompile?: CompileTypeMetadata[];
+        entryComponents?: CompileTypeMetadata[];
         template?: CompileTemplateMetadata;
     });
     identifier: CompileIdentifierMetadata;
@@ -346,22 +346,24 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
     exportedDirectives: CompileDirectiveMetadata[];
     declaredPipes: CompilePipeMetadata[];
     exportedPipes: CompilePipeMetadata[];
-    precompile: CompileTypeMetadata[];
+    entryComponents: CompileTypeMetadata[];
     providers: CompileProviderMetadata[];
     importedModules: CompileNgModuleMetadata[];
     exportedModules: CompileNgModuleMetadata[];
+    schemas: SchemaMetadata[];
     transitiveModule: TransitiveCompileNgModuleMetadata;
-    constructor({type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, precompile, importedModules, exportedModules, transitiveModule}?: {
+    constructor({type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, importedModules, exportedModules, schemas, transitiveModule}?: {
         type?: CompileTypeMetadata;
         providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         declaredDirectives?: CompileDirectiveMetadata[];
         exportedDirectives?: CompileDirectiveMetadata[];
         declaredPipes?: CompilePipeMetadata[];
         exportedPipes?: CompilePipeMetadata[];
-        precompile?: CompileTypeMetadata[];
+        entryComponents?: CompileTypeMetadata[];
         importedModules?: CompileNgModuleMetadata[];
         exportedModules?: CompileNgModuleMetadata[];
         transitiveModule?: TransitiveCompileNgModuleMetadata;
+        schemas?: SchemaMetadata[];
     });
     identifier: CompileIdentifierMetadata;
     runtimeCacheKey: any;
@@ -371,12 +373,12 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
 export declare class TransitiveCompileNgModuleMetadata {
     modules: CompileNgModuleMetadata[];
     providers: CompileProviderMetadata[];
-    precompile: CompileTypeMetadata[];
+    entryComponents: CompileTypeMetadata[];
     directives: CompileDirectiveMetadata[];
     pipes: CompilePipeMetadata[];
     directivesSet: Set<Type>;
     pipesSet: Set<Type>;
-    constructor(modules: CompileNgModuleMetadata[], providers: CompileProviderMetadata[], precompile: CompileTypeMetadata[], directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[]);
+    constructor(modules: CompileNgModuleMetadata[], providers: CompileProviderMetadata[], entryComponents: CompileTypeMetadata[], directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[]);
 }
 export declare function removeIdentifierDuplicates<T extends CompileMetadataWithIdentifier>(items: T[]): T[];
 export declare function isStaticSymbol(value: any): value is StaticSymbol;

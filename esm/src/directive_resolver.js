@@ -121,7 +121,7 @@ export class DirectiveResolver {
                 changeDetection: dm.changeDetection,
                 providers: dm.providers,
                 viewProviders: dm.viewProviders,
-                precompile: dm.precompile
+                entryComponents: dm.entryComponents
             });
         }
         else {

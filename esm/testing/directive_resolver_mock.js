@@ -46,7 +46,7 @@ export class MockDirectiveResolver extends DirectiveResolver {
                 changeDetection: dm.changeDetection,
                 providers: providers,
                 viewProviders: viewProviders,
-                precompile: dm.precompile
+                entryComponents: dm.entryComponents
             });
         }
         return new DirectiveMetadata({

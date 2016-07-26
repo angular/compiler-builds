@@ -108,14 +108,14 @@ export class RuntimeCompiler {
         ngModule.transitiveModule.modules.forEach((localModuleMeta) => {
             localModuleMeta.declaredDirectives.forEach((dirMeta) => {
                 if (dirMeta.isComponent) {
-                    templates.add(this._createCompiledTemplate(dirMeta, localModuleMeta.transitiveModule.directives, localModuleMeta.transitiveModule.pipes));
-                    dirMeta.precompile.forEach((precompileType) => {
-                        templates.add(this._createCompiledHostTemplate(precompileType.runtime));
+                    templates.add(this._createCompiledTemplate(dirMeta, localModuleMeta));
+                    dirMeta.entryComponents.forEach((entryComponentType) => {
+                        templates.add(this._createCompiledHostTemplate(entryComponentType.runtime));
                     });
                 }
             });
-            localModuleMeta.precompile.forEach((precompileType) => {
-                templates.add(this._createCompiledHostTemplate(precompileType.runtime));
+            localModuleMeta.entryComponents.forEach((entryComponentType) => {
+                templates.add(this._createCompiledHostTemplate(entryComponentType.runtime));
             });
         });
         templates.forEach((template) => {
@@ -160,16 +160,16 @@ export class RuntimeCompiler {
             var compMeta = this._metadataResolver.getDirectiveMetadata(compType);
             assertComponent(compMeta);
             var hostMeta = createHostComponentMeta(compMeta);
-            compiledTemplate = new CompiledTemplate(true, compMeta.selector, compMeta.type, [compMeta], [], this._templateNormalizer.normalizeDirective(hostMeta));
+            compiledTemplate = new CompiledTemplate(true, compMeta.selector, compMeta.type, [compMeta], [], [], this._templateNormalizer.normalizeDirective(hostMeta));
             this._compiledHostTemplateCache.set(compType, compiledTemplate);
         }
         return compiledTemplate;
     }
-    _createCompiledTemplate(compMeta, directives, pipes) {
+    _createCompiledTemplate(compMeta, ngModule) {
         var compiledTemplate = this._compiledTemplateCache.get(compMeta.type.runtime);
         if (isBlank(compiledTemplate)) {
             assertComponent(compMeta);
-            compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, directives, pipes, this._templateNormalizer.normalizeDirective(compMeta));
+            compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, ngModule.transitiveModule.directives, ngModule.transitiveModule.pipes, ngModule.schemas, this._templateNormalizer.normalizeDirective(compMeta));
             this._compiledTemplateCache.set(compMeta.type.runtime, compiledTemplate);
         }
         return compiledTemplate;
@@ -199,7 +199,7 @@ export class RuntimeCompiler {
         stylesCompileResult.externalStylesheets.forEach((r) => { externalStylesheetsByModuleUrl.set(r.meta.moduleUrl, r); });
         this._resolveStylesCompileResult(stylesCompileResult.componentStylesheet, externalStylesheetsByModuleUrl);
         const viewCompMetas = template.viewComponentTypes.map((compType) => this._assertComponentLoaded(compType, false).normalizedCompMeta);
-        const parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, template.viewDirectives.concat(viewCompMetas), template.viewPipes, compMeta.type.name);
+        const parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, template.viewDirectives.concat(viewCompMetas), template.viewPipes, template.schemas, compMeta.type.name);
         const compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), template.viewPipes);
         compileResult.dependencies.forEach((dep) => {
             let depTemplate;
@@ -261,10 +261,11 @@ RuntimeCompiler.ctorParameters = [
     { type: Console, },
 ];
 class CompiledTemplate {
-    constructor(isHost, selector, compType, viewDirectivesAndComponents, viewPipes, _normalizeResult) {
+    constructor(isHost, selector, compType, viewDirectivesAndComponents, viewPipes, schemas, _normalizeResult) {
         this.isHost = isHost;
         this.compType = compType;
         this.viewPipes = viewPipes;
+        this.schemas = schemas;
         this._viewFactory = null;
         this.loading = null;
         this._normalizedCompMeta = null;

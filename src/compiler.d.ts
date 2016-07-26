@@ -40,4 +40,4 @@ export declare class RuntimeCompilerFactory implements CompilerFactory {
  *
  * @experimental
  */
-export declare const coreDynamicPlatform: (extraProviders?: any[]) => PlatformRef;
+export declare const platformCoreDynamic: (extraProviders?: any[]) => PlatformRef;

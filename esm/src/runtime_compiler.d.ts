@@ -49,7 +49,7 @@ export declare class RuntimeCompiler implements Compiler {
     clearCacheFor(type: Type): void;
     clearCache(): void;
     private _createCompiledHostTemplate(compType);
-    private _createCompiledTemplate(compMeta, directives, pipes);
+    private _createCompiledTemplate(compMeta, ngModule);
     private _assertComponentKnown(compType, isHost);
     private _assertComponentLoaded(compType, isHost);
     private _compileTemplate(template);

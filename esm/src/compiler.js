@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, CompilerFactory, CompilerOptions, Component, Inject, Injectable, PLATFORM_DIRECTIVES, PLATFORM_INITIALIZER, PLATFORM_PIPES, ReflectiveInjector, ViewEncapsulation, corePlatform, createPlatformFactory, isDevMode } from '@angular/core';
+import { Compiler, CompilerFactory, CompilerOptions, Component, Inject, Injectable, PLATFORM_DIRECTIVES, PLATFORM_INITIALIZER, PLATFORM_PIPES, ReflectiveInjector, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
 export * from './template_ast';
 export { TEMPLATE_TRANSFORMS } from './template_parser';
 export { CompilerConfig, RenderTypes } from './config';
@@ -186,7 +186,7 @@ function _initReflector() {
  *
  * @experimental
  */
-export const coreDynamicPlatform = createPlatformFactory(corePlatform, 'coreDynamic', [
+export const platformCoreDynamic = createPlatformFactory(platformCore, 'coreDynamic', [
     { provide: CompilerOptions, useValue: {}, multi: true },
     { provide: CompilerFactory, useClass: RuntimeCompilerFactory },
     { provide: PLATFORM_INITIALIZER, useValue: _initReflector, multi: true },

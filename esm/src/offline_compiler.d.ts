@@ -1,10 +1,3 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 import { CompileNgModuleMetadata, StaticSymbol } from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { CompileMetadataResolver } from './metadata_resolver';
@@ -36,7 +29,7 @@ export declare class OfflineCompiler {
     compile(moduleUrl: string, ngModulesSummary: NgModulesSummary, components: StaticSymbol[], ngModules: StaticSymbol[]): Promise<SourceModule[]>;
     private _compileModule(ngModuleType, targetStatements);
     private _compileComponentFactory(compMeta, fileSuffix, targetStatements);
-    private _compileComponent(compMeta, directives, pipes, componentStyles, fileSuffix, targetStatements);
+    private _compileComponent(compMeta, directives, pipes, schemas, componentStyles, fileSuffix, targetStatements);
     private _codgenStyles(stylesCompileResult, fileSuffix);
     private _codegenSourceModule(moduleUrl, statements, exportedVars);
 }

@@ -12,7 +12,7 @@ export class MockSchemaRegistry {
         this.existingProperties = existingProperties;
         this.attrPropMapping = attrPropMapping;
     }
-    hasProperty(tagName, property) {
+    hasProperty(tagName, property, schemas) {
         var result = this.existingProperties[property];
         return isPresent(result) ? result : true;
     }

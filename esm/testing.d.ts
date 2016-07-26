@@ -16,4 +16,4 @@ import { PlatformRef } from '@angular/core';
  *
  * @experimental
  */
-export declare const coreDynamicTestingPlatform: (extraProviders?: any[]) => PlatformRef;
+export declare const platformCoreDynamicTesting: (extraProviders?: any[]) => PlatformRef;

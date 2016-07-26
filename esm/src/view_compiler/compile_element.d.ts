@@ -36,7 +36,7 @@ export declare class CompileElement extends CompileNode {
     };
     constructor(parent: CompileElement, view: CompileView, nodeIndex: number, renderNode: o.Expression, sourceAst: TemplateAst, component: CompileDirectiveMetadata, _directives: CompileDirectiveMetadata[], _resolvedProvidersArray: ProviderAst[], hasViewContainer: boolean, hasEmbeddedView: boolean, references: ReferenceAst[]);
     private _createAppElement();
-    createComponentFactoryResolver(precompileComponent: CompileIdentifierMetadata[]): void;
+    createComponentFactoryResolver(entryComponents: CompileIdentifierMetadata[]): void;
     setComponentView(compViewExpr: o.Expression): void;
     setEmbeddedView(embeddedView: CompileView): void;
     beforeChildren(): void;

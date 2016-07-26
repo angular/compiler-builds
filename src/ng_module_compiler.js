@@ -42,12 +42,12 @@ var NgModuleCompiler = (function () {
         var sourceFile = new parse_util_1.ParseSourceFile('', sourceFileName);
         var sourceSpan = new parse_util_1.ParseSourceSpan(new parse_util_1.ParseLocation(sourceFile, null, null, null), new parse_util_1.ParseLocation(sourceFile, null, null, null));
         var deps = [];
-        var precompileComponents = ngModuleMeta.transitiveModule.precompile.map(function (precompileComp) {
-            var id = new compile_metadata_1.CompileIdentifierMetadata({ name: precompileComp.name });
-            deps.push(new ComponentFactoryDependency(precompileComp, id));
+        var entryComponents = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
+            var id = new compile_metadata_1.CompileIdentifierMetadata({ name: entryComponent.name });
+            deps.push(new ComponentFactoryDependency(entryComponent, id));
             return id;
         });
-        var builder = new _InjectorBuilder(ngModuleMeta, precompileComponents, sourceSpan);
+        var builder = new _InjectorBuilder(ngModuleMeta, entryComponents, sourceSpan);
         var providerParser = new provider_analyzer_1.NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
         providerParser.parse().forEach(function (provider) { return builder.addProvider(provider); });
         var injectorClass = builder.build();
@@ -66,9 +66,9 @@ var NgModuleCompiler = (function () {
 }());
 exports.NgModuleCompiler = NgModuleCompiler;
 var _InjectorBuilder = (function () {
-    function _InjectorBuilder(_ngModuleMeta, _precompileComponents, _sourceSpan) {
+    function _InjectorBuilder(_ngModuleMeta, _entryComponents, _sourceSpan) {
         this._ngModuleMeta = _ngModuleMeta;
-        this._precompileComponents = _precompileComponents;
+        this._entryComponents = _entryComponents;
         this._sourceSpan = _sourceSpan;
         this._instances = new compile_metadata_1.CompileIdentifierMap();
         this._fields = [];
@@ -98,7 +98,7 @@ var _InjectorBuilder = (function () {
         var ctor = new o.ClassMethod(null, [new o.FnParam(InjectorProps.parent.name, o.importType(identifiers_1.Identifiers.Injector))], [o.SUPER_EXPR
                 .callFn([
                 o.variable(InjectorProps.parent.name),
-                o.literalArr(this._precompileComponents.map(function (precompiledComponent) { return o.importExpr(precompiledComponent); }))
+                o.literalArr(this._entryComponents.map(function (entryComponent) { return o.importExpr(entryComponent); }))
             ])
                 .toStmt()]);
         var injClassName = this._ngModuleMeta.type.name + "Injector";

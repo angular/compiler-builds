@@ -185,12 +185,12 @@ var ViewBuilderVisitor = (function () {
         if (lang_1.isPresent(component)) {
             var nestedComponentIdentifier = new compile_metadata_1.CompileIdentifierMetadata({ name: util_2.getViewFactoryName(component, 0) });
             this.targetDependencies.push(new ViewFactoryDependency(component.type, nestedComponentIdentifier));
-            var precompileComponentIdentifiers = component.precompile.map(function (precompileComp) {
-                var id = new compile_metadata_1.CompileIdentifierMetadata({ name: precompileComp.name });
-                _this.targetDependencies.push(new ComponentFactoryDependency(precompileComp, id));
+            var entryComponentIdentifiers = component.entryComponents.map(function (entryComponent) {
+                var id = new compile_metadata_1.CompileIdentifierMetadata({ name: entryComponent.name });
+                _this.targetDependencies.push(new ComponentFactoryDependency(entryComponent, id));
                 return id;
             });
-            compileElement.createComponentFactoryResolver(precompileComponentIdentifiers);
+            compileElement.createComponentFactoryResolver(entryComponentIdentifiers);
             compViewExpr = o.variable("compView_" + nodeIndex); // fix highlighting: `
             compileElement.setComponentView(compViewExpr);
             this.view.createMethod.addStmt(compViewExpr

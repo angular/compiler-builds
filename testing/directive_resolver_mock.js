@@ -58,7 +58,7 @@ var MockDirectiveResolver = (function (_super) {
                 changeDetection: dm.changeDetection,
                 providers: providers,
                 viewProviders: viewProviders,
-                precompile: dm.precompile
+                entryComponents: dm.entryComponents
             });
         }
         return new core_1.DirectiveMetadata({

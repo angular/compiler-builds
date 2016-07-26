@@ -11,7 +11,7 @@ export * from './testing/test_component_builder';
 export * from './testing/directive_resolver_mock';
 export * from './testing/ng_module_resolver_mock';
 import { createPlatformFactory, CompilerOptions } from '@angular/core';
-import { coreDynamicPlatform, DirectiveResolver, ViewResolver, NgModuleResolver } from './index';
+import { platformCoreDynamic, DirectiveResolver, ViewResolver, NgModuleResolver } from './index';
 import { MockViewResolver } from './testing/view_resolver_mock';
 import { MockDirectiveResolver } from './testing/directive_resolver_mock';
 import { MockNgModuleResolver } from './testing/ng_module_resolver_mock';
@@ -20,7 +20,7 @@ import { MockNgModuleResolver } from './testing/ng_module_resolver_mock';
  *
  * @experimental
  */
-export const coreDynamicTestingPlatform = createPlatformFactory(coreDynamicPlatform, 'coreDynamicTesting', [{
+export const platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'coreDynamicTesting', [{
         provide: CompilerOptions,
         useValue: {
             providers: [

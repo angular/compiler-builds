@@ -35,12 +35,12 @@ export class NgModuleCompiler {
         var sourceFile = new ParseSourceFile('', sourceFileName);
         var sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
         var deps = [];
-        var precompileComponents = ngModuleMeta.transitiveModule.precompile.map((precompileComp) => {
-            var id = new CompileIdentifierMetadata({ name: precompileComp.name });
-            deps.push(new ComponentFactoryDependency(precompileComp, id));
+        var entryComponents = ngModuleMeta.transitiveModule.entryComponents.map((entryComponent) => {
+            var id = new CompileIdentifierMetadata({ name: entryComponent.name });
+            deps.push(new ComponentFactoryDependency(entryComponent, id));
             return id;
         });
-        var builder = new _InjectorBuilder(ngModuleMeta, precompileComponents, sourceSpan);
+        var builder = new _InjectorBuilder(ngModuleMeta, entryComponents, sourceSpan);
         var providerParser = new NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
         providerParser.parse().forEach((provider) => builder.addProvider(provider));
         var injectorClass = builder.build();
@@ -57,9 +57,9 @@ NgModuleCompiler.decorators = [
     { type: Injectable },
 ];
 class _InjectorBuilder {
-    constructor(_ngModuleMeta, _precompileComponents, _sourceSpan) {
+    constructor(_ngModuleMeta, _entryComponents, _sourceSpan) {
         this._ngModuleMeta = _ngModuleMeta;
-        this._precompileComponents = _precompileComponents;
+        this._entryComponents = _entryComponents;
         this._sourceSpan = _sourceSpan;
         this._instances = new CompileIdentifierMap();
         this._fields = [];
@@ -87,7 +87,7 @@ class _InjectorBuilder {
         var ctor = new o.ClassMethod(null, [new o.FnParam(InjectorProps.parent.name, o.importType(Identifiers.Injector))], [o.SUPER_EXPR
                 .callFn([
                 o.variable(InjectorProps.parent.name),
-                o.literalArr(this._precompileComponents.map((precompiledComponent) => o.importExpr(precompiledComponent)))
+                o.literalArr(this._entryComponents.map((entryComponent) => o.importExpr(entryComponent)))
             ])
                 .toStmt()]);
         var injClassName = `${this._ngModuleMeta.type.name}Injector`;

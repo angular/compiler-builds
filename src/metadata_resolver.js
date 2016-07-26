@@ -126,7 +126,7 @@ var CompileMetadataResolver = (function () {
             var changeDetectionStrategy = null;
             var viewProviders = [];
             var moduleUrl = staticTypeModuleUrl(directiveType);
-            var precompileTypes = [];
+            var entryComponentTypes = [];
             if (dirMeta instanceof core_1.ComponentMetadata) {
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
@@ -151,14 +151,15 @@ var CompileMetadataResolver = (function () {
                     viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'), []);
                 }
                 moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
-                if (cmpMeta.precompile) {
-                    precompileTypes = flattenArray(cmpMeta.precompile)
-                        .map(function (cmp) { return _this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)); });
+                if (cmpMeta.entryComponents) {
+                    entryComponentTypes =
+                        flattenArray(cmpMeta.entryComponents)
+                            .map(function (cmp) { return _this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)); });
                 }
             }
             var providers = [];
             if (lang_1.isPresent(dirMeta.providers)) {
-                providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'), precompileTypes);
+                providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'), entryComponentTypes);
             }
             var queries = [];
             var viewQueries = [];
@@ -181,7 +182,7 @@ var CompileMetadataResolver = (function () {
                 viewProviders: viewProviders,
                 queries: queries,
                 viewQueries: viewQueries,
-                precompile: precompileTypes
+                entryComponents: entryComponentTypes
             });
             this._directiveCache.set(directiveType, meta);
         }
@@ -203,14 +204,34 @@ var CompileMetadataResolver = (function () {
             var exportedPipes_1 = [];
             var importedModules_1 = [];
             var exportedModules_1 = [];
+            var providers_1 = [];
+            var entryComponents_1 = [];
+            var schemas = [];
+            if (meta.providers) {
+                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1));
+            }
+            if (meta.entryComponents) {
+                entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+            }
+            if (meta.schemas) {
+                schemas.push.apply(schemas, flattenArray(meta.schemas));
+            }
             if (meta.imports) {
                 flattenArray(meta.imports).forEach(function (importedType) {
-                    if (!isValidType(importedType)) {
-                        throw new exceptions_1.BaseException("Unexpected value '" + lang_1.stringify(importedType) + "' imported by the module '" + lang_1.stringify(moduleType) + "'");
+                    var importedModuleType;
+                    if (isValidType(importedType)) {
+                        importedModuleType = importedType;
                     }
-                    var importedModuleMeta;
-                    if (importedModuleMeta = _this.getNgModuleMetadata(importedType, false)) {
-                        importedModules_1.push(importedModuleMeta);
+                    else if (importedType && importedType.ngModule) {
+                        var moduleWithProviders = importedType;
+                        importedModuleType = moduleWithProviders.ngModule;
+                        if (moduleWithProviders.providers) {
+                            providers_1.push.apply(providers_1, _this.getProvidersMetadata(moduleWithProviders.providers, entryComponents_1));
+                        }
+                    }
+                    if (importedModuleType) {
+                        importedModules_1.push(_this.getNgModuleMetadata(importedModuleType, false));
                     }
                     else {
                         throw new exceptions_1.BaseException("Unexpected value '" + lang_1.stringify(importedType) + "' imported by the module '" + lang_1.stringify(moduleType) + "'");
@@ -251,7 +272,8 @@ var CompileMetadataResolver = (function () {
                     var declaredPipeMeta;
                     if (declaredDirMeta = _this.getDirectiveMetadata(declaredType, false)) {
                         _this._addDirectiveToModule(declaredDirMeta, moduleType, transitiveModule_1, declaredDirectives_1, true);
-                        // Collect @Component.directives/pipes/precompile into our declared directives/pipes.
+                        // Collect @Component.directives/pipes/entryComponents into our declared
+                        // directives/pipes.
                         _this._getTransitiveViewDirectivesAndPipes(declaredDirMeta, moduleType, transitiveModule_1, declaredDirectives_1, declaredPipes_1);
                     }
                     else if (declaredPipeMeta = _this.getPipeMetadata(declaredType, false)) {
@@ -262,21 +284,13 @@ var CompileMetadataResolver = (function () {
                     }
                 });
             }
-            var providers = [];
-            var precompile = [];
-            if (meta.providers) {
-                providers.push.apply(providers, this.getProvidersMetadata(meta.providers, precompile));
-            }
-            if (meta.precompile) {
-                precompile.push.apply(precompile, flattenArray(meta.precompile)
-                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
-            }
-            (_a = transitiveModule_1.precompile).push.apply(_a, precompile);
-            (_b = transitiveModule_1.providers).push.apply(_b, providers);
+            (_a = transitiveModule_1.entryComponents).push.apply(_a, entryComponents_1);
+            (_b = transitiveModule_1.providers).push.apply(_b, providers_1);
             compileMeta = new cpl.CompileNgModuleMetadata({
                 type: this.getTypeMetadata(moduleType, staticTypeModuleUrl(moduleType)),
-                providers: providers,
-                precompile: precompile,
+                providers: providers_1,
+                entryComponents: entryComponents_1,
+                schemas: schemas,
                 declaredDirectives: declaredDirectives_1,
                 exportedDirectives: exportedDirectives_1,
                 declaredPipes: declaredPipes_1,
@@ -294,12 +308,12 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype.addComponentToModule = function (moduleType, compType) {
         var moduleMeta = this.getNgModuleMetadata(moduleType);
-        // Collect @Component.directives/pipes/precompile into our declared directives/pipes.
+        // Collect @Component.directives/pipes/entryComponents into our declared directives/pipes.
         var compMeta = this.getDirectiveMetadata(compType, false);
         this._addDirectiveToModule(compMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives);
         this._getTransitiveViewDirectivesAndPipes(compMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives, moduleMeta.declaredPipes);
-        moduleMeta.transitiveModule.precompile.push(compMeta.type);
-        moduleMeta.precompile.push(compMeta.type);
+        moduleMeta.transitiveModule.entryComponents.push(compMeta.type);
+        moduleMeta.entryComponents.push(compMeta.type);
         this._verifyModule(moduleMeta);
     };
     CompileMetadataResolver.prototype._verifyModule = function (moduleMeta) {
@@ -314,15 +328,15 @@ var CompileMetadataResolver = (function () {
             }
         });
         moduleMeta.declaredDirectives.forEach(function (dirMeta) {
-            dirMeta.precompile.forEach(function (precompileComp) {
-                if (!moduleMeta.transitiveModule.directivesSet.has(precompileComp.runtime)) {
-                    throw new exceptions_1.BaseException("Component " + lang_1.stringify(dirMeta.type.runtime) + " in NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(precompileComp.runtime) + " via \"precompile\" but it was neither declared nor imported into the module!");
+            dirMeta.entryComponents.forEach(function (entryComponent) {
+                if (!moduleMeta.transitiveModule.directivesSet.has(entryComponent.runtime)) {
+                    throw new exceptions_1.BaseException("Component " + lang_1.stringify(dirMeta.type.runtime) + " in NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponent.runtime) + " via \"entryComponents\" but it was neither declared nor imported into the module!");
                 }
             });
         });
-        moduleMeta.precompile.forEach(function (precompileType) {
-            if (!moduleMeta.transitiveModule.directivesSet.has(precompileType.runtime)) {
-                throw new exceptions_1.BaseException("NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(precompileType.runtime) + " via \"precompile\" but it was neither declared nor imported!");
+        moduleMeta.entryComponents.forEach(function (entryComponentType) {
+            if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
+                throw new exceptions_1.BaseException("NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported!");
             }
         });
     };
@@ -363,14 +377,14 @@ var CompileMetadataResolver = (function () {
         }
     };
     CompileMetadataResolver.prototype._getTransitiveNgModuleMetadata = function (importedModules, exportedModules) {
-        // collect `providers` / `precompile` from all imported and all exported modules
+        // collect `providers` / `entryComponents` from all imported and all exported modules
         var transitiveModules = getTransitiveModules(importedModules.concat(exportedModules), true);
         var providers = flattenArray(transitiveModules.map(function (ngModule) { return ngModule.providers; }));
-        var precompile = flattenArray(transitiveModules.map(function (ngModule) { return ngModule.precompile; }));
+        var entryComponents = flattenArray(transitiveModules.map(function (ngModule) { return ngModule.entryComponents; }));
         var transitiveExportedModules = getTransitiveModules(importedModules, false);
         var directives = flattenArray(transitiveExportedModules.map(function (ngModule) { return ngModule.exportedDirectives; }));
         var pipes = flattenArray(transitiveExportedModules.map(function (ngModule) { return ngModule.exportedPipes; }));
-        return new cpl.TransitiveCompileNgModuleMetadata(transitiveModules, providers, precompile, directives, pipes);
+        return new cpl.TransitiveCompileNgModuleMetadata(transitiveModules, providers, entryComponents, directives, pipes);
     };
     CompileMetadataResolver.prototype._addDirectiveToModule = function (dirMeta, moduleType, transitiveModule, declaredDirectives, force) {
         if (force === void 0) { force = false; }
@@ -525,7 +539,7 @@ var CompileMetadataResolver = (function () {
         }
         return compileToken;
     };
-    CompileMetadataResolver.prototype.getProvidersMetadata = function (providers, targetPrecompileComponents) {
+    CompileMetadataResolver.prototype.getProvidersMetadata = function (providers, targetEntryComponents) {
         var _this = this;
         var compileProviders = [];
         providers.forEach(function (provider) {
@@ -535,12 +549,12 @@ var CompileMetadataResolver = (function () {
             }
             var compileProvider;
             if (lang_1.isArray(provider)) {
-                compileProvider = _this.getProvidersMetadata(provider, targetPrecompileComponents);
+                compileProvider = _this.getProvidersMetadata(provider, targetEntryComponents);
             }
             else if (provider instanceof core_1.Provider) {
                 var tokenMeta = _this.getTokenMetadata(provider.token);
-                if (tokenMeta.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ANALYZE_FOR_PRECOMPILE))) {
-                    targetPrecompileComponents.push.apply(targetPrecompileComponents, _this.getPrecompileComponentsFromProvider(provider));
+                if (tokenMeta.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS))) {
+                    targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(provider));
                 }
                 else {
                     compileProvider = _this.getProviderMetadata(provider);
@@ -558,15 +572,15 @@ var CompileMetadataResolver = (function () {
         });
         return compileProviders;
     };
-    CompileMetadataResolver.prototype.getPrecompileComponentsFromProvider = function (provider) {
+    CompileMetadataResolver.prototype._getEntryComponentsFromProvider = function (provider) {
         var _this = this;
         var components = [];
         var collectedIdentifiers = [];
         if (provider.useFactory || provider.useExisting || provider.useClass) {
-            throw new exceptions_1.BaseException("The ANALYZE_FOR_PRECOMPILE token only supports useValue!");
+            throw new exceptions_1.BaseException("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!");
         }
         if (!provider.multi) {
-            throw new exceptions_1.BaseException("The ANALYZE_FOR_PRECOMPILE token only supports 'multi = true'!");
+            throw new exceptions_1.BaseException("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
         }
         convertToCompileValue(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach(function (identifier) {

@@ -86,8 +86,8 @@ var TemplateParser = (function () {
         this._console = _console;
         this.transforms = transforms;
     }
-    TemplateParser.prototype.parse = function (component, template, directives, pipes, templateUrl) {
-        var result = this.tryParse(component, template, directives, pipes, templateUrl);
+    TemplateParser.prototype.parse = function (component, template, directives, pipes, schemas, templateUrl) {
+        var result = this.tryParse(component, template, directives, pipes, schemas, templateUrl);
         var warnings = result.errors.filter(function (error) { return error.level === parse_util_1.ParseErrorLevel.WARNING; });
         var errors = result.errors.filter(function (error) { return error.level === parse_util_1.ParseErrorLevel.FATAL; });
         if (warnings.length > 0) {
@@ -99,7 +99,7 @@ var TemplateParser = (function () {
         }
         return result.templateAst;
     };
-    TemplateParser.prototype.tryParse = function (component, template, directives, pipes, templateUrl) {
+    TemplateParser.prototype.tryParse = function (component, template, directives, pipes, schemas, templateUrl) {
         var interpolationConfig;
         if (component.template) {
             interpolationConfig = interpolation_config_1.InterpolationConfig.fromArray(component.template.interpolation);
@@ -117,7 +117,7 @@ var TemplateParser = (function () {
             var uniqDirectives = compile_metadata_1.removeIdentifierDuplicates(directives);
             var uniqPipes = compile_metadata_1.removeIdentifierDuplicates(pipes);
             var providerViewContext = new provider_analyzer_1.ProviderViewContext(component, htmlAstWithErrors.rootNodes[0].sourceSpan);
-            var parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, uniqPipes, this._exprParser, this._schemaRegistry);
+            var parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, uniqPipes, schemas, this._exprParser, this._schemaRegistry);
             result = html_ast_1.htmlVisitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
             errors.push.apply(errors, parseVisitor.errors.concat(providerViewContext.errors));
         }
@@ -164,9 +164,10 @@ var TemplateParser = (function () {
 }());
 exports.TemplateParser = TemplateParser;
 var TemplateParseVisitor = (function () {
-    function TemplateParseVisitor(providerViewContext, directives, pipes, _exprParser, _schemaRegistry) {
+    function TemplateParseVisitor(providerViewContext, directives, pipes, _schemas, _exprParser, _schemaRegistry) {
         var _this = this;
         this.providerViewContext = providerViewContext;
+        this._schemas = _schemas;
         this._exprParser = _exprParser;
         this._schemaRegistry = _schemaRegistry;
         this.errors = [];
@@ -657,8 +658,13 @@ var TemplateParseVisitor = (function () {
                 boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);
                 securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
                 bindingType = template_ast_1.PropertyBindingType.Property;
-                if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName)) {
-                    this._reportError("Can't bind to '" + boundPropertyName + "' since it isn't a known native property", sourceSpan);
+                if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName, this._schemas)) {
+                    var errorMsg = "Can't bind to '" + boundPropertyName + "' since it isn't a known native property";
+                    if (elementName.indexOf('-') !== -1) {
+                        errorMsg +=
+                            ". To ignore this error on custom elements, add the \"CUSTOM_ELEMENTS_SCHEMA\" to the NgModule of this component";
+                    }
+                    this._reportError(errorMsg, sourceSpan);
                 }
             }
         }

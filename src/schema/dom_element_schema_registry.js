@@ -266,14 +266,15 @@ var DomElementSchemaRegistry = (function (_super) {
             });
         });
     }
-    DomElementSchemaRegistry.prototype.hasProperty = function (tagName, propName) {
+    DomElementSchemaRegistry.prototype.hasProperty = function (tagName, propName, schemaMetas) {
+        var hasCustomElementSchema = schemaMetas.some(function (schema) { return schema.name === core_1.CUSTOM_ELEMENTS_SCHEMA.name; });
         if (tagName.indexOf('-') !== -1) {
             if (tagName === 'ng-container' || tagName === 'ng-content') {
                 return false;
             }
             // Can't tell now as we don't know which properties a custom element will get
             // once it is instantiated
-            return true;
+            return hasCustomElementSchema;
         }
         else {
             var elementProperties = this.schema[tagName.toLowerCase()];

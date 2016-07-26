@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Injectable, SecurityContext } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, Injectable, SecurityContext } from '@angular/core';
 import { StringMapWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import { SECURITY_SCHEMA } from './dom_security_schema';
@@ -258,14 +258,15 @@ export class DomElementSchemaRegistry extends ElementSchemaRegistry {
             });
         });
     }
-    hasProperty(tagName, propName) {
+    hasProperty(tagName, propName, schemaMetas) {
+        const hasCustomElementSchema = schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name);
         if (tagName.indexOf('-') !== -1) {
             if (tagName === 'ng-container' || tagName === 'ng-content') {
                 return false;
             }
             // Can't tell now as we don't know which properties a custom element will get
             // once it is instantiated
-            return true;
+            return hasCustomElementSchema;
         }
         else {
             var elementProperties = this.schema[tagName.toLowerCase()];

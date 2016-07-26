@@ -76,7 +76,7 @@ export class OfflineCompiler {
                 });
                 // compile components
                 exportedVars.push(this._compileComponentFactory(compMeta, fileSuffix, statements));
-                exportedVars.push(this._compileComponent(compMeta, dirMetas, ngModule.transitiveModule.pipes, stylesCompileResults.componentStylesheet, fileSuffix, statements));
+                exportedVars.push(this._compileComponent(compMeta, dirMetas, ngModule.transitiveModule.pipes, ngModule.schemas, stylesCompileResults.componentStylesheet, fileSuffix, statements));
             });
         }))
             .then(() => {
@@ -98,7 +98,7 @@ export class OfflineCompiler {
     }
     _compileComponentFactory(compMeta, fileSuffix, targetStatements) {
         var hostMeta = createHostComponentMeta(compMeta);
-        var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], null, fileSuffix, targetStatements);
+        var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], [], null, fileSuffix, targetStatements);
         var compFactoryVar = _componentFactoryName(compMeta.type);
         targetStatements.push(o.variable(compFactoryVar)
             .set(o.importExpr(Identifiers.ComponentFactory, [o.importType(compMeta.type)])
@@ -109,8 +109,8 @@ export class OfflineCompiler {
             .toDeclStmt(null, [o.StmtModifier.Final]));
         return compFactoryVar;
     }
-    _compileComponent(compMeta, directives, pipes, componentStyles, fileSuffix, targetStatements) {
-        var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, compMeta.type.name);
+    _compileComponent(compMeta, directives, pipes, schemas, componentStyles, fileSuffix, targetStatements) {
+        var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, schemas, compMeta.type.name);
         var stylesExpr = componentStyles ? o.variable(componentStyles.stylesVar) : o.literalArr([]);
         var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, pipes);
         if (componentStyles) {

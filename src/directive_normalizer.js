@@ -239,7 +239,7 @@ function _cloneDirectiveWithTemplate(directive, template) {
         viewProviders: directive.viewProviders,
         queries: directive.queries,
         viewQueries: directive.viewQueries,
-        precompile: directive.precompile,
+        entryComponents: directive.entryComponents,
         template: template
     });
 }

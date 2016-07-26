@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+import { SchemaMetadata } from '@angular/core';
 import { Console } from '../core_private';
 import { RecursiveAstVisitor, BindingPipe } from './expression_parser/ast';
 import { Parser } from './expression_parser/parser';
@@ -29,8 +37,8 @@ export declare class TemplateParser {
     private _console;
     transforms: TemplateAstVisitor[];
     constructor(_exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
-    parse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[], templateUrl: string): TemplateAst[];
-    tryParse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[], templateUrl: string): TemplateParseResult;
+    parse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[], schemas: SchemaMetadata[], templateUrl: string): TemplateAst[];
+    tryParse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[], schemas: SchemaMetadata[], templateUrl: string): TemplateParseResult;
 }
 export declare function splitClasses(classAttrValue: string): string[];
 export declare class PipeCollector extends RecursiveAstVisitor {

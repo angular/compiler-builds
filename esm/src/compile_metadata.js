@@ -276,7 +276,7 @@ export class CompileTemplateMetadata {
  * Metadata regarding compilation of a directive.
  */
 export class CompileDirectiveMetadata {
-    constructor({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, precompile, template } = {}) {
+    constructor({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, template } = {}) {
         this.type = type;
         this.isComponent = isComponent;
         this.selector = selector;
@@ -292,10 +292,10 @@ export class CompileDirectiveMetadata {
         this.viewProviders = _normalizeArray(viewProviders);
         this.queries = _normalizeArray(queries);
         this.viewQueries = _normalizeArray(viewQueries);
-        this.precompile = _normalizeArray(precompile);
+        this.entryComponents = _normalizeArray(entryComponents);
         this.template = template;
     }
-    static create({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, precompile, template } = {}) {
+    static create({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, template } = {}) {
         var hostListeners = {};
         var hostProperties = {};
         var hostAttributes = {};
@@ -344,7 +344,7 @@ export class CompileDirectiveMetadata {
             viewProviders,
             queries,
             viewQueries,
-            precompile,
+            entryComponents,
             template,
         });
     }
@@ -406,16 +406,17 @@ export class CompilePipeMetadata {
  * Metadata regarding compilation of a directive.
  */
 export class CompileNgModuleMetadata {
-    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, precompile, importedModules, exportedModules, transitiveModule } = {}) {
+    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, importedModules, exportedModules, schemas, transitiveModule } = {}) {
         this.type = type;
         this.declaredDirectives = _normalizeArray(declaredDirectives);
         this.exportedDirectives = _normalizeArray(exportedDirectives);
         this.declaredPipes = _normalizeArray(declaredPipes);
         this.exportedPipes = _normalizeArray(exportedPipes);
         this.providers = _normalizeArray(providers);
-        this.precompile = _normalizeArray(precompile);
+        this.entryComponents = _normalizeArray(entryComponents);
         this.importedModules = _normalizeArray(importedModules);
         this.exportedModules = _normalizeArray(exportedModules);
+        this.schemas = _normalizeArray(schemas);
         this.transitiveModule = transitiveModule;
     }
     get identifier() { return this.type; }
@@ -426,10 +427,10 @@ export class CompileNgModuleMetadata {
     }
 }
 export class TransitiveCompileNgModuleMetadata {
-    constructor(modules, providers, precompile, directives, pipes) {
+    constructor(modules, providers, entryComponents, directives, pipes) {
         this.modules = modules;
         this.providers = providers;
-        this.precompile = precompile;
+        this.entryComponents = entryComponents;
         this.directives = directives;
         this.pipes = pipes;
         this.directivesSet = new Set();

@@ -24,7 +24,7 @@ var ng_module_resolver_mock_2 = require('./testing/ng_module_resolver_mock');
  *
  * @experimental
  */
-exports.coreDynamicTestingPlatform = core_1.createPlatformFactory(index_1.coreDynamicPlatform, 'coreDynamicTesting', [{
+exports.platformCoreDynamicTesting = core_1.createPlatformFactory(index_1.platformCoreDynamic, 'coreDynamicTesting', [{
         provide: core_1.CompilerOptions,
         useValue: {
             providers: [
