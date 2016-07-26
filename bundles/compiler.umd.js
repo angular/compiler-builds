@@ -15766,22 +15766,21 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
         }
         DomElementSchemaRegistry.prototype.hasProperty = function (tagName, propName, schemaMetas) {
-            var hasCustomElementSchema = schemaMetas.some(function (schema) { return schema.name === _angular_core.CUSTOM_ELEMENTS_SCHEMA.name; });
             if (tagName.indexOf('-') !== -1) {
                 if (tagName === 'ng-container' || tagName === 'ng-content') {
                     return false;
                 }
-                // Can't tell now as we don't know which properties a custom element will get
-                // once it is instantiated
-                return hasCustomElementSchema;
-            }
-            else {
-                var elementProperties = this.schema[tagName.toLowerCase()];
-                if (!isPresent(elementProperties)) {
-                    elementProperties = this.schema['unknown'];
+                if (schemaMetas.some(function (schema) { return schema.name === _angular_core.CUSTOM_ELEMENTS_SCHEMA.name; })) {
+                    // Can't tell now as we don't know which properties a custom element will get
+                    // once it is instantiated
+                    return true;
                 }
-                return isPresent(elementProperties[propName]);
             }
+            var elementProperties = this.schema[tagName.toLowerCase()];
+            if (!isPresent(elementProperties)) {
+                elementProperties = this.schema['unknown'];
+            }
+            return isPresent(elementProperties[propName]);
         };
         /**
          * securityContext returns the security context for the given property on the given DOM tag.
