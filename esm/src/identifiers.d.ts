@@ -15,8 +15,8 @@ export declare class Identifiers {
     static CodegenComponentFactoryResolver: CompileIdentifierMetadata;
     static ComponentFactoryResolver: CompileIdentifierMetadata;
     static ComponentFactory: CompileIdentifierMetadata;
-    static AppModuleFactory: CompileIdentifierMetadata;
-    static AppModuleInjector: CompileIdentifierMetadata;
+    static NgModuleFactory: CompileIdentifierMetadata;
+    static NgModuleInjector: CompileIdentifierMetadata;
     static ValueUnwrapper: CompileIdentifierMetadata;
     static Injector: CompileIdentifierMetadata;
     static ViewEncapsulation: CompileIdentifierMetadata;

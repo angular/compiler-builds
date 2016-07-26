@@ -8,7 +8,7 @@
 import { ListWrapper } from '../src/facade/collection';
 import { BaseException } from '../src/facade/exceptions';
 import { isArray, isBlank, isPresent, normalizeBlank } from '../src/facade/lang';
-import { CompileDiDependencyMetadata, CompileProviderMetadata, CompileTokenMap, CompileTokenMetadata, CompileTypeMetadata } from './compile_metadata';
+import { CompileDiDependencyMetadata, CompileIdentifierMap, CompileProviderMetadata, CompileTokenMetadata, CompileTypeMetadata } from './compile_metadata';
 import { Identifiers, identifierToken } from './identifiers';
 import { ParseError } from './parse_util';
 import { ProviderAst, ProviderAstType } from './template_ast';
@@ -23,7 +23,7 @@ export class ProviderViewContext {
         this.sourceSpan = sourceSpan;
         this.errors = [];
         this.viewQueries = _getViewQueries(component);
-        this.viewProviders = new CompileTokenMap();
+        this.viewProviders = new CompileIdentifierMap();
         _normalizeProviders(component.viewProviders, sourceSpan, this.errors).forEach((provider) => {
             if (isBlank(this.viewProviders.get(provider.token))) {
                 this.viewProviders.add(provider.token, true);
@@ -38,8 +38,8 @@ export class ProviderElementContext {
         this._isViewRoot = _isViewRoot;
         this._directiveAsts = _directiveAsts;
         this._sourceSpan = _sourceSpan;
-        this._transformedProviders = new CompileTokenMap();
-        this._seenProviders = new CompileTokenMap();
+        this._transformedProviders = new CompileIdentifierMap();
+        this._seenProviders = new CompileIdentifierMap();
         this._hasViewContainer = false;
         this._attrs = {};
         attrs.forEach((attrAst) => this._attrs[attrAst.name] = attrAst.value);
@@ -47,7 +47,7 @@ export class ProviderElementContext {
         this._allProviders =
             _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, _viewContext.errors);
         this._contentQueries = _getContentQueries(directivesMeta);
-        var queriedTokens = new CompileTokenMap();
+        var queriedTokens = new CompileIdentifierMap();
         this._allProviders.values().forEach((provider) => { this._addQueryReadsTo(provider.token, queriedTokens); });
         refs.forEach((refAst) => {
             this._addQueryReadsTo(new CompileTokenMetadata({ value: refAst.name }), queriedTokens);
@@ -237,18 +237,19 @@ export class ProviderElementContext {
         return result;
     }
 }
-export class AppModuleProviderParser {
-    constructor(appModule, sourceSpan) {
-        this._transformedProviders = new CompileTokenMap();
-        this._seenProviders = new CompileTokenMap();
+export class NgModuleProviderAnalyzer {
+    constructor(ngModule, extraProviders, sourceSpan) {
+        this._transformedProviders = new CompileIdentifierMap();
+        this._seenProviders = new CompileIdentifierMap();
         this._unparsedProviders = [];
         this._errors = [];
-        this._allProviders = new CompileTokenMap();
-        [appModule.type].concat(appModule.modules).forEach((appModuleType) => {
-            const appModuleProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: appModuleType }), useClass: appModuleType });
-            _resolveProviders([appModuleProvider], ProviderAstType.PublicService, true, sourceSpan, this._errors, this._allProviders);
+        this._allProviders = new CompileIdentifierMap();
+        const ngModuleTypes = ngModule.transitiveModule.modules.map((moduleMeta) => moduleMeta.type);
+        ngModuleTypes.forEach((ngModuleType) => {
+            const ngModuleProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: ngModuleType }), useClass: ngModuleType });
+            _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, this._errors, this._allProviders);
         });
-        _resolveProviders(_normalizeProviders(appModule.providers, sourceSpan, this._errors), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
+        _resolveProviders(_normalizeProviders(ngModule.transitiveModule.providers.concat(extraProviders), sourceSpan, this._errors), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
     }
     parse() {
         this._allProviders.values().forEach((provider) => { this._getOrCreateLocalProvider(provider.token, provider.eager); });
@@ -374,7 +375,7 @@ function _normalizeProviders(providers, sourceSpan, targetErrors, targetProvider
     return targetProviders;
 }
 function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
-    var providersByToken = new CompileTokenMap();
+    var providersByToken = new CompileIdentifierMap();
     directives.forEach((directive) => {
         var dirProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: directive.type }), useClass: directive.type });
         _resolveProviders([dirProvider], directive.isComponent ? ProviderAstType.Component : ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken);
@@ -406,7 +407,7 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
     });
 }
 function _getViewQueries(component) {
-    var viewQueries = new CompileTokenMap();
+    var viewQueries = new CompileIdentifierMap();
     if (isPresent(component.viewQueries)) {
         component.viewQueries.forEach((query) => _addQueryToTokenMap(viewQueries, query));
     }
@@ -418,7 +419,7 @@ function _getViewQueries(component) {
     return viewQueries;
 }
 function _getContentQueries(directives) {
-    var contentQueries = new CompileTokenMap();
+    var contentQueries = new CompileIdentifierMap();
     directives.forEach(directive => {
         if (isPresent(directive.queries)) {
             directive.queries.forEach((query) => _addQueryToTokenMap(contentQueries, query));
@@ -441,4 +442,4 @@ function _addQueryToTokenMap(map, query) {
         entry.push(query);
     });
 }
-//# sourceMappingURL=provider_parser.js.map
+//# sourceMappingURL=provider_analyzer.js.map

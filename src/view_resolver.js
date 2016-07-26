@@ -18,7 +18,8 @@ var ViewResolver = (function () {
         if (_reflector === void 0) { _reflector = core_private_1.reflector; }
         this._reflector = _reflector;
     }
-    ViewResolver.prototype.resolve = function (component) {
+    ViewResolver.prototype.resolve = function (component, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         var compMeta = this._reflector.annotations(component).find(_isComponentMetadata);
         if (lang_1.isPresent(compMeta)) {
             if (lang_1.isBlank(compMeta.template) && lang_1.isBlank(compMeta.templateUrl)) {
@@ -39,7 +40,10 @@ var ViewResolver = (function () {
             }
         }
         else {
-            throw new exceptions_1.BaseException("Could not compile '" + lang_1.stringify(component) + "' because it is not a component.");
+            if (throwIfNotFound) {
+                throw new exceptions_1.BaseException("Could not compile '" + lang_1.stringify(component) + "' because it is not a component.");
+            }
+            return null;
         }
     };
     /** @nocollapse */

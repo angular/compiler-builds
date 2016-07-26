@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as app_module_compiler from './src/app_module_compiler';
 import * as directive_normalizer from './src/directive_normalizer';
 import * as lexer from './src/expression_parser/lexer';
 import * as parser from './src/expression_parser/parser';
@@ -15,6 +14,7 @@ import * as i18n_message from './src/i18n/message';
 import * as i18n_extractor from './src/i18n/message_extractor';
 import * as xmb_serializer from './src/i18n/xmb_serializer';
 import * as metadata_resolver from './src/metadata_resolver';
+import * as ng_module_compiler from './src/ng_module_compiler';
 import * as path_util from './src/output/path_util';
 import * as ts_emitter from './src/output/ts_emitter';
 import * as parse_util from './src/parse_util';
@@ -72,8 +72,8 @@ export declare namespace __compiler_private__ {
     var StyleCompiler: typeof style_compiler.StyleCompiler;
     type ViewCompiler = view_compiler.ViewCompiler;
     var ViewCompiler: typeof view_compiler.ViewCompiler;
-    type AppModuleCompiler = app_module_compiler.AppModuleCompiler;
-    var AppModuleCompiler: typeof app_module_compiler.AppModuleCompiler;
+    type NgModuleCompiler = ng_module_compiler.NgModuleCompiler;
+    var NgModuleCompiler: typeof ng_module_compiler.NgModuleCompiler;
     type TypeScriptEmitter = ts_emitter.TypeScriptEmitter;
     var TypeScriptEmitter: typeof ts_emitter.TypeScriptEmitter;
 }

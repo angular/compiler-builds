@@ -13,7 +13,7 @@ var identifiers_1 = require('./identifiers');
 var o = require('./output/output_ast');
 var value_util_1 = require('./output/value_util');
 var parse_util_1 = require('./parse_util');
-var provider_parser_1 = require('./provider_parser');
+var provider_analyzer_1 = require('./provider_analyzer');
 var util_1 = require('./util');
 var ComponentFactoryDependency = (function () {
     function ComponentFactoryDependency(comp, placeholder) {
@@ -23,54 +23,54 @@ var ComponentFactoryDependency = (function () {
     return ComponentFactoryDependency;
 }());
 exports.ComponentFactoryDependency = ComponentFactoryDependency;
-var AppModuleCompileResult = (function () {
-    function AppModuleCompileResult(statements, appModuleFactoryVar, dependencies) {
+var NgModuleCompileResult = (function () {
+    function NgModuleCompileResult(statements, ngModuleFactoryVar, dependencies) {
         this.statements = statements;
-        this.appModuleFactoryVar = appModuleFactoryVar;
+        this.ngModuleFactoryVar = ngModuleFactoryVar;
         this.dependencies = dependencies;
     }
-    return AppModuleCompileResult;
+    return NgModuleCompileResult;
 }());
-exports.AppModuleCompileResult = AppModuleCompileResult;
-var AppModuleCompiler = (function () {
-    function AppModuleCompiler() {
+exports.NgModuleCompileResult = NgModuleCompileResult;
+var NgModuleCompiler = (function () {
+    function NgModuleCompiler() {
     }
-    AppModuleCompiler.prototype.compile = function (appModuleMeta) {
-        var sourceFileName = lang_1.isPresent(appModuleMeta.type.moduleUrl) ?
-            "in AppModule " + appModuleMeta.type.name + " in " + appModuleMeta.type.moduleUrl :
-            "in AppModule " + appModuleMeta.type.name;
+    NgModuleCompiler.prototype.compile = function (ngModuleMeta, extraProviders) {
+        var sourceFileName = lang_1.isPresent(ngModuleMeta.type.moduleUrl) ?
+            "in NgModule " + ngModuleMeta.type.name + " in " + ngModuleMeta.type.moduleUrl :
+            "in NgModule " + ngModuleMeta.type.name;
         var sourceFile = new parse_util_1.ParseSourceFile('', sourceFileName);
         var sourceSpan = new parse_util_1.ParseSourceSpan(new parse_util_1.ParseLocation(sourceFile, null, null, null), new parse_util_1.ParseLocation(sourceFile, null, null, null));
         var deps = [];
-        var precompileComponents = appModuleMeta.precompile.map(function (precompileComp) {
+        var precompileComponents = ngModuleMeta.transitiveModule.precompile.map(function (precompileComp) {
             var id = new compile_metadata_1.CompileIdentifierMetadata({ name: precompileComp.name });
             deps.push(new ComponentFactoryDependency(precompileComp, id));
             return id;
         });
-        var builder = new _InjectorBuilder(appModuleMeta, precompileComponents, sourceSpan);
-        var providerParser = new provider_parser_1.AppModuleProviderParser(appModuleMeta, sourceSpan);
+        var builder = new _InjectorBuilder(ngModuleMeta, precompileComponents, sourceSpan);
+        var providerParser = new provider_analyzer_1.NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
         providerParser.parse().forEach(function (provider) { return builder.addProvider(provider); });
         var injectorClass = builder.build();
-        var appModuleFactoryVar = appModuleMeta.type.name + "NgFactory";
-        var appModuleFactoryStmt = o.variable(appModuleFactoryVar)
-            .set(o.importExpr(identifiers_1.Identifiers.AppModuleFactory)
-            .instantiate([o.variable(injectorClass.name), o.importExpr(appModuleMeta.type)], o.importType(identifiers_1.Identifiers.AppModuleFactory, [o.importType(appModuleMeta.type)], [o.TypeModifier.Const])))
+        var ngModuleFactoryVar = ngModuleMeta.type.name + "NgFactory";
+        var ngModuleFactoryStmt = o.variable(ngModuleFactoryVar)
+            .set(o.importExpr(identifiers_1.Identifiers.NgModuleFactory)
+            .instantiate([o.variable(injectorClass.name), o.importExpr(ngModuleMeta.type)], o.importType(identifiers_1.Identifiers.NgModuleFactory, [o.importType(ngModuleMeta.type)], [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]);
-        return new AppModuleCompileResult([injectorClass, appModuleFactoryStmt], appModuleFactoryVar, deps);
+        return new NgModuleCompileResult([injectorClass, ngModuleFactoryStmt], ngModuleFactoryVar, deps);
     };
     /** @nocollapse */
-    AppModuleCompiler.decorators = [
+    NgModuleCompiler.decorators = [
         { type: core_1.Injectable },
     ];
-    return AppModuleCompiler;
+    return NgModuleCompiler;
 }());
-exports.AppModuleCompiler = AppModuleCompiler;
+exports.NgModuleCompiler = NgModuleCompiler;
 var _InjectorBuilder = (function () {
-    function _InjectorBuilder(_appModuleMeta, _precompileComponents, _sourceSpan) {
-        this._appModuleMeta = _appModuleMeta;
+    function _InjectorBuilder(_ngModuleMeta, _precompileComponents, _sourceSpan) {
+        this._ngModuleMeta = _ngModuleMeta;
         this._precompileComponents = _precompileComponents;
         this._sourceSpan = _sourceSpan;
-        this._instances = new compile_metadata_1.CompileTokenMap();
+        this._instances = new compile_metadata_1.CompileIdentifierMap();
         this._fields = [];
         this._createStmts = [];
         this._getters = [];
@@ -89,7 +89,7 @@ var _InjectorBuilder = (function () {
             return new o.IfStmt(InjectMethodVars.token.identical(util_1.createDiTokenExpression(token)), [new o.ReturnStatement(providerExpr)]);
         });
         var methods = [
-            new o.ClassMethod('createInternal', [], this._createStmts.concat(new o.ReturnStatement(this._instances.get(identifiers_1.identifierToken(this._appModuleMeta.type)))), o.importType(this._appModuleMeta.type)),
+            new o.ClassMethod('createInternal', [], this._createStmts.concat(new o.ReturnStatement(this._instances.get(identifiers_1.identifierToken(this._ngModuleMeta.type)))), o.importType(this._ngModuleMeta.type)),
             new o.ClassMethod('getInternal', [
                 new o.FnParam(InjectMethodVars.token.name, o.DYNAMIC_TYPE),
                 new o.FnParam(InjectMethodVars.notFoundResult.name, o.DYNAMIC_TYPE)
@@ -101,8 +101,8 @@ var _InjectorBuilder = (function () {
                 o.literalArr(this._precompileComponents.map(function (precompiledComponent) { return o.importExpr(precompiledComponent); }))
             ])
                 .toStmt()]);
-        var injClassName = this._appModuleMeta.type.name + "Injector";
-        return new o.ClassStmt(injClassName, o.importExpr(identifiers_1.Identifiers.AppModuleInjector, [o.importType(this._appModuleMeta.type)]), this._fields, this._getters, ctor, methods);
+        var injClassName = this._ngModuleMeta.type.name + "Injector";
+        return new o.ClassStmt(injClassName, o.importExpr(identifiers_1.Identifiers.NgModuleInjector, [o.importType(this._ngModuleMeta.type)]), this._fields, this._getters, ctor, methods);
     };
     _InjectorBuilder.prototype._getProviderValue = function (provider) {
         var _this = this;
@@ -195,4 +195,4 @@ var InjectMethodVars = (function () {
     InjectMethodVars.notFoundResult = o.variable('notFoundResult');
     return InjectMethodVars;
 }());
-//# sourceMappingURL=app_module_compiler.js.map
+//# sourceMappingURL=ng_module_compiler.js.map

@@ -15,8 +15,8 @@ export class CompilerConfig {
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
-        this.deprecatedPlatformDirectives = deprecatedPlatformDirectives;
-        this.deprecatedPlatformPipes = deprecatedPlatformPipes;
+        this.platformDirectives = deprecatedPlatformDirectives;
+        this.platformPipes = deprecatedPlatformPipes;
     }
     get genDebugInfo() {
         return this._genDebugInfo === void 0 ? isDevMode() : this._genDebugInfo;

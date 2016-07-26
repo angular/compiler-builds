@@ -18,6 +18,7 @@ var lang_1 = require('../src/facade/lang');
 var exceptions_1 = require('../src/facade/exceptions');
 var ast_1 = require('./expression_parser/ast');
 var parser_1 = require('./expression_parser/parser');
+var compile_metadata_1 = require('./compile_metadata');
 var html_parser_1 = require('./html_parser');
 var html_tags_1 = require('./html_tags');
 var parse_util_1 = require('./parse_util');
@@ -31,7 +32,7 @@ var html_ast_1 = require('./html_ast');
 var util_1 = require('./util');
 var identifiers_1 = require('./identifiers');
 var expander_1 = require('./expander');
-var provider_parser_1 = require('./provider_parser');
+var provider_analyzer_1 = require('./provider_analyzer');
 // Group 1 = "bind-"
 // Group 2 = "var-"
 // Group 3 = "let-"
@@ -113,9 +114,9 @@ var TemplateParser = (function () {
             htmlAstWithErrors = new html_parser_1.HtmlParseTreeResult(expandedHtmlAst.nodes, errors);
         }
         if (htmlAstWithErrors.rootNodes.length > 0) {
-            var uniqDirectives = removeDuplicates(directives);
-            var uniqPipes = removeDuplicates(pipes);
-            var providerViewContext = new provider_parser_1.ProviderViewContext(component, htmlAstWithErrors.rootNodes[0].sourceSpan);
+            var uniqDirectives = compile_metadata_1.removeIdentifierDuplicates(directives);
+            var uniqPipes = compile_metadata_1.removeIdentifierDuplicates(pipes);
+            var providerViewContext = new provider_analyzer_1.ProviderViewContext(component, htmlAstWithErrors.rootNodes[0].sourceSpan);
             var parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, uniqPipes, this._exprParser, this._schemaRegistry);
             result = html_ast_1.htmlVisitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
             errors.push.apply(errors, parseVisitor.errors.concat(providerViewContext.errors));
@@ -173,7 +174,6 @@ var TemplateParseVisitor = (function () {
         this.ngContentCount = 0;
         this.selectorMatcher = new selector_1.SelectorMatcher();
         var tempMeta = providerViewContext.component.template;
-        // TODO
         if (lang_1.isPresent(tempMeta) && lang_1.isPresent(tempMeta.interpolation)) {
             this._interpolationConfig = {
                 start: tempMeta.interpolation[0],
@@ -343,7 +343,7 @@ var TemplateParseVisitor = (function () {
         var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts)
             .concat(animationProps);
         var isViewRoot = parent.isTemplateElement || hasInlineTemplates;
-        var providerContext = new provider_parser_1.ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
+        var providerContext = new provider_analyzer_1.ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
         var children = html_ast_1.htmlVisitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
         providerContext.afterElement();
         // Override the actual selector when the `ngProjectAs` attribute is provided
@@ -374,7 +374,7 @@ var TemplateParseVisitor = (function () {
             var templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, []);
             var templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateDirectiveAsts);
             this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, element.sourceSpan);
-            var templateProviderContext = new provider_parser_1.ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], element.sourceSpan);
+            var templateProviderContext = new provider_analyzer_1.ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], element.sourceSpan);
             templateProviderContext.afterElement();
             parsedElement = new template_ast_1.EmbeddedTemplateAst([], [], [], templateElementVars, templateProviderContext.transformedDirectiveAsts, templateProviderContext.transformProviders, templateProviderContext.transformedHasViewContainer, [parsedElement], ngContentIndex, element.sourceSpan);
         }
@@ -861,16 +861,4 @@ var PipeCollector = (function (_super) {
     return PipeCollector;
 }(ast_1.RecursiveAstVisitor));
 exports.PipeCollector = PipeCollector;
-function removeDuplicates(items) {
-    var res = [];
-    items.forEach(function (item) {
-        var hasMatch = res.filter(function (r) { return r.type.name == item.type.name && r.type.moduleUrl == item.type.moduleUrl &&
-            r.type.runtime == item.type.runtime; })
-            .length > 0;
-        if (!hasMatch) {
-            res.push(item);
-        }
-    });
-    return res;
-}
 //# sourceMappingURL=template_parser.js.map

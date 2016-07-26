@@ -16,7 +16,7 @@ export class ViewResolver {
     constructor(_reflector = reflector) {
         this._reflector = _reflector;
     }
-    resolve(component) {
+    resolve(component, throwIfNotFound = true) {
         const compMeta = this._reflector.annotations(component).find(_isComponentMetadata);
         if (isPresent(compMeta)) {
             if (isBlank(compMeta.template) && isBlank(compMeta.templateUrl)) {
@@ -37,7 +37,10 @@ export class ViewResolver {
             }
         }
         else {
-            throw new BaseException(`Could not compile '${stringify(component)}' because it is not a component.`);
+            if (throwIfNotFound) {
+                throw new BaseException(`Could not compile '${stringify(component)}' because it is not a component.`);
+            }
+            return null;
         }
     }
 }

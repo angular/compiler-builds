@@ -33,7 +33,7 @@ var ProviderViewContext = (function () {
         this.sourceSpan = sourceSpan;
         this.errors = [];
         this.viewQueries = _getViewQueries(component);
-        this.viewProviders = new compile_metadata_1.CompileTokenMap();
+        this.viewProviders = new compile_metadata_1.CompileIdentifierMap();
         _normalizeProviders(component.viewProviders, sourceSpan, this.errors).forEach(function (provider) {
             if (lang_1.isBlank(_this.viewProviders.get(provider.token))) {
                 _this.viewProviders.add(provider.token, true);
@@ -51,8 +51,8 @@ var ProviderElementContext = (function () {
         this._isViewRoot = _isViewRoot;
         this._directiveAsts = _directiveAsts;
         this._sourceSpan = _sourceSpan;
-        this._transformedProviders = new compile_metadata_1.CompileTokenMap();
-        this._seenProviders = new compile_metadata_1.CompileTokenMap();
+        this._transformedProviders = new compile_metadata_1.CompileIdentifierMap();
+        this._seenProviders = new compile_metadata_1.CompileIdentifierMap();
         this._hasViewContainer = false;
         this._attrs = {};
         attrs.forEach(function (attrAst) { return _this._attrs[attrAst.name] = attrAst.value; });
@@ -60,7 +60,7 @@ var ProviderElementContext = (function () {
         this._allProviders =
             _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, _viewContext.errors);
         this._contentQueries = _getContentQueries(directivesMeta);
-        var queriedTokens = new compile_metadata_1.CompileTokenMap();
+        var queriedTokens = new compile_metadata_1.CompileIdentifierMap();
         this._allProviders.values().forEach(function (provider) { _this._addQueryReadsTo(provider.token, queriedTokens); });
         refs.forEach(function (refAst) {
             _this._addQueryReadsTo(new compile_metadata_1.CompileTokenMetadata({ value: refAst.name }), queriedTokens);
@@ -268,21 +268,22 @@ var ProviderElementContext = (function () {
     return ProviderElementContext;
 }());
 exports.ProviderElementContext = ProviderElementContext;
-var AppModuleProviderParser = (function () {
-    function AppModuleProviderParser(appModule, sourceSpan) {
+var NgModuleProviderAnalyzer = (function () {
+    function NgModuleProviderAnalyzer(ngModule, extraProviders, sourceSpan) {
         var _this = this;
-        this._transformedProviders = new compile_metadata_1.CompileTokenMap();
-        this._seenProviders = new compile_metadata_1.CompileTokenMap();
+        this._transformedProviders = new compile_metadata_1.CompileIdentifierMap();
+        this._seenProviders = new compile_metadata_1.CompileIdentifierMap();
         this._unparsedProviders = [];
         this._errors = [];
-        this._allProviders = new compile_metadata_1.CompileTokenMap();
-        [appModule.type].concat(appModule.modules).forEach(function (appModuleType) {
-            var appModuleProvider = new compile_metadata_1.CompileProviderMetadata({ token: new compile_metadata_1.CompileTokenMetadata({ identifier: appModuleType }), useClass: appModuleType });
-            _resolveProviders([appModuleProvider], template_ast_1.ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders);
+        this._allProviders = new compile_metadata_1.CompileIdentifierMap();
+        var ngModuleTypes = ngModule.transitiveModule.modules.map(function (moduleMeta) { return moduleMeta.type; });
+        ngModuleTypes.forEach(function (ngModuleType) {
+            var ngModuleProvider = new compile_metadata_1.CompileProviderMetadata({ token: new compile_metadata_1.CompileTokenMetadata({ identifier: ngModuleType }), useClass: ngModuleType });
+            _resolveProviders([ngModuleProvider], template_ast_1.ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders);
         });
-        _resolveProviders(_normalizeProviders(appModule.providers, sourceSpan, this._errors), template_ast_1.ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
+        _resolveProviders(_normalizeProviders(ngModule.transitiveModule.providers.concat(extraProviders), sourceSpan, this._errors), template_ast_1.ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
     }
-    AppModuleProviderParser.prototype.parse = function () {
+    NgModuleProviderAnalyzer.prototype.parse = function () {
         var _this = this;
         this._allProviders.values().forEach(function (provider) { _this._getOrCreateLocalProvider(provider.token, provider.eager); });
         if (this._errors.length > 0) {
@@ -291,7 +292,7 @@ var AppModuleProviderParser = (function () {
         }
         return this._transformedProviders.values();
     };
-    AppModuleProviderParser.prototype._getOrCreateLocalProvider = function (token, eager) {
+    NgModuleProviderAnalyzer.prototype._getOrCreateLocalProvider = function (token, eager) {
         var _this = this;
         var resolvedProvider = this._allProviders.get(token);
         if (lang_1.isBlank(resolvedProvider)) {
@@ -341,7 +342,7 @@ var AppModuleProviderParser = (function () {
         this._transformedProviders.add(token, transformedProviderAst);
         return transformedProviderAst;
     };
-    AppModuleProviderParser.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
+    NgModuleProviderAnalyzer.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
         if (eager === void 0) { eager = null; }
         var foundLocal = false;
         if (!dep.isSkipSelf && lang_1.isPresent(dep.token)) {
@@ -365,9 +366,9 @@ var AppModuleProviderParser = (function () {
         }
         return result;
     };
-    return AppModuleProviderParser;
+    return NgModuleProviderAnalyzer;
 }());
-exports.AppModuleProviderParser = AppModuleProviderParser;
+exports.NgModuleProviderAnalyzer = NgModuleProviderAnalyzer;
 function _transformProvider(provider, _a) {
     var useExisting = _a.useExisting, useValue = _a.useValue, deps = _a.deps;
     return new compile_metadata_1.CompileProviderMetadata({
@@ -414,7 +415,7 @@ function _normalizeProviders(providers, sourceSpan, targetErrors, targetProvider
     return targetProviders;
 }
 function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
-    var providersByToken = new compile_metadata_1.CompileTokenMap();
+    var providersByToken = new compile_metadata_1.CompileIdentifierMap();
     directives.forEach(function (directive) {
         var dirProvider = new compile_metadata_1.CompileProviderMetadata({ token: new compile_metadata_1.CompileTokenMetadata({ identifier: directive.type }), useClass: directive.type });
         _resolveProviders([dirProvider], directive.isComponent ? template_ast_1.ProviderAstType.Component : template_ast_1.ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken);
@@ -446,7 +447,7 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
     });
 }
 function _getViewQueries(component) {
-    var viewQueries = new compile_metadata_1.CompileTokenMap();
+    var viewQueries = new compile_metadata_1.CompileIdentifierMap();
     if (lang_1.isPresent(component.viewQueries)) {
         component.viewQueries.forEach(function (query) { return _addQueryToTokenMap(viewQueries, query); });
     }
@@ -458,7 +459,7 @@ function _getViewQueries(component) {
     return viewQueries;
 }
 function _getContentQueries(directives) {
-    var contentQueries = new compile_metadata_1.CompileTokenMap();
+    var contentQueries = new compile_metadata_1.CompileIdentifierMap();
     directives.forEach(function (directive) {
         if (lang_1.isPresent(directive.queries)) {
             directive.queries.forEach(function (query) { return _addQueryToTokenMap(contentQueries, query); });
@@ -481,4 +482,4 @@ function _addQueryToTokenMap(map, query) {
         entry.push(query);
     });
 }
-//# sourceMappingURL=provider_parser.js.map
+//# sourceMappingURL=provider_analyzer.js.map

@@ -12,7 +12,7 @@ import * as o from '../output/output_ast';
 import { convertValueToOutputAst } from '../output/value_util';
 import { ProviderAst, ProviderAstType } from '../template_ast';
 import { InjectMethodVars } from './constants';
-import { CompileTokenMap, CompileTokenMetadata, CompileProviderMetadata, CompileDiDependencyMetadata } from '../compile_metadata';
+import { CompileIdentifierMap, CompileTokenMetadata, CompileProviderMetadata, CompileDiDependencyMetadata } from '../compile_metadata';
 import { getPropertyInView, injectFromViewParentInjector } from './util';
 import { CompileQuery, createQueryList, addQueryToTokenMap } from './compile_query';
 import { CompileMethod } from './compile_method';
@@ -37,9 +37,9 @@ export class CompileElement extends CompileNode {
         this.hasViewContainer = hasViewContainer;
         this.hasEmbeddedView = hasEmbeddedView;
         this._compViewExpr = null;
-        this._instances = new CompileTokenMap();
+        this._instances = new CompileIdentifierMap();
         this._queryCount = 0;
-        this._queries = new CompileTokenMap();
+        this._queries = new CompileIdentifierMap();
         this._componentConstructorViewQueryLists = [];
         this.contentNodesByNgContentIndex = null;
         this.referenceTokens = {};
@@ -110,7 +110,7 @@ export class CompileElement extends CompileNode {
         if (this.hasViewContainer) {
             this._instances.add(identifierToken(Identifiers.ViewContainerRef), this.appElement.prop('vcRef'));
         }
-        this._resolvedProviders = new CompileTokenMap();
+        this._resolvedProviders = new CompileIdentifierMap();
         this._resolvedProvidersArray.forEach(provider => this._resolvedProviders.add(provider.token, provider));
         // create all the provider instances, some in the view constructor,
         // some as getters. We rely on the fact that they are already sorted topologically.

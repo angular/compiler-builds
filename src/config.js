@@ -17,8 +17,8 @@ var CompilerConfig = (function () {
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
-        this.deprecatedPlatformDirectives = deprecatedPlatformDirectives;
-        this.deprecatedPlatformPipes = deprecatedPlatformPipes;
+        this.platformDirectives = deprecatedPlatformDirectives;
+        this.platformPipes = deprecatedPlatformPipes;
     }
     Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
         get: function () {

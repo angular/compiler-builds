@@ -14,7 +14,7 @@ export declare class DirectiveResolver {
     /**
      * Return {@link DirectiveMetadata} for a given `Type`.
      */
-    resolve(type: Type): DirectiveMetadata;
+    resolve(type: Type, throwIfNotFound?: boolean): DirectiveMetadata;
     private _mergeWithPropertyMetadata(dm, propertyMetadata, directiveType);
     private _extractPublicName(def);
     private _merge(dm, inputs, outputs, host, queries, directiveType);

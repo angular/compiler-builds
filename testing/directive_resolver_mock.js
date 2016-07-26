@@ -28,8 +28,12 @@ var MockDirectiveResolver = (function (_super) {
         enumerable: true,
         configurable: true
     });
-    MockDirectiveResolver.prototype.resolve = function (type) {
-        var dm = _super.prototype.resolve.call(this, type);
+    MockDirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        var dm = _super.prototype.resolve.call(this, type, throwIfNotFound);
+        if (!dm) {
+            return null;
+        }
         var providerOverrides = this._providerOverrides.get(type);
         var viewProviderOverrides = this.viewProviderOverrides.get(type);
         var providers = dm.providers;

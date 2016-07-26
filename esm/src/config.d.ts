@@ -14,17 +14,15 @@ export declare class CompilerConfig {
     private _logBindingUpdate;
     useJit: boolean;
     /**
-     * @deprecated Providing platform directives via the {@link CompilerConfig} deprecated. Provide
-     * platform
-     * directives via an {@link AppModule} instead.
+     * @deprecated Providing platform directives via the {@link CompilerConfig} is deprecated. Provide
+     * platform directives via an {@link NgModule} instead.
      */
-    deprecatedPlatformDirectives: any[];
+    platformDirectives: any[];
     /**
-     * @deprecated Providing platform pipes via the {@link CompilerConfig} deprecated. Provide
-     * platform pipes
-     * via an {@link AppModule} instead.
+     * @deprecated Providing platform pipes via the {@link CompilerConfig} is deprecated. Provide
+     * platform pipes via an {@link NgModule} instead.
      */
-    deprecatedPlatformPipes: any[];
+    platformPipes: any[];
     constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, deprecatedPlatformDirectives, deprecatedPlatformPipes}?: {
         renderTypes?: RenderTypes;
         defaultEncapsulation?: ViewEncapsulation;

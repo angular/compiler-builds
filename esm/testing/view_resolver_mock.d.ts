@@ -33,5 +33,5 @@ export declare class MockViewResolver extends ViewResolver {
      * - Override the directives, see `overrideViewDirective`.
      * - Override the @View definition, see `setInlineTemplate`.
      */
-    resolve(component: Type): ViewMetadata;
+    resolve(component: Type, throwIfNotFound?: boolean): ViewMetadata;
 }

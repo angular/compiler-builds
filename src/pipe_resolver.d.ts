@@ -21,5 +21,5 @@ export declare class PipeResolver {
     /**
      * Return {@link PipeMetadata} for a given `Type`.
      */
-    resolve(type: Type): PipeMetadata;
+    resolve(type: Type, throwIfNotFound?: boolean): PipeMetadata;
 }

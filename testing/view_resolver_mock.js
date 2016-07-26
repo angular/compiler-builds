@@ -73,10 +73,14 @@ var MockViewResolver = (function (_super) {
      * - Override the directives, see `overrideViewDirective`.
      * - Override the @View definition, see `setInlineTemplate`.
      */
-    MockViewResolver.prototype.resolve = function (component) {
+    MockViewResolver.prototype.resolve = function (component, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         var view = this._views.get(component);
         if (lang_1.isBlank(view)) {
-            view = _super.prototype.resolve.call(this, component);
+            view = _super.prototype.resolve.call(this, component, throwIfNotFound);
+            if (!view) {
+                return null;
+            }
         }
         var directives = [];
         if (lang_1.isPresent(view.directives)) {

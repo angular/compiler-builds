@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var app_module_compiler = require('./src/app_module_compiler');
 var directive_normalizer = require('./src/directive_normalizer');
 var lexer = require('./src/expression_parser/lexer');
 var parser = require('./src/expression_parser/parser');
@@ -16,6 +15,7 @@ var i18n_message = require('./src/i18n/message');
 var i18n_extractor = require('./src/i18n/message_extractor');
 var xmb_serializer = require('./src/i18n/xmb_serializer');
 var metadata_resolver = require('./src/metadata_resolver');
+var ng_module_compiler = require('./src/ng_module_compiler');
 var path_util = require('./src/output/path_util');
 var ts_emitter = require('./src/output/ts_emitter');
 var parse_util = require('./src/parse_util');
@@ -51,7 +51,7 @@ var __compiler_private__;
     __compiler_private__.DomElementSchemaRegistry = dom_element_schema_registry.DomElementSchemaRegistry;
     __compiler_private__.StyleCompiler = style_compiler.StyleCompiler;
     __compiler_private__.ViewCompiler = view_compiler.ViewCompiler;
-    __compiler_private__.AppModuleCompiler = app_module_compiler.AppModuleCompiler;
+    __compiler_private__.NgModuleCompiler = ng_module_compiler.NgModuleCompiler;
     __compiler_private__.TypeScriptEmitter = ts_emitter.TypeScriptEmitter;
 })(__compiler_private__ = exports.__compiler_private__ || (exports.__compiler_private__ = {}));
 //# sourceMappingURL=private_export.js.map

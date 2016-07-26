@@ -17,8 +17,11 @@ export class MockDirectiveResolver extends DirectiveResolver {
         this.viewProviderOverrides = new Map();
     }
     get _compiler() { return this._injector.get(Compiler); }
-    resolve(type) {
-        var dm = super.resolve(type);
+    resolve(type, throwIfNotFound = true) {
+        var dm = super.resolve(type, throwIfNotFound);
+        if (!dm) {
+            return null;
+        }
         var providerOverrides = this._providerOverrides.get(type);
         var viewProviderOverrides = this.viewProviderOverrides.get(type);
         var providers = dm.providers;

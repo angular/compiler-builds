@@ -18,7 +18,7 @@ export declare class MockDirectiveResolver extends DirectiveResolver {
     private viewProviderOverrides;
     constructor(_injector: Injector);
     private readonly _compiler;
-    resolve(type: Type): DirectiveMetadata;
+    resolve(type: Type, throwIfNotFound?: boolean): DirectiveMetadata;
     setProvidersOverride(type: Type, providers: any[]): void;
     setViewProvidersOverride(type: Type, viewProviders: any[]): void;
 }

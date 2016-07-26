@@ -20,93 +20,58 @@ var SourceModule = (function () {
     return SourceModule;
 }());
 exports.SourceModule = SourceModule;
-var AppModulesSummary = (function () {
-    function AppModulesSummary() {
-        this._compAppModule = new Map();
+var NgModulesSummary = (function () {
+    function NgModulesSummary(ngModuleByComponent) {
+        this.ngModuleByComponent = ngModuleByComponent;
     }
-    AppModulesSummary.prototype._hashKey = function (type) { return type.filePath + "#" + type.name; };
-    AppModulesSummary.prototype.hasComponent = function (component) {
-        return this._compAppModule.has(this._hashKey(component));
-    };
-    AppModulesSummary.prototype.addComponent = function (module, component) {
-        this._compAppModule.set(this._hashKey(component), module);
-    };
-    AppModulesSummary.prototype.getModule = function (comp) {
-        return this._compAppModule.get(this._hashKey(comp));
-    };
-    return AppModulesSummary;
+    return NgModulesSummary;
 }());
-exports.AppModulesSummary = AppModulesSummary;
+exports.NgModulesSummary = NgModulesSummary;
 var OfflineCompiler = (function () {
-    function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _outputEmitter) {
+    function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter) {
         this._metadataResolver = _metadataResolver;
         this._directiveNormalizer = _directiveNormalizer;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
         this._viewCompiler = _viewCompiler;
-        this._appModuleCompiler = _appModuleCompiler;
+        this._ngModuleCompiler = _ngModuleCompiler;
         this._outputEmitter = _outputEmitter;
     }
-    OfflineCompiler.prototype.analyzeModules = function (appModules) {
+    OfflineCompiler.prototype.analyzeModules = function (ngModules) {
         var _this = this;
-        var result = new AppModulesSummary();
-        appModules.forEach(function (appModule) {
-            var appModuleMeta = _this._metadataResolver.getAppModuleMetadata(appModule);
-            appModuleMeta.precompile.forEach(function (precompileComp) {
-                return _this._getTransitiveComponents(appModule, precompileComp.runtime, result);
+        var ngModuleByComponent = new Map();
+        ngModules.forEach(function (ngModule) {
+            var ngModuleMeta = _this._metadataResolver.getNgModuleMetadata(ngModule);
+            ngModuleMeta.declaredDirectives.forEach(function (dirMeta) {
+                if (dirMeta.isComponent) {
+                    ngModuleByComponent.set(dirMeta.type.runtime, ngModuleMeta);
+                }
             });
         });
-        return result;
-    };
-    OfflineCompiler.prototype._getTransitiveComponents = function (appModule, component, target) {
-        var _this = this;
-        if (target === void 0) { target = new AppModulesSummary(); }
-        var compMeta = this._metadataResolver.getDirectiveMetadata(component);
-        // TODO(tbosch): preserve all modules per component, not just one.
-        // Then run the template parser with the union and the intersection of the modules (regarding
-        // directives/pipes)
-        // and report an error if some directives/pipes are only matched with the union but not with the
-        // intersection!
-        // -> this means that a component is used in the wrong way!
-        if (!compMeta.isComponent || target.hasComponent(component)) {
-            return target;
-        }
-        target.addComponent(appModule, component);
-        this._metadataResolver.getViewDirectivesMetadata(component).forEach(function (dirMeta) {
-            _this._getTransitiveComponents(appModule, dirMeta.type.runtime);
-        });
-        compMeta.precompile.forEach(function (precompileComp) {
-            _this._getTransitiveComponents(appModule, precompileComp.type.runtime);
-        });
-        return target;
+        return new NgModulesSummary(ngModuleByComponent);
     };
     OfflineCompiler.prototype.clearCache = function () {
         this._directiveNormalizer.clearCache();
         this._metadataResolver.clearCache();
     };
-    OfflineCompiler.prototype.compile = function (moduleUrl, appModulesSummary, components, appModules) {
+    OfflineCompiler.prototype.compile = function (moduleUrl, ngModulesSummary, components, ngModules) {
         var _this = this;
         var fileSuffix = _splitLastSuffix(moduleUrl)[1];
         var statements = [];
         var exportedVars = [];
         var outputSourceModules = [];
-        // compile app modules
-        exportedVars.push.apply(exportedVars, appModules.map(function (appModule) { return _this._compileAppModule(appModule, statements); }));
+        // compile all ng modules
+        exportedVars.push.apply(exportedVars, ngModules.map(function (ngModuleType) { return _this._compileModule(ngModuleType, statements); }));
         // compile components
         return Promise
             .all(components.map(function (compType) {
-            var appModule = appModulesSummary.getModule(compType);
-            var appModuleDirectives = [];
-            var appModulePipes = [];
-            if (appModule) {
-                var appModuleMeta = _this._metadataResolver.getAppModuleMetadata(appModule);
-                appModuleDirectives.push.apply(appModuleDirectives, appModuleMeta.directives.map(function (type) { return _this._metadataResolver.getDirectiveMetadata(type.runtime); }));
-                appModulePipes.push.apply(appModulePipes, appModuleMeta.pipes.map(function (type) { return _this._metadataResolver.getPipeMetadata(type.runtime); }));
+            var compMeta = _this._metadataResolver.getDirectiveMetadata(compType);
+            var ngModule = ngModulesSummary.ngModuleByComponent.get(compType);
+            if (!ngModule) {
+                throw new exceptions_1.BaseException("Cannot determine the module for component " + compMeta.type.name + "!");
             }
             return Promise
-                .all([
-                _this._metadataResolver.getDirectiveMetadata(compType)
-            ].concat(appModuleDirectives, _this._metadataResolver.getViewDirectivesMetadata(compType)).map(function (dirMeta) { return _this._directiveNormalizer.normalizeDirective(dirMeta).asyncResult; }))
+                .all([compMeta].concat(ngModule.transitiveModule.directives).map(function (dirMeta) { return _this._directiveNormalizer.normalizeDirective(dirMeta).asyncResult; }))
                 .then(function (normalizedCompWithDirectives) {
                 var compMeta = normalizedCompWithDirectives[0];
                 var dirMetas = normalizedCompWithDirectives.slice(1);
@@ -118,8 +83,7 @@ var OfflineCompiler = (function () {
                 });
                 // compile components
                 exportedVars.push(_this._compileComponentFactory(compMeta, fileSuffix, statements));
-                var pipeMetas = appModulePipes.concat(_this._metadataResolver.getViewPipesMetadata(compMeta.type.runtime));
-                exportedVars.push(_this._compileComponent(compMeta, dirMetas, pipeMetas, stylesCompileResults.componentStylesheet, fileSuffix, statements));
+                exportedVars.push(_this._compileComponent(compMeta, dirMetas, ngModule.transitiveModule.pipes, stylesCompileResults.componentStylesheet, fileSuffix, statements));
             });
         }))
             .then(function () {
@@ -129,18 +93,18 @@ var OfflineCompiler = (function () {
             return outputSourceModules;
         });
     };
-    OfflineCompiler.prototype._compileAppModule = function (appModuleType, targetStatements) {
-        var appModuleMeta = this._metadataResolver.getAppModuleMetadata(appModuleType);
-        var appCompileResult = this._appModuleCompiler.compile(appModuleMeta);
+    OfflineCompiler.prototype._compileModule = function (ngModuleType, targetStatements) {
+        var ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
+        var appCompileResult = this._ngModuleCompiler.compile(ngModule, []);
         appCompileResult.dependencies.forEach(function (dep) {
             dep.placeholder.name = _componentFactoryName(dep.comp);
             dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);
         });
         targetStatements.push.apply(targetStatements, appCompileResult.statements);
-        return appCompileResult.appModuleFactoryVar;
+        return appCompileResult.ngModuleFactoryVar;
     };
     OfflineCompiler.prototype._compileComponentFactory = function (compMeta, fileSuffix, targetStatements) {
-        var hostMeta = compile_metadata_1.createHostComponentMeta(compMeta.type, compMeta.selector);
+        var hostMeta = compile_metadata_1.createHostComponentMeta(compMeta);
         var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], null, fileSuffix, targetStatements);
         var compFactoryVar = _componentFactoryName(compMeta.type);
         targetStatements.push(o.variable(compFactoryVar)

@@ -78,13 +78,15 @@ var OverridingTestComponentBuilder = (function (_super) {
         clone._viewBindingsOverrides.set(type, providers);
         return clone;
     };
-    OverridingTestComponentBuilder.prototype.createAsync = function (rootComponentType) {
+    OverridingTestComponentBuilder.prototype.createAsync = function (rootComponentType, ngModule) {
+        if (ngModule === void 0) { ngModule = null; }
         this._applyMetadataOverrides();
-        return _super.prototype.createAsync.call(this, rootComponentType);
+        return _super.prototype.createAsync.call(this, rootComponentType, ngModule);
     };
-    OverridingTestComponentBuilder.prototype.createSync = function (rootComponentType) {
+    OverridingTestComponentBuilder.prototype.createSync = function (rootComponentType, ngModule) {
+        if (ngModule === void 0) { ngModule = null; }
         this._applyMetadataOverrides();
-        return _super.prototype.createSync.call(this, rootComponentType);
+        return _super.prototype.createSync.call(this, rootComponentType, ngModule);
     };
     OverridingTestComponentBuilder.prototype._applyMetadataOverrides = function () {
         var mockDirectiveResolver = this._injector.get(index_1.DirectiveResolver);

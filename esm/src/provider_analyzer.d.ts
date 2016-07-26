@@ -1,4 +1,4 @@
-import { CompileAppModuleMetadata, CompileDirectiveMetadata } from './compile_metadata';
+import { CompileDirectiveMetadata, CompileNgModuleMetadata, CompileProviderMetadata } from './compile_metadata';
 import { ParseError, ParseSourceSpan } from './parse_util';
 import { AttrAst, DirectiveAst, ProviderAst, ReferenceAst } from './template_ast';
 export declare class ProviderError extends ParseError {
@@ -24,22 +24,22 @@ export declare class ProviderElementContext {
     private _hasViewContainer;
     constructor(_viewContext: ProviderViewContext, _parent: ProviderElementContext, _isViewRoot: boolean, _directiveAsts: DirectiveAst[], attrs: AttrAst[], refs: ReferenceAst[], _sourceSpan: ParseSourceSpan);
     afterElement(): void;
-    transformProviders: ProviderAst[];
-    transformedDirectiveAsts: DirectiveAst[];
-    transformedHasViewContainer: boolean;
+    readonly transformProviders: ProviderAst[];
+    readonly transformedDirectiveAsts: DirectiveAst[];
+    readonly transformedHasViewContainer: boolean;
     private _addQueryReadsTo(token, queryReadTokens);
     private _getQueriesFor(token);
     private _getOrCreateLocalProvider(requestingProviderType, token, eager);
     private _getLocalDependency(requestingProviderType, dep, eager?);
     private _getDependency(requestingProviderType, dep, eager?);
 }
-export declare class AppModuleProviderParser {
+export declare class NgModuleProviderAnalyzer {
     private _transformedProviders;
     private _seenProviders;
     private _unparsedProviders;
     private _allProviders;
     private _errors;
-    constructor(appModule: CompileAppModuleMetadata, sourceSpan: ParseSourceSpan);
+    constructor(ngModule: CompileNgModuleMetadata, extraProviders: CompileProviderMetadata[], sourceSpan: ParseSourceSpan);
     parse(): ProviderAst[];
     private _getOrCreateLocalProvider(token, eager);
     private _getDependency(dep, eager, requestorSourceSpan);

@@ -71,13 +71,13 @@ export class OverridingTestComponentBuilder extends TestComponentBuilder {
         clone._viewBindingsOverrides.set(type, providers);
         return clone;
     }
-    createAsync(rootComponentType) {
+    createAsync(rootComponentType, ngModule = null) {
         this._applyMetadataOverrides();
-        return super.createAsync(rootComponentType);
+        return super.createAsync(rootComponentType, ngModule);
     }
-    createSync(rootComponentType) {
+    createSync(rootComponentType, ngModule = null) {
         this._applyMetadataOverrides();
-        return super.createSync(rootComponentType);
+        return super.createSync(rootComponentType, ngModule);
     }
     _applyMetadataOverrides() {
         let mockDirectiveResolver = this._injector.get(DirectiveResolver);

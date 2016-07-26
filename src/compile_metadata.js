@@ -24,6 +24,7 @@ var util_1 = require('./util');
 // group 2: "event" from "(event)"
 // group 3: "@trigger" from "@trigger"
 var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/g;
+var UNDEFINED = new Object();
 var CompileMetadataWithIdentifier = (function () {
     function CompileMetadataWithIdentifier() {
     }
@@ -32,31 +33,20 @@ var CompileMetadataWithIdentifier = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(CompileMetadataWithIdentifier.prototype, "runtimeCacheKey", {
+        get: function () { return exceptions_1.unimplemented(); },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(CompileMetadataWithIdentifier.prototype, "assetCacheKey", {
+        get: function () { return exceptions_1.unimplemented(); },
+        enumerable: true,
+        configurable: true
+    });
+    CompileMetadataWithIdentifier.prototype.equalsTo = function (id2) { return exceptions_1.unimplemented(); };
     return CompileMetadataWithIdentifier;
 }());
 exports.CompileMetadataWithIdentifier = CompileMetadataWithIdentifier;
-var CompileMetadataWithType = (function (_super) {
-    __extends(CompileMetadataWithType, _super);
-    function CompileMetadataWithType() {
-        _super.apply(this, arguments);
-    }
-    Object.defineProperty(CompileMetadataWithType.prototype, "type", {
-        get: function () { return exceptions_1.unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(CompileMetadataWithType.prototype, "identifier", {
-        get: function () { return exceptions_1.unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    return CompileMetadataWithType;
-}(CompileMetadataWithIdentifier));
-exports.CompileMetadataWithType = CompileMetadataWithType;
-function metadataFromJson(data) {
-    return _COMPILE_METADATA_FROM_JSON[data['class']](data);
-}
-exports.metadataFromJson = metadataFromJson;
 var CompileAnimationEntryMetadata = (function () {
     function CompileAnimationEntryMetadata(name, definitions) {
         if (name === void 0) { name = null; }
@@ -64,17 +54,6 @@ var CompileAnimationEntryMetadata = (function () {
         this.name = name;
         this.definitions = definitions;
     }
-    CompileAnimationEntryMetadata.fromJson = function (data) {
-        var value = data['value'];
-        var defs = _arrayFromJson(value['definitions'], metadataFromJson);
-        return new CompileAnimationEntryMetadata(value['name'], defs);
-    };
-    CompileAnimationEntryMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AnimationEntryMetadata',
-            'value': { 'name': this.name, 'definitions': _arrayToJson(this.definitions) }
-        };
-    };
     return CompileAnimationEntryMetadata;
 }());
 exports.CompileAnimationEntryMetadata = CompileAnimationEntryMetadata;
@@ -91,17 +70,6 @@ var CompileAnimationStateDeclarationMetadata = (function (_super) {
         this.stateNameExpr = stateNameExpr;
         this.styles = styles;
     }
-    CompileAnimationStateDeclarationMetadata.fromJson = function (data) {
-        var value = data['value'];
-        var styles = _objFromJson(value['styles'], metadataFromJson);
-        return new CompileAnimationStateDeclarationMetadata(value['stateNameExpr'], styles);
-    };
-    CompileAnimationStateDeclarationMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AnimationStateDeclarationMetadata',
-            'value': { 'stateNameExpr': this.stateNameExpr, 'styles': this.styles.toJson() }
-        };
-    };
     return CompileAnimationStateDeclarationMetadata;
 }(CompileAnimationStateMetadata));
 exports.CompileAnimationStateDeclarationMetadata = CompileAnimationStateDeclarationMetadata;
@@ -112,17 +80,6 @@ var CompileAnimationStateTransitionMetadata = (function (_super) {
         this.stateChangeExpr = stateChangeExpr;
         this.steps = steps;
     }
-    CompileAnimationStateTransitionMetadata.fromJson = function (data) {
-        var value = data['value'];
-        var steps = _objFromJson(value['steps'], metadataFromJson);
-        return new CompileAnimationStateTransitionMetadata(value['stateChangeExpr'], steps);
-    };
-    CompileAnimationStateTransitionMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AnimationStateTransitionMetadata',
-            'value': { 'stateChangeExpr': this.stateChangeExpr, 'steps': this.steps.toJson() }
-        };
-    };
     return CompileAnimationStateTransitionMetadata;
 }(CompileAnimationStateMetadata));
 exports.CompileAnimationStateTransitionMetadata = CompileAnimationStateTransitionMetadata;
@@ -139,13 +96,6 @@ var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
         _super.call(this);
         this.steps = steps;
     }
-    CompileAnimationKeyframesSequenceMetadata.fromJson = function (data) {
-        var steps = _arrayFromJson(data['value'], metadataFromJson);
-        return new CompileAnimationKeyframesSequenceMetadata(steps);
-    };
-    CompileAnimationKeyframesSequenceMetadata.prototype.toJson = function () {
-        return { 'class': 'AnimationKeyframesSequenceMetadata', 'value': _arrayToJson(this.steps) };
-    };
     return CompileAnimationKeyframesSequenceMetadata;
 }(CompileAnimationMetadata));
 exports.CompileAnimationKeyframesSequenceMetadata = CompileAnimationKeyframesSequenceMetadata;
@@ -157,19 +107,6 @@ var CompileAnimationStyleMetadata = (function (_super) {
         this.offset = offset;
         this.styles = styles;
     }
-    CompileAnimationStyleMetadata.fromJson = function (data) {
-        var value = data['value'];
-        var offsetVal = value['offset'];
-        var offset = lang_1.isPresent(offsetVal) ? lang_1.NumberWrapper.parseFloat(offsetVal) : null;
-        var styles = value['styles'];
-        return new CompileAnimationStyleMetadata(offset, styles);
-    };
-    CompileAnimationStyleMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AnimationStyleMetadata',
-            'value': { 'offset': this.offset, 'styles': this.styles }
-        };
-    };
     return CompileAnimationStyleMetadata;
 }(CompileAnimationMetadata));
 exports.CompileAnimationStyleMetadata = CompileAnimationStyleMetadata;
@@ -182,18 +119,6 @@ var CompileAnimationAnimateMetadata = (function (_super) {
         this.timings = timings;
         this.styles = styles;
     }
-    CompileAnimationAnimateMetadata.fromJson = function (data) {
-        var value = data['value'];
-        var timings = value['timings'];
-        var styles = _objFromJson(value['styles'], metadataFromJson);
-        return new CompileAnimationAnimateMetadata(timings, styles);
-    };
-    CompileAnimationAnimateMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AnimationAnimateMetadata',
-            'value': { 'timings': this.timings, 'styles': _objToJson(this.styles) }
-        };
-    };
     return CompileAnimationAnimateMetadata;
 }(CompileAnimationMetadata));
 exports.CompileAnimationAnimateMetadata = CompileAnimationAnimateMetadata;
@@ -213,13 +138,6 @@ var CompileAnimationSequenceMetadata = (function (_super) {
         if (steps === void 0) { steps = null; }
         _super.call(this, steps);
     }
-    CompileAnimationSequenceMetadata.fromJson = function (data) {
-        var steps = _arrayFromJson(data['value'], metadataFromJson);
-        return new CompileAnimationSequenceMetadata(steps);
-    };
-    CompileAnimationSequenceMetadata.prototype.toJson = function () {
-        return { 'class': 'AnimationSequenceMetadata', 'value': _arrayToJson(this.steps) };
-    };
     return CompileAnimationSequenceMetadata;
 }(CompileAnimationWithStepsMetadata));
 exports.CompileAnimationSequenceMetadata = CompileAnimationSequenceMetadata;
@@ -229,46 +147,51 @@ var CompileAnimationGroupMetadata = (function (_super) {
         if (steps === void 0) { steps = null; }
         _super.call(this, steps);
     }
-    CompileAnimationGroupMetadata.fromJson = function (data) {
-        var steps = _arrayFromJson(data['value'], metadataFromJson);
-        return new CompileAnimationGroupMetadata(steps);
-    };
-    CompileAnimationGroupMetadata.prototype.toJson = function () {
-        return { 'class': 'AnimationGroupMetadata', 'value': _arrayToJson(this.steps) };
-    };
     return CompileAnimationGroupMetadata;
 }(CompileAnimationWithStepsMetadata));
 exports.CompileAnimationGroupMetadata = CompileAnimationGroupMetadata;
 var CompileIdentifierMetadata = (function () {
     function CompileIdentifierMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
+        this._assetCacheKey = UNDEFINED;
         this.runtime = runtime;
         this.name = name;
         this.prefix = prefix;
         this.moduleUrl = moduleUrl;
         this.value = value;
     }
-    CompileIdentifierMetadata.fromJson = function (data) {
-        var value = lang_1.isArray(data['value']) ? _arrayFromJson(data['value'], metadataFromJson) :
-            _objFromJson(data['value'], metadataFromJson);
-        return new CompileIdentifierMetadata({ name: data['name'], prefix: data['prefix'], moduleUrl: data['moduleUrl'], value: value });
-    };
-    CompileIdentifierMetadata.prototype.toJson = function () {
-        var value = lang_1.isArray(this.value) ? _arrayToJson(this.value) : _objToJson(this.value);
-        return {
-            // Note: Runtime type can't be serialized...
-            'class': 'Identifier',
-            'name': this.name,
-            'moduleUrl': this.moduleUrl,
-            'prefix': this.prefix,
-            'value': value
-        };
-    };
     Object.defineProperty(CompileIdentifierMetadata.prototype, "identifier", {
         get: function () { return this; },
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(CompileIdentifierMetadata.prototype, "runtimeCacheKey", {
+        get: function () { return this.identifier.runtime; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(CompileIdentifierMetadata.prototype, "assetCacheKey", {
+        get: function () {
+            if (this._assetCacheKey === UNDEFINED) {
+                if (lang_1.isPresent(this.moduleUrl) && lang_1.isPresent(url_resolver_1.getUrlScheme(this.moduleUrl))) {
+                    var uri = core_private_1.reflector.importUri({ 'filePath': this.moduleUrl, 'name': this.name });
+                    this._assetCacheKey = this.name + "|" + uri;
+                }
+                else {
+                    this._assetCacheKey = null;
+                }
+            }
+            return this._assetCacheKey;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    CompileIdentifierMetadata.prototype.equalsTo = function (id2) {
+        var rk = this.runtimeCacheKey;
+        var ak = this.assetCacheKey;
+        return (lang_1.isPresent(rk) && rk == id2.runtimeCacheKey) ||
+            (lang_1.isPresent(ak) && ak == id2.assetCacheKey);
+    };
     return CompileIdentifierMetadata;
 }());
 exports.CompileIdentifierMetadata = CompileIdentifierMetadata;
@@ -286,34 +209,6 @@ var CompileDiDependencyMetadata = (function () {
         this.token = token;
         this.value = value;
     }
-    CompileDiDependencyMetadata.fromJson = function (data) {
-        return new CompileDiDependencyMetadata({
-            token: _objFromJson(data['token'], CompileTokenMetadata.fromJson),
-            query: _objFromJson(data['query'], CompileQueryMetadata.fromJson),
-            viewQuery: _objFromJson(data['viewQuery'], CompileQueryMetadata.fromJson),
-            value: data['value'],
-            isAttribute: data['isAttribute'],
-            isSelf: data['isSelf'],
-            isHost: data['isHost'],
-            isSkipSelf: data['isSkipSelf'],
-            isOptional: data['isOptional'],
-            isValue: data['isValue']
-        });
-    };
-    CompileDiDependencyMetadata.prototype.toJson = function () {
-        return {
-            'token': _objToJson(this.token),
-            'query': _objToJson(this.query),
-            'viewQuery': _objToJson(this.viewQuery),
-            'value': this.value,
-            'isAttribute': this.isAttribute,
-            'isSelf': this.isSelf,
-            'isHost': this.isHost,
-            'isSkipSelf': this.isSkipSelf,
-            'isOptional': this.isOptional,
-            'isValue': this.isValue
-        };
-    };
     return CompileDiDependencyMetadata;
 }());
 exports.CompileDiDependencyMetadata = CompileDiDependencyMetadata;
@@ -328,97 +223,30 @@ var CompileProviderMetadata = (function () {
         this.deps = lang_1.normalizeBlank(deps);
         this.multi = lang_1.normalizeBool(multi);
     }
-    CompileProviderMetadata.fromJson = function (data) {
-        return new CompileProviderMetadata({
-            token: _objFromJson(data['token'], CompileTokenMetadata.fromJson),
-            useClass: _objFromJson(data['useClass'], CompileTypeMetadata.fromJson),
-            useExisting: _objFromJson(data['useExisting'], CompileTokenMetadata.fromJson),
-            useValue: _objFromJson(data['useValue'], CompileIdentifierMetadata.fromJson),
-            useFactory: _objFromJson(data['useFactory'], CompileFactoryMetadata.fromJson),
-            multi: data['multi'],
-            deps: _arrayFromJson(data['deps'], CompileDiDependencyMetadata.fromJson)
-        });
-    };
-    CompileProviderMetadata.prototype.toJson = function () {
-        return {
-            // Note: Runtime type can't be serialized...
-            'class': 'Provider',
-            'token': _objToJson(this.token),
-            'useClass': _objToJson(this.useClass),
-            'useExisting': _objToJson(this.useExisting),
-            'useValue': _objToJson(this.useValue),
-            'useFactory': _objToJson(this.useFactory),
-            'multi': this.multi,
-            'deps': _arrayToJson(this.deps)
-        };
-    };
     return CompileProviderMetadata;
 }());
 exports.CompileProviderMetadata = CompileProviderMetadata;
-var CompileFactoryMetadata = (function () {
+var CompileFactoryMetadata = (function (_super) {
+    __extends(CompileFactoryMetadata, _super);
     function CompileFactoryMetadata(_a) {
         var runtime = _a.runtime, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
-        this.runtime = runtime;
-        this.name = name;
-        this.prefix = prefix;
-        this.moduleUrl = moduleUrl;
+        _super.call(this, { runtime: runtime, name: name, prefix: prefix, moduleUrl: moduleUrl, value: value });
         this.diDeps = _normalizeArray(diDeps);
-        this.value = value;
     }
-    Object.defineProperty(CompileFactoryMetadata.prototype, "identifier", {
-        get: function () { return this; },
-        enumerable: true,
-        configurable: true
-    });
-    CompileFactoryMetadata.fromJson = function (data) {
-        return new CompileFactoryMetadata({
-            name: data['name'],
-            prefix: data['prefix'],
-            moduleUrl: data['moduleUrl'],
-            value: data['value'],
-            diDeps: _arrayFromJson(data['diDeps'], CompileDiDependencyMetadata.fromJson)
-        });
-    };
-    CompileFactoryMetadata.prototype.toJson = function () {
-        return {
-            'class': 'Factory',
-            'name': this.name,
-            'prefix': this.prefix,
-            'moduleUrl': this.moduleUrl,
-            'value': this.value,
-            'diDeps': _arrayToJson(this.diDeps)
-        };
-    };
     return CompileFactoryMetadata;
-}());
+}(CompileIdentifierMetadata));
 exports.CompileFactoryMetadata = CompileFactoryMetadata;
-var UNDEFINED = new Object();
 var CompileTokenMetadata = (function () {
     function CompileTokenMetadata(_a) {
         var value = _a.value, identifier = _a.identifier, identifierIsInstance = _a.identifierIsInstance;
-        this._assetCacheKey = UNDEFINED;
         this.value = value;
         this.identifier = identifier;
         this.identifierIsInstance = lang_1.normalizeBool(identifierIsInstance);
     }
-    CompileTokenMetadata.fromJson = function (data) {
-        return new CompileTokenMetadata({
-            value: data['value'],
-            identifier: _objFromJson(data['identifier'], CompileIdentifierMetadata.fromJson),
-            identifierIsInstance: data['identifierIsInstance']
-        });
-    };
-    CompileTokenMetadata.prototype.toJson = function () {
-        return {
-            'value': this.value,
-            'identifier': _objToJson(this.identifier),
-            'identifierIsInstance': this.identifierIsInstance
-        };
-    };
     Object.defineProperty(CompileTokenMetadata.prototype, "runtimeCacheKey", {
         get: function () {
             if (lang_1.isPresent(this.identifier)) {
-                return this.identifier.runtime;
+                return this.identifier.runtimeCacheKey;
             }
             else {
                 return this.value;
@@ -429,22 +257,12 @@ var CompileTokenMetadata = (function () {
     });
     Object.defineProperty(CompileTokenMetadata.prototype, "assetCacheKey", {
         get: function () {
-            if (this._assetCacheKey === UNDEFINED) {
-                if (lang_1.isPresent(this.identifier)) {
-                    if (lang_1.isPresent(this.identifier.moduleUrl) &&
-                        lang_1.isPresent(url_resolver_1.getUrlScheme(this.identifier.moduleUrl))) {
-                        var uri = core_private_1.reflector.importUri({ 'filePath': this.identifier.moduleUrl, 'name': this.identifier.name });
-                        this._assetCacheKey = this.identifier.name + "|" + uri + "|" + this.identifierIsInstance;
-                    }
-                    else {
-                        this._assetCacheKey = null;
-                    }
-                }
-                else {
-                    this._assetCacheKey = this.value;
-                }
+            if (lang_1.isPresent(this.identifier)) {
+                return this.identifier.assetCacheKey;
             }
-            return this._assetCacheKey;
+            else {
+                return this.value;
+            }
         },
         enumerable: true,
         configurable: true
@@ -465,16 +283,24 @@ var CompileTokenMetadata = (function () {
     return CompileTokenMetadata;
 }());
 exports.CompileTokenMetadata = CompileTokenMetadata;
-var CompileTokenMap = (function () {
-    function CompileTokenMap() {
+/**
+ * Note: We only need this in places where we need to support identifiers that
+ * don't have a `runtime` value given by the `StaticReflector`. E.g. see the `identifiers`
+ * file where we have some identifiers hard coded by name/module path.
+ *
+ * TODO(tbosch): Eventually, all of these places should go through the static reflector
+ * as well, providing them with a valid `StaticSymbol` that is again a singleton.
+ */
+var CompileIdentifierMap = (function () {
+    function CompileIdentifierMap() {
         this._valueMap = new Map();
         this._values = [];
         this._tokens = [];
     }
-    CompileTokenMap.prototype.add = function (token, value) {
+    CompileIdentifierMap.prototype.add = function (token, value) {
         var existing = this.get(token);
         if (lang_1.isPresent(existing)) {
-            throw new exceptions_1.BaseException("Can only add to a TokenMap! Token: " + token.name);
+            throw new exceptions_1.BaseException("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
         }
         this._tokens.push(token);
         this._values.push(value);
@@ -487,7 +313,7 @@ var CompileTokenMap = (function () {
             this._valueMap.set(ak, value);
         }
     };
-    CompileTokenMap.prototype.get = function (token) {
+    CompileIdentifierMap.prototype.get = function (token) {
         var rk = token.runtimeCacheKey;
         var ak = token.assetCacheKey;
         var result;
@@ -499,64 +325,29 @@ var CompileTokenMap = (function () {
         }
         return result;
     };
-    CompileTokenMap.prototype.keys = function () { return this._tokens; };
-    CompileTokenMap.prototype.values = function () { return this._values; };
-    Object.defineProperty(CompileTokenMap.prototype, "size", {
+    CompileIdentifierMap.prototype.keys = function () { return this._tokens; };
+    CompileIdentifierMap.prototype.values = function () { return this._values; };
+    Object.defineProperty(CompileIdentifierMap.prototype, "size", {
         get: function () { return this._values.length; },
         enumerable: true,
         configurable: true
     });
-    return CompileTokenMap;
+    return CompileIdentifierMap;
 }());
-exports.CompileTokenMap = CompileTokenMap;
+exports.CompileIdentifierMap = CompileIdentifierMap;
 /**
  * Metadata regarding compilation of a type.
  */
-var CompileTypeMetadata = (function () {
+var CompileTypeMetadata = (function (_super) {
+    __extends(CompileTypeMetadata, _super);
     function CompileTypeMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps;
-        this.runtime = runtime;
-        this.name = name;
-        this.moduleUrl = moduleUrl;
-        this.prefix = prefix;
+        _super.call(this, { runtime: runtime, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
         this.isHost = lang_1.normalizeBool(isHost);
-        this.value = value;
         this.diDeps = _normalizeArray(diDeps);
     }
-    CompileTypeMetadata.fromJson = function (data) {
-        return new CompileTypeMetadata({
-            name: data['name'],
-            moduleUrl: data['moduleUrl'],
-            prefix: data['prefix'],
-            isHost: data['isHost'],
-            value: data['value'],
-            diDeps: _arrayFromJson(data['diDeps'], CompileDiDependencyMetadata.fromJson)
-        });
-    };
-    Object.defineProperty(CompileTypeMetadata.prototype, "identifier", {
-        get: function () { return this; },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(CompileTypeMetadata.prototype, "type", {
-        get: function () { return this; },
-        enumerable: true,
-        configurable: true
-    });
-    CompileTypeMetadata.prototype.toJson = function () {
-        return {
-            // Note: Runtime type can't be serialized...
-            'class': 'Type',
-            'name': this.name,
-            'moduleUrl': this.moduleUrl,
-            'prefix': this.prefix,
-            'isHost': this.isHost,
-            'value': this.value,
-            'diDeps': _arrayToJson(this.diDeps)
-        };
-    };
     return CompileTypeMetadata;
-}());
+}(CompileIdentifierMetadata));
 exports.CompileTypeMetadata = CompileTypeMetadata;
 var CompileQueryMetadata = (function () {
     function CompileQueryMetadata(_a) {
@@ -567,24 +358,6 @@ var CompileQueryMetadata = (function () {
         this.propertyName = propertyName;
         this.read = read;
     }
-    CompileQueryMetadata.fromJson = function (data) {
-        return new CompileQueryMetadata({
-            selectors: _arrayFromJson(data['selectors'], CompileTokenMetadata.fromJson),
-            descendants: data['descendants'],
-            first: data['first'],
-            propertyName: data['propertyName'],
-            read: _objFromJson(data['read'], CompileTokenMetadata.fromJson)
-        });
-    };
-    CompileQueryMetadata.prototype.toJson = function () {
-        return {
-            'selectors': _arrayToJson(this.selectors),
-            'descendants': this.descendants,
-            'first': this.first,
-            'propertyName': this.propertyName,
-            'read': _objToJson(this.read)
-        };
-    };
     return CompileQueryMetadata;
 }());
 exports.CompileQueryMetadata = CompileQueryMetadata;
@@ -598,12 +371,6 @@ var CompileStylesheetMetadata = (function () {
         this.styles = _normalizeArray(styles);
         this.styleUrls = _normalizeArray(styleUrls);
     }
-    CompileStylesheetMetadata.fromJson = function (data) {
-        return new CompileStylesheetMetadata({ moduleUrl: data['moduleUrl'], styles: data['styles'], styleUrls: data['styleUrls'] });
-    };
-    CompileStylesheetMetadata.prototype.toJson = function () {
-        return { 'moduleUrl': this.moduleUrl, 'styles': this.styles, 'styleUrls': this.styleUrls };
-    };
     return CompileStylesheetMetadata;
 }());
 exports.CompileStylesheetMetadata = CompileStylesheetMetadata;
@@ -626,36 +393,6 @@ var CompileTemplateMetadata = (function () {
         }
         this.interpolation = interpolation;
     }
-    CompileTemplateMetadata.fromJson = function (data) {
-        var animations = _arrayFromJson(data['animations'], metadataFromJson);
-        return new CompileTemplateMetadata({
-            encapsulation: lang_1.isPresent(data['encapsulation']) ?
-                core_private_1.VIEW_ENCAPSULATION_VALUES[data['encapsulation']] :
-                data['encapsulation'],
-            template: data['template'],
-            templateUrl: data['templateUrl'],
-            styles: data['styles'],
-            styleUrls: data['styleUrls'],
-            externalStylesheets: _arrayFromJson(data['externalStylesheets'], CompileStylesheetMetadata.fromJson),
-            animations: animations,
-            ngContentSelectors: data['ngContentSelectors'],
-            interpolation: data['interpolation']
-        });
-    };
-    CompileTemplateMetadata.prototype.toJson = function () {
-        return {
-            'encapsulation': lang_1.isPresent(this.encapsulation) ? lang_1.serializeEnum(this.encapsulation) :
-                this.encapsulation,
-            'template': this.template,
-            'templateUrl': this.templateUrl,
-            'styles': this.styles,
-            'styleUrls': this.styleUrls,
-            'externalStylesheets': _objToJson(this.externalStylesheets),
-            'animations': _objToJson(this.animations),
-            'ngContentSelectors': this.ngContentSelectors,
-            'interpolation': this.interpolation
-        };
-    };
     return CompileTemplateMetadata;
 }());
 exports.CompileTemplateMetadata = CompileTemplateMetadata;
@@ -742,52 +479,18 @@ var CompileDirectiveMetadata = (function () {
         enumerable: true,
         configurable: true
     });
-    CompileDirectiveMetadata.fromJson = function (data) {
-        return new CompileDirectiveMetadata({
-            isComponent: data['isComponent'],
-            selector: data['selector'],
-            exportAs: data['exportAs'],
-            type: lang_1.isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
-            changeDetection: lang_1.isPresent(data['changeDetection']) ?
-                core_private_1.CHANGE_DETECTION_STRATEGY_VALUES[data['changeDetection']] :
-                data['changeDetection'],
-            inputs: data['inputs'],
-            outputs: data['outputs'],
-            hostListeners: data['hostListeners'],
-            hostProperties: data['hostProperties'],
-            hostAttributes: data['hostAttributes'],
-            lifecycleHooks: data['lifecycleHooks'].map(function (hookValue) { return core_private_1.LIFECYCLE_HOOKS_VALUES[hookValue]; }),
-            template: lang_1.isPresent(data['template']) ? CompileTemplateMetadata.fromJson(data['template']) :
-                data['template'],
-            providers: _arrayFromJson(data['providers'], metadataFromJson),
-            viewProviders: _arrayFromJson(data['viewProviders'], metadataFromJson),
-            queries: _arrayFromJson(data['queries'], CompileQueryMetadata.fromJson),
-            viewQueries: _arrayFromJson(data['viewQueries'], CompileQueryMetadata.fromJson),
-            precompile: _arrayFromJson(data['precompile'], CompileTypeMetadata.fromJson)
-        });
-    };
-    CompileDirectiveMetadata.prototype.toJson = function () {
-        return {
-            'class': 'Directive',
-            'isComponent': this.isComponent,
-            'selector': this.selector,
-            'exportAs': this.exportAs,
-            'type': lang_1.isPresent(this.type) ? this.type.toJson() : this.type,
-            'changeDetection': lang_1.isPresent(this.changeDetection) ? lang_1.serializeEnum(this.changeDetection) :
-                this.changeDetection,
-            'inputs': this.inputs,
-            'outputs': this.outputs,
-            'hostListeners': this.hostListeners,
-            'hostProperties': this.hostProperties,
-            'hostAttributes': this.hostAttributes,
-            'lifecycleHooks': this.lifecycleHooks.map(function (hook) { return lang_1.serializeEnum(hook); }),
-            'template': lang_1.isPresent(this.template) ? this.template.toJson() : this.template,
-            'providers': _arrayToJson(this.providers),
-            'viewProviders': _arrayToJson(this.viewProviders),
-            'queries': _arrayToJson(this.queries),
-            'viewQueries': _arrayToJson(this.viewQueries),
-            'precompile': _arrayToJson(this.precompile)
-        };
+    Object.defineProperty(CompileDirectiveMetadata.prototype, "runtimeCacheKey", {
+        get: function () { return this.type.runtimeCacheKey; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(CompileDirectiveMetadata.prototype, "assetCacheKey", {
+        get: function () { return this.type.assetCacheKey; },
+        enumerable: true,
+        configurable: true
+    });
+    CompileDirectiveMetadata.prototype.equalsTo = function (other) {
+        return this.type.equalsTo(other.identifier);
     };
     return CompileDirectiveMetadata;
 }());
@@ -795,13 +498,13 @@ exports.CompileDirectiveMetadata = CompileDirectiveMetadata;
 /**
  * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
  */
-function createHostComponentMeta(componentType, componentSelector) {
-    var template = selector_1.CssSelector.parse(componentSelector)[0].getMatchingElementTemplate();
+function createHostComponentMeta(compMeta) {
+    var template = selector_1.CssSelector.parse(compMeta.selector)[0].getMatchingElementTemplate();
     return CompileDirectiveMetadata.create({
         type: new CompileTypeMetadata({
             runtime: Object,
-            name: componentType.name + "_Host",
-            moduleUrl: componentType.moduleUrl,
+            name: compMeta.type.name + "_Host",
+            moduleUrl: compMeta.type.moduleUrl,
             isHost: true
         }),
         template: new CompileTemplateMetadata({
@@ -839,20 +542,18 @@ var CompilePipeMetadata = (function () {
         enumerable: true,
         configurable: true
     });
-    CompilePipeMetadata.fromJson = function (data) {
-        return new CompilePipeMetadata({
-            type: lang_1.isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
-            name: data['name'],
-            pure: data['pure']
-        });
-    };
-    CompilePipeMetadata.prototype.toJson = function () {
-        return {
-            'class': 'Pipe',
-            'type': lang_1.isPresent(this.type) ? this.type.toJson() : null,
-            'name': this.name,
-            'pure': this.pure
-        };
+    Object.defineProperty(CompilePipeMetadata.prototype, "runtimeCacheKey", {
+        get: function () { return this.type.runtimeCacheKey; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(CompilePipeMetadata.prototype, "assetCacheKey", {
+        get: function () { return this.type.assetCacheKey; },
+        enumerable: true,
+        configurable: true
+    });
+    CompilePipeMetadata.prototype.equalsTo = function (other) {
+        return this.type.equalsTo(other.identifier);
     };
     return CompilePipeMetadata;
 }());
@@ -860,82 +561,67 @@ exports.CompilePipeMetadata = CompilePipeMetadata;
 /**
  * Metadata regarding compilation of a directive.
  */
-var CompileAppModuleMetadata = (function () {
-    function CompileAppModuleMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, directives = _b.directives, pipes = _b.pipes, precompile = _b.precompile, modules = _b.modules;
+var CompileNgModuleMetadata = (function () {
+    function CompileNgModuleMetadata(_a) {
+        var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, declaredDirectives = _b.declaredDirectives, exportedDirectives = _b.exportedDirectives, declaredPipes = _b.declaredPipes, exportedPipes = _b.exportedPipes, precompile = _b.precompile, importedModules = _b.importedModules, exportedModules = _b.exportedModules, transitiveModule = _b.transitiveModule;
         this.type = type;
-        this.directives = _normalizeArray(directives);
-        this.pipes = _normalizeArray(pipes);
+        this.declaredDirectives = _normalizeArray(declaredDirectives);
+        this.exportedDirectives = _normalizeArray(exportedDirectives);
+        this.declaredPipes = _normalizeArray(declaredPipes);
+        this.exportedPipes = _normalizeArray(exportedPipes);
         this.providers = _normalizeArray(providers);
         this.precompile = _normalizeArray(precompile);
-        this.modules = _normalizeArray(modules);
+        this.importedModules = _normalizeArray(importedModules);
+        this.exportedModules = _normalizeArray(exportedModules);
+        this.transitiveModule = transitiveModule;
     }
-    Object.defineProperty(CompileAppModuleMetadata.prototype, "identifier", {
+    Object.defineProperty(CompileNgModuleMetadata.prototype, "identifier", {
         get: function () { return this.type; },
         enumerable: true,
         configurable: true
     });
-    CompileAppModuleMetadata.fromJson = function (data) {
-        return new CompileAppModuleMetadata({
-            type: lang_1.isPresent(data['type']) ? CompileTypeMetadata.fromJson(data['type']) : data['type'],
-            providers: _arrayFromJson(data['providers'], metadataFromJson),
-            directives: _arrayFromJson(data['directives'], metadataFromJson),
-            pipes: _arrayFromJson(data['pipes'], metadataFromJson),
-            precompile: _arrayFromJson(data['precompile'], CompileTypeMetadata.fromJson),
-            modules: _arrayFromJson(data['modules'], CompileTypeMetadata.fromJson)
-        });
+    Object.defineProperty(CompileNgModuleMetadata.prototype, "runtimeCacheKey", {
+        get: function () { return this.type.runtimeCacheKey; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(CompileNgModuleMetadata.prototype, "assetCacheKey", {
+        get: function () { return this.type.assetCacheKey; },
+        enumerable: true,
+        configurable: true
+    });
+    CompileNgModuleMetadata.prototype.equalsTo = function (other) {
+        return this.type.equalsTo(other.identifier);
     };
-    CompileAppModuleMetadata.prototype.toJson = function () {
-        return {
-            'class': 'AppModule',
-            'type': lang_1.isPresent(this.type) ? this.type.toJson() : this.type,
-            'providers': _arrayToJson(this.providers),
-            'directives': _arrayToJson(this.directives),
-            'pipes': _arrayToJson(this.pipes),
-            'precompile': _arrayToJson(this.precompile),
-            'modules': _arrayToJson(this.modules)
-        };
-    };
-    return CompileAppModuleMetadata;
+    return CompileNgModuleMetadata;
 }());
-exports.CompileAppModuleMetadata = CompileAppModuleMetadata;
-var _COMPILE_METADATA_FROM_JSON = {
-    'AppModule': CompileAppModuleMetadata.fromJson,
-    'Directive': CompileDirectiveMetadata.fromJson,
-    'Pipe': CompilePipeMetadata.fromJson,
-    'Type': CompileTypeMetadata.fromJson,
-    'Provider': CompileProviderMetadata.fromJson,
-    'Identifier': CompileIdentifierMetadata.fromJson,
-    'Factory': CompileFactoryMetadata.fromJson,
-    'AnimationEntryMetadata': CompileAnimationEntryMetadata.fromJson,
-    'AnimationStateDeclarationMetadata': CompileAnimationStateDeclarationMetadata.fromJson,
-    'AnimationStateTransitionMetadata': CompileAnimationStateTransitionMetadata.fromJson,
-    'AnimationSequenceMetadata': CompileAnimationSequenceMetadata.fromJson,
-    'AnimationGroupMetadata': CompileAnimationGroupMetadata.fromJson,
-    'AnimationAnimateMetadata': CompileAnimationAnimateMetadata.fromJson,
-    'AnimationStyleMetadata': CompileAnimationStyleMetadata.fromJson,
-    'AnimationKeyframesSequenceMetadata': CompileAnimationKeyframesSequenceMetadata.fromJson
-};
-function _arrayFromJson(obj, fn) {
-    return lang_1.isBlank(obj) ? null : obj.map(function (o) { return _objFromJson(o, fn); });
+exports.CompileNgModuleMetadata = CompileNgModuleMetadata;
+var TransitiveCompileNgModuleMetadata = (function () {
+    function TransitiveCompileNgModuleMetadata(modules, providers, precompile, directives, pipes) {
+        var _this = this;
+        this.modules = modules;
+        this.providers = providers;
+        this.precompile = precompile;
+        this.directives = directives;
+        this.pipes = pipes;
+        this.directivesSet = new Set();
+        this.pipesSet = new Set();
+        directives.forEach(function (dir) { return _this.directivesSet.add(dir.type.runtime); });
+        pipes.forEach(function (pipe) { return _this.pipesSet.add(pipe.type.runtime); });
+    }
+    return TransitiveCompileNgModuleMetadata;
+}());
+exports.TransitiveCompileNgModuleMetadata = TransitiveCompileNgModuleMetadata;
+function removeIdentifierDuplicates(items) {
+    var map = new CompileIdentifierMap();
+    items.forEach(function (item) {
+        if (!map.get(item)) {
+            map.add(item, item);
+        }
+    });
+    return map.keys();
 }
-function _arrayToJson(obj) {
-    return lang_1.isBlank(obj) ? null : obj.map(_objToJson);
-}
-function _objFromJson(obj, fn) {
-    if (lang_1.isArray(obj))
-        return _arrayFromJson(obj, fn);
-    if (lang_1.isString(obj) || lang_1.isBlank(obj) || lang_1.isBoolean(obj) || lang_1.isNumber(obj))
-        return obj;
-    return fn(obj);
-}
-function _objToJson(obj) {
-    if (lang_1.isArray(obj))
-        return _arrayToJson(obj);
-    if (lang_1.isString(obj) || lang_1.isBlank(obj) || lang_1.isBoolean(obj) || lang_1.isNumber(obj))
-        return obj;
-    return obj.toJson();
-}
+exports.removeIdentifierDuplicates = removeIdentifierDuplicates;
 function _normalizeArray(obj) {
     return lang_1.isPresent(obj) ? obj : [];
 }

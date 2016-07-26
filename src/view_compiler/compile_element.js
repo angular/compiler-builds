@@ -47,9 +47,9 @@ var CompileElement = (function (_super) {
         this.hasViewContainer = hasViewContainer;
         this.hasEmbeddedView = hasEmbeddedView;
         this._compViewExpr = null;
-        this._instances = new compile_metadata_1.CompileTokenMap();
+        this._instances = new compile_metadata_1.CompileIdentifierMap();
         this._queryCount = 0;
-        this._queries = new compile_metadata_1.CompileTokenMap();
+        this._queries = new compile_metadata_1.CompileIdentifierMap();
         this._componentConstructorViewQueryLists = [];
         this.contentNodesByNgContentIndex = null;
         this.referenceTokens = {};
@@ -121,7 +121,7 @@ var CompileElement = (function (_super) {
         if (this.hasViewContainer) {
             this._instances.add(identifiers_1.identifierToken(identifiers_1.Identifiers.ViewContainerRef), this.appElement.prop('vcRef'));
         }
-        this._resolvedProviders = new compile_metadata_1.CompileTokenMap();
+        this._resolvedProviders = new compile_metadata_1.CompileIdentifierMap();
         this._resolvedProvidersArray.forEach(function (provider) { return _this._resolvedProviders.add(provider.token, provider); });
         // create all the provider instances, some in the view constructor,
         // some as getters. We rely on the fact that they are already sorted topologically.

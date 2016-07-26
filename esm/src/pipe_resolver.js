@@ -19,7 +19,7 @@ export class PipeResolver {
     /**
      * Return {@link PipeMetadata} for a given `Type`.
      */
-    resolve(type) {
+    resolve(type, throwIfNotFound = true) {
         var metas = this._reflector.annotations(resolveForwardRef(type));
         if (isPresent(metas)) {
             var annotation = metas.find(_isPipeMetadata);
@@ -27,7 +27,10 @@ export class PipeResolver {
                 return annotation;
             }
         }
-        throw new BaseException(`No Pipe decorator found on ${stringify(type)}`);
+        if (throwIfNotFound) {
+            throw new BaseException(`No Pipe decorator found on ${stringify(type)}`);
+        }
+        return null;
     }
 }
 /** @nocollapse */

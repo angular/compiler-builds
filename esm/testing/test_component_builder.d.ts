@@ -19,7 +19,7 @@ export declare class OverridingTestComponentBuilder extends TestComponentBuilder
     overrideDirective(componentType: Type, from: Type, to: Type): OverridingTestComponentBuilder;
     overrideProviders(type: Type, providers: any[]): OverridingTestComponentBuilder;
     overrideViewProviders(type: Type, providers: any[]): OverridingTestComponentBuilder;
-    createAsync<T>(rootComponentType: ConcreteType<T>): Promise<ComponentFixture<T>>;
-    createSync<T>(rootComponentType: ConcreteType<T>): ComponentFixture<T>;
+    createAsync<T>(rootComponentType: ConcreteType<T>, ngModule?: ConcreteType<any>): Promise<ComponentFixture<T>>;
+    createSync<T>(rootComponentType: ConcreteType<T>, ngModule?: ConcreteType<any>): ComponentFixture<T>;
     private _applyMetadataOverrides();
 }

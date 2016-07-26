@@ -6,13 +6,13 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable } from '@angular/core';
-import { CompileDiDependencyMetadata, CompileIdentifierMetadata, CompileTokenMap } from './compile_metadata';
+import { CompileDiDependencyMetadata, CompileIdentifierMap, CompileIdentifierMetadata } from './compile_metadata';
 import { isBlank, isPresent } from './facade/lang';
 import { Identifiers, identifierToken } from './identifiers';
 import * as o from './output/output_ast';
 import { convertValueToOutputAst } from './output/value_util';
 import { ParseLocation, ParseSourceFile, ParseSourceSpan } from './parse_util';
-import { AppModuleProviderParser } from './provider_parser';
+import { NgModuleProviderAnalyzer } from './provider_analyzer';
 import { createDiTokenExpression } from './util';
 export class ComponentFactoryDependency {
     constructor(comp, placeholder) {
@@ -20,48 +20,48 @@ export class ComponentFactoryDependency {
         this.placeholder = placeholder;
     }
 }
-export class AppModuleCompileResult {
-    constructor(statements, appModuleFactoryVar, dependencies) {
+export class NgModuleCompileResult {
+    constructor(statements, ngModuleFactoryVar, dependencies) {
         this.statements = statements;
-        this.appModuleFactoryVar = appModuleFactoryVar;
+        this.ngModuleFactoryVar = ngModuleFactoryVar;
         this.dependencies = dependencies;
     }
 }
-export class AppModuleCompiler {
-    compile(appModuleMeta) {
-        var sourceFileName = isPresent(appModuleMeta.type.moduleUrl) ?
-            `in AppModule ${appModuleMeta.type.name} in ${appModuleMeta.type.moduleUrl}` :
-            `in AppModule ${appModuleMeta.type.name}`;
+export class NgModuleCompiler {
+    compile(ngModuleMeta, extraProviders) {
+        var sourceFileName = isPresent(ngModuleMeta.type.moduleUrl) ?
+            `in NgModule ${ngModuleMeta.type.name} in ${ngModuleMeta.type.moduleUrl}` :
+            `in NgModule ${ngModuleMeta.type.name}`;
         var sourceFile = new ParseSourceFile('', sourceFileName);
         var sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
         var deps = [];
-        var precompileComponents = appModuleMeta.precompile.map((precompileComp) => {
+        var precompileComponents = ngModuleMeta.transitiveModule.precompile.map((precompileComp) => {
             var id = new CompileIdentifierMetadata({ name: precompileComp.name });
             deps.push(new ComponentFactoryDependency(precompileComp, id));
             return id;
         });
-        var builder = new _InjectorBuilder(appModuleMeta, precompileComponents, sourceSpan);
-        var providerParser = new AppModuleProviderParser(appModuleMeta, sourceSpan);
+        var builder = new _InjectorBuilder(ngModuleMeta, precompileComponents, sourceSpan);
+        var providerParser = new NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
         providerParser.parse().forEach((provider) => builder.addProvider(provider));
         var injectorClass = builder.build();
-        var appModuleFactoryVar = `${appModuleMeta.type.name}NgFactory`;
-        var appModuleFactoryStmt = o.variable(appModuleFactoryVar)
-            .set(o.importExpr(Identifiers.AppModuleFactory)
-            .instantiate([o.variable(injectorClass.name), o.importExpr(appModuleMeta.type)], o.importType(Identifiers.AppModuleFactory, [o.importType(appModuleMeta.type)], [o.TypeModifier.Const])))
+        var ngModuleFactoryVar = `${ngModuleMeta.type.name}NgFactory`;
+        var ngModuleFactoryStmt = o.variable(ngModuleFactoryVar)
+            .set(o.importExpr(Identifiers.NgModuleFactory)
+            .instantiate([o.variable(injectorClass.name), o.importExpr(ngModuleMeta.type)], o.importType(Identifiers.NgModuleFactory, [o.importType(ngModuleMeta.type)], [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]);
-        return new AppModuleCompileResult([injectorClass, appModuleFactoryStmt], appModuleFactoryVar, deps);
+        return new NgModuleCompileResult([injectorClass, ngModuleFactoryStmt], ngModuleFactoryVar, deps);
     }
 }
 /** @nocollapse */
-AppModuleCompiler.decorators = [
+NgModuleCompiler.decorators = [
     { type: Injectable },
 ];
 class _InjectorBuilder {
-    constructor(_appModuleMeta, _precompileComponents, _sourceSpan) {
-        this._appModuleMeta = _appModuleMeta;
+    constructor(_ngModuleMeta, _precompileComponents, _sourceSpan) {
+        this._ngModuleMeta = _ngModuleMeta;
         this._precompileComponents = _precompileComponents;
         this._sourceSpan = _sourceSpan;
-        this._instances = new CompileTokenMap();
+        this._instances = new CompileIdentifierMap();
         this._fields = [];
         this._createStmts = [];
         this._getters = [];
@@ -78,7 +78,7 @@ class _InjectorBuilder {
             return new o.IfStmt(InjectMethodVars.token.identical(createDiTokenExpression(token)), [new o.ReturnStatement(providerExpr)]);
         });
         var methods = [
-            new o.ClassMethod('createInternal', [], this._createStmts.concat(new o.ReturnStatement(this._instances.get(identifierToken(this._appModuleMeta.type)))), o.importType(this._appModuleMeta.type)),
+            new o.ClassMethod('createInternal', [], this._createStmts.concat(new o.ReturnStatement(this._instances.get(identifierToken(this._ngModuleMeta.type)))), o.importType(this._ngModuleMeta.type)),
             new o.ClassMethod('getInternal', [
                 new o.FnParam(InjectMethodVars.token.name, o.DYNAMIC_TYPE),
                 new o.FnParam(InjectMethodVars.notFoundResult.name, o.DYNAMIC_TYPE)
@@ -90,8 +90,8 @@ class _InjectorBuilder {
                 o.literalArr(this._precompileComponents.map((precompiledComponent) => o.importExpr(precompiledComponent)))
             ])
                 .toStmt()]);
-        var injClassName = `${this._appModuleMeta.type.name}Injector`;
-        return new o.ClassStmt(injClassName, o.importExpr(Identifiers.AppModuleInjector, [o.importType(this._appModuleMeta.type)]), this._fields, this._getters, ctor, methods);
+        var injClassName = `${this._ngModuleMeta.type.name}Injector`;
+        return new o.ClassStmt(injClassName, o.importExpr(Identifiers.NgModuleInjector, [o.importType(this._ngModuleMeta.type)]), this._fields, this._getters, ctor, methods);
     }
     _getProviderValue(provider) {
         var result;
@@ -176,4 +176,4 @@ class InjectMethodVars {
 }
 InjectMethodVars.token = o.variable('token');
 InjectMethodVars.notFoundResult = o.variable('notFoundResult');
-//# sourceMappingURL=app_module_compiler.js.map
+//# sourceMappingURL=ng_module_compiler.js.map

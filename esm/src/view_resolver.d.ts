@@ -14,5 +14,5 @@ import { Type } from '../src/facade/lang';
 export declare class ViewResolver {
     private _reflector;
     constructor(_reflector?: ReflectorReader);
-    resolve(component: Type): ViewMetadata;
+    resolve(component: Type, throwIfNotFound?: boolean): ViewMetadata;
 }

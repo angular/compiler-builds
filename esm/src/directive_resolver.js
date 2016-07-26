@@ -21,7 +21,7 @@ export class DirectiveResolver {
     /**
      * Return {@link DirectiveMetadata} for a given `Type`.
      */
-    resolve(type) {
+    resolve(type, throwIfNotFound = true) {
         var typeMetadata = this._reflector.annotations(resolveForwardRef(type));
         if (isPresent(typeMetadata)) {
             var metadata = typeMetadata.find(_isDirectiveMetadata);
@@ -30,7 +30,10 @@ export class DirectiveResolver {
                 return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
             }
         }
-        throw new BaseException(`No Directive annotation found on ${stringify(type)}`);
+        if (throwIfNotFound) {
+            throw new BaseException(`No Directive annotation found on ${stringify(type)}`);
+        }
+        return null;
     }
     _mergeWithPropertyMetadata(dm, propertyMetadata, directiveType) {
         var inputs = [];

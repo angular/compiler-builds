@@ -67,7 +67,7 @@ var CompileView = (function () {
         }
         this.componentContext =
             util_1.getPropertyInView(o.THIS_EXPR.prop('context'), this, this.componentView);
-        var viewQueries = new compile_metadata_1.CompileTokenMap();
+        var viewQueries = new compile_metadata_1.CompileIdentifierMap();
         if (this.viewType === core_private_1.ViewType.COMPONENT) {
             var directiveInstance = o.THIS_EXPR.prop('context');
             collection_1.ListWrapper.forEachWithIndex(this.component.viewQueries, function (queryMeta, queryIndex) {
