@@ -319,6 +319,7 @@ var CompileMetadataResolver = (function () {
         this._verifyModule(moduleMeta);
     };
     CompileMetadataResolver.prototype._verifyModule = function (moduleMeta) {
+        var _this = this;
         moduleMeta.exportedDirectives.forEach(function (dirMeta) {
             if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
                 throw new exceptions_1.BaseException("Can't export directive " + lang_1.stringify(dirMeta.type.runtime) + " from " + lang_1.stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
@@ -330,15 +331,17 @@ var CompileMetadataResolver = (function () {
             }
         });
         moduleMeta.declaredDirectives.forEach(function (dirMeta) {
-            dirMeta.entryComponents.forEach(function (entryComponent) {
-                if (!moduleMeta.transitiveModule.directivesSet.has(entryComponent.runtime)) {
-                    throw new exceptions_1.BaseException("Component " + lang_1.stringify(dirMeta.type.runtime) + " in NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponent.runtime) + " via \"entryComponents\" but it was neither declared nor imported into the module!");
+            dirMeta.entryComponents.forEach(function (entryComponentType) {
+                if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
+                    _this._addDirectiveToModule(_this.getDirectiveMetadata(entryComponentType.runtime), moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives);
+                    _this._console.warn("Component " + lang_1.stringify(dirMeta.type.runtime) + " in NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported into the module! This warning will become an error after final.");
                 }
             });
         });
         moduleMeta.entryComponents.forEach(function (entryComponentType) {
             if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
-                throw new exceptions_1.BaseException("NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported!");
+                _this._addDirectiveToModule(_this.getDirectiveMetadata(entryComponentType.runtime), moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives);
+                _this._console.warn("NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported! This warning will become an error after final.");
             }
         });
     };
