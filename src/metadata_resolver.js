@@ -207,6 +207,16 @@ var CompileMetadataResolver = (function () {
             var providers_1 = [];
             var entryComponents_1 = [];
             var schemas = [];
+            if (meta.providers) {
+                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1));
+            }
+            if (meta.entryComponents) {
+                entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+            }
+            if (meta.schemas) {
+                schemas.push.apply(schemas, flattenArray(meta.schemas));
+            }
             if (meta.imports) {
                 flattenArray(meta.imports).forEach(function (importedType) {
                     var importedModuleType;
@@ -273,18 +283,6 @@ var CompileMetadataResolver = (function () {
                         throw new exceptions_1.BaseException("Unexpected value '" + lang_1.stringify(declaredType) + "' declared by the module '" + lang_1.stringify(moduleType) + "'");
                     }
                 });
-            }
-            // The providers of the module have to go last
-            // so that they overwrite any other provider we already added.
-            if (meta.providers) {
-                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1));
-            }
-            if (meta.entryComponents) {
-                entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
-                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
-            }
-            if (meta.schemas) {
-                schemas.push.apply(schemas, flattenArray(meta.schemas));
             }
             (_a = transitiveModule_1.entryComponents).push.apply(_a, entryComponents_1);
             (_b = transitiveModule_1.providers).push.apply(_b, providers_1);
