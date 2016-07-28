@@ -15,7 +15,7 @@ import { Parser } from './expression_parser/parser';
 import { removeIdentifierDuplicates } from './compile_metadata';
 import { HtmlParser, HtmlParseTreeResult } from './html_parser';
 import { splitNsName, mergeNsAndName } from './html_tags';
-import { ParseError, ParseErrorLevel } from './parse_util';
+import { ParseSourceSpan, ParseError, ParseErrorLevel } from './parse_util';
 import { InterpolationConfig } from './interpolation_config';
 import { ElementAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, templateVisitAll, TextAst, BoundTextAst, EmbeddedTemplateAst, AttrAst, NgContentAst, PropertyBindingType, DirectiveAst, BoundDirectivePropertyAst, VariableAst } from './template_ast';
 import { CssSelector, SelectorMatcher } from './selector';
@@ -529,10 +529,11 @@ class TemplateParseVisitor {
         });
         return directives.filter(dir => isPresent(dir));
     }
-    _createDirectiveAsts(isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, sourceSpan, targetReferences) {
+    _createDirectiveAsts(isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, elementSourceSpan, targetReferences) {
         const matchedReferences = new Set();
         let component = null;
         const directiveAsts = directives.map((directive) => {
+            const sourceSpan = new ParseSourceSpan(elementSourceSpan.start, elementSourceSpan.end, `Directive ${directive.type.name}`);
             if (directive.isComponent) {
                 component = directive;
             }

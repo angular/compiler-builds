@@ -5248,9 +5248,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         return ParseSourceFile;
     }());
     var ParseSourceSpan = (function () {
-        function ParseSourceSpan(start, end) {
+        function ParseSourceSpan(start, end, details) {
+            if (details === void 0) { details = null; }
             this.start = start;
             this.end = end;
+            this.details = details;
         }
         ParseSourceSpan.prototype.toString = function () {
             return this.start.file.content.substring(this.start.offset, this.end.offset);
@@ -5273,6 +5275,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var source = this.span.start.file.content;
             var ctxStart = this.span.start.offset;
             var contextStr = '';
+            var details = '';
             if (isPresent(ctxStart)) {
                 if (ctxStart > source.length - 1) {
                     ctxStart = source.length - 1;
@@ -5304,7 +5307,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                     source.substring(this.span.start.offset, ctxEnd + 1);
                 contextStr = " (\"" + context + "\")";
             }
-            return "" + this.msg + contextStr + ": " + this.span.start;
+            if (this.span.details) {
+                details = ", " + this.span.details;
+            }
+            return "" + this.msg + contextStr + ": " + this.span.start + details;
         };
         return ParseError;
     }());
@@ -7695,11 +7701,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
             return directives.filter(function (dir) { return isPresent(dir); });
         };
-        TemplateParseVisitor.prototype._createDirectiveAsts = function (isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, sourceSpan, targetReferences) {
+        TemplateParseVisitor.prototype._createDirectiveAsts = function (isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, elementSourceSpan, targetReferences) {
             var _this = this;
             var matchedReferences = new Set();
             var component = null;
             var directiveAsts = directives.map(function (directive) {
+                var sourceSpan = new ParseSourceSpan(elementSourceSpan.start, elementSourceSpan.end, "Directive " + directive.type.name);
                 if (directive.isComponent) {
                     component = directive;
                 }

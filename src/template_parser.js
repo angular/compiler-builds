@@ -549,11 +549,12 @@ var TemplateParseVisitor = (function () {
         });
         return directives.filter(function (dir) { return lang_1.isPresent(dir); });
     };
-    TemplateParseVisitor.prototype._createDirectiveAsts = function (isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, sourceSpan, targetReferences) {
+    TemplateParseVisitor.prototype._createDirectiveAsts = function (isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, elementSourceSpan, targetReferences) {
         var _this = this;
         var matchedReferences = new Set();
         var component = null;
         var directiveAsts = directives.map(function (directive) {
+            var sourceSpan = new parse_util_1.ParseSourceSpan(elementSourceSpan.start, elementSourceSpan.end, "Directive " + directive.type.name);
             if (directive.isComponent) {
                 component = directive;
             }

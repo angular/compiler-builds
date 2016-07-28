@@ -17,9 +17,10 @@ export class ParseSourceFile {
     }
 }
 export class ParseSourceSpan {
-    constructor(start, end) {
+    constructor(start, end, details = null) {
         this.start = start;
         this.end = end;
+        this.details = details;
     }
     toString() {
         return this.start.file.content.substring(this.start.offset, this.end.offset);
@@ -40,6 +41,7 @@ export class ParseError {
         var source = this.span.start.file.content;
         var ctxStart = this.span.start.offset;
         var contextStr = '';
+        var details = '';
         if (isPresent(ctxStart)) {
             if (ctxStart > source.length - 1) {
                 ctxStart = source.length - 1;
@@ -71,7 +73,10 @@ export class ParseError {
                 source.substring(this.span.start.offset, ctxEnd + 1);
             contextStr = ` ("${context}")`;
         }
-        return `${this.msg}${contextStr}: ${this.span.start}`;
+        if (this.span.details) {
+            details = `, ${this.span.details}`;
+        }
+        return `${this.msg}${contextStr}: ${this.span.start}${details}`;
     }
 }
 //# sourceMappingURL=parse_util.js.map
