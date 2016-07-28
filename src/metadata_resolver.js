@@ -273,9 +273,6 @@ var CompileMetadataResolver = (function () {
                     var declaredPipeMeta;
                     if (declaredDirMeta = _this.getDirectiveMetadata(declaredType, false)) {
                         _this._addDirectiveToModule(declaredDirMeta, moduleType, transitiveModule_1, declaredDirectives_1, true);
-                        // Collect @Component.directives/pipes/entryComponents into our declared
-                        // directives/pipes.
-                        _this._getTransitiveViewDirectivesAndPipes(declaredDirMeta, moduleType, transitiveModule_1, declaredDirectives_1, declaredPipes_1);
                     }
                     else if (declaredPipeMeta = _this.getPipeMetadata(declaredType, false)) {
                         _this._addPipeToModule(declaredPipeMeta, moduleType, transitiveModule_1, declaredPipes_1, true);
@@ -324,7 +321,6 @@ var CompileMetadataResolver = (function () {
         // Collect @Component.directives/pipes/entryComponents into our declared directives/pipes.
         var compMeta = this.getDirectiveMetadata(compType, false);
         this._addDirectiveToModule(compMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives);
-        this._getTransitiveViewDirectivesAndPipes(compMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives, moduleMeta.declaredPipes);
         moduleMeta.transitiveModule.entryComponents.push(compMeta.type);
         moduleMeta.entryComponents.push(compMeta.type);
         this._verifyModule(moduleMeta);
@@ -341,20 +337,16 @@ var CompileMetadataResolver = (function () {
                 throw new exceptions_1.BaseException("Can't export pipe " + lang_1.stringify(pipeMeta.type.runtime) + " from " + lang_1.stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
             }
         });
-        moduleMeta.declaredDirectives.forEach(function (dirMeta) {
-            dirMeta.entryComponents.forEach(function (entryComponentType) {
-                if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
-                    _this._addDirectiveToModule(_this.getDirectiveMetadata(entryComponentType.runtime), moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives);
-                    _this._console.warn("Component " + lang_1.stringify(dirMeta.type.runtime) + " in NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported into the module! This warning will become an error after final.");
-                }
-            });
-        });
         moduleMeta.entryComponents.forEach(function (entryComponentType) {
             if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
                 _this._addDirectiveToModule(_this.getDirectiveMetadata(entryComponentType.runtime), moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives);
                 _this._console.warn("NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported! This warning will become an error after final.");
             }
         });
+        // Collect @Component.directives/pipes/entryComponents into our declared
+        // directives/pipes. Do this last so that directives added by previous steps
+        // are considered as well!
+        moduleMeta.declaredDirectives.forEach(function (dirMeta) { _this._getTransitiveViewDirectivesAndPipes(dirMeta, moduleMeta); });
     };
     CompileMetadataResolver.prototype._addTypeToModule = function (type, moduleType) {
         var oldModule = this._ngModuleOfTypes.get(type);
@@ -363,7 +355,7 @@ var CompileMetadataResolver = (function () {
         }
         this._ngModuleOfTypes.set(type, moduleType);
     };
-    CompileMetadataResolver.prototype._getTransitiveViewDirectivesAndPipes = function (compMeta, moduleType, transitiveModule, declaredDirectives, declaredPipes) {
+    CompileMetadataResolver.prototype._getTransitiveViewDirectivesAndPipes = function (compMeta, moduleMeta) {
         var _this = this;
         if (!compMeta.isComponent) {
             return;
@@ -373,15 +365,15 @@ var CompileMetadataResolver = (function () {
                 throw new exceptions_1.BaseException("Unexpected pipe value '" + pipeType + "' on the View of component '" + lang_1.stringify(compMeta.type.runtime) + "'");
             }
             var pipeMeta = _this.getPipeMetadata(pipeType);
-            _this._addPipeToModule(pipeMeta, moduleType, transitiveModule, declaredPipes);
+            _this._addPipeToModule(pipeMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredPipes);
         };
         var addDirective = function (dirType) {
             if (!dirType) {
                 throw new exceptions_1.BaseException("Unexpected directive value '" + dirType + "' on the View of component '" + lang_1.stringify(compMeta.type.runtime) + "'");
             }
             var dirMeta = _this.getDirectiveMetadata(dirType);
-            if (_this._addDirectiveToModule(dirMeta, moduleType, transitiveModule, declaredDirectives)) {
-                _this._getTransitiveViewDirectivesAndPipes(dirMeta, moduleType, transitiveModule, declaredDirectives, declaredPipes);
+            if (_this._addDirectiveToModule(dirMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives)) {
+                _this._getTransitiveViewDirectivesAndPipes(dirMeta, moduleMeta);
             }
         };
         var view = this._viewResolver.resolve(compMeta.type.runtime);
@@ -391,6 +383,12 @@ var CompileMetadataResolver = (function () {
         if (view.directives) {
             flattenArray(view.directives).forEach(addDirective);
         }
+        compMeta.entryComponents.forEach(function (entryComponentType) {
+            if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
+                _this._console.warn("Component " + lang_1.stringify(compMeta.type.runtime) + " in NgModule " + lang_1.stringify(moduleMeta.type.runtime) + " uses " + lang_1.stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported into the module! This warning will become an error after final.");
+                addDirective(entryComponentType.runtime);
+            }
+        });
     };
     CompileMetadataResolver.prototype._getTransitiveNgModuleMetadata = function (importedModules, exportedModules) {
         // collect `providers` / `entryComponents` from all imported and all exported modules

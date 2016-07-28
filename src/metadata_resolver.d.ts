@@ -43,7 +43,7 @@ export declare class CompileMetadataResolver {
     addComponentToModule(moduleType: Type, compType: Type): void;
     private _verifyModule(moduleMeta);
     private _addTypeToModule(type, moduleType);
-    private _getTransitiveViewDirectivesAndPipes(compMeta, moduleType, transitiveModule, declaredDirectives, declaredPipes);
+    private _getTransitiveViewDirectivesAndPipes(compMeta, moduleMeta);
     private _getTransitiveNgModuleMetadata(importedModules, exportedModules);
     private _addDirectiveToModule(dirMeta, moduleType, transitiveModule, declaredDirectives, force?);
     private _addPipeToModule(pipeMeta, moduleType, transitiveModule, declaredPipes, force?);
