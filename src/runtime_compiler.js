@@ -24,8 +24,8 @@ var output_jit_1 = require('./output/output_jit');
 var output_interpreter_1 = require('./output/output_interpreter');
 var util_1 = require('./util');
 var RuntimeCompiler = (function () {
-    function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
-        this._injector = _injector;
+    function RuntimeCompiler(__injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+        this.__injector = __injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
         this._templateParser = _templateParser;
@@ -38,8 +38,8 @@ var RuntimeCompiler = (function () {
         this._compiledHostTemplateCache = new Map();
         this._compiledNgModuleCache = new Map();
     }
-    Object.defineProperty(RuntimeCompiler.prototype, "injector", {
-        get: function () { return this._injector; },
+    Object.defineProperty(RuntimeCompiler.prototype, "_injector", {
+        get: function () { return this.__injector; },
         enumerable: true,
         configurable: true
     });
@@ -354,8 +354,8 @@ var ModuleBoundCompiler = (function () {
         this._console = _console;
         this._warnOnComponentResolver = true;
     }
-    Object.defineProperty(ModuleBoundCompiler.prototype, "injector", {
-        get: function () { return this._delegate.injector; },
+    Object.defineProperty(ModuleBoundCompiler.prototype, "_injector", {
+        get: function () { return this._delegate._injector; },
         enumerable: true,
         configurable: true
     });

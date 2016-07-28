@@ -25,7 +25,7 @@ import { CompilerConfig } from './config';
  * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
  */
 export declare class RuntimeCompiler implements Compiler {
-    private _injector;
+    private __injector;
     private _metadataResolver;
     private _templateNormalizer;
     private _templateParser;
@@ -37,8 +37,8 @@ export declare class RuntimeCompiler implements Compiler {
     private _compiledTemplateCache;
     private _compiledHostTemplateCache;
     private _compiledNgModuleCache;
-    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _compilerConfig: CompilerConfig, _console: Console);
-    injector: Injector;
+    constructor(__injector: Injector, _metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _compilerConfig: CompilerConfig, _console: Console);
+    _injector: Injector;
     compileModuleSync<T>(moduleType: ConcreteType<T>): NgModuleFactory<T>;
     compileModuleAsync<T>(moduleType: ConcreteType<T>): Promise<NgModuleFactory<T>>;
     compileComponentAsync<T>(compType: ConcreteType<T>, ngModule?: ConcreteType<any>): Promise<ComponentFactory<T>>;

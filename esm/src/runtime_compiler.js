@@ -23,8 +23,8 @@ import { jitStatements } from './output/output_jit';
 import { interpretStatements } from './output/output_interpreter';
 import { SyncAsyncResult } from './util';
 export class RuntimeCompiler {
-    constructor(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
-        this._injector = _injector;
+    constructor(__injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+        this.__injector = __injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
         this._templateParser = _templateParser;
@@ -37,7 +37,7 @@ export class RuntimeCompiler {
         this._compiledHostTemplateCache = new Map();
         this._compiledNgModuleCache = new Map();
     }
-    get injector() { return this._injector; }
+    get _injector() { return this.__injector; }
     compileModuleSync(moduleType) {
         return this._compileModuleAndComponents(moduleType, true).syncResult;
     }
@@ -329,7 +329,7 @@ class ModuleBoundCompiler {
         this._console = _console;
         this._warnOnComponentResolver = true;
     }
-    get injector() { return this._delegate.injector; }
+    get _injector() { return this._delegate._injector; }
     resolveComponent(component) {
         if (isString(component)) {
             if (this._parentComponentResolver) {

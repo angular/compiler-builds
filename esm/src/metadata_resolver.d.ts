@@ -13,6 +13,7 @@ import { CompilerConfig } from './config';
 import { DirectiveResolver } from './directive_resolver';
 import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
+import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { ViewResolver } from './view_resolver';
 export declare class CompileMetadataResolver {
     private _ngModuleResolver;
@@ -21,6 +22,7 @@ export declare class CompileMetadataResolver {
     private _viewResolver;
     private _config;
     private _console;
+    private _schemaRegistry;
     private _reflector;
     private _directiveCache;
     private _pipeCache;
@@ -28,7 +30,7 @@ export declare class CompileMetadataResolver {
     private _ngModuleOfTypes;
     private _anonymousTypes;
     private _anonymousTypeIndex;
-    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _viewResolver: ViewResolver, _config: CompilerConfig, _console: Console, _reflector?: ReflectorReader);
+    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _viewResolver: ViewResolver, _config: CompilerConfig, _console: Console, _schemaRegistry: ElementSchemaRegistry, _reflector?: ReflectorReader);
     private sanitizeTokenName(token);
     clearCacheFor(type: Type): void;
     clearCache(): void;

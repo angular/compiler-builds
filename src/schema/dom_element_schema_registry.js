@@ -308,6 +308,7 @@ var DomElementSchemaRegistry = (function (_super) {
         var mappedPropName = collection_1.StringMapWrapper.get(attrToPropMap, propName);
         return lang_1.isPresent(mappedPropName) ? mappedPropName : propName;
     };
+    DomElementSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
     /** @nocollapse */
     DomElementSchemaRegistry.decorators = [
         { type: core_1.Injectable },

@@ -24,11 +24,12 @@ var directive_resolver_1 = require('./directive_resolver');
 var identifiers_1 = require('./identifiers');
 var ng_module_resolver_1 = require('./ng_module_resolver');
 var pipe_resolver_1 = require('./pipe_resolver');
+var element_schema_registry_1 = require('./schema/element_schema_registry');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
 var view_resolver_1 = require('./view_resolver');
 var CompileMetadataResolver = (function () {
-    function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _reflector) {
+    function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _schemaRegistry, _reflector) {
         if (_reflector === void 0) { _reflector = core_private_1.reflector; }
         this._ngModuleResolver = _ngModuleResolver;
         this._directiveResolver = _directiveResolver;
@@ -36,6 +37,7 @@ var CompileMetadataResolver = (function () {
         this._viewResolver = _viewResolver;
         this._config = _config;
         this._console = _console;
+        this._schemaRegistry = _schemaRegistry;
         this._reflector = _reflector;
         this._directiveCache = new Map();
         this._pipeCache = new Map();
@@ -127,6 +129,7 @@ var CompileMetadataResolver = (function () {
             var viewProviders = [];
             var moduleUrl = staticTypeModuleUrl(directiveType);
             var entryComponentTypes = [];
+            var selector = dirMeta.selector;
             if (dirMeta instanceof core_1.ComponentMetadata) {
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
@@ -156,6 +159,14 @@ var CompileMetadataResolver = (function () {
                         flattenArray(cmpMeta.entryComponents)
                             .map(function (cmp) { return _this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)); });
                 }
+                if (!selector) {
+                    selector = this._schemaRegistry.getDefaultComponentElementName();
+                }
+            }
+            else {
+                if (!selector) {
+                    throw new exceptions_1.BaseException("Directive " + lang_1.stringify(directiveType) + " has no selector, please add it!");
+                }
             }
             var providers = [];
             if (lang_1.isPresent(dirMeta.providers)) {
@@ -168,7 +179,7 @@ var CompileMetadataResolver = (function () {
                 viewQueries = this.getQueriesMetadata(dirMeta.queries, true, directiveType);
             }
             meta = cpl.CompileDirectiveMetadata.create({
-                selector: dirMeta.selector,
+                selector: selector,
                 exportAs: dirMeta.exportAs,
                 isComponent: lang_1.isPresent(templateMeta),
                 type: this.getTypeMetadata(directiveType, moduleUrl),
@@ -661,6 +672,7 @@ var CompileMetadataResolver = (function () {
         { type: view_resolver_1.ViewResolver, },
         { type: config_1.CompilerConfig, },
         { type: core_private_1.Console, },
+        { type: element_schema_registry_1.ElementSchemaRegistry, },
         { type: core_private_1.ReflectorReader, },
     ];
     return CompileMetadataResolver;

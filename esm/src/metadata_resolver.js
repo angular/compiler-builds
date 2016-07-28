@@ -18,17 +18,19 @@ import { DirectiveResolver } from './directive_resolver';
 import { Identifiers, identifierToken } from './identifiers';
 import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
+import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, ValueTransformer, sanitizeIdentifier, visitValue } from './util';
 import { ViewResolver } from './view_resolver';
 export class CompileMetadataResolver {
-    constructor(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _reflector = reflector) {
+    constructor(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _schemaRegistry, _reflector = reflector) {
         this._ngModuleResolver = _ngModuleResolver;
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
         this._viewResolver = _viewResolver;
         this._config = _config;
         this._console = _console;
+        this._schemaRegistry = _schemaRegistry;
         this._reflector = _reflector;
         this._directiveCache = new Map();
         this._pipeCache = new Map();
@@ -116,6 +118,7 @@ export class CompileMetadataResolver {
             var viewProviders = [];
             var moduleUrl = staticTypeModuleUrl(directiveType);
             var entryComponentTypes = [];
+            let selector = dirMeta.selector;
             if (dirMeta instanceof ComponentMetadata) {
                 var cmpMeta = dirMeta;
                 var viewMeta = this._viewResolver.resolve(directiveType);
@@ -145,6 +148,14 @@ export class CompileMetadataResolver {
                         flattenArray(cmpMeta.entryComponents)
                             .map((cmp) => this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)));
                 }
+                if (!selector) {
+                    selector = this._schemaRegistry.getDefaultComponentElementName();
+                }
+            }
+            else {
+                if (!selector) {
+                    throw new BaseException(`Directive ${stringify(directiveType)} has no selector, please add it!`);
+                }
             }
             var providers = [];
             if (isPresent(dirMeta.providers)) {
@@ -157,7 +168,7 @@ export class CompileMetadataResolver {
                 viewQueries = this.getQueriesMetadata(dirMeta.queries, true, directiveType);
             }
             meta = cpl.CompileDirectiveMetadata.create({
-                selector: dirMeta.selector,
+                selector: selector,
                 exportAs: dirMeta.exportAs,
                 isComponent: isPresent(templateMeta),
                 type: this.getTypeMetadata(directiveType, moduleUrl),
@@ -636,6 +647,7 @@ CompileMetadataResolver.ctorParameters = [
     { type: ViewResolver, },
     { type: CompilerConfig, },
     { type: Console, },
+    { type: ElementSchemaRegistry, },
     { type: ReflectorReader, },
 ];
 function getTransitiveModules(modules, includeImports, targetModules = [], visitedModules = new Set()) {

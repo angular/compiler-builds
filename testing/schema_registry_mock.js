@@ -24,6 +24,7 @@ var MockSchemaRegistry = (function () {
         var result = this.attrPropMapping[attrName];
         return lang_1.isPresent(result) ? result : attrName;
     };
+    MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
     return MockSchemaRegistry;
 }());
 exports.MockSchemaRegistry = MockSchemaRegistry;

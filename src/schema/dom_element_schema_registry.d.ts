@@ -27,4 +27,5 @@ export declare class DomElementSchemaRegistry extends ElementSchemaRegistry {
      */
     securityContext(tagName: string, propName: string): SecurityContext;
     getMappedPropName(propName: string): string;
+    getDefaultComponentElementName(): string;
 }

@@ -22,4 +22,5 @@ export declare class MockSchemaRegistry implements ElementSchemaRegistry {
     hasProperty(tagName: string, property: string, schemas: SchemaMetadata[]): boolean;
     securityContext(tagName: string, property: string): SecurityContext;
     getMappedPropName(attrName: string): string;
+    getDefaultComponentElementName(): string;
 }

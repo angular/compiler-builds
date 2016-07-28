@@ -12816,7 +12816,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: ReflectorReader, },
     ];
     var CompileMetadataResolver = (function () {
-        function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _reflector) {
+        function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _schemaRegistry, _reflector) {
             if (_reflector === void 0) { _reflector = reflector; }
             this._ngModuleResolver = _ngModuleResolver;
             this._directiveResolver = _directiveResolver;
@@ -12824,6 +12824,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._viewResolver = _viewResolver;
             this._config = _config;
             this._console = _console;
+            this._schemaRegistry = _schemaRegistry;
             this._reflector = _reflector;
             this._directiveCache = new Map();
             this._pipeCache = new Map();
@@ -12915,6 +12916,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var viewProviders = [];
                 var moduleUrl = staticTypeModuleUrl(directiveType);
                 var entryComponentTypes = [];
+                var selector = dirMeta.selector;
                 if (dirMeta instanceof _angular_core.ComponentMetadata) {
                     var cmpMeta = dirMeta;
                     var viewMeta = this._viewResolver.resolve(directiveType);
@@ -12944,6 +12946,14 @@ var __extends = (this && this.__extends) || function (d, b) {
                             flattenArray(cmpMeta.entryComponents)
                                 .map(function (cmp) { return _this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)); });
                     }
+                    if (!selector) {
+                        selector = this._schemaRegistry.getDefaultComponentElementName();
+                    }
+                }
+                else {
+                    if (!selector) {
+                        throw new BaseException("Directive " + stringify(directiveType) + " has no selector, please add it!");
+                    }
                 }
                 var providers = [];
                 if (isPresent(dirMeta.providers)) {
@@ -12956,7 +12966,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     viewQueries = this.getQueriesMetadata(dirMeta.queries, true, directiveType);
                 }
                 meta = CompileDirectiveMetadata.create({
-                    selector: dirMeta.selector,
+                    selector: selector,
                     exportAs: dirMeta.exportAs,
                     isComponent: isPresent(templateMeta),
                     type: this.getTypeMetadata(directiveType, moduleUrl),
@@ -13451,6 +13461,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: ViewResolver, },
         { type: CompilerConfig, },
         { type: Console, },
+        { type: ElementSchemaRegistry, },
         { type: ReflectorReader, },
     ];
     function getTransitiveModules(modules, includeImports, targetModules, visitedModules) {
@@ -15098,8 +15109,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     var CATCH_ERROR_VAR$2 = 'error';
     var CATCH_STACK_VAR$2 = 'stack';
     var RuntimeCompiler = (function () {
-        function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
-            this._injector = _injector;
+        function RuntimeCompiler(__injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+            this.__injector = __injector;
             this._metadataResolver = _metadataResolver;
             this._templateNormalizer = _templateNormalizer;
             this._templateParser = _templateParser;
@@ -15112,8 +15123,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._compiledHostTemplateCache = new Map();
             this._compiledNgModuleCache = new Map();
         }
-        Object.defineProperty(RuntimeCompiler.prototype, "injector", {
-            get: function () { return this._injector; },
+        Object.defineProperty(RuntimeCompiler.prototype, "_injector", {
+            get: function () { return this.__injector; },
             enumerable: true,
             configurable: true
         });
@@ -15425,8 +15436,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._console = _console;
             this._warnOnComponentResolver = true;
         }
-        Object.defineProperty(ModuleBoundCompiler.prototype, "injector", {
-            get: function () { return this._delegate.injector; },
+        Object.defineProperty(ModuleBoundCompiler.prototype, "_injector", {
+            get: function () { return this._delegate._injector; },
             enumerable: true,
             configurable: true
         });
@@ -15812,6 +15823,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var mappedPropName = StringMapWrapper.get(attrToPropMap, propName);
             return isPresent(mappedPropName) ? mappedPropName : propName;
         };
+        DomElementSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
         return DomElementSchemaRegistry;
     }(ElementSchemaRegistry));
     /** @nocollapse */
