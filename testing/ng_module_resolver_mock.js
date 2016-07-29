@@ -19,7 +19,6 @@ var MockNgModuleResolver = (function (_super) {
     function MockNgModuleResolver(_injector) {
         _super.call(this);
         this._injector = _injector;
-        /** @internal */
         this._ngModules = new collection_1.Map();
     }
     Object.defineProperty(MockNgModuleResolver.prototype, "_compiler", {

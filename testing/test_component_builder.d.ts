@@ -10,7 +10,10 @@ import { ComponentFixture, TestComponentBuilder } from '@angular/core/testing';
 import { ConcreteType, Type } from '../src/facade/lang';
 /**
  * A TestComponentBuilder that allows overriding based on the compiler.
- */
+ *
+ * @deprecated Use `TestBed.configureTestModule` / `TestBed.override...` / `TestBed.createComponent`
+ * instead.
+*/
 export declare class OverridingTestComponentBuilder extends TestComponentBuilder {
     constructor(injector: Injector);
     overrideTemplate(componentType: Type, template: string): OverridingTestComponentBuilder;
@@ -19,7 +22,7 @@ export declare class OverridingTestComponentBuilder extends TestComponentBuilder
     overrideDirective(componentType: Type, from: Type, to: Type): OverridingTestComponentBuilder;
     overrideProviders(type: Type, providers: any[]): OverridingTestComponentBuilder;
     overrideViewProviders(type: Type, providers: any[]): OverridingTestComponentBuilder;
-    createAsync<T>(rootComponentType: ConcreteType<T>, ngModule?: ConcreteType<any>): Promise<ComponentFixture<T>>;
-    createSync<T>(rootComponentType: ConcreteType<T>, ngModule?: ConcreteType<any>): ComponentFixture<T>;
+    createAsync<T>(rootComponentType: ConcreteType<T>): Promise<ComponentFixture<T>>;
+    createSync<T>(rootComponentType: ConcreteType<T>): ComponentFixture<T>;
     private _applyMetadataOverrides();
 }

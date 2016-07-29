@@ -24,8 +24,8 @@ var output_jit_1 = require('./output/output_jit');
 var output_interpreter_1 = require('./output/output_interpreter');
 var util_1 = require('./util');
 var RuntimeCompiler = (function () {
-    function RuntimeCompiler(__injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
-        this.__injector = __injector;
+    function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+        this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
         this._templateParser = _templateParser;
@@ -38,8 +38,8 @@ var RuntimeCompiler = (function () {
         this._compiledHostTemplateCache = new Map();
         this._compiledNgModuleCache = new Map();
     }
-    Object.defineProperty(RuntimeCompiler.prototype, "_injector", {
-        get: function () { return this.__injector; },
+    Object.defineProperty(RuntimeCompiler.prototype, "injector", {
+        get: function () { return this._injector; },
         enumerable: true,
         configurable: true
     });
@@ -48,6 +48,12 @@ var RuntimeCompiler = (function () {
     };
     RuntimeCompiler.prototype.compileModuleAsync = function (moduleType) {
         return this._compileModuleAndComponents(moduleType, false).asyncResult;
+    };
+    RuntimeCompiler.prototype.compileModuleAndAllComponentsSync = function (moduleType) {
+        return this._compileModuleAndAllComponents(moduleType, true).syncResult;
+    };
+    RuntimeCompiler.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
+        return this._compileModuleAndAllComponents(moduleType, false).asyncResult;
     };
     RuntimeCompiler.prototype.compileComponentAsync = function (compType, ngModule) {
         if (ngModule === void 0) { ngModule = null; }
@@ -67,6 +73,33 @@ var RuntimeCompiler = (function () {
         var componentPromise = this._compileComponents(moduleType, isSync);
         var ngModuleFactory = this._compileModule(moduleType);
         return new util_1.SyncAsyncResult(ngModuleFactory, componentPromise.then(function () { return ngModuleFactory; }));
+    };
+    RuntimeCompiler.prototype._compileModuleAndAllComponents = function (moduleType, isSync) {
+        var _this = this;
+        var componentPromise = this._compileComponents(moduleType, isSync);
+        var ngModuleFactory = this._compileModule(moduleType);
+        var moduleMeta = this._metadataResolver.getNgModuleMetadata(moduleType);
+        var componentFactories = [];
+        var templates = new Set();
+        moduleMeta.transitiveModule.modules.forEach(function (moduleMeta) {
+            moduleMeta.declaredDirectives.forEach(function (dirMeta) {
+                if (dirMeta.isComponent) {
+                    var template = _this._createCompiledHostTemplate(dirMeta.type.runtime);
+                    templates.add(template);
+                    componentFactories.push(template.proxyComponentFactory);
+                }
+            });
+        });
+        var syncResult = new core_1.ModuleWithComponentFactories(ngModuleFactory, componentFactories);
+        // Note: host components themselves can always be compiled synchronously as they have an
+        // inline template. However, we still need to wait for the components that they
+        // reference to be loaded / compiled.
+        var compile = function () {
+            templates.forEach(function (template) { _this._compileTemplate(template); });
+            return syncResult;
+        };
+        var asyncResult = isSync ? Promise.resolve(compile()) : componentPromise.then(compile);
+        return new util_1.SyncAsyncResult(syncResult, asyncResult);
     };
     RuntimeCompiler.prototype._compileModule = function (moduleType) {
         var _this = this;
@@ -355,7 +388,7 @@ var ModuleBoundCompiler = (function () {
         this._warnOnComponentResolver = true;
     }
     Object.defineProperty(ModuleBoundCompiler.prototype, "_injector", {
-        get: function () { return this._delegate._injector; },
+        get: function () { return this._delegate.injector; },
         enumerable: true,
         configurable: true
     });
@@ -387,6 +420,12 @@ var ModuleBoundCompiler = (function () {
     };
     ModuleBoundCompiler.prototype.compileModuleAsync = function (moduleType) {
         return this._delegate.compileModuleAsync(moduleType);
+    };
+    ModuleBoundCompiler.prototype.compileModuleAndAllComponentsSync = function (moduleType) {
+        return this._delegate.compileModuleAndAllComponentsSync(moduleType);
+    };
+    ModuleBoundCompiler.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
+        return this._delegate.compileModuleAndAllComponentsAsync(moduleType);
     };
     /**
      * Clears all caches

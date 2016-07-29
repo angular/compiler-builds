@@ -237,7 +237,7 @@ export declare class CompileTemplateMetadata {
  * Metadata regarding compilation of a directive.
  */
 export declare class CompileDirectiveMetadata implements CompileMetadataWithIdentifier {
-    static create({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, template}?: {
+    static create({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template}?: {
         type?: CompileTypeMetadata;
         isComponent?: boolean;
         selector?: string;
@@ -254,6 +254,8 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
         entryComponents?: CompileTypeMetadata[];
+        viewDirectives?: CompileTypeMetadata[];
+        viewPipes?: CompileTypeMetadata[];
         template?: CompileTemplateMetadata;
     }): CompileDirectiveMetadata;
     type: CompileTypeMetadata;
@@ -282,8 +284,10 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
     queries: CompileQueryMetadata[];
     viewQueries: CompileQueryMetadata[];
     entryComponents: CompileTypeMetadata[];
+    viewDirectives: CompileTypeMetadata[];
+    viewPipes: CompileTypeMetadata[];
     template: CompileTemplateMetadata;
-    constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, template}?: {
+    constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template}?: {
         type?: CompileTypeMetadata;
         isComponent?: boolean;
         selector?: string;
@@ -310,6 +314,8 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
         entryComponents?: CompileTypeMetadata[];
+        viewDirectives?: CompileTypeMetadata[];
+        viewPipes?: CompileTypeMetadata[];
         template?: CompileTemplateMetadata;
     });
     readonly identifier: CompileIdentifierMetadata;

@@ -12,7 +12,6 @@ export class MockNgModuleResolver extends NgModuleResolver {
     constructor(_injector) {
         super();
         this._injector = _injector;
-        /** @internal */
         this._ngModules = new Map();
     }
     get _compiler() { return this._injector.get(Compiler); }

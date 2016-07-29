@@ -4561,7 +4561,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var CompileDirectiveMetadata = (function () {
         function CompileDirectiveMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template;
+            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
             this.type = type;
             this.isComponent = isComponent;
             this.selector = selector;
@@ -4578,10 +4578,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.queries = _normalizeArray(queries);
             this.viewQueries = _normalizeArray(viewQueries);
             this.entryComponents = _normalizeArray(entryComponents);
+            this.viewDirectives = _normalizeArray(viewDirectives);
+            this.viewPipes = _normalizeArray(viewPipes);
             this.template = template;
         }
         CompileDirectiveMetadata.create = function (_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template;
+            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
             var hostListeners = {};
             var hostProperties = {};
             var hostAttributes = {};
@@ -4631,6 +4633,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 queries: queries,
                 viewQueries: viewQueries,
                 entryComponents: entryComponents,
+                viewDirectives: viewDirectives,
+                viewPipes: viewPipes,
                 template: template,
             });
         };
@@ -12685,7 +12689,16 @@ var __extends = (this && this.__extends) || function (d, b) {
                     changeDetection: dm.changeDetection,
                     providers: dm.providers,
                     viewProviders: dm.viewProviders,
-                    entryComponents: dm.entryComponents
+                    entryComponents: dm.entryComponents,
+                    directives: dm.directives,
+                    pipes: dm.pipes,
+                    template: dm.template,
+                    templateUrl: dm.templateUrl,
+                    styles: dm.styles,
+                    styleUrls: dm.styleUrls,
+                    encapsulation: dm.encapsulation,
+                    animations: dm.animations,
+                    interpolation: dm.interpolation
                 });
             }
             else {
@@ -12776,59 +12789,12 @@ var __extends = (this && this.__extends) || function (d, b) {
     PipeResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
-    function _isComponentMetadata(obj) {
-        return obj instanceof _angular_core.ComponentMetadata;
-    }
-    var ViewResolver = (function () {
-        function ViewResolver(_reflector) {
-            if (_reflector === void 0) { _reflector = reflector; }
-            this._reflector = _reflector;
-        }
-        ViewResolver.prototype.resolve = function (component, throwIfNotFound) {
-            if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-            var compMeta = this._reflector.annotations(component).find(_isComponentMetadata);
-            if (isPresent(compMeta)) {
-                if (isBlank(compMeta.template) && isBlank(compMeta.templateUrl)) {
-                    throw new BaseException("Component '" + stringify(component) + "' must have either 'template' or 'templateUrl' set.");
-                }
-                else {
-                    return new _angular_core.ViewMetadata({
-                        templateUrl: compMeta.templateUrl,
-                        template: compMeta.template,
-                        directives: compMeta.directives,
-                        pipes: compMeta.pipes,
-                        encapsulation: compMeta.encapsulation,
-                        styles: compMeta.styles,
-                        styleUrls: compMeta.styleUrls,
-                        animations: compMeta.animations,
-                        interpolation: compMeta.interpolation
-                    });
-                }
-            }
-            else {
-                if (throwIfNotFound) {
-                    throw new BaseException("Could not compile '" + stringify(component) + "' because it is not a component.");
-                }
-                return null;
-            }
-        };
-        return ViewResolver;
-    }());
-    /** @nocollapse */
-    ViewResolver.decorators = [
-        { type: _angular_core.Injectable },
-    ];
-    /** @nocollapse */
-    ViewResolver.ctorParameters = [
-        { type: ReflectorReader, },
-    ];
     var CompileMetadataResolver = (function () {
-        function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _schemaRegistry, _reflector) {
+        function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _config, _console, _schemaRegistry, _reflector) {
             if (_reflector === void 0) { _reflector = reflector; }
             this._ngModuleResolver = _ngModuleResolver;
             this._directiveResolver = _directiveResolver;
             this._pipeResolver = _pipeResolver;
-            this._viewResolver = _viewResolver;
             this._config = _config;
             this._console = _console;
             this._schemaRegistry = _schemaRegistry;
@@ -12922,26 +12888,27 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var changeDetectionStrategy = null;
                 var viewProviders = [];
                 var moduleUrl = staticTypeModuleUrl(directiveType);
+                var viewDirectiveTypes = [];
+                var viewPipeTypes = [];
                 var entryComponentTypes = [];
                 var selector = dirMeta.selector;
                 if (dirMeta instanceof _angular_core.ComponentMetadata) {
                     var cmpMeta = dirMeta;
-                    var viewMeta = this._viewResolver.resolve(directiveType);
-                    assertArrayOfStrings('styles', viewMeta.styles);
-                    assertInterpolationSymbols('interpolation', viewMeta.interpolation);
-                    var animations = isPresent(viewMeta.animations) ?
-                        viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
+                    assertArrayOfStrings('styles', cmpMeta.styles);
+                    assertInterpolationSymbols('interpolation', cmpMeta.interpolation);
+                    var animations = isPresent(cmpMeta.animations) ?
+                        cmpMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
                         null;
-                    assertArrayOfStrings('styles', viewMeta.styles);
-                    assertArrayOfStrings('styleUrls', viewMeta.styleUrls);
+                    assertArrayOfStrings('styles', cmpMeta.styles);
+                    assertArrayOfStrings('styleUrls', cmpMeta.styleUrls);
                     templateMeta = new CompileTemplateMetadata({
-                        encapsulation: viewMeta.encapsulation,
-                        template: viewMeta.template,
-                        templateUrl: viewMeta.templateUrl,
-                        styles: viewMeta.styles,
-                        styleUrls: viewMeta.styleUrls,
+                        encapsulation: cmpMeta.encapsulation,
+                        template: cmpMeta.template,
+                        templateUrl: cmpMeta.templateUrl,
+                        styles: cmpMeta.styles,
+                        styleUrls: cmpMeta.styleUrls,
                         animations: animations,
-                        interpolation: viewMeta.interpolation
+                        interpolation: cmpMeta.interpolation
                     });
                     changeDetectionStrategy = cmpMeta.changeDetection;
                     if (isPresent(dirMeta.viewProviders)) {
@@ -12951,7 +12918,23 @@ var __extends = (this && this.__extends) || function (d, b) {
                     if (cmpMeta.entryComponents) {
                         entryComponentTypes =
                             flattenArray(cmpMeta.entryComponents)
-                                .map(function (cmp) { return _this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)); });
+                                .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); });
+                    }
+                    if (cmpMeta.directives) {
+                        viewDirectiveTypes = flattenArray(cmpMeta.directives).map(function (type) {
+                            if (!type) {
+                                throw new BaseException("Unexpected directive value '" + type + "' on the View of component '" + stringify(directiveType) + "'");
+                            }
+                            return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
+                        });
+                    }
+                    if (cmpMeta.pipes) {
+                        viewPipeTypes = flattenArray(cmpMeta.pipes).map(function (type) {
+                            if (!type) {
+                                throw new BaseException("Unexpected pipe value '" + type + "' on the View of component '" + stringify(directiveType) + "'");
+                            }
+                            return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
+                        });
                     }
                     if (!selector) {
                         selector = this._schemaRegistry.getDefaultComponentElementName();
@@ -12987,6 +12970,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     viewProviders: viewProviders,
                     queries: queries,
                     viewQueries: viewQueries,
+                    viewDirectives: viewDirectiveTypes,
+                    viewPipes: viewPipeTypes,
                     entryComponents: entryComponentTypes
                 });
                 this._directiveCache.set(directiveType, meta);
@@ -13155,27 +13140,20 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return;
             }
             var addPipe = function (pipeType) {
-                if (!pipeType) {
-                    throw new BaseException("Unexpected pipe value '" + pipeType + "' on the View of component '" + stringify(compMeta.type.runtime) + "'");
-                }
                 var pipeMeta = _this.getPipeMetadata(pipeType);
                 _this._addPipeToModule(pipeMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredPipes);
             };
             var addDirective = function (dirType) {
-                if (!dirType) {
-                    throw new BaseException("Unexpected directive value '" + dirType + "' on the View of component '" + stringify(compMeta.type.runtime) + "'");
-                }
                 var dirMeta = _this.getDirectiveMetadata(dirType);
                 if (_this._addDirectiveToModule(dirMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives)) {
                     _this._getTransitiveViewDirectivesAndPipes(dirMeta, moduleMeta);
                 }
             };
-            var view = this._viewResolver.resolve(compMeta.type.runtime);
-            if (view.pipes) {
-                flattenArray(view.pipes).forEach(addPipe);
+            if (compMeta.viewPipes) {
+                compMeta.viewPipes.forEach(function (cplType) { return addPipe(cplType.runtime); });
             }
-            if (view.directives) {
-                flattenArray(view.directives).forEach(addDirective);
+            if (compMeta.viewDirectives) {
+                compMeta.viewDirectives.forEach(function (cplType) { return addDirective(cplType.runtime); });
             }
             compMeta.entryComponents.forEach(function (entryComponentType) {
                 if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
@@ -13463,7 +13441,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: NgModuleResolver, },
         { type: DirectiveResolver, },
         { type: PipeResolver, },
-        { type: ViewResolver, },
         { type: CompilerConfig, },
         { type: Console, },
         { type: ElementSchemaRegistry, },
@@ -15114,8 +15091,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     var CATCH_ERROR_VAR$2 = 'error';
     var CATCH_STACK_VAR$2 = 'stack';
     var RuntimeCompiler = (function () {
-        function RuntimeCompiler(__injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
-            this.__injector = __injector;
+        function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+            this._injector = _injector;
             this._metadataResolver = _metadataResolver;
             this._templateNormalizer = _templateNormalizer;
             this._templateParser = _templateParser;
@@ -15128,8 +15105,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._compiledHostTemplateCache = new Map();
             this._compiledNgModuleCache = new Map();
         }
-        Object.defineProperty(RuntimeCompiler.prototype, "_injector", {
-            get: function () { return this.__injector; },
+        Object.defineProperty(RuntimeCompiler.prototype, "injector", {
+            get: function () { return this._injector; },
             enumerable: true,
             configurable: true
         });
@@ -15138,6 +15115,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         RuntimeCompiler.prototype.compileModuleAsync = function (moduleType) {
             return this._compileModuleAndComponents(moduleType, false).asyncResult;
+        };
+        RuntimeCompiler.prototype.compileModuleAndAllComponentsSync = function (moduleType) {
+            return this._compileModuleAndAllComponents(moduleType, true).syncResult;
+        };
+        RuntimeCompiler.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
+            return this._compileModuleAndAllComponents(moduleType, false).asyncResult;
         };
         RuntimeCompiler.prototype.compileComponentAsync = function (compType, ngModule) {
             if (ngModule === void 0) { ngModule = null; }
@@ -15157,6 +15140,33 @@ var __extends = (this && this.__extends) || function (d, b) {
             var componentPromise = this._compileComponents(moduleType, isSync);
             var ngModuleFactory = this._compileModule(moduleType);
             return new SyncAsyncResult(ngModuleFactory, componentPromise.then(function () { return ngModuleFactory; }));
+        };
+        RuntimeCompiler.prototype._compileModuleAndAllComponents = function (moduleType, isSync) {
+            var _this = this;
+            var componentPromise = this._compileComponents(moduleType, isSync);
+            var ngModuleFactory = this._compileModule(moduleType);
+            var moduleMeta = this._metadataResolver.getNgModuleMetadata(moduleType);
+            var componentFactories = [];
+            var templates = new Set();
+            moduleMeta.transitiveModule.modules.forEach(function (moduleMeta) {
+                moduleMeta.declaredDirectives.forEach(function (dirMeta) {
+                    if (dirMeta.isComponent) {
+                        var template = _this._createCompiledHostTemplate(dirMeta.type.runtime);
+                        templates.add(template);
+                        componentFactories.push(template.proxyComponentFactory);
+                    }
+                });
+            });
+            var syncResult = new _angular_core.ModuleWithComponentFactories(ngModuleFactory, componentFactories);
+            // Note: host components themselves can always be compiled synchronously as they have an
+            // inline template. However, we still need to wait for the components that they
+            // reference to be loaded / compiled.
+            var compile = function () {
+                templates.forEach(function (template) { _this._compileTemplate(template); });
+                return syncResult;
+            };
+            var asyncResult = isSync ? Promise.resolve(compile()) : componentPromise.then(compile);
+            return new SyncAsyncResult(syncResult, asyncResult);
         };
         RuntimeCompiler.prototype._compileModule = function (moduleType) {
             var _this = this;
@@ -15442,7 +15452,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._warnOnComponentResolver = true;
         }
         Object.defineProperty(ModuleBoundCompiler.prototype, "_injector", {
-            get: function () { return this._delegate._injector; },
+            get: function () { return this._delegate.injector; },
             enumerable: true,
             configurable: true
         });
@@ -15474,6 +15484,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         ModuleBoundCompiler.prototype.compileModuleAsync = function (moduleType) {
             return this._delegate.compileModuleAsync(moduleType);
+        };
+        ModuleBoundCompiler.prototype.compileModuleAndAllComponentsSync = function (moduleType) {
+            return this._delegate.compileModuleAndAllComponentsSync(moduleType);
+        };
+        ModuleBoundCompiler.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
+            return this._delegate.compileModuleAndAllComponentsAsync(moduleType);
         };
         /**
          * Clears all caches
@@ -15868,7 +15884,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         DomElementSchemaRegistry,
         /*@ts2dart_Provider*/ { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
         UrlResolver,
-        ViewResolver,
         DirectiveResolver,
         PipeResolver,
         NgModuleResolver
@@ -16801,7 +16816,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     exports.SourceModule = SourceModule;
     exports.TEMPLATE_TRANSFORMS = TEMPLATE_TRANSFORMS;
     exports.UrlResolver = UrlResolver;
-    exports.ViewResolver = ViewResolver;
     exports.XHR = XHR;
     exports.analyzeAppProvidersForDeprecatedConfiguration = analyzeAppProvidersForDeprecatedConfiguration;
     exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;

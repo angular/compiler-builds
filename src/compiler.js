@@ -22,8 +22,6 @@ var runtime_compiler_1 = require('./runtime_compiler');
 exports.RuntimeCompiler = runtime_compiler_1.RuntimeCompiler;
 __export(require('./url_resolver'));
 __export(require('./xhr'));
-var view_resolver_1 = require('./view_resolver');
-exports.ViewResolver = view_resolver_1.ViewResolver;
 var directive_resolver_1 = require('./directive_resolver');
 exports.DirectiveResolver = directive_resolver_1.DirectiveResolver;
 var pipe_resolver_1 = require('./pipe_resolver');
@@ -46,7 +44,6 @@ var dom_element_schema_registry_1 = require('./schema/dom_element_schema_registr
 var url_resolver_2 = require('./url_resolver');
 var parser_1 = require('./expression_parser/parser');
 var lexer_1 = require('./expression_parser/lexer');
-var view_resolver_2 = require('./view_resolver');
 var directive_resolver_2 = require('./directive_resolver');
 var pipe_resolver_2 = require('./pipe_resolver');
 var ng_module_resolver_2 = require('./ng_module_resolver');
@@ -83,7 +80,6 @@ exports.COMPILER_PROVIDERS =
     dom_element_schema_registry_1.DomElementSchemaRegistry,
     /*@ts2dart_Provider*/ { provide: element_schema_registry_1.ElementSchemaRegistry, useExisting: dom_element_schema_registry_1.DomElementSchemaRegistry },
     url_resolver_2.UrlResolver,
-    view_resolver_2.ViewResolver,
     directive_resolver_2.DirectiveResolver,
     pipe_resolver_2.PipeResolver,
     ng_module_resolver_2.NgModuleResolver

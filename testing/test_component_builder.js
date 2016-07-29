@@ -78,24 +78,21 @@ var OverridingTestComponentBuilder = (function (_super) {
         clone._viewBindingsOverrides.set(type, providers);
         return clone;
     };
-    OverridingTestComponentBuilder.prototype.createAsync = function (rootComponentType, ngModule) {
-        if (ngModule === void 0) { ngModule = null; }
+    OverridingTestComponentBuilder.prototype.createAsync = function (rootComponentType) {
         this._applyMetadataOverrides();
-        return _super.prototype.createAsync.call(this, rootComponentType, ngModule);
+        return _super.prototype.createAsync.call(this, rootComponentType);
     };
-    OverridingTestComponentBuilder.prototype.createSync = function (rootComponentType, ngModule) {
-        if (ngModule === void 0) { ngModule = null; }
+    OverridingTestComponentBuilder.prototype.createSync = function (rootComponentType) {
         this._applyMetadataOverrides();
-        return _super.prototype.createSync.call(this, rootComponentType, ngModule);
+        return _super.prototype.createSync.call(this, rootComponentType);
     };
     OverridingTestComponentBuilder.prototype._applyMetadataOverrides = function () {
         var mockDirectiveResolver = this._injector.get(index_1.DirectiveResolver);
-        var mockViewResolver = this._injector.get(index_1.ViewResolver);
-        this._viewOverrides.forEach(function (view, type) { mockViewResolver.setView(type, view); });
-        this._templateOverrides.forEach(function (template, type) { return mockViewResolver.setInlineTemplate(type, template); });
-        this._animationOverrides.forEach(function (animationsEntry, type) { return mockViewResolver.setAnimations(type, animationsEntry); });
+        this._viewOverrides.forEach(function (view, type) { mockDirectiveResolver.setView(type, view); });
+        this._templateOverrides.forEach(function (template, type) { return mockDirectiveResolver.setInlineTemplate(type, template); });
+        this._animationOverrides.forEach(function (animationsEntry, type) { return mockDirectiveResolver.setAnimations(type, animationsEntry); });
         this._directiveOverrides.forEach(function (overrides, component) {
-            overrides.forEach(function (to, from) { mockViewResolver.overrideViewDirective(component, from, to); });
+            overrides.forEach(function (to, from) { mockDirectiveResolver.overrideViewDirective(component, from, to); });
         });
         this._bindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setProvidersOverride(type, bindings); });
         this._viewBindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setViewProvidersOverride(type, bindings); });

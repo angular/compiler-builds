@@ -9,6 +9,7 @@ import { Injector, NgModuleMetadata, Type } from '@angular/core';
 import { NgModuleResolver } from '../index';
 export declare class MockNgModuleResolver extends NgModuleResolver {
     private _injector;
+    private _ngModules;
     constructor(_injector: Injector);
     private _compiler;
     private _clearCacheFor(component);

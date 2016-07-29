@@ -38,7 +38,6 @@ exports.RuntimeCompiler = compiler_1.RuntimeCompiler;
 exports.SourceModule = compiler_1.SourceModule;
 exports.TEMPLATE_TRANSFORMS = compiler_1.TEMPLATE_TRANSFORMS;
 exports.UrlResolver = compiler_1.UrlResolver;
-exports.ViewResolver = compiler_1.ViewResolver;
 exports.XHR = compiler_1.XHR;
 exports.analyzeAppProvidersForDeprecatedConfiguration = compiler_1.analyzeAppProvidersForDeprecatedConfiguration;
 exports.createOfflineCompileUrlResolver = compiler_1.createOfflineCompileUrlResolver;

@@ -27,14 +27,12 @@ var pipe_resolver_1 = require('./pipe_resolver');
 var element_schema_registry_1 = require('./schema/element_schema_registry');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
-var view_resolver_1 = require('./view_resolver');
 var CompileMetadataResolver = (function () {
-    function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _schemaRegistry, _reflector) {
+    function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _config, _console, _schemaRegistry, _reflector) {
         if (_reflector === void 0) { _reflector = core_private_1.reflector; }
         this._ngModuleResolver = _ngModuleResolver;
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
-        this._viewResolver = _viewResolver;
         this._config = _config;
         this._console = _console;
         this._schemaRegistry = _schemaRegistry;
@@ -128,26 +126,27 @@ var CompileMetadataResolver = (function () {
             var changeDetectionStrategy = null;
             var viewProviders = [];
             var moduleUrl = staticTypeModuleUrl(directiveType);
+            var viewDirectiveTypes = [];
+            var viewPipeTypes = [];
             var entryComponentTypes = [];
             var selector = dirMeta.selector;
             if (dirMeta instanceof core_1.ComponentMetadata) {
                 var cmpMeta = dirMeta;
-                var viewMeta = this._viewResolver.resolve(directiveType);
-                assertions_1.assertArrayOfStrings('styles', viewMeta.styles);
-                assertions_1.assertInterpolationSymbols('interpolation', viewMeta.interpolation);
-                var animations = lang_1.isPresent(viewMeta.animations) ?
-                    viewMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
+                assertions_1.assertArrayOfStrings('styles', cmpMeta.styles);
+                assertions_1.assertInterpolationSymbols('interpolation', cmpMeta.interpolation);
+                var animations = lang_1.isPresent(cmpMeta.animations) ?
+                    cmpMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
                     null;
-                assertions_1.assertArrayOfStrings('styles', viewMeta.styles);
-                assertions_1.assertArrayOfStrings('styleUrls', viewMeta.styleUrls);
+                assertions_1.assertArrayOfStrings('styles', cmpMeta.styles);
+                assertions_1.assertArrayOfStrings('styleUrls', cmpMeta.styleUrls);
                 templateMeta = new cpl.CompileTemplateMetadata({
-                    encapsulation: viewMeta.encapsulation,
-                    template: viewMeta.template,
-                    templateUrl: viewMeta.templateUrl,
-                    styles: viewMeta.styles,
-                    styleUrls: viewMeta.styleUrls,
+                    encapsulation: cmpMeta.encapsulation,
+                    template: cmpMeta.template,
+                    templateUrl: cmpMeta.templateUrl,
+                    styles: cmpMeta.styles,
+                    styleUrls: cmpMeta.styleUrls,
                     animations: animations,
-                    interpolation: viewMeta.interpolation
+                    interpolation: cmpMeta.interpolation
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (lang_1.isPresent(dirMeta.viewProviders)) {
@@ -157,7 +156,23 @@ var CompileMetadataResolver = (function () {
                 if (cmpMeta.entryComponents) {
                     entryComponentTypes =
                         flattenArray(cmpMeta.entryComponents)
-                            .map(function (cmp) { return _this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)); });
+                            .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); });
+                }
+                if (cmpMeta.directives) {
+                    viewDirectiveTypes = flattenArray(cmpMeta.directives).map(function (type) {
+                        if (!type) {
+                            throw new exceptions_1.BaseException("Unexpected directive value '" + type + "' on the View of component '" + lang_1.stringify(directiveType) + "'");
+                        }
+                        return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
+                    });
+                }
+                if (cmpMeta.pipes) {
+                    viewPipeTypes = flattenArray(cmpMeta.pipes).map(function (type) {
+                        if (!type) {
+                            throw new exceptions_1.BaseException("Unexpected pipe value '" + type + "' on the View of component '" + lang_1.stringify(directiveType) + "'");
+                        }
+                        return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
+                    });
                 }
                 if (!selector) {
                     selector = this._schemaRegistry.getDefaultComponentElementName();
@@ -193,6 +208,8 @@ var CompileMetadataResolver = (function () {
                 viewProviders: viewProviders,
                 queries: queries,
                 viewQueries: viewQueries,
+                viewDirectives: viewDirectiveTypes,
+                viewPipes: viewPipeTypes,
                 entryComponents: entryComponentTypes
             });
             this._directiveCache.set(directiveType, meta);
@@ -361,27 +378,20 @@ var CompileMetadataResolver = (function () {
             return;
         }
         var addPipe = function (pipeType) {
-            if (!pipeType) {
-                throw new exceptions_1.BaseException("Unexpected pipe value '" + pipeType + "' on the View of component '" + lang_1.stringify(compMeta.type.runtime) + "'");
-            }
             var pipeMeta = _this.getPipeMetadata(pipeType);
             _this._addPipeToModule(pipeMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredPipes);
         };
         var addDirective = function (dirType) {
-            if (!dirType) {
-                throw new exceptions_1.BaseException("Unexpected directive value '" + dirType + "' on the View of component '" + lang_1.stringify(compMeta.type.runtime) + "'");
-            }
             var dirMeta = _this.getDirectiveMetadata(dirType);
             if (_this._addDirectiveToModule(dirMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives)) {
                 _this._getTransitiveViewDirectivesAndPipes(dirMeta, moduleMeta);
             }
         };
-        var view = this._viewResolver.resolve(compMeta.type.runtime);
-        if (view.pipes) {
-            flattenArray(view.pipes).forEach(addPipe);
+        if (compMeta.viewPipes) {
+            compMeta.viewPipes.forEach(function (cplType) { return addPipe(cplType.runtime); });
         }
-        if (view.directives) {
-            flattenArray(view.directives).forEach(addDirective);
+        if (compMeta.viewDirectives) {
+            compMeta.viewDirectives.forEach(function (cplType) { return addDirective(cplType.runtime); });
         }
         compMeta.entryComponents.forEach(function (entryComponentType) {
             if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
@@ -667,7 +677,6 @@ var CompileMetadataResolver = (function () {
         { type: ng_module_resolver_1.NgModuleResolver, },
         { type: directive_resolver_1.DirectiveResolver, },
         { type: pipe_resolver_1.PipeResolver, },
-        { type: view_resolver_1.ViewResolver, },
         { type: config_1.CompilerConfig, },
         { type: core_private_1.Console, },
         { type: element_schema_registry_1.ElementSchemaRegistry, },

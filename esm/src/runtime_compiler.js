@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, ComponentFactory, ComponentResolver, ComponentStillLoadingError, Injectable, Injector, OptionalMetadata, Provider, SkipSelfMetadata } from '@angular/core';
+import { Compiler, ComponentFactory, ComponentResolver, ComponentStillLoadingError, Injectable, Injector, ModuleWithComponentFactories, OptionalMetadata, Provider, SkipSelfMetadata } from '@angular/core';
 import { Console } from '../core_private';
 import { BaseException } from '../src/facade/exceptions';
 import { IS_DART, isBlank, isString, stringify } from '../src/facade/lang';
@@ -23,8 +23,8 @@ import { jitStatements } from './output/output_jit';
 import { interpretStatements } from './output/output_interpreter';
 import { SyncAsyncResult } from './util';
 export class RuntimeCompiler {
-    constructor(__injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
-        this.__injector = __injector;
+    constructor(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+        this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
         this._templateParser = _templateParser;
@@ -37,12 +37,18 @@ export class RuntimeCompiler {
         this._compiledHostTemplateCache = new Map();
         this._compiledNgModuleCache = new Map();
     }
-    get _injector() { return this.__injector; }
+    get injector() { return this._injector; }
     compileModuleSync(moduleType) {
         return this._compileModuleAndComponents(moduleType, true).syncResult;
     }
     compileModuleAsync(moduleType) {
         return this._compileModuleAndComponents(moduleType, false).asyncResult;
+    }
+    compileModuleAndAllComponentsSync(moduleType) {
+        return this._compileModuleAndAllComponents(moduleType, true).syncResult;
+    }
+    compileModuleAndAllComponentsAsync(moduleType) {
+        return this._compileModuleAndAllComponents(moduleType, false).asyncResult;
     }
     compileComponentAsync(compType, ngModule = null) {
         if (!ngModule) {
@@ -60,6 +66,32 @@ export class RuntimeCompiler {
         const componentPromise = this._compileComponents(moduleType, isSync);
         const ngModuleFactory = this._compileModule(moduleType);
         return new SyncAsyncResult(ngModuleFactory, componentPromise.then(() => ngModuleFactory));
+    }
+    _compileModuleAndAllComponents(moduleType, isSync) {
+        const componentPromise = this._compileComponents(moduleType, isSync);
+        const ngModuleFactory = this._compileModule(moduleType);
+        const moduleMeta = this._metadataResolver.getNgModuleMetadata(moduleType);
+        const componentFactories = [];
+        const templates = new Set();
+        moduleMeta.transitiveModule.modules.forEach((moduleMeta) => {
+            moduleMeta.declaredDirectives.forEach((dirMeta) => {
+                if (dirMeta.isComponent) {
+                    const template = this._createCompiledHostTemplate(dirMeta.type.runtime);
+                    templates.add(template);
+                    componentFactories.push(template.proxyComponentFactory);
+                }
+            });
+        });
+        const syncResult = new ModuleWithComponentFactories(ngModuleFactory, componentFactories);
+        // Note: host components themselves can always be compiled synchronously as they have an
+        // inline template. However, we still need to wait for the components that they
+        // reference to be loaded / compiled.
+        const compile = () => {
+            templates.forEach((template) => { this._compileTemplate(template); });
+            return syncResult;
+        };
+        const asyncResult = isSync ? Promise.resolve(compile()) : componentPromise.then(compile);
+        return new SyncAsyncResult(syncResult, asyncResult);
     }
     _compileModule(moduleType) {
         let ngModuleFactory = this._compiledNgModuleCache.get(moduleType);
@@ -329,7 +361,7 @@ class ModuleBoundCompiler {
         this._console = _console;
         this._warnOnComponentResolver = true;
     }
-    get _injector() { return this._delegate._injector; }
+    get _injector() { return this._delegate.injector; }
     resolveComponent(component) {
         if (isString(component)) {
             if (this._parentComponentResolver) {
@@ -356,6 +388,12 @@ class ModuleBoundCompiler {
     }
     compileModuleAsync(moduleType) {
         return this._delegate.compileModuleAsync(moduleType);
+    }
+    compileModuleAndAllComponentsSync(moduleType) {
+        return this._delegate.compileModuleAndAllComponentsSync(moduleType);
+    }
+    compileModuleAndAllComponentsAsync(moduleType) {
+        return this._delegate.compileModuleAndAllComponentsAsync(moduleType);
     }
     /**
      * Clears all caches

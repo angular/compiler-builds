@@ -21,13 +21,11 @@ import { PipeResolver } from './pipe_resolver';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, ValueTransformer, sanitizeIdentifier, visitValue } from './util';
-import { ViewResolver } from './view_resolver';
 export class CompileMetadataResolver {
-    constructor(_ngModuleResolver, _directiveResolver, _pipeResolver, _viewResolver, _config, _console, _schemaRegistry, _reflector = reflector) {
+    constructor(_ngModuleResolver, _directiveResolver, _pipeResolver, _config, _console, _schemaRegistry, _reflector = reflector) {
         this._ngModuleResolver = _ngModuleResolver;
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
-        this._viewResolver = _viewResolver;
         this._config = _config;
         this._console = _console;
         this._schemaRegistry = _schemaRegistry;
@@ -117,26 +115,27 @@ export class CompileMetadataResolver {
             var changeDetectionStrategy = null;
             var viewProviders = [];
             var moduleUrl = staticTypeModuleUrl(directiveType);
+            var viewDirectiveTypes = [];
+            var viewPipeTypes = [];
             var entryComponentTypes = [];
             let selector = dirMeta.selector;
             if (dirMeta instanceof ComponentMetadata) {
                 var cmpMeta = dirMeta;
-                var viewMeta = this._viewResolver.resolve(directiveType);
-                assertArrayOfStrings('styles', viewMeta.styles);
-                assertInterpolationSymbols('interpolation', viewMeta.interpolation);
-                var animations = isPresent(viewMeta.animations) ?
-                    viewMeta.animations.map(e => this.getAnimationEntryMetadata(e)) :
+                assertArrayOfStrings('styles', cmpMeta.styles);
+                assertInterpolationSymbols('interpolation', cmpMeta.interpolation);
+                var animations = isPresent(cmpMeta.animations) ?
+                    cmpMeta.animations.map(e => this.getAnimationEntryMetadata(e)) :
                     null;
-                assertArrayOfStrings('styles', viewMeta.styles);
-                assertArrayOfStrings('styleUrls', viewMeta.styleUrls);
+                assertArrayOfStrings('styles', cmpMeta.styles);
+                assertArrayOfStrings('styleUrls', cmpMeta.styleUrls);
                 templateMeta = new cpl.CompileTemplateMetadata({
-                    encapsulation: viewMeta.encapsulation,
-                    template: viewMeta.template,
-                    templateUrl: viewMeta.templateUrl,
-                    styles: viewMeta.styles,
-                    styleUrls: viewMeta.styleUrls,
+                    encapsulation: cmpMeta.encapsulation,
+                    template: cmpMeta.template,
+                    templateUrl: cmpMeta.templateUrl,
+                    styles: cmpMeta.styles,
+                    styleUrls: cmpMeta.styleUrls,
                     animations: animations,
-                    interpolation: viewMeta.interpolation
+                    interpolation: cmpMeta.interpolation
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (isPresent(dirMeta.viewProviders)) {
@@ -146,7 +145,23 @@ export class CompileMetadataResolver {
                 if (cmpMeta.entryComponents) {
                     entryComponentTypes =
                         flattenArray(cmpMeta.entryComponents)
-                            .map((cmp) => this.getTypeMetadata(cmp, staticTypeModuleUrl(cmp)));
+                            .map((type) => this.getTypeMetadata(type, staticTypeModuleUrl(type)));
+                }
+                if (cmpMeta.directives) {
+                    viewDirectiveTypes = flattenArray(cmpMeta.directives).map((type) => {
+                        if (!type) {
+                            throw new BaseException(`Unexpected directive value '${type}' on the View of component '${stringify(directiveType)}'`);
+                        }
+                        return this.getTypeMetadata(type, staticTypeModuleUrl(type));
+                    });
+                }
+                if (cmpMeta.pipes) {
+                    viewPipeTypes = flattenArray(cmpMeta.pipes).map((type) => {
+                        if (!type) {
+                            throw new BaseException(`Unexpected pipe value '${type}' on the View of component '${stringify(directiveType)}'`);
+                        }
+                        return this.getTypeMetadata(type, staticTypeModuleUrl(type));
+                    });
                 }
                 if (!selector) {
                     selector = this._schemaRegistry.getDefaultComponentElementName();
@@ -182,6 +197,8 @@ export class CompileMetadataResolver {
                 viewProviders: viewProviders,
                 queries: queries,
                 viewQueries: viewQueries,
+                viewDirectives: viewDirectiveTypes,
+                viewPipes: viewPipeTypes,
                 entryComponents: entryComponentTypes
             });
             this._directiveCache.set(directiveType, meta);
@@ -345,27 +362,20 @@ export class CompileMetadataResolver {
             return;
         }
         const addPipe = (pipeType) => {
-            if (!pipeType) {
-                throw new BaseException(`Unexpected pipe value '${pipeType}' on the View of component '${stringify(compMeta.type.runtime)}'`);
-            }
             const pipeMeta = this.getPipeMetadata(pipeType);
             this._addPipeToModule(pipeMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredPipes);
         };
         const addDirective = (dirType) => {
-            if (!dirType) {
-                throw new BaseException(`Unexpected directive value '${dirType}' on the View of component '${stringify(compMeta.type.runtime)}'`);
-            }
             const dirMeta = this.getDirectiveMetadata(dirType);
             if (this._addDirectiveToModule(dirMeta, moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives)) {
                 this._getTransitiveViewDirectivesAndPipes(dirMeta, moduleMeta);
             }
         };
-        const view = this._viewResolver.resolve(compMeta.type.runtime);
-        if (view.pipes) {
-            flattenArray(view.pipes).forEach(addPipe);
+        if (compMeta.viewPipes) {
+            compMeta.viewPipes.forEach((cplType) => addPipe(cplType.runtime));
         }
-        if (view.directives) {
-            flattenArray(view.directives).forEach(addDirective);
+        if (compMeta.viewDirectives) {
+            compMeta.viewDirectives.forEach((cplType) => addDirective(cplType.runtime));
         }
         compMeta.entryComponents.forEach((entryComponentType) => {
             if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
@@ -642,7 +652,6 @@ CompileMetadataResolver.ctorParameters = [
     { type: NgModuleResolver, },
     { type: DirectiveResolver, },
     { type: PipeResolver, },
-    { type: ViewResolver, },
     { type: CompilerConfig, },
     { type: Console, },
     { type: ElementSchemaRegistry, },
