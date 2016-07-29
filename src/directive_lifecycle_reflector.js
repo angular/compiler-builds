@@ -8,7 +8,7 @@
 "use strict";
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
-var collection_1 = require('../src/facade/collection');
+var collection_1 = require('./facade/collection');
 var LIFECYCLE_INTERFACES = collection_1.MapWrapper.createFromPairs([
     [core_private_1.LifecycleHooks.OnInit, core_1.OnInit],
     [core_private_1.LifecycleHooks.OnDestroy, core_1.OnDestroy],

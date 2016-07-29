@@ -7,7 +7,7 @@
  */
 import { ChangeDetectionStrategy, SchemaMetadata, ViewEncapsulation } from '@angular/core';
 import { LifecycleHooks } from '../core_private';
-import { Type } from '../src/facade/lang';
+import { Type } from './facade/lang';
 export declare abstract class CompileMetadataWithIdentifier {
     identifier: CompileIdentifierMetadata;
     runtimeCacheKey: any;

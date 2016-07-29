@@ -7,10 +7,10 @@
  */
 import { AnimationEntryMetadata, AnimationMetadata, AnimationStateMetadata, AnimationStyleMetadata, Provider, QueryMetadata } from '@angular/core';
 import { Console, ReflectorReader } from '../core_private';
-import { Type } from '../src/facade/lang';
 import * as cpl from './compile_metadata';
 import { CompilerConfig } from './config';
 import { DirectiveResolver } from './directive_resolver';
+import { Type } from './facade/lang';
 import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';

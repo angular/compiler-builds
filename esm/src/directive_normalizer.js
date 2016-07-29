@@ -6,16 +6,16 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable, ViewEncapsulation } from '@angular/core';
-import { MapWrapper } from '../src/facade/collection';
-import { BaseException } from '../src/facade/exceptions';
-import { isBlank, isPresent } from '../src/facade/lang';
 import { CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
-import { HtmlTextAst, htmlVisitAll } from './html_ast';
-import { HtmlParser } from './html_parser';
-import { InterpolationConfig } from './interpolation_config';
+import { MapWrapper } from './facade/collection';
+import { BaseException } from './facade/exceptions';
+import { isBlank, isPresent } from './facade/lang';
+import * as html from './html_parser/ast';
+import { HtmlParser } from './html_parser/html_parser';
+import { InterpolationConfig } from './html_parser/interpolation_config';
 import { extractStyleUrls, isStyleUrlResolvable } from './style_url_resolver';
-import { PreparsedElementType, preparseElement } from './template_preparser';
+import { PreparsedElementType, preparseElement } from './template_parser/template_preparser';
 import { UrlResolver } from './url_resolver';
 import { SyncAsyncResult } from './util';
 import { XHR } from './xhr';
@@ -93,7 +93,7 @@ export class DirectiveNormalizer {
             moduleUrl: directiveType.moduleUrl
         }));
         const visitor = new TemplatePreparseVisitor();
-        htmlVisitAll(visitor, rootNodesAndErrors.rootNodes);
+        html.visitAll(visitor, rootNodesAndErrors.rootNodes);
         const templateStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({ styles: visitor.styles, styleUrls: visitor.styleUrls, moduleUrl: templateAbsUrl }));
         const allStyles = templateMetadataStyles.styles.concat(templateStyles.styles);
         const allStyleUrls = templateMetadataStyles.styleUrls.concat(templateStyles.styleUrls);
@@ -181,7 +181,7 @@ class TemplatePreparseVisitor {
             case PreparsedElementType.STYLE:
                 var textContent = '';
                 ast.children.forEach(child => {
-                    if (child instanceof HtmlTextAst) {
+                    if (child instanceof html.Text) {
                         textContent += child.value;
                     }
                 });
@@ -198,14 +198,14 @@ class TemplatePreparseVisitor {
         if (preparsedElement.nonBindable) {
             this.ngNonBindableStackCount++;
         }
-        htmlVisitAll(this, ast.children);
+        html.visitAll(this, ast.children);
         if (preparsedElement.nonBindable) {
             this.ngNonBindableStackCount--;
         }
         return null;
     }
     visitComment(ast, context) { return null; }
-    visitAttr(ast, context) { return null; }
+    visitAttribute(ast, context) { return null; }
     visitText(ast, context) { return null; }
     visitExpansion(ast, context) { return null; }
     visitExpansionCase(ast, context) { return null; }

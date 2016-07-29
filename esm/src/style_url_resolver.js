@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { RegExpWrapper, StringWrapper, isBlank, isPresent } from '../src/facade/lang';
+import { RegExpWrapper, StringWrapper, isBlank, isPresent } from './facade/lang';
 export class StyleWithImports {
     constructor(style, styleUrls) {
         this.style = style;

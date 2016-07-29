@@ -1,6 +1,6 @@
 import { CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMetadata, CompileTypeMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
-import { HtmlParser } from './html_parser';
+import { HtmlParser } from './html_parser/html_parser';
 import { UrlResolver } from './url_resolver';
 import { SyncAsyncResult } from './util';
 import { XHR } from './xhr';

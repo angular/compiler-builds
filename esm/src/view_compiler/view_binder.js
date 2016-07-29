@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ListWrapper } from '../facade/collection';
-import { templateVisitAll } from '../template_ast';
+import { templateVisitAll } from '../template_parser/template_ast';
 import { bindRenderText, bindRenderInputs, bindDirectiveInputs, bindDirectiveHostProps } from './property_binder';
 import { bindRenderOutputs, collectEventListeners, bindDirectiveOutputs } from './event_binder';
 import { bindDirectiveAfterContentLifecycleCallbacks, bindDirectiveAfterViewLifecycleCallbacks, bindDirectiveDestroyLifecycleCallbacks, bindPipeDestroyLifecycleCallbacks, bindDirectiveDetectChangesLifecycleCallbacks } from './lifecycle_binder';

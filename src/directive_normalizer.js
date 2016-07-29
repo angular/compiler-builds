@@ -7,16 +7,16 @@
  */
 "use strict";
 var core_1 = require('@angular/core');
-var collection_1 = require('../src/facade/collection');
-var exceptions_1 = require('../src/facade/exceptions');
-var lang_1 = require('../src/facade/lang');
 var compile_metadata_1 = require('./compile_metadata');
 var config_1 = require('./config');
-var html_ast_1 = require('./html_ast');
-var html_parser_1 = require('./html_parser');
-var interpolation_config_1 = require('./interpolation_config');
+var collection_1 = require('./facade/collection');
+var exceptions_1 = require('./facade/exceptions');
+var lang_1 = require('./facade/lang');
+var html = require('./html_parser/ast');
+var html_parser_1 = require('./html_parser/html_parser');
+var interpolation_config_1 = require('./html_parser/interpolation_config');
 var style_url_resolver_1 = require('./style_url_resolver');
-var template_preparser_1 = require('./template_preparser');
+var template_preparser_1 = require('./template_parser/template_preparser');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
 var xhr_1 = require('./xhr');
@@ -99,7 +99,7 @@ var DirectiveNormalizer = (function () {
             moduleUrl: directiveType.moduleUrl
         }));
         var visitor = new TemplatePreparseVisitor();
-        html_ast_1.htmlVisitAll(visitor, rootNodesAndErrors.rootNodes);
+        html.visitAll(visitor, rootNodesAndErrors.rootNodes);
         var templateStyles = this.normalizeStylesheet(new compile_metadata_1.CompileStylesheetMetadata({ styles: visitor.styles, styleUrls: visitor.styleUrls, moduleUrl: templateAbsUrl }));
         var allStyles = templateMetadataStyles.styles.concat(templateStyles.styles);
         var allStyleUrls = templateMetadataStyles.styleUrls.concat(templateStyles.styleUrls);
@@ -192,7 +192,7 @@ var TemplatePreparseVisitor = (function () {
             case template_preparser_1.PreparsedElementType.STYLE:
                 var textContent = '';
                 ast.children.forEach(function (child) {
-                    if (child instanceof html_ast_1.HtmlTextAst) {
+                    if (child instanceof html.Text) {
                         textContent += child.value;
                     }
                 });
@@ -209,14 +209,14 @@ var TemplatePreparseVisitor = (function () {
         if (preparsedElement.nonBindable) {
             this.ngNonBindableStackCount++;
         }
-        html_ast_1.htmlVisitAll(this, ast.children);
+        html.visitAll(this, ast.children);
         if (preparsedElement.nonBindable) {
             this.ngNonBindableStackCount--;
         }
         return null;
     };
     TemplatePreparseVisitor.prototype.visitComment = function (ast, context) { return null; };
-    TemplatePreparseVisitor.prototype.visitAttr = function (ast, context) { return null; };
+    TemplatePreparseVisitor.prototype.visitAttribute = function (ast, context) { return null; };
     TemplatePreparseVisitor.prototype.visitText = function (ast, context) { return null; };
     TemplatePreparseVisitor.prototype.visitExpansion = function (ast, context) { return null; };
     TemplatePreparseVisitor.prototype.visitExpansionCase = function (ast, context) { return null; };

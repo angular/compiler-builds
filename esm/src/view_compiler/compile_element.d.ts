@@ -1,5 +1,5 @@
 import * as o from '../output/output_ast';
-import { ProviderAst, ReferenceAst, TemplateAst } from '../template_ast';
+import { ProviderAst, ReferenceAst, TemplateAst } from '../template_parser/template_ast';
 import { CompileView } from './compile_view';
 import { CompileDirectiveMetadata, CompileTokenMetadata, CompileIdentifierMetadata } from '../compile_metadata';
 export declare class CompileNode {

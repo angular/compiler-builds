@@ -8,7 +8,7 @@
 import { Injectable, NgModuleMetadata } from '@angular/core';
 import { ReflectorReader, reflector } from '../core_private';
 import { BaseException } from '../src/facade/exceptions';
-import { isPresent, stringify } from '../src/facade/lang';
+import { isPresent, stringify } from './facade/lang';
 function _isNgModuleMetadata(obj) {
     return obj instanceof NgModuleMetadata;
 }

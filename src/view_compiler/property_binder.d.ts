@@ -1,5 +1,5 @@
 import * as o from '../output/output_ast';
-import { BoundTextAst, BoundElementPropertyAst, DirectiveAst } from '../template_ast';
+import { BoundTextAst, BoundElementPropertyAst, DirectiveAst } from '../template_parser/template_ast';
 import { CompileView } from './compile_view';
 import { CompileElement, CompileNode } from './compile_element';
 export declare function bindRenderText(boundText: BoundTextAst, compileNode: CompileNode, view: CompileView): void;

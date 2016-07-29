@@ -10,8 +10,8 @@ function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 var core_1 = require('@angular/core');
-__export(require('./template_ast'));
-var template_parser_1 = require('./template_parser');
+__export(require('./template_parser/template_ast'));
+var template_parser_1 = require('./template_parser/template_parser');
 exports.TEMPLATE_TRANSFORMS = template_parser_1.TEMPLATE_TRANSFORMS;
 var config_1 = require('./config');
 exports.CompilerConfig = config_1.CompilerConfig;
@@ -30,8 +30,8 @@ var ng_module_resolver_1 = require('./ng_module_resolver');
 exports.NgModuleResolver = ng_module_resolver_1.NgModuleResolver;
 var lang_1 = require('./facade/lang');
 var collection_1 = require('./facade/collection');
-var template_parser_2 = require('./template_parser');
-var html_parser_1 = require('./html_parser');
+var template_parser_2 = require('./template_parser/template_parser');
+var html_parser_1 = require('./html_parser/html_parser');
 var directive_normalizer_1 = require('./directive_normalizer');
 var metadata_resolver_1 = require('./metadata_resolver');
 var style_compiler_1 = require('./style_compiler');

@@ -11,7 +11,7 @@ import { BaseException } from '../facade/exceptions';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
-import * as t from '../template_ast';
+import * as t from '../template_parser/template_ast';
 import { AnimationStepAst } from './animation_ast';
 import { AnimationParseError, parseAnimationEntry } from './animation_parser';
 export class CompiledAnimation {

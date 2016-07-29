@@ -10,7 +10,7 @@ import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { convertValueToOutputAst } from '../output/value_util';
-import { ProviderAst, ProviderAstType } from '../template_ast';
+import { ProviderAst, ProviderAstType } from '../template_parser/template_ast';
 import { InjectMethodVars } from './constants';
 import { CompileIdentifierMap, CompileTokenMetadata, CompileProviderMetadata, CompileDiDependencyMetadata } from '../compile_metadata';
 import { getPropertyInView, injectFromViewParentInjector } from './util';

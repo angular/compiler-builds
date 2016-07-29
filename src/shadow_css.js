@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var collection_1 = require('../src/facade/collection');
-var lang_1 = require('../src/facade/lang');
+var collection_1 = require('./facade/collection');
+var lang_1 = require('./facade/lang');
 /**
  * This file is a port of shadowCSS from webcomponents.js to TypeScript.
  *

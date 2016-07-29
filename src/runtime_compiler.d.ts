@@ -7,14 +7,14 @@
  */
 import { Compiler, ComponentFactory, Injector, ModuleWithComponentFactories, NgModuleFactory } from '@angular/core';
 import { Console } from '../core_private';
-import { ConcreteType, Type } from '../src/facade/lang';
-import { StyleCompiler } from './style_compiler';
-import { ViewCompiler } from './view_compiler/view_compiler';
-import { NgModuleCompiler } from './ng_module_compiler';
-import { TemplateParser } from './template_parser';
-import { DirectiveNormalizer } from './directive_normalizer';
-import { CompileMetadataResolver } from './metadata_resolver';
 import { CompilerConfig } from './config';
+import { DirectiveNormalizer } from './directive_normalizer';
+import { ConcreteType, Type } from './facade/lang';
+import { CompileMetadataResolver } from './metadata_resolver';
+import { NgModuleCompiler } from './ng_module_compiler';
+import { StyleCompiler } from './style_compiler';
+import { TemplateParser } from './template_parser/template_parser';
+import { ViewCompiler } from './view_compiler/view_compiler';
 /**
  * An internal module of the Angular compiler that begins with component types,
  * extracts templates, and eventually produces a compiled version of the component

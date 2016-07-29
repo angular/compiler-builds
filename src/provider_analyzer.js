@@ -11,13 +11,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var collection_1 = require('../src/facade/collection');
-var exceptions_1 = require('../src/facade/exceptions');
-var lang_1 = require('../src/facade/lang');
 var compile_metadata_1 = require('./compile_metadata');
+var collection_1 = require('./facade/collection');
+var exceptions_1 = require('./facade/exceptions');
+var lang_1 = require('./facade/lang');
 var identifiers_1 = require('./identifiers');
 var parse_util_1 = require('./parse_util');
-var template_ast_1 = require('./template_ast');
+var template_ast_1 = require('./template_parser/template_ast');
 var ProviderError = (function (_super) {
     __extends(ProviderError, _super);
     function ProviderError(message, span) {

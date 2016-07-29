@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Compiler, CompilerFactory, CompilerOptions, Component, Inject, Injectable, PLATFORM_DIRECTIVES, PLATFORM_INITIALIZER, PLATFORM_PIPES, ReflectiveInjector, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
-export * from './template_ast';
-export { TEMPLATE_TRANSFORMS } from './template_parser';
+export * from './template_parser/template_ast';
+export { TEMPLATE_TRANSFORMS } from './template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './config';
 export * from './compile_metadata';
 export * from './offline_compiler';
@@ -19,8 +19,8 @@ export { PipeResolver } from './pipe_resolver';
 export { NgModuleResolver } from './ng_module_resolver';
 import { stringify } from './facade/lang';
 import { ListWrapper } from './facade/collection';
-import { TemplateParser } from './template_parser';
-import { HtmlParser } from './html_parser';
+import { TemplateParser } from './template_parser/template_parser';
+import { HtmlParser } from './html_parser/html_parser';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { CompileMetadataResolver } from './metadata_resolver';
 import { StyleCompiler } from './style_compiler';

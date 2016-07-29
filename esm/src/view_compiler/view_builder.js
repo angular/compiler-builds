@@ -13,7 +13,7 @@ import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection'
 import { StringWrapper, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
-import { templateVisitAll } from '../template_ast';
+import { templateVisitAll } from '../template_parser/template_ast';
 import { createDiTokenExpression } from '../util';
 import { CompileElement, CompileNode } from './compile_element';
 import { CompileView } from './compile_view';

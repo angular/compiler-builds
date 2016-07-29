@@ -7,7 +7,7 @@
  */
 "use strict";
 var core_1 = require('@angular/core');
-var lang_1 = require('../src/facade/lang');
+var lang_1 = require('./facade/lang');
 var _ASSET_SCHEME = 'asset:';
 /**
  * Create a {@link UrlResolver} with no package prefix.

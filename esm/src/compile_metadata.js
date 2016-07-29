@@ -7,9 +7,9 @@
  */
 import { ChangeDetectionStrategy } from '@angular/core';
 import { reflector } from '../core_private';
-import { ListWrapper, StringMapWrapper } from '../src/facade/collection';
-import { BaseException, unimplemented } from '../src/facade/exceptions';
-import { RegExpWrapper, isBlank, isPresent, isStringMap, normalizeBlank, normalizeBool } from '../src/facade/lang';
+import { ListWrapper, StringMapWrapper } from './facade/collection';
+import { BaseException, unimplemented } from './facade/exceptions';
+import { RegExpWrapper, isBlank, isPresent, isStringMap, normalizeBlank, normalizeBool } from './facade/lang';
 import { CssSelector } from './selector';
 import { getUrlScheme } from './url_resolver';
 import { sanitizeIdentifier, splitAtColon } from './util';

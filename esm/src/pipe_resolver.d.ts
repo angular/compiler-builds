@@ -7,7 +7,7 @@
  */
 import { PipeMetadata } from '@angular/core';
 import { ReflectorReader } from '../core_private';
-import { Type } from '../src/facade/lang';
+import { Type } from './facade/lang';
 /**
  * Resolve a `Type` for {@link PipeMetadata}.
  *

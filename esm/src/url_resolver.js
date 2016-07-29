@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Inject, Injectable, PACKAGE_ROOT_URL } from '@angular/core';
-import { StringWrapper, isPresent, isBlank, RegExpWrapper } from '../src/facade/lang';
+import { StringWrapper, isPresent, isBlank, RegExpWrapper } from './facade/lang';
 const _ASSET_SCHEME = 'asset:';
 /**
  * Create a {@link UrlResolver} with no package prefix.

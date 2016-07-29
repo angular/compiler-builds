@@ -7,7 +7,7 @@
  */
 import { NgModuleMetadata } from '@angular/core';
 import { ReflectorReader } from '../core_private';
-import { Type } from '../src/facade/lang';
+import { Type } from './facade/lang';
 /**
  * Resolves types to {@link NgModuleMetadata}.
  */

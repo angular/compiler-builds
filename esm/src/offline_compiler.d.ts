@@ -4,7 +4,7 @@ import { CompileMetadataResolver } from './metadata_resolver';
 import { NgModuleCompiler } from './ng_module_compiler';
 import { OutputEmitter } from './output/abstract_emitter';
 import { StyleCompiler } from './style_compiler';
-import { TemplateParser } from './template_parser';
+import { TemplateParser } from './template_parser/template_parser';
 import { ViewCompiler } from './view_compiler/view_compiler';
 export declare class SourceModule {
     moduleUrl: string;

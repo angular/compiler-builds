@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Compiler, CompilerFactory, CompilerOptions, PlatformRef, Type } from '@angular/core';
-export * from './template_ast';
-export { TEMPLATE_TRANSFORMS } from './template_parser';
+export * from './template_parser/template_ast';
+export { TEMPLATE_TRANSFORMS } from './template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './config';
 export * from './compile_metadata';
 export * from './offline_compiler';

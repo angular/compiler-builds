@@ -13,9 +13,9 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
-var collection_1 = require('../src/facade/collection');
-var exceptions_1 = require('../src/facade/exceptions');
-var lang_1 = require('../src/facade/lang');
+var collection_1 = require('./facade/collection');
+var exceptions_1 = require('./facade/exceptions');
+var lang_1 = require('./facade/lang');
 var selector_1 = require('./selector');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');

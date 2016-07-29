@@ -9,7 +9,7 @@ import { Injectable } from '@angular/core';
 import * as chars from '../chars';
 import { ListWrapper } from '../facade/collection';
 import { RegExpWrapper, StringWrapper, escapeRegExp, isBlank, isPresent } from '../facade/lang';
-import { DEFAULT_INTERPOLATION_CONFIG } from '../interpolation_config';
+import { DEFAULT_INTERPOLATION_CONFIG } from '../html_parser/interpolation_config';
 import { ASTWithSource, Binary, BindingPipe, Chain, Conditional, EmptyExpr, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding } from './ast';
 import { EOF, Lexer, TokenType, isIdentifier, isQuote } from './lexer';
 export class SplitInterpolation {
@@ -99,9 +99,9 @@ export class Parser {
         if (parts.length <= 1) {
             return null;
         }
-        var strings = [];
-        var expressions = [];
-        for (var i = 0; i < parts.length; i++) {
+        const strings = [];
+        const expressions = [];
+        for (let i = 0; i < parts.length; i++) {
             var part = parts[i];
             if (i % 2 === 0) {
                 // fixed string

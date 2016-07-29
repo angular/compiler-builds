@@ -8,21 +8,21 @@
 "use strict";
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
-var exceptions_1 = require('../src/facade/exceptions');
-var lang_1 = require('../src/facade/lang');
-var async_1 = require('../src/facade/async');
 var compile_metadata_1 = require('./compile_metadata');
-var style_compiler_1 = require('./style_compiler');
-var view_compiler_1 = require('./view_compiler/view_compiler');
-var ng_module_compiler_1 = require('./ng_module_compiler');
-var template_parser_1 = require('./template_parser');
-var directive_normalizer_1 = require('./directive_normalizer');
-var metadata_resolver_1 = require('./metadata_resolver');
 var config_1 = require('./config');
+var directive_normalizer_1 = require('./directive_normalizer');
+var async_1 = require('./facade/async');
+var exceptions_1 = require('./facade/exceptions');
+var lang_1 = require('./facade/lang');
+var metadata_resolver_1 = require('./metadata_resolver');
+var ng_module_compiler_1 = require('./ng_module_compiler');
 var ir = require('./output/output_ast');
-var output_jit_1 = require('./output/output_jit');
 var output_interpreter_1 = require('./output/output_interpreter');
+var output_jit_1 = require('./output/output_jit');
+var style_compiler_1 = require('./style_compiler');
+var template_parser_1 = require('./template_parser/template_parser');
 var util_1 = require('./util');
+var view_compiler_1 = require('./view_compiler/view_compiler');
 var RuntimeCompiler = (function () {
     function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
         this._injector = _injector;

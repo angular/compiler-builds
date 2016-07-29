@@ -10,7 +10,7 @@ import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
 import { DetectChangesVars, ViewProperties } from './constants';
-import { PropertyBindingType } from '../template_ast';
+import { PropertyBindingType } from '../template_parser/template_ast';
 import { camelCaseToDashCase } from '../util';
 import { convertCdExpressionToIr } from './expression_converter';
 import { CompileBinding } from './compile_binding';
