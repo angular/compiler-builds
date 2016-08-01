@@ -165,7 +165,8 @@ var _ExtractVisitor = (function () {
             // Do not create empty messages
             return;
         }
-        messages.push(new Message(ast, _meaning(meaningAndDesc), _description(meaningAndDesc)));
+        var _a = _splitMeaningAndDesc(meaningAndDesc), meaning = _a[0], description = _a[1];
+        messages.push(new Message(ast, meaning, description));
     };
     /**
      * Add the node as a child of the block when:
@@ -247,15 +248,10 @@ function _isClosingComment(n) {
 function _getI18nAttr(p) {
     return p.attrs.find(function (attr) { return attr.name === _I18N_ATTR; }) || null;
 }
-function _meaning(i18n) {
-    if (!i18n || i18n == '')
-        return '';
-    return i18n.split('|', 2)[0];
-}
-function _description(i18n) {
-    if (!i18n || i18n == '')
-        return '';
-    var parts = i18n.split('|', 2);
-    return parts.length > 1 ? parts[1] : '';
+function _splitMeaningAndDesc(i18n) {
+    if (!i18n)
+        return ['', ''];
+    var pipeIndex = i18n.indexOf('|');
+    return pipeIndex == -1 ? ['', i18n] : [i18n.slice(0, pipeIndex), i18n.slice(pipeIndex + 1)];
 }
 //# sourceMappingURL=extractor.js.map

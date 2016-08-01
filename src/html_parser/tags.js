@@ -16,11 +16,11 @@ function splitNsName(elementName) {
     if (elementName[0] != ':') {
         return [null, elementName];
     }
-    var parts = elementName.substring(1).split(':', 2);
-    if (parts.length != 2) {
+    var colonIndex = elementName.indexOf(':', 1);
+    if (colonIndex == -1) {
         throw new Error("Unsupported format \"" + elementName + "\" expecting \":namespace:name\"");
     }
-    return parts;
+    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
 }
 exports.splitNsName = splitNsName;
 function getNsPrefix(fullName) {

@@ -15,11 +15,11 @@ export function splitNsName(elementName) {
     if (elementName[0] != ':') {
         return [null, elementName];
     }
-    const parts = elementName.substring(1).split(':', 2);
-    if (parts.length != 2) {
+    const colonIndex = elementName.indexOf(':', 1);
+    if (colonIndex == -1) {
         throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
     }
-    return parts;
+    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
 }
 export function getNsPrefix(fullName) {
     return fullName === null ? null : splitNsName(fullName)[0];

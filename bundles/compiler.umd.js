@@ -2305,11 +2305,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         if (elementName[0] != ':') {
             return [null, elementName];
         }
-        var parts = elementName.substring(1).split(':', 2);
-        if (parts.length != 2) {
+        var colonIndex = elementName.indexOf(':', 1);
+        if (colonIndex == -1) {
             throw new Error("Unsupported format \"" + elementName + "\" expecting \":namespace:name\"");
         }
-        return parts;
+        return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
     }
     function getNsPrefix(fullName) {
         return fullName === null ? null : splitNsName(fullName)[0];
@@ -2920,7 +2920,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 // Do not create empty messages
                 return;
             }
-            messages.push(new Message(ast, _meaning(meaningAndDesc), _description(meaningAndDesc)));
+            var _a = _splitMeaningAndDesc(meaningAndDesc), meaning = _a[0], description = _a[1];
+            messages.push(new Message(ast, meaning, description));
         };
         /**
          * Add the node as a child of the block when:
@@ -3001,16 +3002,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     function _getI18nAttr(p) {
         return p.attrs.find(function (attr) { return attr.name === _I18N_ATTR; }) || null;
     }
-    function _meaning(i18n) {
-        if (!i18n || i18n == '')
-            return '';
-        return i18n.split('|', 2)[0];
-    }
-    function _description(i18n) {
-        if (!i18n || i18n == '')
-            return '';
-        var parts = i18n.split('|', 2);
-        return parts.length > 1 ? parts[1] : '';
+    function _splitMeaningAndDesc(i18n) {
+        if (!i18n)
+            return ['', ''];
+        var pipeIndex = i18n.indexOf('|');
+        return pipeIndex == -1 ? ['', i18n] : [i18n.slice(0, pipeIndex), i18n.slice(pipeIndex + 1)];
     }
     /**
      * @license
@@ -6585,8 +6581,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
     }
     function splitAtColon(input, defaultValues) {
-        var parts = input.split(':', 2).map(function (s) { return s.trim(); });
-        return parts.length > 1 ? parts : defaultValues;
+        var colonIndex = input.indexOf(':');
+        if (colonIndex == -1)
+            return defaultValues;
+        return [input.slice(0, colonIndex).trim(), input.slice(colonIndex + 1).trim()];
     }
     function sanitizeIdentifier(name) {
         return StringWrapper.replaceAll(name, /\W/g, '_');

@@ -16,8 +16,10 @@ function camelCaseToDashCase(input) {
 }
 exports.camelCaseToDashCase = camelCaseToDashCase;
 function splitAtColon(input, defaultValues) {
-    var parts = input.split(':', 2).map(function (s) { return s.trim(); });
-    return parts.length > 1 ? parts : defaultValues;
+    var colonIndex = input.indexOf(':');
+    if (colonIndex == -1)
+        return defaultValues;
+    return [input.slice(0, colonIndex).trim(), input.slice(colonIndex + 1).trim()];
 }
 exports.splitAtColon = splitAtColon;
 function sanitizeIdentifier(name) {

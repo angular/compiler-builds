@@ -14,8 +14,10 @@ export function camelCaseToDashCase(input) {
     return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, (m) => { return '-' + m[1].toLowerCase(); });
 }
 export function splitAtColon(input, defaultValues) {
-    var parts = input.split(':', 2).map((s) => s.trim());
-    return parts.length > 1 ? parts : defaultValues;
+    const colonIndex = input.indexOf(':');
+    if (colonIndex == -1)
+        return defaultValues;
+    return [input.slice(0, colonIndex).trim(), input.slice(colonIndex + 1).trim()];
 }
 export function sanitizeIdentifier(name) {
     return StringWrapper.replaceAll(name, /\W/g, '_');
