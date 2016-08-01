@@ -47,8 +47,7 @@ const _NO_XHR = {
  * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
  * template compilation.
  */
-export const COMPILER_PROVIDERS = 
-/*@ts2dart_const*/ [
+export const COMPILER_PROVIDERS = [
     { provide: Reflector, useValue: reflector },
     { provide: ReflectorReader, useExisting: Reflector },
     { provide: XHR, useValue: _NO_XHR },
@@ -63,11 +62,11 @@ export const COMPILER_PROVIDERS =
     StyleCompiler,
     ViewCompiler,
     NgModuleCompiler,
-    /*@ts2dart_Provider*/ { provide: CompilerConfig, useValue: new CompilerConfig() },
+    { provide: CompilerConfig, useValue: new CompilerConfig() },
     RuntimeCompiler,
-    /*@ts2dart_Provider*/ { provide: Compiler, useExisting: RuntimeCompiler },
+    { provide: Compiler, useExisting: RuntimeCompiler },
     DomElementSchemaRegistry,
-    /*@ts2dart_Provider*/ { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
+    { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
     UrlResolver,
     DirectiveResolver,
     PipeResolver,

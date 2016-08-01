@@ -58,8 +58,7 @@ var _NO_XHR = {
  * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
  * template compilation.
  */
-exports.COMPILER_PROVIDERS = 
-/*@ts2dart_const*/ [
+exports.COMPILER_PROVIDERS = [
     { provide: core_private_1.Reflector, useValue: core_private_1.reflector },
     { provide: core_private_1.ReflectorReader, useExisting: core_private_1.Reflector },
     { provide: xhr_2.XHR, useValue: _NO_XHR },
@@ -74,11 +73,11 @@ exports.COMPILER_PROVIDERS =
     style_compiler_1.StyleCompiler,
     view_compiler_1.ViewCompiler,
     ng_module_compiler_1.NgModuleCompiler,
-    /*@ts2dart_Provider*/ { provide: config_2.CompilerConfig, useValue: new config_2.CompilerConfig() },
+    { provide: config_2.CompilerConfig, useValue: new config_2.CompilerConfig() },
     runtime_compiler_2.RuntimeCompiler,
-    /*@ts2dart_Provider*/ { provide: core_1.Compiler, useExisting: runtime_compiler_2.RuntimeCompiler },
+    { provide: core_1.Compiler, useExisting: runtime_compiler_2.RuntimeCompiler },
     dom_element_schema_registry_1.DomElementSchemaRegistry,
-    /*@ts2dart_Provider*/ { provide: element_schema_registry_1.ElementSchemaRegistry, useExisting: dom_element_schema_registry_1.DomElementSchemaRegistry },
+    { provide: element_schema_registry_1.ElementSchemaRegistry, useExisting: dom_element_schema_registry_1.DomElementSchemaRegistry },
     url_resolver_2.UrlResolver,
     directive_resolver_2.DirectiveResolver,
     pipe_resolver_2.PipeResolver,

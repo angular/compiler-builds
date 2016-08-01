@@ -124,7 +124,7 @@ var RuntimeCompiler = (function () {
                     _this._assertComponentKnown(dep.comp.runtime, true).proxyComponentFactory;
                 dep.placeholder.name = "compFactory_" + dep.comp.name;
             });
-            if (lang_1.IS_DART || !this._compilerConfig.useJit) {
+            if (!this._compilerConfig.useJit) {
                 ngModuleFactory =
                     output_interpreter_1.interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
             }
@@ -263,7 +263,7 @@ var RuntimeCompiler = (function () {
         });
         var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
         var factory;
-        if (lang_1.IS_DART || !this._compilerConfig.useJit) {
+        if (!this._compilerConfig.useJit) {
             factory = output_interpreter_1.interpretStatements(statements, compileResult.viewFactoryVar);
         }
         else {
@@ -282,7 +282,7 @@ var RuntimeCompiler = (function () {
     };
     RuntimeCompiler.prototype._resolveAndEvalStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
         this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
-        if (lang_1.IS_DART || !this._compilerConfig.useJit) {
+        if (!this._compilerConfig.useJit) {
             return output_interpreter_1.interpretStatements(result.statements, result.stylesVar);
         }
         else {

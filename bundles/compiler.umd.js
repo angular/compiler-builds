@@ -108,7 +108,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     else {
         globalScope = window;
     }
-    var IS_DART = false;
     // Need to declare a new variable for global here since TypeScript
     // exports the original value of the symbol.
     var global$1 = globalScope;
@@ -5013,8 +5012,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         throw new BaseException('unimplemented');
     }
     var _EMPTY_ATTR_VALUE = '';
-    // TODO: Can't use `const` here as
-    // in Dart this is not transpiled into `final` yet...
     var _SELECTOR_REGEXP = RegExpWrapper.create('(\\:not\\()|' +
         '([-\\w]+)|' +
         '(?:\\.([-\\w]+))|' +
@@ -6575,7 +6572,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         if (type === void 0) { type = null; }
         return new LiteralExpr(value, type);
     }
-    var MODULE_SUFFIX = IS_DART ? '.dart' : '';
+    var MODULE_SUFFIX = '';
     var CAMEL_CASE_REGEXP = /([A-Z])/g;
     function camelCaseToDashCase(input) {
         return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
@@ -6625,21 +6622,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     function assetUrl(pkg, path, type) {
         if (path === void 0) { path = null; }
         if (type === void 0) { type = 'src'; }
-        if (IS_DART) {
-            if (path == null) {
-                return "asset:angular2/" + pkg + "/" + pkg + ".dart";
-            }
-            else {
-                return "asset:angular2/lib/" + pkg + "/src/" + path + ".dart";
-            }
+        if (path == null) {
+            return "asset:@angular/lib/" + pkg + "/index";
         }
         else {
-            if (path == null) {
-                return "asset:@angular/lib/" + pkg + "/index";
-            }
-            else {
-                return "asset:@angular/lib/" + pkg + "/src/" + path;
-            }
+            return "asset:@angular/lib/" + pkg + "/src/" + path;
         }
     }
     function createDiTokenExpression(token) {
@@ -12643,8 +12630,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                     this.styleUrls.push(preparsedElement.hrefAttr);
                     break;
                 default:
-                    // DDC reports this as error. See:
-                    // https://github.com/dart-lang/dev_compiler/issues/428
                     break;
             }
             if (preparsedElement.nonBindable) {
@@ -14098,7 +14083,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                 name = this.getBuiltinMethodName(expr.builtin);
                 if (isBlank(name)) {
                     // some builtins just mean to skip the call.
-                    // e.g. `bind` in Dart.
                     return null;
                 }
             }
@@ -14317,356 +14301,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         return res;
     }
     var _debugModuleUrl = 'asset://debug/lib';
-    function debugOutputAstAsDart(ast) {
-        var converter = new _DartEmitterVisitor(_debugModuleUrl);
-        var ctx = EmitterVisitorContext.createRoot([]);
-        var asts;
-        if (isArray(ast)) {
-            asts = ast;
-        }
-        else {
-            asts = [ast];
-        }
-        asts.forEach(function (ast) {
-            if (ast instanceof Statement) {
-                ast.visitStatement(converter, ctx);
-            }
-            else if (ast instanceof Expression) {
-                ast.visitExpression(converter, ctx);
-            }
-            else if (ast instanceof Type$1) {
-                ast.visitType(converter, ctx);
-            }
-            else {
-                throw new BaseException("Don't know how to print debug info for " + ast);
-            }
-        });
-        return ctx.toSource();
-    }
-    var _DartEmitterVisitor = (function (_super) {
-        __extends(_DartEmitterVisitor, _super);
-        function _DartEmitterVisitor(_moduleUrl) {
-            _super.call(this, true);
-            this._moduleUrl = _moduleUrl;
-            this.importsWithPrefixes = new Map();
-        }
-        _DartEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
-            this._visitIdentifier(ast.value, ast.typeParams, ctx);
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitDeclareVarStmt = function (stmt, ctx) {
-            if (stmt.hasModifier(StmtModifier.Final)) {
-                if (isConstType(stmt.type)) {
-                    ctx.print("const ");
-                }
-                else {
-                    ctx.print("final ");
-                }
-            }
-            else if (isBlank(stmt.type)) {
-                ctx.print("var ");
-            }
-            if (isPresent(stmt.type)) {
-                stmt.type.visitType(this, ctx);
-                ctx.print(" ");
-            }
-            ctx.print(stmt.name + " = ");
-            stmt.value.visitExpression(this, ctx);
-            ctx.println(";");
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitCastExpr = function (ast, ctx) {
-            ctx.print("(");
-            ast.value.visitExpression(this, ctx);
-            ctx.print(" as ");
-            ast.type.visitType(this, ctx);
-            ctx.print(")");
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitDeclareClassStmt = function (stmt, ctx) {
-            var _this = this;
-            ctx.pushClass(stmt);
-            ctx.print("class " + stmt.name);
-            if (isPresent(stmt.parent)) {
-                ctx.print(" extends ");
-                stmt.parent.visitExpression(this, ctx);
-            }
-            ctx.println(" {");
-            ctx.incIndent();
-            stmt.fields.forEach(function (field) { return _this._visitClassField(field, ctx); });
-            if (isPresent(stmt.constructorMethod)) {
-                this._visitClassConstructor(stmt, ctx);
-            }
-            stmt.getters.forEach(function (getter) { return _this._visitClassGetter(getter, ctx); });
-            stmt.methods.forEach(function (method) { return _this._visitClassMethod(method, ctx); });
-            ctx.decIndent();
-            ctx.println("}");
-            ctx.popClass();
-            return null;
-        };
-        _DartEmitterVisitor.prototype._visitClassField = function (field, ctx) {
-            if (field.hasModifier(StmtModifier.Final)) {
-                ctx.print("final ");
-            }
-            else if (isBlank(field.type)) {
-                ctx.print("var ");
-            }
-            if (isPresent(field.type)) {
-                field.type.visitType(this, ctx);
-                ctx.print(" ");
-            }
-            ctx.println(field.name + ";");
-        };
-        _DartEmitterVisitor.prototype._visitClassGetter = function (getter, ctx) {
-            if (isPresent(getter.type)) {
-                getter.type.visitType(this, ctx);
-                ctx.print(" ");
-            }
-            ctx.println("get " + getter.name + " {");
-            ctx.incIndent();
-            this.visitAllStatements(getter.body, ctx);
-            ctx.decIndent();
-            ctx.println("}");
-        };
-        _DartEmitterVisitor.prototype._visitClassConstructor = function (stmt, ctx) {
-            ctx.print(stmt.name + "(");
-            this._visitParams(stmt.constructorMethod.params, ctx);
-            ctx.print(")");
-            var ctorStmts = stmt.constructorMethod.body;
-            var superCtorExpr = ctorStmts.length > 0 ? getSuperConstructorCallExpr(ctorStmts[0]) : null;
-            if (isPresent(superCtorExpr)) {
-                ctx.print(": ");
-                superCtorExpr.visitExpression(this, ctx);
-                ctorStmts = ctorStmts.slice(1);
-            }
-            ctx.println(" {");
-            ctx.incIndent();
-            this.visitAllStatements(ctorStmts, ctx);
-            ctx.decIndent();
-            ctx.println("}");
-        };
-        _DartEmitterVisitor.prototype._visitClassMethod = function (method, ctx) {
-            if (isPresent(method.type)) {
-                method.type.visitType(this, ctx);
-            }
-            else {
-                ctx.print("void");
-            }
-            ctx.print(" " + method.name + "(");
-            this._visitParams(method.params, ctx);
-            ctx.println(") {");
-            ctx.incIndent();
-            this.visitAllStatements(method.body, ctx);
-            ctx.decIndent();
-            ctx.println("}");
-        };
-        _DartEmitterVisitor.prototype.visitFunctionExpr = function (ast, ctx) {
-            ctx.print("(");
-            this._visitParams(ast.params, ctx);
-            ctx.println(") {");
-            ctx.incIndent();
-            this.visitAllStatements(ast.statements, ctx);
-            ctx.decIndent();
-            ctx.print("}");
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitDeclareFunctionStmt = function (stmt, ctx) {
-            if (isPresent(stmt.type)) {
-                stmt.type.visitType(this, ctx);
-            }
-            else {
-                ctx.print("void");
-            }
-            ctx.print(" " + stmt.name + "(");
-            this._visitParams(stmt.params, ctx);
-            ctx.println(") {");
-            ctx.incIndent();
-            this.visitAllStatements(stmt.statements, ctx);
-            ctx.decIndent();
-            ctx.println("}");
-            return null;
-        };
-        _DartEmitterVisitor.prototype.getBuiltinMethodName = function (method) {
-            var name;
-            switch (method) {
-                case BuiltinMethod.ConcatArray:
-                    name = '.addAll';
-                    break;
-                case BuiltinMethod.SubscribeObservable:
-                    name = 'listen';
-                    break;
-                case BuiltinMethod.bind:
-                    name = null;
-                    break;
-                default:
-                    throw new BaseException("Unknown builtin method: " + method);
-            }
-            return name;
-        };
-        _DartEmitterVisitor.prototype.visitTryCatchStmt = function (stmt, ctx) {
-            ctx.println("try {");
-            ctx.incIndent();
-            this.visitAllStatements(stmt.bodyStmts, ctx);
-            ctx.decIndent();
-            ctx.println("} catch (" + CATCH_ERROR_VAR$2.name + ", " + CATCH_STACK_VAR$2.name + ") {");
-            ctx.incIndent();
-            this.visitAllStatements(stmt.catchStmts, ctx);
-            ctx.decIndent();
-            ctx.println("}");
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitBinaryOperatorExpr = function (ast, ctx) {
-            switch (ast.operator) {
-                case BinaryOperator.Identical:
-                    ctx.print("identical(");
-                    ast.lhs.visitExpression(this, ctx);
-                    ctx.print(", ");
-                    ast.rhs.visitExpression(this, ctx);
-                    ctx.print(")");
-                    break;
-                case BinaryOperator.NotIdentical:
-                    ctx.print("!identical(");
-                    ast.lhs.visitExpression(this, ctx);
-                    ctx.print(", ");
-                    ast.rhs.visitExpression(this, ctx);
-                    ctx.print(")");
-                    break;
-                default:
-                    _super.prototype.visitBinaryOperatorExpr.call(this, ast, ctx);
-            }
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitLiteralArrayExpr = function (ast, ctx) {
-            if (isConstType(ast.type)) {
-                ctx.print("const ");
-            }
-            return _super.prototype.visitLiteralArrayExpr.call(this, ast, ctx);
-        };
-        _DartEmitterVisitor.prototype.visitLiteralMapExpr = function (ast, ctx) {
-            if (isConstType(ast.type)) {
-                ctx.print("const ");
-            }
-            if (isPresent(ast.valueType)) {
-                ctx.print("<String, ");
-                ast.valueType.visitType(this, ctx);
-                ctx.print(">");
-            }
-            return _super.prototype.visitLiteralMapExpr.call(this, ast, ctx);
-        };
-        _DartEmitterVisitor.prototype.visitInstantiateExpr = function (ast, ctx) {
-            ctx.print(isConstType(ast.type) ? "const" : "new");
-            ctx.print(' ');
-            ast.classExpr.visitExpression(this, ctx);
-            ctx.print("(");
-            this.visitAllExpressions(ast.args, ctx, ",");
-            ctx.print(")");
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitBuiltintType = function (type, ctx) {
-            var typeStr;
-            switch (type.name) {
-                case BuiltinTypeName.Bool:
-                    typeStr = 'bool';
-                    break;
-                case BuiltinTypeName.Dynamic:
-                    typeStr = 'dynamic';
-                    break;
-                case BuiltinTypeName.Function:
-                    typeStr = 'Function';
-                    break;
-                case BuiltinTypeName.Number:
-                    typeStr = 'num';
-                    break;
-                case BuiltinTypeName.Int:
-                    typeStr = 'int';
-                    break;
-                case BuiltinTypeName.String:
-                    typeStr = 'String';
-                    break;
-                default:
-                    throw new BaseException("Unsupported builtin type " + type.name);
-            }
-            ctx.print(typeStr);
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitExternalType = function (ast, ctx) {
-            this._visitIdentifier(ast.value, ast.typeParams, ctx);
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitArrayType = function (type, ctx) {
-            ctx.print("List<");
-            if (isPresent(type.of)) {
-                type.of.visitType(this, ctx);
-            }
-            else {
-                ctx.print("dynamic");
-            }
-            ctx.print(">");
-            return null;
-        };
-        _DartEmitterVisitor.prototype.visitMapType = function (type, ctx) {
-            ctx.print("Map<String, ");
-            if (isPresent(type.valueType)) {
-                type.valueType.visitType(this, ctx);
-            }
-            else {
-                ctx.print("dynamic");
-            }
-            ctx.print(">");
-            return null;
-        };
-        _DartEmitterVisitor.prototype._visitParams = function (params, ctx) {
-            var _this = this;
-            this.visitAllObjects(function (param /** TODO #9100 */) {
-                if (isPresent(param.type)) {
-                    param.type.visitType(_this, ctx);
-                    ctx.print(' ');
-                }
-                ctx.print(param.name);
-            }, params, ctx, ',');
-        };
-        _DartEmitterVisitor.prototype._visitIdentifier = function (value, typeParams, ctx) {
-            var _this = this;
-            if (isBlank(value.name)) {
-                throw new BaseException("Internal error: unknown identifier " + value);
-            }
-            if (isPresent(value.moduleUrl) && value.moduleUrl != this._moduleUrl) {
-                var prefix = this.importsWithPrefixes.get(value.moduleUrl);
-                if (isBlank(prefix)) {
-                    prefix = "import" + this.importsWithPrefixes.size;
-                    this.importsWithPrefixes.set(value.moduleUrl, prefix);
-                }
-                ctx.print(prefix + ".");
-            }
-            ctx.print(value.name);
-            if (isPresent(typeParams) && typeParams.length > 0) {
-                ctx.print("<");
-                this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
-                ctx.print(">");
-            }
-        };
-        return _DartEmitterVisitor;
-    }(AbstractEmitterVisitor));
-    function getSuperConstructorCallExpr(stmt) {
-        if (stmt instanceof ExpressionStatement) {
-            var expr = stmt.expr;
-            if (expr instanceof InvokeFunctionExpr) {
-                var fn = expr.fn;
-                if (fn instanceof ReadVarExpr) {
-                    if (fn.builtin === BuiltinVar.Super) {
-                        return expr;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-    function isConstType(type) {
-        return isPresent(type) && type.hasModifier(TypeModifier.Const);
-    }
-    var _debugModuleUrl$1 = 'asset://debug/lib';
     function debugOutputAstAsTypeScript(ast) {
-        var converter = new _TsEmitterVisitor(_debugModuleUrl$1);
+        var converter = new _TsEmitterVisitor(_debugModuleUrl);
         var ctx = EmitterVisitorContext.createRoot([]);
         var asts;
         if (isArray(ast)) {
@@ -15036,9 +14672,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var StatementInterpreter = (function () {
         function StatementInterpreter() {
         }
-        StatementInterpreter.prototype.debugAst = function (ast) {
-            return IS_DART ? debugOutputAstAsDart(ast) : debugOutputAstAsTypeScript(ast);
-        };
+        StatementInterpreter.prototype.debugAst = function (ast) { return debugOutputAstAsTypeScript(ast); };
         StatementInterpreter.prototype.visitDeclareVarStmt = function (stmt, ctx) {
             ctx.vars.set(stmt.name, stmt.value.visitExpression(this, ctx));
             return null;
@@ -15108,12 +14742,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         result = ObservableWrapper.subscribe(receiver, args[0]);
                         break;
                     case BuiltinMethod.bind:
-                        if (IS_DART) {
-                            result = receiver;
-                        }
-                        else {
-                            result = receiver.bind(args[0]);
-                        }
+                        result = receiver.bind(args[0]);
                         break;
                     default:
                         throw new BaseException("Unknown builtin method " + expr.builtin);
@@ -16157,7 +15786,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         _this._assertComponentKnown(dep.comp.runtime, true).proxyComponentFactory;
                     dep.placeholder.name = "compFactory_" + dep.comp.name;
                 });
-                if (IS_DART || !this._compilerConfig.useJit) {
+                if (!this._compilerConfig.useJit) {
                     ngModuleFactory =
                         interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
                 }
@@ -16296,7 +15925,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
             var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
             var factory;
-            if (IS_DART || !this._compilerConfig.useJit) {
+            if (!this._compilerConfig.useJit) {
                 factory = interpretStatements(statements, compileResult.viewFactoryVar);
             }
             else {
@@ -16315,7 +15944,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         RuntimeCompiler.prototype._resolveAndEvalStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
             this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
-            if (IS_DART || !this._compilerConfig.useJit) {
+            if (!this._compilerConfig.useJit) {
                 return interpretStatements(result.statements, result.stylesVar);
             }
             else {
@@ -16578,8 +16207,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     // dom_security_schema.ts. Reach out to mprobst & rjamet for details.
     //
     // =================================================================================================
-    var SCHEMA = 
-    /*@ts2dart_const*/ ([
+    var SCHEMA = ([
         '*|textContent,%classList,className,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*copy,*cut,*paste,*search,*selectstart,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerHTML,#scrollLeft,#scrollTop',
         '^*|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*autocomplete,*autocompleteerror,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
         'media|!autoplay,!controls,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,#playbackRate,preload,src,#volume',
@@ -16830,8 +16458,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
      * template compilation.
      */
-    var COMPILER_PROVIDERS = 
-    /*@ts2dart_const*/ [
+    var COMPILER_PROVIDERS = [
         { provide: Reflector, useValue: reflector },
         { provide: ReflectorReader, useExisting: Reflector },
         { provide: XHR, useValue: _NO_XHR },
@@ -16846,11 +16473,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         StyleCompiler,
         ViewCompiler,
         NgModuleCompiler,
-        /*@ts2dart_Provider*/ { provide: CompilerConfig, useValue: new CompilerConfig() },
+        { provide: CompilerConfig, useValue: new CompilerConfig() },
         RuntimeCompiler,
-        /*@ts2dart_Provider*/ { provide: _angular_core.Compiler, useExisting: RuntimeCompiler },
+        { provide: _angular_core.Compiler, useExisting: RuntimeCompiler },
         DomElementSchemaRegistry,
-        /*@ts2dart_Provider*/ { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
+        { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
         UrlResolver,
         DirectiveResolver,
         PipeResolver,

@@ -9,9 +9,7 @@ import { ListWrapper } from './facade/collection';
 import { BaseException } from './facade/exceptions';
 import { RegExpMatcherWrapper, RegExpWrapper, StringWrapper, isBlank, isPresent } from './facade/lang';
 const _EMPTY_ATTR_VALUE = '';
-// TODO: Can't use `const` here as
-// in Dart this is not transpiled into `final` yet...
-var _SELECTOR_REGEXP = RegExpWrapper.create('(\\:not\\()|' +
+const _SELECTOR_REGEXP = RegExpWrapper.create('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
     '(?:\\[([-\\w*]+)(?:=([^\\]]*))?\\])|' +

@@ -12,7 +12,7 @@ import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { PromiseWrapper } from './facade/async';
 import { BaseException } from './facade/exceptions';
-import { IS_DART, isBlank, isString, stringify } from './facade/lang';
+import { isBlank, isString, stringify } from './facade/lang';
 import { CompileMetadataResolver } from './metadata_resolver';
 import { NgModuleCompiler } from './ng_module_compiler';
 import * as ir from './output/output_ast';
@@ -113,7 +113,7 @@ export class RuntimeCompiler {
                     this._assertComponentKnown(dep.comp.runtime, true).proxyComponentFactory;
                 dep.placeholder.name = `compFactory_${dep.comp.name}`;
             });
-            if (IS_DART || !this._compilerConfig.useJit) {
+            if (!this._compilerConfig.useJit) {
                 ngModuleFactory =
                     interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
             }
@@ -250,7 +250,7 @@ export class RuntimeCompiler {
         });
         const statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
         let factory;
-        if (IS_DART || !this._compilerConfig.useJit) {
+        if (!this._compilerConfig.useJit) {
             factory = interpretStatements(statements, compileResult.viewFactoryVar);
         }
         else {
@@ -268,7 +268,7 @@ export class RuntimeCompiler {
     }
     _resolveAndEvalStylesCompileResult(result, externalStylesheetsByModuleUrl) {
         this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
-        if (IS_DART || !this._compilerConfig.useJit) {
+        if (!this._compilerConfig.useJit) {
             return interpretStatements(result.statements, result.stylesVar);
         }
         else {

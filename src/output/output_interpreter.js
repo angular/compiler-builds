@@ -10,7 +10,6 @@ var async_1 = require('../facade/async');
 var collection_1 = require('../facade/collection');
 var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
-var dart_emitter_1 = require('./dart_emitter');
 var o = require('./output_ast');
 var ts_emitter_1 = require('./ts_emitter');
 function interpretStatements(statements, resultVar) {
@@ -94,9 +93,7 @@ function createDynamicClass(_classStmt, _ctx, _visitor) {
 var StatementInterpreter = (function () {
     function StatementInterpreter() {
     }
-    StatementInterpreter.prototype.debugAst = function (ast) {
-        return lang_1.IS_DART ? dart_emitter_1.debugOutputAstAsDart(ast) : ts_emitter_1.debugOutputAstAsTypeScript(ast);
-    };
+    StatementInterpreter.prototype.debugAst = function (ast) { return ts_emitter_1.debugOutputAstAsTypeScript(ast); };
     StatementInterpreter.prototype.visitDeclareVarStmt = function (stmt, ctx) {
         ctx.vars.set(stmt.name, stmt.value.visitExpression(this, ctx));
         return null;
@@ -166,12 +163,7 @@ var StatementInterpreter = (function () {
                     result = async_1.ObservableWrapper.subscribe(receiver, args[0]);
                     break;
                 case o.BuiltinMethod.bind:
-                    if (lang_1.IS_DART) {
-                        result = receiver;
-                    }
-                    else {
-                        result = receiver.bind(args[0]);
-                    }
+                    result = receiver.bind(args[0]);
                     break;
                 default:
                     throw new exceptions_1.BaseException("Unknown builtin method " + expr.builtin);

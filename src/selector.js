@@ -10,8 +10,6 @@ var collection_1 = require('./facade/collection');
 var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var _EMPTY_ATTR_VALUE = '';
-// TODO: Can't use `const` here as
-// in Dart this is not transpiled into `final` yet...
 var _SELECTOR_REGEXP = lang_1.RegExpWrapper.create('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
