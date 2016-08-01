@@ -16992,7 +16992,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function _mergeArrays(parts) {
         var result = [];
-        parts.forEach(function (part) { return result.push.apply(result, part); });
+        parts.forEach(function (part) { return part && result.push.apply(result, part); });
         return result;
     }
     // asset:<package-name>/<realm>/<path-to-module>

@@ -225,7 +225,7 @@ function _lastDefined(args) {
 }
 function _mergeArrays(parts) {
     var result = [];
-    parts.forEach(function (part) { return result.push.apply(result, part); });
+    parts.forEach(function (part) { return part && result.push.apply(result, part); });
     return result;
 }
 //# sourceMappingURL=compiler.js.map
