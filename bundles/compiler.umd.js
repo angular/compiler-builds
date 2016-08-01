@@ -8342,8 +8342,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             var sourceInfo = sourceSpan.start.toString();
             try {
                 var ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
-                if (ast)
+                if (ast) {
                     this._reportParserErors(ast.errors, sourceSpan);
+                }
+                if (!ast || ast.ast instanceof EmptyExpr) {
+                    this._reportError("Empty expressions are not allowed", sourceSpan);
+                    return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
+                }
                 this._checkPipes(ast, sourceSpan);
                 return ast;
             }
