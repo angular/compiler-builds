@@ -144,7 +144,6 @@ export class CompileView {
         return proxyExpr.callFn(values);
     }
     afterNodes() {
-        this.pipes.forEach((pipe) => pipe.create());
         this.viewQueries.values().forEach((queries) => queries.forEach((query) => query.afterChildren(this.createMethod, this.updateViewQueriesMethod)));
     }
 }

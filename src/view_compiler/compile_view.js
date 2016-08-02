@@ -147,7 +147,6 @@ var CompileView = (function () {
     };
     CompileView.prototype.afterNodes = function () {
         var _this = this;
-        this.pipes.forEach(function (pipe) { return pipe.create(); });
         this.viewQueries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
     };
     return CompileView;

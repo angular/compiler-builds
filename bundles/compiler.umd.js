@@ -10713,20 +10713,24 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return _QueryWithRead;
     }());
-    var _PurePipeProxy = (function () {
-        function _PurePipeProxy(view, instance, argCount) {
-            this.view = view;
-            this.instance = instance;
-            this.argCount = argCount;
-        }
-        return _PurePipeProxy;
-    }());
     var CompilePipe = (function () {
         function CompilePipe(view, meta) {
+            var _this = this;
             this.view = view;
             this.meta = meta;
-            this._purePipeProxies = [];
+            this._purePipeProxyCount = 0;
             this.instance = THIS_EXPR.prop("_pipe_" + meta.name + "_" + view.pipeCount++);
+            var deps = this.meta.type.diDeps.map(function (diDep) {
+                if (diDep.token.equalsTo(identifierToken(Identifiers.ChangeDetectorRef))) {
+                    return getPropertyInView(THIS_EXPR.prop('ref'), _this.view, _this.view.componentView);
+                }
+                return injectFromViewParentInjector(diDep.token, false);
+            });
+            this.view.fields.push(new ClassField(this.instance.name, importType(this.meta.type)));
+            this.view.createMethod.resetDebugInfo(null, null);
+            this.view.createMethod.addStmt(THIS_EXPR.prop(this.instance.name)
+                .set(importExpr(this.meta.type).instantiate(deps))
+                .toStmt());
         }
         CompilePipe.call = function (view, name, args) {
             var compView = view.componentView;
@@ -10753,35 +10757,15 @@ var __extends = (this && this.__extends) || function (d, b) {
             enumerable: true,
             configurable: true
         });
-        CompilePipe.prototype.create = function () {
-            var _this = this;
-            var deps = this.meta.type.diDeps.map(function (diDep) {
-                if (diDep.token.equalsTo(identifierToken(Identifiers.ChangeDetectorRef))) {
-                    return getPropertyInView(THIS_EXPR.prop('ref'), _this.view, _this.view.componentView);
-                }
-                return injectFromViewParentInjector(diDep.token, false);
-            });
-            this.view.fields.push(new ClassField(this.instance.name, importType(this.meta.type)));
-            this.view.createMethod.resetDebugInfo(null, null);
-            this.view.createMethod.addStmt(THIS_EXPR.prop(this.instance.name)
-                .set(importExpr(this.meta.type).instantiate(deps))
-                .toStmt());
-            this._purePipeProxies.forEach(function (purePipeProxy) {
-                var pipeInstanceSeenFromPureProxy = getPropertyInView(_this.instance, purePipeProxy.view, _this.view);
-                createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
-                    .callMethod(BuiltinMethod.bind, [pipeInstanceSeenFromPureProxy]), purePipeProxy.argCount, purePipeProxy.instance, purePipeProxy.view);
-            });
-        };
         CompilePipe.prototype._call = function (callingView, args) {
             if (this.meta.pure) {
                 // PurePipeProxies live on the view that called them.
-                var purePipeProxy = new _PurePipeProxy(callingView, THIS_EXPR.prop(this.instance.name + "_" + this._purePipeProxies.length), args.length);
-                this._purePipeProxies.push(purePipeProxy);
+                var purePipeProxyInstance = THIS_EXPR.prop(this.instance.name + "_" + this._purePipeProxyCount++);
+                var pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
+                createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
+                    .callMethod(BuiltinMethod.bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, callingView);
                 return importExpr(Identifiers.castByValue)
-                    .callFn([
-                    purePipeProxy.instance,
-                    getPropertyInView(this.instance.prop('transform'), callingView, this.view)
-                ])
+                    .callFn([purePipeProxyInstance, pipeInstanceSeenFromPureProxy.prop('transform')])
                     .callFn(args);
             }
             else {
@@ -10934,7 +10918,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileView.prototype.afterNodes = function () {
             var _this = this;
-            this.pipes.forEach(function (pipe) { return pipe.create(); });
             this.viewQueries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
         };
         return CompileView;
