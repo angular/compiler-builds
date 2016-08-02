@@ -33,4 +33,4 @@ export function hasLifecycleHook(hook, token) {
     var lcProp = LIFECYCLE_PROPS.get(hook);
     return reflector.hasLifecycleHook(token, lcInterface, lcProp);
 }
-//# sourceMappingURL=directive_lifecycle_reflector.js.map
+//# sourceMappingURL=lifecycle_reflector.js.map

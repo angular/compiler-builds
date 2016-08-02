@@ -11,11 +11,11 @@ import { StringMapWrapper } from '../src/facade/collection';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { CompilerConfig } from './config';
-import { hasLifecycleHook } from './directive_lifecycle_reflector';
 import { DirectiveResolver } from './directive_resolver';
 import { BaseException } from './facade/exceptions';
 import { Type, isArray, isBlank, isPresent, isString, stringify } from './facade/lang';
 import { Identifiers, identifierToken } from './identifiers';
+import { hasLifecycleHook } from './lifecycle_reflector';
 import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
@@ -192,7 +192,6 @@ export class CompileMetadataResolver {
                 inputs: dirMeta.inputs,
                 outputs: dirMeta.outputs,
                 host: dirMeta.host,
-                lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(hook, directiveType)),
                 providers: providers,
                 viewProviders: viewProviders,
                 queries: queries,
@@ -221,6 +220,7 @@ export class CompileMetadataResolver {
             const exportedModules = [];
             const providers = [];
             const entryComponents = [];
+            const bootstrapComponents = [];
             const schemas = [];
             if (meta.imports) {
                 flattenArray(meta.imports).forEach((importedType) => {
@@ -295,6 +295,11 @@ export class CompileMetadataResolver {
                 entryComponents.push(...flattenArray(meta.entryComponents)
                     .map(type => this.getTypeMetadata(type, staticTypeModuleUrl(type))));
             }
+            if (meta.bootstrap) {
+                bootstrapComponents.push(...flattenArray(meta.bootstrap)
+                    .map(type => this.getTypeMetadata(type, staticTypeModuleUrl(type))));
+            }
+            entryComponents.push(...bootstrapComponents);
             if (meta.schemas) {
                 schemas.push(...flattenArray(meta.schemas));
             }
@@ -304,6 +309,7 @@ export class CompileMetadataResolver {
                 type: this.getTypeMetadata(moduleType, staticTypeModuleUrl(moduleType)),
                 providers: providers,
                 entryComponents: entryComponents,
+                bootstrapComponents: bootstrapComponents,
                 schemas: schemas,
                 declaredDirectives: declaredDirectives,
                 exportedDirectives: exportedDirectives,
@@ -420,7 +426,8 @@ export class CompileMetadataResolver {
             name: this.sanitizeTokenName(type),
             moduleUrl: moduleUrl,
             runtime: type,
-            diDeps: this.getDependenciesMetadata(type, dependencies)
+            diDeps: this.getDependenciesMetadata(type, dependencies),
+            lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(hook, type)),
         });
     }
     getFactoryMetadata(factory, moduleUrl, dependencies = null) {
@@ -443,8 +450,7 @@ export class CompileMetadataResolver {
             meta = new cpl.CompilePipeMetadata({
                 type: this.getTypeMetadata(pipeType, staticTypeModuleUrl(pipeType)),
                 name: pipeMeta.name,
-                pure: pipeMeta.pure,
-                lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(hook, pipeType)),
+                pure: pipeMeta.pure
             });
             this._pipeCache.set(pipeType, meta);
         }

@@ -341,10 +341,11 @@ exports.CompileIdentifierMap = CompileIdentifierMap;
 var CompileTypeMetadata = (function (_super) {
     __extends(CompileTypeMetadata, _super);
     function CompileTypeMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps;
+        var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
         _super.call(this, { runtime: runtime, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
         this.isHost = lang_1.normalizeBool(isHost);
         this.diDeps = _normalizeArray(diDeps);
+        this.lifecycleHooks = _normalizeArray(lifecycleHooks);
     }
     return CompileTypeMetadata;
 }(CompileIdentifierMetadata));
@@ -401,7 +402,7 @@ exports.CompileTemplateMetadata = CompileTemplateMetadata;
  */
 var CompileDirectiveMetadata = (function () {
     function CompileDirectiveMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
+        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
         this.type = type;
         this.isComponent = isComponent;
         this.selector = selector;
@@ -412,7 +413,6 @@ var CompileDirectiveMetadata = (function () {
         this.hostListeners = hostListeners;
         this.hostProperties = hostProperties;
         this.hostAttributes = hostAttributes;
-        this.lifecycleHooks = _normalizeArray(lifecycleHooks);
         this.providers = _normalizeArray(providers);
         this.viewProviders = _normalizeArray(viewProviders);
         this.queries = _normalizeArray(queries);
@@ -423,7 +423,7 @@ var CompileDirectiveMetadata = (function () {
         this.template = template;
     }
     CompileDirectiveMetadata.create = function (_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
+        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
         var hostListeners = {};
         var hostProperties = {};
         var hostAttributes = {};
@@ -466,8 +466,10 @@ var CompileDirectiveMetadata = (function () {
             type: type,
             isComponent: lang_1.normalizeBool(isComponent), selector: selector, exportAs: exportAs, changeDetection: changeDetection,
             inputs: inputsMap,
-            outputs: outputsMap, hostListeners: hostListeners, hostProperties: hostProperties, hostAttributes: hostAttributes,
-            lifecycleHooks: lang_1.isPresent(lifecycleHooks) ? lifecycleHooks : [],
+            outputs: outputsMap,
+            hostListeners: hostListeners,
+            hostProperties: hostProperties,
+            hostAttributes: hostAttributes,
             providers: providers,
             viewProviders: viewProviders,
             queries: queries,
@@ -523,7 +525,6 @@ function createHostComponentMeta(compMeta) {
         inputs: [],
         outputs: [],
         host: {},
-        lifecycleHooks: [],
         isComponent: true,
         selector: '*',
         providers: [],
@@ -535,11 +536,10 @@ function createHostComponentMeta(compMeta) {
 exports.createHostComponentMeta = createHostComponentMeta;
 var CompilePipeMetadata = (function () {
     function CompilePipeMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, name = _b.name, pure = _b.pure, lifecycleHooks = _b.lifecycleHooks;
+        var _b = _a === void 0 ? {} : _a, type = _b.type, name = _b.name, pure = _b.pure;
         this.type = type;
         this.name = name;
         this.pure = lang_1.normalizeBool(pure);
-        this.lifecycleHooks = _normalizeArray(lifecycleHooks);
     }
     Object.defineProperty(CompilePipeMetadata.prototype, "identifier", {
         get: function () { return this.type; },
@@ -567,7 +567,7 @@ exports.CompilePipeMetadata = CompilePipeMetadata;
  */
 var CompileNgModuleMetadata = (function () {
     function CompileNgModuleMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, declaredDirectives = _b.declaredDirectives, exportedDirectives = _b.exportedDirectives, declaredPipes = _b.declaredPipes, exportedPipes = _b.exportedPipes, entryComponents = _b.entryComponents, importedModules = _b.importedModules, exportedModules = _b.exportedModules, schemas = _b.schemas, transitiveModule = _b.transitiveModule;
+        var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, declaredDirectives = _b.declaredDirectives, exportedDirectives = _b.exportedDirectives, declaredPipes = _b.declaredPipes, exportedPipes = _b.exportedPipes, entryComponents = _b.entryComponents, bootstrapComponents = _b.bootstrapComponents, importedModules = _b.importedModules, exportedModules = _b.exportedModules, schemas = _b.schemas, transitiveModule = _b.transitiveModule;
         this.type = type;
         this.declaredDirectives = _normalizeArray(declaredDirectives);
         this.exportedDirectives = _normalizeArray(exportedDirectives);
@@ -575,6 +575,7 @@ var CompileNgModuleMetadata = (function () {
         this.exportedPipes = _normalizeArray(exportedPipes);
         this.providers = _normalizeArray(providers);
         this.entryComponents = _normalizeArray(entryComponents);
+        this.bootstrapComponents = _normalizeArray(bootstrapComponents);
         this.importedModules = _normalizeArray(importedModules);
         this.exportedModules = _normalizeArray(exportedModules);
         this.schemas = _normalizeArray(schemas);

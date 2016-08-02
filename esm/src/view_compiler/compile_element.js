@@ -37,7 +37,7 @@ export class CompileElement extends CompileNode {
         this.hasViewContainer = hasViewContainer;
         this.hasEmbeddedView = hasEmbeddedView;
         this._compViewExpr = null;
-        this._instances = new CompileIdentifierMap();
+        this.instances = new CompileIdentifierMap();
         this._queryCount = 0;
         this._queries = new CompileIdentifierMap();
         this._componentConstructorViewQueryLists = [];
@@ -45,10 +45,10 @@ export class CompileElement extends CompileNode {
         this.referenceTokens = {};
         references.forEach(ref => this.referenceTokens[ref.name] = ref.value);
         this.elementRef = o.importExpr(Identifiers.ElementRef).instantiate([this.renderNode]);
-        this._instances.add(identifierToken(Identifiers.ElementRef), this.elementRef);
+        this.instances.add(identifierToken(Identifiers.ElementRef), this.elementRef);
         this.injector = o.THIS_EXPR.callMethod('injector', [o.literal(this.nodeIndex)]);
-        this._instances.add(identifierToken(Identifiers.Injector), this.injector);
-        this._instances.add(identifierToken(Identifiers.Renderer), o.THIS_EXPR.prop('renderer'));
+        this.instances.add(identifierToken(Identifiers.Injector), this.injector);
+        this.instances.add(identifierToken(Identifiers.Renderer), o.THIS_EXPR.prop('renderer'));
         if (this.hasViewContainer || this.hasEmbeddedView || isPresent(this.component)) {
             this._createAppElement();
         }
@@ -68,7 +68,7 @@ export class CompileElement extends CompileNode {
             .toStmt();
         this.view.createMethod.addStmt(statement);
         this.appElement = o.THIS_EXPR.prop(fieldName);
-        this._instances.add(identifierToken(Identifiers.AppElement), this.appElement);
+        this.instances.add(identifierToken(Identifiers.AppElement), this.appElement);
     }
     createComponentFactoryResolver(entryComponents) {
         if (!entryComponents || entryComponents.length === 0) {
@@ -85,7 +85,7 @@ export class CompileElement extends CompileNode {
         // Add ComponentFactoryResolver as first provider as it does not have deps on other providers
         // ProviderAstType.PrivateService as only the component and its view can see it,
         // but nobody else
-        this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], ProviderAstType.PrivateService, this.sourceAst.sourceSpan));
+        this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], ProviderAstType.PrivateService, [], this.sourceAst.sourceSpan));
     }
     setComponentView(compViewExpr) {
         this._compViewExpr = compViewExpr;
@@ -103,12 +103,12 @@ export class CompileElement extends CompileNode {
             ]);
             var provider = new CompileProviderMetadata({ token: identifierToken(Identifiers.TemplateRef), useValue: createTemplateRefExpr });
             // Add TemplateRef as first provider as it does not have deps on other providers
-            this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], ProviderAstType.Builtin, this.sourceAst.sourceSpan));
+            this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], ProviderAstType.Builtin, [], this.sourceAst.sourceSpan));
         }
     }
     beforeChildren() {
         if (this.hasViewContainer) {
-            this._instances.add(identifierToken(Identifiers.ViewContainerRef), this.appElement.prop('vcRef'));
+            this.instances.add(identifierToken(Identifiers.ViewContainerRef), this.appElement.prop('vcRef'));
         }
         this._resolvedProviders = new CompileIdentifierMap();
         this._resolvedProvidersArray.forEach(provider => this._resolvedProviders.add(provider.token, provider));
@@ -134,15 +134,13 @@ export class CompileElement extends CompileNode {
                     return convertValueToOutputAst(provider.useValue);
                 }
             });
-            var propName = `_${resolvedProvider.token.name}_${this.nodeIndex}_${this._instances.size}`;
+            var propName = `_${resolvedProvider.token.name}_${this.nodeIndex}_${this.instances.size}`;
             var instance = createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, this);
-            this._instances.add(resolvedProvider.token, instance);
+            this.instances.add(resolvedProvider.token, instance);
         });
-        this.directiveInstances =
-            this._directives.map((directive) => this._instances.get(identifierToken(directive.type)));
-        for (var i = 0; i < this.directiveInstances.length; i++) {
-            var directiveInstance = this.directiveInstances[i];
+        for (var i = 0; i < this._directives.length; i++) {
             var directive = this._directives[i];
+            var directiveInstance = this.instances.get(identifierToken(directive.type));
             directive.queries.forEach((queryMeta) => { this._addQuery(queryMeta, directiveInstance); });
         }
         var queriesWithReads = [];
@@ -154,7 +152,7 @@ export class CompileElement extends CompileNode {
             var token = this.referenceTokens[varName];
             var varValue;
             if (isPresent(token)) {
-                varValue = this._instances.get(token);
+                varValue = this.instances.get(token);
             }
             else {
                 varValue = this.renderNode;
@@ -167,13 +165,13 @@ export class CompileElement extends CompileNode {
             var value;
             if (isPresent(queryWithRead.read.identifier)) {
                 // query for an identifier
-                value = this._instances.get(queryWithRead.read);
+                value = this.instances.get(queryWithRead.read);
             }
             else {
                 // query for a reference
                 var token = this.referenceTokens[queryWithRead.read.value];
                 if (isPresent(token)) {
-                    value = this._instances.get(token);
+                    value = this.instances.get(token);
                 }
                 else {
                     value = this.elementRef;
@@ -198,7 +196,7 @@ export class CompileElement extends CompileNode {
             // Note: afterChildren is called after recursing into children.
             // This is good so that an injector match in an element that is closer to a requesting element
             // matches first.
-            var providerExpr = this._instances.get(resolvedProvider.token);
+            var providerExpr = this.instances.get(resolvedProvider.token);
             // Note: view providers are only visible on the injector of that element.
             // This is not fully correct as the rules during codegen don't allow a directive
             // to get hold of a view provdier on the same element. We still do this semantic
@@ -212,7 +210,7 @@ export class CompileElement extends CompileNode {
         this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);
     }
     getComponent() {
-        return isPresent(this.component) ? this._instances.get(identifierToken(this.component.type)) :
+        return isPresent(this.component) ? this.instances.get(identifierToken(this.component.type)) :
             null;
     }
     getProviderTokens() {
@@ -279,7 +277,7 @@ export class CompileElement extends CompileNode {
                     resolvedProvider.providerType === ProviderAstType.PrivateService) {
                     return null;
                 }
-                result = this._instances.get(dep.token);
+                result = this.instances.get(dep.token);
             }
         }
         return result;

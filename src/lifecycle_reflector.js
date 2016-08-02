@@ -35,4 +35,4 @@ function hasLifecycleHook(hook, token) {
     return core_private_1.reflector.hasLifecycleHook(token, lcInterface, lcProp);
 }
 exports.hasLifecycleHook = hasLifecycleHook;
-//# sourceMappingURL=directive_lifecycle_reflector.js.map
+//# sourceMappingURL=lifecycle_reflector.js.map

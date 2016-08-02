@@ -17,11 +17,11 @@ var collection_1 = require('../src/facade/collection');
 var assertions_1 = require('./assertions');
 var cpl = require('./compile_metadata');
 var config_1 = require('./config');
-var directive_lifecycle_reflector_1 = require('./directive_lifecycle_reflector');
 var directive_resolver_1 = require('./directive_resolver');
 var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var identifiers_1 = require('./identifiers');
+var lifecycle_reflector_1 = require('./lifecycle_reflector');
 var ng_module_resolver_1 = require('./ng_module_resolver');
 var pipe_resolver_1 = require('./pipe_resolver');
 var element_schema_registry_1 = require('./schema/element_schema_registry');
@@ -203,7 +203,6 @@ var CompileMetadataResolver = (function () {
                 inputs: dirMeta.inputs,
                 outputs: dirMeta.outputs,
                 host: dirMeta.host,
-                lifecycleHooks: core_private_1.LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return directive_lifecycle_reflector_1.hasLifecycleHook(hook, directiveType); }),
                 providers: providers,
                 viewProviders: viewProviders,
                 queries: queries,
@@ -234,6 +233,7 @@ var CompileMetadataResolver = (function () {
             var exportedModules_1 = [];
             var providers_1 = [];
             var entryComponents_1 = [];
+            var bootstrapComponents = [];
             var schemas = [];
             if (meta.imports) {
                 flattenArray(meta.imports).forEach(function (importedType) {
@@ -308,6 +308,11 @@ var CompileMetadataResolver = (function () {
                 entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
                     .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
             }
+            if (meta.bootstrap) {
+                bootstrapComponents.push.apply(bootstrapComponents, flattenArray(meta.bootstrap)
+                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+            }
+            entryComponents_1.push.apply(entryComponents_1, bootstrapComponents);
             if (meta.schemas) {
                 schemas.push.apply(schemas, flattenArray(meta.schemas));
             }
@@ -317,6 +322,7 @@ var CompileMetadataResolver = (function () {
                 type: this.getTypeMetadata(moduleType, staticTypeModuleUrl(moduleType)),
                 providers: providers_1,
                 entryComponents: entryComponents_1,
+                bootstrapComponents: bootstrapComponents,
                 schemas: schemas,
                 declaredDirectives: declaredDirectives_1,
                 exportedDirectives: exportedDirectives_1,
@@ -439,7 +445,8 @@ var CompileMetadataResolver = (function () {
             name: this.sanitizeTokenName(type),
             moduleUrl: moduleUrl,
             runtime: type,
-            diDeps: this.getDependenciesMetadata(type, dependencies)
+            diDeps: this.getDependenciesMetadata(type, dependencies),
+            lifecycleHooks: core_private_1.LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return lifecycle_reflector_1.hasLifecycleHook(hook, type); }),
         });
     };
     CompileMetadataResolver.prototype.getFactoryMetadata = function (factory, moduleUrl, dependencies) {
@@ -464,8 +471,7 @@ var CompileMetadataResolver = (function () {
             meta = new cpl.CompilePipeMetadata({
                 type: this.getTypeMetadata(pipeType, staticTypeModuleUrl(pipeType)),
                 name: pipeMeta.name,
-                pure: pipeMeta.pure,
-                lifecycleHooks: core_private_1.LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return directive_lifecycle_reflector_1.hasLifecycleHook(hook, pipeType); }),
+                pure: pipeMeta.pure
             });
             this._pipeCache.set(pipeType, meta);
         }

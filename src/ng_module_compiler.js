@@ -7,6 +7,7 @@
  */
 "use strict";
 var core_1 = require('@angular/core');
+var core_private_1 = require('../core_private');
 var compile_metadata_1 = require('./compile_metadata');
 var lang_1 = require('./facade/lang');
 var identifiers_1 = require('./identifiers');
@@ -42,12 +43,16 @@ var NgModuleCompiler = (function () {
         var sourceFile = new parse_util_1.ParseSourceFile('', sourceFileName);
         var sourceSpan = new parse_util_1.ParseSourceSpan(new parse_util_1.ParseLocation(sourceFile, null, null, null), new parse_util_1.ParseLocation(sourceFile, null, null, null));
         var deps = [];
-        var entryComponents = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
+        var bootstrapComponentFactories = [];
+        var entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
             var id = new compile_metadata_1.CompileIdentifierMetadata({ name: entryComponent.name });
+            if (ngModuleMeta.bootstrapComponents.indexOf(entryComponent) > -1) {
+                bootstrapComponentFactories.push(id);
+            }
             deps.push(new ComponentFactoryDependency(entryComponent, id));
             return id;
         });
-        var builder = new _InjectorBuilder(ngModuleMeta, entryComponents, sourceSpan);
+        var builder = new _InjectorBuilder(ngModuleMeta, entryComponentFactories, bootstrapComponentFactories, sourceSpan);
         var providerParser = new provider_analyzer_1.NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
         providerParser.parse().forEach(function (provider) { return builder.addProvider(provider); });
         var injectorClass = builder.build();
@@ -66,13 +71,15 @@ var NgModuleCompiler = (function () {
 }());
 exports.NgModuleCompiler = NgModuleCompiler;
 var _InjectorBuilder = (function () {
-    function _InjectorBuilder(_ngModuleMeta, _entryComponents, _sourceSpan) {
+    function _InjectorBuilder(_ngModuleMeta, _entryComponentFactories, _bootstrapComponentFactories, _sourceSpan) {
         this._ngModuleMeta = _ngModuleMeta;
-        this._entryComponents = _entryComponents;
+        this._entryComponentFactories = _entryComponentFactories;
+        this._bootstrapComponentFactories = _bootstrapComponentFactories;
         this._sourceSpan = _sourceSpan;
         this._instances = new compile_metadata_1.CompileIdentifierMap();
         this._fields = [];
         this._createStmts = [];
+        this._destroyStmts = [];
         this._getters = [];
     }
     _InjectorBuilder.prototype.addProvider = function (resolvedProvider) {
@@ -80,6 +87,9 @@ var _InjectorBuilder = (function () {
         var providerValueExpressions = resolvedProvider.providers.map(function (provider) { return _this._getProviderValue(provider); });
         var propName = "_" + resolvedProvider.token.name + "_" + this._instances.size;
         var instance = this._createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager);
+        if (resolvedProvider.lifecycleHooks.indexOf(core_private_1.LifecycleHooks.OnDestroy) !== -1) {
+            this._destroyStmts.push(instance.callMethod('ngOnDestroy', []).toStmt());
+        }
         this._instances.add(resolvedProvider.token, instance);
     };
     _InjectorBuilder.prototype.build = function () {
@@ -93,12 +103,14 @@ var _InjectorBuilder = (function () {
             new o.ClassMethod('getInternal', [
                 new o.FnParam(InjectMethodVars.token.name, o.DYNAMIC_TYPE),
                 new o.FnParam(InjectMethodVars.notFoundResult.name, o.DYNAMIC_TYPE)
-            ], getMethodStmts.concat([new o.ReturnStatement(InjectMethodVars.notFoundResult)]), o.DYNAMIC_TYPE)
+            ], getMethodStmts.concat([new o.ReturnStatement(InjectMethodVars.notFoundResult)]), o.DYNAMIC_TYPE),
+            new o.ClassMethod('destroyInternal', [], this._destroyStmts),
         ];
         var ctor = new o.ClassMethod(null, [new o.FnParam(InjectorProps.parent.name, o.importType(identifiers_1.Identifiers.Injector))], [o.SUPER_EXPR
                 .callFn([
                 o.variable(InjectorProps.parent.name),
-                o.literalArr(this._entryComponents.map(function (entryComponent) { return o.importExpr(entryComponent); }))
+                o.literalArr(this._entryComponentFactories.map(function (componentFactory) { return o.importExpr(componentFactory); })),
+                o.literalArr(this._bootstrapComponentFactories.map(function (componentFactory) { return o.importExpr(componentFactory); }))
             ])
                 .toStmt()]);
         var injClassName = this._ngModuleMeta.type.name + "Injector";

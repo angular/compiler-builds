@@ -179,12 +179,13 @@ export class DirectiveAst {
  * A provider declared on an element
  */
 export class ProviderAst {
-    constructor(token, multiProvider, eager, providers, providerType, sourceSpan) {
+    constructor(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan) {
         this.token = token;
         this.multiProvider = multiProvider;
         this.eager = eager;
         this.providers = providers;
         this.providerType = providerType;
+        this.lifecycleHooks = lifecycleHooks;
         this.sourceSpan = sourceSpan;
     }
     visit(visitor, context) {

@@ -383,7 +383,7 @@ function _transformProvider(provider, _a) {
 }
 function _transformProviderAst(provider, _a) {
     var eager = _a.eager, providers = _a.providers;
-    return new template_ast_1.ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.sourceSpan);
+    return new template_ast_1.ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.lifecycleHooks, provider.sourceSpan);
 }
 function _normalizeProviders(providers, sourceSpan, targetErrors, targetProviders) {
     if (targetProviders === void 0) { targetProviders = null; }
@@ -435,7 +435,10 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
             targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + resolvedProvider.token.name, sourceSpan));
         }
         if (lang_1.isBlank(resolvedProvider)) {
-            resolvedProvider = new template_ast_1.ProviderAst(provider.token, provider.multi, eager, [provider], providerType, sourceSpan);
+            var lifecycleHooks = provider.token.identifier && provider.token.identifier instanceof compile_metadata_1.CompileTypeMetadata ?
+                provider.token.identifier.lifecycleHooks :
+                [];
+            resolvedProvider = new template_ast_1.ProviderAst(provider.token, provider.multi, eager || lifecycleHooks.length > 0, [provider], providerType, lifecycleHooks, sourceSpan);
             targetProvidersByToken.add(provider.token, resolvedProvider);
         }
         else {

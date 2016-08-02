@@ -228,10 +228,11 @@ export class CompileIdentifierMap {
  * Metadata regarding compilation of a type.
  */
 export class CompileTypeMetadata extends CompileIdentifierMetadata {
-    constructor({ runtime, name, moduleUrl, prefix, isHost, value, diDeps } = {}) {
+    constructor({ runtime, name, moduleUrl, prefix, isHost, value, diDeps, lifecycleHooks } = {}) {
         super({ runtime: runtime, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
         this.isHost = normalizeBool(isHost);
         this.diDeps = _normalizeArray(diDeps);
+        this.lifecycleHooks = _normalizeArray(lifecycleHooks);
     }
 }
 export class CompileQueryMetadata {
@@ -276,7 +277,7 @@ export class CompileTemplateMetadata {
  * Metadata regarding compilation of a directive.
  */
 export class CompileDirectiveMetadata {
-    constructor({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template } = {}) {
+    constructor({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template } = {}) {
         this.type = type;
         this.isComponent = isComponent;
         this.selector = selector;
@@ -287,7 +288,6 @@ export class CompileDirectiveMetadata {
         this.hostListeners = hostListeners;
         this.hostProperties = hostProperties;
         this.hostAttributes = hostAttributes;
-        this.lifecycleHooks = _normalizeArray(lifecycleHooks);
         this.providers = _normalizeArray(providers);
         this.viewProviders = _normalizeArray(viewProviders);
         this.queries = _normalizeArray(queries);
@@ -297,7 +297,7 @@ export class CompileDirectiveMetadata {
         this.viewPipes = _normalizeArray(viewPipes);
         this.template = template;
     }
-    static create({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template } = {}) {
+    static create({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template } = {}) {
         var hostListeners = {};
         var hostProperties = {};
         var hostAttributes = {};
@@ -340,8 +340,10 @@ export class CompileDirectiveMetadata {
             type,
             isComponent: normalizeBool(isComponent), selector, exportAs, changeDetection,
             inputs: inputsMap,
-            outputs: outputsMap, hostListeners, hostProperties, hostAttributes,
-            lifecycleHooks: isPresent(lifecycleHooks) ? lifecycleHooks : [],
+            outputs: outputsMap,
+            hostListeners,
+            hostProperties,
+            hostAttributes,
             providers,
             viewProviders,
             queries,
@@ -383,7 +385,6 @@ export function createHostComponentMeta(compMeta) {
         inputs: [],
         outputs: [],
         host: {},
-        lifecycleHooks: [],
         isComponent: true,
         selector: '*',
         providers: [],
@@ -393,11 +394,10 @@ export function createHostComponentMeta(compMeta) {
     });
 }
 export class CompilePipeMetadata {
-    constructor({ type, name, pure, lifecycleHooks } = {}) {
+    constructor({ type, name, pure } = {}) {
         this.type = type;
         this.name = name;
         this.pure = normalizeBool(pure);
-        this.lifecycleHooks = _normalizeArray(lifecycleHooks);
     }
     get identifier() { return this.type; }
     get runtimeCacheKey() { return this.type.runtimeCacheKey; }
@@ -410,7 +410,7 @@ export class CompilePipeMetadata {
  * Metadata regarding compilation of a directive.
  */
 export class CompileNgModuleMetadata {
-    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, importedModules, exportedModules, schemas, transitiveModule } = {}) {
+    constructor({ type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule } = {}) {
         this.type = type;
         this.declaredDirectives = _normalizeArray(declaredDirectives);
         this.exportedDirectives = _normalizeArray(exportedDirectives);
@@ -418,6 +418,7 @@ export class CompileNgModuleMetadata {
         this.exportedPipes = _normalizeArray(exportedPipes);
         this.providers = _normalizeArray(providers);
         this.entryComponents = _normalizeArray(entryComponents);
+        this.bootstrapComponents = _normalizeArray(bootstrapComponents);
         this.importedModules = _normalizeArray(importedModules);
         this.exportedModules = _normalizeArray(exportedModules);
         this.schemas = _normalizeArray(schemas);

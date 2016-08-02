@@ -1,7 +1,7 @@
 import * as o from '../output/output_ast';
 import { ProviderAst, ReferenceAst, TemplateAst } from '../template_parser/template_ast';
 import { CompileView } from './compile_view';
-import { CompileDirectiveMetadata, CompileTokenMetadata, CompileIdentifierMetadata } from '../compile_metadata';
+import { CompileIdentifierMap, CompileDirectiveMetadata, CompileTokenMetadata, CompileIdentifierMetadata } from '../compile_metadata';
 export declare class CompileNode {
     parent: CompileElement;
     view: CompileView;
@@ -23,14 +23,13 @@ export declare class CompileElement extends CompileNode {
     appElement: o.ReadPropExpr;
     elementRef: o.Expression;
     injector: o.Expression;
-    private _instances;
+    instances: CompileIdentifierMap<CompileTokenMetadata, o.Expression>;
     private _resolvedProviders;
     private _queryCount;
     private _queries;
     private _componentConstructorViewQueryLists;
     contentNodesByNgContentIndex: Array<o.Expression>[];
     embeddedView: CompileView;
-    directiveInstances: o.Expression[];
     referenceTokens: {
         [key: string]: CompileTokenMetadata;
     };

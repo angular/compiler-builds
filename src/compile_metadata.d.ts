@@ -171,7 +171,8 @@ export declare class CompileIdentifierMap<KEY extends CompileMetadataWithIdentif
 export declare class CompileTypeMetadata extends CompileIdentifierMetadata {
     isHost: boolean;
     diDeps: CompileDiDependencyMetadata[];
-    constructor({runtime, name, moduleUrl, prefix, isHost, value, diDeps}?: {
+    lifecycleHooks: LifecycleHooks[];
+    constructor({runtime, name, moduleUrl, prefix, isHost, value, diDeps, lifecycleHooks}?: {
         runtime?: Type;
         name?: string;
         moduleUrl?: string;
@@ -179,6 +180,7 @@ export declare class CompileTypeMetadata extends CompileIdentifierMetadata {
         isHost?: boolean;
         value?: any;
         diDeps?: CompileDiDependencyMetadata[];
+        lifecycleHooks?: LifecycleHooks[];
     });
 }
 export declare class CompileQueryMetadata {
@@ -237,7 +239,7 @@ export declare class CompileTemplateMetadata {
  * Metadata regarding compilation of a directive.
  */
 export declare class CompileDirectiveMetadata implements CompileMetadataWithIdentifier {
-    static create({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template}?: {
+    static create({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template}?: {
         type?: CompileTypeMetadata;
         isComponent?: boolean;
         selector?: string;
@@ -248,7 +250,6 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         host?: {
             [key: string]: string;
         };
-        lifecycleHooks?: LifecycleHooks[];
         providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         queries?: CompileQueryMetadata[];
@@ -278,7 +279,6 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
     hostAttributes: {
         [key: string]: string;
     };
-    lifecycleHooks: LifecycleHooks[];
     providers: CompileProviderMetadata[];
     viewProviders: CompileProviderMetadata[];
     queries: CompileQueryMetadata[];
@@ -287,7 +287,7 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
     viewDirectives: CompileTypeMetadata[];
     viewPipes: CompileTypeMetadata[];
     template: CompileTemplateMetadata;
-    constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, lifecycleHooks, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template}?: {
+    constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template}?: {
         type?: CompileTypeMetadata;
         isComponent?: boolean;
         selector?: string;
@@ -308,7 +308,6 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         hostAttributes?: {
             [key: string]: string;
         };
-        lifecycleHooks?: LifecycleHooks[];
         providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         queries?: CompileQueryMetadata[];
@@ -331,12 +330,10 @@ export declare class CompilePipeMetadata implements CompileMetadataWithIdentifie
     type: CompileTypeMetadata;
     name: string;
     pure: boolean;
-    lifecycleHooks: LifecycleHooks[];
-    constructor({type, name, pure, lifecycleHooks}?: {
+    constructor({type, name, pure}?: {
         type?: CompileTypeMetadata;
         name?: string;
         pure?: boolean;
-        lifecycleHooks?: LifecycleHooks[];
     });
     identifier: CompileIdentifierMetadata;
     runtimeCacheKey: any;
@@ -353,12 +350,13 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
     declaredPipes: CompilePipeMetadata[];
     exportedPipes: CompilePipeMetadata[];
     entryComponents: CompileTypeMetadata[];
+    bootstrapComponents: CompileTypeMetadata[];
     providers: CompileProviderMetadata[];
     importedModules: CompileNgModuleMetadata[];
     exportedModules: CompileNgModuleMetadata[];
     schemas: SchemaMetadata[];
     transitiveModule: TransitiveCompileNgModuleMetadata;
-    constructor({type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, importedModules, exportedModules, schemas, transitiveModule}?: {
+    constructor({type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule}?: {
         type?: CompileTypeMetadata;
         providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         declaredDirectives?: CompileDirectiveMetadata[];
@@ -366,6 +364,7 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
         declaredPipes?: CompilePipeMetadata[];
         exportedPipes?: CompilePipeMetadata[];
         entryComponents?: CompileTypeMetadata[];
+        bootstrapComponents?: CompileTypeMetadata[];
         importedModules?: CompileNgModuleMetadata[];
         exportedModules?: CompileNgModuleMetadata[];
         transitiveModule?: TransitiveCompileNgModuleMetadata;

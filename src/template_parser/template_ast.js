@@ -206,12 +206,13 @@ exports.DirectiveAst = DirectiveAst;
  * A provider declared on an element
  */
 var ProviderAst = (function () {
-    function ProviderAst(token, multiProvider, eager, providers, providerType, sourceSpan) {
+    function ProviderAst(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan) {
         this.token = token;
         this.multiProvider = multiProvider;
         this.eager = eager;
         this.providers = providers;
         this.providerType = providerType;
+        this.lifecycleHooks = lifecycleHooks;
         this.sourceSpan = sourceSpan;
     }
     ProviderAst.prototype.visit = function (visitor, context) {

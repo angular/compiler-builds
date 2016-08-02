@@ -4863,12 +4863,13 @@ var __extends = (this && this.__extends) || function (d, b) {
      * A provider declared on an element
      */
     var ProviderAst = (function () {
-        function ProviderAst(token, multiProvider, eager, providers, providerType, sourceSpan) {
+        function ProviderAst(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan) {
             this.token = token;
             this.multiProvider = multiProvider;
             this.eager = eager;
             this.providers = providers;
             this.providerType = providerType;
+            this.lifecycleHooks = lifecycleHooks;
             this.sourceSpan = sourceSpan;
         }
         ProviderAst.prototype.visit = function (visitor, context) {
@@ -6956,10 +6957,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     var CompileTypeMetadata = (function (_super) {
         __extends(CompileTypeMetadata, _super);
         function CompileTypeMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps;
+            var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
             _super.call(this, { runtime: runtime, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
             this.isHost = normalizeBool(isHost);
             this.diDeps = _normalizeArray(diDeps);
+            this.lifecycleHooks = _normalizeArray(lifecycleHooks);
         }
         return CompileTypeMetadata;
     }(CompileIdentifierMetadata));
@@ -7012,7 +7014,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var CompileDirectiveMetadata = (function () {
         function CompileDirectiveMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
+            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
             this.type = type;
             this.isComponent = isComponent;
             this.selector = selector;
@@ -7023,7 +7025,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.hostListeners = hostListeners;
             this.hostProperties = hostProperties;
             this.hostAttributes = hostAttributes;
-            this.lifecycleHooks = _normalizeArray(lifecycleHooks);
             this.providers = _normalizeArray(providers);
             this.viewProviders = _normalizeArray(viewProviders);
             this.queries = _normalizeArray(queries);
@@ -7034,7 +7035,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.template = template;
         }
         CompileDirectiveMetadata.create = function (_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, lifecycleHooks = _b.lifecycleHooks, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
+            var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
             var hostListeners = {};
             var hostProperties = {};
             var hostAttributes = {};
@@ -7077,8 +7078,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 type: type,
                 isComponent: normalizeBool(isComponent), selector: selector, exportAs: exportAs, changeDetection: changeDetection,
                 inputs: inputsMap,
-                outputs: outputsMap, hostListeners: hostListeners, hostProperties: hostProperties, hostAttributes: hostAttributes,
-                lifecycleHooks: isPresent(lifecycleHooks) ? lifecycleHooks : [],
+                outputs: outputsMap,
+                hostListeners: hostListeners,
+                hostProperties: hostProperties,
+                hostAttributes: hostAttributes,
                 providers: providers,
                 viewProviders: viewProviders,
                 queries: queries,
@@ -7133,7 +7136,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             inputs: [],
             outputs: [],
             host: {},
-            lifecycleHooks: [],
             isComponent: true,
             selector: '*',
             providers: [],
@@ -7144,11 +7146,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var CompilePipeMetadata = (function () {
         function CompilePipeMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, name = _b.name, pure = _b.pure, lifecycleHooks = _b.lifecycleHooks;
+            var _b = _a === void 0 ? {} : _a, type = _b.type, name = _b.name, pure = _b.pure;
             this.type = type;
             this.name = name;
             this.pure = normalizeBool(pure);
-            this.lifecycleHooks = _normalizeArray(lifecycleHooks);
         }
         Object.defineProperty(CompilePipeMetadata.prototype, "identifier", {
             get: function () { return this.type; },
@@ -7175,7 +7176,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      */
     var CompileNgModuleMetadata = (function () {
         function CompileNgModuleMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, declaredDirectives = _b.declaredDirectives, exportedDirectives = _b.exportedDirectives, declaredPipes = _b.declaredPipes, exportedPipes = _b.exportedPipes, entryComponents = _b.entryComponents, importedModules = _b.importedModules, exportedModules = _b.exportedModules, schemas = _b.schemas, transitiveModule = _b.transitiveModule;
+            var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, declaredDirectives = _b.declaredDirectives, exportedDirectives = _b.exportedDirectives, declaredPipes = _b.declaredPipes, exportedPipes = _b.exportedPipes, entryComponents = _b.entryComponents, bootstrapComponents = _b.bootstrapComponents, importedModules = _b.importedModules, exportedModules = _b.exportedModules, schemas = _b.schemas, transitiveModule = _b.transitiveModule;
             this.type = type;
             this.declaredDirectives = _normalizeArray(declaredDirectives);
             this.exportedDirectives = _normalizeArray(exportedDirectives);
@@ -7183,6 +7184,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.exportedPipes = _normalizeArray(exportedPipes);
             this.providers = _normalizeArray(providers);
             this.entryComponents = _normalizeArray(entryComponents);
+            this.bootstrapComponents = _normalizeArray(bootstrapComponents);
             this.importedModules = _normalizeArray(importedModules);
             this.exportedModules = _normalizeArray(exportedModules);
             this.schemas = _normalizeArray(schemas);
@@ -8043,7 +8045,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function _transformProviderAst(provider, _a) {
         var eager = _a.eager, providers = _a.providers;
-        return new ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.sourceSpan);
+        return new ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.lifecycleHooks, provider.sourceSpan);
     }
     function _normalizeProviders(providers, sourceSpan, targetErrors, targetProviders) {
         if (targetProviders === void 0) { targetProviders = null; }
@@ -8095,7 +8097,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + resolvedProvider.token.name, sourceSpan));
             }
             if (isBlank(resolvedProvider)) {
-                resolvedProvider = new ProviderAst(provider.token, provider.multi, eager, [provider], providerType, sourceSpan);
+                var lifecycleHooks = provider.token.identifier && provider.token.identifier instanceof CompileTypeMetadata ?
+                    provider.token.identifier.lifecycleHooks :
+                    [];
+                resolvedProvider = new ProviderAst(provider.token, provider.multi, eager || lifecycleHooks.length > 0, [provider], providerType, lifecycleHooks, sourceSpan);
                 targetProvidersByToken.add(provider.token, resolvedProvider);
             }
             else {
@@ -10387,7 +10392,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.hasViewContainer = hasViewContainer;
             this.hasEmbeddedView = hasEmbeddedView;
             this._compViewExpr = null;
-            this._instances = new CompileIdentifierMap();
+            this.instances = new CompileIdentifierMap();
             this._queryCount = 0;
             this._queries = new CompileIdentifierMap();
             this._componentConstructorViewQueryLists = [];
@@ -10395,10 +10400,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.referenceTokens = {};
             references.forEach(function (ref) { return _this.referenceTokens[ref.name] = ref.value; });
             this.elementRef = importExpr(Identifiers.ElementRef).instantiate([this.renderNode]);
-            this._instances.add(identifierToken(Identifiers.ElementRef), this.elementRef);
+            this.instances.add(identifierToken(Identifiers.ElementRef), this.elementRef);
             this.injector = THIS_EXPR.callMethod('injector', [literal(this.nodeIndex)]);
-            this._instances.add(identifierToken(Identifiers.Injector), this.injector);
-            this._instances.add(identifierToken(Identifiers.Renderer), THIS_EXPR.prop('renderer'));
+            this.instances.add(identifierToken(Identifiers.Injector), this.injector);
+            this.instances.add(identifierToken(Identifiers.Renderer), THIS_EXPR.prop('renderer'));
             if (this.hasViewContainer || this.hasEmbeddedView || isPresent(this.component)) {
                 this._createAppElement();
             }
@@ -10418,7 +10423,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .toStmt();
             this.view.createMethod.addStmt(statement);
             this.appElement = THIS_EXPR.prop(fieldName);
-            this._instances.add(identifierToken(Identifiers.AppElement), this.appElement);
+            this.instances.add(identifierToken(Identifiers.AppElement), this.appElement);
         };
         CompileElement.prototype.createComponentFactoryResolver = function (entryComponents) {
             if (!entryComponents || entryComponents.length === 0) {
@@ -10435,7 +10440,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             // Add ComponentFactoryResolver as first provider as it does not have deps on other providers
             // ProviderAstType.PrivateService as only the component and its view can see it,
             // but nobody else
-            this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], exports.ProviderAstType.PrivateService, this.sourceAst.sourceSpan));
+            this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], exports.ProviderAstType.PrivateService, [], this.sourceAst.sourceSpan));
         };
         CompileElement.prototype.setComponentView = function (compViewExpr) {
             this._compViewExpr = compViewExpr;
@@ -10453,13 +10458,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                 ]);
                 var provider = new CompileProviderMetadata({ token: identifierToken(Identifiers.TemplateRef), useValue: createTemplateRefExpr });
                 // Add TemplateRef as first provider as it does not have deps on other providers
-                this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], exports.ProviderAstType.Builtin, this.sourceAst.sourceSpan));
+                this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], exports.ProviderAstType.Builtin, [], this.sourceAst.sourceSpan));
             }
         };
         CompileElement.prototype.beforeChildren = function () {
             var _this = this;
             if (this.hasViewContainer) {
-                this._instances.add(identifierToken(Identifiers.ViewContainerRef), this.appElement.prop('vcRef'));
+                this.instances.add(identifierToken(Identifiers.ViewContainerRef), this.appElement.prop('vcRef'));
             }
             this._resolvedProviders = new CompileIdentifierMap();
             this._resolvedProvidersArray.forEach(function (provider) { return _this._resolvedProviders.add(provider.token, provider); });
@@ -10485,15 +10490,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                         return convertValueToOutputAst(provider.useValue);
                     }
                 });
-                var propName = "_" + resolvedProvider.token.name + "_" + _this.nodeIndex + "_" + _this._instances.size;
+                var propName = "_" + resolvedProvider.token.name + "_" + _this.nodeIndex + "_" + _this.instances.size;
                 var instance = createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, _this);
-                _this._instances.add(resolvedProvider.token, instance);
+                _this.instances.add(resolvedProvider.token, instance);
             });
-            this.directiveInstances =
-                this._directives.map(function (directive) { return _this._instances.get(identifierToken(directive.type)); });
-            for (var i = 0; i < this.directiveInstances.length; i++) {
-                var directiveInstance = this.directiveInstances[i];
+            for (var i = 0; i < this._directives.length; i++) {
                 var directive = this._directives[i];
+                var directiveInstance = this.instances.get(identifierToken(directive.type));
                 directive.queries.forEach(function (queryMeta) { _this._addQuery(queryMeta, directiveInstance); });
             }
             var queriesWithReads = [];
@@ -10505,7 +10508,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var token = _this.referenceTokens[varName];
                 var varValue;
                 if (isPresent(token)) {
-                    varValue = _this._instances.get(token);
+                    varValue = _this.instances.get(token);
                 }
                 else {
                     varValue = _this.renderNode;
@@ -10518,13 +10521,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var value;
                 if (isPresent(queryWithRead.read.identifier)) {
                     // query for an identifier
-                    value = _this._instances.get(queryWithRead.read);
+                    value = _this.instances.get(queryWithRead.read);
                 }
                 else {
                     // query for a reference
                     var token = _this.referenceTokens[queryWithRead.read.value];
                     if (isPresent(token)) {
-                        value = _this._instances.get(token);
+                        value = _this.instances.get(token);
                     }
                     else {
                         value = _this.elementRef;
@@ -10550,7 +10553,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 // Note: afterChildren is called after recursing into children.
                 // This is good so that an injector match in an element that is closer to a requesting element
                 // matches first.
-                var providerExpr = _this._instances.get(resolvedProvider.token);
+                var providerExpr = _this.instances.get(resolvedProvider.token);
                 // Note: view providers are only visible on the injector of that element.
                 // This is not fully correct as the rules during codegen don't allow a directive
                 // to get hold of a view provdier on the same element. We still do this semantic
@@ -10564,7 +10567,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);
         };
         CompileElement.prototype.getComponent = function () {
-            return isPresent(this.component) ? this._instances.get(identifierToken(this.component.type)) :
+            return isPresent(this.component) ? this.instances.get(identifierToken(this.component.type)) :
                 null;
         };
         CompileElement.prototype.getProviderTokens = function () {
@@ -10631,7 +10634,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         resolvedProvider.providerType === exports.ProviderAstType.PrivateService) {
                         return null;
                     }
-                    result = this._instances.get(dep.token);
+                    result = this.instances.get(dep.token);
                 }
             }
             return result;
@@ -11446,7 +11449,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         var view = compileElement.view;
         var detectChangesInInputsMethod = view.detectChangesInInputsMethod;
         detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-        var lifecycleHooks = directiveAst.directive.lifecycleHooks;
+        var lifecycleHooks = directiveAst.directive.type.lifecycleHooks;
         var calcChangesMap = lifecycleHooks.indexOf(LifecycleHooks.OnChanges) !== -1;
         var isOnPushComp = directiveAst.directive.isComponent &&
             !isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
@@ -11588,8 +11591,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
             listener.addAction(hostEvent, null, null);
         });
-        ListWrapper.forEachWithIndex(dirs, function (directiveAst, i) {
-            var directiveInstance = compileElement.directiveInstances[i];
+        dirs.forEach(function (directiveAst) {
+            var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
             directiveAst.hostEvents.forEach(function (hostEvent) {
                 compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
                 var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
@@ -11626,7 +11629,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement) {
         var view = compileElement.view;
         var detectChangesInInputsMethod = view.detectChangesInInputsMethod;
-        var lifecycleHooks = directiveAst.directive.lifecycleHooks;
+        var lifecycleHooks = directiveAst.directive.type.lifecycleHooks;
         if (lifecycleHooks.indexOf(LifecycleHooks.OnChanges) !== -1 && directiveAst.inputs.length > 0) {
             detectChangesInInputsMethod.addStmt(new IfStmt(DetectChangesVars.changes.notIdentical(NULL_EXPR), [directiveInstance.callMethod('ngOnChanges', [DetectChangesVars.changes]).toStmt()]));
         }
@@ -11639,7 +11642,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function bindDirectiveAfterContentLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
         var view = compileElement.view;
-        var lifecycleHooks = directiveMeta.lifecycleHooks;
+        var lifecycleHooks = directiveMeta.type.lifecycleHooks;
         var afterContentLifecycleCallbacksMethod = view.afterContentLifecycleCallbacksMethod;
         afterContentLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
         if (lifecycleHooks.indexOf(LifecycleHooks.AfterContentInit) !== -1) {
@@ -11651,7 +11654,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function bindDirectiveAfterViewLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
         var view = compileElement.view;
-        var lifecycleHooks = directiveMeta.lifecycleHooks;
+        var lifecycleHooks = directiveMeta.type.lifecycleHooks;
         var afterViewLifecycleCallbacksMethod = view.afterViewLifecycleCallbacksMethod;
         afterViewLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
         if (lifecycleHooks.indexOf(LifecycleHooks.AfterViewInit) !== -1) {
@@ -11661,16 +11664,16 @@ var __extends = (this && this.__extends) || function (d, b) {
             afterViewLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterViewChecked', []).toStmt());
         }
     }
-    function bindDirectiveDestroyLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
+    function bindInjectableDestroyLifecycleCallbacks(provider, providerInstance, compileElement) {
         var onDestroyMethod = compileElement.view.destroyMethod;
         onDestroyMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-        if (directiveMeta.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
-            onDestroyMethod.addStmt(directiveInstance.callMethod('ngOnDestroy', []).toStmt());
+        if (provider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
+            onDestroyMethod.addStmt(providerInstance.callMethod('ngOnDestroy', []).toStmt());
         }
     }
     function bindPipeDestroyLifecycleCallbacks(pipeMeta, pipeInstance, view) {
         var onDestroyMethod = view.destroyMethod;
-        if (pipeMeta.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
+        if (pipeMeta.type.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
             onDestroyMethod.addStmt(pipeInstance.callMethod('ngOnDestroy', []).toStmt());
         }
     }
@@ -11699,8 +11702,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
             bindRenderInputs(ast.inputs, compileElement);
             bindRenderOutputs(eventListeners);
-            ListWrapper.forEachWithIndex(ast.directives, function (directiveAst, index) {
-                var directiveInstance = compileElement.directiveInstances[index];
+            ast.directives.forEach(function (directiveAst) {
+                var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
                 bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
                 bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
                 bindDirectiveHostProps(directiveAst, directiveInstance, compileElement);
@@ -11709,25 +11712,31 @@ var __extends = (this && this.__extends) || function (d, b) {
             templateVisitAll(this, ast.children, compileElement);
             // afterContent and afterView lifecycles need to be called bottom up
             // so that children are notified before parents
-            ListWrapper.forEachWithIndex(ast.directives, function (directiveAst, index) {
-                var directiveInstance = compileElement.directiveInstances[index];
+            ast.directives.forEach(function (directiveAst) {
+                var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
                 bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
                 bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
-                bindDirectiveDestroyLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
+            });
+            ast.providers.forEach(function (providerAst) {
+                var providerInstance = compileElement.instances.get(providerAst.token);
+                bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
             });
             return null;
         };
         ViewBinderVisitor.prototype.visitEmbeddedTemplate = function (ast, parent) {
             var compileElement = this.view.nodes[this._nodeIndex++];
             var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
-            ListWrapper.forEachWithIndex(ast.directives, function (directiveAst, index) {
-                var directiveInstance = compileElement.directiveInstances[index];
+            ast.directives.forEach(function (directiveAst) {
+                var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
                 bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
                 bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
                 bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
                 bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
                 bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
-                bindDirectiveDestroyLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
+            });
+            ast.providers.forEach(function (providerAst) {
+                var providerInstance = compileElement.instances.get(providerAst.token);
+                bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
             });
             bindView(compileElement.embeddedView, ast.children);
             return null;
@@ -12661,7 +12670,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             hostListeners: directive.hostListeners,
             hostProperties: directive.hostProperties,
             hostAttributes: directive.hostAttributes,
-            lifecycleHooks: directive.lifecycleHooks,
             providers: directive.providers,
             viewProviders: directive.viewProviders,
             queries: directive.queries,
@@ -12750,31 +12758,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         ObservableWrapper.toPromise = function (obj) { return rxjs_operator_toPromise.toPromise.call(obj); };
         return ObservableWrapper;
     }());
-    var LIFECYCLE_INTERFACES = MapWrapper.createFromPairs([
-        [LifecycleHooks.OnInit, _angular_core.OnInit],
-        [LifecycleHooks.OnDestroy, _angular_core.OnDestroy],
-        [LifecycleHooks.DoCheck, _angular_core.DoCheck],
-        [LifecycleHooks.OnChanges, _angular_core.OnChanges],
-        [LifecycleHooks.AfterContentInit, _angular_core.AfterContentInit],
-        [LifecycleHooks.AfterContentChecked, _angular_core.AfterContentChecked],
-        [LifecycleHooks.AfterViewInit, _angular_core.AfterViewInit],
-        [LifecycleHooks.AfterViewChecked, _angular_core.AfterViewChecked],
-    ]);
-    var LIFECYCLE_PROPS = MapWrapper.createFromPairs([
-        [LifecycleHooks.OnInit, 'ngOnInit'],
-        [LifecycleHooks.OnDestroy, 'ngOnDestroy'],
-        [LifecycleHooks.DoCheck, 'ngDoCheck'],
-        [LifecycleHooks.OnChanges, 'ngOnChanges'],
-        [LifecycleHooks.AfterContentInit, 'ngAfterContentInit'],
-        [LifecycleHooks.AfterContentChecked, 'ngAfterContentChecked'],
-        [LifecycleHooks.AfterViewInit, 'ngAfterViewInit'],
-        [LifecycleHooks.AfterViewChecked, 'ngAfterViewChecked'],
-    ]);
-    function hasLifecycleHook(hook, token) {
-        var lcInterface = LIFECYCLE_INTERFACES.get(hook);
-        var lcProp = LIFECYCLE_PROPS.get(hook);
-        return reflector.hasLifecycleHook(token, lcInterface, lcProp);
-    }
     function _isDirectiveMetadata(type) {
         return type instanceof _angular_core.DirectiveMetadata;
     }
@@ -12922,6 +12905,31 @@ var __extends = (this && this.__extends) || function (d, b) {
     DirectiveResolver.ctorParameters = [
         { type: ReflectorReader, },
     ];
+    var LIFECYCLE_INTERFACES = MapWrapper.createFromPairs([
+        [LifecycleHooks.OnInit, _angular_core.OnInit],
+        [LifecycleHooks.OnDestroy, _angular_core.OnDestroy],
+        [LifecycleHooks.DoCheck, _angular_core.DoCheck],
+        [LifecycleHooks.OnChanges, _angular_core.OnChanges],
+        [LifecycleHooks.AfterContentInit, _angular_core.AfterContentInit],
+        [LifecycleHooks.AfterContentChecked, _angular_core.AfterContentChecked],
+        [LifecycleHooks.AfterViewInit, _angular_core.AfterViewInit],
+        [LifecycleHooks.AfterViewChecked, _angular_core.AfterViewChecked],
+    ]);
+    var LIFECYCLE_PROPS = MapWrapper.createFromPairs([
+        [LifecycleHooks.OnInit, 'ngOnInit'],
+        [LifecycleHooks.OnDestroy, 'ngOnDestroy'],
+        [LifecycleHooks.DoCheck, 'ngDoCheck'],
+        [LifecycleHooks.OnChanges, 'ngOnChanges'],
+        [LifecycleHooks.AfterContentInit, 'ngAfterContentInit'],
+        [LifecycleHooks.AfterContentChecked, 'ngAfterContentChecked'],
+        [LifecycleHooks.AfterViewInit, 'ngAfterViewInit'],
+        [LifecycleHooks.AfterViewChecked, 'ngAfterViewChecked'],
+    ]);
+    function hasLifecycleHook(hook, token) {
+        var lcInterface = LIFECYCLE_INTERFACES.get(hook);
+        var lcProp = LIFECYCLE_PROPS.get(hook);
+        return reflector.hasLifecycleHook(token, lcInterface, lcProp);
+    }
     function _isNgModuleMetadata(obj) {
         return obj instanceof _angular_core.NgModuleMetadata;
     }
@@ -13164,7 +13172,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                     inputs: dirMeta.inputs,
                     outputs: dirMeta.outputs,
                     host: dirMeta.host,
-                    lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(hook, directiveType); }),
                     providers: providers,
                     viewProviders: viewProviders,
                     queries: queries,
@@ -13195,6 +13202,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var exportedModules_1 = [];
                 var providers_1 = [];
                 var entryComponents_1 = [];
+                var bootstrapComponents = [];
                 var schemas = [];
                 if (meta.imports) {
                     flattenArray(meta.imports).forEach(function (importedType) {
@@ -13269,6 +13277,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                     entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
                         .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
                 }
+                if (meta.bootstrap) {
+                    bootstrapComponents.push.apply(bootstrapComponents, flattenArray(meta.bootstrap)
+                        .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+                }
+                entryComponents_1.push.apply(entryComponents_1, bootstrapComponents);
                 if (meta.schemas) {
                     schemas.push.apply(schemas, flattenArray(meta.schemas));
                 }
@@ -13278,6 +13291,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     type: this.getTypeMetadata(moduleType, staticTypeModuleUrl(moduleType)),
                     providers: providers_1,
                     entryComponents: entryComponents_1,
+                    bootstrapComponents: bootstrapComponents,
                     schemas: schemas,
                     declaredDirectives: declaredDirectives_1,
                     exportedDirectives: exportedDirectives_1,
@@ -13400,7 +13414,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 name: this.sanitizeTokenName(type),
                 moduleUrl: moduleUrl,
                 runtime: type,
-                diDeps: this.getDependenciesMetadata(type, dependencies)
+                diDeps: this.getDependenciesMetadata(type, dependencies),
+                lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(hook, type); }),
             });
         };
         CompileMetadataResolver.prototype.getFactoryMetadata = function (factory, moduleUrl, dependencies) {
@@ -13425,8 +13440,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 meta = new CompilePipeMetadata({
                     type: this.getTypeMetadata(pipeType, staticTypeModuleUrl(pipeType)),
                     name: pipeMeta.name,
-                    pure: pipeMeta.pure,
-                    lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(hook, pipeType); }),
+                    pure: pipeMeta.pure
                 });
                 this._pipeCache.set(pipeType, meta);
             }
@@ -13753,12 +13767,16 @@ var __extends = (this && this.__extends) || function (d, b) {
             var sourceFile = new ParseSourceFile('', sourceFileName);
             var sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
             var deps = [];
-            var entryComponents = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
+            var bootstrapComponentFactories = [];
+            var entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
                 var id = new CompileIdentifierMetadata({ name: entryComponent.name });
+                if (ngModuleMeta.bootstrapComponents.indexOf(entryComponent) > -1) {
+                    bootstrapComponentFactories.push(id);
+                }
                 deps.push(new ComponentFactoryDependency$1(entryComponent, id));
                 return id;
             });
-            var builder = new _InjectorBuilder(ngModuleMeta, entryComponents, sourceSpan);
+            var builder = new _InjectorBuilder(ngModuleMeta, entryComponentFactories, bootstrapComponentFactories, sourceSpan);
             var providerParser = new NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
             providerParser.parse().forEach(function (provider) { return builder.addProvider(provider); });
             var injectorClass = builder.build();
@@ -13776,13 +13794,15 @@ var __extends = (this && this.__extends) || function (d, b) {
         { type: _angular_core.Injectable },
     ];
     var _InjectorBuilder = (function () {
-        function _InjectorBuilder(_ngModuleMeta, _entryComponents, _sourceSpan) {
+        function _InjectorBuilder(_ngModuleMeta, _entryComponentFactories, _bootstrapComponentFactories, _sourceSpan) {
             this._ngModuleMeta = _ngModuleMeta;
-            this._entryComponents = _entryComponents;
+            this._entryComponentFactories = _entryComponentFactories;
+            this._bootstrapComponentFactories = _bootstrapComponentFactories;
             this._sourceSpan = _sourceSpan;
             this._instances = new CompileIdentifierMap();
             this._fields = [];
             this._createStmts = [];
+            this._destroyStmts = [];
             this._getters = [];
         }
         _InjectorBuilder.prototype.addProvider = function (resolvedProvider) {
@@ -13790,6 +13810,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             var providerValueExpressions = resolvedProvider.providers.map(function (provider) { return _this._getProviderValue(provider); });
             var propName = "_" + resolvedProvider.token.name + "_" + this._instances.size;
             var instance = this._createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager);
+            if (resolvedProvider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
+                this._destroyStmts.push(instance.callMethod('ngOnDestroy', []).toStmt());
+            }
             this._instances.add(resolvedProvider.token, instance);
         };
         _InjectorBuilder.prototype.build = function () {
@@ -13803,12 +13826,14 @@ var __extends = (this && this.__extends) || function (d, b) {
                 new ClassMethod('getInternal', [
                     new FnParam(InjectMethodVars$1.token.name, DYNAMIC_TYPE),
                     new FnParam(InjectMethodVars$1.notFoundResult.name, DYNAMIC_TYPE)
-                ], getMethodStmts.concat([new ReturnStatement(InjectMethodVars$1.notFoundResult)]), DYNAMIC_TYPE)
+                ], getMethodStmts.concat([new ReturnStatement(InjectMethodVars$1.notFoundResult)]), DYNAMIC_TYPE),
+                new ClassMethod('destroyInternal', [], this._destroyStmts),
             ];
             var ctor = new ClassMethod(null, [new FnParam(InjectorProps.parent.name, importType(Identifiers.Injector))], [SUPER_EXPR
                     .callFn([
                     variable(InjectorProps.parent.name),
-                    literalArr(this._entryComponents.map(function (entryComponent) { return importExpr(entryComponent); }))
+                    literalArr(this._entryComponentFactories.map(function (componentFactory) { return importExpr(componentFactory); })),
+                    literalArr(this._bootstrapComponentFactories.map(function (componentFactory) { return importExpr(componentFactory); }))
                 ])
                     .toStmt()]);
             var injClassName = this._ngModuleMeta.type.name + "Injector";

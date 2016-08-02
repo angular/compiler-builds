@@ -9,6 +9,7 @@ import { AST } from '../expression_parser/ast';
 import { CompileDirectiveMetadata, CompileTokenMetadata, CompileProviderMetadata } from '../compile_metadata';
 import { ParseSourceSpan } from '../parse_util';
 import { SecurityContext } from '@angular/core';
+import { LifecycleHooks } from '../../core_private';
 /**
  * An Abstract Syntax Tree node representing part of a parsed Angular template.
  */
@@ -164,8 +165,9 @@ export declare class ProviderAst implements TemplateAst {
     eager: boolean;
     providers: CompileProviderMetadata[];
     providerType: ProviderAstType;
+    lifecycleHooks: LifecycleHooks[];
     sourceSpan: ParseSourceSpan;
-    constructor(token: CompileTokenMetadata, multiProvider: boolean, eager: boolean, providers: CompileProviderMetadata[], providerType: ProviderAstType, sourceSpan: ParseSourceSpan);
+    constructor(token: CompileTokenMetadata, multiProvider: boolean, eager: boolean, providers: CompileProviderMetadata[], providerType: ProviderAstType, lifecycleHooks: LifecycleHooks[], sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 export declare enum ProviderAstType {
