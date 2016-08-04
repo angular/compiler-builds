@@ -19,9 +19,7 @@ class _Visitor {
         return `<? xml${this._serializeAttributes(decl.attrs)} ?>`;
     }
     _serializeAttributes(attrs) {
-        const strAttrs = Object.getOwnPropertyNames(attrs)
-            .map((name) => `${name}="${attrs[name]}"`)
-            .join(' ');
+        const strAttrs = Object.keys(attrs).map((name) => `${name}="${attrs[name]}"`).join(' ');
         return strAttrs.length > 0 ? ' ' + strAttrs : '';
     }
     visitDoctype(doctype) {
@@ -35,7 +33,7 @@ export function serialize(nodes) {
 export class Declaration {
     constructor(unescapedAttrs) {
         this.attrs = {};
-        Object.getOwnPropertyNames(unescapedAttrs).forEach((k) => {
+        Object.keys(unescapedAttrs).forEach((k) => {
             this.attrs[k] = _escapeXml(unescapedAttrs[k]);
         });
     }
@@ -54,7 +52,7 @@ export class Tag {
         this.name = name;
         this.children = children;
         this.attrs = {};
-        Object.getOwnPropertyNames(unescapedAttrs).forEach((k) => {
+        Object.keys(unescapedAttrs).forEach((k) => {
             this.attrs[k] = _escapeXml(unescapedAttrs[k]);
         });
     }

@@ -35,7 +35,7 @@ export class Xmb {
         const visitor = new _Visitor();
         let rootNode = new xml.Tag(_MESSAGES_TAG);
         rootNode.children.push(new xml.Text('\n'));
-        Object.getOwnPropertyNames(messageMap).forEach((id) => {
+        Object.keys(messageMap).forEach((id) => {
             const message = messageMap[id];
             let attrs = { id };
             if (message.description) {
@@ -67,7 +67,7 @@ class _Visitor {
     }
     visitIcu(icu, context) {
         const nodes = [new xml.Text(`{${icu.expression}, ${icu.type}, `)];
-        Object.getOwnPropertyNames(icu.cases).forEach((c) => {
+        Object.keys(icu.cases).forEach((c) => {
             nodes.push(new xml.Text(`${c} {`), ...icu.cases[c].visit(this), new xml.Text(`}`));
         });
         nodes.push(new xml.Text(`}`));

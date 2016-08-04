@@ -3168,7 +3168,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         // Generate a hash for a tag - does not take attribute order into account
         PlaceholderRegistry.prototype._hashTag = function (tag, attrs, isVoid) {
             var start = "<" + tag;
-            var strAttrs = Object.getOwnPropertyNames(attrs).sort().map(function (name) { return (" " + name + "=" + attrs[name]); }).join('');
+            var strAttrs = Object.keys(attrs).sort().map(function (name) { return (" " + name + "=" + attrs[name]); }).join('');
             var end = isVoid ? '/>' : "></" + tag + ">";
             return start + strAttrs + end;
         };
@@ -3400,9 +3400,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return "<? xml" + this._serializeAttributes(decl.attrs) + " ?>";
         };
         _Visitor$1.prototype._serializeAttributes = function (attrs) {
-            var strAttrs = Object.getOwnPropertyNames(attrs)
-                .map(function (name) { return (name + "=\"" + attrs[name] + "\""); })
-                .join(' ');
+            var strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');
             return strAttrs.length > 0 ? ' ' + strAttrs : '';
         };
         _Visitor$1.prototype.visitDoctype = function (doctype) {
@@ -3418,7 +3416,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         function Declaration(unescapedAttrs) {
             var _this = this;
             this.attrs = {};
-            Object.getOwnPropertyNames(unescapedAttrs).forEach(function (k) {
+            Object.keys(unescapedAttrs).forEach(function (k) {
                 _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
             });
         }
@@ -3442,7 +3440,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.name = name;
             this.children = children;
             this.attrs = {};
-            Object.getOwnPropertyNames(unescapedAttrs).forEach(function (k) {
+            Object.keys(unescapedAttrs).forEach(function (k) {
                 _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
             });
         }
@@ -3479,7 +3477,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var visitor = new _Visitor();
             var rootNode = new Tag(_MESSAGES_TAG);
             rootNode.children.push(new Text$2('\n'));
-            Object.getOwnPropertyNames(messageMap).forEach(function (id) {
+            Object.keys(messageMap).forEach(function (id) {
                 var message = messageMap[id];
                 var attrs = { id: id };
                 if (message.description) {
@@ -3516,7 +3514,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _Visitor.prototype.visitIcu = function (icu, context) {
             var _this = this;
             var nodes = [new Text$2("{" + icu.expression + ", " + icu.type + ", ")];
-            Object.getOwnPropertyNames(icu.cases).forEach(function (c) {
+            Object.keys(icu.cases).forEach(function (c) {
                 nodes.push.apply(nodes, [new Text$2(c + " {")].concat(icu.cases[c].visit(_this), [new Text$2("}")]));
             });
             nodes.push(new Text$2("}"));
@@ -4587,7 +4585,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             // TODO(vicb): map error message back to the original message in xtb
             var messageMap = {};
             var parseErrors = [];
-            Object.getOwnPropertyNames(messages).forEach(function (id) {
+            Object.keys(messages).forEach(function (id) {
                 var res = _this._htmlParser.parse(messages[id], url, true, _this._interpolationConfig);
                 parseErrors.push.apply(parseErrors, res.errors);
                 messageMap[id] = res.rootNodes;

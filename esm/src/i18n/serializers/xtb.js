@@ -32,7 +32,7 @@ export class Xtb {
         // TODO(vicb): map error message back to the original message in xtb
         let messageMap = {};
         let parseErrors = [];
-        Object.getOwnPropertyNames(messages).forEach((id) => {
+        Object.keys(messages).forEach((id) => {
             const res = this._htmlParser.parse(messages[id], url, true, this._interpolationConfig);
             parseErrors.push(...res.errors);
             messageMap[id] = res.rootNodes;

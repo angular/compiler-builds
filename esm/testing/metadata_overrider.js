@@ -96,14 +96,14 @@ function _serializeReference(ref, references) {
 function _valueProps(obj) {
     const props = [];
     // regular public props
-    Object.getOwnPropertyNames(obj).forEach((prop) => {
+    Object.keys(obj).forEach((prop) => {
         if (!prop.startsWith('_')) {
             props.push(prop);
         }
     });
     // getters
     const proto = Object.getPrototypeOf(obj);
-    Object.getOwnPropertyNames(proto).forEach((protoProp) => {
+    Object.keys(proto).forEach((protoProp) => {
         var desc = Object.getOwnPropertyDescriptor(proto, protoProp);
         if (!protoProp.startsWith('_') && desc && 'get' in desc) {
             props.push(protoProp);

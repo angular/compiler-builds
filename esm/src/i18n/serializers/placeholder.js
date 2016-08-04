@@ -84,7 +84,7 @@ export class PlaceholderRegistry {
     // Generate a hash for a tag - does not take attribute order into account
     _hashTag(tag, attrs, isVoid) {
         const start = `<${tag}`;
-        const strAttrs = Object.getOwnPropertyNames(attrs).sort().map((name) => ` ${name}=${attrs[name]}`).join('');
+        const strAttrs = Object.keys(attrs).sort().map((name) => ` ${name}=${attrs[name]}`).join('');
         const end = isVoid ? '/>' : `></${tag}>`;
         return start + strAttrs + end;
     }

@@ -85,7 +85,7 @@ var PlaceholderRegistry = (function () {
     // Generate a hash for a tag - does not take attribute order into account
     PlaceholderRegistry.prototype._hashTag = function (tag, attrs, isVoid) {
         var start = "<" + tag;
-        var strAttrs = Object.getOwnPropertyNames(attrs).sort().map(function (name) { return (" " + name + "=" + attrs[name]); }).join('');
+        var strAttrs = Object.keys(attrs).sort().map(function (name) { return (" " + name + "=" + attrs[name]); }).join('');
         var end = isVoid ? '/>' : "></" + tag + ">";
         return start + strAttrs + end;
     };

@@ -20,7 +20,7 @@ var Xmb = (function () {
         var visitor = new _Visitor();
         var rootNode = new xml.Tag(_MESSAGES_TAG);
         rootNode.children.push(new xml.Text('\n'));
-        Object.getOwnPropertyNames(messageMap).forEach(function (id) {
+        Object.keys(messageMap).forEach(function (id) {
             var message = messageMap[id];
             var attrs = { id: id };
             if (message.description) {
@@ -58,7 +58,7 @@ var _Visitor = (function () {
     _Visitor.prototype.visitIcu = function (icu, context) {
         var _this = this;
         var nodes = [new xml.Text("{" + icu.expression + ", " + icu.type + ", ")];
-        Object.getOwnPropertyNames(icu.cases).forEach(function (c) {
+        Object.keys(icu.cases).forEach(function (c) {
             nodes.push.apply(nodes, [new xml.Text(c + " {")].concat(icu.cases[c].visit(_this), [new xml.Text("}")]));
         });
         nodes.push(new xml.Text("}"));

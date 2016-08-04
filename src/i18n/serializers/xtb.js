@@ -34,7 +34,7 @@ var Xtb = (function () {
         // TODO(vicb): map error message back to the original message in xtb
         var messageMap = {};
         var parseErrors = [];
-        Object.getOwnPropertyNames(messages).forEach(function (id) {
+        Object.keys(messages).forEach(function (id) {
             var res = _this._htmlParser.parse(messages[id], url, true, _this._interpolationConfig);
             parseErrors.push.apply(parseErrors, res.errors);
             messageMap[id] = res.rootNodes;

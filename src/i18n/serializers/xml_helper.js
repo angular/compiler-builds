@@ -23,9 +23,7 @@ var _Visitor = (function () {
         return "<? xml" + this._serializeAttributes(decl.attrs) + " ?>";
     };
     _Visitor.prototype._serializeAttributes = function (attrs) {
-        var strAttrs = Object.getOwnPropertyNames(attrs)
-            .map(function (name) { return (name + "=\"" + attrs[name] + "\""); })
-            .join(' ');
+        var strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');
         return strAttrs.length > 0 ? ' ' + strAttrs : '';
     };
     _Visitor.prototype.visitDoctype = function (doctype) {
@@ -42,7 +40,7 @@ var Declaration = (function () {
     function Declaration(unescapedAttrs) {
         var _this = this;
         this.attrs = {};
-        Object.getOwnPropertyNames(unescapedAttrs).forEach(function (k) {
+        Object.keys(unescapedAttrs).forEach(function (k) {
             _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
         });
     }
@@ -68,7 +66,7 @@ var Tag = (function () {
         this.name = name;
         this.children = children;
         this.attrs = {};
-        Object.getOwnPropertyNames(unescapedAttrs).forEach(function (k) {
+        Object.keys(unescapedAttrs).forEach(function (k) {
             _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
         });
     }
