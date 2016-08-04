@@ -101,7 +101,7 @@ exports.TestingCompilerImpl = TestingCompilerImpl;
  */
 exports.platformCoreDynamicTesting = core_1.createPlatformFactory(index_1.platformCoreDynamic, 'coreDynamicTesting', [
     {
-        provide: core_1.CompilerOptions,
+        provide: core_1.COMPILER_OPTIONS,
         useValue: {
             providers: [
                 pipe_resolver_mock_2.MockPipeResolver, { provide: index_1.PipeResolver, useExisting: pipe_resolver_mock_2.MockPipeResolver },

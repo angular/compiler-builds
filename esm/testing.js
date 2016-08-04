@@ -10,7 +10,7 @@ export * from './testing/test_component_builder';
 export * from './testing/directive_resolver_mock';
 export * from './testing/ng_module_resolver_mock';
 export * from './testing/pipe_resolver_mock';
-import { createPlatformFactory, Injectable, CompilerOptions, CompilerFactory, NgModuleMetadata, ComponentMetadata, DirectiveMetadata, PipeMetadata } from '@angular/core';
+import { createPlatformFactory, Injectable, COMPILER_OPTIONS, CompilerFactory, NgModuleMetadata, ComponentMetadata, DirectiveMetadata, PipeMetadata } from '@angular/core';
 import { TestingCompilerFactory } from './core_private_testing';
 import { platformCoreDynamic, DirectiveResolver, NgModuleResolver, PipeResolver } from './index';
 import { MockDirectiveResolver } from './testing/directive_resolver_mock';
@@ -87,7 +87,7 @@ export class TestingCompilerImpl {
  */
 export const platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'coreDynamicTesting', [
     {
-        provide: CompilerOptions,
+        provide: COMPILER_OPTIONS,
         useValue: {
             providers: [
                 MockPipeResolver, { provide: PipeResolver, useExisting: MockPipeResolver },

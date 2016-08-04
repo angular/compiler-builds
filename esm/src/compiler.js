@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, CompilerFactory, CompilerOptions, Component, Inject, Injectable, PLATFORM_DIRECTIVES, PLATFORM_INITIALIZER, PLATFORM_PIPES, ReflectiveInjector, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
+import { COMPILER_OPTIONS, Compiler, CompilerFactory, Component, Inject, Injectable, PLATFORM_DIRECTIVES, PLATFORM_INITIALIZER, PLATFORM_PIPES, ReflectiveInjector, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
 export * from './template_parser/template_ast';
 export { TEMPLATE_TRANSFORMS } from './template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './config';
@@ -172,7 +172,7 @@ RuntimeCompilerFactory.decorators = [
 ];
 /** @nocollapse */
 RuntimeCompilerFactory.ctorParameters = [
-    { type: Array, decorators: [{ type: Inject, args: [CompilerOptions,] },] },
+    { type: Array, decorators: [{ type: Inject, args: [COMPILER_OPTIONS,] },] },
 ];
 function _initReflector() {
     reflector.reflectionCapabilities = new ReflectionCapabilities();
@@ -183,7 +183,7 @@ function _initReflector() {
  * @experimental
  */
 export const platformCoreDynamic = createPlatformFactory(platformCore, 'coreDynamic', [
-    { provide: CompilerOptions, useValue: {}, multi: true },
+    { provide: COMPILER_OPTIONS, useValue: {}, multi: true },
     { provide: CompilerFactory, useClass: RuntimeCompilerFactory },
     { provide: PLATFORM_INITIALIZER, useValue: _initReflector, multi: true },
 ]);

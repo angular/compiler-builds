@@ -16596,7 +16596,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     RuntimeCompilerFactory.ctorParameters = [
-        { type: Array, decorators: [{ type: _angular_core.Inject, args: [_angular_core.CompilerOptions,] },] },
+        { type: Array, decorators: [{ type: _angular_core.Inject, args: [_angular_core.COMPILER_OPTIONS,] },] },
     ];
     function _initReflector() {
         reflector.reflectionCapabilities = new ReflectionCapabilities();
@@ -16607,7 +16607,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      * @experimental
      */
     var platformCoreDynamic = _angular_core.createPlatformFactory(_angular_core.platformCore, 'coreDynamic', [
-        { provide: _angular_core.CompilerOptions, useValue: {}, multi: true },
+        { provide: _angular_core.COMPILER_OPTIONS, useValue: {}, multi: true },
         { provide: _angular_core.CompilerFactory, useClass: RuntimeCompilerFactory },
         { provide: _angular_core.PLATFORM_INITIALIZER, useValue: _initReflector, multi: true },
     ]);
