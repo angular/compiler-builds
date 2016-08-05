@@ -44,7 +44,7 @@ export declare class Icu implements Node {
     }, sourceSpan: ParseSourceSpan);
     visit(visitor: Visitor, context?: any): any;
 }
-export declare class TagPlaceholder {
+export declare class TagPlaceholder implements Node {
     tag: string;
     attrs: {
         [k: string]: string;
@@ -59,14 +59,14 @@ export declare class TagPlaceholder {
     }, startName: string, closeName: string, children: Node[], isVoid: boolean, sourceSpan: ParseSourceSpan);
     visit(visitor: Visitor, context?: any): any;
 }
-export declare class Placeholder {
+export declare class Placeholder implements Node {
     value: string;
     name: string;
     sourceSpan: ParseSourceSpan;
     constructor(value: string, name: string, sourceSpan: ParseSourceSpan);
     visit(visitor: Visitor, context?: any): any;
 }
-export declare class IcuPlaceholder {
+export declare class IcuPlaceholder implements Node {
     value: Icu;
     name: string;
     sourceSpan: ParseSourceSpan;

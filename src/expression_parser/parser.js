@@ -9,7 +9,7 @@
 var core_1 = require('@angular/core');
 var chars = require('../chars');
 var lang_1 = require('../facade/lang');
-var interpolation_config_1 = require('../html_parser/interpolation_config');
+var interpolation_config_1 = require('../ml_parser/interpolation_config');
 var ast_1 = require('./ast');
 var lexer_1 = require('./lexer');
 var SplitInterpolation = (function () {

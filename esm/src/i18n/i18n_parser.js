@@ -7,22 +7,17 @@
  */
 import { Lexer as ExpressionLexer } from '../expression_parser/lexer';
 import { Parser as ExpressionParser } from '../expression_parser/parser';
-import * as html from '../html_parser/ast';
-import { getHtmlTagDefinition } from '../html_parser/html_tags';
-import { extractAstMessages } from './extractor';
+import * as html from '../ml_parser/ast';
+import { getHtmlTagDefinition } from '../ml_parser/html_tags';
 import * as i18n from './i18n_ast';
 import { PlaceholderRegistry } from './serializers/placeholder';
+const _expParser = new ExpressionParser(new ExpressionLexer());
 /**
- * Extract all the i18n messages from a component template.
+ * Returns a function converting html Messages to i18n Messages given an interpolationConfig
  */
-export function extractI18nMessages(sourceAst, interpolationConfig, implicitTags, implicitAttrs) {
-    const extractionResult = extractAstMessages(sourceAst, implicitTags, implicitAttrs);
-    if (extractionResult.errors.length) {
-        return [];
-    }
-    const expParser = new ExpressionParser(new ExpressionLexer());
-    const visitor = new _I18nVisitor(expParser, interpolationConfig);
-    return extractionResult.messages.map((msg) => visitor.toI18nMessage(msg.nodes, msg.meaning, msg.description));
+export function createI18nMessageFactory(interpolationConfig) {
+    const visitor = new _I18nVisitor(_expParser, interpolationConfig);
+    return (nodes, meaning, description) => visitor.toI18nMessage(nodes, meaning, description);
 }
 class _I18nVisitor {
     constructor(_expressionParser, _interpolationConfig) {

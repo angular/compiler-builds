@@ -10,7 +10,7 @@ import { Console } from '../../core_private';
 import { CompileDirectiveMetadata, CompilePipeMetadata } from '../compile_metadata';
 import { BindingPipe, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
-import { HtmlParser } from '../html_parser/html_parser';
+import { HtmlParser } from '../ml_parser/html_parser';
 import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
 import { TemplateAst, TemplateAstVisitor } from './template_ast';

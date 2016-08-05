@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var xml = require('../../html_parser/ast');
-var xml_parser_1 = require('../../html_parser/xml_parser');
+var ml = require('../../ml_parser/ast');
+var xml_parser_1 = require('../../ml_parser/xml_parser');
 var parse_util_1 = require('../parse_util');
 var _TRANSLATIONS_TAG = 'translationbundle';
 var _TRANSLATION_TAG = 'translation';
@@ -56,7 +56,7 @@ var _Serializer = (function () {
         this._translationDepth = 0;
         this._errors = [];
         this._placeholders = _placeholders;
-        xml.visitAll(this, nodes, null);
+        ml.visitAll(this, nodes, null);
         return { messages: this._messages, errors: this._errors };
     };
     _Serializer.prototype.visitElement = function (element, context) {
@@ -66,7 +66,7 @@ var _Serializer = (function () {
                 if (this._bundleDepth > 1) {
                     this._addError(element, "<" + _TRANSLATIONS_TAG + "> elements can not be nested");
                 }
-                xml.visitAll(this, element.children, null);
+                ml.visitAll(this, element.children, null);
                 this._bundleDepth--;
                 break;
             case _TRANSLATION_TAG:
@@ -80,7 +80,7 @@ var _Serializer = (function () {
                 }
                 else {
                     this._currentPlaceholders = this._placeholders[idAttr.value] || {};
-                    this._messages[idAttr.value] = xml.visitAll(this, element.children).join('');
+                    this._messages[idAttr.value] = ml.visitAll(this, element.children).join('');
                 }
                 this._translationDepth--;
                 break;
@@ -111,7 +111,7 @@ var _Serializer = (function () {
         return "{" + expansion.switchValue + ", " + expansion.type + ", strCases.join(' ')}";
     };
     _Serializer.prototype.visitExpansionCase = function (expansionCase, context) {
-        return expansionCase.value + " {" + xml.visitAll(this, expansionCase.expression, null) + "}";
+        return expansionCase.value + " {" + ml.visitAll(this, expansionCase.expression, null) + "}";
     };
     _Serializer.prototype._addError = function (node, message) {
         this._errors.push(new parse_util_1.I18nError(node.sourceSpan, message));

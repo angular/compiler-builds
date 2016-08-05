@@ -8,24 +8,21 @@
 "use strict";
 var lexer_1 = require('../expression_parser/lexer');
 var parser_1 = require('../expression_parser/parser');
-var html = require('../html_parser/ast');
-var html_tags_1 = require('../html_parser/html_tags');
-var extractor_1 = require('./extractor');
+var html = require('../ml_parser/ast');
+var html_tags_1 = require('../ml_parser/html_tags');
 var i18n = require('./i18n_ast');
 var placeholder_1 = require('./serializers/placeholder');
+var _expParser = new parser_1.Parser(new lexer_1.Lexer());
 /**
- * Extract all the i18n messages from a component template.
+ * Returns a function converting html Messages to i18n Messages given an interpolationConfig
  */
-function extractI18nMessages(sourceAst, interpolationConfig, implicitTags, implicitAttrs) {
-    var extractionResult = extractor_1.extractAstMessages(sourceAst, implicitTags, implicitAttrs);
-    if (extractionResult.errors.length) {
-        return [];
-    }
-    var expParser = new parser_1.Parser(new lexer_1.Lexer());
-    var visitor = new _I18nVisitor(expParser, interpolationConfig);
-    return extractionResult.messages.map(function (msg) { return visitor.toI18nMessage(msg.nodes, msg.meaning, msg.description); });
+function createI18nMessageFactory(interpolationConfig) {
+    var visitor = new _I18nVisitor(_expParser, interpolationConfig);
+    return function (nodes, meaning, description) {
+        return visitor.toI18nMessage(nodes, meaning, description);
+    };
 }
-exports.extractI18nMessages = extractI18nMessages;
+exports.createI18nMessageFactory = createI18nMessageFactory;
 var _I18nVisitor = (function () {
     function _I18nVisitor(_expressionParser, _interpolationConfig) {
         this._expressionParser = _expressionParser;

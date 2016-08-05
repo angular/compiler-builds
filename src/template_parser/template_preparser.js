@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var tags_1 = require('../html_parser/tags');
+var tags_1 = require('../ml_parser/tags');
 var NG_CONTENT_SELECT_ATTR = 'select';
 var NG_CONTENT_ELEMENT = 'ng-content';
 var LINK_ELEMENT = 'link';

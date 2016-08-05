@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { splitNsName } from '../html_parser/tags';
+import { splitNsName } from '../ml_parser/tags';
 const NG_CONTENT_SELECT_ATTR = 'select';
 const NG_CONTENT_ELEMENT = 'ng-content';
 const LINK_ELEMENT = 'link';

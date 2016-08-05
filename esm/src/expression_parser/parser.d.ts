@@ -1,4 +1,4 @@
-import { InterpolationConfig } from '../html_parser/interpolation_config';
+import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { AST, ASTWithSource, BindingPipe, LiteralMap, ParseSpan, ParserError, TemplateBinding } from './ast';
 import { Lexer, Token } from './lexer';
 export declare class SplitInterpolation {

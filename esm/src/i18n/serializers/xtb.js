@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as xml from '../../html_parser/ast';
-import { XmlParser } from '../../html_parser/xml_parser';
+import * as ml from '../../ml_parser/ast';
+import { XmlParser } from '../../ml_parser/xml_parser';
 import { I18nError } from '../parse_util';
 const _TRANSLATIONS_TAG = 'translationbundle';
 const _TRANSLATION_TAG = 'translation';
@@ -50,7 +50,7 @@ class _Serializer {
         this._translationDepth = 0;
         this._errors = [];
         this._placeholders = _placeholders;
-        xml.visitAll(this, nodes, null);
+        ml.visitAll(this, nodes, null);
         return { messages: this._messages, errors: this._errors };
     }
     visitElement(element, context) {
@@ -60,7 +60,7 @@ class _Serializer {
                 if (this._bundleDepth > 1) {
                     this._addError(element, `<${_TRANSLATIONS_TAG}> elements can not be nested`);
                 }
-                xml.visitAll(this, element.children, null);
+                ml.visitAll(this, element.children, null);
                 this._bundleDepth--;
                 break;
             case _TRANSLATION_TAG:
@@ -74,7 +74,7 @@ class _Serializer {
                 }
                 else {
                     this._currentPlaceholders = this._placeholders[idAttr.value] || {};
-                    this._messages[idAttr.value] = xml.visitAll(this, element.children).join('');
+                    this._messages[idAttr.value] = ml.visitAll(this, element.children).join('');
                 }
                 this._translationDepth--;
                 break;
@@ -104,7 +104,7 @@ class _Serializer {
         return `{${expansion.switchValue}, ${expansion.type}, strCases.join(' ')}`;
     }
     visitExpansionCase(expansionCase, context) {
-        return `${expansionCase.value} {${xml.visitAll(this, expansionCase.expression, null)}}`;
+        return `${expansionCase.value} {${ml.visitAll(this, expansionCase.expression, null)}}`;
     }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));

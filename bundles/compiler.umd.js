@@ -21,6 +21,227 @@ var __extends = (this && this.__extends) || function (d, b) {
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    function digestMessage(message) {
+        return strHash(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
+    }
+    /**
+     * String hash function similar to java.lang.String.hashCode().
+     * The hash code for a string is computed as
+     * s[0] * 31 ^ (n - 1) + s[1] * 31 ^ (n - 2) + ... + s[n - 1],
+     * where s[i] is the ith character of the string and n is the length of
+     * the string. We mod the result to make it between 0 (inclusive) and 2^32 (exclusive).
+     *
+     * Based on goog.string.hashCode from the Google Closure library
+     * https://github.com/google/closure-library/
+     *
+     * @internal
+     */
+    // TODO(vicb): better algo (less collisions) ?
+    function strHash(str) {
+        var result = 0;
+        for (var i = 0; i < str.length; ++i) {
+            // Normalize to 4 byte range, 0 ... 2^32.
+            result = (31 * result + str.charCodeAt(i)) >>> 0;
+        }
+        return result.toString(16);
+    }
+    /**
+     * Serialize the i18n ast to something xml-like in order to generate an UID.
+     *
+     * The visitor is also used in the i18n parser tests
+     *
+     * @internal
+     */
+    var _SerializerVisitor = (function () {
+        function _SerializerVisitor() {
+        }
+        _SerializerVisitor.prototype.visitText = function (text, context) { return text.value; };
+        _SerializerVisitor.prototype.visitContainer = function (container, context) {
+            var _this = this;
+            return "[" + container.children.map(function (child) { return child.visit(_this); }).join(', ') + "]";
+        };
+        _SerializerVisitor.prototype.visitIcu = function (icu, context) {
+            var _this = this;
+            var strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
+            return "{" + icu.expression + ", " + icu.type + ", " + strCases.join(', ') + "}";
+        };
+        _SerializerVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+            var _this = this;
+            return ph.isVoid ?
+                "<ph tag name=\"" + ph.startName + "\"/>" :
+                "<ph tag name=\"" + ph.startName + "\">" + ph.children.map(function (child) { return child.visit(_this); }).join(', ') + "</ph name=\"" + ph.closeName + "\">";
+        };
+        _SerializerVisitor.prototype.visitPlaceholder = function (ph, context) {
+            return "<ph name=\"" + ph.name + "\">" + ph.value + "</ph>";
+        };
+        _SerializerVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
+            return "<ph icu name=\"" + ph.name + "\">" + ph.value.visit(this) + "</ph>";
+        };
+        return _SerializerVisitor;
+    }());
+    var serializerVisitor = new _SerializerVisitor();
+    function serializeNodes(nodes) {
+        return nodes.map(function (a) { return a.visit(serializerVisitor, null); });
+    }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var Text = (function () {
+        function Text(value, sourceSpan) {
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
+        return Text;
+    }());
+    var Expansion = (function () {
+        function Expansion(switchValue, type, cases, sourceSpan, switchValueSourceSpan) {
+            this.switchValue = switchValue;
+            this.type = type;
+            this.cases = cases;
+            this.sourceSpan = sourceSpan;
+            this.switchValueSourceSpan = switchValueSourceSpan;
+        }
+        Expansion.prototype.visit = function (visitor, context) { return visitor.visitExpansion(this, context); };
+        return Expansion;
+    }());
+    var ExpansionCase = (function () {
+        function ExpansionCase(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
+            this.value = value;
+            this.expression = expression;
+            this.sourceSpan = sourceSpan;
+            this.valueSourceSpan = valueSourceSpan;
+            this.expSourceSpan = expSourceSpan;
+        }
+        ExpansionCase.prototype.visit = function (visitor, context) { return visitor.visitExpansionCase(this, context); };
+        return ExpansionCase;
+    }());
+    var Attribute = (function () {
+        function Attribute(name, value, sourceSpan) {
+            this.name = name;
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
+        return Attribute;
+    }());
+    var Element = (function () {
+        function Element(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan) {
+            this.name = name;
+            this.attrs = attrs;
+            this.children = children;
+            this.sourceSpan = sourceSpan;
+            this.startSourceSpan = startSourceSpan;
+            this.endSourceSpan = endSourceSpan;
+        }
+        Element.prototype.visit = function (visitor, context) { return visitor.visitElement(this, context); };
+        return Element;
+    }());
+    var Comment = (function () {
+        function Comment(value, sourceSpan) {
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Comment.prototype.visit = function (visitor, context) { return visitor.visitComment(this, context); };
+        return Comment;
+    }());
+    function visitAll(visitor, nodes, context) {
+        if (context === void 0) { context = null; }
+        var result = [];
+        nodes.forEach(function (ast) {
+            var astResult = ast.visit(visitor, context);
+            if (astResult) {
+                result.push(astResult);
+            }
+        });
+        return result;
+    }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var Message = (function () {
+        function Message(nodes, placeholders, meaning, description) {
+            this.nodes = nodes;
+            this.placeholders = placeholders;
+            this.meaning = meaning;
+            this.description = description;
+        }
+        return Message;
+    }());
+    var Text$1 = (function () {
+        function Text$1(value, sourceSpan) {
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Text$1.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
+        return Text$1;
+    }());
+    var Container = (function () {
+        function Container(children, sourceSpan) {
+            this.children = children;
+            this.sourceSpan = sourceSpan;
+        }
+        Container.prototype.visit = function (visitor, context) { return visitor.visitContainer(this, context); };
+        return Container;
+    }());
+    var Icu = (function () {
+        function Icu(expression, type, cases, sourceSpan) {
+            this.expression = expression;
+            this.type = type;
+            this.cases = cases;
+            this.sourceSpan = sourceSpan;
+        }
+        Icu.prototype.visit = function (visitor, context) { return visitor.visitIcu(this, context); };
+        return Icu;
+    }());
+    var TagPlaceholder = (function () {
+        function TagPlaceholder(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
+            this.tag = tag;
+            this.attrs = attrs;
+            this.startName = startName;
+            this.closeName = closeName;
+            this.children = children;
+            this.isVoid = isVoid;
+            this.sourceSpan = sourceSpan;
+        }
+        TagPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitTagPlaceholder(this, context); };
+        return TagPlaceholder;
+    }());
+    var Placeholder = (function () {
+        function Placeholder(value, name, sourceSpan) {
+            if (name === void 0) { name = ''; }
+            this.value = value;
+            this.name = name;
+            this.sourceSpan = sourceSpan;
+        }
+        Placeholder.prototype.visit = function (visitor, context) { return visitor.visitPlaceholder(this, context); };
+        return Placeholder;
+    }());
+    var IcuPlaceholder = (function () {
+        function IcuPlaceholder(value, name, sourceSpan) {
+            if (name === void 0) { name = ''; }
+            this.value = value;
+            this.name = name;
+            this.sourceSpan = sourceSpan;
+        }
+        IcuPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitIcuPlaceholder(this, context); };
+        return IcuPlaceholder;
+    }());
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     var $EOF = 0;
     var $TAB = 9;
     var $LF = 10;
@@ -2173,83 +2394,6 @@ var __extends = (this && this.__extends) || function (d, b) {
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var Text = (function () {
-        function Text(value, sourceSpan) {
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-        }
-        Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
-        return Text;
-    }());
-    var Expansion = (function () {
-        function Expansion(switchValue, type, cases, sourceSpan, switchValueSourceSpan) {
-            this.switchValue = switchValue;
-            this.type = type;
-            this.cases = cases;
-            this.sourceSpan = sourceSpan;
-            this.switchValueSourceSpan = switchValueSourceSpan;
-        }
-        Expansion.prototype.visit = function (visitor, context) { return visitor.visitExpansion(this, context); };
-        return Expansion;
-    }());
-    var ExpansionCase = (function () {
-        function ExpansionCase(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
-            this.value = value;
-            this.expression = expression;
-            this.sourceSpan = sourceSpan;
-            this.valueSourceSpan = valueSourceSpan;
-            this.expSourceSpan = expSourceSpan;
-        }
-        ExpansionCase.prototype.visit = function (visitor, context) { return visitor.visitExpansionCase(this, context); };
-        return ExpansionCase;
-    }());
-    var Attribute = (function () {
-        function Attribute(name, value, sourceSpan) {
-            this.name = name;
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-        }
-        Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
-        return Attribute;
-    }());
-    var Element = (function () {
-        function Element(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan) {
-            this.name = name;
-            this.attrs = attrs;
-            this.children = children;
-            this.sourceSpan = sourceSpan;
-            this.startSourceSpan = startSourceSpan;
-            this.endSourceSpan = endSourceSpan;
-        }
-        Element.prototype.visit = function (visitor, context) { return visitor.visitElement(this, context); };
-        return Element;
-    }());
-    var Comment = (function () {
-        function Comment(value, sourceSpan) {
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-        }
-        Comment.prototype.visit = function (visitor, context) { return visitor.visitComment(this, context); };
-        return Comment;
-    }());
-    function visitAll(visitor, nodes, context) {
-        if (context === void 0) { context = null; }
-        var result = [];
-        nodes.forEach(function (ast) {
-            var astResult = ast.visit(visitor, context);
-            if (astResult) {
-                result.push(astResult);
-            }
-        });
-        return result;
-    }
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var TagContentType;
     (function (TagContentType) {
         TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
@@ -2624,420 +2768,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function getHtmlTagDefinition(tagName) {
         return TAG_DEFINITIONS[tagName.toLowerCase()] || _DEFAULT_TAG_DEFINITION;
     }
-    var ParseLocation = (function () {
-        function ParseLocation(file, offset, line, col) {
-            this.file = file;
-            this.offset = offset;
-            this.line = line;
-            this.col = col;
-        }
-        ParseLocation.prototype.toString = function () {
-            return isPresent(this.offset) ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
-        };
-        return ParseLocation;
-    }());
-    var ParseSourceFile = (function () {
-        function ParseSourceFile(content, url) {
-            this.content = content;
-            this.url = url;
-        }
-        return ParseSourceFile;
-    }());
-    var ParseSourceSpan = (function () {
-        function ParseSourceSpan(start, end, details) {
-            if (details === void 0) { details = null; }
-            this.start = start;
-            this.end = end;
-            this.details = details;
-        }
-        ParseSourceSpan.prototype.toString = function () {
-            return this.start.file.content.substring(this.start.offset, this.end.offset);
-        };
-        return ParseSourceSpan;
-    }());
-    var ParseErrorLevel;
-    (function (ParseErrorLevel) {
-        ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
-        ParseErrorLevel[ParseErrorLevel["FATAL"] = 1] = "FATAL";
-    })(ParseErrorLevel || (ParseErrorLevel = {}));
-    var ParseError = (function () {
-        function ParseError(span, msg, level) {
-            if (level === void 0) { level = ParseErrorLevel.FATAL; }
-            this.span = span;
-            this.msg = msg;
-            this.level = level;
-        }
-        ParseError.prototype.toString = function () {
-            var source = this.span.start.file.content;
-            var ctxStart = this.span.start.offset;
-            var contextStr = '';
-            var details = '';
-            if (isPresent(ctxStart)) {
-                if (ctxStart > source.length - 1) {
-                    ctxStart = source.length - 1;
-                }
-                var ctxEnd = ctxStart;
-                var ctxLen = 0;
-                var ctxLines = 0;
-                while (ctxLen < 100 && ctxStart > 0) {
-                    ctxStart--;
-                    ctxLen++;
-                    if (source[ctxStart] == '\n') {
-                        if (++ctxLines == 3) {
-                            break;
-                        }
-                    }
-                }
-                ctxLen = 0;
-                ctxLines = 0;
-                while (ctxLen < 100 && ctxEnd < source.length - 1) {
-                    ctxEnd++;
-                    ctxLen++;
-                    if (source[ctxEnd] == '\n') {
-                        if (++ctxLines == 3) {
-                            break;
-                        }
-                    }
-                }
-                var context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
-                    source.substring(this.span.start.offset, ctxEnd + 1);
-                contextStr = " (\"" + context + "\")";
-            }
-            if (this.span.details) {
-                details = ", " + this.span.details;
-            }
-            return "" + this.msg + contextStr + ": " + this.span.start + details;
-        };
-        return ParseError;
-    }());
-    /**
-     * An i18n error.
-     */
-    var I18nError = (function (_super) {
-        __extends(I18nError, _super);
-        function I18nError(span, msg) {
-            _super.call(this, span, msg);
-        }
-        return I18nError;
-    }(ParseError));
-    var _I18N_ATTR = 'i18n';
-    var _I18N_ATTR_PREFIX = 'i18n-';
-    /**
-     * Extract translatable message from an html AST as a list of html AST nodes
-     */
-    function extractAstMessages(sourceAst, implicitTags, implicitAttrs) {
-        var visitor = new _ExtractVisitor(implicitTags, implicitAttrs);
-        return visitor.extract(sourceAst);
-    }
-    var ExtractionResult = (function () {
-        function ExtractionResult(messages, errors) {
-            this.messages = messages;
-            this.errors = errors;
-        }
-        return ExtractionResult;
-    }());
-    var _ExtractVisitor = (function () {
-        function _ExtractVisitor(_implicitTags, _implicitAttrs) {
-            this._implicitTags = _implicitTags;
-            this._implicitAttrs = _implicitAttrs;
-            // <el i18n>...</el>
-            this._inI18nNode = false;
-            this._depth = 0;
-            // {<icu message>}
-            this._inIcu = false;
-        }
-        _ExtractVisitor.prototype.extract = function (nodes) {
-            var _this = this;
-            var messages = [];
-            this._inI18nBlock = false;
-            this._inI18nNode = false;
-            this._depth = 0;
-            this._inIcu = false;
-            this._sectionStartIndex = void 0;
-            this._errors = [];
-            nodes.forEach(function (node) { return node.visit(_this, messages); });
-            if (this._inI18nBlock) {
-                this._reportError(nodes[nodes.length - 1], 'Unclosed block');
-            }
-            return new ExtractionResult(messages, this._errors);
-        };
-        _ExtractVisitor.prototype.visitExpansionCase = function (icuCase, messages) {
-            visitAll(this, icuCase.expression, messages);
-        };
-        _ExtractVisitor.prototype.visitExpansion = function (icu, messages) {
-            this._mayBeAddBlockChildren(icu);
-            var wasInIcu = this._inIcu;
-            if (!this._inIcu) {
-                if (this._inI18nNode || this._inI18nBlock) {
-                    this._addMessage(messages, [icu]);
-                }
-                this._inIcu = true;
-            }
-            visitAll(this, icu.cases, messages);
-            this._inIcu = wasInIcu;
-        };
-        _ExtractVisitor.prototype.visitComment = function (comment, messages) {
-            var isOpening = _isOpeningComment(comment);
-            if (isOpening && (this._inI18nBlock || this._inI18nNode)) {
-                this._reportError(comment, 'Could not start a block inside a translatable section');
-                return;
-            }
-            var isClosing = _isClosingComment(comment);
-            if (isClosing && !this._inI18nBlock) {
-                this._reportError(comment, 'Trying to close an unopened block');
-                return;
-            }
-            if (!(this._inI18nNode || this._inIcu)) {
-                if (!this._inI18nBlock) {
-                    if (isOpening) {
-                        this._inI18nBlock = true;
-                        this._blockStartDepth = this._depth;
-                        this._blockChildren = [];
-                        this._blockMeaningAndDesc = comment.value.replace(/^i18n:?/, '').trim();
-                        this._startSection(messages);
-                    }
-                }
-                else {
-                    if (isClosing) {
-                        if (this._depth == this._blockStartDepth) {
-                            this._endSection(messages, this._blockChildren);
-                            this._inI18nBlock = false;
-                            this._addMessage(messages, this._blockChildren, this._blockMeaningAndDesc);
-                        }
-                        else {
-                            this._reportError(comment, 'I18N blocks should not cross element boundaries');
-                            return;
-                        }
-                    }
-                }
-            }
-        };
-        _ExtractVisitor.prototype.visitText = function (text, messages) { this._mayBeAddBlockChildren(text); };
-        _ExtractVisitor.prototype.visitElement = function (el, messages) {
-            this._mayBeAddBlockChildren(el);
-            this._depth++;
-            var wasInI18nNode = this._inI18nNode;
-            var useSection = false;
-            // Extract only top level nodes with the (implicit) "i18n" attribute if not in a block or an ICU
-            // message
-            var i18nAttr = _getI18nAttr(el);
-            var isImplicitI18n = this._implicitTags.some(function (tagName) { return el.name === tagName; });
-            if (!(this._inI18nNode || this._inIcu || this._inI18nBlock)) {
-                if (i18nAttr) {
-                    this._inI18nNode = true;
-                    this._addMessage(messages, el.children, i18nAttr.value);
-                    useSection = true;
-                }
-                else if (isImplicitI18n) {
-                    this._inI18nNode = true;
-                    this._addMessage(messages, el.children);
-                }
-            }
-            else {
-                if (i18nAttr || isImplicitI18n) {
-                    // TODO(vicb): we should probably allow nested implicit element (ie <div>)
-                    this._reportError(el, 'Could not mark an element as translatable inside a translatable section');
-                }
-            }
-            this._extractFromAttributes(el, messages);
-            if (useSection) {
-                this._startSection(messages);
-                visitAll(this, el.children, messages);
-                this._endSection(messages, el.children);
-            }
-            else {
-                visitAll(this, el.children, messages);
-            }
-            this._depth--;
-            this._inI18nNode = wasInI18nNode;
-        };
-        _ExtractVisitor.prototype.visitAttribute = function (attribute, messages) {
-            throw new Error('unreachable code');
-        };
-        _ExtractVisitor.prototype._extractFromAttributes = function (el, messages) {
-            var _this = this;
-            var explicitAttrNameToValue = new Map();
-            var implicitAttrNames = this._implicitAttrs[el.name] || [];
-            el.attrs.filter(function (attr) { return attr.name.startsWith(_I18N_ATTR_PREFIX); })
-                .forEach(function (attr) { return explicitAttrNameToValue.set(attr.name.substring(_I18N_ATTR_PREFIX.length), attr.value); });
-            el.attrs.forEach(function (attr) {
-                if (explicitAttrNameToValue.has(attr.name)) {
-                    _this._addMessage(messages, [attr], explicitAttrNameToValue.get(attr.name));
-                }
-                else if (implicitAttrNames.some(function (name) { return attr.name === name; })) {
-                    _this._addMessage(messages, [attr]);
-                }
-            });
-        };
-        _ExtractVisitor.prototype._addMessage = function (messages, ast, meaningAndDesc) {
-            if (ast.length == 0 ||
-                ast.length == 1 && ast[0] instanceof Attribute && !ast[0].value) {
-                // Do not create empty messages
-                return;
-            }
-            var _a = _splitMeaningAndDesc(meaningAndDesc), meaning = _a[0], description = _a[1];
-            messages.push(new Message(ast, meaning, description));
-        };
-        /**
-         * Add the node as a child of the block when:
-         * - we are in a block,
-         * - we are not inside a ICU message (those are handled separately),
-         * - the node is a "direct child" of the block
-         */
-        _ExtractVisitor.prototype._mayBeAddBlockChildren = function (node) {
-            if (this._inI18nBlock && !this._inIcu && this._depth == this._blockStartDepth) {
-                this._blockChildren.push(node);
-            }
-        };
-        /**
-         * Marks the start of a section, see `_endSection`
-         */
-        _ExtractVisitor.prototype._startSection = function (messages) {
-            if (this._sectionStartIndex !== void 0) {
-                throw new Error('Unexpected section start');
-            }
-            this._sectionStartIndex = messages.length;
-        };
-        /**
-         * Terminates a section.
-         *
-         * If a section has only one significant children (comments not significant) then we should not
-         * keep the message
-         * from this children:
-         *
-         * `<p i18n="meaning|description">{ICU message}</p>` would produce two messages:
-         * - one for the <p> content with meaning and description,
-         * - another one for the ICU message.
-         *
-         * In this case the last message is discarded as it contains less information (the AST is
-         * otherwise identical).
-         *
-         * Note that we should still keep messages extracted from attributes inside the section (ie in the
-         * ICU message here)
-         */
-        _ExtractVisitor.prototype._endSection = function (messages, directChildren) {
-            if (this._sectionStartIndex === void 0) {
-                throw new Error('Unexpected section end');
-            }
-            var startIndex = this._sectionStartIndex;
-            var significantChildren = directChildren.reduce(function (count, node) { return count + (node instanceof Comment ? 0 : 1); }, 0);
-            if (significantChildren == 1) {
-                for (var i = startIndex; i < messages.length; i++) {
-                    var ast = messages[i].nodes;
-                    if (!(ast.length == 1 && ast[0] instanceof Attribute)) {
-                        messages.splice(i, 1);
-                        break;
-                    }
-                }
-            }
-            this._sectionStartIndex = void 0;
-        };
-        _ExtractVisitor.prototype._reportError = function (node, msg) {
-            this._errors.push(new I18nError(node.sourceSpan, msg));
-        };
-        return _ExtractVisitor;
-    }());
-    /**
-     * A Message contain a fragment (= a subtree) of the source html AST.
-     */
-    var Message = (function () {
-        function Message(nodes, meaning, description) {
-            this.nodes = nodes;
-            this.meaning = meaning;
-            this.description = description;
-        }
-        return Message;
-    }());
-    function _isOpeningComment(n) {
-        return n instanceof Comment && n.value && n.value.startsWith('i18n');
-    }
-    function _isClosingComment(n) {
-        return n instanceof Comment && n.value && n.value === '/i18n';
-    }
-    function _getI18nAttr(p) {
-        return p.attrs.find(function (attr) { return attr.name === _I18N_ATTR; }) || null;
-    }
-    function _splitMeaningAndDesc(i18n) {
-        if (!i18n)
-            return ['', ''];
-        var pipeIndex = i18n.indexOf('|');
-        return pipeIndex == -1 ? ['', i18n] : [i18n.slice(0, pipeIndex), i18n.slice(pipeIndex + 1)];
-    }
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var Message$1 = (function () {
-        function Message$1(nodes, placeholders, meaning, description) {
-            this.nodes = nodes;
-            this.placeholders = placeholders;
-            this.meaning = meaning;
-            this.description = description;
-        }
-        return Message$1;
-    }());
-    var Text$1 = (function () {
-        function Text$1(value, sourceSpan) {
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-        }
-        Text$1.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
-        return Text$1;
-    }());
-    var Container = (function () {
-        function Container(children, sourceSpan) {
-            this.children = children;
-            this.sourceSpan = sourceSpan;
-        }
-        Container.prototype.visit = function (visitor, context) { return visitor.visitContainer(this, context); };
-        return Container;
-    }());
-    var Icu = (function () {
-        function Icu(expression, type, cases, sourceSpan) {
-            this.expression = expression;
-            this.type = type;
-            this.cases = cases;
-            this.sourceSpan = sourceSpan;
-        }
-        Icu.prototype.visit = function (visitor, context) { return visitor.visitIcu(this, context); };
-        return Icu;
-    }());
-    var TagPlaceholder = (function () {
-        function TagPlaceholder(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
-            this.tag = tag;
-            this.attrs = attrs;
-            this.startName = startName;
-            this.closeName = closeName;
-            this.children = children;
-            this.isVoid = isVoid;
-            this.sourceSpan = sourceSpan;
-        }
-        TagPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitTagPlaceholder(this, context); };
-        return TagPlaceholder;
-    }());
-    var Placeholder = (function () {
-        function Placeholder(value, name, sourceSpan) {
-            if (name === void 0) { name = ''; }
-            this.value = value;
-            this.name = name;
-            this.sourceSpan = sourceSpan;
-        }
-        Placeholder.prototype.visit = function (visitor, context) { return visitor.visitPlaceholder(this, context); };
-        return Placeholder;
-    }());
-    var IcuPlaceholder = (function () {
-        function IcuPlaceholder(value, name, sourceSpan) {
-            if (name === void 0) { name = ''; }
-            this.value = value;
-            this.name = name;
-            this.sourceSpan = sourceSpan;
-        }
-        IcuPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitIcuPlaceholder(this, context); };
-        return IcuPlaceholder;
-    }());
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -3144,17 +2874,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return PlaceholderRegistry;
     }());
+    var _expParser = new Parser(new Lexer());
     /**
-     * Extract all the i18n messages from a component template.
+     * Returns a function converting html Messages to i18n Messages given an interpolationConfig
      */
-    function extractI18nMessages(sourceAst, interpolationConfig, implicitTags, implicitAttrs) {
-        var extractionResult = extractAstMessages(sourceAst, implicitTags, implicitAttrs);
-        if (extractionResult.errors.length) {
-            return [];
-        }
-        var expParser = new Parser(new Lexer());
-        var visitor = new _I18nVisitor(expParser, interpolationConfig);
-        return extractionResult.messages.map(function (msg) { return visitor.toI18nMessage(msg.nodes, msg.meaning, msg.description); });
+    function createI18nMessageFactory(interpolationConfig) {
+        var visitor = new _I18nVisitor(_expParser, interpolationConfig);
+        return function (nodes, meaning, description) { return visitor.toI18nMessage(nodes, meaning, description); };
     }
     var _I18nVisitor = (function () {
         function _I18nVisitor(_expressionParser, _interpolationConfig) {
@@ -3167,7 +2893,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._placeholderRegistry = new PlaceholderRegistry();
             this._placeholderToContent = {};
             var i18nodes = visitAll(this, nodes, {});
-            return new Message$1(i18nodes, this._placeholderToContent, meaning, description);
+            return new Message(i18nodes, this._placeholderToContent, meaning, description);
         };
         _I18nVisitor.prototype.visitElement = function (el, context) {
             var children = visitAll(this, el.children);
@@ -3248,6 +2974,494 @@ var __extends = (this && this.__extends) || function (d, b) {
     function _extractPlaceholderName(input) {
         return input.split(_CUSTOM_PH_EXP)[1];
     }
+    var ParseLocation = (function () {
+        function ParseLocation(file, offset, line, col) {
+            this.file = file;
+            this.offset = offset;
+            this.line = line;
+            this.col = col;
+        }
+        ParseLocation.prototype.toString = function () {
+            return isPresent(this.offset) ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
+        };
+        return ParseLocation;
+    }());
+    var ParseSourceFile = (function () {
+        function ParseSourceFile(content, url) {
+            this.content = content;
+            this.url = url;
+        }
+        return ParseSourceFile;
+    }());
+    var ParseSourceSpan = (function () {
+        function ParseSourceSpan(start, end, details) {
+            if (details === void 0) { details = null; }
+            this.start = start;
+            this.end = end;
+            this.details = details;
+        }
+        ParseSourceSpan.prototype.toString = function () {
+            return this.start.file.content.substring(this.start.offset, this.end.offset);
+        };
+        return ParseSourceSpan;
+    }());
+    var ParseErrorLevel;
+    (function (ParseErrorLevel) {
+        ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
+        ParseErrorLevel[ParseErrorLevel["FATAL"] = 1] = "FATAL";
+    })(ParseErrorLevel || (ParseErrorLevel = {}));
+    var ParseError = (function () {
+        function ParseError(span, msg, level) {
+            if (level === void 0) { level = ParseErrorLevel.FATAL; }
+            this.span = span;
+            this.msg = msg;
+            this.level = level;
+        }
+        ParseError.prototype.toString = function () {
+            var source = this.span.start.file.content;
+            var ctxStart = this.span.start.offset;
+            var contextStr = '';
+            var details = '';
+            if (isPresent(ctxStart)) {
+                if (ctxStart > source.length - 1) {
+                    ctxStart = source.length - 1;
+                }
+                var ctxEnd = ctxStart;
+                var ctxLen = 0;
+                var ctxLines = 0;
+                while (ctxLen < 100 && ctxStart > 0) {
+                    ctxStart--;
+                    ctxLen++;
+                    if (source[ctxStart] == '\n') {
+                        if (++ctxLines == 3) {
+                            break;
+                        }
+                    }
+                }
+                ctxLen = 0;
+                ctxLines = 0;
+                while (ctxLen < 100 && ctxEnd < source.length - 1) {
+                    ctxEnd++;
+                    ctxLen++;
+                    if (source[ctxEnd] == '\n') {
+                        if (++ctxLines == 3) {
+                            break;
+                        }
+                    }
+                }
+                var context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
+                    source.substring(this.span.start.offset, ctxEnd + 1);
+                contextStr = " (\"" + context + "\")";
+            }
+            if (this.span.details) {
+                details = ", " + this.span.details;
+            }
+            return "" + this.msg + contextStr + ": " + this.span.start + details;
+        };
+        return ParseError;
+    }());
+    /**
+     * An i18n error.
+     */
+    var I18nError = (function (_super) {
+        __extends(I18nError, _super);
+        function I18nError(span, msg) {
+            _super.call(this, span, msg);
+        }
+        return I18nError;
+    }(ParseError));
+    var _I18N_ATTR = 'i18n';
+    var _I18N_ATTR_PREFIX = 'i18n-';
+    var _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
+    /**
+     * Extract translatable messages from an html AST
+     */
+    function extractMessages(nodes, interpolationConfig, implicitTags, implicitAttrs) {
+        var visitor = new _Visitor(implicitTags, implicitAttrs);
+        return visitor.extract(nodes, interpolationConfig);
+    }
+    var ExtractionResult = (function () {
+        function ExtractionResult(messages, errors) {
+            this.messages = messages;
+            this.errors = errors;
+        }
+        return ExtractionResult;
+    }());
+    var _VisitorMode;
+    (function (_VisitorMode) {
+        _VisitorMode[_VisitorMode["Extract"] = 0] = "Extract";
+        _VisitorMode[_VisitorMode["Merge"] = 1] = "Merge";
+    })(_VisitorMode || (_VisitorMode = {}));
+    /**
+     * This Visitor is used:
+     * 1. to extract all the translatable strings from an html AST (see `extract()`),
+     * 2. to replace the translatable strings with the actual translations (see `merge()`)
+     *
+     * @internal
+     */
+    var _Visitor = (function () {
+        function _Visitor(_implicitTags, _implicitAttrs) {
+            this._implicitTags = _implicitTags;
+            this._implicitAttrs = _implicitAttrs;
+            // <el i18n>...</el>
+            this._inI18nNode = false;
+            this._depth = 0;
+            // {<icu message>}
+            this._inIcu = false;
+        }
+        /**
+         * Extracts the messages from the tree
+         */
+        _Visitor.prototype.extract = function (nodes, interpolationConfig) {
+            var _this = this;
+            this._init(_VisitorMode.Extract, interpolationConfig);
+            nodes.forEach(function (node) { return node.visit(_this, null); });
+            if (this._inI18nBlock) {
+                this._reportError(nodes[nodes.length - 1], 'Unclosed block');
+            }
+            return new ExtractionResult(this._messages, this._errors);
+        };
+        /**
+         * Returns a tree where all translatable nodes are translated
+         */
+        _Visitor.prototype.merge = function (nodes, translations, interpolationConfig) {
+            this._init(_VisitorMode.Merge, interpolationConfig);
+            this._translations = translations;
+            // Construct a single fake root element
+            var wrapper = new Element('wrapper', [], nodes, null, null, null);
+            var translatedNode = wrapper.visit(this, null);
+            if (this._inI18nBlock) {
+                this._reportError(nodes[nodes.length - 1], 'Unclosed block');
+            }
+            return translatedNode.children;
+        };
+        _Visitor.prototype.visitExpansionCase = function (icuCase, context) {
+            // Parse cases for translatable html attributes
+            var expression = visitAll(this, icuCase.expression, context);
+            if (this._mode === _VisitorMode.Merge) {
+                return new ExpansionCase(icuCase.value, expression, icuCase.sourceSpan, icuCase.valueSourceSpan, icuCase.expSourceSpan);
+            }
+        };
+        _Visitor.prototype.visitExpansion = function (icu, context) {
+            this._mayBeAddBlockChildren(icu);
+            var wasInIcu = this._inIcu;
+            if (!this._inIcu) {
+                // nested ICU messages should not be extracted but top-level translated as a whole
+                if (this._isInTranslatableSection) {
+                    this._addMessage([icu]);
+                }
+                this._inIcu = true;
+            }
+            var cases = visitAll(this, icu.cases, context);
+            if (this._mode === _VisitorMode.Merge) {
+                icu = new Expansion(icu.switchValue, icu.type, cases, icu.sourceSpan, icu.switchValueSourceSpan);
+            }
+            this._inIcu = wasInIcu;
+            return icu;
+        };
+        _Visitor.prototype.visitComment = function (comment, context) {
+            var isOpening = _isOpeningComment(comment);
+            if (isOpening && this._isInTranslatableSection) {
+                this._reportError(comment, 'Could not start a block inside a translatable section');
+                return;
+            }
+            var isClosing = _isClosingComment(comment);
+            if (isClosing && !this._inI18nBlock) {
+                this._reportError(comment, 'Trying to close an unopened block');
+                return;
+            }
+            if (!this._inI18nNode && !this._inIcu) {
+                if (!this._inI18nBlock) {
+                    if (isOpening) {
+                        this._inI18nBlock = true;
+                        this._blockStartDepth = this._depth;
+                        this._blockChildren = [];
+                        this._blockMeaningAndDesc = comment.value.replace(_I18N_COMMENT_PREFIX_REGEXP, '').trim();
+                        this._openTranslatableSection(comment);
+                    }
+                }
+                else {
+                    if (isClosing) {
+                        if (this._depth == this._blockStartDepth) {
+                            this._closeTranslatableSection(comment, this._blockChildren);
+                            this._inI18nBlock = false;
+                            var message = this._addMessage(this._blockChildren, this._blockMeaningAndDesc);
+                            return this._translateMessage(comment, message);
+                        }
+                        else {
+                            this._reportError(comment, 'I18N blocks should not cross element boundaries');
+                            return;
+                        }
+                    }
+                }
+            }
+        };
+        _Visitor.prototype.visitText = function (text, context) {
+            if (this._isInTranslatableSection) {
+                this._mayBeAddBlockChildren(text);
+            }
+            return text;
+        };
+        _Visitor.prototype.visitElement = function (el, context) {
+            var _this = this;
+            this._mayBeAddBlockChildren(el);
+            this._depth++;
+            var wasInI18nNode = this._inI18nNode;
+            var childNodes;
+            // Extract only top level nodes with the (implicit) "i18n" attribute if not in a block or an ICU
+            // message
+            var i18nAttr = _getI18nAttr(el);
+            var isImplicitI18n = this._implicitTags.some(function (tag) { return el.name === tag; });
+            if (!this._isInTranslatableSection && !this._inIcu) {
+                if (i18nAttr) {
+                    // explicit translation
+                    this._inI18nNode = true;
+                    var message = this._addMessage(el.children, i18nAttr.value);
+                    childNodes = this._translateMessage(el, message);
+                }
+                else if (isImplicitI18n) {
+                    // implicit translation
+                    this._inI18nNode = true;
+                    var message = this._addMessage(el.children);
+                    childNodes = this._translateMessage(el, message);
+                }
+                if (this._mode == _VisitorMode.Extract) {
+                    var isTranslatable = i18nAttr || isImplicitI18n;
+                    if (isTranslatable) {
+                        this._openTranslatableSection(el);
+                    }
+                    visitAll(this, el.children);
+                    if (isTranslatable) {
+                        this._closeTranslatableSection(el, el.children);
+                    }
+                }
+                if (this._mode === _VisitorMode.Merge && !i18nAttr && !isImplicitI18n) {
+                    childNodes = [];
+                    el.children.forEach(function (child) {
+                        var visited = child.visit(_this, context);
+                        if (visited && !_this._isInTranslatableSection) {
+                            // Do not add the children from translatable sections (= i18n blocks here)
+                            // They will be added when the section is close (i.e. on `<!-- /i18n -->`)
+                            childNodes = childNodes.concat(visited);
+                        }
+                    });
+                }
+            }
+            else {
+                if (i18nAttr || isImplicitI18n) {
+                    // TODO(vicb): we should probably allow nested implicit element (ie <div>)
+                    this._reportError(el, 'Could not mark an element as translatable inside a translatable section');
+                }
+                if (this._mode == _VisitorMode.Extract) {
+                    // Descend into child nodes for extraction
+                    visitAll(this, el.children);
+                }
+                if (this._mode == _VisitorMode.Merge) {
+                    // Translate attributes in ICU messages
+                    childNodes = [];
+                    el.children.forEach(function (child) {
+                        var visited = child.visit(_this, context);
+                        if (visited && !_this._isInTranslatableSection) {
+                            // Do not add the children from translatable sections (= i18n blocks here)
+                            // They will be added when the section is close (i.e. on `<!-- /i18n -->`)
+                            childNodes = childNodes.concat(visited);
+                        }
+                    });
+                }
+            }
+            this._visitAttributesOf(el);
+            this._depth--;
+            this._inI18nNode = wasInI18nNode;
+            if (this._mode === _VisitorMode.Merge) {
+                // There are no childNodes in translatable sections - those nodes will be replace anyway
+                var translatedAttrs = this._translateAttributes(el);
+                return new Element(el.name, translatedAttrs, childNodes, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
+            }
+        };
+        _Visitor.prototype.visitAttribute = function (attribute, context) {
+            throw new Error('unreachable code');
+        };
+        _Visitor.prototype._init = function (mode, interpolationConfig) {
+            this._mode = mode;
+            this._inI18nBlock = false;
+            this._inI18nNode = false;
+            this._depth = 0;
+            this._inIcu = false;
+            this._msgCountAtSectionStart = void 0;
+            this._errors = [];
+            this._messages = [];
+            this._createI18nMessage = createI18nMessageFactory(interpolationConfig);
+        };
+        // looks for translatable attributes
+        _Visitor.prototype._visitAttributesOf = function (el) {
+            var _this = this;
+            var explicitAttrNameToValue = {};
+            var implicitAttrNames = this._implicitAttrs[el.name] || [];
+            el.attrs.filter(function (attr) { return attr.name.startsWith(_I18N_ATTR_PREFIX); })
+                .forEach(function (attr) { return explicitAttrNameToValue[attr.name.slice(_I18N_ATTR_PREFIX.length)] =
+                attr.value; });
+            el.attrs.forEach(function (attr) {
+                if (attr.name in explicitAttrNameToValue) {
+                    _this._addMessage([attr], explicitAttrNameToValue[attr.name]);
+                }
+                else if (implicitAttrNames.some(function (name) { return attr.name === name; })) {
+                    _this._addMessage([attr]);
+                }
+            });
+        };
+        // add a translatable message
+        _Visitor.prototype._addMessage = function (ast, meaningAndDesc) {
+            if (ast.length == 0 ||
+                ast.length == 1 && ast[0] instanceof Attribute && !ast[0].value) {
+                // Do not create empty messages
+                return;
+            }
+            var _a = _splitMeaningAndDesc(meaningAndDesc), meaning = _a[0], description = _a[1];
+            var message = this._createI18nMessage(ast, meaning, description);
+            this._messages.push(message);
+            return message;
+        };
+        // translate the given message given the `TranslationBundle`
+        _Visitor.prototype._translateMessage = function (el, message) {
+            if (message && this._mode === _VisitorMode.Merge) {
+                var id = digestMessage(message);
+                var nodes = this._translations.get(id);
+                if (nodes) {
+                    return nodes;
+                }
+                this._reportError(el, "Translation unavailable for message id=\"" + id + "\"");
+            }
+            return [];
+        };
+        // translate the attributes of an element and remove i18n specific attributes
+        _Visitor.prototype._translateAttributes = function (el) {
+            var _this = this;
+            var attributes = el.attrs;
+            var i18nAttributeMeanings = {};
+            attributes.forEach(function (attr) {
+                if (attr.name.startsWith(_I18N_ATTR_PREFIX)) {
+                    i18nAttributeMeanings[attr.name.slice(_I18N_ATTR_PREFIX.length)] =
+                        _splitMeaningAndDesc(attr.value)[0];
+                }
+            });
+            var translatedAttributes = [];
+            attributes.forEach(function (attr) {
+                if (attr.name === _I18N_ATTR || attr.name.startsWith(_I18N_ATTR_PREFIX)) {
+                    // strip i18n specific attributes
+                    return;
+                }
+                if (i18nAttributeMeanings.hasOwnProperty(attr.name)) {
+                    var meaning = i18nAttributeMeanings[attr.name];
+                    var message = _this._createI18nMessage([attr], meaning, '');
+                    var id = digestMessage(message);
+                    var nodes = _this._translations.get(id);
+                    if (nodes) {
+                        if (nodes[0] instanceof Text) {
+                            var value = nodes[0].value;
+                            translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan));
+                        }
+                        else {
+                            _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + id + "\")");
+                        }
+                    }
+                    else {
+                        _this._reportError(el, "Translation unavailable for attribute \"" + attr.name + "\" (id=\"" + id + "\")");
+                    }
+                }
+                else {
+                    translatedAttributes.push(attr);
+                }
+            });
+            return translatedAttributes;
+        };
+        /**
+         * Add the node as a child of the block when:
+         * - we are in a block,
+         * - we are not inside a ICU message (those are handled separately),
+         * - the node is a "direct child" of the block
+         */
+        _Visitor.prototype._mayBeAddBlockChildren = function (node) {
+            if (this._inI18nBlock && !this._inIcu && this._depth == this._blockStartDepth) {
+                this._blockChildren.push(node);
+            }
+        };
+        /**
+         * Marks the start of a section, see `_endSection`
+         */
+        _Visitor.prototype._openTranslatableSection = function (node) {
+            if (this._isInTranslatableSection) {
+                this._reportError(node, 'Unexpected section start');
+            }
+            else {
+                this._msgCountAtSectionStart = this._messages.length;
+            }
+        };
+        Object.defineProperty(_Visitor.prototype, "_isInTranslatableSection", {
+            /**
+             * A translatable section could be:
+             * - a translatable element,
+             * - nodes between `<!-- i18n -->` and `<!-- /i18n -->` comments
+             */
+            get: function () {
+                return this._msgCountAtSectionStart !== void 0;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        /**
+         * Terminates a section.
+         *
+         * If a section has only one significant children (comments not significant) then we should not
+         * keep the message from this children:
+         *
+         * `<p i18n="meaning|description">{ICU message}</p>` would produce two messages:
+         * - one for the <p> content with meaning and description,
+         * - another one for the ICU message.
+         *
+         * In this case the last message is discarded as it contains less information (the AST is
+         * otherwise identical).
+         *
+         * Note that we should still keep messages extracted from attributes inside the section (ie in the
+         * ICU message here)
+         */
+        _Visitor.prototype._closeTranslatableSection = function (node, directChildren) {
+            if (!this._isInTranslatableSection) {
+                this._reportError(node, 'Unexpected section end');
+                return;
+            }
+            var startIndex = this._msgCountAtSectionStart;
+            var significantChildren = directChildren.reduce(function (count, node) { return count + (node instanceof Comment ? 0 : 1); }, 0);
+            if (significantChildren == 1) {
+                for (var i = this._messages.length - 1; i >= startIndex; i--) {
+                    var ast = this._messages[i].nodes;
+                    if (!(ast.length == 1 && ast[0] instanceof Text$1)) {
+                        this._messages.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+            this._msgCountAtSectionStart = void 0;
+        };
+        _Visitor.prototype._reportError = function (node, msg) {
+            this._errors.push(new I18nError(node.sourceSpan, msg));
+        };
+        return _Visitor;
+    }());
+    function _isOpeningComment(n) {
+        return n instanceof Comment && n.value && n.value.startsWith('i18n');
+    }
+    function _isClosingComment(n) {
+        return n instanceof Comment && n.value && n.value === '/i18n';
+    }
+    function _getI18nAttr(p) {
+        return p.attrs.find(function (attr) { return attr.name === _I18N_ATTR; }) || null;
+    }
+    function _splitMeaningAndDesc(i18n) {
+        if (!i18n)
+            return ['', ''];
+        var pipeIndex = i18n.indexOf('|');
+        return pipeIndex == -1 ? ['', i18n] : [i18n.slice(0, pipeIndex), i18n.slice(pipeIndex + 1)];
+    }
     /**
      * A container for message extracted from the templates.
      */
@@ -3264,74 +3478,15 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (htmlParserResult.errors.length) {
                 return htmlParserResult.errors;
             }
-            var messages = extractI18nMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
-            messages.forEach(function (message) {
-                var id = strHash(serializeAst(message.nodes).join('') + ("[" + message.meaning + "]"));
-                _this._messageMap[id] = message;
-            });
+            var i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
+            if (i18nParserResult.errors.length) {
+                return i18nParserResult.errors;
+            }
+            i18nParserResult.messages.forEach(function (message) { _this._messageMap[digestMessage(message)] = message; });
         };
         MessageBundle.prototype.write = function (serializer) { return serializer.write(this._messageMap); };
         return MessageBundle;
     }());
-    /**
-     * String hash function similar to java.lang.String.hashCode().
-     * The hash code for a string is computed as
-     * s[0] * 31 ^ (n - 1) + s[1] * 31 ^ (n - 2) + ... + s[n - 1],
-     * where s[i] is the ith character of the string and n is the length of
-     * the string. We mod the result to make it between 0 (inclusive) and 2^32 (exclusive).
-     *
-     * Based on goog.string.hashCode from the Google Closure library
-     * https://github.com/google/closure-library/
-     *
-     * @internal
-     */
-    // TODO(vicb): better algo (less collisions) ?
-    function strHash(str) {
-        var result = 0;
-        for (var i = 0; i < str.length; ++i) {
-            // Normalize to 4 byte range, 0 ... 2^32.
-            result = (31 * result + str.charCodeAt(i)) >>> 0;
-        }
-        return result.toString(16);
-    }
-    /**
-     * Serialize the i18n ast to something xml-like in order to generate an UID.
-     *
-     * The visitor is also used in the i18n parser tests
-     *
-     * @internal
-     */
-    var _SerializerVisitor = (function () {
-        function _SerializerVisitor() {
-        }
-        _SerializerVisitor.prototype.visitText = function (text, context) { return text.value; };
-        _SerializerVisitor.prototype.visitContainer = function (container, context) {
-            var _this = this;
-            return "[" + container.children.map(function (child) { return child.visit(_this); }).join(', ') + "]";
-        };
-        _SerializerVisitor.prototype.visitIcu = function (icu, context) {
-            var _this = this;
-            var strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
-            return "{" + icu.expression + ", " + icu.type + ", " + strCases.join(', ') + "}";
-        };
-        _SerializerVisitor.prototype.visitTagPlaceholder = function (ph, context) {
-            var _this = this;
-            return ph.isVoid ?
-                "<ph tag name=\"" + ph.startName + "\"/>" :
-                "<ph tag name=\"" + ph.startName + "\">" + ph.children.map(function (child) { return child.visit(_this); }).join(', ') + "</ph name=\"" + ph.closeName + "\">";
-        };
-        _SerializerVisitor.prototype.visitPlaceholder = function (ph, context) {
-            return "<ph name=\"" + ph.name + "\">" + ph.value + "</ph>";
-        };
-        _SerializerVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
-            return "<ph icu name=\"" + ph.name + "\">" + ph.value.visit(this) + "</ph>";
-        };
-        return _SerializerVisitor;
-    }());
-    var serializerVisitor = new _SerializerVisitor();
-    function serializeAst(ast) {
-        return ast.map(function (a) { return a.visit(serializerVisitor, null); });
-    }
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -3339,10 +3494,10 @@ var __extends = (this && this.__extends) || function (d, b) {
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    var _Visitor$1 = (function () {
-        function _Visitor$1() {
+    var _Visitor$2 = (function () {
+        function _Visitor$2() {
         }
-        _Visitor$1.prototype.visitTag = function (tag) {
+        _Visitor$2.prototype.visitTag = function (tag) {
             var _this = this;
             var strAttrs = this._serializeAttributes(tag.attrs);
             if (tag.children.length == 0) {
@@ -3351,20 +3506,20 @@ var __extends = (this && this.__extends) || function (d, b) {
             var strChildren = tag.children.map(function (node) { return node.visit(_this); });
             return "<" + tag.name + strAttrs + ">" + strChildren.join('') + "</" + tag.name + ">";
         };
-        _Visitor$1.prototype.visitText = function (text) { return text.value; };
-        _Visitor$1.prototype.visitDeclaration = function (decl) {
+        _Visitor$2.prototype.visitText = function (text) { return text.value; };
+        _Visitor$2.prototype.visitDeclaration = function (decl) {
             return "<? xml" + this._serializeAttributes(decl.attrs) + " ?>";
         };
-        _Visitor$1.prototype._serializeAttributes = function (attrs) {
+        _Visitor$2.prototype._serializeAttributes = function (attrs) {
             var strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');
             return strAttrs.length > 0 ? ' ' + strAttrs : '';
         };
-        _Visitor$1.prototype.visitDoctype = function (doctype) {
+        _Visitor$2.prototype.visitDoctype = function (doctype) {
             return "<!DOCTYPE " + doctype.rootTag + " [\n" + doctype.dtd + "\n]>";
         };
-        return _Visitor$1;
+        return _Visitor$2;
     }());
-    var _visitor = new _Visitor$1();
+    var _visitor = new _Visitor$2();
     function serialize(nodes) {
         return nodes.map(function (node) { return node.visit(_visitor); }).join('');
     }
@@ -3430,7 +3585,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         function Xmb() {
         }
         Xmb.prototype.write = function (messageMap) {
-            var visitor = new _Visitor();
+            var visitor = new _Visitor$1();
             var rootNode = new Tag(_MESSAGES_TAG);
             rootNode.children.push(new Text$2('\n'));
             Object.keys(messageMap).forEach(function (id) {
@@ -3457,17 +3612,17 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return Xmb;
     }());
-    var _Visitor = (function () {
-        function _Visitor() {
+    var _Visitor$1 = (function () {
+        function _Visitor$1() {
         }
-        _Visitor.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
-        _Visitor.prototype.visitContainer = function (container, context) {
+        _Visitor$1.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
+        _Visitor$1.prototype.visitContainer = function (container, context) {
             var _this = this;
             var nodes = [];
             container.children.forEach(function (node) { return nodes.push.apply(nodes, node.visit(_this)); });
             return nodes;
         };
-        _Visitor.prototype.visitIcu = function (icu, context) {
+        _Visitor$1.prototype.visitIcu = function (icu, context) {
             var _this = this;
             var nodes = [new Text$2("{" + icu.expression + ", " + icu.type + ", ")];
             Object.keys(icu.cases).forEach(function (c) {
@@ -3476,7 +3631,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             nodes.push(new Text$2("}"));
             return nodes;
         };
-        _Visitor.prototype.visitTagPlaceholder = function (ph, context) {
+        _Visitor$1.prototype.visitTagPlaceholder = function (ph, context) {
             var startEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("<" + ph.tag + ">")]);
             var startTagPh = new Tag(_PLACEHOLDER_TAG, { name: ph.startName }, [startEx]);
             if (ph.isVoid) {
@@ -3487,17 +3642,17 @@ var __extends = (this && this.__extends) || function (d, b) {
             var closeTagPh = new Tag(_PLACEHOLDER_TAG, { name: ph.closeName }, [closeEx]);
             return [startTagPh].concat(this.serialize(ph.children), [closeTagPh]);
         };
-        _Visitor.prototype.visitPlaceholder = function (ph, context) {
+        _Visitor$1.prototype.visitPlaceholder = function (ph, context) {
             return [new Tag(_PLACEHOLDER_TAG, { name: ph.name })];
         };
-        _Visitor.prototype.visitIcuPlaceholder = function (ph, context) {
+        _Visitor$1.prototype.visitIcuPlaceholder = function (ph, context) {
             return [new Tag(_PLACEHOLDER_TAG, { name: ph.name })];
         };
-        _Visitor.prototype.serialize = function (nodes) {
+        _Visitor$1.prototype.serialize = function (nodes) {
             var _this = this;
             return ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
         };
-        return _Visitor;
+        return _Visitor$1;
     }());
     var TokenType$1;
     (function (TokenType) {

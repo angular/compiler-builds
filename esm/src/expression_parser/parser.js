@@ -8,7 +8,7 @@
 import { Injectable } from '@angular/core';
 import * as chars from '../chars';
 import { StringWrapper, escapeRegExp, isBlank, isPresent } from '../facade/lang';
-import { DEFAULT_INTERPOLATION_CONFIG } from '../html_parser/interpolation_config';
+import { DEFAULT_INTERPOLATION_CONFIG } from '../ml_parser/interpolation_config';
 import { ASTWithSource, Binary, BindingPipe, Chain, Conditional, EmptyExpr, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding } from './ast';
 import { EOF, Lexer, TokenType, isIdentifier, isQuote } from './lexer';
 export class SplitInterpolation {
