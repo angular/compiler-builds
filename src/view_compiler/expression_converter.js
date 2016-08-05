@@ -11,7 +11,6 @@ var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
-var IMPLICIT_RECEIVER = o.variable('#implicit');
 var ExpressionWithWrappedValueInfo = (function () {
     function ExpressionWithWrappedValueInfo(expression, needsValueUnwrapper) {
         this.expression = expression;
@@ -137,7 +136,7 @@ var _AstToIrVisitor = (function () {
     };
     _AstToIrVisitor.prototype.visitImplicitReceiver = function (ast, mode) {
         ensureExpressionMode(mode, ast);
-        return IMPLICIT_RECEIVER;
+        return this._implicitReceiver;
     };
     _AstToIrVisitor.prototype.visitInterpolation = function (ast, mode) {
         ensureExpressionMode(mode, ast);
@@ -180,13 +179,10 @@ var _AstToIrVisitor = (function () {
             var args = this.visitAll(ast.args, _Mode.Expression);
             var result = null;
             var receiver = this.visit(ast.receiver, _Mode.Expression);
-            if (receiver === IMPLICIT_RECEIVER) {
+            if (receiver === this._implicitReceiver) {
                 var varExpr = this._nameResolver.getLocal(ast.name);
                 if (lang_1.isPresent(varExpr)) {
                     result = varExpr.callFn(args);
-                }
-                else {
-                    receiver = this._implicitReceiver;
                 }
             }
             if (lang_1.isBlank(result)) {
@@ -206,11 +202,8 @@ var _AstToIrVisitor = (function () {
         else {
             var result = null;
             var receiver = this.visit(ast.receiver, _Mode.Expression);
-            if (receiver === IMPLICIT_RECEIVER) {
+            if (receiver === this._implicitReceiver) {
                 result = this._nameResolver.getLocal(ast.name);
-                if (lang_1.isBlank(result)) {
-                    receiver = this._implicitReceiver;
-                }
             }
             if (lang_1.isBlank(result)) {
                 result = receiver.prop(ast.name);
@@ -220,12 +213,11 @@ var _AstToIrVisitor = (function () {
     };
     _AstToIrVisitor.prototype.visitPropertyWrite = function (ast, mode) {
         var receiver = this.visit(ast.receiver, _Mode.Expression);
-        if (receiver === IMPLICIT_RECEIVER) {
+        if (receiver === this._implicitReceiver) {
             var varExpr = this._nameResolver.getLocal(ast.name);
             if (lang_1.isPresent(varExpr)) {
                 throw new exceptions_1.BaseException('Cannot assign to a reference or variable!');
             }
-            receiver = this._implicitReceiver;
         }
         return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this.visit(ast.value, _Mode.Expression)));
     };

@@ -7,7 +7,6 @@
  */
 import { Injectable } from '@angular/core';
 import * as chars from '../chars';
-import { ListWrapper } from '../facade/collection';
 import { RegExpWrapper, StringWrapper, escapeRegExp, isBlank, isPresent } from '../facade/lang';
 import { DEFAULT_INTERPOLATION_CONFIG } from '../html_parser/interpolation_config';
 import { ASTWithSource, Binary, BindingPipe, Chain, Conditional, EmptyExpr, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding } from './ast';
@@ -452,9 +451,13 @@ export class _ParseAST {
             this.expectCharacter(chars.$RPAREN);
             return result;
         }
-        else if (this.next.isKeywordNull() || this.next.isKeywordUndefined()) {
+        else if (this.next.isKeywordNull()) {
             this.advance();
             return new LiteralPrimitive(this.span(start), null);
+        }
+        else if (this.next.isKeywordUndefined()) {
+            this.advance();
+            return new LiteralPrimitive(this.span(start), void 0);
         }
         else if (this.next.isKeywordTrue()) {
             this.advance();
@@ -463,6 +466,10 @@ export class _ParseAST {
         else if (this.next.isKeywordFalse()) {
             this.advance();
             return new LiteralPrimitive(this.span(start), false);
+        }
+        else if (this.next.isKeywordThis()) {
+            this.advance();
+            return new ImplicitReceiver(this.span(start));
         }
         else if (this.optionalCharacter(chars.$LBRACKET)) {
             this.rbracketsExpected++;
@@ -697,13 +704,7 @@ class SimpleExpressionChecker {
     visitPipe(ast, context) { this.simple = false; }
     visitKeyedRead(ast, context) { this.simple = false; }
     visitKeyedWrite(ast, context) { this.simple = false; }
-    visitAll(asts) {
-        var res = ListWrapper.createFixedSize(asts.length);
-        for (var i = 0; i < asts.length; ++i) {
-            res[i] = asts[i].visit(this);
-        }
-        return res;
-    }
+    visitAll(asts) { return asts.map(node => node.visit(this)); }
     visitChain(ast, context) { this.simple = false; }
     visitQuote(ast, context) { this.simple = false; }
 }

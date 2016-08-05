@@ -379,7 +379,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         TokenType[TokenType["Number"] = 5] = "Number";
         TokenType[TokenType["Error"] = 6] = "Error";
     })(TokenType || (TokenType = {}));
-    var KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else'];
+    var KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
     var Lexer = (function () {
         function Lexer() {
         }
@@ -426,6 +426,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         Token.prototype.isKeywordTrue = function () { return this.type == TokenType.Keyword && this.strValue == 'true'; };
         Token.prototype.isKeywordFalse = function () { return this.type == TokenType.Keyword && this.strValue == 'false'; };
+        Token.prototype.isKeywordThis = function () { return this.type == TokenType.Keyword && this.strValue == 'this'; };
         Token.prototype.isError = function () { return this.type == TokenType.Error; };
         Token.prototype.toNumber = function () { return this.type == TokenType.Number ? this.numValue : -1; };
         Token.prototype.toString = function () {
@@ -719,6 +720,57 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return code;
         }
     }
+    function assertArrayOfStrings(identifier, value) {
+        if (!_angular_core.isDevMode() || isBlank(value)) {
+            return;
+        }
+        if (!isArray(value)) {
+            throw new Error("Expected '" + identifier + "' to be an array of strings.");
+        }
+        for (var i = 0; i < value.length; i += 1) {
+            if (!isString(value[i])) {
+                throw new Error("Expected '" + identifier + "' to be an array of strings.");
+            }
+        }
+    }
+    var INTERPOLATION_BLACKLIST_REGEXPS = [
+        /^\s*$/,
+        /[<>]/,
+        /^[{}]$/,
+        /&(#|[a-z])/i,
+        /^\/\//,
+    ];
+    function assertInterpolationSymbols(identifier, value) {
+        if (isPresent(value) && !(isArray(value) && value.length == 2)) {
+            throw new Error("Expected '" + identifier + "' to be an array, [start, end].");
+        }
+        else if (_angular_core.isDevMode() && !isBlank(value)) {
+            var start_1 = value[0];
+            var end_1 = value[1];
+            // black list checking
+            INTERPOLATION_BLACKLIST_REGEXPS.forEach(function (regexp) {
+                if (regexp.test(start_1) || regexp.test(end_1)) {
+                    throw new Error("['" + start_1 + "', '" + end_1 + "'] contains unusable interpolation symbol.");
+                }
+            });
+        }
+    }
+    var InterpolationConfig = (function () {
+        function InterpolationConfig(start, end) {
+            this.start = start;
+            this.end = end;
+        }
+        InterpolationConfig.fromArray = function (markers) {
+            if (!markers) {
+                return DEFAULT_INTERPOLATION_CONFIG;
+            }
+            assertInterpolationSymbols('interpolation', markers);
+            return new InterpolationConfig(markers[0], markers[1]);
+        };
+        ;
+        return InterpolationConfig;
+    }());
+    var DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
     var Map$1 = global$1.Map;
     var Set$1 = global$1.Set;
     // Safari and Internet Explorer do not support the iterable parameter to the
@@ -1036,57 +1088,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         SetWrapper.delete = function (m, k) { m.delete(k); };
         return SetWrapper;
     }());
-    function assertArrayOfStrings(identifier, value) {
-        if (!_angular_core.isDevMode() || isBlank(value)) {
-            return;
-        }
-        if (!isArray(value)) {
-            throw new Error("Expected '" + identifier + "' to be an array of strings.");
-        }
-        for (var i = 0; i < value.length; i += 1) {
-            if (!isString(value[i])) {
-                throw new Error("Expected '" + identifier + "' to be an array of strings.");
-            }
-        }
-    }
-    var INTERPOLATION_BLACKLIST_REGEXPS = [
-        /^\s*$/,
-        /[<>]/,
-        /^[{}]$/,
-        /&(#|[a-z])/i,
-        /^\/\//,
-    ];
-    function assertInterpolationSymbols(identifier, value) {
-        if (isPresent(value) && !(isArray(value) && value.length == 2)) {
-            throw new Error("Expected '" + identifier + "' to be an array, [start, end].");
-        }
-        else if (_angular_core.isDevMode() && !isBlank(value)) {
-            var start_1 = value[0];
-            var end_1 = value[1];
-            // black list checking
-            INTERPOLATION_BLACKLIST_REGEXPS.forEach(function (regexp) {
-                if (regexp.test(start_1) || regexp.test(end_1)) {
-                    throw new Error("['" + start_1 + "', '" + end_1 + "'] contains unusable interpolation symbol.");
-                }
-            });
-        }
-    }
-    var InterpolationConfig = (function () {
-        function InterpolationConfig(start, end) {
-            this.start = start;
-            this.end = end;
-        }
-        InterpolationConfig.fromArray = function (markers) {
-            if (!markers) {
-                return DEFAULT_INTERPOLATION_CONFIG;
-            }
-            assertInterpolationSymbols('interpolation', markers);
-            return new InterpolationConfig(markers[0], markers[1]);
-        };
-        ;
-        return InterpolationConfig;
-    }());
-    var DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
     var ParserError = (function () {
         function ParserError(message, input, errLocation, ctxLocation) {
             this.input = input;
@@ -1950,9 +1951,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this.expectCharacter($RPAREN);
                 return result;
             }
-            else if (this.next.isKeywordNull() || this.next.isKeywordUndefined()) {
+            else if (this.next.isKeywordNull()) {
                 this.advance();
                 return new LiteralPrimitive(this.span(start), null);
+            }
+            else if (this.next.isKeywordUndefined()) {
+                this.advance();
+                return new LiteralPrimitive(this.span(start), void 0);
             }
             else if (this.next.isKeywordTrue()) {
                 this.advance();
@@ -1961,6 +1966,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             else if (this.next.isKeywordFalse()) {
                 this.advance();
                 return new LiteralPrimitive(this.span(start), false);
+            }
+            else if (this.next.isKeywordThis()) {
+                this.advance();
+                return new ImplicitReceiver(this.span(start));
             }
             else if (this.optionalCharacter($LBRACKET)) {
                 this.rbracketsExpected++;
@@ -2200,11 +2209,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         SimpleExpressionChecker.prototype.visitKeyedRead = function (ast, context) { this.simple = false; };
         SimpleExpressionChecker.prototype.visitKeyedWrite = function (ast, context) { this.simple = false; };
         SimpleExpressionChecker.prototype.visitAll = function (asts) {
-            var res = ListWrapper.createFixedSize(asts.length);
-            for (var i = 0; i < asts.length; ++i) {
-                res[i] = asts[i].visit(this);
-            }
-            return res;
+            var _this = this;
+            return asts.map(function (node) { return node.visit(_this); });
         };
         SimpleExpressionChecker.prototype.visitChain = function (ast, context) { this.simple = false; };
         SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { this.simple = false; };
@@ -10931,7 +10937,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             return ViewType.COMPONENT;
         }
     }
-    var IMPLICIT_RECEIVER = variable('#implicit');
     var ExpressionWithWrappedValueInfo = (function () {
         function ExpressionWithWrappedValueInfo(expression, needsValueUnwrapper) {
             this.expression = expression;
@@ -11054,7 +11059,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _AstToIrVisitor.prototype.visitImplicitReceiver = function (ast, mode) {
             ensureExpressionMode(mode, ast);
-            return IMPLICIT_RECEIVER;
+            return this._implicitReceiver;
         };
         _AstToIrVisitor.prototype.visitInterpolation = function (ast, mode) {
             ensureExpressionMode(mode, ast);
@@ -11097,13 +11102,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var args = this.visitAll(ast.args, _Mode.Expression);
                 var result = null;
                 var receiver = this.visit(ast.receiver, _Mode.Expression);
-                if (receiver === IMPLICIT_RECEIVER) {
+                if (receiver === this._implicitReceiver) {
                     var varExpr = this._nameResolver.getLocal(ast.name);
                     if (isPresent(varExpr)) {
                         result = varExpr.callFn(args);
-                    }
-                    else {
-                        receiver = this._implicitReceiver;
                     }
                 }
                 if (isBlank(result)) {
@@ -11123,11 +11125,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             else {
                 var result = null;
                 var receiver = this.visit(ast.receiver, _Mode.Expression);
-                if (receiver === IMPLICIT_RECEIVER) {
+                if (receiver === this._implicitReceiver) {
                     result = this._nameResolver.getLocal(ast.name);
-                    if (isBlank(result)) {
-                        receiver = this._implicitReceiver;
-                    }
                 }
                 if (isBlank(result)) {
                     result = receiver.prop(ast.name);
@@ -11137,12 +11136,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _AstToIrVisitor.prototype.visitPropertyWrite = function (ast, mode) {
             var receiver = this.visit(ast.receiver, _Mode.Expression);
-            if (receiver === IMPLICIT_RECEIVER) {
+            if (receiver === this._implicitReceiver) {
                 var varExpr = this._nameResolver.getLocal(ast.name);
                 if (isPresent(varExpr)) {
                     throw new BaseException('Cannot assign to a reference or variable!');
                 }
-                receiver = this._implicitReceiver;
             }
             return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this.visit(ast.value, _Mode.Expression)));
         };

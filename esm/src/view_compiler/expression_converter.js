@@ -10,7 +10,6 @@ import { BaseException } from '../facade/exceptions';
 import { isArray, isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
-var IMPLICIT_RECEIVER = o.variable('#implicit');
 export class ExpressionWithWrappedValueInfo {
     constructor(expression, needsValueUnwrapper) {
         this.expression = expression;
@@ -132,7 +131,7 @@ class _AstToIrVisitor {
     }
     visitImplicitReceiver(ast, mode) {
         ensureExpressionMode(mode, ast);
-        return IMPLICIT_RECEIVER;
+        return this._implicitReceiver;
     }
     visitInterpolation(ast, mode) {
         ensureExpressionMode(mode, ast);
@@ -175,13 +174,10 @@ class _AstToIrVisitor {
             const args = this.visitAll(ast.args, _Mode.Expression);
             let result = null;
             let receiver = this.visit(ast.receiver, _Mode.Expression);
-            if (receiver === IMPLICIT_RECEIVER) {
+            if (receiver === this._implicitReceiver) {
                 var varExpr = this._nameResolver.getLocal(ast.name);
                 if (isPresent(varExpr)) {
                     result = varExpr.callFn(args);
-                }
-                else {
-                    receiver = this._implicitReceiver;
                 }
             }
             if (isBlank(result)) {
@@ -201,11 +197,8 @@ class _AstToIrVisitor {
         else {
             let result = null;
             var receiver = this.visit(ast.receiver, _Mode.Expression);
-            if (receiver === IMPLICIT_RECEIVER) {
+            if (receiver === this._implicitReceiver) {
                 result = this._nameResolver.getLocal(ast.name);
-                if (isBlank(result)) {
-                    receiver = this._implicitReceiver;
-                }
             }
             if (isBlank(result)) {
                 result = receiver.prop(ast.name);
@@ -215,12 +208,11 @@ class _AstToIrVisitor {
     }
     visitPropertyWrite(ast, mode) {
         let receiver = this.visit(ast.receiver, _Mode.Expression);
-        if (receiver === IMPLICIT_RECEIVER) {
+        if (receiver === this._implicitReceiver) {
             var varExpr = this._nameResolver.getLocal(ast.name);
             if (isPresent(varExpr)) {
                 throw new BaseException('Cannot assign to a reference or variable!');
             }
-            receiver = this._implicitReceiver;
         }
         return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this.visit(ast.value, _Mode.Expression)));
     }

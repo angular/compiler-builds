@@ -8,7 +8,6 @@
 "use strict";
 var core_1 = require('@angular/core');
 var chars = require('../chars');
-var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
 var interpolation_config_1 = require('../html_parser/interpolation_config');
 var ast_1 = require('./ast');
@@ -472,9 +471,13 @@ var _ParseAST = (function () {
             this.expectCharacter(chars.$RPAREN);
             return result;
         }
-        else if (this.next.isKeywordNull() || this.next.isKeywordUndefined()) {
+        else if (this.next.isKeywordNull()) {
             this.advance();
             return new ast_1.LiteralPrimitive(this.span(start), null);
+        }
+        else if (this.next.isKeywordUndefined()) {
+            this.advance();
+            return new ast_1.LiteralPrimitive(this.span(start), void 0);
         }
         else if (this.next.isKeywordTrue()) {
             this.advance();
@@ -483,6 +486,10 @@ var _ParseAST = (function () {
         else if (this.next.isKeywordFalse()) {
             this.advance();
             return new ast_1.LiteralPrimitive(this.span(start), false);
+        }
+        else if (this.next.isKeywordThis()) {
+            this.advance();
+            return new ast_1.ImplicitReceiver(this.span(start));
         }
         else if (this.optionalCharacter(chars.$LBRACKET)) {
             this.rbracketsExpected++;
@@ -723,11 +730,8 @@ var SimpleExpressionChecker = (function () {
     SimpleExpressionChecker.prototype.visitKeyedRead = function (ast, context) { this.simple = false; };
     SimpleExpressionChecker.prototype.visitKeyedWrite = function (ast, context) { this.simple = false; };
     SimpleExpressionChecker.prototype.visitAll = function (asts) {
-        var res = collection_1.ListWrapper.createFixedSize(asts.length);
-        for (var i = 0; i < asts.length; ++i) {
-            res[i] = asts[i].visit(this);
-        }
-        return res;
+        var _this = this;
+        return asts.map(function (node) { return node.visit(_this); });
     };
     SimpleExpressionChecker.prototype.visitChain = function (ast, context) { this.simple = false; };
     SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { this.simple = false; };

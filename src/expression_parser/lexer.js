@@ -19,7 +19,7 @@ var lang_1 = require('../facade/lang');
     TokenType[TokenType["Error"] = 6] = "Error";
 })(exports.TokenType || (exports.TokenType = {}));
 var TokenType = exports.TokenType;
-var KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else'];
+var KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
 var Lexer = (function () {
     function Lexer() {
     }
@@ -67,6 +67,7 @@ var Token = (function () {
     };
     Token.prototype.isKeywordTrue = function () { return this.type == TokenType.Keyword && this.strValue == 'true'; };
     Token.prototype.isKeywordFalse = function () { return this.type == TokenType.Keyword && this.strValue == 'false'; };
+    Token.prototype.isKeywordThis = function () { return this.type == TokenType.Keyword && this.strValue == 'this'; };
     Token.prototype.isError = function () { return this.type == TokenType.Error; };
     Token.prototype.toNumber = function () { return this.type == TokenType.Number ? this.numValue : -1; };
     Token.prototype.toString = function () {
