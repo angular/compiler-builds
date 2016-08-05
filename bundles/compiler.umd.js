@@ -295,55 +295,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         NumberWrapper.isInteger = function (value) { return Number.isInteger(value); };
         return NumberWrapper;
     }());
-    var RegExpWrapper = (function () {
-        function RegExpWrapper() {
-        }
-        RegExpWrapper.create = function (regExpStr, flags) {
-            if (flags === void 0) { flags = ''; }
-            flags = flags.replace(/g/g, '');
-            return new global$1.RegExp(regExpStr, flags + 'g');
-        };
-        RegExpWrapper.firstMatch = function (regExp, input) {
-            // Reset multimatch regex state
-            regExp.lastIndex = 0;
-            return regExp.exec(input);
-        };
-        RegExpWrapper.test = function (regExp, input) {
-            regExp.lastIndex = 0;
-            return regExp.test(input);
-        };
-        RegExpWrapper.matcher = function (regExp, input) {
-            // Reset regex state for the case
-            // someone did not loop over all matches
-            // last time.
-            regExp.lastIndex = 0;
-            return { re: regExp, input: input };
-        };
-        RegExpWrapper.replaceAll = function (regExp, input, replace) {
-            var c = regExp.exec(input);
-            var res = '';
-            regExp.lastIndex = 0;
-            var prev = 0;
-            while (c) {
-                res += input.substring(prev, c.index);
-                res += replace(c);
-                prev = c.index + c[0].length;
-                regExp.lastIndex = prev;
-                c = regExp.exec(input);
-            }
-            res += input.substring(prev);
-            return res;
-        };
-        return RegExpWrapper;
-    }());
-    var RegExpMatcherWrapper = (function () {
-        function RegExpMatcherWrapper() {
-        }
-        RegExpMatcherWrapper.next = function (matcher) {
-            return matcher.re.exec(matcher.input);
-        };
-        return RegExpMatcherWrapper;
-    }());
     function normalizeBlank(obj) {
         return isBlank(obj) ? null : obj;
     }
@@ -1511,8 +1462,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         return TemplateBindingParseResult;
     }());
     function _createInterpolateRegExp(config) {
-        var regexp = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
-        return RegExpWrapper.create(regexp, 'g');
+        var pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
+        return new RegExp(pattern, 'g');
     }
     var Parser = (function () {
         function Parser(_lexer) {
@@ -5017,12 +4968,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         throw new BaseException('unimplemented');
     }
     var _EMPTY_ATTR_VALUE = '';
-    var _SELECTOR_REGEXP = RegExpWrapper.create('(\\:not\\()|' +
+    var _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
         '([-\\w]+)|' +
         '(?:\\.([-\\w]+))|' +
         '(?:\\[([-\\w*]+)(?:=([^\\]]*))?\\])|' +
         '(\\))|' +
-        '(\\s*,\\s*)'); // ","
+        '(\\s*,\\s*)', // ","
+    'g');
     /**
      * A css selector contains an element name,
      * css classes and attribute/value pairs with the purpose
@@ -5045,11 +4997,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                 res.push(cssSel);
             };
             var cssSelector = new CssSelector();
-            var matcher = RegExpWrapper.matcher(_SELECTOR_REGEXP, selector);
             var match;
             var current = cssSelector;
             var inNot = false;
-            while (isPresent(match = RegExpMatcherWrapper.next(matcher))) {
+            _SELECTOR_REGEXP.lastIndex = 0;
+            while (isPresent(match = _SELECTOR_REGEXP.exec(selector))) {
                 if (isPresent(match[1])) {
                     if (inNot) {
                         throw new BaseException('Nesting :not is not allowed in a selector');
@@ -5533,7 +5485,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      * @type {!RegExp}
      * @internal
      */
-    var _splitRe = RegExpWrapper.create('^' +
+    var _splitRe = new RegExp('^' +
         '(?:' +
         '([^:/?#.]+)' +
         // used by other URL parts such as :,
@@ -5580,7 +5532,7 @@ var __extends = (this && this.__extends) || function (d, b) {
      *     arbitrary strings may still look like path names.
      */
     function _split(uri) {
-        return RegExpWrapper.firstMatch(_splitRe, uri);
+        return uri.match(_splitRe);
     }
     /**
       * Removes dot segments in given path component, as described in
@@ -6661,7 +6613,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     // group 1: "prop" from "[prop]"
     // group 2: "event" from "(event)"
     // group 3: "@trigger" from "@trigger"
-    var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/g;
+    var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
     var UNDEFINED = new Object();
     var CompileMetadataWithIdentifier = (function () {
         function CompileMetadataWithIdentifier() {
@@ -7045,8 +6997,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             var hostAttributes = {};
             if (isPresent(host)) {
                 StringMapWrapper.forEach(host, function (value, key) {
-                    var matches = RegExpWrapper.firstMatch(HOST_REG_EXP, key);
-                    if (isBlank(matches)) {
+                    var matches = key.match(HOST_REG_EXP);
+                    if (matches === null) {
                         hostAttributes[key] = value;
                     }
                     else if (isPresent(matches[1])) {
@@ -7361,8 +7313,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     function isStyleUrlResolvable(url) {
         if (isBlank(url) || url.length === 0 || url[0] == '/')
             return false;
-        var schemeMatch = RegExpWrapper.firstMatch(_urlWithSchemaRe, url);
-        return isBlank(schemeMatch) || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';
+        var schemeMatch = url.match(_urlWithSchemaRe);
+        return schemeMatch === null || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';
     }
     /**
      * Rewrites stylesheets by resolving and removing the @import urls that
@@ -7382,9 +7334,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return new StyleWithImports(modifiedCssText, foundUrls);
     }
     var _cssImportRe = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-    // TODO: can't use /^[^:/?#.]+:/g due to clang-format bug:
-    //       https://github.com/angular/angular/issues/4596
-    var _urlWithSchemaRe = /^([a-zA-Z\-\+\.]+):/g;
+    var _urlWithSchemaRe = /^([^:/?#]+):/;
     var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
     var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
     var CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
@@ -8162,7 +8112,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     // Group 9 = identifier inside [()]
     // Group 10 = identifier inside []
     // Group 11 = identifier inside ()
-    var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/g;
+    var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
     var TEMPLATE_ELEMENT = 'template';
     var TEMPLATE_ATTR = 'template';
     var TEMPLATE_ATTR_PREFIX = '*';
@@ -8532,9 +8482,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         TemplateParseVisitor.prototype._parseAttr = function (isTemplateElement, attr, targetMatchableAttrs, targetProps, targetAnimationProps, targetEvents, targetRefs, targetVars) {
             var attrName = this._normalizeAttributeName(attr.name);
             var attrValue = attr.value;
-            var bindParts = RegExpWrapper.firstMatch(BIND_NAME_REGEXP, attrName);
+            var bindParts = attrName.match(BIND_NAME_REGEXP);
             var hasBinding = false;
-            if (isPresent(bindParts)) {
+            if (bindParts !== null) {
                 hasBinding = true;
                 if (isPresent(bindParts[1])) {
                     this._parsePropertyOrAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
@@ -9628,13 +9578,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
     }
     function _parseTimeExpression(exp, errors) {
-        var regex = /^([\.\d]+)(m?s)(?:\s+([\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?/gi;
+        var regex = /^([\.\d]+)(m?s)(?:\s+([\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?/i;
         var duration;
         var delay = 0;
         var easing = null;
         if (isString(exp)) {
-            var matches = RegExpWrapper.firstMatch(regex, exp);
-            if (!isPresent(matches)) {
+            var matches = exp.match(regex);
+            if (matches === null) {
                 errors.push(new AnimationParseError("The provided timing value \"" + exp + "\" is invalid."));
                 return new _AnimationTimings(0, 0, null);
             }
@@ -15340,8 +15290,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         ShadowCss.prototype._extractUnscopedRulesFromCssText = function (cssText) {
             // Difference with webcomponents.js: does not handle comments
             var r = '', m;
-            var matcher = RegExpWrapper.matcher(_cssContentUnscopedRuleRe, cssText);
-            while (isPresent(m = RegExpMatcherWrapper.next(matcher))) {
+            _cssContentUnscopedRuleRe.lastIndex = 0;
+            while ((m = _cssContentUnscopedRuleRe.exec(cssText)) !== null) {
                 var rule = m[0];
                 rule = StringWrapper.replace(rule, m[2], '');
                 rule = StringWrapper.replace(rule, m[1], m[3]);
@@ -15451,14 +15401,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         ShadowCss.prototype._selectorNeedsScoping = function (selector, scopeSelector) {
             var re = this._makeScopeMatcher(scopeSelector);
-            return !isPresent(RegExpWrapper.firstMatch(re, selector));
+            return !re.test(selector);
         };
         ShadowCss.prototype._makeScopeMatcher = function (scopeSelector) {
             var lre = /\[/g;
             var rre = /\]/g;
             scopeSelector = StringWrapper.replaceAll(scopeSelector, lre, '\\[');
             scopeSelector = StringWrapper.replaceAll(scopeSelector, rre, '\\]');
-            return RegExpWrapper.create('^(' + scopeSelector + ')' + _selectorReSuffix, 'm');
+            return new RegExp('^(' + scopeSelector + ')' + _selectorReSuffix, 'm');
         };
         ShadowCss.prototype._applySelectorScope = function (selector, scopeSelector, hostSelector) {
             // Difference from webcomponentsjs: scopeSelector could not be an array
@@ -15466,7 +15416,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         // scope via name and [is=name]
         ShadowCss.prototype._applySimpleSelectorScope = function (selector, scopeSelector, hostSelector) {
-            if (isPresent(RegExpWrapper.firstMatch(_polyfillHostRe, selector))) {
+            if (_polyfillHostRe.test(selector)) {
                 var replaceBy = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
                 selector = StringWrapper.replace(selector, _polyfillHostNoCombinator, replaceBy);
                 return StringWrapper.replaceAll(selector, _polyfillHostRe, replaceBy + ' ');
@@ -15491,9 +15441,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     var t = StringWrapper.replaceAll(p.trim(), _polyfillHostRe, '');
                     if (t.length > 0 && !ListWrapper.contains(splits, t) &&
                         !StringWrapper.contains(t, attrName)) {
-                        var re = /([^:]*)(:*)(.*)/g;
-                        var m = RegExpWrapper.firstMatch(re, t);
-                        if (isPresent(m)) {
+                        var m = t.match(/([^:]*)(:*)(.*)/);
+                        if (m !== null) {
                             p = m[1] + attrName + m[2] + m[3];
                         }
                     }
@@ -15519,8 +15468,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     var _parenSuffix = ')(?:\\((' +
         '(?:\\([^)(]*\\)|[^)(]*)+?' +
         ')\\))?([^,{]*)';
-    var _cssColonHostRe = RegExpWrapper.create('(' + _polyfillHost + _parenSuffix, 'im');
-    var _cssColonHostContextRe = RegExpWrapper.create('(' + _polyfillHostContext + _parenSuffix, 'im');
+    var _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
+    var _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
     var _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
     var _shadowDOMSelectorsRe = [
         /::shadow/g, /::content/g,
@@ -15532,7 +15481,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     var _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
     var _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
-    var _polyfillHostRe = RegExpWrapper.create(_polyfillHost, 'im');
+    var _polyfillHostRe = new RegExp(_polyfillHost, 'im');
     var _colonHostRe = /:host/gim;
     var _colonHostContextRe = /:host-context/gim;
     var _commentRe = /\/\*[\s\S]*?\*\//g;
@@ -16631,7 +16580,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return result;
     }
     // asset:<package-name>/<realm>/<path-to-module>
-    var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/g;
+    var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
     /**
      * Interface that defines how import statements should be generated.
      */
@@ -16649,8 +16598,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         AssetUrl.parse = function (url, allowNonMatching) {
             if (allowNonMatching === void 0) { allowNonMatching = true; }
-            var match = RegExpWrapper.firstMatch(_ASSET_URL_RE, url);
-            if (isPresent(match)) {
+            var match = url.match(_ASSET_URL_RE);
+            if (match !== null) {
                 return new AssetUrl(match[1], match[2], match[3]);
             }
             if (allowNonMatching) {

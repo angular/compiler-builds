@@ -8,7 +8,7 @@
 import { Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@angular/core';
 import { Console, MAX_INTERPOLATION_VALUES } from '../../core_private';
 import { ListWrapper, StringMapWrapper, SetWrapper } from '../facade/collection';
-import { RegExpWrapper, isPresent, isBlank } from '../facade/lang';
+import { isPresent, isBlank } from '../facade/lang';
 import { BaseException } from '../facade/exceptions';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
@@ -38,7 +38,7 @@ import { ProviderElementContext, ProviderViewContext } from '../provider_analyze
 // Group 9 = identifier inside [()]
 // Group 10 = identifier inside []
 // Group 11 = identifier inside ()
-const BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/g;
+const BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
 const TEMPLATE_ELEMENT = 'template';
 const TEMPLATE_ATTR = 'template';
 const TEMPLATE_ATTR_PREFIX = '*';
@@ -398,9 +398,9 @@ class TemplateParseVisitor {
     _parseAttr(isTemplateElement, attr, targetMatchableAttrs, targetProps, targetAnimationProps, targetEvents, targetRefs, targetVars) {
         const attrName = this._normalizeAttributeName(attr.name);
         const attrValue = attr.value;
-        const bindParts = RegExpWrapper.firstMatch(BIND_NAME_REGEXP, attrName);
+        const bindParts = attrName.match(BIND_NAME_REGEXP);
         let hasBinding = false;
-        if (isPresent(bindParts)) {
+        if (bindParts !== null) {
             hasBinding = true;
             if (isPresent(bindParts[1])) {
                 this._parsePropertyOrAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);

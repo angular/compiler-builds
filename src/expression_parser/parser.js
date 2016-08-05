@@ -30,8 +30,8 @@ var TemplateBindingParseResult = (function () {
 }());
 exports.TemplateBindingParseResult = TemplateBindingParseResult;
 function _createInterpolateRegExp(config) {
-    var regexp = lang_1.escapeRegExp(config.start) + '([\\s\\S]*?)' + lang_1.escapeRegExp(config.end);
-    return lang_1.RegExpWrapper.create(regexp, 'g');
+    var pattern = lang_1.escapeRegExp(config.start) + '([\\s\\S]*?)' + lang_1.escapeRegExp(config.end);
+    return new RegExp(pattern, 'g');
 }
 var Parser = (function () {
     function Parser(_lexer) {

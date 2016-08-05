@@ -44,7 +44,7 @@ var provider_analyzer_1 = require('../provider_analyzer');
 // Group 9 = identifier inside [()]
 // Group 10 = identifier inside []
 // Group 11 = identifier inside ()
-var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/g;
+var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
 var TEMPLATE_ELEMENT = 'template';
 var TEMPLATE_ATTR = 'template';
 var TEMPLATE_ATTR_PREFIX = '*';
@@ -417,9 +417,9 @@ var TemplateParseVisitor = (function () {
     TemplateParseVisitor.prototype._parseAttr = function (isTemplateElement, attr, targetMatchableAttrs, targetProps, targetAnimationProps, targetEvents, targetRefs, targetVars) {
         var attrName = this._normalizeAttributeName(attr.name);
         var attrValue = attr.value;
-        var bindParts = lang_1.RegExpWrapper.firstMatch(BIND_NAME_REGEXP, attrName);
+        var bindParts = attrName.match(BIND_NAME_REGEXP);
         var hasBinding = false;
-        if (lang_1.isPresent(bindParts)) {
+        if (bindParts !== null) {
             hasBinding = true;
             if (lang_1.isPresent(bindParts[1])) {
                 this._parsePropertyOrAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);

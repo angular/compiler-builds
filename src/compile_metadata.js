@@ -23,7 +23,7 @@ var util_1 = require('./util');
 // group 1: "prop" from "[prop]"
 // group 2: "event" from "(event)"
 // group 3: "@trigger" from "@trigger"
-var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/g;
+var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
 var UNDEFINED = new Object();
 var CompileMetadataWithIdentifier = (function () {
     function CompileMetadataWithIdentifier() {
@@ -429,8 +429,8 @@ var CompileDirectiveMetadata = (function () {
         var hostAttributes = {};
         if (lang_1.isPresent(host)) {
             collection_1.StringMapWrapper.forEach(host, function (value, key) {
-                var matches = lang_1.RegExpWrapper.firstMatch(HOST_REG_EXP, key);
-                if (lang_1.isBlank(matches)) {
+                var matches = key.match(HOST_REG_EXP);
+                if (matches === null) {
                     hostAttributes[key] = value;
                 }
                 else if (lang_1.isPresent(matches[1])) {
