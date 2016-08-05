@@ -6,16 +6,16 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
+var core_1 = require('@angular/core');
 var core_private_1 = require('../../core_private');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
-var constants_1 = require('./constants');
 var template_ast_1 = require('../template_parser/template_ast');
 var util_1 = require('../util');
-var expression_converter_1 = require('./expression_converter');
 var compile_binding_1 = require('./compile_binding');
-var core_1 = require('@angular/core');
+var constants_1 = require('./constants');
+var expression_converter_1 = require('./expression_converter');
 function createBindFieldExpr(exprIndex) {
     return o.THIS_EXPR.prop("_expr_" + exprIndex);
 }

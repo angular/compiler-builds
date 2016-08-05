@@ -5,11 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { templateVisitAll } from '../template_parser/template_ast';
-import { bindRenderText, bindRenderInputs, bindDirectiveInputs, bindDirectiveHostProps } from './property_binder';
-import { bindRenderOutputs, collectEventListeners, bindDirectiveOutputs } from './event_binder';
-import { bindDirectiveAfterContentLifecycleCallbacks, bindDirectiveAfterViewLifecycleCallbacks, bindInjectableDestroyLifecycleCallbacks, bindPipeDestroyLifecycleCallbacks, bindDirectiveDetectChangesLifecycleCallbacks } from './lifecycle_binder';
 import { identifierToken } from '../identifiers';
+import { templateVisitAll } from '../template_parser/template_ast';
+import { bindDirectiveOutputs, bindRenderOutputs, collectEventListeners } from './event_binder';
+import { bindDirectiveAfterContentLifecycleCallbacks, bindDirectiveAfterViewLifecycleCallbacks, bindDirectiveDetectChangesLifecycleCallbacks, bindInjectableDestroyLifecycleCallbacks, bindPipeDestroyLifecycleCallbacks } from './lifecycle_binder';
+import { bindDirectiveHostProps, bindDirectiveInputs, bindRenderInputs, bindRenderText } from './property_binder';
 export function bindView(view, parsedTemplate) {
     var visitor = new ViewBinderVisitor(view);
     templateVisitAll(visitor, parsedTemplate);

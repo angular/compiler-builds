@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ObservableWrapper } from '../facade/async';
 import { ListWrapper } from '../facade/collection';
 import { BaseException } from '../facade/exceptions';
 import { isPresent } from '../facade/lang';
@@ -145,7 +144,7 @@ class StatementInterpreter {
                     result = ListWrapper.concat(receiver, args[0]);
                     break;
                 case o.BuiltinMethod.SubscribeObservable:
-                    result = ObservableWrapper.subscribe(receiver, args[0]);
+                    result = receiver.subscribe({ next: args[0] });
                     break;
                 case o.BuiltinMethod.bind:
                     result = receiver.bind(args[0]);

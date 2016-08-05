@@ -5,16 +5,16 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { SecurityContext } from '@angular/core';
 import { EMPTY_STATE as EMPTY_ANIMATION_STATE, LifecycleHooks, isDefaultChangeDetectionStrategy } from '../../core_private';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
-import { DetectChangesVars, ViewProperties } from './constants';
 import { PropertyBindingType } from '../template_parser/template_ast';
 import { camelCaseToDashCase } from '../util';
-import { convertCdExpressionToIr } from './expression_converter';
 import { CompileBinding } from './compile_binding';
-import { SecurityContext } from '@angular/core';
+import { DetectChangesVars, ViewProperties } from './constants';
+import { convertCdExpressionToIr } from './expression_converter';
 function createBindFieldExpr(exprIndex) {
     return o.THIS_EXPR.prop(`_expr_${exprIndex}`);
 }

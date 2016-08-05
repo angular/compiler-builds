@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { OnInit, OnDestroy, DoCheck, OnChanges, AfterContentInit, AfterContentChecked, AfterViewInit, AfterViewChecked } from '@angular/core';
-import { reflector, LifecycleHooks } from '../core_private';
+import { AfterContentChecked, AfterContentInit, AfterViewChecked, AfterViewInit, DoCheck, OnChanges, OnDestroy, OnInit } from '@angular/core';
+import { LifecycleHooks, reflector } from '../core_private';
 import { MapWrapper } from './facade/collection';
 const LIFECYCLE_INTERFACES = MapWrapper.createFromPairs([
     [LifecycleHooks.OnInit, OnInit],

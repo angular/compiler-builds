@@ -10,7 +10,6 @@ import { Console } from '../core_private';
 import { createHostComponentMeta } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
-import { PromiseWrapper } from './facade/async';
 import { BaseException } from './facade/exceptions';
 import { isBlank, isString, stringify } from './facade/lang';
 import { CompileMetadataResolver } from './metadata_resolver';
@@ -368,7 +367,7 @@ class ModuleBoundCompiler {
                 return this._parentComponentResolver.resolveComponent(component);
             }
             else {
-                return PromiseWrapper.reject(new BaseException(`Cannot resolve component using '${component}'.`), null);
+                return Promise.reject(new BaseException(`Cannot resolve component using '${component}'.`));
             }
         }
         if (this._warnOnComponentResolver) {

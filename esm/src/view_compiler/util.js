@@ -7,8 +7,8 @@
  */
 import { BaseException } from '../facade/exceptions';
 import { isBlank, isPresent } from '../facade/lang';
-import * as o from '../output/output_ast';
 import { Identifiers } from '../identifiers';
+import * as o from '../output/output_ast';
 import { createDiTokenExpression } from '../util';
 export function getPropertyInView(property, callingView, definedView) {
     if (callingView === definedView) {

@@ -7,13 +7,13 @@
  */
 import { SchemaMetadata } from '@angular/core';
 import { Console } from '../../core_private';
-import { RecursiveAstVisitor, BindingPipe } from '../expression_parser/ast';
-import { Parser } from '../expression_parser/parser';
 import { CompileDirectiveMetadata, CompilePipeMetadata } from '../compile_metadata';
+import { BindingPipe, RecursiveAstVisitor } from '../expression_parser/ast';
+import { Parser } from '../expression_parser/parser';
 import { HtmlParser } from '../html_parser/html_parser';
-import { ParseSourceSpan, ParseError, ParseErrorLevel } from '../parse_util';
-import { TemplateAst, TemplateAstVisitor } from './template_ast';
+import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
+import { TemplateAst, TemplateAstVisitor } from './template_ast';
 /**
  * Provides an array of {@link TemplateAstVisitor}s which will be used to transform
  * parsed templates before compilation is invoked, allowing custom expression syntax

@@ -11,18 +11,18 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+var compile_metadata_1 = require('../compile_metadata');
 var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
 var value_util_1 = require('../output/value_util');
 var template_ast_1 = require('../template_parser/template_ast');
-var constants_1 = require('./constants');
-var compile_metadata_1 = require('../compile_metadata');
-var util_1 = require('./util');
-var compile_query_1 = require('./compile_query');
+var util_1 = require('../util');
 var compile_method_1 = require('./compile_method');
-var util_2 = require('../util');
+var compile_query_1 = require('./compile_query');
+var constants_1 = require('./constants');
+var util_2 = require('./util');
 var CompileNode = (function () {
     function CompileNode(parent, view, nodeIndex, renderNode, sourceAst) {
         this.parent = parent;
@@ -86,7 +86,7 @@ var CompileElement = (function (_super) {
         }
         var createComponentFactoryResolverExpr = o.importExpr(identifiers_1.Identifiers.CodegenComponentFactoryResolver).instantiate([
             o.literalArr(entryComponents.map(function (entryComponent) { return o.importExpr(entryComponent); })),
-            util_1.injectFromViewParentInjector(identifiers_1.identifierToken(identifiers_1.Identifiers.ComponentFactoryResolver), false)
+            util_2.injectFromViewParentInjector(identifiers_1.identifierToken(identifiers_1.Identifiers.ComponentFactoryResolver), false)
         ]);
         var provider = new compile_metadata_1.CompileProviderMetadata({
             token: identifiers_1.identifierToken(identifiers_1.Identifiers.ComponentFactoryResolver),
@@ -228,7 +228,7 @@ var CompileElement = (function (_super) {
             null;
     };
     CompileElement.prototype.getProviderTokens = function () {
-        return this._resolvedProviders.values().map(function (resolvedProvider) { return util_2.createDiTokenExpression(resolvedProvider.token); });
+        return this._resolvedProviders.values().map(function (resolvedProvider) { return util_1.createDiTokenExpression(resolvedProvider.token); });
     };
     CompileElement.prototype._getQueriesFor = function (token) {
         var result = [];
@@ -277,7 +277,7 @@ var CompileElement = (function (_super) {
                         return this._compViewExpr.prop('ref');
                     }
                     else {
-                        return util_1.getPropertyInView(o.THIS_EXPR.prop('ref'), this.view, this.view.componentView);
+                        return util_2.getPropertyInView(o.THIS_EXPR.prop('ref'), this.view, this.view.componentView);
                     }
                 }
             }
@@ -311,12 +311,12 @@ var CompileElement = (function (_super) {
             result = currElement._getLocalDependency(template_ast_1.ProviderAstType.PublicService, new compile_metadata_1.CompileDiDependencyMetadata({ token: dep.token }));
         }
         if (lang_1.isBlank(result)) {
-            result = util_1.injectFromViewParentInjector(dep.token, dep.isOptional);
+            result = util_2.injectFromViewParentInjector(dep.token, dep.isOptional);
         }
         if (lang_1.isBlank(result)) {
             result = o.NULL_EXPR;
         }
-        return util_1.getPropertyInView(result, this.view, currElement.view);
+        return util_2.getPropertyInView(result, this.view, currElement.view);
     };
     return CompileElement;
 }(CompileNode));
@@ -331,7 +331,7 @@ function createInjectInternalCondition(nodeIndex, childNodeCount, provider, prov
     else {
         indexCondition = o.literal(nodeIndex).identical(constants_1.InjectMethodVars.requestNodeIndex);
     }
-    return new o.IfStmt(constants_1.InjectMethodVars.token.identical(util_2.createDiTokenExpression(provider.token)).and(indexCondition), [new o.ReturnStatement(providerExpr)]);
+    return new o.IfStmt(constants_1.InjectMethodVars.token.identical(util_1.createDiTokenExpression(provider.token)).and(indexCondition), [new o.ReturnStatement(providerExpr)]);
 }
 function createProviderProperty(propName, provider, providerValueExpressions, isMulti, isEager, compileElement) {
     var view = compileElement.view;

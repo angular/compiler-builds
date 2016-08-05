@@ -5,18 +5,18 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { CompileDiDependencyMetadata, CompileIdentifierMap, CompileProviderMetadata, CompileTokenMetadata } from '../compile_metadata';
 import { ListWrapper, StringMapWrapper } from '../facade/collection';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { convertValueToOutputAst } from '../output/value_util';
 import { ProviderAst, ProviderAstType } from '../template_parser/template_ast';
-import { InjectMethodVars } from './constants';
-import { CompileIdentifierMap, CompileTokenMetadata, CompileProviderMetadata, CompileDiDependencyMetadata } from '../compile_metadata';
-import { getPropertyInView, injectFromViewParentInjector } from './util';
-import { CompileQuery, createQueryList, addQueryToTokenMap } from './compile_query';
-import { CompileMethod } from './compile_method';
 import { createDiTokenExpression } from '../util';
+import { CompileMethod } from './compile_method';
+import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
+import { InjectMethodVars } from './constants';
+import { getPropertyInView, injectFromViewParentInjector } from './util';
 export class CompileNode {
     constructor(parent, view, nodeIndex, renderNode, sourceAst) {
         this.parent = parent;

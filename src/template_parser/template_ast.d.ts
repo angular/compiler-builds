@@ -5,11 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AST } from '../expression_parser/ast';
-import { CompileDirectiveMetadata, CompileTokenMetadata, CompileProviderMetadata } from '../compile_metadata';
-import { ParseSourceSpan } from '../parse_util';
 import { SecurityContext } from '@angular/core';
 import { LifecycleHooks } from '../../core_private';
+import { CompileDirectiveMetadata, CompileProviderMetadata, CompileTokenMetadata } from '../compile_metadata';
+import { AST } from '../expression_parser/ast';
+import { ParseSourceSpan } from '../parse_util';
 /**
  * An Abstract Syntax Tree node representing part of a parsed Angular template.
  */

@@ -11,7 +11,6 @@ var core_private_1 = require('../core_private');
 var compile_metadata_1 = require('./compile_metadata');
 var config_1 = require('./config');
 var directive_normalizer_1 = require('./directive_normalizer');
-var async_1 = require('./facade/async');
 var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var metadata_resolver_1 = require('./metadata_resolver');
@@ -398,7 +397,7 @@ var ModuleBoundCompiler = (function () {
                 return this._parentComponentResolver.resolveComponent(component);
             }
             else {
-                return async_1.PromiseWrapper.reject(new exceptions_1.BaseException("Cannot resolve component using '" + component + "'."), null);
+                return Promise.reject(new exceptions_1.BaseException("Cannot resolve component using '" + component + "'."));
             }
         }
         if (this._warnOnComponentResolver) {

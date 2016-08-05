@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var async_1 = require('../facade/async');
 var collection_1 = require('../facade/collection');
 var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
@@ -160,7 +159,7 @@ var StatementInterpreter = (function () {
                     result = collection_1.ListWrapper.concat(receiver, args[0]);
                     break;
                 case o.BuiltinMethod.SubscribeObservable:
-                    result = async_1.ObservableWrapper.subscribe(receiver, args[0]);
+                    result = receiver.subscribe({ next: args[0] });
                     break;
                 case o.BuiltinMethod.bind:
                     result = receiver.bind(args[0]);

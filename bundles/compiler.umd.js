@@ -9,10 +9,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/core'), require('rxjs/Subject'), require('rxjs/observable/PromiseObservable'), require('rxjs/operator/toPromise'), require('rxjs/Observable')) :
-        typeof define === 'function' && define.amd ? define(['exports', '@angular/core', 'rxjs/Subject', 'rxjs/observable/PromiseObservable', 'rxjs/operator/toPromise', 'rxjs/Observable'], factory) :
-            (factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}), global.ng.core, global.Rx, global.Rx, global.Rx.Observable.prototype, global.Rx));
-}(this, function (exports, _angular_core, rxjs_Subject, rxjs_observable_PromiseObservable, rxjs_operator_toPromise, rxjs_Observable) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/core')) :
+        typeof define === 'function' && define.amd ? define(['exports', '@angular/core'], factory) :
+            (factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}), global.ng.core));
+}(this, function (exports, _angular_core) {
     'use strict';
     /**
      * @license
@@ -145,7 +145,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function isArray(obj) {
         return Array.isArray(obj);
     }
-    function noop() { }
     function stringify(token) {
         if (typeof token === 'string') {
             return token;
@@ -7214,127 +7213,97 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     HtmlParser.ctorParameters = [];
+    // http://cldr.unicode.org/index/cldr-spec/plural-rules
+    var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
     /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
+     * Expands special forms into elements.
      *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
+     * For example,
+     *
+     * ```
+     * { messages.length, plural,
+     *   =0 {zero}
+     *   =1 {one}
+     *   other {more than one}
+     * }
+     * ```
+     *
+     * will be expanded into
+     *
+     * ```
+     * <ng-container [ngPlural]="messages.length">
+     *   <template ngPluralCase="=0">zero</ng-container>
+     *   <template ngPluralCase="=1">one</ng-container>
+     *   <template ngPluralCase="other">more than one</ng-container>
+     * </ng-container>
+     * ```
      */
-    var ElementSchemaRegistry = (function () {
-        function ElementSchemaRegistry() {
-        }
-        return ElementSchemaRegistry;
-    }());
-    var NG_CONTENT_SELECT_ATTR = 'select';
-    var NG_CONTENT_ELEMENT = 'ng-content';
-    var LINK_ELEMENT = 'link';
-    var LINK_STYLE_REL_ATTR = 'rel';
-    var LINK_STYLE_HREF_ATTR = 'href';
-    var LINK_STYLE_REL_VALUE = 'stylesheet';
-    var STYLE_ELEMENT = 'style';
-    var SCRIPT_ELEMENT = 'script';
-    var NG_NON_BINDABLE_ATTR = 'ngNonBindable';
-    var NG_PROJECT_AS = 'ngProjectAs';
-    function preparseElement(ast) {
-        var selectAttr = null;
-        var hrefAttr = null;
-        var relAttr = null;
-        var nonBindable = false;
-        var projectAs = null;
-        ast.attrs.forEach(function (attr) {
-            var lcAttrName = attr.name.toLowerCase();
-            if (lcAttrName == NG_CONTENT_SELECT_ATTR) {
-                selectAttr = attr.value;
-            }
-            else if (lcAttrName == LINK_STYLE_HREF_ATTR) {
-                hrefAttr = attr.value;
-            }
-            else if (lcAttrName == LINK_STYLE_REL_ATTR) {
-                relAttr = attr.value;
-            }
-            else if (attr.name == NG_NON_BINDABLE_ATTR) {
-                nonBindable = true;
-            }
-            else if (attr.name == NG_PROJECT_AS) {
-                if (attr.value.length > 0) {
-                    projectAs = attr.value;
-                }
-            }
-        });
-        selectAttr = normalizeNgContentSelect(selectAttr);
-        var nodeName = ast.name.toLowerCase();
-        var type = PreparsedElementType.OTHER;
-        if (splitNsName(nodeName)[1] == NG_CONTENT_ELEMENT) {
-            type = PreparsedElementType.NG_CONTENT;
-        }
-        else if (nodeName == STYLE_ELEMENT) {
-            type = PreparsedElementType.STYLE;
-        }
-        else if (nodeName == SCRIPT_ELEMENT) {
-            type = PreparsedElementType.SCRIPT;
-        }
-        else if (nodeName == LINK_ELEMENT && relAttr == LINK_STYLE_REL_VALUE) {
-            type = PreparsedElementType.STYLESHEET;
-        }
-        return new PreparsedElement(type, selectAttr, hrefAttr, nonBindable, projectAs);
+    function expandNodes(nodes) {
+        var expander = new _Expander();
+        return new ExpansionResult(visitAll(expander, nodes), expander.isExpanded, expander.errors);
     }
-    var PreparsedElementType;
-    (function (PreparsedElementType) {
-        PreparsedElementType[PreparsedElementType["NG_CONTENT"] = 0] = "NG_CONTENT";
-        PreparsedElementType[PreparsedElementType["STYLE"] = 1] = "STYLE";
-        PreparsedElementType[PreparsedElementType["STYLESHEET"] = 2] = "STYLESHEET";
-        PreparsedElementType[PreparsedElementType["SCRIPT"] = 3] = "SCRIPT";
-        PreparsedElementType[PreparsedElementType["OTHER"] = 4] = "OTHER";
-    })(PreparsedElementType || (PreparsedElementType = {}));
-    var PreparsedElement = (function () {
-        function PreparsedElement(type, selectAttr, hrefAttr, nonBindable, projectAs) {
-            this.type = type;
-            this.selectAttr = selectAttr;
-            this.hrefAttr = hrefAttr;
-            this.nonBindable = nonBindable;
-            this.projectAs = projectAs;
+    var ExpansionResult = (function () {
+        function ExpansionResult(nodes, expanded, errors) {
+            this.nodes = nodes;
+            this.expanded = expanded;
+            this.errors = errors;
         }
-        return PreparsedElement;
+        return ExpansionResult;
     }());
-    function normalizeNgContentSelect(selectAttr) {
-        if (selectAttr === null || selectAttr.length === 0) {
-            return '*';
+    var ExpansionError = (function (_super) {
+        __extends(ExpansionError, _super);
+        function ExpansionError(span, errorMsg) {
+            _super.call(this, span, errorMsg);
         }
-        return selectAttr;
-    }
-    var StyleWithImports = (function () {
-        function StyleWithImports(style, styleUrls) {
-            this.style = style;
-            this.styleUrls = styleUrls;
-        }
-        return StyleWithImports;
-    }());
-    function isStyleUrlResolvable(url) {
-        if (isBlank(url) || url.length === 0 || url[0] == '/')
-            return false;
-        var schemeMatch = url.match(_urlWithSchemaRe);
-        return schemeMatch === null || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';
-    }
+        return ExpansionError;
+    }(ParseError));
     /**
-     * Rewrites stylesheets by resolving and removing the @import urls that
-     * are either relative or don't have a `package:` scheme
+     * Expand expansion forms (plural, select) to directives
+     *
+     * @internal
      */
-    function extractStyleUrls(resolver, baseUrl, cssText) {
-        var foundUrls = [];
-        var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m) {
-            var url = isPresent(m[1]) ? m[1] : m[2];
-            if (!isStyleUrlResolvable(url)) {
-                // Do not attempt to resolve non-package absolute URLs with URI scheme
-                return m[0];
+    var _Expander = (function () {
+        function _Expander() {
+            this.isExpanded = false;
+            this.errors = [];
+        }
+        _Expander.prototype.visitElement = function (element, context) {
+            return new Element(element.name, element.attrs, visitAll(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        };
+        _Expander.prototype.visitAttribute = function (attribute, context) { return attribute; };
+        _Expander.prototype.visitText = function (text, context) { return text; };
+        _Expander.prototype.visitComment = function (comment, context) { return comment; };
+        _Expander.prototype.visitExpansion = function (icu, context) {
+            this.isExpanded = true;
+            return icu.type == 'plural' ? _expandPluralForm(icu, this.errors) :
+                _expandDefaultForm(icu, this.errors);
+        };
+        _Expander.prototype.visitExpansionCase = function (icuCase, context) {
+            throw new Error('Should not be reached');
+        };
+        return _Expander;
+    }());
+    function _expandPluralForm(ast, errors) {
+        var children = ast.cases.map(function (c) {
+            if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
+                errors.push(new ExpansionError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(", ")));
             }
-            foundUrls.push(resolver.resolve(baseUrl, url));
-            return '';
+            var expansionResult = expandNodes(c.expression);
+            errors.push.apply(errors, expansionResult.errors);
+            return new Element("template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         });
-        return new StyleWithImports(modifiedCssText, foundUrls);
+        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
+        return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
-    var _cssImportRe = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-    var _urlWithSchemaRe = /^([^:/?#]+):/;
+    function _expandDefaultForm(ast, errors) {
+        var children = ast.cases.map(function (c) {
+            var expansionResult = expandNodes(c.expression);
+            errors.push.apply(errors, expansionResult.errors);
+            return new Element("template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        });
+        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
+        return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    }
     var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
     var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
     var CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
@@ -7546,97 +7515,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     });
     function identifierToken(identifier) {
         return new CompileTokenMetadata({ identifier: identifier });
-    }
-    // http://cldr.unicode.org/index/cldr-spec/plural-rules
-    var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
-    /**
-     * Expands special forms into elements.
-     *
-     * For example,
-     *
-     * ```
-     * { messages.length, plural,
-     *   =0 {zero}
-     *   =1 {one}
-     *   other {more than one}
-     * }
-     * ```
-     *
-     * will be expanded into
-     *
-     * ```
-     * <ng-container [ngPlural]="messages.length">
-     *   <template ngPluralCase="=0">zero</ng-container>
-     *   <template ngPluralCase="=1">one</ng-container>
-     *   <template ngPluralCase="other">more than one</ng-container>
-     * </ng-container>
-     * ```
-     */
-    function expandNodes(nodes) {
-        var expander = new _Expander();
-        return new ExpansionResult(visitAll(expander, nodes), expander.isExpanded, expander.errors);
-    }
-    var ExpansionResult = (function () {
-        function ExpansionResult(nodes, expanded, errors) {
-            this.nodes = nodes;
-            this.expanded = expanded;
-            this.errors = errors;
-        }
-        return ExpansionResult;
-    }());
-    var ExpansionError = (function (_super) {
-        __extends(ExpansionError, _super);
-        function ExpansionError(span, errorMsg) {
-            _super.call(this, span, errorMsg);
-        }
-        return ExpansionError;
-    }(ParseError));
-    /**
-     * Expand expansion forms (plural, select) to directives
-     *
-     * @internal
-     */
-    var _Expander = (function () {
-        function _Expander() {
-            this.isExpanded = false;
-            this.errors = [];
-        }
-        _Expander.prototype.visitElement = function (element, context) {
-            return new Element(element.name, element.attrs, visitAll(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
-        };
-        _Expander.prototype.visitAttribute = function (attribute, context) { return attribute; };
-        _Expander.prototype.visitText = function (text, context) { return text; };
-        _Expander.prototype.visitComment = function (comment, context) { return comment; };
-        _Expander.prototype.visitExpansion = function (icu, context) {
-            this.isExpanded = true;
-            return icu.type == 'plural' ? _expandPluralForm(icu, this.errors) :
-                _expandDefaultForm(icu, this.errors);
-        };
-        _Expander.prototype.visitExpansionCase = function (icuCase, context) {
-            throw new Error('Should not be reached');
-        };
-        return _Expander;
-    }());
-    function _expandPluralForm(ast, errors) {
-        var children = ast.cases.map(function (c) {
-            if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
-                errors.push(new ExpansionError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(", ")));
-            }
-            var expansionResult = expandNodes(c.expression);
-            errors.push.apply(errors, expansionResult.errors);
-            return new Element("template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
-        });
-        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
-        return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
-    }
-    function _expandDefaultForm(ast, errors) {
-        var children = ast.cases.map(function (c) {
-            var expansionResult = expandNodes(c.expression);
-            errors.push.apply(errors, expansionResult.errors);
-            return new Element("template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
-        });
-        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
-        return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
     var ProviderError = (function (_super) {
         __extends(ProviderError, _super);
@@ -8100,6 +7978,127 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             entry.push(query);
         });
+    }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var ElementSchemaRegistry = (function () {
+        function ElementSchemaRegistry() {
+        }
+        return ElementSchemaRegistry;
+    }());
+    var StyleWithImports = (function () {
+        function StyleWithImports(style, styleUrls) {
+            this.style = style;
+            this.styleUrls = styleUrls;
+        }
+        return StyleWithImports;
+    }());
+    function isStyleUrlResolvable(url) {
+        if (isBlank(url) || url.length === 0 || url[0] == '/')
+            return false;
+        var schemeMatch = url.match(_urlWithSchemaRe);
+        return schemeMatch === null || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';
+    }
+    /**
+     * Rewrites stylesheets by resolving and removing the @import urls that
+     * are either relative or don't have a `package:` scheme
+     */
+    function extractStyleUrls(resolver, baseUrl, cssText) {
+        var foundUrls = [];
+        var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m) {
+            var url = isPresent(m[1]) ? m[1] : m[2];
+            if (!isStyleUrlResolvable(url)) {
+                // Do not attempt to resolve non-package absolute URLs with URI scheme
+                return m[0];
+            }
+            foundUrls.push(resolver.resolve(baseUrl, url));
+            return '';
+        });
+        return new StyleWithImports(modifiedCssText, foundUrls);
+    }
+    var _cssImportRe = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
+    var _urlWithSchemaRe = /^([^:/?#]+):/;
+    var NG_CONTENT_SELECT_ATTR = 'select';
+    var NG_CONTENT_ELEMENT = 'ng-content';
+    var LINK_ELEMENT = 'link';
+    var LINK_STYLE_REL_ATTR = 'rel';
+    var LINK_STYLE_HREF_ATTR = 'href';
+    var LINK_STYLE_REL_VALUE = 'stylesheet';
+    var STYLE_ELEMENT = 'style';
+    var SCRIPT_ELEMENT = 'script';
+    var NG_NON_BINDABLE_ATTR = 'ngNonBindable';
+    var NG_PROJECT_AS = 'ngProjectAs';
+    function preparseElement(ast) {
+        var selectAttr = null;
+        var hrefAttr = null;
+        var relAttr = null;
+        var nonBindable = false;
+        var projectAs = null;
+        ast.attrs.forEach(function (attr) {
+            var lcAttrName = attr.name.toLowerCase();
+            if (lcAttrName == NG_CONTENT_SELECT_ATTR) {
+                selectAttr = attr.value;
+            }
+            else if (lcAttrName == LINK_STYLE_HREF_ATTR) {
+                hrefAttr = attr.value;
+            }
+            else if (lcAttrName == LINK_STYLE_REL_ATTR) {
+                relAttr = attr.value;
+            }
+            else if (attr.name == NG_NON_BINDABLE_ATTR) {
+                nonBindable = true;
+            }
+            else if (attr.name == NG_PROJECT_AS) {
+                if (attr.value.length > 0) {
+                    projectAs = attr.value;
+                }
+            }
+        });
+        selectAttr = normalizeNgContentSelect(selectAttr);
+        var nodeName = ast.name.toLowerCase();
+        var type = PreparsedElementType.OTHER;
+        if (splitNsName(nodeName)[1] == NG_CONTENT_ELEMENT) {
+            type = PreparsedElementType.NG_CONTENT;
+        }
+        else if (nodeName == STYLE_ELEMENT) {
+            type = PreparsedElementType.STYLE;
+        }
+        else if (nodeName == SCRIPT_ELEMENT) {
+            type = PreparsedElementType.SCRIPT;
+        }
+        else if (nodeName == LINK_ELEMENT && relAttr == LINK_STYLE_REL_VALUE) {
+            type = PreparsedElementType.STYLESHEET;
+        }
+        return new PreparsedElement(type, selectAttr, hrefAttr, nonBindable, projectAs);
+    }
+    var PreparsedElementType;
+    (function (PreparsedElementType) {
+        PreparsedElementType[PreparsedElementType["NG_CONTENT"] = 0] = "NG_CONTENT";
+        PreparsedElementType[PreparsedElementType["STYLE"] = 1] = "STYLE";
+        PreparsedElementType[PreparsedElementType["STYLESHEET"] = 2] = "STYLESHEET";
+        PreparsedElementType[PreparsedElementType["SCRIPT"] = 3] = "SCRIPT";
+        PreparsedElementType[PreparsedElementType["OTHER"] = 4] = "OTHER";
+    })(PreparsedElementType || (PreparsedElementType = {}));
+    var PreparsedElement = (function () {
+        function PreparsedElement(type, selectAttr, hrefAttr, nonBindable, projectAs) {
+            this.type = type;
+            this.selectAttr = selectAttr;
+            this.hrefAttr = hrefAttr;
+            this.nonBindable = nonBindable;
+            this.projectAs = projectAs;
+        }
+        return PreparsedElement;
+    }());
+    function normalizeNgContentSelect(selectAttr) {
+        if (selectAttr === null || selectAttr.length === 0) {
+            return '*';
+        }
+        return selectAttr;
     }
     // Group 1 = "bind-"
     // Group 2 = "var-"
@@ -10000,101 +9999,64 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return _ValueOutputAstTransformer;
     }());
-    function _enumExpression(classIdentifier, value) {
-        if (isBlank(value))
-            return NULL_EXPR;
-        var name = resolveEnumToken(classIdentifier.runtime, value);
-        return importExpr(new CompileIdentifierMetadata({
-            name: classIdentifier.name + "." + name,
-            moduleUrl: classIdentifier.moduleUrl,
-            runtime: value
-        }));
-    }
-    var ViewTypeEnum = (function () {
-        function ViewTypeEnum() {
+    var _DebugState = (function () {
+        function _DebugState(nodeIndex, sourceAst) {
+            this.nodeIndex = nodeIndex;
+            this.sourceAst = sourceAst;
         }
-        ViewTypeEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ViewType, value);
+        return _DebugState;
+    }());
+    var NULL_DEBUG_STATE = new _DebugState(null, null);
+    var CompileMethod = (function () {
+        function CompileMethod(_view) {
+            this._view = _view;
+            this._newState = NULL_DEBUG_STATE;
+            this._currState = NULL_DEBUG_STATE;
+            this._bodyStatements = [];
+            this._debugEnabled = this._view.genConfig.genDebugInfo;
+        }
+        CompileMethod.prototype._updateDebugContextIfNeeded = function () {
+            if (this._newState.nodeIndex !== this._currState.nodeIndex ||
+                this._newState.sourceAst !== this._currState.sourceAst) {
+                var expr = this._updateDebugContext(this._newState);
+                if (isPresent(expr)) {
+                    this._bodyStatements.push(expr.toStmt());
+                }
+            }
         };
-        return ViewTypeEnum;
-    }());
-    ViewTypeEnum.HOST = ViewTypeEnum.fromValue(ViewType.HOST);
-    ViewTypeEnum.COMPONENT = ViewTypeEnum.fromValue(ViewType.COMPONENT);
-    ViewTypeEnum.EMBEDDED = ViewTypeEnum.fromValue(ViewType.EMBEDDED);
-    var ViewEncapsulationEnum = (function () {
-        function ViewEncapsulationEnum() {
-        }
-        ViewEncapsulationEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ViewEncapsulation, value);
+        CompileMethod.prototype._updateDebugContext = function (newState) {
+            this._currState = this._newState = newState;
+            if (this._debugEnabled) {
+                var sourceLocation = isPresent(newState.sourceAst) ? newState.sourceAst.sourceSpan.start : null;
+                return THIS_EXPR.callMethod('debug', [
+                    literal(newState.nodeIndex),
+                    isPresent(sourceLocation) ? literal(sourceLocation.line) : NULL_EXPR,
+                    isPresent(sourceLocation) ? literal(sourceLocation.col) : NULL_EXPR
+                ]);
+            }
+            else {
+                return null;
+            }
         };
-        return ViewEncapsulationEnum;
-    }());
-    ViewEncapsulationEnum.Emulated = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Emulated);
-    ViewEncapsulationEnum.Native = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Native);
-    ViewEncapsulationEnum.None = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.None);
-    var ChangeDetectionStrategyEnum = (function () {
-        function ChangeDetectionStrategyEnum() {
-        }
-        ChangeDetectionStrategyEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ChangeDetectionStrategy, value);
+        CompileMethod.prototype.resetDebugInfoExpr = function (nodeIndex, templateAst) {
+            var res = this._updateDebugContext(new _DebugState(nodeIndex, templateAst));
+            return isPresent(res) ? res : NULL_EXPR;
         };
-        return ChangeDetectionStrategyEnum;
-    }());
-    ChangeDetectionStrategyEnum.OnPush = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.OnPush);
-    ChangeDetectionStrategyEnum.Default = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Default);
-    var ChangeDetectorStatusEnum = (function () {
-        function ChangeDetectorStatusEnum() {
-        }
-        ChangeDetectorStatusEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ChangeDetectorStatus, value);
+        CompileMethod.prototype.resetDebugInfo = function (nodeIndex, templateAst) {
+            this._newState = new _DebugState(nodeIndex, templateAst);
         };
-        return ChangeDetectorStatusEnum;
+        CompileMethod.prototype.addStmt = function (stmt) {
+            this._updateDebugContextIfNeeded();
+            this._bodyStatements.push(stmt);
+        };
+        CompileMethod.prototype.addStmts = function (stmts) {
+            this._updateDebugContextIfNeeded();
+            ListWrapper.addAll(this._bodyStatements, stmts);
+        };
+        CompileMethod.prototype.finish = function () { return this._bodyStatements; };
+        CompileMethod.prototype.isEmpty = function () { return this._bodyStatements.length === 0; };
+        return CompileMethod;
     }());
-    ChangeDetectorStatusEnum.CheckOnce = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.CheckOnce);
-    ChangeDetectorStatusEnum.Checked = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Checked);
-    ChangeDetectorStatusEnum.CheckAlways = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.CheckAlways);
-    ChangeDetectorStatusEnum.Detached = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Detached);
-    ChangeDetectorStatusEnum.Errored = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Errored);
-    ChangeDetectorStatusEnum.Destroyed = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Destroyed);
-    var ViewConstructorVars = (function () {
-        function ViewConstructorVars() {
-        }
-        return ViewConstructorVars;
-    }());
-    ViewConstructorVars.viewUtils = variable('viewUtils');
-    ViewConstructorVars.parentInjector = variable('parentInjector');
-    ViewConstructorVars.declarationEl = variable('declarationEl');
-    var ViewProperties = (function () {
-        function ViewProperties() {
-        }
-        return ViewProperties;
-    }());
-    ViewProperties.renderer = THIS_EXPR.prop('renderer');
-    ViewProperties.projectableNodes = THIS_EXPR.prop('projectableNodes');
-    ViewProperties.viewUtils = THIS_EXPR.prop('viewUtils');
-    var EventHandlerVars = (function () {
-        function EventHandlerVars() {
-        }
-        return EventHandlerVars;
-    }());
-    EventHandlerVars.event = variable('$event');
-    var InjectMethodVars = (function () {
-        function InjectMethodVars() {
-        }
-        return InjectMethodVars;
-    }());
-    InjectMethodVars.token = variable('token');
-    InjectMethodVars.requestNodeIndex = variable('requestNodeIndex');
-    InjectMethodVars.notFoundResult = variable('notFoundResult');
-    var DetectChangesVars = (function () {
-        function DetectChangesVars() {
-        }
-        return DetectChangesVars;
-    }());
-    DetectChangesVars.throwOnChange = variable("throwOnChange");
-    DetectChangesVars.changes = variable("changes");
-    DetectChangesVars.changed = variable("changed");
-    DetectChangesVars.valUnwrapper = variable("valUnwrapper");
     function getPropertyInView(property, callingView, definedView) {
         if (callingView === definedView) {
             return property;
@@ -10265,64 +10227,101 @@ var __extends = (this && this.__extends) || function (d, b) {
             entry.push(query);
         });
     }
-    var _DebugState = (function () {
-        function _DebugState(nodeIndex, sourceAst) {
-            this.nodeIndex = nodeIndex;
-            this.sourceAst = sourceAst;
+    function _enumExpression(classIdentifier, value) {
+        if (isBlank(value))
+            return NULL_EXPR;
+        var name = resolveEnumToken(classIdentifier.runtime, value);
+        return importExpr(new CompileIdentifierMetadata({
+            name: classIdentifier.name + "." + name,
+            moduleUrl: classIdentifier.moduleUrl,
+            runtime: value
+        }));
+    }
+    var ViewTypeEnum = (function () {
+        function ViewTypeEnum() {
         }
-        return _DebugState;
+        ViewTypeEnum.fromValue = function (value) {
+            return _enumExpression(Identifiers.ViewType, value);
+        };
+        return ViewTypeEnum;
     }());
-    var NULL_DEBUG_STATE = new _DebugState(null, null);
-    var CompileMethod = (function () {
-        function CompileMethod(_view) {
-            this._view = _view;
-            this._newState = NULL_DEBUG_STATE;
-            this._currState = NULL_DEBUG_STATE;
-            this._bodyStatements = [];
-            this._debugEnabled = this._view.genConfig.genDebugInfo;
+    ViewTypeEnum.HOST = ViewTypeEnum.fromValue(ViewType.HOST);
+    ViewTypeEnum.COMPONENT = ViewTypeEnum.fromValue(ViewType.COMPONENT);
+    ViewTypeEnum.EMBEDDED = ViewTypeEnum.fromValue(ViewType.EMBEDDED);
+    var ViewEncapsulationEnum = (function () {
+        function ViewEncapsulationEnum() {
         }
-        CompileMethod.prototype._updateDebugContextIfNeeded = function () {
-            if (this._newState.nodeIndex !== this._currState.nodeIndex ||
-                this._newState.sourceAst !== this._currState.sourceAst) {
-                var expr = this._updateDebugContext(this._newState);
-                if (isPresent(expr)) {
-                    this._bodyStatements.push(expr.toStmt());
-                }
-            }
+        ViewEncapsulationEnum.fromValue = function (value) {
+            return _enumExpression(Identifiers.ViewEncapsulation, value);
         };
-        CompileMethod.prototype._updateDebugContext = function (newState) {
-            this._currState = this._newState = newState;
-            if (this._debugEnabled) {
-                var sourceLocation = isPresent(newState.sourceAst) ? newState.sourceAst.sourceSpan.start : null;
-                return THIS_EXPR.callMethod('debug', [
-                    literal(newState.nodeIndex),
-                    isPresent(sourceLocation) ? literal(sourceLocation.line) : NULL_EXPR,
-                    isPresent(sourceLocation) ? literal(sourceLocation.col) : NULL_EXPR
-                ]);
-            }
-            else {
-                return null;
-            }
-        };
-        CompileMethod.prototype.resetDebugInfoExpr = function (nodeIndex, templateAst) {
-            var res = this._updateDebugContext(new _DebugState(nodeIndex, templateAst));
-            return isPresent(res) ? res : NULL_EXPR;
-        };
-        CompileMethod.prototype.resetDebugInfo = function (nodeIndex, templateAst) {
-            this._newState = new _DebugState(nodeIndex, templateAst);
-        };
-        CompileMethod.prototype.addStmt = function (stmt) {
-            this._updateDebugContextIfNeeded();
-            this._bodyStatements.push(stmt);
-        };
-        CompileMethod.prototype.addStmts = function (stmts) {
-            this._updateDebugContextIfNeeded();
-            ListWrapper.addAll(this._bodyStatements, stmts);
-        };
-        CompileMethod.prototype.finish = function () { return this._bodyStatements; };
-        CompileMethod.prototype.isEmpty = function () { return this._bodyStatements.length === 0; };
-        return CompileMethod;
+        return ViewEncapsulationEnum;
     }());
+    ViewEncapsulationEnum.Emulated = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Emulated);
+    ViewEncapsulationEnum.Native = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Native);
+    ViewEncapsulationEnum.None = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.None);
+    var ChangeDetectionStrategyEnum = (function () {
+        function ChangeDetectionStrategyEnum() {
+        }
+        ChangeDetectionStrategyEnum.fromValue = function (value) {
+            return _enumExpression(Identifiers.ChangeDetectionStrategy, value);
+        };
+        return ChangeDetectionStrategyEnum;
+    }());
+    ChangeDetectionStrategyEnum.OnPush = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.OnPush);
+    ChangeDetectionStrategyEnum.Default = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Default);
+    var ChangeDetectorStatusEnum = (function () {
+        function ChangeDetectorStatusEnum() {
+        }
+        ChangeDetectorStatusEnum.fromValue = function (value) {
+            return _enumExpression(Identifiers.ChangeDetectorStatus, value);
+        };
+        return ChangeDetectorStatusEnum;
+    }());
+    ChangeDetectorStatusEnum.CheckOnce = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.CheckOnce);
+    ChangeDetectorStatusEnum.Checked = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Checked);
+    ChangeDetectorStatusEnum.CheckAlways = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.CheckAlways);
+    ChangeDetectorStatusEnum.Detached = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Detached);
+    ChangeDetectorStatusEnum.Errored = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Errored);
+    ChangeDetectorStatusEnum.Destroyed = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Destroyed);
+    var ViewConstructorVars = (function () {
+        function ViewConstructorVars() {
+        }
+        return ViewConstructorVars;
+    }());
+    ViewConstructorVars.viewUtils = variable('viewUtils');
+    ViewConstructorVars.parentInjector = variable('parentInjector');
+    ViewConstructorVars.declarationEl = variable('declarationEl');
+    var ViewProperties = (function () {
+        function ViewProperties() {
+        }
+        return ViewProperties;
+    }());
+    ViewProperties.renderer = THIS_EXPR.prop('renderer');
+    ViewProperties.projectableNodes = THIS_EXPR.prop('projectableNodes');
+    ViewProperties.viewUtils = THIS_EXPR.prop('viewUtils');
+    var EventHandlerVars = (function () {
+        function EventHandlerVars() {
+        }
+        return EventHandlerVars;
+    }());
+    EventHandlerVars.event = variable('$event');
+    var InjectMethodVars = (function () {
+        function InjectMethodVars() {
+        }
+        return InjectMethodVars;
+    }());
+    InjectMethodVars.token = variable('token');
+    InjectMethodVars.requestNodeIndex = variable('requestNodeIndex');
+    InjectMethodVars.notFoundResult = variable('notFoundResult');
+    var DetectChangesVars = (function () {
+        function DetectChangesVars() {
+        }
+        return DetectChangesVars;
+    }());
+    DetectChangesVars.throwOnChange = variable("throwOnChange");
+    DetectChangesVars.changes = variable("changes");
+    DetectChangesVars.changed = variable("changed");
+    DetectChangesVars.valUnwrapper = variable("valUnwrapper");
     var CompileNode = (function () {
         function CompileNode(parent, view, nodeIndex, renderNode, sourceAst) {
             this.parent = parent;
@@ -10887,6 +10886,20 @@ var __extends = (this && this.__extends) || function (d, b) {
             return ViewType.COMPONENT;
         }
     }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var CompileBinding = (function () {
+        function CompileBinding(node, sourceAst) {
+            this.node = node;
+            this.sourceAst = sourceAst;
+        }
+        return CompileBinding;
+    }());
     var ExpressionWithWrappedValueInfo = (function () {
         function ExpressionWithWrappedValueInfo(expression, needsValueUnwrapper) {
             this.expression = expression;
@@ -11209,20 +11222,180 @@ var __extends = (this && this.__extends) || function (d, b) {
             output.push(arg);
         }
     }
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var CompileBinding = (function () {
-        function CompileBinding(node, sourceAst) {
-            this.node = node;
-            this.sourceAst = sourceAst;
+    var CompileEventListener = (function () {
+        function CompileEventListener(compileElement, eventTarget, eventName, listenerIndex) {
+            this.compileElement = compileElement;
+            this.eventTarget = eventTarget;
+            this.eventName = eventName;
+            this._hasComponentHostListener = false;
+            this._actionResultExprs = [];
+            this._method = new CompileMethod(compileElement.view);
+            this._methodName =
+                "_handle_" + santitizeEventName(eventName) + "_" + compileElement.nodeIndex + "_" + listenerIndex;
+            this._eventParam = new FnParam(EventHandlerVars.event.name, importType(this.compileElement.view.genConfig.renderTypes.renderEvent));
         }
-        return CompileBinding;
+        CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, targetEventListeners) {
+            var listener = targetEventListeners.find(function (listener) { return listener.eventTarget == eventTarget && listener.eventName == eventName; });
+            if (isBlank(listener)) {
+                listener = new CompileEventListener(compileElement, eventTarget, eventName, targetEventListeners.length);
+                targetEventListeners.push(listener);
+            }
+            return listener;
+        };
+        CompileEventListener.prototype.addAction = function (hostEvent, directive, directiveInstance) {
+            if (isPresent(directive) && directive.isComponent) {
+                this._hasComponentHostListener = true;
+            }
+            this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
+            var context = isPresent(directiveInstance) ? directiveInstance :
+                this.compileElement.view.componentContext;
+            var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler);
+            var lastIndex = actionStmts.length - 1;
+            if (lastIndex >= 0) {
+                var lastStatement = actionStmts[lastIndex];
+                var returnExpr = convertStmtIntoExpression(lastStatement);
+                var preventDefaultVar = variable("pd_" + this._actionResultExprs.length);
+                this._actionResultExprs.push(preventDefaultVar);
+                if (isPresent(returnExpr)) {
+                    // Note: We need to cast the result of the method call to dynamic,
+                    // as it might be a void method!
+                    actionStmts[lastIndex] =
+                        preventDefaultVar.set(returnExpr.cast(DYNAMIC_TYPE).notIdentical(literal(false)))
+                            .toDeclStmt(null, [StmtModifier.Final]);
+                }
+            }
+            this._method.addStmts(actionStmts);
+        };
+        CompileEventListener.prototype.finishMethod = function () {
+            var markPathToRootStart = this._hasComponentHostListener ?
+                this.compileElement.appElement.prop('componentView') :
+                THIS_EXPR;
+            var resultExpr = literal(true);
+            this._actionResultExprs.forEach(function (expr) { resultExpr = resultExpr.and(expr); });
+            var stmts = [markPathToRootStart.callMethod('markPathToRootAsCheckOnce', []).toStmt()]
+                .concat(this._method.finish())
+                .concat([new ReturnStatement(resultExpr)]);
+            // private is fine here as no child view will reference the event handler...
+            this.compileElement.view.eventHandlerMethods.push(new ClassMethod(this._methodName, [this._eventParam], stmts, BOOL_TYPE, [StmtModifier.Private]));
+        };
+        CompileEventListener.prototype.listenToRenderer = function () {
+            var listenExpr;
+            var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.bind, [THIS_EXPR])]);
+            if (isPresent(this.eventTarget)) {
+                listenExpr = ViewProperties.renderer.callMethod('listenGlobal', [literal(this.eventTarget), literal(this.eventName), eventListener]);
+            }
+            else {
+                listenExpr = ViewProperties.renderer.callMethod('listen', [this.compileElement.renderNode, literal(this.eventName), eventListener]);
+            }
+            var disposable = variable("disposable_" + this.compileElement.view.disposables.length);
+            this.compileElement.view.disposables.push(disposable);
+            // private is fine here as no child view will reference the event handler...
+            this.compileElement.view.createMethod.addStmt(disposable.set(listenExpr).toDeclStmt(FUNCTION_TYPE, [StmtModifier.Private]));
+        };
+        CompileEventListener.prototype.listenToDirective = function (directiveInstance, observablePropName) {
+            var subscription = variable("subscription_" + this.compileElement.view.subscriptions.length);
+            this.compileElement.view.subscriptions.push(subscription);
+            var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.bind, [THIS_EXPR])]);
+            this.compileElement.view.createMethod.addStmt(subscription
+                .set(directiveInstance.prop(observablePropName)
+                .callMethod(BuiltinMethod.SubscribeObservable, [eventListener]))
+                .toDeclStmt(null, [StmtModifier.Final]));
+        };
+        return CompileEventListener;
     }());
+    function collectEventListeners(hostEvents, dirs, compileElement) {
+        var eventListeners = [];
+        hostEvents.forEach(function (hostEvent) {
+            compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
+            var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
+            listener.addAction(hostEvent, null, null);
+        });
+        dirs.forEach(function (directiveAst) {
+            var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
+            directiveAst.hostEvents.forEach(function (hostEvent) {
+                compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
+                var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
+                listener.addAction(hostEvent, directiveAst.directive, directiveInstance);
+            });
+        });
+        eventListeners.forEach(function (listener) { return listener.finishMethod(); });
+        return eventListeners;
+    }
+    function bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners) {
+        StringMapWrapper.forEach(directiveAst.directive.outputs, function (eventName /** TODO #9100 */, observablePropName /** TODO #9100 */) {
+            eventListeners.filter(function (listener) { return listener.eventName == eventName; }).forEach(function (listener) {
+                listener.listenToDirective(directiveInstance, observablePropName);
+            });
+        });
+    }
+    function bindRenderOutputs(eventListeners) {
+        eventListeners.forEach(function (listener) { return listener.listenToRenderer(); });
+    }
+    function convertStmtIntoExpression(stmt) {
+        if (stmt instanceof ExpressionStatement) {
+            return stmt.expr;
+        }
+        else if (stmt instanceof ReturnStatement) {
+            return stmt.value;
+        }
+        return null;
+    }
+    function santitizeEventName(name) {
+        return StringWrapper.replaceAll(name, /[^a-zA-Z_]/g, '_');
+    }
+    var STATE_IS_NEVER_CHECKED = THIS_EXPR.prop('numberOfChecks').identical(new LiteralExpr(0));
+    var NOT_THROW_ON_CHANGES = not(DetectChangesVars.throwOnChange);
+    function bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement) {
+        var view = compileElement.view;
+        var detectChangesInInputsMethod = view.detectChangesInInputsMethod;
+        var lifecycleHooks = directiveAst.directive.type.lifecycleHooks;
+        if (lifecycleHooks.indexOf(LifecycleHooks.OnChanges) !== -1 && directiveAst.inputs.length > 0) {
+            detectChangesInInputsMethod.addStmt(new IfStmt(DetectChangesVars.changes.notIdentical(NULL_EXPR), [directiveInstance.callMethod('ngOnChanges', [DetectChangesVars.changes]).toStmt()]));
+        }
+        if (lifecycleHooks.indexOf(LifecycleHooks.OnInit) !== -1) {
+            detectChangesInInputsMethod.addStmt(new IfStmt(STATE_IS_NEVER_CHECKED.and(NOT_THROW_ON_CHANGES), [directiveInstance.callMethod('ngOnInit', []).toStmt()]));
+        }
+        if (lifecycleHooks.indexOf(LifecycleHooks.DoCheck) !== -1) {
+            detectChangesInInputsMethod.addStmt(new IfStmt(NOT_THROW_ON_CHANGES, [directiveInstance.callMethod('ngDoCheck', []).toStmt()]));
+        }
+    }
+    function bindDirectiveAfterContentLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
+        var view = compileElement.view;
+        var lifecycleHooks = directiveMeta.type.lifecycleHooks;
+        var afterContentLifecycleCallbacksMethod = view.afterContentLifecycleCallbacksMethod;
+        afterContentLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
+        if (lifecycleHooks.indexOf(LifecycleHooks.AfterContentInit) !== -1) {
+            afterContentLifecycleCallbacksMethod.addStmt(new IfStmt(STATE_IS_NEVER_CHECKED, [directiveInstance.callMethod('ngAfterContentInit', []).toStmt()]));
+        }
+        if (lifecycleHooks.indexOf(LifecycleHooks.AfterContentChecked) !== -1) {
+            afterContentLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterContentChecked', []).toStmt());
+        }
+    }
+    function bindDirectiveAfterViewLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
+        var view = compileElement.view;
+        var lifecycleHooks = directiveMeta.type.lifecycleHooks;
+        var afterViewLifecycleCallbacksMethod = view.afterViewLifecycleCallbacksMethod;
+        afterViewLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
+        if (lifecycleHooks.indexOf(LifecycleHooks.AfterViewInit) !== -1) {
+            afterViewLifecycleCallbacksMethod.addStmt(new IfStmt(STATE_IS_NEVER_CHECKED, [directiveInstance.callMethod('ngAfterViewInit', []).toStmt()]));
+        }
+        if (lifecycleHooks.indexOf(LifecycleHooks.AfterViewChecked) !== -1) {
+            afterViewLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterViewChecked', []).toStmt());
+        }
+    }
+    function bindInjectableDestroyLifecycleCallbacks(provider, providerInstance, compileElement) {
+        var onDestroyMethod = compileElement.view.destroyMethod;
+        onDestroyMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
+        if (provider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
+            onDestroyMethod.addStmt(providerInstance.callMethod('ngOnDestroy', []).toStmt());
+        }
+    }
+    function bindPipeDestroyLifecycleCallbacks(pipeMeta, pipeInstance, view) {
+        var onDestroyMethod = view.destroyMethod;
+        if (pipeMeta.type.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
+            onDestroyMethod.addStmt(pipeInstance.callMethod('ngOnDestroy', []).toStmt());
+        }
+    }
     function createBindFieldExpr(exprIndex) {
         return THIS_EXPR.prop("_expr_" + exprIndex);
     }
@@ -11431,180 +11604,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         ])
             .toStmt();
         return new TryCatchStmt([tryStmt], [catchStmt]);
-    }
-    var CompileEventListener = (function () {
-        function CompileEventListener(compileElement, eventTarget, eventName, listenerIndex) {
-            this.compileElement = compileElement;
-            this.eventTarget = eventTarget;
-            this.eventName = eventName;
-            this._hasComponentHostListener = false;
-            this._actionResultExprs = [];
-            this._method = new CompileMethod(compileElement.view);
-            this._methodName =
-                "_handle_" + santitizeEventName(eventName) + "_" + compileElement.nodeIndex + "_" + listenerIndex;
-            this._eventParam = new FnParam(EventHandlerVars.event.name, importType(this.compileElement.view.genConfig.renderTypes.renderEvent));
-        }
-        CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, targetEventListeners) {
-            var listener = targetEventListeners.find(function (listener) { return listener.eventTarget == eventTarget && listener.eventName == eventName; });
-            if (isBlank(listener)) {
-                listener = new CompileEventListener(compileElement, eventTarget, eventName, targetEventListeners.length);
-                targetEventListeners.push(listener);
-            }
-            return listener;
-        };
-        CompileEventListener.prototype.addAction = function (hostEvent, directive, directiveInstance) {
-            if (isPresent(directive) && directive.isComponent) {
-                this._hasComponentHostListener = true;
-            }
-            this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
-            var context = isPresent(directiveInstance) ? directiveInstance :
-                this.compileElement.view.componentContext;
-            var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler);
-            var lastIndex = actionStmts.length - 1;
-            if (lastIndex >= 0) {
-                var lastStatement = actionStmts[lastIndex];
-                var returnExpr = convertStmtIntoExpression(lastStatement);
-                var preventDefaultVar = variable("pd_" + this._actionResultExprs.length);
-                this._actionResultExprs.push(preventDefaultVar);
-                if (isPresent(returnExpr)) {
-                    // Note: We need to cast the result of the method call to dynamic,
-                    // as it might be a void method!
-                    actionStmts[lastIndex] =
-                        preventDefaultVar.set(returnExpr.cast(DYNAMIC_TYPE).notIdentical(literal(false)))
-                            .toDeclStmt(null, [StmtModifier.Final]);
-                }
-            }
-            this._method.addStmts(actionStmts);
-        };
-        CompileEventListener.prototype.finishMethod = function () {
-            var markPathToRootStart = this._hasComponentHostListener ?
-                this.compileElement.appElement.prop('componentView') :
-                THIS_EXPR;
-            var resultExpr = literal(true);
-            this._actionResultExprs.forEach(function (expr) { resultExpr = resultExpr.and(expr); });
-            var stmts = [markPathToRootStart.callMethod('markPathToRootAsCheckOnce', []).toStmt()]
-                .concat(this._method.finish())
-                .concat([new ReturnStatement(resultExpr)]);
-            // private is fine here as no child view will reference the event handler...
-            this.compileElement.view.eventHandlerMethods.push(new ClassMethod(this._methodName, [this._eventParam], stmts, BOOL_TYPE, [StmtModifier.Private]));
-        };
-        CompileEventListener.prototype.listenToRenderer = function () {
-            var listenExpr;
-            var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.bind, [THIS_EXPR])]);
-            if (isPresent(this.eventTarget)) {
-                listenExpr = ViewProperties.renderer.callMethod('listenGlobal', [literal(this.eventTarget), literal(this.eventName), eventListener]);
-            }
-            else {
-                listenExpr = ViewProperties.renderer.callMethod('listen', [this.compileElement.renderNode, literal(this.eventName), eventListener]);
-            }
-            var disposable = variable("disposable_" + this.compileElement.view.disposables.length);
-            this.compileElement.view.disposables.push(disposable);
-            // private is fine here as no child view will reference the event handler...
-            this.compileElement.view.createMethod.addStmt(disposable.set(listenExpr).toDeclStmt(FUNCTION_TYPE, [StmtModifier.Private]));
-        };
-        CompileEventListener.prototype.listenToDirective = function (directiveInstance, observablePropName) {
-            var subscription = variable("subscription_" + this.compileElement.view.subscriptions.length);
-            this.compileElement.view.subscriptions.push(subscription);
-            var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.bind, [THIS_EXPR])]);
-            this.compileElement.view.createMethod.addStmt(subscription
-                .set(directiveInstance.prop(observablePropName)
-                .callMethod(BuiltinMethod.SubscribeObservable, [eventListener]))
-                .toDeclStmt(null, [StmtModifier.Final]));
-        };
-        return CompileEventListener;
-    }());
-    function collectEventListeners(hostEvents, dirs, compileElement) {
-        var eventListeners = [];
-        hostEvents.forEach(function (hostEvent) {
-            compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
-            var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
-            listener.addAction(hostEvent, null, null);
-        });
-        dirs.forEach(function (directiveAst) {
-            var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
-            directiveAst.hostEvents.forEach(function (hostEvent) {
-                compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
-                var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
-                listener.addAction(hostEvent, directiveAst.directive, directiveInstance);
-            });
-        });
-        eventListeners.forEach(function (listener) { return listener.finishMethod(); });
-        return eventListeners;
-    }
-    function bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners) {
-        StringMapWrapper.forEach(directiveAst.directive.outputs, function (eventName /** TODO #9100 */, observablePropName /** TODO #9100 */) {
-            eventListeners.filter(function (listener) { return listener.eventName == eventName; }).forEach(function (listener) {
-                listener.listenToDirective(directiveInstance, observablePropName);
-            });
-        });
-    }
-    function bindRenderOutputs(eventListeners) {
-        eventListeners.forEach(function (listener) { return listener.listenToRenderer(); });
-    }
-    function convertStmtIntoExpression(stmt) {
-        if (stmt instanceof ExpressionStatement) {
-            return stmt.expr;
-        }
-        else if (stmt instanceof ReturnStatement) {
-            return stmt.value;
-        }
-        return null;
-    }
-    function santitizeEventName(name) {
-        return StringWrapper.replaceAll(name, /[^a-zA-Z_]/g, '_');
-    }
-    var STATE_IS_NEVER_CHECKED = THIS_EXPR.prop('numberOfChecks').identical(new LiteralExpr(0));
-    var NOT_THROW_ON_CHANGES = not(DetectChangesVars.throwOnChange);
-    function bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement) {
-        var view = compileElement.view;
-        var detectChangesInInputsMethod = view.detectChangesInInputsMethod;
-        var lifecycleHooks = directiveAst.directive.type.lifecycleHooks;
-        if (lifecycleHooks.indexOf(LifecycleHooks.OnChanges) !== -1 && directiveAst.inputs.length > 0) {
-            detectChangesInInputsMethod.addStmt(new IfStmt(DetectChangesVars.changes.notIdentical(NULL_EXPR), [directiveInstance.callMethod('ngOnChanges', [DetectChangesVars.changes]).toStmt()]));
-        }
-        if (lifecycleHooks.indexOf(LifecycleHooks.OnInit) !== -1) {
-            detectChangesInInputsMethod.addStmt(new IfStmt(STATE_IS_NEVER_CHECKED.and(NOT_THROW_ON_CHANGES), [directiveInstance.callMethod('ngOnInit', []).toStmt()]));
-        }
-        if (lifecycleHooks.indexOf(LifecycleHooks.DoCheck) !== -1) {
-            detectChangesInInputsMethod.addStmt(new IfStmt(NOT_THROW_ON_CHANGES, [directiveInstance.callMethod('ngDoCheck', []).toStmt()]));
-        }
-    }
-    function bindDirectiveAfterContentLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
-        var view = compileElement.view;
-        var lifecycleHooks = directiveMeta.type.lifecycleHooks;
-        var afterContentLifecycleCallbacksMethod = view.afterContentLifecycleCallbacksMethod;
-        afterContentLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-        if (lifecycleHooks.indexOf(LifecycleHooks.AfterContentInit) !== -1) {
-            afterContentLifecycleCallbacksMethod.addStmt(new IfStmt(STATE_IS_NEVER_CHECKED, [directiveInstance.callMethod('ngAfterContentInit', []).toStmt()]));
-        }
-        if (lifecycleHooks.indexOf(LifecycleHooks.AfterContentChecked) !== -1) {
-            afterContentLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterContentChecked', []).toStmt());
-        }
-    }
-    function bindDirectiveAfterViewLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
-        var view = compileElement.view;
-        var lifecycleHooks = directiveMeta.type.lifecycleHooks;
-        var afterViewLifecycleCallbacksMethod = view.afterViewLifecycleCallbacksMethod;
-        afterViewLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-        if (lifecycleHooks.indexOf(LifecycleHooks.AfterViewInit) !== -1) {
-            afterViewLifecycleCallbacksMethod.addStmt(new IfStmt(STATE_IS_NEVER_CHECKED, [directiveInstance.callMethod('ngAfterViewInit', []).toStmt()]));
-        }
-        if (lifecycleHooks.indexOf(LifecycleHooks.AfterViewChecked) !== -1) {
-            afterViewLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterViewChecked', []).toStmt());
-        }
-    }
-    function bindInjectableDestroyLifecycleCallbacks(provider, providerInstance, compileElement) {
-        var onDestroyMethod = compileElement.view.destroyMethod;
-        onDestroyMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-        if (provider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
-            onDestroyMethod.addStmt(providerInstance.callMethod('ngOnDestroy', []).toStmt());
-        }
-    }
-    function bindPipeDestroyLifecycleCallbacks(pipeMeta, pipeInstance, view) {
-        var onDestroyMethod = view.destroyMethod;
-        if (pipeMeta.type.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
-            onDestroyMethod.addStmt(pipeInstance.callMethod('ngOnDestroy', []).toStmt());
-        }
     }
     function bindView(view, parsedTemplate) {
         var visitor = new ViewBinderVisitor(view);
@@ -12607,86 +12606,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             template: template
         });
     }
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var PromiseCompleter = (function () {
-        function PromiseCompleter() {
-            var _this = this;
-            this.promise = new Promise(function (res, rej) {
-                _this.resolve = res;
-                _this.reject = rej;
-            });
-        }
-        return PromiseCompleter;
-    }());
-    var PromiseWrapper = (function () {
-        function PromiseWrapper() {
-        }
-        PromiseWrapper.resolve = function (obj) { return Promise.resolve(obj); };
-        PromiseWrapper.reject = function (obj, _) { return Promise.reject(obj); };
-        // Note: We can't rename this method into `catch`, as this is not a valid
-        // method name in Dart.
-        PromiseWrapper.catchError = function (promise, onError) {
-            return promise.catch(onError);
-        };
-        PromiseWrapper.all = function (promises) {
-            if (promises.length == 0)
-                return Promise.resolve([]);
-            return Promise.all(promises);
-        };
-        PromiseWrapper.then = function (promise, success, rejection) {
-            return promise.then(success, rejection);
-        };
-        PromiseWrapper.wrap = function (computation) {
-            return new Promise(function (res, rej) {
-                try {
-                    res(computation());
-                }
-                catch (e) {
-                    rej(e);
-                }
-            });
-        };
-        PromiseWrapper.scheduleMicrotask = function (computation) {
-            PromiseWrapper.then(PromiseWrapper.resolve(null), computation, function (_) { });
-        };
-        PromiseWrapper.completer = function () { return new PromiseCompleter(); };
-        return PromiseWrapper;
-    }());
-    var ObservableWrapper = (function () {
-        function ObservableWrapper() {
-        }
-        // TODO(vsavkin): when we use rxnext, try inferring the generic type from the first arg
-        ObservableWrapper.subscribe = function (emitter, onNext, onError, onComplete) {
-            if (onComplete === void 0) { onComplete = function () { }; }
-            onError = (typeof onError === 'function') && onError || noop;
-            onComplete = (typeof onComplete === 'function') && onComplete || noop;
-            return emitter.subscribe({ next: onNext, error: onError, complete: onComplete });
-        };
-        ObservableWrapper.isObservable = function (obs) { return !!obs.subscribe; };
-        /**
-         * Returns whether `obs` has any subscribers listening to events.
-         */
-        ObservableWrapper.hasSubscribers = function (obs) { return obs.observers.length > 0; };
-        ObservableWrapper.dispose = function (subscription) { subscription.unsubscribe(); };
-        /**
-         * @deprecated - use callEmit() instead
-         */
-        ObservableWrapper.callNext = function (emitter, value) { emitter.emit(value); };
-        ObservableWrapper.callEmit = function (emitter, value) { emitter.emit(value); };
-        ObservableWrapper.callError = function (emitter, error) { emitter.error(error); };
-        ObservableWrapper.callComplete = function (emitter) { emitter.complete(); };
-        ObservableWrapper.fromPromise = function (promise) {
-            return rxjs_observable_PromiseObservable.PromiseObservable.create(promise);
-        };
-        ObservableWrapper.toPromise = function (obj) { return rxjs_operator_toPromise.toPromise.call(obj); };
-        return ObservableWrapper;
-    }());
     function _isDirectiveMetadata(type) {
         return type instanceof _angular_core.DirectiveMetadata;
     }
@@ -14694,7 +14613,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         result = ListWrapper.concat(receiver, args[0]);
                         break;
                     case BuiltinMethod.SubscribeObservable:
-                        result = ObservableWrapper.subscribe(receiver, args[0]);
+                        result = receiver.subscribe({ next: args[0] });
                         break;
                     case BuiltinMethod.bind:
                         result = receiver.bind(args[0]);
@@ -16013,7 +15932,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     return this._parentComponentResolver.resolveComponent(component);
                 }
                 else {
-                    return PromiseWrapper.reject(new BaseException("Cannot resolve component using '" + component + "'."), null);
+                    return Promise.reject(new BaseException("Cannot resolve component using '" + component + "'."));
                 }
             }
             if (this._warnOnComponentResolver) {

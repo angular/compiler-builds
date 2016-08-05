@@ -1,7 +1,7 @@
+import { ParseError, ParseSourceSpan } from '../parse_util';
 import * as html from './ast';
-import { ParseSourceSpan, ParseError } from '../parse_util';
-import { TagDefinition } from './tags';
 import { InterpolationConfig } from './interpolation_config';
+import { TagDefinition } from './tags';
 export declare class TreeError extends ParseError {
     elementName: string;
     static create(elementName: string, span: ParseSourceSpan, msg: string): TreeError;

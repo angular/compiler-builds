@@ -8,8 +8,8 @@
 "use strict";
 var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
-var o = require('../output/output_ast');
 var identifiers_1 = require('../identifiers');
+var o = require('../output/output_ast');
 var util_1 = require('../util');
 function getPropertyInView(property, callingView, definedView) {
     if (callingView === definedView) {

@@ -11,13 +11,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var lang_1 = require('../facade/lang');
 var collection_1 = require('../facade/collection');
-var html = require('./ast');
-var lex = require('./lexer');
+var lang_1 = require('../facade/lang');
 var parse_util_1 = require('../parse_util');
-var tags_1 = require('./tags');
+var html = require('./ast');
 var interpolation_config_1 = require('./interpolation_config');
+var lex = require('./lexer');
+var tags_1 = require('./tags');
 var TreeError = (function (_super) {
     __extends(TreeError, _super);
     function TreeError(elementName, span, msg) {

@@ -6,11 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
+var identifiers_1 = require('../identifiers');
 var template_ast_1 = require('../template_parser/template_ast');
-var property_binder_1 = require('./property_binder');
 var event_binder_1 = require('./event_binder');
 var lifecycle_binder_1 = require('./lifecycle_binder');
-var identifiers_1 = require('../identifiers');
+var property_binder_1 = require('./property_binder');
 function bindView(view, parsedTemplate) {
     var visitor = new ViewBinderVisitor(view);
     template_ast_1.templateVisitAll(visitor, parsedTemplate);
