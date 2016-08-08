@@ -7350,115 +7350,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function isStaticSymbol(value) {
         return isStringMap(value) && isPresent(value['name']) && isPresent(value['filePath']);
     }
-    var HtmlParser = (function (_super) {
-        __extends(HtmlParser, _super);
-        function HtmlParser() {
-            _super.call(this, getHtmlTagDefinition);
-        }
-        HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
-            if (parseExpansionForms === void 0) { parseExpansionForms = false; }
-            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-            return _super.prototype.parse.call(this, source, url, parseExpansionForms, interpolationConfig);
-        };
-        return HtmlParser;
-    }(Parser$1));
-    /** @nocollapse */
-    HtmlParser.decorators = [
-        { type: _angular_core.Injectable },
-    ];
-    /** @nocollapse */
-    HtmlParser.ctorParameters = [];
-    // http://cldr.unicode.org/index/cldr-spec/plural-rules
-    var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
-    /**
-     * Expands special forms into elements.
-     *
-     * For example,
-     *
-     * ```
-     * { messages.length, plural,
-     *   =0 {zero}
-     *   =1 {one}
-     *   other {more than one}
-     * }
-     * ```
-     *
-     * will be expanded into
-     *
-     * ```
-     * <ng-container [ngPlural]="messages.length">
-     *   <template ngPluralCase="=0">zero</ng-container>
-     *   <template ngPluralCase="=1">one</ng-container>
-     *   <template ngPluralCase="other">more than one</ng-container>
-     * </ng-container>
-     * ```
-     */
-    function expandNodes(nodes) {
-        var expander = new _Expander();
-        return new ExpansionResult(visitAll(expander, nodes), expander.isExpanded, expander.errors);
-    }
-    var ExpansionResult = (function () {
-        function ExpansionResult(nodes, expanded, errors) {
-            this.nodes = nodes;
-            this.expanded = expanded;
-            this.errors = errors;
-        }
-        return ExpansionResult;
-    }());
-    var ExpansionError = (function (_super) {
-        __extends(ExpansionError, _super);
-        function ExpansionError(span, errorMsg) {
-            _super.call(this, span, errorMsg);
-        }
-        return ExpansionError;
-    }(ParseError));
-    /**
-     * Expand expansion forms (plural, select) to directives
-     *
-     * @internal
-     */
-    var _Expander = (function () {
-        function _Expander() {
-            this.isExpanded = false;
-            this.errors = [];
-        }
-        _Expander.prototype.visitElement = function (element, context) {
-            return new Element(element.name, element.attrs, visitAll(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
-        };
-        _Expander.prototype.visitAttribute = function (attribute, context) { return attribute; };
-        _Expander.prototype.visitText = function (text, context) { return text; };
-        _Expander.prototype.visitComment = function (comment, context) { return comment; };
-        _Expander.prototype.visitExpansion = function (icu, context) {
-            this.isExpanded = true;
-            return icu.type == 'plural' ? _expandPluralForm(icu, this.errors) :
-                _expandDefaultForm(icu, this.errors);
-        };
-        _Expander.prototype.visitExpansionCase = function (icuCase, context) {
-            throw new Error('Should not be reached');
-        };
-        return _Expander;
-    }());
-    function _expandPluralForm(ast, errors) {
-        var children = ast.cases.map(function (c) {
-            if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
-                errors.push(new ExpansionError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(", ")));
-            }
-            var expansionResult = expandNodes(c.expression);
-            errors.push.apply(errors, expansionResult.errors);
-            return new Element("template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
-        });
-        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
-        return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
-    }
-    function _expandDefaultForm(ast, errors) {
-        var children = ast.cases.map(function (c) {
-            var expansionResult = expandNodes(c.expression);
-            errors.push.apply(errors, expansionResult.errors);
-            return new Element("template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
-        });
-        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
-        return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
-    }
     var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
     var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
     var CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
@@ -7670,6 +7561,115 @@ var __extends = (this && this.__extends) || function (d, b) {
     });
     function identifierToken(identifier) {
         return new CompileTokenMetadata({ identifier: identifier });
+    }
+    var HtmlParser = (function (_super) {
+        __extends(HtmlParser, _super);
+        function HtmlParser() {
+            _super.call(this, getHtmlTagDefinition);
+        }
+        HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
+            if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            return _super.prototype.parse.call(this, source, url, parseExpansionForms, interpolationConfig);
+        };
+        return HtmlParser;
+    }(Parser$1));
+    /** @nocollapse */
+    HtmlParser.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    /** @nocollapse */
+    HtmlParser.ctorParameters = [];
+    // http://cldr.unicode.org/index/cldr-spec/plural-rules
+    var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
+    /**
+     * Expands special forms into elements.
+     *
+     * For example,
+     *
+     * ```
+     * { messages.length, plural,
+     *   =0 {zero}
+     *   =1 {one}
+     *   other {more than one}
+     * }
+     * ```
+     *
+     * will be expanded into
+     *
+     * ```
+     * <ng-container [ngPlural]="messages.length">
+     *   <template ngPluralCase="=0">zero</ng-container>
+     *   <template ngPluralCase="=1">one</ng-container>
+     *   <template ngPluralCase="other">more than one</ng-container>
+     * </ng-container>
+     * ```
+     */
+    function expandNodes(nodes) {
+        var expander = new _Expander();
+        return new ExpansionResult(visitAll(expander, nodes), expander.isExpanded, expander.errors);
+    }
+    var ExpansionResult = (function () {
+        function ExpansionResult(nodes, expanded, errors) {
+            this.nodes = nodes;
+            this.expanded = expanded;
+            this.errors = errors;
+        }
+        return ExpansionResult;
+    }());
+    var ExpansionError = (function (_super) {
+        __extends(ExpansionError, _super);
+        function ExpansionError(span, errorMsg) {
+            _super.call(this, span, errorMsg);
+        }
+        return ExpansionError;
+    }(ParseError));
+    /**
+     * Expand expansion forms (plural, select) to directives
+     *
+     * @internal
+     */
+    var _Expander = (function () {
+        function _Expander() {
+            this.isExpanded = false;
+            this.errors = [];
+        }
+        _Expander.prototype.visitElement = function (element, context) {
+            return new Element(element.name, element.attrs, visitAll(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan);
+        };
+        _Expander.prototype.visitAttribute = function (attribute, context) { return attribute; };
+        _Expander.prototype.visitText = function (text, context) { return text; };
+        _Expander.prototype.visitComment = function (comment, context) { return comment; };
+        _Expander.prototype.visitExpansion = function (icu, context) {
+            this.isExpanded = true;
+            return icu.type == 'plural' ? _expandPluralForm(icu, this.errors) :
+                _expandDefaultForm(icu, this.errors);
+        };
+        _Expander.prototype.visitExpansionCase = function (icuCase, context) {
+            throw new Error('Should not be reached');
+        };
+        return _Expander;
+    }());
+    function _expandPluralForm(ast, errors) {
+        var children = ast.cases.map(function (c) {
+            if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
+                errors.push(new ExpansionError(c.valueSourceSpan, "Plural cases should be \"=<number>\" or one of " + PLURAL_CASES.join(", ")));
+            }
+            var expansionResult = expandNodes(c.expression);
+            errors.push.apply(errors, expansionResult.errors);
+            return new Element("template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        });
+        var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
+        return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
+    }
+    function _expandDefaultForm(ast, errors) {
+        var children = ast.cases.map(function (c) {
+            var expansionResult = expandNodes(c.expression);
+            errors.push.apply(errors, expansionResult.errors);
+            return new Element("template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        });
+        var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
+        return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
     }
     var ProviderError = (function (_super) {
         __extends(ProviderError, _super);
