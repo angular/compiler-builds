@@ -457,7 +457,7 @@ var TemplateParseVisitor = (function () {
             }
             else if (lang_1.isPresent(bindParts[7])) {
                 if (attrName[0] == '@' && lang_1.isPresent(attrValue) && attrValue.length > 0) {
-                    this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is deprecated. Use [@prop]=\"exp\" instead!", attr.sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
+                    this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is deprecated. Use property bindings (e.g. [@prop]=\"exp\") instead!", attr.sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
                 }
                 this._parseAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetAnimationProps);
             }
@@ -658,7 +658,11 @@ var TemplateParseVisitor = (function () {
                 boundPropertyName = partValue.substr(1);
                 bindingType = template_ast_1.PropertyBindingType.Animation;
                 securityContext = core_1.SecurityContext.NONE;
-                this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is deprecated. Use \"[@prop]\": \"exp\" instead!", sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
+                // DEPRECATED: remove this if statement post RC5
+                if (boundPropertyName[0] == '@') {
+                    this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is deprecated. Use host bindings (e.g. \"[@prop]\": \"exp\") instead!", sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
+                    boundPropertyName = boundPropertyName.substr(1);
+                }
             }
             else {
                 boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);

@@ -7162,7 +7162,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         hostListeners[matches[2]] = value;
                     }
                     else if (isPresent(matches[3])) {
-                        hostProperties[matches[3]] = value;
+                        hostProperties['@' + matches[3]] = value;
                     }
                 });
             }
@@ -8676,7 +8676,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 else if (isPresent(bindParts[7])) {
                     if (attrName[0] == '@' && isPresent(attrValue) && attrValue.length > 0) {
-                        this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is deprecated. Use [@prop]=\"exp\" instead!", attr.sourceSpan, ParseErrorLevel.WARNING);
+                        this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is deprecated. Use property bindings (e.g. [@prop]=\"exp\") instead!", attr.sourceSpan, ParseErrorLevel.WARNING);
                     }
                     this._parseAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetAnimationProps);
                 }
@@ -8877,7 +8877,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                     boundPropertyName = partValue.substr(1);
                     bindingType = exports.PropertyBindingType.Animation;
                     securityContext = _angular_core.SecurityContext.NONE;
-                    this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is deprecated. Use \"[@prop]\": \"exp\" instead!", sourceSpan, ParseErrorLevel.WARNING);
+                    // DEPRECATED: remove this if statement post RC5
+                    if (boundPropertyName[0] == '@') {
+                        this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is deprecated. Use host bindings (e.g. \"[@prop]\": \"exp\") instead!", sourceSpan, ParseErrorLevel.WARNING);
+                        boundPropertyName = boundPropertyName.substr(1);
+                    }
                 }
                 else {
                     boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);

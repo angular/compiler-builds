@@ -440,7 +440,7 @@ var CompileDirectiveMetadata = (function () {
                     hostListeners[matches[2]] = value;
                 }
                 else if (lang_1.isPresent(matches[3])) {
-                    hostProperties[matches[3]] = value;
+                    hostProperties['@' + matches[3]] = value;
                 }
             });
         }

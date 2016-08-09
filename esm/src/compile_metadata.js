@@ -314,7 +314,7 @@ export class CompileDirectiveMetadata {
                     hostListeners[matches[2]] = value;
                 }
                 else if (isPresent(matches[3])) {
-                    hostProperties[matches[3]] = value;
+                    hostProperties['@' + matches[3]] = value;
                 }
             });
         }
