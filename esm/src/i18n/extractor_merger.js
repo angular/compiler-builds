@@ -46,11 +46,6 @@ class _Visitor {
     constructor(_implicitTags, _implicitAttrs) {
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
-        // <el i18n>...</el>
-        this._inI18nNode = false;
-        this._depth = 0;
-        // {<icu message>}
-        this._inIcu = false;
     }
     /**
      * Extracts the messages from the tree
@@ -148,11 +143,15 @@ class _Visitor {
         this._mayBeAddBlockChildren(el);
         this._depth++;
         const wasInI18nNode = this._inI18nNode;
+        const wasInImplicitNode = this._inImplicitNode;
         let childNodes;
         // Extract only top level nodes with the (implicit) "i18n" attribute if not in a block or an ICU
         // message
         const i18nAttr = _getI18nAttr(el);
-        const isImplicitI18n = this._implicitTags.some((tag) => el.name === tag);
+        const isImplicit = this._implicitTags.some((tag) => el.name === tag) &&
+            !this._inIcu && !this._isInTranslatableSection;
+        const isTopLevelImplicit = !wasInImplicitNode && isImplicit;
+        this._inImplicitNode = this._inImplicitNode || isImplicit;
         if (!this._isInTranslatableSection && !this._inIcu) {
             if (i18nAttr) {
                 // explicit translation
@@ -160,14 +159,14 @@ class _Visitor {
                 const message = this._addMessage(el.children, i18nAttr.value);
                 childNodes = this._translateMessage(el, message);
             }
-            else if (isImplicitI18n) {
+            else if (isTopLevelImplicit) {
                 // implicit translation
                 this._inI18nNode = true;
                 const message = this._addMessage(el.children);
                 childNodes = this._translateMessage(el, message);
             }
             if (this._mode == _VisitorMode.Extract) {
-                const isTranslatable = i18nAttr || isImplicitI18n;
+                const isTranslatable = i18nAttr || isTopLevelImplicit;
                 if (isTranslatable) {
                     this._openTranslatableSection(el);
                 }
@@ -176,7 +175,7 @@ class _Visitor {
                     this._closeTranslatableSection(el, el.children);
                 }
             }
-            if (this._mode === _VisitorMode.Merge && !i18nAttr && !isImplicitI18n) {
+            if (this._mode === _VisitorMode.Merge && !i18nAttr && !isTopLevelImplicit) {
                 childNodes = [];
                 el.children.forEach(child => {
                     const visited = child.visit(this, context);
@@ -189,8 +188,7 @@ class _Visitor {
             }
         }
         else {
-            if (i18nAttr || isImplicitI18n) {
-                // TODO(vicb): we should probably allow nested implicit element (ie <div>)
+            if (i18nAttr || isTopLevelImplicit) {
                 this._reportError(el, 'Could not mark an element as translatable inside a translatable section');
             }
             if (this._mode == _VisitorMode.Extract) {
@@ -213,6 +211,7 @@ class _Visitor {
         this._visitAttributesOf(el);
         this._depth--;
         this._inI18nNode = wasInI18nNode;
+        this._inImplicitNode = wasInImplicitNode;
         if (this._mode === _VisitorMode.Merge) {
             // There are no childNodes in translatable sections - those nodes will be replace anyway
             const translatedAttrs = this._translateAttributes(el);
@@ -231,6 +230,7 @@ class _Visitor {
         this._msgCountAtSectionStart = void 0;
         this._errors = [];
         this._messages = [];
+        this._inImplicitNode = false;
         this._createI18nMessage = createI18nMessageFactory(interpolationConfig);
     }
     // looks for translatable attributes
