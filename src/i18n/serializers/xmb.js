@@ -39,7 +39,7 @@ var Xmb = (function () {
             rootNode,
         ]);
     };
-    Xmb.prototype.load = function (content, url, placeholders) {
+    Xmb.prototype.load = function (content, url, messageBundle) {
         throw new Error('Unsupported');
     };
     return Xmb;

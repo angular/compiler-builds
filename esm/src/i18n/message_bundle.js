@@ -28,6 +28,7 @@ export class MessageBundle {
         }
         i18nParserResult.messages.forEach((message) => { this._messageMap[digestMessage(message)] = message; });
     }
+    getMessageMap() { return this._messageMap; }
     write(serializer) { return serializer.write(this._messageMap); }
 }
 //# sourceMappingURL=message_bundle.js.map

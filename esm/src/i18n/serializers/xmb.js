@@ -54,7 +54,7 @@ export class Xmb {
             rootNode,
         ]);
     }
-    load(content, url, placeholders) {
+    load(content, url, messageBundle) {
         throw new Error('Unsupported');
     }
 }

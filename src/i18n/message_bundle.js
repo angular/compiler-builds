@@ -30,6 +30,7 @@ var MessageBundle = (function () {
         }
         i18nParserResult.messages.forEach(function (message) { _this._messageMap[digest_1.digestMessage(message)] = message; });
     };
+    MessageBundle.prototype.getMessageMap = function () { return this._messageMap; };
     MessageBundle.prototype.write = function (serializer) { return serializer.write(this._messageMap); };
     return MessageBundle;
 }());

@@ -14,8 +14,8 @@ var TranslationBundle = (function () {
         if (_messageMap === void 0) { _messageMap = {}; }
         this._messageMap = _messageMap;
     }
-    TranslationBundle.load = function (content, url, placeholders, serializer) {
-        return new TranslationBundle(serializer.load(content, url, placeholders));
+    TranslationBundle.load = function (content, url, messageBundle, serializer) {
+        return new TranslationBundle(serializer.load(content, url, messageBundle));
     };
     TranslationBundle.prototype.get = function (id) { return this._messageMap[id]; };
     TranslationBundle.prototype.has = function (id) { return id in this._messageMap; };

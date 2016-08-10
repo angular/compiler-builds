@@ -12,8 +12,8 @@ export class TranslationBundle {
     constructor(_messageMap = {}) {
         this._messageMap = _messageMap;
     }
-    static load(content, url, placeholders, serializer) {
-        return new TranslationBundle(serializer.load(content, url, placeholders));
+    static load(content, url, messageBundle, serializer) {
+        return new TranslationBundle(serializer.load(content, url, messageBundle));
     }
     get(id) { return this._messageMap[id]; }
     has(id) { return id in this._messageMap; }

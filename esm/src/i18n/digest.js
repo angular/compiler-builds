@@ -77,7 +77,7 @@ export function sha1(str) {
         const b = sha1.charCodeAt(i);
         hex += (b >>> 4 & 0x0f).toString(16) + (b & 0x0f).toString(16);
     }
-    return hex;
+    return hex.toLowerCase();
 }
 function utf8Encode(str) {
     let encoded = '';

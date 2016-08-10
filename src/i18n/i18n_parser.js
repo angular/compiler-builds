@@ -10,11 +10,12 @@ var lexer_1 = require('../expression_parser/lexer');
 var parser_1 = require('../expression_parser/parser');
 var html = require('../ml_parser/ast');
 var html_tags_1 = require('../ml_parser/html_tags');
+var digest_1 = require('./digest');
 var i18n = require('./i18n_ast');
 var placeholder_1 = require('./serializers/placeholder');
 var _expParser = new parser_1.Parser(new lexer_1.Lexer());
 /**
- * Returns a function converting html Messages to i18n Messages given an interpolationConfig
+ * Returns a function converting html nodes to an i18n Message given an interpolationConfig
  */
 function createI18nMessageFactory(interpolationConfig) {
     var visitor = new _I18nVisitor(_expParser, interpolationConfig);
@@ -33,8 +34,9 @@ var _I18nVisitor = (function () {
         this._icuDepth = 0;
         this._placeholderRegistry = new placeholder_1.PlaceholderRegistry();
         this._placeholderToContent = {};
+        this._placeholderToIds = {};
         var i18nodes = html.visitAll(this, nodes, {});
-        return new i18n.Message(i18nodes, this._placeholderToContent, meaning, description);
+        return new i18n.Message(i18nodes, this._placeholderToContent, this._placeholderToIds, meaning, description);
     };
     _I18nVisitor.prototype.visitElement = function (el, context) {
         var children = html.visitAll(this, el.children);
@@ -73,9 +75,14 @@ var _I18nVisitor = (function () {
             // If the message (vs a part of the message) is an ICU message returns it
             return i18nIcu;
         }
-        // else returns a placeholder
+        // Else returns a placeholder
+        // ICU placeholders should not be replaced with their original content but with the their
+        // translations. We need to create a new visitor (they are not re-entrant) to compute the
+        // message id.
+        // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
         var phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
-        this._placeholderToContent[phName] = icu.sourceSpan.toString();
+        var visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
+        this._placeholderToIds[phName] = digest_1.digestMessage(visitor.toI18nMessage([icu], '', ''));
         return new i18n.IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
     };
     _I18nVisitor.prototype.visitExpansionCase = function (icuCase, context) {

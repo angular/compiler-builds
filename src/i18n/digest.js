@@ -86,7 +86,7 @@ function sha1(str) {
         var b_1 = sha1.charCodeAt(i);
         hex += (b_1 >>> 4 & 0x0f).toString(16) + (b_1 & 0x0f).toString(16);
     }
-    return hex;
+    return hex.toLowerCase();
     var _d, _e;
 }
 exports.sha1 = sha1;

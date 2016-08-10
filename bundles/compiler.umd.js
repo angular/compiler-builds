@@ -99,7 +99,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var b_1 = sha1.charCodeAt(i);
             hex += (b_1 >>> 4 & 0x0f).toString(16) + (b_1 & 0x0f).toString(16);
         }
-        return hex;
+        return hex.toLowerCase();
         var _d, _e;
     }
     function utf8Encode(str) {
@@ -258,9 +258,18 @@ var __extends = (this && this.__extends) || function (d, b) {
      * found in the LICENSE file at https://angular.io/license
      */
     var Message = (function () {
-        function Message(nodes, placeholders, meaning, description) {
+        /**
+         * @param nodes message AST
+         * @param placeholders maps placeholder names to static content
+         * @param placeholderToMsgIds maps placeholder names to translatable message IDs (used for ICU
+         *                            messages)
+         * @param meaning
+         * @param description
+         */
+        function Message(nodes, placeholders, placeholderToMsgIds, meaning, description) {
             this.nodes = nodes;
             this.placeholders = placeholders;
+            this.placeholderToMsgIds = placeholderToMsgIds;
             this.meaning = meaning;
             this.description = description;
         }
@@ -2966,7 +2975,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }());
     var _expParser = new Parser(new Lexer());
     /**
-     * Returns a function converting html Messages to i18n Messages given an interpolationConfig
+     * Returns a function converting html nodes to an i18n Message given an interpolationConfig
      */
     function createI18nMessageFactory(interpolationConfig) {
         var visitor = new _I18nVisitor(_expParser, interpolationConfig);
@@ -2982,8 +2991,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._icuDepth = 0;
             this._placeholderRegistry = new PlaceholderRegistry();
             this._placeholderToContent = {};
+            this._placeholderToIds = {};
             var i18nodes = visitAll(this, nodes, {});
-            return new Message(i18nodes, this._placeholderToContent, meaning, description);
+            return new Message(i18nodes, this._placeholderToContent, this._placeholderToIds, meaning, description);
         };
         _I18nVisitor.prototype.visitElement = function (el, context) {
             var children = visitAll(this, el.children);
@@ -3022,9 +3032,14 @@ var __extends = (this && this.__extends) || function (d, b) {
                 // If the message (vs a part of the message) is an ICU message returns it
                 return i18nIcu;
             }
-            // else returns a placeholder
+            // Else returns a placeholder
+            // ICU placeholders should not be replaced with their original content but with the their
+            // translations. We need to create a new visitor (they are not re-entrant) to compute the
+            // message id.
+            // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
             var phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
-            this._placeholderToContent[phName] = icu.sourceSpan.toString();
+            var visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
+            this._placeholderToIds[phName] = digestMessage(visitor.toI18nMessage([icu], '', ''));
             return new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
         };
         _I18nVisitor.prototype.visitExpansionCase = function (icuCase, context) {
@@ -3574,6 +3589,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             i18nParserResult.messages.forEach(function (message) { _this._messageMap[digestMessage(message)] = message; });
         };
+        MessageBundle.prototype.getMessageMap = function () { return this._messageMap; };
         MessageBundle.prototype.write = function (serializer) { return serializer.write(this._messageMap); };
         return MessageBundle;
     }());
@@ -3697,7 +3713,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 rootNode,
             ]);
         };
-        Xmb.prototype.load = function (content, url, placeholders) {
+        Xmb.prototype.load = function (content, url, messageBundle) {
             throw new Error('Unsupported');
         };
         return Xmb;
@@ -4761,6 +4777,31 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return XmlParser;
     }(Parser$1));
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    // Generate a map of placeholder to content indexed by message ids
+    function extractPlaceholders(messageBundle) {
+        var messageMap = messageBundle.getMessageMap();
+        var placeholders = {};
+        Object.keys(messageMap).forEach(function (msgId) {
+            placeholders[msgId] = messageMap[msgId].placeholders;
+        });
+        return placeholders;
+    }
+    // Generate a map of placeholder to message ids indexed by message ids
+    function extractPlaceholderToIds(messageBundle) {
+        var messageMap = messageBundle.getMessageMap();
+        var placeholderToIds = {};
+        Object.keys(messageMap).forEach(function (msgId) {
+            placeholderToIds[msgId] = messageMap[msgId].placeholderToMsgIds;
+        });
+        return placeholderToIds;
+    }
     var _TRANSLATIONS_TAG = 'translationbundle';
     var _TRANSLATION_TAG = 'translation';
     var _PLACEHOLDER_TAG$1 = 'ph';
@@ -4770,7 +4811,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._interpolationConfig = _interpolationConfig;
         }
         Xtb.prototype.write = function (messageMap) { throw new Error('Unsupported'); };
-        Xtb.prototype.load = function (content, url, placeholders) {
+        Xtb.prototype.load = function (content, url, messageBundle) {
             var _this = this;
             // Parse the xtb file into xml nodes
             var result = new XmlParser().parse(content, url);
@@ -4778,7 +4819,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
             }
             // Replace the placeholders, messages are now string
-            var _a = new _Serializer().parse(result.rootNodes, placeholders), messages = _a.messages, errors = _a.errors;
+            var _a = new _Serializer().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
             if (errors.length) {
                 throw new Error("xtb parse errors:\n" + errors.join('\n'));
             }
@@ -4801,14 +4842,44 @@ var __extends = (this && this.__extends) || function (d, b) {
     var _Serializer = (function () {
         function _Serializer() {
         }
-        _Serializer.prototype.parse = function (nodes, _placeholders) {
-            this._messages = {};
+        _Serializer.prototype.parse = function (nodes, messageBundle) {
+            var _this = this;
+            this._messageNodes = [];
+            this._translatedMessages = {};
             this._bundleDepth = 0;
             this._translationDepth = 0;
             this._errors = [];
-            this._placeholders = _placeholders;
+            // Find all messages
             visitAll(this, nodes, null);
-            return { messages: this._messages, errors: this._errors };
+            var messageMap = messageBundle.getMessageMap();
+            var placeholders = extractPlaceholders(messageBundle);
+            var placeholderToIds = extractPlaceholderToIds(messageBundle);
+            this._messageNodes
+                .filter(function (message) {
+                // Remove any messages that is not present in the source message bundle.
+                return messageMap.hasOwnProperty(message[0]);
+            })
+                .sort(function (a, b) {
+                // Because there could be no ICU placeholders inside an ICU message,
+                // we do not need to take into account the `placeholderToMsgIds` of the referenced
+                // messages, those would always be empty
+                // TODO(vicb): overkill - create 2 buckets and [...woDeps, ...wDeps].process()
+                if (Object.keys(messageMap[a[0]].placeholderToMsgIds).length == 0) {
+                    return -1;
+                }
+                if (Object.keys(messageMap[b[0]].placeholderToMsgIds).length == 0) {
+                    return 1;
+                }
+                return 0;
+            })
+                .forEach(function (message) {
+                var id = message[0];
+                _this._placeholders = placeholders[id] || {};
+                _this._placeholderToIds = placeholderToIds[id] || {};
+                // TODO(vicb): make sure there is no `_TRANSLATIONS_TAG` nor `_TRANSLATION_TAG`
+                _this._translatedMessages[id] = visitAll(_this, message[1]).join('');
+            });
+            return { messages: this._translatedMessages, errors: this._errors };
         };
         _Serializer.prototype.visitElement = function (element, context) {
             switch (element.name) {
@@ -4830,8 +4901,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                         this._addError(element, "<" + _TRANSLATION_TAG + "> misses the \"id\" attribute");
                     }
                     else {
-                        this._currentPlaceholders = this._placeholders[idAttr.value] || {};
-                        this._messages[idAttr.value] = visitAll(this, element.children).join('');
+                        // ICU placeholders are reference to other messages.
+                        // The referenced message might not have been decoded yet.
+                        // We need to have all messages available to make sure deps are decoded first.
+                        // TODO(vicb): report an error on duplicate id
+                        this._messageNodes.push([idAttr.value, element.children]);
                     }
                     this._translationDepth--;
                     break;
@@ -4841,10 +4915,17 @@ var __extends = (this && this.__extends) || function (d, b) {
                         this._addError(element, "<" + _PLACEHOLDER_TAG$1 + "> misses the \"name\" attribute");
                     }
                     else {
-                        if (this._currentPlaceholders.hasOwnProperty(nameAttr.value)) {
-                            return this._currentPlaceholders[nameAttr.value];
+                        var name_2 = nameAttr.value;
+                        if (this._placeholders.hasOwnProperty(name_2)) {
+                            return this._placeholders[name_2];
                         }
-                        this._addError(element, "The placeholder \"" + nameAttr.value + "\" does not exists in the source message");
+                        if (this._placeholderToIds.hasOwnProperty(name_2) &&
+                            this._translatedMessages.hasOwnProperty(this._placeholderToIds[name_2])) {
+                            return this._translatedMessages[this._placeholderToIds[name_2]];
+                        }
+                        // TODO(vicb): better error message for when
+                        // !this._translatedMessages.hasOwnProperty(this._placeholderToIds[name])
+                        this._addError(element, "The placeholder \"" + name_2 + "\" does not exists in the source message");
                     }
                     break;
                 default:
@@ -9000,8 +9081,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     var nsSeparatorIdx = boundPropertyName.indexOf(':');
                     if (nsSeparatorIdx > -1) {
                         var ns = boundPropertyName.substring(0, nsSeparatorIdx);
-                        var name_2 = boundPropertyName.substring(nsSeparatorIdx + 1);
-                        boundPropertyName = mergeNsAndName(ns, name_2);
+                        var name_3 = boundPropertyName.substring(nsSeparatorIdx + 1);
+                        boundPropertyName = mergeNsAndName(ns, name_3);
                     }
                     bindingType = exports.PropertyBindingType.Attribute;
                 }

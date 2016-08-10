@@ -7,9 +7,18 @@
  */
 "use strict";
 var Message = (function () {
-    function Message(nodes, placeholders, meaning, description) {
+    /**
+     * @param nodes message AST
+     * @param placeholders maps placeholder names to static content
+     * @param placeholderToMsgIds maps placeholder names to translatable message IDs (used for ICU
+     *                            messages)
+     * @param meaning
+     * @param description
+     */
+    function Message(nodes, placeholders, placeholderToMsgIds, meaning, description) {
         this.nodes = nodes;
         this.placeholders = placeholders;
+        this.placeholderToMsgIds = placeholderToMsgIds;
         this.meaning = meaning;
         this.description = description;
     }
