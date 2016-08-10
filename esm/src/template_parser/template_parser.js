@@ -5,13 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@angular/core';
+import { BaseException, Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@angular/core';
 import { Console, MAX_INTERPOLATION_VALUES } from '../../core_private';
 import { removeIdentifierDuplicates } from '../compile_metadata';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection';
-import { BaseException } from '../facade/exceptions';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as html from '../ml_parser/ast';

@@ -18,7 +18,6 @@ var assertions_1 = require('./assertions');
 var cpl = require('./compile_metadata');
 var config_1 = require('./config');
 var directive_resolver_1 = require('./directive_resolver');
-var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var identifiers_1 = require('./identifiers');
 var lifecycle_reflector_1 = require('./lifecycle_reflector');
@@ -161,7 +160,7 @@ var CompileMetadataResolver = (function () {
                 if (cmpMeta.directives) {
                     viewDirectiveTypes = flattenArray(cmpMeta.directives).map(function (type) {
                         if (!type) {
-                            throw new exceptions_1.BaseException("Unexpected directive value '" + type + "' on the View of component '" + lang_1.stringify(directiveType) + "'");
+                            throw new core_1.BaseException("Unexpected directive value '" + type + "' on the View of component '" + lang_1.stringify(directiveType) + "'");
                         }
                         return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
                     });
@@ -169,7 +168,7 @@ var CompileMetadataResolver = (function () {
                 if (cmpMeta.pipes) {
                     viewPipeTypes = flattenArray(cmpMeta.pipes).map(function (type) {
                         if (!type) {
-                            throw new exceptions_1.BaseException("Unexpected pipe value '" + type + "' on the View of component '" + lang_1.stringify(directiveType) + "'");
+                            throw new core_1.BaseException("Unexpected pipe value '" + type + "' on the View of component '" + lang_1.stringify(directiveType) + "'");
                         }
                         return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
                     });
@@ -180,7 +179,7 @@ var CompileMetadataResolver = (function () {
             }
             else {
                 if (!selector) {
-                    throw new exceptions_1.BaseException("Directive " + lang_1.stringify(directiveType) + " has no selector, please add it!");
+                    throw new core_1.BaseException("Directive " + lang_1.stringify(directiveType) + " has no selector, please add it!");
                 }
             }
             var providers = [];
@@ -252,14 +251,14 @@ var CompileMetadataResolver = (function () {
                         importedModules_1.push(_this.getNgModuleMetadata(importedModuleType, false));
                     }
                     else {
-                        throw new exceptions_1.BaseException("Unexpected value '" + lang_1.stringify(importedType) + "' imported by the module '" + lang_1.stringify(moduleType) + "'");
+                        throw new core_1.BaseException("Unexpected value '" + lang_1.stringify(importedType) + "' imported by the module '" + lang_1.stringify(moduleType) + "'");
                     }
                 });
             }
             if (meta.exports) {
                 flattenArray(meta.exports).forEach(function (exportedType) {
                     if (!isValidType(exportedType)) {
-                        throw new exceptions_1.BaseException("Unexpected value '" + lang_1.stringify(exportedType) + "' exported by the module '" + lang_1.stringify(moduleType) + "'");
+                        throw new core_1.BaseException("Unexpected value '" + lang_1.stringify(exportedType) + "' exported by the module '" + lang_1.stringify(moduleType) + "'");
                     }
                     var exportedDirMeta;
                     var exportedPipeMeta;
@@ -274,7 +273,7 @@ var CompileMetadataResolver = (function () {
                         exportedModules_1.push(exportedModuleMeta);
                     }
                     else {
-                        throw new exceptions_1.BaseException("Unexpected value '" + lang_1.stringify(exportedType) + "' exported by the module '" + lang_1.stringify(moduleType) + "'");
+                        throw new core_1.BaseException("Unexpected value '" + lang_1.stringify(exportedType) + "' exported by the module '" + lang_1.stringify(moduleType) + "'");
                     }
                 });
             }
@@ -284,7 +283,7 @@ var CompileMetadataResolver = (function () {
             if (meta.declarations) {
                 flattenArray(meta.declarations).forEach(function (declaredType) {
                     if (!isValidType(declaredType)) {
-                        throw new exceptions_1.BaseException("Unexpected value '" + lang_1.stringify(declaredType) + "' declared by the module '" + lang_1.stringify(moduleType) + "'");
+                        throw new core_1.BaseException("Unexpected value '" + lang_1.stringify(declaredType) + "' declared by the module '" + lang_1.stringify(moduleType) + "'");
                     }
                     var declaredDirMeta;
                     var declaredPipeMeta;
@@ -295,7 +294,7 @@ var CompileMetadataResolver = (function () {
                         _this._addPipeToModule(declaredPipeMeta, moduleType, transitiveModule_1, declaredPipes_1, true);
                     }
                     else {
-                        throw new exceptions_1.BaseException("Unexpected value '" + lang_1.stringify(declaredType) + "' declared by the module '" + lang_1.stringify(moduleType) + "'");
+                        throw new core_1.BaseException("Unexpected value '" + lang_1.stringify(declaredType) + "' declared by the module '" + lang_1.stringify(moduleType) + "'");
                     }
                 });
             }
@@ -352,12 +351,12 @@ var CompileMetadataResolver = (function () {
         var _this = this;
         moduleMeta.exportedDirectives.forEach(function (dirMeta) {
             if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-                throw new exceptions_1.BaseException("Can't export directive " + lang_1.stringify(dirMeta.type.runtime) + " from " + lang_1.stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+                throw new core_1.BaseException("Can't export directive " + lang_1.stringify(dirMeta.type.runtime) + " from " + lang_1.stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
             }
         });
         moduleMeta.exportedPipes.forEach(function (pipeMeta) {
             if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-                throw new exceptions_1.BaseException("Can't export pipe " + lang_1.stringify(pipeMeta.type.runtime) + " from " + lang_1.stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+                throw new core_1.BaseException("Can't export pipe " + lang_1.stringify(pipeMeta.type.runtime) + " from " + lang_1.stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
             }
         });
         moduleMeta.entryComponents.forEach(function (entryComponentType) {
@@ -374,7 +373,7 @@ var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype._addTypeToModule = function (type, moduleType) {
         var oldModule = this._ngModuleOfTypes.get(type);
         if (oldModule && oldModule !== moduleType) {
-            throw new exceptions_1.BaseException("Type " + lang_1.stringify(type) + " is part of the declarations of 2 modules: " + lang_1.stringify(oldModule) + " and " + lang_1.stringify(moduleType) + "!");
+            throw new core_1.BaseException("Type " + lang_1.stringify(type) + " is part of the declarations of 2 modules: " + lang_1.stringify(oldModule) + " and " + lang_1.stringify(moduleType) + "!");
         }
         this._ngModuleOfTypes.set(type, moduleType);
     };
@@ -548,7 +547,7 @@ var CompileMetadataResolver = (function () {
         if (hasUnknownDeps) {
             var depsTokens = dependenciesMetadata.map(function (dep) { return dep ? lang_1.stringify(dep.token) : '?'; })
                 .join(', ');
-            throw new exceptions_1.BaseException("Can't resolve all parameters for " + lang_1.stringify(typeOrFunc) + ": (" + depsTokens + ").");
+            throw new core_1.BaseException("Can't resolve all parameters for " + lang_1.stringify(typeOrFunc) + ": (" + depsTokens + ").");
         }
         return dependenciesMetadata;
     };
@@ -594,7 +593,7 @@ var CompileMetadataResolver = (function () {
                 compileProvider = _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
             }
             else {
-                throw new exceptions_1.BaseException("Invalid provider - only instances of Provider and Type are allowed, got: " + lang_1.stringify(provider));
+                throw new core_1.BaseException("Invalid provider - only instances of Provider and Type are allowed, got: " + lang_1.stringify(provider));
             }
             if (compileProvider) {
                 compileProviders.push(compileProvider);
@@ -607,10 +606,10 @@ var CompileMetadataResolver = (function () {
         var components = [];
         var collectedIdentifiers = [];
         if (provider.useFactory || provider.useExisting || provider.useClass) {
-            throw new exceptions_1.BaseException("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!");
+            throw new core_1.BaseException("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!");
         }
         if (!provider.multi) {
-            throw new exceptions_1.BaseException("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
+            throw new core_1.BaseException("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
         }
         convertToCompileValue(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach(function (identifier) {
@@ -662,7 +661,7 @@ var CompileMetadataResolver = (function () {
         }
         else {
             if (!lang_1.isPresent(q.selector)) {
-                throw new exceptions_1.BaseException("Can't construct a query for the property \"" + propertyName + "\" of \"" + lang_1.stringify(typeOrFunc) + "\" since the query selector wasn't defined.");
+                throw new core_1.BaseException("Can't construct a query for the property \"" + propertyName + "\" of \"" + lang_1.stringify(typeOrFunc) + "\" since the query selector wasn't defined.");
             }
             selectors = [this.getTokenMetadata(q.selector)];
         }
@@ -730,7 +729,7 @@ function verifyNonBlankProviders(directiveType, providersTree, providersType) {
     for (var i = 0; i < flat.length; i++) {
         if (lang_1.isBlank(flat[i])) {
             errMsg = flat.map(function (provider) { return lang_1.isBlank(provider) ? '?' : lang_1.stringify(provider); }).join(', ');
-            throw new exceptions_1.BaseException("One or more of " + providersType + " for \"" + lang_1.stringify(directiveType) + "\" were not defined: [" + errMsg + "].");
+            throw new core_1.BaseException("One or more of " + providersType + " for \"" + lang_1.stringify(directiveType) + "\" were not defined: [" + errMsg + "].");
         }
     }
     return providersTree;

@@ -14,7 +14,6 @@ var __extends = (this && this.__extends) || function (d, b) {
 var core_1 = require('@angular/core');
 var directive_resolver_1 = require('../src/directive_resolver');
 var collection_1 = require('../src/facade/collection');
-var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('../src/facade/lang');
 var MockDirectiveResolver = (function (_super) {
     __extends(MockDirectiveResolver, _super);
@@ -83,7 +82,7 @@ var MockDirectiveResolver = (function (_super) {
                 directiveOverrides.forEach(function (to, from) {
                     var srcIndex = directives_1.indexOf(from);
                     if (srcIndex == -1) {
-                        throw new exceptions_1.BaseException("Overriden directive " + lang_1.stringify(from) + " not found in the template of " + lang_1.stringify(type));
+                        throw new core_1.BaseException("Overriden directive " + lang_1.stringify(from) + " not found in the template of " + lang_1.stringify(type));
                     }
                     directives_1[srcIndex] = to;
                 });

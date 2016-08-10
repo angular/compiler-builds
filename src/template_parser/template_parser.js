@@ -17,7 +17,6 @@ var compile_metadata_1 = require('../compile_metadata');
 var ast_1 = require('../expression_parser/ast');
 var parser_1 = require('../expression_parser/parser');
 var collection_1 = require('../facade/collection');
-var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var html = require('../ml_parser/ast');
@@ -95,7 +94,7 @@ var TemplateParser = (function () {
         }
         if (errors.length > 0) {
             var errorString = errors.join('\n');
-            throw new exceptions_1.BaseException("Template parse errors:\n" + errorString);
+            throw new core_1.BaseException("Template parse errors:\n" + errorString);
         }
         return result.templateAst;
     };
@@ -208,7 +207,7 @@ var TemplateParseVisitor = (function () {
             this._checkPipes(ast, sourceSpan);
             if (lang_1.isPresent(ast) &&
                 ast.ast.expressions.length > core_private_1.MAX_INTERPOLATION_VALUES) {
-                throw new exceptions_1.BaseException("Only support at most " + core_private_1.MAX_INTERPOLATION_VALUES + " interpolation values!");
+                throw new core_1.BaseException("Only support at most " + core_private_1.MAX_INTERPOLATION_VALUES + " interpolation values!");
             }
             return ast;
         }

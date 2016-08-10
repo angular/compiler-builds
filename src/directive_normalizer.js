@@ -10,7 +10,6 @@ var core_1 = require('@angular/core');
 var compile_metadata_1 = require('./compile_metadata');
 var config_1 = require('./config');
 var collection_1 = require('./facade/collection');
-var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var html = require('./ml_parser/ast');
 var html_parser_1 = require('./ml_parser/html_parser');
@@ -61,7 +60,7 @@ var DirectiveNormalizer = (function () {
             normalizedTemplateAsync = this.normalizeTemplateAsync(directive.type, directive.template);
         }
         else {
-            throw new exceptions_1.BaseException("No template specified for component " + directive.type.name);
+            throw new core_1.BaseException("No template specified for component " + directive.type.name);
         }
         if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
             // sync case
@@ -91,7 +90,7 @@ var DirectiveNormalizer = (function () {
         var rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name, false, interpolationConfig);
         if (rootNodesAndErrors.errors.length > 0) {
             var errorString = rootNodesAndErrors.errors.join('\n');
-            throw new exceptions_1.BaseException("Template parse errors:\n" + errorString);
+            throw new core_1.BaseException("Template parse errors:\n" + errorString);
         }
         var templateMetadataStyles = this.normalizeStylesheet(new compile_metadata_1.CompileStylesheetMetadata({
             styles: templateMeta.styles,

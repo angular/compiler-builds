@@ -11,7 +11,6 @@ var core_private_1 = require('../core_private');
 var compile_metadata_1 = require('./compile_metadata');
 var config_1 = require('./config');
 var directive_normalizer_1 = require('./directive_normalizer');
-var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var metadata_resolver_1 = require('./metadata_resolver');
 var ng_module_compiler_1 = require('./ng_module_compiler');
@@ -57,14 +56,14 @@ var RuntimeCompiler = (function () {
     RuntimeCompiler.prototype.compileComponentAsync = function (compType, ngModule) {
         if (ngModule === void 0) { ngModule = null; }
         if (!ngModule) {
-            throw new exceptions_1.BaseException("Calling compileComponentAsync on the root compiler without a module is not allowed! (Compiling component " + lang_1.stringify(compType) + ")");
+            throw new core_1.BaseException("Calling compileComponentAsync on the root compiler without a module is not allowed! (Compiling component " + lang_1.stringify(compType) + ")");
         }
         return this._compileComponentInModule(compType, false, ngModule).asyncResult;
     };
     RuntimeCompiler.prototype.compileComponentSync = function (compType, ngModule) {
         if (ngModule === void 0) { ngModule = null; }
         if (!ngModule) {
-            throw new exceptions_1.BaseException("Calling compileComponentSync on the root compiler without a module is not allowed! (Compiling component " + lang_1.stringify(compType) + ")");
+            throw new core_1.BaseException("Calling compileComponentSync on the root compiler without a module is not allowed! (Compiling component " + lang_1.stringify(compType) + ")");
         }
         return this._compileComponentInModule(compType, true, ngModule).syncResult;
     };
@@ -221,14 +220,14 @@ var RuntimeCompiler = (function () {
         var compiledTemplate = isHost ? this._compiledHostTemplateCache.get(compType) :
             this._compiledTemplateCache.get(compType);
         if (!compiledTemplate) {
-            throw new exceptions_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(compType) + " (isHost: " + isHost + ") does not exist!");
+            throw new core_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(compType) + " (isHost: " + isHost + ") does not exist!");
         }
         return compiledTemplate;
     };
     RuntimeCompiler.prototype._assertComponentLoaded = function (compType, isHost) {
         var compiledTemplate = this._assertComponentKnown(compType, isHost);
         if (compiledTemplate.loading) {
-            throw new exceptions_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(compType) + " (isHost: " + isHost + ") is still loading!");
+            throw new core_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(compType) + " (isHost: " + isHost + ") is still loading!");
         }
         return compiledTemplate;
     };
@@ -335,7 +334,7 @@ var CompiledTemplate = (function () {
                 args[_i - 0] = arguments[_i];
             }
             if (!_this._viewFactory) {
-                throw new exceptions_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(_this.compType) + " is not compiled yet!");
+                throw new core_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(_this.compType) + " is not compiled yet!");
             }
             return _this._viewFactory.apply(null, args);
         };
@@ -355,7 +354,7 @@ var CompiledTemplate = (function () {
     Object.defineProperty(CompiledTemplate.prototype, "normalizedCompMeta", {
         get: function () {
             if (this.loading) {
-                throw new exceptions_1.BaseException("Template is still loading for " + this.compType.name + "!");
+                throw new core_1.BaseException("Template is still loading for " + this.compType.name + "!");
             }
             return this._normalizedCompMeta;
         },
@@ -371,7 +370,7 @@ var CompiledTemplate = (function () {
 }());
 function assertComponent(meta) {
     if (!meta.isComponent) {
-        throw new exceptions_1.BaseException("Could not compile '" + meta.type.name + "' because it is not a component.");
+        throw new core_1.BaseException("Could not compile '" + meta.type.name + "' because it is not a component.");
     }
 }
 /**
@@ -397,7 +396,7 @@ var ModuleBoundCompiler = (function () {
                 return this._parentComponentResolver.resolveComponent(component);
             }
             else {
-                return Promise.reject(new exceptions_1.BaseException("Cannot resolve component using '" + component + "'."));
+                return Promise.reject(new core_1.BaseException("Cannot resolve component using '" + component + "'."));
             }
         }
         if (this._warnOnComponentResolver) {
