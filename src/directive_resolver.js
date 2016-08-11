@@ -9,6 +9,7 @@
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
 var collection_1 = require('./facade/collection');
+var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var util_1 = require('./util');
 function _isDirectiveMetadata(type) {
@@ -33,7 +34,7 @@ var DirectiveResolver = (function () {
             }
         }
         if (throwIfNotFound) {
-            throw new core_1.BaseException("No Directive annotation found on " + lang_1.stringify(type));
+            throw new exceptions_1.BaseException("No Directive annotation found on " + lang_1.stringify(type));
         }
         return null;
     };
@@ -88,7 +89,7 @@ var DirectiveResolver = (function () {
             inputs.forEach(function (inputDef) {
                 var publicName = _this._extractPublicName(inputDef);
                 if (inputNames_1.indexOf(publicName) > -1) {
-                    throw new core_1.BaseException("Input '" + publicName + "' defined multiple times in '" + lang_1.stringify(directiveType) + "'");
+                    throw new exceptions_1.BaseException("Input '" + publicName + "' defined multiple times in '" + lang_1.stringify(directiveType) + "'");
                 }
             });
             mergedInputs = dm.inputs.concat(inputs);
@@ -102,7 +103,7 @@ var DirectiveResolver = (function () {
             outputs.forEach(function (outputDef) {
                 var publicName = _this._extractPublicName(outputDef);
                 if (outputNames_1.indexOf(publicName) > -1) {
-                    throw new core_1.BaseException("Output event '" + publicName + "' defined multiple times in '" + lang_1.stringify(directiveType) + "'");
+                    throw new exceptions_1.BaseException("Output event '" + publicName + "' defined multiple times in '" + lang_1.stringify(directiveType) + "'");
                 }
             });
             mergedOutputs = dm.outputs.concat(outputs);

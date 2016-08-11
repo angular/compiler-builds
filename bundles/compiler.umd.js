@@ -431,15 +431,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     // Need to declare a new variable for global here since TypeScript
     // exports the original value of the symbol.
     var global$1 = globalScope;
-    /**
-     * Runtime representation a type that a Component or other object is instances of.
-     *
-     * An example of a `Type` is `MyCustomComponent` class, which in JavaScript is be represented by
-     * the `MyCustomComponent` constructor function.
-     *
-     * @stable
-     */
-    var Type = Function;
     // TODO: remove calls to assert in production environment
     // Note: Can't just export this and import in in other files
     // as `assert` is a reserved keyword in Dart
@@ -12961,7 +12952,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             if (throwIfNotFound) {
-                throw new _angular_core.BaseException("No Directive annotation found on " + stringify(type));
+                throw new BaseException$1("No Directive annotation found on " + stringify(type));
             }
             return null;
         };
@@ -13016,7 +13007,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 inputs.forEach(function (inputDef) {
                     var publicName = _this._extractPublicName(inputDef);
                     if (inputNames_1.indexOf(publicName) > -1) {
-                        throw new _angular_core.BaseException("Input '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
+                        throw new BaseException$1("Input '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                     }
                 });
                 mergedInputs = dm.inputs.concat(inputs);
@@ -13030,7 +13021,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 outputs.forEach(function (outputDef) {
                     var publicName = _this._extractPublicName(outputDef);
                     if (outputNames_1.indexOf(publicName) > -1) {
-                        throw new _angular_core.BaseException("Output event '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
+                        throw new BaseException$1("Output event '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                     }
                 });
                 mergedOutputs = dm.outputs.concat(outputs);
@@ -13127,7 +13118,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             else {
                 if (throwIfNotFound) {
-                    throw new _angular_core.BaseException("No NgModule metadata found for '" + stringify(type) + "'.");
+                    throw new BaseException$1("No NgModule metadata found for '" + stringify(type) + "'.");
                 }
                 return null;
             }
@@ -13163,7 +13154,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             if (throwIfNotFound) {
-                throw new _angular_core.BaseException("No Pipe decorator found on " + stringify(type));
+                throw new BaseException$1("No Pipe decorator found on " + stringify(type));
             }
             return null;
         };
@@ -13311,7 +13302,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     if (cmpMeta.directives) {
                         viewDirectiveTypes = flattenArray(cmpMeta.directives).map(function (type) {
                             if (!type) {
-                                throw new _angular_core.BaseException("Unexpected directive value '" + type + "' on the View of component '" + stringify(directiveType) + "'");
+                                throw new BaseException$1("Unexpected directive value '" + type + "' on the View of component '" + stringify(directiveType) + "'");
                             }
                             return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
                         });
@@ -13319,7 +13310,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     if (cmpMeta.pipes) {
                         viewPipeTypes = flattenArray(cmpMeta.pipes).map(function (type) {
                             if (!type) {
-                                throw new _angular_core.BaseException("Unexpected pipe value '" + type + "' on the View of component '" + stringify(directiveType) + "'");
+                                throw new BaseException$1("Unexpected pipe value '" + type + "' on the View of component '" + stringify(directiveType) + "'");
                             }
                             return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
                         });
@@ -13330,7 +13321,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 else {
                     if (!selector) {
-                        throw new _angular_core.BaseException("Directive " + stringify(directiveType) + " has no selector, please add it!");
+                        throw new BaseException$1("Directive " + stringify(directiveType) + " has no selector, please add it!");
                     }
                 }
                 var providers = [];
@@ -13402,14 +13393,14 @@ var __extends = (this && this.__extends) || function (d, b) {
                             importedModules_1.push(_this.getNgModuleMetadata(importedModuleType, false));
                         }
                         else {
-                            throw new _angular_core.BaseException("Unexpected value '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
+                            throw new BaseException$1("Unexpected value '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
                         }
                     });
                 }
                 if (meta.exports) {
                     flattenArray(meta.exports).forEach(function (exportedType) {
                         if (!isValidType(exportedType)) {
-                            throw new _angular_core.BaseException("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
+                            throw new BaseException$1("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
                         }
                         var exportedDirMeta;
                         var exportedPipeMeta;
@@ -13424,7 +13415,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             exportedModules_1.push(exportedModuleMeta);
                         }
                         else {
-                            throw new _angular_core.BaseException("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
+                            throw new BaseException$1("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
                         }
                     });
                 }
@@ -13434,7 +13425,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 if (meta.declarations) {
                     flattenArray(meta.declarations).forEach(function (declaredType) {
                         if (!isValidType(declaredType)) {
-                            throw new _angular_core.BaseException("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
+                            throw new BaseException$1("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
                         }
                         var declaredDirMeta;
                         var declaredPipeMeta;
@@ -13445,7 +13436,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             _this._addPipeToModule(declaredPipeMeta, moduleType, transitiveModule_1, declaredPipes_1, true);
                         }
                         else {
-                            throw new _angular_core.BaseException("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
+                            throw new BaseException$1("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
                         }
                     });
                 }
@@ -13502,12 +13493,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             moduleMeta.exportedDirectives.forEach(function (dirMeta) {
                 if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-                    throw new _angular_core.BaseException("Can't export directive " + stringify(dirMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+                    throw new BaseException$1("Can't export directive " + stringify(dirMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
                 }
             });
             moduleMeta.exportedPipes.forEach(function (pipeMeta) {
                 if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-                    throw new _angular_core.BaseException("Can't export pipe " + stringify(pipeMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+                    throw new BaseException$1("Can't export pipe " + stringify(pipeMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
                 }
             });
             moduleMeta.entryComponents.forEach(function (entryComponentType) {
@@ -13524,7 +13515,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype._addTypeToModule = function (type, moduleType) {
             var oldModule = this._ngModuleOfTypes.get(type);
             if (oldModule && oldModule !== moduleType) {
-                throw new _angular_core.BaseException("Type " + stringify(type) + " is part of the declarations of 2 modules: " + stringify(oldModule) + " and " + stringify(moduleType) + "!");
+                throw new BaseException$1("Type " + stringify(type) + " is part of the declarations of 2 modules: " + stringify(oldModule) + " and " + stringify(moduleType) + "!");
             }
             this._ngModuleOfTypes.set(type, moduleType);
         };
@@ -13698,7 +13689,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (hasUnknownDeps) {
                 var depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringify(dep.token) : '?'; })
                     .join(', ');
-                throw new _angular_core.BaseException("Can't resolve all parameters for " + stringify(typeOrFunc) + ": (" + depsTokens + ").");
+                throw new BaseException$1("Can't resolve all parameters for " + stringify(typeOrFunc) + ": (" + depsTokens + ").");
             }
             return dependenciesMetadata;
         };
@@ -13744,7 +13735,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     compileProvider = _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
                 }
                 else {
-                    throw new _angular_core.BaseException("Invalid provider - only instances of Provider and Type are allowed, got: " + stringify(provider));
+                    throw new BaseException$1("Invalid provider - only instances of Provider and Type are allowed, got: " + stringify(provider));
                 }
                 if (compileProvider) {
                     compileProviders.push(compileProvider);
@@ -13757,10 +13748,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             var components = [];
             var collectedIdentifiers = [];
             if (provider.useFactory || provider.useExisting || provider.useClass) {
-                throw new _angular_core.BaseException("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!");
+                throw new BaseException$1("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!");
             }
             if (!provider.multi) {
-                throw new _angular_core.BaseException("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
+                throw new BaseException$1("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
             }
             convertToCompileValue(provider.useValue, collectedIdentifiers);
             collectedIdentifiers.forEach(function (identifier) {
@@ -13812,7 +13803,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             else {
                 if (!isPresent(q.selector)) {
-                    throw new _angular_core.BaseException("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringify(typeOrFunc) + "\" since the query selector wasn't defined.");
+                    throw new BaseException$1("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringify(typeOrFunc) + "\" since the query selector wasn't defined.");
                 }
                 selectors = [this.getTokenMetadata(q.selector)];
             }
@@ -13879,13 +13870,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         for (var i = 0; i < flat.length; i++) {
             if (isBlank(flat[i])) {
                 errMsg = flat.map(function (provider) { return isBlank(provider) ? '?' : stringify(provider); }).join(', ');
-                throw new _angular_core.BaseException("One or more of " + providersType + " for \"" + stringify(directiveType) + "\" were not defined: [" + errMsg + "].");
+                throw new BaseException$1("One or more of " + providersType + " for \"" + stringify(directiveType) + "\" were not defined: [" + errMsg + "].");
             }
         }
         return providersTree;
     }
     function isValidType(value) {
-        return isStaticSymbol(value) || (value instanceof Type);
+        return isStaticSymbol(value) || (value instanceof _angular_core.Type);
     }
     function staticTypeModuleUrl(value) {
         return isStaticSymbol(value) ? value.filePath : null;
@@ -15928,14 +15919,14 @@ var __extends = (this && this.__extends) || function (d, b) {
         RuntimeCompiler.prototype.compileComponentAsync = function (compType, ngModule) {
             if (ngModule === void 0) { ngModule = null; }
             if (!ngModule) {
-                throw new _angular_core.BaseException("Calling compileComponentAsync on the root compiler without a module is not allowed! (Compiling component " + stringify(compType) + ")");
+                throw new BaseException$1("Calling compileComponentAsync on the root compiler without a module is not allowed! (Compiling component " + stringify(compType) + ")");
             }
             return this._compileComponentInModule(compType, false, ngModule).asyncResult;
         };
         RuntimeCompiler.prototype.compileComponentSync = function (compType, ngModule) {
             if (ngModule === void 0) { ngModule = null; }
             if (!ngModule) {
-                throw new _angular_core.BaseException("Calling compileComponentSync on the root compiler without a module is not allowed! (Compiling component " + stringify(compType) + ")");
+                throw new BaseException$1("Calling compileComponentSync on the root compiler without a module is not allowed! (Compiling component " + stringify(compType) + ")");
             }
             return this._compileComponentInModule(compType, true, ngModule).syncResult;
         };
@@ -16090,14 +16081,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             var compiledTemplate = isHost ? this._compiledHostTemplateCache.get(compType) :
                 this._compiledTemplateCache.get(compType);
             if (!compiledTemplate) {
-                throw new _angular_core.BaseException("Illegal state: CompiledTemplate for " + stringify(compType) + " (isHost: " + isHost + ") does not exist!");
+                throw new BaseException$1("Illegal state: CompiledTemplate for " + stringify(compType) + " (isHost: " + isHost + ") does not exist!");
             }
             return compiledTemplate;
         };
         RuntimeCompiler.prototype._assertComponentLoaded = function (compType, isHost) {
             var compiledTemplate = this._assertComponentKnown(compType, isHost);
             if (compiledTemplate.loading) {
-                throw new _angular_core.BaseException("Illegal state: CompiledTemplate for " + stringify(compType) + " (isHost: " + isHost + ") is still loading!");
+                throw new BaseException$1("Illegal state: CompiledTemplate for " + stringify(compType) + " (isHost: " + isHost + ") is still loading!");
             }
             return compiledTemplate;
         };
@@ -16203,7 +16194,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     args[_i - 0] = arguments[_i];
                 }
                 if (!_this._viewFactory) {
-                    throw new _angular_core.BaseException("Illegal state: CompiledTemplate for " + stringify(_this.compType) + " is not compiled yet!");
+                    throw new BaseException$1("Illegal state: CompiledTemplate for " + stringify(_this.compType) + " is not compiled yet!");
                 }
                 return _this._viewFactory.apply(null, args);
             };
@@ -16223,7 +16214,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         Object.defineProperty(CompiledTemplate.prototype, "normalizedCompMeta", {
             get: function () {
                 if (this.loading) {
-                    throw new _angular_core.BaseException("Template is still loading for " + this.compType.name + "!");
+                    throw new BaseException$1("Template is still loading for " + this.compType.name + "!");
                 }
                 return this._normalizedCompMeta;
             },
@@ -16239,7 +16230,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }());
     function assertComponent(meta) {
         if (!meta.isComponent) {
-            throw new _angular_core.BaseException("Could not compile '" + meta.type.name + "' because it is not a component.");
+            throw new BaseException$1("Could not compile '" + meta.type.name + "' because it is not a component.");
         }
     }
     /**
@@ -16265,7 +16256,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     return this._parentComponentResolver.resolveComponent(component);
                 }
                 else {
-                    return Promise.reject(new _angular_core.BaseException("Cannot resolve component using '" + component + "'."));
+                    return Promise.reject(new BaseException$1("Cannot resolve component using '" + component + "'."));
                 }
             }
             if (this._warnOnComponentResolver) {

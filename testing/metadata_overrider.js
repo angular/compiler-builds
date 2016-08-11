@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
+var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('../src/facade/lang');
 var _nextReferenceId = 0;
 var MetadataOverrider = (function () {
@@ -24,7 +24,7 @@ var MetadataOverrider = (function () {
         }
         if (override.set) {
             if (override.remove || override.add) {
-                throw new core_1.BaseException("Cannot set and add/remove " + lang_1.stringify(metadataClass) + " at the same time!");
+                throw new exceptions_1.BaseException("Cannot set and add/remove " + lang_1.stringify(metadataClass) + " at the same time!");
             }
             setMetadata(props, override.set);
         }

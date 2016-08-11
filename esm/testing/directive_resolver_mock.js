@@ -5,9 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException, Compiler, ComponentMetadata, DirectiveMetadata, Injectable, Injector, resolveForwardRef } from '@angular/core';
+import { Compiler, ComponentMetadata, DirectiveMetadata, Injectable, Injector, resolveForwardRef } from '@angular/core';
 import { DirectiveResolver } from '../src/directive_resolver';
 import { Map } from '../src/facade/collection';
+import { BaseException } from '../src/facade/exceptions';
 import { isArray, isPresent, stringify } from '../src/facade/lang';
 export class MockDirectiveResolver extends DirectiveResolver {
     constructor(_injector) {
