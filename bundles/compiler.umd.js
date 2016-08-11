@@ -5266,23 +5266,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     var impClearStyles = _angular_core.__core_private__.clearStyles;
     var impCollectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
     var impRenderStyles = _angular_core.__core_private__.renderStyles;
-    /**
-     * @stable
-     */
-    var BaseException$1 = (function (_super) {
-        __extends(BaseException$1, _super);
-        function BaseException$1(message) {
-            if (message === void 0) { message = '--'; }
-            _super.call(this, message);
-            this.message = message;
-            this.stack = (new Error(message)).stack;
-        }
-        BaseException$1.prototype.toString = function () { return this.message; };
-        return BaseException$1;
-    }(Error));
-    function unimplemented() {
-        throw new BaseException$1('unimplemented');
-    }
     var _EMPTY_ATTR_VALUE = '';
     var _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
         '([-\\w]+)|' +
@@ -6925,6 +6908,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         return SyncAsyncResult;
     }());
+    function unimplemented() {
+        throw new _angular_core.BaseException('unimplemented');
+    }
     // group 0: "[prop] or (event) or @trigger"
     // group 1: "prop" from "[prop]"
     // group 2: "event" from "(event)"
@@ -7189,7 +7175,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileIdentifierMap.prototype.add = function (token, value) {
             var existing = this.get(token);
             if (isPresent(existing)) {
-                throw new BaseException$1("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
+                throw new _angular_core.BaseException("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
             }
             this._tokens.push(token);
             this._values.push(value);
@@ -7275,7 +7261,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
             this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
             if (isPresent(interpolation) && interpolation.length != 2) {
-                throw new BaseException$1("'interpolation' should have a start and an end symbol.");
+                throw new _angular_core.BaseException("'interpolation' should have a start and an end symbol.");
             }
             this.interpolation = interpolation;
         }
@@ -12930,6 +12916,20 @@ var __extends = (this && this.__extends) || function (d, b) {
             template: template
         });
     }
+    /**
+     * @stable
+     */
+    var BaseException$1 = (function (_super) {
+        __extends(BaseException$1, _super);
+        function BaseException$1(message) {
+            if (message === void 0) { message = '--'; }
+            _super.call(this, message);
+            this.message = message;
+            this.stack = (new Error(message)).stack;
+        }
+        BaseException$1.prototype.toString = function () { return this.message; };
+        return BaseException$1;
+    }(Error));
     function _isDirectiveMetadata(type) {
         return type instanceof _angular_core.DirectiveMetadata;
     }
@@ -14885,7 +14885,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 currCtx = currCtx.parent;
             }
-            throw new BaseException$1("Not declared variable " + expr.name);
+            throw new _angular_core.BaseException("Not declared variable " + expr.name);
         };
         StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
             var varName = ast.name;
@@ -14902,7 +14902,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         varName = CATCH_STACK_VAR$1;
                         break;
                     default:
-                        throw new BaseException$1("Unknown builtin variable " + ast.builtin);
+                        throw new _angular_core.BaseException("Unknown builtin variable " + ast.builtin);
                 }
             }
             var currCtx = ctx;
@@ -14912,7 +14912,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 currCtx = currCtx.parent;
             }
-            throw new BaseException$1("Not declared variable " + varName);
+            throw new _angular_core.BaseException("Not declared variable " + varName);
         };
         StatementInterpreter.prototype.visitWriteKeyExpr = function (expr, ctx) {
             var receiver = expr.receiver.visitExpression(this, ctx);
@@ -14943,7 +14943,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         result = receiver.bind(args[0]);
                         break;
                     default:
-                        throw new BaseException$1("Unknown builtin method " + expr.builtin);
+                        throw new _angular_core.BaseException("Unknown builtin method " + expr.builtin);
                 }
             }
             else {
@@ -15066,7 +15066,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 case BinaryOperator.BiggerEquals:
                     return lhs() >= rhs();
                 default:
-                    throw new BaseException$1("Unknown operator " + ast.operator);
+                    throw new _angular_core.BaseException("Unknown operator " + ast.operator);
             }
         };
         StatementInterpreter.prototype.visitReadPropExpr = function (ast, ctx) {
