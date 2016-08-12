@@ -5,17 +5,17 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException, Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@angular/core';
+import { Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@angular/core';
 import { Console, MAX_INTERPOLATION_VALUES } from '../../core_private';
 import { removeIdentifierDuplicates } from '../compile_metadata';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection';
+import { BaseException } from '../facade/exceptions';
 import { isBlank, isPresent } from '../facade/lang';
-import { HtmlParser } from '../i18n/html_parser';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as html from '../ml_parser/ast';
-import { ParseTreeResult } from '../ml_parser/html_parser';
+import { HtmlParser, ParseTreeResult } from '../ml_parser/html_parser';
 import { expandNodes } from '../ml_parser/icu_ast_expander';
 import { InterpolationConfig } from '../ml_parser/interpolation_config';
 import { mergeNsAndName, splitNsName } from '../ml_parser/tags';

@@ -16,12 +16,12 @@ export declare class MockPipeResolver extends PipeResolver {
     /**
      * Overrides the {@link PipeMetadata} for a pipe.
      */
-    setPipe(type: Type<any>, metadata: PipeMetadata): void;
+    setPipe(type: Type, metadata: PipeMetadata): void;
     /**
      * Returns the {@link PipeMetadata} for a pipe:
      * - Set the {@link PipeMetadata} to the overridden view when it exists or fallback to the
      * default
      * `PipeResolver`, see `setPipe`.
      */
-    resolve(type: Type<any>, throwIfNotFound?: boolean): PipeMetadata;
+    resolve(type: Type, throwIfNotFound?: boolean): PipeMetadata;
 }

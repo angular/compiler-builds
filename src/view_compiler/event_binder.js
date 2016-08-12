@@ -41,7 +41,7 @@ var CompileEventListener = (function () {
         this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
         var context = lang_1.isPresent(directiveInstance) ? directiveInstance :
             this.compileElement.view.componentContext;
-        var actionStmts = expression_converter_1.convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
+        var actionStmts = expression_converter_1.convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler);
         var lastIndex = actionStmts.length - 1;
         if (lastIndex >= 0) {
             var lastStatement = actionStmts[lastIndex];

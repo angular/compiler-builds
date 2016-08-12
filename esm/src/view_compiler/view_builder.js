@@ -165,14 +165,11 @@ class ViewBuilderVisitor {
         var htmlAttrs = _readHtmlAttrs(ast.attrs);
         var attrNameAndValues = _mergeHtmlAndDirectiveAttrs(htmlAttrs, directives);
         for (var i = 0; i < attrNameAndValues.length; i++) {
-            const attrName = attrNameAndValues[i][0];
-            if (ast.name !== NG_CONTAINER_TAG) {
-                // <ng-container> are not rendered in the DOM
-                const attrValue = attrNameAndValues[i][1];
-                this.view.createMethod.addStmt(ViewProperties.renderer
-                    .callMethod('setElementAttribute', [renderNode, o.literal(attrName), o.literal(attrValue)])
-                    .toStmt());
-            }
+            var attrName = attrNameAndValues[i][0];
+            var attrValue = attrNameAndValues[i][1];
+            this.view.createMethod.addStmt(ViewProperties.renderer
+                .callMethod('setElementAttribute', [renderNode, o.literal(attrName), o.literal(attrValue)])
+                .toStmt());
         }
         var compileElement = new CompileElement(parent, this.view, nodeIndex, renderNode, ast, component, directives, ast.providers, ast.hasViewContainer, false, ast.references);
         this.view.nodes.push(compileElement);

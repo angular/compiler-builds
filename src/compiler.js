@@ -49,7 +49,6 @@ var pipe_resolver_2 = require('./pipe_resolver');
 var ng_module_resolver_2 = require('./ng_module_resolver');
 var core_private_1 = require('../core_private');
 var xhr_2 = require('./xhr');
-var i18n = require('./i18n/index');
 var _NO_XHR = {
     get: function (url) {
         throw new Error("No XHR implementation has been provided. Can't read the url \"" + url + "\"");
@@ -67,13 +66,6 @@ exports.COMPILER_PROVIDERS = [
     lexer_1.Lexer,
     parser_1.Parser,
     html_parser_1.HtmlParser,
-    {
-        provide: i18n.HtmlParser,
-        useFactory: function (parser, translations) {
-            return new i18n.HtmlParser(parser, translations);
-        },
-        deps: [html_parser_1.HtmlParser, [new core_1.OptionalMetadata(), new core_1.Inject(i18n.TRANSLATIONS)]]
-    },
     template_parser_2.TemplateParser,
     directive_normalizer_1.DirectiveNormalizer,
     metadata_resolver_1.CompileMetadataResolver,

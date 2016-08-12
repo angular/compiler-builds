@@ -59,7 +59,7 @@ var _Visitor = (function () {
         var _this = this;
         var nodes = [new xml.Text("{" + icu.expression + ", " + icu.type + ", ")];
         Object.keys(icu.cases).forEach(function (c) {
-            nodes.push.apply(nodes, [new xml.Text(c + " {")].concat(icu.cases[c].visit(_this), [new xml.Text("} ")]));
+            nodes.push.apply(nodes, [new xml.Text(c + " {")].concat(icu.cases[c].visit(_this), [new xml.Text("}")]));
         });
         nodes.push(new xml.Text("}"));
         return nodes;

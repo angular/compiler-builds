@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as html from '../ml_parser/ast';
-import { ParseTreeResult } from '../ml_parser/parser';
 import { digestMessage } from './digest';
 import * as i18n from './i18n_ast';
 import { createI18nMessageFactory } from './i18n_parser';
@@ -71,7 +70,7 @@ class _Visitor {
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
         }
-        return new ParseTreeResult(translatedNode.children, this._errors);
+        return translatedNode.children;
     }
     visitExpansionCase(icuCase, context) {
         // Parse cases for translatable html attributes
@@ -124,9 +123,7 @@ class _Visitor {
                         this._closeTranslatableSection(comment, this._blockChildren);
                         this._inI18nBlock = false;
                         const message = this._addMessage(this._blockChildren, this._blockMeaningAndDesc);
-                        // merge attributes in sections
-                        const nodes = this._translateMessage(comment, message);
-                        return html.visitAll(this, nodes);
+                        return this._translateMessage(comment, message);
                     }
                     else {
                         this._reportError(comment, 'I18N blocks should not cross element boundaries');
@@ -264,8 +261,7 @@ class _Visitor {
         this._messages.push(message);
         return message;
     }
-    // Translates the given message given the `TranslationBundle`
-    // no-op when called in extraction mode (returns [])
+    // translate the given message given the `TranslationBundle`
     _translateMessage(el, message) {
         if (message && this._mode === _VisitorMode.Merge) {
             const id = digestMessage(message);
@@ -293,7 +289,7 @@ class _Visitor {
                 // strip i18n specific attributes
                 return;
             }
-            if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
+            if (i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                 const meaning = i18nAttributeMeanings[attr.name];
                 const message = this._createI18nMessage([attr], meaning, '');
                 const id = digestMessage(message);

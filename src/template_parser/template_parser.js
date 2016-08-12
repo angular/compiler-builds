@@ -17,11 +17,11 @@ var compile_metadata_1 = require('../compile_metadata');
 var ast_1 = require('../expression_parser/ast');
 var parser_1 = require('../expression_parser/parser');
 var collection_1 = require('../facade/collection');
+var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
-var html_parser_1 = require('../i18n/html_parser');
 var identifiers_1 = require('../identifiers');
 var html = require('../ml_parser/ast');
-var html_parser_2 = require('../ml_parser/html_parser');
+var html_parser_1 = require('../ml_parser/html_parser');
 var icu_ast_expander_1 = require('../ml_parser/icu_ast_expander');
 var interpolation_config_1 = require('../ml_parser/interpolation_config');
 var tags_1 = require('../ml_parser/tags');
@@ -95,7 +95,7 @@ var TemplateParser = (function () {
         }
         if (errors.length > 0) {
             var errorString = errors.join('\n');
-            throw new core_1.BaseException("Template parse errors:\n" + errorString);
+            throw new exceptions_1.BaseException("Template parse errors:\n" + errorString);
         }
         return result.templateAst;
     };
@@ -111,7 +111,7 @@ var TemplateParser = (function () {
             // Transform ICU messages to angular directives
             var expandedHtmlAst = icu_ast_expander_1.expandNodes(htmlAstWithErrors.rootNodes);
             errors.push.apply(errors, expandedHtmlAst.errors);
-            htmlAstWithErrors = new html_parser_2.ParseTreeResult(expandedHtmlAst.nodes, errors);
+            htmlAstWithErrors = new html_parser_1.ParseTreeResult(expandedHtmlAst.nodes, errors);
         }
         if (htmlAstWithErrors.rootNodes.length > 0) {
             var uniqDirectives = compile_metadata_1.removeIdentifierDuplicates(directives);
@@ -208,7 +208,7 @@ var TemplateParseVisitor = (function () {
             this._checkPipes(ast, sourceSpan);
             if (lang_1.isPresent(ast) &&
                 ast.ast.expressions.length > core_private_1.MAX_INTERPOLATION_VALUES) {
-                throw new core_1.BaseException("Only support at most " + core_private_1.MAX_INTERPOLATION_VALUES + " interpolation values!");
+                throw new exceptions_1.BaseException("Only support at most " + core_private_1.MAX_INTERPOLATION_VALUES + " interpolation values!");
             }
             return ast;
         }

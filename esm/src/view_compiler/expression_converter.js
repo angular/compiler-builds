@@ -5,40 +5,27 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import * as cdAst from '../expression_parser/ast';
+import { BaseException } from '../facade/exceptions';
 import { isArray, isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
 export class ExpressionWithWrappedValueInfo {
-    constructor(expression, needsValueUnwrapper, temporaryCount) {
+    constructor(expression, needsValueUnwrapper) {
         this.expression = expression;
         this.needsValueUnwrapper = needsValueUnwrapper;
-        this.temporaryCount = temporaryCount;
     }
 }
-export function convertCdExpressionToIr(nameResolver, implicitReceiver, expression, valueUnwrapper, bindingIndex) {
-    const visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, valueUnwrapper, bindingIndex);
+export function convertCdExpressionToIr(nameResolver, implicitReceiver, expression, valueUnwrapper) {
+    const visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, valueUnwrapper);
     const irAst = expression.visit(visitor, _Mode.Expression);
-    return new ExpressionWithWrappedValueInfo(irAst, visitor.needsValueUnwrapper, visitor.temporaryCount);
+    return new ExpressionWithWrappedValueInfo(irAst, visitor.needsValueUnwrapper);
 }
-export function convertCdStatementToIr(nameResolver, implicitReceiver, stmt, bindingIndex) {
-    const visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, null, bindingIndex);
+export function convertCdStatementToIr(nameResolver, implicitReceiver, stmt) {
+    const visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, null);
     let statements = [];
     flattenStatements(stmt.visit(visitor, _Mode.Statement), statements);
-    prependTemporaryDecls(visitor.temporaryCount, bindingIndex, statements);
     return statements;
-}
-function temporaryName(bindingIndex, temporaryNumber) {
-    return `tmp_${bindingIndex}_${temporaryNumber}`;
-}
-export function temporaryDeclaration(bindingIndex, temporaryNumber) {
-    return new o.DeclareVarStmt(temporaryName(bindingIndex, temporaryNumber), o.NULL_EXPR);
-}
-function prependTemporaryDecls(temporaryCount, bindingIndex, statements) {
-    for (let i = temporaryCount - 1; i >= 0; i--) {
-        statements.unshift(temporaryDeclaration(bindingIndex, i));
-    }
 }
 var _Mode;
 (function (_Mode) {
@@ -64,16 +51,12 @@ function convertToStatementIfNeeded(mode, expr) {
     }
 }
 class _AstToIrVisitor {
-    constructor(_nameResolver, _implicitReceiver, _valueUnwrapper, bindingIndex) {
+    constructor(_nameResolver, _implicitReceiver, _valueUnwrapper) {
         this._nameResolver = _nameResolver;
         this._implicitReceiver = _implicitReceiver;
         this._valueUnwrapper = _valueUnwrapper;
-        this.bindingIndex = bindingIndex;
-        this._nodeMap = new Map();
-        this._resultMap = new Map();
-        this._currentTemporary = 0;
+        this._map = new Map();
         this.needsValueUnwrapper = false;
-        this.temporaryCount = 0;
     }
     visitBinary(ast, mode) {
         var op;
@@ -244,10 +227,7 @@ class _AstToIrVisitor {
         throw new BaseException('Quotes are not supported for evaluation!');
     }
     visit(ast, mode) {
-        const result = this._resultMap.get(ast);
-        if (result)
-            return result;
-        return (this._nodeMap.get(ast) || ast).visit(this, mode);
+        return (this._map.get(ast) || ast).visit(this, mode);
     }
     convertSafeAccess(ast, leftMostSafe, mode) {
         // If the expression contains a safe access node on the left it needs to be converted to
@@ -285,35 +265,20 @@ class _AstToIrVisitor {
         //
         // Notice that the first guard condition is the left hand of the left most safe access node
         // which comes in as leftMostSafe to this routine.
-        let guardedExpression = this.visit(leftMostSafe.receiver, mode);
-        let temporary;
-        if (this.needsTemporary(leftMostSafe.receiver)) {
-            // If the expression has method calls or pipes then we need to save the result into a
-            // temporary variable to avoid calling stateful or impure code more than once.
-            temporary = this.allocateTemporary();
-            // Preserve the result in the temporary variable
-            guardedExpression = temporary.set(guardedExpression);
-            // Ensure all further references to the guarded expression refer to the temporary instead.
-            this._resultMap.set(leftMostSafe.receiver, temporary);
-        }
-        const condition = guardedExpression.isBlank();
+        const condition = this.visit(leftMostSafe.receiver, mode).isBlank();
         // Convert the ast to an unguarded access to the receiver's member. The map will substitute
         // leftMostNode with its unguarded version in the call to `this.visit()`.
         if (leftMostSafe instanceof cdAst.SafeMethodCall) {
-            this._nodeMap.set(leftMostSafe, new cdAst.MethodCall(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
+            this._map.set(leftMostSafe, new cdAst.MethodCall(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
         }
         else {
-            this._nodeMap.set(leftMostSafe, new cdAst.PropertyRead(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name));
+            this._map.set(leftMostSafe, new cdAst.PropertyRead(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name));
         }
         // Recursively convert the node now without the guarded member access.
         const access = this.visit(ast, mode);
         // Remove the mapping. This is not strictly required as the converter only traverses each node
         // once but is safer if the conversion is changed to traverse the nodes more than once.
-        this._nodeMap.delete(leftMostSafe);
-        // If we allcoated a temporary, release it.
-        if (temporary) {
-            this.releaseTemporary(temporary);
-        }
+        this._map.delete(leftMostSafe);
         // Produce the conditional
         return condition.conditional(o.literal(null), access);
     }
@@ -325,8 +290,8 @@ class _AstToIrVisitor {
     // then to:
     //   a == null ? null : a.b.c == null ? null : a.b.c.d.e
     leftMostSafeNode(ast) {
-        const visit = (visitor, ast) => {
-            return (this._nodeMap.get(ast) || ast).visit(visitor);
+        let visit = (visitor, ast) => {
+            return (this._map.get(ast) || ast).visit(visitor);
         };
         return ast.visit({
             visitBinary(ast) { return null; },
@@ -351,52 +316,6 @@ class _AstToIrVisitor {
                 return visit(this, ast.receiver) || ast;
             }
         });
-    }
-    // Returns true of the AST includes a method or a pipe indicating that, if the
-    // expression is used as the target of a safe property or method access then
-    // the expression should be stored into a temporary variable.
-    needsTemporary(ast) {
-        const visit = (visitor, ast) => {
-            return ast && (this._nodeMap.get(ast) || ast).visit(visitor);
-        };
-        const visitSome = (visitor, ast) => {
-            return ast.some(ast => visit(visitor, ast));
-        };
-        return ast.visit({
-            visitBinary(ast) { return visit(this, ast.left) || visit(this, ast.right); },
-            visitChain(ast) { return false; },
-            visitConditional(ast) {
-                return visit(this, ast.condition) || visit(this, ast.trueExp) ||
-                    visit(this, ast.falseExp);
-            },
-            visitFunctionCall(ast) { return true; },
-            visitImplicitReceiver(ast) { return false; },
-            visitInterpolation(ast) { return visitSome(this, ast.expressions); },
-            visitKeyedRead(ast) { return false; },
-            visitKeyedWrite(ast) { return false; },
-            visitLiteralArray(ast) { return true; },
-            visitLiteralMap(ast) { return true; },
-            visitLiteralPrimitive(ast) { return false; },
-            visitMethodCall(ast) { return true; },
-            visitPipe(ast) { return true; },
-            visitPrefixNot(ast) { return visit(this, ast.expression); },
-            visitPropertyRead(ast) { return false; },
-            visitPropertyWrite(ast) { return false; },
-            visitQuote(ast) { return false; },
-            visitSafeMethodCall(ast) { return true; },
-            visitSafePropertyRead(ast) { return false; }
-        });
-    }
-    allocateTemporary() {
-        const tempNumber = this._currentTemporary++;
-        this.temporaryCount = Math.max(this._currentTemporary, this.temporaryCount);
-        return new o.ReadVarExpr(temporaryName(this.bindingIndex, tempNumber));
-    }
-    releaseTemporary(temporary) {
-        this._currentTemporary--;
-        if (temporary.name != temporaryName(this.bindingIndex, this._currentTemporary)) {
-            throw new BaseException(`Temporary ${temporary.name} released out of order`);
-        }
     }
 }
 function flattenStatements(arg, output) {

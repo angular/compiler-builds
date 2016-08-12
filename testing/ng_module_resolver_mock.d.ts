@@ -16,12 +16,12 @@ export declare class MockNgModuleResolver extends NgModuleResolver {
     /**
      * Overrides the {@link NgModuleMetadata} for a module.
      */
-    setNgModule(type: Type<any>, metadata: NgModuleMetadata): void;
+    setNgModule(type: Type, metadata: NgModuleMetadata): void;
     /**
      * Returns the {@link NgModuleMetadata} for a module:
      * - Set the {@link NgModuleMetadata} to the overridden view when it exists or fallback to the
      * default
      * `NgModuleResolver`, see `setNgModule`.
      */
-    resolve(type: Type<any>, throwIfNotFound?: boolean): NgModuleMetadata;
+    resolve(type: Type, throwIfNotFound?: boolean): NgModuleMetadata;
 }

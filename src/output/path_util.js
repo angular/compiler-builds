@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
+var exceptions_1 = require('../facade/exceptions');
 // asset:<package-name>/<realm>/<path-to-module>
 var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
 /**
@@ -34,7 +34,7 @@ var AssetUrl = (function () {
         if (allowNonMatching) {
             return null;
         }
-        throw new core_1.BaseException("Url " + url + " is not a valid asset: url");
+        throw new exceptions_1.BaseException("Url " + url + " is not a valid asset: url");
     };
     return AssetUrl;
 }());

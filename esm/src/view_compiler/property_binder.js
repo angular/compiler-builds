@@ -14,7 +14,7 @@ import { PropertyBindingType } from '../template_parser/template_ast';
 import { camelCaseToDashCase } from '../util';
 import { CompileBinding } from './compile_binding';
 import { DetectChangesVars, ViewProperties } from './constants';
-import { convertCdExpressionToIr, temporaryDeclaration } from './expression_converter';
+import { convertCdExpressionToIr } from './expression_converter';
 function createBindFieldExpr(exprIndex) {
     return o.THIS_EXPR.prop(`_expr_${exprIndex}`);
 }
@@ -22,16 +22,11 @@ function createCurrValueExpr(exprIndex) {
     return o.variable(`currVal_${exprIndex}`); // fix syntax highlighting: `
 }
 const _animationViewCheckedFlagMap = new Map();
-function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
-    var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
+function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method) {
+    var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper);
     if (isBlank(checkExpression.expression)) {
         // e.g. an empty expression was given
         return;
-    }
-    if (checkExpression.temporaryCount) {
-        for (let i = 0; i < checkExpression.temporaryCount; i++) {
-            method.addStmt(temporaryDeclaration(bindingIndex, i));
-        }
     }
     // private is fine here as no child view will reference the cached value...
     view.fields.push(new o.ClassField(fieldExpr.name, null, [o.StmtModifier.Private]));
@@ -57,7 +52,7 @@ export function bindRenderText(boundText, compileNode, view) {
     view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileNode.nodeIndex, boundText);
     bind(view, currValExpr, valueField, boundText.value, view.componentContext, [o.THIS_EXPR.prop('renderer')
             .callMethod('setText', [compileNode.renderNode, currValExpr])
-            .toStmt()], view.detectChangesRenderPropertiesMethod, bindingIndex);
+            .toStmt()], view.detectChangesRenderPropertiesMethod);
 }
 function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp) {
     var view = compileElement.view;
@@ -132,7 +127,7 @@ function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp)
                 }
                 break;
         }
-        bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod, view.bindings.length);
+        bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod);
     });
 }
 function sanitizedValue(boundProp, renderValue) {
@@ -206,7 +201,7 @@ export function bindDirectiveInputs(directiveAst, directiveInstance, compileElem
         if (view.genConfig.logBindingUpdate) {
             statements.push(logBindingUpdateStmt(compileElement.renderNode, input.directiveName, currValExpr));
         }
-        bind(view, currValExpr, fieldExpr, input.value, view.componentContext, statements, detectChangesInInputsMethod, bindingIndex);
+        bind(view, currValExpr, fieldExpr, input.value, view.componentContext, statements, detectChangesInInputsMethod);
     });
     if (isOnPushComp) {
         detectChangesInInputsMethod.addStmt(new o.IfStmt(DetectChangesVars.changed, [

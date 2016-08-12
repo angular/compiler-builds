@@ -7,7 +7,6 @@
  */
 "use strict";
 var html = require('../ml_parser/ast');
-var parser_1 = require('../ml_parser/parser');
 var digest_1 = require('./digest');
 var i18n = require('./i18n_ast');
 var i18n_parser_1 = require('./i18n_parser');
@@ -77,7 +76,7 @@ var _Visitor = (function () {
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
         }
-        return new parser_1.ParseTreeResult(translatedNode.children, this._errors);
+        return translatedNode.children;
     };
     _Visitor.prototype.visitExpansionCase = function (icuCase, context) {
         // Parse cases for translatable html attributes
@@ -130,9 +129,7 @@ var _Visitor = (function () {
                         this._closeTranslatableSection(comment, this._blockChildren);
                         this._inI18nBlock = false;
                         var message = this._addMessage(this._blockChildren, this._blockMeaningAndDesc);
-                        // merge attributes in sections
-                        var nodes = this._translateMessage(comment, message);
-                        return html.visitAll(this, nodes);
+                        return this._translateMessage(comment, message);
                     }
                     else {
                         this._reportError(comment, 'I18N blocks should not cross element boundaries');
@@ -272,8 +269,7 @@ var _Visitor = (function () {
         this._messages.push(message);
         return message;
     };
-    // Translates the given message given the `TranslationBundle`
-    // no-op when called in extraction mode (returns [])
+    // translate the given message given the `TranslationBundle`
     _Visitor.prototype._translateMessage = function (el, message) {
         if (message && this._mode === _VisitorMode.Merge) {
             var id = digest_1.digestMessage(message);
@@ -302,7 +298,7 @@ var _Visitor = (function () {
                 // strip i18n specific attributes
                 return;
             }
-            if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
+            if (i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                 var meaning = i18nAttributeMeanings[attr.name];
                 var message = _this._createI18nMessage([attr], meaning, '');
                 var id = digest_1.digestMessage(message);

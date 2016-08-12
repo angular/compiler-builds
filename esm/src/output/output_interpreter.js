@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { ListWrapper } from '../facade/collection';
+import { BaseException } from '../facade/exceptions';
 import { isPresent } from '../facade/lang';
 import * as o from './output_ast';
 import { debugOutputAstAsTypeScript } from './ts_emitter';

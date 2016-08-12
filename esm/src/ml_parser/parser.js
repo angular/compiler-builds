@@ -28,12 +28,12 @@ export class ParseTreeResult {
     }
 }
 export class Parser {
-    constructor(getTagDefinition) {
-        this.getTagDefinition = getTagDefinition;
+    constructor(_getTagDefinition) {
+        this._getTagDefinition = _getTagDefinition;
     }
     parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const tokensAndErrors = lex.tokenize(source, url, this.getTagDefinition, parseExpansionForms, interpolationConfig);
-        const treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
+        const tokensAndErrors = lex.tokenize(source, url, this._getTagDefinition, parseExpansionForms, interpolationConfig);
+        const treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this._getTagDefinition).build();
         return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
     }
 }

@@ -736,7 +736,7 @@ function verifyNonBlankProviders(directiveType, providersTree, providersType) {
     return providersTree;
 }
 function isValidType(value) {
-    return cpl.isStaticSymbol(value) || (value instanceof core_1.Type);
+    return cpl.isStaticSymbol(value) || (value instanceof lang_1.Type);
 }
 function staticTypeModuleUrl(value) {
     return cpl.isStaticSymbol(value) ? value.filePath : null;

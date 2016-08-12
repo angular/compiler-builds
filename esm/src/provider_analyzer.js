@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { CompileDiDependencyMetadata, CompileIdentifierMap, CompileProviderMetadata, CompileTokenMetadata, CompileTypeMetadata } from './compile_metadata';
 import { ListWrapper } from './facade/collection';
+import { BaseException } from './facade/exceptions';
 import { isArray, isBlank, isPresent, normalizeBlank } from './facade/lang';
 import { Identifiers, identifierToken } from './identifiers';
 import { ParseError } from './parse_util';

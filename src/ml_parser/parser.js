@@ -39,14 +39,14 @@ var ParseTreeResult = (function () {
 }());
 exports.ParseTreeResult = ParseTreeResult;
 var Parser = (function () {
-    function Parser(getTagDefinition) {
-        this.getTagDefinition = getTagDefinition;
+    function Parser(_getTagDefinition) {
+        this._getTagDefinition = _getTagDefinition;
     }
     Parser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
         if (parseExpansionForms === void 0) { parseExpansionForms = false; }
         if (interpolationConfig === void 0) { interpolationConfig = interpolation_config_1.DEFAULT_INTERPOLATION_CONFIG; }
-        var tokensAndErrors = lex.tokenize(source, url, this.getTagDefinition, parseExpansionForms, interpolationConfig);
-        var treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
+        var tokensAndErrors = lex.tokenize(source, url, this._getTagDefinition, parseExpansionForms, interpolationConfig);
+        var treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this._getTagDefinition).build();
         return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
     };
     return Parser;

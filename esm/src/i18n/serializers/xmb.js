@@ -68,7 +68,7 @@ class _Visitor {
     visitIcu(icu, context) {
         const nodes = [new xml.Text(`{${icu.expression}, ${icu.type}, `)];
         Object.keys(icu.cases).forEach((c) => {
-            nodes.push(new xml.Text(`${c} {`), ...icu.cases[c].visit(this), new xml.Text(`} `));
+            nodes.push(new xml.Text(`${c} {`), ...icu.cases[c].visit(this), new xml.Text(`}`));
         });
         nodes.push(new xml.Text(`}`));
         return nodes;

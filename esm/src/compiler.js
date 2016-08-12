@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { COMPILER_OPTIONS, Compiler, CompilerFactory, Component, Inject, Injectable, OptionalMetadata, PLATFORM_DIRECTIVES, PLATFORM_INITIALIZER, PLATFORM_PIPES, ReflectiveInjector, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
+import { COMPILER_OPTIONS, Compiler, CompilerFactory, Component, Inject, Injectable, PLATFORM_DIRECTIVES, PLATFORM_INITIALIZER, PLATFORM_PIPES, ReflectiveInjector, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
 export * from './template_parser/template_ast';
 export { TEMPLATE_TRANSFORMS } from './template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './config';
@@ -38,7 +38,6 @@ import { PipeResolver } from './pipe_resolver';
 import { NgModuleResolver } from './ng_module_resolver';
 import { Console, Reflector, reflector, ReflectorReader, ReflectionCapabilities } from '../core_private';
 import { XHR } from './xhr';
-import * as i18n from './i18n/index';
 const _NO_XHR = {
     get(url) {
         throw new Error(`No XHR implementation has been provided. Can't read the url "${url}"`);
@@ -56,11 +55,6 @@ export const COMPILER_PROVIDERS = [
     Lexer,
     Parser,
     HtmlParser,
-    {
-        provide: i18n.HtmlParser,
-        useFactory: (parser, translations) => new i18n.HtmlParser(parser, translations),
-        deps: [HtmlParser, [new OptionalMetadata(), new Inject(i18n.TRANSLATIONS)]]
-    },
     TemplateParser,
     DirectiveNormalizer,
     CompileMetadataResolver,

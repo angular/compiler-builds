@@ -21,12 +21,12 @@ export { NgModuleResolver } from './ng_module_resolver';
  * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
  * template compilation.
  */
-export declare const COMPILER_PROVIDERS: Array<any | Type<any> | {
+export declare const COMPILER_PROVIDERS: Array<any | Type | {
     [k: string]: any;
 } | any[]>;
 export declare function analyzeAppProvidersForDeprecatedConfiguration(appProviders?: any[]): {
     compilerOptions: CompilerOptions;
-    moduleDeclarations: Type<any>[];
+    moduleDeclarations: Type[];
     deprecationMessages: string[];
 };
 export declare class RuntimeCompilerFactory implements CompilerFactory {
