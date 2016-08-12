@@ -4998,9 +4998,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return _Visitor$1;
     }());
-    var TRANSLATIONS = new _angular_core.OpaqueToken('Translations');
     var i18n = Object.freeze({
-        TRANSLATIONS: TRANSLATIONS,
         HtmlParser: HtmlParser,
         MessageBundle: MessageBundle,
         Xmb: Xmb,
@@ -7766,6 +7764,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         name: 'collectAndResolveStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
         runtime: impCollectAndResolveStyles
+    });
+    Identifiers.LOCALE_ID = new CompileIdentifierMetadata({ name: 'LOCALE_ID', moduleUrl: assetUrl('core', 'i18n/tokens'), runtime: _angular_core.LOCALE_ID });
+    Identifiers.TRANSLATIONS_FORMAT = new CompileIdentifierMetadata({
+        name: 'TRANSLATIONS_FORMAT',
+        moduleUrl: assetUrl('core', 'i18n/tokens'),
+        runtime: _angular_core.TRANSLATIONS_FORMAT
     });
     function identifierToken(identifier) {
         return new CompileTokenMetadata({ identifier: identifier });
@@ -12680,7 +12684,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return NgModulesSummary;
     }());
     var OfflineCompiler = (function () {
-        function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter) {
+        function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat) {
             this._metadataResolver = _metadataResolver;
             this._directiveNormalizer = _directiveNormalizer;
             this._templateParser = _templateParser;
@@ -12688,6 +12692,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._viewCompiler = _viewCompiler;
             this._ngModuleCompiler = _ngModuleCompiler;
             this._outputEmitter = _outputEmitter;
+            this._localeId = _localeId;
+            this._translationFormat = _translationFormat;
         }
         OfflineCompiler.prototype.analyzeModules = function (ngModules) {
             var _this = this;
@@ -12747,7 +12753,16 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         OfflineCompiler.prototype._compileModule = function (ngModuleType, targetStatements) {
             var ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
-            var appCompileResult = this._ngModuleCompiler.compile(ngModule, []);
+            var appCompileResult = this._ngModuleCompiler.compile(ngModule, [
+                new CompileProviderMetadata({
+                    token: new CompileTokenMetadata({ identifier: Identifiers.LOCALE_ID }),
+                    useValue: this._localeId
+                }),
+                new CompileProviderMetadata({
+                    token: new CompileTokenMetadata({ identifier: Identifiers.TRANSLATIONS_FORMAT }),
+                    useValue: this._translationFormat
+                })
+            ]);
             appCompileResult.dependencies.forEach(function (dep) {
                 dep.placeholder.name = _componentFactoryName(dep.comp);
                 dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);
@@ -16816,7 +16831,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         {
             provide: HtmlParser,
             useFactory: function (parser, translations) { return new HtmlParser(parser, translations); },
-            deps: [HtmlParser$1, [new _angular_core.OptionalMetadata(), new _angular_core.Inject(TRANSLATIONS)]]
+            deps: [HtmlParser$1, [new _angular_core.OptionalMetadata(), new _angular_core.Inject(_angular_core.TRANSLATIONS)]]
         },
         TemplateParser,
         DirectiveNormalizer,

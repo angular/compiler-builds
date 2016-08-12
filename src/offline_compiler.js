@@ -28,7 +28,7 @@ var NgModulesSummary = (function () {
 }());
 exports.NgModulesSummary = NgModulesSummary;
 var OfflineCompiler = (function () {
-    function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter) {
+    function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat) {
         this._metadataResolver = _metadataResolver;
         this._directiveNormalizer = _directiveNormalizer;
         this._templateParser = _templateParser;
@@ -36,6 +36,8 @@ var OfflineCompiler = (function () {
         this._viewCompiler = _viewCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
         this._outputEmitter = _outputEmitter;
+        this._localeId = _localeId;
+        this._translationFormat = _translationFormat;
     }
     OfflineCompiler.prototype.analyzeModules = function (ngModules) {
         var _this = this;
@@ -95,7 +97,16 @@ var OfflineCompiler = (function () {
     };
     OfflineCompiler.prototype._compileModule = function (ngModuleType, targetStatements) {
         var ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
-        var appCompileResult = this._ngModuleCompiler.compile(ngModule, []);
+        var appCompileResult = this._ngModuleCompiler.compile(ngModule, [
+            new compile_metadata_1.CompileProviderMetadata({
+                token: new compile_metadata_1.CompileTokenMetadata({ identifier: identifiers_1.Identifiers.LOCALE_ID }),
+                useValue: this._localeId
+            }),
+            new compile_metadata_1.CompileProviderMetadata({
+                token: new compile_metadata_1.CompileTokenMetadata({ identifier: identifiers_1.Identifiers.TRANSLATIONS_FORMAT }),
+                useValue: this._translationFormat
+            })
+        ]);
         appCompileResult.dependencies.forEach(function (dep) {
             dep.placeholder.name = _componentFactoryName(dep.comp);
             dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);

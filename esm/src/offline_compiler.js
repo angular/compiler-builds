@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { BaseException } from '@angular/core';
-import { createHostComponentMeta } from './compile_metadata';
+import { CompileProviderMetadata, CompileTokenMetadata, createHostComponentMeta } from './compile_metadata';
 import { ListWrapper } from './facade/collection';
 import { Identifiers } from './identifiers';
 import * as o from './output/output_ast';
@@ -23,7 +23,7 @@ export class NgModulesSummary {
     }
 }
 export class OfflineCompiler {
-    constructor(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter) {
+    constructor(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat) {
         this._metadataResolver = _metadataResolver;
         this._directiveNormalizer = _directiveNormalizer;
         this._templateParser = _templateParser;
@@ -31,6 +31,8 @@ export class OfflineCompiler {
         this._viewCompiler = _viewCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
         this._outputEmitter = _outputEmitter;
+        this._localeId = _localeId;
+        this._translationFormat = _translationFormat;
     }
     analyzeModules(ngModules) {
         const ngModuleByComponent = new Map();
@@ -88,7 +90,16 @@ export class OfflineCompiler {
     }
     _compileModule(ngModuleType, targetStatements) {
         const ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
-        let appCompileResult = this._ngModuleCompiler.compile(ngModule, []);
+        let appCompileResult = this._ngModuleCompiler.compile(ngModule, [
+            new CompileProviderMetadata({
+                token: new CompileTokenMetadata({ identifier: Identifiers.LOCALE_ID }),
+                useValue: this._localeId
+            }),
+            new CompileProviderMetadata({
+                token: new CompileTokenMetadata({ identifier: Identifiers.TRANSLATIONS_FORMAT }),
+                useValue: this._translationFormat
+            })
+        ]);
         appCompileResult.dependencies.forEach((dep) => {
             dep.placeholder.name = _componentFactoryName(dep.comp);
             dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);

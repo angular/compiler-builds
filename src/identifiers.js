@@ -217,6 +217,12 @@ var Identifiers = (function () {
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
         runtime: core_private_1.collectAndResolveStyles
     });
+    Identifiers.LOCALE_ID = new compile_metadata_1.CompileIdentifierMetadata({ name: 'LOCALE_ID', moduleUrl: util_1.assetUrl('core', 'i18n/tokens'), runtime: core_1.LOCALE_ID });
+    Identifiers.TRANSLATIONS_FORMAT = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'TRANSLATIONS_FORMAT',
+        moduleUrl: util_1.assetUrl('core', 'i18n/tokens'),
+        runtime: core_1.TRANSLATIONS_FORMAT
+    });
     return Identifiers;
 }());
 exports.Identifiers = Identifiers;
