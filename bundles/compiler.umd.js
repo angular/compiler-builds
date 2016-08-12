@@ -4215,11 +4215,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             // Construct a single fake root element
             var wrapper = new Element('wrapper', [], nodes, null, null, null);
             var translatedNode = wrapper.visit(this, null);
-            // TODO(vicb): return MergeResult with errors
             if (this._inI18nBlock) {
                 this._reportError(nodes[nodes.length - 1], 'Unclosed block');
             }
-            return translatedNode.children;
+            return new ParseTreeResult(translatedNode.children, this._errors);
         };
         _Visitor.prototype.visitExpansionCase = function (icuCase, context) {
             // Parse cases for translatable html attributes
@@ -4828,8 +4827,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             var xtb = new Xtb(this._htmlParser, interpolationConfig);
             var translationBundle = TranslationBundle.load(this._translations, url, messageBundle, xtb);
-            var translatedNodes = mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
-            return new ParseTreeResult(translatedNodes, []);
+            return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
         };
         return HtmlParser;
     }());
@@ -4972,7 +4970,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             var nodes = [new Text$2("{" + icu.expression + ", " + icu.type + ", ")];
             Object.keys(icu.cases).forEach(function (c) {
-                nodes.push.apply(nodes, [new Text$2(c + " {")].concat(icu.cases[c].visit(_this), [new Text$2("}")]));
+                nodes.push.apply(nodes, [new Text$2(c + " {")].concat(icu.cases[c].visit(_this), [new Text$2("} ")]));
             });
             nodes.push(new Text$2("}"));
             return nodes;

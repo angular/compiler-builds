@@ -33,8 +33,7 @@ export class HtmlParser {
         }
         const xtb = new Xtb(this._htmlParser, interpolationConfig);
         const translationBundle = TranslationBundle.load(this._translations, url, messageBundle, xtb);
-        const translatedNodes = mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
-        return new ParseTreeResult(translatedNodes, []);
+        return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
     }
 }
 //# sourceMappingURL=html_parser.js.map

@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as html from '../ml_parser/ast';
+import { ParseTreeResult } from '../ml_parser/parser';
 import { digestMessage } from './digest';
 import * as i18n from './i18n_ast';
 import { createI18nMessageFactory } from './i18n_parser';
@@ -67,11 +68,10 @@ class _Visitor {
         // Construct a single fake root element
         const wrapper = new html.Element('wrapper', [], nodes, null, null, null);
         const translatedNode = wrapper.visit(this, null);
-        // TODO(vicb): return MergeResult with errors
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
         }
-        return translatedNode.children;
+        return new ParseTreeResult(translatedNode.children, this._errors);
     }
     visitExpansionCase(icuCase, context) {
         // Parse cases for translatable html attributes

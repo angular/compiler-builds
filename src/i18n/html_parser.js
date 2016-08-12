@@ -36,8 +36,7 @@ var HtmlParser = (function () {
         }
         var xtb = new xtb_1.Xtb(this._htmlParser, interpolationConfig);
         var translationBundle = translation_bundle_1.TranslationBundle.load(this._translations, url, messageBundle, xtb);
-        var translatedNodes = extractor_merger_1.mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
-        return new parser_1.ParseTreeResult(translatedNodes, []);
+        return extractor_merger_1.mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
     };
     return HtmlParser;
 }());

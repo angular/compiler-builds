@@ -7,6 +7,7 @@
  */
 "use strict";
 var html = require('../ml_parser/ast');
+var parser_1 = require('../ml_parser/parser');
 var digest_1 = require('./digest');
 var i18n = require('./i18n_ast');
 var i18n_parser_1 = require('./i18n_parser');
@@ -73,11 +74,10 @@ var _Visitor = (function () {
         // Construct a single fake root element
         var wrapper = new html.Element('wrapper', [], nodes, null, null, null);
         var translatedNode = wrapper.visit(this, null);
-        // TODO(vicb): return MergeResult with errors
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
         }
-        return translatedNode.children;
+        return new parser_1.ParseTreeResult(translatedNode.children, this._errors);
     };
     _Visitor.prototype.visitExpansionCase = function (icuCase, context) {
         // Parse cases for translatable html attributes
