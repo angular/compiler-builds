@@ -9521,7 +9521,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return AnimationSequenceAst;
     }(AnimationWithStepsAst));
-    var Math$1 = global$1.Math;
+    var Math$2 = global$1.Math;
     var StylesCollectionEntry = (function () {
         function StylesCollectionEntry(time, value) {
             this.time = time;
@@ -9888,7 +9888,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var astDuration = innerAst.playTime;
                 currentTime += astDuration;
                 playTime += astDuration;
-                maxDuration = Math$1.max(astDuration, maxDuration);
+                maxDuration = Math$2.max(astDuration, maxDuration);
                 steps.push(innerAst);
             });
             if (isPresent(previousStyles)) {
@@ -9964,7 +9964,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (durationUnit == 's') {
                 durationMatch *= _ONE_SECOND;
             }
-            duration = Math$1.floor(durationMatch);
+            duration = Math$2.floor(durationMatch);
             var delayMatch = matches[3];
             var delayUnit = matches[4];
             if (isPresent(delayMatch)) {
@@ -9972,7 +9972,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 if (isPresent(delayUnit) && delayUnit == 's') {
                     delayVal *= _ONE_SECOND;
                 }
-                delay = Math$1.floor(delayVal);
+                delay = Math$2.floor(delayVal);
             }
             var easingVal = matches[5];
             if (!isBlank(easingVal)) {
@@ -11273,22 +11273,35 @@ var __extends = (this && this.__extends) || function (d, b) {
         return CompileBinding;
     }());
     var ExpressionWithWrappedValueInfo = (function () {
-        function ExpressionWithWrappedValueInfo(expression, needsValueUnwrapper) {
+        function ExpressionWithWrappedValueInfo(expression, needsValueUnwrapper, temporaryCount) {
             this.expression = expression;
             this.needsValueUnwrapper = needsValueUnwrapper;
+            this.temporaryCount = temporaryCount;
         }
         return ExpressionWithWrappedValueInfo;
     }());
-    function convertCdExpressionToIr(nameResolver, implicitReceiver, expression, valueUnwrapper) {
-        var visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, valueUnwrapper);
+    function convertCdExpressionToIr(nameResolver, implicitReceiver, expression, valueUnwrapper, bindingIndex) {
+        var visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, valueUnwrapper, bindingIndex);
         var irAst = expression.visit(visitor, _Mode.Expression);
-        return new ExpressionWithWrappedValueInfo(irAst, visitor.needsValueUnwrapper);
+        return new ExpressionWithWrappedValueInfo(irAst, visitor.needsValueUnwrapper, visitor.temporaryCount);
     }
-    function convertCdStatementToIr(nameResolver, implicitReceiver, stmt) {
-        var visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, null);
+    function convertCdStatementToIr(nameResolver, implicitReceiver, stmt, bindingIndex) {
+        var visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, null, bindingIndex);
         var statements = [];
         flattenStatements(stmt.visit(visitor, _Mode.Statement), statements);
+        prependTemporaryDecls(visitor.temporaryCount, bindingIndex, statements);
         return statements;
+    }
+    function temporaryName(bindingIndex, temporaryNumber) {
+        return "tmp_" + bindingIndex + "_" + temporaryNumber;
+    }
+    function temporaryDeclaration(bindingIndex, temporaryNumber) {
+        return new DeclareVarStmt(temporaryName(bindingIndex, temporaryNumber), NULL_EXPR);
+    }
+    function prependTemporaryDecls(temporaryCount, bindingIndex, statements) {
+        for (var i = temporaryCount - 1; i >= 0; i--) {
+            statements.unshift(temporaryDeclaration(bindingIndex, i));
+        }
     }
     var _Mode;
     (function (_Mode) {
@@ -11314,12 +11327,16 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
     }
     var _AstToIrVisitor = (function () {
-        function _AstToIrVisitor(_nameResolver, _implicitReceiver, _valueUnwrapper) {
+        function _AstToIrVisitor(_nameResolver, _implicitReceiver, _valueUnwrapper, bindingIndex) {
             this._nameResolver = _nameResolver;
             this._implicitReceiver = _implicitReceiver;
             this._valueUnwrapper = _valueUnwrapper;
-            this._map = new Map();
+            this.bindingIndex = bindingIndex;
+            this._nodeMap = new Map();
+            this._resultMap = new Map();
+            this._currentTemporary = 0;
             this.needsValueUnwrapper = false;
+            this.temporaryCount = 0;
         }
         _AstToIrVisitor.prototype.visitBinary = function (ast, mode) {
             var op;
@@ -11493,7 +11510,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             throw new _angular_core.BaseException('Quotes are not supported for evaluation!');
         };
         _AstToIrVisitor.prototype.visit = function (ast, mode) {
-            return (this._map.get(ast) || ast).visit(this, mode);
+            var result = this._resultMap.get(ast);
+            if (result)
+                return result;
+            return (this._nodeMap.get(ast) || ast).visit(this, mode);
         };
         _AstToIrVisitor.prototype.convertSafeAccess = function (ast, leftMostSafe, mode) {
             // If the expression contains a safe access node on the left it needs to be converted to
@@ -11531,20 +11551,35 @@ var __extends = (this && this.__extends) || function (d, b) {
             //
             // Notice that the first guard condition is the left hand of the left most safe access node
             // which comes in as leftMostSafe to this routine.
-            var condition = this.visit(leftMostSafe.receiver, mode).isBlank();
+            var guardedExpression = this.visit(leftMostSafe.receiver, mode);
+            var temporary;
+            if (this.needsTemporary(leftMostSafe.receiver)) {
+                // If the expression has method calls or pipes then we need to save the result into a
+                // temporary variable to avoid calling stateful or impure code more than once.
+                temporary = this.allocateTemporary();
+                // Preserve the result in the temporary variable
+                guardedExpression = temporary.set(guardedExpression);
+                // Ensure all further references to the guarded expression refer to the temporary instead.
+                this._resultMap.set(leftMostSafe.receiver, temporary);
+            }
+            var condition = guardedExpression.isBlank();
             // Convert the ast to an unguarded access to the receiver's member. The map will substitute
             // leftMostNode with its unguarded version in the call to `this.visit()`.
             if (leftMostSafe instanceof SafeMethodCall) {
-                this._map.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
+                this._nodeMap.set(leftMostSafe, new MethodCall(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name, leftMostSafe.args));
             }
             else {
-                this._map.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name));
+                this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name));
             }
             // Recursively convert the node now without the guarded member access.
             var access = this.visit(ast, mode);
             // Remove the mapping. This is not strictly required as the converter only traverses each node
             // once but is safer if the conversion is changed to traverse the nodes more than once.
-            this._map.delete(leftMostSafe);
+            this._nodeMap.delete(leftMostSafe);
+            // If we allcoated a temporary, release it.
+            if (temporary) {
+                this.releaseTemporary(temporary);
+            }
             // Produce the conditional
             return condition.conditional(literal(null), access);
         };
@@ -11558,7 +11593,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _AstToIrVisitor.prototype.leftMostSafeNode = function (ast) {
             var _this = this;
             var visit = function (visitor, ast) {
-                return (_this._map.get(ast) || ast).visit(visitor);
+                return (_this._nodeMap.get(ast) || ast).visit(visitor);
             };
             return ast.visit({
                 visitBinary: function (ast) { return null; },
@@ -11583,6 +11618,53 @@ var __extends = (this && this.__extends) || function (d, b) {
                     return visit(this, ast.receiver) || ast;
                 }
             });
+        };
+        // Returns true of the AST includes a method or a pipe indicating that, if the
+        // expression is used as the target of a safe property or method access then
+        // the expression should be stored into a temporary variable.
+        _AstToIrVisitor.prototype.needsTemporary = function (ast) {
+            var _this = this;
+            var visit = function (visitor, ast) {
+                return ast && (_this._nodeMap.get(ast) || ast).visit(visitor);
+            };
+            var visitSome = function (visitor, ast) {
+                return ast.some(function (ast) { return visit(visitor, ast); });
+            };
+            return ast.visit({
+                visitBinary: function (ast) { return visit(this, ast.left) || visit(this, ast.right); },
+                visitChain: function (ast) { return false; },
+                visitConditional: function (ast) {
+                    return visit(this, ast.condition) || visit(this, ast.trueExp) ||
+                        visit(this, ast.falseExp);
+                },
+                visitFunctionCall: function (ast) { return true; },
+                visitImplicitReceiver: function (ast) { return false; },
+                visitInterpolation: function (ast) { return visitSome(this, ast.expressions); },
+                visitKeyedRead: function (ast) { return false; },
+                visitKeyedWrite: function (ast) { return false; },
+                visitLiteralArray: function (ast) { return true; },
+                visitLiteralMap: function (ast) { return true; },
+                visitLiteralPrimitive: function (ast) { return false; },
+                visitMethodCall: function (ast) { return true; },
+                visitPipe: function (ast) { return true; },
+                visitPrefixNot: function (ast) { return visit(this, ast.expression); },
+                visitPropertyRead: function (ast) { return false; },
+                visitPropertyWrite: function (ast) { return false; },
+                visitQuote: function (ast) { return false; },
+                visitSafeMethodCall: function (ast) { return true; },
+                visitSafePropertyRead: function (ast) { return false; }
+            });
+        };
+        _AstToIrVisitor.prototype.allocateTemporary = function () {
+            var tempNumber = this._currentTemporary++;
+            this.temporaryCount = Math.max(this._currentTemporary, this.temporaryCount);
+            return new ReadVarExpr(temporaryName(this.bindingIndex, tempNumber));
+        };
+        _AstToIrVisitor.prototype.releaseTemporary = function (temporary) {
+            this._currentTemporary--;
+            if (temporary.name != temporaryName(this.bindingIndex, this._currentTemporary)) {
+                throw new _angular_core.BaseException("Temporary " + temporary.name + " released out of order");
+            }
         };
         return _AstToIrVisitor;
     }());
@@ -11621,7 +11703,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
             var context = isPresent(directiveInstance) ? directiveInstance :
                 this.compileElement.view.componentContext;
-            var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler);
+            var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
             var lastIndex = actionStmts.length - 1;
             if (lastIndex >= 0) {
                 var lastStatement = actionStmts[lastIndex];
@@ -11775,11 +11857,16 @@ var __extends = (this && this.__extends) || function (d, b) {
         return variable("currVal_" + exprIndex); // fix syntax highlighting: `
     }
     var _animationViewCheckedFlagMap = new Map();
-    function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method) {
-        var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper);
+    function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
+        var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
         if (isBlank(checkExpression.expression)) {
             // e.g. an empty expression was given
             return;
+        }
+        if (checkExpression.temporaryCount) {
+            for (var i = 0; i < checkExpression.temporaryCount; i++) {
+                method.addStmt(temporaryDeclaration(bindingIndex, i));
+            }
         }
         // private is fine here as no child view will reference the cached value...
         view.fields.push(new ClassField(fieldExpr.name, null, [StmtModifier.Private]));
@@ -11805,7 +11892,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileNode.nodeIndex, boundText);
         bind(view, currValExpr, valueField, boundText.value, view.componentContext, [THIS_EXPR.prop('renderer')
                 .callMethod('setText', [compileNode.renderNode, currValExpr])
-                .toStmt()], view.detectChangesRenderPropertiesMethod);
+                .toStmt()], view.detectChangesRenderPropertiesMethod, bindingIndex);
     }
     function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp) {
         var view = compileElement.view;
@@ -11880,7 +11967,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     }
                     break;
             }
-            bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod);
+            bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod, view.bindings.length);
         });
     }
     function sanitizedValue(boundProp, renderValue) {
@@ -11954,7 +12041,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (view.genConfig.logBindingUpdate) {
                 statements.push(logBindingUpdateStmt(compileElement.renderNode, input.directiveName, currValExpr));
             }
-            bind(view, currValExpr, fieldExpr, input.value, view.componentContext, statements, detectChangesInInputsMethod);
+            bind(view, currValExpr, fieldExpr, input.value, view.componentContext, statements, detectChangesInInputsMethod, bindingIndex);
         });
         if (isOnPushComp) {
             detectChangesInInputsMethod.addStmt(new IfStmt(DetectChangesVars.changed, [

@@ -23,11 +23,16 @@ function createCurrValueExpr(exprIndex) {
     return o.variable("currVal_" + exprIndex); // fix syntax highlighting: `
 }
 var _animationViewCheckedFlagMap = new Map();
-function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method) {
-    var checkExpression = expression_converter_1.convertCdExpressionToIr(view, context, parsedExpression, constants_1.DetectChangesVars.valUnwrapper);
+function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
+    var checkExpression = expression_converter_1.convertCdExpressionToIr(view, context, parsedExpression, constants_1.DetectChangesVars.valUnwrapper, bindingIndex);
     if (lang_1.isBlank(checkExpression.expression)) {
         // e.g. an empty expression was given
         return;
+    }
+    if (checkExpression.temporaryCount) {
+        for (var i = 0; i < checkExpression.temporaryCount; i++) {
+            method.addStmt(expression_converter_1.temporaryDeclaration(bindingIndex, i));
+        }
     }
     // private is fine here as no child view will reference the cached value...
     view.fields.push(new o.ClassField(fieldExpr.name, null, [o.StmtModifier.Private]));
@@ -53,7 +58,7 @@ function bindRenderText(boundText, compileNode, view) {
     view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileNode.nodeIndex, boundText);
     bind(view, currValExpr, valueField, boundText.value, view.componentContext, [o.THIS_EXPR.prop('renderer')
             .callMethod('setText', [compileNode.renderNode, currValExpr])
-            .toStmt()], view.detectChangesRenderPropertiesMethod);
+            .toStmt()], view.detectChangesRenderPropertiesMethod, bindingIndex);
 }
 exports.bindRenderText = bindRenderText;
 function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp) {
@@ -129,7 +134,7 @@ function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp)
                 }
                 break;
         }
-        bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod);
+        bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, view.detectChangesRenderPropertiesMethod, view.bindings.length);
     });
 }
 function sanitizedValue(boundProp, renderValue) {
@@ -205,7 +210,7 @@ function bindDirectiveInputs(directiveAst, directiveInstance, compileElement) {
         if (view.genConfig.logBindingUpdate) {
             statements.push(logBindingUpdateStmt(compileElement.renderNode, input.directiveName, currValExpr));
         }
-        bind(view, currValExpr, fieldExpr, input.value, view.componentContext, statements, detectChangesInInputsMethod);
+        bind(view, currValExpr, fieldExpr, input.value, view.componentContext, statements, detectChangesInInputsMethod, bindingIndex);
     });
     if (isOnPushComp) {
         detectChangesInInputsMethod.addStmt(new o.IfStmt(constants_1.DetectChangesVars.changed, [
