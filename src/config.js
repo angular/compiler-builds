@@ -7,8 +7,10 @@
  */
 "use strict";
 var core_1 = require('@angular/core');
-var exceptions_1 = require('../src/facade/exceptions');
 var identifiers_1 = require('./identifiers');
+function unimplemented() {
+    throw new core_1.BaseException('unimplemented');
+}
 var CompilerConfig = (function () {
     function CompilerConfig(_a) {
         var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? core_1.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, _f = _b.deprecatedPlatformDirectives, deprecatedPlatformDirectives = _f === void 0 ? [] : _f, _g = _b.deprecatedPlatformPipes, deprecatedPlatformPipes = _g === void 0 ? [] : _g;
@@ -46,32 +48,32 @@ var RenderTypes = (function () {
     function RenderTypes() {
     }
     Object.defineProperty(RenderTypes.prototype, "renderer", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderTypes.prototype, "renderText", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderTypes.prototype, "renderElement", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderTypes.prototype, "renderComment", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderTypes.prototype, "renderNode", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(RenderTypes.prototype, "renderEvent", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });

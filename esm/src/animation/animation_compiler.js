@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { BaseException } from '@angular/core';
 import { ANY_STATE, DEFAULT_STATE, EMPTY_STATE } from '../../core_private';
 import { StringMapWrapper } from '../facade/collection';
-import { BaseException } from '../facade/exceptions';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';

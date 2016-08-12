@@ -5,9 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ChangeDetectionStrategy, SchemaMetadata, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from '@angular/core';
 import { LifecycleHooks } from '../core_private';
-import { Type } from './facade/lang';
 export declare abstract class CompileMetadataWithIdentifier {
     readonly identifier: CompileIdentifierMetadata;
     readonly runtimeCacheKey: any;
@@ -173,7 +172,7 @@ export declare class CompileTypeMetadata extends CompileIdentifierMetadata {
     diDeps: CompileDiDependencyMetadata[];
     lifecycleHooks: LifecycleHooks[];
     constructor({runtime, name, moduleUrl, prefix, isHost, value, diDeps, lifecycleHooks}?: {
-        runtime?: Type;
+        runtime?: Type<any>;
         name?: string;
         moduleUrl?: string;
         prefix?: string;
@@ -381,8 +380,8 @@ export declare class TransitiveCompileNgModuleMetadata {
     entryComponents: CompileTypeMetadata[];
     directives: CompileDirectiveMetadata[];
     pipes: CompilePipeMetadata[];
-    directivesSet: Set<Type>;
-    pipesSet: Set<Type>;
+    directivesSet: Set<Type<any>>;
+    pipesSet: Set<Type<any>>;
     constructor(modules: CompileNgModuleMetadata[], providers: CompileProviderMetadata[], entryComponents: CompileTypeMetadata[], directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[]);
 }
 export declare function removeIdentifierDuplicates<T extends CompileMetadataWithIdentifier>(items: T[]): T[];

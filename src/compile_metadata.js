@@ -14,11 +14,13 @@ var __extends = (this && this.__extends) || function (d, b) {
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
 var collection_1 = require('./facade/collection');
-var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var selector_1 = require('./selector');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
+function unimplemented() {
+    throw new core_1.BaseException('unimplemented');
+}
 // group 0: "[prop] or (event) or @trigger"
 // group 1: "prop" from "[prop]"
 // group 2: "event" from "(event)"
@@ -29,21 +31,21 @@ var CompileMetadataWithIdentifier = (function () {
     function CompileMetadataWithIdentifier() {
     }
     Object.defineProperty(CompileMetadataWithIdentifier.prototype, "identifier", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(CompileMetadataWithIdentifier.prototype, "runtimeCacheKey", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(CompileMetadataWithIdentifier.prototype, "assetCacheKey", {
-        get: function () { return exceptions_1.unimplemented(); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
-    CompileMetadataWithIdentifier.prototype.equalsTo = function (id2) { return exceptions_1.unimplemented(); };
+    CompileMetadataWithIdentifier.prototype.equalsTo = function (id2) { return unimplemented(); };
     return CompileMetadataWithIdentifier;
 }());
 exports.CompileMetadataWithIdentifier = CompileMetadataWithIdentifier;
@@ -300,7 +302,7 @@ var CompileIdentifierMap = (function () {
     CompileIdentifierMap.prototype.add = function (token, value) {
         var existing = this.get(token);
         if (lang_1.isPresent(existing)) {
-            throw new exceptions_1.BaseException("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
+            throw new core_1.BaseException("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
         }
         this._tokens.push(token);
         this._values.push(value);
@@ -390,7 +392,7 @@ var CompileTemplateMetadata = (function () {
         this.animations = lang_1.isPresent(animations) ? collection_1.ListWrapper.flatten(animations) : [];
         this.ngContentSelectors = lang_1.isPresent(ngContentSelectors) ? ngContentSelectors : [];
         if (lang_1.isPresent(interpolation) && interpolation.length != 2) {
-            throw new exceptions_1.BaseException("'interpolation' should have a start and an end symbol.");
+            throw new core_1.BaseException("'interpolation' should have a start and an end symbol.");
         }
         this.interpolation = interpolation;
     }

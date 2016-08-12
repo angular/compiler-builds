@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { BaseException } from '@angular/core';
 import { createHostComponentMeta } from './compile_metadata';
 import { ListWrapper } from './facade/collection';
-import { BaseException } from './facade/exceptions';
 import { Identifiers } from './identifiers';
 import * as o from './output/output_ast';
 import { ComponentFactoryDependency, ViewFactoryDependency } from './view_compiler/view_compiler';
