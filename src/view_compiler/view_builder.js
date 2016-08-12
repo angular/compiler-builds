@@ -174,10 +174,13 @@ var ViewBuilderVisitor = (function () {
         var attrNameAndValues = _mergeHtmlAndDirectiveAttrs(htmlAttrs, directives);
         for (var i = 0; i < attrNameAndValues.length; i++) {
             var attrName = attrNameAndValues[i][0];
-            var attrValue = attrNameAndValues[i][1];
-            this.view.createMethod.addStmt(constants_1.ViewProperties.renderer
-                .callMethod('setElementAttribute', [renderNode, o.literal(attrName), o.literal(attrValue)])
-                .toStmt());
+            if (ast.name !== NG_CONTAINER_TAG) {
+                // <ng-container> are not rendered in the DOM
+                var attrValue = attrNameAndValues[i][1];
+                this.view.createMethod.addStmt(constants_1.ViewProperties.renderer
+                    .callMethod('setElementAttribute', [renderNode, o.literal(attrName), o.literal(attrValue)])
+                    .toStmt());
+            }
         }
         var compileElement = new compile_element_1.CompileElement(parent, this.view, nodeIndex, renderNode, ast, component, directives, ast.providers, ast.hasViewContainer, false, ast.references);
         this.view.nodes.push(compileElement);

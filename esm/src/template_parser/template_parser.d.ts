@@ -5,12 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { SchemaMetadata } from '@angular/core';
+import { OpaqueToken, SchemaMetadata } from '@angular/core';
 import { Console } from '../../core_private';
 import { CompileDirectiveMetadata, CompilePipeMetadata } from '../compile_metadata';
 import { BindingPipe, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
-import { HtmlParser } from '../ml_parser/html_parser';
+import { HtmlParser } from '../i18n/html_parser';
 import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
 import { TemplateAst, TemplateAstVisitor } from './template_ast';
@@ -21,7 +21,7 @@ import { TemplateAst, TemplateAstVisitor } from './template_ast';
  *
  * This is currently an internal-only feature and not meant for general use.
  */
-export declare const TEMPLATE_TRANSFORMS: any;
+export declare const TEMPLATE_TRANSFORMS: OpaqueToken;
 export declare class TemplateParseError extends ParseError {
     constructor(message: string, span: ParseSourceSpan, level: ParseErrorLevel);
 }

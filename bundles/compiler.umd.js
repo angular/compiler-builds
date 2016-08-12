@@ -21,400 +21,6 @@ var __extends = (this && this.__extends) || function (d, b) {
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    function digestMessage(message) {
-        return sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
-    }
-    /**
-     * Serialize the i18n ast to something xml-like in order to generate an UID.
-     *
-     * The visitor is also used in the i18n parser tests
-     *
-     * @internal
-     */
-    var _SerializerVisitor = (function () {
-        function _SerializerVisitor() {
-        }
-        _SerializerVisitor.prototype.visitText = function (text, context) { return text.value; };
-        _SerializerVisitor.prototype.visitContainer = function (container, context) {
-            var _this = this;
-            return "[" + container.children.map(function (child) { return child.visit(_this); }).join(', ') + "]";
-        };
-        _SerializerVisitor.prototype.visitIcu = function (icu, context) {
-            var _this = this;
-            var strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
-            return "{" + icu.expression + ", " + icu.type + ", " + strCases.join(', ') + "}";
-        };
-        _SerializerVisitor.prototype.visitTagPlaceholder = function (ph, context) {
-            var _this = this;
-            return ph.isVoid ?
-                "<ph tag name=\"" + ph.startName + "\"/>" :
-                "<ph tag name=\"" + ph.startName + "\">" + ph.children.map(function (child) { return child.visit(_this); }).join(', ') + "</ph name=\"" + ph.closeName + "\">";
-        };
-        _SerializerVisitor.prototype.visitPlaceholder = function (ph, context) {
-            return "<ph name=\"" + ph.name + "\">" + ph.value + "</ph>";
-        };
-        _SerializerVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
-            return "<ph icu name=\"" + ph.name + "\">" + ph.value.visit(this) + "</ph>";
-        };
-        return _SerializerVisitor;
-    }());
-    var serializerVisitor = new _SerializerVisitor();
-    function serializeNodes(nodes) {
-        return nodes.map(function (a) { return a.visit(serializerVisitor, null); });
-    }
-    /**
-     * Compute the SHA1 of the given string
-     *
-     * see http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
-     *
-     * WARNING: this function has not been designed not tested with security in mind.
-     *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
-     */
-    function sha1(str) {
-        var utf8 = utf8Encode(str);
-        var words32 = stringToWords32(utf8);
-        var len = utf8.length * 8;
-        var w = new Array(80);
-        var _a = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], a = _a[0], b = _a[1], c = _a[2], d = _a[3], e = _a[4];
-        words32[len >> 5] |= 0x80 << (24 - len % 32);
-        words32[((len + 64 >> 9) << 4) + 15] = len;
-        for (var i = 0; i < words32.length; i += 16) {
-            var _b = [a, b, c, d, e], h0 = _b[0], h1 = _b[1], h2 = _b[2], h3 = _b[3], h4 = _b[4];
-            for (var j = 0; j < 80; j++) {
-                if (j < 16) {
-                    w[j] = words32[i + j];
-                }
-                else {
-                    w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
-                }
-                var _c = fk(j, b, c, d), f = _c[0], k = _c[1];
-                var temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-                _d = [d, c, rol32(b, 30), a, temp], e = _d[0], d = _d[1], c = _d[2], b = _d[3], a = _d[4];
-            }
-            _e = [add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)], a = _e[0], b = _e[1], c = _e[2], d = _e[3], e = _e[4];
-        }
-        var sha1 = words32ToString([a, b, c, d, e]);
-        var hex = '';
-        for (var i = 0; i < sha1.length; i++) {
-            var b_1 = sha1.charCodeAt(i);
-            hex += (b_1 >>> 4 & 0x0f).toString(16) + (b_1 & 0x0f).toString(16);
-        }
-        return hex.toLowerCase();
-        var _d, _e;
-    }
-    function utf8Encode(str) {
-        var encoded = '';
-        for (var index = 0; index < str.length; index++) {
-            var codePoint = decodeSurrogatePairs(str, index);
-            if (codePoint <= 0x7f) {
-                encoded += String.fromCharCode(codePoint);
-            }
-            else if (codePoint <= 0x7ff) {
-                encoded += String.fromCharCode(0xc0 | codePoint >>> 6, 0x80 | codePoint & 0x3f);
-            }
-            else if (codePoint <= 0xffff) {
-                encoded += String.fromCharCode(0xe0 | codePoint >>> 12, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-            }
-            else if (codePoint <= 0x1fffff) {
-                encoded += String.fromCharCode(0xf0 | codePoint >>> 18, 0x80 | codePoint >>> 12 & 0x3f, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-            }
-        }
-        return encoded;
-    }
-    // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
-    function decodeSurrogatePairs(str, index) {
-        if (index < 0 || index >= str.length) {
-            throw new Error("index=" + index + " is out of range in \"" + str + "\"");
-        }
-        var high = str.charCodeAt(index);
-        var low;
-        if (high >= 0xd800 && high <= 0xdfff && str.length > index + 1) {
-            low = str.charCodeAt(index + 1);
-            if (low >= 0xdc00 && low <= 0xdfff) {
-                return (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
-            }
-        }
-        return high;
-    }
-    function stringToWords32(str) {
-        var words32 = Array(str.length >>> 2);
-        for (var i = 0; i < words32.length; i++) {
-            words32[i] = 0;
-        }
-        for (var i = 0; i < str.length; i++) {
-            words32[i >>> 2] |= (str.charCodeAt(i) & 0xff) << 8 * (3 - i & 0x3);
-        }
-        return words32;
-    }
-    function words32ToString(words32) {
-        var str = '';
-        for (var i = 0; i < words32.length * 4; i++) {
-            str += String.fromCharCode((words32[i >>> 2] >>> 8 * (3 - i & 0x3)) & 0xff);
-        }
-        return str;
-    }
-    function fk(index, b, c, d) {
-        if (index < 20) {
-            return [(b & c) | (~b & d), 0x5a827999];
-        }
-        if (index < 40) {
-            return [b ^ c ^ d, 0x6ed9eba1];
-        }
-        if (index < 60) {
-            return [(b & c) | (b & d) | (c & d), 0x8f1bbcdc];
-        }
-        return [b ^ c ^ d, 0xca62c1d6];
-    }
-    function add32(a, b) {
-        var low = (a & 0xffff) + (b & 0xffff);
-        var high = (a >> 16) + (b >> 16) + (low >> 16);
-        return (high << 16) | (low & 0xffff);
-    }
-    function rol32(a, count) {
-        return (a << count) | (a >>> (32 - count));
-    }
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var Text = (function () {
-        function Text(value, sourceSpan) {
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-        }
-        Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
-        return Text;
-    }());
-    var Expansion = (function () {
-        function Expansion(switchValue, type, cases, sourceSpan, switchValueSourceSpan) {
-            this.switchValue = switchValue;
-            this.type = type;
-            this.cases = cases;
-            this.sourceSpan = sourceSpan;
-            this.switchValueSourceSpan = switchValueSourceSpan;
-        }
-        Expansion.prototype.visit = function (visitor, context) { return visitor.visitExpansion(this, context); };
-        return Expansion;
-    }());
-    var ExpansionCase = (function () {
-        function ExpansionCase(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
-            this.value = value;
-            this.expression = expression;
-            this.sourceSpan = sourceSpan;
-            this.valueSourceSpan = valueSourceSpan;
-            this.expSourceSpan = expSourceSpan;
-        }
-        ExpansionCase.prototype.visit = function (visitor, context) { return visitor.visitExpansionCase(this, context); };
-        return ExpansionCase;
-    }());
-    var Attribute = (function () {
-        function Attribute(name, value, sourceSpan) {
-            this.name = name;
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-        }
-        Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
-        return Attribute;
-    }());
-    var Element = (function () {
-        function Element(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan) {
-            this.name = name;
-            this.attrs = attrs;
-            this.children = children;
-            this.sourceSpan = sourceSpan;
-            this.startSourceSpan = startSourceSpan;
-            this.endSourceSpan = endSourceSpan;
-        }
-        Element.prototype.visit = function (visitor, context) { return visitor.visitElement(this, context); };
-        return Element;
-    }());
-    var Comment = (function () {
-        function Comment(value, sourceSpan) {
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-        }
-        Comment.prototype.visit = function (visitor, context) { return visitor.visitComment(this, context); };
-        return Comment;
-    }());
-    function visitAll(visitor, nodes, context) {
-        if (context === void 0) { context = null; }
-        var result = [];
-        nodes.forEach(function (ast) {
-            var astResult = ast.visit(visitor, context);
-            if (astResult) {
-                result.push(astResult);
-            }
-        });
-        return result;
-    }
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var Message = (function () {
-        /**
-         * @param nodes message AST
-         * @param placeholders maps placeholder names to static content
-         * @param placeholderToMsgIds maps placeholder names to translatable message IDs (used for ICU
-         *                            messages)
-         * @param meaning
-         * @param description
-         */
-        function Message(nodes, placeholders, placeholderToMsgIds, meaning, description) {
-            this.nodes = nodes;
-            this.placeholders = placeholders;
-            this.placeholderToMsgIds = placeholderToMsgIds;
-            this.meaning = meaning;
-            this.description = description;
-        }
-        return Message;
-    }());
-    var Text$1 = (function () {
-        function Text$1(value, sourceSpan) {
-            this.value = value;
-            this.sourceSpan = sourceSpan;
-        }
-        Text$1.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
-        return Text$1;
-    }());
-    var Container = (function () {
-        function Container(children, sourceSpan) {
-            this.children = children;
-            this.sourceSpan = sourceSpan;
-        }
-        Container.prototype.visit = function (visitor, context) { return visitor.visitContainer(this, context); };
-        return Container;
-    }());
-    var Icu = (function () {
-        function Icu(expression, type, cases, sourceSpan) {
-            this.expression = expression;
-            this.type = type;
-            this.cases = cases;
-            this.sourceSpan = sourceSpan;
-        }
-        Icu.prototype.visit = function (visitor, context) { return visitor.visitIcu(this, context); };
-        return Icu;
-    }());
-    var TagPlaceholder = (function () {
-        function TagPlaceholder(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
-            this.tag = tag;
-            this.attrs = attrs;
-            this.startName = startName;
-            this.closeName = closeName;
-            this.children = children;
-            this.isVoid = isVoid;
-            this.sourceSpan = sourceSpan;
-        }
-        TagPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitTagPlaceholder(this, context); };
-        return TagPlaceholder;
-    }());
-    var Placeholder = (function () {
-        function Placeholder(value, name, sourceSpan) {
-            if (name === void 0) { name = ''; }
-            this.value = value;
-            this.name = name;
-            this.sourceSpan = sourceSpan;
-        }
-        Placeholder.prototype.visit = function (visitor, context) { return visitor.visitPlaceholder(this, context); };
-        return Placeholder;
-    }());
-    var IcuPlaceholder = (function () {
-        function IcuPlaceholder(value, name, sourceSpan) {
-            if (name === void 0) { name = ''; }
-            this.value = value;
-            this.name = name;
-            this.sourceSpan = sourceSpan;
-        }
-        IcuPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitIcuPlaceholder(this, context); };
-        return IcuPlaceholder;
-    }());
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var $EOF = 0;
-    var $TAB = 9;
-    var $LF = 10;
-    var $VTAB = 11;
-    var $FF = 12;
-    var $CR = 13;
-    var $SPACE = 32;
-    var $BANG = 33;
-    var $DQ = 34;
-    var $HASH = 35;
-    var $$ = 36;
-    var $PERCENT = 37;
-    var $AMPERSAND = 38;
-    var $SQ = 39;
-    var $LPAREN = 40;
-    var $RPAREN = 41;
-    var $STAR = 42;
-    var $PLUS = 43;
-    var $COMMA = 44;
-    var $MINUS = 45;
-    var $PERIOD = 46;
-    var $SLASH = 47;
-    var $COLON = 58;
-    var $SEMICOLON = 59;
-    var $LT = 60;
-    var $EQ = 61;
-    var $GT = 62;
-    var $QUESTION = 63;
-    var $0 = 48;
-    var $9 = 57;
-    var $A = 65;
-    var $E = 69;
-    var $F = 70;
-    var $X = 88;
-    var $Z = 90;
-    var $LBRACKET = 91;
-    var $BACKSLASH = 92;
-    var $RBRACKET = 93;
-    var $CARET = 94;
-    var $_ = 95;
-    var $a = 97;
-    var $e = 101;
-    var $f = 102;
-    var $n = 110;
-    var $r = 114;
-    var $t = 116;
-    var $u = 117;
-    var $v = 118;
-    var $x = 120;
-    var $z = 122;
-    var $LBRACE = 123;
-    var $BAR = 124;
-    var $RBRACE = 125;
-    var $NBSP = 160;
-    var $BT = 96;
-    function isWhitespace(code) {
-        return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
-    }
-    function isDigit(code) {
-        return $0 <= code && code <= $9;
-    }
-    function isAsciiLetter(code) {
-        return code >= $a && code <= $z || code >= $A && code <= $Z;
-    }
-    function isAsciiHexDigit(code) {
-        return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
-    }
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
     var globalScope;
     if (typeof window === 'undefined') {
         if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
@@ -629,357 +235,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function escapeRegExp(s) {
         return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-    }
-    var TokenType;
-    (function (TokenType) {
-        TokenType[TokenType["Character"] = 0] = "Character";
-        TokenType[TokenType["Identifier"] = 1] = "Identifier";
-        TokenType[TokenType["Keyword"] = 2] = "Keyword";
-        TokenType[TokenType["String"] = 3] = "String";
-        TokenType[TokenType["Operator"] = 4] = "Operator";
-        TokenType[TokenType["Number"] = 5] = "Number";
-        TokenType[TokenType["Error"] = 6] = "Error";
-    })(TokenType || (TokenType = {}));
-    var KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
-    var Lexer = (function () {
-        function Lexer() {
-        }
-        Lexer.prototype.tokenize = function (text) {
-            var scanner = new _Scanner(text);
-            var tokens = [];
-            var token = scanner.scanToken();
-            while (token != null) {
-                tokens.push(token);
-                token = scanner.scanToken();
-            }
-            return tokens;
-        };
-        return Lexer;
-    }());
-    /** @nocollapse */
-    Lexer.decorators = [
-        { type: _angular_core.Injectable },
-    ];
-    var Token = (function () {
-        function Token(index, type, numValue, strValue) {
-            this.index = index;
-            this.type = type;
-            this.numValue = numValue;
-            this.strValue = strValue;
-        }
-        Token.prototype.isCharacter = function (code) {
-            return this.type == TokenType.Character && this.numValue == code;
-        };
-        Token.prototype.isNumber = function () { return this.type == TokenType.Number; };
-        Token.prototype.isString = function () { return this.type == TokenType.String; };
-        Token.prototype.isOperator = function (operater) {
-            return this.type == TokenType.Operator && this.strValue == operater;
-        };
-        Token.prototype.isIdentifier = function () { return this.type == TokenType.Identifier; };
-        Token.prototype.isKeyword = function () { return this.type == TokenType.Keyword; };
-        Token.prototype.isKeywordDeprecatedVar = function () {
-            return this.type == TokenType.Keyword && this.strValue == 'var';
-        };
-        Token.prototype.isKeywordLet = function () { return this.type == TokenType.Keyword && this.strValue == 'let'; };
-        Token.prototype.isKeywordNull = function () { return this.type == TokenType.Keyword && this.strValue == 'null'; };
-        Token.prototype.isKeywordUndefined = function () {
-            return this.type == TokenType.Keyword && this.strValue == 'undefined';
-        };
-        Token.prototype.isKeywordTrue = function () { return this.type == TokenType.Keyword && this.strValue == 'true'; };
-        Token.prototype.isKeywordFalse = function () { return this.type == TokenType.Keyword && this.strValue == 'false'; };
-        Token.prototype.isKeywordThis = function () { return this.type == TokenType.Keyword && this.strValue == 'this'; };
-        Token.prototype.isError = function () { return this.type == TokenType.Error; };
-        Token.prototype.toNumber = function () { return this.type == TokenType.Number ? this.numValue : -1; };
-        Token.prototype.toString = function () {
-            switch (this.type) {
-                case TokenType.Character:
-                case TokenType.Identifier:
-                case TokenType.Keyword:
-                case TokenType.Operator:
-                case TokenType.String:
-                case TokenType.Error:
-                    return this.strValue;
-                case TokenType.Number:
-                    return this.numValue.toString();
-                default:
-                    return null;
-            }
-        };
-        return Token;
-    }());
-    function newCharacterToken(index, code) {
-        return new Token(index, TokenType.Character, code, StringWrapper.fromCharCode(code));
-    }
-    function newIdentifierToken(index, text) {
-        return new Token(index, TokenType.Identifier, 0, text);
-    }
-    function newKeywordToken(index, text) {
-        return new Token(index, TokenType.Keyword, 0, text);
-    }
-    function newOperatorToken(index, text) {
-        return new Token(index, TokenType.Operator, 0, text);
-    }
-    function newStringToken(index, text) {
-        return new Token(index, TokenType.String, 0, text);
-    }
-    function newNumberToken(index, n) {
-        return new Token(index, TokenType.Number, n, '');
-    }
-    function newErrorToken(index, message) {
-        return new Token(index, TokenType.Error, 0, message);
-    }
-    var EOF = new Token(-1, TokenType.Character, 0, '');
-    var _Scanner = (function () {
-        function _Scanner(input) {
-            this.input = input;
-            this.peek = 0;
-            this.index = -1;
-            this.length = input.length;
-            this.advance();
-        }
-        _Scanner.prototype.advance = function () {
-            this.peek =
-                ++this.index >= this.length ? $EOF : StringWrapper.charCodeAt(this.input, this.index);
-        };
-        _Scanner.prototype.scanToken = function () {
-            var input = this.input, length = this.length, peek = this.peek, index = this.index;
-            // Skip whitespace.
-            while (peek <= $SPACE) {
-                if (++index >= length) {
-                    peek = $EOF;
-                    break;
-                }
-                else {
-                    peek = StringWrapper.charCodeAt(input, index);
-                }
-            }
-            this.peek = peek;
-            this.index = index;
-            if (index >= length) {
-                return null;
-            }
-            // Handle identifiers and numbers.
-            if (isIdentifierStart(peek))
-                return this.scanIdentifier();
-            if (isDigit(peek))
-                return this.scanNumber(index);
-            var start = index;
-            switch (peek) {
-                case $PERIOD:
-                    this.advance();
-                    return isDigit(this.peek) ? this.scanNumber(start) :
-                        newCharacterToken(start, $PERIOD);
-                case $LPAREN:
-                case $RPAREN:
-                case $LBRACE:
-                case $RBRACE:
-                case $LBRACKET:
-                case $RBRACKET:
-                case $COMMA:
-                case $COLON:
-                case $SEMICOLON:
-                    return this.scanCharacter(start, peek);
-                case $SQ:
-                case $DQ:
-                    return this.scanString();
-                case $HASH:
-                case $PLUS:
-                case $MINUS:
-                case $STAR:
-                case $SLASH:
-                case $PERCENT:
-                case $CARET:
-                    return this.scanOperator(start, StringWrapper.fromCharCode(peek));
-                case $QUESTION:
-                    return this.scanComplexOperator(start, '?', $PERIOD, '.');
-                case $LT:
-                case $GT:
-                    return this.scanComplexOperator(start, StringWrapper.fromCharCode(peek), $EQ, '=');
-                case $BANG:
-                case $EQ:
-                    return this.scanComplexOperator(start, StringWrapper.fromCharCode(peek), $EQ, '=', $EQ, '=');
-                case $AMPERSAND:
-                    return this.scanComplexOperator(start, '&', $AMPERSAND, '&');
-                case $BAR:
-                    return this.scanComplexOperator(start, '|', $BAR, '|');
-                case $NBSP:
-                    while (isWhitespace(this.peek))
-                        this.advance();
-                    return this.scanToken();
-            }
-            this.advance();
-            return this.error("Unexpected character [" + StringWrapper.fromCharCode(peek) + "]", 0);
-        };
-        _Scanner.prototype.scanCharacter = function (start, code) {
-            this.advance();
-            return newCharacterToken(start, code);
-        };
-        _Scanner.prototype.scanOperator = function (start, str) {
-            this.advance();
-            return newOperatorToken(start, str);
-        };
-        /**
-         * Tokenize a 2/3 char long operator
-         *
-         * @param start start index in the expression
-         * @param one first symbol (always part of the operator)
-         * @param twoCode code point for the second symbol
-         * @param two second symbol (part of the operator when the second code point matches)
-         * @param threeCode code point for the third symbol
-         * @param three third symbol (part of the operator when provided and matches source expression)
-         * @returns {Token}
-         */
-        _Scanner.prototype.scanComplexOperator = function (start, one, twoCode, two, threeCode, three) {
-            this.advance();
-            var str = one;
-            if (this.peek == twoCode) {
-                this.advance();
-                str += two;
-            }
-            if (isPresent(threeCode) && this.peek == threeCode) {
-                this.advance();
-                str += three;
-            }
-            return newOperatorToken(start, str);
-        };
-        _Scanner.prototype.scanIdentifier = function () {
-            var start = this.index;
-            this.advance();
-            while (isIdentifierPart(this.peek))
-                this.advance();
-            var str = this.input.substring(start, this.index);
-            return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, str) :
-                newIdentifierToken(start, str);
-        };
-        _Scanner.prototype.scanNumber = function (start) {
-            var simple = (this.index === start);
-            this.advance(); // Skip initial digit.
-            while (true) {
-                if (isDigit(this.peek)) {
-                }
-                else if (this.peek == $PERIOD) {
-                    simple = false;
-                }
-                else if (isExponentStart(this.peek)) {
-                    this.advance();
-                    if (isExponentSign(this.peek))
-                        this.advance();
-                    if (!isDigit(this.peek))
-                        return this.error('Invalid exponent', -1);
-                    simple = false;
-                }
-                else {
-                    break;
-                }
-                this.advance();
-            }
-            var str = this.input.substring(start, this.index);
-            var value = simple ? NumberWrapper.parseIntAutoRadix(str) : NumberWrapper.parseFloat(str);
-            return newNumberToken(start, value);
-        };
-        _Scanner.prototype.scanString = function () {
-            var start = this.index;
-            var quote = this.peek;
-            this.advance(); // Skip initial quote.
-            var buffer;
-            var marker = this.index;
-            var input = this.input;
-            while (this.peek != quote) {
-                if (this.peek == $BACKSLASH) {
-                    if (buffer == null)
-                        buffer = new StringJoiner();
-                    buffer.add(input.substring(marker, this.index));
-                    this.advance();
-                    var unescapedCode;
-                    if (this.peek == $u) {
-                        // 4 character hex code for unicode character.
-                        var hex = input.substring(this.index + 1, this.index + 5);
-                        try {
-                            unescapedCode = NumberWrapper.parseInt(hex, 16);
-                        }
-                        catch (e) {
-                            return this.error("Invalid unicode escape [\\u" + hex + "]", 0);
-                        }
-                        for (var i = 0; i < 5; i++) {
-                            this.advance();
-                        }
-                    }
-                    else {
-                        unescapedCode = unescape(this.peek);
-                        this.advance();
-                    }
-                    buffer.add(StringWrapper.fromCharCode(unescapedCode));
-                    marker = this.index;
-                }
-                else if (this.peek == $EOF) {
-                    return this.error('Unterminated quote', 0);
-                }
-                else {
-                    this.advance();
-                }
-            }
-            var last = input.substring(marker, this.index);
-            this.advance(); // Skip terminating quote.
-            // Compute the unescaped string value.
-            var unescaped = last;
-            if (buffer != null) {
-                buffer.add(last);
-                unescaped = buffer.toString();
-            }
-            return newStringToken(start, unescaped);
-        };
-        _Scanner.prototype.error = function (message, offset) {
-            var position = this.index + offset;
-            return newErrorToken(position, "Lexer Error: " + message + " at column " + position + " in expression [" + this.input + "]");
-        };
-        return _Scanner;
-    }());
-    function isIdentifierStart(code) {
-        return ($a <= code && code <= $z) || ($A <= code && code <= $Z) ||
-            (code == $_) || (code == $$);
-    }
-    function isIdentifier(input) {
-        if (input.length == 0)
-            return false;
-        var scanner = new _Scanner(input);
-        if (!isIdentifierStart(scanner.peek))
-            return false;
-        scanner.advance();
-        while (scanner.peek !== $EOF) {
-            if (!isIdentifierPart(scanner.peek))
-                return false;
-            scanner.advance();
-        }
-        return true;
-    }
-    function isIdentifierPart(code) {
-        return isAsciiLetter(code) || isDigit(code) || (code == $_) ||
-            (code == $$);
-    }
-    function isExponentStart(code) {
-        return code == $e || code == $E;
-    }
-    function isExponentSign(code) {
-        return code == $MINUS || code == $PLUS;
-    }
-    function isQuote(code) {
-        return code === $SQ || code === $DQ || code === $BT;
-    }
-    function unescape(code) {
-        switch (code) {
-            case $n:
-                return $LF;
-            case $f:
-                return $FF;
-            case $r:
-                return $CR;
-            case $t:
-                return $TAB;
-            case $v:
-                return $VTAB;
-            default:
-                return code;
-        }
     }
     function assertArrayOfStrings(identifier, value) {
         if (!_angular_core.isDevMode() || isBlank(value)) {
@@ -1349,6 +604,2114 @@ var __extends = (this && this.__extends) || function (d, b) {
         SetWrapper.delete = function (m, k) { m.delete(k); };
         return SetWrapper;
     }());
+    var ParseLocation = (function () {
+        function ParseLocation(file, offset, line, col) {
+            this.file = file;
+            this.offset = offset;
+            this.line = line;
+            this.col = col;
+        }
+        ParseLocation.prototype.toString = function () {
+            return isPresent(this.offset) ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
+        };
+        return ParseLocation;
+    }());
+    var ParseSourceFile = (function () {
+        function ParseSourceFile(content, url) {
+            this.content = content;
+            this.url = url;
+        }
+        return ParseSourceFile;
+    }());
+    var ParseSourceSpan = (function () {
+        function ParseSourceSpan(start, end, details) {
+            if (details === void 0) { details = null; }
+            this.start = start;
+            this.end = end;
+            this.details = details;
+        }
+        ParseSourceSpan.prototype.toString = function () {
+            return this.start.file.content.substring(this.start.offset, this.end.offset);
+        };
+        return ParseSourceSpan;
+    }());
+    var ParseErrorLevel;
+    (function (ParseErrorLevel) {
+        ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
+        ParseErrorLevel[ParseErrorLevel["FATAL"] = 1] = "FATAL";
+    })(ParseErrorLevel || (ParseErrorLevel = {}));
+    var ParseError = (function () {
+        function ParseError(span, msg, level) {
+            if (level === void 0) { level = ParseErrorLevel.FATAL; }
+            this.span = span;
+            this.msg = msg;
+            this.level = level;
+        }
+        ParseError.prototype.toString = function () {
+            var source = this.span.start.file.content;
+            var ctxStart = this.span.start.offset;
+            var contextStr = '';
+            var details = '';
+            if (isPresent(ctxStart)) {
+                if (ctxStart > source.length - 1) {
+                    ctxStart = source.length - 1;
+                }
+                var ctxEnd = ctxStart;
+                var ctxLen = 0;
+                var ctxLines = 0;
+                while (ctxLen < 100 && ctxStart > 0) {
+                    ctxStart--;
+                    ctxLen++;
+                    if (source[ctxStart] == '\n') {
+                        if (++ctxLines == 3) {
+                            break;
+                        }
+                    }
+                }
+                ctxLen = 0;
+                ctxLines = 0;
+                while (ctxLen < 100 && ctxEnd < source.length - 1) {
+                    ctxEnd++;
+                    ctxLen++;
+                    if (source[ctxEnd] == '\n') {
+                        if (++ctxLines == 3) {
+                            break;
+                        }
+                    }
+                }
+                var context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
+                    source.substring(this.span.start.offset, ctxEnd + 1);
+                contextStr = " (\"" + context + "\")";
+            }
+            if (this.span.details) {
+                details = ", " + this.span.details;
+            }
+            return "" + this.msg + contextStr + ": " + this.span.start + details;
+        };
+        return ParseError;
+    }());
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var Text = (function () {
+        function Text(value, sourceSpan) {
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
+        return Text;
+    }());
+    var Expansion = (function () {
+        function Expansion(switchValue, type, cases, sourceSpan, switchValueSourceSpan) {
+            this.switchValue = switchValue;
+            this.type = type;
+            this.cases = cases;
+            this.sourceSpan = sourceSpan;
+            this.switchValueSourceSpan = switchValueSourceSpan;
+        }
+        Expansion.prototype.visit = function (visitor, context) { return visitor.visitExpansion(this, context); };
+        return Expansion;
+    }());
+    var ExpansionCase = (function () {
+        function ExpansionCase(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
+            this.value = value;
+            this.expression = expression;
+            this.sourceSpan = sourceSpan;
+            this.valueSourceSpan = valueSourceSpan;
+            this.expSourceSpan = expSourceSpan;
+        }
+        ExpansionCase.prototype.visit = function (visitor, context) { return visitor.visitExpansionCase(this, context); };
+        return ExpansionCase;
+    }());
+    var Attribute = (function () {
+        function Attribute(name, value, sourceSpan) {
+            this.name = name;
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
+        return Attribute;
+    }());
+    var Element = (function () {
+        function Element(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan) {
+            this.name = name;
+            this.attrs = attrs;
+            this.children = children;
+            this.sourceSpan = sourceSpan;
+            this.startSourceSpan = startSourceSpan;
+            this.endSourceSpan = endSourceSpan;
+        }
+        Element.prototype.visit = function (visitor, context) { return visitor.visitElement(this, context); };
+        return Element;
+    }());
+    var Comment = (function () {
+        function Comment(value, sourceSpan) {
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Comment.prototype.visit = function (visitor, context) { return visitor.visitComment(this, context); };
+        return Comment;
+    }());
+    function visitAll(visitor, nodes, context) {
+        if (context === void 0) { context = null; }
+        var result = [];
+        nodes.forEach(function (ast) {
+            var astResult = ast.visit(visitor, context);
+            if (astResult) {
+                result.push(astResult);
+            }
+        });
+        return result;
+    }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var $EOF = 0;
+    var $TAB = 9;
+    var $LF = 10;
+    var $VTAB = 11;
+    var $FF = 12;
+    var $CR = 13;
+    var $SPACE = 32;
+    var $BANG = 33;
+    var $DQ = 34;
+    var $HASH = 35;
+    var $$ = 36;
+    var $PERCENT = 37;
+    var $AMPERSAND = 38;
+    var $SQ = 39;
+    var $LPAREN = 40;
+    var $RPAREN = 41;
+    var $STAR = 42;
+    var $PLUS = 43;
+    var $COMMA = 44;
+    var $MINUS = 45;
+    var $PERIOD = 46;
+    var $SLASH = 47;
+    var $COLON = 58;
+    var $SEMICOLON = 59;
+    var $LT = 60;
+    var $EQ = 61;
+    var $GT = 62;
+    var $QUESTION = 63;
+    var $0 = 48;
+    var $9 = 57;
+    var $A = 65;
+    var $E = 69;
+    var $F = 70;
+    var $X = 88;
+    var $Z = 90;
+    var $LBRACKET = 91;
+    var $BACKSLASH = 92;
+    var $RBRACKET = 93;
+    var $CARET = 94;
+    var $_ = 95;
+    var $a = 97;
+    var $e = 101;
+    var $f = 102;
+    var $n = 110;
+    var $r = 114;
+    var $t = 116;
+    var $u = 117;
+    var $v = 118;
+    var $x = 120;
+    var $z = 122;
+    var $LBRACE = 123;
+    var $BAR = 124;
+    var $RBRACE = 125;
+    var $NBSP = 160;
+    var $BT = 96;
+    function isWhitespace(code) {
+        return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
+    }
+    function isDigit(code) {
+        return $0 <= code && code <= $9;
+    }
+    function isAsciiLetter(code) {
+        return code >= $a && code <= $z || code >= $A && code <= $Z;
+    }
+    function isAsciiHexDigit(code) {
+        return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
+    }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var TagContentType;
+    (function (TagContentType) {
+        TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
+        TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
+        TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
+    })(TagContentType || (TagContentType = {}));
+    function splitNsName(elementName) {
+        if (elementName[0] != ':') {
+            return [null, elementName];
+        }
+        var colonIndex = elementName.indexOf(':', 1);
+        if (colonIndex == -1) {
+            throw new Error("Unsupported format \"" + elementName + "\" expecting \":namespace:name\"");
+        }
+        return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
+    }
+    function getNsPrefix(fullName) {
+        return fullName === null ? null : splitNsName(fullName)[0];
+    }
+    function mergeNsAndName(prefix, localName) {
+        return prefix ? ":" + prefix + ":" + localName : localName;
+    }
+    // see http://www.w3.org/TR/html51/syntax.html#named-character-references
+    // see https://html.spec.whatwg.org/multipage/entities.json
+    // This list is not exhaustive to keep the compiler footprint low.
+    // The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not exist.
+    var NAMED_ENTITIES = {
+        'Aacute': '\u00C1',
+        'aacute': '\u00E1',
+        'Acirc': '\u00C2',
+        'acirc': '\u00E2',
+        'acute': '\u00B4',
+        'AElig': '\u00C6',
+        'aelig': '\u00E6',
+        'Agrave': '\u00C0',
+        'agrave': '\u00E0',
+        'alefsym': '\u2135',
+        'Alpha': '\u0391',
+        'alpha': '\u03B1',
+        'amp': '&',
+        'and': '\u2227',
+        'ang': '\u2220',
+        'apos': '\u0027',
+        'Aring': '\u00C5',
+        'aring': '\u00E5',
+        'asymp': '\u2248',
+        'Atilde': '\u00C3',
+        'atilde': '\u00E3',
+        'Auml': '\u00C4',
+        'auml': '\u00E4',
+        'bdquo': '\u201E',
+        'Beta': '\u0392',
+        'beta': '\u03B2',
+        'brvbar': '\u00A6',
+        'bull': '\u2022',
+        'cap': '\u2229',
+        'Ccedil': '\u00C7',
+        'ccedil': '\u00E7',
+        'cedil': '\u00B8',
+        'cent': '\u00A2',
+        'Chi': '\u03A7',
+        'chi': '\u03C7',
+        'circ': '\u02C6',
+        'clubs': '\u2663',
+        'cong': '\u2245',
+        'copy': '\u00A9',
+        'crarr': '\u21B5',
+        'cup': '\u222A',
+        'curren': '\u00A4',
+        'dagger': '\u2020',
+        'Dagger': '\u2021',
+        'darr': '\u2193',
+        'dArr': '\u21D3',
+        'deg': '\u00B0',
+        'Delta': '\u0394',
+        'delta': '\u03B4',
+        'diams': '\u2666',
+        'divide': '\u00F7',
+        'Eacute': '\u00C9',
+        'eacute': '\u00E9',
+        'Ecirc': '\u00CA',
+        'ecirc': '\u00EA',
+        'Egrave': '\u00C8',
+        'egrave': '\u00E8',
+        'empty': '\u2205',
+        'emsp': '\u2003',
+        'ensp': '\u2002',
+        'Epsilon': '\u0395',
+        'epsilon': '\u03B5',
+        'equiv': '\u2261',
+        'Eta': '\u0397',
+        'eta': '\u03B7',
+        'ETH': '\u00D0',
+        'eth': '\u00F0',
+        'Euml': '\u00CB',
+        'euml': '\u00EB',
+        'euro': '\u20AC',
+        'exist': '\u2203',
+        'fnof': '\u0192',
+        'forall': '\u2200',
+        'frac12': '\u00BD',
+        'frac14': '\u00BC',
+        'frac34': '\u00BE',
+        'frasl': '\u2044',
+        'Gamma': '\u0393',
+        'gamma': '\u03B3',
+        'ge': '\u2265',
+        'gt': '>',
+        'harr': '\u2194',
+        'hArr': '\u21D4',
+        'hearts': '\u2665',
+        'hellip': '\u2026',
+        'Iacute': '\u00CD',
+        'iacute': '\u00ED',
+        'Icirc': '\u00CE',
+        'icirc': '\u00EE',
+        'iexcl': '\u00A1',
+        'Igrave': '\u00CC',
+        'igrave': '\u00EC',
+        'image': '\u2111',
+        'infin': '\u221E',
+        'int': '\u222B',
+        'Iota': '\u0399',
+        'iota': '\u03B9',
+        'iquest': '\u00BF',
+        'isin': '\u2208',
+        'Iuml': '\u00CF',
+        'iuml': '\u00EF',
+        'Kappa': '\u039A',
+        'kappa': '\u03BA',
+        'Lambda': '\u039B',
+        'lambda': '\u03BB',
+        'lang': '\u27E8',
+        'laquo': '\u00AB',
+        'larr': '\u2190',
+        'lArr': '\u21D0',
+        'lceil': '\u2308',
+        'ldquo': '\u201C',
+        'le': '\u2264',
+        'lfloor': '\u230A',
+        'lowast': '\u2217',
+        'loz': '\u25CA',
+        'lrm': '\u200E',
+        'lsaquo': '\u2039',
+        'lsquo': '\u2018',
+        'lt': '<',
+        'macr': '\u00AF',
+        'mdash': '\u2014',
+        'micro': '\u00B5',
+        'middot': '\u00B7',
+        'minus': '\u2212',
+        'Mu': '\u039C',
+        'mu': '\u03BC',
+        'nabla': '\u2207',
+        'nbsp': '\u00A0',
+        'ndash': '\u2013',
+        'ne': '\u2260',
+        'ni': '\u220B',
+        'not': '\u00AC',
+        'notin': '\u2209',
+        'nsub': '\u2284',
+        'Ntilde': '\u00D1',
+        'ntilde': '\u00F1',
+        'Nu': '\u039D',
+        'nu': '\u03BD',
+        'Oacute': '\u00D3',
+        'oacute': '\u00F3',
+        'Ocirc': '\u00D4',
+        'ocirc': '\u00F4',
+        'OElig': '\u0152',
+        'oelig': '\u0153',
+        'Ograve': '\u00D2',
+        'ograve': '\u00F2',
+        'oline': '\u203E',
+        'Omega': '\u03A9',
+        'omega': '\u03C9',
+        'Omicron': '\u039F',
+        'omicron': '\u03BF',
+        'oplus': '\u2295',
+        'or': '\u2228',
+        'ordf': '\u00AA',
+        'ordm': '\u00BA',
+        'Oslash': '\u00D8',
+        'oslash': '\u00F8',
+        'Otilde': '\u00D5',
+        'otilde': '\u00F5',
+        'otimes': '\u2297',
+        'Ouml': '\u00D6',
+        'ouml': '\u00F6',
+        'para': '\u00B6',
+        'permil': '\u2030',
+        'perp': '\u22A5',
+        'Phi': '\u03A6',
+        'phi': '\u03C6',
+        'Pi': '\u03A0',
+        'pi': '\u03C0',
+        'piv': '\u03D6',
+        'plusmn': '\u00B1',
+        'pound': '\u00A3',
+        'prime': '\u2032',
+        'Prime': '\u2033',
+        'prod': '\u220F',
+        'prop': '\u221D',
+        'Psi': '\u03A8',
+        'psi': '\u03C8',
+        'quot': '\u0022',
+        'radic': '\u221A',
+        'rang': '\u27E9',
+        'raquo': '\u00BB',
+        'rarr': '\u2192',
+        'rArr': '\u21D2',
+        'rceil': '\u2309',
+        'rdquo': '\u201D',
+        'real': '\u211C',
+        'reg': '\u00AE',
+        'rfloor': '\u230B',
+        'Rho': '\u03A1',
+        'rho': '\u03C1',
+        'rlm': '\u200F',
+        'rsaquo': '\u203A',
+        'rsquo': '\u2019',
+        'sbquo': '\u201A',
+        'Scaron': '\u0160',
+        'scaron': '\u0161',
+        'sdot': '\u22C5',
+        'sect': '\u00A7',
+        'shy': '\u00AD',
+        'Sigma': '\u03A3',
+        'sigma': '\u03C3',
+        'sigmaf': '\u03C2',
+        'sim': '\u223C',
+        'spades': '\u2660',
+        'sub': '\u2282',
+        'sube': '\u2286',
+        'sum': '\u2211',
+        'sup': '\u2283',
+        'sup1': '\u00B9',
+        'sup2': '\u00B2',
+        'sup3': '\u00B3',
+        'supe': '\u2287',
+        'szlig': '\u00DF',
+        'Tau': '\u03A4',
+        'tau': '\u03C4',
+        'there4': '\u2234',
+        'Theta': '\u0398',
+        'theta': '\u03B8',
+        'thetasym': '\u03D1',
+        'thinsp': '\u2009',
+        'THORN': '\u00DE',
+        'thorn': '\u00FE',
+        'tilde': '\u02DC',
+        'times': '\u00D7',
+        'trade': '\u2122',
+        'Uacute': '\u00DA',
+        'uacute': '\u00FA',
+        'uarr': '\u2191',
+        'uArr': '\u21D1',
+        'Ucirc': '\u00DB',
+        'ucirc': '\u00FB',
+        'Ugrave': '\u00D9',
+        'ugrave': '\u00F9',
+        'uml': '\u00A8',
+        'upsih': '\u03D2',
+        'Upsilon': '\u03A5',
+        'upsilon': '\u03C5',
+        'Uuml': '\u00DC',
+        'uuml': '\u00FC',
+        'weierp': '\u2118',
+        'Xi': '\u039E',
+        'xi': '\u03BE',
+        'Yacute': '\u00DD',
+        'yacute': '\u00FD',
+        'yen': '\u00A5',
+        'yuml': '\u00FF',
+        'Yuml': '\u0178',
+        'Zeta': '\u0396',
+        'zeta': '\u03B6',
+        'zwj': '\u200D',
+        'zwnj': '\u200C',
+    };
+    var TokenType;
+    (function (TokenType) {
+        TokenType[TokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
+        TokenType[TokenType["TAG_OPEN_END"] = 1] = "TAG_OPEN_END";
+        TokenType[TokenType["TAG_OPEN_END_VOID"] = 2] = "TAG_OPEN_END_VOID";
+        TokenType[TokenType["TAG_CLOSE"] = 3] = "TAG_CLOSE";
+        TokenType[TokenType["TEXT"] = 4] = "TEXT";
+        TokenType[TokenType["ESCAPABLE_RAW_TEXT"] = 5] = "ESCAPABLE_RAW_TEXT";
+        TokenType[TokenType["RAW_TEXT"] = 6] = "RAW_TEXT";
+        TokenType[TokenType["COMMENT_START"] = 7] = "COMMENT_START";
+        TokenType[TokenType["COMMENT_END"] = 8] = "COMMENT_END";
+        TokenType[TokenType["CDATA_START"] = 9] = "CDATA_START";
+        TokenType[TokenType["CDATA_END"] = 10] = "CDATA_END";
+        TokenType[TokenType["ATTR_NAME"] = 11] = "ATTR_NAME";
+        TokenType[TokenType["ATTR_VALUE"] = 12] = "ATTR_VALUE";
+        TokenType[TokenType["DOC_TYPE"] = 13] = "DOC_TYPE";
+        TokenType[TokenType["EXPANSION_FORM_START"] = 14] = "EXPANSION_FORM_START";
+        TokenType[TokenType["EXPANSION_CASE_VALUE"] = 15] = "EXPANSION_CASE_VALUE";
+        TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 16] = "EXPANSION_CASE_EXP_START";
+        TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 17] = "EXPANSION_CASE_EXP_END";
+        TokenType[TokenType["EXPANSION_FORM_END"] = 18] = "EXPANSION_FORM_END";
+        TokenType[TokenType["EOF"] = 19] = "EOF";
+    })(TokenType || (TokenType = {}));
+    var Token = (function () {
+        function Token(type, parts, sourceSpan) {
+            this.type = type;
+            this.parts = parts;
+            this.sourceSpan = sourceSpan;
+        }
+        return Token;
+    }());
+    var TokenError = (function (_super) {
+        __extends(TokenError, _super);
+        function TokenError(errorMsg, tokenType, span) {
+            _super.call(this, span, errorMsg);
+            this.tokenType = tokenType;
+        }
+        return TokenError;
+    }(ParseError));
+    var TokenizeResult = (function () {
+        function TokenizeResult(tokens, errors) {
+            this.tokens = tokens;
+            this.errors = errors;
+        }
+        return TokenizeResult;
+    }());
+    function tokenize(source, url, getTagDefinition, tokenizeExpansionForms, interpolationConfig) {
+        if (tokenizeExpansionForms === void 0) { tokenizeExpansionForms = false; }
+        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+        return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, tokenizeExpansionForms, interpolationConfig)
+            .tokenize();
+    }
+    var _CR_OR_CRLF_REGEXP = /\r\n?/g;
+    function _unexpectedCharacterErrorMsg(charCode) {
+        var char = charCode === $EOF ? 'EOF' : String.fromCharCode(charCode);
+        return "Unexpected character \"" + char + "\"";
+    }
+    function _unknownEntityErrorMsg(entitySrc) {
+        return "Unknown entity \"" + entitySrc + "\" - use the \"&#<decimal>;\" or  \"&#x<hex>;\" syntax";
+    }
+    var _ControlFlowError = (function () {
+        function _ControlFlowError(error) {
+            this.error = error;
+        }
+        return _ControlFlowError;
+    }());
+    // See http://www.w3.org/TR/html51/syntax.html#writing
+    var _Tokenizer = (function () {
+        /**
+         * @param _file The html source
+         * @param _getTagDefinition
+         * @param _tokenizeIcu Whether to tokenize ICU messages (considered as text nodes when false)
+         * @param _interpolationConfig
+         */
+        function _Tokenizer(_file, _getTagDefinition, _tokenizeIcu, _interpolationConfig) {
+            if (_interpolationConfig === void 0) { _interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            this._file = _file;
+            this._getTagDefinition = _getTagDefinition;
+            this._tokenizeIcu = _tokenizeIcu;
+            this._interpolationConfig = _interpolationConfig;
+            // Note: this is always lowercase!
+            this._peek = -1;
+            this._nextPeek = -1;
+            this._index = -1;
+            this._line = 0;
+            this._column = -1;
+            this._expansionCaseStack = [];
+            this._inInterpolation = false;
+            this.tokens = [];
+            this.errors = [];
+            this._input = _file.content;
+            this._length = _file.content.length;
+            this._advance();
+        }
+        _Tokenizer.prototype._processCarriageReturns = function (content) {
+            // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
+            // In order to keep the original position in the source, we can not
+            // pre-process it.
+            // Instead CRs are processed right before instantiating the tokens.
+            return content.replace(_CR_OR_CRLF_REGEXP, '\n');
+        };
+        _Tokenizer.prototype.tokenize = function () {
+            while (this._peek !== $EOF) {
+                var start = this._getLocation();
+                try {
+                    if (this._attemptCharCode($LT)) {
+                        if (this._attemptCharCode($BANG)) {
+                            if (this._attemptCharCode($LBRACKET)) {
+                                this._consumeCdata(start);
+                            }
+                            else if (this._attemptCharCode($MINUS)) {
+                                this._consumeComment(start);
+                            }
+                            else {
+                                this._consumeDocType(start);
+                            }
+                        }
+                        else if (this._attemptCharCode($SLASH)) {
+                            this._consumeTagClose(start);
+                        }
+                        else {
+                            this._consumeTagOpen(start);
+                        }
+                    }
+                    else if (!this._tokenizeIcu || !this._tokenizeExpansionForm()) {
+                        this._consumeText();
+                    }
+                }
+                catch (e) {
+                    if (e instanceof _ControlFlowError) {
+                        this.errors.push(e.error);
+                    }
+                    else {
+                        throw e;
+                    }
+                }
+            }
+            this._beginToken(TokenType.EOF);
+            this._endToken([]);
+            return new TokenizeResult(mergeTextTokens(this.tokens), this.errors);
+        };
+        /**
+         * @returns {boolean} whether an ICU token has been created
+         * @internal
+         */
+        _Tokenizer.prototype._tokenizeExpansionForm = function () {
+            if (isExpansionFormStart(this._input, this._index, this._interpolationConfig)) {
+                this._consumeExpansionFormStart();
+                return true;
+            }
+            if (isExpansionCaseStart(this._peek) && this._isInExpansionForm()) {
+                this._consumeExpansionCaseStart();
+                return true;
+            }
+            if (this._peek === $RBRACE) {
+                if (this._isInExpansionCase()) {
+                    this._consumeExpansionCaseEnd();
+                    return true;
+                }
+                if (this._isInExpansionForm()) {
+                    this._consumeExpansionFormEnd();
+                    return true;
+                }
+            }
+            return false;
+        };
+        _Tokenizer.prototype._getLocation = function () {
+            return new ParseLocation(this._file, this._index, this._line, this._column);
+        };
+        _Tokenizer.prototype._getSpan = function (start, end) {
+            if (start === void 0) { start = this._getLocation(); }
+            if (end === void 0) { end = this._getLocation(); }
+            return new ParseSourceSpan(start, end);
+        };
+        _Tokenizer.prototype._beginToken = function (type, start) {
+            if (start === void 0) { start = this._getLocation(); }
+            this._currentTokenStart = start;
+            this._currentTokenType = type;
+        };
+        _Tokenizer.prototype._endToken = function (parts, end) {
+            if (end === void 0) { end = this._getLocation(); }
+            var token = new Token(this._currentTokenType, parts, new ParseSourceSpan(this._currentTokenStart, end));
+            this.tokens.push(token);
+            this._currentTokenStart = null;
+            this._currentTokenType = null;
+            return token;
+        };
+        _Tokenizer.prototype._createError = function (msg, span) {
+            if (this._isInExpansionForm()) {
+                msg += " (Do you have an unescaped \"{\" in your template? Use \"{{ '{' }}\") to escape it.)";
+            }
+            var error = new TokenError(msg, this._currentTokenType, span);
+            this._currentTokenStart = null;
+            this._currentTokenType = null;
+            return new _ControlFlowError(error);
+        };
+        _Tokenizer.prototype._advance = function () {
+            if (this._index >= this._length) {
+                throw this._createError(_unexpectedCharacterErrorMsg($EOF), this._getSpan());
+            }
+            if (this._peek === $LF) {
+                this._line++;
+                this._column = 0;
+            }
+            else if (this._peek !== $LF && this._peek !== $CR) {
+                this._column++;
+            }
+            this._index++;
+            this._peek = this._index >= this._length ? $EOF : this._input.charCodeAt(this._index);
+            this._nextPeek =
+                this._index + 1 >= this._length ? $EOF : this._input.charCodeAt(this._index + 1);
+        };
+        _Tokenizer.prototype._attemptCharCode = function (charCode) {
+            if (this._peek === charCode) {
+                this._advance();
+                return true;
+            }
+            return false;
+        };
+        _Tokenizer.prototype._attemptCharCodeCaseInsensitive = function (charCode) {
+            if (compareCharCodeCaseInsensitive(this._peek, charCode)) {
+                this._advance();
+                return true;
+            }
+            return false;
+        };
+        _Tokenizer.prototype._requireCharCode = function (charCode) {
+            var location = this._getLocation();
+            if (!this._attemptCharCode(charCode)) {
+                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(location, location));
+            }
+        };
+        _Tokenizer.prototype._attemptStr = function (chars) {
+            var len = chars.length;
+            if (this._index + len > this._length) {
+                return false;
+            }
+            var initialPosition = this._savePosition();
+            for (var i = 0; i < len; i++) {
+                if (!this._attemptCharCode(chars.charCodeAt(i))) {
+                    // If attempting to parse the string fails, we want to reset the parser
+                    // to where it was before the attempt
+                    this._restorePosition(initialPosition);
+                    return false;
+                }
+            }
+            return true;
+        };
+        _Tokenizer.prototype._attemptStrCaseInsensitive = function (chars) {
+            for (var i = 0; i < chars.length; i++) {
+                if (!this._attemptCharCodeCaseInsensitive(chars.charCodeAt(i))) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        _Tokenizer.prototype._requireStr = function (chars) {
+            var location = this._getLocation();
+            if (!this._attemptStr(chars)) {
+                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(location));
+            }
+        };
+        _Tokenizer.prototype._attemptCharCodeUntilFn = function (predicate) {
+            while (!predicate(this._peek)) {
+                this._advance();
+            }
+        };
+        _Tokenizer.prototype._requireCharCodeUntilFn = function (predicate, len) {
+            var start = this._getLocation();
+            this._attemptCharCodeUntilFn(predicate);
+            if (this._index - start.offset < len) {
+                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(start, start));
+            }
+        };
+        _Tokenizer.prototype._attemptUntilChar = function (char) {
+            while (this._peek !== char) {
+                this._advance();
+            }
+        };
+        _Tokenizer.prototype._readChar = function (decodeEntities) {
+            if (decodeEntities && this._peek === $AMPERSAND) {
+                return this._decodeEntity();
+            }
+            else {
+                var index = this._index;
+                this._advance();
+                return this._input[index];
+            }
+        };
+        _Tokenizer.prototype._decodeEntity = function () {
+            var start = this._getLocation();
+            this._advance();
+            if (this._attemptCharCode($HASH)) {
+                var isHex = this._attemptCharCode($x) || this._attemptCharCode($X);
+                var numberStart = this._getLocation().offset;
+                this._attemptCharCodeUntilFn(isDigitEntityEnd);
+                if (this._peek != $SEMICOLON) {
+                    throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan());
+                }
+                this._advance();
+                var strNum = this._input.substring(numberStart, this._index - 1);
+                try {
+                    var charCode = parseInt(strNum, isHex ? 16 : 10);
+                    return String.fromCharCode(charCode);
+                }
+                catch (e) {
+                    var entity = this._input.substring(start.offset + 1, this._index - 1);
+                    throw this._createError(_unknownEntityErrorMsg(entity), this._getSpan(start));
+                }
+            }
+            else {
+                var startPosition = this._savePosition();
+                this._attemptCharCodeUntilFn(isNamedEntityEnd);
+                if (this._peek != $SEMICOLON) {
+                    this._restorePosition(startPosition);
+                    return '&';
+                }
+                this._advance();
+                var name_1 = this._input.substring(start.offset + 1, this._index - 1);
+                var char = NAMED_ENTITIES[name_1];
+                if (!char) {
+                    throw this._createError(_unknownEntityErrorMsg(name_1), this._getSpan(start));
+                }
+                return char;
+            }
+        };
+        _Tokenizer.prototype._consumeRawText = function (decodeEntities, firstCharOfEnd, attemptEndRest) {
+            var tagCloseStart;
+            var textStart = this._getLocation();
+            this._beginToken(decodeEntities ? TokenType.ESCAPABLE_RAW_TEXT : TokenType.RAW_TEXT, textStart);
+            var parts = [];
+            while (true) {
+                tagCloseStart = this._getLocation();
+                if (this._attemptCharCode(firstCharOfEnd) && attemptEndRest()) {
+                    break;
+                }
+                if (this._index > tagCloseStart.offset) {
+                    // add the characters consumed by the previous if statement to the output
+                    parts.push(this._input.substring(tagCloseStart.offset, this._index));
+                }
+                while (this._peek !== firstCharOfEnd) {
+                    parts.push(this._readChar(decodeEntities));
+                }
+            }
+            return this._endToken([this._processCarriageReturns(parts.join(''))], tagCloseStart);
+        };
+        _Tokenizer.prototype._consumeComment = function (start) {
+            var _this = this;
+            this._beginToken(TokenType.COMMENT_START, start);
+            this._requireCharCode($MINUS);
+            this._endToken([]);
+            var textToken = this._consumeRawText(false, $MINUS, function () { return _this._attemptStr('->'); });
+            this._beginToken(TokenType.COMMENT_END, textToken.sourceSpan.end);
+            this._endToken([]);
+        };
+        _Tokenizer.prototype._consumeCdata = function (start) {
+            var _this = this;
+            this._beginToken(TokenType.CDATA_START, start);
+            this._requireStr('CDATA[');
+            this._endToken([]);
+            var textToken = this._consumeRawText(false, $RBRACKET, function () { return _this._attemptStr(']>'); });
+            this._beginToken(TokenType.CDATA_END, textToken.sourceSpan.end);
+            this._endToken([]);
+        };
+        _Tokenizer.prototype._consumeDocType = function (start) {
+            this._beginToken(TokenType.DOC_TYPE, start);
+            this._attemptUntilChar($GT);
+            this._advance();
+            this._endToken([this._input.substring(start.offset + 2, this._index - 1)]);
+        };
+        _Tokenizer.prototype._consumePrefixAndName = function () {
+            var nameOrPrefixStart = this._index;
+            var prefix = null;
+            while (this._peek !== $COLON && !isPrefixEnd(this._peek)) {
+                this._advance();
+            }
+            var nameStart;
+            if (this._peek === $COLON) {
+                this._advance();
+                prefix = this._input.substring(nameOrPrefixStart, this._index - 1);
+                nameStart = this._index;
+            }
+            else {
+                nameStart = nameOrPrefixStart;
+            }
+            this._requireCharCodeUntilFn(isNameEnd, this._index === nameStart ? 1 : 0);
+            var name = this._input.substring(nameStart, this._index);
+            return [prefix, name];
+        };
+        _Tokenizer.prototype._consumeTagOpen = function (start) {
+            var savedPos = this._savePosition();
+            var tagName;
+            var lowercaseTagName;
+            try {
+                if (!isAsciiLetter(this._peek)) {
+                    throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan());
+                }
+                var nameStart = this._index;
+                this._consumeTagOpenStart(start);
+                tagName = this._input.substring(nameStart, this._index);
+                lowercaseTagName = tagName.toLowerCase();
+                this._attemptCharCodeUntilFn(isNotWhitespace);
+                while (this._peek !== $SLASH && this._peek !== $GT) {
+                    this._consumeAttributeName();
+                    this._attemptCharCodeUntilFn(isNotWhitespace);
+                    if (this._attemptCharCode($EQ)) {
+                        this._attemptCharCodeUntilFn(isNotWhitespace);
+                        this._consumeAttributeValue();
+                    }
+                    this._attemptCharCodeUntilFn(isNotWhitespace);
+                }
+                this._consumeTagOpenEnd();
+            }
+            catch (e) {
+                if (e instanceof _ControlFlowError) {
+                    // When the start tag is invalid, assume we want a "<"
+                    this._restorePosition(savedPos);
+                    // Back to back text tokens are merged at the end
+                    this._beginToken(TokenType.TEXT, start);
+                    this._endToken(['<']);
+                    return;
+                }
+                throw e;
+            }
+            var contentTokenType = this._getTagDefinition(tagName).contentType;
+            if (contentTokenType === TagContentType.RAW_TEXT) {
+                this._consumeRawTextWithTagClose(lowercaseTagName, false);
+            }
+            else if (contentTokenType === TagContentType.ESCAPABLE_RAW_TEXT) {
+                this._consumeRawTextWithTagClose(lowercaseTagName, true);
+            }
+        };
+        _Tokenizer.prototype._consumeRawTextWithTagClose = function (lowercaseTagName, decodeEntities) {
+            var _this = this;
+            var textToken = this._consumeRawText(decodeEntities, $LT, function () {
+                if (!_this._attemptCharCode($SLASH))
+                    return false;
+                _this._attemptCharCodeUntilFn(isNotWhitespace);
+                if (!_this._attemptStrCaseInsensitive(lowercaseTagName))
+                    return false;
+                _this._attemptCharCodeUntilFn(isNotWhitespace);
+                return _this._attemptCharCode($GT);
+            });
+            this._beginToken(TokenType.TAG_CLOSE, textToken.sourceSpan.end);
+            this._endToken([null, lowercaseTagName]);
+        };
+        _Tokenizer.prototype._consumeTagOpenStart = function (start) {
+            this._beginToken(TokenType.TAG_OPEN_START, start);
+            var parts = this._consumePrefixAndName();
+            this._endToken(parts);
+        };
+        _Tokenizer.prototype._consumeAttributeName = function () {
+            this._beginToken(TokenType.ATTR_NAME);
+            var prefixAndName = this._consumePrefixAndName();
+            this._endToken(prefixAndName);
+        };
+        _Tokenizer.prototype._consumeAttributeValue = function () {
+            this._beginToken(TokenType.ATTR_VALUE);
+            var value;
+            if (this._peek === $SQ || this._peek === $DQ) {
+                var quoteChar = this._peek;
+                this._advance();
+                var parts = [];
+                while (this._peek !== quoteChar) {
+                    parts.push(this._readChar(true));
+                }
+                value = parts.join('');
+                this._advance();
+            }
+            else {
+                var valueStart = this._index;
+                this._requireCharCodeUntilFn(isNameEnd, 1);
+                value = this._input.substring(valueStart, this._index);
+            }
+            this._endToken([this._processCarriageReturns(value)]);
+        };
+        _Tokenizer.prototype._consumeTagOpenEnd = function () {
+            var tokenType = this._attemptCharCode($SLASH) ? TokenType.TAG_OPEN_END_VOID : TokenType.TAG_OPEN_END;
+            this._beginToken(tokenType);
+            this._requireCharCode($GT);
+            this._endToken([]);
+        };
+        _Tokenizer.prototype._consumeTagClose = function (start) {
+            this._beginToken(TokenType.TAG_CLOSE, start);
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+            var prefixAndName = this._consumePrefixAndName();
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+            this._requireCharCode($GT);
+            this._endToken(prefixAndName);
+        };
+        _Tokenizer.prototype._consumeExpansionFormStart = function () {
+            this._beginToken(TokenType.EXPANSION_FORM_START, this._getLocation());
+            this._requireCharCode($LBRACE);
+            this._endToken([]);
+            this._expansionCaseStack.push(TokenType.EXPANSION_FORM_START);
+            this._beginToken(TokenType.RAW_TEXT, this._getLocation());
+            var condition = this._readUntil($COMMA);
+            this._endToken([condition], this._getLocation());
+            this._requireCharCode($COMMA);
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+            this._beginToken(TokenType.RAW_TEXT, this._getLocation());
+            var type = this._readUntil($COMMA);
+            this._endToken([type], this._getLocation());
+            this._requireCharCode($COMMA);
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+        };
+        _Tokenizer.prototype._consumeExpansionCaseStart = function () {
+            this._beginToken(TokenType.EXPANSION_CASE_VALUE, this._getLocation());
+            var value = this._readUntil($LBRACE).trim();
+            this._endToken([value], this._getLocation());
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+            this._beginToken(TokenType.EXPANSION_CASE_EXP_START, this._getLocation());
+            this._requireCharCode($LBRACE);
+            this._endToken([], this._getLocation());
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+            this._expansionCaseStack.push(TokenType.EXPANSION_CASE_EXP_START);
+        };
+        _Tokenizer.prototype._consumeExpansionCaseEnd = function () {
+            this._beginToken(TokenType.EXPANSION_CASE_EXP_END, this._getLocation());
+            this._requireCharCode($RBRACE);
+            this._endToken([], this._getLocation());
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+            this._expansionCaseStack.pop();
+        };
+        _Tokenizer.prototype._consumeExpansionFormEnd = function () {
+            this._beginToken(TokenType.EXPANSION_FORM_END, this._getLocation());
+            this._requireCharCode($RBRACE);
+            this._endToken([]);
+            this._expansionCaseStack.pop();
+        };
+        _Tokenizer.prototype._consumeText = function () {
+            var start = this._getLocation();
+            this._beginToken(TokenType.TEXT, start);
+            var parts = [];
+            do {
+                if (this._interpolationConfig && this._attemptStr(this._interpolationConfig.start)) {
+                    parts.push(this._interpolationConfig.start);
+                    this._inInterpolation = true;
+                }
+                else if (this._interpolationConfig && this._attemptStr(this._interpolationConfig.end) &&
+                    this._inInterpolation) {
+                    parts.push(this._interpolationConfig.end);
+                    this._inInterpolation = false;
+                }
+                else {
+                    parts.push(this._readChar(true));
+                }
+            } while (!this._isTextEnd());
+            this._endToken([this._processCarriageReturns(parts.join(''))]);
+        };
+        _Tokenizer.prototype._isTextEnd = function () {
+            if (this._peek === $LT || this._peek === $EOF) {
+                return true;
+            }
+            if (this._tokenizeIcu && !this._inInterpolation) {
+                if (isExpansionFormStart(this._input, this._index, this._interpolationConfig)) {
+                    // start of an expansion form
+                    return true;
+                }
+                if (this._peek === $RBRACE && this._isInExpansionCase()) {
+                    // end of and expansion case
+                    return true;
+                }
+            }
+            return false;
+        };
+        _Tokenizer.prototype._savePosition = function () {
+            return [this._peek, this._index, this._column, this._line, this.tokens.length];
+        };
+        _Tokenizer.prototype._readUntil = function (char) {
+            var start = this._index;
+            this._attemptUntilChar(char);
+            return this._input.substring(start, this._index);
+        };
+        _Tokenizer.prototype._restorePosition = function (position) {
+            this._peek = position[0];
+            this._index = position[1];
+            this._column = position[2];
+            this._line = position[3];
+            var nbTokens = position[4];
+            if (nbTokens < this.tokens.length) {
+                // remove any extra tokens
+                this.tokens = this.tokens.slice(0, nbTokens);
+            }
+        };
+        _Tokenizer.prototype._isInExpansionCase = function () {
+            return this._expansionCaseStack.length > 0 &&
+                this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
+                    TokenType.EXPANSION_CASE_EXP_START;
+        };
+        _Tokenizer.prototype._isInExpansionForm = function () {
+            return this._expansionCaseStack.length > 0 &&
+                this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
+                    TokenType.EXPANSION_FORM_START;
+        };
+        return _Tokenizer;
+    }());
+    function isNotWhitespace(code) {
+        return !isWhitespace(code) || code === $EOF;
+    }
+    function isNameEnd(code) {
+        return isWhitespace(code) || code === $GT || code === $SLASH ||
+            code === $SQ || code === $DQ || code === $EQ;
+    }
+    function isPrefixEnd(code) {
+        return (code < $a || $z < code) && (code < $A || $Z < code) &&
+            (code < $0 || code > $9);
+    }
+    function isDigitEntityEnd(code) {
+        return code == $SEMICOLON || code == $EOF || !isAsciiHexDigit(code);
+    }
+    function isNamedEntityEnd(code) {
+        return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
+    }
+    function isExpansionFormStart(input, offset, interpolationConfig) {
+        var isInterpolationStart = interpolationConfig ? input.indexOf(interpolationConfig.start, offset) == offset : false;
+        return input.charCodeAt(offset) == $LBRACE && !isInterpolationStart;
+    }
+    function isExpansionCaseStart(peek) {
+        return peek === $EQ || isAsciiLetter(peek);
+    }
+    function compareCharCodeCaseInsensitive(code1, code2) {
+        return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
+    }
+    function toUpperCaseCharCode(code) {
+        return code >= $a && code <= $z ? code - $a + $A : code;
+    }
+    function mergeTextTokens(srcTokens) {
+        var dstTokens = [];
+        var lastDstToken;
+        for (var i = 0; i < srcTokens.length; i++) {
+            var token = srcTokens[i];
+            if (lastDstToken && lastDstToken.type == TokenType.TEXT && token.type == TokenType.TEXT) {
+                lastDstToken.parts[0] += token.parts[0];
+                lastDstToken.sourceSpan.end = token.sourceSpan.end;
+            }
+            else {
+                lastDstToken = token;
+                dstTokens.push(lastDstToken);
+            }
+        }
+        return dstTokens;
+    }
+    var TreeError = (function (_super) {
+        __extends(TreeError, _super);
+        function TreeError(elementName, span, msg) {
+            _super.call(this, span, msg);
+            this.elementName = elementName;
+        }
+        TreeError.create = function (elementName, span, msg) {
+            return new TreeError(elementName, span, msg);
+        };
+        return TreeError;
+    }(ParseError));
+    var ParseTreeResult = (function () {
+        function ParseTreeResult(rootNodes, errors) {
+            this.rootNodes = rootNodes;
+            this.errors = errors;
+        }
+        return ParseTreeResult;
+    }());
+    var Parser = (function () {
+        function Parser(getTagDefinition) {
+            this.getTagDefinition = getTagDefinition;
+        }
+        Parser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
+            if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            var tokensAndErrors = tokenize(source, url, this.getTagDefinition, parseExpansionForms, interpolationConfig);
+            var treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
+            return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
+        };
+        return Parser;
+    }());
+    var _TreeBuilder = (function () {
+        function _TreeBuilder(tokens, getTagDefinition) {
+            this.tokens = tokens;
+            this.getTagDefinition = getTagDefinition;
+            this._index = -1;
+            this._rootNodes = [];
+            this._errors = [];
+            this._elementStack = [];
+            this._advance();
+        }
+        _TreeBuilder.prototype.build = function () {
+            while (this._peek.type !== TokenType.EOF) {
+                if (this._peek.type === TokenType.TAG_OPEN_START) {
+                    this._consumeStartTag(this._advance());
+                }
+                else if (this._peek.type === TokenType.TAG_CLOSE) {
+                    this._consumeEndTag(this._advance());
+                }
+                else if (this._peek.type === TokenType.CDATA_START) {
+                    this._closeVoidElement();
+                    this._consumeCdata(this._advance());
+                }
+                else if (this._peek.type === TokenType.COMMENT_START) {
+                    this._closeVoidElement();
+                    this._consumeComment(this._advance());
+                }
+                else if (this._peek.type === TokenType.TEXT || this._peek.type === TokenType.RAW_TEXT ||
+                    this._peek.type === TokenType.ESCAPABLE_RAW_TEXT) {
+                    this._closeVoidElement();
+                    this._consumeText(this._advance());
+                }
+                else if (this._peek.type === TokenType.EXPANSION_FORM_START) {
+                    this._consumeExpansion(this._advance());
+                }
+                else {
+                    // Skip all other tokens...
+                    this._advance();
+                }
+            }
+            return new ParseTreeResult(this._rootNodes, this._errors);
+        };
+        _TreeBuilder.prototype._advance = function () {
+            var prev = this._peek;
+            if (this._index < this.tokens.length - 1) {
+                // Note: there is always an EOF token at the end
+                this._index++;
+            }
+            this._peek = this.tokens[this._index];
+            return prev;
+        };
+        _TreeBuilder.prototype._advanceIf = function (type) {
+            if (this._peek.type === type) {
+                return this._advance();
+            }
+            return null;
+        };
+        _TreeBuilder.prototype._consumeCdata = function (startToken) {
+            this._consumeText(this._advance());
+            this._advanceIf(TokenType.CDATA_END);
+        };
+        _TreeBuilder.prototype._consumeComment = function (token) {
+            var text = this._advanceIf(TokenType.RAW_TEXT);
+            this._advanceIf(TokenType.COMMENT_END);
+            var value = isPresent(text) ? text.parts[0].trim() : null;
+            this._addToParent(new Comment(value, token.sourceSpan));
+        };
+        _TreeBuilder.prototype._consumeExpansion = function (token) {
+            var switchValue = this._advance();
+            var type = this._advance();
+            var cases = [];
+            // read =
+            while (this._peek.type === TokenType.EXPANSION_CASE_VALUE) {
+                var expCase = this._parseExpansionCase();
+                if (isBlank(expCase))
+                    return; // error
+                cases.push(expCase);
+            }
+            // read the final }
+            if (this._peek.type !== TokenType.EXPANSION_FORM_END) {
+                this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
+                return;
+            }
+            var sourceSpan = new ParseSourceSpan(token.sourceSpan.start, this._peek.sourceSpan.end);
+            this._addToParent(new Expansion(switchValue.parts[0], type.parts[0], cases, sourceSpan, switchValue.sourceSpan));
+            this._advance();
+        };
+        _TreeBuilder.prototype._parseExpansionCase = function () {
+            var value = this._advance();
+            // read {
+            if (this._peek.type !== TokenType.EXPANSION_CASE_EXP_START) {
+                this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '{'."));
+                return null;
+            }
+            // read until }
+            var start = this._advance();
+            var exp = this._collectExpansionExpTokens(start);
+            if (isBlank(exp))
+                return null;
+            var end = this._advance();
+            exp.push(new Token(TokenType.EOF, [], end.sourceSpan));
+            // parse everything in between { and }
+            var parsedExp = new _TreeBuilder(exp, this.getTagDefinition).build();
+            if (parsedExp.errors.length > 0) {
+                this._errors = this._errors.concat(parsedExp.errors);
+                return null;
+            }
+            var sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end);
+            var expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end);
+            return new ExpansionCase(value.parts[0], parsedExp.rootNodes, sourceSpan, value.sourceSpan, expSourceSpan);
+        };
+        _TreeBuilder.prototype._collectExpansionExpTokens = function (start) {
+            var exp = [];
+            var expansionFormStack = [TokenType.EXPANSION_CASE_EXP_START];
+            while (true) {
+                if (this._peek.type === TokenType.EXPANSION_FORM_START ||
+                    this._peek.type === TokenType.EXPANSION_CASE_EXP_START) {
+                    expansionFormStack.push(this._peek.type);
+                }
+                if (this._peek.type === TokenType.EXPANSION_CASE_EXP_END) {
+                    if (lastOnStack(expansionFormStack, TokenType.EXPANSION_CASE_EXP_START)) {
+                        expansionFormStack.pop();
+                        if (expansionFormStack.length == 0)
+                            return exp;
+                    }
+                    else {
+                        this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                        return null;
+                    }
+                }
+                if (this._peek.type === TokenType.EXPANSION_FORM_END) {
+                    if (lastOnStack(expansionFormStack, TokenType.EXPANSION_FORM_START)) {
+                        expansionFormStack.pop();
+                    }
+                    else {
+                        this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                        return null;
+                    }
+                }
+                if (this._peek.type === TokenType.EOF) {
+                    this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
+                    return null;
+                }
+                exp.push(this._advance());
+            }
+        };
+        _TreeBuilder.prototype._consumeText = function (token) {
+            var text = token.parts[0];
+            if (text.length > 0 && text[0] == '\n') {
+                var parent_1 = this._getParentElement();
+                if (isPresent(parent_1) && parent_1.children.length == 0 &&
+                    this.getTagDefinition(parent_1.name).ignoreFirstLf) {
+                    text = text.substring(1);
+                }
+            }
+            if (text.length > 0) {
+                this._addToParent(new Text(text, token.sourceSpan));
+            }
+        };
+        _TreeBuilder.prototype._closeVoidElement = function () {
+            if (this._elementStack.length > 0) {
+                var el = ListWrapper.last(this._elementStack);
+                if (this.getTagDefinition(el.name).isVoid) {
+                    this._elementStack.pop();
+                }
+            }
+        };
+        _TreeBuilder.prototype._consumeStartTag = function (startTagToken) {
+            var prefix = startTagToken.parts[0];
+            var name = startTagToken.parts[1];
+            var attrs = [];
+            while (this._peek.type === TokenType.ATTR_NAME) {
+                attrs.push(this._consumeAttr(this._advance()));
+            }
+            var fullName = this._getElementFullName(prefix, name, this._getParentElement());
+            var selfClosing = false;
+            // Note: There could have been a tokenizer error
+            // so that we don't get a token for the end tag...
+            if (this._peek.type === TokenType.TAG_OPEN_END_VOID) {
+                this._advance();
+                selfClosing = true;
+                var tagDef = this.getTagDefinition(fullName);
+                if (!(tagDef.canSelfClose || getNsPrefix(fullName) !== null || tagDef.isVoid)) {
+                    this._errors.push(TreeError.create(fullName, startTagToken.sourceSpan, "Only void and foreign elements can be self closed \"" + startTagToken.parts[1] + "\""));
+                }
+            }
+            else if (this._peek.type === TokenType.TAG_OPEN_END) {
+                this._advance();
+                selfClosing = false;
+            }
+            var end = this._peek.sourceSpan.start;
+            var span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
+            var el = new Element(fullName, attrs, [], span, span, null);
+            this._pushElement(el);
+            if (selfClosing) {
+                this._popElement(fullName);
+                el.endSourceSpan = span;
+            }
+        };
+        _TreeBuilder.prototype._pushElement = function (el) {
+            if (this._elementStack.length > 0) {
+                var parentEl = ListWrapper.last(this._elementStack);
+                if (this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
+                    this._elementStack.pop();
+                }
+            }
+            var tagDef = this.getTagDefinition(el.name);
+            var _a = this._getParentElementSkippingContainers(), parent = _a.parent, container = _a.container;
+            if (isPresent(parent) && tagDef.requireExtraParent(parent.name)) {
+                var newParent = new Element(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
+                this._insertBeforeContainer(parent, container, newParent);
+            }
+            this._addToParent(el);
+            this._elementStack.push(el);
+        };
+        _TreeBuilder.prototype._consumeEndTag = function (endTagToken) {
+            var fullName = this._getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
+            if (this._getParentElement()) {
+                this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
+            }
+            if (this.getTagDefinition(fullName).isVoid) {
+                this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Void elements do not have end tags \"" + endTagToken.parts[1] + "\""));
+            }
+            else if (!this._popElement(fullName)) {
+                this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Unexpected closing tag \"" + endTagToken.parts[1] + "\""));
+            }
+        };
+        _TreeBuilder.prototype._popElement = function (fullName) {
+            for (var stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
+                var el = this._elementStack[stackIndex];
+                if (el.name == fullName) {
+                    ListWrapper.splice(this._elementStack, stackIndex, this._elementStack.length - stackIndex);
+                    return true;
+                }
+                if (!this.getTagDefinition(el.name).closedByParent) {
+                    return false;
+                }
+            }
+            return false;
+        };
+        _TreeBuilder.prototype._consumeAttr = function (attrName) {
+            var fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
+            var end = attrName.sourceSpan.end;
+            var value = '';
+            if (this._peek.type === TokenType.ATTR_VALUE) {
+                var valueToken = this._advance();
+                value = valueToken.parts[0];
+                end = valueToken.sourceSpan.end;
+            }
+            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end));
+        };
+        _TreeBuilder.prototype._getParentElement = function () {
+            return this._elementStack.length > 0 ? ListWrapper.last(this._elementStack) : null;
+        };
+        /**
+         * Returns the parent in the DOM and the container.
+         *
+         * `<ng-container>` elements are skipped as they are not rendered as DOM element.
+         */
+        _TreeBuilder.prototype._getParentElementSkippingContainers = function () {
+            var container = null;
+            for (var i = this._elementStack.length - 1; i >= 0; i--) {
+                if (this._elementStack[i].name !== 'ng-container') {
+                    return { parent: this._elementStack[i], container: container };
+                }
+                container = this._elementStack[i];
+            }
+            return { parent: ListWrapper.last(this._elementStack), container: container };
+        };
+        _TreeBuilder.prototype._addToParent = function (node) {
+            var parent = this._getParentElement();
+            if (isPresent(parent)) {
+                parent.children.push(node);
+            }
+            else {
+                this._rootNodes.push(node);
+            }
+        };
+        /**
+         * Insert a node between the parent and the container.
+         * When no container is given, the node is appended as a child of the parent.
+         * Also updates the element stack accordingly.
+         *
+         * @internal
+         */
+        _TreeBuilder.prototype._insertBeforeContainer = function (parent, container, node) {
+            if (!container) {
+                this._addToParent(node);
+                this._elementStack.push(node);
+            }
+            else {
+                if (parent) {
+                    // replace the container with the new node in the children
+                    var index = parent.children.indexOf(container);
+                    parent.children[index] = node;
+                }
+                else {
+                    this._rootNodes.push(node);
+                }
+                node.children.push(container);
+                this._elementStack.splice(this._elementStack.indexOf(container), 0, node);
+            }
+        };
+        _TreeBuilder.prototype._getElementFullName = function (prefix, localName, parentElement) {
+            if (isBlank(prefix)) {
+                prefix = this.getTagDefinition(localName).implicitNamespacePrefix;
+                if (isBlank(prefix) && isPresent(parentElement)) {
+                    prefix = getNsPrefix(parentElement.name);
+                }
+            }
+            return mergeNsAndName(prefix, localName);
+        };
+        return _TreeBuilder;
+    }());
+    function lastOnStack(stack, element) {
+        return stack.length > 0 && stack[stack.length - 1] === element;
+    }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    function digestMessage(message) {
+        return sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
+    }
+    /**
+     * Serialize the i18n ast to something xml-like in order to generate an UID.
+     *
+     * The visitor is also used in the i18n parser tests
+     *
+     * @internal
+     */
+    var _SerializerVisitor = (function () {
+        function _SerializerVisitor() {
+        }
+        _SerializerVisitor.prototype.visitText = function (text, context) { return text.value; };
+        _SerializerVisitor.prototype.visitContainer = function (container, context) {
+            var _this = this;
+            return "[" + container.children.map(function (child) { return child.visit(_this); }).join(', ') + "]";
+        };
+        _SerializerVisitor.prototype.visitIcu = function (icu, context) {
+            var _this = this;
+            var strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
+            return "{" + icu.expression + ", " + icu.type + ", " + strCases.join(', ') + "}";
+        };
+        _SerializerVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+            var _this = this;
+            return ph.isVoid ?
+                "<ph tag name=\"" + ph.startName + "\"/>" :
+                "<ph tag name=\"" + ph.startName + "\">" + ph.children.map(function (child) { return child.visit(_this); }).join(', ') + "</ph name=\"" + ph.closeName + "\">";
+        };
+        _SerializerVisitor.prototype.visitPlaceholder = function (ph, context) {
+            return "<ph name=\"" + ph.name + "\">" + ph.value + "</ph>";
+        };
+        _SerializerVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
+            return "<ph icu name=\"" + ph.name + "\">" + ph.value.visit(this) + "</ph>";
+        };
+        return _SerializerVisitor;
+    }());
+    var serializerVisitor = new _SerializerVisitor();
+    function serializeNodes(nodes) {
+        return nodes.map(function (a) { return a.visit(serializerVisitor, null); });
+    }
+    /**
+     * Compute the SHA1 of the given string
+     *
+     * see http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
+     *
+     * WARNING: this function has not been designed not tested with security in mind.
+     *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
+     */
+    function sha1(str) {
+        var utf8 = utf8Encode(str);
+        var words32 = stringToWords32(utf8);
+        var len = utf8.length * 8;
+        var w = new Array(80);
+        var _a = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], a = _a[0], b = _a[1], c = _a[2], d = _a[3], e = _a[4];
+        words32[len >> 5] |= 0x80 << (24 - len % 32);
+        words32[((len + 64 >> 9) << 4) + 15] = len;
+        for (var i = 0; i < words32.length; i += 16) {
+            var _b = [a, b, c, d, e], h0 = _b[0], h1 = _b[1], h2 = _b[2], h3 = _b[3], h4 = _b[4];
+            for (var j = 0; j < 80; j++) {
+                if (j < 16) {
+                    w[j] = words32[i + j];
+                }
+                else {
+                    w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
+                }
+                var _c = fk(j, b, c, d), f = _c[0], k = _c[1];
+                var temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
+                _d = [d, c, rol32(b, 30), a, temp], e = _d[0], d = _d[1], c = _d[2], b = _d[3], a = _d[4];
+            }
+            _e = [add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)], a = _e[0], b = _e[1], c = _e[2], d = _e[3], e = _e[4];
+        }
+        var sha1 = words32ToString([a, b, c, d, e]);
+        var hex = '';
+        for (var i = 0; i < sha1.length; i++) {
+            var b_1 = sha1.charCodeAt(i);
+            hex += (b_1 >>> 4 & 0x0f).toString(16) + (b_1 & 0x0f).toString(16);
+        }
+        return hex.toLowerCase();
+        var _d, _e;
+    }
+    function utf8Encode(str) {
+        var encoded = '';
+        for (var index = 0; index < str.length; index++) {
+            var codePoint = decodeSurrogatePairs(str, index);
+            if (codePoint <= 0x7f) {
+                encoded += String.fromCharCode(codePoint);
+            }
+            else if (codePoint <= 0x7ff) {
+                encoded += String.fromCharCode(0xc0 | codePoint >>> 6, 0x80 | codePoint & 0x3f);
+            }
+            else if (codePoint <= 0xffff) {
+                encoded += String.fromCharCode(0xe0 | codePoint >>> 12, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
+            }
+            else if (codePoint <= 0x1fffff) {
+                encoded += String.fromCharCode(0xf0 | codePoint >>> 18, 0x80 | codePoint >>> 12 & 0x3f, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
+            }
+        }
+        return encoded;
+    }
+    // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+    function decodeSurrogatePairs(str, index) {
+        if (index < 0 || index >= str.length) {
+            throw new Error("index=" + index + " is out of range in \"" + str + "\"");
+        }
+        var high = str.charCodeAt(index);
+        var low;
+        if (high >= 0xd800 && high <= 0xdfff && str.length > index + 1) {
+            low = str.charCodeAt(index + 1);
+            if (low >= 0xdc00 && low <= 0xdfff) {
+                return (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
+            }
+        }
+        return high;
+    }
+    function stringToWords32(str) {
+        var words32 = Array(str.length >>> 2);
+        for (var i = 0; i < words32.length; i++) {
+            words32[i] = 0;
+        }
+        for (var i = 0; i < str.length; i++) {
+            words32[i >>> 2] |= (str.charCodeAt(i) & 0xff) << 8 * (3 - i & 0x3);
+        }
+        return words32;
+    }
+    function words32ToString(words32) {
+        var str = '';
+        for (var i = 0; i < words32.length * 4; i++) {
+            str += String.fromCharCode((words32[i >>> 2] >>> 8 * (3 - i & 0x3)) & 0xff);
+        }
+        return str;
+    }
+    function fk(index, b, c, d) {
+        if (index < 20) {
+            return [(b & c) | (~b & d), 0x5a827999];
+        }
+        if (index < 40) {
+            return [b ^ c ^ d, 0x6ed9eba1];
+        }
+        if (index < 60) {
+            return [(b & c) | (b & d) | (c & d), 0x8f1bbcdc];
+        }
+        return [b ^ c ^ d, 0xca62c1d6];
+    }
+    function add32(a, b) {
+        var low = (a & 0xffff) + (b & 0xffff);
+        var high = (a >> 16) + (b >> 16) + (low >> 16);
+        return (high << 16) | (low & 0xffff);
+    }
+    function rol32(a, count) {
+        return (a << count) | (a >>> (32 - count));
+    }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var Message = (function () {
+        /**
+         * @param nodes message AST
+         * @param placeholders maps placeholder names to static content
+         * @param placeholderToMsgIds maps placeholder names to translatable message IDs (used for ICU
+         *                            messages)
+         * @param meaning
+         * @param description
+         */
+        function Message(nodes, placeholders, placeholderToMsgIds, meaning, description) {
+            this.nodes = nodes;
+            this.placeholders = placeholders;
+            this.placeholderToMsgIds = placeholderToMsgIds;
+            this.meaning = meaning;
+            this.description = description;
+        }
+        return Message;
+    }());
+    var Text$1 = (function () {
+        function Text$1(value, sourceSpan) {
+            this.value = value;
+            this.sourceSpan = sourceSpan;
+        }
+        Text$1.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
+        return Text$1;
+    }());
+    var Container = (function () {
+        function Container(children, sourceSpan) {
+            this.children = children;
+            this.sourceSpan = sourceSpan;
+        }
+        Container.prototype.visit = function (visitor, context) { return visitor.visitContainer(this, context); };
+        return Container;
+    }());
+    var Icu = (function () {
+        function Icu(expression, type, cases, sourceSpan) {
+            this.expression = expression;
+            this.type = type;
+            this.cases = cases;
+            this.sourceSpan = sourceSpan;
+        }
+        Icu.prototype.visit = function (visitor, context) { return visitor.visitIcu(this, context); };
+        return Icu;
+    }());
+    var TagPlaceholder = (function () {
+        function TagPlaceholder(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
+            this.tag = tag;
+            this.attrs = attrs;
+            this.startName = startName;
+            this.closeName = closeName;
+            this.children = children;
+            this.isVoid = isVoid;
+            this.sourceSpan = sourceSpan;
+        }
+        TagPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitTagPlaceholder(this, context); };
+        return TagPlaceholder;
+    }());
+    var Placeholder = (function () {
+        function Placeholder(value, name, sourceSpan) {
+            if (name === void 0) { name = ''; }
+            this.value = value;
+            this.name = name;
+            this.sourceSpan = sourceSpan;
+        }
+        Placeholder.prototype.visit = function (visitor, context) { return visitor.visitPlaceholder(this, context); };
+        return Placeholder;
+    }());
+    var IcuPlaceholder = (function () {
+        function IcuPlaceholder(value, name, sourceSpan) {
+            if (name === void 0) { name = ''; }
+            this.value = value;
+            this.name = name;
+            this.sourceSpan = sourceSpan;
+        }
+        IcuPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitIcuPlaceholder(this, context); };
+        return IcuPlaceholder;
+    }());
+    var TokenType$1;
+    (function (TokenType) {
+        TokenType[TokenType["Character"] = 0] = "Character";
+        TokenType[TokenType["Identifier"] = 1] = "Identifier";
+        TokenType[TokenType["Keyword"] = 2] = "Keyword";
+        TokenType[TokenType["String"] = 3] = "String";
+        TokenType[TokenType["Operator"] = 4] = "Operator";
+        TokenType[TokenType["Number"] = 5] = "Number";
+        TokenType[TokenType["Error"] = 6] = "Error";
+    })(TokenType$1 || (TokenType$1 = {}));
+    var KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
+    var Lexer = (function () {
+        function Lexer() {
+        }
+        Lexer.prototype.tokenize = function (text) {
+            var scanner = new _Scanner(text);
+            var tokens = [];
+            var token = scanner.scanToken();
+            while (token != null) {
+                tokens.push(token);
+                token = scanner.scanToken();
+            }
+            return tokens;
+        };
+        return Lexer;
+    }());
+    /** @nocollapse */
+    Lexer.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    var Token$1 = (function () {
+        function Token$1(index, type, numValue, strValue) {
+            this.index = index;
+            this.type = type;
+            this.numValue = numValue;
+            this.strValue = strValue;
+        }
+        Token$1.prototype.isCharacter = function (code) {
+            return this.type == TokenType$1.Character && this.numValue == code;
+        };
+        Token$1.prototype.isNumber = function () { return this.type == TokenType$1.Number; };
+        Token$1.prototype.isString = function () { return this.type == TokenType$1.String; };
+        Token$1.prototype.isOperator = function (operater) {
+            return this.type == TokenType$1.Operator && this.strValue == operater;
+        };
+        Token$1.prototype.isIdentifier = function () { return this.type == TokenType$1.Identifier; };
+        Token$1.prototype.isKeyword = function () { return this.type == TokenType$1.Keyword; };
+        Token$1.prototype.isKeywordDeprecatedVar = function () {
+            return this.type == TokenType$1.Keyword && this.strValue == 'var';
+        };
+        Token$1.prototype.isKeywordLet = function () { return this.type == TokenType$1.Keyword && this.strValue == 'let'; };
+        Token$1.prototype.isKeywordNull = function () { return this.type == TokenType$1.Keyword && this.strValue == 'null'; };
+        Token$1.prototype.isKeywordUndefined = function () {
+            return this.type == TokenType$1.Keyword && this.strValue == 'undefined';
+        };
+        Token$1.prototype.isKeywordTrue = function () { return this.type == TokenType$1.Keyword && this.strValue == 'true'; };
+        Token$1.prototype.isKeywordFalse = function () { return this.type == TokenType$1.Keyword && this.strValue == 'false'; };
+        Token$1.prototype.isKeywordThis = function () { return this.type == TokenType$1.Keyword && this.strValue == 'this'; };
+        Token$1.prototype.isError = function () { return this.type == TokenType$1.Error; };
+        Token$1.prototype.toNumber = function () { return this.type == TokenType$1.Number ? this.numValue : -1; };
+        Token$1.prototype.toString = function () {
+            switch (this.type) {
+                case TokenType$1.Character:
+                case TokenType$1.Identifier:
+                case TokenType$1.Keyword:
+                case TokenType$1.Operator:
+                case TokenType$1.String:
+                case TokenType$1.Error:
+                    return this.strValue;
+                case TokenType$1.Number:
+                    return this.numValue.toString();
+                default:
+                    return null;
+            }
+        };
+        return Token$1;
+    }());
+    function newCharacterToken(index, code) {
+        return new Token$1(index, TokenType$1.Character, code, StringWrapper.fromCharCode(code));
+    }
+    function newIdentifierToken(index, text) {
+        return new Token$1(index, TokenType$1.Identifier, 0, text);
+    }
+    function newKeywordToken(index, text) {
+        return new Token$1(index, TokenType$1.Keyword, 0, text);
+    }
+    function newOperatorToken(index, text) {
+        return new Token$1(index, TokenType$1.Operator, 0, text);
+    }
+    function newStringToken(index, text) {
+        return new Token$1(index, TokenType$1.String, 0, text);
+    }
+    function newNumberToken(index, n) {
+        return new Token$1(index, TokenType$1.Number, n, '');
+    }
+    function newErrorToken(index, message) {
+        return new Token$1(index, TokenType$1.Error, 0, message);
+    }
+    var EOF = new Token$1(-1, TokenType$1.Character, 0, '');
+    var _Scanner = (function () {
+        function _Scanner(input) {
+            this.input = input;
+            this.peek = 0;
+            this.index = -1;
+            this.length = input.length;
+            this.advance();
+        }
+        _Scanner.prototype.advance = function () {
+            this.peek =
+                ++this.index >= this.length ? $EOF : StringWrapper.charCodeAt(this.input, this.index);
+        };
+        _Scanner.prototype.scanToken = function () {
+            var input = this.input, length = this.length, peek = this.peek, index = this.index;
+            // Skip whitespace.
+            while (peek <= $SPACE) {
+                if (++index >= length) {
+                    peek = $EOF;
+                    break;
+                }
+                else {
+                    peek = StringWrapper.charCodeAt(input, index);
+                }
+            }
+            this.peek = peek;
+            this.index = index;
+            if (index >= length) {
+                return null;
+            }
+            // Handle identifiers and numbers.
+            if (isIdentifierStart(peek))
+                return this.scanIdentifier();
+            if (isDigit(peek))
+                return this.scanNumber(index);
+            var start = index;
+            switch (peek) {
+                case $PERIOD:
+                    this.advance();
+                    return isDigit(this.peek) ? this.scanNumber(start) :
+                        newCharacterToken(start, $PERIOD);
+                case $LPAREN:
+                case $RPAREN:
+                case $LBRACE:
+                case $RBRACE:
+                case $LBRACKET:
+                case $RBRACKET:
+                case $COMMA:
+                case $COLON:
+                case $SEMICOLON:
+                    return this.scanCharacter(start, peek);
+                case $SQ:
+                case $DQ:
+                    return this.scanString();
+                case $HASH:
+                case $PLUS:
+                case $MINUS:
+                case $STAR:
+                case $SLASH:
+                case $PERCENT:
+                case $CARET:
+                    return this.scanOperator(start, StringWrapper.fromCharCode(peek));
+                case $QUESTION:
+                    return this.scanComplexOperator(start, '?', $PERIOD, '.');
+                case $LT:
+                case $GT:
+                    return this.scanComplexOperator(start, StringWrapper.fromCharCode(peek), $EQ, '=');
+                case $BANG:
+                case $EQ:
+                    return this.scanComplexOperator(start, StringWrapper.fromCharCode(peek), $EQ, '=', $EQ, '=');
+                case $AMPERSAND:
+                    return this.scanComplexOperator(start, '&', $AMPERSAND, '&');
+                case $BAR:
+                    return this.scanComplexOperator(start, '|', $BAR, '|');
+                case $NBSP:
+                    while (isWhitespace(this.peek))
+                        this.advance();
+                    return this.scanToken();
+            }
+            this.advance();
+            return this.error("Unexpected character [" + StringWrapper.fromCharCode(peek) + "]", 0);
+        };
+        _Scanner.prototype.scanCharacter = function (start, code) {
+            this.advance();
+            return newCharacterToken(start, code);
+        };
+        _Scanner.prototype.scanOperator = function (start, str) {
+            this.advance();
+            return newOperatorToken(start, str);
+        };
+        /**
+         * Tokenize a 2/3 char long operator
+         *
+         * @param start start index in the expression
+         * @param one first symbol (always part of the operator)
+         * @param twoCode code point for the second symbol
+         * @param two second symbol (part of the operator when the second code point matches)
+         * @param threeCode code point for the third symbol
+         * @param three third symbol (part of the operator when provided and matches source expression)
+         * @returns {Token}
+         */
+        _Scanner.prototype.scanComplexOperator = function (start, one, twoCode, two, threeCode, three) {
+            this.advance();
+            var str = one;
+            if (this.peek == twoCode) {
+                this.advance();
+                str += two;
+            }
+            if (isPresent(threeCode) && this.peek == threeCode) {
+                this.advance();
+                str += three;
+            }
+            return newOperatorToken(start, str);
+        };
+        _Scanner.prototype.scanIdentifier = function () {
+            var start = this.index;
+            this.advance();
+            while (isIdentifierPart(this.peek))
+                this.advance();
+            var str = this.input.substring(start, this.index);
+            return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, str) :
+                newIdentifierToken(start, str);
+        };
+        _Scanner.prototype.scanNumber = function (start) {
+            var simple = (this.index === start);
+            this.advance(); // Skip initial digit.
+            while (true) {
+                if (isDigit(this.peek)) {
+                }
+                else if (this.peek == $PERIOD) {
+                    simple = false;
+                }
+                else if (isExponentStart(this.peek)) {
+                    this.advance();
+                    if (isExponentSign(this.peek))
+                        this.advance();
+                    if (!isDigit(this.peek))
+                        return this.error('Invalid exponent', -1);
+                    simple = false;
+                }
+                else {
+                    break;
+                }
+                this.advance();
+            }
+            var str = this.input.substring(start, this.index);
+            var value = simple ? NumberWrapper.parseIntAutoRadix(str) : NumberWrapper.parseFloat(str);
+            return newNumberToken(start, value);
+        };
+        _Scanner.prototype.scanString = function () {
+            var start = this.index;
+            var quote = this.peek;
+            this.advance(); // Skip initial quote.
+            var buffer;
+            var marker = this.index;
+            var input = this.input;
+            while (this.peek != quote) {
+                if (this.peek == $BACKSLASH) {
+                    if (buffer == null)
+                        buffer = new StringJoiner();
+                    buffer.add(input.substring(marker, this.index));
+                    this.advance();
+                    var unescapedCode;
+                    if (this.peek == $u) {
+                        // 4 character hex code for unicode character.
+                        var hex = input.substring(this.index + 1, this.index + 5);
+                        try {
+                            unescapedCode = NumberWrapper.parseInt(hex, 16);
+                        }
+                        catch (e) {
+                            return this.error("Invalid unicode escape [\\u" + hex + "]", 0);
+                        }
+                        for (var i = 0; i < 5; i++) {
+                            this.advance();
+                        }
+                    }
+                    else {
+                        unescapedCode = unescape(this.peek);
+                        this.advance();
+                    }
+                    buffer.add(StringWrapper.fromCharCode(unescapedCode));
+                    marker = this.index;
+                }
+                else if (this.peek == $EOF) {
+                    return this.error('Unterminated quote', 0);
+                }
+                else {
+                    this.advance();
+                }
+            }
+            var last = input.substring(marker, this.index);
+            this.advance(); // Skip terminating quote.
+            // Compute the unescaped string value.
+            var unescaped = last;
+            if (buffer != null) {
+                buffer.add(last);
+                unescaped = buffer.toString();
+            }
+            return newStringToken(start, unescaped);
+        };
+        _Scanner.prototype.error = function (message, offset) {
+            var position = this.index + offset;
+            return newErrorToken(position, "Lexer Error: " + message + " at column " + position + " in expression [" + this.input + "]");
+        };
+        return _Scanner;
+    }());
+    function isIdentifierStart(code) {
+        return ($a <= code && code <= $z) || ($A <= code && code <= $Z) ||
+            (code == $_) || (code == $$);
+    }
+    function isIdentifier(input) {
+        if (input.length == 0)
+            return false;
+        var scanner = new _Scanner(input);
+        if (!isIdentifierStart(scanner.peek))
+            return false;
+        scanner.advance();
+        while (scanner.peek !== $EOF) {
+            if (!isIdentifierPart(scanner.peek))
+                return false;
+            scanner.advance();
+        }
+        return true;
+    }
+    function isIdentifierPart(code) {
+        return isAsciiLetter(code) || isDigit(code) || (code == $_) ||
+            (code == $$);
+    }
+    function isExponentStart(code) {
+        return code == $e || code == $E;
+    }
+    function isExponentSign(code) {
+        return code == $MINUS || code == $PLUS;
+    }
+    function isQuote(code) {
+        return code === $SQ || code === $DQ || code === $BT;
+    }
+    function unescape(code) {
+        switch (code) {
+            case $n:
+                return $LF;
+            case $f:
+                return $FF;
+            case $r:
+                return $CR;
+            case $t:
+                return $TAB;
+            case $v:
+                return $VTAB;
+            default:
+                return code;
+        }
+    }
     var ParserError = (function () {
         function ParserError(message, input, errLocation, ctxLocation) {
             this.input = input;
@@ -1775,24 +3138,24 @@ var __extends = (this && this.__extends) || function (d, b) {
         var pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
         return new RegExp(pattern, 'g');
     }
-    var Parser = (function () {
-        function Parser(_lexer) {
+    var Parser$1 = (function () {
+        function Parser$1(_lexer) {
             this._lexer = _lexer;
             this.errors = [];
         }
-        Parser.prototype.parseAction = function (input, location, interpolationConfig) {
+        Parser$1.prototype.parseAction = function (input, location, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             this._checkNoInterpolation(input, location, interpolationConfig);
             var tokens = this._lexer.tokenize(this._stripComments(input));
             var ast = new _ParseAST(input, location, tokens, true, this.errors).parseChain();
             return new ASTWithSource(ast, input, location, this.errors);
         };
-        Parser.prototype.parseBinding = function (input, location, interpolationConfig) {
+        Parser$1.prototype.parseBinding = function (input, location, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             var ast = this._parseBindingAst(input, location, interpolationConfig);
             return new ASTWithSource(ast, input, location, this.errors);
         };
-        Parser.prototype.parseSimpleBinding = function (input, location, interpolationConfig) {
+        Parser$1.prototype.parseSimpleBinding = function (input, location, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             var ast = this._parseBindingAst(input, location, interpolationConfig);
             if (!SimpleExpressionChecker.check(ast)) {
@@ -1800,10 +3163,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return new ASTWithSource(ast, input, location, this.errors);
         };
-        Parser.prototype._reportError = function (message, input, errLocation, ctxLocation) {
+        Parser$1.prototype._reportError = function (message, input, errLocation, ctxLocation) {
             this.errors.push(new ParserError(message, input, errLocation, ctxLocation));
         };
-        Parser.prototype._parseBindingAst = function (input, location, interpolationConfig) {
+        Parser$1.prototype._parseBindingAst = function (input, location, interpolationConfig) {
             // Quotes expressions use 3rd-party expression language. We don't want to use
             // our lexer or parser for that, so we check for that ahead of time.
             var quote = this._parseQuote(input, location);
@@ -1814,7 +3177,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var tokens = this._lexer.tokenize(this._stripComments(input));
             return new _ParseAST(input, location, tokens, false, this.errors).parseChain();
         };
-        Parser.prototype._parseQuote = function (input, location) {
+        Parser$1.prototype._parseQuote = function (input, location) {
             if (isBlank(input))
                 return null;
             var prefixSeparatorIndex = input.indexOf(':');
@@ -1826,11 +3189,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             var uninterpretedExpression = input.substring(prefixSeparatorIndex + 1);
             return new Quote(new ParseSpan(0, input.length), prefix, uninterpretedExpression, location);
         };
-        Parser.prototype.parseTemplateBindings = function (input, location) {
+        Parser$1.prototype.parseTemplateBindings = function (input, location) {
             var tokens = this._lexer.tokenize(input);
             return new _ParseAST(input, location, tokens, false, this.errors).parseTemplateBindings();
         };
-        Parser.prototype.parseInterpolation = function (input, location, interpolationConfig) {
+        Parser$1.prototype.parseInterpolation = function (input, location, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             var split = this.splitInterpolation(input, location, interpolationConfig);
             if (split == null)
@@ -1843,7 +3206,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return new ASTWithSource(new Interpolation(new ParseSpan(0, isBlank(input) ? 0 : input.length), split.strings, expressions), input, location, this.errors);
         };
-        Parser.prototype.splitInterpolation = function (input, location, interpolationConfig) {
+        Parser$1.prototype.splitInterpolation = function (input, location, interpolationConfig) {
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             var regexp = _createInterpolateRegExp(interpolationConfig);
             var parts = StringWrapper.split(input, regexp);
@@ -1867,14 +3230,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return new SplitInterpolation(strings, expressions);
         };
-        Parser.prototype.wrapLiteralPrimitive = function (input, location) {
+        Parser$1.prototype.wrapLiteralPrimitive = function (input, location) {
             return new ASTWithSource(new LiteralPrimitive(new ParseSpan(0, isBlank(input) ? 0 : input.length), input), input, location, this.errors);
         };
-        Parser.prototype._stripComments = function (input) {
+        Parser$1.prototype._stripComments = function (input) {
             var i = this._commentStart(input);
             return isPresent(i) ? input.substring(0, i).trim() : input;
         };
-        Parser.prototype._commentStart = function (input) {
+        Parser$1.prototype._commentStart = function (input) {
             var outerQuote = null;
             for (var i = 0; i < input.length - 1; i++) {
                 var char = StringWrapper.charCodeAt(input, i);
@@ -1890,14 +3253,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return null;
         };
-        Parser.prototype._checkNoInterpolation = function (input, location, interpolationConfig) {
+        Parser$1.prototype._checkNoInterpolation = function (input, location, interpolationConfig) {
             var regexp = _createInterpolateRegExp(interpolationConfig);
             var parts = StringWrapper.split(input, regexp);
             if (parts.length > 1) {
                 this._reportError("Got interpolation (" + interpolationConfig.start + interpolationConfig.end + ") where expression was expected", input, "at column " + this._findInterpolationErrorColumn(parts, 1, interpolationConfig) + " in", location);
             }
         };
-        Parser.prototype._findInterpolationErrorColumn = function (parts, partInErrIdx, interpolationConfig) {
+        Parser$1.prototype._findInterpolationErrorColumn = function (parts, partInErrIdx, interpolationConfig) {
             var errLocation = '';
             for (var j = 0; j < partInErrIdx; j++) {
                 errLocation += j % 2 === 0 ?
@@ -1906,14 +3269,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return errLocation.length;
         };
-        return Parser;
+        return Parser$1;
     }());
     /** @nocollapse */
-    Parser.decorators = [
+    Parser$1.decorators = [
         { type: _angular_core.Injectable },
     ];
     /** @nocollapse */
-    Parser.ctorParameters = [
+    Parser$1.ctorParameters = [
         { type: Lexer, },
     ];
     var _ParseAST = (function () {
@@ -2078,7 +3441,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _ParseAST.prototype.parseEquality = function () {
             // '==','!=','===','!=='
             var result = this.parseRelational();
-            while (this.next.type == TokenType.Operator) {
+            while (this.next.type == TokenType$1.Operator) {
                 var operator = this.next.strValue;
                 switch (operator) {
                     case '==':
@@ -2097,7 +3460,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _ParseAST.prototype.parseRelational = function () {
             // '<', '>', '<=', '>='
             var result = this.parseAdditive();
-            while (this.next.type == TokenType.Operator) {
+            while (this.next.type == TokenType$1.Operator) {
                 var operator = this.next.strValue;
                 switch (operator) {
                     case '<':
@@ -2116,7 +3479,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _ParseAST.prototype.parseAdditive = function () {
             // '+', '-'
             var result = this.parseMultiplicative();
-            while (this.next.type == TokenType.Operator) {
+            while (this.next.type == TokenType$1.Operator) {
                 var operator = this.next.strValue;
                 switch (operator) {
                     case '+':
@@ -2133,7 +3496,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _ParseAST.prototype.parseMultiplicative = function () {
             // '*', '%', '/'
             var result = this.parsePrefix();
-            while (this.next.type == TokenType.Operator) {
+            while (this.next.type == TokenType$1.Operator) {
                 var operator = this.next.strValue;
                 switch (operator) {
                     case '*':
@@ -2149,7 +3512,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return result;
         };
         _ParseAST.prototype.parsePrefix = function () {
-            if (this.next.type == TokenType.Operator) {
+            if (this.next.type == TokenType$1.Operator) {
                 var start = this.inputIndex;
                 var operator = this.next.strValue;
                 var result = void 0;
@@ -2477,293 +3840,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { this.simple = false; };
         return SimpleExpressionChecker;
     }());
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var TagContentType;
-    (function (TagContentType) {
-        TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
-        TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
-        TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
-    })(TagContentType || (TagContentType = {}));
-    function splitNsName(elementName) {
-        if (elementName[0] != ':') {
-            return [null, elementName];
-        }
-        var colonIndex = elementName.indexOf(':', 1);
-        if (colonIndex == -1) {
-            throw new Error("Unsupported format \"" + elementName + "\" expecting \":namespace:name\"");
-        }
-        return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
-    }
-    function getNsPrefix(fullName) {
-        return fullName === null ? null : splitNsName(fullName)[0];
-    }
-    function mergeNsAndName(prefix, localName) {
-        return prefix ? ":" + prefix + ":" + localName : localName;
-    }
-    // see http://www.w3.org/TR/html51/syntax.html#named-character-references
-    // see https://html.spec.whatwg.org/multipage/entities.json
-    // This list is not exhaustive to keep the compiler footprint low.
-    // The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not exist.
-    var NAMED_ENTITIES = {
-        'Aacute': '\u00C1',
-        'aacute': '\u00E1',
-        'Acirc': '\u00C2',
-        'acirc': '\u00E2',
-        'acute': '\u00B4',
-        'AElig': '\u00C6',
-        'aelig': '\u00E6',
-        'Agrave': '\u00C0',
-        'agrave': '\u00E0',
-        'alefsym': '\u2135',
-        'Alpha': '\u0391',
-        'alpha': '\u03B1',
-        'amp': '&',
-        'and': '\u2227',
-        'ang': '\u2220',
-        'apos': '\u0027',
-        'Aring': '\u00C5',
-        'aring': '\u00E5',
-        'asymp': '\u2248',
-        'Atilde': '\u00C3',
-        'atilde': '\u00E3',
-        'Auml': '\u00C4',
-        'auml': '\u00E4',
-        'bdquo': '\u201E',
-        'Beta': '\u0392',
-        'beta': '\u03B2',
-        'brvbar': '\u00A6',
-        'bull': '\u2022',
-        'cap': '\u2229',
-        'Ccedil': '\u00C7',
-        'ccedil': '\u00E7',
-        'cedil': '\u00B8',
-        'cent': '\u00A2',
-        'Chi': '\u03A7',
-        'chi': '\u03C7',
-        'circ': '\u02C6',
-        'clubs': '\u2663',
-        'cong': '\u2245',
-        'copy': '\u00A9',
-        'crarr': '\u21B5',
-        'cup': '\u222A',
-        'curren': '\u00A4',
-        'dagger': '\u2020',
-        'Dagger': '\u2021',
-        'darr': '\u2193',
-        'dArr': '\u21D3',
-        'deg': '\u00B0',
-        'Delta': '\u0394',
-        'delta': '\u03B4',
-        'diams': '\u2666',
-        'divide': '\u00F7',
-        'Eacute': '\u00C9',
-        'eacute': '\u00E9',
-        'Ecirc': '\u00CA',
-        'ecirc': '\u00EA',
-        'Egrave': '\u00C8',
-        'egrave': '\u00E8',
-        'empty': '\u2205',
-        'emsp': '\u2003',
-        'ensp': '\u2002',
-        'Epsilon': '\u0395',
-        'epsilon': '\u03B5',
-        'equiv': '\u2261',
-        'Eta': '\u0397',
-        'eta': '\u03B7',
-        'ETH': '\u00D0',
-        'eth': '\u00F0',
-        'Euml': '\u00CB',
-        'euml': '\u00EB',
-        'euro': '\u20AC',
-        'exist': '\u2203',
-        'fnof': '\u0192',
-        'forall': '\u2200',
-        'frac12': '\u00BD',
-        'frac14': '\u00BC',
-        'frac34': '\u00BE',
-        'frasl': '\u2044',
-        'Gamma': '\u0393',
-        'gamma': '\u03B3',
-        'ge': '\u2265',
-        'gt': '>',
-        'harr': '\u2194',
-        'hArr': '\u21D4',
-        'hearts': '\u2665',
-        'hellip': '\u2026',
-        'Iacute': '\u00CD',
-        'iacute': '\u00ED',
-        'Icirc': '\u00CE',
-        'icirc': '\u00EE',
-        'iexcl': '\u00A1',
-        'Igrave': '\u00CC',
-        'igrave': '\u00EC',
-        'image': '\u2111',
-        'infin': '\u221E',
-        'int': '\u222B',
-        'Iota': '\u0399',
-        'iota': '\u03B9',
-        'iquest': '\u00BF',
-        'isin': '\u2208',
-        'Iuml': '\u00CF',
-        'iuml': '\u00EF',
-        'Kappa': '\u039A',
-        'kappa': '\u03BA',
-        'Lambda': '\u039B',
-        'lambda': '\u03BB',
-        'lang': '\u27E8',
-        'laquo': '\u00AB',
-        'larr': '\u2190',
-        'lArr': '\u21D0',
-        'lceil': '\u2308',
-        'ldquo': '\u201C',
-        'le': '\u2264',
-        'lfloor': '\u230A',
-        'lowast': '\u2217',
-        'loz': '\u25CA',
-        'lrm': '\u200E',
-        'lsaquo': '\u2039',
-        'lsquo': '\u2018',
-        'lt': '<',
-        'macr': '\u00AF',
-        'mdash': '\u2014',
-        'micro': '\u00B5',
-        'middot': '\u00B7',
-        'minus': '\u2212',
-        'Mu': '\u039C',
-        'mu': '\u03BC',
-        'nabla': '\u2207',
-        'nbsp': '\u00A0',
-        'ndash': '\u2013',
-        'ne': '\u2260',
-        'ni': '\u220B',
-        'not': '\u00AC',
-        'notin': '\u2209',
-        'nsub': '\u2284',
-        'Ntilde': '\u00D1',
-        'ntilde': '\u00F1',
-        'Nu': '\u039D',
-        'nu': '\u03BD',
-        'Oacute': '\u00D3',
-        'oacute': '\u00F3',
-        'Ocirc': '\u00D4',
-        'ocirc': '\u00F4',
-        'OElig': '\u0152',
-        'oelig': '\u0153',
-        'Ograve': '\u00D2',
-        'ograve': '\u00F2',
-        'oline': '\u203E',
-        'Omega': '\u03A9',
-        'omega': '\u03C9',
-        'Omicron': '\u039F',
-        'omicron': '\u03BF',
-        'oplus': '\u2295',
-        'or': '\u2228',
-        'ordf': '\u00AA',
-        'ordm': '\u00BA',
-        'Oslash': '\u00D8',
-        'oslash': '\u00F8',
-        'Otilde': '\u00D5',
-        'otilde': '\u00F5',
-        'otimes': '\u2297',
-        'Ouml': '\u00D6',
-        'ouml': '\u00F6',
-        'para': '\u00B6',
-        'permil': '\u2030',
-        'perp': '\u22A5',
-        'Phi': '\u03A6',
-        'phi': '\u03C6',
-        'Pi': '\u03A0',
-        'pi': '\u03C0',
-        'piv': '\u03D6',
-        'plusmn': '\u00B1',
-        'pound': '\u00A3',
-        'prime': '\u2032',
-        'Prime': '\u2033',
-        'prod': '\u220F',
-        'prop': '\u221D',
-        'Psi': '\u03A8',
-        'psi': '\u03C8',
-        'quot': '\u0022',
-        'radic': '\u221A',
-        'rang': '\u27E9',
-        'raquo': '\u00BB',
-        'rarr': '\u2192',
-        'rArr': '\u21D2',
-        'rceil': '\u2309',
-        'rdquo': '\u201D',
-        'real': '\u211C',
-        'reg': '\u00AE',
-        'rfloor': '\u230B',
-        'Rho': '\u03A1',
-        'rho': '\u03C1',
-        'rlm': '\u200F',
-        'rsaquo': '\u203A',
-        'rsquo': '\u2019',
-        'sbquo': '\u201A',
-        'Scaron': '\u0160',
-        'scaron': '\u0161',
-        'sdot': '\u22C5',
-        'sect': '\u00A7',
-        'shy': '\u00AD',
-        'Sigma': '\u03A3',
-        'sigma': '\u03C3',
-        'sigmaf': '\u03C2',
-        'sim': '\u223C',
-        'spades': '\u2660',
-        'sub': '\u2282',
-        'sube': '\u2286',
-        'sum': '\u2211',
-        'sup': '\u2283',
-        'sup1': '\u00B9',
-        'sup2': '\u00B2',
-        'sup3': '\u00B3',
-        'supe': '\u2287',
-        'szlig': '\u00DF',
-        'Tau': '\u03A4',
-        'tau': '\u03C4',
-        'there4': '\u2234',
-        'Theta': '\u0398',
-        'theta': '\u03B8',
-        'thetasym': '\u03D1',
-        'thinsp': '\u2009',
-        'THORN': '\u00DE',
-        'thorn': '\u00FE',
-        'tilde': '\u02DC',
-        'times': '\u00D7',
-        'trade': '\u2122',
-        'Uacute': '\u00DA',
-        'uacute': '\u00FA',
-        'uarr': '\u2191',
-        'uArr': '\u21D1',
-        'Ucirc': '\u00DB',
-        'ucirc': '\u00FB',
-        'Ugrave': '\u00D9',
-        'ugrave': '\u00F9',
-        'uml': '\u00A8',
-        'upsih': '\u03D2',
-        'Upsilon': '\u03A5',
-        'upsilon': '\u03C5',
-        'Uuml': '\u00DC',
-        'uuml': '\u00FC',
-        'weierp': '\u2118',
-        'Xi': '\u039E',
-        'xi': '\u03BE',
-        'Yacute': '\u00DD',
-        'yacute': '\u00FD',
-        'yen': '\u00A5',
-        'yuml': '\u00FF',
-        'Yuml': '\u0178',
-        'Zeta': '\u0396',
-        'zeta': '\u03B6',
-        'zwj': '\u200D',
-        'zwnj': '\u200C',
-    };
     var HtmlTagDefinition = (function () {
         function HtmlTagDefinition(_a) {
             var _this = this;
@@ -2964,7 +4040,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return PlaceholderRegistry;
     }());
-    var _expParser = new Parser(new Lexer());
+    var _expParser = new Parser$1(new Lexer());
     /**
      * Returns a function converting html nodes to an i18n Message given an interpolationConfig
      */
@@ -3070,92 +4146,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function _extractPlaceholderName(input) {
         return input.split(_CUSTOM_PH_EXP)[1];
     }
-    var ParseLocation = (function () {
-        function ParseLocation(file, offset, line, col) {
-            this.file = file;
-            this.offset = offset;
-            this.line = line;
-            this.col = col;
-        }
-        ParseLocation.prototype.toString = function () {
-            return isPresent(this.offset) ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
-        };
-        return ParseLocation;
-    }());
-    var ParseSourceFile = (function () {
-        function ParseSourceFile(content, url) {
-            this.content = content;
-            this.url = url;
-        }
-        return ParseSourceFile;
-    }());
-    var ParseSourceSpan = (function () {
-        function ParseSourceSpan(start, end, details) {
-            if (details === void 0) { details = null; }
-            this.start = start;
-            this.end = end;
-            this.details = details;
-        }
-        ParseSourceSpan.prototype.toString = function () {
-            return this.start.file.content.substring(this.start.offset, this.end.offset);
-        };
-        return ParseSourceSpan;
-    }());
-    var ParseErrorLevel;
-    (function (ParseErrorLevel) {
-        ParseErrorLevel[ParseErrorLevel["WARNING"] = 0] = "WARNING";
-        ParseErrorLevel[ParseErrorLevel["FATAL"] = 1] = "FATAL";
-    })(ParseErrorLevel || (ParseErrorLevel = {}));
-    var ParseError = (function () {
-        function ParseError(span, msg, level) {
-            if (level === void 0) { level = ParseErrorLevel.FATAL; }
-            this.span = span;
-            this.msg = msg;
-            this.level = level;
-        }
-        ParseError.prototype.toString = function () {
-            var source = this.span.start.file.content;
-            var ctxStart = this.span.start.offset;
-            var contextStr = '';
-            var details = '';
-            if (isPresent(ctxStart)) {
-                if (ctxStart > source.length - 1) {
-                    ctxStart = source.length - 1;
-                }
-                var ctxEnd = ctxStart;
-                var ctxLen = 0;
-                var ctxLines = 0;
-                while (ctxLen < 100 && ctxStart > 0) {
-                    ctxStart--;
-                    ctxLen++;
-                    if (source[ctxStart] == '\n') {
-                        if (++ctxLines == 3) {
-                            break;
-                        }
-                    }
-                }
-                ctxLen = 0;
-                ctxLines = 0;
-                while (ctxLen < 100 && ctxEnd < source.length - 1) {
-                    ctxEnd++;
-                    ctxLen++;
-                    if (source[ctxEnd] == '\n') {
-                        if (++ctxLines == 3) {
-                            break;
-                        }
-                    }
-                }
-                var context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
-                    source.substring(this.span.start.offset, ctxEnd + 1);
-                contextStr = " (\"" + context + "\")";
-            }
-            if (this.span.details) {
-                details = ", " + this.span.details;
-            }
-            return "" + this.msg + contextStr + ": " + this.span.start + details;
-        };
-        return ParseError;
-    }());
     /**
      * An i18n error.
      */
@@ -3175,6 +4165,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     function extractMessages(nodes, interpolationConfig, implicitTags, implicitAttrs) {
         var visitor = new _Visitor(implicitTags, implicitAttrs);
         return visitor.extract(nodes, interpolationConfig);
+    }
+    function mergeTranslations(nodes, translations, interpolationConfig, implicitTags, implicitAttrs) {
+        var visitor = new _Visitor(implicitTags, implicitAttrs);
+        return visitor.merge(nodes, translations, interpolationConfig);
     }
     var ExtractionResult = (function () {
         function ExtractionResult(messages, errors) {
@@ -3221,6 +4215,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             // Construct a single fake root element
             var wrapper = new Element('wrapper', [], nodes, null, null, null);
             var translatedNode = wrapper.visit(this, null);
+            // TODO(vicb): return MergeResult with errors
             if (this._inI18nBlock) {
                 this._reportError(nodes[nodes.length - 1], 'Unclosed block');
             }
@@ -3277,7 +4272,9 @@ var __extends = (this && this.__extends) || function (d, b) {
                             this._closeTranslatableSection(comment, this._blockChildren);
                             this._inI18nBlock = false;
                             var message = this._addMessage(this._blockChildren, this._blockMeaningAndDesc);
-                            return this._translateMessage(comment, message);
+                            // merge attributes in sections
+                            var nodes = this._translateMessage(comment, message);
+                            return visitAll(this, nodes);
                         }
                         else {
                             this._reportError(comment, 'I18N blocks should not cross element boundaries');
@@ -3417,7 +4414,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._messages.push(message);
             return message;
         };
-        // translate the given message given the `TranslationBundle`
+        // Translates the given message given the `TranslationBundle`
+        // no-op when called in extraction mode (returns [])
         _Visitor.prototype._translateMessage = function (el, message) {
             if (message && this._mode === _VisitorMode.Merge) {
                 var id = digestMessage(message);
@@ -3446,7 +4444,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     // strip i18n specific attributes
                     return;
                 }
-                if (i18nAttributeMeanings.hasOwnProperty(attr.name)) {
+                if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                     var meaning = i18nAttributeMeanings[attr.name];
                     var message = _this._createI18nMessage([attr], meaning, '');
                     var id = digestMessage(message);
@@ -3584,1163 +4582,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         MessageBundle.prototype.write = function (serializer) { return serializer.write(this._messageMap); };
         return MessageBundle;
     }());
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var _Visitor$2 = (function () {
-        function _Visitor$2() {
-        }
-        _Visitor$2.prototype.visitTag = function (tag) {
-            var _this = this;
-            var strAttrs = this._serializeAttributes(tag.attrs);
-            if (tag.children.length == 0) {
-                return "<" + tag.name + strAttrs + "/>";
-            }
-            var strChildren = tag.children.map(function (node) { return node.visit(_this); });
-            return "<" + tag.name + strAttrs + ">" + strChildren.join('') + "</" + tag.name + ">";
-        };
-        _Visitor$2.prototype.visitText = function (text) { return text.value; };
-        _Visitor$2.prototype.visitDeclaration = function (decl) {
-            return "<? xml" + this._serializeAttributes(decl.attrs) + " ?>";
-        };
-        _Visitor$2.prototype._serializeAttributes = function (attrs) {
-            var strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');
-            return strAttrs.length > 0 ? ' ' + strAttrs : '';
-        };
-        _Visitor$2.prototype.visitDoctype = function (doctype) {
-            return "<!DOCTYPE " + doctype.rootTag + " [\n" + doctype.dtd + "\n]>";
-        };
-        return _Visitor$2;
-    }());
-    var _visitor = new _Visitor$2();
-    function serialize(nodes) {
-        return nodes.map(function (node) { return node.visit(_visitor); }).join('');
-    }
-    var Declaration = (function () {
-        function Declaration(unescapedAttrs) {
-            var _this = this;
-            this.attrs = {};
-            Object.keys(unescapedAttrs).forEach(function (k) {
-                _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
-            });
-        }
-        Declaration.prototype.visit = function (visitor) { return visitor.visitDeclaration(this); };
-        return Declaration;
-    }());
-    var Doctype = (function () {
-        function Doctype(rootTag, dtd) {
-            this.rootTag = rootTag;
-            this.dtd = dtd;
-        }
-        ;
-        Doctype.prototype.visit = function (visitor) { return visitor.visitDoctype(this); };
-        return Doctype;
-    }());
-    var Tag = (function () {
-        function Tag(name, unescapedAttrs, children) {
-            var _this = this;
-            if (unescapedAttrs === void 0) { unescapedAttrs = {}; }
-            if (children === void 0) { children = []; }
-            this.name = name;
-            this.children = children;
-            this.attrs = {};
-            Object.keys(unescapedAttrs).forEach(function (k) {
-                _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
-            });
-        }
-        Tag.prototype.visit = function (visitor) { return visitor.visitTag(this); };
-        return Tag;
-    }());
-    var Text$2 = (function () {
-        function Text$2(unescapedValue) {
-            this.value = _escapeXml(unescapedValue);
-        }
-        ;
-        Text$2.prototype.visit = function (visitor) { return visitor.visitText(this); };
-        return Text$2;
-    }());
-    var _ESCAPED_CHARS = [
-        [/&/g, '&amp;'],
-        [/"/g, '&quot;'],
-        [/'/g, '&apos;'],
-        [/</g, '&lt;'],
-        [/>/g, '&gt;'],
-    ];
-    function _escapeXml(text) {
-        return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
-    }
-    var _MESSAGES_TAG = 'messagebundle';
-    var _MESSAGE_TAG = 'msg';
-    var _PLACEHOLDER_TAG = 'ph';
-    var _EXEMPLE_TAG = 'ex';
-    var _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
-    var Xmb = (function () {
-        function Xmb() {
-        }
-        Xmb.prototype.write = function (messageMap) {
-            var visitor = new _Visitor$1();
-            var rootNode = new Tag(_MESSAGES_TAG);
-            rootNode.children.push(new Text$2('\n'));
-            Object.keys(messageMap).forEach(function (id) {
-                var message = messageMap[id];
-                var attrs = { id: id };
-                if (message.description) {
-                    attrs['desc'] = message.description;
-                }
-                if (message.meaning) {
-                    attrs['meaning'] = message.meaning;
-                }
-                rootNode.children.push(new Text$2('  '), new Tag(_MESSAGE_TAG, attrs, visitor.serialize(message.nodes)), new Text$2('\n'));
-            });
-            return serialize([
-                new Declaration({ version: '1.0', encoding: 'UTF-8' }),
-                new Text$2('\n'),
-                new Doctype(_MESSAGES_TAG, _DOCTYPE),
-                new Text$2('\n'),
-                rootNode,
-            ]);
-        };
-        Xmb.prototype.load = function (content, url, messageBundle) {
-            throw new Error('Unsupported');
-        };
-        return Xmb;
-    }());
-    var _Visitor$1 = (function () {
-        function _Visitor$1() {
-        }
-        _Visitor$1.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
-        _Visitor$1.prototype.visitContainer = function (container, context) {
-            var _this = this;
-            var nodes = [];
-            container.children.forEach(function (node) { return nodes.push.apply(nodes, node.visit(_this)); });
-            return nodes;
-        };
-        _Visitor$1.prototype.visitIcu = function (icu, context) {
-            var _this = this;
-            var nodes = [new Text$2("{" + icu.expression + ", " + icu.type + ", ")];
-            Object.keys(icu.cases).forEach(function (c) {
-                nodes.push.apply(nodes, [new Text$2(c + " {")].concat(icu.cases[c].visit(_this), [new Text$2("}")]));
-            });
-            nodes.push(new Text$2("}"));
-            return nodes;
-        };
-        _Visitor$1.prototype.visitTagPlaceholder = function (ph, context) {
-            var startEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("<" + ph.tag + ">")]);
-            var startTagPh = new Tag(_PLACEHOLDER_TAG, { name: ph.startName }, [startEx]);
-            if (ph.isVoid) {
-                // void tags have no children nor closing tags
-                return [startTagPh];
-            }
-            var closeEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("</" + ph.tag + ">")]);
-            var closeTagPh = new Tag(_PLACEHOLDER_TAG, { name: ph.closeName }, [closeEx]);
-            return [startTagPh].concat(this.serialize(ph.children), [closeTagPh]);
-        };
-        _Visitor$1.prototype.visitPlaceholder = function (ph, context) {
-            return [new Tag(_PLACEHOLDER_TAG, { name: ph.name })];
-        };
-        _Visitor$1.prototype.visitIcuPlaceholder = function (ph, context) {
-            return [new Tag(_PLACEHOLDER_TAG, { name: ph.name })];
-        };
-        _Visitor$1.prototype.serialize = function (nodes) {
-            var _this = this;
-            return ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
-        };
-        return _Visitor$1;
-    }());
-    var TokenType$1;
-    (function (TokenType) {
-        TokenType[TokenType["TAG_OPEN_START"] = 0] = "TAG_OPEN_START";
-        TokenType[TokenType["TAG_OPEN_END"] = 1] = "TAG_OPEN_END";
-        TokenType[TokenType["TAG_OPEN_END_VOID"] = 2] = "TAG_OPEN_END_VOID";
-        TokenType[TokenType["TAG_CLOSE"] = 3] = "TAG_CLOSE";
-        TokenType[TokenType["TEXT"] = 4] = "TEXT";
-        TokenType[TokenType["ESCAPABLE_RAW_TEXT"] = 5] = "ESCAPABLE_RAW_TEXT";
-        TokenType[TokenType["RAW_TEXT"] = 6] = "RAW_TEXT";
-        TokenType[TokenType["COMMENT_START"] = 7] = "COMMENT_START";
-        TokenType[TokenType["COMMENT_END"] = 8] = "COMMENT_END";
-        TokenType[TokenType["CDATA_START"] = 9] = "CDATA_START";
-        TokenType[TokenType["CDATA_END"] = 10] = "CDATA_END";
-        TokenType[TokenType["ATTR_NAME"] = 11] = "ATTR_NAME";
-        TokenType[TokenType["ATTR_VALUE"] = 12] = "ATTR_VALUE";
-        TokenType[TokenType["DOC_TYPE"] = 13] = "DOC_TYPE";
-        TokenType[TokenType["EXPANSION_FORM_START"] = 14] = "EXPANSION_FORM_START";
-        TokenType[TokenType["EXPANSION_CASE_VALUE"] = 15] = "EXPANSION_CASE_VALUE";
-        TokenType[TokenType["EXPANSION_CASE_EXP_START"] = 16] = "EXPANSION_CASE_EXP_START";
-        TokenType[TokenType["EXPANSION_CASE_EXP_END"] = 17] = "EXPANSION_CASE_EXP_END";
-        TokenType[TokenType["EXPANSION_FORM_END"] = 18] = "EXPANSION_FORM_END";
-        TokenType[TokenType["EOF"] = 19] = "EOF";
-    })(TokenType$1 || (TokenType$1 = {}));
-    var Token$1 = (function () {
-        function Token$1(type, parts, sourceSpan) {
-            this.type = type;
-            this.parts = parts;
-            this.sourceSpan = sourceSpan;
-        }
-        return Token$1;
-    }());
-    var TokenError = (function (_super) {
-        __extends(TokenError, _super);
-        function TokenError(errorMsg, tokenType, span) {
-            _super.call(this, span, errorMsg);
-            this.tokenType = tokenType;
-        }
-        return TokenError;
-    }(ParseError));
-    var TokenizeResult = (function () {
-        function TokenizeResult(tokens, errors) {
-            this.tokens = tokens;
-            this.errors = errors;
-        }
-        return TokenizeResult;
-    }());
-    function tokenize(source, url, getTagDefinition, tokenizeExpansionForms, interpolationConfig) {
-        if (tokenizeExpansionForms === void 0) { tokenizeExpansionForms = false; }
-        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-        return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, tokenizeExpansionForms, interpolationConfig)
-            .tokenize();
-    }
-    var _CR_OR_CRLF_REGEXP = /\r\n?/g;
-    function _unexpectedCharacterErrorMsg(charCode) {
-        var char = charCode === $EOF ? 'EOF' : String.fromCharCode(charCode);
-        return "Unexpected character \"" + char + "\"";
-    }
-    function _unknownEntityErrorMsg(entitySrc) {
-        return "Unknown entity \"" + entitySrc + "\" - use the \"&#<decimal>;\" or  \"&#x<hex>;\" syntax";
-    }
-    var _ControlFlowError = (function () {
-        function _ControlFlowError(error) {
-            this.error = error;
-        }
-        return _ControlFlowError;
-    }());
-    // See http://www.w3.org/TR/html51/syntax.html#writing
-    var _Tokenizer = (function () {
-        /**
-         * @param _file The html source
-         * @param _getTagDefinition
-         * @param _tokenizeIcu Whether to tokenize ICU messages (considered as text nodes when false)
-         * @param _interpolationConfig
-         */
-        function _Tokenizer(_file, _getTagDefinition, _tokenizeIcu, _interpolationConfig) {
-            if (_interpolationConfig === void 0) { _interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-            this._file = _file;
-            this._getTagDefinition = _getTagDefinition;
-            this._tokenizeIcu = _tokenizeIcu;
-            this._interpolationConfig = _interpolationConfig;
-            // Note: this is always lowercase!
-            this._peek = -1;
-            this._nextPeek = -1;
-            this._index = -1;
-            this._line = 0;
-            this._column = -1;
-            this._expansionCaseStack = [];
-            this._inInterpolation = false;
-            this.tokens = [];
-            this.errors = [];
-            this._input = _file.content;
-            this._length = _file.content.length;
-            this._advance();
-        }
-        _Tokenizer.prototype._processCarriageReturns = function (content) {
-            // http://www.w3.org/TR/html5/syntax.html#preprocessing-the-input-stream
-            // In order to keep the original position in the source, we can not
-            // pre-process it.
-            // Instead CRs are processed right before instantiating the tokens.
-            return content.replace(_CR_OR_CRLF_REGEXP, '\n');
-        };
-        _Tokenizer.prototype.tokenize = function () {
-            while (this._peek !== $EOF) {
-                var start = this._getLocation();
-                try {
-                    if (this._attemptCharCode($LT)) {
-                        if (this._attemptCharCode($BANG)) {
-                            if (this._attemptCharCode($LBRACKET)) {
-                                this._consumeCdata(start);
-                            }
-                            else if (this._attemptCharCode($MINUS)) {
-                                this._consumeComment(start);
-                            }
-                            else {
-                                this._consumeDocType(start);
-                            }
-                        }
-                        else if (this._attemptCharCode($SLASH)) {
-                            this._consumeTagClose(start);
-                        }
-                        else {
-                            this._consumeTagOpen(start);
-                        }
-                    }
-                    else if (!this._tokenizeIcu || !this._tokenizeExpansionForm()) {
-                        this._consumeText();
-                    }
-                }
-                catch (e) {
-                    if (e instanceof _ControlFlowError) {
-                        this.errors.push(e.error);
-                    }
-                    else {
-                        throw e;
-                    }
-                }
-            }
-            this._beginToken(TokenType$1.EOF);
-            this._endToken([]);
-            return new TokenizeResult(mergeTextTokens(this.tokens), this.errors);
-        };
-        /**
-         * @returns {boolean} whether an ICU token has been created
-         * @internal
-         */
-        _Tokenizer.prototype._tokenizeExpansionForm = function () {
-            if (isExpansionFormStart(this._input, this._index, this._interpolationConfig)) {
-                this._consumeExpansionFormStart();
-                return true;
-            }
-            if (isExpansionCaseStart(this._peek) && this._isInExpansionForm()) {
-                this._consumeExpansionCaseStart();
-                return true;
-            }
-            if (this._peek === $RBRACE) {
-                if (this._isInExpansionCase()) {
-                    this._consumeExpansionCaseEnd();
-                    return true;
-                }
-                if (this._isInExpansionForm()) {
-                    this._consumeExpansionFormEnd();
-                    return true;
-                }
-            }
-            return false;
-        };
-        _Tokenizer.prototype._getLocation = function () {
-            return new ParseLocation(this._file, this._index, this._line, this._column);
-        };
-        _Tokenizer.prototype._getSpan = function (start, end) {
-            if (start === void 0) { start = this._getLocation(); }
-            if (end === void 0) { end = this._getLocation(); }
-            return new ParseSourceSpan(start, end);
-        };
-        _Tokenizer.prototype._beginToken = function (type, start) {
-            if (start === void 0) { start = this._getLocation(); }
-            this._currentTokenStart = start;
-            this._currentTokenType = type;
-        };
-        _Tokenizer.prototype._endToken = function (parts, end) {
-            if (end === void 0) { end = this._getLocation(); }
-            var token = new Token$1(this._currentTokenType, parts, new ParseSourceSpan(this._currentTokenStart, end));
-            this.tokens.push(token);
-            this._currentTokenStart = null;
-            this._currentTokenType = null;
-            return token;
-        };
-        _Tokenizer.prototype._createError = function (msg, span) {
-            if (this._isInExpansionForm()) {
-                msg += " (Do you have an unescaped \"{\" in your template? Use \"{{ '{' }}\") to escape it.)";
-            }
-            var error = new TokenError(msg, this._currentTokenType, span);
-            this._currentTokenStart = null;
-            this._currentTokenType = null;
-            return new _ControlFlowError(error);
-        };
-        _Tokenizer.prototype._advance = function () {
-            if (this._index >= this._length) {
-                throw this._createError(_unexpectedCharacterErrorMsg($EOF), this._getSpan());
-            }
-            if (this._peek === $LF) {
-                this._line++;
-                this._column = 0;
-            }
-            else if (this._peek !== $LF && this._peek !== $CR) {
-                this._column++;
-            }
-            this._index++;
-            this._peek = this._index >= this._length ? $EOF : this._input.charCodeAt(this._index);
-            this._nextPeek =
-                this._index + 1 >= this._length ? $EOF : this._input.charCodeAt(this._index + 1);
-        };
-        _Tokenizer.prototype._attemptCharCode = function (charCode) {
-            if (this._peek === charCode) {
-                this._advance();
-                return true;
-            }
-            return false;
-        };
-        _Tokenizer.prototype._attemptCharCodeCaseInsensitive = function (charCode) {
-            if (compareCharCodeCaseInsensitive(this._peek, charCode)) {
-                this._advance();
-                return true;
-            }
-            return false;
-        };
-        _Tokenizer.prototype._requireCharCode = function (charCode) {
-            var location = this._getLocation();
-            if (!this._attemptCharCode(charCode)) {
-                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(location, location));
-            }
-        };
-        _Tokenizer.prototype._attemptStr = function (chars) {
-            var len = chars.length;
-            if (this._index + len > this._length) {
-                return false;
-            }
-            var initialPosition = this._savePosition();
-            for (var i = 0; i < len; i++) {
-                if (!this._attemptCharCode(chars.charCodeAt(i))) {
-                    // If attempting to parse the string fails, we want to reset the parser
-                    // to where it was before the attempt
-                    this._restorePosition(initialPosition);
-                    return false;
-                }
-            }
-            return true;
-        };
-        _Tokenizer.prototype._attemptStrCaseInsensitive = function (chars) {
-            for (var i = 0; i < chars.length; i++) {
-                if (!this._attemptCharCodeCaseInsensitive(chars.charCodeAt(i))) {
-                    return false;
-                }
-            }
-            return true;
-        };
-        _Tokenizer.prototype._requireStr = function (chars) {
-            var location = this._getLocation();
-            if (!this._attemptStr(chars)) {
-                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(location));
-            }
-        };
-        _Tokenizer.prototype._attemptCharCodeUntilFn = function (predicate) {
-            while (!predicate(this._peek)) {
-                this._advance();
-            }
-        };
-        _Tokenizer.prototype._requireCharCodeUntilFn = function (predicate, len) {
-            var start = this._getLocation();
-            this._attemptCharCodeUntilFn(predicate);
-            if (this._index - start.offset < len) {
-                throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan(start, start));
-            }
-        };
-        _Tokenizer.prototype._attemptUntilChar = function (char) {
-            while (this._peek !== char) {
-                this._advance();
-            }
-        };
-        _Tokenizer.prototype._readChar = function (decodeEntities) {
-            if (decodeEntities && this._peek === $AMPERSAND) {
-                return this._decodeEntity();
-            }
-            else {
-                var index = this._index;
-                this._advance();
-                return this._input[index];
-            }
-        };
-        _Tokenizer.prototype._decodeEntity = function () {
-            var start = this._getLocation();
-            this._advance();
-            if (this._attemptCharCode($HASH)) {
-                var isHex = this._attemptCharCode($x) || this._attemptCharCode($X);
-                var numberStart = this._getLocation().offset;
-                this._attemptCharCodeUntilFn(isDigitEntityEnd);
-                if (this._peek != $SEMICOLON) {
-                    throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan());
-                }
-                this._advance();
-                var strNum = this._input.substring(numberStart, this._index - 1);
-                try {
-                    var charCode = parseInt(strNum, isHex ? 16 : 10);
-                    return String.fromCharCode(charCode);
-                }
-                catch (e) {
-                    var entity = this._input.substring(start.offset + 1, this._index - 1);
-                    throw this._createError(_unknownEntityErrorMsg(entity), this._getSpan(start));
-                }
-            }
-            else {
-                var startPosition = this._savePosition();
-                this._attemptCharCodeUntilFn(isNamedEntityEnd);
-                if (this._peek != $SEMICOLON) {
-                    this._restorePosition(startPosition);
-                    return '&';
-                }
-                this._advance();
-                var name_1 = this._input.substring(start.offset + 1, this._index - 1);
-                var char = NAMED_ENTITIES[name_1];
-                if (!char) {
-                    throw this._createError(_unknownEntityErrorMsg(name_1), this._getSpan(start));
-                }
-                return char;
-            }
-        };
-        _Tokenizer.prototype._consumeRawText = function (decodeEntities, firstCharOfEnd, attemptEndRest) {
-            var tagCloseStart;
-            var textStart = this._getLocation();
-            this._beginToken(decodeEntities ? TokenType$1.ESCAPABLE_RAW_TEXT : TokenType$1.RAW_TEXT, textStart);
-            var parts = [];
-            while (true) {
-                tagCloseStart = this._getLocation();
-                if (this._attemptCharCode(firstCharOfEnd) && attemptEndRest()) {
-                    break;
-                }
-                if (this._index > tagCloseStart.offset) {
-                    // add the characters consumed by the previous if statement to the output
-                    parts.push(this._input.substring(tagCloseStart.offset, this._index));
-                }
-                while (this._peek !== firstCharOfEnd) {
-                    parts.push(this._readChar(decodeEntities));
-                }
-            }
-            return this._endToken([this._processCarriageReturns(parts.join(''))], tagCloseStart);
-        };
-        _Tokenizer.prototype._consumeComment = function (start) {
-            var _this = this;
-            this._beginToken(TokenType$1.COMMENT_START, start);
-            this._requireCharCode($MINUS);
-            this._endToken([]);
-            var textToken = this._consumeRawText(false, $MINUS, function () { return _this._attemptStr('->'); });
-            this._beginToken(TokenType$1.COMMENT_END, textToken.sourceSpan.end);
-            this._endToken([]);
-        };
-        _Tokenizer.prototype._consumeCdata = function (start) {
-            var _this = this;
-            this._beginToken(TokenType$1.CDATA_START, start);
-            this._requireStr('CDATA[');
-            this._endToken([]);
-            var textToken = this._consumeRawText(false, $RBRACKET, function () { return _this._attemptStr(']>'); });
-            this._beginToken(TokenType$1.CDATA_END, textToken.sourceSpan.end);
-            this._endToken([]);
-        };
-        _Tokenizer.prototype._consumeDocType = function (start) {
-            this._beginToken(TokenType$1.DOC_TYPE, start);
-            this._attemptUntilChar($GT);
-            this._advance();
-            this._endToken([this._input.substring(start.offset + 2, this._index - 1)]);
-        };
-        _Tokenizer.prototype._consumePrefixAndName = function () {
-            var nameOrPrefixStart = this._index;
-            var prefix = null;
-            while (this._peek !== $COLON && !isPrefixEnd(this._peek)) {
-                this._advance();
-            }
-            var nameStart;
-            if (this._peek === $COLON) {
-                this._advance();
-                prefix = this._input.substring(nameOrPrefixStart, this._index - 1);
-                nameStart = this._index;
-            }
-            else {
-                nameStart = nameOrPrefixStart;
-            }
-            this._requireCharCodeUntilFn(isNameEnd, this._index === nameStart ? 1 : 0);
-            var name = this._input.substring(nameStart, this._index);
-            return [prefix, name];
-        };
-        _Tokenizer.prototype._consumeTagOpen = function (start) {
-            var savedPos = this._savePosition();
-            var tagName;
-            var lowercaseTagName;
-            try {
-                if (!isAsciiLetter(this._peek)) {
-                    throw this._createError(_unexpectedCharacterErrorMsg(this._peek), this._getSpan());
-                }
-                var nameStart = this._index;
-                this._consumeTagOpenStart(start);
-                tagName = this._input.substring(nameStart, this._index);
-                lowercaseTagName = tagName.toLowerCase();
-                this._attemptCharCodeUntilFn(isNotWhitespace);
-                while (this._peek !== $SLASH && this._peek !== $GT) {
-                    this._consumeAttributeName();
-                    this._attemptCharCodeUntilFn(isNotWhitespace);
-                    if (this._attemptCharCode($EQ)) {
-                        this._attemptCharCodeUntilFn(isNotWhitespace);
-                        this._consumeAttributeValue();
-                    }
-                    this._attemptCharCodeUntilFn(isNotWhitespace);
-                }
-                this._consumeTagOpenEnd();
-            }
-            catch (e) {
-                if (e instanceof _ControlFlowError) {
-                    // When the start tag is invalid, assume we want a "<"
-                    this._restorePosition(savedPos);
-                    // Back to back text tokens are merged at the end
-                    this._beginToken(TokenType$1.TEXT, start);
-                    this._endToken(['<']);
-                    return;
-                }
-                throw e;
-            }
-            var contentTokenType = this._getTagDefinition(tagName).contentType;
-            if (contentTokenType === TagContentType.RAW_TEXT) {
-                this._consumeRawTextWithTagClose(lowercaseTagName, false);
-            }
-            else if (contentTokenType === TagContentType.ESCAPABLE_RAW_TEXT) {
-                this._consumeRawTextWithTagClose(lowercaseTagName, true);
-            }
-        };
-        _Tokenizer.prototype._consumeRawTextWithTagClose = function (lowercaseTagName, decodeEntities) {
-            var _this = this;
-            var textToken = this._consumeRawText(decodeEntities, $LT, function () {
-                if (!_this._attemptCharCode($SLASH))
-                    return false;
-                _this._attemptCharCodeUntilFn(isNotWhitespace);
-                if (!_this._attemptStrCaseInsensitive(lowercaseTagName))
-                    return false;
-                _this._attemptCharCodeUntilFn(isNotWhitespace);
-                return _this._attemptCharCode($GT);
-            });
-            this._beginToken(TokenType$1.TAG_CLOSE, textToken.sourceSpan.end);
-            this._endToken([null, lowercaseTagName]);
-        };
-        _Tokenizer.prototype._consumeTagOpenStart = function (start) {
-            this._beginToken(TokenType$1.TAG_OPEN_START, start);
-            var parts = this._consumePrefixAndName();
-            this._endToken(parts);
-        };
-        _Tokenizer.prototype._consumeAttributeName = function () {
-            this._beginToken(TokenType$1.ATTR_NAME);
-            var prefixAndName = this._consumePrefixAndName();
-            this._endToken(prefixAndName);
-        };
-        _Tokenizer.prototype._consumeAttributeValue = function () {
-            this._beginToken(TokenType$1.ATTR_VALUE);
-            var value;
-            if (this._peek === $SQ || this._peek === $DQ) {
-                var quoteChar = this._peek;
-                this._advance();
-                var parts = [];
-                while (this._peek !== quoteChar) {
-                    parts.push(this._readChar(true));
-                }
-                value = parts.join('');
-                this._advance();
-            }
-            else {
-                var valueStart = this._index;
-                this._requireCharCodeUntilFn(isNameEnd, 1);
-                value = this._input.substring(valueStart, this._index);
-            }
-            this._endToken([this._processCarriageReturns(value)]);
-        };
-        _Tokenizer.prototype._consumeTagOpenEnd = function () {
-            var tokenType = this._attemptCharCode($SLASH) ? TokenType$1.TAG_OPEN_END_VOID : TokenType$1.TAG_OPEN_END;
-            this._beginToken(tokenType);
-            this._requireCharCode($GT);
-            this._endToken([]);
-        };
-        _Tokenizer.prototype._consumeTagClose = function (start) {
-            this._beginToken(TokenType$1.TAG_CLOSE, start);
-            this._attemptCharCodeUntilFn(isNotWhitespace);
-            var prefixAndName = this._consumePrefixAndName();
-            this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._requireCharCode($GT);
-            this._endToken(prefixAndName);
-        };
-        _Tokenizer.prototype._consumeExpansionFormStart = function () {
-            this._beginToken(TokenType$1.EXPANSION_FORM_START, this._getLocation());
-            this._requireCharCode($LBRACE);
-            this._endToken([]);
-            this._expansionCaseStack.push(TokenType$1.EXPANSION_FORM_START);
-            this._beginToken(TokenType$1.RAW_TEXT, this._getLocation());
-            var condition = this._readUntil($COMMA);
-            this._endToken([condition], this._getLocation());
-            this._requireCharCode($COMMA);
-            this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._beginToken(TokenType$1.RAW_TEXT, this._getLocation());
-            var type = this._readUntil($COMMA);
-            this._endToken([type], this._getLocation());
-            this._requireCharCode($COMMA);
-            this._attemptCharCodeUntilFn(isNotWhitespace);
-        };
-        _Tokenizer.prototype._consumeExpansionCaseStart = function () {
-            this._beginToken(TokenType$1.EXPANSION_CASE_VALUE, this._getLocation());
-            var value = this._readUntil($LBRACE).trim();
-            this._endToken([value], this._getLocation());
-            this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._beginToken(TokenType$1.EXPANSION_CASE_EXP_START, this._getLocation());
-            this._requireCharCode($LBRACE);
-            this._endToken([], this._getLocation());
-            this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._expansionCaseStack.push(TokenType$1.EXPANSION_CASE_EXP_START);
-        };
-        _Tokenizer.prototype._consumeExpansionCaseEnd = function () {
-            this._beginToken(TokenType$1.EXPANSION_CASE_EXP_END, this._getLocation());
-            this._requireCharCode($RBRACE);
-            this._endToken([], this._getLocation());
-            this._attemptCharCodeUntilFn(isNotWhitespace);
-            this._expansionCaseStack.pop();
-        };
-        _Tokenizer.prototype._consumeExpansionFormEnd = function () {
-            this._beginToken(TokenType$1.EXPANSION_FORM_END, this._getLocation());
-            this._requireCharCode($RBRACE);
-            this._endToken([]);
-            this._expansionCaseStack.pop();
-        };
-        _Tokenizer.prototype._consumeText = function () {
-            var start = this._getLocation();
-            this._beginToken(TokenType$1.TEXT, start);
-            var parts = [];
-            do {
-                if (this._interpolationConfig && this._attemptStr(this._interpolationConfig.start)) {
-                    parts.push(this._interpolationConfig.start);
-                    this._inInterpolation = true;
-                }
-                else if (this._interpolationConfig && this._attemptStr(this._interpolationConfig.end) &&
-                    this._inInterpolation) {
-                    parts.push(this._interpolationConfig.end);
-                    this._inInterpolation = false;
-                }
-                else {
-                    parts.push(this._readChar(true));
-                }
-            } while (!this._isTextEnd());
-            this._endToken([this._processCarriageReturns(parts.join(''))]);
-        };
-        _Tokenizer.prototype._isTextEnd = function () {
-            if (this._peek === $LT || this._peek === $EOF) {
-                return true;
-            }
-            if (this._tokenizeIcu && !this._inInterpolation) {
-                if (isExpansionFormStart(this._input, this._index, this._interpolationConfig)) {
-                    // start of an expansion form
-                    return true;
-                }
-                if (this._peek === $RBRACE && this._isInExpansionCase()) {
-                    // end of and expansion case
-                    return true;
-                }
-            }
-            return false;
-        };
-        _Tokenizer.prototype._savePosition = function () {
-            return [this._peek, this._index, this._column, this._line, this.tokens.length];
-        };
-        _Tokenizer.prototype._readUntil = function (char) {
-            var start = this._index;
-            this._attemptUntilChar(char);
-            return this._input.substring(start, this._index);
-        };
-        _Tokenizer.prototype._restorePosition = function (position) {
-            this._peek = position[0];
-            this._index = position[1];
-            this._column = position[2];
-            this._line = position[3];
-            var nbTokens = position[4];
-            if (nbTokens < this.tokens.length) {
-                // remove any extra tokens
-                this.tokens = this.tokens.slice(0, nbTokens);
-            }
-        };
-        _Tokenizer.prototype._isInExpansionCase = function () {
-            return this._expansionCaseStack.length > 0 &&
-                this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                    TokenType$1.EXPANSION_CASE_EXP_START;
-        };
-        _Tokenizer.prototype._isInExpansionForm = function () {
-            return this._expansionCaseStack.length > 0 &&
-                this._expansionCaseStack[this._expansionCaseStack.length - 1] ===
-                    TokenType$1.EXPANSION_FORM_START;
-        };
-        return _Tokenizer;
-    }());
-    function isNotWhitespace(code) {
-        return !isWhitespace(code) || code === $EOF;
-    }
-    function isNameEnd(code) {
-        return isWhitespace(code) || code === $GT || code === $SLASH ||
-            code === $SQ || code === $DQ || code === $EQ;
-    }
-    function isPrefixEnd(code) {
-        return (code < $a || $z < code) && (code < $A || $Z < code) &&
-            (code < $0 || code > $9);
-    }
-    function isDigitEntityEnd(code) {
-        return code == $SEMICOLON || code == $EOF || !isAsciiHexDigit(code);
-    }
-    function isNamedEntityEnd(code) {
-        return code == $SEMICOLON || code == $EOF || !isAsciiLetter(code);
-    }
-    function isExpansionFormStart(input, offset, interpolationConfig) {
-        var isInterpolationStart = interpolationConfig ? input.indexOf(interpolationConfig.start, offset) == offset : false;
-        return input.charCodeAt(offset) == $LBRACE && !isInterpolationStart;
-    }
-    function isExpansionCaseStart(peek) {
-        return peek === $EQ || isAsciiLetter(peek);
-    }
-    function compareCharCodeCaseInsensitive(code1, code2) {
-        return toUpperCaseCharCode(code1) == toUpperCaseCharCode(code2);
-    }
-    function toUpperCaseCharCode(code) {
-        return code >= $a && code <= $z ? code - $a + $A : code;
-    }
-    function mergeTextTokens(srcTokens) {
-        var dstTokens = [];
-        var lastDstToken;
-        for (var i = 0; i < srcTokens.length; i++) {
-            var token = srcTokens[i];
-            if (lastDstToken && lastDstToken.type == TokenType$1.TEXT && token.type == TokenType$1.TEXT) {
-                lastDstToken.parts[0] += token.parts[0];
-                lastDstToken.sourceSpan.end = token.sourceSpan.end;
-            }
-            else {
-                lastDstToken = token;
-                dstTokens.push(lastDstToken);
-            }
-        }
-        return dstTokens;
-    }
-    var TreeError = (function (_super) {
-        __extends(TreeError, _super);
-        function TreeError(elementName, span, msg) {
-            _super.call(this, span, msg);
-            this.elementName = elementName;
-        }
-        TreeError.create = function (elementName, span, msg) {
-            return new TreeError(elementName, span, msg);
-        };
-        return TreeError;
-    }(ParseError));
-    var ParseTreeResult = (function () {
-        function ParseTreeResult(rootNodes, errors) {
-            this.rootNodes = rootNodes;
-            this.errors = errors;
-        }
-        return ParseTreeResult;
-    }());
-    var Parser$1 = (function () {
-        function Parser$1(_getTagDefinition) {
-            this._getTagDefinition = _getTagDefinition;
-        }
-        Parser$1.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
-            if (parseExpansionForms === void 0) { parseExpansionForms = false; }
-            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-            var tokensAndErrors = tokenize(source, url, this._getTagDefinition, parseExpansionForms, interpolationConfig);
-            var treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this._getTagDefinition).build();
-            return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
-        };
-        return Parser$1;
-    }());
-    var _TreeBuilder = (function () {
-        function _TreeBuilder(tokens, getTagDefinition) {
-            this.tokens = tokens;
-            this.getTagDefinition = getTagDefinition;
-            this._index = -1;
-            this._rootNodes = [];
-            this._errors = [];
-            this._elementStack = [];
-            this._advance();
-        }
-        _TreeBuilder.prototype.build = function () {
-            while (this._peek.type !== TokenType$1.EOF) {
-                if (this._peek.type === TokenType$1.TAG_OPEN_START) {
-                    this._consumeStartTag(this._advance());
-                }
-                else if (this._peek.type === TokenType$1.TAG_CLOSE) {
-                    this._consumeEndTag(this._advance());
-                }
-                else if (this._peek.type === TokenType$1.CDATA_START) {
-                    this._closeVoidElement();
-                    this._consumeCdata(this._advance());
-                }
-                else if (this._peek.type === TokenType$1.COMMENT_START) {
-                    this._closeVoidElement();
-                    this._consumeComment(this._advance());
-                }
-                else if (this._peek.type === TokenType$1.TEXT || this._peek.type === TokenType$1.RAW_TEXT ||
-                    this._peek.type === TokenType$1.ESCAPABLE_RAW_TEXT) {
-                    this._closeVoidElement();
-                    this._consumeText(this._advance());
-                }
-                else if (this._peek.type === TokenType$1.EXPANSION_FORM_START) {
-                    this._consumeExpansion(this._advance());
-                }
-                else {
-                    // Skip all other tokens...
-                    this._advance();
-                }
-            }
-            return new ParseTreeResult(this._rootNodes, this._errors);
-        };
-        _TreeBuilder.prototype._advance = function () {
-            var prev = this._peek;
-            if (this._index < this.tokens.length - 1) {
-                // Note: there is always an EOF token at the end
-                this._index++;
-            }
-            this._peek = this.tokens[this._index];
-            return prev;
-        };
-        _TreeBuilder.prototype._advanceIf = function (type) {
-            if (this._peek.type === type) {
-                return this._advance();
-            }
-            return null;
-        };
-        _TreeBuilder.prototype._consumeCdata = function (startToken) {
-            this._consumeText(this._advance());
-            this._advanceIf(TokenType$1.CDATA_END);
-        };
-        _TreeBuilder.prototype._consumeComment = function (token) {
-            var text = this._advanceIf(TokenType$1.RAW_TEXT);
-            this._advanceIf(TokenType$1.COMMENT_END);
-            var value = isPresent(text) ? text.parts[0].trim() : null;
-            this._addToParent(new Comment(value, token.sourceSpan));
-        };
-        _TreeBuilder.prototype._consumeExpansion = function (token) {
-            var switchValue = this._advance();
-            var type = this._advance();
-            var cases = [];
-            // read =
-            while (this._peek.type === TokenType$1.EXPANSION_CASE_VALUE) {
-                var expCase = this._parseExpansionCase();
-                if (isBlank(expCase))
-                    return; // error
-                cases.push(expCase);
-            }
-            // read the final }
-            if (this._peek.type !== TokenType$1.EXPANSION_FORM_END) {
-                this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '}'."));
-                return;
-            }
-            var sourceSpan = new ParseSourceSpan(token.sourceSpan.start, this._peek.sourceSpan.end);
-            this._addToParent(new Expansion(switchValue.parts[0], type.parts[0], cases, sourceSpan, switchValue.sourceSpan));
-            this._advance();
-        };
-        _TreeBuilder.prototype._parseExpansionCase = function () {
-            var value = this._advance();
-            // read {
-            if (this._peek.type !== TokenType$1.EXPANSION_CASE_EXP_START) {
-                this._errors.push(TreeError.create(null, this._peek.sourceSpan, "Invalid ICU message. Missing '{'."));
-                return null;
-            }
-            // read until }
-            var start = this._advance();
-            var exp = this._collectExpansionExpTokens(start);
-            if (isBlank(exp))
-                return null;
-            var end = this._advance();
-            exp.push(new Token$1(TokenType$1.EOF, [], end.sourceSpan));
-            // parse everything in between { and }
-            var parsedExp = new _TreeBuilder(exp, this.getTagDefinition).build();
-            if (parsedExp.errors.length > 0) {
-                this._errors = this._errors.concat(parsedExp.errors);
-                return null;
-            }
-            var sourceSpan = new ParseSourceSpan(value.sourceSpan.start, end.sourceSpan.end);
-            var expSourceSpan = new ParseSourceSpan(start.sourceSpan.start, end.sourceSpan.end);
-            return new ExpansionCase(value.parts[0], parsedExp.rootNodes, sourceSpan, value.sourceSpan, expSourceSpan);
-        };
-        _TreeBuilder.prototype._collectExpansionExpTokens = function (start) {
-            var exp = [];
-            var expansionFormStack = [TokenType$1.EXPANSION_CASE_EXP_START];
-            while (true) {
-                if (this._peek.type === TokenType$1.EXPANSION_FORM_START ||
-                    this._peek.type === TokenType$1.EXPANSION_CASE_EXP_START) {
-                    expansionFormStack.push(this._peek.type);
-                }
-                if (this._peek.type === TokenType$1.EXPANSION_CASE_EXP_END) {
-                    if (lastOnStack(expansionFormStack, TokenType$1.EXPANSION_CASE_EXP_START)) {
-                        expansionFormStack.pop();
-                        if (expansionFormStack.length == 0)
-                            return exp;
-                    }
-                    else {
-                        this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
-                        return null;
-                    }
-                }
-                if (this._peek.type === TokenType$1.EXPANSION_FORM_END) {
-                    if (lastOnStack(expansionFormStack, TokenType$1.EXPANSION_FORM_START)) {
-                        expansionFormStack.pop();
-                    }
-                    else {
-                        this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
-                        return null;
-                    }
-                }
-                if (this._peek.type === TokenType$1.EOF) {
-                    this._errors.push(TreeError.create(null, start.sourceSpan, "Invalid ICU message. Missing '}'."));
-                    return null;
-                }
-                exp.push(this._advance());
-            }
-        };
-        _TreeBuilder.prototype._consumeText = function (token) {
-            var text = token.parts[0];
-            if (text.length > 0 && text[0] == '\n') {
-                var parent_1 = this._getParentElement();
-                if (isPresent(parent_1) && parent_1.children.length == 0 &&
-                    this.getTagDefinition(parent_1.name).ignoreFirstLf) {
-                    text = text.substring(1);
-                }
-            }
-            if (text.length > 0) {
-                this._addToParent(new Text(text, token.sourceSpan));
-            }
-        };
-        _TreeBuilder.prototype._closeVoidElement = function () {
-            if (this._elementStack.length > 0) {
-                var el = ListWrapper.last(this._elementStack);
-                if (this.getTagDefinition(el.name).isVoid) {
-                    this._elementStack.pop();
-                }
-            }
-        };
-        _TreeBuilder.prototype._consumeStartTag = function (startTagToken) {
-            var prefix = startTagToken.parts[0];
-            var name = startTagToken.parts[1];
-            var attrs = [];
-            while (this._peek.type === TokenType$1.ATTR_NAME) {
-                attrs.push(this._consumeAttr(this._advance()));
-            }
-            var fullName = this._getElementFullName(prefix, name, this._getParentElement());
-            var selfClosing = false;
-            // Note: There could have been a tokenizer error
-            // so that we don't get a token for the end tag...
-            if (this._peek.type === TokenType$1.TAG_OPEN_END_VOID) {
-                this._advance();
-                selfClosing = true;
-                var tagDef = this.getTagDefinition(fullName);
-                if (!(tagDef.canSelfClose || getNsPrefix(fullName) !== null || tagDef.isVoid)) {
-                    this._errors.push(TreeError.create(fullName, startTagToken.sourceSpan, "Only void and foreign elements can be self closed \"" + startTagToken.parts[1] + "\""));
-                }
-            }
-            else if (this._peek.type === TokenType$1.TAG_OPEN_END) {
-                this._advance();
-                selfClosing = false;
-            }
-            var end = this._peek.sourceSpan.start;
-            var span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
-            var el = new Element(fullName, attrs, [], span, span, null);
-            this._pushElement(el);
-            if (selfClosing) {
-                this._popElement(fullName);
-                el.endSourceSpan = span;
-            }
-        };
-        _TreeBuilder.prototype._pushElement = function (el) {
-            if (this._elementStack.length > 0) {
-                var parentEl = ListWrapper.last(this._elementStack);
-                if (this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
-                    this._elementStack.pop();
-                }
-            }
-            var tagDef = this.getTagDefinition(el.name);
-            var _a = this._getParentElementSkippingContainers(), parent = _a.parent, container = _a.container;
-            if (isPresent(parent) && tagDef.requireExtraParent(parent.name)) {
-                var newParent = new Element(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
-                this._insertBeforeContainer(parent, container, newParent);
-            }
-            this._addToParent(el);
-            this._elementStack.push(el);
-        };
-        _TreeBuilder.prototype._consumeEndTag = function (endTagToken) {
-            var fullName = this._getElementFullName(endTagToken.parts[0], endTagToken.parts[1], this._getParentElement());
-            if (this._getParentElement()) {
-                this._getParentElement().endSourceSpan = endTagToken.sourceSpan;
-            }
-            if (this.getTagDefinition(fullName).isVoid) {
-                this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Void elements do not have end tags \"" + endTagToken.parts[1] + "\""));
-            }
-            else if (!this._popElement(fullName)) {
-                this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, "Unexpected closing tag \"" + endTagToken.parts[1] + "\""));
-            }
-        };
-        _TreeBuilder.prototype._popElement = function (fullName) {
-            for (var stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
-                var el = this._elementStack[stackIndex];
-                if (el.name == fullName) {
-                    ListWrapper.splice(this._elementStack, stackIndex, this._elementStack.length - stackIndex);
-                    return true;
-                }
-                if (!this.getTagDefinition(el.name).closedByParent) {
-                    return false;
-                }
-            }
-            return false;
-        };
-        _TreeBuilder.prototype._consumeAttr = function (attrName) {
-            var fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
-            var end = attrName.sourceSpan.end;
-            var value = '';
-            if (this._peek.type === TokenType$1.ATTR_VALUE) {
-                var valueToken = this._advance();
-                value = valueToken.parts[0];
-                end = valueToken.sourceSpan.end;
-            }
-            return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end));
-        };
-        _TreeBuilder.prototype._getParentElement = function () {
-            return this._elementStack.length > 0 ? ListWrapper.last(this._elementStack) : null;
-        };
-        /**
-         * Returns the parent in the DOM and the container.
-         *
-         * `<ng-container>` elements are skipped as they are not rendered as DOM element.
-         */
-        _TreeBuilder.prototype._getParentElementSkippingContainers = function () {
-            var container = null;
-            for (var i = this._elementStack.length - 1; i >= 0; i--) {
-                if (this._elementStack[i].name !== 'ng-container') {
-                    return { parent: this._elementStack[i], container: container };
-                }
-                container = this._elementStack[i];
-            }
-            return { parent: ListWrapper.last(this._elementStack), container: container };
-        };
-        _TreeBuilder.prototype._addToParent = function (node) {
-            var parent = this._getParentElement();
-            if (isPresent(parent)) {
-                parent.children.push(node);
-            }
-            else {
-                this._rootNodes.push(node);
-            }
-        };
-        /**
-         * Insert a node between the parent and the container.
-         * When no container is given, the node is appended as a child of the parent.
-         * Also updates the element stack accordingly.
-         *
-         * @internal
-         */
-        _TreeBuilder.prototype._insertBeforeContainer = function (parent, container, node) {
-            if (!container) {
-                this._addToParent(node);
-                this._elementStack.push(node);
-            }
-            else {
-                if (parent) {
-                    // replace the container with the new node in the children
-                    var index = parent.children.indexOf(container);
-                    parent.children[index] = node;
-                }
-                else {
-                    this._rootNodes.push(node);
-                }
-                node.children.push(container);
-                this._elementStack.splice(this._elementStack.indexOf(container), 0, node);
-            }
-        };
-        _TreeBuilder.prototype._getElementFullName = function (prefix, localName, parentElement) {
-            if (isBlank(prefix)) {
-                prefix = this.getTagDefinition(localName).implicitNamespacePrefix;
-                if (isBlank(prefix) && isPresent(parentElement)) {
-                    prefix = getNsPrefix(parentElement.name);
-                }
-            }
-            return mergeNsAndName(prefix, localName);
-        };
-        return _TreeBuilder;
-    }());
-    function lastOnStack(stack, element) {
-        return stack.length > 0 && stack[stack.length - 1] === element;
-    }
     var XmlTagDefinition = (function () {
         function XmlTagDefinition() {
             this.closedByParent = false;
@@ -4767,7 +4608,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return _super.prototype.parse.call(this, source, url, parseExpansionForms, null);
         };
         return XmlParser;
-    }(Parser$1));
+    }(Parser));
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -4795,7 +4636,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var _TRANSLATIONS_TAG = 'translationbundle';
     var _TRANSLATION_TAG = 'translation';
-    var _PLACEHOLDER_TAG$1 = 'ph';
+    var _PLACEHOLDER_TAG = 'ph';
     var Xtb = (function () {
         function Xtb(_htmlParser, _interpolationConfig) {
             this._htmlParser = _htmlParser;
@@ -4900,10 +4741,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                     }
                     this._translationDepth--;
                     break;
-                case _PLACEHOLDER_TAG$1:
+                case _PLACEHOLDER_TAG:
                     var nameAttr = element.attrs.find(function (attr) { return attr.name === 'name'; });
                     if (!nameAttr) {
-                        this._addError(element, "<" + _PLACEHOLDER_TAG$1 + "> misses the \"name\" attribute");
+                        this._addError(element, "<" + _PLACEHOLDER_TAG + "> misses the \"name\" attribute");
                     }
                     else {
                         var name_2 = nameAttr.value;
@@ -4941,7 +4782,228 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return _Serializer;
     }());
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    /**
+     * A container for translated messages
+     */
+    var TranslationBundle = (function () {
+        function TranslationBundle(_messageMap) {
+            if (_messageMap === void 0) { _messageMap = {}; }
+            this._messageMap = _messageMap;
+        }
+        TranslationBundle.load = function (content, url, messageBundle, serializer) {
+            return new TranslationBundle(serializer.load(content, url, messageBundle));
+        };
+        TranslationBundle.prototype.get = function (id) { return this._messageMap[id]; };
+        TranslationBundle.prototype.has = function (id) { return id in this._messageMap; };
+        return TranslationBundle;
+    }());
+    var HtmlParser = (function () {
+        // TODO(vicb): transB.load() should not need a msgB & add transB.resolve(msgB,
+        // interpolationConfig)
+        // TODO(vicb): remove the interpolationConfig from the Xtb serializer
+        function HtmlParser(_htmlParser, _translations) {
+            this._htmlParser = _htmlParser;
+            this._translations = _translations;
+        }
+        HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
+            if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            var parseResult = this._htmlParser.parse(source, url, parseExpansionForms, interpolationConfig);
+            if (!this._translations || this._translations === '') {
+                // Do not enable i18n when no translation bundle is provided
+                return parseResult;
+            }
+            // TODO(vicb): add support for implicit tags / attributes
+            var messageBundle = new MessageBundle(this._htmlParser, [], {});
+            var errors = messageBundle.updateFromTemplate(source, url, interpolationConfig);
+            if (errors && errors.length) {
+                return new ParseTreeResult(parseResult.rootNodes, parseResult.errors.concat(errors));
+            }
+            var xtb = new Xtb(this._htmlParser, interpolationConfig);
+            var translationBundle = TranslationBundle.load(this._translations, url, messageBundle, xtb);
+            var translatedNodes = mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
+            return new ParseTreeResult(translatedNodes, []);
+        };
+        return HtmlParser;
+    }());
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    var _Visitor$2 = (function () {
+        function _Visitor$2() {
+        }
+        _Visitor$2.prototype.visitTag = function (tag) {
+            var _this = this;
+            var strAttrs = this._serializeAttributes(tag.attrs);
+            if (tag.children.length == 0) {
+                return "<" + tag.name + strAttrs + "/>";
+            }
+            var strChildren = tag.children.map(function (node) { return node.visit(_this); });
+            return "<" + tag.name + strAttrs + ">" + strChildren.join('') + "</" + tag.name + ">";
+        };
+        _Visitor$2.prototype.visitText = function (text) { return text.value; };
+        _Visitor$2.prototype.visitDeclaration = function (decl) {
+            return "<? xml" + this._serializeAttributes(decl.attrs) + " ?>";
+        };
+        _Visitor$2.prototype._serializeAttributes = function (attrs) {
+            var strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');
+            return strAttrs.length > 0 ? ' ' + strAttrs : '';
+        };
+        _Visitor$2.prototype.visitDoctype = function (doctype) {
+            return "<!DOCTYPE " + doctype.rootTag + " [\n" + doctype.dtd + "\n]>";
+        };
+        return _Visitor$2;
+    }());
+    var _visitor = new _Visitor$2();
+    function serialize(nodes) {
+        return nodes.map(function (node) { return node.visit(_visitor); }).join('');
+    }
+    var Declaration = (function () {
+        function Declaration(unescapedAttrs) {
+            var _this = this;
+            this.attrs = {};
+            Object.keys(unescapedAttrs).forEach(function (k) {
+                _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            });
+        }
+        Declaration.prototype.visit = function (visitor) { return visitor.visitDeclaration(this); };
+        return Declaration;
+    }());
+    var Doctype = (function () {
+        function Doctype(rootTag, dtd) {
+            this.rootTag = rootTag;
+            this.dtd = dtd;
+        }
+        ;
+        Doctype.prototype.visit = function (visitor) { return visitor.visitDoctype(this); };
+        return Doctype;
+    }());
+    var Tag = (function () {
+        function Tag(name, unescapedAttrs, children) {
+            var _this = this;
+            if (unescapedAttrs === void 0) { unescapedAttrs = {}; }
+            if (children === void 0) { children = []; }
+            this.name = name;
+            this.children = children;
+            this.attrs = {};
+            Object.keys(unescapedAttrs).forEach(function (k) {
+                _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+            });
+        }
+        Tag.prototype.visit = function (visitor) { return visitor.visitTag(this); };
+        return Tag;
+    }());
+    var Text$2 = (function () {
+        function Text$2(unescapedValue) {
+            this.value = _escapeXml(unescapedValue);
+        }
+        ;
+        Text$2.prototype.visit = function (visitor) { return visitor.visitText(this); };
+        return Text$2;
+    }());
+    var _ESCAPED_CHARS = [
+        [/&/g, '&amp;'],
+        [/"/g, '&quot;'],
+        [/'/g, '&apos;'],
+        [/</g, '&lt;'],
+        [/>/g, '&gt;'],
+    ];
+    function _escapeXml(text) {
+        return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
+    }
+    var _MESSAGES_TAG = 'messagebundle';
+    var _MESSAGE_TAG = 'msg';
+    var _PLACEHOLDER_TAG$1 = 'ph';
+    var _EXEMPLE_TAG = 'ex';
+    var _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
+    var Xmb = (function () {
+        function Xmb() {
+        }
+        Xmb.prototype.write = function (messageMap) {
+            var visitor = new _Visitor$1();
+            var rootNode = new Tag(_MESSAGES_TAG);
+            rootNode.children.push(new Text$2('\n'));
+            Object.keys(messageMap).forEach(function (id) {
+                var message = messageMap[id];
+                var attrs = { id: id };
+                if (message.description) {
+                    attrs['desc'] = message.description;
+                }
+                if (message.meaning) {
+                    attrs['meaning'] = message.meaning;
+                }
+                rootNode.children.push(new Text$2('  '), new Tag(_MESSAGE_TAG, attrs, visitor.serialize(message.nodes)), new Text$2('\n'));
+            });
+            return serialize([
+                new Declaration({ version: '1.0', encoding: 'UTF-8' }),
+                new Text$2('\n'),
+                new Doctype(_MESSAGES_TAG, _DOCTYPE),
+                new Text$2('\n'),
+                rootNode,
+            ]);
+        };
+        Xmb.prototype.load = function (content, url, messageBundle) {
+            throw new Error('Unsupported');
+        };
+        return Xmb;
+    }());
+    var _Visitor$1 = (function () {
+        function _Visitor$1() {
+        }
+        _Visitor$1.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
+        _Visitor$1.prototype.visitContainer = function (container, context) {
+            var _this = this;
+            var nodes = [];
+            container.children.forEach(function (node) { return nodes.push.apply(nodes, node.visit(_this)); });
+            return nodes;
+        };
+        _Visitor$1.prototype.visitIcu = function (icu, context) {
+            var _this = this;
+            var nodes = [new Text$2("{" + icu.expression + ", " + icu.type + ", ")];
+            Object.keys(icu.cases).forEach(function (c) {
+                nodes.push.apply(nodes, [new Text$2(c + " {")].concat(icu.cases[c].visit(_this), [new Text$2("}")]));
+            });
+            nodes.push(new Text$2("}"));
+            return nodes;
+        };
+        _Visitor$1.prototype.visitTagPlaceholder = function (ph, context) {
+            var startEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("<" + ph.tag + ">")]);
+            var startTagPh = new Tag(_PLACEHOLDER_TAG$1, { name: ph.startName }, [startEx]);
+            if (ph.isVoid) {
+                // void tags have no children nor closing tags
+                return [startTagPh];
+            }
+            var closeEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("</" + ph.tag + ">")]);
+            var closeTagPh = new Tag(_PLACEHOLDER_TAG$1, { name: ph.closeName }, [closeEx]);
+            return [startTagPh].concat(this.serialize(ph.children), [closeTagPh]);
+        };
+        _Visitor$1.prototype.visitPlaceholder = function (ph, context) {
+            return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name })];
+        };
+        _Visitor$1.prototype.visitIcuPlaceholder = function (ph, context) {
+            return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name })];
+        };
+        _Visitor$1.prototype.serialize = function (nodes) {
+            var _this = this;
+            return ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
+        };
+        return _Visitor$1;
+    }());
+    var TRANSLATIONS = new _angular_core.OpaqueToken('Translations');
     var i18n = Object.freeze({
+        TRANSLATIONS: TRANSLATIONS,
+        HtmlParser: HtmlParser,
         MessageBundle: MessageBundle,
         Xmb: Xmb,
         Xtb: Xtb
@@ -7710,24 +7772,24 @@ var __extends = (this && this.__extends) || function (d, b) {
     function identifierToken(identifier) {
         return new CompileTokenMetadata({ identifier: identifier });
     }
-    var HtmlParser = (function (_super) {
-        __extends(HtmlParser, _super);
-        function HtmlParser() {
+    var HtmlParser$1 = (function (_super) {
+        __extends(HtmlParser$1, _super);
+        function HtmlParser$1() {
             _super.call(this, getHtmlTagDefinition);
         }
-        HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
+        HtmlParser$1.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
             if (parseExpansionForms === void 0) { parseExpansionForms = false; }
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             return _super.prototype.parse.call(this, source, url, parseExpansionForms, interpolationConfig);
         };
-        return HtmlParser;
-    }(Parser$1));
+        return HtmlParser$1;
+    }(Parser));
     /** @nocollapse */
-    HtmlParser.decorators = [
+    HtmlParser$1.decorators = [
         { type: _angular_core.Injectable },
     ];
     /** @nocollapse */
-    HtmlParser.ctorParameters = [];
+    HtmlParser$1.ctorParameters = [];
     // http://cldr.unicode.org/index/cldr-spec/plural-rules
     var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
     /**
@@ -8524,7 +8586,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     TemplateParser.ctorParameters = [
-        { type: Parser, },
+        { type: Parser$1, },
         { type: ElementSchemaRegistry, },
         { type: HtmlParser, },
         { type: Console, },
@@ -12140,10 +12202,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             var attrNameAndValues = _mergeHtmlAndDirectiveAttrs(htmlAttrs, directives);
             for (var i = 0; i < attrNameAndValues.length; i++) {
                 var attrName = attrNameAndValues[i][0];
-                var attrValue = attrNameAndValues[i][1];
-                this.view.createMethod.addStmt(ViewProperties.renderer
-                    .callMethod('setElementAttribute', [renderNode, literal(attrName), literal(attrValue)])
-                    .toStmt());
+                if (ast.name !== NG_CONTAINER_TAG) {
+                    // <ng-container> are not rendered in the DOM
+                    var attrValue = attrNameAndValues[i][1];
+                    this.view.createMethod.addStmt(ViewProperties.renderer
+                        .callMethod('setElementAttribute', [renderNode, literal(attrName), literal(attrValue)])
+                        .toStmt());
+                }
             }
             var compileElement = new CompileElement(parent, this.view, nodeIndex, renderNode, ast, component, directives, ast.providers, ast.hasViewContainer, false, ast.references);
             this.view.nodes.push(compileElement);
@@ -12847,7 +12912,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     DirectiveNormalizer.ctorParameters = [
         { type: XHR, },
         { type: UrlResolver, },
-        { type: HtmlParser, },
+        { type: HtmlParser$1, },
         { type: CompilerConfig, },
     ];
     var TemplatePreparseVisitor = (function () {
@@ -16661,8 +16726,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         { provide: XHR, useValue: _NO_XHR },
         Console,
         Lexer,
-        Parser,
-        HtmlParser,
+        Parser$1,
+        HtmlParser$1,
+        {
+            provide: HtmlParser,
+            useFactory: function (parser, translations) { return new HtmlParser(parser, translations); },
+            deps: [HtmlParser$1, [new _angular_core.OptionalMetadata(), new _angular_core.Inject(TRANSLATIONS)]]
+        },
         TemplateParser,
         DirectiveNormalizer,
         CompileMetadataResolver,
@@ -16859,11 +16929,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         __compiler_private__.AssetUrl = AssetUrl;
         __compiler_private__.ImportGenerator = ImportGenerator;
         __compiler_private__.CompileMetadataResolver = CompileMetadataResolver;
-        __compiler_private__.HtmlParser = HtmlParser;
+        __compiler_private__.HtmlParser = HtmlParser$1;
         __compiler_private__.InterpolationConfig = InterpolationConfig;
         __compiler_private__.DirectiveNormalizer = DirectiveNormalizer;
         __compiler_private__.Lexer = Lexer;
-        __compiler_private__.Parser = Parser;
+        __compiler_private__.Parser = Parser$1;
         __compiler_private__.ParseLocation = ParseLocation;
         __compiler_private__.ParseError = ParseError;
         __compiler_private__.ParseErrorLevel = ParseErrorLevel;

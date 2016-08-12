@@ -73,6 +73,7 @@ var _Visitor = (function () {
         // Construct a single fake root element
         var wrapper = new html.Element('wrapper', [], nodes, null, null, null);
         var translatedNode = wrapper.visit(this, null);
+        // TODO(vicb): return MergeResult with errors
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
         }
@@ -129,7 +130,9 @@ var _Visitor = (function () {
                         this._closeTranslatableSection(comment, this._blockChildren);
                         this._inI18nBlock = false;
                         var message = this._addMessage(this._blockChildren, this._blockMeaningAndDesc);
-                        return this._translateMessage(comment, message);
+                        // merge attributes in sections
+                        var nodes = this._translateMessage(comment, message);
+                        return html.visitAll(this, nodes);
                     }
                     else {
                         this._reportError(comment, 'I18N blocks should not cross element boundaries');
@@ -269,7 +272,8 @@ var _Visitor = (function () {
         this._messages.push(message);
         return message;
     };
-    // translate the given message given the `TranslationBundle`
+    // Translates the given message given the `TranslationBundle`
+    // no-op when called in extraction mode (returns [])
     _Visitor.prototype._translateMessage = function (el, message) {
         if (message && this._mode === _VisitorMode.Merge) {
             var id = digest_1.digestMessage(message);
@@ -298,7 +302,7 @@ var _Visitor = (function () {
                 // strip i18n specific attributes
                 return;
             }
-            if (i18nAttributeMeanings.hasOwnProperty(attr.name)) {
+            if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                 var meaning = i18nAttributeMeanings[attr.name];
                 var message = _this._createI18nMessage([attr], meaning, '');
                 var id = digest_1.digestMessage(message);
