@@ -111,13 +111,15 @@ function _valueProps(obj) {
         }
     });
     // getters
-    var proto = Object.getPrototypeOf(obj);
-    Object.keys(proto).forEach(function (protoProp) {
-        var desc = Object.getOwnPropertyDescriptor(proto, protoProp);
-        if (!protoProp.startsWith('_') && desc && 'get' in desc) {
-            props.push(protoProp);
-        }
-    });
+    var proto = obj;
+    while (proto = Object.getPrototypeOf(proto)) {
+        Object.keys(proto).forEach(function (protoProp) {
+            var desc = Object.getOwnPropertyDescriptor(proto, protoProp);
+            if (!protoProp.startsWith('_') && desc && 'get' in desc) {
+                props.push(protoProp);
+            }
+        });
+    }
     return props;
 }
 //# sourceMappingURL=metadata_overrider.js.map
