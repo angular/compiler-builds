@@ -61,7 +61,7 @@ var CompilePipe = (function () {
             var purePipeProxyInstance = o.THIS_EXPR.prop(this.instance.name + "_" + this._purePipeProxyCount++);
             var pipeInstanceSeenFromPureProxy = util_1.getPropertyInView(this.instance, callingView, this.view);
             util_1.createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
-                .callMethod(o.BuiltinMethod.bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, callingView);
+                .callMethod(o.BuiltinMethod.Bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, callingView);
             return o.importExpr(identifiers_1.Identifiers.castByValue)
                 .callFn([purePipeProxyInstance, pipeInstanceSeenFromPureProxy.prop('transform')])
                 .callFn(args);

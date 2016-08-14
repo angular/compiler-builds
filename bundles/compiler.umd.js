@@ -6222,7 +6222,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     (function (BuiltinMethod) {
         BuiltinMethod[BuiltinMethod["ConcatArray"] = 0] = "ConcatArray";
         BuiltinMethod[BuiltinMethod["SubscribeObservable"] = 1] = "SubscribeObservable";
-        BuiltinMethod[BuiltinMethod["bind"] = 2] = "bind";
+        BuiltinMethod[BuiltinMethod["Bind"] = 2] = "Bind";
     })(BuiltinMethod || (BuiltinMethod = {}));
     var InvokeMethodExpr = (function (_super) {
         __extends(InvokeMethodExpr, _super);
@@ -11090,7 +11090,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var purePipeProxyInstance = THIS_EXPR.prop(this.instance.name + "_" + this._purePipeProxyCount++);
                 var pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
                 createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
-                    .callMethod(BuiltinMethod.bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, callingView);
+                    .callMethod(BuiltinMethod.Bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, callingView);
                 return importExpr(Identifiers.castByValue)
                     .callFn([purePipeProxyInstance, pipeInstanceSeenFromPureProxy.prop('transform')])
                     .callFn(args);
@@ -11736,7 +11736,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileEventListener.prototype.listenToRenderer = function () {
             var listenExpr;
-            var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.bind, [THIS_EXPR])]);
+            var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
             if (isPresent(this.eventTarget)) {
                 listenExpr = ViewProperties.renderer.callMethod('listenGlobal', [literal(this.eventTarget), literal(this.eventName), eventListener]);
             }
@@ -11751,7 +11751,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileEventListener.prototype.listenToDirective = function (directiveInstance, observablePropName) {
             var subscription = variable("subscription_" + this.compileElement.view.subscriptions.length);
             this.compileElement.view.subscriptions.push(subscription);
-            var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.bind, [THIS_EXPR])]);
+            var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
             this.compileElement.view.createMethod.addStmt(subscription
                 .set(directiveInstance.prop(observablePropName)
                 .callMethod(BuiltinMethod.SubscribeObservable, [eventListener]))
@@ -14917,7 +14917,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 case BuiltinMethod.SubscribeObservable:
                     name = 'subscribe';
                     break;
-                case BuiltinMethod.bind:
+                case BuiltinMethod.Bind:
                     name = 'bind';
                     break;
                 default:
@@ -15104,7 +15104,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     case BuiltinMethod.SubscribeObservable:
                         result = receiver.subscribe({ next: args[0] });
                         break;
-                    case BuiltinMethod.bind:
+                    case BuiltinMethod.Bind:
                         result = receiver.bind(args[0]);
                         break;
                     default:
@@ -15424,7 +15424,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 case BuiltinMethod.SubscribeObservable:
                     name = 'subscribe';
                     break;
-                case BuiltinMethod.bind:
+                case BuiltinMethod.Bind:
                     name = 'bind';
                     break;
                 default:

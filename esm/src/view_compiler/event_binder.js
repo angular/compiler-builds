@@ -71,7 +71,7 @@ export class CompileEventListener {
     }
     listenToRenderer() {
         var listenExpr;
-        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.bind, [o.THIS_EXPR])]);
+        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
         if (isPresent(this.eventTarget)) {
             listenExpr = ViewProperties.renderer.callMethod('listenGlobal', [o.literal(this.eventTarget), o.literal(this.eventName), eventListener]);
         }
@@ -86,7 +86,7 @@ export class CompileEventListener {
     listenToDirective(directiveInstance, observablePropName) {
         var subscription = o.variable(`subscription_${this.compileElement.view.subscriptions.length}`);
         this.compileElement.view.subscriptions.push(subscription);
-        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.bind, [o.THIS_EXPR])]);
+        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
         this.compileElement.view.createMethod.addStmt(subscription
             .set(directiveInstance.prop(observablePropName)
             .callMethod(o.BuiltinMethod.SubscribeObservable, [eventListener]))

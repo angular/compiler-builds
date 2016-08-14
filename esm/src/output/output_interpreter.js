@@ -146,7 +146,7 @@ class StatementInterpreter {
                 case o.BuiltinMethod.SubscribeObservable:
                     result = receiver.subscribe({ next: args[0] });
                     break;
-                case o.BuiltinMethod.bind:
+                case o.BuiltinMethod.Bind:
                     result = receiver.bind(args[0]);
                     break;
                 default:
