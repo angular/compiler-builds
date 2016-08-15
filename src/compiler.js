@@ -28,8 +28,6 @@ var pipe_resolver_1 = require('./pipe_resolver');
 exports.PipeResolver = pipe_resolver_1.PipeResolver;
 var ng_module_resolver_1 = require('./ng_module_resolver');
 exports.NgModuleResolver = ng_module_resolver_1.NgModuleResolver;
-var lang_1 = require('./facade/lang');
-var collection_1 = require('./facade/collection');
 var template_parser_2 = require('./template_parser/template_parser');
 var html_parser_1 = require('./ml_parser/html_parser');
 var directive_normalizer_1 = require('./directive_normalizer');
@@ -93,8 +91,6 @@ exports.COMPILER_PROVIDERS = [
 ];
 function analyzeAppProvidersForDeprecatedConfiguration(appProviders) {
     if (appProviders === void 0) { appProviders = []; }
-    var platformDirectives = [];
-    var platformPipes = [];
     var compilerProviders = [];
     var useDebug;
     var useJit;
@@ -106,33 +102,15 @@ function analyzeAppProvidersForDeprecatedConfiguration(appProviders) {
     var tempInj = core_1.ReflectiveInjector.resolveAndCreate(appProviders);
     var compilerConfig = tempInj.get(config_2.CompilerConfig, null);
     if (compilerConfig) {
-        platformDirectives = compilerConfig.platformDirectives;
-        platformPipes = compilerConfig.platformPipes;
         useJit = compilerConfig.useJit;
         useDebug = compilerConfig.genDebugInfo;
         defaultEncapsulation = compilerConfig.defaultEncapsulation;
         deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use the \"compilerOptions\" parameter of \"bootstrap()\" or use a custom \"CompilerFactory\" platform provider instead.");
     }
-    else {
-        // If nobody provided a CompilerConfig, use the
-        // PLATFORM_DIRECTIVES / PLATFORM_PIPES values directly if existing
-        platformDirectives = tempInj.get(core_1.PLATFORM_DIRECTIVES, []);
-        platformPipes = tempInj.get(core_1.PLATFORM_PIPES, []);
-    }
-    platformDirectives = collection_1.ListWrapper.flatten(platformDirectives);
-    platformPipes = collection_1.ListWrapper.flatten(platformPipes);
     var xhr = tempInj.get(xhr_2.XHR, null);
     if (xhr) {
         compilerProviders.push([{ provide: xhr_2.XHR, useValue: xhr }]);
         deprecationMessages.push("Passing XHR as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
-    }
-    if (platformDirectives.length > 0) {
-        deprecationMessages.push("The PLATFORM_DIRECTIVES provider and CompilerConfig.platformDirectives is deprecated. Add the directives to an NgModule instead! " +
-            ("(Directives: " + platformDirectives.map(function (type) { return lang_1.stringify(type); }) + ")"));
-    }
-    if (platformPipes.length > 0) {
-        deprecationMessages.push("The PLATFORM_PIPES provider and CompilerConfig.platformPipes is deprecated. Add the pipes to an NgModule instead! " +
-            ("(Pipes: " + platformPipes.map(function (type) { return lang_1.stringify(type); }) + ")"));
     }
     var compilerOptions = {
         useJit: useJit,
@@ -140,20 +118,7 @@ function analyzeAppProvidersForDeprecatedConfiguration(appProviders) {
         defaultEncapsulation: defaultEncapsulation,
         providers: compilerProviders
     };
-    var DynamicComponent = (function () {
-        function DynamicComponent() {
-        }
-        /** @nocollapse */
-        DynamicComponent.decorators = [
-            { type: core_1.Component, args: [{ directives: platformDirectives, pipes: platformPipes, template: '' },] },
-        ];
-        return DynamicComponent;
-    }());
-    return {
-        compilerOptions: compilerOptions,
-        moduleDeclarations: [DynamicComponent],
-        deprecationMessages: deprecationMessages
-    };
+    return { compilerOptions: compilerOptions, moduleDeclarations: [], deprecationMessages: deprecationMessages };
 }
 exports.analyzeAppProvidersForDeprecatedConfiguration = analyzeAppProvidersForDeprecatedConfiguration;
 var RuntimeCompilerFactory = (function () {

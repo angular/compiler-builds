@@ -11,14 +11,12 @@ function unimplemented() {
     throw new BaseException('unimplemented');
 }
 export class CompilerConfig {
-    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true, deprecatedPlatformDirectives = [], deprecatedPlatformPipes = [] } = {}) {
+    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true } = {}) {
         this.renderTypes = renderTypes;
         this.defaultEncapsulation = defaultEncapsulation;
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
-        this.platformDirectives = deprecatedPlatformDirectives;
-        this.platformPipes = deprecatedPlatformPipes;
     }
     get genDebugInfo() {
         return this._genDebugInfo === void 0 ? isDevMode() : this._genDebugInfo;
