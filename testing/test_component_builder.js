@@ -14,6 +14,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 var core_1 = require('@angular/core');
 var testing_1 = require('@angular/core/testing');
 var core_private_testing_1 = require('../core_private_testing');
+// export {ViewMetadata} from '../core_private';
 var index_1 = require('../index');
 var collection_1 = require('../src/facade/collection');
 var lang_1 = require('../src/facade/lang');

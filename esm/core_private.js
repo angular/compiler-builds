@@ -65,4 +65,5 @@ export var flattenStyles = r.flattenStyles;
 export var clearStyles = r.clearStyles;
 export var collectAndResolveStyles = r.collectAndResolveStyles;
 export var renderStyles = r.renderStyles;
+export var ViewMetadata = r.ViewMetadata;
 //# sourceMappingURL=core_private.js.map

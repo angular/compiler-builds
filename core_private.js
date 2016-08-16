@@ -66,4 +66,5 @@ exports.flattenStyles = core_1.__core_private__.flattenStyles;
 exports.clearStyles = core_1.__core_private__.clearStyles;
 exports.collectAndResolveStyles = core_1.__core_private__.collectAndResolveStyles;
 exports.renderStyles = core_1.__core_private__.renderStyles;
+exports.ViewMetadata = core_1.__core_private__.ViewMetadata;
 //# sourceMappingURL=core_private.js.map

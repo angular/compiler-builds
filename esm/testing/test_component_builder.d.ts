@@ -5,8 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationEntryMetadata, Injector, Type, ViewMetadata } from '@angular/core';
+import { AnimationEntryMetadata, Injector, Type } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
+import { ViewMetadata } from '../core_private';
 import { TestComponentBuilder } from '../core_private_testing';
 /**
  * A TestComponentBuilder that allows overriding based on the compiler.

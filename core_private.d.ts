@@ -81,3 +81,5 @@ export declare var flattenStyles: typeof t.flattenStyles;
 export declare var clearStyles: typeof t.clearStyles;
 export declare var collectAndResolveStyles: typeof r.collectAndResolveStyles;
 export declare var renderStyles: typeof t.renderStyles;
+export declare type ViewMetadata = t.ViewMetadata;
+export declare var ViewMetadata: typeof t.ViewMetadata;
