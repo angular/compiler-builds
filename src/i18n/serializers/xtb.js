@@ -27,7 +27,7 @@ var Xtb = (function () {
             throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
         }
         // Replace the placeholders, messages are now string
-        var _a = new _Serializer().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
+        var _a = new _Visitor().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
         if (errors.length) {
             throw new Error("xtb parse errors:\n" + errors.join('\n'));
         }
@@ -48,10 +48,10 @@ var Xtb = (function () {
     return Xtb;
 }());
 exports.Xtb = Xtb;
-var _Serializer = (function () {
-    function _Serializer() {
+var _Visitor = (function () {
+    function _Visitor() {
     }
-    _Serializer.prototype.parse = function (nodes, messageBundle) {
+    _Visitor.prototype.parse = function (nodes, messageBundle) {
         var _this = this;
         this._messageNodes = [];
         this._translatedMessages = {};
@@ -90,7 +90,7 @@ var _Serializer = (function () {
         });
         return { messages: this._translatedMessages, errors: this._errors };
     };
-    _Serializer.prototype.visitElement = function (element, context) {
+    _Visitor.prototype.visitElement = function (element, context) {
         switch (element.name) {
             case _TRANSLATIONS_TAG:
                 this._bundleDepth++;
@@ -141,22 +141,22 @@ var _Serializer = (function () {
                 this._addError(element, 'Unexpected tag');
         }
     };
-    _Serializer.prototype.visitAttribute = function (attribute, context) {
+    _Visitor.prototype.visitAttribute = function (attribute, context) {
         throw new Error('unreachable code');
     };
-    _Serializer.prototype.visitText = function (text, context) { return text.value; };
-    _Serializer.prototype.visitComment = function (comment, context) { return ''; };
-    _Serializer.prototype.visitExpansion = function (expansion, context) {
+    _Visitor.prototype.visitText = function (text, context) { return text.value; };
+    _Visitor.prototype.visitComment = function (comment, context) { return ''; };
+    _Visitor.prototype.visitExpansion = function (expansion, context) {
         var _this = this;
         var strCases = expansion.cases.map(function (c) { return c.visit(_this, null); });
         return "{" + expansion.switchValue + ", " + expansion.type + ", strCases.join(' ')}";
     };
-    _Serializer.prototype.visitExpansionCase = function (expansionCase, context) {
+    _Visitor.prototype.visitExpansionCase = function (expansionCase, context) {
         return expansionCase.value + " {" + ml.visitAll(this, expansionCase.expression, null) + "}";
     };
-    _Serializer.prototype._addError = function (node, message) {
+    _Visitor.prototype._addError = function (node, message) {
         this._errors.push(new parse_util_1.I18nError(node.sourceSpan, message));
     };
-    return _Serializer;
+    return _Visitor;
 }());
 //# sourceMappingURL=xtb.js.map

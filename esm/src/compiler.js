@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { COMPILER_OPTIONS, Compiler, CompilerFactory, Inject, Injectable, OptionalMetadata, PLATFORM_INITIALIZER, ReflectiveInjector, TRANSLATIONS, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
+import { COMPILER_OPTIONS, Compiler, CompilerFactory, Inject, Injectable, OptionalMetadata, PLATFORM_INITIALIZER, ReflectiveInjector, TRANSLATIONS, TRANSLATIONS_FORMAT, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
 export * from './template_parser/template_ast';
 export { TEMPLATE_TRANSFORMS } from './template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './config';
@@ -56,8 +56,12 @@ export const COMPILER_PROVIDERS = [
     HtmlParser,
     {
         provide: i18n.HtmlParser,
-        useFactory: (parser, translations) => new i18n.HtmlParser(parser, translations),
-        deps: [HtmlParser, [new OptionalMetadata(), new Inject(TRANSLATIONS)]]
+        useFactory: (parser, translations, format) => new i18n.HtmlParser(parser, translations, format),
+        deps: [
+            HtmlParser,
+            [new OptionalMetadata(), new Inject(TRANSLATIONS)],
+            [new OptionalMetadata(), new Inject(TRANSLATIONS_FORMAT)],
+        ]
     },
     TemplateParser,
     DirectiveNormalizer,

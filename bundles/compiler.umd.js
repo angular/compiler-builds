@@ -4633,154 +4633,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         return placeholderToIds;
     }
-    var _TRANSLATIONS_TAG = 'translationbundle';
-    var _TRANSLATION_TAG = 'translation';
-    var _PLACEHOLDER_TAG = 'ph';
-    var Xtb = (function () {
-        function Xtb(_htmlParser, _interpolationConfig) {
-            this._htmlParser = _htmlParser;
-            this._interpolationConfig = _interpolationConfig;
-        }
-        Xtb.prototype.write = function (messageMap) { throw new Error('Unsupported'); };
-        Xtb.prototype.load = function (content, url, messageBundle) {
-            var _this = this;
-            // Parse the xtb file into xml nodes
-            var result = new XmlParser().parse(content, url);
-            if (result.errors.length) {
-                throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
-            }
-            // Replace the placeholders, messages are now string
-            var _a = new _Serializer().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
-            if (errors.length) {
-                throw new Error("xtb parse errors:\n" + errors.join('\n'));
-            }
-            // Convert the string messages to html ast
-            // TODO(vicb): map error message back to the original message in xtb
-            var messageMap = {};
-            var parseErrors = [];
-            Object.keys(messages).forEach(function (id) {
-                var res = _this._htmlParser.parse(messages[id], url, true, _this._interpolationConfig);
-                parseErrors.push.apply(parseErrors, res.errors);
-                messageMap[id] = res.rootNodes;
-            });
-            if (parseErrors.length) {
-                throw new Error("xtb parse errors:\n" + parseErrors.join('\n'));
-            }
-            return messageMap;
-        };
-        return Xtb;
-    }());
-    var _Serializer = (function () {
-        function _Serializer() {
-        }
-        _Serializer.prototype.parse = function (nodes, messageBundle) {
-            var _this = this;
-            this._messageNodes = [];
-            this._translatedMessages = {};
-            this._bundleDepth = 0;
-            this._translationDepth = 0;
-            this._errors = [];
-            // Find all messages
-            visitAll(this, nodes, null);
-            var messageMap = messageBundle.getMessageMap();
-            var placeholders = extractPlaceholders(messageBundle);
-            var placeholderToIds = extractPlaceholderToIds(messageBundle);
-            this._messageNodes
-                .filter(function (message) {
-                // Remove any messages that is not present in the source message bundle.
-                return messageMap.hasOwnProperty(message[0]);
-            })
-                .sort(function (a, b) {
-                // Because there could be no ICU placeholders inside an ICU message,
-                // we do not need to take into account the `placeholderToMsgIds` of the referenced
-                // messages, those would always be empty
-                // TODO(vicb): overkill - create 2 buckets and [...woDeps, ...wDeps].process()
-                if (Object.keys(messageMap[a[0]].placeholderToMsgIds).length == 0) {
-                    return -1;
-                }
-                if (Object.keys(messageMap[b[0]].placeholderToMsgIds).length == 0) {
-                    return 1;
-                }
-                return 0;
-            })
-                .forEach(function (message) {
-                var id = message[0];
-                _this._placeholders = placeholders[id] || {};
-                _this._placeholderToIds = placeholderToIds[id] || {};
-                // TODO(vicb): make sure there is no `_TRANSLATIONS_TAG` nor `_TRANSLATION_TAG`
-                _this._translatedMessages[id] = visitAll(_this, message[1]).join('');
-            });
-            return { messages: this._translatedMessages, errors: this._errors };
-        };
-        _Serializer.prototype.visitElement = function (element, context) {
-            switch (element.name) {
-                case _TRANSLATIONS_TAG:
-                    this._bundleDepth++;
-                    if (this._bundleDepth > 1) {
-                        this._addError(element, "<" + _TRANSLATIONS_TAG + "> elements can not be nested");
-                    }
-                    visitAll(this, element.children, null);
-                    this._bundleDepth--;
-                    break;
-                case _TRANSLATION_TAG:
-                    this._translationDepth++;
-                    if (this._translationDepth > 1) {
-                        this._addError(element, "<" + _TRANSLATION_TAG + "> elements can not be nested");
-                    }
-                    var idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
-                    if (!idAttr) {
-                        this._addError(element, "<" + _TRANSLATION_TAG + "> misses the \"id\" attribute");
-                    }
-                    else {
-                        // ICU placeholders are reference to other messages.
-                        // The referenced message might not have been decoded yet.
-                        // We need to have all messages available to make sure deps are decoded first.
-                        // TODO(vicb): report an error on duplicate id
-                        this._messageNodes.push([idAttr.value, element.children]);
-                    }
-                    this._translationDepth--;
-                    break;
-                case _PLACEHOLDER_TAG:
-                    var nameAttr = element.attrs.find(function (attr) { return attr.name === 'name'; });
-                    if (!nameAttr) {
-                        this._addError(element, "<" + _PLACEHOLDER_TAG + "> misses the \"name\" attribute");
-                    }
-                    else {
-                        var name_2 = nameAttr.value;
-                        if (this._placeholders.hasOwnProperty(name_2)) {
-                            return this._placeholders[name_2];
-                        }
-                        if (this._placeholderToIds.hasOwnProperty(name_2) &&
-                            this._translatedMessages.hasOwnProperty(this._placeholderToIds[name_2])) {
-                            return this._translatedMessages[this._placeholderToIds[name_2]];
-                        }
-                        // TODO(vicb): better error message for when
-                        // !this._translatedMessages.hasOwnProperty(this._placeholderToIds[name])
-                        this._addError(element, "The placeholder \"" + name_2 + "\" does not exists in the source message");
-                    }
-                    break;
-                default:
-                    this._addError(element, 'Unexpected tag');
-            }
-        };
-        _Serializer.prototype.visitAttribute = function (attribute, context) {
-            throw new Error('unreachable code');
-        };
-        _Serializer.prototype.visitText = function (text, context) { return text.value; };
-        _Serializer.prototype.visitComment = function (comment, context) { return ''; };
-        _Serializer.prototype.visitExpansion = function (expansion, context) {
-            var _this = this;
-            var strCases = expansion.cases.map(function (c) { return c.visit(_this, null); });
-            return "{" + expansion.switchValue + ", " + expansion.type + ", strCases.join(' ')}";
-        };
-        _Serializer.prototype.visitExpansionCase = function (expansionCase, context) {
-            return expansionCase.value + " {" + visitAll(this, expansionCase.expression, null) + "}";
-        };
-        _Serializer.prototype._addError = function (node, message) {
-            this._errors.push(new I18nError(node.sourceSpan, message));
-        };
-        return _Serializer;
-    }());
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -4788,60 +4640,10 @@ var __extends = (this && this.__extends) || function (d, b) {
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    /**
-     * A container for translated messages
-     */
-    var TranslationBundle = (function () {
-        function TranslationBundle(_messageMap) {
-            if (_messageMap === void 0) { _messageMap = {}; }
-            this._messageMap = _messageMap;
+    var _Visitor$1 = (function () {
+        function _Visitor$1() {
         }
-        TranslationBundle.load = function (content, url, messageBundle, serializer) {
-            return new TranslationBundle(serializer.load(content, url, messageBundle));
-        };
-        TranslationBundle.prototype.get = function (id) { return this._messageMap[id]; };
-        TranslationBundle.prototype.has = function (id) { return id in this._messageMap; };
-        return TranslationBundle;
-    }());
-    var HtmlParser = (function () {
-        // TODO(vicb): transB.load() should not need a msgB & add transB.resolve(msgB,
-        // interpolationConfig)
-        // TODO(vicb): remove the interpolationConfig from the Xtb serializer
-        function HtmlParser(_htmlParser, _translations) {
-            this._htmlParser = _htmlParser;
-            this._translations = _translations;
-        }
-        HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
-            if (parseExpansionForms === void 0) { parseExpansionForms = false; }
-            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-            var parseResult = this._htmlParser.parse(source, url, parseExpansionForms, interpolationConfig);
-            if (!this._translations || this._translations === '') {
-                // Do not enable i18n when no translation bundle is provided
-                return parseResult;
-            }
-            // TODO(vicb): add support for implicit tags / attributes
-            var messageBundle = new MessageBundle(this._htmlParser, [], {});
-            var errors = messageBundle.updateFromTemplate(source, url, interpolationConfig);
-            if (errors && errors.length) {
-                return new ParseTreeResult(parseResult.rootNodes, parseResult.errors.concat(errors));
-            }
-            var xtb = new Xtb(this._htmlParser, interpolationConfig);
-            var translationBundle = TranslationBundle.load(this._translations, url, messageBundle, xtb);
-            return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
-        };
-        return HtmlParser;
-    }());
-    /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    var _Visitor$2 = (function () {
-        function _Visitor$2() {
-        }
-        _Visitor$2.prototype.visitTag = function (tag) {
+        _Visitor$1.prototype.visitTag = function (tag) {
             var _this = this;
             var strAttrs = this._serializeAttributes(tag.attrs);
             if (tag.children.length == 0) {
@@ -4850,20 +4652,20 @@ var __extends = (this && this.__extends) || function (d, b) {
             var strChildren = tag.children.map(function (node) { return node.visit(_this); });
             return "<" + tag.name + strAttrs + ">" + strChildren.join('') + "</" + tag.name + ">";
         };
-        _Visitor$2.prototype.visitText = function (text) { return text.value; };
-        _Visitor$2.prototype.visitDeclaration = function (decl) {
-            return "<? xml" + this._serializeAttributes(decl.attrs) + " ?>";
+        _Visitor$1.prototype.visitText = function (text) { return text.value; };
+        _Visitor$1.prototype.visitDeclaration = function (decl) {
+            return "<?xml" + this._serializeAttributes(decl.attrs) + " ?>";
         };
-        _Visitor$2.prototype._serializeAttributes = function (attrs) {
+        _Visitor$1.prototype._serializeAttributes = function (attrs) {
             var strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');
             return strAttrs.length > 0 ? ' ' + strAttrs : '';
         };
-        _Visitor$2.prototype.visitDoctype = function (doctype) {
+        _Visitor$1.prototype.visitDoctype = function (doctype) {
             return "<!DOCTYPE " + doctype.rootTag + " [\n" + doctype.dtd + "\n]>";
         };
-        return _Visitor$2;
+        return _Visitor$1;
     }());
-    var _visitor = new _Visitor$2();
+    var _visitor = new _Visitor$1();
     function serialize(nodes) {
         return nodes.map(function (node) { return node.visit(_visitor); }).join('');
     }
@@ -4920,6 +4722,224 @@ var __extends = (this && this.__extends) || function (d, b) {
     function _escapeXml(text) {
         return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
     }
+    var _VERSION = '1.2';
+    var _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
+    // TODO(vicb): make this a param (s/_/-/)
+    var _SOURCE_LANG = 'en';
+    var _PLACEHOLDER_TAG = 'x';
+    var _SOURCE_TAG = 'source';
+    var _TARGET_TAG = 'target';
+    var _UNIT_TAG = 'trans-unit';
+    var _CR = function (ws) {
+        if (ws === void 0) { ws = 0; }
+        return new Text$2("\n" + new Array(ws).join(' '));
+    };
+    // http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
+    // http://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2.html
+    var Xliff = (function () {
+        function Xliff(_htmlParser, _interpolationConfig) {
+            this._htmlParser = _htmlParser;
+            this._interpolationConfig = _interpolationConfig;
+        }
+        Xliff.prototype.write = function (messageMap) {
+            var visitor = new _WriteVisitor();
+            var transUnits = [];
+            Object.keys(messageMap).forEach(function (id) {
+                var message = messageMap[id];
+                var transUnit = new Tag(_UNIT_TAG, { id: id, datatype: 'html' });
+                transUnit.children.push(_CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), _CR(8), new Tag(_TARGET_TAG));
+                if (message.description) {
+                    transUnit.children.push(_CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$2(message.description)]));
+                }
+                if (message.meaning) {
+                    transUnit.children.push(_CR(8), new Tag('note', { priority: '1', from: 'meaning' }, [new Text$2(message.meaning)]));
+                }
+                transUnit.children.push(_CR(6));
+                transUnits.push(_CR(6), transUnit);
+            });
+            var body = new Tag('body', {}, transUnits.concat([_CR(4)]));
+            var file = new Tag('file', { 'source-language': _SOURCE_LANG, datatype: 'plaintext', original: 'ng2.template' }, [_CR(4), body, _CR(2)]);
+            var xliff = new Tag('xliff', { version: _VERSION, xmlns: _XMLNS }, [_CR(2), file, _CR()]);
+            return serialize([new Declaration({ version: '1.0', encoding: 'UTF-8' }), _CR(), xliff]);
+        };
+        Xliff.prototype.load = function (content, url, messageBundle) {
+            var _this = this;
+            // Parse the xtb file into xml nodes
+            var result = new XmlParser().parse(content, url);
+            if (result.errors.length) {
+                throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
+            }
+            // Replace the placeholders, messages are now string
+            var _a = new _LoadVisitor().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
+            if (errors.length) {
+                throw new Error("xtb parse errors:\n" + errors.join('\n'));
+            }
+            // Convert the string messages to html ast
+            // TODO(vicb): map error message back to the original message in xtb
+            var messageMap = {};
+            var parseErrors = [];
+            Object.keys(messages).forEach(function (id) {
+                var res = _this._htmlParser.parse(messages[id], url, true, _this._interpolationConfig);
+                parseErrors.push.apply(parseErrors, res.errors);
+                messageMap[id] = res.rootNodes;
+            });
+            if (parseErrors.length) {
+                throw new Error("xtb parse errors:\n" + parseErrors.join('\n'));
+            }
+            return messageMap;
+        };
+        return Xliff;
+    }());
+    var _WriteVisitor = (function () {
+        function _WriteVisitor() {
+        }
+        _WriteVisitor.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
+        _WriteVisitor.prototype.visitContainer = function (container, context) {
+            var _this = this;
+            var nodes = [];
+            container.children.forEach(function (node) { return nodes.push.apply(nodes, node.visit(_this)); });
+            return nodes;
+        };
+        _WriteVisitor.prototype.visitIcu = function (icu, context) {
+            if (this._isInIcu) {
+                // nested ICU is not supported
+                throw new Error('xliff does not support nested ICU messages');
+            }
+            this._isInIcu = true;
+            // TODO(vicb): support ICU messages
+            // https://lists.oasis-open.org/archives/xliff/201201/msg00028.html
+            // http://docs.oasis-open.org/xliff/v1.2/xliff-profile-po/xliff-profile-po-1.2-cd02.html
+            var nodes = [];
+            this._isInIcu = false;
+            return nodes;
+        };
+        _WriteVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+            var startTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype: ph.tag });
+            if (ph.isVoid) {
+                // void tags have no children nor closing tags
+                return [startTagPh];
+            }
+            var closeTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.closeName, ctype: ph.tag });
+            return [startTagPh].concat(this.serialize(ph.children), [closeTagPh]);
+        };
+        _WriteVisitor.prototype.visitPlaceholder = function (ph, context) {
+            return [new Tag(_PLACEHOLDER_TAG, { id: ph.name })];
+        };
+        _WriteVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
+            return [new Tag(_PLACEHOLDER_TAG, { id: ph.name })];
+        };
+        _WriteVisitor.prototype.serialize = function (nodes) {
+            var _this = this;
+            this._isInIcu = false;
+            return ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
+        };
+        return _WriteVisitor;
+    }());
+    // TODO(vicb): add error management (structure)
+    // TODO(vicb): factorize (xtb) ?
+    var _LoadVisitor = (function () {
+        function _LoadVisitor() {
+        }
+        _LoadVisitor.prototype.parse = function (nodes, messageBundle) {
+            var _this = this;
+            this._messageNodes = [];
+            this._translatedMessages = {};
+            this._msgId = '';
+            this._target = [];
+            this._errors = [];
+            // Find all messages
+            visitAll(this, nodes, null);
+            var messageMap = messageBundle.getMessageMap();
+            var placeholders = extractPlaceholders(messageBundle);
+            var placeholderToIds = extractPlaceholderToIds(messageBundle);
+            this._messageNodes
+                .filter(function (message) {
+                // Remove any messages that is not present in the source message bundle.
+                return messageMap.hasOwnProperty(message[0]);
+            })
+                .sort(function (a, b) {
+                // Because there could be no ICU placeholders inside an ICU message,
+                // we do not need to take into account the `placeholderToMsgIds` of the referenced
+                // messages, those would always be empty
+                // TODO(vicb): overkill - create 2 buckets and [...woDeps, ...wDeps].process()
+                if (Object.keys(messageMap[a[0]].placeholderToMsgIds).length == 0) {
+                    return -1;
+                }
+                if (Object.keys(messageMap[b[0]].placeholderToMsgIds).length == 0) {
+                    return 1;
+                }
+                return 0;
+            })
+                .forEach(function (message) {
+                var id = message[0];
+                _this._placeholders = placeholders[id] || {};
+                _this._placeholderToIds = placeholderToIds[id] || {};
+                // TODO(vicb): make sure there is no `_TRANSLATIONS_TAG` nor `_TRANSLATION_TAG`
+                _this._translatedMessages[id] = visitAll(_this, message[1]).join('');
+            });
+            return { messages: this._translatedMessages, errors: this._errors };
+        };
+        _LoadVisitor.prototype.visitElement = function (element, context) {
+            switch (element.name) {
+                case _UNIT_TAG:
+                    this._target = null;
+                    var msgId = element.attrs.find(function (attr) { return attr.name === 'id'; });
+                    if (!msgId) {
+                        this._addError(element, "<" + _UNIT_TAG + "> misses the \"id\" attribute");
+                    }
+                    else {
+                        this._msgId = msgId.value;
+                    }
+                    visitAll(this, element.children, null);
+                    if (this._msgId !== null) {
+                        this._messageNodes.push([this._msgId, this._target]);
+                    }
+                    break;
+                case _SOURCE_TAG:
+                    // ignore source message
+                    break;
+                case _TARGET_TAG:
+                    this._target = element.children;
+                    break;
+                case _PLACEHOLDER_TAG:
+                    var idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
+                    if (!idAttr) {
+                        this._addError(element, "<" + _PLACEHOLDER_TAG + "> misses the \"id\" attribute");
+                    }
+                    else {
+                        var id = idAttr.value;
+                        if (this._placeholders.hasOwnProperty(id)) {
+                            return this._placeholders[id];
+                        }
+                        if (this._placeholderToIds.hasOwnProperty(id) &&
+                            this._translatedMessages.hasOwnProperty(this._placeholderToIds[id])) {
+                            return this._translatedMessages[this._placeholderToIds[id]];
+                        }
+                        // TODO(vicb): better error message for when
+                        // !this._translatedMessages.hasOwnProperty(this._placeholderToIds[id])
+                        this._addError(element, "The placeholder \"" + id + "\" does not exists in the source message");
+                    }
+                    break;
+                default:
+                    visitAll(this, element.children, null);
+            }
+        };
+        _LoadVisitor.prototype.visitAttribute = function (attribute, context) {
+            throw new Error('unreachable code');
+        };
+        _LoadVisitor.prototype.visitText = function (text, context) { return text.value; };
+        _LoadVisitor.prototype.visitComment = function (comment, context) { return ''; };
+        _LoadVisitor.prototype.visitExpansion = function (expansion, context) {
+            throw new Error('unreachable code');
+        };
+        _LoadVisitor.prototype.visitExpansionCase = function (expansionCase, context) {
+            throw new Error('unreachable code');
+        };
+        _LoadVisitor.prototype._addError = function (node, message) {
+            this._errors.push(new I18nError(node.sourceSpan, message));
+        };
+        return _LoadVisitor;
+    }());
     var _MESSAGES_TAG = 'messagebundle';
     var _MESSAGE_TAG = 'msg';
     var _PLACEHOLDER_TAG$1 = 'ph';
@@ -4929,7 +4949,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         function Xmb() {
         }
         Xmb.prototype.write = function (messageMap) {
-            var visitor = new _Visitor$1();
+            var visitor = new _Visitor$2();
             var rootNode = new Tag(_MESSAGES_TAG);
             rootNode.children.push(new Text$2('\n'));
             Object.keys(messageMap).forEach(function (id) {
@@ -4956,17 +4976,17 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return Xmb;
     }());
-    var _Visitor$1 = (function () {
-        function _Visitor$1() {
+    var _Visitor$2 = (function () {
+        function _Visitor$2() {
         }
-        _Visitor$1.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
-        _Visitor$1.prototype.visitContainer = function (container, context) {
+        _Visitor$2.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
+        _Visitor$2.prototype.visitContainer = function (container, context) {
             var _this = this;
             var nodes = [];
             container.children.forEach(function (node) { return nodes.push.apply(nodes, node.visit(_this)); });
             return nodes;
         };
-        _Visitor$1.prototype.visitIcu = function (icu, context) {
+        _Visitor$2.prototype.visitIcu = function (icu, context) {
             var _this = this;
             var nodes = [new Text$2("{" + icu.expression + ", " + icu.type + ", ")];
             Object.keys(icu.cases).forEach(function (c) {
@@ -4975,7 +4995,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             nodes.push(new Text$2("}"));
             return nodes;
         };
-        _Visitor$1.prototype.visitTagPlaceholder = function (ph, context) {
+        _Visitor$2.prototype.visitTagPlaceholder = function (ph, context) {
             var startEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("<" + ph.tag + ">")]);
             var startTagPh = new Tag(_PLACEHOLDER_TAG$1, { name: ph.startName }, [startEx]);
             if (ph.isVoid) {
@@ -4986,21 +5006,234 @@ var __extends = (this && this.__extends) || function (d, b) {
             var closeTagPh = new Tag(_PLACEHOLDER_TAG$1, { name: ph.closeName }, [closeEx]);
             return [startTagPh].concat(this.serialize(ph.children), [closeTagPh]);
         };
-        _Visitor$1.prototype.visitPlaceholder = function (ph, context) {
+        _Visitor$2.prototype.visitPlaceholder = function (ph, context) {
             return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name })];
         };
-        _Visitor$1.prototype.visitIcuPlaceholder = function (ph, context) {
+        _Visitor$2.prototype.visitIcuPlaceholder = function (ph, context) {
             return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name })];
         };
-        _Visitor$1.prototype.serialize = function (nodes) {
+        _Visitor$2.prototype.serialize = function (nodes) {
             var _this = this;
             return ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
         };
-        return _Visitor$1;
+        return _Visitor$2;
+    }());
+    var _TRANSLATIONS_TAG = 'translationbundle';
+    var _TRANSLATION_TAG = 'translation';
+    var _PLACEHOLDER_TAG$2 = 'ph';
+    var Xtb = (function () {
+        function Xtb(_htmlParser, _interpolationConfig) {
+            this._htmlParser = _htmlParser;
+            this._interpolationConfig = _interpolationConfig;
+        }
+        Xtb.prototype.write = function (messageMap) { throw new Error('Unsupported'); };
+        Xtb.prototype.load = function (content, url, messageBundle) {
+            var _this = this;
+            // Parse the xtb file into xml nodes
+            var result = new XmlParser().parse(content, url);
+            if (result.errors.length) {
+                throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
+            }
+            // Replace the placeholders, messages are now string
+            var _a = new _Visitor$3().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
+            if (errors.length) {
+                throw new Error("xtb parse errors:\n" + errors.join('\n'));
+            }
+            // Convert the string messages to html ast
+            // TODO(vicb): map error message back to the original message in xtb
+            var messageMap = {};
+            var parseErrors = [];
+            Object.keys(messages).forEach(function (id) {
+                var res = _this._htmlParser.parse(messages[id], url, true, _this._interpolationConfig);
+                parseErrors.push.apply(parseErrors, res.errors);
+                messageMap[id] = res.rootNodes;
+            });
+            if (parseErrors.length) {
+                throw new Error("xtb parse errors:\n" + parseErrors.join('\n'));
+            }
+            return messageMap;
+        };
+        return Xtb;
+    }());
+    var _Visitor$3 = (function () {
+        function _Visitor$3() {
+        }
+        _Visitor$3.prototype.parse = function (nodes, messageBundle) {
+            var _this = this;
+            this._messageNodes = [];
+            this._translatedMessages = {};
+            this._bundleDepth = 0;
+            this._translationDepth = 0;
+            this._errors = [];
+            // Find all messages
+            visitAll(this, nodes, null);
+            var messageMap = messageBundle.getMessageMap();
+            var placeholders = extractPlaceholders(messageBundle);
+            var placeholderToIds = extractPlaceholderToIds(messageBundle);
+            this._messageNodes
+                .filter(function (message) {
+                // Remove any messages that is not present in the source message bundle.
+                return messageMap.hasOwnProperty(message[0]);
+            })
+                .sort(function (a, b) {
+                // Because there could be no ICU placeholders inside an ICU message,
+                // we do not need to take into account the `placeholderToMsgIds` of the referenced
+                // messages, those would always be empty
+                // TODO(vicb): overkill - create 2 buckets and [...woDeps, ...wDeps].process()
+                if (Object.keys(messageMap[a[0]].placeholderToMsgIds).length == 0) {
+                    return -1;
+                }
+                if (Object.keys(messageMap[b[0]].placeholderToMsgIds).length == 0) {
+                    return 1;
+                }
+                return 0;
+            })
+                .forEach(function (message) {
+                var id = message[0];
+                _this._placeholders = placeholders[id] || {};
+                _this._placeholderToIds = placeholderToIds[id] || {};
+                // TODO(vicb): make sure there is no `_TRANSLATIONS_TAG` nor `_TRANSLATION_TAG`
+                _this._translatedMessages[id] = visitAll(_this, message[1]).join('');
+            });
+            return { messages: this._translatedMessages, errors: this._errors };
+        };
+        _Visitor$3.prototype.visitElement = function (element, context) {
+            switch (element.name) {
+                case _TRANSLATIONS_TAG:
+                    this._bundleDepth++;
+                    if (this._bundleDepth > 1) {
+                        this._addError(element, "<" + _TRANSLATIONS_TAG + "> elements can not be nested");
+                    }
+                    visitAll(this, element.children, null);
+                    this._bundleDepth--;
+                    break;
+                case _TRANSLATION_TAG:
+                    this._translationDepth++;
+                    if (this._translationDepth > 1) {
+                        this._addError(element, "<" + _TRANSLATION_TAG + "> elements can not be nested");
+                    }
+                    var idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
+                    if (!idAttr) {
+                        this._addError(element, "<" + _TRANSLATION_TAG + "> misses the \"id\" attribute");
+                    }
+                    else {
+                        // ICU placeholders are reference to other messages.
+                        // The referenced message might not have been decoded yet.
+                        // We need to have all messages available to make sure deps are decoded first.
+                        // TODO(vicb): report an error on duplicate id
+                        this._messageNodes.push([idAttr.value, element.children]);
+                    }
+                    this._translationDepth--;
+                    break;
+                case _PLACEHOLDER_TAG$2:
+                    var nameAttr = element.attrs.find(function (attr) { return attr.name === 'name'; });
+                    if (!nameAttr) {
+                        this._addError(element, "<" + _PLACEHOLDER_TAG$2 + "> misses the \"name\" attribute");
+                    }
+                    else {
+                        var name_2 = nameAttr.value;
+                        if (this._placeholders.hasOwnProperty(name_2)) {
+                            return this._placeholders[name_2];
+                        }
+                        if (this._placeholderToIds.hasOwnProperty(name_2) &&
+                            this._translatedMessages.hasOwnProperty(this._placeholderToIds[name_2])) {
+                            return this._translatedMessages[this._placeholderToIds[name_2]];
+                        }
+                        // TODO(vicb): better error message for when
+                        // !this._translatedMessages.hasOwnProperty(this._placeholderToIds[name])
+                        this._addError(element, "The placeholder \"" + name_2 + "\" does not exists in the source message");
+                    }
+                    break;
+                default:
+                    this._addError(element, 'Unexpected tag');
+            }
+        };
+        _Visitor$3.prototype.visitAttribute = function (attribute, context) {
+            throw new Error('unreachable code');
+        };
+        _Visitor$3.prototype.visitText = function (text, context) { return text.value; };
+        _Visitor$3.prototype.visitComment = function (comment, context) { return ''; };
+        _Visitor$3.prototype.visitExpansion = function (expansion, context) {
+            var _this = this;
+            var strCases = expansion.cases.map(function (c) { return c.visit(_this, null); });
+            return "{" + expansion.switchValue + ", " + expansion.type + ", strCases.join(' ')}";
+        };
+        _Visitor$3.prototype.visitExpansionCase = function (expansionCase, context) {
+            return expansionCase.value + " {" + visitAll(this, expansionCase.expression, null) + "}";
+        };
+        _Visitor$3.prototype._addError = function (node, message) {
+            this._errors.push(new I18nError(node.sourceSpan, message));
+        };
+        return _Visitor$3;
+    }());
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    /**
+     * A container for translated messages
+     */
+    var TranslationBundle = (function () {
+        function TranslationBundle(_messageMap) {
+            if (_messageMap === void 0) { _messageMap = {}; }
+            this._messageMap = _messageMap;
+        }
+        TranslationBundle.load = function (content, url, messageBundle, serializer) {
+            return new TranslationBundle(serializer.load(content, url, messageBundle));
+        };
+        TranslationBundle.prototype.get = function (id) { return this._messageMap[id]; };
+        TranslationBundle.prototype.has = function (id) { return id in this._messageMap; };
+        return TranslationBundle;
+    }());
+    var HtmlParser = (function () {
+        // TODO(vicb): transB.load() should not need a msgB & add transB.resolve(msgB,
+        // interpolationConfig)
+        // TODO(vicb): remove the interpolationConfig from the Xtb serializer
+        function HtmlParser(_htmlParser, _translations, _translationsFormat) {
+            this._htmlParser = _htmlParser;
+            this._translations = _translations;
+            this._translationsFormat = _translationsFormat;
+        }
+        HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
+            if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+            if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+            var parseResult = this._htmlParser.parse(source, url, parseExpansionForms, interpolationConfig);
+            if (!this._translations || this._translations === '') {
+                // Do not enable i18n when no translation bundle is provided
+                return parseResult;
+            }
+            // TODO(vicb): add support for implicit tags / attributes
+            var messageBundle = new MessageBundle(this._htmlParser, [], {});
+            var errors = messageBundle.updateFromTemplate(source, url, interpolationConfig);
+            if (errors && errors.length) {
+                return new ParseTreeResult(parseResult.rootNodes, parseResult.errors.concat(errors));
+            }
+            var serializer = this._createSerializer(interpolationConfig);
+            var translationBundle = TranslationBundle.load(this._translations, url, messageBundle, serializer);
+            return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
+        };
+        HtmlParser.prototype._createSerializer = function (interpolationConfig) {
+            var format = (this._translationsFormat || 'xlf').toLowerCase();
+            switch (format) {
+                case 'xmb':
+                    return new Xmb();
+                case 'xtb':
+                    return new Xtb(this._htmlParser, interpolationConfig);
+                case 'xliff':
+                case 'xlf':
+                default:
+                    return new Xliff(this._htmlParser, interpolationConfig);
+            }
+        };
+        return HtmlParser;
     }());
     var i18n = Object.freeze({
         HtmlParser: HtmlParser,
         MessageBundle: MessageBundle,
+        Xliff: Xliff,
         Xmb: Xmb,
         Xtb: Xtb
     });
@@ -16850,8 +17083,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         HtmlParser$1,
         {
             provide: HtmlParser,
-            useFactory: function (parser, translations) { return new HtmlParser(parser, translations); },
-            deps: [HtmlParser$1, [new _angular_core.OptionalMetadata(), new _angular_core.Inject(_angular_core.TRANSLATIONS)]]
+            useFactory: function (parser, translations, format) { return new HtmlParser(parser, translations, format); },
+            deps: [
+                HtmlParser$1,
+                [new _angular_core.OptionalMetadata(), new _angular_core.Inject(_angular_core.TRANSLATIONS)],
+                [new _angular_core.OptionalMetadata(), new _angular_core.Inject(_angular_core.TRANSLATIONS_FORMAT)],
+            ]
         },
         TemplateParser,
         DirectiveNormalizer,
@@ -17061,6 +17298,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     exports.analyzeAppProvidersForDeprecatedConfiguration = analyzeAppProvidersForDeprecatedConfiguration;
     exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;
     exports.platformCoreDynamic = platformCoreDynamic;
+    exports.DEFAULT_INTERPOLATION_CONFIG = DEFAULT_INTERPOLATION_CONFIG;
     exports.InterpolationConfig = InterpolationConfig;
     exports.ElementSchemaRegistry = ElementSchemaRegistry;
     exports.TextAst = TextAst;

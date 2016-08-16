@@ -7,6 +7,7 @@
  */
 export { HtmlParser } from './html_parser';
 export { MessageBundle } from './message_bundle';
+export { Xliff } from './serializers/xliff';
 export { Xmb } from './serializers/xmb';
 export { Xtb } from './serializers/xtb';
 //# sourceMappingURL=index.js.map

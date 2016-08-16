@@ -25,7 +25,7 @@ export class Xtb {
             throw new Error(`xtb parse errors:\n${result.errors.join('\n')}`);
         }
         // Replace the placeholders, messages are now string
-        const { messages, errors } = new _Serializer().parse(result.rootNodes, messageBundle);
+        const { messages, errors } = new _Visitor().parse(result.rootNodes, messageBundle);
         if (errors.length) {
             throw new Error(`xtb parse errors:\n${errors.join('\n')}`);
         }
@@ -44,7 +44,7 @@ export class Xtb {
         return messageMap;
     }
 }
-class _Serializer {
+class _Visitor {
     parse(nodes, messageBundle) {
         this._messageNodes = [];
         this._translatedMessages = {};

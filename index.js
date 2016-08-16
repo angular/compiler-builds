@@ -45,6 +45,7 @@ exports.analyzeAppProvidersForDeprecatedConfiguration = compiler_1.analyzeAppPro
 exports.createOfflineCompileUrlResolver = compiler_1.createOfflineCompileUrlResolver;
 exports.platformCoreDynamic = compiler_1.platformCoreDynamic;
 var interpolation_config_1 = require('./src/ml_parser/interpolation_config');
+exports.DEFAULT_INTERPOLATION_CONFIG = interpolation_config_1.DEFAULT_INTERPOLATION_CONFIG;
 exports.InterpolationConfig = interpolation_config_1.InterpolationConfig;
 var element_schema_registry_1 = require('./src/schema/element_schema_registry');
 exports.ElementSchemaRegistry = element_schema_registry_1.ElementSchemaRegistry;

@@ -67,10 +67,14 @@ exports.COMPILER_PROVIDERS = [
     html_parser_1.HtmlParser,
     {
         provide: i18n.HtmlParser,
-        useFactory: function (parser, translations) {
-            return new i18n.HtmlParser(parser, translations);
+        useFactory: function (parser, translations, format) {
+            return new i18n.HtmlParser(parser, translations, format);
         },
-        deps: [html_parser_1.HtmlParser, [new core_1.OptionalMetadata(), new core_1.Inject(core_1.TRANSLATIONS)]]
+        deps: [
+            html_parser_1.HtmlParser,
+            [new core_1.OptionalMetadata(), new core_1.Inject(core_1.TRANSLATIONS)],
+            [new core_1.OptionalMetadata(), new core_1.Inject(core_1.TRANSLATIONS_FORMAT)],
+        ]
     },
     template_parser_2.TemplateParser,
     directive_normalizer_1.DirectiveNormalizer,

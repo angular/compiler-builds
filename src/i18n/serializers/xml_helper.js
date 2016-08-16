@@ -20,7 +20,7 @@ var _Visitor = (function () {
     };
     _Visitor.prototype.visitText = function (text) { return text.value; };
     _Visitor.prototype.visitDeclaration = function (decl) {
-        return "<? xml" + this._serializeAttributes(decl.attrs) + " ?>";
+        return "<?xml" + this._serializeAttributes(decl.attrs) + " ?>";
     };
     _Visitor.prototype._serializeAttributes = function (attrs) {
         var strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');

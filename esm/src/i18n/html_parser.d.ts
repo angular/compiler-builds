@@ -11,7 +11,9 @@ import { ParseTreeResult } from '../ml_parser/parser';
 export declare class HtmlParser implements BaseHtmlParser {
     private _htmlParser;
     private _translations;
+    private _translationsFormat;
     getTagDefinition: any;
-    constructor(_htmlParser: BaseHtmlParser, _translations?: string);
+    constructor(_htmlParser: BaseHtmlParser, _translations?: string, _translationsFormat?: string);
     parse(source: string, url: string, parseExpansionForms?: boolean, interpolationConfig?: InterpolationConfig): ParseTreeResult;
+    private _createSerializer(interpolationConfig);
 }

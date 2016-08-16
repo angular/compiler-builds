@@ -16,7 +16,7 @@ class _Visitor {
     }
     visitText(text) { return text.value; }
     visitDeclaration(decl) {
-        return `<? xml${this._serializeAttributes(decl.attrs)} ?>`;
+        return `<?xml${this._serializeAttributes(decl.attrs)} ?>`;
     }
     _serializeAttributes(attrs) {
         const strAttrs = Object.keys(attrs).map((name) => `${name}="${attrs[name]}"`).join(' ');

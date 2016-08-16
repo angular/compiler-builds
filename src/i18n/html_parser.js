@@ -10,15 +10,18 @@ var interpolation_config_1 = require('../ml_parser/interpolation_config');
 var parser_1 = require('../ml_parser/parser');
 var extractor_merger_1 = require('./extractor_merger');
 var message_bundle_1 = require('./message_bundle');
+var xliff_1 = require('./serializers/xliff');
+var xmb_1 = require('./serializers/xmb');
 var xtb_1 = require('./serializers/xtb');
 var translation_bundle_1 = require('./translation_bundle');
 var HtmlParser = (function () {
     // TODO(vicb): transB.load() should not need a msgB & add transB.resolve(msgB,
     // interpolationConfig)
     // TODO(vicb): remove the interpolationConfig from the Xtb serializer
-    function HtmlParser(_htmlParser, _translations) {
+    function HtmlParser(_htmlParser, _translations, _translationsFormat) {
         this._htmlParser = _htmlParser;
         this._translations = _translations;
+        this._translationsFormat = _translationsFormat;
     }
     HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
         if (parseExpansionForms === void 0) { parseExpansionForms = false; }
@@ -34,9 +37,22 @@ var HtmlParser = (function () {
         if (errors && errors.length) {
             return new parser_1.ParseTreeResult(parseResult.rootNodes, parseResult.errors.concat(errors));
         }
-        var xtb = new xtb_1.Xtb(this._htmlParser, interpolationConfig);
-        var translationBundle = translation_bundle_1.TranslationBundle.load(this._translations, url, messageBundle, xtb);
+        var serializer = this._createSerializer(interpolationConfig);
+        var translationBundle = translation_bundle_1.TranslationBundle.load(this._translations, url, messageBundle, serializer);
         return extractor_merger_1.mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
+    };
+    HtmlParser.prototype._createSerializer = function (interpolationConfig) {
+        var format = (this._translationsFormat || 'xlf').toLowerCase();
+        switch (format) {
+            case 'xmb':
+                return new xmb_1.Xmb();
+            case 'xtb':
+                return new xtb_1.Xtb(this._htmlParser, interpolationConfig);
+            case 'xliff':
+            case 'xlf':
+            default:
+                return new xliff_1.Xliff(this._htmlParser, interpolationConfig);
+        }
     };
     return HtmlParser;
 }());
