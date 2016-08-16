@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var core_1 = require('@angular/core');
 var testing_1 = require('@angular/core/testing');
+var core_private_testing_1 = require('../core_private_testing');
 var index_1 = require('../index');
 var collection_1 = require('../src/facade/collection');
 var lang_1 = require('../src/facade/lang');
@@ -106,6 +107,6 @@ var OverridingTestComponentBuilder = (function (_super) {
         { type: core_1.Injector, decorators: [{ type: core_1.Inject, args: [testing_1.TestBed,] },] },
     ];
     return OverridingTestComponentBuilder;
-}(testing_1.TestComponentBuilder));
+}(core_private_testing_1.TestComponentBuilder));
 exports.OverridingTestComponentBuilder = OverridingTestComponentBuilder;
 //# sourceMappingURL=test_component_builder.js.map

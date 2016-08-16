@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Inject, Injectable, Injector } from '@angular/core';
-import { TestBed, TestComponentBuilder } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { TestComponentBuilder } from '../core_private_testing';
 import { DirectiveResolver } from '../index';
 import { MapWrapper } from '../src/facade/collection';
 import { isPresent } from '../src/facade/lang';

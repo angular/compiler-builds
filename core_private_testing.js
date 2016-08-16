@@ -9,4 +9,5 @@
 var testing_1 = require('@angular/core/testing');
 exports.TestingCompiler = testing_1.__core_private_testing__.TestingCompiler;
 exports.TestingCompilerFactory = testing_1.__core_private_testing__.TestingCompilerFactory;
+exports.TestComponentBuilder = testing_1.__core_private_testing__.TestComponentBuilder;
 //# sourceMappingURL=core_private_testing.js.map

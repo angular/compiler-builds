@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AnimationEntryMetadata, Injector, Type, ViewMetadata } from '@angular/core';
-import { ComponentFixture, TestComponentBuilder } from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
+import { TestComponentBuilder } from '../core_private_testing';
 /**
  * A TestComponentBuilder that allows overriding based on the compiler.
  *
