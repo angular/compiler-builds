@@ -21,7 +21,7 @@ __export(require('./offline_compiler'));
 var runtime_compiler_1 = require('./runtime_compiler');
 exports.RuntimeCompiler = runtime_compiler_1.RuntimeCompiler;
 __export(require('./url_resolver'));
-__export(require('./resource_loader'));
+__export(require('./xhr'));
 var directive_resolver_1 = require('./directive_resolver');
 exports.DirectiveResolver = directive_resolver_1.DirectiveResolver;
 var pipe_resolver_1 = require('./pipe_resolver');
@@ -46,11 +46,11 @@ var directive_resolver_2 = require('./directive_resolver');
 var pipe_resolver_2 = require('./pipe_resolver');
 var ng_module_resolver_2 = require('./ng_module_resolver');
 var core_private_1 = require('../core_private');
-var resource_loader_2 = require('./resource_loader');
+var xhr_2 = require('./xhr');
 var i18n = require('./i18n/index');
-var _NO_RESOURCE_LOADER = {
+var _NO_XHR = {
     get: function (url) {
-        throw new Error("No ResourceLoader implementation has been provided. Can't read the url \"" + url + "\"");
+        throw new Error("No XHR implementation has been provided. Can't read the url \"" + url + "\"");
     }
 };
 /**
@@ -60,7 +60,7 @@ var _NO_RESOURCE_LOADER = {
 exports.COMPILER_PROVIDERS = [
     { provide: core_private_1.Reflector, useValue: core_private_1.reflector },
     { provide: core_private_1.ReflectorReader, useExisting: core_private_1.Reflector },
-    { provide: resource_loader_2.ResourceLoader, useValue: _NO_RESOURCE_LOADER },
+    { provide: xhr_2.XHR, useValue: _NO_XHR },
     core_private_1.Console,
     lexer_1.Lexer,
     parser_1.Parser,
@@ -101,7 +101,7 @@ function analyzeAppProvidersForDeprecatedConfiguration(appProviders) {
     var defaultEncapsulation;
     var deprecationMessages = [];
     // Note: This is a hack to still support the old way
-    // of configuring platform directives / pipes and the compiler resource loader.
+    // of configuring platform directives / pipes and the compiler xhr.
     // This will soon be deprecated!
     var tempInj = core_1.ReflectiveInjector.resolveAndCreate(appProviders);
     var compilerConfig = tempInj.get(config_2.CompilerConfig, null);
@@ -111,10 +111,10 @@ function analyzeAppProvidersForDeprecatedConfiguration(appProviders) {
         defaultEncapsulation = compilerConfig.defaultEncapsulation;
         deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use \"compilerOptions\" use a custom \"CompilerFactory\" platform provider instead.");
     }
-    var resourceLoader = tempInj.get(resource_loader_2.ResourceLoader, null);
-    if (resourceLoader) {
-        compilerProviders.push([{ provide: resource_loader_2.ResourceLoader, useValue: resourceLoader }]);
-        deprecationMessages.push("Passing ResourceLoader as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
+    var xhr = tempInj.get(xhr_2.XHR, null);
+    if (xhr) {
+        compilerProviders.push([{ provide: xhr_2.XHR, useValue: xhr }]);
+        deprecationMessages.push("Passing XHR as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
     }
     var compilerOptions = {
         useJit: useJit,

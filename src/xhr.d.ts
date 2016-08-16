@@ -9,7 +9,6 @@
  * An interface for retrieving documents by URL that the compiler uses
  * to load templates.
  */
-export class ResourceLoader {
-    get(url) { return null; }
+export declare class XHR {
+    get(url: string): Promise<string>;
 }
-//# sourceMappingURL=resource_loader.js.map

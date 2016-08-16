@@ -6,15 +6,16 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
+// TODO: vsavkin rename it into TemplateLoader
 /**
  * An interface for retrieving documents by URL that the compiler uses
  * to load templates.
  */
-var ResourceLoader = (function () {
-    function ResourceLoader() {
+var XHR = (function () {
+    function XHR() {
     }
-    ResourceLoader.prototype.get = function (url) { return null; };
-    return ResourceLoader;
+    XHR.prototype.get = function (url) { return null; };
+    return XHR;
 }());
-exports.ResourceLoader = ResourceLoader;
-//# sourceMappingURL=resource_loader.js.map
+exports.XHR = XHR;
+//# sourceMappingURL=xhr.js.map

@@ -8717,12 +8717,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     // Group 4 = "ref-/#"
     // Group 5 = "on-"
     // Group 6 = "bindon-"
-    // Group 7 = "animate-/@"
+    // Group 7 = "@"
     // Group 8 = the identifier after "bind-", "var-/#", or "on-"
     // Group 9 = identifier inside [()]
     // Group 10 = identifier inside []
     // Group 11 = identifier inside ()
-    var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+    var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+    var ANIMATE_PROP_PREFIX = 'animate-';
     var TEMPLATE_ELEMENT = 'template';
     var TEMPLATE_ATTR = 'template';
     var TEMPLATE_ATTR_PREFIX = '*';
@@ -9132,7 +9133,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 else if (isPresent(bindParts[7])) {
                     if (attrName[0] == '@' && isPresent(attrValue) && attrValue.length > 0) {
-                        this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is deprecated. Use property bindings (e.g. [@prop]=\"exp\") instead!", attr.sourceSpan, ParseErrorLevel.WARNING);
+                        this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid. Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", attr.sourceSpan, ParseErrorLevel.FATAL);
                     }
                     this._parseAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetAnimationProps);
                 }
@@ -9171,8 +9172,15 @@ var __extends = (this && this.__extends) || function (d, b) {
             targetRefs.push(new ElementOrDirectiveRef(identifier, value, sourceSpan));
         };
         TemplateParseVisitor.prototype._parsePropertyOrAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps) {
-            if (name[0] == '@') {
-                this._parseAnimation(name.substr(1), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
+            var animatePropLength = ANIMATE_PROP_PREFIX.length;
+            var isAnimationProp = name[0] == '@';
+            var animationPrefixLength = 1;
+            if (name.substring(0, animatePropLength) == ANIMATE_PROP_PREFIX) {
+                isAnimationProp = true;
+                animationPrefixLength = animatePropLength;
+            }
+            if (isAnimationProp) {
+                this._parseAnimation(name.substr(animationPrefixLength), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
             }
             else {
                 this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
@@ -9333,9 +9341,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     boundPropertyName = partValue.substr(1);
                     bindingType = exports.PropertyBindingType.Animation;
                     securityContext = _angular_core.SecurityContext.NONE;
-                    // DEPRECATED: remove this if statement post RC5
                     if (boundPropertyName[0] == '@') {
-                        this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is deprecated. Use host bindings (e.g. \"[@prop]\": \"exp\") instead!", sourceSpan, ParseErrorLevel.WARNING);
+                        this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is invalid. Use host bindings (e.g. \"[@prop]\": \"exp\") instead.", sourceSpan, ParseErrorLevel.FATAL);
                         boundPropertyName = boundPropertyName.substr(1);
                     }
                 }
@@ -13095,38 +13102,39 @@ var __extends = (this && this.__extends) || function (d, b) {
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
+    // TODO: vsavkin rename it into TemplateLoader
     /**
      * An interface for retrieving documents by URL that the compiler uses
      * to load templates.
      */
-    var ResourceLoader = (function () {
-        function ResourceLoader() {
+    var XHR = (function () {
+        function XHR() {
         }
-        ResourceLoader.prototype.get = function (url) { return null; };
-        return ResourceLoader;
+        XHR.prototype.get = function (url) { return null; };
+        return XHR;
     }());
     var DirectiveNormalizer = (function () {
-        function DirectiveNormalizer(_resourceLoader, _urlResolver, _htmlParser, _config) {
-            this._resourceLoader = _resourceLoader;
+        function DirectiveNormalizer(_xhr, _urlResolver, _htmlParser, _config) {
+            this._xhr = _xhr;
             this._urlResolver = _urlResolver;
             this._htmlParser = _htmlParser;
             this._config = _config;
-            this._resourceLoaderCache = new Map();
+            this._xhrCache = new Map();
         }
-        DirectiveNormalizer.prototype.clearCache = function () { this._resourceLoaderCache.clear(); };
+        DirectiveNormalizer.prototype.clearCache = function () { this._xhrCache.clear(); };
         DirectiveNormalizer.prototype.clearCacheFor = function (normalizedDirective) {
             var _this = this;
             if (!normalizedDirective.isComponent) {
                 return;
             }
-            this._resourceLoaderCache.delete(normalizedDirective.template.templateUrl);
-            normalizedDirective.template.externalStylesheets.forEach(function (stylesheet) { _this._resourceLoaderCache.delete(stylesheet.moduleUrl); });
+            this._xhrCache.delete(normalizedDirective.template.templateUrl);
+            normalizedDirective.template.externalStylesheets.forEach(function (stylesheet) { _this._xhrCache.delete(stylesheet.moduleUrl); });
         };
         DirectiveNormalizer.prototype._fetch = function (url) {
-            var result = this._resourceLoaderCache.get(url);
+            var result = this._xhrCache.get(url);
             if (!result) {
-                result = this._resourceLoader.get(url);
-                this._resourceLoaderCache.set(url, result);
+                result = this._xhr.get(url);
+                this._xhrCache.set(url, result);
             }
             return result;
         };
@@ -13251,7 +13259,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     DirectiveNormalizer.ctorParameters = [
-        { type: ResourceLoader, },
+        { type: XHR, },
         { type: UrlResolver, },
         { type: HtmlParser$1, },
         { type: CompilerConfig, },
@@ -16384,16 +16392,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             var ngModuleFactory = this._compiledNgModuleCache.get(moduleType);
             if (!ngModuleFactory) {
                 var moduleMeta_1 = this._metadataResolver.getNgModuleMetadata(moduleType);
-                var transitiveModuleMeta = moduleMeta_1.transitiveModule;
-                var boundCompilerFactory = function (parentResolver) { return new ModuleBoundCompiler(_this, moduleMeta_1.type.runtime, parentResolver, _this._console); };
-                // Always provide a bound Compiler and ComponentResolver
-                var extraProviders = [
-                    this._metadataResolver.getProviderMetadata(new ProviderMeta(_angular_core.Compiler, {
-                        useFactory: boundCompilerFactory,
-                        deps: [[new _angular_core.OptionalMetadata(), new _angular_core.SkipSelfMetadata(), _angular_core.ComponentResolver]]
-                    })),
-                    this._metadataResolver.getProviderMetadata(new ProviderMeta(_angular_core.ComponentResolver, { useExisting: _angular_core.Compiler }))
-                ];
+                // Always provide a bound Compiler
+                var extraProviders = [this._metadataResolver.getProviderMetadata(new ProviderMeta(_angular_core.Compiler, { useFactory: function () { return new ModuleBoundCompiler(_this, moduleMeta_1.type.runtime); } }))];
                 var compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
                 compileResult.dependencies.forEach(function (dep) {
                     dep.placeholder.runtime =
@@ -16651,37 +16651,18 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
     }
     /**
-     * Implements `Compiler` and `ComponentResolver` by delegating
-     * to the RuntimeCompiler using a known module.
+     * Implements `Compiler` by delegating to the RuntimeCompiler using a known module.
      */
     var ModuleBoundCompiler = (function () {
-        function ModuleBoundCompiler(_delegate, _ngModule, _parentComponentResolver, _console) {
+        function ModuleBoundCompiler(_delegate, _ngModule) {
             this._delegate = _delegate;
             this._ngModule = _ngModule;
-            this._parentComponentResolver = _parentComponentResolver;
-            this._console = _console;
-            this._warnOnComponentResolver = true;
         }
         Object.defineProperty(ModuleBoundCompiler.prototype, "_injector", {
             get: function () { return this._delegate.injector; },
             enumerable: true,
             configurable: true
         });
-        ModuleBoundCompiler.prototype.resolveComponent = function (component) {
-            if (isString(component)) {
-                if (this._parentComponentResolver) {
-                    return this._parentComponentResolver.resolveComponent(component);
-                }
-                else {
-                    return Promise.reject(new BaseException$1("Cannot resolve component using '" + component + "'."));
-                }
-            }
-            if (this._warnOnComponentResolver) {
-                this._console.warn(_angular_core.ComponentResolver.DynamicCompilationDeprecationMsg);
-                this._warnOnComponentResolver = false;
-            }
-            return this.compileComponentAsync(component);
-        };
         ModuleBoundCompiler.prototype.compileComponentAsync = function (compType, ngModule) {
             if (ngModule === void 0) { ngModule = null; }
             return this._delegate.compileComponentAsync(compType, ngModule ? ngModule : this._ngModule);
@@ -16705,12 +16686,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         /**
          * Clears all caches
          */
-        ModuleBoundCompiler.prototype.clearCache = function () {
-            this._delegate.clearCache();
-            if (this._parentComponentResolver) {
-                this._parentComponentResolver.clearCache();
-            }
-        };
+        ModuleBoundCompiler.prototype.clearCache = function () { this._delegate.clearCache(); };
         /**
          * Clears the cache for the given component/ngModule.
          */
@@ -17063,9 +17039,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     DomElementSchemaRegistry.ctorParameters = [];
-    var _NO_RESOURCE_LOADER = {
+    var _NO_XHR = {
         get: function (url) {
-            throw new Error("No ResourceLoader implementation has been provided. Can't read the url \"" + url + "\"");
+            throw new Error("No XHR implementation has been provided. Can't read the url \"" + url + "\"");
         }
     };
     /**
@@ -17075,7 +17051,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var COMPILER_PROVIDERS = [
         { provide: Reflector, useValue: reflector },
         { provide: ReflectorReader, useExisting: Reflector },
-        { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
+        { provide: XHR, useValue: _NO_XHR },
         Console,
         Lexer,
         Parser$1,
@@ -17114,7 +17090,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         var defaultEncapsulation;
         var deprecationMessages = [];
         // Note: This is a hack to still support the old way
-        // of configuring platform directives / pipes and the compiler resource loader.
+        // of configuring platform directives / pipes and the compiler xhr.
         // This will soon be deprecated!
         var tempInj = _angular_core.ReflectiveInjector.resolveAndCreate(appProviders);
         var compilerConfig = tempInj.get(CompilerConfig, null);
@@ -17124,10 +17100,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             defaultEncapsulation = compilerConfig.defaultEncapsulation;
             deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use \"compilerOptions\" use a custom \"CompilerFactory\" platform provider instead.");
         }
-        var resourceLoader = tempInj.get(ResourceLoader, null);
-        if (resourceLoader) {
-            compilerProviders.push([{ provide: ResourceLoader, useValue: resourceLoader }]);
-            deprecationMessages.push("Passing ResourceLoader as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
+        var xhr = tempInj.get(XHR, null);
+        if (xhr) {
+            compilerProviders.push([{ provide: XHR, useValue: xhr }]);
+            deprecationMessages.push("Passing XHR as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
         }
         var compilerOptions = {
             useJit: useJit,
@@ -17289,11 +17265,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     exports.OfflineCompiler = OfflineCompiler;
     exports.PipeResolver = PipeResolver;
     exports.RenderTypes = RenderTypes;
-    exports.ResourceLoader = ResourceLoader;
     exports.RuntimeCompiler = RuntimeCompiler;
     exports.SourceModule = SourceModule;
     exports.TEMPLATE_TRANSFORMS = TEMPLATE_TRANSFORMS;
     exports.UrlResolver = UrlResolver;
+    exports.XHR = XHR;
     exports.analyzeAppProvidersForDeprecatedConfiguration = analyzeAppProvidersForDeprecatedConfiguration;
     exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;
     exports.platformCoreDynamic = platformCoreDynamic;

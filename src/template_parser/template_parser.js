@@ -39,12 +39,13 @@ var template_preparser_1 = require('./template_preparser');
 // Group 4 = "ref-/#"
 // Group 5 = "on-"
 // Group 6 = "bindon-"
-// Group 7 = "animate-/@"
+// Group 7 = "@"
 // Group 8 = the identifier after "bind-", "var-/#", or "on-"
 // Group 9 = identifier inside [()]
 // Group 10 = identifier inside []
 // Group 11 = identifier inside ()
-var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+var ANIMATE_PROP_PREFIX = 'animate-';
 var TEMPLATE_ELEMENT = 'template';
 var TEMPLATE_ATTR = 'template';
 var TEMPLATE_ATTR_PREFIX = '*';
@@ -457,7 +458,7 @@ var TemplateParseVisitor = (function () {
             }
             else if (lang_1.isPresent(bindParts[7])) {
                 if (attrName[0] == '@' && lang_1.isPresent(attrValue) && attrValue.length > 0) {
-                    this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is deprecated. Use property bindings (e.g. [@prop]=\"exp\") instead!", attr.sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
+                    this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid. Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", attr.sourceSpan, parse_util_1.ParseErrorLevel.FATAL);
                 }
                 this._parseAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetAnimationProps);
             }
@@ -496,8 +497,15 @@ var TemplateParseVisitor = (function () {
         targetRefs.push(new ElementOrDirectiveRef(identifier, value, sourceSpan));
     };
     TemplateParseVisitor.prototype._parsePropertyOrAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps) {
-        if (name[0] == '@') {
-            this._parseAnimation(name.substr(1), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
+        var animatePropLength = ANIMATE_PROP_PREFIX.length;
+        var isAnimationProp = name[0] == '@';
+        var animationPrefixLength = 1;
+        if (name.substring(0, animatePropLength) == ANIMATE_PROP_PREFIX) {
+            isAnimationProp = true;
+            animationPrefixLength = animatePropLength;
+        }
+        if (isAnimationProp) {
+            this._parseAnimation(name.substr(animationPrefixLength), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
         }
         else {
             this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
@@ -658,9 +666,8 @@ var TemplateParseVisitor = (function () {
                 boundPropertyName = partValue.substr(1);
                 bindingType = template_ast_1.PropertyBindingType.Animation;
                 securityContext = core_1.SecurityContext.NONE;
-                // DEPRECATED: remove this if statement post RC5
                 if (boundPropertyName[0] == '@') {
-                    this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is deprecated. Use host bindings (e.g. \"[@prop]\": \"exp\") instead!", sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
+                    this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is invalid. Use host bindings (e.g. \"[@prop]\": \"exp\") instead.", sourceSpan, parse_util_1.ParseErrorLevel.FATAL);
                     boundPropertyName = boundPropertyName.substr(1);
                 }
             }

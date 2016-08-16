@@ -105,18 +105,8 @@ var RuntimeCompiler = (function () {
         var ngModuleFactory = this._compiledNgModuleCache.get(moduleType);
         if (!ngModuleFactory) {
             var moduleMeta_1 = this._metadataResolver.getNgModuleMetadata(moduleType);
-            var transitiveModuleMeta = moduleMeta_1.transitiveModule;
-            var boundCompilerFactory = function (parentResolver) {
-                return new ModuleBoundCompiler(_this, moduleMeta_1.type.runtime, parentResolver, _this._console);
-            };
-            // Always provide a bound Compiler and ComponentResolver
-            var extraProviders = [
-                this._metadataResolver.getProviderMetadata(new compile_metadata_1.ProviderMeta(core_1.Compiler, {
-                    useFactory: boundCompilerFactory,
-                    deps: [[new core_1.OptionalMetadata(), new core_1.SkipSelfMetadata(), core_1.ComponentResolver]]
-                })),
-                this._metadataResolver.getProviderMetadata(new compile_metadata_1.ProviderMeta(core_1.ComponentResolver, { useExisting: core_1.Compiler }))
-            ];
+            // Always provide a bound Compiler
+            var extraProviders = [this._metadataResolver.getProviderMetadata(new compile_metadata_1.ProviderMeta(core_1.Compiler, { useFactory: function () { return new ModuleBoundCompiler(_this, moduleMeta_1.type.runtime); } }))];
             var compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
             compileResult.dependencies.forEach(function (dep) {
                 dep.placeholder.runtime =
@@ -375,37 +365,18 @@ function assertComponent(meta) {
     }
 }
 /**
- * Implements `Compiler` and `ComponentResolver` by delegating
- * to the RuntimeCompiler using a known module.
+ * Implements `Compiler` by delegating to the RuntimeCompiler using a known module.
  */
 var ModuleBoundCompiler = (function () {
-    function ModuleBoundCompiler(_delegate, _ngModule, _parentComponentResolver, _console) {
+    function ModuleBoundCompiler(_delegate, _ngModule) {
         this._delegate = _delegate;
         this._ngModule = _ngModule;
-        this._parentComponentResolver = _parentComponentResolver;
-        this._console = _console;
-        this._warnOnComponentResolver = true;
     }
     Object.defineProperty(ModuleBoundCompiler.prototype, "_injector", {
         get: function () { return this._delegate.injector; },
         enumerable: true,
         configurable: true
     });
-    ModuleBoundCompiler.prototype.resolveComponent = function (component) {
-        if (lang_1.isString(component)) {
-            if (this._parentComponentResolver) {
-                return this._parentComponentResolver.resolveComponent(component);
-            }
-            else {
-                return Promise.reject(new exceptions_1.BaseException("Cannot resolve component using '" + component + "'."));
-            }
-        }
-        if (this._warnOnComponentResolver) {
-            this._console.warn(core_1.ComponentResolver.DynamicCompilationDeprecationMsg);
-            this._warnOnComponentResolver = false;
-        }
-        return this.compileComponentAsync(component);
-    };
     ModuleBoundCompiler.prototype.compileComponentAsync = function (compType, ngModule) {
         if (ngModule === void 0) { ngModule = null; }
         return this._delegate.compileComponentAsync(compType, ngModule ? ngModule : this._ngModule);
@@ -429,12 +400,7 @@ var ModuleBoundCompiler = (function () {
     /**
      * Clears all caches
      */
-    ModuleBoundCompiler.prototype.clearCache = function () {
-        this._delegate.clearCache();
-        if (this._parentComponentResolver) {
-            this._parentComponentResolver.clearCache();
-        }
-    };
+    ModuleBoundCompiler.prototype.clearCache = function () { this._delegate.clearCache(); };
     /**
      * Clears the cache for the given component/ngModule.
      */

@@ -5,13 +5,13 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, ComponentFactory, ComponentResolver, ComponentStillLoadingError, Injectable, Injector, ModuleWithComponentFactories, OptionalMetadata, SkipSelfMetadata } from '@angular/core';
+import { Compiler, ComponentFactory, ComponentStillLoadingError, Injectable, Injector, ModuleWithComponentFactories } from '@angular/core';
 import { Console } from '../core_private';
 import { ProviderMeta, createHostComponentMeta } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { BaseException } from './facade/exceptions';
-import { isBlank, isString, stringify } from './facade/lang';
+import { isBlank, stringify } from './facade/lang';
 import { CompileMetadataResolver } from './metadata_resolver';
 import { NgModuleCompiler } from './ng_module_compiler';
 import * as ir from './output/output_ast';
@@ -96,16 +96,8 @@ export class RuntimeCompiler {
         let ngModuleFactory = this._compiledNgModuleCache.get(moduleType);
         if (!ngModuleFactory) {
             const moduleMeta = this._metadataResolver.getNgModuleMetadata(moduleType);
-            const transitiveModuleMeta = moduleMeta.transitiveModule;
-            let boundCompilerFactory = (parentResolver) => new ModuleBoundCompiler(this, moduleMeta.type.runtime, parentResolver, this._console);
-            // Always provide a bound Compiler and ComponentResolver
-            const extraProviders = [
-                this._metadataResolver.getProviderMetadata(new ProviderMeta(Compiler, {
-                    useFactory: boundCompilerFactory,
-                    deps: [[new OptionalMetadata(), new SkipSelfMetadata(), ComponentResolver]]
-                })),
-                this._metadataResolver.getProviderMetadata(new ProviderMeta(ComponentResolver, { useExisting: Compiler }))
-            ];
+            // Always provide a bound Compiler
+            const extraProviders = [this._metadataResolver.getProviderMetadata(new ProviderMeta(Compiler, { useFactory: () => new ModuleBoundCompiler(this, moduleMeta.type.runtime) }))];
             var compileResult = this._ngModuleCompiler.compile(moduleMeta, extraProviders);
             compileResult.dependencies.forEach((dep) => {
                 dep.placeholder.runtime =
@@ -349,33 +341,14 @@ function assertComponent(meta) {
     }
 }
 /**
- * Implements `Compiler` and `ComponentResolver` by delegating
- * to the RuntimeCompiler using a known module.
+ * Implements `Compiler` by delegating to the RuntimeCompiler using a known module.
  */
 class ModuleBoundCompiler {
-    constructor(_delegate, _ngModule, _parentComponentResolver, _console) {
+    constructor(_delegate, _ngModule) {
         this._delegate = _delegate;
         this._ngModule = _ngModule;
-        this._parentComponentResolver = _parentComponentResolver;
-        this._console = _console;
-        this._warnOnComponentResolver = true;
     }
     get _injector() { return this._delegate.injector; }
-    resolveComponent(component) {
-        if (isString(component)) {
-            if (this._parentComponentResolver) {
-                return this._parentComponentResolver.resolveComponent(component);
-            }
-            else {
-                return Promise.reject(new BaseException(`Cannot resolve component using '${component}'.`));
-            }
-        }
-        if (this._warnOnComponentResolver) {
-            this._console.warn(ComponentResolver.DynamicCompilationDeprecationMsg);
-            this._warnOnComponentResolver = false;
-        }
-        return this.compileComponentAsync(component);
-    }
     compileComponentAsync(compType, ngModule = null) {
         return this._delegate.compileComponentAsync(compType, ngModule ? ngModule : this._ngModule);
     }
@@ -397,12 +370,7 @@ class ModuleBoundCompiler {
     /**
      * Clears all caches
      */
-    clearCache() {
-        this._delegate.clearCache();
-        if (this._parentComponentResolver) {
-            this._parentComponentResolver.clearCache();
-        }
-    }
+    clearCache() { this._delegate.clearCache(); }
     /**
      * Clears the cache for the given component/ngModule.
      */
