@@ -390,3 +390,20 @@ export interface StaticSymbol {
     name: string;
     filePath: string;
 }
+export declare class ProviderMeta {
+    token: any;
+    useClass: Type<any>;
+    useValue: any;
+    useExisting: any;
+    useFactory: Function;
+    dependencies: Object[];
+    multi: boolean;
+    constructor(token: any, {useClass, useValue, useExisting, useFactory, deps, multi}: {
+        useClass?: Type<any>;
+        useValue?: any;
+        useExisting?: any;
+        useFactory?: Function;
+        deps?: Object[];
+        multi?: boolean;
+    });
+}

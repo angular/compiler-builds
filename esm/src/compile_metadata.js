@@ -461,4 +461,15 @@ function _normalizeArray(obj) {
 export function isStaticSymbol(value) {
     return isStringMap(value) && isPresent(value['name']) && isPresent(value['filePath']);
 }
+export class ProviderMeta {
+    constructor(token, { useClass, useValue, useExisting, useFactory, deps, multi }) {
+        this.token = token;
+        this.useClass = useClass;
+        this.useValue = useValue;
+        this.useExisting = useExisting;
+        this.useFactory = useFactory;
+        this.dependencies = deps;
+        this.multi = !!multi;
+    }
+}
 //# sourceMappingURL=compile_metadata.js.map

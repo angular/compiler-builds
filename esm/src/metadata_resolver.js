@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, AttributeMetadata, ComponentMetadata, HostMetadata, InjectMetadata, Injectable, OptionalMetadata, Provider, QueryMetadata, SelfMetadata, SkipSelfMetadata, Type, resolveForwardRef } from '@angular/core';
-import { Console, LIFECYCLE_HOOKS_VALUES, ReflectorReader, createProvider, isProviderLiteral, reflector } from '../core_private';
+import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, AttributeMetadata, ComponentMetadata, HostMetadata, InjectMetadata, Injectable, OptionalMetadata, QueryMetadata, SelfMetadata, SkipSelfMetadata, Type, resolveForwardRef } from '@angular/core';
+import { Console, LIFECYCLE_HOOKS_VALUES, ReflectorReader, reflector } from '../core_private';
 import { StringMapWrapper } from '../src/facade/collection';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
@@ -551,14 +551,14 @@ export class CompileMetadataResolver {
         const compileProviders = [];
         providers.forEach((provider) => {
             provider = resolveForwardRef(provider);
-            if (isProviderLiteral(provider)) {
-                provider = createProvider(provider);
+            if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
+                provider = new cpl.ProviderMeta(provider.provide, provider);
             }
             let compileProvider;
             if (isArray(provider)) {
                 compileProvider = this.getProvidersMetadata(provider, targetEntryComponents);
             }
-            else if (provider instanceof Provider) {
+            else if (provider instanceof cpl.ProviderMeta) {
                 let tokenMeta = this.getTokenMetadata(provider.token);
                 if (tokenMeta.equalsTo(identifierToken(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS))) {
                     targetEntryComponents.push(...this._getEntryComponentsFromProvider(provider));

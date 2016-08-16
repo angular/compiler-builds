@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, ComponentFactory, ComponentResolver, ComponentStillLoadingError, Injectable, Injector, ModuleWithComponentFactories, OptionalMetadata, Provider, SkipSelfMetadata } from '@angular/core';
+import { Compiler, ComponentFactory, ComponentResolver, ComponentStillLoadingError, Injectable, Injector, ModuleWithComponentFactories, OptionalMetadata, SkipSelfMetadata } from '@angular/core';
 import { Console } from '../core_private';
-import { createHostComponentMeta } from './compile_metadata';
+import { ProviderMeta, createHostComponentMeta } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { BaseException } from './facade/exceptions';
@@ -100,11 +100,11 @@ export class RuntimeCompiler {
             let boundCompilerFactory = (parentResolver) => new ModuleBoundCompiler(this, moduleMeta.type.runtime, parentResolver, this._console);
             // Always provide a bound Compiler and ComponentResolver
             const extraProviders = [
-                this._metadataResolver.getProviderMetadata(new Provider(Compiler, {
+                this._metadataResolver.getProviderMetadata(new ProviderMeta(Compiler, {
                     useFactory: boundCompilerFactory,
                     deps: [[new OptionalMetadata(), new SkipSelfMetadata(), ComponentResolver]]
                 })),
-                this._metadataResolver.getProviderMetadata(new Provider(ComponentResolver, { useExisting: Compiler }))
+                this._metadataResolver.getProviderMetadata(new ProviderMeta(ComponentResolver, { useExisting: Compiler }))
             ];
             var compileResult = this._ngModuleCompiler.compile(moduleMeta, extraProviders);
             compileResult.dependencies.forEach((dep) => {

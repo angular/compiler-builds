@@ -39,8 +39,6 @@ export declare var ValueUnwrapper: typeof t.ValueUnwrapper;
 export declare var TemplateRef_: typeof t.TemplateRef_;
 export declare type RenderDebugInfo = t.RenderDebugInfo;
 export declare var RenderDebugInfo: typeof t.RenderDebugInfo;
-export declare var createProvider: typeof t.createProvider;
-export declare var isProviderLiteral: typeof t.isProviderLiteral;
 export declare var EMPTY_ARRAY: typeof t.EMPTY_ARRAY;
 export declare var EMPTY_MAP: typeof t.EMPTY_MAP;
 export declare var pureProxy1: typeof t.pureProxy1;

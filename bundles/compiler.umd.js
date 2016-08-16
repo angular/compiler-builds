@@ -5291,8 +5291,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     var UNINITIALIZED = _angular_core.__core_private__.UNINITIALIZED;
     var ValueUnwrapper = _angular_core.__core_private__.ValueUnwrapper;
     var TemplateRef_ = _angular_core.__core_private__.TemplateRef_;
-    var createProvider = _angular_core.__core_private__.createProvider;
-    var isProviderLiteral = _angular_core.__core_private__.isProviderLiteral;
     var EMPTY_ARRAY = _angular_core.__core_private__.EMPTY_ARRAY;
     var EMPTY_MAP = _angular_core.__core_private__.EMPTY_MAP;
     var pureProxy1 = _angular_core.__core_private__.pureProxy1;
@@ -7556,6 +7554,19 @@ var __extends = (this && this.__extends) || function (d, b) {
     function isStaticSymbol(value) {
         return isStringMap(value) && isPresent(value['name']) && isPresent(value['filePath']);
     }
+    var ProviderMeta = (function () {
+        function ProviderMeta(token, _a) {
+            var useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
+            this.token = token;
+            this.useClass = useClass;
+            this.useValue = useValue;
+            this.useExisting = useExisting;
+            this.useFactory = useFactory;
+            this.dependencies = deps;
+            this.multi = !!multi;
+        }
+        return ProviderMeta;
+    }());
     var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
     var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
     var CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
@@ -13878,14 +13889,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             var compileProviders = [];
             providers.forEach(function (provider) {
                 provider = _angular_core.resolveForwardRef(provider);
-                if (isProviderLiteral(provider)) {
-                    provider = createProvider(provider);
+                if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
+                    provider = new ProviderMeta(provider.provide, provider);
                 }
                 var compileProvider;
                 if (isArray(provider)) {
                     compileProvider = _this.getProvidersMetadata(provider, targetEntryComponents);
                 }
-                else if (provider instanceof _angular_core.Provider) {
+                else if (provider instanceof ProviderMeta) {
                     var tokenMeta = _this.getTokenMetadata(provider.token);
                     if (tokenMeta.equalsTo(identifierToken(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS))) {
                         targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(provider));
@@ -16145,11 +16156,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var boundCompilerFactory = function (parentResolver) { return new ModuleBoundCompiler(_this, moduleMeta_1.type.runtime, parentResolver, _this._console); };
                 // Always provide a bound Compiler and ComponentResolver
                 var extraProviders = [
-                    this._metadataResolver.getProviderMetadata(new _angular_core.Provider(_angular_core.Compiler, {
+                    this._metadataResolver.getProviderMetadata(new ProviderMeta(_angular_core.Compiler, {
                         useFactory: boundCompilerFactory,
                         deps: [[new _angular_core.OptionalMetadata(), new _angular_core.SkipSelfMetadata(), _angular_core.ComponentResolver]]
                     })),
-                    this._metadataResolver.getProviderMetadata(new _angular_core.Provider(_angular_core.ComponentResolver, { useExisting: _angular_core.Compiler }))
+                    this._metadataResolver.getProviderMetadata(new ProviderMeta(_angular_core.ComponentResolver, { useExisting: _angular_core.Compiler }))
                 ];
                 var compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
                 compileResult.dependencies.forEach(function (dep) {

@@ -637,4 +637,18 @@ function isStaticSymbol(value) {
     return lang_1.isStringMap(value) && lang_1.isPresent(value['name']) && lang_1.isPresent(value['filePath']);
 }
 exports.isStaticSymbol = isStaticSymbol;
+var ProviderMeta = (function () {
+    function ProviderMeta(token, _a) {
+        var useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
+        this.token = token;
+        this.useClass = useClass;
+        this.useValue = useValue;
+        this.useExisting = useExisting;
+        this.useFactory = useFactory;
+        this.dependencies = deps;
+        this.multi = !!multi;
+    }
+    return ProviderMeta;
+}());
+exports.ProviderMeta = ProviderMeta;
 //# sourceMappingURL=compile_metadata.js.map

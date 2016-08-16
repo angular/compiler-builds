@@ -111,11 +111,11 @@ var RuntimeCompiler = (function () {
             };
             // Always provide a bound Compiler and ComponentResolver
             var extraProviders = [
-                this._metadataResolver.getProviderMetadata(new core_1.Provider(core_1.Compiler, {
+                this._metadataResolver.getProviderMetadata(new compile_metadata_1.ProviderMeta(core_1.Compiler, {
                     useFactory: boundCompilerFactory,
                     deps: [[new core_1.OptionalMetadata(), new core_1.SkipSelfMetadata(), core_1.ComponentResolver]]
                 })),
-                this._metadataResolver.getProviderMetadata(new core_1.Provider(core_1.ComponentResolver, { useExisting: core_1.Compiler }))
+                this._metadataResolver.getProviderMetadata(new compile_metadata_1.ProviderMeta(core_1.ComponentResolver, { useExisting: core_1.Compiler }))
             ];
             var compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
             compileResult.dependencies.forEach(function (dep) {

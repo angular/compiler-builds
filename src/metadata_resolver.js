@@ -574,14 +574,14 @@ var CompileMetadataResolver = (function () {
         var compileProviders = [];
         providers.forEach(function (provider) {
             provider = core_1.resolveForwardRef(provider);
-            if (core_private_1.isProviderLiteral(provider)) {
-                provider = core_private_1.createProvider(provider);
+            if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
+                provider = new cpl.ProviderMeta(provider.provide, provider);
             }
             var compileProvider;
             if (lang_1.isArray(provider)) {
                 compileProvider = _this.getProvidersMetadata(provider, targetEntryComponents);
             }
-            else if (provider instanceof core_1.Provider) {
+            else if (provider instanceof cpl.ProviderMeta) {
                 var tokenMeta = _this.getTokenMetadata(provider.token);
                 if (tokenMeta.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS))) {
                     targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(provider));
