@@ -13,7 +13,7 @@ export * from './compile_metadata';
 export * from './offline_compiler';
 export { RuntimeCompiler } from './runtime_compiler';
 export * from './url_resolver';
-export * from './xhr';
+export * from './resource_loader';
 export { DirectiveResolver } from './directive_resolver';
 export { PipeResolver } from './pipe_resolver';
 export { NgModuleResolver } from './ng_module_resolver';

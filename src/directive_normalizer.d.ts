@@ -3,14 +3,14 @@ import { CompilerConfig } from './config';
 import { HtmlParser } from './ml_parser/html_parser';
 import { UrlResolver } from './url_resolver';
 import { SyncAsyncResult } from './util';
-import { XHR } from './xhr';
+import { ResourceLoader } from './resource_loader';
 export declare class DirectiveNormalizer {
-    private _xhr;
+    private _resourceLoader;
     private _urlResolver;
     private _htmlParser;
     private _config;
-    private _xhrCache;
-    constructor(_xhr: XHR, _urlResolver: UrlResolver, _htmlParser: HtmlParser, _config: CompilerConfig);
+    private _resourceLoaderCache;
+    constructor(_resourceLoader: ResourceLoader, _urlResolver: UrlResolver, _htmlParser: HtmlParser, _config: CompilerConfig);
     clearCache(): void;
     clearCacheFor(normalizedDirective: CompileDirectiveMetadata): void;
     private _fetch(url);

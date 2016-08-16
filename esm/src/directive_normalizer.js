@@ -17,28 +17,28 @@ import { extractStyleUrls, isStyleUrlResolvable } from './style_url_resolver';
 import { PreparsedElementType, preparseElement } from './template_parser/template_preparser';
 import { UrlResolver } from './url_resolver';
 import { SyncAsyncResult } from './util';
-import { XHR } from './xhr';
+import { ResourceLoader } from './resource_loader';
 export class DirectiveNormalizer {
-    constructor(_xhr, _urlResolver, _htmlParser, _config) {
-        this._xhr = _xhr;
+    constructor(_resourceLoader, _urlResolver, _htmlParser, _config) {
+        this._resourceLoader = _resourceLoader;
         this._urlResolver = _urlResolver;
         this._htmlParser = _htmlParser;
         this._config = _config;
-        this._xhrCache = new Map();
+        this._resourceLoaderCache = new Map();
     }
-    clearCache() { this._xhrCache.clear(); }
+    clearCache() { this._resourceLoaderCache.clear(); }
     clearCacheFor(normalizedDirective) {
         if (!normalizedDirective.isComponent) {
             return;
         }
-        this._xhrCache.delete(normalizedDirective.template.templateUrl);
-        normalizedDirective.template.externalStylesheets.forEach((stylesheet) => { this._xhrCache.delete(stylesheet.moduleUrl); });
+        this._resourceLoaderCache.delete(normalizedDirective.template.templateUrl);
+        normalizedDirective.template.externalStylesheets.forEach((stylesheet) => { this._resourceLoaderCache.delete(stylesheet.moduleUrl); });
     }
     _fetch(url) {
-        var result = this._xhrCache.get(url);
+        var result = this._resourceLoaderCache.get(url);
         if (!result) {
-            result = this._xhr.get(url);
-            this._xhrCache.set(url, result);
+            result = this._resourceLoader.get(url);
+            this._resourceLoaderCache.set(url, result);
         }
         return result;
     }
@@ -157,7 +157,7 @@ DirectiveNormalizer.decorators = [
 ];
 /** @nocollapse */
 DirectiveNormalizer.ctorParameters = [
-    { type: XHR, },
+    { type: ResourceLoader, },
     { type: UrlResolver, },
     { type: HtmlParser, },
     { type: CompilerConfig, },
