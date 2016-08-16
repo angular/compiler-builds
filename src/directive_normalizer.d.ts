@@ -1,9 +1,9 @@
 import { CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMetadata, CompileTypeMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { HtmlParser } from './ml_parser/html_parser';
+import { ResourceLoader } from './resource_loader';
 import { UrlResolver } from './url_resolver';
 import { SyncAsyncResult } from './util';
-import { ResourceLoader } from './resource_loader';
 export declare class DirectiveNormalizer {
     private _resourceLoader;
     private _urlResolver;

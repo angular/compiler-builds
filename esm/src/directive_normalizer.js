@@ -13,11 +13,11 @@ import { isBlank, isPresent } from './facade/lang';
 import * as html from './ml_parser/ast';
 import { HtmlParser } from './ml_parser/html_parser';
 import { InterpolationConfig } from './ml_parser/interpolation_config';
+import { ResourceLoader } from './resource_loader';
 import { extractStyleUrls, isStyleUrlResolvable } from './style_url_resolver';
 import { PreparsedElementType, preparseElement } from './template_parser/template_preparser';
 import { UrlResolver } from './url_resolver';
 import { SyncAsyncResult } from './util';
-import { ResourceLoader } from './resource_loader';
 export class DirectiveNormalizer {
     constructor(_resourceLoader, _urlResolver, _htmlParser, _config) {
         this._resourceLoader = _resourceLoader;
