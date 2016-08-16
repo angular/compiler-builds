@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewType } from '../../core_private';
-import { CompileIdentifierMetadata, CompileTokenMap } from '../compile_metadata';
+import { CompileIdentifierMap, CompileIdentifierMetadata } from '../compile_metadata';
 import { ListWrapper } from '../facade/collection';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
@@ -65,7 +65,7 @@ export class CompileView {
         }
         this.componentContext =
             getPropertyInView(o.THIS_EXPR.prop('context'), this, this.componentView);
-        var viewQueries = new CompileTokenMap();
+        var viewQueries = new CompileIdentifierMap();
         if (this.viewType === ViewType.COMPONENT) {
             var directiveInstance = o.THIS_EXPR.prop('context');
             ListWrapper.forEachWithIndex(this.component.viewQueries, (queryMeta, queryIndex) => {
@@ -144,7 +144,6 @@ export class CompileView {
         return proxyExpr.callFn(values);
     }
     afterNodes() {
-        this.pipes.forEach((pipe) => pipe.create());
         this.viewQueries.values().forEach((queries) => queries.forEach((query) => query.afterChildren(this.createMethod, this.updateViewQueriesMethod)));
     }
 }

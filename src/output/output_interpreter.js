@@ -6,11 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var async_1 = require('../facade/async');
+var core_1 = require('@angular/core');
 var collection_1 = require('../facade/collection');
-var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
-var dart_emitter_1 = require('./dart_emitter');
 var o = require('./output_ast');
 var ts_emitter_1 = require('./ts_emitter');
 function interpretStatements(statements, resultVar) {
@@ -94,9 +92,7 @@ function createDynamicClass(_classStmt, _ctx, _visitor) {
 var StatementInterpreter = (function () {
     function StatementInterpreter() {
     }
-    StatementInterpreter.prototype.debugAst = function (ast) {
-        return lang_1.IS_DART ? dart_emitter_1.debugOutputAstAsDart(ast) : ts_emitter_1.debugOutputAstAsTypeScript(ast);
-    };
+    StatementInterpreter.prototype.debugAst = function (ast) { return ts_emitter_1.debugOutputAstAsTypeScript(ast); };
     StatementInterpreter.prototype.visitDeclareVarStmt = function (stmt, ctx) {
         ctx.vars.set(stmt.name, stmt.value.visitExpression(this, ctx));
         return null;
@@ -111,7 +107,7 @@ var StatementInterpreter = (function () {
             }
             currCtx = currCtx.parent;
         }
-        throw new exceptions_1.BaseException("Not declared variable " + expr.name);
+        throw new core_1.BaseException("Not declared variable " + expr.name);
     };
     StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
         var varName = ast.name;
@@ -128,7 +124,7 @@ var StatementInterpreter = (function () {
                     varName = CATCH_STACK_VAR;
                     break;
                 default:
-                    throw new exceptions_1.BaseException("Unknown builtin variable " + ast.builtin);
+                    throw new core_1.BaseException("Unknown builtin variable " + ast.builtin);
             }
         }
         var currCtx = ctx;
@@ -138,7 +134,7 @@ var StatementInterpreter = (function () {
             }
             currCtx = currCtx.parent;
         }
-        throw new exceptions_1.BaseException("Not declared variable " + varName);
+        throw new core_1.BaseException("Not declared variable " + varName);
     };
     StatementInterpreter.prototype.visitWriteKeyExpr = function (expr, ctx) {
         var receiver = expr.receiver.visitExpression(this, ctx);
@@ -163,18 +159,13 @@ var StatementInterpreter = (function () {
                     result = collection_1.ListWrapper.concat(receiver, args[0]);
                     break;
                 case o.BuiltinMethod.SubscribeObservable:
-                    result = async_1.ObservableWrapper.subscribe(receiver, args[0]);
+                    result = receiver.subscribe({ next: args[0] });
                     break;
-                case o.BuiltinMethod.bind:
-                    if (lang_1.IS_DART) {
-                        result = receiver;
-                    }
-                    else {
-                        result = receiver.bind(args[0]);
-                    }
+                case o.BuiltinMethod.Bind:
+                    result = receiver.bind(args[0]);
                     break;
                 default:
-                    throw new exceptions_1.BaseException("Unknown builtin method " + expr.builtin);
+                    throw new core_1.BaseException("Unknown builtin method " + expr.builtin);
             }
         }
         else {
@@ -297,7 +288,7 @@ var StatementInterpreter = (function () {
             case o.BinaryOperator.BiggerEquals:
                 return lhs() >= rhs();
             default:
-                throw new exceptions_1.BaseException("Unknown operator " + ast.operator);
+                throw new core_1.BaseException("Unknown operator " + ast.operator);
         }
     };
     StatementInterpreter.prototype.visitReadPropExpr = function (ast, ctx) {

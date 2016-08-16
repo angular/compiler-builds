@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var exceptions_1 = require('../facade/exceptions');
+var core_1 = require('@angular/core');
 var lang_1 = require('../facade/lang');
 var abstract_emitter_1 = require('./abstract_emitter');
 var o = require('./output_ast');
@@ -37,7 +37,7 @@ function debugOutputAstAsTypeScript(ast) {
             ast.visitType(converter, ctx);
         }
         else {
-            throw new exceptions_1.BaseException("Don't know how to print debug info for " + ast);
+            throw new core_1.BaseException("Don't know how to print debug info for " + ast);
         }
     });
     return ctx.toSource();
@@ -242,7 +242,7 @@ var _TsEmitterVisitor = (function (_super) {
                 typeStr = 'string';
                 break;
             default:
-                throw new exceptions_1.BaseException("Unsupported builtin type " + type.name);
+                throw new core_1.BaseException("Unsupported builtin type " + type.name);
         }
         ctx.print(typeStr);
         return null;
@@ -271,11 +271,11 @@ var _TsEmitterVisitor = (function (_super) {
             case o.BuiltinMethod.SubscribeObservable:
                 name = 'subscribe';
                 break;
-            case o.BuiltinMethod.bind:
+            case o.BuiltinMethod.Bind:
                 name = 'bind';
                 break;
             default:
-                throw new exceptions_1.BaseException("Unknown builtin method: " + method);
+                throw new core_1.BaseException("Unknown builtin method: " + method);
         }
         return name;
     };
@@ -290,7 +290,7 @@ var _TsEmitterVisitor = (function (_super) {
     _TsEmitterVisitor.prototype._visitIdentifier = function (value, typeParams, ctx) {
         var _this = this;
         if (lang_1.isBlank(value.name)) {
-            throw new exceptions_1.BaseException("Internal error: unknown identifier " + value);
+            throw new core_1.BaseException("Internal error: unknown identifier " + value);
         }
         if (lang_1.isPresent(value.moduleUrl) && value.moduleUrl != this._moduleUrl) {
             var prefix = this.importsWithPrefixes.get(value.moduleUrl);

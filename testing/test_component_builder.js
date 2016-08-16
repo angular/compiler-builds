@@ -13,6 +13,8 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 var core_1 = require('@angular/core');
 var testing_1 = require('@angular/core/testing');
+var core_private_testing_1 = require('../core_private_testing');
+// export {ViewMetadata} from '../core_private';
 var index_1 = require('../index');
 var collection_1 = require('../src/facade/collection');
 var lang_1 = require('../src/facade/lang');
@@ -88,12 +90,11 @@ var OverridingTestComponentBuilder = (function (_super) {
     };
     OverridingTestComponentBuilder.prototype._applyMetadataOverrides = function () {
         var mockDirectiveResolver = this._injector.get(index_1.DirectiveResolver);
-        var mockViewResolver = this._injector.get(index_1.ViewResolver);
-        this._viewOverrides.forEach(function (view, type) { mockViewResolver.setView(type, view); });
-        this._templateOverrides.forEach(function (template, type) { return mockViewResolver.setInlineTemplate(type, template); });
-        this._animationOverrides.forEach(function (animationsEntry, type) { return mockViewResolver.setAnimations(type, animationsEntry); });
+        this._viewOverrides.forEach(function (view, type) { mockDirectiveResolver.setView(type, view); });
+        this._templateOverrides.forEach(function (template, type) { return mockDirectiveResolver.setInlineTemplate(type, template); });
+        this._animationOverrides.forEach(function (animationsEntry, type) { return mockDirectiveResolver.setAnimations(type, animationsEntry); });
         this._directiveOverrides.forEach(function (overrides, component) {
-            overrides.forEach(function (to, from) { mockViewResolver.overrideViewDirective(component, from, to); });
+            overrides.forEach(function (to, from) { mockDirectiveResolver.overrideViewDirective(component, from, to); });
         });
         this._bindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setProvidersOverride(type, bindings); });
         this._viewBindingsOverrides.forEach(function (bindings, type) { return mockDirectiveResolver.setViewProvidersOverride(type, bindings); });
@@ -107,6 +108,6 @@ var OverridingTestComponentBuilder = (function (_super) {
         { type: core_1.Injector, decorators: [{ type: core_1.Inject, args: [testing_1.TestBed,] },] },
     ];
     return OverridingTestComponentBuilder;
-}(testing_1.TestComponentBuilder));
+}(core_private_testing_1.TestComponentBuilder));
 exports.OverridingTestComponentBuilder = OverridingTestComponentBuilder;
 //# sourceMappingURL=test_component_builder.js.map

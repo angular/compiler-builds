@@ -7,9 +7,8 @@
  */
 import { Injectable } from '@angular/core';
 import * as chars from '../chars';
-import { ListWrapper } from '../facade/collection';
-import { RegExpWrapper, StringWrapper, escapeRegExp, isBlank, isPresent } from '../facade/lang';
-import { DEFAULT_INTERPOLATION_CONFIG } from '../interpolation_config';
+import { StringWrapper, escapeRegExp, isBlank, isPresent } from '../facade/lang';
+import { DEFAULT_INTERPOLATION_CONFIG } from '../ml_parser/interpolation_config';
 import { ASTWithSource, Binary, BindingPipe, Chain, Conditional, EmptyExpr, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding } from './ast';
 import { EOF, Lexer, TokenType, isIdentifier, isQuote } from './lexer';
 export class SplitInterpolation {
@@ -26,8 +25,8 @@ export class TemplateBindingParseResult {
     }
 }
 function _createInterpolateRegExp(config) {
-    const regexp = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
-    return RegExpWrapper.create(regexp, 'g');
+    const pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
+    return new RegExp(pattern, 'g');
 }
 export class Parser {
     constructor(_lexer) {
@@ -36,8 +35,8 @@ export class Parser {
     }
     parseAction(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this._checkNoInterpolation(input, location, interpolationConfig);
-        var tokens = this._lexer.tokenize(this._stripComments(input));
-        var ast = new _ParseAST(input, location, tokens, true, this.errors).parseChain();
+        const tokens = this._lexer.tokenize(this._stripComments(input));
+        const ast = new _ParseAST(input, location, tokens, true, this.errors).parseChain();
         return new ASTWithSource(ast, input, location, this.errors);
     }
     parseBinding(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
@@ -99,9 +98,9 @@ export class Parser {
         if (parts.length <= 1) {
             return null;
         }
-        var strings = [];
-        var expressions = [];
-        for (var i = 0; i < parts.length; i++) {
+        const strings = [];
+        const expressions = [];
+        for (let i = 0; i < parts.length; i++) {
             var part = parts[i];
             if (i % 2 === 0) {
                 // fixed string
@@ -120,14 +119,14 @@ export class Parser {
         return new ASTWithSource(new LiteralPrimitive(new ParseSpan(0, isBlank(input) ? 0 : input.length), input), input, location, this.errors);
     }
     _stripComments(input) {
-        let i = this._commentStart(input);
+        const i = this._commentStart(input);
         return isPresent(i) ? input.substring(0, i).trim() : input;
     }
     _commentStart(input) {
         var outerQuote = null;
-        for (var i = 0; i < input.length - 1; i++) {
-            let char = StringWrapper.charCodeAt(input, i);
-            let nextChar = StringWrapper.charCodeAt(input, i + 1);
+        for (let i = 0; i < input.length - 1; i++) {
+            const char = StringWrapper.charCodeAt(input, i);
+            const nextChar = StringWrapper.charCodeAt(input, i + 1);
             if (char === chars.$SLASH && nextChar == chars.$SLASH && isBlank(outerQuote))
                 return i;
             if (outerQuote === char) {
@@ -452,9 +451,13 @@ export class _ParseAST {
             this.expectCharacter(chars.$RPAREN);
             return result;
         }
-        else if (this.next.isKeywordNull() || this.next.isKeywordUndefined()) {
+        else if (this.next.isKeywordNull()) {
             this.advance();
             return new LiteralPrimitive(this.span(start), null);
+        }
+        else if (this.next.isKeywordUndefined()) {
+            this.advance();
+            return new LiteralPrimitive(this.span(start), void 0);
         }
         else if (this.next.isKeywordTrue()) {
             this.advance();
@@ -463,6 +466,10 @@ export class _ParseAST {
         else if (this.next.isKeywordFalse()) {
             this.advance();
             return new LiteralPrimitive(this.span(start), false);
+        }
+        else if (this.next.isKeywordThis()) {
+            this.advance();
+            return new ImplicitReceiver(this.span(start));
         }
         else if (this.optionalCharacter(chars.$LBRACKET)) {
             this.rbracketsExpected++;
@@ -697,13 +704,7 @@ class SimpleExpressionChecker {
     visitPipe(ast, context) { this.simple = false; }
     visitKeyedRead(ast, context) { this.simple = false; }
     visitKeyedWrite(ast, context) { this.simple = false; }
-    visitAll(asts) {
-        var res = ListWrapper.createFixedSize(asts.length);
-        for (var i = 0; i < asts.length; ++i) {
-            res[i] = asts[i].visit(this);
-        }
-        return res;
-    }
+    visitAll(asts) { return asts.map(node => node.visit(this)); }
     visitChain(ast, context) { this.simple = false; }
     visitQuote(ast, context) { this.simple = false; }
 }

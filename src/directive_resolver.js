@@ -23,7 +23,8 @@ var DirectiveResolver = (function () {
     /**
      * Return {@link DirectiveMetadata} for a given `Type`.
      */
-    DirectiveResolver.prototype.resolve = function (type) {
+    DirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         var typeMetadata = this._reflector.annotations(core_1.resolveForwardRef(type));
         if (lang_1.isPresent(typeMetadata)) {
             var metadata = typeMetadata.find(_isDirectiveMetadata);
@@ -32,7 +33,10 @@ var DirectiveResolver = (function () {
                 return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
             }
         }
-        throw new exceptions_1.BaseException("No Directive annotation found on " + lang_1.stringify(type));
+        if (throwIfNotFound) {
+            throw new exceptions_1.BaseException("No Directive annotation found on " + lang_1.stringify(type));
+        }
+        return null;
     };
     DirectiveResolver.prototype._mergeWithPropertyMetadata = function (dm, propertyMetadata, directiveType) {
         var inputs = [];
@@ -121,7 +125,16 @@ var DirectiveResolver = (function () {
                 changeDetection: dm.changeDetection,
                 providers: dm.providers,
                 viewProviders: dm.viewProviders,
-                precompile: dm.precompile
+                entryComponents: dm.entryComponents,
+                directives: dm.directives,
+                pipes: dm.pipes,
+                template: dm.template,
+                templateUrl: dm.templateUrl,
+                styles: dm.styles,
+                styleUrls: dm.styleUrls,
+                encapsulation: dm.encapsulation,
+                animations: dm.animations,
+                interpolation: dm.interpolation
             });
         }
         else {

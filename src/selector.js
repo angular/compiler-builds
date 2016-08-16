@@ -6,18 +6,17 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var collection_1 = require('../src/facade/collection');
-var exceptions_1 = require('../src/facade/exceptions');
-var lang_1 = require('../src/facade/lang');
+var core_1 = require('@angular/core');
+var collection_1 = require('./facade/collection');
+var lang_1 = require('./facade/lang');
 var _EMPTY_ATTR_VALUE = '';
-// TODO: Can't use `const` here as
-// in Dart this is not transpiled into `final` yet...
-var _SELECTOR_REGEXP = lang_1.RegExpWrapper.create('(\\:not\\()|' +
+var _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
     '(?:\\[([-\\w*]+)(?:=([^\\]]*))?\\])|' +
     '(\\))|' +
-    '(\\s*,\\s*)'); // ","
+    '(\\s*,\\s*)', // ","
+'g');
 /**
  * A css selector contains an element name,
  * css classes and attribute/value pairs with the purpose
@@ -40,14 +39,14 @@ var CssSelector = (function () {
             res.push(cssSel);
         };
         var cssSelector = new CssSelector();
-        var matcher = lang_1.RegExpWrapper.matcher(_SELECTOR_REGEXP, selector);
         var match;
         var current = cssSelector;
         var inNot = false;
-        while (lang_1.isPresent(match = lang_1.RegExpMatcherWrapper.next(matcher))) {
+        _SELECTOR_REGEXP.lastIndex = 0;
+        while (lang_1.isPresent(match = _SELECTOR_REGEXP.exec(selector))) {
             if (lang_1.isPresent(match[1])) {
                 if (inNot) {
-                    throw new exceptions_1.BaseException('Nesting :not is not allowed in a selector');
+                    throw new core_1.BaseException('Nesting :not is not allowed in a selector');
                 }
                 inNot = true;
                 current = new CssSelector();
@@ -68,7 +67,7 @@ var CssSelector = (function () {
             }
             if (lang_1.isPresent(match[7])) {
                 if (inNot) {
-                    throw new exceptions_1.BaseException('Multiple selectors in :not are not supported');
+                    throw new core_1.BaseException('Multiple selectors in :not are not supported');
                 }
                 _addResult(results, cssSelector);
                 cssSelector = current = new CssSelector();

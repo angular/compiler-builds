@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var exceptions_1 = require('../facade/exceptions');
+var core_1 = require('@angular/core');
 var lang_1 = require('../facade/lang');
 var abstract_emitter_1 = require('./abstract_emitter');
 var o = require('./output_ast');
@@ -77,7 +77,7 @@ var AbstractJsEmitterVisitor = (function (_super) {
             ctx.print('self');
         }
         else if (ast.builtin === o.BuiltinVar.Super) {
-            throw new exceptions_1.BaseException("'super' needs to be handled at a parent ast node, not at the variable level!");
+            throw new core_1.BaseException("'super' needs to be handled at a parent ast node, not at the variable level!");
         }
         else {
             _super.prototype.visitReadVarExpr.call(this, ast, ctx);
@@ -157,11 +157,11 @@ var AbstractJsEmitterVisitor = (function (_super) {
             case o.BuiltinMethod.SubscribeObservable:
                 name = 'subscribe';
                 break;
-            case o.BuiltinMethod.bind:
+            case o.BuiltinMethod.Bind:
                 name = 'bind';
                 break;
             default:
-                throw new exceptions_1.BaseException("Unknown builtin method: " + method);
+                throw new core_1.BaseException("Unknown builtin method: " + method);
         }
         return name;
     };

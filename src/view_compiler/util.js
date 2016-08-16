@@ -6,10 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var exceptions_1 = require('../facade/exceptions');
+var core_1 = require('@angular/core');
 var lang_1 = require('../facade/lang');
-var o = require('../output/output_ast');
 var identifiers_1 = require('../identifiers');
+var o = require('../output/output_ast');
 var util_1 = require('../util');
 function getPropertyInView(property, callingView, definedView) {
     if (callingView === definedView) {
@@ -23,7 +23,7 @@ function getPropertyInView(property, callingView, definedView) {
             viewProp = viewProp.prop('parent');
         }
         if (currView !== definedView) {
-            throw new exceptions_1.BaseException("Internal error: Could not calculate a property in a parent view: " + property);
+            throw new core_1.BaseException("Internal error: Could not calculate a property in a parent view: " + property);
         }
         if (property instanceof o.ReadPropExpr) {
             var readPropExpr_1 = property;
@@ -77,7 +77,7 @@ function createPureProxy(fn, argCount, pureProxyProp, view) {
     view.fields.push(new o.ClassField(pureProxyProp.name, null));
     var pureProxyId = argCount < identifiers_1.Identifiers.pureProxies.length ? identifiers_1.Identifiers.pureProxies[argCount] : null;
     if (lang_1.isBlank(pureProxyId)) {
-        throw new exceptions_1.BaseException("Unsupported number of argument for pure functions: " + argCount);
+        throw new core_1.BaseException("Unsupported number of argument for pure functions: " + argCount);
     }
     view.createMethod.addStmt(o.THIS_EXPR.prop(pureProxyProp.name).set(o.importExpr(pureProxyId).callFn([fn])).toStmt());
 }

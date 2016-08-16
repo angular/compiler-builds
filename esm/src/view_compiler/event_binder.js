@@ -5,8 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ListWrapper, StringMapWrapper } from '../facade/collection';
+import { StringMapWrapper } from '../facade/collection';
 import { StringWrapper, isBlank, isPresent } from '../facade/lang';
+import { identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { CompileBinding } from './compile_binding';
 import { CompileMethod } from './compile_method';
@@ -39,7 +40,7 @@ export class CompileEventListener {
         this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
         var context = isPresent(directiveInstance) ? directiveInstance :
             this.compileElement.view.componentContext;
-        var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler);
+        var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
         var lastIndex = actionStmts.length - 1;
         if (lastIndex >= 0) {
             var lastStatement = actionStmts[lastIndex];
@@ -70,7 +71,7 @@ export class CompileEventListener {
     }
     listenToRenderer() {
         var listenExpr;
-        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.bind, [o.THIS_EXPR])]);
+        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
         if (isPresent(this.eventTarget)) {
             listenExpr = ViewProperties.renderer.callMethod('listenGlobal', [o.literal(this.eventTarget), o.literal(this.eventName), eventListener]);
         }
@@ -85,7 +86,7 @@ export class CompileEventListener {
     listenToDirective(directiveInstance, observablePropName) {
         var subscription = o.variable(`subscription_${this.compileElement.view.subscriptions.length}`);
         this.compileElement.view.subscriptions.push(subscription);
-        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.bind, [o.THIS_EXPR])]);
+        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
         this.compileElement.view.createMethod.addStmt(subscription
             .set(directiveInstance.prop(observablePropName)
             .callMethod(o.BuiltinMethod.SubscribeObservable, [eventListener]))
@@ -99,8 +100,8 @@ export function collectEventListeners(hostEvents, dirs, compileElement) {
         var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
         listener.addAction(hostEvent, null, null);
     });
-    ListWrapper.forEachWithIndex(dirs, (directiveAst, i) => {
-        var directiveInstance = compileElement.directiveInstances[i];
+    dirs.forEach((directiveAst) => {
+        var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
         directiveAst.hostEvents.forEach((hostEvent) => {
             compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
             var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);

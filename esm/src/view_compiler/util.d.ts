@@ -1,5 +1,5 @@
+import { CompileDirectiveMetadata, CompileTokenMetadata } from '../compile_metadata';
 import * as o from '../output/output_ast';
-import { CompileTokenMetadata, CompileDirectiveMetadata } from '../compile_metadata';
 import { CompileView } from './compile_view';
 export declare function getPropertyInView(property: o.Expression, callingView: CompileView, definedView: CompileView): o.Expression;
 export declare function injectFromViewParentInjector(token: CompileTokenMetadata, optional: boolean): o.Expression;

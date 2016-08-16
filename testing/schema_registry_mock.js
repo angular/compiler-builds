@@ -13,7 +13,7 @@ var MockSchemaRegistry = (function () {
         this.existingProperties = existingProperties;
         this.attrPropMapping = attrPropMapping;
     }
-    MockSchemaRegistry.prototype.hasProperty = function (tagName, property) {
+    MockSchemaRegistry.prototype.hasProperty = function (tagName, property, schemas) {
         var result = this.existingProperties[property];
         return lang_1.isPresent(result) ? result : true;
     };
@@ -24,6 +24,7 @@ var MockSchemaRegistry = (function () {
         var result = this.attrPropMapping[attrName];
         return lang_1.isPresent(result) ? result : attrName;
     };
+    MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
     return MockSchemaRegistry;
 }());
 exports.MockSchemaRegistry = MockSchemaRegistry;
