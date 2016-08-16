@@ -109,7 +109,7 @@ function analyzeAppProvidersForDeprecatedConfiguration(appProviders) {
         useJit = compilerConfig.useJit;
         useDebug = compilerConfig.genDebugInfo;
         defaultEncapsulation = compilerConfig.defaultEncapsulation;
-        deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use the \"compilerOptions\" parameter of \"bootstrap()\" or use a custom \"CompilerFactory\" platform provider instead.");
+        deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use \"compilerOptions\" use a custom \"CompilerFactory\" platform provider instead.");
     }
     var xhr = tempInj.get(xhr_2.XHR, null);
     if (xhr) {

@@ -17123,7 +17123,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             useJit = compilerConfig.useJit;
             useDebug = compilerConfig.genDebugInfo;
             defaultEncapsulation = compilerConfig.defaultEncapsulation;
-            deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use the \"compilerOptions\" parameter of \"bootstrap()\" or use a custom \"CompilerFactory\" platform provider instead.");
+            deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use \"compilerOptions\" use a custom \"CompilerFactory\" platform provider instead.");
         }
         var xhr = tempInj.get(XHR, null);
         if (xhr) {
