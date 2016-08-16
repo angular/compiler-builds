@@ -5,9 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
+import { BaseException } from '../facade/exceptions';
+import { RegExpWrapper, isPresent } from '../facade/lang';
 // asset:<package-name>/<realm>/<path-to-module>
-var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
+var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/g;
 /**
  * Interface that defines how import statements should be generated.
  */
@@ -21,8 +22,8 @@ export class AssetUrl {
         this.modulePath = modulePath;
     }
     static parse(url, allowNonMatching = true) {
-        const match = url.match(_ASSET_URL_RE);
-        if (match !== null) {
+        var match = RegExpWrapper.firstMatch(_ASSET_URL_RE, url);
+        if (isPresent(match)) {
             return new AssetUrl(match[1], match[2], match[3]);
         }
         if (allowNonMatching) {

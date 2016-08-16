@@ -6,13 +6,13 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
 var core_private_1 = require('../../core_private');
 var collection_1 = require('../facade/collection');
+var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
-var t = require('../template_parser/template_ast');
+var t = require('../template_ast');
 var animation_ast_1 = require('./animation_ast');
 var animation_parser_1 = require('./animation_parser');
 var CompiledAnimation = (function () {
@@ -59,7 +59,7 @@ var AnimationCompiler = (function () {
         if (groupedErrors.length > 0) {
             var errorMessageStr = "Animation parsing for " + component.type.name + " has failed due to the following errors:";
             groupedErrors.forEach(function (error) { return errorMessageStr += "\n- " + error; });
-            throw new core_1.BaseException(errorMessageStr);
+            throw new exceptions_1.BaseException(errorMessageStr);
         }
         return compiledAnimations;
     };

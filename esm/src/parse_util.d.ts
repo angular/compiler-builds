@@ -14,8 +14,7 @@ export declare class ParseSourceFile {
 export declare class ParseSourceSpan {
     start: ParseLocation;
     end: ParseLocation;
-    details: string;
-    constructor(start: ParseLocation, end: ParseLocation, details?: string);
+    constructor(start: ParseLocation, end: ParseLocation);
     toString(): string;
 }
 export declare enum ParseErrorLevel {

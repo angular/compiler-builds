@@ -13,7 +13,7 @@ var NOT_THROW_ON_CHANGES = o.not(DetectChangesVars.throwOnChange);
 export function bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement) {
     var view = compileElement.view;
     var detectChangesInInputsMethod = view.detectChangesInInputsMethod;
-    var lifecycleHooks = directiveAst.directive.type.lifecycleHooks;
+    var lifecycleHooks = directiveAst.directive.lifecycleHooks;
     if (lifecycleHooks.indexOf(LifecycleHooks.OnChanges) !== -1 && directiveAst.inputs.length > 0) {
         detectChangesInInputsMethod.addStmt(new o.IfStmt(DetectChangesVars.changes.notIdentical(o.NULL_EXPR), [directiveInstance.callMethod('ngOnChanges', [DetectChangesVars.changes]).toStmt()]));
     }
@@ -26,7 +26,7 @@ export function bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, direc
 }
 export function bindDirectiveAfterContentLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
     var view = compileElement.view;
-    var lifecycleHooks = directiveMeta.type.lifecycleHooks;
+    var lifecycleHooks = directiveMeta.lifecycleHooks;
     var afterContentLifecycleCallbacksMethod = view.afterContentLifecycleCallbacksMethod;
     afterContentLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
     if (lifecycleHooks.indexOf(LifecycleHooks.AfterContentInit) !== -1) {
@@ -38,7 +38,7 @@ export function bindDirectiveAfterContentLifecycleCallbacks(directiveMeta, direc
 }
 export function bindDirectiveAfterViewLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
     var view = compileElement.view;
-    var lifecycleHooks = directiveMeta.type.lifecycleHooks;
+    var lifecycleHooks = directiveMeta.lifecycleHooks;
     var afterViewLifecycleCallbacksMethod = view.afterViewLifecycleCallbacksMethod;
     afterViewLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
     if (lifecycleHooks.indexOf(LifecycleHooks.AfterViewInit) !== -1) {
@@ -48,16 +48,16 @@ export function bindDirectiveAfterViewLifecycleCallbacks(directiveMeta, directiv
         afterViewLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterViewChecked', []).toStmt());
     }
 }
-export function bindInjectableDestroyLifecycleCallbacks(provider, providerInstance, compileElement) {
+export function bindDirectiveDestroyLifecycleCallbacks(directiveMeta, directiveInstance, compileElement) {
     var onDestroyMethod = compileElement.view.destroyMethod;
     onDestroyMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-    if (provider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
-        onDestroyMethod.addStmt(providerInstance.callMethod('ngOnDestroy', []).toStmt());
+    if (directiveMeta.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
+        onDestroyMethod.addStmt(directiveInstance.callMethod('ngOnDestroy', []).toStmt());
     }
 }
 export function bindPipeDestroyLifecycleCallbacks(pipeMeta, pipeInstance, view) {
     var onDestroyMethod = view.destroyMethod;
-    if (pipeMeta.type.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
+    if (pipeMeta.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
         onDestroyMethod.addStmt(pipeInstance.callMethod('ngOnDestroy', []).toStmt());
     }
 }

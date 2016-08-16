@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
+import { BaseException } from '../facade/exceptions';
 import { isPresent } from '../facade/lang';
 import { AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR } from './abstract_emitter';
 import * as o from './output_ast';
@@ -149,7 +149,7 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
             case o.BuiltinMethod.SubscribeObservable:
                 name = 'subscribe';
                 break;
-            case o.BuiltinMethod.Bind:
+            case o.BuiltinMethod.bind:
                 name = 'bind';
                 break;
             default:

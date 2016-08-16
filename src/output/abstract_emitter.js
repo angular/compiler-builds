@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
+var exceptions_1 = require('../facade/exceptions');
 var lang_1 = require('../facade/lang');
 var o = require('./output_ast');
 var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
@@ -195,6 +195,7 @@ var AbstractEmitterVisitor = (function () {
             name = this.getBuiltinMethodName(expr.builtin);
             if (lang_1.isBlank(name)) {
                 // some builtins just mean to skip the call.
+                // e.g. `bind` in Dart.
                 return null;
             }
         }
@@ -227,7 +228,7 @@ var AbstractEmitterVisitor = (function () {
                     varName = exports.CATCH_STACK_VAR.name;
                     break;
                 default:
-                    throw new core_1.BaseException("Unknown builtin variable " + ast.builtin);
+                    throw new exceptions_1.BaseException("Unknown builtin variable " + ast.builtin);
             }
         }
         ctx.print(varName);
@@ -318,7 +319,7 @@ var AbstractEmitterVisitor = (function () {
                 opStr = '>=';
                 break;
             default:
-                throw new core_1.BaseException("Unknown operator " + ast.operator);
+                throw new exceptions_1.BaseException("Unknown operator " + ast.operator);
         }
         ctx.print("(");
         ast.lhs.visitExpression(this, ctx);

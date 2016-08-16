@@ -18,7 +18,7 @@ export var TokenType;
     TokenType[TokenType["Number"] = 5] = "Number";
     TokenType[TokenType["Error"] = 6] = "Error";
 })(TokenType || (TokenType = {}));
-const KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
+const KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else'];
 export class Lexer {
     tokenize(text) {
         const scanner = new _Scanner(text);
@@ -62,7 +62,6 @@ export class Token {
     }
     isKeywordTrue() { return this.type == TokenType.Keyword && this.strValue == 'true'; }
     isKeywordFalse() { return this.type == TokenType.Keyword && this.strValue == 'false'; }
-    isKeywordThis() { return this.type == TokenType.Keyword && this.strValue == 'this'; }
     isError() { return this.type == TokenType.Error; }
     toNumber() { return this.type == TokenType.Number ? this.numValue : -1; }
     toString() {

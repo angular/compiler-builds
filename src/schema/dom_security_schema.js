@@ -37,7 +37,7 @@ registerContext(core_1.SecurityContext.URL, [
     '*|formAction', 'area|href', 'area|ping', 'audio|src', 'a|href',
     'a|ping', 'blockquote|cite', 'body|background', 'del|cite', 'form|action',
     'img|src', 'img|srcset', 'input|src', 'ins|cite', 'q|cite',
-    'source|src', 'source|srcset', 'track|src', 'video|poster', 'video|src',
+    'source|src', 'source|srcset', 'video|poster', 'video|src',
 ]);
 registerContext(core_1.SecurityContext.RESOURCE_URL, [
     'applet|code',
@@ -53,5 +53,6 @@ registerContext(core_1.SecurityContext.RESOURCE_URL, [
     'object|codebase',
     'object|data',
     'script|src',
+    'track|src',
 ]);
 //# sourceMappingURL=dom_security_schema.js.map

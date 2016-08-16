@@ -222,7 +222,7 @@ export var BuiltinMethod;
 (function (BuiltinMethod) {
     BuiltinMethod[BuiltinMethod["ConcatArray"] = 0] = "ConcatArray";
     BuiltinMethod[BuiltinMethod["SubscribeObservable"] = 1] = "SubscribeObservable";
-    BuiltinMethod[BuiltinMethod["Bind"] = 2] = "Bind";
+    BuiltinMethod[BuiltinMethod["bind"] = 2] = "bind";
 })(BuiltinMethod || (BuiltinMethod = {}));
 export class InvokeMethodExpr extends Expression {
     constructor(receiver, method, args, type = null) {

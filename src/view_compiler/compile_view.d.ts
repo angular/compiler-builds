@@ -7,7 +7,7 @@
  */
 import { ViewType } from '../../core_private';
 import { CompiledAnimation } from '../animation/animation_compiler';
-import { CompileDirectiveMetadata, CompileIdentifierMap, CompilePipeMetadata, CompileTokenMetadata } from '../compile_metadata';
+import { CompileDirectiveMetadata, CompilePipeMetadata, CompileTokenMap } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import * as o from '../output/output_ast';
 import { CompileBinding } from './compile_binding';
@@ -26,7 +26,7 @@ export declare class CompileView implements NameResolver {
     declarationElement: CompileElement;
     templateVariableBindings: string[][];
     viewType: ViewType;
-    viewQueries: CompileIdentifierMap<CompileTokenMetadata, CompileQuery[]>;
+    viewQueries: CompileTokenMap<CompileQuery[]>;
     nodes: CompileNode[];
     rootNodesOrAppElements: o.Expression[];
     bindings: CompileBinding[];

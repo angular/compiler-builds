@@ -8,8 +8,9 @@
 "use strict";
 var core_1 = require('@angular/core');
 var chars = require('../chars');
+var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
-var interpolation_config_1 = require('../ml_parser/interpolation_config');
+var interpolation_config_1 = require('../interpolation_config');
 var ast_1 = require('./ast');
 var lexer_1 = require('./lexer');
 var SplitInterpolation = (function () {
@@ -30,8 +31,8 @@ var TemplateBindingParseResult = (function () {
 }());
 exports.TemplateBindingParseResult = TemplateBindingParseResult;
 function _createInterpolateRegExp(config) {
-    var pattern = lang_1.escapeRegExp(config.start) + '([\\s\\S]*?)' + lang_1.escapeRegExp(config.end);
-    return new RegExp(pattern, 'g');
+    var regexp = lang_1.escapeRegExp(config.start) + '([\\s\\S]*?)' + lang_1.escapeRegExp(config.end);
+    return lang_1.RegExpWrapper.create(regexp, 'g');
 }
 var Parser = (function () {
     function Parser(_lexer) {
@@ -471,13 +472,9 @@ var _ParseAST = (function () {
             this.expectCharacter(chars.$RPAREN);
             return result;
         }
-        else if (this.next.isKeywordNull()) {
+        else if (this.next.isKeywordNull() || this.next.isKeywordUndefined()) {
             this.advance();
             return new ast_1.LiteralPrimitive(this.span(start), null);
-        }
-        else if (this.next.isKeywordUndefined()) {
-            this.advance();
-            return new ast_1.LiteralPrimitive(this.span(start), void 0);
         }
         else if (this.next.isKeywordTrue()) {
             this.advance();
@@ -486,10 +483,6 @@ var _ParseAST = (function () {
         else if (this.next.isKeywordFalse()) {
             this.advance();
             return new ast_1.LiteralPrimitive(this.span(start), false);
-        }
-        else if (this.next.isKeywordThis()) {
-            this.advance();
-            return new ast_1.ImplicitReceiver(this.span(start));
         }
         else if (this.optionalCharacter(chars.$LBRACKET)) {
             this.rbracketsExpected++;
@@ -730,8 +723,11 @@ var SimpleExpressionChecker = (function () {
     SimpleExpressionChecker.prototype.visitKeyedRead = function (ast, context) { this.simple = false; };
     SimpleExpressionChecker.prototype.visitKeyedWrite = function (ast, context) { this.simple = false; };
     SimpleExpressionChecker.prototype.visitAll = function (asts) {
-        var _this = this;
-        return asts.map(function (node) { return node.visit(_this); });
+        var res = collection_1.ListWrapper.createFixedSize(asts.length);
+        for (var i = 0; i < asts.length; ++i) {
+            res[i] = asts[i].visit(this);
+        }
+        return res;
     };
     SimpleExpressionChecker.prototype.visitChain = function (ast, context) { this.simple = false; };
     SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { this.simple = false; };

@@ -270,7 +270,7 @@ exports.WritePropExpr = WritePropExpr;
 (function (BuiltinMethod) {
     BuiltinMethod[BuiltinMethod["ConcatArray"] = 0] = "ConcatArray";
     BuiltinMethod[BuiltinMethod["SubscribeObservable"] = 1] = "SubscribeObservable";
-    BuiltinMethod[BuiltinMethod["Bind"] = 2] = "Bind";
+    BuiltinMethod[BuiltinMethod["bind"] = 2] = "bind";
 })(exports.BuiltinMethod || (exports.BuiltinMethod = {}));
 var BuiltinMethod = exports.BuiltinMethod;
 var InvokeMethodExpr = (function (_super) {

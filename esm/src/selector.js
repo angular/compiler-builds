@@ -5,17 +5,18 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
-import { ListWrapper } from './facade/collection';
-import { StringWrapper, isBlank, isPresent } from './facade/lang';
+import { ListWrapper } from '../src/facade/collection';
+import { BaseException } from '../src/facade/exceptions';
+import { RegExpMatcherWrapper, RegExpWrapper, StringWrapper, isBlank, isPresent } from '../src/facade/lang';
 const _EMPTY_ATTR_VALUE = '';
-const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
+// TODO: Can't use `const` here as
+// in Dart this is not transpiled into `final` yet...
+var _SELECTOR_REGEXP = RegExpWrapper.create('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
     '(?:\\[([-\\w*]+)(?:=([^\\]]*))?\\])|' +
     '(\\))|' +
-    '(\\s*,\\s*)', // ","
-'g');
+    '(\\s*,\\s*)'); // ","
 /**
  * A css selector contains an element name,
  * css classes and attribute/value pairs with the purpose
@@ -38,11 +39,11 @@ export class CssSelector {
             res.push(cssSel);
         };
         var cssSelector = new CssSelector();
+        var matcher = RegExpWrapper.matcher(_SELECTOR_REGEXP, selector);
         var match;
         var current = cssSelector;
         var inNot = false;
-        _SELECTOR_REGEXP.lastIndex = 0;
-        while (isPresent(match = _SELECTOR_REGEXP.exec(selector))) {
+        while (isPresent(match = RegExpMatcherWrapper.next(matcher))) {
             if (isPresent(match[1])) {
                 if (inNot) {
                     throw new BaseException('Nesting :not is not allowed in a selector');

@@ -9,17 +9,15 @@
 var collection_1 = require('./facade/collection');
 var lang_1 = require('./facade/lang');
 var o = require('./output/output_ast');
-exports.MODULE_SUFFIX = '';
+exports.MODULE_SUFFIX = lang_1.IS_DART ? '.dart' : '';
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 function camelCaseToDashCase(input) {
     return lang_1.StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
 }
 exports.camelCaseToDashCase = camelCaseToDashCase;
 function splitAtColon(input, defaultValues) {
-    var colonIndex = input.indexOf(':');
-    if (colonIndex == -1)
-        return defaultValues;
-    return [input.slice(0, colonIndex).trim(), input.slice(colonIndex + 1).trim()];
+    var parts = input.split(':', 2).map(function (s) { return s.trim(); });
+    return parts.length > 1 ? parts : defaultValues;
 }
 exports.splitAtColon = splitAtColon;
 function sanitizeIdentifier(name) {
@@ -64,11 +62,21 @@ exports.ValueTransformer = ValueTransformer;
 function assetUrl(pkg, path, type) {
     if (path === void 0) { path = null; }
     if (type === void 0) { type = 'src'; }
-    if (path == null) {
-        return "asset:@angular/lib/" + pkg + "/index";
+    if (lang_1.IS_DART) {
+        if (path == null) {
+            return "asset:angular2/" + pkg + "/" + pkg + ".dart";
+        }
+        else {
+            return "asset:angular2/lib/" + pkg + "/src/" + path + ".dart";
+        }
     }
     else {
-        return "asset:@angular/lib/" + pkg + "/src/" + path;
+        if (path == null) {
+            return "asset:@angular/lib/" + pkg + "/index";
+        }
+        else {
+            return "asset:@angular/lib/" + pkg + "/src/" + path;
+        }
     }
 }
 exports.assetUrl = assetUrl;

@@ -6,9 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Inject, Injectable, Injector } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
-import { TestComponentBuilder } from '../core_private_testing';
-import { DirectiveResolver } from '../index';
+import { TestBed, TestComponentBuilder } from '@angular/core/testing';
+import { DirectiveResolver, ViewResolver } from '../index';
 import { MapWrapper } from '../src/facade/collection';
 import { isPresent } from '../src/facade/lang';
 export class OverridingTestComponentBuilder extends TestComponentBuilder {
@@ -82,11 +81,12 @@ export class OverridingTestComponentBuilder extends TestComponentBuilder {
     }
     _applyMetadataOverrides() {
         let mockDirectiveResolver = this._injector.get(DirectiveResolver);
-        this._viewOverrides.forEach((view, type) => { mockDirectiveResolver.setView(type, view); });
-        this._templateOverrides.forEach((template, type) => mockDirectiveResolver.setInlineTemplate(type, template));
-        this._animationOverrides.forEach((animationsEntry, type) => mockDirectiveResolver.setAnimations(type, animationsEntry));
+        let mockViewResolver = this._injector.get(ViewResolver);
+        this._viewOverrides.forEach((view, type) => { mockViewResolver.setView(type, view); });
+        this._templateOverrides.forEach((template, type) => mockViewResolver.setInlineTemplate(type, template));
+        this._animationOverrides.forEach((animationsEntry, type) => mockViewResolver.setAnimations(type, animationsEntry));
         this._directiveOverrides.forEach((overrides, component) => {
-            overrides.forEach((to, from) => { mockDirectiveResolver.overrideViewDirective(component, from, to); });
+            overrides.forEach((to, from) => { mockViewResolver.overrideViewDirective(component, from, to); });
         });
         this._bindingsOverrides.forEach((bindings, type) => mockDirectiveResolver.setProvidersOverride(type, bindings));
         this._viewBindingsOverrides.forEach((bindings, type) => mockDirectiveResolver.setViewProvidersOverride(type, bindings));

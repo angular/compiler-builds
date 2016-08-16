@@ -28,7 +28,6 @@ export declare class Token {
     isKeywordUndefined(): boolean;
     isKeywordTrue(): boolean;
     isKeywordFalse(): boolean;
-    isKeywordThis(): boolean;
     isError(): boolean;
     toNumber(): number;
     toString(): string;

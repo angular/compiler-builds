@@ -1,6 +1,6 @@
 import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
 export declare class Identifiers {
-    static ANALYZE_FOR_ENTRY_COMPONENTS: CompileIdentifierMetadata;
+    static ANALYZE_FOR_PRECOMPILE: CompileIdentifierMetadata;
     static ViewUtils: CompileIdentifierMetadata;
     static AppView: CompileIdentifierMetadata;
     static DebugAppView: CompileIdentifierMetadata;
@@ -15,8 +15,8 @@ export declare class Identifiers {
     static CodegenComponentFactoryResolver: CompileIdentifierMetadata;
     static ComponentFactoryResolver: CompileIdentifierMetadata;
     static ComponentFactory: CompileIdentifierMetadata;
-    static NgModuleFactory: CompileIdentifierMetadata;
-    static NgModuleInjector: CompileIdentifierMetadata;
+    static AppModuleFactory: CompileIdentifierMetadata;
+    static AppModuleInjector: CompileIdentifierMetadata;
     static ValueUnwrapper: CompileIdentifierMetadata;
     static Injector: CompileIdentifierMetadata;
     static ViewEncapsulation: CompileIdentifierMetadata;
@@ -47,7 +47,5 @@ export declare class Identifiers {
     static clearStyles: CompileIdentifierMetadata;
     static renderStyles: CompileIdentifierMetadata;
     static collectAndResolveStyles: CompileIdentifierMetadata;
-    static LOCALE_ID: CompileIdentifierMetadata;
-    static TRANSLATIONS_FORMAT: CompileIdentifierMetadata;
 }
 export declare function identifierToken(identifier: CompileIdentifierMetadata): CompileTokenMetadata;

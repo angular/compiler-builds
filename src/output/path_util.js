@@ -6,9 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
+var exceptions_1 = require('../facade/exceptions');
+var lang_1 = require('../facade/lang');
 // asset:<package-name>/<realm>/<path-to-module>
-var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
+var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/g;
 /**
  * Interface that defines how import statements should be generated.
  */
@@ -27,14 +28,14 @@ var AssetUrl = (function () {
     }
     AssetUrl.parse = function (url, allowNonMatching) {
         if (allowNonMatching === void 0) { allowNonMatching = true; }
-        var match = url.match(_ASSET_URL_RE);
-        if (match !== null) {
+        var match = lang_1.RegExpWrapper.firstMatch(_ASSET_URL_RE, url);
+        if (lang_1.isPresent(match)) {
             return new AssetUrl(match[1], match[2], match[3]);
         }
         if (allowNonMatching) {
             return null;
         }
-        throw new core_1.BaseException("Url " + url + " is not a valid asset: url");
+        throw new exceptions_1.BaseException("Url " + url + " is not a valid asset: url");
     };
     return AssetUrl;
 }());

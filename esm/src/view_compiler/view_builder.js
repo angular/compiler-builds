@@ -13,7 +13,7 @@ import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection'
 import { StringWrapper, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
-import { templateVisitAll } from '../template_parser/template_ast';
+import { templateVisitAll } from '../template_ast';
 import { createDiTokenExpression } from '../util';
 import { CompileElement, CompileNode } from './compile_element';
 import { CompileView } from './compile_view';
@@ -165,14 +165,11 @@ class ViewBuilderVisitor {
         var htmlAttrs = _readHtmlAttrs(ast.attrs);
         var attrNameAndValues = _mergeHtmlAndDirectiveAttrs(htmlAttrs, directives);
         for (var i = 0; i < attrNameAndValues.length; i++) {
-            const attrName = attrNameAndValues[i][0];
-            if (ast.name !== NG_CONTAINER_TAG) {
-                // <ng-container> are not rendered in the DOM
-                const attrValue = attrNameAndValues[i][1];
-                this.view.createMethod.addStmt(ViewProperties.renderer
-                    .callMethod('setElementAttribute', [renderNode, o.literal(attrName), o.literal(attrValue)])
-                    .toStmt());
-            }
+            var attrName = attrNameAndValues[i][0];
+            var attrValue = attrNameAndValues[i][1];
+            this.view.createMethod.addStmt(ViewProperties.renderer
+                .callMethod('setElementAttribute', [renderNode, o.literal(attrName), o.literal(attrValue)])
+                .toStmt());
         }
         var compileElement = new CompileElement(parent, this.view, nodeIndex, renderNode, ast, component, directives, ast.providers, ast.hasViewContainer, false, ast.references);
         this.view.nodes.push(compileElement);
@@ -180,12 +177,12 @@ class ViewBuilderVisitor {
         if (isPresent(component)) {
             let nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewFactoryName(component, 0) });
             this.targetDependencies.push(new ViewFactoryDependency(component.type, nestedComponentIdentifier));
-            let entryComponentIdentifiers = component.entryComponents.map((entryComponent) => {
-                var id = new CompileIdentifierMetadata({ name: entryComponent.name });
-                this.targetDependencies.push(new ComponentFactoryDependency(entryComponent, id));
+            let precompileComponentIdentifiers = component.precompile.map((precompileComp) => {
+                var id = new CompileIdentifierMetadata({ name: precompileComp.name });
+                this.targetDependencies.push(new ComponentFactoryDependency(precompileComp, id));
                 return id;
             });
-            compileElement.createComponentFactoryResolver(entryComponentIdentifiers);
+            compileElement.createComponentFactoryResolver(precompileComponentIdentifiers);
             compViewExpr = o.variable(`compView_${nodeIndex}`); // fix highlighting: `
             compileElement.setComponentView(compViewExpr);
             this.view.createMethod.addStmt(compViewExpr

@@ -5,18 +5,18 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException, ViewEncapsulation, isDevMode } from '@angular/core';
+import { ViewEncapsulation, isDevMode } from '@angular/core';
+import { unimplemented } from '../src/facade/exceptions';
 import { Identifiers } from './identifiers';
-function unimplemented() {
-    throw new BaseException('unimplemented');
-}
 export class CompilerConfig {
-    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true } = {}) {
+    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true, deprecatedPlatformDirectives = [], deprecatedPlatformPipes = [] } = {}) {
         this.renderTypes = renderTypes;
         this.defaultEncapsulation = defaultEncapsulation;
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
+        this.deprecatedPlatformDirectives = deprecatedPlatformDirectives;
+        this.deprecatedPlatformPipes = deprecatedPlatformPipes;
     }
     get genDebugInfo() {
         return this._genDebugInfo === void 0 ? isDevMode() : this._genDebugInfo;

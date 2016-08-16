@@ -12,7 +12,7 @@ export class MockSchemaRegistry {
         this.existingProperties = existingProperties;
         this.attrPropMapping = attrPropMapping;
     }
-    hasProperty(tagName, property, schemas) {
+    hasProperty(tagName, property) {
         var result = this.existingProperties[property];
         return isPresent(result) ? result : true;
     }
@@ -23,6 +23,5 @@ export class MockSchemaRegistry {
         var result = this.attrPropMapping[attrName];
         return isPresent(result) ? result : attrName;
     }
-    getDefaultComponentElementName() { return 'ng-component'; }
 }
 //# sourceMappingURL=schema_registry_mock.js.map

@@ -6,18 +6,16 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { StringMapWrapper } from './facade/collection';
-import { StringWrapper, isArray, isBlank, isPresent, isPrimitive, isStrictStringMap } from './facade/lang';
+import { IS_DART, StringWrapper, isArray, isBlank, isPresent, isPrimitive, isStrictStringMap } from './facade/lang';
 import * as o from './output/output_ast';
-export const MODULE_SUFFIX = '';
+export var MODULE_SUFFIX = IS_DART ? '.dart' : '';
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 export function camelCaseToDashCase(input) {
     return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, (m) => { return '-' + m[1].toLowerCase(); });
 }
 export function splitAtColon(input, defaultValues) {
-    const colonIndex = input.indexOf(':');
-    if (colonIndex == -1)
-        return defaultValues;
-    return [input.slice(0, colonIndex).trim(), input.slice(colonIndex + 1).trim()];
+    var parts = input.split(':', 2).map((s) => s.trim());
+    return parts.length > 1 ? parts : defaultValues;
 }
 export function sanitizeIdentifier(name) {
     return StringWrapper.replaceAll(name, /\W/g, '_');
@@ -51,11 +49,21 @@ export class ValueTransformer {
     visitOther(value, context) { return value; }
 }
 export function assetUrl(pkg, path = null, type = 'src') {
-    if (path == null) {
-        return `asset:@angular/lib/${pkg}/index`;
+    if (IS_DART) {
+        if (path == null) {
+            return `asset:angular2/${pkg}/${pkg}.dart`;
+        }
+        else {
+            return `asset:angular2/lib/${pkg}/src/${path}.dart`;
+        }
     }
     else {
-        return `asset:@angular/lib/${pkg}/src/${path}`;
+        if (path == null) {
+            return `asset:@angular/lib/${pkg}/index`;
+        }
+        else {
+            return `asset:@angular/lib/${pkg}/src/${path}`;
+        }
     }
 }
 export function createDiTokenExpression(token) {

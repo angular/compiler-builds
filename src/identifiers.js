@@ -54,10 +54,10 @@ var ANIMATION_STYLE_UTIL_ASSET_URL = util_1.assetUrl('core', 'animation/animatio
 var Identifiers = (function () {
     function Identifiers() {
     }
-    Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = new compile_metadata_1.CompileIdentifierMetadata({
-        name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
+    Identifiers.ANALYZE_FOR_PRECOMPILE = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'ANALYZE_FOR_PRECOMPILE',
         moduleUrl: util_1.assetUrl('core', 'metadata/di'),
-        runtime: core_1.ANALYZE_FOR_ENTRY_COMPONENTS
+        runtime: core_1.ANALYZE_FOR_PRECOMPILE
     });
     Identifiers.ViewUtils = new compile_metadata_1.CompileIdentifierMetadata({ name: 'ViewUtils', moduleUrl: util_1.assetUrl('core', 'linker/view_utils'), runtime: impViewUtils });
     Identifiers.AppView = new compile_metadata_1.CompileIdentifierMetadata({ name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impAppView });
@@ -109,15 +109,15 @@ var Identifiers = (function () {
         runtime: core_1.ComponentFactory,
         moduleUrl: util_1.assetUrl('core', 'linker/component_factory')
     });
-    Identifiers.NgModuleFactory = new compile_metadata_1.CompileIdentifierMetadata({
-        name: 'NgModuleFactory',
-        runtime: core_1.NgModuleFactory,
-        moduleUrl: util_1.assetUrl('core', 'linker/ng_module_factory')
+    Identifiers.AppModuleFactory = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'AppModuleFactory',
+        runtime: core_1.AppModuleFactory,
+        moduleUrl: util_1.assetUrl('core', 'linker/app_module_factory')
     });
-    Identifiers.NgModuleInjector = new compile_metadata_1.CompileIdentifierMetadata({
-        name: 'NgModuleInjector',
-        runtime: core_private_1.NgModuleInjector,
-        moduleUrl: util_1.assetUrl('core', 'linker/ng_module_factory')
+    Identifiers.AppModuleInjector = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'AppModuleInjector',
+        runtime: core_private_1.AppModuleInjector,
+        moduleUrl: util_1.assetUrl('core', 'linker/app_module_factory')
     });
     Identifiers.ValueUnwrapper = new compile_metadata_1.CompileIdentifierMetadata({ name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: impValueUnwrapper });
     Identifiers.Injector = new compile_metadata_1.CompileIdentifierMetadata({ name: 'Injector', moduleUrl: util_1.assetUrl('core', 'di/injector'), runtime: impInjector });
@@ -216,12 +216,6 @@ var Identifiers = (function () {
         name: 'collectAndResolveStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
         runtime: core_private_1.collectAndResolveStyles
-    });
-    Identifiers.LOCALE_ID = new compile_metadata_1.CompileIdentifierMetadata({ name: 'LOCALE_ID', moduleUrl: util_1.assetUrl('core', 'i18n/tokens'), runtime: core_1.LOCALE_ID });
-    Identifiers.TRANSLATIONS_FORMAT = new compile_metadata_1.CompileIdentifierMetadata({
-        name: 'TRANSLATIONS_FORMAT',
-        moduleUrl: util_1.assetUrl('core', 'i18n/tokens'),
-        runtime: core_1.TRANSLATIONS_FORMAT
     });
     return Identifiers;
 }());

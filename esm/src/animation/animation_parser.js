@@ -8,7 +8,7 @@
 import { ANY_STATE, FILL_STYLE_FLAG } from '../../core_private';
 import { CompileAnimationAnimateMetadata, CompileAnimationGroupMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationSequenceMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStyleMetadata, CompileAnimationWithStepsMetadata } from '../compile_metadata';
 import { ListWrapper, StringMapWrapper } from '../facade/collection';
-import { NumberWrapper, isArray, isBlank, isPresent, isString, isStringMap } from '../facade/lang';
+import { NumberWrapper, RegExpWrapper, isArray, isBlank, isPresent, isString, isStringMap } from '../facade/lang';
 import { Math } from '../facade/math';
 import { ParseError } from '../parse_util';
 import { AnimationEntryAst, AnimationGroupAst, AnimationKeyframeAst, AnimationSequenceAst, AnimationStateDeclarationAst, AnimationStateTransitionAst, AnimationStateTransitionExpression, AnimationStepAst, AnimationStylesAst, AnimationWithStepsAst } from './animation_ast';
@@ -394,13 +394,13 @@ function _fillAnimationAstStartingKeyframes(ast, collectedStyles, errors) {
     }
 }
 function _parseTimeExpression(exp, errors) {
-    var regex = /^([\.\d]+)(m?s)(?:\s+([\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?/i;
+    var regex = /^([\.\d]+)(m?s)(?:\s+([\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?/gi;
     var duration;
     var delay = 0;
     var easing = null;
     if (isString(exp)) {
-        const matches = exp.match(regex);
-        if (matches === null) {
+        var matches = RegExpWrapper.firstMatch(regex, exp);
+        if (!isPresent(matches)) {
             errors.push(new AnimationParseError(`The provided timing value "${exp}" is invalid.`));
             return new _AnimationTimings(0, 0, null);
         }

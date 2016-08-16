@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ANALYZE_FOR_ENTRY_COMPONENTS, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ElementRef, Injector, LOCALE_ID as LOCALE_ID_, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TRANSLATIONS_FORMAT as TRANSLATIONS_FORMAT_, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
-import { AnimationGroupPlayer as AnimationGroupPlayer_, AnimationKeyframe as AnimationKeyframe_, AnimationSequencePlayer as AnimationSequencePlayer_, AnimationStyles as AnimationStyles_, AppElement, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, DebugAppView, DebugContext, EMPTY_ARRAY, EMPTY_MAP, NgModuleInjector, NoOpAnimationPlayer as NoOpAnimationPlayer_, StaticNodeDebugInfo, TemplateRef_, UNINITIALIZED, ValueUnwrapper, ViewType, ViewUtils, balanceAnimationKeyframes as impBalanceAnimationKeyframes, castByValue, checkBinding, clearStyles as impClearStyles, collectAndResolveStyles as impCollectAndResolveStyles, devModeEqual, flattenNestedViewRenderNodes, interpolate, prepareFinalAnimationStyles as impBalanceAnimationStyles, pureProxy1, pureProxy10, pureProxy2, pureProxy3, pureProxy4, pureProxy5, pureProxy6, pureProxy7, pureProxy8, pureProxy9, renderStyles as impRenderStyles } from '../core_private';
+import { ANALYZE_FOR_PRECOMPILE, AppModuleFactory, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ElementRef, Injector, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
+import { AnimationGroupPlayer as AnimationGroupPlayer_, AnimationKeyframe as AnimationKeyframe_, AnimationSequencePlayer as AnimationSequencePlayer_, AnimationStyles as AnimationStyles_, AppElement, AppModuleInjector, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, DebugAppView, DebugContext, EMPTY_ARRAY, EMPTY_MAP, NoOpAnimationPlayer as NoOpAnimationPlayer_, StaticNodeDebugInfo, TemplateRef_, UNINITIALIZED, ValueUnwrapper, ViewType, ViewUtils, balanceAnimationKeyframes as impBalanceAnimationKeyframes, castByValue, checkBinding, clearStyles as impClearStyles, collectAndResolveStyles as impCollectAndResolveStyles, devModeEqual, flattenNestedViewRenderNodes, interpolate, prepareFinalAnimationStyles as impBalanceAnimationStyles, pureProxy1, pureProxy10, pureProxy2, pureProxy3, pureProxy4, pureProxy5, pureProxy6, pureProxy7, pureProxy8, pureProxy9, renderStyles as impRenderStyles } from '../core_private';
 import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
 import { assetUrl } from './util';
 var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
@@ -52,10 +52,10 @@ var impNoOpAnimationPlayer = NoOpAnimationPlayer_;
 var ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
 export class Identifiers {
 }
-Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = new CompileIdentifierMetadata({
-    name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
+Identifiers.ANALYZE_FOR_PRECOMPILE = new CompileIdentifierMetadata({
+    name: 'ANALYZE_FOR_PRECOMPILE',
     moduleUrl: assetUrl('core', 'metadata/di'),
-    runtime: ANALYZE_FOR_ENTRY_COMPONENTS
+    runtime: ANALYZE_FOR_PRECOMPILE
 });
 Identifiers.ViewUtils = new CompileIdentifierMetadata({ name: 'ViewUtils', moduleUrl: assetUrl('core', 'linker/view_utils'), runtime: impViewUtils });
 Identifiers.AppView = new CompileIdentifierMetadata({ name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impAppView });
@@ -107,15 +107,15 @@ Identifiers.ComponentFactory = new CompileIdentifierMetadata({
     runtime: ComponentFactory,
     moduleUrl: assetUrl('core', 'linker/component_factory')
 });
-Identifiers.NgModuleFactory = new CompileIdentifierMetadata({
-    name: 'NgModuleFactory',
-    runtime: NgModuleFactory,
-    moduleUrl: assetUrl('core', 'linker/ng_module_factory')
+Identifiers.AppModuleFactory = new CompileIdentifierMetadata({
+    name: 'AppModuleFactory',
+    runtime: AppModuleFactory,
+    moduleUrl: assetUrl('core', 'linker/app_module_factory')
 });
-Identifiers.NgModuleInjector = new CompileIdentifierMetadata({
-    name: 'NgModuleInjector',
-    runtime: NgModuleInjector,
-    moduleUrl: assetUrl('core', 'linker/ng_module_factory')
+Identifiers.AppModuleInjector = new CompileIdentifierMetadata({
+    name: 'AppModuleInjector',
+    runtime: AppModuleInjector,
+    moduleUrl: assetUrl('core', 'linker/app_module_factory')
 });
 Identifiers.ValueUnwrapper = new CompileIdentifierMetadata({ name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: impValueUnwrapper });
 Identifiers.Injector = new CompileIdentifierMetadata({ name: 'Injector', moduleUrl: assetUrl('core', 'di/injector'), runtime: impInjector });
@@ -214,12 +214,6 @@ Identifiers.collectAndResolveStyles = new CompileIdentifierMetadata({
     name: 'collectAndResolveStyles',
     moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
     runtime: impCollectAndResolveStyles
-});
-Identifiers.LOCALE_ID = new CompileIdentifierMetadata({ name: 'LOCALE_ID', moduleUrl: assetUrl('core', 'i18n/tokens'), runtime: LOCALE_ID_ });
-Identifiers.TRANSLATIONS_FORMAT = new CompileIdentifierMetadata({
-    name: 'TRANSLATIONS_FORMAT',
-    moduleUrl: assetUrl('core', 'i18n/tokens'),
-    runtime: TRANSLATIONS_FORMAT_
 });
 export function identifierToken(identifier) {
     return new CompileTokenMetadata({ identifier: identifier });

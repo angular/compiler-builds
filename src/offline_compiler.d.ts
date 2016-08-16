@@ -1,19 +1,29 @@
-import { CompileNgModuleMetadata, StaticSymbol } from './compile_metadata';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+import { AppModuleCompiler } from './app_module_compiler';
+import { StaticSymbol } from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { CompileMetadataResolver } from './metadata_resolver';
-import { NgModuleCompiler } from './ng_module_compiler';
 import { OutputEmitter } from './output/abstract_emitter';
 import { StyleCompiler } from './style_compiler';
-import { TemplateParser } from './template_parser/template_parser';
+import { TemplateParser } from './template_parser';
 import { ViewCompiler } from './view_compiler/view_compiler';
 export declare class SourceModule {
     moduleUrl: string;
     source: string;
     constructor(moduleUrl: string, source: string);
 }
-export declare class NgModulesSummary {
-    ngModuleByComponent: Map<StaticSymbol, CompileNgModuleMetadata>;
-    constructor(ngModuleByComponent: Map<StaticSymbol, CompileNgModuleMetadata>);
+export declare class AppModulesSummary {
+    private _compAppModule;
+    private _hashKey(type);
+    hasComponent(component: StaticSymbol): boolean;
+    addComponent(module: StaticSymbol, component: StaticSymbol): void;
+    getModule(comp: StaticSymbol): StaticSymbol;
 }
 export declare class OfflineCompiler {
     private _metadataResolver;
@@ -21,17 +31,16 @@ export declare class OfflineCompiler {
     private _templateParser;
     private _styleCompiler;
     private _viewCompiler;
-    private _ngModuleCompiler;
+    private _appModuleCompiler;
     private _outputEmitter;
-    private _localeId;
-    private _translationFormat;
-    constructor(_metadataResolver: CompileMetadataResolver, _directiveNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _localeId: string, _translationFormat: string);
-    analyzeModules(ngModules: StaticSymbol[]): NgModulesSummary;
+    constructor(_metadataResolver: CompileMetadataResolver, _directiveNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _appModuleCompiler: AppModuleCompiler, _outputEmitter: OutputEmitter);
+    analyzeModules(appModules: StaticSymbol[]): AppModulesSummary;
+    private _getTransitiveComponents(appModule, component, target?);
     clearCache(): void;
-    compile(moduleUrl: string, ngModulesSummary: NgModulesSummary, components: StaticSymbol[], ngModules: StaticSymbol[]): Promise<SourceModule[]>;
-    private _compileModule(ngModuleType, targetStatements);
+    compile(moduleUrl: string, appModulesSummary: AppModulesSummary, components: StaticSymbol[], appModules: StaticSymbol[]): Promise<SourceModule[]>;
+    private _compileAppModule(appModuleType, targetStatements);
     private _compileComponentFactory(compMeta, fileSuffix, targetStatements);
-    private _compileComponent(compMeta, directives, pipes, schemas, componentStyles, fileSuffix, targetStatements);
+    private _compileComponent(compMeta, directives, pipes, componentStyles, fileSuffix, targetStatements);
     private _codgenStyles(stylesCompileResult, fileSuffix);
     private _codegenSourceModule(moduleUrl, statements, exportedVars);
 }

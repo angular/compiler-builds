@@ -29,11 +29,9 @@ var ParseSourceFile = (function () {
 }());
 exports.ParseSourceFile = ParseSourceFile;
 var ParseSourceSpan = (function () {
-    function ParseSourceSpan(start, end, details) {
-        if (details === void 0) { details = null; }
+    function ParseSourceSpan(start, end) {
         this.start = start;
         this.end = end;
-        this.details = details;
     }
     ParseSourceSpan.prototype.toString = function () {
         return this.start.file.content.substring(this.start.offset, this.end.offset);
@@ -57,7 +55,6 @@ var ParseError = (function () {
         var source = this.span.start.file.content;
         var ctxStart = this.span.start.offset;
         var contextStr = '';
-        var details = '';
         if (lang_1.isPresent(ctxStart)) {
             if (ctxStart > source.length - 1) {
                 ctxStart = source.length - 1;
@@ -89,10 +86,7 @@ var ParseError = (function () {
                 source.substring(this.span.start.offset, ctxEnd + 1);
             contextStr = " (\"" + context + "\")";
         }
-        if (this.span.details) {
-            details = ", " + this.span.details;
-        }
-        return "" + this.msg + contextStr + ": " + this.span.start + details;
+        return "" + this.msg + contextStr + ": " + this.span.start;
     };
     return ParseError;
 }());

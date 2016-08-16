@@ -409,13 +409,13 @@ function _fillAnimationAstStartingKeyframes(ast, collectedStyles, errors) {
     }
 }
 function _parseTimeExpression(exp, errors) {
-    var regex = /^([\.\d]+)(m?s)(?:\s+([\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?/i;
+    var regex = /^([\.\d]+)(m?s)(?:\s+([\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?/gi;
     var duration;
     var delay = 0;
     var easing = null;
     if (lang_1.isString(exp)) {
-        var matches = exp.match(regex);
-        if (matches === null) {
+        var matches = lang_1.RegExpWrapper.firstMatch(regex, exp);
+        if (!lang_1.isPresent(matches)) {
             errors.push(new AnimationParseError("The provided timing value \"" + exp + "\" is invalid."));
             return new _AnimationTimings(0, 0, null);
         }

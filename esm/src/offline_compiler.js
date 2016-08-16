@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
-import { CompileProviderMetadata, CompileTokenMetadata, createHostComponentMeta } from './compile_metadata';
+import { createHostComponentMeta } from './compile_metadata';
 import { ListWrapper } from './facade/collection';
+import { BaseException } from './facade/exceptions';
 import { Identifiers } from './identifiers';
 import * as o from './output/output_ast';
 import { ComponentFactoryDependency, ViewFactoryDependency } from './view_compiler/view_compiler';
@@ -17,68 +17,102 @@ export class SourceModule {
         this.source = source;
     }
 }
-export class NgModulesSummary {
-    constructor(ngModuleByComponent) {
-        this.ngModuleByComponent = ngModuleByComponent;
+export class AppModulesSummary {
+    constructor() {
+        this._compAppModule = new Map();
+    }
+    _hashKey(type) { return `${type.filePath}#${type.name}`; }
+    hasComponent(component) {
+        return this._compAppModule.has(this._hashKey(component));
+    }
+    addComponent(module, component) {
+        this._compAppModule.set(this._hashKey(component), module);
+    }
+    getModule(comp) {
+        return this._compAppModule.get(this._hashKey(comp));
     }
 }
 export class OfflineCompiler {
-    constructor(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat) {
+    constructor(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _appModuleCompiler, _outputEmitter) {
         this._metadataResolver = _metadataResolver;
         this._directiveNormalizer = _directiveNormalizer;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
         this._viewCompiler = _viewCompiler;
-        this._ngModuleCompiler = _ngModuleCompiler;
+        this._appModuleCompiler = _appModuleCompiler;
         this._outputEmitter = _outputEmitter;
-        this._localeId = _localeId;
-        this._translationFormat = _translationFormat;
     }
-    analyzeModules(ngModules) {
-        const ngModuleByComponent = new Map();
-        ngModules.forEach((ngModule) => {
-            const ngModuleMeta = this._metadataResolver.getNgModuleMetadata(ngModule);
-            ngModuleMeta.declaredDirectives.forEach((dirMeta) => {
-                if (dirMeta.isComponent) {
-                    ngModuleByComponent.set(dirMeta.type.runtime, ngModuleMeta);
-                }
-            });
+    analyzeModules(appModules) {
+        let result = new AppModulesSummary();
+        appModules.forEach((appModule) => {
+            let appModuleMeta = this._metadataResolver.getAppModuleMetadata(appModule);
+            appModuleMeta.precompile.forEach((precompileComp) => this._getTransitiveComponents(appModule, precompileComp.runtime, result));
         });
-        return new NgModulesSummary(ngModuleByComponent);
+        return result;
+    }
+    _getTransitiveComponents(appModule, component, target = new AppModulesSummary()) {
+        var compMeta = this._metadataResolver.getDirectiveMetadata(component);
+        // TODO(tbosch): preserve all modules per component, not just one.
+        // Then run the template parser with the union and the intersection of the modules (regarding
+        // directives/pipes)
+        // and report an error if some directives/pipes are only matched with the union but not with the
+        // intersection!
+        // -> this means that a component is used in the wrong way!
+        if (!compMeta.isComponent || target.hasComponent(component)) {
+            return target;
+        }
+        target.addComponent(appModule, component);
+        this._metadataResolver.getViewDirectivesMetadata(component).forEach((dirMeta) => {
+            this._getTransitiveComponents(appModule, dirMeta.type.runtime);
+        });
+        compMeta.precompile.forEach((precompileComp) => {
+            this._getTransitiveComponents(appModule, precompileComp.type.runtime);
+        });
+        return target;
     }
     clearCache() {
         this._directiveNormalizer.clearCache();
         this._metadataResolver.clearCache();
     }
-    compile(moduleUrl, ngModulesSummary, components, ngModules) {
+    compile(moduleUrl, appModulesSummary, components, appModules) {
         let fileSuffix = _splitLastSuffix(moduleUrl)[1];
         let statements = [];
         let exportedVars = [];
         let outputSourceModules = [];
-        // compile all ng modules
-        exportedVars.push(...ngModules.map((ngModuleType) => this._compileModule(ngModuleType, statements)));
+        // compile app modules
+        exportedVars.push(...appModules.map((appModule) => this._compileAppModule(appModule, statements)));
         // compile components
         return Promise
             .all(components.map((compType) => {
-            const compMeta = this._metadataResolver.getDirectiveMetadata(compType);
-            const ngModule = ngModulesSummary.ngModuleByComponent.get(compType);
-            if (!ngModule) {
-                throw new BaseException(`Cannot determine the module for component ${compMeta.type.name}!`);
+            let appModule = appModulesSummary.getModule(compType);
+            let appModuleDirectives = [];
+            let appModulePipes = [];
+            if (appModule) {
+                let appModuleMeta = this._metadataResolver.getAppModuleMetadata(appModule);
+                appModuleDirectives.push(...appModuleMeta.directives.map(type => this._metadataResolver.getDirectiveMetadata(type.runtime)));
+                appModulePipes.push(...appModuleMeta.pipes.map(type => this._metadataResolver.getPipeMetadata(type.runtime)));
             }
             return Promise
-                .all([compMeta, ...ngModule.transitiveModule.directives].map(dirMeta => this._directiveNormalizer.normalizeDirective(dirMeta).asyncResult))
+                .all([
+                this._metadataResolver.getDirectiveMetadata(compType), ...appModuleDirectives,
+                ...this._metadataResolver.getViewDirectivesMetadata(compType)
+            ].map(dirMeta => this._directiveNormalizer.normalizeDirective(dirMeta).asyncResult))
                 .then((normalizedCompWithDirectives) => {
-                const compMeta = normalizedCompWithDirectives[0];
-                const dirMetas = normalizedCompWithDirectives.slice(1);
+                let compMeta = normalizedCompWithDirectives[0];
+                let dirMetas = normalizedCompWithDirectives.slice(1);
                 _assertComponent(compMeta);
                 // compile styles
-                const stylesCompileResults = this._styleCompiler.compileComponent(compMeta);
+                let stylesCompileResults = this._styleCompiler.compileComponent(compMeta);
                 stylesCompileResults.externalStylesheets.forEach((compiledStyleSheet) => {
                     outputSourceModules.push(this._codgenStyles(compiledStyleSheet, fileSuffix));
                 });
                 // compile components
                 exportedVars.push(this._compileComponentFactory(compMeta, fileSuffix, statements));
-                exportedVars.push(this._compileComponent(compMeta, dirMetas, ngModule.transitiveModule.pipes, ngModule.schemas, stylesCompileResults.componentStylesheet, fileSuffix, statements));
+                let pipeMetas = [
+                    ...appModulePipes,
+                    ...this._metadataResolver.getViewPipesMetadata(compMeta.type.runtime)
+                ];
+                exportedVars.push(this._compileComponent(compMeta, dirMetas, pipeMetas, stylesCompileResults.componentStylesheet, fileSuffix, statements));
             });
         }))
             .then(() => {
@@ -88,28 +122,19 @@ export class OfflineCompiler {
             return outputSourceModules;
         });
     }
-    _compileModule(ngModuleType, targetStatements) {
-        const ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
-        let appCompileResult = this._ngModuleCompiler.compile(ngModule, [
-            new CompileProviderMetadata({
-                token: new CompileTokenMetadata({ identifier: Identifiers.LOCALE_ID }),
-                useValue: this._localeId
-            }),
-            new CompileProviderMetadata({
-                token: new CompileTokenMetadata({ identifier: Identifiers.TRANSLATIONS_FORMAT }),
-                useValue: this._translationFormat
-            })
-        ]);
+    _compileAppModule(appModuleType, targetStatements) {
+        let appModuleMeta = this._metadataResolver.getAppModuleMetadata(appModuleType);
+        let appCompileResult = this._appModuleCompiler.compile(appModuleMeta);
         appCompileResult.dependencies.forEach((dep) => {
             dep.placeholder.name = _componentFactoryName(dep.comp);
             dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);
         });
         targetStatements.push(...appCompileResult.statements);
-        return appCompileResult.ngModuleFactoryVar;
+        return appCompileResult.appModuleFactoryVar;
     }
     _compileComponentFactory(compMeta, fileSuffix, targetStatements) {
-        var hostMeta = createHostComponentMeta(compMeta);
-        var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], [], null, fileSuffix, targetStatements);
+        var hostMeta = createHostComponentMeta(compMeta.type, compMeta.selector);
+        var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], null, fileSuffix, targetStatements);
         var compFactoryVar = _componentFactoryName(compMeta.type);
         targetStatements.push(o.variable(compFactoryVar)
             .set(o.importExpr(Identifiers.ComponentFactory, [o.importType(compMeta.type)])
@@ -120,8 +145,8 @@ export class OfflineCompiler {
             .toDeclStmt(null, [o.StmtModifier.Final]));
         return compFactoryVar;
     }
-    _compileComponent(compMeta, directives, pipes, schemas, componentStyles, fileSuffix, targetStatements) {
-        var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, schemas, compMeta.type.name);
+    _compileComponent(compMeta, directives, pipes, componentStyles, fileSuffix, targetStatements) {
+        var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, compMeta.type.name);
         var stylesExpr = componentStyles ? o.variable(componentStyles.stylesVar) : o.literalArr([]);
         var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, pipes);
         if (componentStyles) {

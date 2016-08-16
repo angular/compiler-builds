@@ -21,7 +21,7 @@ export class DirectiveResolver {
     /**
      * Return {@link DirectiveMetadata} for a given `Type`.
      */
-    resolve(type, throwIfNotFound = true) {
+    resolve(type) {
         var typeMetadata = this._reflector.annotations(resolveForwardRef(type));
         if (isPresent(typeMetadata)) {
             var metadata = typeMetadata.find(_isDirectiveMetadata);
@@ -30,10 +30,7 @@ export class DirectiveResolver {
                 return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
             }
         }
-        if (throwIfNotFound) {
-            throw new BaseException(`No Directive annotation found on ${stringify(type)}`);
-        }
-        return null;
+        throw new BaseException(`No Directive annotation found on ${stringify(type)}`);
     }
     _mergeWithPropertyMetadata(dm, propertyMetadata, directiveType) {
         var inputs = [];
@@ -121,16 +118,7 @@ export class DirectiveResolver {
                 changeDetection: dm.changeDetection,
                 providers: dm.providers,
                 viewProviders: dm.viewProviders,
-                entryComponents: dm.entryComponents,
-                directives: dm.directives,
-                pipes: dm.pipes,
-                template: dm.template,
-                templateUrl: dm.templateUrl,
-                styles: dm.styles,
-                styleUrls: dm.styleUrls,
-                encapsulation: dm.encapsulation,
-                animations: dm.animations,
-                interpolation: dm.interpolation
+                precompile: dm.precompile
             });
         }
         else {

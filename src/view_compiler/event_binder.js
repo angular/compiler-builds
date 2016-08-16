@@ -8,7 +8,6 @@
 "use strict";
 var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
-var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
 var compile_binding_1 = require('./compile_binding');
 var compile_method_1 = require('./compile_method');
@@ -41,7 +40,7 @@ var CompileEventListener = (function () {
         this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
         var context = lang_1.isPresent(directiveInstance) ? directiveInstance :
             this.compileElement.view.componentContext;
-        var actionStmts = expression_converter_1.convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
+        var actionStmts = expression_converter_1.convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler);
         var lastIndex = actionStmts.length - 1;
         if (lastIndex >= 0) {
             var lastStatement = actionStmts[lastIndex];
@@ -72,7 +71,7 @@ var CompileEventListener = (function () {
     };
     CompileEventListener.prototype.listenToRenderer = function () {
         var listenExpr;
-        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
+        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.bind, [o.THIS_EXPR])]);
         if (lang_1.isPresent(this.eventTarget)) {
             listenExpr = constants_1.ViewProperties.renderer.callMethod('listenGlobal', [o.literal(this.eventTarget), o.literal(this.eventName), eventListener]);
         }
@@ -87,7 +86,7 @@ var CompileEventListener = (function () {
     CompileEventListener.prototype.listenToDirective = function (directiveInstance, observablePropName) {
         var subscription = o.variable("subscription_" + this.compileElement.view.subscriptions.length);
         this.compileElement.view.subscriptions.push(subscription);
-        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
+        var eventListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.bind, [o.THIS_EXPR])]);
         this.compileElement.view.createMethod.addStmt(subscription
             .set(directiveInstance.prop(observablePropName)
             .callMethod(o.BuiltinMethod.SubscribeObservable, [eventListener]))
@@ -103,8 +102,8 @@ function collectEventListeners(hostEvents, dirs, compileElement) {
         var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
         listener.addAction(hostEvent, null, null);
     });
-    dirs.forEach(function (directiveAst) {
-        var directiveInstance = compileElement.instances.get(identifiers_1.identifierToken(directiveAst.directive.type));
+    collection_1.ListWrapper.forEachWithIndex(dirs, function (directiveAst, i) {
+        var directiveInstance = compileElement.directiveInstances[i];
         directiveAst.hostEvents.forEach(function (hostEvent) {
             compileElement.view.bindings.push(new compile_binding_1.CompileBinding(compileElement, hostEvent));
             var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
