@@ -8717,12 +8717,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     // Group 4 = "ref-/#"
     // Group 5 = "on-"
     // Group 6 = "bindon-"
-    // Group 7 = "animate-/@"
+    // Group 7 = "@"
     // Group 8 = the identifier after "bind-", "var-/#", or "on-"
     // Group 9 = identifier inside [()]
     // Group 10 = identifier inside []
     // Group 11 = identifier inside ()
-    var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(animate-|@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+    var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+    var ANIMATE_PROP_PREFIX = 'animate-';
     var TEMPLATE_ELEMENT = 'template';
     var TEMPLATE_ATTR = 'template';
     var TEMPLATE_ATTR_PREFIX = '*';
@@ -9132,7 +9133,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 else if (isPresent(bindParts[7])) {
                     if (attrName[0] == '@' && isPresent(attrValue) && attrValue.length > 0) {
-                        this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is deprecated. Use property bindings (e.g. [@prop]=\"exp\") instead!", attr.sourceSpan, ParseErrorLevel.WARNING);
+                        this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid. Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", attr.sourceSpan, ParseErrorLevel.FATAL);
                     }
                     this._parseAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetAnimationProps);
                 }
@@ -9171,8 +9172,15 @@ var __extends = (this && this.__extends) || function (d, b) {
             targetRefs.push(new ElementOrDirectiveRef(identifier, value, sourceSpan));
         };
         TemplateParseVisitor.prototype._parsePropertyOrAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps) {
-            if (name[0] == '@') {
-                this._parseAnimation(name.substr(1), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
+            var animatePropLength = ANIMATE_PROP_PREFIX.length;
+            var isAnimationProp = name[0] == '@';
+            var animationPrefixLength = 1;
+            if (name.substring(0, animatePropLength) == ANIMATE_PROP_PREFIX) {
+                isAnimationProp = true;
+                animationPrefixLength = animatePropLength;
+            }
+            if (isAnimationProp) {
+                this._parseAnimation(name.substr(animationPrefixLength), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
             }
             else {
                 this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
@@ -9333,9 +9341,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                     boundPropertyName = partValue.substr(1);
                     bindingType = exports.PropertyBindingType.Animation;
                     securityContext = _angular_core.SecurityContext.NONE;
-                    // DEPRECATED: remove this if statement post RC5
                     if (boundPropertyName[0] == '@') {
-                        this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is deprecated. Use host bindings (e.g. \"[@prop]\": \"exp\") instead!", sourceSpan, ParseErrorLevel.WARNING);
+                        this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is invalid. Use host bindings (e.g. \"[@prop]\": \"exp\") instead.", sourceSpan, ParseErrorLevel.FATAL);
                         boundPropertyName = boundPropertyName.substr(1);
                     }
                 }
