@@ -39,6 +39,7 @@ export declare class CompileMetadataResolver {
     getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean): cpl.CompileNgModuleMetadata;
     addComponentToModule(moduleType: Type<any>, compType: Type<any>): void;
     private _verifyModule(moduleMeta);
+    private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
     private _getTransitiveViewDirectivesAndPipes(compMeta, moduleMeta);
     private _getTransitiveNgModuleMetadata(importedModules, exportedModules);

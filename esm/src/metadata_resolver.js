@@ -236,7 +236,11 @@ export class CompileMetadataResolver {
                         }
                     }
                     if (importedModuleType) {
-                        importedModules.push(this.getNgModuleMetadata(importedModuleType, false));
+                        let importedMeta = this.getNgModuleMetadata(importedModuleType, false);
+                        if (importedMeta === null) {
+                            throw new BaseException(`Unexpected ${this._getTypeDescriptor(importedType)} '${stringify(importedType)}' imported by the module '${stringify(moduleType)}'`);
+                        }
+                        importedModules.push(importedMeta);
                     }
                     else {
                         throw new BaseException(`Unexpected value '${stringify(importedType)}' imported by the module '${stringify(moduleType)}'`);
@@ -261,7 +265,7 @@ export class CompileMetadataResolver {
                         exportedModules.push(exportedModuleMeta);
                     }
                     else {
-                        throw new BaseException(`Unexpected value '${stringify(exportedType)}' exported by the module '${stringify(moduleType)}'`);
+                        throw new BaseException(`Unexpected ${this._getTypeDescriptor(exportedType)} '${stringify(exportedType)}' exported by the module '${stringify(moduleType)}'`);
                     }
                 });
             }
@@ -282,7 +286,7 @@ export class CompileMetadataResolver {
                         this._addPipeToModule(declaredPipeMeta, moduleType, transitiveModule, declaredPipes, true);
                     }
                     else {
-                        throw new BaseException(`Unexpected value '${stringify(declaredType)}' declared by the module '${stringify(moduleType)}'`);
+                        throw new BaseException(`Unexpected ${this._getTypeDescriptor(declaredType)} '${stringify(declaredType)}' declared by the module '${stringify(moduleType)}'`);
                     }
                 });
             }
@@ -355,6 +359,23 @@ export class CompileMetadataResolver {
         // directives/pipes. Do this last so that directives added by previous steps
         // are considered as well!
         moduleMeta.declaredDirectives.forEach((dirMeta) => { this._getTransitiveViewDirectivesAndPipes(dirMeta, moduleMeta); });
+    }
+    _getTypeDescriptor(type) {
+        if (this._directiveResolver.resolve(type, false) !== null) {
+            return 'directive';
+        }
+        else if (this._pipeResolver.resolve(type, false) !== null) {
+            return 'pipe';
+        }
+        else if (this._ngModuleResolver.resolve(type, false) !== null) {
+            return 'module';
+        }
+        else if (type.provide) {
+            return 'provider';
+        }
+        else {
+            return 'value';
+        }
     }
     _addTypeToModule(type, moduleType) {
         const oldModule = this._ngModuleOfTypes.get(type);

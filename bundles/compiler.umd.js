@@ -13818,7 +13818,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                             }
                         }
                         if (importedModuleType) {
-                            importedModules_1.push(_this.getNgModuleMetadata(importedModuleType, false));
+                            var importedMeta = _this.getNgModuleMetadata(importedModuleType, false);
+                            if (importedMeta === null) {
+                                throw new BaseException$1("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
+                            }
+                            importedModules_1.push(importedMeta);
                         }
                         else {
                             throw new BaseException$1("Unexpected value '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
@@ -13843,7 +13847,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             exportedModules_1.push(exportedModuleMeta);
                         }
                         else {
-                            throw new BaseException$1("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
+                            throw new BaseException$1("Unexpected " + _this._getTypeDescriptor(exportedType) + " '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
                         }
                     });
                 }
@@ -13864,7 +13868,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             _this._addPipeToModule(declaredPipeMeta, moduleType, transitiveModule_1, declaredPipes_1, true);
                         }
                         else {
-                            throw new BaseException$1("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
+                            throw new BaseException$1("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
                         }
                     });
                 }
@@ -13939,6 +13943,23 @@ var __extends = (this && this.__extends) || function (d, b) {
             // directives/pipes. Do this last so that directives added by previous steps
             // are considered as well!
             moduleMeta.declaredDirectives.forEach(function (dirMeta) { _this._getTransitiveViewDirectivesAndPipes(dirMeta, moduleMeta); });
+        };
+        CompileMetadataResolver.prototype._getTypeDescriptor = function (type) {
+            if (this._directiveResolver.resolve(type, false) !== null) {
+                return 'directive';
+            }
+            else if (this._pipeResolver.resolve(type, false) !== null) {
+                return 'pipe';
+            }
+            else if (this._ngModuleResolver.resolve(type, false) !== null) {
+                return 'module';
+            }
+            else if (type.provide) {
+                return 'provider';
+            }
+            else {
+                return 'value';
+            }
         };
         CompileMetadataResolver.prototype._addTypeToModule = function (type, moduleType) {
             var oldModule = this._ngModuleOfTypes.get(type);
