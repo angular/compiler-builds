@@ -14,33 +14,33 @@ var lang_1 = require('./facade/lang');
 var html = require('./ml_parser/ast');
 var html_parser_1 = require('./ml_parser/html_parser');
 var interpolation_config_1 = require('./ml_parser/interpolation_config');
+var resource_loader_1 = require('./resource_loader');
 var style_url_resolver_1 = require('./style_url_resolver');
 var template_preparser_1 = require('./template_parser/template_preparser');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
-var xhr_1 = require('./xhr');
 var DirectiveNormalizer = (function () {
-    function DirectiveNormalizer(_xhr, _urlResolver, _htmlParser, _config) {
-        this._xhr = _xhr;
+    function DirectiveNormalizer(_resourceLoader, _urlResolver, _htmlParser, _config) {
+        this._resourceLoader = _resourceLoader;
         this._urlResolver = _urlResolver;
         this._htmlParser = _htmlParser;
         this._config = _config;
-        this._xhrCache = new Map();
+        this._resourceLoaderCache = new Map();
     }
-    DirectiveNormalizer.prototype.clearCache = function () { this._xhrCache.clear(); };
+    DirectiveNormalizer.prototype.clearCache = function () { this._resourceLoaderCache.clear(); };
     DirectiveNormalizer.prototype.clearCacheFor = function (normalizedDirective) {
         var _this = this;
         if (!normalizedDirective.isComponent) {
             return;
         }
-        this._xhrCache.delete(normalizedDirective.template.templateUrl);
-        normalizedDirective.template.externalStylesheets.forEach(function (stylesheet) { _this._xhrCache.delete(stylesheet.moduleUrl); });
+        this._resourceLoaderCache.delete(normalizedDirective.template.templateUrl);
+        normalizedDirective.template.externalStylesheets.forEach(function (stylesheet) { _this._resourceLoaderCache.delete(stylesheet.moduleUrl); });
     };
     DirectiveNormalizer.prototype._fetch = function (url) {
-        var result = this._xhrCache.get(url);
+        var result = this._resourceLoaderCache.get(url);
         if (!result) {
-            result = this._xhr.get(url);
-            this._xhrCache.set(url, result);
+            result = this._resourceLoader.get(url);
+            this._resourceLoaderCache.set(url, result);
         }
         return result;
     };
@@ -165,7 +165,7 @@ var DirectiveNormalizer = (function () {
     ];
     /** @nocollapse */
     DirectiveNormalizer.ctorParameters = [
-        { type: xhr_1.XHR, },
+        { type: resource_loader_1.ResourceLoader, },
         { type: url_resolver_1.UrlResolver, },
         { type: html_parser_1.HtmlParser, },
         { type: config_1.CompilerConfig, },

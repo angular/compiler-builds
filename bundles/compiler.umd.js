@@ -13117,39 +13117,38 @@ var __extends = (this && this.__extends) || function (d, b) {
      * Use of this source code is governed by an MIT-style license that can be
      * found in the LICENSE file at https://angular.io/license
      */
-    // TODO: vsavkin rename it into TemplateLoader
     /**
      * An interface for retrieving documents by URL that the compiler uses
      * to load templates.
      */
-    var XHR = (function () {
-        function XHR() {
+    var ResourceLoader = (function () {
+        function ResourceLoader() {
         }
-        XHR.prototype.get = function (url) { return null; };
-        return XHR;
+        ResourceLoader.prototype.get = function (url) { return null; };
+        return ResourceLoader;
     }());
     var DirectiveNormalizer = (function () {
-        function DirectiveNormalizer(_xhr, _urlResolver, _htmlParser, _config) {
-            this._xhr = _xhr;
+        function DirectiveNormalizer(_resourceLoader, _urlResolver, _htmlParser, _config) {
+            this._resourceLoader = _resourceLoader;
             this._urlResolver = _urlResolver;
             this._htmlParser = _htmlParser;
             this._config = _config;
-            this._xhrCache = new Map();
+            this._resourceLoaderCache = new Map();
         }
-        DirectiveNormalizer.prototype.clearCache = function () { this._xhrCache.clear(); };
+        DirectiveNormalizer.prototype.clearCache = function () { this._resourceLoaderCache.clear(); };
         DirectiveNormalizer.prototype.clearCacheFor = function (normalizedDirective) {
             var _this = this;
             if (!normalizedDirective.isComponent) {
                 return;
             }
-            this._xhrCache.delete(normalizedDirective.template.templateUrl);
-            normalizedDirective.template.externalStylesheets.forEach(function (stylesheet) { _this._xhrCache.delete(stylesheet.moduleUrl); });
+            this._resourceLoaderCache.delete(normalizedDirective.template.templateUrl);
+            normalizedDirective.template.externalStylesheets.forEach(function (stylesheet) { _this._resourceLoaderCache.delete(stylesheet.moduleUrl); });
         };
         DirectiveNormalizer.prototype._fetch = function (url) {
-            var result = this._xhrCache.get(url);
+            var result = this._resourceLoaderCache.get(url);
             if (!result) {
-                result = this._xhr.get(url);
-                this._xhrCache.set(url, result);
+                result = this._resourceLoader.get(url);
+                this._resourceLoaderCache.set(url, result);
             }
             return result;
         };
@@ -13274,7 +13273,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     DirectiveNormalizer.ctorParameters = [
-        { type: XHR, },
+        { type: ResourceLoader, },
         { type: UrlResolver, },
         { type: HtmlParser$1, },
         { type: CompilerConfig, },
@@ -17054,9 +17053,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     ];
     /** @nocollapse */
     DomElementSchemaRegistry.ctorParameters = [];
-    var _NO_XHR = {
+    var _NO_RESOURCE_LOADER = {
         get: function (url) {
-            throw new Error("No XHR implementation has been provided. Can't read the url \"" + url + "\"");
+            throw new Error("No ResourceLoader implementation has been provided. Can't read the url \"" + url + "\"");
         }
     };
     /**
@@ -17066,7 +17065,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var COMPILER_PROVIDERS = [
         { provide: Reflector, useValue: reflector },
         { provide: ReflectorReader, useExisting: Reflector },
-        { provide: XHR, useValue: _NO_XHR },
+        { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
         Console,
         Lexer,
         Parser$1,
@@ -17105,7 +17104,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         var defaultEncapsulation;
         var deprecationMessages = [];
         // Note: This is a hack to still support the old way
-        // of configuring platform directives / pipes and the compiler xhr.
+        // of configuring platform directives / pipes and the compiler resource loader.
         // This will soon be deprecated!
         var tempInj = _angular_core.ReflectiveInjector.resolveAndCreate(appProviders);
         var compilerConfig = tempInj.get(CompilerConfig, null);
@@ -17115,10 +17114,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             defaultEncapsulation = compilerConfig.defaultEncapsulation;
             deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use \"compilerOptions\" use a custom \"CompilerFactory\" platform provider instead.");
         }
-        var xhr = tempInj.get(XHR, null);
-        if (xhr) {
-            compilerProviders.push([{ provide: XHR, useValue: xhr }]);
-            deprecationMessages.push("Passing XHR as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
+        var resourceLoader = tempInj.get(ResourceLoader, null);
+        if (resourceLoader) {
+            compilerProviders.push([{ provide: ResourceLoader, useValue: resourceLoader }]);
+            deprecationMessages.push("Passing ResourceLoader as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
         }
         var compilerOptions = {
             useJit: useJit,
@@ -17280,11 +17279,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     exports.OfflineCompiler = OfflineCompiler;
     exports.PipeResolver = PipeResolver;
     exports.RenderTypes = RenderTypes;
+    exports.ResourceLoader = ResourceLoader;
     exports.RuntimeCompiler = RuntimeCompiler;
     exports.SourceModule = SourceModule;
     exports.TEMPLATE_TRANSFORMS = TEMPLATE_TRANSFORMS;
     exports.UrlResolver = UrlResolver;
-    exports.XHR = XHR;
     exports.analyzeAppProvidersForDeprecatedConfiguration = analyzeAppProvidersForDeprecatedConfiguration;
     exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;
     exports.platformCoreDynamic = platformCoreDynamic;
