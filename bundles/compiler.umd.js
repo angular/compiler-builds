@@ -10263,6 +10263,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
         return new AnimationKeyframeAst(_INITIAL_KEYFRAME, new AnimationStylesAst([values]));
     }
+    var animationCompilationCache = new Map();
     var CompiledAnimation = (function () {
         function CompiledAnimation(name, statesMapStatement, statesVariableName, fnStatement, fnVariable) {
             this.name = name;
@@ -10308,6 +10309,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 groupedErrors.forEach(function (error) { return errorMessageStr += "\n- " + error; });
                 throw new _angular_core.BaseException(errorMessageStr);
             }
+            animationCompilationCache.set(component, compiledAnimations);
             return compiledAnimations;
         };
         return AnimationCompiler;
@@ -10559,17 +10561,30 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     var _AnimationTemplatePropertyVisitor = (function () {
         function _AnimationTemplatePropertyVisitor(animations) {
-            var _this = this;
-            this._animationRegistry = {};
             this.errors = [];
-            animations.forEach(function (entry) { _this._animationRegistry[entry.name] = true; });
+            this._animationRegistry = this._buildCompileAnimationLookup(animations);
         }
+        _AnimationTemplatePropertyVisitor.prototype._buildCompileAnimationLookup = function (animations) {
+            var map = {};
+            animations.forEach(function (entry) { map[entry.name] = true; });
+            return map;
+        };
         _AnimationTemplatePropertyVisitor.prototype.visitElement = function (ast, ctx) {
             var _this = this;
-            ast.inputs.forEach(function (input) {
+            var inputAsts = ast.inputs;
+            var componentAnimationRegistry = this._animationRegistry;
+            var componentOnElement = ast.directives.find(function (directive) { return directive.directive.isComponent; });
+            if (componentOnElement) {
+                inputAsts = componentOnElement.hostProperties;
+                var cachedComponentAnimations = animationCompilationCache.get(componentOnElement.directive);
+                if (cachedComponentAnimations) {
+                    componentAnimationRegistry = this._buildCompileAnimationLookup(cachedComponentAnimations);
+                }
+            }
+            inputAsts.forEach(function (input) {
                 if (input.type == exports.PropertyBindingType.Animation) {
                     var animationName = input.name;
-                    if (!isPresent(_this._animationRegistry[animationName])) {
+                    if (!isPresent(componentAnimationRegistry[animationName])) {
                         _this.errors.push(new AnimationParseError("couldn't find an animation entry for " + animationName));
                     }
                 }

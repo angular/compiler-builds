@@ -14,6 +14,7 @@ import * as o from '../output/output_ast';
 import * as t from '../template_parser/template_ast';
 import { AnimationStepAst } from './animation_ast';
 import { AnimationParseError, parseAnimationEntry } from './animation_parser';
+const animationCompilationCache = new Map();
 export class CompiledAnimation {
     constructor(name, statesMapStatement, statesVariableName, fnStatement, fnVariable) {
         this.name = name;
@@ -56,6 +57,7 @@ export class AnimationCompiler {
             groupedErrors.forEach(error => errorMessageStr += `\n- ${error}`);
             throw new BaseException(errorMessageStr);
         }
+        animationCompilationCache.set(component, compiledAnimations);
         return compiledAnimations;
     }
 }
@@ -293,15 +295,29 @@ function _validateAnimationProperties(compiledAnimations, template) {
 }
 class _AnimationTemplatePropertyVisitor {
     constructor(animations) {
-        this._animationRegistry = {};
         this.errors = [];
-        animations.forEach(entry => { this._animationRegistry[entry.name] = true; });
+        this._animationRegistry = this._buildCompileAnimationLookup(animations);
+    }
+    _buildCompileAnimationLookup(animations) {
+        var map = {};
+        animations.forEach(entry => { map[entry.name] = true; });
+        return map;
     }
     visitElement(ast, ctx) {
-        ast.inputs.forEach(input => {
+        var inputAsts = ast.inputs;
+        var componentAnimationRegistry = this._animationRegistry;
+        var componentOnElement = ast.directives.find(directive => directive.directive.isComponent);
+        if (componentOnElement) {
+            inputAsts = componentOnElement.hostProperties;
+            let cachedComponentAnimations = animationCompilationCache.get(componentOnElement.directive);
+            if (cachedComponentAnimations) {
+                componentAnimationRegistry = this._buildCompileAnimationLookup(cachedComponentAnimations);
+            }
+        }
+        inputAsts.forEach(input => {
             if (input.type == t.PropertyBindingType.Animation) {
                 var animationName = input.name;
-                if (!isPresent(this._animationRegistry[animationName])) {
+                if (!isPresent(componentAnimationRegistry[animationName])) {
                     this.errors.push(new AnimationParseError(`couldn't find an animation entry for ${animationName}`));
                 }
             }
