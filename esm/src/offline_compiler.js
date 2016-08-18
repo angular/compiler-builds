@@ -51,7 +51,7 @@ export class OfflineCompiler {
         this._metadataResolver.clearCache();
     }
     compile(moduleUrl, ngModulesSummary, components, ngModules) {
-        let fileSuffix = _splitLastSuffix(moduleUrl)[1];
+        let fileSuffix = _splitTypescriptSuffix(moduleUrl)[1];
         let statements = [];
         let exportedVars = [];
         let outputSourceModules = [];
@@ -159,7 +159,7 @@ function _resolveStyleStatements(compileResult, fileSuffix) {
     return compileResult.statements;
 }
 function _ngfactoryModuleUrl(compUrl) {
-    var urlWithSuffix = _splitLastSuffix(compUrl);
+    var urlWithSuffix = _splitTypescriptSuffix(compUrl);
     return `${urlWithSuffix[0]}.ngfactory${urlWithSuffix[1]}`;
 }
 function _componentFactoryName(comp) {
@@ -173,7 +173,10 @@ function _assertComponent(meta) {
         throw new BaseException(`Could not compile '${meta.type.name}' because it is not a component.`);
     }
 }
-function _splitLastSuffix(path) {
+function _splitTypescriptSuffix(path) {
+    if (/\.d\.ts$/.test(path)) {
+        return [path.substring(0, path.length - 5), '.ts'];
+    }
     let lastDot = path.lastIndexOf('.');
     if (lastDot !== -1) {
         return [path.substring(0, lastDot), path.substring(lastDot)];
