@@ -13938,8 +13938,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
             moduleMeta.entryComponents.forEach(function (entryComponentType) {
                 if (!moduleMeta.transitiveModule.directivesSet.has(entryComponentType.runtime)) {
-                    _this._addDirectiveToModule(_this.getDirectiveMetadata(entryComponentType.runtime), moduleMeta.type.runtime, moduleMeta.transitiveModule, moduleMeta.declaredDirectives);
-                    _this._console.warn("NgModule " + stringify(moduleMeta.type.runtime) + " uses " + stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported! This warning will become an error after final.");
+                    throw new BaseException$1("NgModule " + stringify(moduleMeta.type.runtime) + " uses " + stringify(entryComponentType.runtime) + " via \"entryComponents\" but it was neither declared nor imported! If " + stringify(entryComponentType.runtime) + " is declared in an imported module, make sure it is exported.");
                 }
             });
             // Collect @Component.directives/pipes/entryComponents into our declared
