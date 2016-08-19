@@ -17026,6 +17026,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
         }
         DomElementSchemaRegistry.prototype.hasProperty = function (tagName, propName, schemaMetas) {
+            if (schemaMetas.some(function (schema) { return schema.name === _angular_core.NO_ERRORS_SCHEMA.name; })) {
+                return true;
+            }
             if (tagName.indexOf('-') !== -1) {
                 if (tagName === 'ng-container' || tagName === 'ng-content') {
                     return false;

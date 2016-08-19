@@ -266,6 +266,9 @@ var DomElementSchemaRegistry = (function (_super) {
         });
     }
     DomElementSchemaRegistry.prototype.hasProperty = function (tagName, propName, schemaMetas) {
+        if (schemaMetas.some(function (schema) { return schema.name === core_1.NO_ERRORS_SCHEMA.name; })) {
+            return true;
+        }
         if (tagName.indexOf('-') !== -1) {
             if (tagName === 'ng-container' || tagName === 'ng-content') {
                 return false;
