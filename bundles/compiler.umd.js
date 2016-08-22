@@ -15067,7 +15067,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         _TsEmitterVisitor.prototype._visitClassField = function (field, ctx) {
             if (field.hasModifier(StmtModifier.Private)) {
-                ctx.print("private ");
+                // comment out as a workaround for #10967
+                ctx.print("/*private*/ ");
             }
             ctx.print(field.name);
             ctx.print(':');

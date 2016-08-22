@@ -135,7 +135,8 @@ var _TsEmitterVisitor = (function (_super) {
     };
     _TsEmitterVisitor.prototype._visitClassField = function (field, ctx) {
         if (field.hasModifier(o.StmtModifier.Private)) {
-            ctx.print("private ");
+            // comment out as a workaround for #10967
+            ctx.print("/*private*/ ");
         }
         ctx.print(field.name);
         ctx.print(':');
