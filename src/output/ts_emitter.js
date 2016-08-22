@@ -80,6 +80,9 @@ var _TsEmitterVisitor = (function (_super) {
             ctx.print(defaultType);
         }
     };
+    _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
+        _super.prototype.visitLiteralExpr.call(this, ast, ctx, '(null as any)');
+    };
     _TsEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
         this._visitIdentifier(ast.value, ast.typeParams, ctx);
         return null;

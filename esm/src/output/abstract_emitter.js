@@ -221,13 +221,13 @@ export class AbstractEmitterVisitor {
         ctx.print(`)`);
         return null;
     }
-    visitLiteralExpr(ast, ctx) {
+    visitLiteralExpr(ast, ctx, absentValue = 'null') {
         var value = ast.value;
         if (isString(value)) {
             ctx.print(escapeSingleQuoteString(value, this._escapeDollarInStrings));
         }
         else if (isBlank(value)) {
-            ctx.print('null');
+            ctx.print(absentValue);
         }
         else {
             ctx.print(`${value}`);

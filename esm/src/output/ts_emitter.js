@@ -68,6 +68,9 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
             ctx.print(defaultType);
         }
     }
+    visitLiteralExpr(ast, ctx) {
+        super.visitLiteralExpr(ast, ctx, '(null as any)');
+    }
     visitExternalExpr(ast, ctx) {
         this._visitIdentifier(ast.value, ast.typeParams, ctx);
         return null;

@@ -14778,13 +14778,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             ctx.print(")");
             return null;
         };
-        AbstractEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
+        AbstractEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx, absentValue) {
+            if (absentValue === void 0) { absentValue = 'null'; }
             var value = ast.value;
             if (isString(value)) {
                 ctx.print(escapeSingleQuoteString(value, this._escapeDollarInStrings));
             }
             else if (isBlank(value)) {
-                ctx.print('null');
+                ctx.print(absentValue);
             }
             else {
                 ctx.print("" + value);
@@ -15011,6 +15012,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             else {
                 ctx.print(defaultType);
             }
+        };
+        _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
+            _super.prototype.visitLiteralExpr.call(this, ast, ctx, '(null as any)');
         };
         _TsEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
             this._visitIdentifier(ast.value, ast.typeParams, ctx);

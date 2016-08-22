@@ -241,13 +241,14 @@ var AbstractEmitterVisitor = (function () {
         ctx.print(")");
         return null;
     };
-    AbstractEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
+    AbstractEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx, absentValue) {
+        if (absentValue === void 0) { absentValue = 'null'; }
         var value = ast.value;
         if (lang_1.isString(value)) {
             ctx.print(escapeSingleQuoteString(value, this._escapeDollarInStrings));
         }
         else if (lang_1.isBlank(value)) {
-            ctx.print('null');
+            ctx.print(absentValue);
         }
         else {
             ctx.print("" + value);
