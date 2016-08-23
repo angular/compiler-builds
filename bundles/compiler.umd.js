@@ -15281,10 +15281,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
                 ctx.print(">");
             }
-            if (value.runtime && value.runtime.members) {
-                ctx.print('.');
-                ctx.print(value.runtime.members.join('.'));
-            }
         };
         return _TsEmitterVisitor;
     }(AbstractEmitterVisitor));
