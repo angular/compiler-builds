@@ -310,6 +310,10 @@ var _TsEmitterVisitor = (function (_super) {
             this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
             ctx.print(">");
         }
+        if (value.runtime && value.runtime.members) {
+            ctx.print('.');
+            ctx.print(value.runtime.members.join('.'));
+        }
     };
     return _TsEmitterVisitor;
 }(abstract_emitter_1.AbstractEmitterVisitor));
