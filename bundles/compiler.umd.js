@@ -13826,7 +13826,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     });
                     changeDetectionStrategy = cmpMeta.changeDetection;
                     if (isPresent(dirMeta.viewProviders)) {
-                        viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'), entryComponentMetadata);
+                        viewProviders = this.getProvidersMetadata(dirMeta.viewProviders, entryComponentMetadata, "viewProviders for \"" + stringify(directiveType) + "\"");
                     }
                     moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
                     if (cmpMeta.entryComponents) {
@@ -13846,7 +13846,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 var providers = [];
                 if (isPresent(dirMeta.providers)) {
-                    providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'), entryComponentMetadata);
+                    providers = this.getProvidersMetadata(dirMeta.providers, entryComponentMetadata, "providers for \"" + stringify(directiveType) + "\"");
                 }
                 var queries = [];
                 var viewQueries = [];
@@ -13904,7 +13904,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             var moduleWithProviders = importedType;
                             importedModuleType = moduleWithProviders.ngModule;
                             if (moduleWithProviders.providers) {
-                                providers_1.push.apply(providers_1, _this.getProvidersMetadata(moduleWithProviders.providers, entryComponents_1));
+                                providers_1.push.apply(providers_1, _this.getProvidersMetadata(moduleWithProviders.providers, entryComponents_1, "provider for the NgModule '" + stringify(importedModuleType) + "'"));
                             }
                         }
                         if (importedModuleType) {
@@ -13965,7 +13965,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 // The providers of the module have to go last
                 // so that they overwrite any other provider we already added.
                 if (meta.providers) {
-                    providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1));
+                    providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1, "provider for the NgModule '" + stringify(moduleType) + "'"));
                 }
                 if (meta.entryComponents) {
                     entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
@@ -14201,17 +14201,17 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return compileToken;
         };
-        CompileMetadataResolver.prototype.getProvidersMetadata = function (providers, targetEntryComponents) {
+        CompileMetadataResolver.prototype.getProvidersMetadata = function (providers, targetEntryComponents, debugInfo) {
             var _this = this;
             var compileProviders = [];
-            providers.forEach(function (provider) {
+            providers.forEach(function (provider, providerIdx) {
                 provider = _angular_core.resolveForwardRef(provider);
                 if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
                     provider = new ProviderMeta(provider.provide, provider);
                 }
                 var compileProvider;
                 if (isArray(provider)) {
-                    compileProvider = _this.getProvidersMetadata(provider, targetEntryComponents);
+                    compileProvider = _this.getProvidersMetadata(provider, targetEntryComponents, debugInfo);
                 }
                 else if (provider instanceof ProviderMeta) {
                     var tokenMeta = _this.getTokenMetadata(provider.token);
@@ -14226,7 +14226,20 @@ var __extends = (this && this.__extends) || function (d, b) {
                     compileProvider = _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
                 }
                 else {
-                    throw new BaseException$1("Invalid provider - only instances of Provider and Type are allowed, got: " + stringify(provider));
+                    var providersInfo = providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
+                        if (seenProviderIdx < providerIdx) {
+                            soFar.push("" + stringify(seenProvider));
+                        }
+                        else if (seenProviderIdx == providerIdx) {
+                            soFar.push("?" + stringify(seenProvider) + "?");
+                        }
+                        else if (seenProviderIdx == providerIdx + 1) {
+                            soFar.push('...');
+                        }
+                        return soFar;
+                    }, [])
+                        .join(', ');
+                    throw new BaseException$1("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]");
                 }
                 if (compileProvider) {
                     compileProviders.push(compileProvider);
@@ -14351,18 +14364,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         }
         return out;
-    }
-    function verifyNonBlankProviders(directiveType, providersTree, providersType) {
-        var flat = [];
-        var errMsg;
-        flattenArray(providersTree, flat);
-        for (var i = 0; i < flat.length; i++) {
-            if (isBlank(flat[i])) {
-                errMsg = flat.map(function (provider) { return isBlank(provider) ? '?' : stringify(provider); }).join(', ');
-                throw new BaseException$1("One or more of " + providersType + " for \"" + stringify(directiveType) + "\" were not defined: [" + errMsg + "].");
-            }
-        }
-        return providersTree;
     }
     function isValidType(value) {
         return isStaticSymbol(value) || (value instanceof _angular_core.Type);

@@ -145,7 +145,7 @@ var CompileMetadataResolver = (function () {
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (lang_1.isPresent(dirMeta.viewProviders)) {
-                    viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'), entryComponentMetadata);
+                    viewProviders = this.getProvidersMetadata(dirMeta.viewProviders, entryComponentMetadata, "viewProviders for \"" + lang_1.stringify(directiveType) + "\"");
                 }
                 moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
                 if (cmpMeta.entryComponents) {
@@ -165,7 +165,7 @@ var CompileMetadataResolver = (function () {
             }
             var providers = [];
             if (lang_1.isPresent(dirMeta.providers)) {
-                providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'), entryComponentMetadata);
+                providers = this.getProvidersMetadata(dirMeta.providers, entryComponentMetadata, "providers for \"" + lang_1.stringify(directiveType) + "\"");
             }
             var queries = [];
             var viewQueries = [];
@@ -223,7 +223,7 @@ var CompileMetadataResolver = (function () {
                         var moduleWithProviders = importedType;
                         importedModuleType = moduleWithProviders.ngModule;
                         if (moduleWithProviders.providers) {
-                            providers_1.push.apply(providers_1, _this.getProvidersMetadata(moduleWithProviders.providers, entryComponents_1));
+                            providers_1.push.apply(providers_1, _this.getProvidersMetadata(moduleWithProviders.providers, entryComponents_1, "provider for the NgModule '" + lang_1.stringify(importedModuleType) + "'"));
                         }
                     }
                     if (importedModuleType) {
@@ -284,7 +284,7 @@ var CompileMetadataResolver = (function () {
             // The providers of the module have to go last
             // so that they overwrite any other provider we already added.
             if (meta.providers) {
-                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1));
+                providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1, "provider for the NgModule '" + lang_1.stringify(moduleType) + "'"));
             }
             if (meta.entryComponents) {
                 entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
@@ -520,17 +520,17 @@ var CompileMetadataResolver = (function () {
         }
         return compileToken;
     };
-    CompileMetadataResolver.prototype.getProvidersMetadata = function (providers, targetEntryComponents) {
+    CompileMetadataResolver.prototype.getProvidersMetadata = function (providers, targetEntryComponents, debugInfo) {
         var _this = this;
         var compileProviders = [];
-        providers.forEach(function (provider) {
+        providers.forEach(function (provider, providerIdx) {
             provider = core_1.resolveForwardRef(provider);
             if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
                 provider = new cpl.ProviderMeta(provider.provide, provider);
             }
             var compileProvider;
             if (lang_1.isArray(provider)) {
-                compileProvider = _this.getProvidersMetadata(provider, targetEntryComponents);
+                compileProvider = _this.getProvidersMetadata(provider, targetEntryComponents, debugInfo);
             }
             else if (provider instanceof cpl.ProviderMeta) {
                 var tokenMeta = _this.getTokenMetadata(provider.token);
@@ -545,7 +545,20 @@ var CompileMetadataResolver = (function () {
                 compileProvider = _this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
             }
             else {
-                throw new exceptions_1.BaseException("Invalid provider - only instances of Provider and Type are allowed, got: " + lang_1.stringify(provider));
+                var providersInfo = providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
+                    if (seenProviderIdx < providerIdx) {
+                        soFar.push("" + lang_1.stringify(seenProvider));
+                    }
+                    else if (seenProviderIdx == providerIdx) {
+                        soFar.push("?" + lang_1.stringify(seenProvider) + "?");
+                    }
+                    else if (seenProviderIdx == providerIdx + 1) {
+                        soFar.push('...');
+                    }
+                    return soFar;
+                }, [])
+                    .join(', ');
+                throw new exceptions_1.BaseException("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]");
             }
             if (compileProvider) {
                 compileProviders.push(compileProvider);
@@ -671,18 +684,6 @@ function flattenArray(tree, out) {
         }
     }
     return out;
-}
-function verifyNonBlankProviders(directiveType, providersTree, providersType) {
-    var flat = [];
-    var errMsg;
-    flattenArray(providersTree, flat);
-    for (var i = 0; i < flat.length; i++) {
-        if (lang_1.isBlank(flat[i])) {
-            errMsg = flat.map(function (provider) { return lang_1.isBlank(provider) ? '?' : lang_1.stringify(provider); }).join(', ');
-            throw new exceptions_1.BaseException("One or more of " + providersType + " for \"" + lang_1.stringify(directiveType) + "\" were not defined: [" + errMsg + "].");
-        }
-    }
-    return providersTree;
 }
 function isValidType(value) {
     return cpl.isStaticSymbol(value) || (value instanceof core_1.Type);

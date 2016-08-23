@@ -134,7 +134,7 @@ export class CompileMetadataResolver {
                 });
                 changeDetectionStrategy = cmpMeta.changeDetection;
                 if (isPresent(dirMeta.viewProviders)) {
-                    viewProviders = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.viewProviders, 'viewProviders'), entryComponentMetadata);
+                    viewProviders = this.getProvidersMetadata(dirMeta.viewProviders, entryComponentMetadata, `viewProviders for "${stringify(directiveType)}"`);
                 }
                 moduleUrl = componentModuleUrl(this._reflector, directiveType, cmpMeta);
                 if (cmpMeta.entryComponents) {
@@ -154,7 +154,7 @@ export class CompileMetadataResolver {
             }
             var providers = [];
             if (isPresent(dirMeta.providers)) {
-                providers = this.getProvidersMetadata(verifyNonBlankProviders(directiveType, dirMeta.providers, 'providers'), entryComponentMetadata);
+                providers = this.getProvidersMetadata(dirMeta.providers, entryComponentMetadata, `providers for "${stringify(directiveType)}"`);
             }
             var queries = [];
             var viewQueries = [];
@@ -210,7 +210,7 @@ export class CompileMetadataResolver {
                         const moduleWithProviders = importedType;
                         importedModuleType = moduleWithProviders.ngModule;
                         if (moduleWithProviders.providers) {
-                            providers.push(...this.getProvidersMetadata(moduleWithProviders.providers, entryComponents));
+                            providers.push(...this.getProvidersMetadata(moduleWithProviders.providers, entryComponents, `provider for the NgModule '${stringify(importedModuleType)}'`));
                         }
                     }
                     if (importedModuleType) {
@@ -271,7 +271,7 @@ export class CompileMetadataResolver {
             // The providers of the module have to go last
             // so that they overwrite any other provider we already added.
             if (meta.providers) {
-                providers.push(...this.getProvidersMetadata(meta.providers, entryComponents));
+                providers.push(...this.getProvidersMetadata(meta.providers, entryComponents, `provider for the NgModule '${stringify(moduleType)}'`));
             }
             if (meta.entryComponents) {
                 entryComponents.push(...flattenArray(meta.entryComponents)
@@ -500,16 +500,16 @@ export class CompileMetadataResolver {
         }
         return compileToken;
     }
-    getProvidersMetadata(providers, targetEntryComponents) {
+    getProvidersMetadata(providers, targetEntryComponents, debugInfo) {
         const compileProviders = [];
-        providers.forEach((provider) => {
+        providers.forEach((provider, providerIdx) => {
             provider = resolveForwardRef(provider);
             if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
                 provider = new cpl.ProviderMeta(provider.provide, provider);
             }
             let compileProvider;
             if (isArray(provider)) {
-                compileProvider = this.getProvidersMetadata(provider, targetEntryComponents);
+                compileProvider = this.getProvidersMetadata(provider, targetEntryComponents, debugInfo);
             }
             else if (provider instanceof cpl.ProviderMeta) {
                 let tokenMeta = this.getTokenMetadata(provider.token);
@@ -524,7 +524,20 @@ export class CompileMetadataResolver {
                 compileProvider = this.getTypeMetadata(provider, staticTypeModuleUrl(provider));
             }
             else {
-                throw new BaseException(`Invalid provider - only instances of Provider and Type are allowed, got: ${stringify(provider)}`);
+                let providersInfo = providers.reduce((soFar, seenProvider, seenProviderIdx) => {
+                    if (seenProviderIdx < providerIdx) {
+                        soFar.push(`${stringify(seenProvider)}`);
+                    }
+                    else if (seenProviderIdx == providerIdx) {
+                        soFar.push(`?${stringify(seenProvider)}?`);
+                    }
+                    else if (seenProviderIdx == providerIdx + 1) {
+                        soFar.push('...');
+                    }
+                    return soFar;
+                }, [])
+                    .join(', ');
+                throw new BaseException(`Invalid ${debugInfo ? debugInfo : 'provider'} - only instances of Provider and Type are allowed, got: [${providersInfo}]`);
             }
             if (compileProvider) {
                 compileProviders.push(compileProvider);
@@ -642,18 +655,6 @@ function flattenArray(tree, out = []) {
         }
     }
     return out;
-}
-function verifyNonBlankProviders(directiveType, providersTree, providersType) {
-    var flat = [];
-    var errMsg;
-    flattenArray(providersTree, flat);
-    for (var i = 0; i < flat.length; i++) {
-        if (isBlank(flat[i])) {
-            errMsg = flat.map(provider => isBlank(provider) ? '?' : stringify(provider)).join(', ');
-            throw new BaseException(`One or more of ${providersType} for "${stringify(directiveType)}" were not defined: [${errMsg}].`);
-        }
-    }
-    return providersTree;
 }
 function isValidType(value) {
     return cpl.isStaticSymbol(value) || (value instanceof Type);
