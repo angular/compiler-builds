@@ -295,6 +295,10 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
             this.visitAllObjects((type /** TODO #9100 */) => type.visitType(this, ctx), typeParams, ctx, ',');
             ctx.print(`>`);
         }
+        if (value.runtime && value.runtime.members) {
+            ctx.print('.');
+            ctx.print(value.runtime.members.join('.'));
+        }
     }
 }
 //# sourceMappingURL=ts_emitter.js.map
