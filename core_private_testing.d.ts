@@ -5,8 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { __core_private_testing_types__ as t } from '@angular/core/testing';
-export declare type TestingCompiler = t.TestingCompiler;
-export declare var TestingCompiler: typeof t.TestingCompiler;
-export declare type TestingCompilerFactory = t.TestingCompilerFactory;
-export declare var TestingCompilerFactory: typeof t.TestingCompilerFactory;
+import { __core_private_testing__ as r, __core_private_testing_types__ as types } from '@angular/core/testing';
+export declare let _compiler_core_testing_types: types;
+export declare type TestingCompiler = typeof _compiler_core_testing_types.TestingCompiler;
+export declare var TestingCompiler: typeof r.TestingCompiler;
+export declare type TestingCompilerFactory = typeof _compiler_core_testing_types.TestingCompilerFactory;
+export declare var TestingCompilerFactory: typeof r.TestingCompilerFactory;
