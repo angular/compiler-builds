@@ -229,7 +229,7 @@ class ViewBuilderVisitor {
         this.view.nodes.push(compileElement);
         var compiledAnimations = this._animationCompiler.compileComponent(this.view.component, [ast]);
         this.nestedViewCount++;
-        var embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, o.NULL_EXPR, compiledAnimations, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
+        var embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, o.NULL_EXPR, compiledAnimations.triggers, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
         this.nestedViewCount += buildView(embeddedView, ast.children, this.targetDependencies);
         compileElement.beforeChildren();
         this._addRootNodeAndProject(compileElement);

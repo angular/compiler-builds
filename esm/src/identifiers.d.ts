@@ -49,5 +49,6 @@ export declare class Identifiers {
     static collectAndResolveStyles: CompileIdentifierMetadata;
     static LOCALE_ID: CompileIdentifierMetadata;
     static TRANSLATIONS_FORMAT: CompileIdentifierMetadata;
+    static AnimationOutput: CompileIdentifierMetadata;
 }
 export declare function identifierToken(identifier: CompileIdentifierMetadata): CompileTokenMetadata;

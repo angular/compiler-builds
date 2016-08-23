@@ -1,24 +1,19 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 import { identifierToken } from '../identifiers';
 import { templateVisitAll } from '../template_parser/template_ast';
-import { bindDirectiveOutputs, bindRenderOutputs, collectEventListeners } from './event_binder';
+import { CompileElementAnimationOutput, bindAnimationOutputs, bindDirectiveOutputs, bindRenderOutputs, collectEventListeners } from './event_binder';
 import { bindDirectiveAfterContentLifecycleCallbacks, bindDirectiveAfterViewLifecycleCallbacks, bindDirectiveDetectChangesLifecycleCallbacks, bindInjectableDestroyLifecycleCallbacks, bindPipeDestroyLifecycleCallbacks } from './lifecycle_binder';
 import { bindDirectiveHostProps, bindDirectiveInputs, bindRenderInputs, bindRenderText } from './property_binder';
-export function bindView(view, parsedTemplate) {
-    var visitor = new ViewBinderVisitor(view);
+export function bindView(view, parsedTemplate, animationOutputs) {
+    var visitor = new ViewBinderVisitor(view, animationOutputs);
     templateVisitAll(visitor, parsedTemplate);
     view.pipes.forEach((pipe) => { bindPipeDestroyLifecycleCallbacks(pipe.meta, pipe.instance, pipe.view); });
 }
 class ViewBinderVisitor {
-    constructor(view) {
+    constructor(view, animationOutputs) {
         this.view = view;
         this._nodeIndex = 0;
+        this._animationOutputsMap = {};
+        animationOutputs.forEach(entry => { this._animationOutputsMap[entry.fullPropertyName] = entry; });
     }
     visitBoundText(ast, parent) {
         var node = this.view.nodes[this._nodeIndex++];
@@ -32,7 +27,24 @@ class ViewBinderVisitor {
     visitNgContent(ast, parent) { return null; }
     visitElement(ast, parent) {
         var compileElement = this.view.nodes[this._nodeIndex++];
-        var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
+        var eventListeners = [];
+        var animationEventListeners = [];
+        collectEventListeners(ast.outputs, ast.directives, compileElement).forEach(entry => {
+            // TODO: figure out how to abstract this `if` statement elsewhere
+            if (entry.eventName[0] == '@') {
+                let animationOutputName = entry.eventName.substr(1);
+                let output = this._animationOutputsMap[animationOutputName];
+                // no need to report an error here since the parser will
+                // have caught the missing animation trigger definition
+                if (output) {
+                    animationEventListeners.push(new CompileElementAnimationOutput(entry, output));
+                }
+            }
+            else {
+                eventListeners.push(entry);
+            }
+        });
+        bindAnimationOutputs(animationEventListeners);
         bindRenderInputs(ast.inputs, compileElement);
         bindRenderOutputs(eventListeners);
         ast.directives.forEach((directiveAst) => {
@@ -71,7 +83,7 @@ class ViewBinderVisitor {
             var providerInstance = compileElement.instances.get(providerAst.token);
             bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
         });
-        bindView(compileElement.embeddedView, ast.children);
+        bindView(compileElement.embeddedView, ast.children, []);
         return null;
     }
     visitAttr(ast, ctx) { return null; }

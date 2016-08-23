@@ -5546,6 +5546,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var AnimationGroupPlayer_ = _angular_core.__core_private__.AnimationGroupPlayer;
     var AnimationKeyframe_ = _angular_core.__core_private__.AnimationKeyframe;
     var AnimationStyles_ = _angular_core.__core_private__.AnimationStyles;
+    var AnimationOutput = _angular_core.__core_private__.AnimationOutput;
     var ANY_STATE = _angular_core.__core_private__.ANY_STATE;
     var DEFAULT_STATE = _angular_core.__core_private__.DEFAULT_STATE;
     var EMPTY_ANIMATION_STATE = _angular_core.__core_private__.EMPTY_STATE;
@@ -7840,6 +7841,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var impAnimationKeyframe = AnimationKeyframe_;
     var impAnimationStyles = AnimationStyles_;
     var impNoOpAnimationPlayer = NoOpAnimationPlayer_;
+    var impAnimationOutput = AnimationOutput;
     var ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
     var Identifiers = (function () {
         function Identifiers() {
@@ -8014,6 +8016,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         name: 'TRANSLATIONS_FORMAT',
         moduleUrl: assetUrl('core', 'i18n/tokens'),
         runtime: _angular_core.TRANSLATIONS_FORMAT
+    });
+    Identifiers.AnimationOutput = new CompileIdentifierMetadata({
+        name: 'AnimationOutput',
+        moduleUrl: assetUrl('core', 'animation/animation_output'),
+        runtime: impAnimationOutput
     });
     function identifierToken(identifier) {
         return new CompileTokenMetadata({ identifier: identifier });
@@ -9861,6 +9868,28 @@ var __extends = (this && this.__extends) || function (d, b) {
         var ast = new AnimationEntryAst(entry.name, stateDeclarationAsts, stateTransitionAsts);
         return new ParsedAnimationResult(ast, errors);
     }
+    function parseAnimationOutputName(outputName, errors) {
+        var values = outputName.split('.');
+        var name;
+        var phase = '';
+        if (values.length > 1) {
+            name = values[0];
+            var parsedPhase = values[1];
+            switch (parsedPhase) {
+                case 'start':
+                case 'done':
+                    phase = parsedPhase;
+                    break;
+                default:
+                    errors.push(new AnimationParseError("The provided animation output phase value \"" + parsedPhase + "\" for \"@" + name + "\" is not supported (use start or done)"));
+            }
+        }
+        else {
+            name = outputName;
+            errors.push(new AnimationParseError("The animation trigger output event (@" + name + ") is missing its phase value name (start or done are currently supported)"));
+        }
+        return new AnimationOutput(name, phase, outputName);
+    }
     function _parseAnimationDeclarationStates(stateMetadata, errors) {
         var styleValues = [];
         stateMetadata.styles.styles.forEach(function (stylesEntry) {
@@ -10264,15 +10293,22 @@ var __extends = (this && this.__extends) || function (d, b) {
         return new AnimationKeyframeAst(_INITIAL_KEYFRAME, new AnimationStylesAst([values]));
     }
     var animationCompilationCache = new Map();
-    var CompiledAnimation = (function () {
-        function CompiledAnimation(name, statesMapStatement, statesVariableName, fnStatement, fnVariable) {
+    var CompiledAnimationTriggerResult = (function () {
+        function CompiledAnimationTriggerResult(name, statesMapStatement, statesVariableName, fnStatement, fnVariable) {
             this.name = name;
             this.statesMapStatement = statesMapStatement;
             this.statesVariableName = statesVariableName;
             this.fnStatement = fnStatement;
             this.fnVariable = fnVariable;
         }
-        return CompiledAnimation;
+        return CompiledAnimationTriggerResult;
+    }());
+    var CompiledComponentAnimationResult = (function () {
+        function CompiledComponentAnimationResult(outputs, triggers) {
+            this.outputs = outputs;
+            this.triggers = triggers;
+        }
+        return CompiledComponentAnimationResult;
     }());
     var AnimationCompiler = (function () {
         function AnimationCompiler() {
@@ -10301,16 +10337,15 @@ var __extends = (this && this.__extends) || function (d, b) {
                     triggerLookup[entry.name] = compileResult;
                 }
             });
-            _validateAnimationProperties(compiledAnimations, template).forEach(function (entry) {
-                groupedErrors.push(entry.msg);
-            });
+            var validatedProperties = _validateAnimationProperties(compiledAnimations, template);
+            validatedProperties.errors.forEach(function (error) { groupedErrors.push(error.msg); });
             if (groupedErrors.length > 0) {
                 var errorMessageStr = "Animation parsing for " + component.type.name + " has failed due to the following errors:";
                 groupedErrors.forEach(function (error) { return errorMessageStr += "\n- " + error; });
                 throw new _angular_core.BaseException(errorMessageStr);
             }
             animationCompilationCache.set(component, compiledAnimations);
-            return compiledAnimations;
+            return new CompiledComponentAnimationResult(validatedProperties.outputs, compiledAnimations);
         };
         return AnimationCompiler;
     }());
@@ -10473,7 +10508,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             statements.push(_ANIMATION_FACTORY_VIEW_VAR
                 .callMethod('queueAnimation', [
                 _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
-                _ANIMATION_PLAYER_VAR
+                _ANIMATION_PLAYER_VAR, _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR
             ])
                 .toStmt());
             return fn([
@@ -10500,7 +10535,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 lookupMap.push([stateName, variableValue]);
             });
             var compiledStatesMapExpr = this._statesMapVar.set(literalMap(lookupMap)).toDeclStmt();
-            return new CompiledAnimation(this.animationName, compiledStatesMapExpr, this._statesMapVarName, fnStatement, fnVariable);
+            return new CompiledAnimationTriggerResult(this.animationName, compiledStatesMapExpr, this._statesMapVarName, fnStatement, fnVariable);
         };
         return _AnimationBuilder;
     }());
@@ -10557,11 +10592,19 @@ var __extends = (this && this.__extends) || function (d, b) {
     function _validateAnimationProperties(compiledAnimations, template) {
         var visitor = new _AnimationTemplatePropertyVisitor(compiledAnimations);
         templateVisitAll(visitor, template);
-        return visitor.errors;
+        return new AnimationPropertyValidationOutput(visitor.outputs, visitor.errors);
     }
+    var AnimationPropertyValidationOutput = (function () {
+        function AnimationPropertyValidationOutput(outputs, errors) {
+            this.outputs = outputs;
+            this.errors = errors;
+        }
+        return AnimationPropertyValidationOutput;
+    }());
     var _AnimationTemplatePropertyVisitor = (function () {
         function _AnimationTemplatePropertyVisitor(animations) {
             this.errors = [];
+            this.outputs = [];
             this._animationRegistry = this._buildCompileAnimationLookup(animations);
         }
         _AnimationTemplatePropertyVisitor.prototype._buildCompileAnimationLookup = function (animations) {
@@ -10569,35 +10612,55 @@ var __extends = (this && this.__extends) || function (d, b) {
             animations.forEach(function (entry) { map[entry.name] = true; });
             return map;
         };
-        _AnimationTemplatePropertyVisitor.prototype.visitElement = function (ast, ctx) {
+        _AnimationTemplatePropertyVisitor.prototype._validateAnimationInputOutputPairs = function (inputAsts, outputAsts, animationRegistry, isHostLevel) {
             var _this = this;
-            var inputAsts = ast.inputs;
-            var componentAnimationRegistry = this._animationRegistry;
-            var componentOnElement = ast.directives.find(function (directive) { return directive.directive.isComponent; });
-            if (componentOnElement) {
-                inputAsts = componentOnElement.hostProperties;
-                var cachedComponentAnimations = animationCompilationCache.get(componentOnElement.directive);
-                if (cachedComponentAnimations) {
-                    componentAnimationRegistry = this._buildCompileAnimationLookup(cachedComponentAnimations);
-                }
-            }
+            var detectedAnimationInputs = {};
             inputAsts.forEach(function (input) {
                 if (input.type == exports.PropertyBindingType.Animation) {
-                    var animationName = input.name;
-                    if (!isPresent(componentAnimationRegistry[animationName])) {
-                        _this.errors.push(new AnimationParseError("couldn't find an animation entry for " + animationName));
+                    var triggerName = input.name;
+                    if (isPresent(animationRegistry[triggerName])) {
+                        detectedAnimationInputs[triggerName] = true;
+                    }
+                    else {
+                        _this.errors.push(new AnimationParseError("Couldn't find an animation entry for " + triggerName));
                     }
                 }
             });
+            outputAsts.forEach(function (output) {
+                if (output.name[0] == '@') {
+                    var normalizedOutputData = parseAnimationOutputName(output.name.substr(1), _this.errors);
+                    var triggerName = normalizedOutputData.name;
+                    var triggerEventPhase = normalizedOutputData.phase;
+                    if (!animationRegistry[triggerName]) {
+                        _this.errors.push(new AnimationParseError("Couldn't find the corresponding " + (isHostLevel ? 'host-level ' : '') + "animation trigger definition for (@" + triggerName + ")"));
+                    }
+                    else if (!detectedAnimationInputs[triggerName]) {
+                        _this.errors.push(new AnimationParseError("Unable to listen on (@" + triggerName + "." + triggerEventPhase + ") because the animation trigger [@" + triggerName + "] isn't being used on the same element"));
+                    }
+                    else {
+                        _this.outputs.push(normalizedOutputData);
+                    }
+                }
+            });
+        };
+        _AnimationTemplatePropertyVisitor.prototype.visitElement = function (ast, ctx) {
+            this._validateAnimationInputOutputPairs(ast.inputs, ast.outputs, this._animationRegistry, false);
+            var componentOnElement = ast.directives.find(function (directive) { return directive.directive.isComponent; });
+            if (componentOnElement) {
+                var cachedComponentAnimations = animationCompilationCache.get(componentOnElement.directive);
+                if (cachedComponentAnimations) {
+                    this._validateAnimationInputOutputPairs(componentOnElement.hostProperties, componentOnElement.hostEvents, this._buildCompileAnimationLookup(cachedComponentAnimations), true);
+                }
+            }
             templateVisitAll(this, ast.children);
         };
+        _AnimationTemplatePropertyVisitor.prototype.visitEvent = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitBoundText = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitText = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitEmbeddedTemplate = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitNgContent = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitAttr = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitDirective = function (ast, ctx) { };
-        _AnimationTemplatePropertyVisitor.prototype.visitEvent = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitReference = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitVariable = function (ast, ctx) { };
         _AnimationTemplatePropertyVisitor.prototype.visitDirectiveProperty = function (ast, ctx) { };
@@ -11942,6 +12005,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             output.push(arg);
         }
     }
+    var CompileElementAnimationOutput = (function () {
+        function CompileElementAnimationOutput(listener, output) {
+            this.listener = listener;
+            this.output = output;
+        }
+        return CompileElementAnimationOutput;
+    }());
     var CompileEventListener = (function () {
         function CompileEventListener(compileElement, eventTarget, eventName, listenerIndex) {
             this.compileElement = compileElement;
@@ -11962,6 +12032,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             return listener;
         };
+        Object.defineProperty(CompileEventListener.prototype, "methodName", {
+            get: function () { return this._methodName; },
+            enumerable: true,
+            configurable: true
+        });
         CompileEventListener.prototype.addAction = function (hostEvent, directive, directiveInstance) {
             if (isPresent(directive) && directive.isComponent) {
                 this._hasComponentHostListener = true;
@@ -12012,6 +12087,20 @@ var __extends = (this && this.__extends) || function (d, b) {
             // private is fine here as no child view will reference the event handler...
             this.compileElement.view.createMethod.addStmt(disposable.set(listenExpr).toDeclStmt(FUNCTION_TYPE, [StmtModifier.Private]));
         };
+        CompileEventListener.prototype.listenToAnimation = function (output) {
+            var outputListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
+            // tie the property callback method to the view animations map
+            var stmt = THIS_EXPR
+                .callMethod('registerAnimationOutput', [
+                this.compileElement.renderNode,
+                importExpr(Identifiers.AnimationOutput).instantiate([
+                    literal(output.name), literal(output.phase)
+                ]),
+                outputListener
+            ])
+                .toStmt();
+            this.compileElement.view.createMethod.addStmt(stmt);
+        };
         CompileEventListener.prototype.listenToDirective = function (directiveInstance, observablePropName) {
             var subscription = variable("subscription_" + this.compileElement.view.subscriptions.length);
             this.compileElement.view.subscriptions.push(subscription);
@@ -12050,6 +12139,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function bindRenderOutputs(eventListeners) {
         eventListeners.forEach(function (listener) { return listener.listenToRenderer(); });
+    }
+    function bindAnimationOutputs(eventListeners) {
+        eventListeners.forEach(function (entry) { entry.listener.listenToAnimation(entry.output); });
     }
     function convertStmtIntoExpression(stmt) {
         if (stmt instanceof ExpressionStatement) {
@@ -12330,15 +12422,18 @@ var __extends = (this && this.__extends) || function (d, b) {
             .toStmt();
         return new TryCatchStmt([tryStmt], [catchStmt]);
     }
-    function bindView(view, parsedTemplate) {
-        var visitor = new ViewBinderVisitor(view);
+    function bindView(view, parsedTemplate, animationOutputs) {
+        var visitor = new ViewBinderVisitor(view, animationOutputs);
         templateVisitAll(visitor, parsedTemplate);
         view.pipes.forEach(function (pipe) { bindPipeDestroyLifecycleCallbacks(pipe.meta, pipe.instance, pipe.view); });
     }
     var ViewBinderVisitor = (function () {
-        function ViewBinderVisitor(view) {
+        function ViewBinderVisitor(view, animationOutputs) {
+            var _this = this;
             this.view = view;
             this._nodeIndex = 0;
+            this._animationOutputsMap = {};
+            animationOutputs.forEach(function (entry) { _this._animationOutputsMap[entry.fullPropertyName] = entry; });
         }
         ViewBinderVisitor.prototype.visitBoundText = function (ast, parent) {
             var node = this.view.nodes[this._nodeIndex++];
@@ -12351,8 +12446,26 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         ViewBinderVisitor.prototype.visitNgContent = function (ast, parent) { return null; };
         ViewBinderVisitor.prototype.visitElement = function (ast, parent) {
+            var _this = this;
             var compileElement = this.view.nodes[this._nodeIndex++];
-            var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
+            var eventListeners = [];
+            var animationEventListeners = [];
+            collectEventListeners(ast.outputs, ast.directives, compileElement).forEach(function (entry) {
+                // TODO: figure out how to abstract this `if` statement elsewhere
+                if (entry.eventName[0] == '@') {
+                    var animationOutputName = entry.eventName.substr(1);
+                    var output = _this._animationOutputsMap[animationOutputName];
+                    // no need to report an error here since the parser will
+                    // have caught the missing animation trigger definition
+                    if (output) {
+                        animationEventListeners.push(new CompileElementAnimationOutput(entry, output));
+                    }
+                }
+                else {
+                    eventListeners.push(entry);
+                }
+            });
+            bindAnimationOutputs(animationEventListeners);
             bindRenderInputs(ast.inputs, compileElement);
             bindRenderOutputs(eventListeners);
             ast.directives.forEach(function (directiveAst) {
@@ -12391,7 +12504,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var providerInstance = compileElement.instances.get(providerAst.token);
                 bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
             });
-            bindView(compileElement.embeddedView, ast.children);
+            bindView(compileElement.embeddedView, ast.children, []);
             return null;
         };
         ViewBinderVisitor.prototype.visitAttr = function (ast, ctx) { return null; };
@@ -12618,7 +12731,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.view.nodes.push(compileElement);
             var compiledAnimations = this._animationCompiler.compileComponent(this.view.component, [ast]);
             this.nestedViewCount++;
-            var embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, NULL_EXPR, compiledAnimations, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
+            var embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, NULL_EXPR, compiledAnimations.triggers, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
             this.nestedViewCount += buildView(embeddedView, ast.children, this.targetDependencies);
             compileElement.beforeChildren();
             this._addRootNodeAndProject(compileElement);
@@ -12912,15 +13025,16 @@ var __extends = (this && this.__extends) || function (d, b) {
             var dependencies = [];
             var compiledAnimations = this._animationCompiler.compileComponent(component, template);
             var statements = [];
-            compiledAnimations.map(function (entry) {
+            var animationTriggers = compiledAnimations.triggers;
+            animationTriggers.forEach(function (entry) {
                 statements.push(entry.statesMapStatement);
                 statements.push(entry.fnStatement);
             });
-            var view = new CompileView(component, this._genConfig, pipes, styles, compiledAnimations, 0, CompileElement.createNull(), []);
+            var view = new CompileView(component, this._genConfig, pipes, styles, animationTriggers, 0, CompileElement.createNull(), []);
             buildView(view, template, dependencies);
             // Need to separate binding from creation to be able to refer to
             // variables that have been declared after usage.
-            bindView(view, template);
+            bindView(view, template, compiledAnimations.outputs);
             finishView(view, statements);
             return new ViewCompileResult(statements, view.viewFactory.name, dependencies);
         };

@@ -1,26 +1,22 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 "use strict";
 var identifiers_1 = require('../identifiers');
 var template_ast_1 = require('../template_parser/template_ast');
 var event_binder_1 = require('./event_binder');
 var lifecycle_binder_1 = require('./lifecycle_binder');
 var property_binder_1 = require('./property_binder');
-function bindView(view, parsedTemplate) {
-    var visitor = new ViewBinderVisitor(view);
+function bindView(view, parsedTemplate, animationOutputs) {
+    var visitor = new ViewBinderVisitor(view, animationOutputs);
     template_ast_1.templateVisitAll(visitor, parsedTemplate);
     view.pipes.forEach(function (pipe) { lifecycle_binder_1.bindPipeDestroyLifecycleCallbacks(pipe.meta, pipe.instance, pipe.view); });
 }
 exports.bindView = bindView;
 var ViewBinderVisitor = (function () {
-    function ViewBinderVisitor(view) {
+    function ViewBinderVisitor(view, animationOutputs) {
+        var _this = this;
         this.view = view;
         this._nodeIndex = 0;
+        this._animationOutputsMap = {};
+        animationOutputs.forEach(function (entry) { _this._animationOutputsMap[entry.fullPropertyName] = entry; });
     }
     ViewBinderVisitor.prototype.visitBoundText = function (ast, parent) {
         var node = this.view.nodes[this._nodeIndex++];
@@ -33,8 +29,26 @@ var ViewBinderVisitor = (function () {
     };
     ViewBinderVisitor.prototype.visitNgContent = function (ast, parent) { return null; };
     ViewBinderVisitor.prototype.visitElement = function (ast, parent) {
+        var _this = this;
         var compileElement = this.view.nodes[this._nodeIndex++];
-        var eventListeners = event_binder_1.collectEventListeners(ast.outputs, ast.directives, compileElement);
+        var eventListeners = [];
+        var animationEventListeners = [];
+        event_binder_1.collectEventListeners(ast.outputs, ast.directives, compileElement).forEach(function (entry) {
+            // TODO: figure out how to abstract this `if` statement elsewhere
+            if (entry.eventName[0] == '@') {
+                var animationOutputName = entry.eventName.substr(1);
+                var output = _this._animationOutputsMap[animationOutputName];
+                // no need to report an error here since the parser will
+                // have caught the missing animation trigger definition
+                if (output) {
+                    animationEventListeners.push(new event_binder_1.CompileElementAnimationOutput(entry, output));
+                }
+            }
+            else {
+                eventListeners.push(entry);
+            }
+        });
+        event_binder_1.bindAnimationOutputs(animationEventListeners);
         property_binder_1.bindRenderInputs(ast.inputs, compileElement);
         event_binder_1.bindRenderOutputs(eventListeners);
         ast.directives.forEach(function (directiveAst) {
@@ -73,7 +87,7 @@ var ViewBinderVisitor = (function () {
             var providerInstance = compileElement.instances.get(providerAst.token);
             lifecycle_binder_1.bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
         });
-        bindView(compileElement.embeddedView, ast.children);
+        bindView(compileElement.embeddedView, ast.children, []);
         return null;
     };
     ViewBinderVisitor.prototype.visitAttr = function (ast, ctx) { return null; };

@@ -7,12 +7,18 @@
  */
 import { StringMapWrapper } from '../facade/collection';
 import { StringWrapper, isBlank, isPresent } from '../facade/lang';
-import { identifierToken } from '../identifiers';
+import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { CompileBinding } from './compile_binding';
 import { CompileMethod } from './compile_method';
 import { EventHandlerVars, ViewProperties } from './constants';
 import { convertCdStatementToIr } from './expression_converter';
+export class CompileElementAnimationOutput {
+    constructor(listener, output) {
+        this.listener = listener;
+        this.output = output;
+    }
+}
 export class CompileEventListener {
     constructor(compileElement, eventTarget, eventName, listenerIndex) {
         this.compileElement = compileElement;
@@ -33,6 +39,7 @@ export class CompileEventListener {
         }
         return listener;
     }
+    get methodName() { return this._methodName; }
     addAction(hostEvent, directive, directiveInstance) {
         if (isPresent(directive) && directive.isComponent) {
             this._hasComponentHostListener = true;
@@ -83,6 +90,20 @@ export class CompileEventListener {
         // private is fine here as no child view will reference the event handler...
         this.compileElement.view.createMethod.addStmt(disposable.set(listenExpr).toDeclStmt(o.FUNCTION_TYPE, [o.StmtModifier.Private]));
     }
+    listenToAnimation(output) {
+        var outputListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
+        // tie the property callback method to the view animations map
+        var stmt = o.THIS_EXPR
+            .callMethod('registerAnimationOutput', [
+            this.compileElement.renderNode,
+            o.importExpr(Identifiers.AnimationOutput).instantiate([
+                o.literal(output.name), o.literal(output.phase)
+            ]),
+            outputListener
+        ])
+            .toStmt();
+        this.compileElement.view.createMethod.addStmt(stmt);
+    }
     listenToDirective(directiveInstance, observablePropName) {
         var subscription = o.variable(`subscription_${this.compileElement.view.subscriptions.length}`);
         this.compileElement.view.subscriptions.push(subscription);
@@ -120,6 +141,9 @@ export function bindDirectiveOutputs(directiveAst, directiveInstance, eventListe
 }
 export function bindRenderOutputs(eventListeners) {
     eventListeners.forEach(listener => listener.listenToRenderer());
+}
+export function bindAnimationOutputs(eventListeners) {
+    eventListeners.forEach(entry => { entry.listener.listenToAnimation(entry.output); });
 }
 function convertStmtIntoExpression(stmt) {
     if (stmt instanceof o.ExpressionStatement) {

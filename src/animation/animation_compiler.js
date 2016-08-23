@@ -16,17 +16,25 @@ var t = require('../template_parser/template_ast');
 var animation_ast_1 = require('./animation_ast');
 var animation_parser_1 = require('./animation_parser');
 var animationCompilationCache = new Map();
-var CompiledAnimation = (function () {
-    function CompiledAnimation(name, statesMapStatement, statesVariableName, fnStatement, fnVariable) {
+var CompiledAnimationTriggerResult = (function () {
+    function CompiledAnimationTriggerResult(name, statesMapStatement, statesVariableName, fnStatement, fnVariable) {
         this.name = name;
         this.statesMapStatement = statesMapStatement;
         this.statesVariableName = statesVariableName;
         this.fnStatement = fnStatement;
         this.fnVariable = fnVariable;
     }
-    return CompiledAnimation;
+    return CompiledAnimationTriggerResult;
 }());
-exports.CompiledAnimation = CompiledAnimation;
+exports.CompiledAnimationTriggerResult = CompiledAnimationTriggerResult;
+var CompiledComponentAnimationResult = (function () {
+    function CompiledComponentAnimationResult(outputs, triggers) {
+        this.outputs = outputs;
+        this.triggers = triggers;
+    }
+    return CompiledComponentAnimationResult;
+}());
+exports.CompiledComponentAnimationResult = CompiledComponentAnimationResult;
 var AnimationCompiler = (function () {
     function AnimationCompiler() {
     }
@@ -54,16 +62,15 @@ var AnimationCompiler = (function () {
                 triggerLookup[entry.name] = compileResult;
             }
         });
-        _validateAnimationProperties(compiledAnimations, template).forEach(function (entry) {
-            groupedErrors.push(entry.msg);
-        });
+        var validatedProperties = _validateAnimationProperties(compiledAnimations, template);
+        validatedProperties.errors.forEach(function (error) { groupedErrors.push(error.msg); });
         if (groupedErrors.length > 0) {
             var errorMessageStr = "Animation parsing for " + component.type.name + " has failed due to the following errors:";
             groupedErrors.forEach(function (error) { return errorMessageStr += "\n- " + error; });
             throw new core_1.BaseException(errorMessageStr);
         }
         animationCompilationCache.set(component, compiledAnimations);
-        return compiledAnimations;
+        return new CompiledComponentAnimationResult(validatedProperties.outputs, compiledAnimations);
     };
     return AnimationCompiler;
 }());
@@ -227,7 +234,7 @@ var _AnimationBuilder = (function () {
         statements.push(_ANIMATION_FACTORY_VIEW_VAR
             .callMethod('queueAnimation', [
             _ANIMATION_FACTORY_ELEMENT_VAR, o.literal(this.animationName),
-            _ANIMATION_PLAYER_VAR
+            _ANIMATION_PLAYER_VAR, _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR
         ])
             .toStmt());
         return o.fn([
@@ -254,7 +261,7 @@ var _AnimationBuilder = (function () {
             lookupMap.push([stateName, variableValue]);
         });
         var compiledStatesMapExpr = this._statesMapVar.set(o.literalMap(lookupMap)).toDeclStmt();
-        return new CompiledAnimation(this.animationName, compiledStatesMapExpr, this._statesMapVarName, fnStatement, fnVariable);
+        return new CompiledAnimationTriggerResult(this.animationName, compiledStatesMapExpr, this._statesMapVarName, fnStatement, fnVariable);
     };
     return _AnimationBuilder;
 }());
@@ -311,11 +318,20 @@ function _getStylesArray(obj) {
 function _validateAnimationProperties(compiledAnimations, template) {
     var visitor = new _AnimationTemplatePropertyVisitor(compiledAnimations);
     t.templateVisitAll(visitor, template);
-    return visitor.errors;
+    return new AnimationPropertyValidationOutput(visitor.outputs, visitor.errors);
 }
+var AnimationPropertyValidationOutput = (function () {
+    function AnimationPropertyValidationOutput(outputs, errors) {
+        this.outputs = outputs;
+        this.errors = errors;
+    }
+    return AnimationPropertyValidationOutput;
+}());
+exports.AnimationPropertyValidationOutput = AnimationPropertyValidationOutput;
 var _AnimationTemplatePropertyVisitor = (function () {
     function _AnimationTemplatePropertyVisitor(animations) {
         this.errors = [];
+        this.outputs = [];
         this._animationRegistry = this._buildCompileAnimationLookup(animations);
     }
     _AnimationTemplatePropertyVisitor.prototype._buildCompileAnimationLookup = function (animations) {
@@ -323,35 +339,55 @@ var _AnimationTemplatePropertyVisitor = (function () {
         animations.forEach(function (entry) { map[entry.name] = true; });
         return map;
     };
-    _AnimationTemplatePropertyVisitor.prototype.visitElement = function (ast, ctx) {
+    _AnimationTemplatePropertyVisitor.prototype._validateAnimationInputOutputPairs = function (inputAsts, outputAsts, animationRegistry, isHostLevel) {
         var _this = this;
-        var inputAsts = ast.inputs;
-        var componentAnimationRegistry = this._animationRegistry;
-        var componentOnElement = ast.directives.find(function (directive) { return directive.directive.isComponent; });
-        if (componentOnElement) {
-            inputAsts = componentOnElement.hostProperties;
-            var cachedComponentAnimations = animationCompilationCache.get(componentOnElement.directive);
-            if (cachedComponentAnimations) {
-                componentAnimationRegistry = this._buildCompileAnimationLookup(cachedComponentAnimations);
-            }
-        }
+        var detectedAnimationInputs = {};
         inputAsts.forEach(function (input) {
             if (input.type == t.PropertyBindingType.Animation) {
-                var animationName = input.name;
-                if (!lang_1.isPresent(componentAnimationRegistry[animationName])) {
-                    _this.errors.push(new animation_parser_1.AnimationParseError("couldn't find an animation entry for " + animationName));
+                var triggerName = input.name;
+                if (lang_1.isPresent(animationRegistry[triggerName])) {
+                    detectedAnimationInputs[triggerName] = true;
+                }
+                else {
+                    _this.errors.push(new animation_parser_1.AnimationParseError("Couldn't find an animation entry for " + triggerName));
                 }
             }
         });
+        outputAsts.forEach(function (output) {
+            if (output.name[0] == '@') {
+                var normalizedOutputData = animation_parser_1.parseAnimationOutputName(output.name.substr(1), _this.errors);
+                var triggerName = normalizedOutputData.name;
+                var triggerEventPhase = normalizedOutputData.phase;
+                if (!animationRegistry[triggerName]) {
+                    _this.errors.push(new animation_parser_1.AnimationParseError("Couldn't find the corresponding " + (isHostLevel ? 'host-level ' : '') + "animation trigger definition for (@" + triggerName + ")"));
+                }
+                else if (!detectedAnimationInputs[triggerName]) {
+                    _this.errors.push(new animation_parser_1.AnimationParseError("Unable to listen on (@" + triggerName + "." + triggerEventPhase + ") because the animation trigger [@" + triggerName + "] isn't being used on the same element"));
+                }
+                else {
+                    _this.outputs.push(normalizedOutputData);
+                }
+            }
+        });
+    };
+    _AnimationTemplatePropertyVisitor.prototype.visitElement = function (ast, ctx) {
+        this._validateAnimationInputOutputPairs(ast.inputs, ast.outputs, this._animationRegistry, false);
+        var componentOnElement = ast.directives.find(function (directive) { return directive.directive.isComponent; });
+        if (componentOnElement) {
+            var cachedComponentAnimations = animationCompilationCache.get(componentOnElement.directive);
+            if (cachedComponentAnimations) {
+                this._validateAnimationInputOutputPairs(componentOnElement.hostProperties, componentOnElement.hostEvents, this._buildCompileAnimationLookup(cachedComponentAnimations), true);
+            }
+        }
         t.templateVisitAll(this, ast.children);
     };
+    _AnimationTemplatePropertyVisitor.prototype.visitEvent = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitBoundText = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitText = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitEmbeddedTemplate = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitNgContent = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitAttr = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitDirective = function (ast, ctx) { };
-    _AnimationTemplatePropertyVisitor.prototype.visitEvent = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitReference = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitVariable = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitDirectiveProperty = function (ast, ctx) { };

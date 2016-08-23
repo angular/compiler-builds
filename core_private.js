@@ -56,6 +56,7 @@ exports.AnimationSequencePlayer = core_1.__core_private__.AnimationSequencePlaye
 exports.AnimationGroupPlayer = core_1.__core_private__.AnimationGroupPlayer;
 exports.AnimationKeyframe = core_1.__core_private__.AnimationKeyframe;
 exports.AnimationStyles = core_1.__core_private__.AnimationStyles;
+exports.AnimationOutput = core_1.__core_private__.AnimationOutput;
 exports.ANY_STATE = core_1.__core_private__.ANY_STATE;
 exports.DEFAULT_STATE = core_1.__core_private__.DEFAULT_STATE;
 exports.EMPTY_STATE = core_1.__core_private__.EMPTY_STATE;

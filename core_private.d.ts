@@ -71,6 +71,8 @@ export declare type AnimationKeyframe = t.AnimationKeyframe;
 export declare var AnimationKeyframe: typeof t.AnimationKeyframe;
 export declare type AnimationStyles = t.AnimationStyles;
 export declare var AnimationStyles: typeof t.AnimationStyles;
+export declare type AnimationOutput = t.AnimationOutput;
+export declare var AnimationOutput: typeof t.AnimationOutput;
 export declare var ANY_STATE: string;
 export declare var DEFAULT_STATE: string;
 export declare var EMPTY_STATE: string;

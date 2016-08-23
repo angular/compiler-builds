@@ -60,6 +60,29 @@ function parseAnimationEntry(entry) {
     return new ParsedAnimationResult(ast, errors);
 }
 exports.parseAnimationEntry = parseAnimationEntry;
+function parseAnimationOutputName(outputName, errors) {
+    var values = outputName.split('.');
+    var name;
+    var phase = '';
+    if (values.length > 1) {
+        name = values[0];
+        var parsedPhase = values[1];
+        switch (parsedPhase) {
+            case 'start':
+            case 'done':
+                phase = parsedPhase;
+                break;
+            default:
+                errors.push(new AnimationParseError("The provided animation output phase value \"" + parsedPhase + "\" for \"@" + name + "\" is not supported (use start or done)"));
+        }
+    }
+    else {
+        name = outputName;
+        errors.push(new AnimationParseError("The animation trigger output event (@" + name + ") is missing its phase value name (start or done are currently supported)"));
+    }
+    return new core_private_1.AnimationOutput(name, phase, outputName);
+}
+exports.parseAnimationOutputName = parseAnimationOutputName;
 function _parseAnimationDeclarationStates(stateMetadata, errors) {
     var styleValues = [];
     stateMetadata.styles.styles.forEach(function (stylesEntry) {

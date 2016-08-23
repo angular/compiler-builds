@@ -50,6 +50,7 @@ var impAnimationSequencePlayer = core_private_1.AnimationSequencePlayer;
 var impAnimationKeyframe = core_private_1.AnimationKeyframe;
 var impAnimationStyles = core_private_1.AnimationStyles;
 var impNoOpAnimationPlayer = core_private_1.NoOpAnimationPlayer;
+var impAnimationOutput = core_private_1.AnimationOutput;
 var ANIMATION_STYLE_UTIL_ASSET_URL = util_1.assetUrl('core', 'animation/animation_style_util');
 var Identifiers = (function () {
     function Identifiers() {
@@ -222,6 +223,11 @@ var Identifiers = (function () {
         name: 'TRANSLATIONS_FORMAT',
         moduleUrl: util_1.assetUrl('core', 'i18n/tokens'),
         runtime: core_1.TRANSLATIONS_FORMAT
+    });
+    Identifiers.AnimationOutput = new compile_metadata_1.CompileIdentifierMetadata({
+        name: 'AnimationOutput',
+        moduleUrl: util_1.assetUrl('core', 'animation/animation_output'),
+        runtime: impAnimationOutput
     });
     return Identifiers;
 }());

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewType } from '../../core_private';
-import { CompiledAnimation } from '../animation/animation_compiler';
+import { CompiledAnimationTriggerResult } from '../animation/animation_compiler';
 import { CompileDirectiveMetadata, CompileIdentifierMap, CompilePipeMetadata, CompileTokenMetadata } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import * as o from '../output/output_ast';
@@ -21,7 +21,7 @@ export declare class CompileView implements NameResolver {
     genConfig: CompilerConfig;
     pipeMetas: CompilePipeMetadata[];
     styles: o.Expression;
-    animations: CompiledAnimation[];
+    animations: CompiledAnimationTriggerResult[];
     viewIndex: number;
     declarationElement: CompileElement;
     templateVariableBindings: string[][];
@@ -58,7 +58,7 @@ export declare class CompileView implements NameResolver {
     literalMapCount: number;
     pipeCount: number;
     componentContext: o.Expression;
-    constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeMetadata[], styles: o.Expression, animations: CompiledAnimation[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][]);
+    constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeMetadata[], styles: o.Expression, animations: CompiledAnimationTriggerResult[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][]);
     callPipe(name: string, input: o.Expression, args: o.Expression[]): o.Expression;
     getLocal(name: string): o.Expression;
     createLiteralArray(values: o.Expression[]): o.Expression;
