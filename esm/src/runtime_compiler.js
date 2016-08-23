@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Compiler, ComponentFactory, ComponentStillLoadingError, Injectable, Injector, ModuleWithComponentFactories } from '@angular/core';
-import { Console } from '../core_private';
 import { ProviderMeta, createHostComponentMeta } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
@@ -22,7 +21,7 @@ import { TemplateParser } from './template_parser/template_parser';
 import { SyncAsyncResult } from './util';
 import { ComponentFactoryDependency, ViewCompiler, ViewFactoryDependency } from './view_compiler/view_compiler';
 export class RuntimeCompiler {
-    constructor(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+    constructor(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
@@ -31,7 +30,6 @@ export class RuntimeCompiler {
         this._viewCompiler = _viewCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
         this._compilerConfig = _compilerConfig;
-        this._console = _console;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledNgModuleCache = new Map();
@@ -48,18 +46,6 @@ export class RuntimeCompiler {
     }
     compileModuleAndAllComponentsAsync(moduleType) {
         return this._compileModuleAndAllComponents(moduleType, false).asyncResult;
-    }
-    compileComponentAsync(compType, ngModule = null) {
-        if (!ngModule) {
-            throw new BaseException(`Calling compileComponentAsync on the root compiler without a module is not allowed! (Compiling component ${stringify(compType)})`);
-        }
-        return this._compileComponentInModule(compType, false, ngModule).asyncResult;
-    }
-    compileComponentSync(compType, ngModule = null) {
-        if (!ngModule) {
-            throw new BaseException(`Calling compileComponentSync on the root compiler without a module is not allowed! (Compiling component ${stringify(compType)})`);
-        }
-        return this._compileComponentInModule(compType, true, ngModule).syncResult;
     }
     _compileModuleAndComponents(moduleType, isSync) {
         const componentPromise = this._compileComponents(moduleType, isSync);
@@ -115,12 +101,6 @@ export class RuntimeCompiler {
         }
         return ngModuleFactory;
     }
-    _compileComponentInModule(compType, isSync, moduleType) {
-        this._metadataResolver.addComponentToModule(moduleType, compType);
-        const componentPromise = this._compileComponents(moduleType, isSync);
-        const componentFactory = this._assertComponentKnown(compType, true).proxyComponentFactory;
-        return new SyncAsyncResult(componentFactory, componentPromise.then(() => componentFactory));
-    }
     /**
      * @internal
      */
@@ -139,6 +119,7 @@ export class RuntimeCompiler {
             });
             localModuleMeta.entryComponents.forEach((entryComponentType) => {
                 templates.add(this._createCompiledHostTemplate(entryComponentType.runtime));
+                // TODO: what about entryComponents of entryComponents?
             });
         });
         templates.forEach((template) => {
@@ -201,7 +182,12 @@ export class RuntimeCompiler {
         const compiledTemplate = isHost ? this._compiledHostTemplateCache.get(compType) :
             this._compiledTemplateCache.get(compType);
         if (!compiledTemplate) {
-            throw new BaseException(`Illegal state: CompiledTemplate for ${stringify(compType)} (isHost: ${isHost}) does not exist!`);
+            if (isHost) {
+                throw new BaseException(`Illegal state: Compiled view for component ${stringify(compType)} does not exist!`);
+            }
+            else {
+                throw new BaseException(`Component ${stringify(compType)} is not part of any NgModule or the module has not been imported into your module.`);
+            }
         }
         return compiledTemplate;
     }
@@ -281,7 +267,6 @@ RuntimeCompiler.ctorParameters = [
     { type: ViewCompiler, },
     { type: NgModuleCompiler, },
     { type: CompilerConfig, },
-    { type: Console, },
 ];
 class CompiledTemplate {
     constructor(isHost, selector, compType, viewDirectivesAndComponents, viewPipes, schemas, _normalizeResult) {
@@ -349,12 +334,6 @@ class ModuleBoundCompiler {
         this._ngModule = _ngModule;
     }
     get _injector() { return this._delegate.injector; }
-    compileComponentAsync(compType, ngModule = null) {
-        return this._delegate.compileComponentAsync(compType, ngModule ? ngModule : this._ngModule);
-    }
-    compileComponentSync(compType, ngModule = null) {
-        return this._delegate.compileComponentSync(compType, ngModule ? ngModule : this._ngModule);
-    }
     compileModuleSync(moduleType) {
         return this._delegate.compileModuleSync(moduleType);
     }

@@ -14,7 +14,6 @@ var __extends = (this && this.__extends) || function (d, b) {
 var core_1 = require('@angular/core');
 var directive_resolver_1 = require('../src/directive_resolver');
 var collection_1 = require('../src/facade/collection');
-var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('../src/facade/lang');
 var MockDirectiveResolver = (function (_super) {
     __extends(MockDirectiveResolver, _super);
@@ -27,7 +26,6 @@ var MockDirectiveResolver = (function (_super) {
         this._views = new collection_1.Map();
         this._inlineTemplates = new collection_1.Map();
         this._animations = new collection_1.Map();
-        this._directiveOverrides = new collection_1.Map();
     }
     Object.defineProperty(MockDirectiveResolver.prototype, "_compiler", {
         get: function () { return this._injector.get(core_1.Compiler); },
@@ -61,13 +59,8 @@ var MockDirectiveResolver = (function (_super) {
             if (!view) {
                 view = metadata;
             }
-            var directives_1 = [];
-            if (lang_1.isPresent(view.directives)) {
-                flattenArray(view.directives, directives_1);
-            }
             var animations = view.animations;
             var templateUrl = view.templateUrl;
-            var directiveOverrides = this._directiveOverrides.get(type);
             var inlineAnimations = this._animations.get(type);
             if (lang_1.isPresent(inlineAnimations)) {
                 animations = inlineAnimations;
@@ -78,15 +71,6 @@ var MockDirectiveResolver = (function (_super) {
             }
             else {
                 inlineTemplate = view.template;
-            }
-            if (lang_1.isPresent(directiveOverrides) && lang_1.isPresent(view.directives)) {
-                directiveOverrides.forEach(function (to, from) {
-                    var srcIndex = directives_1.indexOf(from);
-                    if (srcIndex == -1) {
-                        throw new exceptions_1.BaseException("Overriden directive " + lang_1.stringify(from) + " not found in the template of " + lang_1.stringify(type));
-                    }
-                    directives_1[srcIndex] = to;
-                });
             }
             return new core_1.ComponentMetadata({
                 selector: metadata.selector,
@@ -102,11 +86,9 @@ var MockDirectiveResolver = (function (_super) {
                 entryComponents: metadata.entryComponents,
                 template: inlineTemplate,
                 templateUrl: templateUrl,
-                directives: directives_1.length > 0 ? directives_1 : null,
                 animations: animations,
                 styles: view.styles,
                 styleUrls: view.styleUrls,
-                pipes: view.pipes,
                 encapsulation: view.encapsulation,
                 interpolation: view.interpolation
             });
@@ -152,18 +134,6 @@ var MockDirectiveResolver = (function (_super) {
     };
     MockDirectiveResolver.prototype.setAnimations = function (component, animations) {
         this._animations.set(component, animations);
-        this._clearCacheFor(component);
-    };
-    /**
-     * Overrides a directive from the component {@link ViewMetadata}.
-     */
-    MockDirectiveResolver.prototype.overrideViewDirective = function (component, from, to) {
-        var overrides = this._directiveOverrides.get(component);
-        if (!overrides) {
-            overrides = new collection_1.Map();
-            this._directiveOverrides.set(component, overrides);
-        }
-        overrides.set(from, to);
         this._clearCacheFor(component);
     };
     /** @nocollapse */

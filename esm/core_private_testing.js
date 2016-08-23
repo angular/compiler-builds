@@ -8,5 +8,4 @@
 import { __core_private_testing__ as r } from '@angular/core/testing';
 export var TestingCompiler = r.TestingCompiler;
 export var TestingCompilerFactory = r.TestingCompilerFactory;
-export var TestComponentBuilder = r.TestComponentBuilder;
 //# sourceMappingURL=core_private_testing.js.map

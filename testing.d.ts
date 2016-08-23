@@ -6,11 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 export * from './testing/schema_registry_mock';
-export * from './testing/test_component_builder';
 export * from './testing/directive_resolver_mock';
 export * from './testing/ng_module_resolver_mock';
 export * from './testing/pipe_resolver_mock';
-import { ModuleWithComponentFactories, CompilerOptions, CompilerFactory, ComponentFactory, NgModuleFactory, Injector, NgModuleMetadataType, ComponentMetadataType, DirectiveMetadataType, PipeMetadataType, Type, PlatformRef } from '@angular/core';
+import { ModuleWithComponentFactories, CompilerOptions, CompilerFactory, NgModuleFactory, Injector, NgModuleMetadataType, ComponentMetadataType, DirectiveMetadataType, PipeMetadataType, Type, PlatformRef } from '@angular/core';
 import { MetadataOverride } from '@angular/core/testing';
 import { TestingCompilerFactory, TestingCompiler } from './core_private_testing';
 import { RuntimeCompiler } from './index';
@@ -30,8 +29,6 @@ export declare class TestingCompilerImpl implements TestingCompiler {
     private _overrider;
     constructor(_compiler: RuntimeCompiler, _directiveResolver: MockDirectiveResolver, _pipeResolver: MockPipeResolver, _moduleResolver: MockNgModuleResolver);
     injector: Injector;
-    compileComponentAsync<T>(component: Type<T>, ngModule?: Type<any>): Promise<ComponentFactory<T>>;
-    compileComponentSync<T>(component: Type<T>, ngModule?: Type<any>): ComponentFactory<T>;
     compileModuleSync<T>(moduleType: Type<T>): NgModuleFactory<T>;
     compileModuleAsync<T>(moduleType: Type<T>): Promise<NgModuleFactory<T>>;
     compileModuleAndAllComponentsSync<T>(moduleType: Type<T>): ModuleWithComponentFactories<T>;

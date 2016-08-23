@@ -404,7 +404,7 @@ exports.CompileTemplateMetadata = CompileTemplateMetadata;
  */
 var CompileDirectiveMetadata = (function () {
     function CompileDirectiveMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
+        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template;
         this.type = type;
         this.isComponent = isComponent;
         this.selector = selector;
@@ -420,12 +420,10 @@ var CompileDirectiveMetadata = (function () {
         this.queries = _normalizeArray(queries);
         this.viewQueries = _normalizeArray(viewQueries);
         this.entryComponents = _normalizeArray(entryComponents);
-        this.viewDirectives = _normalizeArray(viewDirectives);
-        this.viewPipes = _normalizeArray(viewPipes);
         this.template = template;
     }
     CompileDirectiveMetadata.create = function (_a) {
-        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, viewDirectives = _b.viewDirectives, viewPipes = _b.viewPipes, template = _b.template;
+        var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template;
         var hostListeners = {};
         var hostProperties = {};
         var hostAttributes = {};
@@ -477,8 +475,6 @@ var CompileDirectiveMetadata = (function () {
             queries: queries,
             viewQueries: viewQueries,
             entryComponents: entryComponents,
-            viewDirectives: viewDirectives,
-            viewPipes: viewPipes,
             template: template,
         });
     };

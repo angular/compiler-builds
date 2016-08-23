@@ -8,8 +8,7 @@
 import { Compiler, ComponentMetadata, DirectiveMetadata, Injectable, Injector, resolveForwardRef } from '@angular/core';
 import { DirectiveResolver } from '../src/directive_resolver';
 import { Map } from '../src/facade/collection';
-import { BaseException } from '../src/facade/exceptions';
-import { isArray, isPresent, stringify } from '../src/facade/lang';
+import { isArray, isPresent } from '../src/facade/lang';
 export class MockDirectiveResolver extends DirectiveResolver {
     constructor(_injector) {
         super();
@@ -20,7 +19,6 @@ export class MockDirectiveResolver extends DirectiveResolver {
         this._views = new Map();
         this._inlineTemplates = new Map();
         this._animations = new Map();
-        this._directiveOverrides = new Map();
     }
     get _compiler() { return this._injector.get(Compiler); }
     _clearCacheFor(component) { this._compiler.clearCacheFor(component); }
@@ -49,13 +47,8 @@ export class MockDirectiveResolver extends DirectiveResolver {
             if (!view) {
                 view = metadata;
             }
-            const directives = [];
-            if (isPresent(view.directives)) {
-                flattenArray(view.directives, directives);
-            }
             let animations = view.animations;
             let templateUrl = view.templateUrl;
-            const directiveOverrides = this._directiveOverrides.get(type);
             const inlineAnimations = this._animations.get(type);
             if (isPresent(inlineAnimations)) {
                 animations = inlineAnimations;
@@ -66,15 +59,6 @@ export class MockDirectiveResolver extends DirectiveResolver {
             }
             else {
                 inlineTemplate = view.template;
-            }
-            if (isPresent(directiveOverrides) && isPresent(view.directives)) {
-                directiveOverrides.forEach((to, from) => {
-                    var srcIndex = directives.indexOf(from);
-                    if (srcIndex == -1) {
-                        throw new BaseException(`Overriden directive ${stringify(from)} not found in the template of ${stringify(type)}`);
-                    }
-                    directives[srcIndex] = to;
-                });
             }
             return new ComponentMetadata({
                 selector: metadata.selector,
@@ -90,11 +74,9 @@ export class MockDirectiveResolver extends DirectiveResolver {
                 entryComponents: metadata.entryComponents,
                 template: inlineTemplate,
                 templateUrl: templateUrl,
-                directives: directives.length > 0 ? directives : null,
                 animations: animations,
                 styles: view.styles,
                 styleUrls: view.styleUrls,
-                pipes: view.pipes,
                 encapsulation: view.encapsulation,
                 interpolation: view.interpolation
             });
@@ -140,18 +122,6 @@ export class MockDirectiveResolver extends DirectiveResolver {
     }
     setAnimations(component, animations) {
         this._animations.set(component, animations);
-        this._clearCacheFor(component);
-    }
-    /**
-     * Overrides a directive from the component {@link ViewMetadata}.
-     */
-    overrideViewDirective(component, from, to) {
-        var overrides = this._directiveOverrides.get(component);
-        if (!overrides) {
-            overrides = new Map();
-            this._directiveOverrides.set(component, overrides);
-        }
-        overrides.set(from, to);
         this._clearCacheFor(component);
     }
 }

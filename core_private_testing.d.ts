@@ -10,5 +10,3 @@ export declare type TestingCompiler = t.TestingCompiler;
 export declare var TestingCompiler: typeof t.TestingCompiler;
 export declare type TestingCompilerFactory = t.TestingCompilerFactory;
 export declare var TestingCompilerFactory: typeof t.TestingCompilerFactory;
-export declare type TestComponentBuilder = t.TestComponentBuilder;
-export declare var TestComponentBuilder: typeof t.TestComponentBuilder;

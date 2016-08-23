@@ -6,9 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AnimationEntryMetadata, AnimationMetadata, AnimationStateMetadata, AnimationStyleMetadata, Provider, QueryMetadata, Type } from '@angular/core';
-import { Console, ReflectorReader } from '../core_private';
+import { ReflectorReader } from '../core_private';
 import * as cpl from './compile_metadata';
-import { CompilerConfig } from './config';
 import { DirectiveResolver } from './directive_resolver';
 import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
@@ -17,8 +16,6 @@ export declare class CompileMetadataResolver {
     private _ngModuleResolver;
     private _directiveResolver;
     private _pipeResolver;
-    private _config;
-    private _console;
     private _schemaRegistry;
     private _reflector;
     private _directiveCache;
@@ -27,7 +24,7 @@ export declare class CompileMetadataResolver {
     private _ngModuleOfTypes;
     private _anonymousTypes;
     private _anonymousTypeIndex;
-    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _config: CompilerConfig, _console: Console, _schemaRegistry: ElementSchemaRegistry, _reflector?: ReflectorReader);
+    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _schemaRegistry: ElementSchemaRegistry, _reflector?: ReflectorReader);
     private sanitizeTokenName(token);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
@@ -37,11 +34,9 @@ export declare class CompileMetadataResolver {
     getAnimationMetadata(value: AnimationMetadata): cpl.CompileAnimationMetadata;
     getDirectiveMetadata(directiveType: Type<any>, throwIfNotFound?: boolean): cpl.CompileDirectiveMetadata;
     getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean): cpl.CompileNgModuleMetadata;
-    addComponentToModule(moduleType: Type<any>, compType: Type<any>): void;
     private _verifyModule(moduleMeta);
     private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
-    private _getTransitiveViewDirectivesAndPipes(compMeta, moduleMeta);
     private _getTransitiveNgModuleMetadata(importedModules, exportedModules);
     private _addDirectiveToModule(dirMeta, moduleType, transitiveModule, declaredDirectives, force?);
     private _addPipeToModule(pipeMeta, moduleType, transitiveModule, declaredPipes, force?);

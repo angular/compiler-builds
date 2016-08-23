@@ -279,7 +279,7 @@ export class CompileTemplateMetadata {
  * Metadata regarding compilation of a directive.
  */
 export class CompileDirectiveMetadata {
-    constructor({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template } = {}) {
+    constructor({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template } = {}) {
         this.type = type;
         this.isComponent = isComponent;
         this.selector = selector;
@@ -295,11 +295,9 @@ export class CompileDirectiveMetadata {
         this.queries = _normalizeArray(queries);
         this.viewQueries = _normalizeArray(viewQueries);
         this.entryComponents = _normalizeArray(entryComponents);
-        this.viewDirectives = _normalizeArray(viewDirectives);
-        this.viewPipes = _normalizeArray(viewPipes);
         this.template = template;
     }
-    static create({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, viewDirectives, viewPipes, template } = {}) {
+    static create({ type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, template } = {}) {
         var hostListeners = {};
         var hostProperties = {};
         var hostAttributes = {};
@@ -351,8 +349,6 @@ export class CompileDirectiveMetadata {
             queries,
             viewQueries,
             entryComponents,
-            viewDirectives,
-            viewPipes,
             template,
         });
     }

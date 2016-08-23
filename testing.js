@@ -10,7 +10,6 @@ function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 __export(require('./testing/schema_registry_mock'));
-__export(require('./testing/test_component_builder'));
 __export(require('./testing/directive_resolver_mock'));
 __export(require('./testing/ng_module_resolver_mock'));
 __export(require('./testing/pipe_resolver_mock'));
@@ -53,14 +52,6 @@ var TestingCompilerImpl = (function () {
         enumerable: true,
         configurable: true
     });
-    TestingCompilerImpl.prototype.compileComponentAsync = function (component, ngModule) {
-        if (ngModule === void 0) { ngModule = null; }
-        return this._compiler.compileComponentAsync(component, ngModule);
-    };
-    TestingCompilerImpl.prototype.compileComponentSync = function (component, ngModule) {
-        if (ngModule === void 0) { ngModule = null; }
-        return this._compiler.compileComponentSync(component, ngModule);
-    };
     TestingCompilerImpl.prototype.compileModuleSync = function (moduleType) {
         return this._compiler.compileModuleSync(moduleType);
     };

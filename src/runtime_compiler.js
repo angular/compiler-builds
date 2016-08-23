@@ -7,7 +7,6 @@
  */
 "use strict";
 var core_1 = require('@angular/core');
-var core_private_1 = require('../core_private');
 var compile_metadata_1 = require('./compile_metadata');
 var config_1 = require('./config');
 var directive_normalizer_1 = require('./directive_normalizer');
@@ -23,7 +22,7 @@ var template_parser_1 = require('./template_parser/template_parser');
 var util_1 = require('./util');
 var view_compiler_1 = require('./view_compiler/view_compiler');
 var RuntimeCompiler = (function () {
-    function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+    function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
@@ -32,7 +31,6 @@ var RuntimeCompiler = (function () {
         this._viewCompiler = _viewCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
         this._compilerConfig = _compilerConfig;
-        this._console = _console;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledNgModuleCache = new Map();
@@ -53,20 +51,6 @@ var RuntimeCompiler = (function () {
     };
     RuntimeCompiler.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
         return this._compileModuleAndAllComponents(moduleType, false).asyncResult;
-    };
-    RuntimeCompiler.prototype.compileComponentAsync = function (compType, ngModule) {
-        if (ngModule === void 0) { ngModule = null; }
-        if (!ngModule) {
-            throw new exceptions_1.BaseException("Calling compileComponentAsync on the root compiler without a module is not allowed! (Compiling component " + lang_1.stringify(compType) + ")");
-        }
-        return this._compileComponentInModule(compType, false, ngModule).asyncResult;
-    };
-    RuntimeCompiler.prototype.compileComponentSync = function (compType, ngModule) {
-        if (ngModule === void 0) { ngModule = null; }
-        if (!ngModule) {
-            throw new exceptions_1.BaseException("Calling compileComponentSync on the root compiler without a module is not allowed! (Compiling component " + lang_1.stringify(compType) + ")");
-        }
-        return this._compileComponentInModule(compType, true, ngModule).syncResult;
     };
     RuntimeCompiler.prototype._compileModuleAndComponents = function (moduleType, isSync) {
         var componentPromise = this._compileComponents(moduleType, isSync);
@@ -124,12 +108,6 @@ var RuntimeCompiler = (function () {
         }
         return ngModuleFactory;
     };
-    RuntimeCompiler.prototype._compileComponentInModule = function (compType, isSync, moduleType) {
-        this._metadataResolver.addComponentToModule(moduleType, compType);
-        var componentPromise = this._compileComponents(moduleType, isSync);
-        var componentFactory = this._assertComponentKnown(compType, true).proxyComponentFactory;
-        return new util_1.SyncAsyncResult(componentFactory, componentPromise.then(function () { return componentFactory; }));
-    };
     /**
      * @internal
      */
@@ -149,6 +127,7 @@ var RuntimeCompiler = (function () {
             });
             localModuleMeta.entryComponents.forEach(function (entryComponentType) {
                 templates.add(_this._createCompiledHostTemplate(entryComponentType.runtime));
+                // TODO: what about entryComponents of entryComponents?
             });
         });
         templates.forEach(function (template) {
@@ -211,7 +190,12 @@ var RuntimeCompiler = (function () {
         var compiledTemplate = isHost ? this._compiledHostTemplateCache.get(compType) :
             this._compiledTemplateCache.get(compType);
         if (!compiledTemplate) {
-            throw new exceptions_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(compType) + " (isHost: " + isHost + ") does not exist!");
+            if (isHost) {
+                throw new exceptions_1.BaseException("Illegal state: Compiled view for component " + lang_1.stringify(compType) + " does not exist!");
+            }
+            else {
+                throw new exceptions_1.BaseException("Component " + lang_1.stringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
+            }
         }
         return compiledTemplate;
     };
@@ -292,7 +276,6 @@ var RuntimeCompiler = (function () {
         { type: view_compiler_1.ViewCompiler, },
         { type: ng_module_compiler_1.NgModuleCompiler, },
         { type: config_1.CompilerConfig, },
-        { type: core_private_1.Console, },
     ];
     return RuntimeCompiler;
 }());
@@ -377,14 +360,6 @@ var ModuleBoundCompiler = (function () {
         enumerable: true,
         configurable: true
     });
-    ModuleBoundCompiler.prototype.compileComponentAsync = function (compType, ngModule) {
-        if (ngModule === void 0) { ngModule = null; }
-        return this._delegate.compileComponentAsync(compType, ngModule ? ngModule : this._ngModule);
-    };
-    ModuleBoundCompiler.prototype.compileComponentSync = function (compType, ngModule) {
-        if (ngModule === void 0) { ngModule = null; }
-        return this._delegate.compileComponentSync(compType, ngModule ? ngModule : this._ngModule);
-    };
     ModuleBoundCompiler.prototype.compileModuleSync = function (moduleType) {
         return this._delegate.compileModuleSync(moduleType);
     };

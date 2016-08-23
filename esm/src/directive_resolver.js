@@ -122,8 +122,6 @@ export class DirectiveResolver {
                 providers: dm.providers,
                 viewProviders: dm.viewProviders,
                 entryComponents: dm.entryComponents,
-                directives: dm.directives,
-                pipes: dm.pipes,
                 template: dm.template,
                 templateUrl: dm.templateUrl,
                 styles: dm.styles,

@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 export * from './testing/schema_registry_mock';
-export * from './testing/test_component_builder';
 export * from './testing/directive_resolver_mock';
 export * from './testing/ng_module_resolver_mock';
 export * from './testing/pipe_resolver_mock';
@@ -43,12 +42,6 @@ export class TestingCompilerImpl {
         this._overrider = new MetadataOverrider();
     }
     get injector() { return this._compiler.injector; }
-    compileComponentAsync(component, ngModule = null) {
-        return this._compiler.compileComponentAsync(component, ngModule);
-    }
-    compileComponentSync(component, ngModule = null) {
-        return this._compiler.compileComponentSync(component, ngModule);
-    }
     compileModuleSync(moduleType) {
         return this._compiler.compileModuleSync(moduleType);
     }
