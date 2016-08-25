@@ -34,17 +34,26 @@ var util_1 = require('../util');
 var template_ast_1 = require('./template_ast');
 var template_preparser_1 = require('./template_preparser');
 // Group 1 = "bind-"
-// Group 2 = "var-"
-// Group 3 = "let-"
-// Group 4 = "ref-/#"
-// Group 5 = "on-"
-// Group 6 = "bindon-"
-// Group 7 = "@"
-// Group 8 = the identifier after "bind-", "var-/#", or "on-"
-// Group 9 = identifier inside [()]
-// Group 10 = identifier inside []
-// Group 11 = identifier inside ()
-var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(var-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+// Group 2 = "let-"
+// Group 3 = "ref-/#"
+// Group 4 = "on-"
+// Group 5 = "bindon-"
+// Group 6 = "@"
+// Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
+// Group 8 = identifier inside [()]
+// Group 9 = identifier inside []
+// Group 10 = identifier inside ()
+var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+var KW_BIND_IDX = 1;
+var KW_LET_IDX = 2;
+var KW_REF_IDX = 3;
+var KW_ON_IDX = 4;
+var KW_BINDON_IDX = 5;
+var KW_AT_IDX = 6;
+var IDENT_KW_IDX = 7;
+var IDENT_BANANA_BOX_IDX = 8;
+var IDENT_PROPERTY_IDX = 9;
+var IDENT_EVENT_IDX = 10;
 var ANIMATE_PROP_PREFIX = 'animate-';
 var TEMPLATE_ELEMENT = 'template';
 var TEMPLATE_ATTR = 'template';
@@ -416,73 +425,65 @@ var TemplateParseVisitor = (function () {
         return false;
     };
     TemplateParseVisitor.prototype._parseAttr = function (isTemplateElement, attr, targetMatchableAttrs, targetProps, targetAnimationProps, targetEvents, targetRefs, targetVars) {
-        var attrName = this._normalizeAttributeName(attr.name);
-        var attrValue = attr.value;
-        var bindParts = attrName.match(BIND_NAME_REGEXP);
+        var name = this._normalizeAttributeName(attr.name);
+        var value = attr.value;
+        var srcSpan = attr.sourceSpan;
+        var bindParts = name.match(BIND_NAME_REGEXP);
         var hasBinding = false;
         if (bindParts !== null) {
             hasBinding = true;
-            if (lang_1.isPresent(bindParts[1])) {
-                this._parsePropertyOrAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
+            if (lang_1.isPresent(bindParts[KW_BIND_IDX])) {
+                this._parsePropertyOrAnimation(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
             }
-            else if (lang_1.isPresent(bindParts[2])) {
-                var identifier = bindParts[8];
+            else if (bindParts[KW_LET_IDX]) {
                 if (isTemplateElement) {
-                    this._reportError("\"var-\" on <template> elements is deprecated. Use \"let-\" instead!", attr.sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
-                    this._parseVariable(identifier, attrValue, attr.sourceSpan, targetVars);
+                    var identifier = bindParts[IDENT_KW_IDX];
+                    this._parseVariable(identifier, value, srcSpan, targetVars);
                 }
                 else {
-                    this._reportError("\"var-\" on non <template> elements is deprecated. Use \"ref-\" instead!", attr.sourceSpan, parse_util_1.ParseErrorLevel.WARNING);
-                    this._parseReference(identifier, attrValue, attr.sourceSpan, targetRefs);
+                    this._reportError("\"let-\" is only supported on template elements.", srcSpan);
                 }
             }
-            else if (lang_1.isPresent(bindParts[3])) {
-                if (isTemplateElement) {
-                    var identifier = bindParts[8];
-                    this._parseVariable(identifier, attrValue, attr.sourceSpan, targetVars);
+            else if (bindParts[KW_REF_IDX]) {
+                var identifier = bindParts[IDENT_KW_IDX];
+                this._parseReference(identifier, value, srcSpan, targetRefs);
+            }
+            else if (bindParts[KW_ON_IDX]) {
+                this._parseEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
+            }
+            else if (bindParts[KW_BINDON_IDX]) {
+                this._parsePropertyOrAnimation(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
+                this._parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
+            }
+            else if (bindParts[KW_AT_IDX]) {
+                if (name[0] == '@' && lang_1.isPresent(value) && value.length > 0) {
+                    this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid." +
+                        " Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", srcSpan, parse_util_1.ParseErrorLevel.FATAL);
                 }
-                else {
-                    this._reportError("\"let-\" is only supported on template elements.", attr.sourceSpan);
-                }
+                this._parseAnimation(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetAnimationProps);
             }
-            else if (lang_1.isPresent(bindParts[4])) {
-                var identifier = bindParts[8];
-                this._parseReference(identifier, attrValue, attr.sourceSpan, targetRefs);
+            else if (bindParts[IDENT_BANANA_BOX_IDX]) {
+                this._parsePropertyOrAnimation(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
+                this._parseAssignmentEvent(bindParts[IDENT_BANANA_BOX_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
             }
-            else if (lang_1.isPresent(bindParts[5])) {
-                this._parseEvent(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
+            else if (bindParts[IDENT_PROPERTY_IDX]) {
+                this._parsePropertyOrAnimation(bindParts[IDENT_PROPERTY_IDX], value, srcSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
             }
-            else if (lang_1.isPresent(bindParts[6])) {
-                this._parsePropertyOrAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
-                this._parseAssignmentEvent(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
-            }
-            else if (lang_1.isPresent(bindParts[7])) {
-                if (attrName[0] == '@' && lang_1.isPresent(attrValue) && attrValue.length > 0) {
-                    this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid. Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", attr.sourceSpan, parse_util_1.ParseErrorLevel.FATAL);
-                }
-                this._parseAnimation(bindParts[8], attrValue, attr.sourceSpan, targetMatchableAttrs, targetAnimationProps);
-            }
-            else if (lang_1.isPresent(bindParts[9])) {
-                this._parsePropertyOrAnimation(bindParts[9], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
-                this._parseAssignmentEvent(bindParts[9], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
-            }
-            else if (lang_1.isPresent(bindParts[10])) {
-                this._parsePropertyOrAnimation(bindParts[10], attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
-            }
-            else if (lang_1.isPresent(bindParts[11])) {
-                this._parseEvent(bindParts[11], attrValue, attr.sourceSpan, targetMatchableAttrs, targetEvents);
+            else if (bindParts[IDENT_EVENT_IDX]) {
+                this._parseEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
             }
         }
         else {
-            hasBinding = this._parsePropertyInterpolation(attrName, attrValue, attr.sourceSpan, targetMatchableAttrs, targetProps);
+            hasBinding =
+                this._parsePropertyInterpolation(name, value, srcSpan, targetMatchableAttrs, targetProps);
         }
         if (!hasBinding) {
-            this._parseLiteralAttr(attrName, attrValue, attr.sourceSpan, targetProps);
+            this._parseLiteralAttr(name, value, srcSpan, targetProps);
         }
         return hasBinding;
     };
     TemplateParseVisitor.prototype._normalizeAttributeName = function (attrName) {
-        return attrName.toLowerCase().startsWith('data-') ? attrName.substring(5) : attrName;
+        return /^data-/i.test(attrName) ? attrName.substring(5) : attrName;
     };
     TemplateParseVisitor.prototype._parseVariable = function (identifier, value, sourceSpan, targetVars) {
         if (identifier.indexOf('-') > -1) {

@@ -215,8 +215,6 @@ var _ParseAST = (function () {
         }
     };
     _ParseAST.prototype.peekKeywordLet = function () { return this.next.isKeywordLet(); };
-    _ParseAST.prototype.peekDeprecatedKeywordVar = function () { return this.next.isKeywordDeprecatedVar(); };
-    _ParseAST.prototype.peekDeprecatedOperatorHash = function () { return this.next.isOperator('#'); };
     _ParseAST.prototype.expectCharacter = function (code) {
         if (this.optionalCharacter(code))
             return;
@@ -618,14 +616,6 @@ var _ParseAST = (function () {
         var warnings = [];
         while (this.index < this.tokens.length) {
             var keyIsVar = this.peekKeywordLet();
-            if (!keyIsVar && this.peekDeprecatedKeywordVar()) {
-                keyIsVar = true;
-                warnings.push("\"var\" inside of expressions is deprecated. Use \"let\" instead!");
-            }
-            if (!keyIsVar && this.peekDeprecatedOperatorHash()) {
-                keyIsVar = true;
-                warnings.push("\"#\" inside of expressions is deprecated. Use \"let\" instead!");
-            }
             if (keyIsVar) {
                 this.advance();
             }
@@ -649,8 +639,7 @@ var _ParseAST = (function () {
                     name = '\$implicit';
                 }
             }
-            else if (this.next !== lexer_1.EOF && !this.peekKeywordLet() && !this.peekDeprecatedKeywordVar() &&
-                !this.peekDeprecatedOperatorHash()) {
+            else if (this.next !== lexer_1.EOF && !this.peekKeywordLet()) {
                 var start = this.inputIndex;
                 var ast = this.parsePipe();
                 var source = this.input.substring(start, this.inputIndex);
@@ -683,7 +672,7 @@ var _ParseAST = (function () {
     // of the '(' begins an '(' <expr> ')' production). The recovery points of grouping symbols
     // must be conditional as they must be skipped if none of the calling productions are not
     // expecting the closing token else we will never make progress in the case of an
-    // extrainious group closing symbol (such as a stray ')'). This is not the case for ';' because
+    // extraneous group closing symbol (such as a stray ')'). This is not the case for ';' because
     // parseChain() is always the root production and it expects a ';'.
     // If a production expects one of these token it increments the corresponding nesting count,
     // and then decrements it just prior to checking if the token is in the input.
