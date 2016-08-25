@@ -10352,6 +10352,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var _ANIMATION_CURRENT_STATE_VAR = variable('currentState');
     var _ANIMATION_NEXT_STATE_VAR = variable('nextState');
     var _ANIMATION_PLAYER_VAR = variable('player');
+    var _ANIMATION_TIME_VAR = variable('totalTime');
     var _ANIMATION_START_STATE_STYLES_VAR = variable('startStateStyles');
     var _ANIMATION_END_STATE_STYLES_VAR = variable('endStateStyles');
     var _ANIMATION_COLLECTED_STYLES = variable('collectedStyles');
@@ -10390,7 +10391,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             var startingStylesExpr = ast.startingStyles.visit(this, context);
             var keyframeExpressions = ast.keyframes.map(function (keyframeEntry) { return keyframeEntry.visit(_this, context); });
-            return this._callAnimateMethod(ast, startingStylesExpr, literalArr(keyframeExpressions));
+            return this._callAnimateMethod(ast, startingStylesExpr, literalArr(keyframeExpressions), context);
         };
         /** @internal */
         _AnimationBuilder.prototype._visitEndStateAnimation = function (ast, context) {
@@ -10401,10 +10402,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                 _ANIMATION_COLLECTED_STYLES, _ANIMATION_END_STATE_STYLES_VAR,
                 literalArr(keyframeExpressions)
             ]);
-            return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr);
+            return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr, context);
         };
         /** @internal */
-        _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr) {
+        _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr, context) {
+            context.totalTransitionTime += ast.duration + ast.delay;
             return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
                 _ANIMATION_FACTORY_ELEMENT_VAR, startingStylesExpr, keyframesExpr, literal(ast.duration),
                 literal(ast.delay), literal(ast.easing)
@@ -10433,6 +10435,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (_isEndStateAnimateStep(lastStep)) {
                 context.endStateAnimateStep = lastStep;
             }
+            context.totalTransitionTime = 0;
             context.isExpectingFirstStyleStep = true;
             var stateChangePreconditions = [];
             ast.stateChanges.forEach(function (stateChange) {
@@ -10448,7 +10451,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             var animationPlayerExpr = ast.animation.visit(this, context);
             var reducedStateChangesPrecondition = stateChangePreconditions.reduce(function (a, b) { return a.or(b); });
             var precondition = _ANIMATION_PLAYER_VAR.equals(NULL_EXPR).and(reducedStateChangesPrecondition);
-            return new IfStmt(precondition, [_ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt()]);
+            var animationStmt = _ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt();
+            var totalTimeStmt = _ANIMATION_TIME_VAR.set(literal(context.totalTransitionTime)).toStmt();
+            return new IfStmt(precondition, [animationStmt, totalTimeStmt]);
         };
         _AnimationBuilder.prototype.visitAnimationEntry = function (ast, context) {
             var _this = this;
@@ -10465,6 +10470,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .toStmt());
             statements.push(_ANIMATION_COLLECTED_STYLES.set(EMPTY_MAP$1).toDeclStmt());
             statements.push(_ANIMATION_PLAYER_VAR.set(NULL_EXPR).toDeclStmt());
+            statements.push(_ANIMATION_TIME_VAR.set(literal(0)).toDeclStmt());
             statements.push(_ANIMATION_DEFAULT_STATE_VAR.set(this._statesMapVar.key(literal(DEFAULT_STATE)))
                 .toDeclStmt());
             statements.push(_ANIMATION_START_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_CURRENT_STATE_VAR))
@@ -10504,7 +10510,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             statements.push(_ANIMATION_FACTORY_VIEW_VAR
                 .callMethod('queueAnimation', [
                 _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
-                _ANIMATION_PLAYER_VAR, _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR
+                _ANIMATION_PLAYER_VAR, _ANIMATION_TIME_VAR,
+                _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR
             ])
                 .toStmt());
             return fn([
@@ -10540,6 +10547,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.stateMap = new _AnimationBuilderStateMap();
             this.endStateAnimateStep = null;
             this.isExpectingFirstStyleStep = false;
+            this.totalTransitionTime = 0;
         }
         return _AnimationBuilderContext;
     }());
