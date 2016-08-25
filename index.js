@@ -41,7 +41,6 @@ exports.RuntimeCompiler = compiler_1.RuntimeCompiler;
 exports.SourceModule = compiler_1.SourceModule;
 exports.TEMPLATE_TRANSFORMS = compiler_1.TEMPLATE_TRANSFORMS;
 exports.UrlResolver = compiler_1.UrlResolver;
-exports.analyzeAppProvidersForDeprecatedConfiguration = compiler_1.analyzeAppProvidersForDeprecatedConfiguration;
 exports.createOfflineCompileUrlResolver = compiler_1.createOfflineCompileUrlResolver;
 exports.platformCoreDynamic = compiler_1.platformCoreDynamic;
 var interpolation_config_1 = require('./src/ml_parser/interpolation_config');

@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, CompilerFactory, CompilerOptions, PlatformRef, Type } from '@angular/core';
+import { ClassProvider, Compiler, CompilerFactory, CompilerOptions, ExistingProvider, FactoryProvider, PlatformRef, Type, TypeProvider, ValueProvider } from '@angular/core';
 export * from './template_parser/template_ast';
 export { TEMPLATE_TRANSFORMS } from './template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './config';
@@ -24,11 +24,6 @@ export { NgModuleResolver } from './ng_module_resolver';
 export declare const COMPILER_PROVIDERS: Array<any | Type<any> | {
     [k: string]: any;
 } | any[]>;
-export declare function analyzeAppProvidersForDeprecatedConfiguration(appProviders?: any[]): {
-    compilerOptions: CompilerOptions;
-    moduleDeclarations: Type<any>[];
-    deprecationMessages: string[];
-};
 export declare class RuntimeCompilerFactory implements CompilerFactory {
     private _defaultOptions;
     constructor(defaultOptions: CompilerOptions[]);
@@ -39,4 +34,4 @@ export declare class RuntimeCompilerFactory implements CompilerFactory {
  *
  * @experimental
  */
-export declare const platformCoreDynamic: (extraProviders?: any[]) => PlatformRef;
+export declare const platformCoreDynamic: (extraProviders?: (TypeProvider | ValueProvider | ClassProvider | ExistingProvider | FactoryProvider | any[])[]) => PlatformRef;

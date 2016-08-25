@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationEntryMetadata, DirectiveMetadata, Injector, Type } from '@angular/core';
+import { AnimationEntryMetadata, DirectiveMetadata, Injector, Provider, Type } from '@angular/core';
 import { ViewMetadata } from '../core_private';
 import { DirectiveResolver } from '../src/directive_resolver';
 /**
@@ -28,8 +28,8 @@ export declare class MockDirectiveResolver extends DirectiveResolver {
      * Overrides the {@link DirectiveMetadata} for a directive.
      */
     setDirective(type: Type<any>, metadata: DirectiveMetadata): void;
-    setProvidersOverride(type: Type<any>, providers: any[]): void;
-    setViewProvidersOverride(type: Type<any>, viewProviders: any[]): void;
+    setProvidersOverride(type: Type<any>, providers: Provider[]): void;
+    setViewProvidersOverride(type: Type<any>, viewProviders: Provider[]): void;
     /**
      * Overrides the {@link ViewMetadata} for a component.
      */

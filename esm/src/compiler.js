@@ -80,36 +80,6 @@ export const COMPILER_PROVIDERS = [
     PipeResolver,
     NgModuleResolver
 ];
-export function analyzeAppProvidersForDeprecatedConfiguration(appProviders = []) {
-    let compilerProviders = [];
-    let useDebug;
-    let useJit;
-    let defaultEncapsulation;
-    const deprecationMessages = [];
-    // Note: This is a hack to still support the old way
-    // of configuring platform directives / pipes and the compiler resource loader.
-    // This will soon be deprecated!
-    const tempInj = ReflectiveInjector.resolveAndCreate(appProviders);
-    const compilerConfig = tempInj.get(CompilerConfig, null);
-    if (compilerConfig) {
-        useJit = compilerConfig.useJit;
-        useDebug = compilerConfig.genDebugInfo;
-        defaultEncapsulation = compilerConfig.defaultEncapsulation;
-        deprecationMessages.push(`Passing CompilerConfig as a regular provider is deprecated. Use "compilerOptions" use a custom "CompilerFactory" platform provider instead.`);
-    }
-    const resourceLoader = tempInj.get(ResourceLoader, null);
-    if (resourceLoader) {
-        compilerProviders.push([{ provide: ResourceLoader, useValue: resourceLoader }]);
-        deprecationMessages.push(`Passing ResourceLoader as regular provider is deprecated. Pass the provider via "compilerOptions" instead.`);
-    }
-    const compilerOptions = {
-        useJit: useJit,
-        useDebug: useDebug,
-        defaultEncapsulation: defaultEncapsulation,
-        providers: compilerProviders
-    };
-    return { compilerOptions, moduleDeclarations: [], deprecationMessages: deprecationMessages };
-}
 export class RuntimeCompilerFactory {
     constructor(defaultOptions) {
         this._defaultOptions = [{

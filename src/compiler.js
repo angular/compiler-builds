@@ -93,38 +93,6 @@ exports.COMPILER_PROVIDERS = [
     pipe_resolver_2.PipeResolver,
     ng_module_resolver_2.NgModuleResolver
 ];
-function analyzeAppProvidersForDeprecatedConfiguration(appProviders) {
-    if (appProviders === void 0) { appProviders = []; }
-    var compilerProviders = [];
-    var useDebug;
-    var useJit;
-    var defaultEncapsulation;
-    var deprecationMessages = [];
-    // Note: This is a hack to still support the old way
-    // of configuring platform directives / pipes and the compiler resource loader.
-    // This will soon be deprecated!
-    var tempInj = core_1.ReflectiveInjector.resolveAndCreate(appProviders);
-    var compilerConfig = tempInj.get(config_2.CompilerConfig, null);
-    if (compilerConfig) {
-        useJit = compilerConfig.useJit;
-        useDebug = compilerConfig.genDebugInfo;
-        defaultEncapsulation = compilerConfig.defaultEncapsulation;
-        deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use \"compilerOptions\" use a custom \"CompilerFactory\" platform provider instead.");
-    }
-    var resourceLoader = tempInj.get(resource_loader_2.ResourceLoader, null);
-    if (resourceLoader) {
-        compilerProviders.push([{ provide: resource_loader_2.ResourceLoader, useValue: resourceLoader }]);
-        deprecationMessages.push("Passing ResourceLoader as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
-    }
-    var compilerOptions = {
-        useJit: useJit,
-        useDebug: useDebug,
-        defaultEncapsulation: defaultEncapsulation,
-        providers: compilerProviders
-    };
-    return { compilerOptions: compilerOptions, moduleDeclarations: [], deprecationMessages: deprecationMessages };
-}
-exports.analyzeAppProvidersForDeprecatedConfiguration = analyzeAppProvidersForDeprecatedConfiguration;
 var RuntimeCompilerFactory = (function () {
     function RuntimeCompilerFactory(defaultOptions) {
         this._defaultOptions = [{

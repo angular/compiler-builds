@@ -8382,7 +8382,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             this._transformedProviders = new CompileIdentifierMap();
             this._seenProviders = new CompileIdentifierMap();
-            this._unparsedProviders = [];
             this._errors = [];
             this._allProviders = new CompileIdentifierMap();
             var ngModuleTypes = ngModule.transitiveModule.modules.map(function (moduleMeta) { return moduleMeta.type; });
@@ -17154,37 +17153,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         PipeResolver,
         NgModuleResolver
     ];
-    function analyzeAppProvidersForDeprecatedConfiguration(appProviders) {
-        if (appProviders === void 0) { appProviders = []; }
-        var compilerProviders = [];
-        var useDebug;
-        var useJit;
-        var defaultEncapsulation;
-        var deprecationMessages = [];
-        // Note: This is a hack to still support the old way
-        // of configuring platform directives / pipes and the compiler resource loader.
-        // This will soon be deprecated!
-        var tempInj = _angular_core.ReflectiveInjector.resolveAndCreate(appProviders);
-        var compilerConfig = tempInj.get(CompilerConfig, null);
-        if (compilerConfig) {
-            useJit = compilerConfig.useJit;
-            useDebug = compilerConfig.genDebugInfo;
-            defaultEncapsulation = compilerConfig.defaultEncapsulation;
-            deprecationMessages.push("Passing CompilerConfig as a regular provider is deprecated. Use \"compilerOptions\" use a custom \"CompilerFactory\" platform provider instead.");
-        }
-        var resourceLoader = tempInj.get(ResourceLoader, null);
-        if (resourceLoader) {
-            compilerProviders.push([{ provide: ResourceLoader, useValue: resourceLoader }]);
-            deprecationMessages.push("Passing ResourceLoader as regular provider is deprecated. Pass the provider via \"compilerOptions\" instead.");
-        }
-        var compilerOptions = {
-            useJit: useJit,
-            useDebug: useDebug,
-            defaultEncapsulation: defaultEncapsulation,
-            providers: compilerProviders
-        };
-        return { compilerOptions: compilerOptions, moduleDeclarations: [], deprecationMessages: deprecationMessages };
-    }
     var RuntimeCompilerFactory = (function () {
         function RuntimeCompilerFactory(defaultOptions) {
             this._defaultOptions = [{
@@ -17342,7 +17310,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     exports.SourceModule = SourceModule;
     exports.TEMPLATE_TRANSFORMS = TEMPLATE_TRANSFORMS;
     exports.UrlResolver = UrlResolver;
-    exports.analyzeAppProvidersForDeprecatedConfiguration = analyzeAppProvidersForDeprecatedConfiguration;
     exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;
     exports.platformCoreDynamic = platformCoreDynamic;
     exports.DEFAULT_INTERPOLATION_CONFIG = DEFAULT_INTERPOLATION_CONFIG;

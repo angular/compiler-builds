@@ -241,7 +241,6 @@ export class NgModuleProviderAnalyzer {
     constructor(ngModule, extraProviders, sourceSpan) {
         this._transformedProviders = new CompileIdentifierMap();
         this._seenProviders = new CompileIdentifierMap();
-        this._unparsedProviders = [];
         this._errors = [];
         this._allProviders = new CompileIdentifierMap();
         const ngModuleTypes = ngModule.transitiveModule.modules.map((moduleMeta) => moduleMeta.type);

@@ -273,7 +273,6 @@ var NgModuleProviderAnalyzer = (function () {
         var _this = this;
         this._transformedProviders = new compile_metadata_1.CompileIdentifierMap();
         this._seenProviders = new compile_metadata_1.CompileIdentifierMap();
-        this._unparsedProviders = [];
         this._errors = [];
         this._allProviders = new compile_metadata_1.CompileIdentifierMap();
         var ngModuleTypes = ngModule.transitiveModule.modules.map(function (moduleMeta) { return moduleMeta.type; });
