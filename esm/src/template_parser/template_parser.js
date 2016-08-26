@@ -11,7 +11,7 @@ import { removeIdentifierDuplicates } from '../compile_metadata';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection';
-import { isBlank, isPresent } from '../facade/lang';
+import { isBlank, isPresent, isString } from '../facade/lang';
 import { HtmlParser } from '../i18n/html_parser';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as html from '../ml_parser/ast';
@@ -585,15 +585,25 @@ class TemplateParseVisitor {
     _createDirectiveHostPropertyAsts(elementName, hostProps, sourceSpan, targetPropertyAsts) {
         if (isPresent(hostProps)) {
             StringMapWrapper.forEach(hostProps, (expression, propName) => {
-                const exprAst = this._parseBinding(expression, sourceSpan);
-                targetPropertyAsts.push(this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
+                if (isString(expression)) {
+                    const exprAst = this._parseBinding(expression, sourceSpan);
+                    targetPropertyAsts.push(this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
+                }
+                else {
+                    this._reportError(`Value of the host property binding "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
+                }
             });
         }
     }
     _createDirectiveHostEventAsts(hostListeners, sourceSpan, targetEventAsts) {
         if (isPresent(hostListeners)) {
             StringMapWrapper.forEach(hostListeners, (expression, propName) => {
-                this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
+                if (isString(expression)) {
+                    this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
+                }
+                else {
+                    this._reportError(`Value of the host listener "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
+                }
             });
         }
     }

@@ -9267,8 +9267,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             if (isPresent(hostProps)) {
                 StringMapWrapper.forEach(hostProps, function (expression, propName) {
-                    var exprAst = _this._parseBinding(expression, sourceSpan);
-                    targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
+                    if (isString(expression)) {
+                        var exprAst = _this._parseBinding(expression, sourceSpan);
+                        targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
+                    }
+                    else {
+                        _this._reportError("Value of the host property binding \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
+                    }
                 });
             }
         };
@@ -9276,7 +9281,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             if (isPresent(hostListeners)) {
                 StringMapWrapper.forEach(hostListeners, function (expression, propName) {
-                    _this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
+                    if (isString(expression)) {
+                        _this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
+                    }
+                    else {
+                        _this._reportError("Value of the host listener \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
+                    }
                 });
             }
         };

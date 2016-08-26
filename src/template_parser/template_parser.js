@@ -607,8 +607,13 @@ var TemplateParseVisitor = (function () {
         var _this = this;
         if (lang_1.isPresent(hostProps)) {
             collection_1.StringMapWrapper.forEach(hostProps, function (expression, propName) {
-                var exprAst = _this._parseBinding(expression, sourceSpan);
-                targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
+                if (lang_1.isString(expression)) {
+                    var exprAst = _this._parseBinding(expression, sourceSpan);
+                    targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
+                }
+                else {
+                    _this._reportError("Value of the host property binding \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
+                }
             });
         }
     };
@@ -616,7 +621,12 @@ var TemplateParseVisitor = (function () {
         var _this = this;
         if (lang_1.isPresent(hostListeners)) {
             collection_1.StringMapWrapper.forEach(hostListeners, function (expression, propName) {
-                _this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
+                if (lang_1.isString(expression)) {
+                    _this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
+                }
+                else {
+                    _this._reportError("Value of the host listener \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
+                }
             });
         }
     };
