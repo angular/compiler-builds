@@ -667,10 +667,6 @@ var TemplateParseVisitor = (function () {
                 boundPropertyName = partValue.substr(1);
                 bindingType = template_ast_1.PropertyBindingType.Animation;
                 securityContext = core_1.SecurityContext.NONE;
-                if (boundPropertyName[0] == '@') {
-                    this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is invalid. Use host bindings (e.g. \"[@prop]\": \"exp\") instead.", sourceSpan, parse_util_1.ParseErrorLevel.FATAL);
-                    boundPropertyName = boundPropertyName.substr(1);
-                }
             }
             else {
                 boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);

@@ -2408,9 +2408,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         Token$1.prototype.isIdentifier = function () { return this.type == TokenType$1.Identifier; };
         Token$1.prototype.isKeyword = function () { return this.type == TokenType$1.Keyword; };
-        Token$1.prototype.isKeywordDeprecatedVar = function () {
-            return this.type == TokenType$1.Keyword && this.strValue == 'var';
-        };
         Token$1.prototype.isKeywordLet = function () { return this.type == TokenType$1.Keyword && this.strValue == 'let'; };
         Token$1.prototype.isKeywordNull = function () { return this.type == TokenType$1.Keyword && this.strValue == 'null'; };
         Token$1.prototype.isKeywordUndefined = function () {
@@ -7586,9 +7583,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                     else if (isPresent(matches[2])) {
                         hostListeners[matches[2]] = value;
                     }
-                    else if (isPresent(matches[3])) {
-                        hostProperties['@' + matches[3]] = value;
-                    }
                 });
             }
             var inputsMap = {};
@@ -9333,10 +9327,6 @@ var __extends = (this && this.__extends) || function (d, b) {
                     boundPropertyName = partValue.substr(1);
                     bindingType = exports.PropertyBindingType.Animation;
                     securityContext = _angular_core.SecurityContext.NONE;
-                    if (boundPropertyName[0] == '@') {
-                        this._reportError("Assigning animation triggers within host data as attributes such as \"@prop\": \"exp\" is invalid. Use host bindings (e.g. \"[@prop]\": \"exp\") instead.", sourceSpan, ParseErrorLevel.FATAL);
-                        boundPropertyName = boundPropertyName.substr(1);
-                    }
                 }
                 else {
                     boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);

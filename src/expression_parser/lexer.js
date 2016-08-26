@@ -57,9 +57,6 @@ var Token = (function () {
     };
     Token.prototype.isIdentifier = function () { return this.type == TokenType.Identifier; };
     Token.prototype.isKeyword = function () { return this.type == TokenType.Keyword; };
-    Token.prototype.isKeywordDeprecatedVar = function () {
-        return this.type == TokenType.Keyword && this.strValue == 'var';
-    };
     Token.prototype.isKeywordLet = function () { return this.type == TokenType.Keyword && this.strValue == 'let'; };
     Token.prototype.isKeywordNull = function () { return this.type == TokenType.Keyword && this.strValue == 'null'; };
     Token.prototype.isKeywordUndefined = function () {

@@ -52,9 +52,6 @@ export class Token {
     }
     isIdentifier() { return this.type == TokenType.Identifier; }
     isKeyword() { return this.type == TokenType.Keyword; }
-    isKeywordDeprecatedVar() {
-        return this.type == TokenType.Keyword && this.strValue == 'var';
-    }
     isKeywordLet() { return this.type == TokenType.Keyword && this.strValue == 'let'; }
     isKeywordNull() { return this.type == TokenType.Keyword && this.strValue == 'null'; }
     isKeywordUndefined() {

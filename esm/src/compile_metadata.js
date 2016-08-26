@@ -313,9 +313,6 @@ export class CompileDirectiveMetadata {
                 else if (isPresent(matches[2])) {
                     hostListeners[matches[2]] = value;
                 }
-                else if (isPresent(matches[3])) {
-                    hostProperties['@' + matches[3]] = value;
-                }
             });
         }
         var inputsMap = {};

@@ -439,9 +439,6 @@ var CompileDirectiveMetadata = (function () {
                 else if (lang_1.isPresent(matches[2])) {
                     hostListeners[matches[2]] = value;
                 }
-                else if (lang_1.isPresent(matches[3])) {
-                    hostProperties['@' + matches[3]] = value;
-                }
             });
         }
         var inputsMap = {};
