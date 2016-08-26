@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ListWrapper } from './facade/collection';
 import { StringWrapper, isBlank, isPresent } from './facade/lang';
 /**
  * This file is a port of shadowCSS from webcomponents.js to TypeScript.
@@ -49,7 +48,7 @@ import { StringWrapper, isBlank, isPresent } from './facade/lang';
       background: red;
     }
 
-  * encapsultion: Styles defined within ShadowDOM, apply only to
+  * encapsulation: Styles defined within ShadowDOM, apply only to
   dom inside the ShadowDOM. Polymer uses one of two techniques to implement
   this feature.
 
@@ -325,13 +324,13 @@ export class ShadowCss {
     }
     _scopeSelector(selector, scopeSelector, hostSelector, strict) {
         return selector.split(',')
-            .map((part) => { return StringWrapper.split(part.trim(), _shadowDeepSelectors); })
+            .map(part => part.trim().split(_shadowDeepSelectors))
             .map((deepParts) => {
             const [shallowPart, ...otherParts] = deepParts;
             const applyScope = (shallowPart) => {
                 if (this._selectorNeedsScoping(shallowPart, scopeSelector)) {
-                    return strict && !StringWrapper.contains(shallowPart, _polyfillHostNoCombinator) ?
-                        this._applyStrictSelectorScope(shallowPart, scopeSelector) :
+                    return strict ?
+                        this._applyStrictSelectorScope(shallowPart, scopeSelector, hostSelector) :
                         this._applySelectorScope(shallowPart, scopeSelector, hostSelector);
                 }
                 else {
@@ -354,7 +353,7 @@ export class ShadowCss {
         return new RegExp('^(' + scopeSelector + ')' + _selectorReSuffix, 'm');
     }
     _applySelectorScope(selector, scopeSelector, hostSelector) {
-        // Difference from webcomponentsjs: scopeSelector could not be an array
+        // Difference from webcomponents.js: scopeSelector could not be an array
         return this._applySimpleSelectorScope(selector, scopeSelector, hostSelector);
     }
     // scope via name and [is=name]
@@ -370,37 +369,49 @@ export class ShadowCss {
     }
     // return a selector with [name] suffix on each simple selector
     // e.g. .foo.bar > .zot becomes .foo[name].bar[name] > .zot[name]  /** @internal */
-    _applyStrictSelectorScope(selector, scopeSelector) {
+    _applyStrictSelectorScope(selector, scopeSelector, hostSelector) {
         const isRe = /\[is=([^\]]*)\]/g;
-        scopeSelector =
-            StringWrapper.replaceAllMapped(scopeSelector, isRe, (m /** TODO #9100 */) => m[1]);
-        const splits = [' ', '>', '+', '~'];
-        let scoped = selector;
+        scopeSelector = scopeSelector.replace(isRe, (_, ...parts) => parts[0]);
         const attrName = '[' + scopeSelector + ']';
-        for (let i = 0; i < splits.length; i++) {
-            const sep = splits[i];
-            const parts = scoped.split(sep);
-            scoped = parts
-                .map(p => {
+        const _scopeSelectorPart = (p) => {
+            var scopedP = p.trim();
+            if (scopedP.length == 0) {
+                return '';
+            }
+            if (p.indexOf(_polyfillHostNoCombinator) > -1) {
+                scopedP = this._applySimpleSelectorScope(p, scopeSelector, hostSelector);
+            }
+            else {
                 // remove :host since it should be unnecessary
-                const t = StringWrapper.replaceAll(p.trim(), _polyfillHostRe, '');
-                if (t.length > 0 && !ListWrapper.contains(splits, t) &&
-                    !StringWrapper.contains(t, attrName)) {
-                    const m = t.match(/([^:]*)(:*)(.*)/);
-                    if (m !== null) {
-                        p = m[1] + attrName + m[2] + m[3];
+                var t = p.replace(_polyfillHostRe, '');
+                if (t.length > 0) {
+                    const matches = t.match(/([^:]*)(:*)(.*)/);
+                    if (matches !== null) {
+                        scopedP = matches[1] + attrName + matches[2] + matches[3];
                     }
                 }
-                return p;
-            })
-                .join(sep);
+            }
+            return scopedP;
+        };
+        const sep = /( |>|\+|~)\s*/g;
+        const scopeAfter = selector.indexOf(_polyfillHostNoCombinator);
+        let scoped = '';
+        let startIndex = 0;
+        let res;
+        while ((res = sep.exec(selector)) !== null) {
+            const separator = res[1];
+            const part = selector.slice(startIndex, res.index).trim();
+            // if a selector appears before :host-context it should not be shimmed as it
+            // matches on ancestor elements and not on elements in the host's shadow
+            const scopedPart = startIndex >= scopeAfter ? _scopeSelectorPart(part) : part;
+            scoped += `${scopedPart} ${separator} `;
+            startIndex = sep.lastIndex;
         }
-        return scoped;
+        return scoped + _scopeSelectorPart(selector.substring(startIndex));
     }
     _insertPolyfillHostInCssText(selector) {
-        selector = StringWrapper.replaceAll(selector, _colonHostContextRe, _polyfillHostContext);
-        selector = StringWrapper.replaceAll(selector, _colonHostRe, _polyfillHost);
-        return selector;
+        return selector.replace(_colonHostContextRe, _polyfillHostContext)
+            .replace(_colonHostRe, _polyfillHost);
     }
 }
 const _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?['"](.*?)['"][;\s]*}([^{]*?){/gim;
@@ -416,16 +427,15 @@ const _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
 const _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
 const _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
 const _shadowDOMSelectorsRe = [
-    /::shadow/g, /::content/g,
+    /::shadow/g,
+    /::content/g,
     // Deprecated selectors
-    // TODO(vicb): see https://github.com/angular/clang-format/issues/16
-    // clang-format off
     /\/shadow-deep\//g,
     /\/shadow\//g,
 ];
 const _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
 const _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
-const _polyfillHostRe = new RegExp(_polyfillHost, 'im');
+const _polyfillHostRe = /-shadowcsshost/gim;
 const _colonHostRe = /:host/gim;
 const _colonHostContextRe = /:host-context/gim;
 const _commentRe = /\/\*\s*[\s\S]*?\*\//g;
