@@ -59,4 +59,4 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     visitAllObjects(handler: Function, expressions: any, ctx: EmitterVisitorContext, separator: string, newLine?: boolean): void;
     visitAllStatements(statements: o.Statement[], ctx: EmitterVisitorContext): void;
 }
-export declare function escapeSingleQuoteString(input: string, escapeDollar: boolean): any;
+export declare function escapeIdentifier(input: string, escapeDollar: boolean, alwaysQuote?: boolean): any;

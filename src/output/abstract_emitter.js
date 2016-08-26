@@ -9,6 +9,7 @@
 var lang_1 = require('../facade/lang');
 var o = require('./output_ast');
 var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+var _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 exports.CATCH_ERROR_VAR = o.variable('error');
 exports.CATCH_STACK_VAR = o.variable('stack');
 var OutputEmitter = (function () {
@@ -244,7 +245,7 @@ var AbstractEmitterVisitor = (function () {
         if (absentValue === void 0) { absentValue = 'null'; }
         var value = ast.value;
         if (lang_1.isString(value)) {
-            ctx.print(escapeSingleQuoteString(value, this._escapeDollarInStrings));
+            ctx.print(escapeIdentifier(value, this._escapeDollarInStrings));
         }
         else if (lang_1.isBlank(value)) {
             ctx.print(absentValue);
@@ -355,7 +356,7 @@ var AbstractEmitterVisitor = (function () {
         ctx.print("{", useNewLine);
         ctx.incIndent();
         this.visitAllObjects(function (entry /** TODO #9100 */) {
-            ctx.print(escapeSingleQuoteString(entry[0], _this._escapeDollarInStrings) + ": ");
+            ctx.print(escapeIdentifier(entry[0], _this._escapeDollarInStrings, false) + ": ");
             entry[1].visitExpression(_this, ctx);
         }, ast.entries, ctx, ',', useNewLine);
         ctx.decIndent();
@@ -386,7 +387,8 @@ var AbstractEmitterVisitor = (function () {
     return AbstractEmitterVisitor;
 }());
 exports.AbstractEmitterVisitor = AbstractEmitterVisitor;
-function escapeSingleQuoteString(input, escapeDollar) {
+function escapeIdentifier(input, escapeDollar, alwaysQuote) {
+    if (alwaysQuote === void 0) { alwaysQuote = true; }
     if (lang_1.isBlank(input)) {
         return null;
     }
@@ -404,9 +406,10 @@ function escapeSingleQuoteString(input, escapeDollar) {
             return "\\" + match[0];
         }
     });
-    return "'" + body + "'";
+    var requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
+    return requiresQuotes ? "'" + body + "'" : body;
 }
-exports.escapeSingleQuoteString = escapeSingleQuoteString;
+exports.escapeIdentifier = escapeIdentifier;
 function _createIndent(count) {
     var res = '';
     for (var i = 0; i < count; i++) {

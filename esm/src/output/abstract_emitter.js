@@ -8,6 +8,7 @@
 import { StringWrapper, isBlank, isPresent, isString } from '../facade/lang';
 import * as o from './output_ast';
 var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+var _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 export var CATCH_ERROR_VAR = o.variable('error');
 export var CATCH_STACK_VAR = o.variable('stack');
 export class OutputEmitter {
@@ -223,7 +224,7 @@ export class AbstractEmitterVisitor {
     visitLiteralExpr(ast, ctx, absentValue = 'null') {
         var value = ast.value;
         if (isString(value)) {
-            ctx.print(escapeSingleQuoteString(value, this._escapeDollarInStrings));
+            ctx.print(escapeIdentifier(value, this._escapeDollarInStrings));
         }
         else if (isBlank(value)) {
             ctx.print(absentValue);
@@ -333,7 +334,7 @@ export class AbstractEmitterVisitor {
         ctx.print(`{`, useNewLine);
         ctx.incIndent();
         this.visitAllObjects((entry /** TODO #9100 */) => {
-            ctx.print(`${escapeSingleQuoteString(entry[0], this._escapeDollarInStrings)}: `);
+            ctx.print(`${escapeIdentifier(entry[0], this._escapeDollarInStrings, false)}: `);
             entry[1].visitExpression(this, ctx);
         }, ast.entries, ctx, ',', useNewLine);
         ctx.decIndent();
@@ -358,7 +359,7 @@ export class AbstractEmitterVisitor {
         statements.forEach((stmt) => { return stmt.visitStatement(this, ctx); });
     }
 }
-export function escapeSingleQuoteString(input, escapeDollar) {
+export function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
     if (isBlank(input)) {
         return null;
     }
@@ -376,7 +377,8 @@ export function escapeSingleQuoteString(input, escapeDollar) {
             return `\\${match[0]}`;
         }
     });
-    return `'${body}'`;
+    let requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
+    return requiresQuotes ? `'${body}'` : body;
 }
 function _createIndent(count) {
     var res = '';

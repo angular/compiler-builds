@@ -14568,6 +14568,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     InjectMethodVars$1.token = variable('token');
     InjectMethodVars$1.notFoundResult = variable('notFoundResult');
     var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+    var _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
     var CATCH_ERROR_VAR$2 = variable('error');
     var CATCH_STACK_VAR$2 = variable('stack');
     var _EmittedLine = (function () {
@@ -14796,7 +14797,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (absentValue === void 0) { absentValue = 'null'; }
             var value = ast.value;
             if (isString(value)) {
-                ctx.print(escapeSingleQuoteString(value, this._escapeDollarInStrings));
+                ctx.print(escapeIdentifier(value, this._escapeDollarInStrings));
             }
             else if (isBlank(value)) {
                 ctx.print(absentValue);
@@ -14907,7 +14908,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             ctx.print("{", useNewLine);
             ctx.incIndent();
             this.visitAllObjects(function (entry /** TODO #9100 */) {
-                ctx.print(escapeSingleQuoteString(entry[0], _this._escapeDollarInStrings) + ": ");
+                ctx.print(escapeIdentifier(entry[0], _this._escapeDollarInStrings, false) + ": ");
                 entry[1].visitExpression(_this, ctx);
             }, ast.entries, ctx, ',', useNewLine);
             ctx.decIndent();
@@ -14937,7 +14938,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return AbstractEmitterVisitor;
     }());
-    function escapeSingleQuoteString(input, escapeDollar) {
+    function escapeIdentifier(input, escapeDollar, alwaysQuote) {
+        if (alwaysQuote === void 0) { alwaysQuote = true; }
         if (isBlank(input)) {
             return null;
         }
@@ -14955,7 +14957,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return "\\" + match[0];
             }
         });
-        return "'" + body + "'";
+        var requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
+        return requiresQuotes ? "'" + body + "'" : body;
     }
     function _createIndent(count) {
         var res = '';
