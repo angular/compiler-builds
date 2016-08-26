@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { CompileIdentifierMetadata } from '../compile_metadata';
 import { StringMapWrapper } from '../facade/collection';
 import { visitValue } from '../util';
@@ -33,7 +32,7 @@ class _ValueOutputAstTransformer {
             return value;
         }
         else {
-            throw new BaseException(`Illegal state: Don't now how to compile value ${value}`);
+            throw new Error(`Illegal state: Don't now how to compile value ${value}`);
         }
     }
 }

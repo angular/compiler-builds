@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
 var compile_metadata_1 = require('../compile_metadata');
 var collection_1 = require('../facade/collection');
 var util_1 = require('../util');
@@ -40,7 +39,7 @@ var _ValueOutputAstTransformer = (function () {
             return value;
         }
         else {
-            throw new core_1.BaseException("Illegal state: Don't now how to compile value " + value);
+            throw new Error("Illegal state: Don't now how to compile value " + value);
         }
     };
     return _ValueOutputAstTransformer;

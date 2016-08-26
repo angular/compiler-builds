@@ -8,7 +8,6 @@
 import { ComponentMetadata, DirectiveMetadata, HostBindingMetadata, HostListenerMetadata, Injectable, InputMetadata, OutputMetadata, QueryMetadata, resolveForwardRef } from '@angular/core';
 import { ReflectorReader, reflector } from '../core_private';
 import { StringMapWrapper } from './facade/collection';
-import { BaseException } from './facade/exceptions';
 import { isPresent, stringify } from './facade/lang';
 import { splitAtColon } from './util';
 function _isDirectiveMetadata(type) {
@@ -31,7 +30,7 @@ export class DirectiveResolver {
             }
         }
         if (throwIfNotFound) {
-            throw new BaseException(`No Directive annotation found on ${stringify(type)}`);
+            throw new Error(`No Directive annotation found on ${stringify(type)}`);
         }
         return null;
     }
@@ -85,7 +84,7 @@ export class DirectiveResolver {
             inputs.forEach((inputDef) => {
                 const publicName = this._extractPublicName(inputDef);
                 if (inputNames.indexOf(publicName) > -1) {
-                    throw new BaseException(`Input '${publicName}' defined multiple times in '${stringify(directiveType)}'`);
+                    throw new Error(`Input '${publicName}' defined multiple times in '${stringify(directiveType)}'`);
                 }
             });
             mergedInputs = dm.inputs.concat(inputs);
@@ -99,7 +98,7 @@ export class DirectiveResolver {
             outputs.forEach((outputDef) => {
                 const publicName = this._extractPublicName(outputDef);
                 if (outputNames.indexOf(publicName) > -1) {
-                    throw new BaseException(`Output event '${publicName}' defined multiple times in '${stringify(directiveType)}'`);
+                    throw new Error(`Output event '${publicName}' defined multiple times in '${stringify(directiveType)}'`);
                 }
             });
             mergedOutputs = dm.outputs.concat(outputs);

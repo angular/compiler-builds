@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
 var compile_metadata_1 = require('./compile_metadata');
 var collection_1 = require('./facade/collection');
 var identifiers_1 = require('./identifiers');
@@ -70,7 +69,7 @@ var OfflineCompiler = (function () {
             var compMeta = _this._metadataResolver.getDirectiveMetadata(compType);
             var ngModule = ngModulesSummary.ngModuleByComponent.get(compType);
             if (!ngModule) {
-                throw new core_1.BaseException("Cannot determine the module for component " + compMeta.type.name + "!");
+                throw new Error("Cannot determine the module for component " + compMeta.type.name + "!");
             }
             return Promise
                 .all([compMeta].concat(ngModule.transitiveModule.directives).map(function (dirMeta) { return _this._directiveNormalizer.normalizeDirective(dirMeta).asyncResult; }))
@@ -179,7 +178,7 @@ function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
 }
 function _assertComponent(meta) {
     if (!meta.isComponent) {
-        throw new core_1.BaseException("Could not compile '" + meta.type.name + "' because it is not a component.");
+        throw new Error("Could not compile '" + meta.type.name + "' because it is not a component.");
     }
 }
 function _splitTypescriptSuffix(path) {

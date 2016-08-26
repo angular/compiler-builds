@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { isArray, isBlank, isPresent } from '../facade/lang';
 import { AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR, EmitterVisitorContext } from './abstract_emitter';
 import * as o from './output_ast';
@@ -31,7 +30,7 @@ export function debugOutputAstAsTypeScript(ast) {
             ast.visitType(converter, ctx);
         }
         else {
-            throw new BaseException(`Don't know how to print debug info for ${ast}`);
+            throw new Error(`Don't know how to print debug info for ${ast}`);
         }
     });
     return ctx.toSource();
@@ -233,7 +232,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
                 typeStr = 'string';
                 break;
             default:
-                throw new BaseException(`Unsupported builtin type ${type.name}`);
+                throw new Error(`Unsupported builtin type ${type.name}`);
         }
         ctx.print(typeStr);
         return null;
@@ -266,7 +265,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
                 name = 'bind';
                 break;
             default:
-                throw new BaseException(`Unknown builtin method: ${method}`);
+                throw new Error(`Unknown builtin method: ${method}`);
         }
         return name;
     }
@@ -279,7 +278,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
     }
     _visitIdentifier(value, typeParams, ctx) {
         if (isBlank(value.name)) {
-            throw new BaseException(`Internal error: unknown identifier ${value}`);
+            throw new Error(`Internal error: unknown identifier ${value}`);
         }
         if (isPresent(value.moduleUrl) && value.moduleUrl != this._moduleUrl) {
             var prefix = this.importsWithPrefixes.get(value.moduleUrl);

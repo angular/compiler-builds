@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { isBlank } from '../facade/lang';
 import { Identifiers, identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -75,7 +74,7 @@ function _findPipeMeta(view, name) {
         }
     }
     if (isBlank(pipeMeta)) {
-        throw new BaseException(`Illegal state: Could not find pipe ${name} although the parser should have detected this error!`);
+        throw new Error(`Illegal state: Could not find pipe ${name} although the parser should have detected this error!`);
     }
     return pipeMeta;
 }

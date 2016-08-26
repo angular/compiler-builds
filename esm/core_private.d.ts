@@ -87,3 +87,5 @@ export declare var collectAndResolveStyles: typeof r.collectAndResolveStyles;
 export declare var renderStyles: typeof r.renderStyles;
 export declare type ViewMetadata = typeof _compiler_core_private_types.ViewMetadata;
 export declare var ViewMetadata: typeof r.ViewMetadata;
+export declare type ComponentStillLoadingError = typeof _compiler_core_private_types.ComponentStillLoadingError;
+export declare var ComponentStillLoadingError: typeof r.ComponentStillLoadingError;

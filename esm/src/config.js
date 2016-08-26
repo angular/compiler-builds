@@ -5,10 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException, ViewEncapsulation, isDevMode } from '@angular/core';
+import { ViewEncapsulation, isDevMode } from '@angular/core';
 import { Identifiers } from './identifiers';
 function unimplemented() {
-    throw new BaseException('unimplemented');
+    throw new Error('unimplemented');
 }
 export class CompilerConfig {
     constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true } = {}) {

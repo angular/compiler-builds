@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
@@ -83,7 +82,7 @@ function _findPipeMeta(view, name) {
         }
     }
     if (lang_1.isBlank(pipeMeta)) {
-        throw new core_1.BaseException("Illegal state: Could not find pipe " + name + " although the parser should have detected this error!");
+        throw new Error("Illegal state: Could not find pipe " + name + " although the parser should have detected this error!");
     }
     return pipeMeta;
 }

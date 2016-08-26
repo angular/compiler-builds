@@ -11,7 +11,6 @@ import { StringMapWrapper } from '../src/facade/collection';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { DirectiveResolver } from './directive_resolver';
-import { BaseException } from './facade/exceptions';
 import { isArray, isBlank, isPresent, isString, stringify } from './facade/lang';
 import { Identifiers, identifierToken } from './identifiers';
 import { hasLifecycleHook } from './lifecycle_reflector';
@@ -149,7 +148,7 @@ export class CompileMetadataResolver {
             }
             else {
                 if (!selector) {
-                    throw new BaseException(`Directive ${stringify(directiveType)} has no selector, please add it!`);
+                    throw new Error(`Directive ${stringify(directiveType)} has no selector, please add it!`);
                 }
             }
             var providers = [];
@@ -216,19 +215,19 @@ export class CompileMetadataResolver {
                     if (importedModuleType) {
                         let importedMeta = this.getNgModuleMetadata(importedModuleType, false);
                         if (importedMeta === null) {
-                            throw new BaseException(`Unexpected ${this._getTypeDescriptor(importedType)} '${stringify(importedType)}' imported by the module '${stringify(moduleType)}'`);
+                            throw new Error(`Unexpected ${this._getTypeDescriptor(importedType)} '${stringify(importedType)}' imported by the module '${stringify(moduleType)}'`);
                         }
                         importedModules.push(importedMeta);
                     }
                     else {
-                        throw new BaseException(`Unexpected value '${stringify(importedType)}' imported by the module '${stringify(moduleType)}'`);
+                        throw new Error(`Unexpected value '${stringify(importedType)}' imported by the module '${stringify(moduleType)}'`);
                     }
                 });
             }
             if (meta.exports) {
                 flattenArray(meta.exports).forEach((exportedType) => {
                     if (!isValidType(exportedType)) {
-                        throw new BaseException(`Unexpected value '${stringify(exportedType)}' exported by the module '${stringify(moduleType)}'`);
+                        throw new Error(`Unexpected value '${stringify(exportedType)}' exported by the module '${stringify(moduleType)}'`);
                     }
                     let exportedDirMeta;
                     let exportedPipeMeta;
@@ -243,7 +242,7 @@ export class CompileMetadataResolver {
                         exportedModules.push(exportedModuleMeta);
                     }
                     else {
-                        throw new BaseException(`Unexpected ${this._getTypeDescriptor(exportedType)} '${stringify(exportedType)}' exported by the module '${stringify(moduleType)}'`);
+                        throw new Error(`Unexpected ${this._getTypeDescriptor(exportedType)} '${stringify(exportedType)}' exported by the module '${stringify(moduleType)}'`);
                     }
                 });
             }
@@ -253,7 +252,7 @@ export class CompileMetadataResolver {
             if (meta.declarations) {
                 flattenArray(meta.declarations).forEach((declaredType) => {
                     if (!isValidType(declaredType)) {
-                        throw new BaseException(`Unexpected value '${stringify(declaredType)}' declared by the module '${stringify(moduleType)}'`);
+                        throw new Error(`Unexpected value '${stringify(declaredType)}' declared by the module '${stringify(moduleType)}'`);
                     }
                     let declaredDirMeta;
                     let declaredPipeMeta;
@@ -264,7 +263,7 @@ export class CompileMetadataResolver {
                         this._addPipeToModule(declaredPipeMeta, moduleType, transitiveModule, declaredPipes, true);
                     }
                     else {
-                        throw new BaseException(`Unexpected ${this._getTypeDescriptor(declaredType)} '${stringify(declaredType)}' declared by the module '${stringify(moduleType)}'`);
+                        throw new Error(`Unexpected ${this._getTypeDescriptor(declaredType)} '${stringify(declaredType)}' declared by the module '${stringify(moduleType)}'`);
                     }
                 });
             }
@@ -310,12 +309,12 @@ export class CompileMetadataResolver {
     _verifyModule(moduleMeta) {
         moduleMeta.exportedDirectives.forEach((dirMeta) => {
             if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-                throw new BaseException(`Can't export directive ${stringify(dirMeta.type.runtime)} from ${stringify(moduleMeta.type.runtime)} as it was neither declared nor imported!`);
+                throw new Error(`Can't export directive ${stringify(dirMeta.type.runtime)} from ${stringify(moduleMeta.type.runtime)} as it was neither declared nor imported!`);
             }
         });
         moduleMeta.exportedPipes.forEach((pipeMeta) => {
             if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-                throw new BaseException(`Can't export pipe ${stringify(pipeMeta.type.runtime)} from ${stringify(moduleMeta.type.runtime)} as it was neither declared nor imported!`);
+                throw new Error(`Can't export pipe ${stringify(pipeMeta.type.runtime)} from ${stringify(moduleMeta.type.runtime)} as it was neither declared nor imported!`);
             }
         });
     }
@@ -339,7 +338,7 @@ export class CompileMetadataResolver {
     _addTypeToModule(type, moduleType) {
         const oldModule = this._ngModuleOfTypes.get(type);
         if (oldModule && oldModule !== moduleType) {
-            throw new BaseException(`Type ${stringify(type)} is part of the declarations of 2 modules: ${stringify(oldModule)} and ${stringify(moduleType)}!`);
+            throw new Error(`Type ${stringify(type)} is part of the declarations of 2 modules: ${stringify(oldModule)} and ${stringify(moduleType)}!`);
         }
         this._ngModuleOfTypes.set(type, moduleType);
     }
@@ -479,7 +478,7 @@ export class CompileMetadataResolver {
         if (hasUnknownDeps) {
             let depsTokens = dependenciesMetadata.map((dep) => { return dep ? stringify(dep.token) : '?'; })
                 .join(', ');
-            throw new BaseException(`Can't resolve all parameters for ${stringify(typeOrFunc)}: (${depsTokens}).`);
+            throw new Error(`Can't resolve all parameters for ${stringify(typeOrFunc)}: (${depsTokens}).`);
         }
         return dependenciesMetadata;
     }
@@ -537,7 +536,7 @@ export class CompileMetadataResolver {
                     return soFar;
                 }, [])
                     .join(', ');
-                throw new BaseException(`Invalid ${debugInfo ? debugInfo : 'provider'} - only instances of Provider and Type are allowed, got: [${providersInfo}]`);
+                throw new Error(`Invalid ${debugInfo ? debugInfo : 'provider'} - only instances of Provider and Type are allowed, got: [${providersInfo}]`);
             }
             if (compileProvider) {
                 compileProviders.push(compileProvider);
@@ -549,10 +548,10 @@ export class CompileMetadataResolver {
         let components = [];
         let collectedIdentifiers = [];
         if (provider.useFactory || provider.useExisting || provider.useClass) {
-            throw new BaseException(`The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!`);
+            throw new Error(`The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!`);
         }
         if (!provider.multi) {
-            throw new BaseException(`The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!`);
+            throw new Error(`The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!`);
         }
         convertToCompileValue(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach((identifier) => {
@@ -602,7 +601,7 @@ export class CompileMetadataResolver {
         }
         else {
             if (!isPresent(q.selector)) {
-                throw new BaseException(`Can't construct a query for the property "${propertyName}" of "${stringify(typeOrFunc)}" since the query selector wasn't defined.`);
+                throw new Error(`Can't construct a query for the property "${propertyName}" of "${stringify(typeOrFunc)}" since the query selector wasn't defined.`);
             }
             selectors = [this.getTokenMetadata(q.selector)];
         }

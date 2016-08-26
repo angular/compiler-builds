@@ -19,7 +19,7 @@ var selector_1 = require('./selector');
 var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
 function unimplemented() {
-    throw new core_1.BaseException('unimplemented');
+    throw new Error('unimplemented');
 }
 // group 0: "[prop] or (event) or @trigger"
 // group 1: "prop" from "[prop]"
@@ -302,7 +302,7 @@ var CompileIdentifierMap = (function () {
     CompileIdentifierMap.prototype.add = function (token, value) {
         var existing = this.get(token);
         if (lang_1.isPresent(existing)) {
-            throw new core_1.BaseException("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
+            throw new Error("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
         }
         this._tokens.push(token);
         this._values.push(value);
@@ -392,7 +392,7 @@ var CompileTemplateMetadata = (function () {
         this.animations = lang_1.isPresent(animations) ? collection_1.ListWrapper.flatten(animations) : [];
         this.ngContentSelectors = lang_1.isPresent(ngContentSelectors) ? ngContentSelectors : [];
         if (lang_1.isPresent(interpolation) && interpolation.length != 2) {
-            throw new core_1.BaseException("'interpolation' should have a start and an end symbol.");
+            throw new Error("'interpolation' should have a start and an end symbol.");
         }
         this.interpolation = interpolation;
     }

@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { ListWrapper } from './facade/collection';
 import { StringWrapper, isBlank, isPresent } from './facade/lang';
 const _EMPTY_ATTR_VALUE = '';
@@ -45,7 +44,7 @@ export class CssSelector {
         while (isPresent(match = _SELECTOR_REGEXP.exec(selector))) {
             if (isPresent(match[1])) {
                 if (inNot) {
-                    throw new BaseException('Nesting :not is not allowed in a selector');
+                    throw new Error('Nesting :not is not allowed in a selector');
                 }
                 inNot = true;
                 current = new CssSelector();
@@ -66,7 +65,7 @@ export class CssSelector {
             }
             if (isPresent(match[7])) {
                 if (inNot) {
-                    throw new BaseException('Multiple selectors in :not are not supported');
+                    throw new Error('Multiple selectors in :not are not supported');
                 }
                 _addResult(results, cssSelector);
                 cssSelector = current = new CssSelector();

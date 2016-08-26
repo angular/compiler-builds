@@ -105,7 +105,7 @@ var TemplateParser = (function () {
         }
         if (errors.length > 0) {
             var errorString = errors.join('\n');
-            throw new core_1.BaseException("Template parse errors:\n" + errorString);
+            throw new Error("Template parse errors:\n" + errorString);
         }
         return result.templateAst;
     };
@@ -218,7 +218,7 @@ var TemplateParseVisitor = (function () {
             this._checkPipes(ast, sourceSpan);
             if (lang_1.isPresent(ast) &&
                 ast.ast.expressions.length > core_private_1.MAX_INTERPOLATION_VALUES) {
-                throw new core_1.BaseException("Only support at most " + core_private_1.MAX_INTERPOLATION_VALUES + " interpolation values!");
+                throw new Error("Only support at most " + core_private_1.MAX_INTERPOLATION_VALUES + " interpolation values!");
             }
             return ast;
         }

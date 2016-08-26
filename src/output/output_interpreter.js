@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
 var collection_1 = require('../facade/collection');
 var lang_1 = require('../facade/lang');
 var o = require('./output_ast');
@@ -107,7 +106,7 @@ var StatementInterpreter = (function () {
             }
             currCtx = currCtx.parent;
         }
-        throw new core_1.BaseException("Not declared variable " + expr.name);
+        throw new Error("Not declared variable " + expr.name);
     };
     StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
         var varName = ast.name;
@@ -124,7 +123,7 @@ var StatementInterpreter = (function () {
                     varName = CATCH_STACK_VAR;
                     break;
                 default:
-                    throw new core_1.BaseException("Unknown builtin variable " + ast.builtin);
+                    throw new Error("Unknown builtin variable " + ast.builtin);
             }
         }
         var currCtx = ctx;
@@ -134,7 +133,7 @@ var StatementInterpreter = (function () {
             }
             currCtx = currCtx.parent;
         }
-        throw new core_1.BaseException("Not declared variable " + varName);
+        throw new Error("Not declared variable " + varName);
     };
     StatementInterpreter.prototype.visitWriteKeyExpr = function (expr, ctx) {
         var receiver = expr.receiver.visitExpression(this, ctx);
@@ -165,7 +164,7 @@ var StatementInterpreter = (function () {
                     result = receiver.bind(args[0]);
                     break;
                 default:
-                    throw new core_1.BaseException("Unknown builtin method " + expr.builtin);
+                    throw new Error("Unknown builtin method " + expr.builtin);
             }
         }
         else {
@@ -288,7 +287,7 @@ var StatementInterpreter = (function () {
             case o.BinaryOperator.BiggerEquals:
                 return lhs() >= rhs();
             default:
-                throw new core_1.BaseException("Unknown operator " + ast.operator);
+                throw new Error("Unknown operator " + ast.operator);
         }
     };
     StatementInterpreter.prototype.visitReadPropExpr = function (ast, ctx) {

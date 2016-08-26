@@ -7,10 +7,10 @@
  */
 "use strict";
 var core_1 = require('@angular/core');
+var core_private_1 = require('../core_private');
 var compile_metadata_1 = require('./compile_metadata');
 var config_1 = require('./config');
 var directive_normalizer_1 = require('./directive_normalizer');
-var exceptions_1 = require('./facade/exceptions');
 var lang_1 = require('./facade/lang');
 var metadata_resolver_1 = require('./metadata_resolver');
 var ng_module_compiler_1 = require('./ng_module_compiler');
@@ -133,7 +133,7 @@ var RuntimeCompiler = (function () {
         templates.forEach(function (template) {
             if (template.loading) {
                 if (isSync) {
-                    throw new core_1.ComponentStillLoadingError(template.compType.runtime);
+                    throw new core_private_1.ComponentStillLoadingError(template.compType.runtime);
                 }
                 else {
                     loadingPromises.push(template.loading);
@@ -191,10 +191,10 @@ var RuntimeCompiler = (function () {
             this._compiledTemplateCache.get(compType);
         if (!compiledTemplate) {
             if (isHost) {
-                throw new exceptions_1.BaseException("Illegal state: Compiled view for component " + lang_1.stringify(compType) + " does not exist!");
+                throw new Error("Illegal state: Compiled view for component " + lang_1.stringify(compType) + " does not exist!");
             }
             else {
-                throw new exceptions_1.BaseException("Component " + lang_1.stringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
+                throw new Error("Component " + lang_1.stringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
             }
         }
         return compiledTemplate;
@@ -202,7 +202,7 @@ var RuntimeCompiler = (function () {
     RuntimeCompiler.prototype._assertComponentLoaded = function (compType, isHost) {
         var compiledTemplate = this._assertComponentKnown(compType, isHost);
         if (compiledTemplate.loading) {
-            throw new exceptions_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(compType) + " (isHost: " + isHost + ") is still loading!");
+            throw new Error("Illegal state: CompiledTemplate for " + lang_1.stringify(compType) + " (isHost: " + isHost + ") is still loading!");
         }
         return compiledTemplate;
     };
@@ -308,7 +308,7 @@ var CompiledTemplate = (function () {
                 args[_i - 0] = arguments[_i];
             }
             if (!_this._viewFactory) {
-                throw new exceptions_1.BaseException("Illegal state: CompiledTemplate for " + lang_1.stringify(_this.compType) + " is not compiled yet!");
+                throw new Error("Illegal state: CompiledTemplate for " + lang_1.stringify(_this.compType) + " is not compiled yet!");
             }
             return _this._viewFactory.apply(null, args);
         };
@@ -328,7 +328,7 @@ var CompiledTemplate = (function () {
     Object.defineProperty(CompiledTemplate.prototype, "normalizedCompMeta", {
         get: function () {
             if (this.loading) {
-                throw new exceptions_1.BaseException("Template is still loading for " + this.compType.name + "!");
+                throw new Error("Template is still loading for " + this.compType.name + "!");
             }
             return this._normalizedCompMeta;
         },
@@ -344,7 +344,7 @@ var CompiledTemplate = (function () {
 }());
 function assertComponent(meta) {
     if (!meta.isComponent) {
-        throw new exceptions_1.BaseException("Could not compile '" + meta.type.name + "' because it is not a component.");
+        throw new Error("Could not compile '" + meta.type.name + "' because it is not a component.");
     }
 }
 /**

@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -22,7 +21,7 @@ export function getPropertyInView(property, callingView, definedView) {
             viewProp = viewProp.prop('parent');
         }
         if (currView !== definedView) {
-            throw new BaseException(`Internal error: Could not calculate a property in a parent view: ${property}`);
+            throw new Error(`Internal error: Could not calculate a property in a parent view: ${property}`);
         }
         if (property instanceof o.ReadPropExpr) {
             let readPropExpr = property;
@@ -72,7 +71,7 @@ export function createPureProxy(fn, argCount, pureProxyProp, view) {
     view.fields.push(new o.ClassField(pureProxyProp.name, null));
     var pureProxyId = argCount < Identifiers.pureProxies.length ? Identifiers.pureProxies[argCount] : null;
     if (isBlank(pureProxyId)) {
-        throw new BaseException(`Unsupported number of argument for pure functions: ${argCount}`);
+        throw new Error(`Unsupported number of argument for pure functions: ${argCount}`);
     }
     view.createMethod.addStmt(o.THIS_EXPR.prop(pureProxyProp.name).set(o.importExpr(pureProxyId).callFn([fn])).toStmt());
 }

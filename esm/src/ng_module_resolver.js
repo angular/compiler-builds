@@ -7,7 +7,6 @@
  */
 import { Injectable, NgModuleMetadata } from '@angular/core';
 import { ReflectorReader, reflector } from '../core_private';
-import { BaseException } from '../src/facade/exceptions';
 import { isPresent, stringify } from './facade/lang';
 function _isNgModuleMetadata(obj) {
     return obj instanceof NgModuleMetadata;
@@ -23,7 +22,7 @@ export class NgModuleResolver {
         }
         else {
             if (throwIfNotFound) {
-                throw new BaseException(`No NgModule metadata found for '${stringify(type)}'.`);
+                throw new Error(`No NgModule metadata found for '${stringify(type)}'.`);
             }
             return null;
         }

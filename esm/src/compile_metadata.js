@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { reflector } from '../core_private';
 import { ListWrapper, StringMapWrapper } from './facade/collection';
 import { isBlank, isPresent, isStringMap, normalizeBlank, normalizeBool } from './facade/lang';
@@ -13,7 +13,7 @@ import { CssSelector } from './selector';
 import { getUrlScheme } from './url_resolver';
 import { sanitizeIdentifier, splitAtColon } from './util';
 function unimplemented() {
-    throw new BaseException('unimplemented');
+    throw new Error('unimplemented');
 }
 // group 0: "[prop] or (event) or @trigger"
 // group 1: "prop" from "[prop]"
@@ -197,7 +197,7 @@ export class CompileIdentifierMap {
     add(token, value) {
         var existing = this.get(token);
         if (isPresent(existing)) {
-            throw new BaseException(`Cannot overwrite in a CompileIdentifierMap! Token: ${token.identifier.name}`);
+            throw new Error(`Cannot overwrite in a CompileIdentifierMap! Token: ${token.identifier.name}`);
         }
         this._tokens.push(token);
         this._values.push(value);
@@ -270,7 +270,7 @@ export class CompileTemplateMetadata {
         this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
         this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
         if (isPresent(interpolation) && interpolation.length != 2) {
-            throw new BaseException(`'interpolation' should have a start and an end symbol.`);
+            throw new Error(`'interpolation' should have a start and an end symbol.`);
         }
         this.interpolation = interpolation;
     }

@@ -67,4 +67,5 @@ export var clearStyles = r.clearStyles;
 export var collectAndResolveStyles = r.collectAndResolveStyles;
 export var renderStyles = r.renderStyles;
 export var ViewMetadata = r.ViewMetadata;
+export var ComponentStillLoadingError = r.ComponentStillLoadingError;
 //# sourceMappingURL=core_private.js.map

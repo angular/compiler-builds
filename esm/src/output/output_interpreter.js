@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { ListWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import * as o from './output_ast';
@@ -92,7 +91,7 @@ class StatementInterpreter {
             }
             currCtx = currCtx.parent;
         }
-        throw new BaseException(`Not declared variable ${expr.name}`);
+        throw new Error(`Not declared variable ${expr.name}`);
     }
     visitReadVarExpr(ast, ctx) {
         var varName = ast.name;
@@ -109,7 +108,7 @@ class StatementInterpreter {
                     varName = CATCH_STACK_VAR;
                     break;
                 default:
-                    throw new BaseException(`Unknown builtin variable ${ast.builtin}`);
+                    throw new Error(`Unknown builtin variable ${ast.builtin}`);
             }
         }
         var currCtx = ctx;
@@ -119,7 +118,7 @@ class StatementInterpreter {
             }
             currCtx = currCtx.parent;
         }
-        throw new BaseException(`Not declared variable ${varName}`);
+        throw new Error(`Not declared variable ${varName}`);
     }
     visitWriteKeyExpr(expr, ctx) {
         var receiver = expr.receiver.visitExpression(this, ctx);
@@ -150,7 +149,7 @@ class StatementInterpreter {
                     result = receiver.bind(args[0]);
                     break;
                 default:
-                    throw new BaseException(`Unknown builtin method ${expr.builtin}`);
+                    throw new Error(`Unknown builtin method ${expr.builtin}`);
             }
         }
         else {
@@ -272,7 +271,7 @@ class StatementInterpreter {
             case o.BinaryOperator.BiggerEquals:
                 return lhs() >= rhs();
             default:
-                throw new BaseException(`Unknown operator ${ast.operator}`);
+                throw new Error(`Unknown operator ${ast.operator}`);
         }
     }
     visitReadPropExpr(ast, ctx) {

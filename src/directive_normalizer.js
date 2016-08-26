@@ -60,7 +60,7 @@ var DirectiveNormalizer = (function () {
             normalizedTemplateAsync = this.normalizeTemplateAsync(directive.type, directive.template);
         }
         else {
-            throw new core_1.BaseException("No template specified for component " + directive.type.name);
+            throw new Error("No template specified for component " + directive.type.name);
         }
         if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
             // sync case
@@ -90,7 +90,7 @@ var DirectiveNormalizer = (function () {
         var rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name, false, interpolationConfig);
         if (rootNodesAndErrors.errors.length > 0) {
             var errorString = rootNodesAndErrors.errors.join('\n');
-            throw new core_1.BaseException("Template parse errors:\n" + errorString);
+            throw new Error("Template parse errors:\n" + errorString);
         }
         var templateMetadataStyles = this.normalizeStylesheet(new compile_metadata_1.CompileStylesheetMetadata({
             styles: templateMeta.styles,

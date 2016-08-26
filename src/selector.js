@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
 var collection_1 = require('./facade/collection');
 var lang_1 = require('./facade/lang');
 var _EMPTY_ATTR_VALUE = '';
@@ -46,7 +45,7 @@ var CssSelector = (function () {
         while (lang_1.isPresent(match = _SELECTOR_REGEXP.exec(selector))) {
             if (lang_1.isPresent(match[1])) {
                 if (inNot) {
-                    throw new core_1.BaseException('Nesting :not is not allowed in a selector');
+                    throw new Error('Nesting :not is not allowed in a selector');
                 }
                 inNot = true;
                 current = new CssSelector();
@@ -67,7 +66,7 @@ var CssSelector = (function () {
             }
             if (lang_1.isPresent(match[7])) {
                 if (inNot) {
-                    throw new core_1.BaseException('Multiple selectors in :not are not supported');
+                    throw new Error('Multiple selectors in :not are not supported');
                 }
                 _addResult(results, cssSelector);
                 cssSelector = current = new CssSelector();

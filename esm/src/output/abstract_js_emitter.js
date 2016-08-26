@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { isPresent } from '../facade/lang';
 import { AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR } from './abstract_emitter';
 import * as o from './output_ast';
@@ -69,7 +68,7 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
             ctx.print('self');
         }
         else if (ast.builtin === o.BuiltinVar.Super) {
-            throw new BaseException(`'super' needs to be handled at a parent ast node, not at the variable level!`);
+            throw new Error(`'super' needs to be handled at a parent ast node, not at the variable level!`);
         }
         else {
             super.visitReadVarExpr(ast, ctx);
@@ -153,7 +152,7 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
                 name = 'bind';
                 break;
             default:
-                throw new BaseException(`Unknown builtin method: ${method}`);
+                throw new Error(`Unknown builtin method: ${method}`);
         }
         return name;
     }

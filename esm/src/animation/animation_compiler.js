@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { ANY_STATE, DEFAULT_STATE, EMPTY_STATE } from '../../core_private';
 import { StringMapWrapper } from '../facade/collection';
 import { isBlank, isPresent } from '../facade/lang';
@@ -60,7 +59,7 @@ export class AnimationCompiler {
         if (groupedErrors.length > 0) {
             var errorMessageStr = `Animation parsing for ${component.type.name} has failed due to the following errors:`;
             groupedErrors.forEach(error => errorMessageStr += `\n- ${error}`);
-            throw new BaseException(errorMessageStr);
+            throw new Error(errorMessageStr);
         }
         animationCompilationCache.set(component, compiledAnimations);
         return new CompiledComponentAnimationResult(validatedProperties.outputs, compiledAnimations);

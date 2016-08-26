@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { StringWrapper, isBlank, isPresent, isString } from '../facade/lang';
 import * as o from './output_ast';
 var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
@@ -207,7 +206,7 @@ export class AbstractEmitterVisitor {
                     varName = CATCH_STACK_VAR.name;
                     break;
                 default:
-                    throw new BaseException(`Unknown builtin variable ${ast.builtin}`);
+                    throw new Error(`Unknown builtin variable ${ast.builtin}`);
             }
         }
         ctx.print(varName);
@@ -298,7 +297,7 @@ export class AbstractEmitterVisitor {
                 opStr = '>=';
                 break;
             default:
-                throw new BaseException(`Unknown operator ${ast.operator}`);
+                throw new Error(`Unknown operator ${ast.operator}`);
         }
         ctx.print(`(`);
         ast.lhs.visitExpression(this, ctx);

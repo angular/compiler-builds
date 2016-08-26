@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { CompileDiDependencyMetadata, CompileIdentifierMap, CompileProviderMetadata, CompileTokenMetadata, CompileTypeMetadata } from './compile_metadata';
 import { ListWrapper } from './facade/collection';
 import { isArray, isBlank, isPresent, normalizeBlank } from './facade/lang';
@@ -254,7 +253,7 @@ export class NgModuleProviderAnalyzer {
         this._allProviders.values().forEach((provider) => { this._getOrCreateLocalProvider(provider.token, provider.eager); });
         if (this._errors.length > 0) {
             const errorString = this._errors.join('\n');
-            throw new BaseException(`Provider parse errors:\n${errorString}`);
+            throw new Error(`Provider parse errors:\n${errorString}`);
         }
         return this._transformedProviders.values();
     }

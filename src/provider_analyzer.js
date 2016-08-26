@@ -11,7 +11,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var core_1 = require('@angular/core');
 var compile_metadata_1 = require('./compile_metadata');
 var collection_1 = require('./facade/collection');
 var lang_1 = require('./facade/lang');
@@ -287,7 +286,7 @@ var NgModuleProviderAnalyzer = (function () {
         this._allProviders.values().forEach(function (provider) { _this._getOrCreateLocalProvider(provider.token, provider.eager); });
         if (this._errors.length > 0) {
             var errorString = this._errors.join('\n');
-            throw new core_1.BaseException("Provider parse errors:\n" + errorString);
+            throw new Error("Provider parse errors:\n" + errorString);
         }
         return this._transformedProviders.values();
     };

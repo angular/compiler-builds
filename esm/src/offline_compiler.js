@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 import { CompileProviderMetadata, CompileTokenMetadata, createHostComponentMeta } from './compile_metadata';
 import { ListWrapper } from './facade/collection';
 import { Identifiers } from './identifiers';
@@ -63,7 +62,7 @@ export class OfflineCompiler {
             const compMeta = this._metadataResolver.getDirectiveMetadata(compType);
             const ngModule = ngModulesSummary.ngModuleByComponent.get(compType);
             if (!ngModule) {
-                throw new BaseException(`Cannot determine the module for component ${compMeta.type.name}!`);
+                throw new Error(`Cannot determine the module for component ${compMeta.type.name}!`);
             }
             return Promise
                 .all([compMeta, ...ngModule.transitiveModule.directives].map(dirMeta => this._directiveNormalizer.normalizeDirective(dirMeta).asyncResult))
@@ -170,7 +169,7 @@ function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
 }
 function _assertComponent(meta) {
     if (!meta.isComponent) {
-        throw new BaseException(`Could not compile '${meta.type.name}' because it is not a component.`);
+        throw new Error(`Could not compile '${meta.type.name}' because it is not a component.`);
     }
 }
 function _splitTypescriptSuffix(path) {

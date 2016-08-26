@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException } from '@angular/core';
 // asset:<package-name>/<realm>/<path-to-module>
 var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
 /**
@@ -28,7 +27,7 @@ export class AssetUrl {
         if (allowNonMatching) {
             return null;
         }
-        throw new BaseException(`Url ${url} is not a valid asset: url`);
+        throw new Error(`Url ${url} is not a valid asset: url`);
     }
 }
 //# sourceMappingURL=path_util.js.map

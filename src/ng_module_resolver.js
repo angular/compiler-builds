@@ -8,7 +8,6 @@
 "use strict";
 var core_1 = require('@angular/core');
 var core_private_1 = require('../core_private');
-var exceptions_1 = require('../src/facade/exceptions');
 var lang_1 = require('./facade/lang');
 function _isNgModuleMetadata(obj) {
     return obj instanceof core_1.NgModuleMetadata;
@@ -26,7 +25,7 @@ var NgModuleResolver = (function () {
         }
         else {
             if (throwIfNotFound) {
-                throw new exceptions_1.BaseException("No NgModule metadata found for '" + lang_1.stringify(type) + "'.");
+                throw new Error("No NgModule metadata found for '" + lang_1.stringify(type) + "'.");
             }
             return null;
         }

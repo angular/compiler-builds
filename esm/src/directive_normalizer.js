@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseException, Injectable, ViewEncapsulation } from '@angular/core';
+import { Injectable, ViewEncapsulation } from '@angular/core';
 import { CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { MapWrapper } from './facade/collection';
@@ -57,7 +57,7 @@ export class DirectiveNormalizer {
             normalizedTemplateAsync = this.normalizeTemplateAsync(directive.type, directive.template);
         }
         else {
-            throw new BaseException(`No template specified for component ${directive.type.name}`);
+            throw new Error(`No template specified for component ${directive.type.name}`);
         }
         if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
             // sync case
@@ -84,7 +84,7 @@ export class DirectiveNormalizer {
         const rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name, false, interpolationConfig);
         if (rootNodesAndErrors.errors.length > 0) {
             const errorString = rootNodesAndErrors.errors.join('\n');
-            throw new BaseException(`Template parse errors:\n${errorString}`);
+            throw new Error(`Template parse errors:\n${errorString}`);
         }
         const templateMetadataStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({
             styles: templateMeta.styles,

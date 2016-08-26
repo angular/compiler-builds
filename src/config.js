@@ -9,7 +9,7 @@
 var core_1 = require('@angular/core');
 var identifiers_1 = require('./identifiers');
 function unimplemented() {
-    throw new core_1.BaseException('unimplemented');
+    throw new Error('unimplemented');
 }
 var CompilerConfig = (function () {
     function CompilerConfig(_a) {

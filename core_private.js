@@ -68,4 +68,5 @@ exports.clearStyles = core_1.__core_private__.clearStyles;
 exports.collectAndResolveStyles = core_1.__core_private__.collectAndResolveStyles;
 exports.renderStyles = core_1.__core_private__.renderStyles;
 exports.ViewMetadata = core_1.__core_private__.ViewMetadata;
+exports.ComponentStillLoadingError = core_1.__core_private__.ComponentStillLoadingError;
 //# sourceMappingURL=core_private.js.map

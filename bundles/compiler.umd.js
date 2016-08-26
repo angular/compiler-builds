@@ -159,15 +159,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         StringJoiner.prototype.toString = function () { return this.parts.join(''); };
         return StringJoiner;
     }());
-    var NumberParseError = (function (_super) {
-        __extends(NumberParseError, _super);
-        function NumberParseError(message) {
-            _super.call(this);
-            this.message = message;
-        }
-        NumberParseError.prototype.toString = function () { return this.message; };
-        return NumberParseError;
-    }(Error));
     var NumberWrapper = (function () {
         function NumberWrapper() {
         }
@@ -176,7 +167,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         NumberWrapper.parseIntAutoRadix = function (text) {
             var result = parseInt(text);
             if (isNaN(result)) {
-                throw new NumberParseError('Invalid integer literal when parsing ' + text);
+                throw new Error('Invalid integer literal when parsing ' + text);
             }
             return result;
         };
@@ -197,7 +188,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     return result;
                 }
             }
-            throw new NumberParseError('Invalid integer literal when parsing ' + text + ' in base ' + radix);
+            throw new Error('Invalid integer literal when parsing ' + text + ' in base ' + radix);
         };
         // TODO: NaN is a valid literal but is returned by parseFloat to indicate an error.
         NumberWrapper.parseFloat = function (text) { return parseFloat(text); };
@@ -5542,6 +5533,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     var impClearStyles = _angular_core.__core_private__.clearStyles;
     var impCollectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
     var impRenderStyles = _angular_core.__core_private__.renderStyles;
+    var ComponentStillLoadingError = _angular_core.__core_private__.ComponentStillLoadingError;
     var _EMPTY_ATTR_VALUE = '';
     var _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
         '([-\\w]+)|' +
@@ -5579,7 +5571,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             while (isPresent(match = _SELECTOR_REGEXP.exec(selector))) {
                 if (isPresent(match[1])) {
                     if (inNot) {
-                        throw new _angular_core.BaseException('Nesting :not is not allowed in a selector');
+                        throw new Error('Nesting :not is not allowed in a selector');
                     }
                     inNot = true;
                     current = new CssSelector();
@@ -5600,7 +5592,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 if (isPresent(match[7])) {
                     if (inNot) {
-                        throw new _angular_core.BaseException('Multiple selectors in :not are not supported');
+                        throw new Error('Multiple selectors in :not are not supported');
                     }
                     _addResult(results, cssSelector);
                     cssSelector = current = new CssSelector();
@@ -7185,7 +7177,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return SyncAsyncResult;
     }());
     function unimplemented() {
-        throw new _angular_core.BaseException('unimplemented');
+        throw new Error('unimplemented');
     }
     // group 0: "[prop] or (event) or @trigger"
     // group 1: "prop" from "[prop]"
@@ -7451,7 +7443,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileIdentifierMap.prototype.add = function (token, value) {
             var existing = this.get(token);
             if (isPresent(existing)) {
-                throw new _angular_core.BaseException("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
+                throw new Error("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
             }
             this._tokens.push(token);
             this._values.push(value);
@@ -7537,7 +7529,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
             this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
             if (isPresent(interpolation) && interpolation.length != 2) {
-                throw new _angular_core.BaseException("'interpolation' should have a start and an end symbol.");
+                throw new Error("'interpolation' should have a start and an end symbol.");
             }
             this.interpolation = interpolation;
         }
@@ -8379,7 +8371,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._allProviders.values().forEach(function (provider) { _this._getOrCreateLocalProvider(provider.token, provider.eager); });
             if (this._errors.length > 0) {
                 var errorString = this._errors.join('\n');
-                throw new _angular_core.BaseException("Provider parse errors:\n" + errorString);
+                throw new Error("Provider parse errors:\n" + errorString);
             }
             return this._transformedProviders.values();
         };
@@ -8766,7 +8758,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             if (errors.length > 0) {
                 var errorString = errors.join('\n');
-                throw new _angular_core.BaseException("Template parse errors:\n" + errorString);
+                throw new Error("Template parse errors:\n" + errorString);
             }
             return result.templateAst;
         };
@@ -8878,7 +8870,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this._checkPipes(ast, sourceSpan);
                 if (isPresent(ast) &&
                     ast.ast.expressions.length > MAX_INTERPOLATION_VALUES) {
-                    throw new _angular_core.BaseException("Only support at most " + MAX_INTERPOLATION_VALUES + " interpolation values!");
+                    throw new Error("Only support at most " + MAX_INTERPOLATION_VALUES + " interpolation values!");
                 }
                 return ast;
             }
@@ -9555,7 +9547,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return PipeCollector;
     }(RecursiveAstVisitor));
     function unimplemented$1() {
-        throw new _angular_core.BaseException('unimplemented');
+        throw new Error('unimplemented');
     }
     var CompilerConfig = (function () {
         function CompilerConfig(_a) {
@@ -10327,7 +10319,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (groupedErrors.length > 0) {
                 var errorMessageStr = "Animation parsing for " + component.type.name + " has failed due to the following errors:";
                 groupedErrors.forEach(function (error) { return errorMessageStr += "\n- " + error; });
-                throw new _angular_core.BaseException(errorMessageStr);
+                throw new Error(errorMessageStr);
             }
             animationCompilationCache.set(component, compiledAnimations);
             return new CompiledComponentAnimationResult(validatedProperties.outputs, compiledAnimations);
@@ -10688,7 +10680,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return value;
             }
             else {
-                throw new _angular_core.BaseException("Illegal state: Don't now how to compile value " + value);
+                throw new Error("Illegal state: Don't now how to compile value " + value);
             }
         };
         return _ValueOutputAstTransformer;
@@ -10763,7 +10755,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 viewProp = viewProp.prop('parent');
             }
             if (currView !== definedView) {
-                throw new _angular_core.BaseException("Internal error: Could not calculate a property in a parent view: " + property);
+                throw new Error("Internal error: Could not calculate a property in a parent view: " + property);
             }
             if (property instanceof ReadPropExpr) {
                 var readPropExpr_1 = property;
@@ -10813,7 +10805,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         view.fields.push(new ClassField(pureProxyProp.name, null));
         var pureProxyId = argCount < Identifiers.pureProxies.length ? Identifiers.pureProxies[argCount] : null;
         if (isBlank(pureProxyId)) {
-            throw new _angular_core.BaseException("Unsupported number of argument for pure functions: " + argCount);
+            throw new Error("Unsupported number of argument for pure functions: " + argCount);
         }
         view.createMethod.addStmt(THIS_EXPR.prop(pureProxyProp.name).set(importExpr(pureProxyId).callFn([fn])).toStmt());
     }
@@ -11431,7 +11423,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
         }
         if (isBlank(pipeMeta)) {
-            throw new _angular_core.BaseException("Illegal state: Could not find pipe " + name + " although the parser should have detected this error!");
+            throw new Error("Illegal state: Could not find pipe " + name + " although the parser should have detected this error!");
         }
         return pipeMeta;
     }
@@ -11632,12 +11624,12 @@ var __extends = (this && this.__extends) || function (d, b) {
     })(_Mode || (_Mode = {}));
     function ensureStatementMode(mode, ast) {
         if (mode !== _Mode.Statement) {
-            throw new _angular_core.BaseException("Expected a statement, but saw " + ast);
+            throw new Error("Expected a statement, but saw " + ast);
         }
     }
     function ensureExpressionMode(mode, ast) {
         if (mode !== _Mode.Expression) {
-            throw new _angular_core.BaseException("Expected an expression, but saw " + ast);
+            throw new Error("Expected an expression, but saw " + ast);
         }
     }
     function convertToStatementIfNeeded(mode, expr) {
@@ -11709,7 +11701,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     op = BinaryOperator.BiggerEquals;
                     break;
                 default:
-                    throw new _angular_core.BaseException("Unsupported operation " + ast.operation);
+                    throw new Error("Unsupported operation " + ast.operation);
             }
             return convertToStatementIfNeeded(mode, new BinaryOperatorExpr(op, this.visit(ast.left, _Mode.Expression), this.visit(ast.right, _Mode.Expression)));
         };
@@ -11813,7 +11805,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (receiver === this._implicitReceiver) {
                 var varExpr = this._nameResolver.getLocal(ast.name);
                 if (isPresent(varExpr)) {
-                    throw new _angular_core.BaseException('Cannot assign to a reference or variable!');
+                    throw new Error('Cannot assign to a reference or variable!');
                 }
             }
             return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this.visit(ast.value, _Mode.Expression)));
@@ -11829,7 +11821,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return asts.map(function (ast) { return _this.visit(ast, mode); });
         };
         _AstToIrVisitor.prototype.visitQuote = function (ast, mode) {
-            throw new _angular_core.BaseException('Quotes are not supported for evaluation!');
+            throw new Error('Quotes are not supported for evaluation!');
         };
         _AstToIrVisitor.prototype.visit = function (ast, mode) {
             var result = this._resultMap.get(ast);
@@ -11985,7 +11977,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _AstToIrVisitor.prototype.releaseTemporary = function (temporary) {
             this._currentTemporary--;
             if (temporary.name != temporaryName(this.bindingIndex, this._currentTemporary)) {
-                throw new _angular_core.BaseException("Temporary " + temporary.name + " released out of order");
+                throw new Error("Temporary " + temporary.name + " released out of order");
             }
         };
         return _AstToIrVisitor;
@@ -13097,7 +13089,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var compMeta = _this._metadataResolver.getDirectiveMetadata(compType);
                 var ngModule = ngModulesSummary.ngModuleByComponent.get(compType);
                 if (!ngModule) {
-                    throw new _angular_core.BaseException("Cannot determine the module for component " + compMeta.type.name + "!");
+                    throw new Error("Cannot determine the module for component " + compMeta.type.name + "!");
                 }
                 return Promise
                     .all([compMeta].concat(ngModule.transitiveModule.directives).map(function (dirMeta) { return _this._directiveNormalizer.normalizeDirective(dirMeta).asyncResult; }))
@@ -13205,7 +13197,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function _assertComponent(meta) {
         if (!meta.isComponent) {
-            throw new _angular_core.BaseException("Could not compile '" + meta.type.name + "' because it is not a component.");
+            throw new Error("Could not compile '" + meta.type.name + "' because it is not a component.");
         }
     }
     function _splitTypescriptSuffix(path) {
@@ -13278,7 +13270,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 normalizedTemplateAsync = this.normalizeTemplateAsync(directive.type, directive.template);
             }
             else {
-                throw new _angular_core.BaseException("No template specified for component " + directive.type.name);
+                throw new Error("No template specified for component " + directive.type.name);
             }
             if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
                 // sync case
@@ -13306,7 +13298,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var rootNodesAndErrors = this._htmlParser.parse(template, directiveType.name, false, interpolationConfig);
             if (rootNodesAndErrors.errors.length > 0) {
                 var errorString = rootNodesAndErrors.errors.join('\n');
-                throw new _angular_core.BaseException("Template parse errors:\n" + errorString);
+                throw new Error("Template parse errors:\n" + errorString);
             }
             var templateMetadataStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({
                 styles: templateMeta.styles,
@@ -13454,20 +13446,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             template: template
         });
     }
-    /**
-     * @stable
-     */
-    var BaseException$1 = (function (_super) {
-        __extends(BaseException$1, _super);
-        function BaseException$1(message) {
-            if (message === void 0) { message = '--'; }
-            _super.call(this, message);
-            this.message = message;
-            this.stack = (new Error(message)).stack;
-        }
-        BaseException$1.prototype.toString = function () { return this.message; };
-        return BaseException$1;
-    }(Error));
     function _isDirectiveMetadata(type) {
         return type instanceof _angular_core.DirectiveMetadata;
     }
@@ -13490,7 +13468,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             if (throwIfNotFound) {
-                throw new BaseException$1("No Directive annotation found on " + stringify(type));
+                throw new Error("No Directive annotation found on " + stringify(type));
             }
             return null;
         };
@@ -13545,7 +13523,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 inputs.forEach(function (inputDef) {
                     var publicName = _this._extractPublicName(inputDef);
                     if (inputNames_1.indexOf(publicName) > -1) {
-                        throw new BaseException$1("Input '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
+                        throw new Error("Input '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                     }
                 });
                 mergedInputs = dm.inputs.concat(inputs);
@@ -13559,7 +13537,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 outputs.forEach(function (outputDef) {
                     var publicName = _this._extractPublicName(outputDef);
                     if (outputNames_1.indexOf(publicName) > -1) {
-                        throw new BaseException$1("Output event '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
+                        throw new Error("Output event '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                     }
                 });
                 mergedOutputs = dm.outputs.concat(outputs);
@@ -13654,7 +13632,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             else {
                 if (throwIfNotFound) {
-                    throw new BaseException$1("No NgModule metadata found for '" + stringify(type) + "'.");
+                    throw new Error("No NgModule metadata found for '" + stringify(type) + "'.");
                 }
                 return null;
             }
@@ -13690,7 +13668,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
             }
             if (throwIfNotFound) {
-                throw new BaseException$1("No Pipe decorator found on " + stringify(type));
+                throw new Error("No Pipe decorator found on " + stringify(type));
             }
             return null;
         };
@@ -13838,7 +13816,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 else {
                     if (!selector) {
-                        throw new BaseException$1("Directive " + stringify(directiveType) + " has no selector, please add it!");
+                        throw new Error("Directive " + stringify(directiveType) + " has no selector, please add it!");
                     }
                 }
                 var providers = [];
@@ -13907,19 +13885,19 @@ var __extends = (this && this.__extends) || function (d, b) {
                         if (importedModuleType) {
                             var importedMeta = _this.getNgModuleMetadata(importedModuleType, false);
                             if (importedMeta === null) {
-                                throw new BaseException$1("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
+                                throw new Error("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
                             }
                             importedModules_1.push(importedMeta);
                         }
                         else {
-                            throw new BaseException$1("Unexpected value '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
+                            throw new Error("Unexpected value '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
                         }
                     });
                 }
                 if (meta.exports) {
                     flattenArray(meta.exports).forEach(function (exportedType) {
                         if (!isValidType(exportedType)) {
-                            throw new BaseException$1("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
+                            throw new Error("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
                         }
                         var exportedDirMeta;
                         var exportedPipeMeta;
@@ -13934,7 +13912,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             exportedModules_1.push(exportedModuleMeta);
                         }
                         else {
-                            throw new BaseException$1("Unexpected " + _this._getTypeDescriptor(exportedType) + " '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
+                            throw new Error("Unexpected " + _this._getTypeDescriptor(exportedType) + " '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
                         }
                     });
                 }
@@ -13944,7 +13922,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 if (meta.declarations) {
                     flattenArray(meta.declarations).forEach(function (declaredType) {
                         if (!isValidType(declaredType)) {
-                            throw new BaseException$1("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
+                            throw new Error("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
                         }
                         var declaredDirMeta;
                         var declaredPipeMeta;
@@ -13955,7 +13933,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                             _this._addPipeToModule(declaredPipeMeta, moduleType, transitiveModule_1, declaredPipes_1, true);
                         }
                         else {
-                            throw new BaseException$1("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
+                            throw new Error("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
                         }
                     });
                 }
@@ -14002,12 +13980,12 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype._verifyModule = function (moduleMeta) {
             moduleMeta.exportedDirectives.forEach(function (dirMeta) {
                 if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-                    throw new BaseException$1("Can't export directive " + stringify(dirMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+                    throw new Error("Can't export directive " + stringify(dirMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
                 }
             });
             moduleMeta.exportedPipes.forEach(function (pipeMeta) {
                 if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-                    throw new BaseException$1("Can't export pipe " + stringify(pipeMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+                    throw new Error("Can't export pipe " + stringify(pipeMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
                 }
             });
         };
@@ -14031,7 +14009,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileMetadataResolver.prototype._addTypeToModule = function (type, moduleType) {
             var oldModule = this._ngModuleOfTypes.get(type);
             if (oldModule && oldModule !== moduleType) {
-                throw new BaseException$1("Type " + stringify(type) + " is part of the declarations of 2 modules: " + stringify(oldModule) + " and " + stringify(moduleType) + "!");
+                throw new Error("Type " + stringify(type) + " is part of the declarations of 2 modules: " + stringify(oldModule) + " and " + stringify(moduleType) + "!");
             }
             this._ngModuleOfTypes.set(type, moduleType);
         };
@@ -14177,7 +14155,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (hasUnknownDeps) {
                 var depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringify(dep.token) : '?'; })
                     .join(', ');
-                throw new BaseException$1("Can't resolve all parameters for " + stringify(typeOrFunc) + ": (" + depsTokens + ").");
+                throw new Error("Can't resolve all parameters for " + stringify(typeOrFunc) + ": (" + depsTokens + ").");
             }
             return dependenciesMetadata;
         };
@@ -14236,7 +14214,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         return soFar;
                     }, [])
                         .join(', ');
-                    throw new BaseException$1("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]");
+                    throw new Error("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]");
                 }
                 if (compileProvider) {
                     compileProviders.push(compileProvider);
@@ -14249,10 +14227,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             var components = [];
             var collectedIdentifiers = [];
             if (provider.useFactory || provider.useExisting || provider.useClass) {
-                throw new BaseException$1("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!");
+                throw new Error("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!");
             }
             if (!provider.multi) {
-                throw new BaseException$1("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
+                throw new Error("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
             }
             convertToCompileValue(provider.useValue, collectedIdentifiers);
             collectedIdentifiers.forEach(function (identifier) {
@@ -14304,7 +14282,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             else {
                 if (!isPresent(q.selector)) {
-                    throw new BaseException$1("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringify(typeOrFunc) + "\" since the query selector wasn't defined.");
+                    throw new Error("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringify(typeOrFunc) + "\" since the query selector wasn't defined.");
                 }
                 selectors = [this.getTokenMetadata(q.selector)];
             }
@@ -14800,7 +14778,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         varName = CATCH_STACK_VAR$2.name;
                         break;
                     default:
-                        throw new _angular_core.BaseException("Unknown builtin variable " + ast.builtin);
+                        throw new Error("Unknown builtin variable " + ast.builtin);
                 }
             }
             ctx.print(varName);
@@ -14892,7 +14870,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     opStr = '>=';
                     break;
                 default:
-                    throw new _angular_core.BaseException("Unknown operator " + ast.operator);
+                    throw new Error("Unknown operator " + ast.operator);
             }
             ctx.print("(");
             ast.lhs.visitExpression(this, ctx);
@@ -15008,7 +14986,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 ast.visitType(converter, ctx);
             }
             else {
-                throw new _angular_core.BaseException("Don't know how to print debug info for " + ast);
+                throw new Error("Don't know how to print debug info for " + ast);
             }
         });
         return ctx.toSource();
@@ -15215,7 +15193,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     typeStr = 'string';
                     break;
                 default:
-                    throw new _angular_core.BaseException("Unsupported builtin type " + type.name);
+                    throw new Error("Unsupported builtin type " + type.name);
             }
             ctx.print(typeStr);
             return null;
@@ -15248,7 +15226,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     name = 'bind';
                     break;
                 default:
-                    throw new _angular_core.BaseException("Unknown builtin method: " + method);
+                    throw new Error("Unknown builtin method: " + method);
             }
             return name;
         };
@@ -15263,7 +15241,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         _TsEmitterVisitor.prototype._visitIdentifier = function (value, typeParams, ctx) {
             var _this = this;
             if (isBlank(value.name)) {
-                throw new _angular_core.BaseException("Internal error: unknown identifier " + value);
+                throw new Error("Internal error: unknown identifier " + value);
             }
             if (isPresent(value.moduleUrl) && value.moduleUrl != this._moduleUrl) {
                 var prefix = this.importsWithPrefixes.get(value.moduleUrl);
@@ -15381,7 +15359,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 currCtx = currCtx.parent;
             }
-            throw new _angular_core.BaseException("Not declared variable " + expr.name);
+            throw new Error("Not declared variable " + expr.name);
         };
         StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
             var varName = ast.name;
@@ -15398,7 +15376,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         varName = CATCH_STACK_VAR$1;
                         break;
                     default:
-                        throw new _angular_core.BaseException("Unknown builtin variable " + ast.builtin);
+                        throw new Error("Unknown builtin variable " + ast.builtin);
                 }
             }
             var currCtx = ctx;
@@ -15408,7 +15386,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 currCtx = currCtx.parent;
             }
-            throw new _angular_core.BaseException("Not declared variable " + varName);
+            throw new Error("Not declared variable " + varName);
         };
         StatementInterpreter.prototype.visitWriteKeyExpr = function (expr, ctx) {
             var receiver = expr.receiver.visitExpression(this, ctx);
@@ -15439,7 +15417,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         result = receiver.bind(args[0]);
                         break;
                     default:
-                        throw new _angular_core.BaseException("Unknown builtin method " + expr.builtin);
+                        throw new Error("Unknown builtin method " + expr.builtin);
                 }
             }
             else {
@@ -15562,7 +15540,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 case BinaryOperator.BiggerEquals:
                     return lhs() >= rhs();
                 default:
-                    throw new _angular_core.BaseException("Unknown operator " + ast.operator);
+                    throw new Error("Unknown operator " + ast.operator);
             }
         };
         StatementInterpreter.prototype.visitReadPropExpr = function (ast, ctx) {
@@ -15675,7 +15653,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 ctx.print('self');
             }
             else if (ast.builtin === BuiltinVar.Super) {
-                throw new _angular_core.BaseException("'super' needs to be handled at a parent ast node, not at the variable level!");
+                throw new Error("'super' needs to be handled at a parent ast node, not at the variable level!");
             }
             else {
                 _super.prototype.visitReadVarExpr.call(this, ast, ctx);
@@ -15759,7 +15737,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     name = 'bind';
                     break;
                 default:
-                    throw new _angular_core.BaseException("Unknown builtin method: " + method);
+                    throw new Error("Unknown builtin method: " + method);
             }
             return name;
         };
@@ -16503,7 +16481,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             templates.forEach(function (template) {
                 if (template.loading) {
                     if (isSync) {
-                        throw new _angular_core.ComponentStillLoadingError(template.compType.runtime);
+                        throw new ComponentStillLoadingError(template.compType.runtime);
                     }
                     else {
                         loadingPromises.push(template.loading);
@@ -16561,10 +16539,10 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this._compiledTemplateCache.get(compType);
             if (!compiledTemplate) {
                 if (isHost) {
-                    throw new BaseException$1("Illegal state: Compiled view for component " + stringify(compType) + " does not exist!");
+                    throw new Error("Illegal state: Compiled view for component " + stringify(compType) + " does not exist!");
                 }
                 else {
-                    throw new BaseException$1("Component " + stringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
+                    throw new Error("Component " + stringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
                 }
             }
             return compiledTemplate;
@@ -16572,7 +16550,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         RuntimeCompiler.prototype._assertComponentLoaded = function (compType, isHost) {
             var compiledTemplate = this._assertComponentKnown(compType, isHost);
             if (compiledTemplate.loading) {
-                throw new BaseException$1("Illegal state: CompiledTemplate for " + stringify(compType) + " (isHost: " + isHost + ") is still loading!");
+                throw new Error("Illegal state: CompiledTemplate for " + stringify(compType) + " (isHost: " + isHost + ") is still loading!");
             }
             return compiledTemplate;
         };
@@ -16677,7 +16655,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     args[_i - 0] = arguments[_i];
                 }
                 if (!_this._viewFactory) {
-                    throw new BaseException$1("Illegal state: CompiledTemplate for " + stringify(_this.compType) + " is not compiled yet!");
+                    throw new Error("Illegal state: CompiledTemplate for " + stringify(_this.compType) + " is not compiled yet!");
                 }
                 return _this._viewFactory.apply(null, args);
             };
@@ -16697,7 +16675,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         Object.defineProperty(CompiledTemplate.prototype, "normalizedCompMeta", {
             get: function () {
                 if (this.loading) {
-                    throw new BaseException$1("Template is still loading for " + this.compType.name + "!");
+                    throw new Error("Template is still loading for " + this.compType.name + "!");
                 }
                 return this._normalizedCompMeta;
             },
@@ -16713,7 +16691,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }());
     function assertComponent(meta) {
         if (!meta.isComponent) {
-            throw new BaseException$1("Could not compile '" + meta.type.name + "' because it is not a component.");
+            throw new Error("Could not compile '" + meta.type.name + "' because it is not a component.");
         }
     }
     /**
@@ -17221,6 +17199,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         parts.forEach(function (part) { return part && result.push.apply(result, part); });
         return result;
     }
+    /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
     // asset:<package-name>/<realm>/<path-to-module>
     var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
     /**
@@ -17247,7 +17232,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (allowNonMatching) {
                 return null;
             }
-            throw new _angular_core.BaseException("Url " + url + " is not a valid asset: url");
+            throw new Error("Url " + url + " is not a valid asset: url");
         };
         return AssetUrl;
     }());

@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 "use strict";
-var core_1 = require('@angular/core');
 var cdAst = require('../expression_parser/ast');
 var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
@@ -53,12 +52,12 @@ var _Mode;
 })(_Mode || (_Mode = {}));
 function ensureStatementMode(mode, ast) {
     if (mode !== _Mode.Statement) {
-        throw new core_1.BaseException("Expected a statement, but saw " + ast);
+        throw new Error("Expected a statement, but saw " + ast);
     }
 }
 function ensureExpressionMode(mode, ast) {
     if (mode !== _Mode.Expression) {
-        throw new core_1.BaseException("Expected an expression, but saw " + ast);
+        throw new Error("Expected an expression, but saw " + ast);
     }
 }
 function convertToStatementIfNeeded(mode, expr) {
@@ -130,7 +129,7 @@ var _AstToIrVisitor = (function () {
                 op = o.BinaryOperator.BiggerEquals;
                 break;
             default:
-                throw new core_1.BaseException("Unsupported operation " + ast.operation);
+                throw new Error("Unsupported operation " + ast.operation);
         }
         return convertToStatementIfNeeded(mode, new o.BinaryOperatorExpr(op, this.visit(ast.left, _Mode.Expression), this.visit(ast.right, _Mode.Expression)));
     };
@@ -234,7 +233,7 @@ var _AstToIrVisitor = (function () {
         if (receiver === this._implicitReceiver) {
             var varExpr = this._nameResolver.getLocal(ast.name);
             if (lang_1.isPresent(varExpr)) {
-                throw new core_1.BaseException('Cannot assign to a reference or variable!');
+                throw new Error('Cannot assign to a reference or variable!');
             }
         }
         return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this.visit(ast.value, _Mode.Expression)));
@@ -250,7 +249,7 @@ var _AstToIrVisitor = (function () {
         return asts.map(function (ast) { return _this.visit(ast, mode); });
     };
     _AstToIrVisitor.prototype.visitQuote = function (ast, mode) {
-        throw new core_1.BaseException('Quotes are not supported for evaluation!');
+        throw new Error('Quotes are not supported for evaluation!');
     };
     _AstToIrVisitor.prototype.visit = function (ast, mode) {
         var result = this._resultMap.get(ast);
@@ -406,7 +405,7 @@ var _AstToIrVisitor = (function () {
     _AstToIrVisitor.prototype.releaseTemporary = function (temporary) {
         this._currentTemporary--;
         if (temporary.name != temporaryName(this.bindingIndex, this._currentTemporary)) {
-            throw new core_1.BaseException("Temporary " + temporary.name + " released out of order");
+            throw new Error("Temporary " + temporary.name + " released out of order");
         }
     };
     return _AstToIrVisitor;
