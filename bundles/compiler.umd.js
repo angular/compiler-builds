@@ -16139,6 +16139,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         // scope via name and [is=name]
         ShadowCss.prototype._applySimpleSelectorScope = function (selector, scopeSelector, hostSelector) {
+            // In Android browser, the lastIndex is not reset when the regex is used in String.replace()
+            _polyfillHostRe.lastIndex = 0;
             if (_polyfillHostRe.test(selector)) {
                 var replaceBy = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
                 selector = StringWrapper.replace(selector, _polyfillHostNoCombinator, replaceBy);
