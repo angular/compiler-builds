@@ -32,10 +32,10 @@ var ProviderViewContext = (function () {
         this.sourceSpan = sourceSpan;
         this.errors = [];
         this.viewQueries = _getViewQueries(component);
-        this.viewProviders = new compile_metadata_1.CompileIdentifierMap();
+        this.viewProviders = new Map();
         _normalizeProviders(component.viewProviders, sourceSpan, this.errors).forEach(function (provider) {
-            if (lang_1.isBlank(_this.viewProviders.get(provider.token))) {
-                _this.viewProviders.add(provider.token, true);
+            if (lang_1.isBlank(_this.viewProviders.get(provider.token.reference))) {
+                _this.viewProviders.set(provider.token.reference, true);
             }
         });
     }
@@ -50,8 +50,8 @@ var ProviderElementContext = (function () {
         this._isViewRoot = _isViewRoot;
         this._directiveAsts = _directiveAsts;
         this._sourceSpan = _sourceSpan;
-        this._transformedProviders = new compile_metadata_1.CompileIdentifierMap();
-        this._seenProviders = new compile_metadata_1.CompileIdentifierMap();
+        this._transformedProviders = new Map();
+        this._seenProviders = new Map();
         this._hasViewContainer = false;
         this._attrs = {};
         attrs.forEach(function (attrAst) { return _this._attrs[attrAst.name] = attrAst.value; });
@@ -59,17 +59,19 @@ var ProviderElementContext = (function () {
         this._allProviders =
             _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, _viewContext.errors);
         this._contentQueries = _getContentQueries(directivesMeta);
-        var queriedTokens = new compile_metadata_1.CompileIdentifierMap();
-        this._allProviders.values().forEach(function (provider) { _this._addQueryReadsTo(provider.token, queriedTokens); });
+        var queriedTokens = new Map();
+        collection_1.MapWrapper.values(this._allProviders).forEach(function (provider) {
+            _this._addQueryReadsTo(provider.token, queriedTokens);
+        });
         refs.forEach(function (refAst) {
             _this._addQueryReadsTo(new compile_metadata_1.CompileTokenMetadata({ value: refAst.name }), queriedTokens);
         });
-        if (lang_1.isPresent(queriedTokens.get(identifiers_1.identifierToken(identifiers_1.Identifiers.ViewContainerRef)))) {
+        if (lang_1.isPresent(queriedTokens.get(identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.ViewContainerRef).reference))) {
             this._hasViewContainer = true;
         }
         // create the providers that we know are eager first
-        this._allProviders.values().forEach(function (provider) {
-            var eager = provider.eager || lang_1.isPresent(queriedTokens.get(provider.token));
+        collection_1.MapWrapper.values(this._allProviders).forEach(function (provider) {
+            var eager = provider.eager || lang_1.isPresent(queriedTokens.get(provider.token.reference));
             if (eager) {
                 _this._getOrCreateLocalProvider(provider.providerType, provider.token, true);
             }
@@ -78,18 +80,18 @@ var ProviderElementContext = (function () {
     ProviderElementContext.prototype.afterElement = function () {
         var _this = this;
         // collect lazy providers
-        this._allProviders.values().forEach(function (provider) {
+        collection_1.MapWrapper.values(this._allProviders).forEach(function (provider) {
             _this._getOrCreateLocalProvider(provider.providerType, provider.token, false);
         });
     };
     Object.defineProperty(ProviderElementContext.prototype, "transformProviders", {
-        get: function () { return this._transformedProviders.values(); },
+        get: function () { return collection_1.MapWrapper.values(this._transformedProviders); },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(ProviderElementContext.prototype, "transformedDirectiveAsts", {
         get: function () {
-            var sortedProviderTypes = this._transformedProviders.values().map(function (provider) { return provider.token.identifier; });
+            var sortedProviderTypes = this.transformProviders.map(function (provider) { return provider.token.identifier; });
             var sortedDirectives = collection_1.ListWrapper.clone(this._directiveAsts);
             collection_1.ListWrapper.sort(sortedDirectives, function (dir1, dir2) { return sortedProviderTypes.indexOf(dir1.directive.type) -
                 sortedProviderTypes.indexOf(dir2.directive.type); });
@@ -106,8 +108,8 @@ var ProviderElementContext = (function () {
     ProviderElementContext.prototype._addQueryReadsTo = function (token, queryReadTokens) {
         this._getQueriesFor(token).forEach(function (query) {
             var queryReadToken = lang_1.isPresent(query.read) ? query.read : token;
-            if (lang_1.isBlank(queryReadTokens.get(queryReadToken))) {
-                queryReadTokens.add(queryReadToken, true);
+            if (lang_1.isBlank(queryReadTokens.get(queryReadToken.reference))) {
+                queryReadTokens.set(queryReadToken.reference, true);
             }
         });
     };
@@ -117,7 +119,7 @@ var ProviderElementContext = (function () {
         var distance = 0;
         var queries;
         while (currentEl !== null) {
-            queries = currentEl._contentQueries.get(token);
+            queries = currentEl._contentQueries.get(token.reference);
             if (lang_1.isPresent(queries)) {
                 collection_1.ListWrapper.addAll(result, queries.filter(function (query) { return query.descendants || distance <= 1; }));
             }
@@ -126,7 +128,7 @@ var ProviderElementContext = (function () {
             }
             currentEl = currentEl._parent;
         }
-        queries = this._viewContext.viewQueries.get(token);
+        queries = this._viewContext.viewQueries.get(token.reference);
         if (lang_1.isPresent(queries)) {
             collection_1.ListWrapper.addAll(result, queries);
         }
@@ -134,7 +136,7 @@ var ProviderElementContext = (function () {
     };
     ProviderElementContext.prototype._getOrCreateLocalProvider = function (requestingProviderType, token, eager) {
         var _this = this;
-        var resolvedProvider = this._allProviders.get(token);
+        var resolvedProvider = this._allProviders.get(token.reference);
         if (lang_1.isBlank(resolvedProvider) ||
             ((requestingProviderType === template_ast_1.ProviderAstType.Directive ||
                 requestingProviderType === template_ast_1.ProviderAstType.PublicService) &&
@@ -144,15 +146,15 @@ var ProviderElementContext = (function () {
                 resolvedProvider.providerType === template_ast_1.ProviderAstType.Builtin)) {
             return null;
         }
-        var transformedProviderAst = this._transformedProviders.get(token);
+        var transformedProviderAst = this._transformedProviders.get(token.reference);
         if (lang_1.isPresent(transformedProviderAst)) {
             return transformedProviderAst;
         }
-        if (lang_1.isPresent(this._seenProviders.get(token))) {
+        if (lang_1.isPresent(this._seenProviders.get(token.reference))) {
             this._viewContext.errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, this._sourceSpan));
             return null;
         }
-        this._seenProviders.add(token, true);
+        this._seenProviders.set(token.reference, true);
         var transformedProviders = resolvedProvider.providers.map(function (provider) {
             var transformedUseValue = provider.useValue;
             var transformedUseExisting = provider.useExisting;
@@ -185,7 +187,7 @@ var ProviderElementContext = (function () {
         });
         transformedProviderAst =
             _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
-        this._transformedProviders.add(token, transformedProviderAst);
+        this._transformedProviders.set(token.reference, transformedProviderAst);
         return transformedProviderAst;
     };
     ProviderElementContext.prototype._getLocalDependency = function (requestingProviderType, dep, eager) {
@@ -201,18 +203,20 @@ var ProviderElementContext = (function () {
             // access builtints
             if ((requestingProviderType === template_ast_1.ProviderAstType.Directive ||
                 requestingProviderType === template_ast_1.ProviderAstType.Component)) {
-                if (dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.Renderer)) ||
-                    dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ElementRef)) ||
-                    dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ChangeDetectorRef)) ||
-                    dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.TemplateRef))) {
+                if (dep.token.reference === identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.Renderer).reference ||
+                    dep.token.reference === identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.ElementRef).reference ||
+                    dep.token.reference ===
+                        identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.ChangeDetectorRef).reference ||
+                    dep.token.reference === identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.TemplateRef).reference) {
                     return dep;
                 }
-                if (dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ViewContainerRef))) {
+                if (dep.token.reference ===
+                    identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.ViewContainerRef).reference) {
                     this._hasViewContainer = true;
                 }
             }
             // access the injector
-            if (dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.Injector))) {
+            if (dep.token.reference === identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.Injector).reference) {
                 return dep;
             }
             // access providers
@@ -248,8 +252,8 @@ var ProviderElementContext = (function () {
             // check @Host restriction
             if (lang_1.isBlank(result)) {
                 if (!dep.isHost || this._viewContext.component.type.isHost ||
-                    identifiers_1.identifierToken(this._viewContext.component.type).equalsTo(dep.token) ||
-                    lang_1.isPresent(this._viewContext.viewProviders.get(dep.token))) {
+                    this._viewContext.component.type.reference === dep.token.reference ||
+                    lang_1.isPresent(this._viewContext.viewProviders.get(dep.token.reference))) {
                     result = dep;
                 }
                 else {
@@ -270,10 +274,10 @@ exports.ProviderElementContext = ProviderElementContext;
 var NgModuleProviderAnalyzer = (function () {
     function NgModuleProviderAnalyzer(ngModule, extraProviders, sourceSpan) {
         var _this = this;
-        this._transformedProviders = new compile_metadata_1.CompileIdentifierMap();
-        this._seenProviders = new compile_metadata_1.CompileIdentifierMap();
+        this._transformedProviders = new Map();
+        this._seenProviders = new Map();
         this._errors = [];
-        this._allProviders = new compile_metadata_1.CompileIdentifierMap();
+        this._allProviders = new Map();
         var ngModuleTypes = ngModule.transitiveModule.modules.map(function (moduleMeta) { return moduleMeta.type; });
         ngModuleTypes.forEach(function (ngModuleType) {
             var ngModuleProvider = new compile_metadata_1.CompileProviderMetadata({ token: new compile_metadata_1.CompileTokenMetadata({ identifier: ngModuleType }), useClass: ngModuleType });
@@ -283,28 +287,30 @@ var NgModuleProviderAnalyzer = (function () {
     }
     NgModuleProviderAnalyzer.prototype.parse = function () {
         var _this = this;
-        this._allProviders.values().forEach(function (provider) { _this._getOrCreateLocalProvider(provider.token, provider.eager); });
+        collection_1.MapWrapper.values(this._allProviders).forEach(function (provider) {
+            _this._getOrCreateLocalProvider(provider.token, provider.eager);
+        });
         if (this._errors.length > 0) {
             var errorString = this._errors.join('\n');
             throw new Error("Provider parse errors:\n" + errorString);
         }
-        return this._transformedProviders.values();
+        return collection_1.MapWrapper.values(this._transformedProviders);
     };
     NgModuleProviderAnalyzer.prototype._getOrCreateLocalProvider = function (token, eager) {
         var _this = this;
-        var resolvedProvider = this._allProviders.get(token);
+        var resolvedProvider = this._allProviders.get(token.reference);
         if (lang_1.isBlank(resolvedProvider)) {
             return null;
         }
-        var transformedProviderAst = this._transformedProviders.get(token);
+        var transformedProviderAst = this._transformedProviders.get(token.reference);
         if (lang_1.isPresent(transformedProviderAst)) {
             return transformedProviderAst;
         }
-        if (lang_1.isPresent(this._seenProviders.get(token))) {
+        if (lang_1.isPresent(this._seenProviders.get(token.reference))) {
             this._errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, resolvedProvider.sourceSpan));
             return null;
         }
-        this._seenProviders.add(token, true);
+        this._seenProviders.set(token.reference, true);
         var transformedProviders = resolvedProvider.providers.map(function (provider) {
             var transformedUseValue = provider.useValue;
             var transformedUseExisting = provider.useExisting;
@@ -337,7 +343,7 @@ var NgModuleProviderAnalyzer = (function () {
         });
         transformedProviderAst =
             _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
-        this._transformedProviders.add(token, transformedProviderAst);
+        this._transformedProviders.set(token.reference, transformedProviderAst);
         return transformedProviderAst;
     };
     NgModuleProviderAnalyzer.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
@@ -345,8 +351,9 @@ var NgModuleProviderAnalyzer = (function () {
         var foundLocal = false;
         if (!dep.isSkipSelf && lang_1.isPresent(dep.token)) {
             // access the injector
-            if (dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.Injector)) ||
-                dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ComponentFactoryResolver))) {
+            if (dep.token.reference === identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.Injector).reference ||
+                dep.token.reference ===
+                    identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.ComponentFactoryResolver).reference) {
                 foundLocal = true;
             }
             else if (lang_1.isPresent(this._getOrCreateLocalProvider(dep.token, eager))) {
@@ -413,7 +420,7 @@ function _normalizeProviders(providers, sourceSpan, targetErrors, targetProvider
     return targetProviders;
 }
 function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
-    var providersByToken = new compile_metadata_1.CompileIdentifierMap();
+    var providersByToken = new Map();
     directives.forEach(function (directive) {
         var dirProvider = new compile_metadata_1.CompileProviderMetadata({ token: new compile_metadata_1.CompileTokenMetadata({ identifier: directive.type }), useClass: directive.type });
         _resolveProviders([dirProvider], directive.isComponent ? template_ast_1.ProviderAstType.Component : template_ast_1.ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken);
@@ -428,7 +435,7 @@ function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
 }
 function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken) {
     providers.forEach(function (provider) {
-        var resolvedProvider = targetProvidersByToken.get(provider.token);
+        var resolvedProvider = targetProvidersByToken.get(provider.token.reference);
         if (lang_1.isPresent(resolvedProvider) && resolvedProvider.multiProvider !== provider.multi) {
             targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + resolvedProvider.token.name, sourceSpan));
         }
@@ -437,7 +444,7 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
                 provider.token.identifier.lifecycleHooks :
                 [];
             resolvedProvider = new template_ast_1.ProviderAst(provider.token, provider.multi, eager || lifecycleHooks.length > 0, [provider], providerType, lifecycleHooks, sourceSpan);
-            targetProvidersByToken.add(provider.token, resolvedProvider);
+            targetProvidersByToken.set(provider.token.reference, resolvedProvider);
         }
         else {
             if (!provider.multi) {
@@ -448,7 +455,7 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
     });
 }
 function _getViewQueries(component) {
-    var viewQueries = new compile_metadata_1.CompileIdentifierMap();
+    var viewQueries = new Map();
     if (lang_1.isPresent(component.viewQueries)) {
         component.viewQueries.forEach(function (query) { return _addQueryToTokenMap(viewQueries, query); });
     }
@@ -460,7 +467,7 @@ function _getViewQueries(component) {
     return viewQueries;
 }
 function _getContentQueries(directives) {
-    var contentQueries = new compile_metadata_1.CompileIdentifierMap();
+    var contentQueries = new Map();
     directives.forEach(function (directive) {
         if (lang_1.isPresent(directive.queries)) {
             directive.queries.forEach(function (query) { return _addQueryToTokenMap(contentQueries, query); });
@@ -475,10 +482,10 @@ function _getContentQueries(directives) {
 }
 function _addQueryToTokenMap(map, query) {
     query.selectors.forEach(function (token) {
-        var entry = map.get(token);
+        var entry = map.get(token.reference);
         if (lang_1.isBlank(entry)) {
             entry = [];
-            map.add(token, entry);
+            map.set(token.reference, entry);
         }
         entry.push(query);
     });

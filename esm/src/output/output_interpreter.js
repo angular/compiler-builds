@@ -211,7 +211,9 @@ class StatementInterpreter {
         return new clazz(...args);
     }
     visitLiteralExpr(ast, ctx) { return ast.value; }
-    visitExternalExpr(ast, ctx) { return ast.value.runtime; }
+    visitExternalExpr(ast, ctx) {
+        return ast.value.reference;
+    }
     visitConditionalExpr(ast, ctx) {
         if (ast.condition.visitExpression(this, ctx)) {
             return ast.trueCase.visitExpression(this, ctx);

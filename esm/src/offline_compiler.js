@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileProviderMetadata, CompileTokenMetadata, createHostComponentMeta } from './compile_metadata';
+import { CompileProviderMetadata, createHostComponentMeta } from './compile_metadata';
 import { ListWrapper } from './facade/collection';
-import { Identifiers } from './identifiers';
+import { Identifiers, resolveIdentifier, resolveIdentifierToken } from './identifiers';
 import * as o from './output/output_ast';
 import { ComponentFactoryDependency, ViewFactoryDependency } from './view_compiler/view_compiler';
 export class SourceModule {
@@ -39,7 +39,7 @@ export class OfflineCompiler {
             const ngModuleMeta = this._metadataResolver.getNgModuleMetadata(ngModule);
             ngModuleMeta.declaredDirectives.forEach((dirMeta) => {
                 if (dirMeta.isComponent) {
-                    ngModuleByComponent.set(dirMeta.type.runtime, ngModuleMeta);
+                    ngModuleByComponent.set(dirMeta.type.reference, ngModuleMeta);
                 }
             });
         });
@@ -90,12 +90,9 @@ export class OfflineCompiler {
     _compileModule(ngModuleType, targetStatements) {
         const ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
         let appCompileResult = this._ngModuleCompiler.compile(ngModule, [
+            new CompileProviderMetadata({ token: resolveIdentifierToken(Identifiers.LOCALE_ID), useValue: this._localeId }),
             new CompileProviderMetadata({
-                token: new CompileTokenMetadata({ identifier: Identifiers.LOCALE_ID }),
-                useValue: this._localeId
-            }),
-            new CompileProviderMetadata({
-                token: new CompileTokenMetadata({ identifier: Identifiers.TRANSLATIONS_FORMAT }),
+                token: resolveIdentifierToken(Identifiers.TRANSLATIONS_FORMAT),
                 useValue: this._translationFormat
             })
         ]);
@@ -111,11 +108,11 @@ export class OfflineCompiler {
         var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], [], null, fileSuffix, targetStatements);
         var compFactoryVar = _componentFactoryName(compMeta.type);
         targetStatements.push(o.variable(compFactoryVar)
-            .set(o.importExpr(Identifiers.ComponentFactory, [o.importType(compMeta.type)])
+            .set(o.importExpr(resolveIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)])
             .instantiate([
             o.literal(compMeta.selector), o.variable(hostViewFactoryVar),
             o.importExpr(compMeta.type)
-        ], o.importType(Identifiers.ComponentFactory, [o.importType(compMeta.type)], [o.TypeModifier.Const])))
+        ], o.importType(resolveIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]));
         return compFactoryVar;
     }

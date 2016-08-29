@@ -1,4 +1,3 @@
-import { identifierToken } from '../identifiers';
 import { templateVisitAll } from '../template_parser/template_ast';
 import { CompileElementAnimationOutput, bindAnimationOutputs, bindDirectiveOutputs, bindRenderOutputs, collectEventListeners } from './event_binder';
 import { bindDirectiveAfterContentLifecycleCallbacks, bindDirectiveAfterViewLifecycleCallbacks, bindDirectiveDetectChangesLifecycleCallbacks, bindInjectableDestroyLifecycleCallbacks, bindPipeDestroyLifecycleCallbacks } from './lifecycle_binder';
@@ -48,7 +47,7 @@ class ViewBinderVisitor {
         bindRenderInputs(ast.inputs, compileElement);
         bindRenderOutputs(eventListeners);
         ast.directives.forEach((directiveAst) => {
-            var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
+            var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
             bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
             bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
             bindDirectiveHostProps(directiveAst, directiveInstance, compileElement);
@@ -58,12 +57,12 @@ class ViewBinderVisitor {
         // afterContent and afterView lifecycles need to be called bottom up
         // so that children are notified before parents
         ast.directives.forEach((directiveAst) => {
-            var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
+            var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
             bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
             bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
         });
         ast.providers.forEach((providerAst) => {
-            var providerInstance = compileElement.instances.get(providerAst.token);
+            var providerInstance = compileElement.instances.get(providerAst.token.reference);
             bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
         });
         return null;
@@ -72,7 +71,7 @@ class ViewBinderVisitor {
         var compileElement = this.view.nodes[this._nodeIndex++];
         var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
         ast.directives.forEach((directiveAst) => {
-            var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
+            var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
             bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
             bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
             bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
@@ -80,7 +79,7 @@ class ViewBinderVisitor {
             bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
         });
         ast.providers.forEach((providerAst) => {
-            var providerInstance = compileElement.instances.get(providerAst.token);
+            var providerInstance = compileElement.instances.get(providerAst.token.reference);
             bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
         });
         bindView(compileElement.embeddedView, ast.children, []);

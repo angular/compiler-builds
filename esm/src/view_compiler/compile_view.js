@@ -6,10 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewType } from '../../core_private';
-import { CompileIdentifierMap, CompileIdentifierMetadata } from '../compile_metadata';
-import { ListWrapper } from '../facade/collection';
+import { CompileIdentifierMetadata } from '../compile_metadata';
+import { ListWrapper, MapWrapper } from '../facade/collection';
 import { isBlank, isPresent } from '../facade/lang';
-import { Identifiers } from '../identifiers';
+import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
@@ -65,7 +65,7 @@ export class CompileView {
         }
         this.componentContext =
             getPropertyInView(o.THIS_EXPR.prop('context'), this, this.componentView);
-        var viewQueries = new CompileIdentifierMap();
+        var viewQueries = new Map();
         if (this.viewType === ViewType.COMPONENT) {
             var directiveInstance = o.THIS_EXPR.prop('context');
             ListWrapper.forEachWithIndex(this.component.viewQueries, (queryMeta, queryIndex) => {
@@ -113,7 +113,7 @@ export class CompileView {
     }
     createLiteralArray(values) {
         if (values.length === 0) {
-            return o.importExpr(Identifiers.EMPTY_ARRAY);
+            return o.importExpr(resolveIdentifier(Identifiers.EMPTY_ARRAY));
         }
         var proxyExpr = o.THIS_EXPR.prop(`_arr_${this.literalArrayCount++}`);
         var proxyParams = [];
@@ -128,7 +128,7 @@ export class CompileView {
     }
     createLiteralMap(entries) {
         if (entries.length === 0) {
-            return o.importExpr(Identifiers.EMPTY_MAP);
+            return o.importExpr(resolveIdentifier(Identifiers.EMPTY_MAP));
         }
         var proxyExpr = o.THIS_EXPR.prop(`_map_${this.literalMapCount++}`);
         var proxyParams = [];
@@ -144,7 +144,8 @@ export class CompileView {
         return proxyExpr.callFn(values);
     }
     afterNodes() {
-        this.viewQueries.values().forEach((queries) => queries.forEach((query) => query.afterChildren(this.createMethod, this.updateViewQueriesMethod)));
+        MapWrapper.values(this.viewQueries)
+            .forEach((queries) => queries.forEach((query) => query.afterChildren(this.createMethod, this.updateViewQueriesMethod)));
     }
 }
 function getViewType(component, embeddedTemplateIndex) {

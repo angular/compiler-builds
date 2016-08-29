@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewEncapsulation, isDevMode } from '@angular/core';
-import { Identifiers } from './identifiers';
+import { Identifiers, resolveIdentifier } from './identifiers';
 function unimplemented() {
     throw new Error('unimplemented');
 }
@@ -40,12 +40,13 @@ export class RenderTypes {
 }
 export class DefaultRenderTypes {
     constructor() {
-        this.renderer = Identifiers.Renderer;
         this.renderText = null;
         this.renderElement = null;
         this.renderComment = null;
         this.renderNode = null;
         this.renderEvent = null;
     }
+    get renderer() { return resolveIdentifier(Identifiers.Renderer); }
+    ;
 }
 //# sourceMappingURL=config.js.map

@@ -596,7 +596,7 @@ var TemplateParseVisitor = (function () {
             else if (lang_1.isBlank(component)) {
                 var refToken = null;
                 if (isTemplateElement) {
-                    refToken = identifiers_1.identifierToken(identifiers_1.Identifiers.TemplateRef);
+                    refToken = identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.TemplateRef);
                 }
                 targetReferences.push(new template_ast_1.ReferenceAst(elOrDirRef.name, refToken, elOrDirRef.sourceSpan));
             }

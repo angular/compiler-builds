@@ -37,7 +37,7 @@ var JitEmitterVisitor = (function (_super) {
         return result;
     };
     JitEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
-        var value = ast.value.runtime;
+        var value = ast.value.reference;
         var id = this._evalArgValues.indexOf(value);
         if (id === -1) {
             id = this._evalArgValues.length;

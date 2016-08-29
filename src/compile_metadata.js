@@ -12,11 +12,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var core_1 = require('@angular/core');
-var core_private_1 = require('../core_private');
 var collection_1 = require('./facade/collection');
 var lang_1 = require('./facade/lang');
 var selector_1 = require('./selector');
-var url_resolver_1 = require('./url_resolver');
 var util_1 = require('./util');
 function unimplemented() {
     throw new Error('unimplemented');
@@ -35,17 +33,6 @@ var CompileMetadataWithIdentifier = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(CompileMetadataWithIdentifier.prototype, "runtimeCacheKey", {
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(CompileMetadataWithIdentifier.prototype, "assetCacheKey", {
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    CompileMetadataWithIdentifier.prototype.equalsTo = function (id2) { return unimplemented(); };
     return CompileMetadataWithIdentifier;
 }());
 exports.CompileMetadataWithIdentifier = CompileMetadataWithIdentifier;
@@ -154,9 +141,8 @@ var CompileAnimationGroupMetadata = (function (_super) {
 exports.CompileAnimationGroupMetadata = CompileAnimationGroupMetadata;
 var CompileIdentifierMetadata = (function () {
     function CompileIdentifierMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
-        this._assetCacheKey = UNDEFINED;
-        this.runtime = runtime;
+        var _b = _a === void 0 ? {} : _a, reference = _b.reference, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
+        this.reference = reference;
         this.name = name;
         this.prefix = prefix;
         this.moduleUrl = moduleUrl;
@@ -167,33 +153,6 @@ var CompileIdentifierMetadata = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(CompileIdentifierMetadata.prototype, "runtimeCacheKey", {
-        get: function () { return this.identifier.runtime; },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(CompileIdentifierMetadata.prototype, "assetCacheKey", {
-        get: function () {
-            if (this._assetCacheKey === UNDEFINED) {
-                if (lang_1.isPresent(this.moduleUrl) && lang_1.isPresent(url_resolver_1.getUrlScheme(this.moduleUrl))) {
-                    var uri = core_private_1.reflector.importUri({ 'filePath': this.moduleUrl, 'name': this.name });
-                    this._assetCacheKey = this.name + "|" + uri;
-                }
-                else {
-                    this._assetCacheKey = null;
-                }
-            }
-            return this._assetCacheKey;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    CompileIdentifierMetadata.prototype.equalsTo = function (id2) {
-        var rk = this.runtimeCacheKey;
-        var ak = this.assetCacheKey;
-        return (lang_1.isPresent(rk) && rk == id2.runtimeCacheKey) ||
-            (lang_1.isPresent(ak) && ak == id2.assetCacheKey);
-    };
     return CompileIdentifierMetadata;
 }());
 exports.CompileIdentifierMetadata = CompileIdentifierMetadata;
@@ -231,8 +190,8 @@ exports.CompileProviderMetadata = CompileProviderMetadata;
 var CompileFactoryMetadata = (function (_super) {
     __extends(CompileFactoryMetadata, _super);
     function CompileFactoryMetadata(_a) {
-        var runtime = _a.runtime, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
-        _super.call(this, { runtime: runtime, name: name, prefix: prefix, moduleUrl: moduleUrl, value: value });
+        var reference = _a.reference, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
+        _super.call(this, { reference: reference, name: name, prefix: prefix, moduleUrl: moduleUrl, value: value });
         this.diDeps = _normalizeArray(diDeps);
     }
     return CompileFactoryMetadata;
@@ -245,10 +204,10 @@ var CompileTokenMetadata = (function () {
         this.identifier = identifier;
         this.identifierIsInstance = lang_1.normalizeBool(identifierIsInstance);
     }
-    Object.defineProperty(CompileTokenMetadata.prototype, "runtimeCacheKey", {
+    Object.defineProperty(CompileTokenMetadata.prototype, "reference", {
         get: function () {
             if (lang_1.isPresent(this.identifier)) {
-                return this.identifier.runtimeCacheKey;
+                return this.identifier.reference;
             }
             else {
                 return this.value;
@@ -257,24 +216,6 @@ var CompileTokenMetadata = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(CompileTokenMetadata.prototype, "assetCacheKey", {
-        get: function () {
-            if (lang_1.isPresent(this.identifier)) {
-                return this.identifier.assetCacheKey;
-            }
-            else {
-                return this.value;
-            }
-        },
-        enumerable: true,
-        configurable: true
-    });
-    CompileTokenMetadata.prototype.equalsTo = function (token2) {
-        var rk = this.runtimeCacheKey;
-        var ak = this.assetCacheKey;
-        return (lang_1.isPresent(rk) && rk == token2.runtimeCacheKey) ||
-            (lang_1.isPresent(ak) && ak == token2.assetCacheKey);
-    };
     Object.defineProperty(CompileTokenMetadata.prototype, "name", {
         get: function () {
             return lang_1.isPresent(this.value) ? util_1.sanitizeIdentifier(this.value) : this.identifier.name;
@@ -286,65 +227,13 @@ var CompileTokenMetadata = (function () {
 }());
 exports.CompileTokenMetadata = CompileTokenMetadata;
 /**
- * Note: We only need this in places where we need to support identifiers that
- * don't have a `runtime` value given by the `StaticReflector`. E.g. see the `identifiers`
- * file where we have some identifiers hard coded by name/module path.
- *
- * TODO(tbosch): Eventually, all of these places should go through the static reflector
- * as well, providing them with a valid `StaticSymbol` that is again a singleton.
- */
-var CompileIdentifierMap = (function () {
-    function CompileIdentifierMap() {
-        this._valueMap = new Map();
-        this._values = [];
-        this._tokens = [];
-    }
-    CompileIdentifierMap.prototype.add = function (token, value) {
-        var existing = this.get(token);
-        if (lang_1.isPresent(existing)) {
-            throw new Error("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
-        }
-        this._tokens.push(token);
-        this._values.push(value);
-        var rk = token.runtimeCacheKey;
-        if (lang_1.isPresent(rk)) {
-            this._valueMap.set(rk, value);
-        }
-        var ak = token.assetCacheKey;
-        if (lang_1.isPresent(ak)) {
-            this._valueMap.set(ak, value);
-        }
-    };
-    CompileIdentifierMap.prototype.get = function (token) {
-        var rk = token.runtimeCacheKey;
-        var ak = token.assetCacheKey;
-        var result;
-        if (lang_1.isPresent(rk)) {
-            result = this._valueMap.get(rk);
-        }
-        if (lang_1.isBlank(result) && lang_1.isPresent(ak)) {
-            result = this._valueMap.get(ak);
-        }
-        return result;
-    };
-    CompileIdentifierMap.prototype.keys = function () { return this._tokens; };
-    CompileIdentifierMap.prototype.values = function () { return this._values; };
-    Object.defineProperty(CompileIdentifierMap.prototype, "size", {
-        get: function () { return this._values.length; },
-        enumerable: true,
-        configurable: true
-    });
-    return CompileIdentifierMap;
-}());
-exports.CompileIdentifierMap = CompileIdentifierMap;
-/**
  * Metadata regarding compilation of a type.
  */
 var CompileTypeMetadata = (function (_super) {
     __extends(CompileTypeMetadata, _super);
     function CompileTypeMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
-        _super.call(this, { runtime: runtime, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
+        var _b = _a === void 0 ? {} : _a, reference = _b.reference, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
+        _super.call(this, { reference: reference, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
         this.isHost = lang_1.normalizeBool(isHost);
         this.diDeps = _normalizeArray(diDeps);
         this.lifecycleHooks = _normalizeArray(lifecycleHooks);
@@ -480,19 +369,6 @@ var CompileDirectiveMetadata = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(CompileDirectiveMetadata.prototype, "runtimeCacheKey", {
-        get: function () { return this.type.runtimeCacheKey; },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(CompileDirectiveMetadata.prototype, "assetCacheKey", {
-        get: function () { return this.type.assetCacheKey; },
-        enumerable: true,
-        configurable: true
-    });
-    CompileDirectiveMetadata.prototype.equalsTo = function (other) {
-        return this.type.equalsTo(other.identifier);
-    };
     return CompileDirectiveMetadata;
 }());
 exports.CompileDirectiveMetadata = CompileDirectiveMetadata;
@@ -503,12 +379,13 @@ function createHostComponentMeta(compMeta) {
     var template = selector_1.CssSelector.parse(compMeta.selector)[0].getMatchingElementTemplate();
     return CompileDirectiveMetadata.create({
         type: new CompileTypeMetadata({
-            runtime: Object,
+            reference: Object,
             name: compMeta.type.name + "_Host",
             moduleUrl: compMeta.type.moduleUrl,
             isHost: true
         }),
         template: new CompileTemplateMetadata({
+            encapsulation: core_1.ViewEncapsulation.None,
             template: template,
             templateUrl: '',
             styles: [],
@@ -541,19 +418,6 @@ var CompilePipeMetadata = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(CompilePipeMetadata.prototype, "runtimeCacheKey", {
-        get: function () { return this.type.runtimeCacheKey; },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(CompilePipeMetadata.prototype, "assetCacheKey", {
-        get: function () { return this.type.assetCacheKey; },
-        enumerable: true,
-        configurable: true
-    });
-    CompilePipeMetadata.prototype.equalsTo = function (other) {
-        return this.type.equalsTo(other.identifier);
-    };
     return CompilePipeMetadata;
 }());
 exports.CompilePipeMetadata = CompilePipeMetadata;
@@ -581,19 +445,6 @@ var CompileNgModuleMetadata = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(CompileNgModuleMetadata.prototype, "runtimeCacheKey", {
-        get: function () { return this.type.runtimeCacheKey; },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(CompileNgModuleMetadata.prototype, "assetCacheKey", {
-        get: function () { return this.type.assetCacheKey; },
-        enumerable: true,
-        configurable: true
-    });
-    CompileNgModuleMetadata.prototype.equalsTo = function (other) {
-        return this.type.equalsTo(other.identifier);
-    };
     return CompileNgModuleMetadata;
 }());
 exports.CompileNgModuleMetadata = CompileNgModuleMetadata;
@@ -607,20 +458,20 @@ var TransitiveCompileNgModuleMetadata = (function () {
         this.pipes = pipes;
         this.directivesSet = new Set();
         this.pipesSet = new Set();
-        directives.forEach(function (dir) { return _this.directivesSet.add(dir.type.runtime); });
-        pipes.forEach(function (pipe) { return _this.pipesSet.add(pipe.type.runtime); });
+        directives.forEach(function (dir) { return _this.directivesSet.add(dir.type.reference); });
+        pipes.forEach(function (pipe) { return _this.pipesSet.add(pipe.type.reference); });
     }
     return TransitiveCompileNgModuleMetadata;
 }());
 exports.TransitiveCompileNgModuleMetadata = TransitiveCompileNgModuleMetadata;
 function removeIdentifierDuplicates(items) {
-    var map = new CompileIdentifierMap();
+    var map = new Map();
     items.forEach(function (item) {
-        if (!map.get(item)) {
-            map.add(item, item);
+        if (!map.get(item.identifier.reference)) {
+            map.set(item.identifier.reference, item);
         }
     });
-    return map.keys();
+    return collection_1.MapWrapper.values(map);
 }
 exports.removeIdentifierDuplicates = removeIdentifierDuplicates;
 function _normalizeArray(obj) {

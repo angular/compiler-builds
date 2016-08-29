@@ -79,9 +79,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         var newLineIndex = res.indexOf('\n');
         return (newLineIndex === -1) ? res : res.substring(0, newLineIndex);
     }
-    function resolveEnumToken(enumValue, val) {
-        return enumValue[val];
-    }
     var StringWrapper = (function () {
         function StringWrapper() {
         }
@@ -5518,21 +5515,21 @@ var __extends = (this && this.__extends) || function (d, b) {
     var reflector = _angular_core.__core_private__.reflector;
     var Reflector = _angular_core.__core_private__.Reflector;
     var ReflectionCapabilities = _angular_core.__core_private__.ReflectionCapabilities;
-    var NoOpAnimationPlayer_ = _angular_core.__core_private__.NoOpAnimationPlayer;
-    var AnimationSequencePlayer_ = _angular_core.__core_private__.AnimationSequencePlayer;
-    var AnimationGroupPlayer_ = _angular_core.__core_private__.AnimationGroupPlayer;
-    var AnimationKeyframe_ = _angular_core.__core_private__.AnimationKeyframe;
-    var AnimationStyles_ = _angular_core.__core_private__.AnimationStyles;
+    var NoOpAnimationPlayer = _angular_core.__core_private__.NoOpAnimationPlayer;
+    var AnimationSequencePlayer = _angular_core.__core_private__.AnimationSequencePlayer;
+    var AnimationGroupPlayer = _angular_core.__core_private__.AnimationGroupPlayer;
+    var AnimationKeyframe = _angular_core.__core_private__.AnimationKeyframe;
+    var AnimationStyles = _angular_core.__core_private__.AnimationStyles;
     var AnimationOutput = _angular_core.__core_private__.AnimationOutput;
     var ANY_STATE = _angular_core.__core_private__.ANY_STATE;
     var DEFAULT_STATE = _angular_core.__core_private__.DEFAULT_STATE;
     var EMPTY_ANIMATION_STATE = _angular_core.__core_private__.EMPTY_STATE;
     var FILL_STYLE_FLAG = _angular_core.__core_private__.FILL_STYLE_FLAG;
-    var impBalanceAnimationStyles = _angular_core.__core_private__.prepareFinalAnimationStyles;
-    var impBalanceAnimationKeyframes = _angular_core.__core_private__.balanceAnimationKeyframes;
-    var impClearStyles = _angular_core.__core_private__.clearStyles;
-    var impCollectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
-    var impRenderStyles = _angular_core.__core_private__.renderStyles;
+    var prepareFinalAnimationStyles = _angular_core.__core_private__.prepareFinalAnimationStyles;
+    var balanceAnimationKeyframes = _angular_core.__core_private__.balanceAnimationKeyframes;
+    var clearStyles = _angular_core.__core_private__.clearStyles;
+    var collectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
+    var renderStyles = _angular_core.__core_private__.renderStyles;
     var ComponentStillLoadingError = _angular_core.__core_private__.ComponentStillLoadingError;
     var _EMPTY_ATTR_VALUE = '';
     var _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
@@ -5882,307 +5879,6 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         return SelectorContext;
     }());
-    var _ASSET_SCHEME = 'asset:';
-    function createOfflineCompileUrlResolver() {
-        return new UrlResolver(_ASSET_SCHEME);
-    }
-    /**
-     * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
-     */
-    var DEFAULT_PACKAGE_URL_PROVIDER = {
-        provide: _angular_core.PACKAGE_ROOT_URL,
-        useValue: '/'
-    };
-    var UrlResolver = (function () {
-        function UrlResolver(_packagePrefix) {
-            if (_packagePrefix === void 0) { _packagePrefix = null; }
-            this._packagePrefix = _packagePrefix;
-        }
-        /**
-         * Resolves the `url` given the `baseUrl`:
-         * - when the `url` is null, the `baseUrl` is returned,
-         * - if `url` is relative ('path/to/here', './path/to/here'), the resolved url is a combination of
-         * `baseUrl` and `url`,
-         * - if `url` is absolute (it has a scheme: 'http://', 'https://' or start with '/'), the `url` is
-         * returned as is (ignoring the `baseUrl`)
-         */
-        UrlResolver.prototype.resolve = function (baseUrl, url) {
-            var resolvedUrl = url;
-            if (isPresent(baseUrl) && baseUrl.length > 0) {
-                resolvedUrl = _resolveUrl(baseUrl, resolvedUrl);
-            }
-            var resolvedParts = _split(resolvedUrl);
-            var prefix = this._packagePrefix;
-            if (isPresent(prefix) && isPresent(resolvedParts) &&
-                resolvedParts[_ComponentIndex.Scheme] == 'package') {
-                var path = resolvedParts[_ComponentIndex.Path];
-                if (this._packagePrefix === _ASSET_SCHEME) {
-                    var pathSegements = path.split(/\//);
-                    resolvedUrl = "asset:" + pathSegements[0] + "/lib/" + pathSegements.slice(1).join('/');
-                }
-                else {
-                    prefix = StringWrapper.stripRight(prefix, '/');
-                    path = StringWrapper.stripLeft(path, '/');
-                    return prefix + "/" + path;
-                }
-            }
-            return resolvedUrl;
-        };
-        return UrlResolver;
-    }());
-    /** @nocollapse */
-    UrlResolver.decorators = [
-        { type: _angular_core.Injectable },
-    ];
-    /** @nocollapse */
-    UrlResolver.ctorParameters = [
-        { type: undefined, decorators: [{ type: _angular_core.Inject, args: [_angular_core.PACKAGE_ROOT_URL,] },] },
-    ];
-    /**
-     * Extract the scheme of a URL.
-     */
-    function getUrlScheme(url) {
-        var match = _split(url);
-        return (match && match[_ComponentIndex.Scheme]) || '';
-    }
-    // The code below is adapted from Traceur:
-    // https://github.com/google/traceur-compiler/blob/9511c1dafa972bf0de1202a8a863bad02f0f95a8/src/runtime/url.js
-    /**
-     * Builds a URI string from already-encoded parts.
-     *
-     * No encoding is performed.  Any component may be omitted as either null or
-     * undefined.
-     *
-     * @param opt_scheme The scheme such as 'http'.
-     * @param opt_userInfo The user name before the '@'.
-     * @param opt_domain The domain such as 'www.google.com', already
-     *     URI-encoded.
-     * @param opt_port The port number.
-     * @param opt_path The path, already URI-encoded.  If it is not
-     *     empty, it must begin with a slash.
-     * @param opt_queryData The URI-encoded query data.
-     * @param opt_fragment The URI-encoded fragment identifier.
-     * @return The fully combined URI.
-     */
-    function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, opt_path, opt_queryData, opt_fragment) {
-        var out = [];
-        if (isPresent(opt_scheme)) {
-            out.push(opt_scheme + ':');
-        }
-        if (isPresent(opt_domain)) {
-            out.push('//');
-            if (isPresent(opt_userInfo)) {
-                out.push(opt_userInfo + '@');
-            }
-            out.push(opt_domain);
-            if (isPresent(opt_port)) {
-                out.push(':' + opt_port);
-            }
-        }
-        if (isPresent(opt_path)) {
-            out.push(opt_path);
-        }
-        if (isPresent(opt_queryData)) {
-            out.push('?' + opt_queryData);
-        }
-        if (isPresent(opt_fragment)) {
-            out.push('#' + opt_fragment);
-        }
-        return out.join('');
-    }
-    /**
-     * A regular expression for breaking a URI into its component parts.
-     *
-     * {@link http://www.gbiv.com/protocols/uri/rfc/rfc3986.html#RFC2234} says
-     * As the "first-match-wins" algorithm is identical to the "greedy"
-     * disambiguation method used by POSIX regular expressions, it is natural and
-     * commonplace to use a regular expression for parsing the potential five
-     * components of a URI reference.
-     *
-     * The following line is the regular expression for breaking-down a
-     * well-formed URI reference into its components.
-     *
-     * <pre>
-     * ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?
-     *  12            3  4          5       6  7        8 9
-     * </pre>
-     *
-     * The numbers in the second line above are only to assist readability; they
-     * indicate the reference points for each subexpression (i.e., each paired
-     * parenthesis). We refer to the value matched for subexpression <n> as $<n>.
-     * For example, matching the above expression to
-     * <pre>
-     *     http://www.ics.uci.edu/pub/ietf/uri/#Related
-     * </pre>
-     * results in the following subexpression matches:
-     * <pre>
-     *    $1 = http:
-     *    $2 = http
-     *    $3 = //www.ics.uci.edu
-     *    $4 = www.ics.uci.edu
-     *    $5 = /pub/ietf/uri/
-     *    $6 = <undefined>
-     *    $7 = <undefined>
-     *    $8 = #Related
-     *    $9 = Related
-     * </pre>
-     * where <undefined> indicates that the component is not present, as is the
-     * case for the query component in the above example. Therefore, we can
-     * determine the value of the five components as
-     * <pre>
-     *    scheme    = $2
-     *    authority = $4
-     *    path      = $5
-     *    query     = $7
-     *    fragment  = $9
-     * </pre>
-     *
-     * The regular expression has been modified slightly to expose the
-     * userInfo, domain, and port separately from the authority.
-     * The modified version yields
-     * <pre>
-     *    $1 = http              scheme
-     *    $2 = <undefined>       userInfo -\
-     *    $3 = www.ics.uci.edu   domain     | authority
-     *    $4 = <undefined>       port     -/
-     *    $5 = /pub/ietf/uri/    path
-     *    $6 = <undefined>       query without ?
-     *    $7 = Related           fragment without #
-     * </pre>
-     * @type {!RegExp}
-     * @internal
-     */
-    var _splitRe = new RegExp('^' +
-        '(?:' +
-        '([^:/?#.]+)' +
-        // used by other URL parts such as :,
-        // ?, /, #, and .
-        ':)?' +
-        '(?://' +
-        '(?:([^/?#]*)@)?' +
-        '([\\w\\d\\-\\u0100-\\uffff.%]*)' +
-        // digits, dashes, dots, percent
-        // escapes, and unicode characters.
-        '(?::([0-9]+))?' +
-        ')?' +
-        '([^?#]+)?' +
-        '(?:\\?([^#]*))?' +
-        '(?:#(.*))?' +
-        '$');
-    /**
-     * The index of each URI component in the return value of goog.uri.utils.split.
-     * @enum {number}
-     */
-    var _ComponentIndex;
-    (function (_ComponentIndex) {
-        _ComponentIndex[_ComponentIndex["Scheme"] = 1] = "Scheme";
-        _ComponentIndex[_ComponentIndex["UserInfo"] = 2] = "UserInfo";
-        _ComponentIndex[_ComponentIndex["Domain"] = 3] = "Domain";
-        _ComponentIndex[_ComponentIndex["Port"] = 4] = "Port";
-        _ComponentIndex[_ComponentIndex["Path"] = 5] = "Path";
-        _ComponentIndex[_ComponentIndex["QueryData"] = 6] = "QueryData";
-        _ComponentIndex[_ComponentIndex["Fragment"] = 7] = "Fragment";
-    })(_ComponentIndex || (_ComponentIndex = {}));
-    /**
-     * Splits a URI into its component parts.
-     *
-     * Each component can be accessed via the component indices; for example:
-     * <pre>
-     * goog.uri.utils.split(someStr)[goog.uri.utils.CompontentIndex.QUERY_DATA];
-     * </pre>
-     *
-     * @param uri The URI string to examine.
-     * @return Each component still URI-encoded.
-     *     Each component that is present will contain the encoded value, whereas
-     *     components that are not present will be undefined or empty, depending
-     *     on the browser's regular expression implementation.  Never null, since
-     *     arbitrary strings may still look like path names.
-     */
-    function _split(uri) {
-        return uri.match(_splitRe);
-    }
-    /**
-      * Removes dot segments in given path component, as described in
-      * RFC 3986, section 5.2.4.
-      *
-      * @param path A non-empty path component.
-      * @return Path component with removed dot segments.
-      */
-    function _removeDotSegments(path) {
-        if (path == '/')
-            return '/';
-        var leadingSlash = path[0] == '/' ? '/' : '';
-        var trailingSlash = path[path.length - 1] === '/' ? '/' : '';
-        var segments = path.split('/');
-        var out = [];
-        var up = 0;
-        for (var pos = 0; pos < segments.length; pos++) {
-            var segment = segments[pos];
-            switch (segment) {
-                case '':
-                case '.':
-                    break;
-                case '..':
-                    if (out.length > 0) {
-                        out.pop();
-                    }
-                    else {
-                        up++;
-                    }
-                    break;
-                default:
-                    out.push(segment);
-            }
-        }
-        if (leadingSlash == '') {
-            while (up-- > 0) {
-                out.unshift('..');
-            }
-            if (out.length === 0)
-                out.push('.');
-        }
-        return leadingSlash + out.join('/') + trailingSlash;
-    }
-    /**
-     * Takes an array of the parts from split and canonicalizes the path part
-     * and then joins all the parts.
-     */
-    function _joinAndCanonicalizePath(parts) {
-        var path = parts[_ComponentIndex.Path];
-        path = isBlank(path) ? '' : _removeDotSegments(path);
-        parts[_ComponentIndex.Path] = path;
-        return _buildFromEncodedParts(parts[_ComponentIndex.Scheme], parts[_ComponentIndex.UserInfo], parts[_ComponentIndex.Domain], parts[_ComponentIndex.Port], path, parts[_ComponentIndex.QueryData], parts[_ComponentIndex.Fragment]);
-    }
-    /**
-     * Resolves a URL.
-     * @param base The URL acting as the base URL.
-     * @param to The URL to resolve.
-     */
-    function _resolveUrl(base, url) {
-        var parts = _split(encodeURI(url));
-        var baseParts = _split(base);
-        if (isPresent(parts[_ComponentIndex.Scheme])) {
-            return _joinAndCanonicalizePath(parts);
-        }
-        else {
-            parts[_ComponentIndex.Scheme] = baseParts[_ComponentIndex.Scheme];
-        }
-        for (var i = _ComponentIndex.Scheme; i <= _ComponentIndex.Port; i++) {
-            if (isBlank(parts[i])) {
-                parts[i] = baseParts[i];
-            }
-        }
-        if (parts[_ComponentIndex.Path][0] == '/') {
-            return _joinAndCanonicalizePath(parts);
-        }
-        var path = baseParts[_ComponentIndex.Path];
-        if (isBlank(path))
-            path = '/';
-        var index = path.lastIndexOf('/');
-        path = path.substring(0, index + 1) + parts[_ComponentIndex.Path];
-        parts[_ComponentIndex.Path] = path;
-        return _joinAndCanonicalizePath(parts);
-    }
     //// Types
     var TypeModifier;
     (function (TypeModifier) {
@@ -7184,7 +6880,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     // group 2: "event" from "(event)"
     // group 3: "@trigger" from "@trigger"
     var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
-    var UNDEFINED = new Object();
     var CompileMetadataWithIdentifier = (function () {
         function CompileMetadataWithIdentifier() {
         }
@@ -7193,17 +6888,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(CompileMetadataWithIdentifier.prototype, "runtimeCacheKey", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompileMetadataWithIdentifier.prototype, "assetCacheKey", {
-            get: function () { return unimplemented(); },
-            enumerable: true,
-            configurable: true
-        });
-        CompileMetadataWithIdentifier.prototype.equalsTo = function (id2) { return unimplemented(); };
         return CompileMetadataWithIdentifier;
     }());
     var CompileAnimationEntryMetadata = (function () {
@@ -7300,9 +6984,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     }(CompileAnimationWithStepsMetadata));
     var CompileIdentifierMetadata = (function () {
         function CompileIdentifierMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
-            this._assetCacheKey = UNDEFINED;
-            this.runtime = runtime;
+            var _b = _a === void 0 ? {} : _a, reference = _b.reference, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
+            this.reference = reference;
             this.name = name;
             this.prefix = prefix;
             this.moduleUrl = moduleUrl;
@@ -7313,33 +6996,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(CompileIdentifierMetadata.prototype, "runtimeCacheKey", {
-            get: function () { return this.identifier.runtime; },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompileIdentifierMetadata.prototype, "assetCacheKey", {
-            get: function () {
-                if (this._assetCacheKey === UNDEFINED) {
-                    if (isPresent(this.moduleUrl) && isPresent(getUrlScheme(this.moduleUrl))) {
-                        var uri = reflector.importUri({ 'filePath': this.moduleUrl, 'name': this.name });
-                        this._assetCacheKey = this.name + "|" + uri;
-                    }
-                    else {
-                        this._assetCacheKey = null;
-                    }
-                }
-                return this._assetCacheKey;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        CompileIdentifierMetadata.prototype.equalsTo = function (id2) {
-            var rk = this.runtimeCacheKey;
-            var ak = this.assetCacheKey;
-            return (isPresent(rk) && rk == id2.runtimeCacheKey) ||
-                (isPresent(ak) && ak == id2.assetCacheKey);
-        };
         return CompileIdentifierMetadata;
     }());
     var CompileDiDependencyMetadata = (function () {
@@ -7374,8 +7030,8 @@ var __extends = (this && this.__extends) || function (d, b) {
     var CompileFactoryMetadata = (function (_super) {
         __extends(CompileFactoryMetadata, _super);
         function CompileFactoryMetadata(_a) {
-            var runtime = _a.runtime, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
-            _super.call(this, { runtime: runtime, name: name, prefix: prefix, moduleUrl: moduleUrl, value: value });
+            var reference = _a.reference, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
+            _super.call(this, { reference: reference, name: name, prefix: prefix, moduleUrl: moduleUrl, value: value });
             this.diDeps = _normalizeArray(diDeps);
         }
         return CompileFactoryMetadata;
@@ -7387,10 +7043,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.identifier = identifier;
             this.identifierIsInstance = normalizeBool(identifierIsInstance);
         }
-        Object.defineProperty(CompileTokenMetadata.prototype, "runtimeCacheKey", {
+        Object.defineProperty(CompileTokenMetadata.prototype, "reference", {
             get: function () {
                 if (isPresent(this.identifier)) {
-                    return this.identifier.runtimeCacheKey;
+                    return this.identifier.reference;
                 }
                 else {
                     return this.value;
@@ -7399,24 +7055,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(CompileTokenMetadata.prototype, "assetCacheKey", {
-            get: function () {
-                if (isPresent(this.identifier)) {
-                    return this.identifier.assetCacheKey;
-                }
-                else {
-                    return this.value;
-                }
-            },
-            enumerable: true,
-            configurable: true
-        });
-        CompileTokenMetadata.prototype.equalsTo = function (token2) {
-            var rk = this.runtimeCacheKey;
-            var ak = this.assetCacheKey;
-            return (isPresent(rk) && rk == token2.runtimeCacheKey) ||
-                (isPresent(ak) && ak == token2.assetCacheKey);
-        };
         Object.defineProperty(CompileTokenMetadata.prototype, "name", {
             get: function () {
                 return isPresent(this.value) ? sanitizeIdentifier(this.value) : this.identifier.name;
@@ -7427,64 +7065,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         return CompileTokenMetadata;
     }());
     /**
-     * Note: We only need this in places where we need to support identifiers that
-     * don't have a `runtime` value given by the `StaticReflector`. E.g. see the `identifiers`
-     * file where we have some identifiers hard coded by name/module path.
-     *
-     * TODO(tbosch): Eventually, all of these places should go through the static reflector
-     * as well, providing them with a valid `StaticSymbol` that is again a singleton.
-     */
-    var CompileIdentifierMap = (function () {
-        function CompileIdentifierMap() {
-            this._valueMap = new Map();
-            this._values = [];
-            this._tokens = [];
-        }
-        CompileIdentifierMap.prototype.add = function (token, value) {
-            var existing = this.get(token);
-            if (isPresent(existing)) {
-                throw new Error("Cannot overwrite in a CompileIdentifierMap! Token: " + token.identifier.name);
-            }
-            this._tokens.push(token);
-            this._values.push(value);
-            var rk = token.runtimeCacheKey;
-            if (isPresent(rk)) {
-                this._valueMap.set(rk, value);
-            }
-            var ak = token.assetCacheKey;
-            if (isPresent(ak)) {
-                this._valueMap.set(ak, value);
-            }
-        };
-        CompileIdentifierMap.prototype.get = function (token) {
-            var rk = token.runtimeCacheKey;
-            var ak = token.assetCacheKey;
-            var result;
-            if (isPresent(rk)) {
-                result = this._valueMap.get(rk);
-            }
-            if (isBlank(result) && isPresent(ak)) {
-                result = this._valueMap.get(ak);
-            }
-            return result;
-        };
-        CompileIdentifierMap.prototype.keys = function () { return this._tokens; };
-        CompileIdentifierMap.prototype.values = function () { return this._values; };
-        Object.defineProperty(CompileIdentifierMap.prototype, "size", {
-            get: function () { return this._values.length; },
-            enumerable: true,
-            configurable: true
-        });
-        return CompileIdentifierMap;
-    }());
-    /**
      * Metadata regarding compilation of a type.
      */
     var CompileTypeMetadata = (function (_super) {
         __extends(CompileTypeMetadata, _super);
         function CompileTypeMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, runtime = _b.runtime, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
-            _super.call(this, { runtime: runtime, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
+            var _b = _a === void 0 ? {} : _a, reference = _b.reference, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
+            _super.call(this, { reference: reference, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
             this.isHost = normalizeBool(isHost);
             this.diDeps = _normalizeArray(diDeps);
             this.lifecycleHooks = _normalizeArray(lifecycleHooks);
@@ -7616,19 +7203,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(CompileDirectiveMetadata.prototype, "runtimeCacheKey", {
-            get: function () { return this.type.runtimeCacheKey; },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompileDirectiveMetadata.prototype, "assetCacheKey", {
-            get: function () { return this.type.assetCacheKey; },
-            enumerable: true,
-            configurable: true
-        });
-        CompileDirectiveMetadata.prototype.equalsTo = function (other) {
-            return this.type.equalsTo(other.identifier);
-        };
         return CompileDirectiveMetadata;
     }());
     /**
@@ -7638,12 +7212,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         var template = CssSelector.parse(compMeta.selector)[0].getMatchingElementTemplate();
         return CompileDirectiveMetadata.create({
             type: new CompileTypeMetadata({
-                runtime: Object,
+                reference: Object,
                 name: compMeta.type.name + "_Host",
                 moduleUrl: compMeta.type.moduleUrl,
                 isHost: true
             }),
             template: new CompileTemplateMetadata({
+                encapsulation: _angular_core.ViewEncapsulation.None,
                 template: template,
                 templateUrl: '',
                 styles: [],
@@ -7675,19 +7250,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(CompilePipeMetadata.prototype, "runtimeCacheKey", {
-            get: function () { return this.type.runtimeCacheKey; },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompilePipeMetadata.prototype, "assetCacheKey", {
-            get: function () { return this.type.assetCacheKey; },
-            enumerable: true,
-            configurable: true
-        });
-        CompilePipeMetadata.prototype.equalsTo = function (other) {
-            return this.type.equalsTo(other.identifier);
-        };
         return CompilePipeMetadata;
     }());
     /**
@@ -7714,19 +7276,6 @@ var __extends = (this && this.__extends) || function (d, b) {
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(CompileNgModuleMetadata.prototype, "runtimeCacheKey", {
-            get: function () { return this.type.runtimeCacheKey; },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompileNgModuleMetadata.prototype, "assetCacheKey", {
-            get: function () { return this.type.assetCacheKey; },
-            enumerable: true,
-            configurable: true
-        });
-        CompileNgModuleMetadata.prototype.equalsTo = function (other) {
-            return this.type.equalsTo(other.identifier);
-        };
         return CompileNgModuleMetadata;
     }());
     var TransitiveCompileNgModuleMetadata = (function () {
@@ -7739,19 +7288,19 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.pipes = pipes;
             this.directivesSet = new Set();
             this.pipesSet = new Set();
-            directives.forEach(function (dir) { return _this.directivesSet.add(dir.type.runtime); });
-            pipes.forEach(function (pipe) { return _this.pipesSet.add(pipe.type.runtime); });
+            directives.forEach(function (dir) { return _this.directivesSet.add(dir.type.reference); });
+            pipes.forEach(function (pipe) { return _this.pipesSet.add(pipe.type.reference); });
         }
         return TransitiveCompileNgModuleMetadata;
     }());
     function removeIdentifierDuplicates(items) {
-        var map = new CompileIdentifierMap();
+        var map = new Map();
         items.forEach(function (item) {
-            if (!map.get(item)) {
-                map.add(item, item);
+            if (!map.get(item.identifier.reference)) {
+                map.set(item.identifier.reference, item);
             }
         });
-        return map.keys();
+        return MapWrapper.values(map);
     }
     function _normalizeArray(obj) {
         return isPresent(obj) ? obj : [];
@@ -7775,226 +7324,262 @@ var __extends = (this && this.__extends) || function (d, b) {
     var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
     var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
     var CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
-    // Reassign the imports to different variables so we can
-    // define static variables with the name of the import.
-    // (only needed for Dart).
-    var impViewUtils = ViewUtils;
-    var impAppView = AppView;
-    var impDebugAppView = DebugAppView;
-    var impDebugContext = DebugContext;
-    var impAppElement = AppElement;
-    var impElementRef = _angular_core.ElementRef;
-    var impViewContainerRef = _angular_core.ViewContainerRef;
-    var impChangeDetectorRef = _angular_core.ChangeDetectorRef;
-    var impRenderComponentType = _angular_core.RenderComponentType;
-    var impQueryList = _angular_core.QueryList;
-    var impTemplateRef = _angular_core.TemplateRef;
-    var impTemplateRef_ = TemplateRef_;
-    var impValueUnwrapper = ValueUnwrapper;
-    var impInjector = _angular_core.Injector;
-    var impViewEncapsulation = _angular_core.ViewEncapsulation;
-    var impViewType = ViewType;
-    var impChangeDetectionStrategy = _angular_core.ChangeDetectionStrategy;
-    var impStaticNodeDebugInfo = StaticNodeDebugInfo;
-    var impRenderer = _angular_core.Renderer;
-    var impSimpleChange = _angular_core.SimpleChange;
-    var impUNINITIALIZED = UNINITIALIZED;
-    var impChangeDetectorStatus = ChangeDetectorStatus;
-    var impFlattenNestedViewRenderNodes = flattenNestedViewRenderNodes;
-    var impDevModeEqual = devModeEqual;
-    var impInterpolate = interpolate;
-    var impCheckBinding = checkBinding;
-    var impCastByValue = castByValue;
-    var impEMPTY_ARRAY = EMPTY_ARRAY;
-    var impEMPTY_MAP = EMPTY_MAP;
-    var impAnimationGroupPlayer = AnimationGroupPlayer_;
-    var impAnimationSequencePlayer = AnimationSequencePlayer_;
-    var impAnimationKeyframe = AnimationKeyframe_;
-    var impAnimationStyles = AnimationStyles_;
-    var impNoOpAnimationPlayer = NoOpAnimationPlayer_;
-    var impAnimationOutput = AnimationOutput;
     var ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
     var Identifiers = (function () {
         function Identifiers() {
         }
         return Identifiers;
     }());
-    Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = new CompileIdentifierMetadata({
+    Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
         name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
         moduleUrl: assetUrl('core', 'metadata/di'),
         runtime: _angular_core.ANALYZE_FOR_ENTRY_COMPONENTS
-    });
-    Identifiers.ViewUtils = new CompileIdentifierMetadata({ name: 'ViewUtils', moduleUrl: assetUrl('core', 'linker/view_utils'), runtime: impViewUtils });
-    Identifiers.AppView = new CompileIdentifierMetadata({ name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impAppView });
-    Identifiers.DebugAppView = new CompileIdentifierMetadata({ name: 'DebugAppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: impDebugAppView });
-    Identifiers.AppElement = new CompileIdentifierMetadata({ name: 'AppElement', moduleUrl: assetUrl('core', 'linker/element'), runtime: impAppElement });
-    Identifiers.ElementRef = new CompileIdentifierMetadata({
+    };
+    Identifiers.ViewUtils = {
+        name: 'ViewUtils',
+        moduleUrl: assetUrl('core', 'linker/view_utils'),
+        runtime: ViewUtils
+    };
+    Identifiers.AppView = { name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: AppView };
+    Identifiers.DebugAppView = {
+        name: 'DebugAppView',
+        moduleUrl: APP_VIEW_MODULE_URL,
+        runtime: DebugAppView
+    };
+    Identifiers.AppElement = {
+        name: 'AppElement',
+        moduleUrl: assetUrl('core', 'linker/element'),
+        runtime: AppElement
+    };
+    Identifiers.ElementRef = {
         name: 'ElementRef',
         moduleUrl: assetUrl('core', 'linker/element_ref'),
-        runtime: impElementRef
-    });
-    Identifiers.ViewContainerRef = new CompileIdentifierMetadata({
+        runtime: _angular_core.ElementRef
+    };
+    Identifiers.ViewContainerRef = {
         name: 'ViewContainerRef',
         moduleUrl: assetUrl('core', 'linker/view_container_ref'),
-        runtime: impViewContainerRef
-    });
-    Identifiers.ChangeDetectorRef = new CompileIdentifierMetadata({
+        runtime: _angular_core.ViewContainerRef
+    };
+    Identifiers.ChangeDetectorRef = {
         name: 'ChangeDetectorRef',
         moduleUrl: assetUrl('core', 'change_detection/change_detector_ref'),
-        runtime: impChangeDetectorRef
-    });
-    Identifiers.RenderComponentType = new CompileIdentifierMetadata({
+        runtime: _angular_core.ChangeDetectorRef
+    };
+    Identifiers.RenderComponentType = {
         name: 'RenderComponentType',
         moduleUrl: assetUrl('core', 'render/api'),
-        runtime: impRenderComponentType
-    });
-    Identifiers.QueryList = new CompileIdentifierMetadata({ name: 'QueryList', moduleUrl: assetUrl('core', 'linker/query_list'), runtime: impQueryList });
-    Identifiers.TemplateRef = new CompileIdentifierMetadata({
+        runtime: _angular_core.RenderComponentType
+    };
+    Identifiers.QueryList = {
+        name: 'QueryList',
+        moduleUrl: assetUrl('core', 'linker/query_list'),
+        runtime: _angular_core.QueryList
+    };
+    Identifiers.TemplateRef = {
         name: 'TemplateRef',
         moduleUrl: assetUrl('core', 'linker/template_ref'),
-        runtime: impTemplateRef
-    });
-    Identifiers.TemplateRef_ = new CompileIdentifierMetadata({
+        runtime: _angular_core.TemplateRef
+    };
+    Identifiers.TemplateRef_ = {
         name: 'TemplateRef_',
         moduleUrl: assetUrl('core', 'linker/template_ref'),
-        runtime: impTemplateRef_
-    });
-    Identifiers.CodegenComponentFactoryResolver = new CompileIdentifierMetadata({
+        runtime: TemplateRef_
+    };
+    Identifiers.CodegenComponentFactoryResolver = {
         name: 'CodegenComponentFactoryResolver',
         moduleUrl: assetUrl('core', 'linker/component_factory_resolver'),
         runtime: CodegenComponentFactoryResolver
-    });
-    Identifiers.ComponentFactoryResolver = new CompileIdentifierMetadata({
+    };
+    Identifiers.ComponentFactoryResolver = {
         name: 'ComponentFactoryResolver',
         moduleUrl: assetUrl('core', 'linker/component_factory_resolver'),
         runtime: _angular_core.ComponentFactoryResolver
-    });
-    Identifiers.ComponentFactory = new CompileIdentifierMetadata({
+    };
+    Identifiers.ComponentFactory = {
         name: 'ComponentFactory',
         runtime: _angular_core.ComponentFactory,
         moduleUrl: assetUrl('core', 'linker/component_factory')
-    });
-    Identifiers.NgModuleFactory = new CompileIdentifierMetadata({
+    };
+    Identifiers.NgModuleFactory = {
         name: 'NgModuleFactory',
         runtime: _angular_core.NgModuleFactory,
         moduleUrl: assetUrl('core', 'linker/ng_module_factory')
-    });
-    Identifiers.NgModuleInjector = new CompileIdentifierMetadata({
+    };
+    Identifiers.NgModuleInjector = {
         name: 'NgModuleInjector',
         runtime: NgModuleInjector,
         moduleUrl: assetUrl('core', 'linker/ng_module_factory')
-    });
-    Identifiers.ValueUnwrapper = new CompileIdentifierMetadata({ name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: impValueUnwrapper });
-    Identifiers.Injector = new CompileIdentifierMetadata({ name: 'Injector', moduleUrl: assetUrl('core', 'di/injector'), runtime: impInjector });
-    Identifiers.ViewEncapsulation = new CompileIdentifierMetadata({
+    };
+    Identifiers.ValueUnwrapper = { name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: ValueUnwrapper };
+    Identifiers.Injector = {
+        name: 'Injector',
+        moduleUrl: assetUrl('core', 'di/injector'),
+        runtime: _angular_core.Injector
+    };
+    Identifiers.ViewEncapsulation = {
         name: 'ViewEncapsulation',
         moduleUrl: assetUrl('core', 'metadata/view'),
-        runtime: impViewEncapsulation
-    });
-    Identifiers.ViewType = new CompileIdentifierMetadata({ name: 'ViewType', moduleUrl: assetUrl('core', 'linker/view_type'), runtime: impViewType });
-    Identifiers.ChangeDetectionStrategy = new CompileIdentifierMetadata({
+        runtime: _angular_core.ViewEncapsulation
+    };
+    Identifiers.ViewType = {
+        name: 'ViewType',
+        moduleUrl: assetUrl('core', 'linker/view_type'),
+        runtime: ViewType
+    };
+    Identifiers.ChangeDetectionStrategy = {
         name: 'ChangeDetectionStrategy',
         moduleUrl: CD_MODULE_URL,
-        runtime: impChangeDetectionStrategy
-    });
-    Identifiers.StaticNodeDebugInfo = new CompileIdentifierMetadata({
+        runtime: _angular_core.ChangeDetectionStrategy
+    };
+    Identifiers.StaticNodeDebugInfo = {
         name: 'StaticNodeDebugInfo',
         moduleUrl: assetUrl('core', 'linker/debug_context'),
-        runtime: impStaticNodeDebugInfo
-    });
-    Identifiers.DebugContext = new CompileIdentifierMetadata({
+        runtime: StaticNodeDebugInfo
+    };
+    Identifiers.DebugContext = {
         name: 'DebugContext',
         moduleUrl: assetUrl('core', 'linker/debug_context'),
-        runtime: impDebugContext
-    });
-    Identifiers.Renderer = new CompileIdentifierMetadata({ name: 'Renderer', moduleUrl: assetUrl('core', 'render/api'), runtime: impRenderer });
-    Identifiers.SimpleChange = new CompileIdentifierMetadata({ name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: impSimpleChange });
-    Identifiers.UNINITIALIZED = new CompileIdentifierMetadata({ name: 'UNINITIALIZED', moduleUrl: CD_MODULE_URL, runtime: impUNINITIALIZED });
-    Identifiers.ChangeDetectorStatus = new CompileIdentifierMetadata({ name: 'ChangeDetectorStatus', moduleUrl: CD_MODULE_URL, runtime: impChangeDetectorStatus });
-    Identifiers.checkBinding = new CompileIdentifierMetadata({ name: 'checkBinding', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCheckBinding });
-    Identifiers.flattenNestedViewRenderNodes = new CompileIdentifierMetadata({
+        runtime: DebugContext
+    };
+    Identifiers.Renderer = {
+        name: 'Renderer',
+        moduleUrl: assetUrl('core', 'render/api'),
+        runtime: _angular_core.Renderer
+    };
+    Identifiers.SimpleChange = { name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: _angular_core.SimpleChange };
+    Identifiers.UNINITIALIZED = { name: 'UNINITIALIZED', moduleUrl: CD_MODULE_URL, runtime: UNINITIALIZED };
+    Identifiers.ChangeDetectorStatus = {
+        name: 'ChangeDetectorStatus',
+        moduleUrl: CD_MODULE_URL,
+        runtime: ChangeDetectorStatus
+    };
+    Identifiers.checkBinding = {
+        name: 'checkBinding',
+        moduleUrl: VIEW_UTILS_MODULE_URL,
+        runtime: checkBinding
+    };
+    Identifiers.flattenNestedViewRenderNodes = {
         name: 'flattenNestedViewRenderNodes',
         moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: impFlattenNestedViewRenderNodes
-    });
-    Identifiers.devModeEqual = new CompileIdentifierMetadata({ name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: impDevModeEqual });
-    Identifiers.interpolate = new CompileIdentifierMetadata({ name: 'interpolate', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impInterpolate });
-    Identifiers.castByValue = new CompileIdentifierMetadata({ name: 'castByValue', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impCastByValue });
-    Identifiers.EMPTY_ARRAY = new CompileIdentifierMetadata({ name: 'EMPTY_ARRAY', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impEMPTY_ARRAY });
-    Identifiers.EMPTY_MAP = new CompileIdentifierMetadata({ name: 'EMPTY_MAP', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: impEMPTY_MAP });
+        runtime: flattenNestedViewRenderNodes
+    };
+    Identifiers.devModeEqual = { name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: devModeEqual };
+    Identifiers.interpolate = {
+        name: 'interpolate',
+        moduleUrl: VIEW_UTILS_MODULE_URL,
+        runtime: interpolate
+    };
+    Identifiers.castByValue = {
+        name: 'castByValue',
+        moduleUrl: VIEW_UTILS_MODULE_URL,
+        runtime: castByValue
+    };
+    Identifiers.EMPTY_ARRAY = {
+        name: 'EMPTY_ARRAY',
+        moduleUrl: VIEW_UTILS_MODULE_URL,
+        runtime: EMPTY_ARRAY
+    };
+    Identifiers.EMPTY_MAP = { name: 'EMPTY_MAP', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: EMPTY_MAP };
     Identifiers.pureProxies = [
         null,
-        new CompileIdentifierMetadata({ name: 'pureProxy1', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy1 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy2 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy3', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy3 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy4', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy4 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy5', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy5 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy6', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy6 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy7', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy7 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy8', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy8 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy9', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy9 }),
-        new CompileIdentifierMetadata({ name: 'pureProxy10', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy10 }),
+        { name: 'pureProxy1', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy1 },
+        { name: 'pureProxy2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy2 },
+        { name: 'pureProxy3', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy3 },
+        { name: 'pureProxy4', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy4 },
+        { name: 'pureProxy5', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy5 },
+        { name: 'pureProxy6', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy6 },
+        { name: 'pureProxy7', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy7 },
+        { name: 'pureProxy8', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy8 },
+        { name: 'pureProxy9', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy9 },
+        { name: 'pureProxy10', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy10 },
     ];
-    Identifiers.SecurityContext = new CompileIdentifierMetadata({
+    Identifiers.SecurityContext = {
         name: 'SecurityContext',
         moduleUrl: assetUrl('core', 'security'),
         runtime: _angular_core.SecurityContext,
-    });
-    Identifiers.AnimationKeyframe = new CompileIdentifierMetadata({
+    };
+    Identifiers.AnimationKeyframe = {
         name: 'AnimationKeyframe',
         moduleUrl: assetUrl('core', 'animation/animation_keyframe'),
-        runtime: impAnimationKeyframe
-    });
-    Identifiers.AnimationStyles = new CompileIdentifierMetadata({
+        runtime: AnimationKeyframe
+    };
+    Identifiers.AnimationStyles = {
         name: 'AnimationStyles',
         moduleUrl: assetUrl('core', 'animation/animation_styles'),
-        runtime: impAnimationStyles
-    });
-    Identifiers.NoOpAnimationPlayer = new CompileIdentifierMetadata({
+        runtime: AnimationStyles
+    };
+    Identifiers.NoOpAnimationPlayer = {
         name: 'NoOpAnimationPlayer',
         moduleUrl: assetUrl('core', 'animation/animation_player'),
-        runtime: impNoOpAnimationPlayer
-    });
-    Identifiers.AnimationGroupPlayer = new CompileIdentifierMetadata({
+        runtime: NoOpAnimationPlayer
+    };
+    Identifiers.AnimationGroupPlayer = {
         name: 'AnimationGroupPlayer',
         moduleUrl: assetUrl('core', 'animation/animation_group_player'),
-        runtime: impAnimationGroupPlayer
-    });
-    Identifiers.AnimationSequencePlayer = new CompileIdentifierMetadata({
+        runtime: AnimationGroupPlayer
+    };
+    Identifiers.AnimationSequencePlayer = {
         name: 'AnimationSequencePlayer',
         moduleUrl: assetUrl('core', 'animation/animation_sequence_player'),
-        runtime: impAnimationSequencePlayer
-    });
-    Identifiers.prepareFinalAnimationStyles = new CompileIdentifierMetadata({
+        runtime: AnimationSequencePlayer
+    };
+    Identifiers.prepareFinalAnimationStyles = {
         name: 'prepareFinalAnimationStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: impBalanceAnimationStyles
-    });
-    Identifiers.balanceAnimationKeyframes = new CompileIdentifierMetadata({
+        runtime: prepareFinalAnimationStyles
+    };
+    Identifiers.balanceAnimationKeyframes = {
         name: 'balanceAnimationKeyframes',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: impBalanceAnimationKeyframes
-    });
-    Identifiers.clearStyles = new CompileIdentifierMetadata({ name: 'clearStyles', moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL, runtime: impClearStyles });
-    Identifiers.renderStyles = new CompileIdentifierMetadata({ name: 'renderStyles', moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL, runtime: impRenderStyles });
-    Identifiers.collectAndResolveStyles = new CompileIdentifierMetadata({
+        runtime: balanceAnimationKeyframes
+    };
+    Identifiers.clearStyles = {
+        name: 'clearStyles',
+        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+        runtime: clearStyles
+    };
+    Identifiers.renderStyles = {
+        name: 'renderStyles',
+        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
+        runtime: renderStyles
+    };
+    Identifiers.collectAndResolveStyles = {
         name: 'collectAndResolveStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: impCollectAndResolveStyles
-    });
-    Identifiers.LOCALE_ID = new CompileIdentifierMetadata({ name: 'LOCALE_ID', moduleUrl: assetUrl('core', 'i18n/tokens'), runtime: _angular_core.LOCALE_ID });
-    Identifiers.TRANSLATIONS_FORMAT = new CompileIdentifierMetadata({
+        runtime: collectAndResolveStyles
+    };
+    Identifiers.LOCALE_ID = {
+        name: 'LOCALE_ID',
+        moduleUrl: assetUrl('core', 'i18n/tokens'),
+        runtime: _angular_core.LOCALE_ID
+    };
+    Identifiers.TRANSLATIONS_FORMAT = {
         name: 'TRANSLATIONS_FORMAT',
         moduleUrl: assetUrl('core', 'i18n/tokens'),
         runtime: _angular_core.TRANSLATIONS_FORMAT
-    });
-    Identifiers.AnimationOutput = new CompileIdentifierMetadata({
+    };
+    Identifiers.AnimationOutput = {
         name: 'AnimationOutput',
         moduleUrl: assetUrl('core', 'animation/animation_output'),
-        runtime: impAnimationOutput
-    });
+        runtime: AnimationOutput
+    };
+    function resolveIdentifier(identifier) {
+        return new CompileIdentifierMetadata({
+            name: identifier.name,
+            moduleUrl: identifier.moduleUrl,
+            reference: reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime)
+        });
+    }
     function identifierToken(identifier) {
         return new CompileTokenMetadata({ identifier: identifier });
+    }
+    function resolveIdentifierToken(identifier) {
+        return identifierToken(resolveIdentifier(identifier));
+    }
+    function resolveEnumIdentifier(enumType, name) {
+        var resolvedEnum = reflector.resolveEnum(enumType.reference, name);
+        return new CompileIdentifierMetadata({ name: enumType.name + "." + name, moduleUrl: enumType.moduleUrl, reference: resolvedEnum });
     }
     var HtmlParser$1 = (function (_super) {
         __extends(HtmlParser$1, _super);
@@ -8119,10 +7704,10 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.sourceSpan = sourceSpan;
             this.errors = [];
             this.viewQueries = _getViewQueries(component);
-            this.viewProviders = new CompileIdentifierMap();
+            this.viewProviders = new Map();
             _normalizeProviders(component.viewProviders, sourceSpan, this.errors).forEach(function (provider) {
-                if (isBlank(_this.viewProviders.get(provider.token))) {
-                    _this.viewProviders.add(provider.token, true);
+                if (isBlank(_this.viewProviders.get(provider.token.reference))) {
+                    _this.viewProviders.set(provider.token.reference, true);
                 }
             });
         }
@@ -8136,8 +7721,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._isViewRoot = _isViewRoot;
             this._directiveAsts = _directiveAsts;
             this._sourceSpan = _sourceSpan;
-            this._transformedProviders = new CompileIdentifierMap();
-            this._seenProviders = new CompileIdentifierMap();
+            this._transformedProviders = new Map();
+            this._seenProviders = new Map();
             this._hasViewContainer = false;
             this._attrs = {};
             attrs.forEach(function (attrAst) { return _this._attrs[attrAst.name] = attrAst.value; });
@@ -8145,17 +7730,19 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._allProviders =
                 _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, _viewContext.errors);
             this._contentQueries = _getContentQueries(directivesMeta);
-            var queriedTokens = new CompileIdentifierMap();
-            this._allProviders.values().forEach(function (provider) { _this._addQueryReadsTo(provider.token, queriedTokens); });
+            var queriedTokens = new Map();
+            MapWrapper.values(this._allProviders).forEach(function (provider) {
+                _this._addQueryReadsTo(provider.token, queriedTokens);
+            });
             refs.forEach(function (refAst) {
                 _this._addQueryReadsTo(new CompileTokenMetadata({ value: refAst.name }), queriedTokens);
             });
-            if (isPresent(queriedTokens.get(identifierToken(Identifiers.ViewContainerRef)))) {
+            if (isPresent(queriedTokens.get(resolveIdentifierToken(Identifiers.ViewContainerRef).reference))) {
                 this._hasViewContainer = true;
             }
             // create the providers that we know are eager first
-            this._allProviders.values().forEach(function (provider) {
-                var eager = provider.eager || isPresent(queriedTokens.get(provider.token));
+            MapWrapper.values(this._allProviders).forEach(function (provider) {
+                var eager = provider.eager || isPresent(queriedTokens.get(provider.token.reference));
                 if (eager) {
                     _this._getOrCreateLocalProvider(provider.providerType, provider.token, true);
                 }
@@ -8164,18 +7751,18 @@ var __extends = (this && this.__extends) || function (d, b) {
         ProviderElementContext.prototype.afterElement = function () {
             var _this = this;
             // collect lazy providers
-            this._allProviders.values().forEach(function (provider) {
+            MapWrapper.values(this._allProviders).forEach(function (provider) {
                 _this._getOrCreateLocalProvider(provider.providerType, provider.token, false);
             });
         };
         Object.defineProperty(ProviderElementContext.prototype, "transformProviders", {
-            get: function () { return this._transformedProviders.values(); },
+            get: function () { return MapWrapper.values(this._transformedProviders); },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(ProviderElementContext.prototype, "transformedDirectiveAsts", {
             get: function () {
-                var sortedProviderTypes = this._transformedProviders.values().map(function (provider) { return provider.token.identifier; });
+                var sortedProviderTypes = this.transformProviders.map(function (provider) { return provider.token.identifier; });
                 var sortedDirectives = ListWrapper.clone(this._directiveAsts);
                 ListWrapper.sort(sortedDirectives, function (dir1, dir2) { return sortedProviderTypes.indexOf(dir1.directive.type) -
                     sortedProviderTypes.indexOf(dir2.directive.type); });
@@ -8192,8 +7779,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         ProviderElementContext.prototype._addQueryReadsTo = function (token, queryReadTokens) {
             this._getQueriesFor(token).forEach(function (query) {
                 var queryReadToken = isPresent(query.read) ? query.read : token;
-                if (isBlank(queryReadTokens.get(queryReadToken))) {
-                    queryReadTokens.add(queryReadToken, true);
+                if (isBlank(queryReadTokens.get(queryReadToken.reference))) {
+                    queryReadTokens.set(queryReadToken.reference, true);
                 }
             });
         };
@@ -8203,7 +7790,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var distance = 0;
             var queries;
             while (currentEl !== null) {
-                queries = currentEl._contentQueries.get(token);
+                queries = currentEl._contentQueries.get(token.reference);
                 if (isPresent(queries)) {
                     ListWrapper.addAll(result, queries.filter(function (query) { return query.descendants || distance <= 1; }));
                 }
@@ -8212,7 +7799,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 currentEl = currentEl._parent;
             }
-            queries = this._viewContext.viewQueries.get(token);
+            queries = this._viewContext.viewQueries.get(token.reference);
             if (isPresent(queries)) {
                 ListWrapper.addAll(result, queries);
             }
@@ -8220,7 +7807,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         ProviderElementContext.prototype._getOrCreateLocalProvider = function (requestingProviderType, token, eager) {
             var _this = this;
-            var resolvedProvider = this._allProviders.get(token);
+            var resolvedProvider = this._allProviders.get(token.reference);
             if (isBlank(resolvedProvider) ||
                 ((requestingProviderType === exports.ProviderAstType.Directive ||
                     requestingProviderType === exports.ProviderAstType.PublicService) &&
@@ -8230,15 +7817,15 @@ var __extends = (this && this.__extends) || function (d, b) {
                     resolvedProvider.providerType === exports.ProviderAstType.Builtin)) {
                 return null;
             }
-            var transformedProviderAst = this._transformedProviders.get(token);
+            var transformedProviderAst = this._transformedProviders.get(token.reference);
             if (isPresent(transformedProviderAst)) {
                 return transformedProviderAst;
             }
-            if (isPresent(this._seenProviders.get(token))) {
+            if (isPresent(this._seenProviders.get(token.reference))) {
                 this._viewContext.errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, this._sourceSpan));
                 return null;
             }
-            this._seenProviders.add(token, true);
+            this._seenProviders.set(token.reference, true);
             var transformedProviders = resolvedProvider.providers.map(function (provider) {
                 var transformedUseValue = provider.useValue;
                 var transformedUseExisting = provider.useExisting;
@@ -8271,7 +7858,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
             transformedProviderAst =
                 _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
-            this._transformedProviders.add(token, transformedProviderAst);
+            this._transformedProviders.set(token.reference, transformedProviderAst);
             return transformedProviderAst;
         };
         ProviderElementContext.prototype._getLocalDependency = function (requestingProviderType, dep, eager) {
@@ -8287,18 +7874,20 @@ var __extends = (this && this.__extends) || function (d, b) {
                 // access builtints
                 if ((requestingProviderType === exports.ProviderAstType.Directive ||
                     requestingProviderType === exports.ProviderAstType.Component)) {
-                    if (dep.token.equalsTo(identifierToken(Identifiers.Renderer)) ||
-                        dep.token.equalsTo(identifierToken(Identifiers.ElementRef)) ||
-                        dep.token.equalsTo(identifierToken(Identifiers.ChangeDetectorRef)) ||
-                        dep.token.equalsTo(identifierToken(Identifiers.TemplateRef))) {
+                    if (dep.token.reference === resolveIdentifierToken(Identifiers.Renderer).reference ||
+                        dep.token.reference === resolveIdentifierToken(Identifiers.ElementRef).reference ||
+                        dep.token.reference ===
+                            resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference ||
+                        dep.token.reference === resolveIdentifierToken(Identifiers.TemplateRef).reference) {
                         return dep;
                     }
-                    if (dep.token.equalsTo(identifierToken(Identifiers.ViewContainerRef))) {
+                    if (dep.token.reference ===
+                        resolveIdentifierToken(Identifiers.ViewContainerRef).reference) {
                         this._hasViewContainer = true;
                     }
                 }
                 // access the injector
-                if (dep.token.equalsTo(identifierToken(Identifiers.Injector))) {
+                if (dep.token.reference === resolveIdentifierToken(Identifiers.Injector).reference) {
                     return dep;
                 }
                 // access providers
@@ -8334,8 +7923,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 // check @Host restriction
                 if (isBlank(result)) {
                     if (!dep.isHost || this._viewContext.component.type.isHost ||
-                        identifierToken(this._viewContext.component.type).equalsTo(dep.token) ||
-                        isPresent(this._viewContext.viewProviders.get(dep.token))) {
+                        this._viewContext.component.type.reference === dep.token.reference ||
+                        isPresent(this._viewContext.viewProviders.get(dep.token.reference))) {
                         result = dep;
                     }
                     else {
@@ -8355,10 +7944,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     var NgModuleProviderAnalyzer = (function () {
         function NgModuleProviderAnalyzer(ngModule, extraProviders, sourceSpan) {
             var _this = this;
-            this._transformedProviders = new CompileIdentifierMap();
-            this._seenProviders = new CompileIdentifierMap();
+            this._transformedProviders = new Map();
+            this._seenProviders = new Map();
             this._errors = [];
-            this._allProviders = new CompileIdentifierMap();
+            this._allProviders = new Map();
             var ngModuleTypes = ngModule.transitiveModule.modules.map(function (moduleMeta) { return moduleMeta.type; });
             ngModuleTypes.forEach(function (ngModuleType) {
                 var ngModuleProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: ngModuleType }), useClass: ngModuleType });
@@ -8368,28 +7957,30 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         NgModuleProviderAnalyzer.prototype.parse = function () {
             var _this = this;
-            this._allProviders.values().forEach(function (provider) { _this._getOrCreateLocalProvider(provider.token, provider.eager); });
+            MapWrapper.values(this._allProviders).forEach(function (provider) {
+                _this._getOrCreateLocalProvider(provider.token, provider.eager);
+            });
             if (this._errors.length > 0) {
                 var errorString = this._errors.join('\n');
                 throw new Error("Provider parse errors:\n" + errorString);
             }
-            return this._transformedProviders.values();
+            return MapWrapper.values(this._transformedProviders);
         };
         NgModuleProviderAnalyzer.prototype._getOrCreateLocalProvider = function (token, eager) {
             var _this = this;
-            var resolvedProvider = this._allProviders.get(token);
+            var resolvedProvider = this._allProviders.get(token.reference);
             if (isBlank(resolvedProvider)) {
                 return null;
             }
-            var transformedProviderAst = this._transformedProviders.get(token);
+            var transformedProviderAst = this._transformedProviders.get(token.reference);
             if (isPresent(transformedProviderAst)) {
                 return transformedProviderAst;
             }
-            if (isPresent(this._seenProviders.get(token))) {
+            if (isPresent(this._seenProviders.get(token.reference))) {
                 this._errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, resolvedProvider.sourceSpan));
                 return null;
             }
-            this._seenProviders.add(token, true);
+            this._seenProviders.set(token.reference, true);
             var transformedProviders = resolvedProvider.providers.map(function (provider) {
                 var transformedUseValue = provider.useValue;
                 var transformedUseExisting = provider.useExisting;
@@ -8422,7 +8013,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             });
             transformedProviderAst =
                 _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
-            this._transformedProviders.add(token, transformedProviderAst);
+            this._transformedProviders.set(token.reference, transformedProviderAst);
             return transformedProviderAst;
         };
         NgModuleProviderAnalyzer.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
@@ -8430,8 +8021,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             var foundLocal = false;
             if (!dep.isSkipSelf && isPresent(dep.token)) {
                 // access the injector
-                if (dep.token.equalsTo(identifierToken(Identifiers.Injector)) ||
-                    dep.token.equalsTo(identifierToken(Identifiers.ComponentFactoryResolver))) {
+                if (dep.token.reference === resolveIdentifierToken(Identifiers.Injector).reference ||
+                    dep.token.reference ===
+                        resolveIdentifierToken(Identifiers.ComponentFactoryResolver).reference) {
                     foundLocal = true;
                 }
                 else if (isPresent(this._getOrCreateLocalProvider(dep.token, eager))) {
@@ -8497,7 +8089,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return targetProviders;
     }
     function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
-        var providersByToken = new CompileIdentifierMap();
+        var providersByToken = new Map();
         directives.forEach(function (directive) {
             var dirProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: directive.type }), useClass: directive.type });
             _resolveProviders([dirProvider], directive.isComponent ? exports.ProviderAstType.Component : exports.ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken);
@@ -8512,7 +8104,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken) {
         providers.forEach(function (provider) {
-            var resolvedProvider = targetProvidersByToken.get(provider.token);
+            var resolvedProvider = targetProvidersByToken.get(provider.token.reference);
             if (isPresent(resolvedProvider) && resolvedProvider.multiProvider !== provider.multi) {
                 targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + resolvedProvider.token.name, sourceSpan));
             }
@@ -8521,7 +8113,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                     provider.token.identifier.lifecycleHooks :
                     [];
                 resolvedProvider = new ProviderAst(provider.token, provider.multi, eager || lifecycleHooks.length > 0, [provider], providerType, lifecycleHooks, sourceSpan);
-                targetProvidersByToken.add(provider.token, resolvedProvider);
+                targetProvidersByToken.set(provider.token.reference, resolvedProvider);
             }
             else {
                 if (!provider.multi) {
@@ -8532,7 +8124,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         });
     }
     function _getViewQueries(component) {
-        var viewQueries = new CompileIdentifierMap();
+        var viewQueries = new Map();
         if (isPresent(component.viewQueries)) {
             component.viewQueries.forEach(function (query) { return _addQueryToTokenMap(viewQueries, query); });
         }
@@ -8544,7 +8136,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         return viewQueries;
     }
     function _getContentQueries(directives) {
-        var contentQueries = new CompileIdentifierMap();
+        var contentQueries = new Map();
         directives.forEach(function (directive) {
             if (isPresent(directive.queries)) {
                 directive.queries.forEach(function (query) { return _addQueryToTokenMap(contentQueries, query); });
@@ -8559,10 +8151,10 @@ var __extends = (this && this.__extends) || function (d, b) {
     }
     function _addQueryToTokenMap(map, query) {
         query.selectors.forEach(function (token) {
-            var entry = map.get(token);
+            var entry = map.get(token.reference);
             if (isBlank(entry)) {
                 entry = [];
-                map.add(token, entry);
+                map.set(token.reference, entry);
             }
             entry.push(query);
         });
@@ -9248,7 +8840,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 else if (isBlank(component)) {
                     var refToken = null;
                     if (isTemplateElement) {
-                        refToken = identifierToken(Identifiers.TemplateRef);
+                        refToken = resolveIdentifierToken(Identifiers.TemplateRef);
                     }
                     targetReferences.push(new ReferenceAst(elOrDirRef.name, refToken, elOrDirRef.sourceSpan));
                 }
@@ -9616,13 +9208,18 @@ var __extends = (this && this.__extends) || function (d, b) {
     }());
     var DefaultRenderTypes = (function () {
         function DefaultRenderTypes() {
-            this.renderer = Identifiers.Renderer;
             this.renderText = null;
             this.renderElement = null;
             this.renderComment = null;
             this.renderNode = null;
             this.renderEvent = null;
         }
+        Object.defineProperty(DefaultRenderTypes.prototype, "renderer", {
+            get: function () { return resolveIdentifier(Identifiers.Renderer); },
+            enumerable: true,
+            configurable: true
+        });
+        ;
         return DefaultRenderTypes;
     }());
     /**
@@ -10354,14 +9951,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             ast.styles.forEach(function (entry) {
                 stylesArr.push(literalMap(StringMapWrapper.keys(entry).map(function (key) { return [key, literal(entry[key])]; })));
             });
-            return importExpr(Identifiers.AnimationStyles).instantiate([
-                importExpr(Identifiers.collectAndResolveStyles).callFn([
+            return importExpr(resolveIdentifier(Identifiers.AnimationStyles)).instantiate([
+                importExpr(resolveIdentifier(Identifiers.collectAndResolveStyles)).callFn([
                     _ANIMATION_COLLECTED_STYLES, literalArr(stylesArr)
                 ])
             ]);
         };
         _AnimationBuilder.prototype.visitAnimationKeyframe = function (ast, context) {
-            return importExpr(Identifiers.AnimationKeyframe).instantiate([
+            return importExpr(resolveIdentifier(Identifiers.AnimationKeyframe)).instantiate([
                 literal(ast.offset), ast.styles.visit(this, context)
             ]);
         };
@@ -10379,7 +9976,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var _this = this;
             var startingStylesExpr = ast.startingStyles.visit(this, context);
             var keyframeExpressions = ast.keyframes.map(function (keyframe) { return keyframe.visit(_this, context); });
-            var keyframesExpr = importExpr(Identifiers.balanceAnimationKeyframes).callFn([
+            var keyframesExpr = importExpr(resolveIdentifier(Identifiers.balanceAnimationKeyframes)).callFn([
                 _ANIMATION_COLLECTED_STYLES, _ANIMATION_END_STATE_STYLES_VAR,
                 literalArr(keyframeExpressions)
             ]);
@@ -10396,12 +9993,16 @@ var __extends = (this && this.__extends) || function (d, b) {
         _AnimationBuilder.prototype.visitAnimationSequence = function (ast, context) {
             var _this = this;
             var playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
-            return importExpr(Identifiers.AnimationSequencePlayer).instantiate([literalArr(playerExprs)]);
+            return importExpr(resolveIdentifier(Identifiers.AnimationSequencePlayer)).instantiate([
+                literalArr(playerExprs)
+            ]);
         };
         _AnimationBuilder.prototype.visitAnimationGroup = function (ast, context) {
             var _this = this;
             var playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
-            return importExpr(Identifiers.AnimationGroupPlayer).instantiate([literalArr(playerExprs)]);
+            return importExpr(resolveIdentifier(Identifiers.AnimationGroupPlayer)).instantiate([
+                literalArr(playerExprs)
+            ]);
         };
         _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
             var flatStyles = {};
@@ -10460,20 +10061,22 @@ var __extends = (this && this.__extends) || function (d, b) {
             statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR))
                 .toDeclStmt());
             statements.push(new IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(NULL_EXPR), [_ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
-            var RENDER_STYLES_FN = importExpr(Identifiers.renderStyles);
+            var RENDER_STYLES_FN = importExpr(resolveIdentifier(Identifiers.renderStyles));
             // before we start any animation we want to clear out the starting
             // styles from the element's style property (since they were placed
             // there at the end of the last animation
             statements.push(RENDER_STYLES_FN
                 .callFn([
                 _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-                importExpr(Identifiers.clearStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
+                importExpr(resolveIdentifier(Identifiers.clearStyles))
+                    .callFn([_ANIMATION_START_STATE_STYLES_VAR])
             ])
                 .toStmt());
             ast.stateTransitions.forEach(function (transAst) { return statements.push(transAst.visit(_this, context)); });
             // this check ensures that the animation factory always returns a player
             // so that the onDone callback can be used for tracking
-            statements.push(new IfStmt(_ANIMATION_PLAYER_VAR.equals(NULL_EXPR), [_ANIMATION_PLAYER_VAR.set(importExpr(Identifiers.NoOpAnimationPlayer).instantiate([]))
+            statements.push(new IfStmt(_ANIMATION_PLAYER_VAR.equals(NULL_EXPR), [_ANIMATION_PLAYER_VAR
+                    .set(importExpr(resolveIdentifier(Identifiers.NoOpAnimationPlayer)).instantiate([]))
                     .toStmt()]));
             // once complete we want to apply the styles on the element
             // since the destination state's values should persist once
@@ -10482,7 +10085,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 .callMethod('onDone', [fn([], [RENDER_STYLES_FN
                         .callFn([
                         _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-                        importExpr(Identifiers.prepareFinalAnimationStyles).callFn([
+                        importExpr(resolveIdentifier(Identifiers.prepareFinalAnimationStyles))
+                            .callFn([
                             _ANIMATION_START_STATE_STYLES_VAR, _ANIMATION_END_STATE_STYLES_VAR
                         ])
                     ])
@@ -10496,7 +10100,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             ])
                 .toStmt());
             return fn([
-                new FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, importType(Identifiers.AppView, [DYNAMIC_TYPE])),
+                new FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
                 new FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, DYNAMIC_TYPE),
                 new FnParam(_ANIMATION_CURRENT_STATE_VAR.name, DYNAMIC_TYPE),
                 new FnParam(_ANIMATION_NEXT_STATE_VAR.name, DYNAMIC_TYPE)
@@ -10807,7 +10411,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         if (isBlank(pureProxyId)) {
             throw new Error("Unsupported number of argument for pure functions: " + argCount);
         }
-        view.createMethod.addStmt(THIS_EXPR.prop(pureProxyProp.name).set(importExpr(pureProxyId).callFn([fn])).toStmt());
+        view.createMethod.addStmt(THIS_EXPR.prop(pureProxyProp.name)
+            .set(importExpr(resolveIdentifier(pureProxyId)).callFn([fn]))
+            .toStmt());
     }
     var ViewQueryValues = (function () {
         function ViewQueryValues(view, values) {
@@ -10896,79 +10502,87 @@ var __extends = (this && this.__extends) || function (d, b) {
         ]);
     }
     function createQueryList(query, directiveInstance, propertyName, compileView) {
-        compileView.fields.push(new ClassField(propertyName, importType(Identifiers.QueryList, [DYNAMIC_TYPE])));
+        compileView.fields.push(new ClassField(propertyName, importType(resolveIdentifier(Identifiers.QueryList), [DYNAMIC_TYPE])));
         var expr = THIS_EXPR.prop(propertyName);
         compileView.createMethod.addStmt(THIS_EXPR.prop(propertyName)
-            .set(importExpr(Identifiers.QueryList, [DYNAMIC_TYPE]).instantiate([]))
+            .set(importExpr(resolveIdentifier(Identifiers.QueryList), [DYNAMIC_TYPE])
+            .instantiate([]))
             .toStmt());
         return expr;
     }
     function addQueryToTokenMap(map, query) {
         query.meta.selectors.forEach(function (selector) {
-            var entry = map.get(selector);
+            var entry = map.get(selector.reference);
             if (isBlank(entry)) {
                 entry = [];
-                map.add(selector, entry);
+                map.set(selector.reference, entry);
             }
             entry.push(query);
         });
     }
-    function _enumExpression(classIdentifier, value) {
-        if (isBlank(value))
-            return NULL_EXPR;
-        var name = resolveEnumToken(classIdentifier.runtime, value);
-        return importExpr(new CompileIdentifierMetadata({
-            name: classIdentifier.name + "." + name,
-            moduleUrl: classIdentifier.moduleUrl,
-            runtime: value
-        }));
+    function _enumExpression(classIdentifier, name) {
+        return importExpr(resolveEnumIdentifier(classIdentifier, name));
     }
     var ViewTypeEnum = (function () {
         function ViewTypeEnum() {
         }
         ViewTypeEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ViewType, value);
+            var viewType = resolveIdentifier(Identifiers.ViewType);
+            switch (value) {
+                case ViewType.HOST:
+                    return _enumExpression(viewType, 'HOST');
+                case ViewType.COMPONENT:
+                    return _enumExpression(viewType, 'COMPONENT');
+                case ViewType.EMBEDDED:
+                    return _enumExpression(viewType, 'EMBEDDED');
+                default:
+                    throw Error("Inavlid ViewType value: " + value);
+            }
         };
         return ViewTypeEnum;
     }());
-    ViewTypeEnum.HOST = ViewTypeEnum.fromValue(ViewType.HOST);
-    ViewTypeEnum.COMPONENT = ViewTypeEnum.fromValue(ViewType.COMPONENT);
-    ViewTypeEnum.EMBEDDED = ViewTypeEnum.fromValue(ViewType.EMBEDDED);
     var ViewEncapsulationEnum = (function () {
         function ViewEncapsulationEnum() {
         }
         ViewEncapsulationEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ViewEncapsulation, value);
+            var viewEncapsulation = resolveIdentifier(Identifiers.ViewEncapsulation);
+            switch (value) {
+                case _angular_core.ViewEncapsulation.Emulated:
+                    return _enumExpression(viewEncapsulation, 'Emulated');
+                case _angular_core.ViewEncapsulation.Native:
+                    return _enumExpression(viewEncapsulation, 'Native');
+                case _angular_core.ViewEncapsulation.None:
+                    return _enumExpression(viewEncapsulation, 'None');
+                default:
+                    throw Error("Inavlid ViewEncapsulation value: " + value);
+            }
         };
         return ViewEncapsulationEnum;
     }());
-    ViewEncapsulationEnum.Emulated = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Emulated);
-    ViewEncapsulationEnum.Native = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.Native);
-    ViewEncapsulationEnum.None = ViewEncapsulationEnum.fromValue(_angular_core.ViewEncapsulation.None);
-    var ChangeDetectionStrategyEnum = (function () {
-        function ChangeDetectionStrategyEnum() {
-        }
-        ChangeDetectionStrategyEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ChangeDetectionStrategy, value);
-        };
-        return ChangeDetectionStrategyEnum;
-    }());
-    ChangeDetectionStrategyEnum.OnPush = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.OnPush);
-    ChangeDetectionStrategyEnum.Default = ChangeDetectionStrategyEnum.fromValue(_angular_core.ChangeDetectionStrategy.Default);
     var ChangeDetectorStatusEnum = (function () {
         function ChangeDetectorStatusEnum() {
         }
         ChangeDetectorStatusEnum.fromValue = function (value) {
-            return _enumExpression(Identifiers.ChangeDetectorStatus, value);
+            var changeDetectorStatus = resolveIdentifier(Identifiers.ChangeDetectorStatus);
+            switch (value) {
+                case ChangeDetectorStatus.CheckOnce:
+                    return _enumExpression(changeDetectorStatus, 'CheckOnce');
+                case ChangeDetectorStatus.Checked:
+                    return _enumExpression(changeDetectorStatus, 'Checked');
+                case ChangeDetectorStatus.CheckAlways:
+                    return _enumExpression(changeDetectorStatus, 'CheckAlways');
+                case ChangeDetectorStatus.Detached:
+                    return _enumExpression(changeDetectorStatus, 'Detached');
+                case ChangeDetectorStatus.Errored:
+                    return _enumExpression(changeDetectorStatus, 'Errored');
+                case ChangeDetectorStatus.Destroyed:
+                    return _enumExpression(changeDetectorStatus, 'Destroyed');
+                default:
+                    throw Error("Inavlid ChangeDetectorStatus value: " + value);
+            }
         };
         return ChangeDetectorStatusEnum;
     }());
-    ChangeDetectorStatusEnum.CheckOnce = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.CheckOnce);
-    ChangeDetectorStatusEnum.Checked = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Checked);
-    ChangeDetectorStatusEnum.CheckAlways = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.CheckAlways);
-    ChangeDetectorStatusEnum.Detached = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Detached);
-    ChangeDetectorStatusEnum.Errored = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Errored);
-    ChangeDetectorStatusEnum.Destroyed = ChangeDetectorStatusEnum.fromValue(ChangeDetectorStatus.Destroyed);
     var ViewConstructorVars = (function () {
         function ViewConstructorVars() {
         }
@@ -11031,18 +10645,19 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.hasViewContainer = hasViewContainer;
             this.hasEmbeddedView = hasEmbeddedView;
             this._compViewExpr = null;
-            this.instances = new CompileIdentifierMap();
+            this.instances = new Map();
             this._queryCount = 0;
-            this._queries = new CompileIdentifierMap();
+            this._queries = new Map();
             this._componentConstructorViewQueryLists = [];
             this.contentNodesByNgContentIndex = null;
             this.referenceTokens = {};
             references.forEach(function (ref) { return _this.referenceTokens[ref.name] = ref.value; });
-            this.elementRef = importExpr(Identifiers.ElementRef).instantiate([this.renderNode]);
-            this.instances.add(identifierToken(Identifiers.ElementRef), this.elementRef);
+            this.elementRef =
+                importExpr(resolveIdentifier(Identifiers.ElementRef)).instantiate([this.renderNode]);
+            this.instances.set(resolveIdentifierToken(Identifiers.ElementRef).reference, this.elementRef);
             this.injector = THIS_EXPR.callMethod('injector', [literal(this.nodeIndex)]);
-            this.instances.add(identifierToken(Identifiers.Injector), this.injector);
-            this.instances.add(identifierToken(Identifiers.Renderer), THIS_EXPR.prop('renderer'));
+            this.instances.set(resolveIdentifierToken(Identifiers.Injector).reference, this.injector);
+            this.instances.set(resolveIdentifierToken(Identifiers.Renderer).reference, THIS_EXPR.prop('renderer'));
             if (this.hasViewContainer || this.hasEmbeddedView || isPresent(this.component)) {
                 this._createAppElement();
             }
@@ -11054,26 +10669,26 @@ var __extends = (this && this.__extends) || function (d, b) {
             var fieldName = "_appEl_" + this.nodeIndex;
             var parentNodeIndex = this.isRootElement() ? null : this.parent.nodeIndex;
             // private is fine here as no child view will reference an AppElement
-            this.view.fields.push(new ClassField(fieldName, importType(Identifiers.AppElement), [StmtModifier.Private]));
+            this.view.fields.push(new ClassField(fieldName, importType(resolveIdentifier(Identifiers.AppElement)), [StmtModifier.Private]));
             var statement = THIS_EXPR.prop(fieldName)
-                .set(importExpr(Identifiers.AppElement).instantiate([
+                .set(importExpr(resolveIdentifier(Identifiers.AppElement)).instantiate([
                 literal(this.nodeIndex), literal(parentNodeIndex), THIS_EXPR, this.renderNode
             ]))
                 .toStmt();
             this.view.createMethod.addStmt(statement);
             this.appElement = THIS_EXPR.prop(fieldName);
-            this.instances.add(identifierToken(Identifiers.AppElement), this.appElement);
+            this.instances.set(resolveIdentifierToken(Identifiers.AppElement).reference, this.appElement);
         };
         CompileElement.prototype.createComponentFactoryResolver = function (entryComponents) {
             if (!entryComponents || entryComponents.length === 0) {
                 return;
             }
-            var createComponentFactoryResolverExpr = importExpr(Identifiers.CodegenComponentFactoryResolver).instantiate([
+            var createComponentFactoryResolverExpr = importExpr(resolveIdentifier(Identifiers.CodegenComponentFactoryResolver)).instantiate([
                 literalArr(entryComponents.map(function (entryComponent) { return importExpr(entryComponent); })),
-                injectFromViewParentInjector(identifierToken(Identifiers.ComponentFactoryResolver), false)
+                injectFromViewParentInjector(resolveIdentifierToken(Identifiers.ComponentFactoryResolver), false)
             ]);
             var provider = new CompileProviderMetadata({
-                token: identifierToken(Identifiers.ComponentFactoryResolver),
+                token: resolveIdentifierToken(Identifiers.ComponentFactoryResolver),
                 useValue: createComponentFactoryResolverExpr
             });
             // Add ComponentFactoryResolver as first provider as it does not have deps on other providers
@@ -11092,10 +10707,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileElement.prototype.setEmbeddedView = function (embeddedView) {
             this.embeddedView = embeddedView;
             if (isPresent(embeddedView)) {
-                var createTemplateRefExpr = importExpr(Identifiers.TemplateRef_).instantiate([
+                var createTemplateRefExpr = importExpr(resolveIdentifier(Identifiers.TemplateRef_)).instantiate([
                     this.appElement, this.embeddedView.viewFactory
                 ]);
-                var provider = new CompileProviderMetadata({ token: identifierToken(Identifiers.TemplateRef), useValue: createTemplateRefExpr });
+                var provider = new CompileProviderMetadata({
+                    token: resolveIdentifierToken(Identifiers.TemplateRef),
+                    useValue: createTemplateRefExpr
+                });
                 // Add TemplateRef as first provider as it does not have deps on other providers
                 this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], exports.ProviderAstType.Builtin, [], this.sourceAst.sourceSpan));
             }
@@ -11103,13 +10721,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         CompileElement.prototype.beforeChildren = function () {
             var _this = this;
             if (this.hasViewContainer) {
-                this.instances.add(identifierToken(Identifiers.ViewContainerRef), this.appElement.prop('vcRef'));
+                this.instances.set(resolveIdentifierToken(Identifiers.ViewContainerRef).reference, this.appElement.prop('vcRef'));
             }
-            this._resolvedProviders = new CompileIdentifierMap();
-            this._resolvedProvidersArray.forEach(function (provider) { return _this._resolvedProviders.add(provider.token, provider); });
+            this._resolvedProviders = new Map();
+            this._resolvedProvidersArray.forEach(function (provider) { return _this._resolvedProviders.set(provider.token.reference, provider); });
             // create all the provider instances, some in the view constructor,
             // some as getters. We rely on the fact that they are already sorted topologically.
-            this._resolvedProviders.values().forEach(function (resolvedProvider) {
+            MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
                 var providerValueExpressions = resolvedProvider.providers.map(function (provider) {
                     if (isPresent(provider.useExisting)) {
                         return _this._getDependency(resolvedProvider.providerType, new CompileDiDependencyMetadata({ token: provider.useExisting }));
@@ -11131,15 +10749,15 @@ var __extends = (this && this.__extends) || function (d, b) {
                 });
                 var propName = "_" + resolvedProvider.token.name + "_" + _this.nodeIndex + "_" + _this.instances.size;
                 var instance = createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, _this);
-                _this.instances.add(resolvedProvider.token, instance);
+                _this.instances.set(resolvedProvider.token.reference, instance);
             });
             for (var i = 0; i < this._directives.length; i++) {
                 var directive = this._directives[i];
-                var directiveInstance = this.instances.get(identifierToken(directive.type));
+                var directiveInstance = this.instances.get(identifierToken(directive.type).reference);
                 directive.queries.forEach(function (queryMeta) { _this._addQuery(queryMeta, directiveInstance); });
             }
             var queriesWithReads = [];
-            this._resolvedProviders.values().forEach(function (resolvedProvider) {
+            MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
                 var queriesForProvider = _this._getQueriesFor(resolvedProvider.token);
                 ListWrapper.addAll(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
             });
@@ -11147,7 +10765,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var token = _this.referenceTokens[varName];
                 var varValue;
                 if (isPresent(token)) {
-                    varValue = _this.instances.get(token);
+                    varValue = _this.instances.get(token.reference);
                 }
                 else {
                     varValue = _this.renderNode;
@@ -11160,13 +10778,13 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var value;
                 if (isPresent(queryWithRead.read.identifier)) {
                     // query for an identifier
-                    value = _this.instances.get(queryWithRead.read);
+                    value = _this.instances.get(queryWithRead.read.reference);
                 }
                 else {
                     // query for a reference
                     var token = _this.referenceTokens[queryWithRead.read.value];
                     if (isPresent(token)) {
-                        value = _this.instances.get(token);
+                        value = _this.instances.get(token.reference);
                     }
                     else {
                         value = _this.elementRef;
@@ -11188,11 +10806,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileElement.prototype.afterChildren = function (childNodeCount) {
             var _this = this;
-            this._resolvedProviders.values().forEach(function (resolvedProvider) {
+            MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
                 // Note: afterChildren is called after recursing into children.
                 // This is good so that an injector match in an element that is closer to a requesting element
                 // matches first.
-                var providerExpr = _this.instances.get(resolvedProvider.token);
+                var providerExpr = _this.instances.get(resolvedProvider.token.reference);
                 // Note: view providers are only visible on the injector of that element.
                 // This is not fully correct as the rules during codegen don't allow a directive
                 // to get hold of a view provdier on the same element. We still do this semantic
@@ -11200,17 +10818,20 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var providerChildNodeCount = resolvedProvider.providerType === exports.ProviderAstType.PrivateService ? 0 : childNodeCount;
                 _this.view.injectorGetMethod.addStmt(createInjectInternalCondition(_this.nodeIndex, providerChildNodeCount, resolvedProvider, providerExpr));
             });
-            this._queries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.view.createMethod, _this.view.updateContentQueriesMethod); }); });
+            MapWrapper.values(this._queries)
+                .forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.view.createMethod, _this.view.updateContentQueriesMethod); }); });
         };
         CompileElement.prototype.addContentNode = function (ngContentIndex, nodeExpr) {
             this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);
         };
         CompileElement.prototype.getComponent = function () {
-            return isPresent(this.component) ? this.instances.get(identifierToken(this.component.type)) :
+            return isPresent(this.component) ?
+                this.instances.get(identifierToken(this.component.type).reference) :
                 null;
         };
         CompileElement.prototype.getProviderTokens = function () {
-            return this._resolvedProviders.values().map(function (resolvedProvider) { return createDiTokenExpression(resolvedProvider.token); });
+            return MapWrapper.values(this._resolvedProviders)
+                .map(function (resolvedProvider) { return createDiTokenExpression(resolvedProvider.token); });
         };
         CompileElement.prototype._getQueriesFor = function (token) {
             var result = [];
@@ -11218,7 +10839,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var distance = 0;
             var queries;
             while (!currentEl.isNull()) {
-                queries = currentEl._queries.get(token);
+                queries = currentEl._queries.get(token.reference);
                 if (isPresent(queries)) {
                     ListWrapper.addAll(result, queries.filter(function (query) { return query.meta.descendants || distance <= 1; }));
                 }
@@ -11227,7 +10848,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 currentEl = currentEl.parent;
             }
-            queries = this.view.componentView.viewQueries.get(token);
+            queries = this.view.componentView.viewQueries.get(token.reference);
             if (isPresent(queries)) {
                 ListWrapper.addAll(result, queries);
             }
@@ -11254,7 +10875,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (isPresent(dep.token)) {
                 // access builtins with special visibility
                 if (isBlank(result)) {
-                    if (dep.token.equalsTo(identifierToken(Identifiers.ChangeDetectorRef))) {
+                    if (dep.token.reference ===
+                        resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference) {
                         if (requestingProviderType === exports.ProviderAstType.Component) {
                             return this._compViewExpr.prop('ref');
                         }
@@ -11265,7 +10887,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 // access regular providers on the element
                 if (isBlank(result)) {
-                    var resolvedProvider = this._resolvedProviders.get(dep.token);
+                    var resolvedProvider = this._resolvedProviders.get(dep.token.reference);
                     // don't allow directives / public services to access private services.
                     // only components and private services can access private services.
                     if (resolvedProvider && (requestingProviderType === exports.ProviderAstType.Directive ||
@@ -11273,7 +10895,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                         resolvedProvider.providerType === exports.ProviderAstType.PrivateService) {
                         return null;
                     }
-                    result = this.instances.get(dep.token);
+                    result = this.instances.get(dep.token.reference);
                 }
             }
             return result;
@@ -11360,7 +10982,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._purePipeProxyCount = 0;
             this.instance = THIS_EXPR.prop("_pipe_" + meta.name + "_" + view.pipeCount++);
             var deps = this.meta.type.diDeps.map(function (diDep) {
-                if (diDep.token.equalsTo(identifierToken(Identifiers.ChangeDetectorRef))) {
+                if (diDep.token.reference ===
+                    resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference) {
                     return getPropertyInView(THIS_EXPR.prop('ref'), _this.view, _this.view.componentView);
                 }
                 return injectFromViewParentInjector(diDep.token, false);
@@ -11403,7 +11026,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
                 createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
                     .callMethod(BuiltinMethod.Bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, callingView);
-                return importExpr(Identifiers.castByValue)
+                return importExpr(resolveIdentifier(Identifiers.castByValue))
                     .callFn([purePipeProxyInstance, pipeInstanceSeenFromPureProxy.prop('transform')])
                     .callFn(args);
             }
@@ -11477,7 +11100,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             this.componentContext =
                 getPropertyInView(THIS_EXPR.prop('context'), this, this.componentView);
-            var viewQueries = new CompileIdentifierMap();
+            var viewQueries = new Map();
             if (this.viewType === ViewType.COMPONENT) {
                 var directiveInstance = THIS_EXPR.prop('context');
                 ListWrapper.forEachWithIndex(this.component.viewQueries, function (queryMeta, queryIndex) {
@@ -11525,7 +11148,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileView.prototype.createLiteralArray = function (values) {
             if (values.length === 0) {
-                return importExpr(Identifiers.EMPTY_ARRAY);
+                return importExpr(resolveIdentifier(Identifiers.EMPTY_ARRAY));
             }
             var proxyExpr = THIS_EXPR.prop("_arr_" + this.literalArrayCount++);
             var proxyParams = [];
@@ -11540,7 +11163,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileView.prototype.createLiteralMap = function (entries) {
             if (entries.length === 0) {
-                return importExpr(Identifiers.EMPTY_MAP);
+                return importExpr(resolveIdentifier(Identifiers.EMPTY_MAP));
             }
             var proxyExpr = THIS_EXPR.prop("_map_" + this.literalMapCount++);
             var proxyParams = [];
@@ -11557,7 +11180,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileView.prototype.afterNodes = function () {
             var _this = this;
-            this.viewQueries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
+            MapWrapper.values(this.viewQueries)
+                .forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
         };
         return CompileView;
     }());
@@ -11735,7 +11359,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 args.push(this.visit(ast.expressions[i], _Mode.Expression));
             }
             args.push(literal(ast.strings[ast.strings.length - 1]));
-            return importExpr(Identifiers.interpolate).callFn(args);
+            return importExpr(resolveIdentifier(Identifiers.interpolate)).callFn(args);
         };
         _AstToIrVisitor.prototype.visitKeyedRead = function (ast, mode) {
             return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));
@@ -12078,7 +11702,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var stmt = THIS_EXPR
                 .callMethod('registerAnimationOutput', [
                 this.compileElement.renderNode,
-                importExpr(Identifiers.AnimationOutput).instantiate([
+                importExpr(resolveIdentifier(Identifiers.AnimationOutput)).instantiate([
                     literal(output.name), literal(output.phase)
                 ]),
                 outputListener
@@ -12105,7 +11729,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             listener.addAction(hostEvent, null, null);
         });
         dirs.forEach(function (directiveAst) {
-            var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
+            var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type).reference);
             directiveAst.hostEvents.forEach(function (hostEvent) {
                 compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
                 var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
@@ -12213,13 +11837,15 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         // private is fine here as no child view will reference the cached value...
         view.fields.push(new ClassField(fieldExpr.name, null, [StmtModifier.Private]));
-        view.createMethod.addStmt(THIS_EXPR.prop(fieldExpr.name).set(importExpr(Identifiers.UNINITIALIZED)).toStmt());
+        view.createMethod.addStmt(THIS_EXPR.prop(fieldExpr.name)
+            .set(importExpr(resolveIdentifier(Identifiers.UNINITIALIZED)))
+            .toStmt());
         if (checkExpression.needsValueUnwrapper) {
             var initValueUnwrapperStmt = DetectChangesVars.valUnwrapper.callMethod('reset', []).toStmt();
             method.addStmt(initValueUnwrapperStmt);
         }
         method.addStmt(currValExpr.set(checkExpression.expression).toDeclStmt(null, [StmtModifier.Final]));
-        var condition = importExpr(Identifiers.checkBinding).callFn([
+        var condition = importExpr(resolveIdentifier(Identifiers.checkBinding)).callFn([
             DetectChangesVars.throwOnChange, fieldExpr, currValExpr
         ]);
         if (checkExpression.needsValueUnwrapper) {
@@ -12294,11 +11920,11 @@ var __extends = (this && this.__extends) || function (d, b) {
                     // void => ...
                     var oldRenderVar = variable('oldRenderVar');
                     updateStmts.push(oldRenderVar.set(oldRenderValue).toDeclStmt());
-                    updateStmts.push(new IfStmt(oldRenderVar.equals(importExpr(Identifiers.UNINITIALIZED)), [oldRenderVar.set(emptyStateValue).toStmt()]));
+                    updateStmts.push(new IfStmt(oldRenderVar.equals(importExpr(resolveIdentifier(Identifiers.UNINITIALIZED))), [oldRenderVar.set(emptyStateValue).toStmt()]));
                     // ... => void
                     var newRenderVar = variable('newRenderVar');
                     updateStmts.push(newRenderVar.set(renderValue).toDeclStmt());
-                    updateStmts.push(new IfStmt(newRenderVar.equals(importExpr(Identifiers.UNINITIALIZED)), [newRenderVar.set(emptyStateValue).toStmt()]));
+                    updateStmts.push(new IfStmt(newRenderVar.equals(importExpr(resolveIdentifier(Identifiers.UNINITIALIZED))), [newRenderVar.set(emptyStateValue).toStmt()]));
                     updateStmts.push(animationFnExpr.callFn([THIS_EXPR, renderNode, oldRenderVar, newRenderVar]).toStmt());
                     view.detachMethod.addStmt(animationFnExpr.callFn([THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])
                         .toStmt());
@@ -12337,7 +11963,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 throw new Error("internal error, unexpected SecurityContext " + boundProp.securityContext + ".");
         }
         var ctx = ViewProperties.viewUtils.prop('sanitizer');
-        var args = [importExpr(Identifiers.SecurityContext).prop(enumValue), renderValue];
+        var args = [importExpr(resolveIdentifier(Identifiers.SecurityContext)).prop(enumValue), renderValue];
         return ctx.callMethod('sanitize', args);
     }
     function bindRenderInputs(boundProps, compileElement) {
@@ -12372,10 +11998,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             var statements = [directiveInstance.prop(input.directiveName).set(currValExpr).toStmt()];
             if (calcChangesMap) {
                 statements.push(new IfStmt(DetectChangesVars.changes.identical(NULL_EXPR), [DetectChangesVars.changes
-                        .set(literalMap([], new MapType(importType(Identifiers.SimpleChange))))
+                        .set(literalMap([], new MapType(importType(resolveIdentifier(Identifiers.SimpleChange)))))
                         .toStmt()]));
                 statements.push(DetectChangesVars.changes.key(literal(input.directiveName))
-                    .set(importExpr(Identifiers.SimpleChange).instantiate([fieldExpr, currValExpr]))
+                    .set(importExpr(resolveIdentifier(Identifiers.SimpleChange))
+                    .instantiate([fieldExpr, currValExpr]))
                     .toStmt());
             }
             if (isOnPushComp) {
@@ -12454,7 +12081,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             bindRenderInputs(ast.inputs, compileElement);
             bindRenderOutputs(eventListeners);
             ast.directives.forEach(function (directiveAst) {
-                var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
+                var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
                 bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
                 bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
                 bindDirectiveHostProps(directiveAst, directiveInstance, compileElement);
@@ -12464,12 +12091,12 @@ var __extends = (this && this.__extends) || function (d, b) {
             // afterContent and afterView lifecycles need to be called bottom up
             // so that children are notified before parents
             ast.directives.forEach(function (directiveAst) {
-                var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
+                var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
                 bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
                 bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
             });
             ast.providers.forEach(function (providerAst) {
-                var providerInstance = compileElement.instances.get(providerAst.token);
+                var providerInstance = compileElement.instances.get(providerAst.token.reference);
                 bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
             });
             return null;
@@ -12478,7 +12105,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             var compileElement = this.view.nodes[this._nodeIndex++];
             var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
             ast.directives.forEach(function (directiveAst) {
-                var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type));
+                var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
                 bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
                 bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
                 bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
@@ -12486,7 +12113,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
             });
             ast.providers.forEach(function (providerAst) {
-                var providerInstance = compileElement.instances.get(providerAst.token);
+                var providerInstance = compileElement.instances.get(providerAst.token.reference);
                 bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
             });
             bindView(compileElement.embeddedView, ast.children, []);
@@ -12610,7 +12237,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 this.view.createMethod.addStmt(ViewProperties.renderer
                     .callMethod('projectNodes', [
                     parentRenderNode,
-                    importExpr(Identifiers.flattenNestedViewRenderNodes).callFn([nodesExpression])
+                    importExpr(resolveIdentifier(Identifiers.flattenNestedViewRenderNodes))
+                        .callFn([nodesExpression])
                 ])
                     .toStmt());
             }
@@ -12805,13 +12433,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         if (view.genConfig.genDebugInfo) {
             nodeDebugInfosVar = variable("nodeDebugInfos_" + view.component.type.name + view.viewIndex); // fix highlighting: `
             targetStatements.push(nodeDebugInfosVar
-                .set(literalArr(view.nodes.map(createStaticNodeDebugInfo), new ArrayType(new ExternalType(Identifiers.StaticNodeDebugInfo), [TypeModifier.Const])))
+                .set(literalArr(view.nodes.map(createStaticNodeDebugInfo), new ArrayType(new ExternalType(resolveIdentifier(Identifiers.StaticNodeDebugInfo)), [TypeModifier.Const])))
                 .toDeclStmt(null, [StmtModifier.Final]));
         }
         var renderCompTypeVar = variable("renderType_" + view.component.type.name); // fix highlighting: `
         if (view.viewIndex === 0) {
             targetStatements.push(renderCompTypeVar.set(NULL_EXPR)
-                .toDeclStmt(importType(Identifiers.RenderComponentType)));
+                .toDeclStmt(importType(resolveIdentifier(Identifiers.RenderComponentType))));
         }
         var viewClass = createViewClass(view, renderCompTypeVar, nodeDebugInfosVar);
         targetStatements.push(viewClass);
@@ -12831,18 +12459,18 @@ var __extends = (this && this.__extends) || function (d, b) {
                 varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : NULL_EXPR]);
             });
         }
-        return importExpr(Identifiers.StaticNodeDebugInfo)
+        return importExpr(resolveIdentifier(Identifiers.StaticNodeDebugInfo))
             .instantiate([
             literalArr(providerTokens, new ArrayType(DYNAMIC_TYPE, [TypeModifier.Const])),
             componentToken,
             literalMap(varTokenEntries, new MapType(DYNAMIC_TYPE, [TypeModifier.Const]))
-        ], importType(Identifiers.StaticNodeDebugInfo, null, [TypeModifier.Const]));
+        ], importType(resolveIdentifier(Identifiers.StaticNodeDebugInfo), null, [TypeModifier.Const]));
     }
     function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
         var viewConstructorArgs = [
-            new FnParam(ViewConstructorVars.viewUtils.name, importType(Identifiers.ViewUtils)),
-            new FnParam(ViewConstructorVars.parentInjector.name, importType(Identifiers.Injector)),
-            new FnParam(ViewConstructorVars.declarationEl.name, importType(Identifiers.AppElement))
+            new FnParam(ViewConstructorVars.viewUtils.name, importType(resolveIdentifier(Identifiers.ViewUtils))),
+            new FnParam(ViewConstructorVars.parentInjector.name, importType(resolveIdentifier(Identifiers.Injector))),
+            new FnParam(ViewConstructorVars.declarationEl.name, importType(resolveIdentifier(Identifiers.AppElement)))
         ];
         var superConstructorArgs = [
             variable(view.className), renderCompTypeVar, ViewTypeEnum.fromValue(view.viewType),
@@ -12855,7 +12483,7 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         var viewConstructor = new ClassMethod(null, viewConstructorArgs, [SUPER_EXPR.callFn(superConstructorArgs).toStmt()]);
         var viewMethods = [
-            new ClassMethod('createInternal', [new FnParam(rootSelectorVar.name, STRING_TYPE)], generateCreateMethod(view), importType(Identifiers.AppElement)),
+            new ClassMethod('createInternal', [new FnParam(rootSelectorVar.name, STRING_TYPE)], generateCreateMethod(view), importType(resolveIdentifier(Identifiers.AppElement))),
             new ClassMethod('injectorGetInternal', [
                 new FnParam(InjectMethodVars.token.name, DYNAMIC_TYPE),
                 // Note: Can't use o.INT_TYPE here as the method in AppView uses number
@@ -12868,14 +12496,14 @@ var __extends = (this && this.__extends) || function (d, b) {
             new ClassMethod('detachInternal', [], view.detachMethod.finish())
         ].concat(view.eventHandlerMethods);
         var superClass = view.genConfig.genDebugInfo ? Identifiers.DebugAppView : Identifiers.AppView;
-        var viewClass = new ClassStmt(view.className, importExpr(superClass, [getContextType(view)]), view.fields, view.getters, viewConstructor, viewMethods.filter(function (method) { return method.body.length > 0; }));
+        var viewClass = new ClassStmt(view.className, importExpr(resolveIdentifier(superClass), [getContextType(view)]), view.fields, view.getters, viewConstructor, viewMethods.filter(function (method) { return method.body.length > 0; }));
         return viewClass;
     }
     function createViewFactory(view, viewClass, renderCompTypeVar) {
         var viewFactoryArgs = [
-            new FnParam(ViewConstructorVars.viewUtils.name, importType(Identifiers.ViewUtils)),
-            new FnParam(ViewConstructorVars.parentInjector.name, importType(Identifiers.Injector)),
-            new FnParam(ViewConstructorVars.declarationEl.name, importType(Identifiers.AppElement))
+            new FnParam(ViewConstructorVars.viewUtils.name, importType(resolveIdentifier(Identifiers.ViewUtils))),
+            new FnParam(ViewConstructorVars.parentInjector.name, importType(resolveIdentifier(Identifiers.Injector))),
+            new FnParam(ViewConstructorVars.declarationEl.name, importType(resolveIdentifier(Identifiers.AppElement)))
         ];
         var initRenderCompTypeStmts = [];
         var templateUrlInfo;
@@ -12900,7 +12528,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 ])];
         }
         return fn(viewFactoryArgs, initRenderCompTypeStmts.concat([new ReturnStatement(variable(viewClass.name)
-                .instantiate(viewClass.constructorMethod.params.map(function (param) { return variable(param.name); })))]), importType(Identifiers.AppView, [getContextType(view)]))
+                .instantiate(viewClass.constructorMethod.params.map(function (param) { return variable(param.name); })))]), importType(resolveIdentifier(Identifiers.AppView), [getContextType(view)]))
             .toDeclStmt(view.viewFactory.name, [StmtModifier.Final]);
     }
     function generateCreateMethod(view) {
@@ -12959,10 +12587,11 @@ var __extends = (this && this.__extends) || function (d, b) {
         }
         if (SetWrapper.has(readVars, DetectChangesVars.changes.name)) {
             varStmts.push(DetectChangesVars.changes.set(NULL_EXPR)
-                .toDeclStmt(new MapType(importType(Identifiers.SimpleChange))));
+                .toDeclStmt(new MapType(importType(resolveIdentifier(Identifiers.SimpleChange)))));
         }
         if (SetWrapper.has(readVars, DetectChangesVars.valUnwrapper.name)) {
-            varStmts.push(DetectChangesVars.valUnwrapper.set(importExpr(Identifiers.ValueUnwrapper).instantiate([]))
+            varStmts.push(DetectChangesVars.valUnwrapper
+                .set(importExpr(resolveIdentifier(Identifiers.ValueUnwrapper)).instantiate([]))
                 .toDeclStmt(null, [StmtModifier.Final]));
         }
         return varStmts.concat(stmts);
@@ -13065,7 +12694,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var ngModuleMeta = _this._metadataResolver.getNgModuleMetadata(ngModule);
                 ngModuleMeta.declaredDirectives.forEach(function (dirMeta) {
                     if (dirMeta.isComponent) {
-                        ngModuleByComponent.set(dirMeta.type.runtime, ngModuleMeta);
+                        ngModuleByComponent.set(dirMeta.type.reference, ngModuleMeta);
                     }
                 });
             });
@@ -13117,12 +12746,9 @@ var __extends = (this && this.__extends) || function (d, b) {
         OfflineCompiler.prototype._compileModule = function (ngModuleType, targetStatements) {
             var ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
             var appCompileResult = this._ngModuleCompiler.compile(ngModule, [
+                new CompileProviderMetadata({ token: resolveIdentifierToken(Identifiers.LOCALE_ID), useValue: this._localeId }),
                 new CompileProviderMetadata({
-                    token: new CompileTokenMetadata({ identifier: Identifiers.LOCALE_ID }),
-                    useValue: this._localeId
-                }),
-                new CompileProviderMetadata({
-                    token: new CompileTokenMetadata({ identifier: Identifiers.TRANSLATIONS_FORMAT }),
+                    token: resolveIdentifierToken(Identifiers.TRANSLATIONS_FORMAT),
                     useValue: this._translationFormat
                 })
             ]);
@@ -13138,11 +12764,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], [], null, fileSuffix, targetStatements);
             var compFactoryVar = _componentFactoryName(compMeta.type);
             targetStatements.push(variable(compFactoryVar)
-                .set(importExpr(Identifiers.ComponentFactory, [importType(compMeta.type)])
+                .set(importExpr(resolveIdentifier(Identifiers.ComponentFactory), [importType(compMeta.type)])
                 .instantiate([
                 literal(compMeta.selector), variable(hostViewFactoryVar),
                 importExpr(compMeta.type)
-            ], importType(Identifiers.ComponentFactory, [importType(compMeta.type)], [TypeModifier.Const])))
+            ], importType(resolveIdentifier(Identifiers.ComponentFactory), [importType(compMeta.type)], [TypeModifier.Const])))
                 .toDeclStmt(null, [StmtModifier.Final]));
             return compFactoryVar;
         };
@@ -13229,6 +12855,307 @@ var __extends = (this && this.__extends) || function (d, b) {
         ResourceLoader.prototype.get = function (url) { return null; };
         return ResourceLoader;
     }());
+    var _ASSET_SCHEME = 'asset:';
+    function createOfflineCompileUrlResolver() {
+        return new UrlResolver(_ASSET_SCHEME);
+    }
+    /**
+     * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
+     */
+    var DEFAULT_PACKAGE_URL_PROVIDER = {
+        provide: _angular_core.PACKAGE_ROOT_URL,
+        useValue: '/'
+    };
+    var UrlResolver = (function () {
+        function UrlResolver(_packagePrefix) {
+            if (_packagePrefix === void 0) { _packagePrefix = null; }
+            this._packagePrefix = _packagePrefix;
+        }
+        /**
+         * Resolves the `url` given the `baseUrl`:
+         * - when the `url` is null, the `baseUrl` is returned,
+         * - if `url` is relative ('path/to/here', './path/to/here'), the resolved url is a combination of
+         * `baseUrl` and `url`,
+         * - if `url` is absolute (it has a scheme: 'http://', 'https://' or start with '/'), the `url` is
+         * returned as is (ignoring the `baseUrl`)
+         */
+        UrlResolver.prototype.resolve = function (baseUrl, url) {
+            var resolvedUrl = url;
+            if (isPresent(baseUrl) && baseUrl.length > 0) {
+                resolvedUrl = _resolveUrl(baseUrl, resolvedUrl);
+            }
+            var resolvedParts = _split(resolvedUrl);
+            var prefix = this._packagePrefix;
+            if (isPresent(prefix) && isPresent(resolvedParts) &&
+                resolvedParts[_ComponentIndex.Scheme] == 'package') {
+                var path = resolvedParts[_ComponentIndex.Path];
+                if (this._packagePrefix === _ASSET_SCHEME) {
+                    var pathSegements = path.split(/\//);
+                    resolvedUrl = "asset:" + pathSegements[0] + "/lib/" + pathSegements.slice(1).join('/');
+                }
+                else {
+                    prefix = StringWrapper.stripRight(prefix, '/');
+                    path = StringWrapper.stripLeft(path, '/');
+                    return prefix + "/" + path;
+                }
+            }
+            return resolvedUrl;
+        };
+        return UrlResolver;
+    }());
+    /** @nocollapse */
+    UrlResolver.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    /** @nocollapse */
+    UrlResolver.ctorParameters = [
+        { type: undefined, decorators: [{ type: _angular_core.Inject, args: [_angular_core.PACKAGE_ROOT_URL,] },] },
+    ];
+    /**
+     * Extract the scheme of a URL.
+     */
+    function getUrlScheme(url) {
+        var match = _split(url);
+        return (match && match[_ComponentIndex.Scheme]) || '';
+    }
+    // The code below is adapted from Traceur:
+    // https://github.com/google/traceur-compiler/blob/9511c1dafa972bf0de1202a8a863bad02f0f95a8/src/runtime/url.js
+    /**
+     * Builds a URI string from already-encoded parts.
+     *
+     * No encoding is performed.  Any component may be omitted as either null or
+     * undefined.
+     *
+     * @param opt_scheme The scheme such as 'http'.
+     * @param opt_userInfo The user name before the '@'.
+     * @param opt_domain The domain such as 'www.google.com', already
+     *     URI-encoded.
+     * @param opt_port The port number.
+     * @param opt_path The path, already URI-encoded.  If it is not
+     *     empty, it must begin with a slash.
+     * @param opt_queryData The URI-encoded query data.
+     * @param opt_fragment The URI-encoded fragment identifier.
+     * @return The fully combined URI.
+     */
+    function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, opt_path, opt_queryData, opt_fragment) {
+        var out = [];
+        if (isPresent(opt_scheme)) {
+            out.push(opt_scheme + ':');
+        }
+        if (isPresent(opt_domain)) {
+            out.push('//');
+            if (isPresent(opt_userInfo)) {
+                out.push(opt_userInfo + '@');
+            }
+            out.push(opt_domain);
+            if (isPresent(opt_port)) {
+                out.push(':' + opt_port);
+            }
+        }
+        if (isPresent(opt_path)) {
+            out.push(opt_path);
+        }
+        if (isPresent(opt_queryData)) {
+            out.push('?' + opt_queryData);
+        }
+        if (isPresent(opt_fragment)) {
+            out.push('#' + opt_fragment);
+        }
+        return out.join('');
+    }
+    /**
+     * A regular expression for breaking a URI into its component parts.
+     *
+     * {@link http://www.gbiv.com/protocols/uri/rfc/rfc3986.html#RFC2234} says
+     * As the "first-match-wins" algorithm is identical to the "greedy"
+     * disambiguation method used by POSIX regular expressions, it is natural and
+     * commonplace to use a regular expression for parsing the potential five
+     * components of a URI reference.
+     *
+     * The following line is the regular expression for breaking-down a
+     * well-formed URI reference into its components.
+     *
+     * <pre>
+     * ^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?
+     *  12            3  4          5       6  7        8 9
+     * </pre>
+     *
+     * The numbers in the second line above are only to assist readability; they
+     * indicate the reference points for each subexpression (i.e., each paired
+     * parenthesis). We refer to the value matched for subexpression <n> as $<n>.
+     * For example, matching the above expression to
+     * <pre>
+     *     http://www.ics.uci.edu/pub/ietf/uri/#Related
+     * </pre>
+     * results in the following subexpression matches:
+     * <pre>
+     *    $1 = http:
+     *    $2 = http
+     *    $3 = //www.ics.uci.edu
+     *    $4 = www.ics.uci.edu
+     *    $5 = /pub/ietf/uri/
+     *    $6 = <undefined>
+     *    $7 = <undefined>
+     *    $8 = #Related
+     *    $9 = Related
+     * </pre>
+     * where <undefined> indicates that the component is not present, as is the
+     * case for the query component in the above example. Therefore, we can
+     * determine the value of the five components as
+     * <pre>
+     *    scheme    = $2
+     *    authority = $4
+     *    path      = $5
+     *    query     = $7
+     *    fragment  = $9
+     * </pre>
+     *
+     * The regular expression has been modified slightly to expose the
+     * userInfo, domain, and port separately from the authority.
+     * The modified version yields
+     * <pre>
+     *    $1 = http              scheme
+     *    $2 = <undefined>       userInfo -\
+     *    $3 = www.ics.uci.edu   domain     | authority
+     *    $4 = <undefined>       port     -/
+     *    $5 = /pub/ietf/uri/    path
+     *    $6 = <undefined>       query without ?
+     *    $7 = Related           fragment without #
+     * </pre>
+     * @type {!RegExp}
+     * @internal
+     */
+    var _splitRe = new RegExp('^' +
+        '(?:' +
+        '([^:/?#.]+)' +
+        // used by other URL parts such as :,
+        // ?, /, #, and .
+        ':)?' +
+        '(?://' +
+        '(?:([^/?#]*)@)?' +
+        '([\\w\\d\\-\\u0100-\\uffff.%]*)' +
+        // digits, dashes, dots, percent
+        // escapes, and unicode characters.
+        '(?::([0-9]+))?' +
+        ')?' +
+        '([^?#]+)?' +
+        '(?:\\?([^#]*))?' +
+        '(?:#(.*))?' +
+        '$');
+    /**
+     * The index of each URI component in the return value of goog.uri.utils.split.
+     * @enum {number}
+     */
+    var _ComponentIndex;
+    (function (_ComponentIndex) {
+        _ComponentIndex[_ComponentIndex["Scheme"] = 1] = "Scheme";
+        _ComponentIndex[_ComponentIndex["UserInfo"] = 2] = "UserInfo";
+        _ComponentIndex[_ComponentIndex["Domain"] = 3] = "Domain";
+        _ComponentIndex[_ComponentIndex["Port"] = 4] = "Port";
+        _ComponentIndex[_ComponentIndex["Path"] = 5] = "Path";
+        _ComponentIndex[_ComponentIndex["QueryData"] = 6] = "QueryData";
+        _ComponentIndex[_ComponentIndex["Fragment"] = 7] = "Fragment";
+    })(_ComponentIndex || (_ComponentIndex = {}));
+    /**
+     * Splits a URI into its component parts.
+     *
+     * Each component can be accessed via the component indices; for example:
+     * <pre>
+     * goog.uri.utils.split(someStr)[goog.uri.utils.CompontentIndex.QUERY_DATA];
+     * </pre>
+     *
+     * @param uri The URI string to examine.
+     * @return Each component still URI-encoded.
+     *     Each component that is present will contain the encoded value, whereas
+     *     components that are not present will be undefined or empty, depending
+     *     on the browser's regular expression implementation.  Never null, since
+     *     arbitrary strings may still look like path names.
+     */
+    function _split(uri) {
+        return uri.match(_splitRe);
+    }
+    /**
+      * Removes dot segments in given path component, as described in
+      * RFC 3986, section 5.2.4.
+      *
+      * @param path A non-empty path component.
+      * @return Path component with removed dot segments.
+      */
+    function _removeDotSegments(path) {
+        if (path == '/')
+            return '/';
+        var leadingSlash = path[0] == '/' ? '/' : '';
+        var trailingSlash = path[path.length - 1] === '/' ? '/' : '';
+        var segments = path.split('/');
+        var out = [];
+        var up = 0;
+        for (var pos = 0; pos < segments.length; pos++) {
+            var segment = segments[pos];
+            switch (segment) {
+                case '':
+                case '.':
+                    break;
+                case '..':
+                    if (out.length > 0) {
+                        out.pop();
+                    }
+                    else {
+                        up++;
+                    }
+                    break;
+                default:
+                    out.push(segment);
+            }
+        }
+        if (leadingSlash == '') {
+            while (up-- > 0) {
+                out.unshift('..');
+            }
+            if (out.length === 0)
+                out.push('.');
+        }
+        return leadingSlash + out.join('/') + trailingSlash;
+    }
+    /**
+     * Takes an array of the parts from split and canonicalizes the path part
+     * and then joins all the parts.
+     */
+    function _joinAndCanonicalizePath(parts) {
+        var path = parts[_ComponentIndex.Path];
+        path = isBlank(path) ? '' : _removeDotSegments(path);
+        parts[_ComponentIndex.Path] = path;
+        return _buildFromEncodedParts(parts[_ComponentIndex.Scheme], parts[_ComponentIndex.UserInfo], parts[_ComponentIndex.Domain], parts[_ComponentIndex.Port], path, parts[_ComponentIndex.QueryData], parts[_ComponentIndex.Fragment]);
+    }
+    /**
+     * Resolves a URL.
+     * @param base The URL acting as the base URL.
+     * @param to The URL to resolve.
+     */
+    function _resolveUrl(base, url) {
+        var parts = _split(encodeURI(url));
+        var baseParts = _split(base);
+        if (isPresent(parts[_ComponentIndex.Scheme])) {
+            return _joinAndCanonicalizePath(parts);
+        }
+        else {
+            parts[_ComponentIndex.Scheme] = baseParts[_ComponentIndex.Scheme];
+        }
+        for (var i = _ComponentIndex.Scheme; i <= _ComponentIndex.Port; i++) {
+            if (isBlank(parts[i])) {
+                parts[i] = baseParts[i];
+            }
+        }
+        if (parts[_ComponentIndex.Path][0] == '/') {
+            return _joinAndCanonicalizePath(parts);
+        }
+        var path = baseParts[_ComponentIndex.Path];
+        if (isBlank(path))
+            path = '/';
+        var index = path.lastIndexOf('/');
+        path = path.substring(0, index + 1) + parts[_ComponentIndex.Path];
+        parts[_ComponentIndex.Path] = path;
+        return _joinAndCanonicalizePath(parts);
+    }
     var DirectiveNormalizer = (function () {
         function DirectiveNormalizer(_resourceLoader, _urlResolver, _htmlParser, _config) {
             this._resourceLoader = _resourceLoader;
@@ -13979,13 +13906,13 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileMetadataResolver.prototype._verifyModule = function (moduleMeta) {
             moduleMeta.exportedDirectives.forEach(function (dirMeta) {
-                if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-                    throw new Error("Can't export directive " + stringify(dirMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+                if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.reference)) {
+                    throw new Error("Can't export directive " + stringify(dirMeta.type.reference) + " from " + stringify(moduleMeta.type.reference) + " as it was neither declared nor imported!");
                 }
             });
             moduleMeta.exportedPipes.forEach(function (pipeMeta) {
-                if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-                    throw new Error("Can't export pipe " + stringify(pipeMeta.type.runtime) + " from " + stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+                if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.reference)) {
+                    throw new Error("Can't export pipe " + stringify(pipeMeta.type.reference) + " from " + stringify(moduleMeta.type.reference) + " as it was neither declared nor imported!");
                 }
             });
         };
@@ -14025,22 +13952,22 @@ var __extends = (this && this.__extends) || function (d, b) {
         };
         CompileMetadataResolver.prototype._addDirectiveToModule = function (dirMeta, moduleType, transitiveModule, declaredDirectives, force) {
             if (force === void 0) { force = false; }
-            if (force || !transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-                transitiveModule.directivesSet.add(dirMeta.type.runtime);
+            if (force || !transitiveModule.directivesSet.has(dirMeta.type.reference)) {
+                transitiveModule.directivesSet.add(dirMeta.type.reference);
                 transitiveModule.directives.push(dirMeta);
                 declaredDirectives.push(dirMeta);
-                this._addTypeToModule(dirMeta.type.runtime, moduleType);
+                this._addTypeToModule(dirMeta.type.reference, moduleType);
                 return true;
             }
             return false;
         };
         CompileMetadataResolver.prototype._addPipeToModule = function (pipeMeta, moduleType, transitiveModule, declaredPipes, force) {
             if (force === void 0) { force = false; }
-            if (force || !transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-                transitiveModule.pipesSet.add(pipeMeta.type.runtime);
+            if (force || !transitiveModule.pipesSet.has(pipeMeta.type.reference)) {
+                transitiveModule.pipesSet.add(pipeMeta.type.reference);
                 transitiveModule.pipes.push(pipeMeta);
                 declaredPipes.push(pipeMeta);
-                this._addTypeToModule(pipeMeta.type.runtime, moduleType);
+                this._addTypeToModule(pipeMeta.type.reference, moduleType);
                 return true;
             }
             return false;
@@ -14051,7 +13978,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return new CompileTypeMetadata({
                 name: this.sanitizeTokenName(type),
                 moduleUrl: moduleUrl,
-                runtime: type,
+                reference: type,
                 diDeps: this.getDependenciesMetadata(type, dependencies),
                 lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(hook, type); }),
             });
@@ -14062,7 +13989,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return new CompileFactoryMetadata({
                 name: this.sanitizeTokenName(factory),
                 moduleUrl: moduleUrl,
-                runtime: factory,
+                reference: factory,
                 diDeps: this.getDependenciesMetadata(factory, dependencies)
             });
         };
@@ -14168,7 +14095,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             else {
                 compileToken = new CompileTokenMetadata({
                     identifier: new CompileIdentifierMetadata({
-                        runtime: token,
+                        reference: token,
                         name: this.sanitizeTokenName(token),
                         moduleUrl: staticTypeModuleUrl(token)
                     })
@@ -14190,7 +14117,8 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 else if (provider instanceof ProviderMeta) {
                     var tokenMeta = _this.getTokenMetadata(provider.token);
-                    if (tokenMeta.equalsTo(identifierToken(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS))) {
+                    if (tokenMeta.reference ===
+                        resolveIdentifierToken(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS).reference) {
                         targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(provider));
                     }
                     else {
@@ -14234,7 +14162,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             convertToCompileValue(provider.useValue, collectedIdentifiers);
             collectedIdentifiers.forEach(function (identifier) {
-                var dirMeta = _this.getDirectiveMetadata(identifier.runtime, false);
+                var dirMeta = _this.getDirectiveMetadata(identifier.reference, false);
                 if (dirMeta) {
                     components.push(dirMeta.type);
                 }
@@ -14312,8 +14240,8 @@ var __extends = (this && this.__extends) || function (d, b) {
         if (targetModules === void 0) { targetModules = []; }
         if (visitedModules === void 0) { visitedModules = new Set(); }
         modules.forEach(function (ngModule) {
-            if (!visitedModules.has(ngModule.type.runtime)) {
-                visitedModules.add(ngModule.type.runtime);
+            if (!visitedModules.has(ngModule.type.reference)) {
+                visitedModules.add(ngModule.type.reference);
                 var nestedModules = includeImports ?
                     ngModule.importedModules.concat(ngModule.exportedModules) :
                     ngModule.exportedModules;
@@ -14369,10 +14297,10 @@ var __extends = (this && this.__extends) || function (d, b) {
         _CompileValueConverter.prototype.visitOther = function (value, targetIdentifiers) {
             var identifier;
             if (isStaticSymbol(value)) {
-                identifier = new CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, runtime: value });
+                identifier = new CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, reference: value });
             }
             else {
-                identifier = new CompileIdentifierMetadata({ runtime: value });
+                identifier = new CompileIdentifierMetadata({ reference: value });
             }
             targetIdentifiers.push(identifier);
             return identifier;
@@ -14419,8 +14347,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             var injectorClass = builder.build();
             var ngModuleFactoryVar = ngModuleMeta.type.name + "NgFactory";
             var ngModuleFactoryStmt = variable(ngModuleFactoryVar)
-                .set(importExpr(Identifiers.NgModuleFactory)
-                .instantiate([variable(injectorClass.name), importExpr(ngModuleMeta.type)], importType(Identifiers.NgModuleFactory, [importType(ngModuleMeta.type)], [TypeModifier.Const])))
+                .set(importExpr(resolveIdentifier(Identifiers.NgModuleFactory))
+                .instantiate([variable(injectorClass.name), importExpr(ngModuleMeta.type)], importType(resolveIdentifier(Identifiers.NgModuleFactory), [importType(ngModuleMeta.type)], [TypeModifier.Const])))
                 .toDeclStmt(null, [StmtModifier.Final]);
             return new NgModuleCompileResult([injectorClass, ngModuleFactoryStmt], ngModuleFactoryVar, deps);
         };
@@ -14436,7 +14364,8 @@ var __extends = (this && this.__extends) || function (d, b) {
             this._entryComponentFactories = _entryComponentFactories;
             this._bootstrapComponentFactories = _bootstrapComponentFactories;
             this._sourceSpan = _sourceSpan;
-            this._instances = new CompileIdentifierMap();
+            this._tokens = [];
+            this._instances = new Map();
             this._fields = [];
             this._createStmts = [];
             this._destroyStmts = [];
@@ -14450,23 +14379,24 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (resolvedProvider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
                 this._destroyStmts.push(instance.callMethod('ngOnDestroy', []).toStmt());
             }
-            this._instances.add(resolvedProvider.token, instance);
+            this._tokens.push(resolvedProvider.token);
+            this._instances.set(resolvedProvider.token.reference, instance);
         };
         _InjectorBuilder.prototype.build = function () {
             var _this = this;
-            var getMethodStmts = this._instances.keys().map(function (token) {
-                var providerExpr = _this._instances.get(token);
+            var getMethodStmts = this._tokens.map(function (token) {
+                var providerExpr = _this._instances.get(token.reference);
                 return new IfStmt(InjectMethodVars$1.token.identical(createDiTokenExpression(token)), [new ReturnStatement(providerExpr)]);
             });
             var methods = [
-                new ClassMethod('createInternal', [], this._createStmts.concat(new ReturnStatement(this._instances.get(identifierToken(this._ngModuleMeta.type)))), importType(this._ngModuleMeta.type)),
+                new ClassMethod('createInternal', [], this._createStmts.concat(new ReturnStatement(this._instances.get(this._ngModuleMeta.type.reference))), importType(this._ngModuleMeta.type)),
                 new ClassMethod('getInternal', [
                     new FnParam(InjectMethodVars$1.token.name, DYNAMIC_TYPE),
                     new FnParam(InjectMethodVars$1.notFoundResult.name, DYNAMIC_TYPE)
                 ], getMethodStmts.concat([new ReturnStatement(InjectMethodVars$1.notFoundResult)]), DYNAMIC_TYPE),
                 new ClassMethod('destroyInternal', [], this._destroyStmts),
             ];
-            var ctor = new ClassMethod(null, [new FnParam(InjectorProps.parent.name, importType(Identifiers.Injector))], [SUPER_EXPR
+            var ctor = new ClassMethod(null, [new FnParam(InjectorProps.parent.name, importType(resolveIdentifier(Identifiers.Injector)))], [SUPER_EXPR
                     .callFn([
                     variable(InjectorProps.parent.name),
                     literalArr(this._entryComponentFactories.map(function (componentFactory) { return importExpr(componentFactory); })),
@@ -14474,7 +14404,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 ])
                     .toStmt()]);
             var injClassName = this._ngModuleMeta.type.name + "Injector";
-            return new ClassStmt(injClassName, importExpr(Identifiers.NgModuleInjector, [importType(this._ngModuleMeta.type)]), this._fields, this._getters, ctor, methods);
+            return new ClassStmt(injClassName, importExpr(resolveIdentifier(Identifiers.NgModuleInjector), [importType(this._ngModuleMeta.type)]), this._fields, this._getters, ctor, methods);
         };
         _InjectorBuilder.prototype._getProviderValue = function (provider) {
             var _this = this;
@@ -14535,12 +14465,13 @@ var __extends = (this && this.__extends) || function (d, b) {
             }
             if (!dep.isSkipSelf) {
                 if (dep.token &&
-                    (dep.token.equalsTo(identifierToken(Identifiers.Injector)) ||
-                        dep.token.equalsTo(identifierToken(Identifiers.ComponentFactoryResolver)))) {
+                    (dep.token.reference === resolveIdentifierToken(Identifiers.Injector).reference ||
+                        dep.token.reference ===
+                            resolveIdentifierToken(Identifiers.ComponentFactoryResolver).reference)) {
                     result = THIS_EXPR;
                 }
                 if (isBlank(result)) {
-                    result = this._instances.get(dep.token);
+                    result = this._instances.get(dep.token.reference);
                 }
             }
             if (isBlank(result)) {
@@ -15254,15 +15185,18 @@ var __extends = (this && this.__extends) || function (d, b) {
                 }
                 ctx.print(prefix + ".");
             }
-            ctx.print(value.name);
+            if (value.reference && value.reference.members) {
+                ctx.print(value.reference.name);
+                ctx.print('.');
+                ctx.print(value.reference.members.join('.'));
+            }
+            else {
+                ctx.print(value.name);
+            }
             if (isPresent(typeParams) && typeParams.length > 0) {
                 ctx.print("<");
                 this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
                 ctx.print(">");
-            }
-            if (value.runtime && value.runtime.members) {
-                ctx.print('.');
-                ctx.print(value.runtime.members.join('.'));
             }
         };
         return _TsEmitterVisitor;
@@ -15482,7 +15416,9 @@ var __extends = (this && this.__extends) || function (d, b) {
             return new (clazz.bind.apply(clazz, [void 0].concat(args)))();
         };
         StatementInterpreter.prototype.visitLiteralExpr = function (ast, ctx) { return ast.value; };
-        StatementInterpreter.prototype.visitExternalExpr = function (ast, ctx) { return ast.value.runtime; };
+        StatementInterpreter.prototype.visitExternalExpr = function (ast, ctx) {
+            return ast.value.reference;
+        };
         StatementInterpreter.prototype.visitConditionalExpr = function (ast, ctx) {
             if (ast.condition.visitExpression(this, ctx)) {
                 return ast.trueCase.visitExpression(this, ctx);
@@ -15771,7 +15707,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             return result;
         };
         JitEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
-            var value = ast.value.runtime;
+            var value = ast.value.reference;
             var id = this._evalArgValues.indexOf(value);
             if (id === -1) {
                 id = this._evalArgValues.length;
@@ -16438,7 +16374,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             moduleMeta.transitiveModule.modules.forEach(function (moduleMeta) {
                 moduleMeta.declaredDirectives.forEach(function (dirMeta) {
                     if (dirMeta.isComponent) {
-                        var template = _this._createCompiledHostTemplate(dirMeta.type.runtime);
+                        var template = _this._createCompiledHostTemplate(dirMeta.type.reference);
                         templates.add(template);
                         componentFactories.push(template.proxyComponentFactory);
                     }
@@ -16461,11 +16397,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             if (!ngModuleFactory) {
                 var moduleMeta_1 = this._metadataResolver.getNgModuleMetadata(moduleType);
                 // Always provide a bound Compiler
-                var extraProviders = [this._metadataResolver.getProviderMetadata(new ProviderMeta(_angular_core.Compiler, { useFactory: function () { return new ModuleBoundCompiler(_this, moduleMeta_1.type.runtime); } }))];
+                var extraProviders = [this._metadataResolver.getProviderMetadata(new ProviderMeta(_angular_core.Compiler, { useFactory: function () { return new ModuleBoundCompiler(_this, moduleMeta_1.type.reference); } }))];
                 var compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
                 compileResult.dependencies.forEach(function (dep) {
-                    dep.placeholder.runtime =
-                        _this._assertComponentKnown(dep.comp.runtime, true).proxyComponentFactory;
+                    dep.placeholder.reference =
+                        _this._assertComponentKnown(dep.comp.reference, true).proxyComponentFactory;
                     dep.placeholder.name = "compFactory_" + dep.comp.name;
                 });
                 if (!this._compilerConfig.useJit) {
@@ -16475,7 +16411,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 else {
                     ngModuleFactory = jitStatements(moduleMeta_1.type.name + ".ngfactory.js", compileResult.statements, compileResult.ngModuleFactoryVar);
                 }
-                this._compiledNgModuleCache.set(moduleMeta_1.type.runtime, ngModuleFactory);
+                this._compiledNgModuleCache.set(moduleMeta_1.type.reference, ngModuleFactory);
             }
             return ngModuleFactory;
         };
@@ -16492,19 +16428,19 @@ var __extends = (this && this.__extends) || function (d, b) {
                     if (dirMeta.isComponent) {
                         templates.add(_this._createCompiledTemplate(dirMeta, localModuleMeta));
                         dirMeta.entryComponents.forEach(function (entryComponentType) {
-                            templates.add(_this._createCompiledHostTemplate(entryComponentType.runtime));
+                            templates.add(_this._createCompiledHostTemplate(entryComponentType.reference));
                         });
                     }
                 });
                 localModuleMeta.entryComponents.forEach(function (entryComponentType) {
-                    templates.add(_this._createCompiledHostTemplate(entryComponentType.runtime));
+                    templates.add(_this._createCompiledHostTemplate(entryComponentType.reference));
                     // TODO: what about entryComponents of entryComponents?
                 });
             });
             templates.forEach(function (template) {
                 if (template.loading) {
                     if (isSync) {
-                        throw new ComponentStillLoadingError(template.compType.runtime);
+                        throw new ComponentStillLoadingError(template.compType.reference);
                     }
                     else {
                         loadingPromises.push(template.loading);
@@ -16549,11 +16485,11 @@ var __extends = (this && this.__extends) || function (d, b) {
             return compiledTemplate;
         };
         RuntimeCompiler.prototype._createCompiledTemplate = function (compMeta, ngModule) {
-            var compiledTemplate = this._compiledTemplateCache.get(compMeta.type.runtime);
+            var compiledTemplate = this._compiledTemplateCache.get(compMeta.type.reference);
             if (isBlank(compiledTemplate)) {
                 assertComponent(compMeta);
                 compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, ngModule.transitiveModule.directives, ngModule.transitiveModule.pipes, ngModule.schemas, this._templateNormalizer.normalizeDirective(compMeta));
-                this._compiledTemplateCache.set(compMeta.type.runtime, compiledTemplate);
+                this._compiledTemplateCache.set(compMeta.type.reference, compiledTemplate);
             }
             return compiledTemplate;
         };
@@ -16594,14 +16530,14 @@ var __extends = (this && this.__extends) || function (d, b) {
                 var depTemplate;
                 if (dep instanceof ViewFactoryDependency) {
                     var vfd = dep;
-                    depTemplate = _this._assertComponentLoaded(vfd.comp.runtime, false);
-                    vfd.placeholder.runtime = depTemplate.proxyViewFactory;
+                    depTemplate = _this._assertComponentLoaded(vfd.comp.reference, false);
+                    vfd.placeholder.reference = depTemplate.proxyViewFactory;
                     vfd.placeholder.name = "viewFactory_" + vfd.comp.name;
                 }
                 else if (dep instanceof ComponentFactoryDependency) {
                     var cfd = dep;
-                    depTemplate = _this._assertComponentLoaded(cfd.comp.runtime, true);
-                    cfd.placeholder.runtime = depTemplate.proxyComponentFactory;
+                    depTemplate = _this._assertComponentLoaded(cfd.comp.reference, true);
+                    cfd.placeholder.reference = depTemplate.proxyComponentFactory;
                     cfd.placeholder.name = "compFactory_" + cfd.comp.name;
                 }
             });
@@ -16611,7 +16547,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 factory = interpretStatements(statements, compileResult.viewFactoryVar);
             }
             else {
-                factory = jitStatements(template.compType.name + ".ngfactory.js", statements, compileResult.viewFactoryVar);
+                factory = jitStatements("" + template.compType.name + (template.isHost ? '_Host' : '') + ".ngfactory.js", statements, compileResult.viewFactoryVar);
             }
             template.compiled(factory);
         };
@@ -16620,7 +16556,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             result.dependencies.forEach(function (dep, i) {
                 var nestedCompileResult = externalStylesheetsByModuleUrl.get(dep.moduleUrl);
                 var nestedStylesArr = _this._resolveAndEvalStylesCompileResult(nestedCompileResult, externalStylesheetsByModuleUrl);
-                dep.valuePlaceholder.runtime = nestedStylesArr;
+                dep.valuePlaceholder.reference = nestedStylesArr;
                 dep.valuePlaceholder.name = "importedStyles" + i;
             });
         };
@@ -16666,7 +16602,7 @@ var __extends = (this && this.__extends) || function (d, b) {
             this.viewDirectives = [];
             viewDirectivesAndComponents.forEach(function (dirMeta) {
                 if (dirMeta.isComponent) {
-                    _this.viewComponentTypes.push(dirMeta.type.runtime);
+                    _this.viewComponentTypes.push(dirMeta.type.reference);
                 }
                 else {
                     _this.viewDirectives.push(dirMeta);
@@ -16683,7 +16619,7 @@ var __extends = (this && this.__extends) || function (d, b) {
                 return _this._viewFactory.apply(null, args);
             };
             this.proxyComponentFactory = isHost ?
-                new _angular_core.ComponentFactory(selector, this.proxyViewFactory, compType.runtime) :
+                new _angular_core.ComponentFactory(selector, this.proxyViewFactory, compType.reference) :
                 null;
             if (_normalizeResult.syncResult) {
                 this._normalizedCompMeta = _normalizeResult.syncResult;

@@ -322,13 +322,13 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype._verifyModule = function (moduleMeta) {
         moduleMeta.exportedDirectives.forEach(function (dirMeta) {
-            if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-                throw new Error("Can't export directive " + lang_1.stringify(dirMeta.type.runtime) + " from " + lang_1.stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+            if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.reference)) {
+                throw new Error("Can't export directive " + lang_1.stringify(dirMeta.type.reference) + " from " + lang_1.stringify(moduleMeta.type.reference) + " as it was neither declared nor imported!");
             }
         });
         moduleMeta.exportedPipes.forEach(function (pipeMeta) {
-            if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-                throw new Error("Can't export pipe " + lang_1.stringify(pipeMeta.type.runtime) + " from " + lang_1.stringify(moduleMeta.type.runtime) + " as it was neither declared nor imported!");
+            if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.reference)) {
+                throw new Error("Can't export pipe " + lang_1.stringify(pipeMeta.type.reference) + " from " + lang_1.stringify(moduleMeta.type.reference) + " as it was neither declared nor imported!");
             }
         });
     };
@@ -368,22 +368,22 @@ var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype._addDirectiveToModule = function (dirMeta, moduleType, transitiveModule, declaredDirectives, force) {
         if (force === void 0) { force = false; }
-        if (force || !transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-            transitiveModule.directivesSet.add(dirMeta.type.runtime);
+        if (force || !transitiveModule.directivesSet.has(dirMeta.type.reference)) {
+            transitiveModule.directivesSet.add(dirMeta.type.reference);
             transitiveModule.directives.push(dirMeta);
             declaredDirectives.push(dirMeta);
-            this._addTypeToModule(dirMeta.type.runtime, moduleType);
+            this._addTypeToModule(dirMeta.type.reference, moduleType);
             return true;
         }
         return false;
     };
     CompileMetadataResolver.prototype._addPipeToModule = function (pipeMeta, moduleType, transitiveModule, declaredPipes, force) {
         if (force === void 0) { force = false; }
-        if (force || !transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-            transitiveModule.pipesSet.add(pipeMeta.type.runtime);
+        if (force || !transitiveModule.pipesSet.has(pipeMeta.type.reference)) {
+            transitiveModule.pipesSet.add(pipeMeta.type.reference);
             transitiveModule.pipes.push(pipeMeta);
             declaredPipes.push(pipeMeta);
-            this._addTypeToModule(pipeMeta.type.runtime, moduleType);
+            this._addTypeToModule(pipeMeta.type.reference, moduleType);
             return true;
         }
         return false;
@@ -394,7 +394,7 @@ var CompileMetadataResolver = (function () {
         return new cpl.CompileTypeMetadata({
             name: this.sanitizeTokenName(type),
             moduleUrl: moduleUrl,
-            runtime: type,
+            reference: type,
             diDeps: this.getDependenciesMetadata(type, dependencies),
             lifecycleHooks: core_private_1.LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return lifecycle_reflector_1.hasLifecycleHook(hook, type); }),
         });
@@ -405,7 +405,7 @@ var CompileMetadataResolver = (function () {
         return new cpl.CompileFactoryMetadata({
             name: this.sanitizeTokenName(factory),
             moduleUrl: moduleUrl,
-            runtime: factory,
+            reference: factory,
             diDeps: this.getDependenciesMetadata(factory, dependencies)
         });
     };
@@ -511,7 +511,7 @@ var CompileMetadataResolver = (function () {
         else {
             compileToken = new cpl.CompileTokenMetadata({
                 identifier: new cpl.CompileIdentifierMetadata({
-                    runtime: token,
+                    reference: token,
                     name: this.sanitizeTokenName(token),
                     moduleUrl: staticTypeModuleUrl(token)
                 })
@@ -533,7 +533,8 @@ var CompileMetadataResolver = (function () {
             }
             else if (provider instanceof cpl.ProviderMeta) {
                 var tokenMeta = _this.getTokenMetadata(provider.token);
-                if (tokenMeta.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS))) {
+                if (tokenMeta.reference ===
+                    identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS).reference) {
                     targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(provider));
                 }
                 else {
@@ -577,7 +578,7 @@ var CompileMetadataResolver = (function () {
         }
         convertToCompileValue(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach(function (identifier) {
-            var dirMeta = _this.getDirectiveMetadata(identifier.runtime, false);
+            var dirMeta = _this.getDirectiveMetadata(identifier.reference, false);
             if (dirMeta) {
                 components.push(dirMeta.type);
             }
@@ -656,8 +657,8 @@ function getTransitiveModules(modules, includeImports, targetModules, visitedMod
     if (targetModules === void 0) { targetModules = []; }
     if (visitedModules === void 0) { visitedModules = new Set(); }
     modules.forEach(function (ngModule) {
-        if (!visitedModules.has(ngModule.type.runtime)) {
-            visitedModules.add(ngModule.type.runtime);
+        if (!visitedModules.has(ngModule.type.reference)) {
+            visitedModules.add(ngModule.type.reference);
             var nestedModules = includeImports ?
                 ngModule.importedModules.concat(ngModule.exportedModules) :
                 ngModule.exportedModules;
@@ -713,10 +714,10 @@ var _CompileValueConverter = (function (_super) {
     _CompileValueConverter.prototype.visitOther = function (value, targetIdentifiers) {
         var identifier;
         if (cpl.isStaticSymbol(value)) {
-            identifier = new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, runtime: value });
+            identifier = new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, reference: value });
         }
         else {
-            identifier = new cpl.CompileIdentifierMetadata({ runtime: value });
+            identifier = new cpl.CompileIdentifierMetadata({ reference: value });
         }
         targetIdentifiers.push(identifier);
         return identifier;

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { isBlank } from '../facade/lang';
-import { Identifiers, identifierToken } from '../identifiers';
+import { Identifiers, resolveIdentifier, resolveIdentifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { createPureProxy, getPropertyInView, injectFromViewParentInjector } from './util';
 export class CompilePipe {
@@ -16,7 +16,8 @@ export class CompilePipe {
         this._purePipeProxyCount = 0;
         this.instance = o.THIS_EXPR.prop(`_pipe_${meta.name}_${view.pipeCount++}`);
         var deps = this.meta.type.diDeps.map((diDep) => {
-            if (diDep.token.equalsTo(identifierToken(Identifiers.ChangeDetectorRef))) {
+            if (diDep.token.reference ===
+                resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference) {
                 return getPropertyInView(o.THIS_EXPR.prop('ref'), this.view, this.view.componentView);
             }
             return injectFromViewParentInjector(diDep.token, false);
@@ -55,7 +56,7 @@ export class CompilePipe {
             var pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
             createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
                 .callMethod(o.BuiltinMethod.Bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, callingView);
-            return o.importExpr(Identifiers.castByValue)
+            return o.importExpr(resolveIdentifier(Identifiers.castByValue))
                 .callFn([purePipeProxyInstance, pipeInstanceSeenFromPureProxy.prop('transform')])
                 .callFn(args);
         }

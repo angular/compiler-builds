@@ -303,15 +303,18 @@ var _TsEmitterVisitor = (function (_super) {
             }
             ctx.print(prefix + ".");
         }
-        ctx.print(value.name);
+        if (value.reference && value.reference.members) {
+            ctx.print(value.reference.name);
+            ctx.print('.');
+            ctx.print(value.reference.members.join('.'));
+        }
+        else {
+            ctx.print(value.name);
+        }
         if (lang_1.isPresent(typeParams) && typeParams.length > 0) {
             ctx.print("<");
             this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
             ctx.print(">");
-        }
-        if (value.runtime && value.runtime.members) {
-            ctx.print('.');
-            ctx.print(value.runtime.members.join('.'));
         }
     };
     return _TsEmitterVisitor;

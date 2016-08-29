@@ -67,7 +67,7 @@ var CompileView = (function () {
         }
         this.componentContext =
             util_1.getPropertyInView(o.THIS_EXPR.prop('context'), this, this.componentView);
-        var viewQueries = new compile_metadata_1.CompileIdentifierMap();
+        var viewQueries = new Map();
         if (this.viewType === core_private_1.ViewType.COMPONENT) {
             var directiveInstance = o.THIS_EXPR.prop('context');
             collection_1.ListWrapper.forEachWithIndex(this.component.viewQueries, function (queryMeta, queryIndex) {
@@ -115,7 +115,7 @@ var CompileView = (function () {
     };
     CompileView.prototype.createLiteralArray = function (values) {
         if (values.length === 0) {
-            return o.importExpr(identifiers_1.Identifiers.EMPTY_ARRAY);
+            return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.EMPTY_ARRAY));
         }
         var proxyExpr = o.THIS_EXPR.prop("_arr_" + this.literalArrayCount++);
         var proxyParams = [];
@@ -130,7 +130,7 @@ var CompileView = (function () {
     };
     CompileView.prototype.createLiteralMap = function (entries) {
         if (entries.length === 0) {
-            return o.importExpr(identifiers_1.Identifiers.EMPTY_MAP);
+            return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.EMPTY_MAP));
         }
         var proxyExpr = o.THIS_EXPR.prop("_map_" + this.literalMapCount++);
         var proxyParams = [];
@@ -147,7 +147,8 @@ var CompileView = (function () {
     };
     CompileView.prototype.afterNodes = function () {
         var _this = this;
-        this.viewQueries.values().forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
+        collection_1.MapWrapper.values(this.viewQueries)
+            .forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
     };
     return CompileView;
 }());

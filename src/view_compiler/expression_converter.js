@@ -163,7 +163,7 @@ var _AstToIrVisitor = (function () {
             args.push(this.visit(ast.expressions[i], _Mode.Expression));
         }
         args.push(o.literal(ast.strings[ast.strings.length - 1]));
-        return o.importExpr(identifiers_1.Identifiers.interpolate).callFn(args);
+        return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.interpolate)).callFn(args);
     };
     _AstToIrVisitor.prototype.visitKeyedRead = function (ast, mode) {
         return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));

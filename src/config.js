@@ -80,13 +80,18 @@ var RenderTypes = (function () {
 exports.RenderTypes = RenderTypes;
 var DefaultRenderTypes = (function () {
     function DefaultRenderTypes() {
-        this.renderer = identifiers_1.Identifiers.Renderer;
         this.renderText = null;
         this.renderElement = null;
         this.renderComment = null;
         this.renderNode = null;
         this.renderEvent = null;
     }
+    Object.defineProperty(DefaultRenderTypes.prototype, "renderer", {
+        get: function () { return identifiers_1.resolveIdentifier(identifiers_1.Identifiers.Renderer); },
+        enumerable: true,
+        configurable: true
+    });
+    ;
     return DefaultRenderTypes;
 }());
 exports.DefaultRenderTypes = DefaultRenderTypes;

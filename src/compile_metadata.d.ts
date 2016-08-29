@@ -9,9 +9,6 @@ import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from
 import { LifecycleHooks } from '../core_private';
 export declare abstract class CompileMetadataWithIdentifier {
     identifier: CompileIdentifierMetadata;
-    runtimeCacheKey: any;
-    assetCacheKey: any;
-    equalsTo(id2: CompileMetadataWithIdentifier): boolean;
 }
 export declare class CompileAnimationEntryMetadata {
     name: string;
@@ -61,23 +58,19 @@ export declare class CompileAnimationGroupMetadata extends CompileAnimationWithS
     constructor(steps?: CompileAnimationMetadata[]);
 }
 export declare class CompileIdentifierMetadata implements CompileMetadataWithIdentifier {
-    runtime: any;
+    reference: any;
     name: string;
     prefix: string;
     moduleUrl: string;
     value: any;
-    private _assetCacheKey;
-    constructor({runtime, name, moduleUrl, prefix, value}?: {
-        runtime?: any;
+    constructor({reference, name, moduleUrl, prefix, value}?: {
+        reference?: any;
         name?: string;
         moduleUrl?: string;
         prefix?: string;
         value?: any;
     });
     identifier: CompileIdentifierMetadata;
-    runtimeCacheKey: any;
-    assetCacheKey: any;
-    equalsTo(id2: CompileIdentifierMetadata): boolean;
 }
 export declare class CompileDiDependencyMetadata {
     isAttribute: boolean;
@@ -123,8 +116,8 @@ export declare class CompileProviderMetadata {
 }
 export declare class CompileFactoryMetadata extends CompileIdentifierMetadata {
     diDeps: CompileDiDependencyMetadata[];
-    constructor({runtime, name, moduleUrl, prefix, diDeps, value}: {
-        runtime?: Function;
+    constructor({reference, name, moduleUrl, prefix, diDeps, value}: {
+        reference?: Function;
         name?: string;
         prefix?: string;
         moduleUrl?: string;
@@ -141,28 +134,8 @@ export declare class CompileTokenMetadata implements CompileMetadataWithIdentifi
         identifier?: CompileIdentifierMetadata;
         identifierIsInstance?: boolean;
     });
-    runtimeCacheKey: any;
-    assetCacheKey: any;
-    equalsTo(token2: CompileTokenMetadata): boolean;
+    reference: any;
     name: string;
-}
-/**
- * Note: We only need this in places where we need to support identifiers that
- * don't have a `runtime` value given by the `StaticReflector`. E.g. see the `identifiers`
- * file where we have some identifiers hard coded by name/module path.
- *
- * TODO(tbosch): Eventually, all of these places should go through the static reflector
- * as well, providing them with a valid `StaticSymbol` that is again a singleton.
- */
-export declare class CompileIdentifierMap<KEY extends CompileMetadataWithIdentifier, VALUE> {
-    private _valueMap;
-    private _values;
-    private _tokens;
-    add(token: KEY, value: VALUE): void;
-    get(token: KEY): VALUE;
-    keys(): KEY[];
-    values(): VALUE[];
-    size: number;
 }
 /**
  * Metadata regarding compilation of a type.
@@ -171,8 +144,8 @@ export declare class CompileTypeMetadata extends CompileIdentifierMetadata {
     isHost: boolean;
     diDeps: CompileDiDependencyMetadata[];
     lifecycleHooks: LifecycleHooks[];
-    constructor({runtime, name, moduleUrl, prefix, isHost, value, diDeps, lifecycleHooks}?: {
-        runtime?: Type<any>;
+    constructor({reference, name, moduleUrl, prefix, isHost, value, diDeps, lifecycleHooks}?: {
+        reference?: Type<any>;
         name?: string;
         moduleUrl?: string;
         prefix?: string;
@@ -315,9 +288,6 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         template?: CompileTemplateMetadata;
     });
     identifier: CompileIdentifierMetadata;
-    runtimeCacheKey: any;
-    assetCacheKey: any;
-    equalsTo(other: CompileMetadataWithIdentifier): boolean;
 }
 /**
  * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
@@ -333,9 +303,6 @@ export declare class CompilePipeMetadata implements CompileMetadataWithIdentifie
         pure?: boolean;
     });
     identifier: CompileIdentifierMetadata;
-    runtimeCacheKey: any;
-    assetCacheKey: any;
-    equalsTo(other: CompileMetadataWithIdentifier): boolean;
 }
 /**
  * Metadata regarding compilation of a directive.
@@ -368,9 +335,6 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
         schemas?: SchemaMetadata[];
     });
     identifier: CompileIdentifierMetadata;
-    runtimeCacheKey: any;
-    assetCacheKey: any;
-    equalsTo(other: CompileMetadataWithIdentifier): boolean;
 }
 export declare class TransitiveCompileNgModuleMetadata {
     modules: CompileNgModuleMetadata[];

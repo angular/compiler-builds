@@ -8,29 +8,27 @@
 "use strict";
 var core_1 = require('@angular/core');
 var core_private_1 = require('../../core_private');
-var compile_metadata_1 = require('../compile_metadata');
-var lang_1 = require('../facade/lang');
 var identifiers_1 = require('../identifiers');
 var o = require('../output/output_ast');
-function _enumExpression(classIdentifier, value) {
-    if (lang_1.isBlank(value))
-        return o.NULL_EXPR;
-    var name = lang_1.resolveEnumToken(classIdentifier.runtime, value);
-    return o.importExpr(new compile_metadata_1.CompileIdentifierMetadata({
-        name: classIdentifier.name + "." + name,
-        moduleUrl: classIdentifier.moduleUrl,
-        runtime: value
-    }));
+function _enumExpression(classIdentifier, name) {
+    return o.importExpr(identifiers_1.resolveEnumIdentifier(classIdentifier, name));
 }
 var ViewTypeEnum = (function () {
     function ViewTypeEnum() {
     }
     ViewTypeEnum.fromValue = function (value) {
-        return _enumExpression(identifiers_1.Identifiers.ViewType, value);
+        var viewType = identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ViewType);
+        switch (value) {
+            case core_private_1.ViewType.HOST:
+                return _enumExpression(viewType, 'HOST');
+            case core_private_1.ViewType.COMPONENT:
+                return _enumExpression(viewType, 'COMPONENT');
+            case core_private_1.ViewType.EMBEDDED:
+                return _enumExpression(viewType, 'EMBEDDED');
+            default:
+                throw Error("Inavlid ViewType value: " + value);
+        }
     };
-    ViewTypeEnum.HOST = ViewTypeEnum.fromValue(core_private_1.ViewType.HOST);
-    ViewTypeEnum.COMPONENT = ViewTypeEnum.fromValue(core_private_1.ViewType.COMPONENT);
-    ViewTypeEnum.EMBEDDED = ViewTypeEnum.fromValue(core_private_1.ViewType.EMBEDDED);
     return ViewTypeEnum;
 }());
 exports.ViewTypeEnum = ViewTypeEnum;
@@ -38,11 +36,18 @@ var ViewEncapsulationEnum = (function () {
     function ViewEncapsulationEnum() {
     }
     ViewEncapsulationEnum.fromValue = function (value) {
-        return _enumExpression(identifiers_1.Identifiers.ViewEncapsulation, value);
+        var viewEncapsulation = identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ViewEncapsulation);
+        switch (value) {
+            case core_1.ViewEncapsulation.Emulated:
+                return _enumExpression(viewEncapsulation, 'Emulated');
+            case core_1.ViewEncapsulation.Native:
+                return _enumExpression(viewEncapsulation, 'Native');
+            case core_1.ViewEncapsulation.None:
+                return _enumExpression(viewEncapsulation, 'None');
+            default:
+                throw Error("Inavlid ViewEncapsulation value: " + value);
+        }
     };
-    ViewEncapsulationEnum.Emulated = ViewEncapsulationEnum.fromValue(core_1.ViewEncapsulation.Emulated);
-    ViewEncapsulationEnum.Native = ViewEncapsulationEnum.fromValue(core_1.ViewEncapsulation.Native);
-    ViewEncapsulationEnum.None = ViewEncapsulationEnum.fromValue(core_1.ViewEncapsulation.None);
     return ViewEncapsulationEnum;
 }());
 exports.ViewEncapsulationEnum = ViewEncapsulationEnum;
@@ -50,10 +55,16 @@ var ChangeDetectionStrategyEnum = (function () {
     function ChangeDetectionStrategyEnum() {
     }
     ChangeDetectionStrategyEnum.fromValue = function (value) {
-        return _enumExpression(identifiers_1.Identifiers.ChangeDetectionStrategy, value);
+        var changeDetectionStrategy = identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ChangeDetectionStrategy);
+        switch (value) {
+            case core_1.ChangeDetectionStrategy.OnPush:
+                return _enumExpression(changeDetectionStrategy, 'OnPush');
+            case core_1.ChangeDetectionStrategy.Default:
+                return _enumExpression(changeDetectionStrategy, 'Default');
+            default:
+                throw Error("Inavlid ChangeDetectionStrategy value: " + value);
+        }
     };
-    ChangeDetectionStrategyEnum.OnPush = ChangeDetectionStrategyEnum.fromValue(core_1.ChangeDetectionStrategy.OnPush);
-    ChangeDetectionStrategyEnum.Default = ChangeDetectionStrategyEnum.fromValue(core_1.ChangeDetectionStrategy.Default);
     return ChangeDetectionStrategyEnum;
 }());
 exports.ChangeDetectionStrategyEnum = ChangeDetectionStrategyEnum;
@@ -61,14 +72,24 @@ var ChangeDetectorStatusEnum = (function () {
     function ChangeDetectorStatusEnum() {
     }
     ChangeDetectorStatusEnum.fromValue = function (value) {
-        return _enumExpression(identifiers_1.Identifiers.ChangeDetectorStatus, value);
+        var changeDetectorStatus = identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ChangeDetectorStatus);
+        switch (value) {
+            case core_private_1.ChangeDetectorStatus.CheckOnce:
+                return _enumExpression(changeDetectorStatus, 'CheckOnce');
+            case core_private_1.ChangeDetectorStatus.Checked:
+                return _enumExpression(changeDetectorStatus, 'Checked');
+            case core_private_1.ChangeDetectorStatus.CheckAlways:
+                return _enumExpression(changeDetectorStatus, 'CheckAlways');
+            case core_private_1.ChangeDetectorStatus.Detached:
+                return _enumExpression(changeDetectorStatus, 'Detached');
+            case core_private_1.ChangeDetectorStatus.Errored:
+                return _enumExpression(changeDetectorStatus, 'Errored');
+            case core_private_1.ChangeDetectorStatus.Destroyed:
+                return _enumExpression(changeDetectorStatus, 'Destroyed');
+            default:
+                throw Error("Inavlid ChangeDetectorStatus value: " + value);
+        }
     };
-    ChangeDetectorStatusEnum.CheckOnce = ChangeDetectorStatusEnum.fromValue(core_private_1.ChangeDetectorStatus.CheckOnce);
-    ChangeDetectorStatusEnum.Checked = ChangeDetectorStatusEnum.fromValue(core_private_1.ChangeDetectorStatus.Checked);
-    ChangeDetectorStatusEnum.CheckAlways = ChangeDetectorStatusEnum.fromValue(core_private_1.ChangeDetectorStatus.CheckAlways);
-    ChangeDetectorStatusEnum.Detached = ChangeDetectorStatusEnum.fromValue(core_private_1.ChangeDetectorStatus.Detached);
-    ChangeDetectorStatusEnum.Errored = ChangeDetectorStatusEnum.fromValue(core_private_1.ChangeDetectorStatus.Errored);
-    ChangeDetectorStatusEnum.Destroyed = ChangeDetectorStatusEnum.fromValue(core_private_1.ChangeDetectorStatus.Destroyed);
     return ChangeDetectorStatusEnum;
 }());
 exports.ChangeDetectorStatusEnum = ChangeDetectorStatusEnum;

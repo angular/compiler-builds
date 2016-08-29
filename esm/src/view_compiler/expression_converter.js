@@ -7,7 +7,7 @@
  */
 import * as cdAst from '../expression_parser/ast';
 import { isArray, isBlank, isPresent } from '../facade/lang';
-import { Identifiers } from '../identifiers';
+import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 export class ExpressionWithWrappedValueInfo {
     constructor(expression, needsValueUnwrapper, temporaryCount) {
@@ -157,7 +157,7 @@ class _AstToIrVisitor {
             args.push(this.visit(ast.expressions[i], _Mode.Expression));
         }
         args.push(o.literal(ast.strings[ast.strings.length - 1]));
-        return o.importExpr(Identifiers.interpolate).callFn(args);
+        return o.importExpr(resolveIdentifier(Identifiers.interpolate)).callFn(args);
     }
     visitKeyedRead(ast, mode) {
         return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));

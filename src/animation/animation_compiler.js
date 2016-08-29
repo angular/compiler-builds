@@ -102,14 +102,14 @@ var _AnimationBuilder = (function () {
         ast.styles.forEach(function (entry) {
             stylesArr.push(o.literalMap(collection_1.StringMapWrapper.keys(entry).map(function (key) { return [key, o.literal(entry[key])]; })));
         });
-        return o.importExpr(identifiers_1.Identifiers.AnimationStyles).instantiate([
-            o.importExpr(identifiers_1.Identifiers.collectAndResolveStyles).callFn([
+        return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AnimationStyles)).instantiate([
+            o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.collectAndResolveStyles)).callFn([
                 _ANIMATION_COLLECTED_STYLES, o.literalArr(stylesArr)
             ])
         ]);
     };
     _AnimationBuilder.prototype.visitAnimationKeyframe = function (ast, context) {
-        return o.importExpr(identifiers_1.Identifiers.AnimationKeyframe).instantiate([
+        return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AnimationKeyframe)).instantiate([
             o.literal(ast.offset), ast.styles.visit(this, context)
         ]);
     };
@@ -127,7 +127,7 @@ var _AnimationBuilder = (function () {
         var _this = this;
         var startingStylesExpr = ast.startingStyles.visit(this, context);
         var keyframeExpressions = ast.keyframes.map(function (keyframe) { return keyframe.visit(_this, context); });
-        var keyframesExpr = o.importExpr(identifiers_1.Identifiers.balanceAnimationKeyframes).callFn([
+        var keyframesExpr = o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.balanceAnimationKeyframes)).callFn([
             _ANIMATION_COLLECTED_STYLES, _ANIMATION_END_STATE_STYLES_VAR,
             o.literalArr(keyframeExpressions)
         ]);
@@ -144,12 +144,16 @@ var _AnimationBuilder = (function () {
     _AnimationBuilder.prototype.visitAnimationSequence = function (ast, context) {
         var _this = this;
         var playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
-        return o.importExpr(identifiers_1.Identifiers.AnimationSequencePlayer).instantiate([o.literalArr(playerExprs)]);
+        return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AnimationSequencePlayer)).instantiate([
+            o.literalArr(playerExprs)
+        ]);
     };
     _AnimationBuilder.prototype.visitAnimationGroup = function (ast, context) {
         var _this = this;
         var playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
-        return o.importExpr(identifiers_1.Identifiers.AnimationGroupPlayer).instantiate([o.literalArr(playerExprs)]);
+        return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AnimationGroupPlayer)).instantiate([
+            o.literalArr(playerExprs)
+        ]);
     };
     _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
         var flatStyles = {};
@@ -208,20 +212,22 @@ var _AnimationBuilder = (function () {
         statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR))
             .toDeclStmt());
         statements.push(new o.IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(o.NULL_EXPR), [_ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
-        var RENDER_STYLES_FN = o.importExpr(identifiers_1.Identifiers.renderStyles);
+        var RENDER_STYLES_FN = o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.renderStyles));
         // before we start any animation we want to clear out the starting
         // styles from the element's style property (since they were placed
         // there at the end of the last animation
         statements.push(RENDER_STYLES_FN
             .callFn([
             _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-            o.importExpr(identifiers_1.Identifiers.clearStyles).callFn([_ANIMATION_START_STATE_STYLES_VAR])
+            o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.clearStyles))
+                .callFn([_ANIMATION_START_STATE_STYLES_VAR])
         ])
             .toStmt());
         ast.stateTransitions.forEach(function (transAst) { return statements.push(transAst.visit(_this, context)); });
         // this check ensures that the animation factory always returns a player
         // so that the onDone callback can be used for tracking
-        statements.push(new o.IfStmt(_ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR), [_ANIMATION_PLAYER_VAR.set(o.importExpr(identifiers_1.Identifiers.NoOpAnimationPlayer).instantiate([]))
+        statements.push(new o.IfStmt(_ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR), [_ANIMATION_PLAYER_VAR
+                .set(o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.NoOpAnimationPlayer)).instantiate([]))
                 .toStmt()]));
         // once complete we want to apply the styles on the element
         // since the destination state's values should persist once
@@ -230,7 +236,8 @@ var _AnimationBuilder = (function () {
             .callMethod('onDone', [o.fn([], [RENDER_STYLES_FN
                     .callFn([
                     _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-                    o.importExpr(identifiers_1.Identifiers.prepareFinalAnimationStyles).callFn([
+                    o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.prepareFinalAnimationStyles))
+                        .callFn([
                         _ANIMATION_START_STATE_STYLES_VAR, _ANIMATION_END_STATE_STYLES_VAR
                     ])
                 ])
@@ -244,7 +251,7 @@ var _AnimationBuilder = (function () {
         ])
             .toStmt());
         return o.fn([
-            new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(identifiers_1.Identifiers.AppView, [o.DYNAMIC_TYPE])),
+            new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AppView), [o.DYNAMIC_TYPE])),
             new o.FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_CURRENT_STATE_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_NEXT_STATE_VAR.name, o.DYNAMIC_TYPE)

@@ -226,7 +226,9 @@ var StatementInterpreter = (function () {
         return new (clazz.bind.apply(clazz, [void 0].concat(args)))();
     };
     StatementInterpreter.prototype.visitLiteralExpr = function (ast, ctx) { return ast.value; };
-    StatementInterpreter.prototype.visitExternalExpr = function (ast, ctx) { return ast.value.runtime; };
+    StatementInterpreter.prototype.visitExternalExpr = function (ast, ctx) {
+        return ast.value.reference;
+    };
     StatementInterpreter.prototype.visitConditionalExpr = function (ast, ctx) {
         if (ast.condition.visitExpression(this, ctx)) {
             return ast.trueCase.visitExpression(this, ctx);

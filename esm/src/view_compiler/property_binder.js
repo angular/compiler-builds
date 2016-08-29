@@ -8,7 +8,7 @@
 import { SecurityContext } from '@angular/core';
 import { EMPTY_STATE as EMPTY_ANIMATION_STATE, LifecycleHooks, isDefaultChangeDetectionStrategy } from '../../core_private';
 import { isBlank, isPresent } from '../facade/lang';
-import { Identifiers } from '../identifiers';
+import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { PropertyBindingType } from '../template_parser/template_ast';
 import { camelCaseToDashCase } from '../util';
@@ -35,13 +35,15 @@ function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, 
     }
     // private is fine here as no child view will reference the cached value...
     view.fields.push(new o.ClassField(fieldExpr.name, null, [o.StmtModifier.Private]));
-    view.createMethod.addStmt(o.THIS_EXPR.prop(fieldExpr.name).set(o.importExpr(Identifiers.UNINITIALIZED)).toStmt());
+    view.createMethod.addStmt(o.THIS_EXPR.prop(fieldExpr.name)
+        .set(o.importExpr(resolveIdentifier(Identifiers.UNINITIALIZED)))
+        .toStmt());
     if (checkExpression.needsValueUnwrapper) {
         var initValueUnwrapperStmt = DetectChangesVars.valUnwrapper.callMethod('reset', []).toStmt();
         method.addStmt(initValueUnwrapperStmt);
     }
     method.addStmt(currValExpr.set(checkExpression.expression).toDeclStmt(null, [o.StmtModifier.Final]));
-    var condition = o.importExpr(Identifiers.checkBinding).callFn([
+    var condition = o.importExpr(resolveIdentifier(Identifiers.checkBinding)).callFn([
         DetectChangesVars.throwOnChange, fieldExpr, currValExpr
     ]);
     if (checkExpression.needsValueUnwrapper) {
@@ -116,11 +118,11 @@ function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp)
                 // void => ...
                 var oldRenderVar = o.variable('oldRenderVar');
                 updateStmts.push(oldRenderVar.set(oldRenderValue).toDeclStmt());
-                updateStmts.push(new o.IfStmt(oldRenderVar.equals(o.importExpr(Identifiers.UNINITIALIZED)), [oldRenderVar.set(emptyStateValue).toStmt()]));
+                updateStmts.push(new o.IfStmt(oldRenderVar.equals(o.importExpr(resolveIdentifier(Identifiers.UNINITIALIZED))), [oldRenderVar.set(emptyStateValue).toStmt()]));
                 // ... => void
                 var newRenderVar = o.variable('newRenderVar');
                 updateStmts.push(newRenderVar.set(renderValue).toDeclStmt());
-                updateStmts.push(new o.IfStmt(newRenderVar.equals(o.importExpr(Identifiers.UNINITIALIZED)), [newRenderVar.set(emptyStateValue).toStmt()]));
+                updateStmts.push(new o.IfStmt(newRenderVar.equals(o.importExpr(resolveIdentifier(Identifiers.UNINITIALIZED))), [newRenderVar.set(emptyStateValue).toStmt()]));
                 updateStmts.push(animationFnExpr.callFn([o.THIS_EXPR, renderNode, oldRenderVar, newRenderVar]).toStmt());
                 view.detachMethod.addStmt(animationFnExpr.callFn([o.THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])
                     .toStmt());
@@ -159,7 +161,7 @@ function sanitizedValue(boundProp, renderValue) {
             throw new Error(`internal error, unexpected SecurityContext ${boundProp.securityContext}.`);
     }
     let ctx = ViewProperties.viewUtils.prop('sanitizer');
-    let args = [o.importExpr(Identifiers.SecurityContext).prop(enumValue), renderValue];
+    let args = [o.importExpr(resolveIdentifier(Identifiers.SecurityContext)).prop(enumValue), renderValue];
     return ctx.callMethod('sanitize', args);
 }
 export function bindRenderInputs(boundProps, compileElement) {
@@ -194,10 +196,11 @@ export function bindDirectiveInputs(directiveAst, directiveInstance, compileElem
         var statements = [directiveInstance.prop(input.directiveName).set(currValExpr).toStmt()];
         if (calcChangesMap) {
             statements.push(new o.IfStmt(DetectChangesVars.changes.identical(o.NULL_EXPR), [DetectChangesVars.changes
-                    .set(o.literalMap([], new o.MapType(o.importType(Identifiers.SimpleChange))))
+                    .set(o.literalMap([], new o.MapType(o.importType(resolveIdentifier(Identifiers.SimpleChange)))))
                     .toStmt()]));
             statements.push(DetectChangesVars.changes.key(o.literal(input.directiveName))
-                .set(o.importExpr(Identifiers.SimpleChange).instantiate([fieldExpr, currValExpr]))
+                .set(o.importExpr(resolveIdentifier(Identifiers.SimpleChange))
+                .instantiate([fieldExpr, currValExpr]))
                 .toStmt());
         }
         if (isOnPushComp) {

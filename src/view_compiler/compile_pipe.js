@@ -18,7 +18,8 @@ var CompilePipe = (function () {
         this._purePipeProxyCount = 0;
         this.instance = o.THIS_EXPR.prop("_pipe_" + meta.name + "_" + view.pipeCount++);
         var deps = this.meta.type.diDeps.map(function (diDep) {
-            if (diDep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ChangeDetectorRef))) {
+            if (diDep.token.reference ===
+                identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.ChangeDetectorRef).reference) {
                 return util_1.getPropertyInView(o.THIS_EXPR.prop('ref'), _this.view, _this.view.componentView);
             }
             return util_1.injectFromViewParentInjector(diDep.token, false);
@@ -61,7 +62,7 @@ var CompilePipe = (function () {
             var pipeInstanceSeenFromPureProxy = util_1.getPropertyInView(this.instance, callingView, this.view);
             util_1.createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
                 .callMethod(o.BuiltinMethod.Bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, callingView);
-            return o.importExpr(identifiers_1.Identifiers.castByValue)
+            return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.castByValue))
                 .callFn([purePipeProxyInstance, pipeInstanceSeenFromPureProxy.prop('transform')])
                 .callFn(args);
         }

@@ -7,7 +7,7 @@
  */
 import { ListWrapper } from '../facade/collection';
 import { isBlank, isPresent } from '../facade/lang';
-import { Identifiers } from '../identifiers';
+import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { getPropertyInView } from './util';
 class ViewQueryValues {
@@ -95,19 +95,20 @@ function mapNestedViews(declarationAppElement, view, expressions) {
     ]);
 }
 export function createQueryList(query, directiveInstance, propertyName, compileView) {
-    compileView.fields.push(new o.ClassField(propertyName, o.importType(Identifiers.QueryList, [o.DYNAMIC_TYPE])));
+    compileView.fields.push(new o.ClassField(propertyName, o.importType(resolveIdentifier(Identifiers.QueryList), [o.DYNAMIC_TYPE])));
     var expr = o.THIS_EXPR.prop(propertyName);
     compileView.createMethod.addStmt(o.THIS_EXPR.prop(propertyName)
-        .set(o.importExpr(Identifiers.QueryList, [o.DYNAMIC_TYPE]).instantiate([]))
+        .set(o.importExpr(resolveIdentifier(Identifiers.QueryList), [o.DYNAMIC_TYPE])
+        .instantiate([]))
         .toStmt());
     return expr;
 }
 export function addQueryToTokenMap(map, query) {
     query.meta.selectors.forEach((selector) => {
-        var entry = map.get(selector);
+        var entry = map.get(selector.reference);
         if (isBlank(entry)) {
             entry = [];
-            map.add(selector, entry);
+            map.set(selector.reference, entry);
         }
         entry.push(query);
     });

@@ -78,7 +78,9 @@ function createPureProxy(fn, argCount, pureProxyProp, view) {
     if (lang_1.isBlank(pureProxyId)) {
         throw new Error("Unsupported number of argument for pure functions: " + argCount);
     }
-    view.createMethod.addStmt(o.THIS_EXPR.prop(pureProxyProp.name).set(o.importExpr(pureProxyId).callFn([fn])).toStmt());
+    view.createMethod.addStmt(o.THIS_EXPR.prop(pureProxyProp.name)
+        .set(o.importExpr(identifiers_1.resolveIdentifier(pureProxyId)).callFn([fn]))
+        .toStmt());
 }
 exports.createPureProxy = createPureProxy;
 //# sourceMappingURL=util.js.map

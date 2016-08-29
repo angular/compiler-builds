@@ -131,7 +131,8 @@ var ViewBuilderVisitor = (function () {
             this.view.createMethod.addStmt(constants_1.ViewProperties.renderer
                 .callMethod('projectNodes', [
                 parentRenderNode,
-                o.importExpr(identifiers_1.Identifiers.flattenNestedViewRenderNodes).callFn([nodesExpression])
+                o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.flattenNestedViewRenderNodes))
+                    .callFn([nodesExpression])
             ])
                 .toStmt());
         }
@@ -326,13 +327,13 @@ function createViewTopLevelStmts(view, targetStatements) {
     if (view.genConfig.genDebugInfo) {
         nodeDebugInfosVar = o.variable("nodeDebugInfos_" + view.component.type.name + view.viewIndex); // fix highlighting: `
         targetStatements.push(nodeDebugInfosVar
-            .set(o.literalArr(view.nodes.map(createStaticNodeDebugInfo), new o.ArrayType(new o.ExternalType(identifiers_1.Identifiers.StaticNodeDebugInfo), [o.TypeModifier.Const])))
+            .set(o.literalArr(view.nodes.map(createStaticNodeDebugInfo), new o.ArrayType(new o.ExternalType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.StaticNodeDebugInfo)), [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
     var renderCompTypeVar = o.variable("renderType_" + view.component.type.name); // fix highlighting: `
     if (view.viewIndex === 0) {
         targetStatements.push(renderCompTypeVar.set(o.NULL_EXPR)
-            .toDeclStmt(o.importType(identifiers_1.Identifiers.RenderComponentType)));
+            .toDeclStmt(o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.RenderComponentType))));
     }
     var viewClass = createViewClass(view, renderCompTypeVar, nodeDebugInfosVar);
     targetStatements.push(viewClass);
@@ -352,18 +353,18 @@ function createStaticNodeDebugInfo(node) {
             varTokenEntries.push([varName, lang_1.isPresent(token) ? util_1.createDiTokenExpression(token) : o.NULL_EXPR]);
         });
     }
-    return o.importExpr(identifiers_1.Identifiers.StaticNodeDebugInfo)
+    return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.StaticNodeDebugInfo))
         .instantiate([
         o.literalArr(providerTokens, new o.ArrayType(o.DYNAMIC_TYPE, [o.TypeModifier.Const])),
         componentToken,
         o.literalMap(varTokenEntries, new o.MapType(o.DYNAMIC_TYPE, [o.TypeModifier.Const]))
-    ], o.importType(identifiers_1.Identifiers.StaticNodeDebugInfo, null, [o.TypeModifier.Const]));
+    ], o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.StaticNodeDebugInfo), null, [o.TypeModifier.Const]));
 }
 function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
     var viewConstructorArgs = [
-        new o.FnParam(constants_1.ViewConstructorVars.viewUtils.name, o.importType(identifiers_1.Identifiers.ViewUtils)),
-        new o.FnParam(constants_1.ViewConstructorVars.parentInjector.name, o.importType(identifiers_1.Identifiers.Injector)),
-        new o.FnParam(constants_1.ViewConstructorVars.declarationEl.name, o.importType(identifiers_1.Identifiers.AppElement))
+        new o.FnParam(constants_1.ViewConstructorVars.viewUtils.name, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ViewUtils))),
+        new o.FnParam(constants_1.ViewConstructorVars.parentInjector.name, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.Injector))),
+        new o.FnParam(constants_1.ViewConstructorVars.declarationEl.name, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AppElement)))
     ];
     var superConstructorArgs = [
         o.variable(view.className), renderCompTypeVar, constants_1.ViewTypeEnum.fromValue(view.viewType),
@@ -376,7 +377,7 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
     }
     var viewConstructor = new o.ClassMethod(null, viewConstructorArgs, [o.SUPER_EXPR.callFn(superConstructorArgs).toStmt()]);
     var viewMethods = [
-        new o.ClassMethod('createInternal', [new o.FnParam(rootSelectorVar.name, o.STRING_TYPE)], generateCreateMethod(view), o.importType(identifiers_1.Identifiers.AppElement)),
+        new o.ClassMethod('createInternal', [new o.FnParam(rootSelectorVar.name, o.STRING_TYPE)], generateCreateMethod(view), o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AppElement))),
         new o.ClassMethod('injectorGetInternal', [
             new o.FnParam(constants_1.InjectMethodVars.token.name, o.DYNAMIC_TYPE),
             // Note: Can't use o.INT_TYPE here as the method in AppView uses number
@@ -389,14 +390,14 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
         new o.ClassMethod('detachInternal', [], view.detachMethod.finish())
     ].concat(view.eventHandlerMethods);
     var superClass = view.genConfig.genDebugInfo ? identifiers_1.Identifiers.DebugAppView : identifiers_1.Identifiers.AppView;
-    var viewClass = new o.ClassStmt(view.className, o.importExpr(superClass, [getContextType(view)]), view.fields, view.getters, viewConstructor, viewMethods.filter(function (method) { return method.body.length > 0; }));
+    var viewClass = new o.ClassStmt(view.className, o.importExpr(identifiers_1.resolveIdentifier(superClass), [getContextType(view)]), view.fields, view.getters, viewConstructor, viewMethods.filter(function (method) { return method.body.length > 0; }));
     return viewClass;
 }
 function createViewFactory(view, viewClass, renderCompTypeVar) {
     var viewFactoryArgs = [
-        new o.FnParam(constants_1.ViewConstructorVars.viewUtils.name, o.importType(identifiers_1.Identifiers.ViewUtils)),
-        new o.FnParam(constants_1.ViewConstructorVars.parentInjector.name, o.importType(identifiers_1.Identifiers.Injector)),
-        new o.FnParam(constants_1.ViewConstructorVars.declarationEl.name, o.importType(identifiers_1.Identifiers.AppElement))
+        new o.FnParam(constants_1.ViewConstructorVars.viewUtils.name, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ViewUtils))),
+        new o.FnParam(constants_1.ViewConstructorVars.parentInjector.name, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.Injector))),
+        new o.FnParam(constants_1.ViewConstructorVars.declarationEl.name, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AppElement)))
     ];
     var initRenderCompTypeStmts = [];
     var templateUrlInfo;
@@ -422,7 +423,7 @@ function createViewFactory(view, viewClass, renderCompTypeVar) {
     }
     return o
         .fn(viewFactoryArgs, initRenderCompTypeStmts.concat([new o.ReturnStatement(o.variable(viewClass.name)
-            .instantiate(viewClass.constructorMethod.params.map(function (param) { return o.variable(param.name); })))]), o.importType(identifiers_1.Identifiers.AppView, [getContextType(view)]))
+            .instantiate(viewClass.constructorMethod.params.map(function (param) { return o.variable(param.name); })))]), o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AppView), [getContextType(view)]))
         .toDeclStmt(view.viewFactory.name, [o.StmtModifier.Final]);
 }
 function generateCreateMethod(view) {
@@ -481,10 +482,11 @@ function generateDetectChangesMethod(view) {
     }
     if (collection_1.SetWrapper.has(readVars, constants_1.DetectChangesVars.changes.name)) {
         varStmts.push(constants_1.DetectChangesVars.changes.set(o.NULL_EXPR)
-            .toDeclStmt(new o.MapType(o.importType(identifiers_1.Identifiers.SimpleChange))));
+            .toDeclStmt(new o.MapType(o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.SimpleChange)))));
     }
     if (collection_1.SetWrapper.has(readVars, constants_1.DetectChangesVars.valUnwrapper.name)) {
-        varStmts.push(constants_1.DetectChangesVars.valUnwrapper.set(o.importExpr(identifiers_1.Identifiers.ValueUnwrapper).instantiate([]))
+        varStmts.push(constants_1.DetectChangesVars.valUnwrapper
+            .set(o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ValueUnwrapper)).instantiate([]))
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
     return varStmts.concat(stmts);

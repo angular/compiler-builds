@@ -45,7 +45,7 @@ var OfflineCompiler = (function () {
             var ngModuleMeta = _this._metadataResolver.getNgModuleMetadata(ngModule);
             ngModuleMeta.declaredDirectives.forEach(function (dirMeta) {
                 if (dirMeta.isComponent) {
-                    ngModuleByComponent.set(dirMeta.type.runtime, ngModuleMeta);
+                    ngModuleByComponent.set(dirMeta.type.reference, ngModuleMeta);
                 }
             });
         });
@@ -97,12 +97,9 @@ var OfflineCompiler = (function () {
     OfflineCompiler.prototype._compileModule = function (ngModuleType, targetStatements) {
         var ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
         var appCompileResult = this._ngModuleCompiler.compile(ngModule, [
+            new compile_metadata_1.CompileProviderMetadata({ token: identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.LOCALE_ID), useValue: this._localeId }),
             new compile_metadata_1.CompileProviderMetadata({
-                token: new compile_metadata_1.CompileTokenMetadata({ identifier: identifiers_1.Identifiers.LOCALE_ID }),
-                useValue: this._localeId
-            }),
-            new compile_metadata_1.CompileProviderMetadata({
-                token: new compile_metadata_1.CompileTokenMetadata({ identifier: identifiers_1.Identifiers.TRANSLATIONS_FORMAT }),
+                token: identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.TRANSLATIONS_FORMAT),
                 useValue: this._translationFormat
             })
         ]);
@@ -118,11 +115,11 @@ var OfflineCompiler = (function () {
         var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], [], null, fileSuffix, targetStatements);
         var compFactoryVar = _componentFactoryName(compMeta.type);
         targetStatements.push(o.variable(compFactoryVar)
-            .set(o.importExpr(identifiers_1.Identifiers.ComponentFactory, [o.importType(compMeta.type)])
+            .set(o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ComponentFactory), [o.importType(compMeta.type)])
             .instantiate([
             o.literal(compMeta.selector), o.variable(hostViewFactoryVar),
             o.importExpr(compMeta.type)
-        ], o.importType(identifiers_1.Identifiers.ComponentFactory, [o.importType(compMeta.type)], [o.TypeModifier.Const])))
+        ], o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]));
         return compFactoryVar;
     };

@@ -12,7 +12,7 @@ import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { DirectiveResolver } from './directive_resolver';
 import { isArray, isBlank, isPresent, isString, stringify } from './facade/lang';
-import { Identifiers, identifierToken } from './identifiers';
+import { Identifiers, resolveIdentifierToken } from './identifiers';
 import { hasLifecycleHook } from './lifecycle_reflector';
 import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
@@ -308,13 +308,13 @@ export class CompileMetadataResolver {
     }
     _verifyModule(moduleMeta) {
         moduleMeta.exportedDirectives.forEach((dirMeta) => {
-            if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-                throw new Error(`Can't export directive ${stringify(dirMeta.type.runtime)} from ${stringify(moduleMeta.type.runtime)} as it was neither declared nor imported!`);
+            if (!moduleMeta.transitiveModule.directivesSet.has(dirMeta.type.reference)) {
+                throw new Error(`Can't export directive ${stringify(dirMeta.type.reference)} from ${stringify(moduleMeta.type.reference)} as it was neither declared nor imported!`);
             }
         });
         moduleMeta.exportedPipes.forEach((pipeMeta) => {
-            if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-                throw new Error(`Can't export pipe ${stringify(pipeMeta.type.runtime)} from ${stringify(moduleMeta.type.runtime)} as it was neither declared nor imported!`);
+            if (!moduleMeta.transitiveModule.pipesSet.has(pipeMeta.type.reference)) {
+                throw new Error(`Can't export pipe ${stringify(pipeMeta.type.reference)} from ${stringify(moduleMeta.type.reference)} as it was neither declared nor imported!`);
             }
         });
     }
@@ -353,21 +353,21 @@ export class CompileMetadataResolver {
         return new cpl.TransitiveCompileNgModuleMetadata(transitiveModules, providers, entryComponents, directives, pipes);
     }
     _addDirectiveToModule(dirMeta, moduleType, transitiveModule, declaredDirectives, force = false) {
-        if (force || !transitiveModule.directivesSet.has(dirMeta.type.runtime)) {
-            transitiveModule.directivesSet.add(dirMeta.type.runtime);
+        if (force || !transitiveModule.directivesSet.has(dirMeta.type.reference)) {
+            transitiveModule.directivesSet.add(dirMeta.type.reference);
             transitiveModule.directives.push(dirMeta);
             declaredDirectives.push(dirMeta);
-            this._addTypeToModule(dirMeta.type.runtime, moduleType);
+            this._addTypeToModule(dirMeta.type.reference, moduleType);
             return true;
         }
         return false;
     }
     _addPipeToModule(pipeMeta, moduleType, transitiveModule, declaredPipes, force = false) {
-        if (force || !transitiveModule.pipesSet.has(pipeMeta.type.runtime)) {
-            transitiveModule.pipesSet.add(pipeMeta.type.runtime);
+        if (force || !transitiveModule.pipesSet.has(pipeMeta.type.reference)) {
+            transitiveModule.pipesSet.add(pipeMeta.type.reference);
             transitiveModule.pipes.push(pipeMeta);
             declaredPipes.push(pipeMeta);
-            this._addTypeToModule(pipeMeta.type.runtime, moduleType);
+            this._addTypeToModule(pipeMeta.type.reference, moduleType);
             return true;
         }
         return false;
@@ -377,7 +377,7 @@ export class CompileMetadataResolver {
         return new cpl.CompileTypeMetadata({
             name: this.sanitizeTokenName(type),
             moduleUrl: moduleUrl,
-            runtime: type,
+            reference: type,
             diDeps: this.getDependenciesMetadata(type, dependencies),
             lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(hook, type)),
         });
@@ -387,7 +387,7 @@ export class CompileMetadataResolver {
         return new cpl.CompileFactoryMetadata({
             name: this.sanitizeTokenName(factory),
             moduleUrl: moduleUrl,
-            runtime: factory,
+            reference: factory,
             diDeps: this.getDependenciesMetadata(factory, dependencies)
         });
     }
@@ -491,7 +491,7 @@ export class CompileMetadataResolver {
         else {
             compileToken = new cpl.CompileTokenMetadata({
                 identifier: new cpl.CompileIdentifierMetadata({
-                    runtime: token,
+                    reference: token,
                     name: this.sanitizeTokenName(token),
                     moduleUrl: staticTypeModuleUrl(token)
                 })
@@ -512,7 +512,8 @@ export class CompileMetadataResolver {
             }
             else if (provider instanceof cpl.ProviderMeta) {
                 let tokenMeta = this.getTokenMetadata(provider.token);
-                if (tokenMeta.equalsTo(identifierToken(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS))) {
+                if (tokenMeta.reference ===
+                    resolveIdentifierToken(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS).reference) {
                     targetEntryComponents.push(...this._getEntryComponentsFromProvider(provider));
                 }
                 else {
@@ -555,7 +556,7 @@ export class CompileMetadataResolver {
         }
         convertToCompileValue(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach((identifier) => {
-            let dirMeta = this.getDirectiveMetadata(identifier.runtime, false);
+            let dirMeta = this.getDirectiveMetadata(identifier.reference, false);
             if (dirMeta) {
                 components.push(dirMeta.type);
             }
@@ -628,8 +629,8 @@ CompileMetadataResolver.ctorParameters = [
 ];
 function getTransitiveModules(modules, includeImports, targetModules = [], visitedModules = new Set()) {
     modules.forEach((ngModule) => {
-        if (!visitedModules.has(ngModule.type.runtime)) {
-            visitedModules.add(ngModule.type.runtime);
+        if (!visitedModules.has(ngModule.type.reference)) {
+            visitedModules.add(ngModule.type.reference);
             const nestedModules = includeImports ?
                 ngModule.importedModules.concat(ngModule.exportedModules) :
                 ngModule.exportedModules;
@@ -680,10 +681,10 @@ class _CompileValueConverter extends ValueTransformer {
     visitOther(value, targetIdentifiers) {
         let identifier;
         if (cpl.isStaticSymbol(value)) {
-            identifier = new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, runtime: value });
+            identifier = new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, reference: value });
         }
         else {
-            identifier = new cpl.CompileIdentifierMetadata({ runtime: value });
+            identifier = new cpl.CompileIdentifierMetadata({ reference: value });
         }
         targetIdentifiers.push(identifier);
         return identifier;

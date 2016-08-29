@@ -103,7 +103,7 @@ var CompileEventListener = (function () {
         var stmt = o.THIS_EXPR
             .callMethod('registerAnimationOutput', [
             this.compileElement.renderNode,
-            o.importExpr(identifiers_1.Identifiers.AnimationOutput).instantiate([
+            o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.AnimationOutput)).instantiate([
                 o.literal(output.name), o.literal(output.phase)
             ]),
             outputListener
@@ -131,7 +131,7 @@ function collectEventListeners(hostEvents, dirs, compileElement) {
         listener.addAction(hostEvent, null, null);
     });
     dirs.forEach(function (directiveAst) {
-        var directiveInstance = compileElement.instances.get(identifiers_1.identifierToken(directiveAst.directive.type));
+        var directiveInstance = compileElement.instances.get(identifiers_1.identifierToken(directiveAst.directive.type).reference);
         directiveAst.hostEvents.forEach(function (hostEvent) {
             compileElement.view.bindings.push(new compile_binding_1.CompileBinding(compileElement, hostEvent));
             var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);

@@ -37,7 +37,7 @@ export declare abstract class RenderTypes {
     readonly renderEvent: CompileIdentifierMetadata;
 }
 export declare class DefaultRenderTypes implements RenderTypes {
-    renderer: CompileIdentifierMetadata;
+    readonly renderer: CompileIdentifierMetadata;
     renderText: any;
     renderElement: any;
     renderComment: any;

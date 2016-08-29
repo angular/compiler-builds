@@ -11,7 +11,7 @@ import { AnimationCompiler } from '../animation/animation_compiler';
 import { CompileIdentifierMetadata } from '../compile_metadata';
 import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection';
 import { StringWrapper, isPresent } from '../facade/lang';
-import { Identifiers, identifierToken } from '../identifiers';
+import { Identifiers, identifierToken, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { templateVisitAll } from '../template_parser/template_ast';
 import { createDiTokenExpression } from '../util';
@@ -124,7 +124,8 @@ class ViewBuilderVisitor {
             this.view.createMethod.addStmt(ViewProperties.renderer
                 .callMethod('projectNodes', [
                 parentRenderNode,
-                o.importExpr(Identifiers.flattenNestedViewRenderNodes).callFn([nodesExpression])
+                o.importExpr(resolveIdentifier(Identifiers.flattenNestedViewRenderNodes))
+                    .callFn([nodesExpression])
             ])
                 .toStmt());
         }
@@ -317,13 +318,13 @@ function createViewTopLevelStmts(view, targetStatements) {
     if (view.genConfig.genDebugInfo) {
         nodeDebugInfosVar = o.variable(`nodeDebugInfos_${view.component.type.name}${view.viewIndex}`); // fix highlighting: `
         targetStatements.push(nodeDebugInfosVar
-            .set(o.literalArr(view.nodes.map(createStaticNodeDebugInfo), new o.ArrayType(new o.ExternalType(Identifiers.StaticNodeDebugInfo), [o.TypeModifier.Const])))
+            .set(o.literalArr(view.nodes.map(createStaticNodeDebugInfo), new o.ArrayType(new o.ExternalType(resolveIdentifier(Identifiers.StaticNodeDebugInfo)), [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
     var renderCompTypeVar = o.variable(`renderType_${view.component.type.name}`); // fix highlighting: `
     if (view.viewIndex === 0) {
         targetStatements.push(renderCompTypeVar.set(o.NULL_EXPR)
-            .toDeclStmt(o.importType(Identifiers.RenderComponentType)));
+            .toDeclStmt(o.importType(resolveIdentifier(Identifiers.RenderComponentType))));
     }
     var viewClass = createViewClass(view, renderCompTypeVar, nodeDebugInfosVar);
     targetStatements.push(viewClass);
@@ -343,18 +344,18 @@ function createStaticNodeDebugInfo(node) {
             varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : o.NULL_EXPR]);
         });
     }
-    return o.importExpr(Identifiers.StaticNodeDebugInfo)
+    return o.importExpr(resolveIdentifier(Identifiers.StaticNodeDebugInfo))
         .instantiate([
         o.literalArr(providerTokens, new o.ArrayType(o.DYNAMIC_TYPE, [o.TypeModifier.Const])),
         componentToken,
         o.literalMap(varTokenEntries, new o.MapType(o.DYNAMIC_TYPE, [o.TypeModifier.Const]))
-    ], o.importType(Identifiers.StaticNodeDebugInfo, null, [o.TypeModifier.Const]));
+    ], o.importType(resolveIdentifier(Identifiers.StaticNodeDebugInfo), null, [o.TypeModifier.Const]));
 }
 function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
     var viewConstructorArgs = [
-        new o.FnParam(ViewConstructorVars.viewUtils.name, o.importType(Identifiers.ViewUtils)),
-        new o.FnParam(ViewConstructorVars.parentInjector.name, o.importType(Identifiers.Injector)),
-        new o.FnParam(ViewConstructorVars.declarationEl.name, o.importType(Identifiers.AppElement))
+        new o.FnParam(ViewConstructorVars.viewUtils.name, o.importType(resolveIdentifier(Identifiers.ViewUtils))),
+        new o.FnParam(ViewConstructorVars.parentInjector.name, o.importType(resolveIdentifier(Identifiers.Injector))),
+        new o.FnParam(ViewConstructorVars.declarationEl.name, o.importType(resolveIdentifier(Identifiers.AppElement)))
     ];
     var superConstructorArgs = [
         o.variable(view.className), renderCompTypeVar, ViewTypeEnum.fromValue(view.viewType),
@@ -367,7 +368,7 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
     }
     var viewConstructor = new o.ClassMethod(null, viewConstructorArgs, [o.SUPER_EXPR.callFn(superConstructorArgs).toStmt()]);
     var viewMethods = [
-        new o.ClassMethod('createInternal', [new o.FnParam(rootSelectorVar.name, o.STRING_TYPE)], generateCreateMethod(view), o.importType(Identifiers.AppElement)),
+        new o.ClassMethod('createInternal', [new o.FnParam(rootSelectorVar.name, o.STRING_TYPE)], generateCreateMethod(view), o.importType(resolveIdentifier(Identifiers.AppElement))),
         new o.ClassMethod('injectorGetInternal', [
             new o.FnParam(InjectMethodVars.token.name, o.DYNAMIC_TYPE),
             // Note: Can't use o.INT_TYPE here as the method in AppView uses number
@@ -380,14 +381,14 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
         new o.ClassMethod('detachInternal', [], view.detachMethod.finish())
     ].concat(view.eventHandlerMethods);
     var superClass = view.genConfig.genDebugInfo ? Identifiers.DebugAppView : Identifiers.AppView;
-    var viewClass = new o.ClassStmt(view.className, o.importExpr(superClass, [getContextType(view)]), view.fields, view.getters, viewConstructor, viewMethods.filter((method) => method.body.length > 0));
+    var viewClass = new o.ClassStmt(view.className, o.importExpr(resolveIdentifier(superClass), [getContextType(view)]), view.fields, view.getters, viewConstructor, viewMethods.filter((method) => method.body.length > 0));
     return viewClass;
 }
 function createViewFactory(view, viewClass, renderCompTypeVar) {
     var viewFactoryArgs = [
-        new o.FnParam(ViewConstructorVars.viewUtils.name, o.importType(Identifiers.ViewUtils)),
-        new o.FnParam(ViewConstructorVars.parentInjector.name, o.importType(Identifiers.Injector)),
-        new o.FnParam(ViewConstructorVars.declarationEl.name, o.importType(Identifiers.AppElement))
+        new o.FnParam(ViewConstructorVars.viewUtils.name, o.importType(resolveIdentifier(Identifiers.ViewUtils))),
+        new o.FnParam(ViewConstructorVars.parentInjector.name, o.importType(resolveIdentifier(Identifiers.Injector))),
+        new o.FnParam(ViewConstructorVars.declarationEl.name, o.importType(resolveIdentifier(Identifiers.AppElement)))
     ];
     var initRenderCompTypeStmts = [];
     var templateUrlInfo;
@@ -413,7 +414,7 @@ function createViewFactory(view, viewClass, renderCompTypeVar) {
     }
     return o
         .fn(viewFactoryArgs, initRenderCompTypeStmts.concat([new o.ReturnStatement(o.variable(viewClass.name)
-            .instantiate(viewClass.constructorMethod.params.map((param) => o.variable(param.name))))]), o.importType(Identifiers.AppView, [getContextType(view)]))
+            .instantiate(viewClass.constructorMethod.params.map((param) => o.variable(param.name))))]), o.importType(resolveIdentifier(Identifiers.AppView), [getContextType(view)]))
         .toDeclStmt(view.viewFactory.name, [o.StmtModifier.Final]);
 }
 function generateCreateMethod(view) {
@@ -472,10 +473,11 @@ function generateDetectChangesMethod(view) {
     }
     if (SetWrapper.has(readVars, DetectChangesVars.changes.name)) {
         varStmts.push(DetectChangesVars.changes.set(o.NULL_EXPR)
-            .toDeclStmt(new o.MapType(o.importType(Identifiers.SimpleChange))));
+            .toDeclStmt(new o.MapType(o.importType(resolveIdentifier(Identifiers.SimpleChange)))));
     }
     if (SetWrapper.has(readVars, DetectChangesVars.valUnwrapper.name)) {
-        varStmts.push(DetectChangesVars.valUnwrapper.set(o.importExpr(Identifiers.ValueUnwrapper).instantiate([]))
+        varStmts.push(DetectChangesVars.valUnwrapper
+            .set(o.importExpr(resolveIdentifier(Identifiers.ValueUnwrapper)).instantiate([]))
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
     return varStmts.concat(stmts);

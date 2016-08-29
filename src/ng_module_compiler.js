@@ -58,8 +58,8 @@ var NgModuleCompiler = (function () {
         var injectorClass = builder.build();
         var ngModuleFactoryVar = ngModuleMeta.type.name + "NgFactory";
         var ngModuleFactoryStmt = o.variable(ngModuleFactoryVar)
-            .set(o.importExpr(identifiers_1.Identifiers.NgModuleFactory)
-            .instantiate([o.variable(injectorClass.name), o.importExpr(ngModuleMeta.type)], o.importType(identifiers_1.Identifiers.NgModuleFactory, [o.importType(ngModuleMeta.type)], [o.TypeModifier.Const])))
+            .set(o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.NgModuleFactory))
+            .instantiate([o.variable(injectorClass.name), o.importExpr(ngModuleMeta.type)], o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.NgModuleFactory), [o.importType(ngModuleMeta.type)], [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]);
         return new NgModuleCompileResult([injectorClass, ngModuleFactoryStmt], ngModuleFactoryVar, deps);
     };
@@ -76,7 +76,8 @@ var _InjectorBuilder = (function () {
         this._entryComponentFactories = _entryComponentFactories;
         this._bootstrapComponentFactories = _bootstrapComponentFactories;
         this._sourceSpan = _sourceSpan;
-        this._instances = new compile_metadata_1.CompileIdentifierMap();
+        this._tokens = [];
+        this._instances = new Map();
         this._fields = [];
         this._createStmts = [];
         this._destroyStmts = [];
@@ -90,23 +91,24 @@ var _InjectorBuilder = (function () {
         if (resolvedProvider.lifecycleHooks.indexOf(core_private_1.LifecycleHooks.OnDestroy) !== -1) {
             this._destroyStmts.push(instance.callMethod('ngOnDestroy', []).toStmt());
         }
-        this._instances.add(resolvedProvider.token, instance);
+        this._tokens.push(resolvedProvider.token);
+        this._instances.set(resolvedProvider.token.reference, instance);
     };
     _InjectorBuilder.prototype.build = function () {
         var _this = this;
-        var getMethodStmts = this._instances.keys().map(function (token) {
-            var providerExpr = _this._instances.get(token);
+        var getMethodStmts = this._tokens.map(function (token) {
+            var providerExpr = _this._instances.get(token.reference);
             return new o.IfStmt(InjectMethodVars.token.identical(util_1.createDiTokenExpression(token)), [new o.ReturnStatement(providerExpr)]);
         });
         var methods = [
-            new o.ClassMethod('createInternal', [], this._createStmts.concat(new o.ReturnStatement(this._instances.get(identifiers_1.identifierToken(this._ngModuleMeta.type)))), o.importType(this._ngModuleMeta.type)),
+            new o.ClassMethod('createInternal', [], this._createStmts.concat(new o.ReturnStatement(this._instances.get(this._ngModuleMeta.type.reference))), o.importType(this._ngModuleMeta.type)),
             new o.ClassMethod('getInternal', [
                 new o.FnParam(InjectMethodVars.token.name, o.DYNAMIC_TYPE),
                 new o.FnParam(InjectMethodVars.notFoundResult.name, o.DYNAMIC_TYPE)
             ], getMethodStmts.concat([new o.ReturnStatement(InjectMethodVars.notFoundResult)]), o.DYNAMIC_TYPE),
             new o.ClassMethod('destroyInternal', [], this._destroyStmts),
         ];
-        var ctor = new o.ClassMethod(null, [new o.FnParam(InjectorProps.parent.name, o.importType(identifiers_1.Identifiers.Injector))], [o.SUPER_EXPR
+        var ctor = new o.ClassMethod(null, [new o.FnParam(InjectorProps.parent.name, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.Injector)))], [o.SUPER_EXPR
                 .callFn([
                 o.variable(InjectorProps.parent.name),
                 o.literalArr(this._entryComponentFactories.map(function (componentFactory) { return o.importExpr(componentFactory); })),
@@ -114,7 +116,7 @@ var _InjectorBuilder = (function () {
             ])
                 .toStmt()]);
         var injClassName = this._ngModuleMeta.type.name + "Injector";
-        return new o.ClassStmt(injClassName, o.importExpr(identifiers_1.Identifiers.NgModuleInjector, [o.importType(this._ngModuleMeta.type)]), this._fields, this._getters, ctor, methods);
+        return new o.ClassStmt(injClassName, o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.NgModuleInjector), [o.importType(this._ngModuleMeta.type)]), this._fields, this._getters, ctor, methods);
     };
     _InjectorBuilder.prototype._getProviderValue = function (provider) {
         var _this = this;
@@ -175,12 +177,13 @@ var _InjectorBuilder = (function () {
         }
         if (!dep.isSkipSelf) {
             if (dep.token &&
-                (dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.Injector)) ||
-                    dep.token.equalsTo(identifiers_1.identifierToken(identifiers_1.Identifiers.ComponentFactoryResolver)))) {
+                (dep.token.reference === identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.Injector).reference ||
+                    dep.token.reference ===
+                        identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.ComponentFactoryResolver).reference)) {
                 result = o.THIS_EXPR;
             }
             if (lang_1.isBlank(result)) {
-                result = this._instances.get(dep.token);
+                result = this._instances.get(dep.token.reference);
             }
         }
         if (lang_1.isBlank(result)) {

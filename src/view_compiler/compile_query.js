@@ -99,20 +99,21 @@ function mapNestedViews(declarationAppElement, view, expressions) {
     ]);
 }
 function createQueryList(query, directiveInstance, propertyName, compileView) {
-    compileView.fields.push(new o.ClassField(propertyName, o.importType(identifiers_1.Identifiers.QueryList, [o.DYNAMIC_TYPE])));
+    compileView.fields.push(new o.ClassField(propertyName, o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.QueryList), [o.DYNAMIC_TYPE])));
     var expr = o.THIS_EXPR.prop(propertyName);
     compileView.createMethod.addStmt(o.THIS_EXPR.prop(propertyName)
-        .set(o.importExpr(identifiers_1.Identifiers.QueryList, [o.DYNAMIC_TYPE]).instantiate([]))
+        .set(o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.QueryList), [o.DYNAMIC_TYPE])
+        .instantiate([]))
         .toStmt());
     return expr;
 }
 exports.createQueryList = createQueryList;
 function addQueryToTokenMap(map, query) {
     query.meta.selectors.forEach(function (selector) {
-        var entry = map.get(selector);
+        var entry = map.get(selector.reference);
         if (lang_1.isBlank(entry)) {
             entry = [];
-            map.add(selector, entry);
+            map.set(selector.reference, entry);
         }
         entry.push(query);
     });
