@@ -872,9 +872,10 @@
           return results;
       };
       CssSelector.prototype.isElementSelector = function () {
-          return isPresent(this.element) && ListWrapper.isEmpty(this.classNames) &&
-              ListWrapper.isEmpty(this.attrs) && this.notSelectors.length === 0;
+          return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
+              this.notSelectors.length === 0;
       };
+      CssSelector.prototype.hasElementSelector = function () { return !!this.element; };
       CssSelector.prototype.setElement = function (element) {
           if (element === void 0) { element = null; }
           this.element = element;
@@ -8594,30 +8595,30 @@
           this._schemas = _schemas;
           this._exprParser = _exprParser;
           this._schemaRegistry = _schemaRegistry;
+          this.selectorMatcher = new SelectorMatcher();
           this.errors = [];
           this.directivesIndex = new Map();
           this.ngContentCount = 0;
-          this.selectorMatcher = new SelectorMatcher();
+          this.pipesByName = new Map();
           var tempMeta = providerViewContext.component.template;
-          if (isPresent(tempMeta) && isPresent(tempMeta.interpolation)) {
+          if (tempMeta && tempMeta.interpolation) {
               this._interpolationConfig = {
                   start: tempMeta.interpolation[0],
                   end: tempMeta.interpolation[1]
               };
           }
-          ListWrapper.forEachWithIndex(directives, function (directive, index) {
+          directives.forEach(function (directive, index) {
               var selector = CssSelector.parse(directive.selector);
               _this.selectorMatcher.addSelectables(selector, directive);
               _this.directivesIndex.set(directive, index);
           });
-          this.pipesByName = new Map();
           pipes.forEach(function (pipe) { return _this.pipesByName.set(pipe.name, pipe); });
       }
       TemplateParseVisitor.prototype._reportError = function (message, sourceSpan, level) {
           if (level === void 0) { level = ParseErrorLevel.FATAL; }
           this.errors.push(new TemplateParseError(message, sourceSpan, level));
       };
-      TemplateParseVisitor.prototype._reportParserErors = function (errors, sourceSpan) {
+      TemplateParseVisitor.prototype._reportParserErrors = function (errors, sourceSpan) {
           for (var _i = 0, errors_1 = errors; _i < errors_1.length; _i++) {
               var error = errors_1[_i];
               this._reportError(error.message, sourceSpan);
@@ -8628,7 +8629,7 @@
           try {
               var ast = this._exprParser.parseInterpolation(value, sourceInfo, this._interpolationConfig);
               if (ast)
-                  this._reportParserErors(ast.errors, sourceSpan);
+                  this._reportParserErrors(ast.errors, sourceSpan);
               this._checkPipes(ast, sourceSpan);
               if (isPresent(ast) &&
                   ast.ast.expressions.length > MAX_INTERPOLATION_VALUES) {
@@ -8646,7 +8647,7 @@
           try {
               var ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
               if (ast) {
-                  this._reportParserErors(ast.errors, sourceSpan);
+                  this._reportParserErrors(ast.errors, sourceSpan);
               }
               if (!ast || ast.ast instanceof EmptyExpr) {
                   this._reportError("Empty expressions are not allowed", sourceSpan);
@@ -8665,7 +8666,7 @@
           try {
               var ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
               if (ast)
-                  this._reportParserErors(ast.errors, sourceSpan);
+                  this._reportParserErrors(ast.errors, sourceSpan);
               this._checkPipes(ast, sourceSpan);
               return ast;
           }
@@ -8679,7 +8680,7 @@
           var sourceInfo = sourceSpan.start.toString();
           try {
               var bindingsResult = this._exprParser.parseTemplateBindings(value, sourceInfo);
-              this._reportParserErors(bindingsResult.errors, sourceSpan);
+              this._reportParserErrors(bindingsResult.errors, sourceSpan);
               bindingsResult.templateBindings.forEach(function (binding) {
                   if (isPresent(binding.expression)) {
                       _this._checkPipes(binding.expression, sourceSpan);
@@ -8717,7 +8718,7 @@
               return new TextAst(text.value, ngContentIndex, text.sourceSpan);
           }
       };
-      TemplateParseVisitor.prototype.visitAttribute = function (attribute, contex) {
+      TemplateParseVisitor.prototype.visitAttribute = function (attribute, context) {
           return new AttrAst(attribute.name, attribute.value, attribute.sourceSpan);
       };
       TemplateParseVisitor.prototype.visitComment = function (comment, context) { return null; };
@@ -8767,7 +8768,7 @@
               }
           });
           var elementCssSelector = createElementCssSelector(nodeName, matchableAttrs);
-          var directiveMetas = this._parseDirectives(this.selectorMatcher, elementCssSelector);
+          var _a = this._parseDirectives(this.selectorMatcher, elementCssSelector), directiveMetas = _a.directives, matchElement = _a.matchElement;
           var references = [];
           var directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references);
           var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts)
@@ -8794,13 +8795,14 @@
               parsedElement = new EmbeddedTemplateAst(attrs, events, references, elementVars, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan);
           }
           else {
+              this._assertElementExists(matchElement, element);
               this._assertOnlyOneComponent(directiveAsts, element.sourceSpan);
               var ngContentIndex_1 = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
               parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan);
           }
           if (hasInlineTemplates) {
               var templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
-              var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateCssSelector);
+              var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateCssSelector).directives;
               var templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, []);
               var templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateDirectiveAsts);
               this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, element.sourceSpan);
@@ -8970,12 +8972,18 @@
           var _this = this;
           // Need to sort the directives so that we get consistent results throughout,
           // as selectorMatcher uses Maps inside.
-          // Also dedupe directives as they might match more than one time!
-          var directives = ListWrapper.createFixedSize(this.directivesIndex.size);
+          // Also deduplicate directives as they might match more than one time!
+          var directives = new Array(this.directivesIndex.size);
+          // Whether any directive selector matches on the element name
+          var matchElement = false;
           selectorMatcher.match(elementCssSelector, function (selector, directive) {
               directives[_this.directivesIndex.get(directive)] = directive;
+              matchElement = matchElement || selector.hasElementSelector();
           });
-          return directives.filter(function (dir) { return isPresent(dir); });
+          return {
+              directives: directives.filter(function (dir) { return !!dir; }),
+              matchElement: matchElement,
+          };
       };
       TemplateParseVisitor.prototype._createDirectiveAsts = function (isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, elementSourceSpan, targetReferences) {
           var _this = this;
@@ -9003,11 +9011,11 @@
           });
           elementOrDirectiveRefs.forEach(function (elOrDirRef) {
               if (elOrDirRef.value.length > 0) {
-                  if (!SetWrapper.has(matchedReferences, elOrDirRef.name)) {
+                  if (!matchedReferences.has(elOrDirRef.name)) {
                       _this._reportError("There is no directive with \"exportAs\" set to \"" + elOrDirRef.value + "\"", elOrDirRef.sourceSpan);
                   }
               }
-              else if (isBlank(component)) {
+              else if (!component) {
                   var refToken = null;
                   if (isTemplateElement) {
                       refToken = resolveIdentifierToken(Identifiers.TemplateRef);
@@ -9019,7 +9027,7 @@
       };
       TemplateParseVisitor.prototype._createDirectiveHostPropertyAsts = function (elementName, hostProps, sourceSpan, targetPropertyAsts) {
           var _this = this;
-          if (isPresent(hostProps)) {
+          if (hostProps) {
               StringMapWrapper.forEach(hostProps, function (expression, propName) {
                   if (isString(expression)) {
                       var exprAst = _this._parseBinding(expression, sourceSpan);
@@ -9033,7 +9041,7 @@
       };
       TemplateParseVisitor.prototype._createDirectiveHostEventAsts = function (hostListeners, sourceSpan, targetEventAsts) {
           var _this = this;
-          if (isPresent(hostListeners)) {
+          if (hostListeners) {
               StringMapWrapper.forEach(hostListeners, function (expression, propName) {
                   if (isString(expression)) {
                       _this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
@@ -9045,7 +9053,7 @@
           }
       };
       TemplateParseVisitor.prototype._createDirectivePropertyAsts = function (directiveProperties, boundProps, targetBoundDirectiveProps) {
-          if (isPresent(directiveProperties)) {
+          if (directiveProperties) {
               var boundPropsByName_1 = new Map();
               boundProps.forEach(function (boundProp) {
                   var prevValue = boundPropsByName_1.get(boundProp.name);
@@ -9057,7 +9065,7 @@
               StringMapWrapper.forEach(directiveProperties, function (elProp, dirProp) {
                   var boundProp = boundPropsByName_1.get(elProp);
                   // Bindings are optional, so this binding only needs to be set up if an expression is given.
-                  if (isPresent(boundProp)) {
+                  if (boundProp) {
                       targetBoundDirectiveProps.push(new BoundDirectivePropertyAst(dirProp, boundProp.name, boundProp.expression, boundProp.sourceSpan));
                   }
               });
@@ -9096,9 +9104,10 @@
                   boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);
                   securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
                   bindingType = exports.PropertyBindingType.Property;
+                  this._assertNoEventBinding(boundPropertyName, sourceSpan);
                   if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName, this._schemas)) {
                       var errorMsg = "Can't bind to '" + boundPropertyName + "' since it isn't a known property of '" + elementName + "'.";
-                      if (elementName.indexOf('-') !== -1) {
+                      if (elementName.indexOf('-') > -1) {
                           errorMsg +=
                               ("\n1. If '" + elementName + "' is an Angular component and it has '" + boundPropertyName + "' input, then verify that it is part of this module.") +
                                   ("\n2. If '" + elementName + "' is a Web Component then add \"CUSTOM_ELEMENTS_SCHEMA\" to the '@NgModule.schema' of this component to suppress this message.\n");
@@ -9110,12 +9119,10 @@
           else {
               if (parts[0] == ATTRIBUTE_PREFIX) {
                   boundPropertyName = parts[1];
-                  if (boundPropertyName.toLowerCase().startsWith('on')) {
-                      this._reportError(("Binding to event attribute '" + boundPropertyName + "' is disallowed ") +
-                          ("for security reasons, please use (" + boundPropertyName.slice(2) + ")=..."), sourceSpan);
-                  }
+                  this._assertNoEventBinding(boundPropertyName, sourceSpan);
                   // NB: For security purposes, use the mapped property name, not the attribute name.
-                  securityContext = this._schemaRegistry.securityContext(elementName, this._schemaRegistry.getMappedPropName(boundPropertyName));
+                  var mapPropName = this._schemaRegistry.getMappedPropName(boundPropertyName);
+                  securityContext = this._schemaRegistry.securityContext(elementName, mapPropName);
                   var nsSeparatorIdx = boundPropertyName.indexOf(':');
                   if (nsSeparatorIdx > -1) {
                       var ns = boundPropertyName.substring(0, nsSeparatorIdx);
@@ -9143,6 +9150,12 @@
           }
           return new BoundElementPropertyAst(boundPropertyName, bindingType, securityContext, ast, unit, sourceSpan);
       };
+      TemplateParseVisitor.prototype._assertNoEventBinding = function (propName, sourceSpan) {
+          if (propName.toLowerCase().startsWith('on')) {
+              this._reportError(("Binding to event attribute '" + propName + "' is disallowed ") +
+                  ("for security reasons, please use (" + propName.slice(2) + ")=..."), sourceSpan, ParseErrorLevel.FATAL);
+          }
+      };
       TemplateParseVisitor.prototype._findComponentDirectiveNames = function (directives) {
           var componentTypeNames = [];
           directives.forEach(function (directive) {
@@ -9157,6 +9170,24 @@
           var componentTypeNames = this._findComponentDirectiveNames(directives);
           if (componentTypeNames.length > 1) {
               this._reportError("More than one component: " + componentTypeNames.join(','), sourceSpan);
+          }
+      };
+      /**
+       * Make sure that non-angular tags conform to the schemas.
+       *
+       * Note: An element is considered an angular tag when at least one directive selector matches the
+       * tag name.
+       *
+       * @param matchElement Whether any directive has matched on the tag name
+       * @param element the html element
+       */
+      TemplateParseVisitor.prototype._assertElementExists = function (matchElement, element) {
+          var elName = element.name.replace(/^:xhtml:/, '');
+          if (!matchElement && !this._schemaRegistry.hasElement(elName, this._schemas)) {
+              var errorMsg = ("'" + elName + "' is not a known element:\n") +
+                  ("1. If '" + elName + "' is an Angular component, then verify that it is part of this module.\n") +
+                  ("2. If '" + elName + "' is a Web Component then add \"CUSTOM_ELEMENTS_SCHEMA\" to the '@NgModule.schema' of this component to suppress this message.");
+              this._reportError(errorMsg, element.sourceSpan);
           }
       };
       TemplateParseVisitor.prototype._assertNoComponentsNorElementBindingsOnTemplate = function (directives, elementProps, sourceSpan) {
@@ -9178,7 +9209,7 @@
               });
           });
           events.forEach(function (event) {
-              if (isPresent(event.target) || !SetWrapper.has(allDirectiveEvents, event.name)) {
+              if (isPresent(event.target) || !allDirectiveEvents.has(event.name)) {
                   _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the \"directives\" section.", event.sourceSpan);
               }
           });
@@ -9247,7 +9278,7 @@
           var matcher = new SelectorMatcher();
           var wildcardNgContentIndex = null;
           var component = directives.find(function (directive) { return directive.directive.isComponent; });
-          if (isPresent(component)) {
+          if (component) {
               var ngContentSelectors = component.directive.template.ngContentSelectors;
               for (var i = 0; i < ngContentSelectors.length; i++) {
                   var selector = ngContentSelectors[i];
@@ -9264,7 +9295,7 @@
       ElementContext.prototype.findNgContentIndex = function (selector) {
           var ngContentIndices = [];
           this._ngContentIndexMatcher.match(selector, function (selector, ngContentIndex) { ngContentIndices.push(ngContentIndex); });
-          ListWrapper.sort(ngContentIndices);
+          ngContentIndices.sort();
           if (isPresent(this._wildcardNgContentIndex)) {
               ngContentIndices.push(this._wildcardNgContentIndex);
           }
@@ -17076,7 +17107,7 @@
    * ## Overview
    *
    * Each line represents one kind of element. The `element_inheritance` and properties are joined
-   * using `element_inheritance|preperties` syntax.
+   * using `element_inheritance|properties` syntax.
    *
    * ## Element Inheritance
    *
@@ -17104,7 +17135,7 @@
    *
    * ## Query
    *
-   * The class creates an internal squas representaino which allows to easily answer the query of
+   * The class creates an internal squas representation which allows to easily answer the query of
    * if a given property exist on a given element.
    *
    * NOTE: We don't yet support querying for types or events.
@@ -17125,9 +17156,9 @@
   // =================================================================================================
   var SCHEMA = ([
       '*|textContent,%classList,className,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*copy,*cut,*paste,*search,*selectstart,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerHTML,#scrollLeft,#scrollTop',
-      '^*|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*autocomplete,*autocompleteerror,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
-      'media|!autoplay,!controls,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,#playbackRate,preload,src,#volume',
-      ':svg:^*|*abort,*autocomplete,*autocompleteerror,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*cuechange,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*seeked,*seeking,*select,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,%style,#tabIndex',
+      'abbr,address,article,aside,b,bdi,bdo,cite,code,dd,dfn,dt,em,figcaption,figure,footer,header,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^*|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
+      'media^abbr|!autoplay,!controls,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,#playbackRate,preload,src,%srcObject,#volume',
+      ':svg:^abbr|*abort,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*cuechange,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*seeked,*seeking,*select,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,%style,#tabIndex',
       ':svg:graphics^:svg:|',
       ':svg:animation^:svg:|*begin,*end,*repeat',
       ':svg:geometry^:svg:|',
@@ -17135,74 +17166,75 @@
       ':svg:gradient^:svg:|',
       ':svg:textContent^:svg:graphics|',
       ':svg:textPositioning^:svg:textContent|',
-      'a|charset,coords,download,hash,host,hostname,href,hreflang,name,password,pathname,ping,port,protocol,referrerpolicy,rel,rev,search,shape,target,text,type,username',
-      'area|alt,coords,hash,host,hostname,href,!noHref,password,pathname,ping,port,protocol,referrerpolicy,search,shape,target,username',
+      'abbr^*|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
+      'a^abbr|charset,coords,download,hash,host,hostname,href,hreflang,name,password,pathname,ping,port,protocol,referrerPolicy,rel,rev,search,shape,target,text,type,username',
+      'area^abbr|alt,coords,hash,host,hostname,href,!noHref,password,pathname,ping,port,protocol,referrerPolicy,search,shape,target,username',
       'audio^media|',
-      'br|clear',
-      'base|href,target',
-      'body|aLink,background,bgColor,link,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,text,vLink',
-      'button|!autofocus,!disabled,formAction,formEnctype,formMethod,!formNoValidate,formTarget,name,type,value',
-      'canvas|#height,#width',
-      'content|select',
-      'dl|!compact',
-      'datalist|',
-      'details|!open',
-      'dialog|!open,returnValue',
-      'dir|!compact',
-      'div|align',
-      'embed|align,height,name,src,type,width',
-      'fieldset|!disabled,name',
-      'font|color,face,size',
-      'form|acceptCharset,action,autocomplete,encoding,enctype,method,name,!noValidate,target',
-      'frame|frameBorder,longDesc,marginHeight,marginWidth,name,!noResize,scrolling,src',
-      'frameset|cols,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,rows',
-      'hr|align,color,!noShade,size,width',
-      'head|',
-      'h1,h2,h3,h4,h5,h6|align',
-      'html|version',
-      'iframe|align,!allowFullscreen,frameBorder,height,longDesc,marginHeight,marginWidth,name,referrerpolicy,%sandbox,scrolling,src,srcdoc,width',
-      'img|align,alt,border,%crossOrigin,#height,#hspace,!isMap,longDesc,lowsrc,name,referrerpolicy,sizes,src,srcset,useMap,#vspace,#width',
-      'input|accept,align,alt,autocapitalize,autocomplete,!autofocus,!checked,!defaultChecked,defaultValue,dirName,!disabled,%files,formAction,formEnctype,formMethod,!formNoValidate,formTarget,#height,!incremental,!indeterminate,max,#maxLength,min,#minLength,!multiple,name,pattern,placeholder,!readOnly,!required,selectionDirection,#selectionEnd,#selectionStart,#size,src,step,type,useMap,value,%valueAsDate,#valueAsNumber,#width',
-      'keygen|!autofocus,challenge,!disabled,keytype,name',
-      'li|type,#value',
-      'label|htmlFor',
-      'legend|align',
-      'link|as,charset,%crossOrigin,!disabled,href,hreflang,integrity,media,rel,%relList,rev,%sizes,target,type',
-      'map|name',
-      'marquee|behavior,bgColor,direction,height,#hspace,#loop,#scrollAmount,#scrollDelay,!trueSpeed,#vspace,width',
-      'menu|!compact',
-      'meta|content,httpEquiv,name,scheme',
-      'meter|#high,#low,#max,#min,#optimum,#value',
-      'ins,del|cite,dateTime',
-      'ol|!compact,!reversed,#start,type',
-      'object|align,archive,border,code,codeBase,codeType,data,!declare,height,#hspace,name,standby,type,useMap,#vspace,width',
-      'optgroup|!disabled,label',
-      'option|!defaultSelected,!disabled,label,!selected,text,value',
-      'output|defaultValue,%htmlFor,name,value',
-      'p|align',
-      'param|name,type,value,valueType',
-      'picture|',
-      'pre|#width',
-      'progress|#max,#value',
-      'q,blockquote,cite|',
-      'script|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,src,text,type',
-      'select|!autofocus,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value',
-      'shadow|',
-      'source|media,sizes,src,srcset,type',
-      'span|',
-      'style|!disabled,media,type',
-      'caption|align',
-      'th,td|abbr,align,axis,bgColor,ch,chOff,#colSpan,headers,height,!noWrap,#rowSpan,scope,vAlign,width',
-      'col,colgroup|align,ch,chOff,#span,vAlign,width',
-      'table|align,bgColor,border,%caption,cellPadding,cellSpacing,frame,rules,summary,%tFoot,%tHead,width',
-      'tr|align,bgColor,ch,chOff,vAlign',
-      'tfoot,thead,tbody|align,ch,chOff,vAlign',
-      'template|',
-      'textarea|autocapitalize,!autofocus,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap',
-      'title|text',
-      'track|!default,kind,label,src,srclang',
-      'ul|!compact,type',
-      'unknown|',
+      'br^abbr|clear',
+      'base^abbr|href,target',
+      'body^abbr|aLink,background,bgColor,link,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,text,vLink',
+      'button^abbr|!autofocus,!disabled,formAction,formEnctype,formMethod,!formNoValidate,formTarget,name,type,value',
+      'canvas^abbr|#height,#width',
+      'content^abbr|select',
+      'dl^abbr|!compact',
+      'datalist^abbr|',
+      'details^abbr|!open',
+      'dialog^abbr|!open,returnValue',
+      'dir^abbr|!compact',
+      'div^abbr|align',
+      'embed^abbr|align,height,name,src,type,width',
+      'fieldset^abbr|!disabled,name',
+      'font^abbr|color,face,size',
+      'form^abbr|acceptCharset,action,autocomplete,encoding,enctype,method,name,!noValidate,target',
+      'frame^abbr|frameBorder,longDesc,marginHeight,marginWidth,name,!noResize,scrolling,src',
+      'frameset^abbr|cols,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,rows',
+      'hr^abbr|align,color,!noShade,size,width',
+      'head^abbr|',
+      'h1,h2,h3,h4,h5,h6^abbr|align',
+      'html^abbr|version',
+      'iframe^abbr|align,!allowFullscreen,frameBorder,height,longDesc,marginHeight,marginWidth,name,referrerPolicy,%sandbox,scrolling,src,srcdoc,width',
+      'img^abbr|align,alt,border,%crossOrigin,#height,#hspace,!isMap,longDesc,lowsrc,name,referrerPolicy,sizes,src,srcset,useMap,#vspace,#width',
+      'input^abbr|accept,align,alt,autocapitalize,autocomplete,!autofocus,!checked,!defaultChecked,defaultValue,dirName,!disabled,%files,formAction,formEnctype,formMethod,!formNoValidate,formTarget,#height,!incremental,!indeterminate,max,#maxLength,min,#minLength,!multiple,name,pattern,placeholder,!readOnly,!required,selectionDirection,#selectionEnd,#selectionStart,#size,src,step,type,useMap,value,%valueAsDate,#valueAsNumber,#width',
+      'keygen^abbr|!autofocus,challenge,!disabled,keytype,name',
+      'li^abbr|type,#value',
+      'label^abbr|htmlFor',
+      'legend^abbr|align',
+      'link^abbr|as,charset,%crossOrigin,!disabled,href,hreflang,integrity,media,rel,%relList,rev,%sizes,target,type',
+      'map^abbr|name',
+      'marquee^abbr|behavior,bgColor,direction,height,#hspace,#loop,#scrollAmount,#scrollDelay,!trueSpeed,#vspace,width',
+      'menu^abbr|!compact',
+      'meta^abbr|content,httpEquiv,name,scheme',
+      'meter^abbr|#high,#low,#max,#min,#optimum,#value',
+      'ins,del^abbr|cite,dateTime',
+      'ol^abbr|!compact,!reversed,#start,type',
+      'object^abbr|align,archive,border,code,codeBase,codeType,data,!declare,height,#hspace,name,standby,type,useMap,#vspace,width',
+      'optgroup^abbr|!disabled,label',
+      'option^abbr|!defaultSelected,!disabled,label,!selected,text,value',
+      'output^abbr|defaultValue,%htmlFor,name,value',
+      'p^abbr|align',
+      'param^abbr|name,type,value,valueType',
+      'picture^abbr|',
+      'pre^abbr|#width',
+      'progress^abbr|#max,#value',
+      'q,blockquote,cite^abbr|',
+      'script^abbr|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,src,text,type',
+      'select^abbr|!autofocus,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value',
+      'shadow^abbr|',
+      'source^abbr|media,sizes,src,srcset,type',
+      'span^abbr|',
+      'style^abbr|!disabled,media,type',
+      'caption^abbr|align',
+      'th,td^abbr|abbr,align,axis,bgColor,ch,chOff,#colSpan,headers,height,!noWrap,#rowSpan,scope,vAlign,width',
+      'col,colgroup^abbr|align,ch,chOff,#span,vAlign,width',
+      'table^abbr|align,bgColor,border,%caption,cellPadding,cellSpacing,frame,rules,summary,%tFoot,%tHead,width',
+      'tr^abbr|align,bgColor,ch,chOff,vAlign',
+      'tfoot,thead,tbody^abbr|align,ch,chOff,vAlign',
+      'template^abbr|',
+      'textarea^abbr|autocapitalize,!autofocus,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap',
+      'title^abbr|text',
+      'track^abbr|!default,kind,label,src,srclang',
+      'ul^abbr|!compact,type',
+      'unknown^abbr|',
       'video^media|#height,poster,#width',
       ':svg:a^:svg:graphics|',
       ':svg:animate^:svg:animation|',
@@ -17270,7 +17302,7 @@
       ':svg:use^:svg:graphics|',
       ':svg:view^:svg:|#zoomAndPan',
   ]);
-  var attrToPropMap = {
+  var _ATTR_TO_PROP = {
       'class': 'className',
       'formaction': 'formAction',
       'innerHtml': 'innerHTML',
@@ -17282,34 +17314,39 @@
       function DomElementSchemaRegistry() {
           var _this = this;
           _super.call(this);
-          this.schema = {};
+          this._schema = {};
           SCHEMA.forEach(function (encodedType) {
-              var parts = encodedType.split('|');
-              var properties = parts[1].split(',');
-              var typeParts = (parts[0] + '^').split('^');
-              var typeName = typeParts[0];
+              var _a = encodedType.split('|'), strType = _a[0], strProperties = _a[1];
+              var properties = strProperties.split(',');
+              var _b = strType.split('^'), typeNames = _b[0], superName = _b[1];
               var type = {};
-              typeName.split(',').forEach(function (tag) { return _this.schema[tag] = type; });
-              var superType = _this.schema[typeParts[1]];
-              if (isPresent(superType)) {
-                  StringMapWrapper.forEach(superType, function (v /** TODO #9100 */, k /** TODO #9100 */) { return type[k] = v; });
+              typeNames.split(',').forEach(function (tag) { return _this._schema[tag.toLowerCase()] = type; });
+              var superType = _this._schema[superName];
+              if (superType) {
+                  Object.keys(superType).forEach(function (prop) { type[prop] = superType[prop]; });
               }
               properties.forEach(function (property) {
-                  if (property == '') {
-                  }
-                  else if (property.startsWith('*')) {
-                  }
-                  else if (property.startsWith('!')) {
-                      type[property.substring(1)] = BOOLEAN;
-                  }
-                  else if (property.startsWith('#')) {
-                      type[property.substring(1)] = NUMBER;
-                  }
-                  else if (property.startsWith('%')) {
-                      type[property.substring(1)] = OBJECT;
-                  }
-                  else {
-                      type[property] = STRING;
+                  if (property.length > 0) {
+                      switch (property[0]) {
+                          case '*':
+                              // We don't yet support events.
+                              // If ever allowing to bind to events, GO THROUGH A SECURITY REVIEW, allowing events
+                              // will
+                              // almost certainly introduce bad XSS vulnerabilities.
+                              // type[property.substring(1)] = EVENT;
+                              break;
+                          case '!':
+                              type[property.substring(1)] = BOOLEAN;
+                              break;
+                          case '#':
+                              type[property.substring(1)] = NUMBER;
+                              break;
+                          case '%':
+                              type[property.substring(1)] = OBJECT;
+                              break;
+                          default:
+                              type[property] = STRING;
+                      }
                   }
               });
           });
@@ -17318,7 +17355,7 @@
           if (schemaMetas.some(function (schema) { return schema.name === _angular_core.NO_ERRORS_SCHEMA.name; })) {
               return true;
           }
-          if (tagName.indexOf('-') !== -1) {
+          if (tagName.indexOf('-') > -1) {
               if (tagName === 'ng-container' || tagName === 'ng-content') {
                   return false;
               }
@@ -17328,11 +17365,23 @@
                   return true;
               }
           }
-          var elementProperties = this.schema[tagName.toLowerCase()];
-          if (!isPresent(elementProperties)) {
-              elementProperties = this.schema['unknown'];
+          var elementProperties = this._schema[tagName.toLowerCase()] || this._schema['unknown'];
+          return !!elementProperties[propName];
+      };
+      DomElementSchemaRegistry.prototype.hasElement = function (tagName, schemaMetas) {
+          if (schemaMetas.some(function (schema) { return schema.name === _angular_core.NO_ERRORS_SCHEMA.name; })) {
+              return true;
           }
-          return isPresent(elementProperties[propName]);
+          if (tagName.indexOf('-') > -1) {
+              if (tagName === 'ng-container' || tagName === 'ng-content') {
+                  return true;
+              }
+              if (schemaMetas.some(function (schema) { return schema.name === _angular_core.CUSTOM_ELEMENTS_SCHEMA.name; })) {
+                  // Allow any custom elements
+                  return true;
+              }
+          }
+          return !!this._schema[tagName.toLowerCase()];
       };
       /**
        * securityContext returns the security context for the given property on the given DOM tag.
@@ -17350,15 +17399,13 @@
           tagName = tagName.toLowerCase();
           propName = propName.toLowerCase();
           var ctx = SECURITY_SCHEMA[tagName + '|' + propName];
-          if (ctx !== undefined)
+          if (ctx) {
               return ctx;
+          }
           ctx = SECURITY_SCHEMA['*|' + propName];
-          return ctx !== undefined ? ctx : _angular_core.SecurityContext.NONE;
+          return ctx ? ctx : _angular_core.SecurityContext.NONE;
       };
-      DomElementSchemaRegistry.prototype.getMappedPropName = function (propName) {
-          var mappedPropName = StringMapWrapper.get(attrToPropMap, propName);
-          return isPresent(mappedPropName) ? mappedPropName : propName;
-      };
+      DomElementSchemaRegistry.prototype.getMappedPropName = function (propName) { return _ATTR_TO_PROP[propName] || propName; };
       DomElementSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
       DomElementSchemaRegistry.decorators = [
           { type: _angular_core.Injectable },

@@ -9,6 +9,28 @@
     (factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}, global.ng.compiler.testing = global.ng.compiler.testing || {}),global.ng.core,global.ng.compiler,global.ng.core.testing));
 }(this, function (exports,_angular_core,_angular_compiler,_angular_core_testing) { 'use strict';
 
+    var MockSchemaRegistry = (function () {
+        function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements) {
+            this.existingProperties = existingProperties;
+            this.attrPropMapping = attrPropMapping;
+            this.existingElements = existingElements;
+        }
+        MockSchemaRegistry.prototype.hasProperty = function (tagName, property, schemas) {
+            var value = this.existingProperties[property];
+            return value === void 0 ? true : value;
+        };
+        MockSchemaRegistry.prototype.hasElement = function (tagName, schemaMetas) {
+            var value = this.existingElements[tagName.toLowerCase()];
+            return value === void 0 ? true : value;
+        };
+        MockSchemaRegistry.prototype.securityContext = function (tagName, property) {
+            return _angular_core.SecurityContext.NONE;
+        };
+        MockSchemaRegistry.prototype.getMappedPropName = function (attrName) { return this.attrPropMapping[attrName] || attrName; };
+        MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
+        return MockSchemaRegistry;
+    }());
+
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -31,11 +53,11 @@
     }
     // Need to declare a new variable for global here since TypeScript
     // exports the original value of the symbol.
-    var global$1 = globalScope;
+    var _global = globalScope;
     // TODO: remove calls to assert in production environment
     // Note: Can't just export this and import in in other files
     // as `assert` is a reserved keyword in Dart
-    global$1.assert = function assert(condition) {
+    _global.assert = function assert(condition) {
         // TODO: to be fixed properly via #2830, noop for now
     };
     function isPresent(obj) {
@@ -108,28 +130,8 @@
         return NumberWrapper;
     }());
 
-    var MockSchemaRegistry = (function () {
-        function MockSchemaRegistry(existingProperties, attrPropMapping) {
-            this.existingProperties = existingProperties;
-            this.attrPropMapping = attrPropMapping;
-        }
-        MockSchemaRegistry.prototype.hasProperty = function (tagName, property, schemas) {
-            var result = this.existingProperties[property];
-            return isPresent(result) ? result : true;
-        };
-        MockSchemaRegistry.prototype.securityContext = function (tagName, property) {
-            return _angular_core.SecurityContext.NONE;
-        };
-        MockSchemaRegistry.prototype.getMappedPropName = function (attrName) {
-            var result = this.attrPropMapping[attrName];
-            return isPresent(result) ? result : attrName;
-        };
-        MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
-        return MockSchemaRegistry;
-    }());
-
-    var Map$1 = global$1.Map;
-    var Set$1 = global$1.Set;
+    var Map$1 = _global.Map;
+    var Set$1 = _global.Set;
     // Safari and Internet Explorer do not support the iterable parameter to the
     // Map constructor.  We work around that by manually adding the items.
     var createMapFromPairs = (function () {

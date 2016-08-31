@@ -75,9 +75,10 @@ export var CssSelector = (function () {
         return results;
     };
     CssSelector.prototype.isElementSelector = function () {
-        return isPresent(this.element) && ListWrapper.isEmpty(this.classNames) &&
-            ListWrapper.isEmpty(this.attrs) && this.notSelectors.length === 0;
+        return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
+            this.notSelectors.length === 0;
     };
+    CssSelector.prototype.hasElementSelector = function () { return !!this.element; };
     CssSelector.prototype.setElement = function (element) {
         if (element === void 0) { element = null; }
         this.element = element;

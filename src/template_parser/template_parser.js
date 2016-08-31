@@ -14,7 +14,7 @@ import { Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@ang
 import { removeIdentifierDuplicates } from '../compile_metadata';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
-import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection';
+import { StringMapWrapper } from '../facade/collection';
 import { isBlank, isPresent, isString } from '../facade/lang';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
 import { Identifiers, identifierToken, resolveIdentifierToken } from '../identifiers';
@@ -175,30 +175,30 @@ var TemplateParseVisitor = (function () {
         this._schemas = _schemas;
         this._exprParser = _exprParser;
         this._schemaRegistry = _schemaRegistry;
+        this.selectorMatcher = new SelectorMatcher();
         this.errors = [];
         this.directivesIndex = new Map();
         this.ngContentCount = 0;
-        this.selectorMatcher = new SelectorMatcher();
+        this.pipesByName = new Map();
         var tempMeta = providerViewContext.component.template;
-        if (isPresent(tempMeta) && isPresent(tempMeta.interpolation)) {
+        if (tempMeta && tempMeta.interpolation) {
             this._interpolationConfig = {
                 start: tempMeta.interpolation[0],
                 end: tempMeta.interpolation[1]
             };
         }
-        ListWrapper.forEachWithIndex(directives, function (directive, index) {
+        directives.forEach(function (directive, index) {
             var selector = CssSelector.parse(directive.selector);
             _this.selectorMatcher.addSelectables(selector, directive);
             _this.directivesIndex.set(directive, index);
         });
-        this.pipesByName = new Map();
         pipes.forEach(function (pipe) { return _this.pipesByName.set(pipe.name, pipe); });
     }
     TemplateParseVisitor.prototype._reportError = function (message, sourceSpan, level) {
         if (level === void 0) { level = ParseErrorLevel.FATAL; }
         this.errors.push(new TemplateParseError(message, sourceSpan, level));
     };
-    TemplateParseVisitor.prototype._reportParserErors = function (errors, sourceSpan) {
+    TemplateParseVisitor.prototype._reportParserErrors = function (errors, sourceSpan) {
         for (var _i = 0, errors_1 = errors; _i < errors_1.length; _i++) {
             var error = errors_1[_i];
             this._reportError(error.message, sourceSpan);
@@ -209,7 +209,7 @@ var TemplateParseVisitor = (function () {
         try {
             var ast = this._exprParser.parseInterpolation(value, sourceInfo, this._interpolationConfig);
             if (ast)
-                this._reportParserErors(ast.errors, sourceSpan);
+                this._reportParserErrors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
             if (isPresent(ast) &&
                 ast.ast.expressions.length > MAX_INTERPOLATION_VALUES) {
@@ -227,7 +227,7 @@ var TemplateParseVisitor = (function () {
         try {
             var ast = this._exprParser.parseAction(value, sourceInfo, this._interpolationConfig);
             if (ast) {
-                this._reportParserErors(ast.errors, sourceSpan);
+                this._reportParserErrors(ast.errors, sourceSpan);
             }
             if (!ast || ast.ast instanceof EmptyExpr) {
                 this._reportError("Empty expressions are not allowed", sourceSpan);
@@ -246,7 +246,7 @@ var TemplateParseVisitor = (function () {
         try {
             var ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
             if (ast)
-                this._reportParserErors(ast.errors, sourceSpan);
+                this._reportParserErrors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
             return ast;
         }
@@ -260,7 +260,7 @@ var TemplateParseVisitor = (function () {
         var sourceInfo = sourceSpan.start.toString();
         try {
             var bindingsResult = this._exprParser.parseTemplateBindings(value, sourceInfo);
-            this._reportParserErors(bindingsResult.errors, sourceSpan);
+            this._reportParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach(function (binding) {
                 if (isPresent(binding.expression)) {
                     _this._checkPipes(binding.expression, sourceSpan);
@@ -298,7 +298,7 @@ var TemplateParseVisitor = (function () {
             return new TextAst(text.value, ngContentIndex, text.sourceSpan);
         }
     };
-    TemplateParseVisitor.prototype.visitAttribute = function (attribute, contex) {
+    TemplateParseVisitor.prototype.visitAttribute = function (attribute, context) {
         return new AttrAst(attribute.name, attribute.value, attribute.sourceSpan);
     };
     TemplateParseVisitor.prototype.visitComment = function (comment, context) { return null; };
@@ -348,7 +348,7 @@ var TemplateParseVisitor = (function () {
             }
         });
         var elementCssSelector = createElementCssSelector(nodeName, matchableAttrs);
-        var directiveMetas = this._parseDirectives(this.selectorMatcher, elementCssSelector);
+        var _a = this._parseDirectives(this.selectorMatcher, elementCssSelector), directiveMetas = _a.directives, matchElement = _a.matchElement;
         var references = [];
         var directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references);
         var elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts)
@@ -375,13 +375,14 @@ var TemplateParseVisitor = (function () {
             parsedElement = new EmbeddedTemplateAst(attrs, events, references, elementVars, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan);
         }
         else {
+            this._assertElementExists(matchElement, element);
             this._assertOnlyOneComponent(directiveAsts, element.sourceSpan);
             var ngContentIndex_1 = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
             parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan);
         }
         if (hasInlineTemplates) {
             var templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
-            var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateCssSelector);
+            var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateCssSelector).directives;
             var templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, []);
             var templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateDirectiveAsts);
             this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, element.sourceSpan);
@@ -551,12 +552,18 @@ var TemplateParseVisitor = (function () {
         var _this = this;
         // Need to sort the directives so that we get consistent results throughout,
         // as selectorMatcher uses Maps inside.
-        // Also dedupe directives as they might match more than one time!
-        var directives = ListWrapper.createFixedSize(this.directivesIndex.size);
+        // Also deduplicate directives as they might match more than one time!
+        var directives = new Array(this.directivesIndex.size);
+        // Whether any directive selector matches on the element name
+        var matchElement = false;
         selectorMatcher.match(elementCssSelector, function (selector, directive) {
             directives[_this.directivesIndex.get(directive)] = directive;
+            matchElement = matchElement || selector.hasElementSelector();
         });
-        return directives.filter(function (dir) { return isPresent(dir); });
+        return {
+            directives: directives.filter(function (dir) { return !!dir; }),
+            matchElement: matchElement,
+        };
     };
     TemplateParseVisitor.prototype._createDirectiveAsts = function (isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, elementSourceSpan, targetReferences) {
         var _this = this;
@@ -584,11 +591,11 @@ var TemplateParseVisitor = (function () {
         });
         elementOrDirectiveRefs.forEach(function (elOrDirRef) {
             if (elOrDirRef.value.length > 0) {
-                if (!SetWrapper.has(matchedReferences, elOrDirRef.name)) {
+                if (!matchedReferences.has(elOrDirRef.name)) {
                     _this._reportError("There is no directive with \"exportAs\" set to \"" + elOrDirRef.value + "\"", elOrDirRef.sourceSpan);
                 }
             }
-            else if (isBlank(component)) {
+            else if (!component) {
                 var refToken = null;
                 if (isTemplateElement) {
                     refToken = resolveIdentifierToken(Identifiers.TemplateRef);
@@ -600,7 +607,7 @@ var TemplateParseVisitor = (function () {
     };
     TemplateParseVisitor.prototype._createDirectiveHostPropertyAsts = function (elementName, hostProps, sourceSpan, targetPropertyAsts) {
         var _this = this;
-        if (isPresent(hostProps)) {
+        if (hostProps) {
             StringMapWrapper.forEach(hostProps, function (expression, propName) {
                 if (isString(expression)) {
                     var exprAst = _this._parseBinding(expression, sourceSpan);
@@ -614,7 +621,7 @@ var TemplateParseVisitor = (function () {
     };
     TemplateParseVisitor.prototype._createDirectiveHostEventAsts = function (hostListeners, sourceSpan, targetEventAsts) {
         var _this = this;
-        if (isPresent(hostListeners)) {
+        if (hostListeners) {
             StringMapWrapper.forEach(hostListeners, function (expression, propName) {
                 if (isString(expression)) {
                     _this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
@@ -626,7 +633,7 @@ var TemplateParseVisitor = (function () {
         }
     };
     TemplateParseVisitor.prototype._createDirectivePropertyAsts = function (directiveProperties, boundProps, targetBoundDirectiveProps) {
-        if (isPresent(directiveProperties)) {
+        if (directiveProperties) {
             var boundPropsByName_1 = new Map();
             boundProps.forEach(function (boundProp) {
                 var prevValue = boundPropsByName_1.get(boundProp.name);
@@ -638,7 +645,7 @@ var TemplateParseVisitor = (function () {
             StringMapWrapper.forEach(directiveProperties, function (elProp, dirProp) {
                 var boundProp = boundPropsByName_1.get(elProp);
                 // Bindings are optional, so this binding only needs to be set up if an expression is given.
-                if (isPresent(boundProp)) {
+                if (boundProp) {
                     targetBoundDirectiveProps.push(new BoundDirectivePropertyAst(dirProp, boundProp.name, boundProp.expression, boundProp.sourceSpan));
                 }
             });
@@ -677,9 +684,10 @@ var TemplateParseVisitor = (function () {
                 boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);
                 securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
                 bindingType = PropertyBindingType.Property;
+                this._assertNoEventBinding(boundPropertyName, sourceSpan);
                 if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName, this._schemas)) {
                     var errorMsg = "Can't bind to '" + boundPropertyName + "' since it isn't a known property of '" + elementName + "'.";
-                    if (elementName.indexOf('-') !== -1) {
+                    if (elementName.indexOf('-') > -1) {
                         errorMsg +=
                             ("\n1. If '" + elementName + "' is an Angular component and it has '" + boundPropertyName + "' input, then verify that it is part of this module.") +
                                 ("\n2. If '" + elementName + "' is a Web Component then add \"CUSTOM_ELEMENTS_SCHEMA\" to the '@NgModule.schema' of this component to suppress this message.\n");
@@ -691,12 +699,10 @@ var TemplateParseVisitor = (function () {
         else {
             if (parts[0] == ATTRIBUTE_PREFIX) {
                 boundPropertyName = parts[1];
-                if (boundPropertyName.toLowerCase().startsWith('on')) {
-                    this._reportError(("Binding to event attribute '" + boundPropertyName + "' is disallowed ") +
-                        ("for security reasons, please use (" + boundPropertyName.slice(2) + ")=..."), sourceSpan);
-                }
+                this._assertNoEventBinding(boundPropertyName, sourceSpan);
                 // NB: For security purposes, use the mapped property name, not the attribute name.
-                securityContext = this._schemaRegistry.securityContext(elementName, this._schemaRegistry.getMappedPropName(boundPropertyName));
+                var mapPropName = this._schemaRegistry.getMappedPropName(boundPropertyName);
+                securityContext = this._schemaRegistry.securityContext(elementName, mapPropName);
                 var nsSeparatorIdx = boundPropertyName.indexOf(':');
                 if (nsSeparatorIdx > -1) {
                     var ns = boundPropertyName.substring(0, nsSeparatorIdx);
@@ -724,6 +730,12 @@ var TemplateParseVisitor = (function () {
         }
         return new BoundElementPropertyAst(boundPropertyName, bindingType, securityContext, ast, unit, sourceSpan);
     };
+    TemplateParseVisitor.prototype._assertNoEventBinding = function (propName, sourceSpan) {
+        if (propName.toLowerCase().startsWith('on')) {
+            this._reportError(("Binding to event attribute '" + propName + "' is disallowed ") +
+                ("for security reasons, please use (" + propName.slice(2) + ")=..."), sourceSpan, ParseErrorLevel.FATAL);
+        }
+    };
     TemplateParseVisitor.prototype._findComponentDirectiveNames = function (directives) {
         var componentTypeNames = [];
         directives.forEach(function (directive) {
@@ -738,6 +750,24 @@ var TemplateParseVisitor = (function () {
         var componentTypeNames = this._findComponentDirectiveNames(directives);
         if (componentTypeNames.length > 1) {
             this._reportError("More than one component: " + componentTypeNames.join(','), sourceSpan);
+        }
+    };
+    /**
+     * Make sure that non-angular tags conform to the schemas.
+     *
+     * Note: An element is considered an angular tag when at least one directive selector matches the
+     * tag name.
+     *
+     * @param matchElement Whether any directive has matched on the tag name
+     * @param element the html element
+     */
+    TemplateParseVisitor.prototype._assertElementExists = function (matchElement, element) {
+        var elName = element.name.replace(/^:xhtml:/, '');
+        if (!matchElement && !this._schemaRegistry.hasElement(elName, this._schemas)) {
+            var errorMsg = ("'" + elName + "' is not a known element:\n") +
+                ("1. If '" + elName + "' is an Angular component, then verify that it is part of this module.\n") +
+                ("2. If '" + elName + "' is a Web Component then add \"CUSTOM_ELEMENTS_SCHEMA\" to the '@NgModule.schema' of this component to suppress this message.");
+            this._reportError(errorMsg, element.sourceSpan);
         }
     };
     TemplateParseVisitor.prototype._assertNoComponentsNorElementBindingsOnTemplate = function (directives, elementProps, sourceSpan) {
@@ -759,7 +789,7 @@ var TemplateParseVisitor = (function () {
             });
         });
         events.forEach(function (event) {
-            if (isPresent(event.target) || !SetWrapper.has(allDirectiveEvents, event.name)) {
+            if (isPresent(event.target) || !allDirectiveEvents.has(event.name)) {
                 _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the \"directives\" section.", event.sourceSpan);
             }
         });
@@ -828,7 +858,7 @@ var ElementContext = (function () {
         var matcher = new SelectorMatcher();
         var wildcardNgContentIndex = null;
         var component = directives.find(function (directive) { return directive.directive.isComponent; });
-        if (isPresent(component)) {
+        if (component) {
             var ngContentSelectors = component.directive.template.ngContentSelectors;
             for (var i = 0; i < ngContentSelectors.length; i++) {
                 var selector = ngContentSelectors[i];
@@ -845,7 +875,7 @@ var ElementContext = (function () {
     ElementContext.prototype.findNgContentIndex = function (selector) {
         var ngContentIndices = [];
         this._ngContentIndexMatcher.match(selector, function (selector, ngContentIndex) { ngContentIndices.push(ngContentIndex); });
-        ListWrapper.sort(ngContentIndices);
+        ngContentIndices.sort();
         if (isPresent(this._wildcardNgContentIndex)) {
             ngContentIndices.push(this._wildcardNgContentIndex);
         }
