@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from '@angular/core';
-import { LifecycleHooks } from '../core_private';
+import { LifecycleHooks } from './private_import_core';
 export declare abstract class CompileMetadataWithIdentifier {
     identifier: CompileIdentifierMetadata;
 }

@@ -5,12 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var cdAst = require('../expression_parser/ast');
-var lang_1 = require('../facade/lang');
-var identifiers_1 = require('../identifiers');
-var o = require('../output/output_ast');
-var ExpressionWithWrappedValueInfo = (function () {
+import * as cdAst from '../expression_parser/ast';
+import { isArray, isBlank, isPresent } from '../facade/lang';
+import { Identifiers, resolveIdentifier } from '../identifiers';
+import * as o from '../output/output_ast';
+export var ExpressionWithWrappedValueInfo = (function () {
     function ExpressionWithWrappedValueInfo(expression, needsValueUnwrapper, temporaryCount) {
         this.expression = expression;
         this.needsValueUnwrapper = needsValueUnwrapper;
@@ -18,28 +17,24 @@ var ExpressionWithWrappedValueInfo = (function () {
     }
     return ExpressionWithWrappedValueInfo;
 }());
-exports.ExpressionWithWrappedValueInfo = ExpressionWithWrappedValueInfo;
-function convertCdExpressionToIr(nameResolver, implicitReceiver, expression, valueUnwrapper, bindingIndex) {
+export function convertCdExpressionToIr(nameResolver, implicitReceiver, expression, valueUnwrapper, bindingIndex) {
     var visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, valueUnwrapper, bindingIndex);
     var irAst = expression.visit(visitor, _Mode.Expression);
     return new ExpressionWithWrappedValueInfo(irAst, visitor.needsValueUnwrapper, visitor.temporaryCount);
 }
-exports.convertCdExpressionToIr = convertCdExpressionToIr;
-function convertCdStatementToIr(nameResolver, implicitReceiver, stmt, bindingIndex) {
+export function convertCdStatementToIr(nameResolver, implicitReceiver, stmt, bindingIndex) {
     var visitor = new _AstToIrVisitor(nameResolver, implicitReceiver, null, bindingIndex);
     var statements = [];
     flattenStatements(stmt.visit(visitor, _Mode.Statement), statements);
     prependTemporaryDecls(visitor.temporaryCount, bindingIndex, statements);
     return statements;
 }
-exports.convertCdStatementToIr = convertCdStatementToIr;
 function temporaryName(bindingIndex, temporaryNumber) {
     return "tmp_" + bindingIndex + "_" + temporaryNumber;
 }
-function temporaryDeclaration(bindingIndex, temporaryNumber) {
+export function temporaryDeclaration(bindingIndex, temporaryNumber) {
     return new o.DeclareVarStmt(temporaryName(bindingIndex, temporaryNumber), o.NULL_EXPR);
 }
-exports.temporaryDeclaration = temporaryDeclaration;
 function prependTemporaryDecls(temporaryCount, bindingIndex, statements) {
     for (var i = temporaryCount - 1; i >= 0; i--) {
         statements.unshift(temporaryDeclaration(bindingIndex, i));
@@ -163,7 +158,7 @@ var _AstToIrVisitor = (function () {
             args.push(this.visit(ast.expressions[i], _Mode.Expression));
         }
         args.push(o.literal(ast.strings[ast.strings.length - 1]));
-        return o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.interpolate)).callFn(args);
+        return o.importExpr(resolveIdentifier(Identifiers.interpolate)).callFn(args);
     };
     _AstToIrVisitor.prototype.visitKeyedRead = function (ast, mode) {
         return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));
@@ -198,11 +193,11 @@ var _AstToIrVisitor = (function () {
             var receiver = this.visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
                 var varExpr = this._nameResolver.getLocal(ast.name);
-                if (lang_1.isPresent(varExpr)) {
+                if (isPresent(varExpr)) {
                     result = varExpr.callFn(args);
                 }
             }
-            if (lang_1.isBlank(result)) {
+            if (isBlank(result)) {
                 result = receiver.callMethod(ast.name, args);
             }
             return convertToStatementIfNeeded(mode, result);
@@ -222,7 +217,7 @@ var _AstToIrVisitor = (function () {
             if (receiver === this._implicitReceiver) {
                 result = this._nameResolver.getLocal(ast.name);
             }
-            if (lang_1.isBlank(result)) {
+            if (isBlank(result)) {
                 result = receiver.prop(ast.name);
             }
             return convertToStatementIfNeeded(mode, result);
@@ -232,7 +227,7 @@ var _AstToIrVisitor = (function () {
         var receiver = this.visit(ast.receiver, _Mode.Expression);
         if (receiver === this._implicitReceiver) {
             var varExpr = this._nameResolver.getLocal(ast.name);
-            if (lang_1.isPresent(varExpr)) {
+            if (isPresent(varExpr)) {
                 throw new Error('Cannot assign to a reference or variable!');
             }
         }
@@ -411,7 +406,7 @@ var _AstToIrVisitor = (function () {
     return _AstToIrVisitor;
 }());
 function flattenStatements(arg, output) {
-    if (lang_1.isArray(arg)) {
+    if (isArray(arg)) {
         arg.forEach(function (entry) { return flattenStatements(entry, output); });
     }
     else {

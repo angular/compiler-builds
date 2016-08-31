@@ -5,8 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var lang_1 = require('./facade/lang');
+import { StringWrapper, isBlank, isPresent } from './facade/lang';
 /**
  * This file is a port of shadowCSS from webcomponents.js to TypeScript.
  *
@@ -131,7 +130,7 @@ var lang_1 = require('./facade/lang');
   declaration. This is a directive to the styling shim to use the selector
   in comments in lieu of the next selector when running under polyfill.
 */
-var ShadowCss = (function () {
+export var ShadowCss = (function () {
     function ShadowCss() {
         this.strictStyling = true;
     }
@@ -170,7 +169,7 @@ var ShadowCss = (function () {
     **/
     ShadowCss.prototype._insertPolyfillDirectivesInCssText = function (cssText) {
         // Difference with webcomponents.js: does not handle comments
-        return lang_1.StringWrapper.replaceAllMapped(cssText, _cssContentNextSelectorRe, function (m /** TODO #9100 */) { return m[1] + '{'; });
+        return StringWrapper.replaceAllMapped(cssText, _cssContentNextSelectorRe, function (m /** TODO #9100 */) { return m[1] + '{'; });
     };
     /*
      * Process styles to add rules which will only apply under the polyfill
@@ -189,10 +188,10 @@ var ShadowCss = (function () {
     **/
     ShadowCss.prototype._insertPolyfillRulesInCssText = function (cssText) {
         // Difference with webcomponents.js: does not handle comments
-        return lang_1.StringWrapper.replaceAllMapped(cssText, _cssContentRuleRe, function (m /** TODO #9100 */) {
+        return StringWrapper.replaceAllMapped(cssText, _cssContentRuleRe, function (m /** TODO #9100 */) {
             var rule = m[0];
-            rule = lang_1.StringWrapper.replace(rule, m[1], '');
-            rule = lang_1.StringWrapper.replace(rule, m[2], '');
+            rule = StringWrapper.replace(rule, m[1], '');
+            rule = StringWrapper.replace(rule, m[2], '');
             return m[3] + rule;
         });
     };
@@ -210,7 +209,7 @@ var ShadowCss = (function () {
         cssText = this._convertColonHost(cssText);
         cssText = this._convertColonHostContext(cssText);
         cssText = this._convertShadowDOMSelectors(cssText);
-        if (lang_1.isPresent(scopeSelector)) {
+        if (isPresent(scopeSelector)) {
             cssText = this._scopeSelectors(cssText, scopeSelector, hostSelector);
         }
         cssText = cssText + '\n' + unscoped;
@@ -238,8 +237,8 @@ var ShadowCss = (function () {
         _cssContentUnscopedRuleRe.lastIndex = 0;
         while ((m = _cssContentUnscopedRuleRe.exec(cssText)) !== null) {
             var rule = m[0];
-            rule = lang_1.StringWrapper.replace(rule, m[2], '');
-            rule = lang_1.StringWrapper.replace(rule, m[1], m[3]);
+            rule = StringWrapper.replace(rule, m[2], '');
+            rule = StringWrapper.replace(rule, m[1], m[3]);
             r += rule + '\n\n';
         }
         return r;
@@ -274,12 +273,12 @@ var ShadowCss = (function () {
     };
     ShadowCss.prototype._convertColonRule = function (cssText, regExp, partReplacer) {
         // p1 = :host, p2 = contents of (), p3 rest of rule
-        return lang_1.StringWrapper.replaceAllMapped(cssText, regExp, function (m /** TODO #9100 */) {
-            if (lang_1.isPresent(m[2])) {
+        return StringWrapper.replaceAllMapped(cssText, regExp, function (m /** TODO #9100 */) {
+            if (isPresent(m[2])) {
                 var parts = m[2].split(','), r = [];
                 for (var i = 0; i < parts.length; i++) {
                     var p = parts[i];
-                    if (lang_1.isBlank(p))
+                    if (isBlank(p))
                         break;
                     p = p.trim();
                     r.push(partReplacer(_polyfillHostNoCombinator, p, m[3]));
@@ -292,7 +291,7 @@ var ShadowCss = (function () {
         });
     };
     ShadowCss.prototype._colonHostContextPartReplacer = function (host, part, suffix) {
-        if (lang_1.StringWrapper.contains(part, _polyfillHost)) {
+        if (StringWrapper.contains(part, _polyfillHost)) {
             return this._colonHostPartReplacer(host, part, suffix);
         }
         else {
@@ -300,14 +299,14 @@ var ShadowCss = (function () {
         }
     };
     ShadowCss.prototype._colonHostPartReplacer = function (host, part, suffix) {
-        return host + lang_1.StringWrapper.replace(part, _polyfillHost, '') + suffix;
+        return host + StringWrapper.replace(part, _polyfillHost, '') + suffix;
     };
     /*
      * Convert combinators like ::shadow and pseudo-elements like ::content
      * by replacing with space.
     */
     ShadowCss.prototype._convertShadowDOMSelectors = function (cssText) {
-        return _shadowDOMSelectorsRe.reduce(function (result, pattern) { return lang_1.StringWrapper.replaceAll(result, pattern, ' '); }, cssText);
+        return _shadowDOMSelectorsRe.reduce(function (result, pattern) { return StringWrapper.replaceAll(result, pattern, ' '); }, cssText);
     };
     // change a selector like 'div' to 'name div'
     ShadowCss.prototype._scopeSelectors = function (cssText, scopeSelector, hostSelector) {
@@ -352,8 +351,8 @@ var ShadowCss = (function () {
     ShadowCss.prototype._makeScopeMatcher = function (scopeSelector) {
         var lre = /\[/g;
         var rre = /\]/g;
-        scopeSelector = lang_1.StringWrapper.replaceAll(scopeSelector, lre, '\\[');
-        scopeSelector = lang_1.StringWrapper.replaceAll(scopeSelector, rre, '\\]');
+        scopeSelector = StringWrapper.replaceAll(scopeSelector, lre, '\\[');
+        scopeSelector = StringWrapper.replaceAll(scopeSelector, rre, '\\]');
         return new RegExp('^(' + scopeSelector + ')' + _selectorReSuffix, 'm');
     };
     ShadowCss.prototype._applySelectorScope = function (selector, scopeSelector, hostSelector) {
@@ -366,8 +365,8 @@ var ShadowCss = (function () {
         _polyfillHostRe.lastIndex = 0;
         if (_polyfillHostRe.test(selector)) {
             var replaceBy = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
-            selector = lang_1.StringWrapper.replace(selector, _polyfillHostNoCombinator, replaceBy);
-            return lang_1.StringWrapper.replaceAll(selector, _polyfillHostRe, replaceBy + ' ');
+            selector = StringWrapper.replace(selector, _polyfillHostNoCombinator, replaceBy);
+            return StringWrapper.replaceAll(selector, _polyfillHostRe, replaceBy + ' ');
         }
         else {
             return scopeSelector + ' ' + selector;
@@ -428,7 +427,6 @@ var ShadowCss = (function () {
     };
     return ShadowCss;
 }());
-exports.ShadowCss = ShadowCss;
 var _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?['"](.*?)['"][;\s]*}([^{]*?){/gim;
 var _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
 var _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
@@ -455,7 +453,7 @@ var _colonHostRe = /:host/gim;
 var _colonHostContextRe = /:host-context/gim;
 var _commentRe = /\/\*\s*[\s\S]*?\*\//g;
 function stripComments(input) {
-    return lang_1.StringWrapper.replaceAllMapped(input, _commentRe, function (_ /** TODO #9100 */) { return ''; });
+    return StringWrapper.replaceAllMapped(input, _commentRe, function (_ /** TODO #9100 */) { return ''; });
 }
 // all comments except inline source mapping ("/* #sourceMappingURL= ... */")
 var _sourceMappingUrlRe = /[\s\S]*(\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\/)\s*$/;
@@ -468,23 +466,22 @@ var _curlyRe = /([{}])/g;
 var OPEN_CURLY = '{';
 var CLOSE_CURLY = '}';
 var BLOCK_PLACEHOLDER = '%BLOCK%';
-var CssRule = (function () {
+export var CssRule = (function () {
     function CssRule(selector, content) {
         this.selector = selector;
         this.content = content;
     }
     return CssRule;
 }());
-exports.CssRule = CssRule;
-function processRules(input, ruleCallback) {
+export function processRules(input, ruleCallback) {
     var inputWithEscapedBlocks = escapeBlocks(input);
     var nextBlockIndex = 0;
-    return lang_1.StringWrapper.replaceAllMapped(inputWithEscapedBlocks.escapedString, _ruleRe, function (m /** TODO #9100 */) {
+    return StringWrapper.replaceAllMapped(inputWithEscapedBlocks.escapedString, _ruleRe, function (m /** TODO #9100 */) {
         var selector = m[2];
         var content = '';
         var suffix = m[4];
         var contentPrefix = '';
-        if (lang_1.isPresent(m[4]) && m[4].startsWith('{' + BLOCK_PLACEHOLDER)) {
+        if (isPresent(m[4]) && m[4].startsWith('{' + BLOCK_PLACEHOLDER)) {
             content = inputWithEscapedBlocks.blocks[nextBlockIndex++];
             suffix = m[4].substring(BLOCK_PLACEHOLDER.length + 1);
             contentPrefix = '{';
@@ -493,7 +490,6 @@ function processRules(input, ruleCallback) {
         return "" + m[1] + rule.selector + m[3] + contentPrefix + rule.content + suffix;
     });
 }
-exports.processRules = processRules;
 var StringWithEscapedBlocks = (function () {
     function StringWithEscapedBlocks(escapedString, blocks) {
         this.escapedString = escapedString;
@@ -502,7 +498,7 @@ var StringWithEscapedBlocks = (function () {
     return StringWithEscapedBlocks;
 }());
 function escapeBlocks(input) {
-    var inputParts = lang_1.StringWrapper.split(input, _curlyRe);
+    var inputParts = StringWrapper.split(input, _curlyRe);
     var resultParts = [];
     var escapedBlocks = [];
     var bracketCount = 0;

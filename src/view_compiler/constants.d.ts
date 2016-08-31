@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
-import { ViewType } from '../../core_private';
 import * as o from '../output/output_ast';
+import { ViewType } from '../private_import_core';
 export declare class ViewTypeEnum {
     static fromValue(value: ViewType): o.Expression;
 }

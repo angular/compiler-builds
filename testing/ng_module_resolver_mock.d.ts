@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { NgModuleResolver } from '@angular/compiler';
 import { Injector, NgModuleMetadata, Type } from '@angular/core';
-import { NgModuleResolver } from '../index';
 export declare class MockNgModuleResolver extends NgModuleResolver {
     private _injector;
     private _ngModules;

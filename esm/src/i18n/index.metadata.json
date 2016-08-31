@@ -1,1 +1,0 @@
-{"__symbolic":"module","version":1,"metadata":{},"exports":[{"from":"./html_parser","export":["HtmlParser"]},{"from":"./message_bundle","export":["MessageBundle"]},{"from":"./serializers/serializer","export":["Serializer"]},{"from":"./serializers/xliff","export":["Xliff"]},{"from":"./serializers/xmb","export":["Xmb"]},{"from":"./serializers/xtb","export":["Xtb"]}]}

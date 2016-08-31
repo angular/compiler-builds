@@ -5,15 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var ml = require('../../ml_parser/ast');
-var xml_parser_1 = require('../../ml_parser/xml_parser');
-var parse_util_1 = require('../parse_util');
-var serializer_1 = require('./serializer');
+import * as ml from '../../ml_parser/ast';
+import { XmlParser } from '../../ml_parser/xml_parser';
+import { I18nError } from '../parse_util';
+import { extractPlaceholderToIds, extractPlaceholders } from './serializer';
 var _TRANSLATIONS_TAG = 'translationbundle';
 var _TRANSLATION_TAG = 'translation';
 var _PLACEHOLDER_TAG = 'ph';
-var Xtb = (function () {
+export var Xtb = (function () {
     function Xtb(_htmlParser, _interpolationConfig) {
         this._htmlParser = _htmlParser;
         this._interpolationConfig = _interpolationConfig;
@@ -22,7 +21,7 @@ var Xtb = (function () {
     Xtb.prototype.load = function (content, url, messageBundle) {
         var _this = this;
         // Parse the xtb file into xml nodes
-        var result = new xml_parser_1.XmlParser().parse(content, url);
+        var result = new XmlParser().parse(content, url);
         if (result.errors.length) {
             throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
         }
@@ -47,7 +46,6 @@ var Xtb = (function () {
     };
     return Xtb;
 }());
-exports.Xtb = Xtb;
 var _Visitor = (function () {
     function _Visitor() {
     }
@@ -61,8 +59,8 @@ var _Visitor = (function () {
         // Find all messages
         ml.visitAll(this, nodes, null);
         var messageMap = messageBundle.getMessageMap();
-        var placeholders = serializer_1.extractPlaceholders(messageBundle);
-        var placeholderToIds = serializer_1.extractPlaceholderToIds(messageBundle);
+        var placeholders = extractPlaceholders(messageBundle);
+        var placeholderToIds = extractPlaceholderToIds(messageBundle);
         this._messageNodes
             .filter(function (message) {
             // Remove any messages that is not present in the source message bundle.
@@ -155,7 +153,7 @@ var _Visitor = (function () {
         return expansionCase.value + " {" + ml.visitAll(this, expansionCase.expression, null) + "}";
     };
     _Visitor.prototype._addError = function (node, message) {
-        this._errors.push(new parse_util_1.I18nError(node.sourceSpan, message));
+        this._errors.push(new I18nError(node.sourceSpan, message));
     };
     return _Visitor;
 }());

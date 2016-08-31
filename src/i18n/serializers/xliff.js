@@ -5,13 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var collection_1 = require('../../facade/collection');
-var ml = require('../../ml_parser/ast');
-var xml_parser_1 = require('../../ml_parser/xml_parser');
-var parse_util_1 = require('../parse_util');
-var serializer_1 = require('./serializer');
-var xml = require('./xml_helper');
+import { ListWrapper } from '../../facade/collection';
+import * as ml from '../../ml_parser/ast';
+import { XmlParser } from '../../ml_parser/xml_parser';
+import { I18nError } from '../parse_util';
+import { extractPlaceholderToIds, extractPlaceholders } from './serializer';
+import * as xml from './xml_helper';
 var _VERSION = '1.2';
 var _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
@@ -26,7 +25,7 @@ var _CR = function (ws) {
 };
 // http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
 // http://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2.html
-var Xliff = (function () {
+export var Xliff = (function () {
     function Xliff(_htmlParser, _interpolationConfig) {
         this._htmlParser = _htmlParser;
         this._interpolationConfig = _interpolationConfig;
@@ -55,7 +54,7 @@ var Xliff = (function () {
     Xliff.prototype.load = function (content, url, messageBundle) {
         var _this = this;
         // Parse the xtb file into xml nodes
-        var result = new xml_parser_1.XmlParser().parse(content, url);
+        var result = new XmlParser().parse(content, url);
         if (result.errors.length) {
             throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
         }
@@ -80,7 +79,6 @@ var Xliff = (function () {
     };
     return Xliff;
 }());
-exports.Xliff = Xliff;
 var _WriteVisitor = (function () {
     function _WriteVisitor() {
     }
@@ -122,7 +120,7 @@ var _WriteVisitor = (function () {
     _WriteVisitor.prototype.serialize = function (nodes) {
         var _this = this;
         this._isInIcu = false;
-        return collection_1.ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
+        return ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
     };
     return _WriteVisitor;
 }());
@@ -141,8 +139,8 @@ var _LoadVisitor = (function () {
         // Find all messages
         ml.visitAll(this, nodes, null);
         var messageMap = messageBundle.getMessageMap();
-        var placeholders = serializer_1.extractPlaceholders(messageBundle);
-        var placeholderToIds = serializer_1.extractPlaceholderToIds(messageBundle);
+        var placeholders = extractPlaceholders(messageBundle);
+        var placeholderToIds = extractPlaceholderToIds(messageBundle);
         this._messageNodes
             .filter(function (message) {
             // Remove any messages that is not present in the source message bundle.
@@ -227,7 +225,7 @@ var _LoadVisitor = (function () {
         throw new Error('unreachable code');
     };
     _LoadVisitor.prototype._addError = function (node, message) {
-        this._errors.push(new parse_util_1.I18nError(node.sourceSpan, message));
+        this._errors.push(new I18nError(node.sourceSpan, message));
     };
     return _LoadVisitor;
 }());

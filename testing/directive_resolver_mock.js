@@ -1,34 +1,30 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-"use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var core_1 = require('@angular/core');
-var directive_resolver_1 = require('../src/directive_resolver');
-var collection_1 = require('../src/facade/collection');
-var lang_1 = require('../src/facade/lang');
-var MockDirectiveResolver = (function (_super) {
+import { DirectiveResolver } from '@angular/compiler';
+import { Compiler, ComponentMetadata, DirectiveMetadata, Injectable, Injector, resolveForwardRef } from '@angular/core';
+import { Map } from './facade/collection';
+import { isArray, isPresent } from './facade/lang';
+/**
+ * An implementation of {@link DirectiveResolver} that allows overriding
+ * various properties of directives.
+ */
+export var MockDirectiveResolver = (function (_super) {
     __extends(MockDirectiveResolver, _super);
     function MockDirectiveResolver(_injector) {
         _super.call(this);
         this._injector = _injector;
-        this._directives = new collection_1.Map();
-        this._providerOverrides = new collection_1.Map();
-        this._viewProviderOverrides = new collection_1.Map();
-        this._views = new collection_1.Map();
-        this._inlineTemplates = new collection_1.Map();
-        this._animations = new collection_1.Map();
+        this._directives = new Map();
+        this._providerOverrides = new Map();
+        this._viewProviderOverrides = new Map();
+        this._views = new Map();
+        this._inlineTemplates = new Map();
+        this._animations = new Map();
     }
     Object.defineProperty(MockDirectiveResolver.prototype, "_compiler", {
-        get: function () { return this._injector.get(core_1.Compiler); },
+        get: function () { return this._injector.get(Compiler); },
         enumerable: true,
         configurable: true
     });
@@ -45,14 +41,14 @@ var MockDirectiveResolver = (function (_super) {
         var providerOverrides = this._providerOverrides.get(type);
         var viewProviderOverrides = this._viewProviderOverrides.get(type);
         var providers = metadata.providers;
-        if (lang_1.isPresent(providerOverrides)) {
-            var originalViewProviders = lang_1.isPresent(metadata.providers) ? metadata.providers : [];
+        if (isPresent(providerOverrides)) {
+            var originalViewProviders = isPresent(metadata.providers) ? metadata.providers : [];
             providers = originalViewProviders.concat(providerOverrides);
         }
-        if (metadata instanceof core_1.ComponentMetadata) {
+        if (metadata instanceof ComponentMetadata) {
             var viewProviders = metadata.viewProviders;
-            if (lang_1.isPresent(viewProviderOverrides)) {
-                var originalViewProviders = lang_1.isPresent(metadata.viewProviders) ? metadata.viewProviders : [];
+            if (isPresent(viewProviderOverrides)) {
+                var originalViewProviders = isPresent(metadata.viewProviders) ? metadata.viewProviders : [];
                 viewProviders = originalViewProviders.concat(viewProviderOverrides);
             }
             var view = this._views.get(type);
@@ -62,17 +58,17 @@ var MockDirectiveResolver = (function (_super) {
             var animations = view.animations;
             var templateUrl = view.templateUrl;
             var inlineAnimations = this._animations.get(type);
-            if (lang_1.isPresent(inlineAnimations)) {
+            if (isPresent(inlineAnimations)) {
                 animations = inlineAnimations;
             }
             var inlineTemplate = this._inlineTemplates.get(type);
-            if (lang_1.isPresent(inlineTemplate)) {
+            if (isPresent(inlineTemplate)) {
                 templateUrl = null;
             }
             else {
                 inlineTemplate = view.template;
             }
-            return new core_1.ComponentMetadata({
+            return new ComponentMetadata({
                 selector: metadata.selector,
                 inputs: metadata.inputs,
                 outputs: metadata.outputs,
@@ -93,7 +89,7 @@ var MockDirectiveResolver = (function (_super) {
                 interpolation: view.interpolation
             });
         }
-        return new core_1.DirectiveMetadata({
+        return new DirectiveMetadata({
             selector: metadata.selector,
             inputs: metadata.inputs,
             outputs: metadata.outputs,
@@ -136,23 +132,21 @@ var MockDirectiveResolver = (function (_super) {
         this._animations.set(component, animations);
         this._clearCacheFor(component);
     };
-    /** @nocollapse */
     MockDirectiveResolver.decorators = [
-        { type: core_1.Injectable },
+        { type: Injectable },
     ];
     /** @nocollapse */
     MockDirectiveResolver.ctorParameters = [
-        { type: core_1.Injector, },
+        { type: Injector, },
     ];
     return MockDirectiveResolver;
-}(directive_resolver_1.DirectiveResolver));
-exports.MockDirectiveResolver = MockDirectiveResolver;
+}(DirectiveResolver));
 function flattenArray(tree, out) {
-    if (!lang_1.isPresent(tree))
+    if (!isPresent(tree))
         return;
     for (var i = 0; i < tree.length; i++) {
-        var item = core_1.resolveForwardRef(tree[i]);
-        if (lang_1.isArray(item)) {
+        var item = resolveForwardRef(tree[i]);
+        if (isArray(item)) {
             flattenArray(item, out);
         }
         else {

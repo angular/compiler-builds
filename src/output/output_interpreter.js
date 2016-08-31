@@ -5,26 +5,24 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var collection_1 = require('../facade/collection');
-var lang_1 = require('../facade/lang');
-var o = require('./output_ast');
-var ts_emitter_1 = require('./ts_emitter');
-function interpretStatements(statements, resultVar) {
+import { ListWrapper } from '../facade/collection';
+import { isPresent } from '../facade/lang';
+import * as o from './output_ast';
+import { debugOutputAstAsTypeScript } from './ts_emitter';
+export function interpretStatements(statements, resultVar) {
     var stmtsWithReturn = statements.concat([new o.ReturnStatement(o.variable(resultVar))]);
     var ctx = new _ExecutionContext(null, null, null, new Map());
     var visitor = new StatementInterpreter();
     var result = visitor.visitAllStatements(stmtsWithReturn, ctx);
-    return lang_1.isPresent(result) ? result.value : null;
+    return isPresent(result) ? result.value : null;
 }
-exports.interpretStatements = interpretStatements;
 function _executeFunctionStatements(varNames, varValues, statements, ctx, visitor) {
     var childCtx = ctx.createChildWihtLocalVars();
     for (var i = 0; i < varNames.length; i++) {
         childCtx.vars.set(varNames[i], varValues[i]);
     }
     var result = visitor.visitAllStatements(statements, childCtx);
-    return lang_1.isPresent(result) ? result.value : null;
+    return isPresent(result) ? result.value : null;
 }
 var _ExecutionContext = (function () {
     function _ExecutionContext(parent, instance, className, vars) {
@@ -91,7 +89,7 @@ function createDynamicClass(_classStmt, _ctx, _visitor) {
 var StatementInterpreter = (function () {
     function StatementInterpreter() {
     }
-    StatementInterpreter.prototype.debugAst = function (ast) { return ts_emitter_1.debugOutputAstAsTypeScript(ast); };
+    StatementInterpreter.prototype.debugAst = function (ast) { return debugOutputAstAsTypeScript(ast); };
     StatementInterpreter.prototype.visitDeclareVarStmt = function (stmt, ctx) {
         ctx.vars.set(stmt.name, stmt.value.visitExpression(this, ctx));
         return null;
@@ -110,7 +108,7 @@ var StatementInterpreter = (function () {
     };
     StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
         var varName = ast.name;
-        if (lang_1.isPresent(ast.builtin)) {
+        if (isPresent(ast.builtin)) {
             switch (ast.builtin) {
                 case o.BuiltinVar.Super:
                     return ctx.instance.__proto__;
@@ -152,10 +150,10 @@ var StatementInterpreter = (function () {
         var receiver = expr.receiver.visitExpression(this, ctx);
         var args = this.visitAllExpressions(expr.args, ctx);
         var result;
-        if (lang_1.isPresent(expr.builtin)) {
+        if (isPresent(expr.builtin)) {
             switch (expr.builtin) {
                 case o.BuiltinMethod.ConcatArray:
-                    result = collection_1.ListWrapper.concat(receiver, args[0]);
+                    result = ListWrapper.concat(receiver, args[0]);
                     break;
                 case o.BuiltinMethod.SubscribeObservable:
                     result = receiver.subscribe({ next: args[0] });
@@ -200,7 +198,7 @@ var StatementInterpreter = (function () {
         if (condition) {
             return this.visitAllStatements(stmt.trueCase, ctx);
         }
-        else if (lang_1.isPresent(stmt.falseCase)) {
+        else if (isPresent(stmt.falseCase)) {
             return this.visitAllStatements(stmt.falseCase, ctx);
         }
         return null;
@@ -233,7 +231,7 @@ var StatementInterpreter = (function () {
         if (ast.condition.visitExpression(this, ctx)) {
             return ast.trueCase.visitExpression(this, ctx);
         }
-        else if (lang_1.isPresent(ast.falseCase)) {
+        else if (isPresent(ast.falseCase)) {
             return ast.falseCase.visitExpression(this, ctx);
         }
         return null;

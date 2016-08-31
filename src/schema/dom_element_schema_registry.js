@@ -5,17 +5,16 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var core_1 = require('@angular/core');
-var collection_1 = require('../facade/collection');
-var lang_1 = require('../facade/lang');
-var dom_security_schema_1 = require('./dom_security_schema');
-var element_schema_registry_1 = require('./element_schema_registry');
+import { CUSTOM_ELEMENTS_SCHEMA, Injectable, NO_ERRORS_SCHEMA, SecurityContext } from '@angular/core';
+import { StringMapWrapper } from '../facade/collection';
+import { isPresent } from '../facade/lang';
+import { SECURITY_SCHEMA } from './dom_security_schema';
+import { ElementSchemaRegistry } from './element_schema_registry';
 var EVENT = 'event';
 var BOOLEAN = 'boolean';
 var NUMBER = 'number';
@@ -228,7 +227,7 @@ var attrToPropMap = {
     'readonly': 'readOnly',
     'tabindex': 'tabIndex'
 };
-var DomElementSchemaRegistry = (function (_super) {
+export var DomElementSchemaRegistry = (function (_super) {
     __extends(DomElementSchemaRegistry, _super);
     function DomElementSchemaRegistry() {
         var _this = this;
@@ -242,8 +241,8 @@ var DomElementSchemaRegistry = (function (_super) {
             var type = {};
             typeName.split(',').forEach(function (tag) { return _this.schema[tag] = type; });
             var superType = _this.schema[typeParts[1]];
-            if (lang_1.isPresent(superType)) {
-                collection_1.StringMapWrapper.forEach(superType, function (v /** TODO #9100 */, k /** TODO #9100 */) { return type[k] = v; });
+            if (isPresent(superType)) {
+                StringMapWrapper.forEach(superType, function (v /** TODO #9100 */, k /** TODO #9100 */) { return type[k] = v; });
             }
             properties.forEach(function (property) {
                 if (property == '') {
@@ -266,24 +265,24 @@ var DomElementSchemaRegistry = (function (_super) {
         });
     }
     DomElementSchemaRegistry.prototype.hasProperty = function (tagName, propName, schemaMetas) {
-        if (schemaMetas.some(function (schema) { return schema.name === core_1.NO_ERRORS_SCHEMA.name; })) {
+        if (schemaMetas.some(function (schema) { return schema.name === NO_ERRORS_SCHEMA.name; })) {
             return true;
         }
         if (tagName.indexOf('-') !== -1) {
             if (tagName === 'ng-container' || tagName === 'ng-content') {
                 return false;
             }
-            if (schemaMetas.some(function (schema) { return schema.name === core_1.CUSTOM_ELEMENTS_SCHEMA.name; })) {
+            if (schemaMetas.some(function (schema) { return schema.name === CUSTOM_ELEMENTS_SCHEMA.name; })) {
                 // Can't tell now as we don't know which properties a custom element will get
                 // once it is instantiated
                 return true;
             }
         }
         var elementProperties = this.schema[tagName.toLowerCase()];
-        if (!lang_1.isPresent(elementProperties)) {
+        if (!isPresent(elementProperties)) {
             elementProperties = this.schema['unknown'];
         }
-        return lang_1.isPresent(elementProperties[propName]);
+        return isPresent(elementProperties[propName]);
     };
     /**
      * securityContext returns the security context for the given property on the given DOM tag.
@@ -300,24 +299,22 @@ var DomElementSchemaRegistry = (function (_super) {
         // property names do not have a security impact.
         tagName = tagName.toLowerCase();
         propName = propName.toLowerCase();
-        var ctx = dom_security_schema_1.SECURITY_SCHEMA[tagName + '|' + propName];
+        var ctx = SECURITY_SCHEMA[tagName + '|' + propName];
         if (ctx !== undefined)
             return ctx;
-        ctx = dom_security_schema_1.SECURITY_SCHEMA['*|' + propName];
-        return ctx !== undefined ? ctx : core_1.SecurityContext.NONE;
+        ctx = SECURITY_SCHEMA['*|' + propName];
+        return ctx !== undefined ? ctx : SecurityContext.NONE;
     };
     DomElementSchemaRegistry.prototype.getMappedPropName = function (propName) {
-        var mappedPropName = collection_1.StringMapWrapper.get(attrToPropMap, propName);
-        return lang_1.isPresent(mappedPropName) ? mappedPropName : propName;
+        var mappedPropName = StringMapWrapper.get(attrToPropMap, propName);
+        return isPresent(mappedPropName) ? mappedPropName : propName;
     };
     DomElementSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
-    /** @nocollapse */
     DomElementSchemaRegistry.decorators = [
-        { type: core_1.Injectable },
+        { type: Injectable },
     ];
     /** @nocollapse */
     DomElementSchemaRegistry.ctorParameters = [];
     return DomElementSchemaRegistry;
-}(element_schema_registry_1.ElementSchemaRegistry));
-exports.DomElementSchemaRegistry = DomElementSchemaRegistry;
+}(ElementSchemaRegistry));
 //# sourceMappingURL=dom_element_schema_registry.js.map

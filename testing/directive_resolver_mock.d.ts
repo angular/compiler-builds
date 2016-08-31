@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { DirectiveResolver } from '@angular/compiler';
 import { AnimationEntryMetadata, DirectiveMetadata, Injector, Provider, Type } from '@angular/core';
-import { ViewMetadata } from '../core_private';
-import { DirectiveResolver } from '../src/directive_resolver';
+import { ViewMetadata } from './private_import_core';
 /**
  * An implementation of {@link DirectiveResolver} that allows overriding
  * various properties of directives.

@@ -5,28 +5,25 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var compile_metadata_1 = require('./compile_metadata');
-var collection_1 = require('./facade/collection');
-var identifiers_1 = require('./identifiers');
-var o = require('./output/output_ast');
-var view_compiler_1 = require('./view_compiler/view_compiler');
-var SourceModule = (function () {
+import { CompileProviderMetadata, createHostComponentMeta } from './compile_metadata';
+import { ListWrapper } from './facade/collection';
+import { Identifiers, resolveIdentifier, resolveIdentifierToken } from './identifiers';
+import * as o from './output/output_ast';
+import { ComponentFactoryDependency, ViewFactoryDependency } from './view_compiler/view_compiler';
+export var SourceModule = (function () {
     function SourceModule(moduleUrl, source) {
         this.moduleUrl = moduleUrl;
         this.source = source;
     }
     return SourceModule;
 }());
-exports.SourceModule = SourceModule;
-var NgModulesSummary = (function () {
+export var NgModulesSummary = (function () {
     function NgModulesSummary(ngModuleByComponent) {
         this.ngModuleByComponent = ngModuleByComponent;
     }
     return NgModulesSummary;
 }());
-exports.NgModulesSummary = NgModulesSummary;
-var OfflineCompiler = (function () {
+export var OfflineCompiler = (function () {
     function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat) {
         this._metadataResolver = _metadataResolver;
         this._directiveNormalizer = _directiveNormalizer;
@@ -97,9 +94,9 @@ var OfflineCompiler = (function () {
     OfflineCompiler.prototype._compileModule = function (ngModuleType, targetStatements) {
         var ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
         var appCompileResult = this._ngModuleCompiler.compile(ngModule, [
-            new compile_metadata_1.CompileProviderMetadata({ token: identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.LOCALE_ID), useValue: this._localeId }),
-            new compile_metadata_1.CompileProviderMetadata({
-                token: identifiers_1.resolveIdentifierToken(identifiers_1.Identifiers.TRANSLATIONS_FORMAT),
+            new CompileProviderMetadata({ token: resolveIdentifierToken(Identifiers.LOCALE_ID), useValue: this._localeId }),
+            new CompileProviderMetadata({
+                token: resolveIdentifierToken(Identifiers.TRANSLATIONS_FORMAT),
                 useValue: this._translationFormat
             })
         ]);
@@ -111,15 +108,15 @@ var OfflineCompiler = (function () {
         return appCompileResult.ngModuleFactoryVar;
     };
     OfflineCompiler.prototype._compileComponentFactory = function (compMeta, fileSuffix, targetStatements) {
-        var hostMeta = compile_metadata_1.createHostComponentMeta(compMeta);
+        var hostMeta = createHostComponentMeta(compMeta);
         var hostViewFactoryVar = this._compileComponent(hostMeta, [compMeta], [], [], null, fileSuffix, targetStatements);
         var compFactoryVar = _componentFactoryName(compMeta.type);
         targetStatements.push(o.variable(compFactoryVar)
-            .set(o.importExpr(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ComponentFactory), [o.importType(compMeta.type)])
+            .set(o.importExpr(resolveIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)])
             .instantiate([
             o.literal(compMeta.selector), o.variable(hostViewFactoryVar),
             o.importExpr(compMeta.type)
-        ], o.importType(identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const])))
+        ], o.importType(resolveIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]));
         return compFactoryVar;
     };
@@ -128,9 +125,9 @@ var OfflineCompiler = (function () {
         var stylesExpr = componentStyles ? o.variable(componentStyles.stylesVar) : o.literalArr([]);
         var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, pipes);
         if (componentStyles) {
-            collection_1.ListWrapper.addAll(targetStatements, _resolveStyleStatements(componentStyles, fileSuffix));
+            ListWrapper.addAll(targetStatements, _resolveStyleStatements(componentStyles, fileSuffix));
         }
-        collection_1.ListWrapper.addAll(targetStatements, _resolveViewStatements(viewResult));
+        ListWrapper.addAll(targetStatements, _resolveViewStatements(viewResult));
         return viewResult.viewFactoryVar;
     };
     OfflineCompiler.prototype._codgenStyles = function (stylesCompileResult, fileSuffix) {
@@ -142,14 +139,13 @@ var OfflineCompiler = (function () {
     };
     return OfflineCompiler;
 }());
-exports.OfflineCompiler = OfflineCompiler;
 function _resolveViewStatements(compileResult) {
     compileResult.dependencies.forEach(function (dep) {
-        if (dep instanceof view_compiler_1.ViewFactoryDependency) {
+        if (dep instanceof ViewFactoryDependency) {
             var vfd = dep;
             vfd.placeholder.moduleUrl = _ngfactoryModuleUrl(vfd.comp.moduleUrl);
         }
-        else if (dep instanceof view_compiler_1.ComponentFactoryDependency) {
+        else if (dep instanceof ComponentFactoryDependency) {
             var cfd = dep;
             cfd.placeholder.name = _componentFactoryName(cfd.comp);
             cfd.placeholder.moduleUrl = _ngfactoryModuleUrl(cfd.comp.moduleUrl);

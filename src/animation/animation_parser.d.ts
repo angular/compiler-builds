@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationOutput } from '../../core_private';
 import { CompileAnimationEntryMetadata } from '../compile_metadata';
 import { ParseError } from '../parse_util';
+import { AnimationOutput } from '../private_import_core';
 import { AnimationEntryAst } from './animation_ast';
 export declare class AnimationParseError extends ParseError {
     constructor(message: any);

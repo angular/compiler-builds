@@ -6,12 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { OpaqueToken, SchemaMetadata } from '@angular/core';
-import { Console } from '../../core_private';
 import { CompileDirectiveMetadata, CompilePipeMetadata } from '../compile_metadata';
 import { BindingPipe, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
-import { HtmlParser } from '../i18n/html_parser';
+import { I18NHtmlParser } from '../i18n/i18n_html_parser';
 import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
+import { Console } from '../private_import_core';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
 import { TemplateAst, TemplateAstVisitor } from './template_ast';
 /**
@@ -36,7 +36,7 @@ export declare class TemplateParser {
     private _htmlParser;
     private _console;
     transforms: TemplateAstVisitor[];
-    constructor(_exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: HtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
+    constructor(_exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: I18NHtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
     parse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[], schemas: SchemaMetadata[], templateUrl: string): TemplateAst[];
     tryParse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[], schemas: SchemaMetadata[], templateUrl: string): TemplateParseResult;
 }

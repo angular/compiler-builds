@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationOutput } from '../../core_private';
 import { CompileDirectiveMetadata } from '../compile_metadata';
 import * as o from '../output/output_ast';
+import { AnimationOutput } from '../private_import_core';
 import { BoundEventAst, DirectiveAst } from '../template_parser/template_ast';
 import { CompileElement } from './compile_element';
 export declare class CompileElementAnimationOutput {

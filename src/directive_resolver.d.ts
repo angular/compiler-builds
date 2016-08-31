@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { DirectiveMetadata, Type } from '@angular/core';
-import { ReflectorReader } from '../core_private';
+import { ReflectorReader } from './private_import_core';
 export declare class DirectiveResolver {
     private _reflector;
     constructor(_reflector?: ReflectorReader);

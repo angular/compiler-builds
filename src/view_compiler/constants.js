@@ -5,25 +5,24 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var core_1 = require('@angular/core');
-var core_private_1 = require('../../core_private');
-var identifiers_1 = require('../identifiers');
-var o = require('../output/output_ast');
+import { ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { Identifiers, resolveEnumIdentifier, resolveIdentifier } from '../identifiers';
+import * as o from '../output/output_ast';
+import { ChangeDetectorStatus, ViewType } from '../private_import_core';
 function _enumExpression(classIdentifier, name) {
-    return o.importExpr(identifiers_1.resolveEnumIdentifier(classIdentifier, name));
+    return o.importExpr(resolveEnumIdentifier(classIdentifier, name));
 }
-var ViewTypeEnum = (function () {
+export var ViewTypeEnum = (function () {
     function ViewTypeEnum() {
     }
     ViewTypeEnum.fromValue = function (value) {
-        var viewType = identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ViewType);
+        var viewType = resolveIdentifier(Identifiers.ViewType);
         switch (value) {
-            case core_private_1.ViewType.HOST:
+            case ViewType.HOST:
                 return _enumExpression(viewType, 'HOST');
-            case core_private_1.ViewType.COMPONENT:
+            case ViewType.COMPONENT:
                 return _enumExpression(viewType, 'COMPONENT');
-            case core_private_1.ViewType.EMBEDDED:
+            case ViewType.EMBEDDED:
                 return _enumExpression(viewType, 'EMBEDDED');
             default:
                 throw Error("Inavlid ViewType value: " + value);
@@ -31,18 +30,17 @@ var ViewTypeEnum = (function () {
     };
     return ViewTypeEnum;
 }());
-exports.ViewTypeEnum = ViewTypeEnum;
-var ViewEncapsulationEnum = (function () {
+export var ViewEncapsulationEnum = (function () {
     function ViewEncapsulationEnum() {
     }
     ViewEncapsulationEnum.fromValue = function (value) {
-        var viewEncapsulation = identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ViewEncapsulation);
+        var viewEncapsulation = resolveIdentifier(Identifiers.ViewEncapsulation);
         switch (value) {
-            case core_1.ViewEncapsulation.Emulated:
+            case ViewEncapsulation.Emulated:
                 return _enumExpression(viewEncapsulation, 'Emulated');
-            case core_1.ViewEncapsulation.Native:
+            case ViewEncapsulation.Native:
                 return _enumExpression(viewEncapsulation, 'Native');
-            case core_1.ViewEncapsulation.None:
+            case ViewEncapsulation.None:
                 return _enumExpression(viewEncapsulation, 'None');
             default:
                 throw Error("Inavlid ViewEncapsulation value: " + value);
@@ -50,16 +48,15 @@ var ViewEncapsulationEnum = (function () {
     };
     return ViewEncapsulationEnum;
 }());
-exports.ViewEncapsulationEnum = ViewEncapsulationEnum;
-var ChangeDetectionStrategyEnum = (function () {
+export var ChangeDetectionStrategyEnum = (function () {
     function ChangeDetectionStrategyEnum() {
     }
     ChangeDetectionStrategyEnum.fromValue = function (value) {
-        var changeDetectionStrategy = identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ChangeDetectionStrategy);
+        var changeDetectionStrategy = resolveIdentifier(Identifiers.ChangeDetectionStrategy);
         switch (value) {
-            case core_1.ChangeDetectionStrategy.OnPush:
+            case ChangeDetectionStrategy.OnPush:
                 return _enumExpression(changeDetectionStrategy, 'OnPush');
-            case core_1.ChangeDetectionStrategy.Default:
+            case ChangeDetectionStrategy.Default:
                 return _enumExpression(changeDetectionStrategy, 'Default');
             default:
                 throw Error("Inavlid ChangeDetectionStrategy value: " + value);
@@ -67,24 +64,23 @@ var ChangeDetectionStrategyEnum = (function () {
     };
     return ChangeDetectionStrategyEnum;
 }());
-exports.ChangeDetectionStrategyEnum = ChangeDetectionStrategyEnum;
-var ChangeDetectorStatusEnum = (function () {
+export var ChangeDetectorStatusEnum = (function () {
     function ChangeDetectorStatusEnum() {
     }
     ChangeDetectorStatusEnum.fromValue = function (value) {
-        var changeDetectorStatus = identifiers_1.resolveIdentifier(identifiers_1.Identifiers.ChangeDetectorStatus);
+        var changeDetectorStatus = resolveIdentifier(Identifiers.ChangeDetectorStatus);
         switch (value) {
-            case core_private_1.ChangeDetectorStatus.CheckOnce:
+            case ChangeDetectorStatus.CheckOnce:
                 return _enumExpression(changeDetectorStatus, 'CheckOnce');
-            case core_private_1.ChangeDetectorStatus.Checked:
+            case ChangeDetectorStatus.Checked:
                 return _enumExpression(changeDetectorStatus, 'Checked');
-            case core_private_1.ChangeDetectorStatus.CheckAlways:
+            case ChangeDetectorStatus.CheckAlways:
                 return _enumExpression(changeDetectorStatus, 'CheckAlways');
-            case core_private_1.ChangeDetectorStatus.Detached:
+            case ChangeDetectorStatus.Detached:
                 return _enumExpression(changeDetectorStatus, 'Detached');
-            case core_private_1.ChangeDetectorStatus.Errored:
+            case ChangeDetectorStatus.Errored:
                 return _enumExpression(changeDetectorStatus, 'Errored');
-            case core_private_1.ChangeDetectorStatus.Destroyed:
+            case ChangeDetectorStatus.Destroyed:
                 return _enumExpression(changeDetectorStatus, 'Destroyed');
             default:
                 throw Error("Inavlid ChangeDetectorStatus value: " + value);
@@ -92,8 +88,7 @@ var ChangeDetectorStatusEnum = (function () {
     };
     return ChangeDetectorStatusEnum;
 }());
-exports.ChangeDetectorStatusEnum = ChangeDetectorStatusEnum;
-var ViewConstructorVars = (function () {
+export var ViewConstructorVars = (function () {
     function ViewConstructorVars() {
     }
     ViewConstructorVars.viewUtils = o.variable('viewUtils');
@@ -101,8 +96,7 @@ var ViewConstructorVars = (function () {
     ViewConstructorVars.declarationEl = o.variable('declarationEl');
     return ViewConstructorVars;
 }());
-exports.ViewConstructorVars = ViewConstructorVars;
-var ViewProperties = (function () {
+export var ViewProperties = (function () {
     function ViewProperties() {
     }
     ViewProperties.renderer = o.THIS_EXPR.prop('renderer');
@@ -110,15 +104,13 @@ var ViewProperties = (function () {
     ViewProperties.viewUtils = o.THIS_EXPR.prop('viewUtils');
     return ViewProperties;
 }());
-exports.ViewProperties = ViewProperties;
-var EventHandlerVars = (function () {
+export var EventHandlerVars = (function () {
     function EventHandlerVars() {
     }
     EventHandlerVars.event = o.variable('$event');
     return EventHandlerVars;
 }());
-exports.EventHandlerVars = EventHandlerVars;
-var InjectMethodVars = (function () {
+export var InjectMethodVars = (function () {
     function InjectMethodVars() {
     }
     InjectMethodVars.token = o.variable('token');
@@ -126,8 +118,7 @@ var InjectMethodVars = (function () {
     InjectMethodVars.notFoundResult = o.variable('notFoundResult');
     return InjectMethodVars;
 }());
-exports.InjectMethodVars = InjectMethodVars;
-var DetectChangesVars = (function () {
+export var DetectChangesVars = (function () {
     function DetectChangesVars() {
     }
     DetectChangesVars.throwOnChange = o.variable("throwOnChange");
@@ -136,5 +127,4 @@ var DetectChangesVars = (function () {
     DetectChangesVars.valUnwrapper = o.variable("valUnwrapper");
     return DetectChangesVars;
 }());
-exports.DetectChangesVars = DetectChangesVars;
 //# sourceMappingURL=constants.js.map

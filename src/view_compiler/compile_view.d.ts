@@ -5,11 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ViewType } from '../../core_private';
 import { CompiledAnimationTriggerResult } from '../animation/animation_compiler';
 import { CompileDirectiveMetadata, CompilePipeMetadata } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import * as o from '../output/output_ast';
+import { ViewType } from '../private_import_core';
 import { CompileBinding } from './compile_binding';
 import { CompileElement, CompileNode } from './compile_element';
 import { CompileMethod } from './compile_method';

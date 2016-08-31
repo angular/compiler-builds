@@ -5,11 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-function digestMessage(message) {
+export function digestMessage(message) {
     return sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
 }
-exports.digestMessage = digestMessage;
 /**
  * Serialize the i18n ast to something xml-like in order to generate an UID.
  *
@@ -45,10 +43,9 @@ var _SerializerVisitor = (function () {
     return _SerializerVisitor;
 }());
 var serializerVisitor = new _SerializerVisitor();
-function serializeNodes(nodes) {
+export function serializeNodes(nodes) {
     return nodes.map(function (a) { return a.visit(serializerVisitor, null); });
 }
-exports.serializeNodes = serializeNodes;
 /**
  * Compute the SHA1 of the given string
  *
@@ -57,7 +54,7 @@ exports.serializeNodes = serializeNodes;
  * WARNING: this function has not been designed not tested with security in mind.
  *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
  */
-function sha1(str) {
+export function sha1(str) {
     var utf8 = utf8Encode(str);
     var words32 = stringToWords32(utf8);
     var len = utf8.length * 8;
@@ -89,7 +86,6 @@ function sha1(str) {
     return hex.toLowerCase();
     var _d, _e;
 }
-exports.sha1 = sha1;
 function utf8Encode(str) {
     var encoded = '';
     for (var index = 0; index < str.length; index++) {

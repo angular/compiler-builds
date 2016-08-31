@@ -5,23 +5,31 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var core_1 = require('@angular/core');
-var core_private_1 = require('../core_private');
-var compile_metadata_1 = require('./compile_metadata');
-var config_1 = require('./config');
-var directive_normalizer_1 = require('./directive_normalizer');
-var lang_1 = require('./facade/lang');
-var metadata_resolver_1 = require('./metadata_resolver');
-var ng_module_compiler_1 = require('./ng_module_compiler');
-var ir = require('./output/output_ast');
-var output_interpreter_1 = require('./output/output_interpreter');
-var output_jit_1 = require('./output/output_jit');
-var style_compiler_1 = require('./style_compiler');
-var template_parser_1 = require('./template_parser/template_parser');
-var util_1 = require('./util');
-var view_compiler_1 = require('./view_compiler/view_compiler');
-var RuntimeCompiler = (function () {
+import { Compiler, ComponentFactory, Injectable, Injector, ModuleWithComponentFactories } from '@angular/core';
+import { ProviderMeta, createHostComponentMeta } from './compile_metadata';
+import { CompilerConfig } from './config';
+import { DirectiveNormalizer } from './directive_normalizer';
+import { isBlank, stringify } from './facade/lang';
+import { CompileMetadataResolver } from './metadata_resolver';
+import { NgModuleCompiler } from './ng_module_compiler';
+import * as ir from './output/output_ast';
+import { interpretStatements } from './output/output_interpreter';
+import { jitStatements } from './output/output_jit';
+import { ComponentStillLoadingError } from './private_import_core';
+import { StyleCompiler } from './style_compiler';
+import { TemplateParser } from './template_parser/template_parser';
+import { SyncAsyncResult } from './util';
+import { ComponentFactoryDependency, ViewCompiler, ViewFactoryDependency } from './view_compiler/view_compiler';
+/**
+ * An internal module of the Angular compiler that begins with component types,
+ * extracts templates, and eventually produces a compiled version of the component
+ * ready for linking into an application.
+ *
+ * @security  When compiling templates at runtime, you must ensure that the entire template comes
+ * from a trusted source. Attacker-controlled data introduced by a template could expose your
+ * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
+ */
+export var RuntimeCompiler = (function () {
     function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
@@ -55,7 +63,7 @@ var RuntimeCompiler = (function () {
     RuntimeCompiler.prototype._compileModuleAndComponents = function (moduleType, isSync) {
         var componentPromise = this._compileComponents(moduleType, isSync);
         var ngModuleFactory = this._compileModule(moduleType);
-        return new util_1.SyncAsyncResult(ngModuleFactory, componentPromise.then(function () { return ngModuleFactory; }));
+        return new SyncAsyncResult(ngModuleFactory, componentPromise.then(function () { return ngModuleFactory; }));
     };
     RuntimeCompiler.prototype._compileModuleAndAllComponents = function (moduleType, isSync) {
         var _this = this;
@@ -73,7 +81,7 @@ var RuntimeCompiler = (function () {
                 }
             });
         });
-        var syncResult = new core_1.ModuleWithComponentFactories(ngModuleFactory, componentFactories);
+        var syncResult = new ModuleWithComponentFactories(ngModuleFactory, componentFactories);
         // Note: host components themselves can always be compiled synchronously as they have an
         // inline template. However, we still need to wait for the components that they
         // reference to be loaded / compiled.
@@ -82,7 +90,7 @@ var RuntimeCompiler = (function () {
             return syncResult;
         };
         var asyncResult = isSync ? Promise.resolve(compile()) : componentPromise.then(compile);
-        return new util_1.SyncAsyncResult(syncResult, asyncResult);
+        return new SyncAsyncResult(syncResult, asyncResult);
     };
     RuntimeCompiler.prototype._compileModule = function (moduleType) {
         var _this = this;
@@ -90,7 +98,7 @@ var RuntimeCompiler = (function () {
         if (!ngModuleFactory) {
             var moduleMeta_1 = this._metadataResolver.getNgModuleMetadata(moduleType);
             // Always provide a bound Compiler
-            var extraProviders = [this._metadataResolver.getProviderMetadata(new compile_metadata_1.ProviderMeta(core_1.Compiler, { useFactory: function () { return new ModuleBoundCompiler(_this, moduleMeta_1.type.reference); } }))];
+            var extraProviders = [this._metadataResolver.getProviderMetadata(new ProviderMeta(Compiler, { useFactory: function () { return new ModuleBoundCompiler(_this, moduleMeta_1.type.reference); } }))];
             var compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
             compileResult.dependencies.forEach(function (dep) {
                 dep.placeholder.reference =
@@ -99,10 +107,10 @@ var RuntimeCompiler = (function () {
             });
             if (!this._compilerConfig.useJit) {
                 ngModuleFactory =
-                    output_interpreter_1.interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
+                    interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
             }
             else {
-                ngModuleFactory = output_jit_1.jitStatements(moduleMeta_1.type.name + ".ngfactory.js", compileResult.statements, compileResult.ngModuleFactoryVar);
+                ngModuleFactory = jitStatements(moduleMeta_1.type.name + ".ngfactory.js", compileResult.statements, compileResult.ngModuleFactoryVar);
             }
             this._compiledNgModuleCache.set(moduleMeta_1.type.reference, ngModuleFactory);
         }
@@ -133,7 +141,7 @@ var RuntimeCompiler = (function () {
         templates.forEach(function (template) {
             if (template.loading) {
                 if (isSync) {
-                    throw new core_private_1.ComponentStillLoadingError(template.compType.reference);
+                    throw new ComponentStillLoadingError(template.compType.reference);
                 }
                 else {
                     loadingPromises.push(template.loading);
@@ -168,10 +176,10 @@ var RuntimeCompiler = (function () {
     };
     RuntimeCompiler.prototype._createCompiledHostTemplate = function (compType) {
         var compiledTemplate = this._compiledHostTemplateCache.get(compType);
-        if (lang_1.isBlank(compiledTemplate)) {
+        if (isBlank(compiledTemplate)) {
             var compMeta = this._metadataResolver.getDirectiveMetadata(compType);
             assertComponent(compMeta);
-            var hostMeta = compile_metadata_1.createHostComponentMeta(compMeta);
+            var hostMeta = createHostComponentMeta(compMeta);
             compiledTemplate = new CompiledTemplate(true, compMeta.selector, compMeta.type, [compMeta], [], [], this._templateNormalizer.normalizeDirective(hostMeta));
             this._compiledHostTemplateCache.set(compType, compiledTemplate);
         }
@@ -179,7 +187,7 @@ var RuntimeCompiler = (function () {
     };
     RuntimeCompiler.prototype._createCompiledTemplate = function (compMeta, ngModule) {
         var compiledTemplate = this._compiledTemplateCache.get(compMeta.type.reference);
-        if (lang_1.isBlank(compiledTemplate)) {
+        if (isBlank(compiledTemplate)) {
             assertComponent(compMeta);
             compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, ngModule.transitiveModule.directives, ngModule.transitiveModule.pipes, ngModule.schemas, this._templateNormalizer.normalizeDirective(compMeta));
             this._compiledTemplateCache.set(compMeta.type.reference, compiledTemplate);
@@ -191,10 +199,10 @@ var RuntimeCompiler = (function () {
             this._compiledTemplateCache.get(compType);
         if (!compiledTemplate) {
             if (isHost) {
-                throw new Error("Illegal state: Compiled view for component " + lang_1.stringify(compType) + " does not exist!");
+                throw new Error("Illegal state: Compiled view for component " + stringify(compType) + " does not exist!");
             }
             else {
-                throw new Error("Component " + lang_1.stringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
+                throw new Error("Component " + stringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
             }
         }
         return compiledTemplate;
@@ -202,7 +210,7 @@ var RuntimeCompiler = (function () {
     RuntimeCompiler.prototype._assertComponentLoaded = function (compType, isHost) {
         var compiledTemplate = this._assertComponentKnown(compType, isHost);
         if (compiledTemplate.loading) {
-            throw new Error("Illegal state: CompiledTemplate for " + lang_1.stringify(compType) + " (isHost: " + isHost + ") is still loading!");
+            throw new Error("Illegal state: CompiledTemplate for " + stringify(compType) + " (isHost: " + isHost + ") is still loading!");
         }
         return compiledTemplate;
     };
@@ -221,13 +229,13 @@ var RuntimeCompiler = (function () {
         var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), template.viewPipes);
         compileResult.dependencies.forEach(function (dep) {
             var depTemplate;
-            if (dep instanceof view_compiler_1.ViewFactoryDependency) {
+            if (dep instanceof ViewFactoryDependency) {
                 var vfd = dep;
                 depTemplate = _this._assertComponentLoaded(vfd.comp.reference, false);
                 vfd.placeholder.reference = depTemplate.proxyViewFactory;
                 vfd.placeholder.name = "viewFactory_" + vfd.comp.name;
             }
-            else if (dep instanceof view_compiler_1.ComponentFactoryDependency) {
+            else if (dep instanceof ComponentFactoryDependency) {
                 var cfd = dep;
                 depTemplate = _this._assertComponentLoaded(cfd.comp.reference, true);
                 cfd.placeholder.reference = depTemplate.proxyComponentFactory;
@@ -237,10 +245,10 @@ var RuntimeCompiler = (function () {
         var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
         var factory;
         if (!this._compilerConfig.useJit) {
-            factory = output_interpreter_1.interpretStatements(statements, compileResult.viewFactoryVar);
+            factory = interpretStatements(statements, compileResult.viewFactoryVar);
         }
         else {
-            factory = output_jit_1.jitStatements("" + template.compType.name + (template.isHost ? '_Host' : '') + ".ngfactory.js", statements, compileResult.viewFactoryVar);
+            factory = jitStatements("" + template.compType.name + (template.isHost ? '_Host' : '') + ".ngfactory.js", statements, compileResult.viewFactoryVar);
         }
         template.compiled(factory);
     };
@@ -256,30 +264,28 @@ var RuntimeCompiler = (function () {
     RuntimeCompiler.prototype._resolveAndEvalStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
         this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
         if (!this._compilerConfig.useJit) {
-            return output_interpreter_1.interpretStatements(result.statements, result.stylesVar);
+            return interpretStatements(result.statements, result.stylesVar);
         }
         else {
-            return output_jit_1.jitStatements(result.meta.moduleUrl + ".css.js", result.statements, result.stylesVar);
+            return jitStatements(result.meta.moduleUrl + ".css.js", result.statements, result.stylesVar);
         }
     };
-    /** @nocollapse */
     RuntimeCompiler.decorators = [
-        { type: core_1.Injectable },
+        { type: Injectable },
     ];
     /** @nocollapse */
     RuntimeCompiler.ctorParameters = [
-        { type: core_1.Injector, },
-        { type: metadata_resolver_1.CompileMetadataResolver, },
-        { type: directive_normalizer_1.DirectiveNormalizer, },
-        { type: template_parser_1.TemplateParser, },
-        { type: style_compiler_1.StyleCompiler, },
-        { type: view_compiler_1.ViewCompiler, },
-        { type: ng_module_compiler_1.NgModuleCompiler, },
-        { type: config_1.CompilerConfig, },
+        { type: Injector, },
+        { type: CompileMetadataResolver, },
+        { type: DirectiveNormalizer, },
+        { type: TemplateParser, },
+        { type: StyleCompiler, },
+        { type: ViewCompiler, },
+        { type: NgModuleCompiler, },
+        { type: CompilerConfig, },
     ];
     return RuntimeCompiler;
 }());
-exports.RuntimeCompiler = RuntimeCompiler;
 var CompiledTemplate = (function () {
     function CompiledTemplate(isHost, selector, compType, viewDirectivesAndComponents, viewPipes, schemas, _normalizeResult) {
         var _this = this;
@@ -308,12 +314,12 @@ var CompiledTemplate = (function () {
                 args[_i - 0] = arguments[_i];
             }
             if (!_this._viewFactory) {
-                throw new Error("Illegal state: CompiledTemplate for " + lang_1.stringify(_this.compType) + " is not compiled yet!");
+                throw new Error("Illegal state: CompiledTemplate for " + stringify(_this.compType) + " is not compiled yet!");
             }
             return _this._viewFactory.apply(null, args);
         };
         this.proxyComponentFactory = isHost ?
-            new core_1.ComponentFactory(selector, this.proxyViewFactory, compType.reference) :
+            new ComponentFactory(selector, this.proxyViewFactory, compType.reference) :
             null;
         if (_normalizeResult.syncResult) {
             this._normalizedCompMeta = _normalizeResult.syncResult;

@@ -6,11 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AnimationEntryMetadata, AnimationMetadata, AnimationStateMetadata, AnimationStyleMetadata, Provider, QueryMetadata, Type } from '@angular/core';
-import { ReflectorReader } from '../core_private';
 import * as cpl from './compile_metadata';
 import { DirectiveResolver } from './directive_resolver';
 import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
+import { ReflectorReader } from './private_import_core';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
 export declare class CompileMetadataResolver {
     private _ngModuleResolver;

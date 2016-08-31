@@ -5,37 +5,33 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var html = require('../ml_parser/ast');
-var parser_1 = require('../ml_parser/parser');
-var digest_1 = require('./digest');
-var i18n = require('./i18n_ast');
-var i18n_parser_1 = require('./i18n_parser');
-var parse_util_1 = require('./parse_util');
+import * as html from '../ml_parser/ast';
+import { ParseTreeResult } from '../ml_parser/parser';
+import { digestMessage } from './digest';
+import * as i18n from './i18n_ast';
+import { createI18nMessageFactory } from './i18n_parser';
+import { I18nError } from './parse_util';
 var _I18N_ATTR = 'i18n';
 var _I18N_ATTR_PREFIX = 'i18n-';
 var _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
 /**
  * Extract translatable messages from an html AST
  */
-function extractMessages(nodes, interpolationConfig, implicitTags, implicitAttrs) {
+export function extractMessages(nodes, interpolationConfig, implicitTags, implicitAttrs) {
     var visitor = new _Visitor(implicitTags, implicitAttrs);
     return visitor.extract(nodes, interpolationConfig);
 }
-exports.extractMessages = extractMessages;
-function mergeTranslations(nodes, translations, interpolationConfig, implicitTags, implicitAttrs) {
+export function mergeTranslations(nodes, translations, interpolationConfig, implicitTags, implicitAttrs) {
     var visitor = new _Visitor(implicitTags, implicitAttrs);
     return visitor.merge(nodes, translations, interpolationConfig);
 }
-exports.mergeTranslations = mergeTranslations;
-var ExtractionResult = (function () {
+export var ExtractionResult = (function () {
     function ExtractionResult(messages, errors) {
         this.messages = messages;
         this.errors = errors;
     }
     return ExtractionResult;
 }());
-exports.ExtractionResult = ExtractionResult;
 var _VisitorMode;
 (function (_VisitorMode) {
     _VisitorMode[_VisitorMode["Extract"] = 0] = "Extract";
@@ -77,7 +73,7 @@ var _Visitor = (function () {
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
         }
-        return new parser_1.ParseTreeResult(translatedNode.children, this._errors);
+        return new ParseTreeResult(translatedNode.children, this._errors);
     };
     _Visitor.prototype.visitExpansionCase = function (icuCase, context) {
         // Parse cases for translatable html attributes
@@ -241,7 +237,7 @@ var _Visitor = (function () {
         this._errors = [];
         this._messages = [];
         this._inImplicitNode = false;
-        this._createI18nMessage = i18n_parser_1.createI18nMessageFactory(interpolationConfig);
+        this._createI18nMessage = createI18nMessageFactory(interpolationConfig);
     };
     // looks for translatable attributes
     _Visitor.prototype._visitAttributesOf = function (el) {
@@ -276,7 +272,7 @@ var _Visitor = (function () {
     // no-op when called in extraction mode (returns [])
     _Visitor.prototype._translateMessage = function (el, message) {
         if (message && this._mode === _VisitorMode.Merge) {
-            var id = digest_1.digestMessage(message);
+            var id = digestMessage(message);
             var nodes = this._translations.get(id);
             if (nodes) {
                 return nodes;
@@ -305,7 +301,7 @@ var _Visitor = (function () {
             if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                 var meaning = i18nAttributeMeanings[attr.name];
                 var message = _this._createI18nMessage([attr], meaning, '');
-                var id = digest_1.digestMessage(message);
+                var id = digestMessage(message);
                 var nodes = _this._translations.get(id);
                 if (nodes) {
                     if (nodes[0] instanceof html.Text) {
@@ -395,7 +391,7 @@ var _Visitor = (function () {
         this._msgCountAtSectionStart = void 0;
     };
     _Visitor.prototype._reportError = function (node, msg) {
-        this._errors.push(new parse_util_1.I18nError(node.sourceSpan, msg));
+        this._errors.push(new I18nError(node.sourceSpan, msg));
     };
     return _Visitor;
 }());

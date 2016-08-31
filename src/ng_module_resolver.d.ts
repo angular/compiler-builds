@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { NgModuleMetadata, Type } from '@angular/core';
-import { ReflectorReader } from '../core_private';
+import { ReflectorReader } from './private_import_core';
 /**
  * Resolves types to {@link NgModuleMetadata}.
  */

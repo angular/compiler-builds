@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ClassProvider, Compiler, CompilerFactory, CompilerOptions, ExistingProvider, FactoryProvider, PlatformRef, Type, TypeProvider, ValueProvider } from '@angular/core';
+import { Compiler, CompilerFactory, CompilerOptions, PlatformRef, Provider, Type } from '@angular/core';
 export * from './template_parser/template_ast';
 export { TEMPLATE_TRANSFORMS } from './template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './config';
@@ -34,4 +34,4 @@ export declare class RuntimeCompilerFactory implements CompilerFactory {
  *
  * @experimental
  */
-export declare const platformCoreDynamic: (extraProviders?: (TypeProvider | ValueProvider | ClassProvider | ExistingProvider | FactoryProvider | any[])[]) => PlatformRef;
+export declare const platformCoreDynamic: (extraProviders?: Provider[]) => PlatformRef;

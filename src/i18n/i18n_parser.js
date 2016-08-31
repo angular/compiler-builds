@@ -5,25 +5,23 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var lexer_1 = require('../expression_parser/lexer');
-var parser_1 = require('../expression_parser/parser');
-var html = require('../ml_parser/ast');
-var html_tags_1 = require('../ml_parser/html_tags');
-var digest_1 = require('./digest');
-var i18n = require('./i18n_ast');
-var placeholder_1 = require('./serializers/placeholder');
-var _expParser = new parser_1.Parser(new lexer_1.Lexer());
+import { Lexer as ExpressionLexer } from '../expression_parser/lexer';
+import { Parser as ExpressionParser } from '../expression_parser/parser';
+import * as html from '../ml_parser/ast';
+import { getHtmlTagDefinition } from '../ml_parser/html_tags';
+import { digestMessage } from './digest';
+import * as i18n from './i18n_ast';
+import { PlaceholderRegistry } from './serializers/placeholder';
+var _expParser = new ExpressionParser(new ExpressionLexer());
 /**
  * Returns a function converting html nodes to an i18n Message given an interpolationConfig
  */
-function createI18nMessageFactory(interpolationConfig) {
+export function createI18nMessageFactory(interpolationConfig) {
     var visitor = new _I18nVisitor(_expParser, interpolationConfig);
     return function (nodes, meaning, description) {
         return visitor.toI18nMessage(nodes, meaning, description);
     };
 }
-exports.createI18nMessageFactory = createI18nMessageFactory;
 var _I18nVisitor = (function () {
     function _I18nVisitor(_expressionParser, _interpolationConfig) {
         this._expressionParser = _expressionParser;
@@ -32,7 +30,7 @@ var _I18nVisitor = (function () {
     _I18nVisitor.prototype.toI18nMessage = function (nodes, meaning, description) {
         this._isIcu = nodes.length == 1 && nodes[0] instanceof html.Expansion;
         this._icuDepth = 0;
-        this._placeholderRegistry = new placeholder_1.PlaceholderRegistry();
+        this._placeholderRegistry = new PlaceholderRegistry();
         this._placeholderToContent = {};
         this._placeholderToIds = {};
         var i18nodes = html.visitAll(this, nodes, {});
@@ -45,7 +43,7 @@ var _I18nVisitor = (function () {
             // Do not visit the attributes, translatable ones are top-level ASTs
             attrs[attr.name] = attr.value;
         });
-        var isVoid = html_tags_1.getHtmlTagDefinition(el.name).isVoid;
+        var isVoid = getHtmlTagDefinition(el.name).isVoid;
         var startPhName = this._placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
         this._placeholderToContent[startPhName] = el.sourceSpan.toString();
         var closePhName = '';
@@ -82,7 +80,7 @@ var _I18nVisitor = (function () {
         // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
         var phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
         var visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
-        this._placeholderToIds[phName] = digest_1.digestMessage(visitor.toI18nMessage([icu], '', ''));
+        this._placeholderToIds[phName] = digestMessage(visitor.toI18nMessage([icu], '', ''));
         return new i18n.IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
     };
     _I18nVisitor.prototype.visitExpansionCase = function (icuCase, context) {

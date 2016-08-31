@@ -5,10 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var lang_1 = require('../src/facade/lang');
+import { stringify } from './facade/lang';
 var _nextReferenceId = 0;
-var MetadataOverrider = (function () {
+export var MetadataOverrider = (function () {
     function MetadataOverrider() {
         this._references = new Map();
     }
@@ -23,7 +22,7 @@ var MetadataOverrider = (function () {
         }
         if (override.set) {
             if (override.remove || override.add) {
-                throw new Error("Cannot set and add/remove " + lang_1.stringify(metadataClass) + " at the same time!");
+                throw new Error("Cannot set and add/remove " + stringify(metadataClass) + " at the same time!");
             }
             setMetadata(props, override.set);
         }
@@ -37,7 +36,6 @@ var MetadataOverrider = (function () {
     };
     return MetadataOverrider;
 }());
-exports.MetadataOverrider = MetadataOverrider;
 function removeMetadata(metadata, remove, references) {
     var removeObjects = new Set();
     var _loop_1 = function(prop) {
@@ -96,7 +94,7 @@ function _propHashKey(propName, propValue, references) {
 function _serializeReference(ref, references) {
     var id = references.get(ref);
     if (!id) {
-        id = "" + lang_1.stringify(ref) + _nextReferenceId++;
+        id = "" + stringify(ref) + _nextReferenceId++;
         references.set(ref, id);
     }
     return id;

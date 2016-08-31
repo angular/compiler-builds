@@ -5,15 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var collection_1 = require('../../facade/collection');
-var xml = require('./xml_helper');
+import { ListWrapper } from '../../facade/collection';
+import * as xml from './xml_helper';
 var _MESSAGES_TAG = 'messagebundle';
 var _MESSAGE_TAG = 'msg';
 var _PLACEHOLDER_TAG = 'ph';
 var _EXEMPLE_TAG = 'ex';
 var _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
-var Xmb = (function () {
+export var Xmb = (function () {
     function Xmb() {
     }
     Xmb.prototype.write = function (messageMap) {
@@ -44,7 +43,6 @@ var Xmb = (function () {
     };
     return Xmb;
 }());
-exports.Xmb = Xmb;
 var _Visitor = (function () {
     function _Visitor() {
     }
@@ -83,7 +81,7 @@ var _Visitor = (function () {
     };
     _Visitor.prototype.serialize = function (nodes) {
         var _this = this;
-        return collection_1.ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
+        return ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
     };
     return _Visitor;
 }());

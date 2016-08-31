@@ -5,20 +5,18 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
 // asset:<package-name>/<realm>/<path-to-module>
 var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
 /**
  * Interface that defines how import statements should be generated.
  */
-var ImportGenerator = (function () {
+export var ImportGenerator = (function () {
     function ImportGenerator() {
     }
     ImportGenerator.parseAssetUrl = function (url) { return AssetUrl.parse(url); };
     return ImportGenerator;
 }());
-exports.ImportGenerator = ImportGenerator;
-var AssetUrl = (function () {
+export var AssetUrl = (function () {
     function AssetUrl(packageName, firstLevelDir, modulePath) {
         this.packageName = packageName;
         this.firstLevelDir = firstLevelDir;
@@ -37,5 +35,4 @@ var AssetUrl = (function () {
     };
     return AssetUrl;
 }());
-exports.AssetUrl = AssetUrl;
 //# sourceMappingURL=path_util.js.map

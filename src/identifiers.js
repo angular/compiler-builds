@@ -5,274 +5,268 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-"use strict";
-var core_1 = require('@angular/core');
-var core_private_1 = require('../core_private');
-var compile_metadata_1 = require('./compile_metadata');
-var util_1 = require('./util');
-var APP_VIEW_MODULE_URL = util_1.assetUrl('core', 'linker/view');
-var VIEW_UTILS_MODULE_URL = util_1.assetUrl('core', 'linker/view_utils');
-var CD_MODULE_URL = util_1.assetUrl('core', 'change_detection/change_detection');
-var ANIMATION_STYLE_UTIL_ASSET_URL = util_1.assetUrl('core', 'animation/animation_style_util');
-var Identifiers = (function () {
+import { ANALYZE_FOR_ENTRY_COMPONENTS, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ElementRef, Injector, LOCALE_ID as LOCALE_ID_, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TRANSLATIONS_FORMAT as TRANSLATIONS_FORMAT_, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
+import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
+import { AnimationGroupPlayer, AnimationKeyframe, AnimationOutput, AnimationSequencePlayer, AnimationStyles, AppElement, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, DebugAppView, DebugContext, EMPTY_ARRAY, EMPTY_MAP, NgModuleInjector, NoOpAnimationPlayer, StaticNodeDebugInfo, TemplateRef_, UNINITIALIZED, ValueUnwrapper, ViewType, ViewUtils, balanceAnimationKeyframes, castByValue, checkBinding, clearStyles, collectAndResolveStyles, devModeEqual, flattenNestedViewRenderNodes, interpolate, prepareFinalAnimationStyles, pureProxy1, pureProxy10, pureProxy2, pureProxy3, pureProxy4, pureProxy5, pureProxy6, pureProxy7, pureProxy8, pureProxy9, reflector, renderStyles } from './private_import_core';
+import { assetUrl } from './util';
+var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
+var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
+var CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
+var ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
+export var Identifiers = (function () {
     function Identifiers() {
     }
     Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
         name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
-        moduleUrl: util_1.assetUrl('core', 'metadata/di'),
-        runtime: core_1.ANALYZE_FOR_ENTRY_COMPONENTS
+        moduleUrl: assetUrl('core', 'metadata/di'),
+        runtime: ANALYZE_FOR_ENTRY_COMPONENTS
     };
     Identifiers.ViewUtils = {
         name: 'ViewUtils',
-        moduleUrl: util_1.assetUrl('core', 'linker/view_utils'),
-        runtime: core_private_1.ViewUtils
+        moduleUrl: assetUrl('core', 'linker/view_utils'),
+        runtime: ViewUtils
     };
-    Identifiers.AppView = { name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: core_private_1.AppView };
+    Identifiers.AppView = { name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: AppView };
     Identifiers.DebugAppView = {
         name: 'DebugAppView',
         moduleUrl: APP_VIEW_MODULE_URL,
-        runtime: core_private_1.DebugAppView
+        runtime: DebugAppView
     };
     Identifiers.AppElement = {
         name: 'AppElement',
-        moduleUrl: util_1.assetUrl('core', 'linker/element'),
-        runtime: core_private_1.AppElement
+        moduleUrl: assetUrl('core', 'linker/element'),
+        runtime: AppElement
     };
     Identifiers.ElementRef = {
         name: 'ElementRef',
-        moduleUrl: util_1.assetUrl('core', 'linker/element_ref'),
-        runtime: core_1.ElementRef
+        moduleUrl: assetUrl('core', 'linker/element_ref'),
+        runtime: ElementRef
     };
     Identifiers.ViewContainerRef = {
         name: 'ViewContainerRef',
-        moduleUrl: util_1.assetUrl('core', 'linker/view_container_ref'),
-        runtime: core_1.ViewContainerRef
+        moduleUrl: assetUrl('core', 'linker/view_container_ref'),
+        runtime: ViewContainerRef
     };
     Identifiers.ChangeDetectorRef = {
         name: 'ChangeDetectorRef',
-        moduleUrl: util_1.assetUrl('core', 'change_detection/change_detector_ref'),
-        runtime: core_1.ChangeDetectorRef
+        moduleUrl: assetUrl('core', 'change_detection/change_detector_ref'),
+        runtime: ChangeDetectorRef
     };
     Identifiers.RenderComponentType = {
         name: 'RenderComponentType',
-        moduleUrl: util_1.assetUrl('core', 'render/api'),
-        runtime: core_1.RenderComponentType
+        moduleUrl: assetUrl('core', 'render/api'),
+        runtime: RenderComponentType
     };
     Identifiers.QueryList = {
         name: 'QueryList',
-        moduleUrl: util_1.assetUrl('core', 'linker/query_list'),
-        runtime: core_1.QueryList
+        moduleUrl: assetUrl('core', 'linker/query_list'),
+        runtime: QueryList
     };
     Identifiers.TemplateRef = {
         name: 'TemplateRef',
-        moduleUrl: util_1.assetUrl('core', 'linker/template_ref'),
-        runtime: core_1.TemplateRef
+        moduleUrl: assetUrl('core', 'linker/template_ref'),
+        runtime: TemplateRef
     };
     Identifiers.TemplateRef_ = {
         name: 'TemplateRef_',
-        moduleUrl: util_1.assetUrl('core', 'linker/template_ref'),
-        runtime: core_private_1.TemplateRef_
+        moduleUrl: assetUrl('core', 'linker/template_ref'),
+        runtime: TemplateRef_
     };
     Identifiers.CodegenComponentFactoryResolver = {
         name: 'CodegenComponentFactoryResolver',
-        moduleUrl: util_1.assetUrl('core', 'linker/component_factory_resolver'),
-        runtime: core_private_1.CodegenComponentFactoryResolver
+        moduleUrl: assetUrl('core', 'linker/component_factory_resolver'),
+        runtime: CodegenComponentFactoryResolver
     };
     Identifiers.ComponentFactoryResolver = {
         name: 'ComponentFactoryResolver',
-        moduleUrl: util_1.assetUrl('core', 'linker/component_factory_resolver'),
-        runtime: core_1.ComponentFactoryResolver
+        moduleUrl: assetUrl('core', 'linker/component_factory_resolver'),
+        runtime: ComponentFactoryResolver
     };
     Identifiers.ComponentFactory = {
         name: 'ComponentFactory',
-        runtime: core_1.ComponentFactory,
-        moduleUrl: util_1.assetUrl('core', 'linker/component_factory')
+        runtime: ComponentFactory,
+        moduleUrl: assetUrl('core', 'linker/component_factory')
     };
     Identifiers.NgModuleFactory = {
         name: 'NgModuleFactory',
-        runtime: core_1.NgModuleFactory,
-        moduleUrl: util_1.assetUrl('core', 'linker/ng_module_factory')
+        runtime: NgModuleFactory,
+        moduleUrl: assetUrl('core', 'linker/ng_module_factory')
     };
     Identifiers.NgModuleInjector = {
         name: 'NgModuleInjector',
-        runtime: core_private_1.NgModuleInjector,
-        moduleUrl: util_1.assetUrl('core', 'linker/ng_module_factory')
+        runtime: NgModuleInjector,
+        moduleUrl: assetUrl('core', 'linker/ng_module_factory')
     };
-    Identifiers.ValueUnwrapper = { name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: core_private_1.ValueUnwrapper };
+    Identifiers.ValueUnwrapper = { name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: ValueUnwrapper };
     Identifiers.Injector = {
         name: 'Injector',
-        moduleUrl: util_1.assetUrl('core', 'di/injector'),
-        runtime: core_1.Injector
+        moduleUrl: assetUrl('core', 'di/injector'),
+        runtime: Injector
     };
     Identifiers.ViewEncapsulation = {
         name: 'ViewEncapsulation',
-        moduleUrl: util_1.assetUrl('core', 'metadata/view'),
-        runtime: core_1.ViewEncapsulation
+        moduleUrl: assetUrl('core', 'metadata/view'),
+        runtime: ViewEncapsulation
     };
     Identifiers.ViewType = {
         name: 'ViewType',
-        moduleUrl: util_1.assetUrl('core', 'linker/view_type'),
-        runtime: core_private_1.ViewType
+        moduleUrl: assetUrl('core', 'linker/view_type'),
+        runtime: ViewType
     };
     Identifiers.ChangeDetectionStrategy = {
         name: 'ChangeDetectionStrategy',
         moduleUrl: CD_MODULE_URL,
-        runtime: core_1.ChangeDetectionStrategy
+        runtime: ChangeDetectionStrategy
     };
     Identifiers.StaticNodeDebugInfo = {
         name: 'StaticNodeDebugInfo',
-        moduleUrl: util_1.assetUrl('core', 'linker/debug_context'),
-        runtime: core_private_1.StaticNodeDebugInfo
+        moduleUrl: assetUrl('core', 'linker/debug_context'),
+        runtime: StaticNodeDebugInfo
     };
     Identifiers.DebugContext = {
         name: 'DebugContext',
-        moduleUrl: util_1.assetUrl('core', 'linker/debug_context'),
-        runtime: core_private_1.DebugContext
+        moduleUrl: assetUrl('core', 'linker/debug_context'),
+        runtime: DebugContext
     };
     Identifiers.Renderer = {
         name: 'Renderer',
-        moduleUrl: util_1.assetUrl('core', 'render/api'),
-        runtime: core_1.Renderer
+        moduleUrl: assetUrl('core', 'render/api'),
+        runtime: Renderer
     };
-    Identifiers.SimpleChange = { name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: core_1.SimpleChange };
-    Identifiers.UNINITIALIZED = { name: 'UNINITIALIZED', moduleUrl: CD_MODULE_URL, runtime: core_private_1.UNINITIALIZED };
+    Identifiers.SimpleChange = { name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: SimpleChange };
+    Identifiers.UNINITIALIZED = { name: 'UNINITIALIZED', moduleUrl: CD_MODULE_URL, runtime: UNINITIALIZED };
     Identifiers.ChangeDetectorStatus = {
         name: 'ChangeDetectorStatus',
         moduleUrl: CD_MODULE_URL,
-        runtime: core_private_1.ChangeDetectorStatus
+        runtime: ChangeDetectorStatus
     };
     Identifiers.checkBinding = {
         name: 'checkBinding',
         moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: core_private_1.checkBinding
+        runtime: checkBinding
     };
     Identifiers.flattenNestedViewRenderNodes = {
         name: 'flattenNestedViewRenderNodes',
         moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: core_private_1.flattenNestedViewRenderNodes
+        runtime: flattenNestedViewRenderNodes
     };
-    Identifiers.devModeEqual = { name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: core_private_1.devModeEqual };
+    Identifiers.devModeEqual = { name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: devModeEqual };
     Identifiers.interpolate = {
         name: 'interpolate',
         moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: core_private_1.interpolate
+        runtime: interpolate
     };
     Identifiers.castByValue = {
         name: 'castByValue',
         moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: core_private_1.castByValue
+        runtime: castByValue
     };
     Identifiers.EMPTY_ARRAY = {
         name: 'EMPTY_ARRAY',
         moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: core_private_1.EMPTY_ARRAY
+        runtime: EMPTY_ARRAY
     };
-    Identifiers.EMPTY_MAP = { name: 'EMPTY_MAP', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.EMPTY_MAP };
+    Identifiers.EMPTY_MAP = { name: 'EMPTY_MAP', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: EMPTY_MAP };
     Identifiers.pureProxies = [
         null,
-        { name: 'pureProxy1', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy1 },
-        { name: 'pureProxy2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy2 },
-        { name: 'pureProxy3', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy3 },
-        { name: 'pureProxy4', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy4 },
-        { name: 'pureProxy5', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy5 },
-        { name: 'pureProxy6', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy6 },
-        { name: 'pureProxy7', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy7 },
-        { name: 'pureProxy8', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy8 },
-        { name: 'pureProxy9', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy9 },
-        { name: 'pureProxy10', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: core_private_1.pureProxy10 },
+        { name: 'pureProxy1', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy1 },
+        { name: 'pureProxy2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy2 },
+        { name: 'pureProxy3', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy3 },
+        { name: 'pureProxy4', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy4 },
+        { name: 'pureProxy5', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy5 },
+        { name: 'pureProxy6', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy6 },
+        { name: 'pureProxy7', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy7 },
+        { name: 'pureProxy8', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy8 },
+        { name: 'pureProxy9', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy9 },
+        { name: 'pureProxy10', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: pureProxy10 },
     ];
     Identifiers.SecurityContext = {
         name: 'SecurityContext',
-        moduleUrl: util_1.assetUrl('core', 'security'),
-        runtime: core_1.SecurityContext,
+        moduleUrl: assetUrl('core', 'security'),
+        runtime: SecurityContext,
     };
     Identifiers.AnimationKeyframe = {
         name: 'AnimationKeyframe',
-        moduleUrl: util_1.assetUrl('core', 'animation/animation_keyframe'),
-        runtime: core_private_1.AnimationKeyframe
+        moduleUrl: assetUrl('core', 'animation/animation_keyframe'),
+        runtime: AnimationKeyframe
     };
     Identifiers.AnimationStyles = {
         name: 'AnimationStyles',
-        moduleUrl: util_1.assetUrl('core', 'animation/animation_styles'),
-        runtime: core_private_1.AnimationStyles
+        moduleUrl: assetUrl('core', 'animation/animation_styles'),
+        runtime: AnimationStyles
     };
     Identifiers.NoOpAnimationPlayer = {
         name: 'NoOpAnimationPlayer',
-        moduleUrl: util_1.assetUrl('core', 'animation/animation_player'),
-        runtime: core_private_1.NoOpAnimationPlayer
+        moduleUrl: assetUrl('core', 'animation/animation_player'),
+        runtime: NoOpAnimationPlayer
     };
     Identifiers.AnimationGroupPlayer = {
         name: 'AnimationGroupPlayer',
-        moduleUrl: util_1.assetUrl('core', 'animation/animation_group_player'),
-        runtime: core_private_1.AnimationGroupPlayer
+        moduleUrl: assetUrl('core', 'animation/animation_group_player'),
+        runtime: AnimationGroupPlayer
     };
     Identifiers.AnimationSequencePlayer = {
         name: 'AnimationSequencePlayer',
-        moduleUrl: util_1.assetUrl('core', 'animation/animation_sequence_player'),
-        runtime: core_private_1.AnimationSequencePlayer
+        moduleUrl: assetUrl('core', 'animation/animation_sequence_player'),
+        runtime: AnimationSequencePlayer
     };
     Identifiers.prepareFinalAnimationStyles = {
         name: 'prepareFinalAnimationStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.prepareFinalAnimationStyles
+        runtime: prepareFinalAnimationStyles
     };
     Identifiers.balanceAnimationKeyframes = {
         name: 'balanceAnimationKeyframes',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.balanceAnimationKeyframes
+        runtime: balanceAnimationKeyframes
     };
     Identifiers.clearStyles = {
         name: 'clearStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.clearStyles
+        runtime: clearStyles
     };
     Identifiers.renderStyles = {
         name: 'renderStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.renderStyles
+        runtime: renderStyles
     };
     Identifiers.collectAndResolveStyles = {
         name: 'collectAndResolveStyles',
         moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: core_private_1.collectAndResolveStyles
+        runtime: collectAndResolveStyles
     };
     Identifiers.LOCALE_ID = {
         name: 'LOCALE_ID',
-        moduleUrl: util_1.assetUrl('core', 'i18n/tokens'),
-        runtime: core_1.LOCALE_ID
+        moduleUrl: assetUrl('core', 'i18n/tokens'),
+        runtime: LOCALE_ID_
     };
     Identifiers.TRANSLATIONS_FORMAT = {
         name: 'TRANSLATIONS_FORMAT',
-        moduleUrl: util_1.assetUrl('core', 'i18n/tokens'),
-        runtime: core_1.TRANSLATIONS_FORMAT
+        moduleUrl: assetUrl('core', 'i18n/tokens'),
+        runtime: TRANSLATIONS_FORMAT_
     };
     Identifiers.AnimationOutput = {
         name: 'AnimationOutput',
-        moduleUrl: util_1.assetUrl('core', 'animation/animation_output'),
-        runtime: core_private_1.AnimationOutput
+        moduleUrl: assetUrl('core', 'animation/animation_output'),
+        runtime: AnimationOutput
     };
     return Identifiers;
 }());
-exports.Identifiers = Identifiers;
-function resolveIdentifier(identifier) {
-    return new compile_metadata_1.CompileIdentifierMetadata({
+export function resolveIdentifier(identifier) {
+    return new CompileIdentifierMetadata({
         name: identifier.name,
         moduleUrl: identifier.moduleUrl,
-        reference: core_private_1.reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime)
+        reference: reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime)
     });
 }
-exports.resolveIdentifier = resolveIdentifier;
-function identifierToken(identifier) {
-    return new compile_metadata_1.CompileTokenMetadata({ identifier: identifier });
+export function identifierToken(identifier) {
+    return new CompileTokenMetadata({ identifier: identifier });
 }
-exports.identifierToken = identifierToken;
-function resolveIdentifierToken(identifier) {
+export function resolveIdentifierToken(identifier) {
     return identifierToken(resolveIdentifier(identifier));
 }
-exports.resolveIdentifierToken = resolveIdentifierToken;
-function resolveEnumIdentifier(enumType, name) {
-    var resolvedEnum = core_private_1.reflector.resolveEnum(enumType.reference, name);
-    return new compile_metadata_1.CompileIdentifierMetadata({ name: enumType.name + "." + name, moduleUrl: enumType.moduleUrl, reference: resolvedEnum });
+export function resolveEnumIdentifier(enumType, name) {
+    var resolvedEnum = reflector.resolveEnum(enumType.reference, name);
+    return new CompileIdentifierMetadata({ name: enumType.name + "." + name, moduleUrl: enumType.moduleUrl, reference: resolvedEnum });
 }
-exports.resolveEnumIdentifier = resolveEnumIdentifier;
 //# sourceMappingURL=identifiers.js.map
