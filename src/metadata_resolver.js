@@ -310,7 +310,8 @@ export var CompileMetadataResolver = (function () {
                 exportedPipes: exportedPipes_1,
                 importedModules: importedModules_1,
                 exportedModules: exportedModules_1,
-                transitiveModule: transitiveModule_1
+                transitiveModule: transitiveModule_1,
+                id: meta.id,
             });
             transitiveModule_1.modules.push(compileMeta);
             this._verifyModule(compileMeta);

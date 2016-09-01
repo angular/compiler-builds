@@ -2565,7 +2565,7 @@
    */
   var CompileNgModuleMetadata = (function () {
       function CompileNgModuleMetadata(_a) {
-          var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, declaredDirectives = _b.declaredDirectives, exportedDirectives = _b.exportedDirectives, declaredPipes = _b.declaredPipes, exportedPipes = _b.exportedPipes, entryComponents = _b.entryComponents, bootstrapComponents = _b.bootstrapComponents, importedModules = _b.importedModules, exportedModules = _b.exportedModules, schemas = _b.schemas, transitiveModule = _b.transitiveModule;
+          var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, declaredDirectives = _b.declaredDirectives, exportedDirectives = _b.exportedDirectives, declaredPipes = _b.declaredPipes, exportedPipes = _b.exportedPipes, entryComponents = _b.entryComponents, bootstrapComponents = _b.bootstrapComponents, importedModules = _b.importedModules, exportedModules = _b.exportedModules, schemas = _b.schemas, transitiveModule = _b.transitiveModule, id = _b.id;
           this.type = type;
           this.declaredDirectives = _normalizeArray(declaredDirectives);
           this.exportedDirectives = _normalizeArray(exportedDirectives);
@@ -2577,6 +2577,7 @@
           this.importedModules = _normalizeArray(importedModules);
           this.exportedModules = _normalizeArray(exportedModules);
           this.schemas = _normalizeArray(schemas);
+          this.id = id;
           this.transitiveModule = transitiveModule;
       }
       Object.defineProperty(CompileNgModuleMetadata.prototype, "identifier", {
@@ -7393,6 +7394,7 @@
   var AppView = _angular_core.__core_private__.AppView;
   var DebugAppView = _angular_core.__core_private__.DebugAppView;
   var NgModuleInjector = _angular_core.__core_private__.NgModuleInjector;
+  var registerModuleFactory = _angular_core.__core_private__.registerModuleFactory;
   var ViewType = _angular_core.__core_private__.ViewType;
   var MAX_INTERPOLATION_VALUES = _angular_core.__core_private__.MAX_INTERPOLATION_VALUES;
   var checkBinding = _angular_core.__core_private__.checkBinding;
@@ -7526,6 +7528,11 @@
           name: 'NgModuleInjector',
           runtime: NgModuleInjector,
           moduleUrl: assetUrl('core', 'linker/ng_module_factory')
+      };
+      Identifiers.RegisterModuleFactoryFn = {
+          name: 'registerModuleFactory',
+          runtime: registerModuleFactory,
+          moduleUrl: assetUrl('core', 'linker/ng_module_factory_loader')
       };
       Identifiers.ValueUnwrapper = { name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: ValueUnwrapper };
       Identifiers.Injector = {
@@ -14196,7 +14203,8 @@
                   exportedPipes: exportedPipes_1,
                   importedModules: importedModules_1,
                   exportedModules: exportedModules_1,
-                  transitiveModule: transitiveModule_1
+                  transitiveModule: transitiveModule_1,
+                  id: meta.id,
               });
               transitiveModule_1.modules.push(compileMeta);
               this._verifyModule(compileMeta);
@@ -14651,7 +14659,14 @@
               .set(importExpr(resolveIdentifier(Identifiers.NgModuleFactory))
               .instantiate([variable(injectorClass.name), importExpr(ngModuleMeta.type)], importType(resolveIdentifier(Identifiers.NgModuleFactory), [importType(ngModuleMeta.type)], [TypeModifier.Const])))
               .toDeclStmt(null, [StmtModifier.Final]);
-          return new NgModuleCompileResult([injectorClass, ngModuleFactoryStmt], ngModuleFactoryVar, deps);
+          var stmts = [injectorClass, ngModuleFactoryStmt];
+          if (ngModuleMeta.id) {
+              var registerFactoryStmt = importExpr(resolveIdentifier(Identifiers.RegisterModuleFactoryFn))
+                  .callFn([literal(ngModuleMeta.id), variable(ngModuleFactoryVar)])
+                  .toStmt();
+              stmts.push(registerFactoryStmt);
+          }
+          return new NgModuleCompileResult(stmts, ngModuleFactoryVar, deps);
       };
       NgModuleCompiler.decorators = [
           { type: _angular_core.Injectable },
