@@ -10465,10 +10465,12 @@
           }
           templateVisitAll(this, ast.children);
       };
+      _AnimationTemplatePropertyVisitor.prototype.visitEmbeddedTemplate = function (ast, ctx) {
+          templateVisitAll(this, ast.children);
+      };
       _AnimationTemplatePropertyVisitor.prototype.visitEvent = function (ast, ctx) { };
       _AnimationTemplatePropertyVisitor.prototype.visitBoundText = function (ast, ctx) { };
       _AnimationTemplatePropertyVisitor.prototype.visitText = function (ast, ctx) { };
-      _AnimationTemplatePropertyVisitor.prototype.visitEmbeddedTemplate = function (ast, ctx) { };
       _AnimationTemplatePropertyVisitor.prototype.visitNgContent = function (ast, ctx) { };
       _AnimationTemplatePropertyVisitor.prototype.visitAttr = function (ast, ctx) { };
       _AnimationTemplatePropertyVisitor.prototype.visitDirective = function (ast, ctx) { };
@@ -12291,6 +12293,7 @@
       function ViewBinderVisitor(view, animationOutputs) {
           var _this = this;
           this.view = view;
+          this.animationOutputs = animationOutputs;
           this._nodeIndex = 0;
           this._animationOutputsMap = {};
           animationOutputs.forEach(function (entry) { _this._animationOutputsMap[entry.fullPropertyName] = entry; });
@@ -12364,7 +12367,7 @@
               var providerInstance = compileElement.instances.get(providerAst.token.reference);
               bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
           });
-          bindView(compileElement.embeddedView, ast.children, []);
+          bindView(compileElement.embeddedView, ast.children, this.animationOutputs);
           return null;
       };
       ViewBinderVisitor.prototype.visitAttr = function (ast, ctx) { return null; };

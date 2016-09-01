@@ -11,6 +11,7 @@ var ViewBinderVisitor = (function () {
     function ViewBinderVisitor(view, animationOutputs) {
         var _this = this;
         this.view = view;
+        this.animationOutputs = animationOutputs;
         this._nodeIndex = 0;
         this._animationOutputsMap = {};
         animationOutputs.forEach(function (entry) { _this._animationOutputsMap[entry.fullPropertyName] = entry; });
@@ -84,7 +85,7 @@ var ViewBinderVisitor = (function () {
             var providerInstance = compileElement.instances.get(providerAst.token.reference);
             bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
         });
-        bindView(compileElement.embeddedView, ast.children, []);
+        bindView(compileElement.embeddedView, ast.children, this.animationOutputs);
         return null;
     };
     ViewBinderVisitor.prototype.visitAttr = function (ast, ctx) { return null; };

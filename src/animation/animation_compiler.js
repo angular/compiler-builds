@@ -390,10 +390,12 @@ var _AnimationTemplatePropertyVisitor = (function () {
         }
         t.templateVisitAll(this, ast.children);
     };
+    _AnimationTemplatePropertyVisitor.prototype.visitEmbeddedTemplate = function (ast, ctx) {
+        t.templateVisitAll(this, ast.children);
+    };
     _AnimationTemplatePropertyVisitor.prototype.visitEvent = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitBoundText = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitText = function (ast, ctx) { };
-    _AnimationTemplatePropertyVisitor.prototype.visitEmbeddedTemplate = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitNgContent = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitAttr = function (ast, ctx) { };
     _AnimationTemplatePropertyVisitor.prototype.visitDirective = function (ast, ctx) { };
