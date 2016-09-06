@@ -289,8 +289,13 @@ export var CompileMetadataResolver = (function () {
                     .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
             }
             if (meta.bootstrap) {
-                bootstrapComponents.push.apply(bootstrapComponents, flattenArray(meta.bootstrap)
-                    .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
+                var typeMetadata = flattenArray(meta.bootstrap).map(function (type) {
+                    if (!isValidType(type)) {
+                        throw new Error("Unexpected value '" + stringify(type) + "' used in the bootstrap property of module '" + stringify(moduleType) + "'");
+                    }
+                    return _this.getTypeMetadata(type, staticTypeModuleUrl(type));
+                });
+                bootstrapComponents.push.apply(bootstrapComponents, typeMetadata);
             }
             entryComponents_1.push.apply(entryComponents_1, bootstrapComponents);
             if (meta.schemas) {
