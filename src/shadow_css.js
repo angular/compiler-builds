@@ -456,10 +456,10 @@ function stripComments(input) {
     return StringWrapper.replaceAllMapped(input, _commentRe, function (_ /** TODO #9100 */) { return ''; });
 }
 // all comments except inline source mapping ("/* #sourceMappingURL= ... */")
-var _sourceMappingUrlRe = /[\s\S]*(\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\/)\s*$/;
+var _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
 function extractSourceMappingUrl(input) {
     var matcher = input.match(_sourceMappingUrlRe);
-    return matcher ? matcher[1] : '';
+    return matcher ? matcher[0] : '';
 }
 var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
 var _curlyRe = /([{}])/g;
