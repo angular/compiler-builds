@@ -9720,10 +9720,10 @@
       if (errors.length == 0) {
           _fillAnimationAstStartingKeyframes(animationAst, styles, errors);
       }
-      var sequenceAst = (animationAst instanceof AnimationSequenceAst) ?
+      var stepsAst = (animationAst instanceof AnimationWithStepsAst) ?
           animationAst :
           new AnimationSequenceAst([animationAst]);
-      return new AnimationStateTransitionAst(transitionExprs, sequenceAst);
+      return new AnimationStateTransitionAst(transitionExprs, stepsAst);
   }
   function _parseAnimationTransitionExpr(eventStr, errors) {
       var expressions = [];
@@ -9760,7 +9760,9 @@
   }
   function _normalizeStyleSteps(entry, stateStyles, errors) {
       var steps = _normalizeStyleStepEntry(entry, stateStyles, errors);
-      return new CompileAnimationSequenceMetadata(steps);
+      return (entry instanceof CompileAnimationGroupMetadata) ?
+          new CompileAnimationGroupMetadata(steps) :
+          new CompileAnimationSequenceMetadata(steps);
   }
   function _mergeAnimationStyles(stylesList, newItem) {
       if (isStringMap(newItem) && stylesList.length > 0) {
