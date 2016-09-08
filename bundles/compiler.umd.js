@@ -182,8 +182,6 @@
           }
           throw new Error('Invalid integer literal when parsing ' + text + ' in base ' + radix);
       };
-      // TODO: NaN is a valid literal but is returned by parseFloat to indicate an error.
-      NumberWrapper.parseFloat = function (text) { return parseFloat(text); };
       Object.defineProperty(NumberWrapper, "NaN", {
           get: function () { return NaN; },
           enumerable: true,
@@ -3421,7 +3419,7 @@
               this.advance();
           }
           var str = this.input.substring(start, this.index);
-          var value = simple ? NumberWrapper.parseIntAutoRadix(str) : NumberWrapper.parseFloat(str);
+          var value = simple ? NumberWrapper.parseIntAutoRadix(str) : parseFloat(str);
           return newNumberToken(start, value);
       };
       _Scanner.prototype.scanString = function () {
@@ -10043,7 +10041,7 @@
               errors.push(new AnimationParseError("The provided timing value \"" + exp + "\" is invalid."));
               return new _AnimationTimings(0, 0, null);
           }
-          var durationMatch = NumberWrapper.parseFloat(matches[1]);
+          var durationMatch = parseFloat(matches[1]);
           var durationUnit = matches[2];
           if (durationUnit == 's') {
               durationMatch *= _ONE_SECOND;
@@ -10052,7 +10050,7 @@
           var delayMatch = matches[3];
           var delayUnit = matches[4];
           if (isPresent(delayMatch)) {
-              var delayVal = NumberWrapper.parseFloat(delayMatch);
+              var delayVal = parseFloat(delayMatch);
               if (isPresent(delayUnit) && delayUnit == 's') {
                   delayVal *= _ONE_SECOND;
               }

@@ -12,7 +12,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { CompileAnimationAnimateMetadata, CompileAnimationGroupMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationSequenceMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStyleMetadata, CompileAnimationWithStepsMetadata } from '../compile_metadata';
 import { ListWrapper, StringMapWrapper } from '../facade/collection';
-import { NumberWrapper, isArray, isBlank, isPresent, isString, isStringMap } from '../facade/lang';
+import { isArray, isBlank, isPresent, isString, isStringMap } from '../facade/lang';
 import { Math } from '../facade/math';
 import { ParseError } from '../parse_util';
 import { ANY_STATE, AnimationOutput, FILL_STYLE_FLAG } from '../private_import_core';
@@ -439,7 +439,7 @@ function _parseTimeExpression(exp, errors) {
             errors.push(new AnimationParseError("The provided timing value \"" + exp + "\" is invalid."));
             return new _AnimationTimings(0, 0, null);
         }
-        var durationMatch = NumberWrapper.parseFloat(matches[1]);
+        var durationMatch = parseFloat(matches[1]);
         var durationUnit = matches[2];
         if (durationUnit == 's') {
             durationMatch *= _ONE_SECOND;
@@ -448,7 +448,7 @@ function _parseTimeExpression(exp, errors) {
         var delayMatch = matches[3];
         var delayUnit = matches[4];
         if (isPresent(delayMatch)) {
-            var delayVal = NumberWrapper.parseFloat(delayMatch);
+            var delayVal = parseFloat(delayMatch);
             if (isPresent(delayUnit) && delayUnit == 's') {
                 delayVal *= _ONE_SECOND;
             }
