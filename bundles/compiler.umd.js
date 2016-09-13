@@ -4744,7 +4744,7 @@
       ExpansionCase.prototype.visit = function (visitor, context) { return visitor.visitExpansionCase(this, context); };
       return ExpansionCase;
   }());
-  var Attribute = (function () {
+  var Attribute$1 = (function () {
       function Attribute(name, value, sourceSpan) {
           this.name = name;
           this.value = value;
@@ -5732,7 +5732,7 @@
               value = valueToken.parts[0];
               end = valueToken.sourceSpan.end;
           }
-          return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end));
+          return new Attribute$1(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end));
       };
       _TreeBuilder.prototype._getParentElement = function () {
           return this._elementStack.length > 0 ? ListWrapper.last(this._elementStack) : null;
@@ -6533,7 +6533,7 @@
       // add a translatable message
       _Visitor.prototype._addMessage = function (ast, meaningAndDesc) {
           if (ast.length == 0 ||
-              ast.length == 1 && ast[0] instanceof Attribute && !ast[0].value) {
+              ast.length == 1 && ast[0] instanceof Attribute$1 && !ast[0].value) {
               // Do not create empty messages
               return;
           }
@@ -6580,7 +6580,7 @@
                   if (nodes) {
                       if (nodes[0] instanceof Text) {
                           var value = nodes[0].value;
-                          translatedAttributes.push(new Attribute(attr.name, value, attr.sourceSpan));
+                          translatedAttributes.push(new Attribute$1(attr.name, value, attr.sourceSpan));
                       }
                       else {
                           _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + id + "\")");
@@ -7824,18 +7824,18 @@
           }
           var expansionResult = expandNodes(c.expression);
           errors.push.apply(errors, expansionResult.errors);
-          return new Element("template", [new Attribute('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+          return new Element("template", [new Attribute$1('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
       });
-      var switchAttr = new Attribute('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
+      var switchAttr = new Attribute$1('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
       return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
   }
   function _expandDefaultForm(ast, errors) {
       var children = ast.cases.map(function (c) {
           var expansionResult = expandNodes(c.expression);
           errors.push.apply(errors, expansionResult.errors);
-          return new Element("template", [new Attribute('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+          return new Element("template", [new Attribute$1('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
       });
-      var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
+      var switchAttr = new Attribute$1('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
       return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
   }
 
@@ -13652,10 +13652,10 @@
   }
 
   function _isDirectiveMetadata(type) {
-      return type instanceof _angular_core.DirectiveMetadata;
+      return type instanceof _angular_core.Directive;
   }
   /*
-   * Resolve a `Type` for {@link DirectiveMetadata}.
+   * Resolve a `Type` for {@link Directive}.
    *
    * This interface can be overridden by the application developer to create custom behavior.
    *
@@ -13667,7 +13667,7 @@
           this._reflector = _reflector;
       }
       /**
-       * Return {@link DirectiveMetadata} for a given `Type`.
+       * Return {@link Directive} for a given `Type`.
        */
       DirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
@@ -13691,7 +13691,7 @@
           var queries = {};
           StringMapWrapper.forEach(propertyMetadata, function (metadata, propName) {
               metadata.forEach(function (a) {
-                  if (a instanceof _angular_core.InputMetadata) {
+                  if (a instanceof _angular_core.Input) {
                       if (isPresent(a.bindingPropertyName)) {
                           inputs.push(propName + ": " + a.bindingPropertyName);
                       }
@@ -13699,27 +13699,30 @@
                           inputs.push(propName);
                       }
                   }
-                  else if (a instanceof _angular_core.OutputMetadata) {
-                      if (isPresent(a.bindingPropertyName)) {
-                          outputs.push(propName + ": " + a.bindingPropertyName);
+                  else if (a instanceof _angular_core.Output) {
+                      var output = a;
+                      if (isPresent(output.bindingPropertyName)) {
+                          outputs.push(propName + ": " + output.bindingPropertyName);
                       }
                       else {
                           outputs.push(propName);
                       }
                   }
-                  else if (a instanceof _angular_core.HostBindingMetadata) {
-                      if (isPresent(a.hostPropertyName)) {
-                          host[("[" + a.hostPropertyName + "]")] = propName;
+                  else if (a instanceof _angular_core.HostBinding) {
+                      var hostBinding = a;
+                      if (isPresent(hostBinding.hostPropertyName)) {
+                          host[("[" + hostBinding.hostPropertyName + "]")] = propName;
                       }
                       else {
                           host[("[" + propName + "]")] = propName;
                       }
                   }
-                  else if (a instanceof _angular_core.HostListenerMetadata) {
-                      var args = isPresent(a.args) ? a.args.join(', ') : '';
-                      host[("(" + a.eventName + ")")] = propName + "(" + args + ")";
+                  else if (a instanceof _angular_core.HostListener) {
+                      var hostListener = a;
+                      var args = isPresent(hostListener.args) ? hostListener.args.join(', ') : '';
+                      host[("(" + hostListener.eventName + ")")] = propName + "(" + args + ")";
                   }
-                  else if (a instanceof _angular_core.QueryMetadata) {
+                  else if (a instanceof _angular_core.Query) {
                       queries[propName] = a;
                   }
               });
@@ -13759,8 +13762,8 @@
           }
           var mergedHost = isPresent(dm.host) ? StringMapWrapper.merge(dm.host, host) : host;
           var mergedQueries = isPresent(dm.queries) ? StringMapWrapper.merge(dm.queries, queries) : queries;
-          if (dm instanceof _angular_core.ComponentMetadata) {
-              return new _angular_core.ComponentMetadata({
+          if (dm instanceof _angular_core.Component) {
+              return new _angular_core.Component({
                   selector: dm.selector,
                   inputs: mergedInputs,
                   outputs: mergedOutputs,
@@ -13782,7 +13785,7 @@
               });
           }
           else {
-              return new _angular_core.DirectiveMetadata({
+              return new _angular_core.Directive({
                   selector: dm.selector,
                   inputs: mergedInputs,
                   outputs: mergedOutputs,
@@ -13830,10 +13833,10 @@
   }
 
   function _isNgModuleMetadata(obj) {
-      return obj instanceof _angular_core.NgModuleMetadata;
+      return obj instanceof _angular_core.NgModule;
   }
   /**
-   * Resolves types to {@link NgModuleMetadata}.
+   * Resolves types to {@link NgModule}.
    */
   var NgModuleResolver = (function () {
       function NgModuleResolver(_reflector) {
@@ -13864,10 +13867,10 @@
   }());
 
   function _isPipeMetadata(type) {
-      return type instanceof _angular_core.PipeMetadata;
+      return type instanceof _angular_core.Pipe;
   }
   /**
-   * Resolve a `Type` for {@link PipeMetadata}.
+   * Resolve a `Type` for {@link Pipe}.
    *
    * This interface can be overridden by the application developer to create custom behavior.
    *
@@ -13879,7 +13882,7 @@
           this._reflector = _reflector;
       }
       /**
-       * Return {@link PipeMetadata} for a given `Type`.
+       * Return {@link Pipe} for a given `Type`.
        */
       PipeResolver.prototype.resolve = function (type, throwIfNotFound) {
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
@@ -13949,7 +13952,7 @@
           this._directiveCache.delete(type);
           this._pipeCache.delete(type);
           this._ngModuleOfTypes.delete(type);
-          // Clear all of the NgModuleMetadata as they contain transitive information!
+          // Clear all of the NgModule as they contain transitive information!
           this._ngModuleCache.clear();
       };
       CompileMetadataResolver.prototype.clearCache = function () {
@@ -14016,7 +14019,7 @@
               var moduleUrl = staticTypeModuleUrl(directiveType);
               var entryComponentMetadata = [];
               var selector = dirMeta.selector;
-              if (dirMeta instanceof _angular_core.ComponentMetadata) {
+              if (dirMeta instanceof _angular_core.Component) {
                   var cmpMeta = dirMeta;
                   assertArrayOfStrings('styles', cmpMeta.styles);
                   assertInterpolationSymbols('interpolation', cmpMeta.interpolation);
@@ -14345,23 +14348,23 @@
               var token = null;
               if (isArray(param)) {
                   param.forEach(function (paramEntry) {
-                      if (paramEntry instanceof _angular_core.HostMetadata) {
+                      if (paramEntry instanceof _angular_core.Host) {
                           isHost = true;
                       }
-                      else if (paramEntry instanceof _angular_core.SelfMetadata) {
+                      else if (paramEntry instanceof _angular_core.Self) {
                           isSelf = true;
                       }
-                      else if (paramEntry instanceof _angular_core.SkipSelfMetadata) {
+                      else if (paramEntry instanceof _angular_core.SkipSelf) {
                           isSkipSelf = true;
                       }
-                      else if (paramEntry instanceof _angular_core.OptionalMetadata) {
+                      else if (paramEntry instanceof _angular_core.Optional) {
                           isOptional = true;
                       }
-                      else if (paramEntry instanceof _angular_core.AttributeMetadata) {
+                      else if (paramEntry instanceof _angular_core.Attribute) {
                           isAttribute = true;
                           token = paramEntry.attributeName;
                       }
-                      else if (paramEntry instanceof _angular_core.QueryMetadata) {
+                      else if (paramEntry instanceof _angular_core.Query) {
                           if (paramEntry.isViewQuery) {
                               viewQuery = paramEntry;
                           }
@@ -14369,7 +14372,7 @@
                               query = paramEntry;
                           }
                       }
-                      else if (paramEntry instanceof _angular_core.InjectMetadata) {
+                      else if (paramEntry instanceof _angular_core.Inject) {
                           token = paramEntry.token;
                       }
                       else if (isValidType(paramEntry) && isBlank(token)) {
@@ -14518,11 +14521,14 @@
           });
           return res;
       };
+      CompileMetadataResolver.prototype._queryVarBindings = function (selector) {
+          return StringWrapper.split(selector, /\s*,\s*/g);
+      };
       CompileMetadataResolver.prototype.getQueryMetadata = function (q, propertyName, typeOrFunc) {
           var _this = this;
           var selectors;
-          if (q.isVarBindingQuery) {
-              selectors = q.varBindings.map(function (varName) { return _this.getTokenMetadata(varName); });
+          if (isString(q.selector)) {
+              selectors = this._queryVarBindings(q.selector).map(function (varName) { return _this.getTokenMetadata(varName); });
           }
           else {
               if (!isPresent(q.selector)) {
@@ -17467,8 +17473,8 @@
           },
           deps: [
               HtmlParser,
-              [new _angular_core.OptionalMetadata(), new _angular_core.Inject(_angular_core.TRANSLATIONS)],
-              [new _angular_core.OptionalMetadata(), new _angular_core.Inject(_angular_core.TRANSLATIONS_FORMAT)],
+              [new _angular_core.Optional(), new _angular_core.Inject(_angular_core.TRANSLATIONS)],
+              [new _angular_core.Optional(), new _angular_core.Inject(_angular_core.TRANSLATIONS_FORMAT)],
           ]
       },
       TemplateParser,
