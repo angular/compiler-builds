@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v0.0.0-PLACEHOLDER
+ * @license Angular v0.0.0-PLACEHOLDER
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -16537,7 +16537,7 @@
   function stripComments(input) {
       return StringWrapper.replaceAllMapped(input, _commentRe, function (_ /** TODO #9100 */) { return ''; });
   }
-  // all comments except inline source mapping ("/* #sourceMappingURL= ... */")
+  // all comments except inline source mapping
   var _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
   function extractSourceMappingUrl(input) {
       var matcher = input.match(_sourceMappingUrlRe);
