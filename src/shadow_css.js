@@ -405,7 +405,7 @@ export var ShadowCss = (function () {
             }
             return scopedP;
         };
-        var sep = /( |>|\+|~)\s*/g;
+        var sep = /( |>|\+|~(?!=))\s*/g;
         var scopeAfter = selector.indexOf(_polyfillHostNoCombinator);
         var scoped = '';
         var startIndex = 0;
