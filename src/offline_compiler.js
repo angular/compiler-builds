@@ -147,11 +147,13 @@ export var OfflineCompiler = (function () {
 function _resolveViewStatements(compileResult) {
     compileResult.dependencies.forEach(function (dep) {
         if (dep instanceof ViewFactoryDependency) {
-            dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);
+            var vfd = dep;
+            vfd.placeholder.moduleUrl = _ngfactoryModuleUrl(vfd.comp.moduleUrl);
         }
         else if (dep instanceof ComponentFactoryDependency) {
-            dep.placeholder.name = _componentFactoryName(dep.comp);
-            dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);
+            var cfd = dep;
+            cfd.placeholder.name = _componentFactoryName(cfd.comp);
+            cfd.placeholder.moduleUrl = _ngfactoryModuleUrl(cfd.comp.moduleUrl);
         }
     });
     return compileResult.statements;
