@@ -12981,8 +12981,7 @@
               return Promise
                   .all([compMeta].concat(ngModule.transitiveModule.directives).map(function (dirMeta) { return _this._directiveNormalizer.normalizeDirective(dirMeta).asyncResult; }))
                   .then(function (normalizedCompWithDirectives) {
-                  var compMeta = normalizedCompWithDirectives[0];
-                  var dirMetas = normalizedCompWithDirectives.slice(1);
+                  var compMeta = normalizedCompWithDirectives[0], dirMetas = normalizedCompWithDirectives.slice(1);
                   _assertComponent(compMeta);
                   // compile styles
                   var stylesCompileResults = _this._styleCompiler.compileComponent(compMeta);
@@ -12990,8 +12989,7 @@
                       outputSourceModules.push(_this._codgenStyles(compiledStyleSheet, fileSuffix));
                   });
                   // compile components
-                  exportedVars.push(_this._compileComponentFactory(compMeta, fileSuffix, statements));
-                  exportedVars.push(_this._compileComponent(compMeta, dirMetas, ngModule.transitiveModule.pipes, ngModule.schemas, stylesCompileResults.componentStylesheet, fileSuffix, statements));
+                  exportedVars.push(_this._compileComponentFactory(compMeta, fileSuffix, statements), _this._compileComponent(compMeta, dirMetas, ngModule.transitiveModule.pipes, ngModule.schemas, stylesCompileResults.componentStylesheet, fileSuffix, statements));
               });
           }))
               .then(function () {
@@ -13003,13 +13001,20 @@
       };
       OfflineCompiler.prototype._compileModule = function (ngModuleType, targetStatements) {
           var ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
-          var appCompileResult = this._ngModuleCompiler.compile(ngModule, [
-              new CompileProviderMetadata({ token: resolveIdentifierToken(Identifiers.LOCALE_ID), useValue: this._localeId }),
-              new CompileProviderMetadata({
+          var providers = [];
+          if (this._localeId) {
+              providers.push(new CompileProviderMetadata({
+                  token: resolveIdentifierToken(Identifiers.LOCALE_ID),
+                  useValue: this._localeId,
+              }));
+          }
+          if (this._translationFormat) {
+              providers.push(new CompileProviderMetadata({
                   token: resolveIdentifierToken(Identifiers.TRANSLATIONS_FORMAT),
                   useValue: this._translationFormat
-              })
-          ]);
+              }));
+          }
+          var appCompileResult = this._ngModuleCompiler.compile(ngModule, providers);
           appCompileResult.dependencies.forEach(function (dep) {
               dep.placeholder.name = _componentFactoryName(dep.comp);
               dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);
@@ -13024,8 +13029,9 @@
           targetStatements.push(variable(compFactoryVar)
               .set(importExpr(resolveIdentifier(Identifiers.ComponentFactory), [importType(compMeta.type)])
               .instantiate([
-              literal(compMeta.selector), variable(hostViewFactoryVar),
-              importExpr(compMeta.type)
+              literal(compMeta.selector),
+              variable(hostViewFactoryVar),
+              importExpr(compMeta.type),
           ], importType(resolveIdentifier(Identifiers.ComponentFactory), [importType(compMeta.type)], [TypeModifier.Const])))
               .toDeclStmt(null, [StmtModifier.Final]));
           return compFactoryVar;
@@ -13035,9 +13041,9 @@
           var stylesExpr = componentStyles ? variable(componentStyles.stylesVar) : literalArr([]);
           var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, pipes);
           if (componentStyles) {
-              ListWrapper.addAll(targetStatements, _resolveStyleStatements(componentStyles, fileSuffix));
+              targetStatements.push.apply(targetStatements, _resolveStyleStatements(componentStyles, fileSuffix));
           }
-          ListWrapper.addAll(targetStatements, _resolveViewStatements(viewResult));
+          targetStatements.push.apply(targetStatements, _resolveViewStatements(viewResult));
           return viewResult.viewFactoryVar;
       };
       OfflineCompiler.prototype._codgenStyles = function (stylesCompileResult, fileSuffix) {
@@ -13052,13 +13058,11 @@
   function _resolveViewStatements(compileResult) {
       compileResult.dependencies.forEach(function (dep) {
           if (dep instanceof ViewFactoryDependency) {
-              var vfd = dep;
-              vfd.placeholder.moduleUrl = _ngfactoryModuleUrl(vfd.comp.moduleUrl);
+              dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);
           }
           else if (dep instanceof ComponentFactoryDependency) {
-              var cfd = dep;
-              cfd.placeholder.name = _componentFactoryName(cfd.comp);
-              cfd.placeholder.moduleUrl = _ngfactoryModuleUrl(cfd.comp.moduleUrl);
+              dep.placeholder.name = _componentFactoryName(dep.comp);
+              dep.placeholder.moduleUrl = _ngfactoryModuleUrl(dep.comp.moduleUrl);
           }
       });
       return compileResult.statements;
@@ -13085,16 +13089,14 @@
       }
   }
   function _splitTypescriptSuffix(path) {
-      if (/\.d\.ts$/.test(path)) {
-          return [path.substring(0, path.length - 5), '.ts'];
+      if (path.endsWith('.d.ts')) {
+          return [path.slice(0, -5), '.ts'];
       }
       var lastDot = path.lastIndexOf('.');
       if (lastDot !== -1) {
           return [path.substring(0, lastDot), path.substring(lastDot)];
       }
-      else {
-          return [path, ''];
-      }
+      return [path, ''];
   }
 
   /**
