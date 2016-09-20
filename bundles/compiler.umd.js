@@ -11715,7 +11715,7 @@
           //
           // Notice that the first guard condition is the left hand of the left most safe access node
           // which comes in as leftMostSafe to this routine.
-          var guardedExpression = this.visit(leftMostSafe.receiver, mode);
+          var guardedExpression = this.visit(leftMostSafe.receiver, _Mode.Expression);
           var temporary;
           if (this.needsTemporary(leftMostSafe.receiver)) {
               // If the expression has method calls or pipes then we need to save the result into a
@@ -11736,7 +11736,7 @@
               this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name));
           }
           // Recursively convert the node now without the guarded member access.
-          var access = this.visit(ast, mode);
+          var access = this.visit(ast, _Mode.Expression);
           // Remove the mapping. This is not strictly required as the converter only traverses each node
           // once but is safer if the conversion is changed to traverse the nodes more than once.
           this._nodeMap.delete(leftMostSafe);
@@ -11745,7 +11745,7 @@
               this.releaseTemporary(temporary);
           }
           // Produce the conditional
-          return condition.conditional(literal(null), access);
+          return convertToStatementIfNeeded(mode, condition.conditional(literal(null), access));
       };
       // Given a expression of the form a?.b.c?.d.e the the left most safe node is
       // the (a?.b). The . and ?. are left associative thus can be rewritten as:
