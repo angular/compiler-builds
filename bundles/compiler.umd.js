@@ -484,20 +484,18 @@
       return result;
   }
 
-  var Map$1 = global$1.Map;
-  var Set$1 = global$1.Set;
   // Safari and Internet Explorer do not support the iterable parameter to the
   // Map constructor.  We work around that by manually adding the items.
   var createMapFromPairs = (function () {
       try {
-          if (new Map$1([[1, 2]]).size === 1) {
-              return function createMapFromPairs(pairs) { return new Map$1(pairs); };
+          if (new Map([[1, 2]]).size === 1) {
+              return function createMapFromPairs(pairs) { return new Map(pairs); };
           }
       }
       catch (e) {
       }
       return function createMapAndPopulateFromPairs(pairs) {
-          var map = new Map$1();
+          var map = new Map();
           for (var i = 0; i < pairs.length; i++) {
               var pair = pairs[i];
               map.set(pair[0], pair[1]);
@@ -505,22 +503,8 @@
           return map;
       };
   })();
-  var createMapFromMap = (function () {
-      try {
-          if (new Map$1(new Map$1())) {
-              return function createMapFromMap(m) { return new Map$1(m); };
-          }
-      }
-      catch (e) {
-      }
-      return function createMapAndPopulateFromMap(m) {
-          var map = new Map$1();
-          m.forEach(function (v, k) { map.set(k, v); });
-          return map;
-      };
-  })();
   var _clearValues = (function () {
-      if ((new Map$1()).keys().next) {
+      if ((new Map()).keys().next) {
           return function _clearValues(m) {
               var keyIterator = m.keys();
               var k;
@@ -539,7 +523,7 @@
   // TODO(mlaval): remove the work around once we have a working polyfill of Array.from
   var _arrayFromMap = (function () {
       try {
-          if ((new Map$1()).values().next) {
+          if ((new Map()).values().next) {
               return function createArrayFromMap(m, getValues) {
                   return getValues ? Array.from(m.values()) : Array.from(m.keys());
               };
@@ -548,7 +532,7 @@
       catch (e) {
       }
       return function createArrayFromMapWithForeach(m, getValues) {
-          var res = ListWrapper.createFixedSize(m.size), i = 0;
+          var res = new Array(m.size), i = 0;
           m.forEach(function (v, k) {
               res[i] = getValues ? v : k;
               i++;
@@ -559,9 +543,8 @@
   var MapWrapper = (function () {
       function MapWrapper() {
       }
-      MapWrapper.clone = function (m) { return createMapFromMap(m); };
       MapWrapper.createFromStringMap = function (stringMap) {
-          var result = new Map$1();
+          var result = new Map();
           for (var prop in stringMap) {
               result.set(prop, stringMap[prop]);
           }
@@ -573,7 +556,6 @@
           return r;
       };
       MapWrapper.createFromPairs = function (pairs) { return createMapFromPairs(pairs); };
-      MapWrapper.clearValues = function (m) { _clearValues(m); };
       MapWrapper.iterable = function (m) { return m; };
       MapWrapper.keys = function (m) { return _arrayFromMap(m, false); };
       MapWrapper.values = function (m) { return _arrayFromMap(m, true); };
@@ -585,15 +567,6 @@
   var StringMapWrapper = (function () {
       function StringMapWrapper() {
       }
-      StringMapWrapper.create = function () {
-          // Note: We are not using Object.create(null) here due to
-          // performance!
-          // http://jsperf.com/ng2-object-create-null
-          return {};
-      };
-      StringMapWrapper.contains = function (map, key) {
-          return map.hasOwnProperty(key);
-      };
       StringMapWrapper.get = function (map, key) {
           return map.hasOwnProperty(key) ? map[key] : undefined;
       };
@@ -608,7 +581,6 @@
           }
           return true;
       };
-      StringMapWrapper.delete = function (map, key) { delete map[key]; };
       StringMapWrapper.forEach = function (map, callback) {
           for (var _i = 0, _a = Object.keys(map); _i < _a.length; _i++) {
               var k = _a[_i];
@@ -776,13 +748,13 @@
   // Safari and Internet Explorer do not support the iterable parameter to the
   // Set constructor.  We work around that by manually adding the items.
   var createSetFromList = (function () {
-      var test = new Set$1([1, 2, 3]);
+      var test = new Set([1, 2, 3]);
       if (test.size === 3) {
-          return function createSetFromList(lst) { return new Set$1(lst); };
+          return function createSetFromList(lst) { return new Set(lst); };
       }
       else {
           return function createSetAndPopulateFromList(lst) {
-              var res = new Set$1(lst);
+              var res = new Set(lst);
               if (res.size !== lst.length) {
                   for (var i = 0; i < lst.length; i++) {
                       res.add(lst[i]);
@@ -10948,7 +10920,7 @@
       CompileElement.prototype.setComponentView = function (compViewExpr) {
           this._compViewExpr = compViewExpr;
           this.contentNodesByNgContentIndex =
-              ListWrapper.createFixedSize(this.component.template.ngContentSelectors.length);
+              new Array(this.component.template.ngContentSelectors.length);
           for (var i = 0; i < this.contentNodesByNgContentIndex.length; i++) {
               this.contentNodesByNgContentIndex[i] = [];
           }
