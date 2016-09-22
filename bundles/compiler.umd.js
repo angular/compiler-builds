@@ -9081,7 +9081,7 @@
                   boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);
                   securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
                   bindingType = exports.PropertyBindingType.Property;
-                  this._assertNoEventBinding(boundPropertyName, sourceSpan);
+                  this._assertNoEventBinding(boundPropertyName, sourceSpan, false);
                   if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName, this._schemas)) {
                       var errorMsg = "Can't bind to '" + boundPropertyName + "' since it isn't a known property of '" + elementName + "'.";
                       if (elementName.indexOf('-') > -1) {
@@ -9096,7 +9096,7 @@
           else {
               if (parts[0] == ATTRIBUTE_PREFIX) {
                   boundPropertyName = parts[1];
-                  this._assertNoEventBinding(boundPropertyName, sourceSpan);
+                  this._assertNoEventBinding(boundPropertyName, sourceSpan, true);
                   // NB: For security purposes, use the mapped property name, not the attribute name.
                   var mapPropName = this._schemaRegistry.getMappedPropName(boundPropertyName);
                   securityContext = this._schemaRegistry.securityContext(elementName, mapPropName);
@@ -9127,10 +9127,22 @@
           }
           return new BoundElementPropertyAst(boundPropertyName, bindingType, securityContext, ast, unit, sourceSpan);
       };
-      TemplateParseVisitor.prototype._assertNoEventBinding = function (propName, sourceSpan) {
+      /**
+       * @param propName the name of the property / attribute
+       * @param sourceSpan
+       * @param isAttr true when binding to an attribute
+       * @private
+       */
+      TemplateParseVisitor.prototype._assertNoEventBinding = function (propName, sourceSpan, isAttr) {
           if (propName.toLowerCase().startsWith('on')) {
-              this._reportError(("Binding to event attribute '" + propName + "' is disallowed ") +
-                  ("for security reasons, please use (" + propName.slice(2) + ")=..."), sourceSpan, ParseErrorLevel.FATAL);
+              var msg = ("Binding to event attribute '" + propName + "' is disallowed for security reasons, ") +
+                  ("please use (" + propName.slice(2) + ")=...");
+              if (!isAttr) {
+                  msg +=
+                      ("\nIf '" + propName + "' is a directive input, make sure the directive is imported by the") +
+                          " current module.";
+              }
+              this._reportError(msg, sourceSpan, ParseErrorLevel.FATAL);
           }
       };
       TemplateParseVisitor.prototype._findComponentDirectiveNames = function (directives) {
