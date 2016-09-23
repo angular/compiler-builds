@@ -15,7 +15,7 @@ import { ListWrapper, StringMapWrapper } from '../facade/collection';
 import { isArray, isBlank, isPresent, isString, isStringMap } from '../facade/lang';
 import { Math } from '../facade/math';
 import { ParseError } from '../parse_util';
-import { ANY_STATE, AnimationOutput, FILL_STYLE_FLAG } from '../private_import_core';
+import { ANY_STATE, FILL_STYLE_FLAG } from '../private_import_core';
 import { AnimationEntryAst, AnimationGroupAst, AnimationKeyframeAst, AnimationSequenceAst, AnimationStateDeclarationAst, AnimationStateTransitionAst, AnimationStateTransitionExpression, AnimationStepAst, AnimationStylesAst, AnimationWithStepsAst } from './animation_ast';
 import { StylesCollection } from './styles_collection';
 var _INITIAL_KEYFRAME = 0;
@@ -23,61 +23,72 @@ var _TERMINAL_KEYFRAME = 1;
 var _ONE_SECOND = 1000;
 export var AnimationParseError = (function (_super) {
     __extends(AnimationParseError, _super);
-    function AnimationParseError(message /** TODO #9100 */) {
+    function AnimationParseError(message) {
         _super.call(this, null, message);
     }
     AnimationParseError.prototype.toString = function () { return "" + this.msg; };
     return AnimationParseError;
 }(ParseError));
-export var ParsedAnimationResult = (function () {
-    function ParsedAnimationResult(ast, errors) {
+export var AnimationEntryParseResult = (function () {
+    function AnimationEntryParseResult(ast, errors) {
         this.ast = ast;
         this.errors = errors;
     }
-    return ParsedAnimationResult;
+    return AnimationEntryParseResult;
 }());
-export function parseAnimationEntry(entry) {
-    var errors = [];
-    var stateStyles = {};
-    var transitions = [];
-    var stateDeclarationAsts = [];
-    entry.definitions.forEach(function (def) {
-        if (def instanceof CompileAnimationStateDeclarationMetadata) {
-            _parseAnimationDeclarationStates(def, errors).forEach(function (ast) {
-                stateDeclarationAsts.push(ast);
-                stateStyles[ast.stateName] = ast.styles;
-            });
-        }
-        else {
-            transitions.push(def);
-        }
-    });
-    var stateTransitionAsts = transitions.map(function (transDef) { return _parseAnimationStateTransition(transDef, stateStyles, errors); });
-    var ast = new AnimationEntryAst(entry.name, stateDeclarationAsts, stateTransitionAsts);
-    return new ParsedAnimationResult(ast, errors);
-}
-export function parseAnimationOutputName(outputName, errors) {
-    var values = outputName.split('.');
-    var name;
-    var phase = '';
-    if (values.length > 1) {
-        name = values[0];
-        var parsedPhase = values[1];
-        switch (parsedPhase) {
-            case 'start':
-            case 'done':
-                phase = parsedPhase;
-                break;
-            default:
-                errors.push(new AnimationParseError("The provided animation output phase value \"" + parsedPhase + "\" for \"@" + name + "\" is not supported (use start or done)"));
-        }
+export var AnimationParser = (function () {
+    function AnimationParser() {
     }
-    else {
-        name = outputName;
-        errors.push(new AnimationParseError("The animation trigger output event (@" + name + ") is missing its phase value name (start or done are currently supported)"));
-    }
-    return new AnimationOutput(name, phase, outputName);
-}
+    AnimationParser.prototype.parseComponent = function (component) {
+        var _this = this;
+        var errors = [];
+        var componentName = component.type.name;
+        var animationTriggerNames = new Set();
+        var asts = component.template.animations.map(function (entry) {
+            var result = _this.parseEntry(entry);
+            var ast = result.ast;
+            var triggerName = ast.name;
+            if (animationTriggerNames.has(triggerName)) {
+                result.errors.push(new AnimationParseError("The animation trigger \"" + triggerName + "\" has already been registered for the " + componentName + " component"));
+            }
+            else {
+                animationTriggerNames.add(triggerName);
+            }
+            if (result.errors.length > 0) {
+                var errorMessage_1 = "- Unable to parse the animation sequence for \"" + triggerName + "\" on the " + componentName + " component due to the following errors:";
+                result.errors.forEach(function (error) { errorMessage_1 += '\n-- ' + error.msg; });
+                errors.push(errorMessage_1);
+            }
+            return ast;
+        });
+        if (errors.length > 0) {
+            var errorString = errors.join('\n');
+            throw new Error("Animation parse errors:\n" + errorString);
+        }
+        return asts;
+    };
+    AnimationParser.prototype.parseEntry = function (entry) {
+        var errors = [];
+        var stateStyles = {};
+        var transitions = [];
+        var stateDeclarationAsts = [];
+        entry.definitions.forEach(function (def) {
+            if (def instanceof CompileAnimationStateDeclarationMetadata) {
+                _parseAnimationDeclarationStates(def, errors).forEach(function (ast) {
+                    stateDeclarationAsts.push(ast);
+                    stateStyles[ast.stateName] = ast.styles;
+                });
+            }
+            else {
+                transitions.push(def);
+            }
+        });
+        var stateTransitionAsts = transitions.map(function (transDef) { return _parseAnimationStateTransition(transDef, stateStyles, errors); });
+        var ast = new AnimationEntryAst(entry.name, stateDeclarationAsts, stateTransitionAsts);
+        return new AnimationEntryParseResult(ast, errors);
+    };
+    return AnimationParser;
+}());
 function _parseAnimationDeclarationStates(stateMetadata, errors) {
     var styleValues = [];
     stateMetadata.styles.styles.forEach(function (stylesEntry) {

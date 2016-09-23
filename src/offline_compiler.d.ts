@@ -25,6 +25,8 @@ export declare class OfflineCompiler {
     private _outputEmitter;
     private _localeId;
     private _translationFormat;
+    private _animationParser;
+    private _animationCompiler;
     constructor(_metadataResolver: CompileMetadataResolver, _directiveNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _localeId: string, _translationFormat: string);
     analyzeModules(ngModules: StaticSymbol[]): NgModulesSummary;
     clearCache(): void;

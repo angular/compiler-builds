@@ -5,6 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { AnimationCompiler } from './animation/animation_compiler';
+import { AnimationParser } from './animation/animation_parser';
 import { CompileProviderMetadata, createHostComponentMeta } from './compile_metadata';
 import { Identifiers, resolveIdentifier, resolveIdentifierToken } from './identifiers';
 import * as o from './output/output_ast';
@@ -33,6 +35,8 @@ export var OfflineCompiler = (function () {
         this._outputEmitter = _outputEmitter;
         this._localeId = _localeId;
         this._translationFormat = _translationFormat;
+        this._animationParser = new AnimationParser();
+        this._animationCompiler = new AnimationCompiler();
     }
     OfflineCompiler.prototype.analyzeModules = function (ngModules) {
         var _this = this;
@@ -126,12 +130,15 @@ export var OfflineCompiler = (function () {
         return compFactoryVar;
     };
     OfflineCompiler.prototype._compileComponent = function (compMeta, directives, pipes, schemas, componentStyles, fileSuffix, targetStatements) {
+        var parsedAnimations = this._animationParser.parseComponent(compMeta);
         var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, schemas, compMeta.type.name);
         var stylesExpr = componentStyles ? o.variable(componentStyles.stylesVar) : o.literalArr([]);
-        var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, pipes);
+        var compiledAnimations = this._animationCompiler.compile(compMeta.type.name, parsedAnimations);
+        var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, pipes, compiledAnimations);
         if (componentStyles) {
             targetStatements.push.apply(targetStatements, _resolveStyleStatements(componentStyles, fileSuffix));
         }
+        compiledAnimations.forEach(function (entry) { entry.statements.forEach(function (statement) { targetStatements.push(statement); }); });
         targetStatements.push.apply(targetStatements, _resolveViewStatements(viewResult));
         return viewResult.viewFactoryVar;
     };
