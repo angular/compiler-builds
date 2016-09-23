@@ -54,6 +54,7 @@ export var AnimationSequencePlayer = r.AnimationSequencePlayer;
 export var AnimationGroupPlayer = r.AnimationGroupPlayer;
 export var AnimationKeyframe = r.AnimationKeyframe;
 export var AnimationStyles = r.AnimationStyles;
+export var AnimationOutput = r.AnimationOutput;
 export var ANY_STATE = r.ANY_STATE;
 export var DEFAULT_STATE = r.DEFAULT_STATE;
 export var EMPTY_STATE = r.EMPTY_STATE;

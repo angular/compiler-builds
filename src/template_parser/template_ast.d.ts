@@ -54,8 +54,7 @@ export declare class AttrAst implements TemplateAst {
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
- * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
- * `[@trigger]="stateExp"`)
+ * A binding for an element property (e.g. `[property]="expression"`).
  */
 export declare class BoundElementPropertyAst implements TemplateAst {
     name: string;
@@ -66,22 +65,18 @@ export declare class BoundElementPropertyAst implements TemplateAst {
     sourceSpan: ParseSourceSpan;
     constructor(name: string, type: PropertyBindingType, securityContext: SecurityContext, value: AST, unit: string, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
-    isAnimation: boolean;
 }
 /**
- * A binding for an element event (e.g. `(event)="handler()"`) or an animation trigger event (e.g.
- * `(@trigger.phase)="callback($event)"`).
+ * A binding for an element event (e.g. `(event)="handler()"`).
  */
 export declare class BoundEventAst implements TemplateAst {
     name: string;
     target: string;
-    phase: string;
     handler: AST;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, target: string, phase: string, handler: AST, sourceSpan: ParseSourceSpan);
+    constructor(name: string, target: string, handler: AST, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
     fullName: string;
-    isAnimation: boolean;
 }
 /**
  * A reference declaration on an element (e.g. `let someName="expression"`).

@@ -45,8 +45,7 @@ export var AttrAst = (function () {
     return AttrAst;
 }());
 /**
- * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
- * `[@trigger]="stateExp"`)
+ * A binding for an element property (e.g. `[property]="expression"`).
  */
 export var BoundElementPropertyAst = (function () {
     function BoundElementPropertyAst(name, type, securityContext, value, unit, sourceSpan) {
@@ -60,22 +59,15 @@ export var BoundElementPropertyAst = (function () {
     BoundElementPropertyAst.prototype.visit = function (visitor, context) {
         return visitor.visitElementProperty(this, context);
     };
-    Object.defineProperty(BoundElementPropertyAst.prototype, "isAnimation", {
-        get: function () { return this.type === PropertyBindingType.Animation; },
-        enumerable: true,
-        configurable: true
-    });
     return BoundElementPropertyAst;
 }());
 /**
- * A binding for an element event (e.g. `(event)="handler()"`) or an animation trigger event (e.g.
- * `(@trigger.phase)="callback($event)"`).
+ * A binding for an element event (e.g. `(event)="handler()"`).
  */
 export var BoundEventAst = (function () {
-    function BoundEventAst(name, target, phase, handler, sourceSpan) {
+    function BoundEventAst(name, target, handler, sourceSpan) {
         this.name = name;
         this.target = target;
-        this.phase = phase;
         this.handler = handler;
         this.sourceSpan = sourceSpan;
     }
@@ -91,11 +83,6 @@ export var BoundEventAst = (function () {
                 return this.name;
             }
         },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(BoundEventAst.prototype, "isAnimation", {
-        get: function () { return !!this.phase; },
         enumerable: true,
         configurable: true
     });

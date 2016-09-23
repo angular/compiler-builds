@@ -7,18 +7,24 @@
  */
 import { StringMapWrapper } from '../facade/collection';
 import { StringWrapper, isBlank, isPresent } from '../facade/lang';
-import { identifierToken } from '../identifiers';
+import { Identifiers, identifierToken, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { CompileBinding } from './compile_binding';
 import { CompileMethod } from './compile_method';
 import { EventHandlerVars, ViewProperties } from './constants';
 import { convertCdStatementToIr } from './expression_converter';
+export var CompileElementAnimationOutput = (function () {
+    function CompileElementAnimationOutput(listener, output) {
+        this.listener = listener;
+        this.output = output;
+    }
+    return CompileElementAnimationOutput;
+}());
 export var CompileEventListener = (function () {
-    function CompileEventListener(compileElement, eventTarget, eventName, eventPhase, listenerIndex) {
+    function CompileEventListener(compileElement, eventTarget, eventName, listenerIndex) {
         this.compileElement = compileElement;
         this.eventTarget = eventTarget;
         this.eventName = eventName;
-        this.eventPhase = eventPhase;
         this._hasComponentHostListener = false;
         this._actionResultExprs = [];
         this._method = new CompileMethod(compileElement.view);
@@ -26,11 +32,10 @@ export var CompileEventListener = (function () {
             "_handle_" + santitizeEventName(eventName) + "_" + compileElement.nodeIndex + "_" + listenerIndex;
         this._eventParam = new o.FnParam(EventHandlerVars.event.name, o.importType(this.compileElement.view.genConfig.renderTypes.renderEvent));
     }
-    CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, eventPhase, targetEventListeners) {
-        var listener = targetEventListeners.find(function (listener) { return listener.eventTarget == eventTarget && listener.eventName == eventName &&
-            listener.eventPhase == eventPhase; });
+    CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, targetEventListeners) {
+        var listener = targetEventListeners.find(function (listener) { return listener.eventTarget == eventTarget && listener.eventName == eventName; });
         if (isBlank(listener)) {
-            listener = new CompileEventListener(compileElement, eventTarget, eventName, eventPhase, targetEventListeners.length);
+            listener = new CompileEventListener(compileElement, eventTarget, eventName, targetEventListeners.length);
             targetEventListeners.push(listener);
         }
         return listener;
@@ -90,13 +95,16 @@ export var CompileEventListener = (function () {
         // private is fine here as no child view will reference the event handler...
         this.compileElement.view.createMethod.addStmt(disposable.set(listenExpr).toDeclStmt(o.FUNCTION_TYPE, [o.StmtModifier.Private]));
     };
-    CompileEventListener.prototype.listenToAnimation = function () {
+    CompileEventListener.prototype.listenToAnimation = function (output) {
         var outputListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
         // tie the property callback method to the view animations map
         var stmt = o.THIS_EXPR
             .callMethod('registerAnimationOutput', [
-            this.compileElement.renderNode, o.literal(this.eventName),
-            o.literal(this.eventPhase), outputListener
+            this.compileElement.renderNode,
+            o.importExpr(resolveIdentifier(Identifiers.AnimationOutput)).instantiate([
+                o.literal(output.name), o.literal(output.phase)
+            ]),
+            outputListener
         ])
             .toStmt();
         this.compileElement.view.createMethod.addStmt(stmt);
@@ -116,14 +124,14 @@ export function collectEventListeners(hostEvents, dirs, compileElement) {
     var eventListeners = [];
     hostEvents.forEach(function (hostEvent) {
         compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
-        var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, hostEvent.phase, eventListeners);
+        var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
         listener.addAction(hostEvent, null, null);
     });
     dirs.forEach(function (directiveAst) {
         var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type).reference);
         directiveAst.hostEvents.forEach(function (hostEvent) {
             compileElement.view.bindings.push(new CompileBinding(compileElement, hostEvent));
-            var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, hostEvent.phase, eventListeners);
+            var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, eventListeners);
             listener.addAction(hostEvent, directiveAst.directive, directiveInstance);
         });
     });
@@ -138,14 +146,10 @@ export function bindDirectiveOutputs(directiveAst, directiveInstance, eventListe
     });
 }
 export function bindRenderOutputs(eventListeners) {
-    eventListeners.forEach(function (listener) {
-        if (listener.eventPhase) {
-            listener.listenToAnimation();
-        }
-        else {
-            listener.listenToRenderer();
-        }
-    });
+    eventListeners.forEach(function (listener) { return listener.listenToRenderer(); });
+}
+export function bindAnimationOutputs(eventListeners) {
+    eventListeners.forEach(function (entry) { entry.listener.listenToAnimation(entry.output); });
 }
 function convertStmtIntoExpression(stmt) {
     if (stmt instanceof o.ExpressionStatement) {

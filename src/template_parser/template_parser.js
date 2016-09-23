@@ -29,7 +29,7 @@ import { ProviderElementContext, ProviderViewContext } from '../provider_analyze
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
 import { CssSelector, SelectorMatcher } from '../selector';
 import { isStyleUrlResolvable } from '../style_url_resolver';
-import { splitAtColon, splitAtPeriod } from '../util';
+import { splitAtColon } from '../util';
 import { AttrAst, BoundDirectivePropertyAst, BoundElementPropertyAst, BoundEventAst, BoundTextAst, DirectiveAst, ElementAst, EmbeddedTemplateAst, NgContentAst, PropertyBindingType, ReferenceAst, TextAst, VariableAst, templateVisitAll } from './template_ast';
 import { PreparsedElementType, preparseElement } from './template_preparser';
 // Group 1 = "bind-"
@@ -379,10 +379,6 @@ var TemplateParseVisitor = (function () {
             this._assertOnlyOneComponent(directiveAsts, element.sourceSpan);
             var ngContentIndex_1 = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
             parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan);
-            this._findComponentDirectives(directiveAsts)
-                .forEach(function (componentDirectiveAst) { return _this._validateElementAnimationInputOutputs(componentDirectiveAst.hostProperties, componentDirectiveAst.hostEvents, componentDirectiveAst.directive.template); });
-            var componentTemplate = providerContext.viewContext.component.template;
-            this._validateElementAnimationInputOutputs(elementProps, events, componentTemplate);
         }
         if (hasInlineTemplates) {
             var templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
@@ -395,26 +391,6 @@ var TemplateParseVisitor = (function () {
             parsedElement = new EmbeddedTemplateAst([], [], [], templateElementVars, templateProviderContext.transformedDirectiveAsts, templateProviderContext.transformProviders, templateProviderContext.transformedHasViewContainer, [parsedElement], ngContentIndex, element.sourceSpan);
         }
         return parsedElement;
-    };
-    TemplateParseVisitor.prototype._validateElementAnimationInputOutputs = function (inputs, outputs, template) {
-        var _this = this;
-        var triggerLookup = new Set();
-        template.animations.forEach(function (entry) { triggerLookup.add(entry.name); });
-        var animationInputs = inputs.filter(function (input) { return input.isAnimation; });
-        animationInputs.forEach(function (input) {
-            var name = input.name;
-            if (!triggerLookup.has(name)) {
-                _this._reportError("Couldn't find an animation entry for \"" + name + "\"", input.sourceSpan);
-            }
-        });
-        outputs.forEach(function (output) {
-            if (output.isAnimation) {
-                var found = animationInputs.find(function (input) { return input.name == output.name; });
-                if (!found) {
-                    _this._reportError("Unable to listen on (@" + output.name + "." + output.phase + ") because the animation trigger [@" + output.name + "] isn't being used on the same element", output.sourceSpan);
-                }
-            }
-        });
     };
     TemplateParseVisitor.prototype._parseInlineTemplateBinding = function (attr, targetMatchableAttrs, targetProps, targetVars) {
         var templateBindingsSource = null;
@@ -469,14 +445,14 @@ var TemplateParseVisitor = (function () {
                 this._parseReference(identifier, value, srcSpan, targetRefs);
             }
             else if (bindParts[KW_ON_IDX]) {
-                this._parseEventOrAnimationEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
+                this._parseEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
             }
             else if (bindParts[KW_BINDON_IDX]) {
                 this._parsePropertyOrAnimation(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
                 this._parseAssignmentEvent(bindParts[IDENT_KW_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
             }
             else if (bindParts[KW_AT_IDX]) {
-                if (_isAnimationLabel(name) && isPresent(value) && value.length > 0) {
+                if (name[0] == '@' && isPresent(value) && value.length > 0) {
                     this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid." +
                         " Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", srcSpan, ParseErrorLevel.FATAL);
                 }
@@ -490,7 +466,7 @@ var TemplateParseVisitor = (function () {
                 this._parsePropertyOrAnimation(bindParts[IDENT_PROPERTY_IDX], value, srcSpan, targetMatchableAttrs, targetProps, targetAnimationProps);
             }
             else if (bindParts[IDENT_EVENT_IDX]) {
-                this._parseEventOrAnimationEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
+                this._parseEvent(bindParts[IDENT_EVENT_IDX], value, srcSpan, targetMatchableAttrs, targetEvents);
             }
         }
         else {
@@ -519,7 +495,7 @@ var TemplateParseVisitor = (function () {
     };
     TemplateParseVisitor.prototype._parsePropertyOrAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetProps, targetAnimationProps) {
         var animatePropLength = ANIMATE_PROP_PREFIX.length;
-        var isAnimationProp = _isAnimationLabel(name);
+        var isAnimationProp = name[0] == '@';
         var animationPrefixLength = 1;
         if (name.substring(0, animatePropLength) == ANIMATE_PROP_PREFIX) {
             isAnimationProp = true;
@@ -556,43 +532,16 @@ var TemplateParseVisitor = (function () {
         targetProps.push(new BoundElementOrDirectiveProperty(name, ast, false, sourceSpan));
     };
     TemplateParseVisitor.prototype._parseAssignmentEvent = function (name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
-        this._parseEventOrAnimationEvent(name + "Change", expression + "=$event", sourceSpan, targetMatchableAttrs, targetEvents);
-    };
-    TemplateParseVisitor.prototype._parseEventOrAnimationEvent = function (name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
-        if (_isAnimationLabel(name)) {
-            name = name.substr(1);
-            this._parseAnimationEvent(name, expression, sourceSpan, targetEvents);
-        }
-        else {
-            this._parseEvent(name, expression, sourceSpan, targetMatchableAttrs, targetEvents);
-        }
-    };
-    TemplateParseVisitor.prototype._parseAnimationEvent = function (name, expression, sourceSpan, targetEvents) {
-        var matches = splitAtPeriod(name, [name, '']);
-        var eventName = matches[0];
-        var phase = matches[1].toLowerCase();
-        if (phase) {
-            switch (phase) {
-                case 'start':
-                case 'done':
-                    var ast = this._parseAction(expression, sourceSpan);
-                    targetEvents.push(new BoundEventAst(eventName, null, phase, ast, sourceSpan));
-                    break;
-                default:
-                    this._reportError("The provided animation output phase value \"" + phase + "\" for \"@" + eventName + "\" is not supported (use start or done)", sourceSpan);
-                    break;
-            }
-        }
-        else {
-            this._reportError("The animation trigger output event (@" + eventName + ") is missing its phase value name (start or done are currently supported)", sourceSpan);
-        }
+        this._parseEvent(name + "Change", expression + "=$event", sourceSpan, targetMatchableAttrs, targetEvents);
     };
     TemplateParseVisitor.prototype._parseEvent = function (name, expression, sourceSpan, targetMatchableAttrs, targetEvents) {
         // long format: 'target: eventName'
-        var _a = splitAtColon(name, [null, name]), target = _a[0], eventName = _a[1];
+        var parts = splitAtColon(name, [null, name]);
+        var target = parts[0];
+        var eventName = parts[1];
         var ast = this._parseAction(expression, sourceSpan);
         targetMatchableAttrs.push([name, ast.source]);
-        targetEvents.push(new BoundEventAst(eventName, target, null, ast, sourceSpan));
+        targetEvents.push(new BoundEventAst(eventName, target, ast, sourceSpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     };
@@ -675,7 +624,7 @@ var TemplateParseVisitor = (function () {
         if (hostListeners) {
             StringMapWrapper.forEach(hostListeners, function (expression, propName) {
                 if (isString(expression)) {
-                    _this._parseEventOrAnimationEvent(propName, expression, sourceSpan, [], targetEventAsts);
+                    _this._parseEvent(propName, expression, sourceSpan, [], targetEventAsts);
                 }
                 else {
                     _this._reportError("Value of the host listener \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
@@ -726,7 +675,7 @@ var TemplateParseVisitor = (function () {
         var securityContext;
         if (parts.length === 1) {
             var partValue = parts[0];
-            if (_isAnimationLabel(partValue)) {
+            if (partValue[0] == '@') {
                 boundPropertyName = partValue.substr(1);
                 bindingType = PropertyBindingType.Animation;
                 securityContext = SecurityContext.NONE;
@@ -799,12 +748,15 @@ var TemplateParseVisitor = (function () {
             this._reportError(msg, sourceSpan, ParseErrorLevel.FATAL);
         }
     };
-    TemplateParseVisitor.prototype._findComponentDirectives = function (directives) {
-        return directives.filter(function (directive) { return directive.directive.isComponent; });
-    };
     TemplateParseVisitor.prototype._findComponentDirectiveNames = function (directives) {
-        return this._findComponentDirectives(directives)
-            .map(function (directive) { return directive.directive.type.name; });
+        var componentTypeNames = [];
+        directives.forEach(function (directive) {
+            var typeName = directive.directive.type.name;
+            if (directive.directive.isComponent) {
+                componentTypeNames.push(typeName);
+            }
+        });
+        return componentTypeNames;
     };
     TemplateParseVisitor.prototype._assertOnlyOneComponent = function (directives, sourceSpan) {
         var componentTypeNames = this._findComponentDirectiveNames(directives);
@@ -975,7 +927,4 @@ export var PipeCollector = (function (_super) {
     };
     return PipeCollector;
 }(RecursiveAstVisitor));
-function _isAnimationLabel(name) {
-    return name[0] == '@';
-}
 //# sourceMappingURL=template_parser.js.map

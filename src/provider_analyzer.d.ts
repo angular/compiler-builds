@@ -18,7 +18,7 @@ export declare class ProviderViewContext {
     constructor(component: CompileDirectiveMetadata, sourceSpan: ParseSourceSpan);
 }
 export declare class ProviderElementContext {
-    viewContext: ProviderViewContext;
+    private _viewContext;
     private _parent;
     private _isViewRoot;
     private _directiveAsts;
@@ -29,7 +29,7 @@ export declare class ProviderElementContext {
     private _allProviders;
     private _attrs;
     private _hasViewContainer;
-    constructor(viewContext: ProviderViewContext, _parent: ProviderElementContext, _isViewRoot: boolean, _directiveAsts: DirectiveAst[], attrs: AttrAst[], refs: ReferenceAst[], _sourceSpan: ParseSourceSpan);
+    constructor(_viewContext: ProviderViewContext, _parent: ProviderElementContext, _isViewRoot: boolean, _directiveAsts: DirectiveAst[], attrs: AttrAst[], refs: ReferenceAst[], _sourceSpan: ParseSourceSpan);
     afterElement(): void;
     transformProviders: ProviderAst[];
     transformedDirectiveAsts: DirectiveAst[];

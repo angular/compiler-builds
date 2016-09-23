@@ -14,16 +14,10 @@ export function camelCaseToDashCase(input) {
     return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
 }
 export function splitAtColon(input, defaultValues) {
-    return _splitAt(input, ':', defaultValues);
-}
-export function splitAtPeriod(input, defaultValues) {
-    return _splitAt(input, '.', defaultValues);
-}
-function _splitAt(input, character, defaultValues) {
-    var characterIndex = input.indexOf(character);
-    if (characterIndex == -1)
+    var colonIndex = input.indexOf(':');
+    if (colonIndex == -1)
         return defaultValues;
-    return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
+    return [input.slice(0, colonIndex).trim(), input.slice(colonIndex + 1).trim()];
 }
 export function sanitizeIdentifier(name) {
     return StringWrapper.replaceAll(name, /\W/g, '_');
