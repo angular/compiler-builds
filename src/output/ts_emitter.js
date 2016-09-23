@@ -89,7 +89,7 @@ var _TsEmitterVisitor = (function (_super) {
         }
         var result = _super.prototype.visitLiteralArrayExpr.call(this, ast, ctx);
         if (ast.entries.length === 0) {
-            ctx.print(' as any)');
+            ctx.print(' as any[])');
         }
         return result;
     };
