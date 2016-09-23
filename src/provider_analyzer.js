@@ -40,9 +40,9 @@ export var ProviderViewContext = (function () {
     return ProviderViewContext;
 }());
 export var ProviderElementContext = (function () {
-    function ProviderElementContext(_viewContext, _parent, _isViewRoot, _directiveAsts, attrs, refs, _sourceSpan) {
+    function ProviderElementContext(viewContext, _parent, _isViewRoot, _directiveAsts, attrs, refs, _sourceSpan) {
         var _this = this;
-        this._viewContext = _viewContext;
+        this.viewContext = viewContext;
         this._parent = _parent;
         this._isViewRoot = _isViewRoot;
         this._directiveAsts = _directiveAsts;
@@ -54,7 +54,7 @@ export var ProviderElementContext = (function () {
         attrs.forEach(function (attrAst) { return _this._attrs[attrAst.name] = attrAst.value; });
         var directivesMeta = _directiveAsts.map(function (directiveAst) { return directiveAst.directive; });
         this._allProviders =
-            _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, _viewContext.errors);
+            _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, viewContext.errors);
         this._contentQueries = _getContentQueries(directivesMeta);
         var queriedTokens = new Map();
         MapWrapper.values(this._allProviders).forEach(function (provider) {
@@ -125,7 +125,7 @@ export var ProviderElementContext = (function () {
             }
             currentEl = currentEl._parent;
         }
-        queries = this._viewContext.viewQueries.get(token.reference);
+        queries = this.viewContext.viewQueries.get(token.reference);
         if (isPresent(queries)) {
             ListWrapper.addAll(result, queries);
         }
@@ -148,7 +148,7 @@ export var ProviderElementContext = (function () {
             return transformedProviderAst;
         }
         if (isPresent(this._seenProviders.get(token.reference))) {
-            this._viewContext.errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, this._sourceSpan));
+            this.viewContext.errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, this._sourceSpan));
             return null;
         }
         this._seenProviders.set(token.reference, true);
@@ -248,9 +248,9 @@ export var ProviderElementContext = (function () {
             }
             // check @Host restriction
             if (isBlank(result)) {
-                if (!dep.isHost || this._viewContext.component.type.isHost ||
-                    this._viewContext.component.type.reference === dep.token.reference ||
-                    isPresent(this._viewContext.viewProviders.get(dep.token.reference))) {
+                if (!dep.isHost || this.viewContext.component.type.isHost ||
+                    this.viewContext.component.type.reference === dep.token.reference ||
+                    isPresent(this.viewContext.viewProviders.get(dep.token.reference))) {
                     result = dep;
                 }
                 else {
@@ -261,7 +261,7 @@ export var ProviderElementContext = (function () {
             }
         }
         if (isBlank(result)) {
-            this._viewContext.errors.push(new ProviderError("No provider for " + dep.token.name, this._sourceSpan));
+            this.viewContext.errors.push(new ProviderError("No provider for " + dep.token.name, this._sourceSpan));
         }
         return result;
     };

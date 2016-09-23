@@ -21,7 +21,6 @@ function createBindFieldExpr(exprIndex) {
 function createCurrValueExpr(exprIndex) {
     return o.variable("currVal_" + exprIndex); // fix syntax highlighting: `
 }
-var _animationViewCheckedFlagMap = new Map();
 function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
     var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
     if (isBlank(checkExpression.expression)) {
