@@ -8,7 +8,6 @@
 import { __core_private__ as r } from '@angular/core';
 export var isDefaultChangeDetectionStrategy = r.isDefaultChangeDetectionStrategy;
 export var ChangeDetectorStatus = r.ChangeDetectorStatus;
-r.CHANGE_DETECTION_STRATEGY_VALUES;
 export var LifecycleHooks = r.LifecycleHooks;
 export var LIFECYCLE_HOOKS_VALUES = r.LIFECYCLE_HOOKS_VALUES;
 export var ReflectorReader = r.ReflectorReader;

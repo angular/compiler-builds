@@ -7,7 +7,7 @@
  */
 import { ViewEncapsulation } from '@angular/core';
 import { CompileIdentifierMetadata } from '../compile_metadata';
-import { ListWrapper, SetWrapper, StringMapWrapper } from '../facade/collection';
+import { ListWrapper, StringMapWrapper } from '../facade/collection';
 import { StringWrapper, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -471,14 +471,14 @@ function generateDetectChangesMethod(view) {
     }
     var varStmts = [];
     var readVars = o.findReadVarNames(stmts);
-    if (SetWrapper.has(readVars, DetectChangesVars.changed.name)) {
+    if (readVars.has(DetectChangesVars.changed.name)) {
         varStmts.push(DetectChangesVars.changed.set(o.literal(true)).toDeclStmt(o.BOOL_TYPE));
     }
-    if (SetWrapper.has(readVars, DetectChangesVars.changes.name)) {
+    if (readVars.has(DetectChangesVars.changes.name)) {
         varStmts.push(DetectChangesVars.changes.set(o.NULL_EXPR)
             .toDeclStmt(new o.MapType(o.importType(resolveIdentifier(Identifiers.SimpleChange)))));
     }
-    if (SetWrapper.has(readVars, DetectChangesVars.valUnwrapper.name)) {
+    if (readVars.has(DetectChangesVars.valUnwrapper.name)) {
         varStmts.push(DetectChangesVars.valUnwrapper
             .set(o.importExpr(resolveIdentifier(Identifiers.ValueUnwrapper)).instantiate([]))
             .toDeclStmt(null, [o.StmtModifier.Final]));

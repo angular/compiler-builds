@@ -72,7 +72,7 @@
       }
       var res = token.toString();
       var newLineIndex = res.indexOf('\n');
-      return (newLineIndex === -1) ? res : res.substring(0, newLineIndex);
+      return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
   }
   var StringWrapper = (function () {
       function StringWrapper() {
@@ -580,10 +580,15 @@
   var StringMapWrapper = (function () {
       function StringMapWrapper() {
       }
-      StringMapWrapper.get = function (map, key) {
-          return map.hasOwnProperty(key) ? map[key] : undefined;
+      StringMapWrapper.create = function () {
+          // Note: We are not using Object.create(null) here due to
+          // performance!
+          // http://jsperf.com/ng2-object-create-null
+          return {};
       };
-      StringMapWrapper.set = function (map, key, value) { map[key] = value; };
+      StringMapWrapper.contains = function (map, key) {
+          return map.hasOwnProperty(key);
+      };
       StringMapWrapper.keys = function (map) { return Object.keys(map); };
       StringMapWrapper.values = function (map) {
           return Object.keys(map).map(function (k) { return map[k]; });
@@ -758,33 +763,6 @@
       }
       return target;
   }
-  // Safari and Internet Explorer do not support the iterable parameter to the
-  // Set constructor.  We work around that by manually adding the items.
-  var createSetFromList = (function () {
-      var test = new Set([1, 2, 3]);
-      if (test.size === 3) {
-          return function createSetFromList(lst) { return new Set(lst); };
-      }
-      else {
-          return function createSetAndPopulateFromList(lst) {
-              var res = new Set(lst);
-              if (res.size !== lst.length) {
-                  for (var i = 0; i < lst.length; i++) {
-                      res.add(lst[i]);
-                  }
-              }
-              return res;
-          };
-      }
-  })();
-  var SetWrapper = (function () {
-      function SetWrapper() {
-      }
-      SetWrapper.createFromList = function (lst) { return createSetFromList(lst); };
-      SetWrapper.has = function (s, key) { return s.has(key); };
-      SetWrapper.delete = function (m, k) { m.delete(k); };
-      return SetWrapper;
-  }());
 
   /**
    * @license
@@ -9888,7 +9866,7 @@
       return obj.styles.styles;
   }
 
-  var Math$2 = global$1.Math;
+  var Math$1 = global$1.Math;
 
   var StylesCollectionEntry = (function () {
       function StylesCollectionEntry(time, value) {
@@ -10304,7 +10282,7 @@
               var astDuration = innerAst.playTime;
               currentTime += astDuration;
               playTime += astDuration;
-              maxDuration = Math$2.max(astDuration, maxDuration);
+              maxDuration = Math$1.max(astDuration, maxDuration);
               steps.push(innerAst);
           });
           if (isPresent(previousStyles)) {
@@ -10382,7 +10360,7 @@
           if (durationUnit == 's') {
               durationMatch *= _ONE_SECOND;
           }
-          duration = Math$2.floor(durationMatch);
+          duration = Math$1.floor(durationMatch);
           var delayMatch = matches[3];
           var delayUnit = matches[4];
           if (isPresent(delayMatch)) {
@@ -10390,7 +10368,7 @@
               if (isPresent(delayUnit) && delayUnit == 's') {
                   delayVal *= _ONE_SECOND;
               }
-              delay = Math$2.floor(delayVal);
+              delay = Math$1.floor(delayVal);
           }
           var easingVal = matches[5];
           if (!isBlank(easingVal)) {
@@ -12757,14 +12735,14 @@
       }
       var varStmts = [];
       var readVars = findReadVarNames(stmts);
-      if (SetWrapper.has(readVars, DetectChangesVars.changed.name)) {
+      if (readVars.has(DetectChangesVars.changed.name)) {
           varStmts.push(DetectChangesVars.changed.set(literal(true)).toDeclStmt(BOOL_TYPE));
       }
-      if (SetWrapper.has(readVars, DetectChangesVars.changes.name)) {
+      if (readVars.has(DetectChangesVars.changes.name)) {
           varStmts.push(DetectChangesVars.changes.set(NULL_EXPR)
               .toDeclStmt(new MapType(importType(resolveIdentifier(Identifiers.SimpleChange)))));
       }
-      if (SetWrapper.has(readVars, DetectChangesVars.valUnwrapper.name)) {
+      if (readVars.has(DetectChangesVars.valUnwrapper.name)) {
           varStmts.push(DetectChangesVars.valUnwrapper
               .set(importExpr(resolveIdentifier(Identifiers.ValueUnwrapper)).instantiate([]))
               .toDeclStmt(null, [StmtModifier.Final]));

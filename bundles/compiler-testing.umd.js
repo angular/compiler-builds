@@ -49,7 +49,7 @@
         }
         var res = token.toString();
         var newLineIndex = res.indexOf('\n');
-        return (newLineIndex === -1) ? res : res.substring(0, newLineIndex);
+        return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
     }
     var NumberWrapper = (function () {
         function NumberWrapper() {
