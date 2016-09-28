@@ -10,12 +10,10 @@
 }(this, function (exports,_angular_core,_angular_compiler,_angular_core_testing) { 'use strict';
 
     var MockSchemaRegistry = (function () {
-        function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements, invalidProperties, invalidAttributes) {
+        function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements) {
             this.existingProperties = existingProperties;
             this.attrPropMapping = attrPropMapping;
             this.existingElements = existingElements;
-            this.invalidProperties = invalidProperties;
-            this.invalidAttributes = invalidAttributes;
         }
         MockSchemaRegistry.prototype.hasProperty = function (tagName, property, schemas) {
             var value = this.existingProperties[property];
@@ -30,25 +28,6 @@
         };
         MockSchemaRegistry.prototype.getMappedPropName = function (attrName) { return this.attrPropMapping[attrName] || attrName; };
         MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
-        MockSchemaRegistry.prototype.validateProperty = function (name) {
-            if (this.invalidProperties.indexOf(name) > -1) {
-                return { error: true, msg: "Binding to property '" + name + "' is disallowed for security reasons" };
-            }
-            else {
-                return { error: false };
-            }
-        };
-        MockSchemaRegistry.prototype.validateAttribute = function (name) {
-            if (this.invalidAttributes.indexOf(name) > -1) {
-                return {
-                    error: true,
-                    msg: "Binding to attribute '" + name + "' is disallowed for security reasons"
-                };
-            }
-            else {
-                return { error: false };
-            }
-        };
         return MockSchemaRegistry;
     }());
 
