@@ -9123,7 +9123,7 @@
                   boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);
                   securityContext = this._schemaRegistry.securityContext(elementName, boundPropertyName);
                   bindingType = exports.PropertyBindingType.Property;
-                  this._assertNoEventBinding(boundPropertyName, sourceSpan, false);
+                  this._validatePropertyOrAttributeName(boundPropertyName, sourceSpan, false);
                   if (!this._schemaRegistry.hasProperty(elementName, boundPropertyName, this._schemas)) {
                       var errorMsg = "Can't bind to '" + boundPropertyName + "' since it isn't a known property of '" + elementName + "'.";
                       if (elementName.indexOf('-') > -1) {
@@ -9138,7 +9138,7 @@
           else {
               if (parts[0] == ATTRIBUTE_PREFIX) {
                   boundPropertyName = parts[1];
-                  this._assertNoEventBinding(boundPropertyName, sourceSpan, true);
+                  this._validatePropertyOrAttributeName(boundPropertyName, sourceSpan, true);
                   // NB: For security purposes, use the mapped property name, not the attribute name.
                   var mapPropName = this._schemaRegistry.getMappedPropName(boundPropertyName);
                   securityContext = this._schemaRegistry.securityContext(elementName, mapPropName);
@@ -9175,16 +9175,11 @@
        * @param isAttr true when binding to an attribute
        * @private
        */
-      TemplateParseVisitor.prototype._assertNoEventBinding = function (propName, sourceSpan, isAttr) {
-          if (propName.toLowerCase().startsWith('on')) {
-              var msg = ("Binding to event attribute '" + propName + "' is disallowed for security reasons, ") +
-                  ("please use (" + propName.slice(2) + ")=...");
-              if (!isAttr) {
-                  msg +=
-                      ("\nIf '" + propName + "' is a directive input, make sure the directive is imported by the") +
-                          " current module.";
-              }
-              this._reportError(msg, sourceSpan, ParseErrorLevel.FATAL);
+      TemplateParseVisitor.prototype._validatePropertyOrAttributeName = function (propName, sourceSpan, isAttr) {
+          var report = isAttr ? this._schemaRegistry.validateAttribute(propName) :
+              this._schemaRegistry.validateProperty(propName);
+          if (report.error) {
+              this._reportError(report.msg, sourceSpan, ParseErrorLevel.FATAL);
           }
       };
       TemplateParseVisitor.prototype._findComponentDirectives = function (directives) {
@@ -12667,16 +12662,15 @@
       }
       if (view.viewIndex === 0) {
           var animationsExpr = literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; }));
-          initRenderCompTypeStmts = [new IfStmt(renderCompTypeVar.identical(NULL_EXPR), [
-                  renderCompTypeVar
+          initRenderCompTypeStmts = [new IfStmt(renderCompTypeVar.identical(NULL_EXPR), [renderCompTypeVar
                       .set(ViewConstructorVars.viewUtils.callMethod('createRenderComponentType', [
-                      literal(templateUrlInfo),
+                      view.genConfig.genDebugInfo ? literal(templateUrlInfo) : literal(''),
                       literal(view.component.template.ngContentSelectors.length),
-                      ViewEncapsulationEnum.fromValue(view.component.template.encapsulation), view.styles,
-                      animationsExpr
+                      ViewEncapsulationEnum.fromValue(view.component.template.encapsulation),
+                      view.styles,
+                      animationsExpr,
                   ]))
-                      .toStmt()
-              ])];
+                      .toStmt()])];
       }
       return fn(viewFactoryArgs, initRenderCompTypeStmts.concat([new ReturnStatement(variable(viewClass.name)
               .instantiate(viewClass.constructorMethod.params.map(function (param) { return variable(param.name); })))]), importType(resolveIdentifier(Identifiers.AppView), [getContextType(view)]))
@@ -17348,6 +17342,28 @@
       };
       DomElementSchemaRegistry.prototype.getMappedPropName = function (propName) { return _ATTR_TO_PROP[propName] || propName; };
       DomElementSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
+      DomElementSchemaRegistry.prototype.validateProperty = function (name) {
+          if (name.toLowerCase().startsWith('on')) {
+              var msg = ("Binding to event property '" + name + "' is disallowed for security reasons, ") +
+                  ("please use (" + name.slice(2) + ")=...") +
+                  ("\nIf '" + name + "' is a directive input, make sure the directive is imported by the") +
+                  " current module.";
+              return { error: true, msg: msg };
+          }
+          else {
+              return { error: false };
+          }
+      };
+      DomElementSchemaRegistry.prototype.validateAttribute = function (name) {
+          if (name.toLowerCase().startsWith('on')) {
+              var msg = ("Binding to event attribute '" + name + "' is disallowed for security reasons, ") +
+                  ("please use (" + name.slice(2) + ")=...");
+              return { error: true, msg: msg };
+          }
+          else {
+              return { error: false };
+          }
+      };
       DomElementSchemaRegistry.decorators = [
           { type: _angular_core.Injectable },
       ];

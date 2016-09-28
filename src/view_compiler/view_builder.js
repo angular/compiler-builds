@@ -402,16 +402,15 @@ function createViewFactory(view, viewClass, renderCompTypeVar) {
     }
     if (view.viewIndex === 0) {
         var animationsExpr = o.literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; }));
-        initRenderCompTypeStmts = [new o.IfStmt(renderCompTypeVar.identical(o.NULL_EXPR), [
-                renderCompTypeVar
+        initRenderCompTypeStmts = [new o.IfStmt(renderCompTypeVar.identical(o.NULL_EXPR), [renderCompTypeVar
                     .set(ViewConstructorVars.viewUtils.callMethod('createRenderComponentType', [
-                    o.literal(templateUrlInfo),
+                    view.genConfig.genDebugInfo ? o.literal(templateUrlInfo) : o.literal(''),
                     o.literal(view.component.template.ngContentSelectors.length),
-                    ViewEncapsulationEnum.fromValue(view.component.template.encapsulation), view.styles,
-                    animationsExpr
+                    ViewEncapsulationEnum.fromValue(view.component.template.encapsulation),
+                    view.styles,
+                    animationsExpr,
                 ]))
-                    .toStmt()
-            ])];
+                    .toStmt()])];
     }
     return o
         .fn(viewFactoryArgs, initRenderCompTypeStmts.concat([new o.ReturnStatement(o.variable(viewClass.name)
