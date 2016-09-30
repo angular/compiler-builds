@@ -323,11 +323,12 @@ export var ShadowCss = (function () {
         return processRules(cssText, function (rule) {
             var selector = rule.selector;
             var content = rule.content;
-            if (rule.selector[0] != '@' || rule.selector.startsWith('@page')) {
+            if (rule.selector[0] != '@') {
                 selector =
                     _this._scopeSelector(rule.selector, scopeSelector, hostSelector, _this.strictStyling);
             }
-            else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports')) {
+            else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports') ||
+                rule.selector.startsWith('@page') || rule.selector.startsWith('@document')) {
                 content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
             }
             return new CssRule(selector, content);
