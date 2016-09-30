@@ -16146,7 +16146,7 @@
               for (var _i = 0; _i < arguments.length; _i++) {
                   m[_i - 0] = arguments[_i];
               }
-              return m[1] + '{';
+              return m[2] + '{';
           });
       };
       /*
@@ -16172,7 +16172,7 @@
                   m[_i - 0] = arguments[_i];
               }
               var rule = m[0].replace(m[1], '').replace(m[2], '');
-              return m[3] + rule;
+              return m[4] + rule;
           });
       };
       /* Ensure styles are scoped. Pseudo-scoping takes a rule like:
@@ -16216,7 +16216,7 @@
           var m;
           _cssContentUnscopedRuleRe.lastIndex = 0;
           while ((m = _cssContentUnscopedRuleRe.exec(cssText)) !== null) {
-              var rule = m[0].replace(m[2], '').replace(m[1], m[3]);
+              var rule = m[0].replace(m[2], '').replace(m[1], m[4]);
               r += rule + '\n\n';
           }
           return r;
@@ -16226,7 +16226,7 @@
        *
        * to
        *
-       * scopeName.foo > .bar
+       * .foo<scopeName> > .bar
       */
       ShadowCss.prototype._convertColonHost = function (cssText) {
           return this._convertColonRule(cssText, _cssColonHostRe, this._colonHostPartReplacer);
@@ -16236,7 +16236,7 @@
        *
        * to
        *
-       * scopeName.foo > .bar, .foo scopeName > .bar { }
+       * .foo<scopeName> > .bar, .foo scopeName > .bar { }
        *
        * and
        *
@@ -16244,13 +16244,13 @@
        *
        * to
        *
-       * scopeName.foo .bar { ... }
+       * .foo<scopeName> .bar { ... }
       */
       ShadowCss.prototype._convertColonHostContext = function (cssText) {
           return this._convertColonRule(cssText, _cssColonHostContextRe, this._colonHostContextPartReplacer);
       };
       ShadowCss.prototype._convertColonRule = function (cssText, regExp, partReplacer) {
-          // p1 = :host, p2 = contents of (), p3 rest of rule
+          // m[1] = :host, m[2] = contents of (), m[3] rest of rule
           return cssText.replace(regExp, function () {
               var m = [];
               for (var _i = 0; _i < arguments.length; _i++) {
@@ -16345,13 +16345,11 @@
           // In Android browser, the lastIndex is not reset when the regex is used in String.replace()
           _polyfillHostRe.lastIndex = 0;
           if (_polyfillHostRe.test(selector)) {
-              var replaceBy = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
-              return selector.replace(_polyfillHostNoCombinator, replaceBy)
-                  .replace(_polyfillHostRe, replaceBy + ' ');
+              var replaceBy_1 = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
+              return selector.replace(_polyfillHostNoCombinatorRe, function (hnc, selector) { return selector + replaceBy_1; })
+                  .replace(_polyfillHostRe, replaceBy_1 + ' ');
           }
-          else {
-              return scopeSelector + ' ' + selector;
-          }
+          return scopeSelector + ' ' + selector;
       };
       // return a selector with [name] suffix on each simple selector
       // e.g. .foo.bar > .zot becomes .foo[name].bar[name] > .zot[name]  /** @internal */
@@ -16423,9 +16421,9 @@
       };
       return ShadowCss;
   }());
-  var _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?['"](.*?)['"][;\s]*}([^{]*?){/gim;
-  var _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
-  var _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*['"](.*?)['"])[;\s]*[^}]*}/gim;
+  var _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
+  var _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
+  var _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
   var _polyfillHost = '-shadowcsshost';
   // note: :host-context pre-processed to -shadowcsshostcontext.
   var _polyfillHostContext = '-shadowcsscontext';
@@ -16435,6 +16433,7 @@
   var _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
   var _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
   var _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
+  var _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
   var _shadowDOMSelectorsRe = [
       /::shadow/g,
       /::content/g,

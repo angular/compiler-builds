@@ -43,4 +43,4 @@ export declare class CssRule {
     content: string;
     constructor(selector: string, content: string);
 }
-export declare function processRules(input: string, ruleCallback: Function): string;
+export declare function processRules(input: string, ruleCallback: (rule: CssRule) => CssRule): string;
