@@ -13552,9 +13552,6 @@
       });
   }
 
-  function _isDirectiveMetadata(type) {
-      return type instanceof _angular_core.Directive;
-  }
   /*
    * Resolve a `Type` for {@link Directive}.
    *
@@ -13573,9 +13570,9 @@
       DirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
           var typeMetadata = this._reflector.annotations(_angular_core.resolveForwardRef(type));
-          if (isPresent(typeMetadata)) {
-              var metadata = typeMetadata.find(_isDirectiveMetadata);
-              if (isPresent(metadata)) {
+          if (typeMetadata) {
+              var metadata = typeMetadata.find(isDirectiveMetadata);
+              if (metadata) {
                   var propertyMetadata = this._reflector.propMetadata(type);
                   return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
               }
@@ -13590,10 +13587,10 @@
           var outputs = [];
           var host = {};
           var queries = {};
-          StringMapWrapper.forEach(propertyMetadata, function (metadata, propName) {
-              metadata.forEach(function (a) {
+          Object.keys(propertyMetadata).forEach(function (propName) {
+              propertyMetadata[propName].forEach(function (a) {
                   if (a instanceof _angular_core.Input) {
-                      if (isPresent(a.bindingPropertyName)) {
+                      if (a.bindingPropertyName) {
                           inputs.push(propName + ": " + a.bindingPropertyName);
                       }
                       else {
@@ -13602,7 +13599,7 @@
                   }
                   else if (a instanceof _angular_core.Output) {
                       var output = a;
-                      if (isPresent(output.bindingPropertyName)) {
+                      if (output.bindingPropertyName) {
                           outputs.push(propName + ": " + output.bindingPropertyName);
                       }
                       else {
@@ -13611,7 +13608,7 @@
                   }
                   else if (a instanceof _angular_core.HostBinding) {
                       var hostBinding = a;
-                      if (isPresent(hostBinding.hostPropertyName)) {
+                      if (hostBinding.hostPropertyName) {
                           host[("[" + hostBinding.hostPropertyName + "]")] = propName;
                       }
                       else {
@@ -13620,8 +13617,8 @@
                   }
                   else if (a instanceof _angular_core.HostListener) {
                       var hostListener = a;
-                      var args = isPresent(hostListener.args) ? hostListener.args.join(', ') : '';
-                      host[("(" + hostListener.eventName + ")")] = propName + "(" + args + ")";
+                      var args = hostListener.args || [];
+                      host[("(" + hostListener.eventName + ")")] = propName + "(" + args.join(',') + ")";
                   }
                   else if (a instanceof _angular_core.Query) {
                       queries[propName] = a;
@@ -13631,69 +13628,63 @@
           return this._merge(dm, inputs, outputs, host, queries, directiveType);
       };
       DirectiveResolver.prototype._extractPublicName = function (def) { return splitAtColon(def, [null, def])[1].trim(); };
-      DirectiveResolver.prototype._merge = function (dm, inputs, outputs, host, queries, directiveType) {
+      DirectiveResolver.prototype._merge = function (directive, inputs, outputs, host, queries, directiveType) {
           var _this = this;
-          var mergedInputs;
-          if (isPresent(dm.inputs)) {
-              var inputNames_1 = dm.inputs.map(function (def) { return _this._extractPublicName(def); });
+          var mergedInputs = inputs;
+          if (directive.inputs) {
+              var inputNames_1 = directive.inputs.map(function (def) { return _this._extractPublicName(def); });
               inputs.forEach(function (inputDef) {
                   var publicName = _this._extractPublicName(inputDef);
                   if (inputNames_1.indexOf(publicName) > -1) {
                       throw new Error("Input '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                   }
               });
-              mergedInputs = dm.inputs.concat(inputs);
+              mergedInputs.unshift.apply(mergedInputs, directive.inputs);
           }
-          else {
-              mergedInputs = inputs;
-          }
-          var mergedOutputs;
-          if (isPresent(dm.outputs)) {
-              var outputNames_1 = dm.outputs.map(function (def) { return _this._extractPublicName(def); });
+          var mergedOutputs = outputs;
+          if (directive.outputs) {
+              var outputNames_1 = directive.outputs.map(function (def) { return _this._extractPublicName(def); });
               outputs.forEach(function (outputDef) {
                   var publicName = _this._extractPublicName(outputDef);
                   if (outputNames_1.indexOf(publicName) > -1) {
                       throw new Error("Output event '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                   }
               });
-              mergedOutputs = dm.outputs.concat(outputs);
+              mergedOutputs.unshift.apply(mergedOutputs, directive.outputs);
           }
-          else {
-              mergedOutputs = outputs;
-          }
-          var mergedHost = isPresent(dm.host) ? StringMapWrapper.merge(dm.host, host) : host;
-          var mergedQueries = isPresent(dm.queries) ? StringMapWrapper.merge(dm.queries, queries) : queries;
-          if (dm instanceof _angular_core.Component) {
+          var mergedHost = directive.host ? StringMapWrapper.merge(directive.host, host) : host;
+          var mergedQueries = directive.queries ? StringMapWrapper.merge(directive.queries, queries) : queries;
+          if (directive instanceof _angular_core.Component) {
               return new _angular_core.Component({
-                  selector: dm.selector,
+                  selector: directive.selector,
                   inputs: mergedInputs,
                   outputs: mergedOutputs,
                   host: mergedHost,
-                  exportAs: dm.exportAs,
-                  moduleId: dm.moduleId,
+                  exportAs: directive.exportAs,
+                  moduleId: directive.moduleId,
                   queries: mergedQueries,
-                  changeDetection: dm.changeDetection,
-                  providers: dm.providers,
-                  viewProviders: dm.viewProviders,
-                  entryComponents: dm.entryComponents,
-                  template: dm.template,
-                  templateUrl: dm.templateUrl,
-                  styles: dm.styles,
-                  styleUrls: dm.styleUrls,
-                  encapsulation: dm.encapsulation,
-                  animations: dm.animations,
-                  interpolation: dm.interpolation
+                  changeDetection: directive.changeDetection,
+                  providers: directive.providers,
+                  viewProviders: directive.viewProviders,
+                  entryComponents: directive.entryComponents,
+                  template: directive.template,
+                  templateUrl: directive.templateUrl,
+                  styles: directive.styles,
+                  styleUrls: directive.styleUrls,
+                  encapsulation: directive.encapsulation,
+                  animations: directive.animations,
+                  interpolation: directive.interpolation
               });
           }
           else {
               return new _angular_core.Directive({
-                  selector: dm.selector,
+                  selector: directive.selector,
                   inputs: mergedInputs,
                   outputs: mergedOutputs,
                   host: mergedHost,
-                  exportAs: dm.exportAs,
+                  exportAs: directive.exportAs,
                   queries: mergedQueries,
-                  providers: dm.providers
+                  providers: directive.providers
               });
           }
       };
@@ -13706,6 +13697,9 @@
       ];
       return DirectiveResolver;
   }());
+  function isDirectiveMetadata(type) {
+      return type instanceof _angular_core.Directive;
+  }
 
   var LIFECYCLE_INTERFACES = MapWrapper.createFromPairs([
       [LifecycleHooks.OnInit, _angular_core.OnInit],
