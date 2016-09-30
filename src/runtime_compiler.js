@@ -11,7 +11,7 @@ import { AnimationParser } from './animation/animation_parser';
 import { ProviderMeta, createHostComponentMeta } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
-import { isBlank, stringify } from './facade/lang';
+import { stringify } from './facade/lang';
 import { CompileMetadataResolver } from './metadata_resolver';
 import { NgModuleCompiler } from './ng_module_compiler';
 import * as ir from './output/output_ast';
@@ -180,7 +180,7 @@ export var RuntimeCompiler = (function () {
     };
     RuntimeCompiler.prototype._createCompiledHostTemplate = function (compType) {
         var compiledTemplate = this._compiledHostTemplateCache.get(compType);
-        if (isBlank(compiledTemplate)) {
+        if (!compiledTemplate) {
             var compMeta = this._metadataResolver.getDirectiveMetadata(compType);
             assertComponent(compMeta);
             var hostMeta = createHostComponentMeta(compMeta);
@@ -191,7 +191,7 @@ export var RuntimeCompiler = (function () {
     };
     RuntimeCompiler.prototype._createCompiledTemplate = function (compMeta, ngModule) {
         var compiledTemplate = this._compiledTemplateCache.get(compMeta.type.reference);
-        if (isBlank(compiledTemplate)) {
+        if (!compiledTemplate) {
             assertComponent(compMeta);
             compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, ngModule.transitiveModule.directives, ngModule.transitiveModule.pipes, ngModule.schemas, this._templateNormalizer.normalizeDirective(compMeta));
             this._compiledTemplateCache.set(compMeta.type.reference, compiledTemplate);

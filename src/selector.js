@@ -204,7 +204,7 @@ export var SelectorMatcher = (function () {
                 if (isTerminal) {
                     var terminalMap = matcher._attrValueMap;
                     var terminalValuesMap = terminalMap.get(attrName);
-                    if (isBlank(terminalValuesMap)) {
+                    if (!terminalValuesMap) {
                         terminalValuesMap = new Map();
                         terminalMap.set(attrName, terminalValuesMap);
                     }
@@ -213,7 +213,7 @@ export var SelectorMatcher = (function () {
                 else {
                     var parttialMap = matcher._attrValuePartialMap;
                     var partialValuesMap = parttialMap.get(attrName);
-                    if (isBlank(partialValuesMap)) {
+                    if (!partialValuesMap) {
                         partialValuesMap = new Map();
                         parttialMap.set(attrName, partialValuesMap);
                     }
@@ -224,7 +224,7 @@ export var SelectorMatcher = (function () {
     };
     SelectorMatcher.prototype._addTerminal = function (map, name, selectable) {
         var terminalList = map.get(name);
-        if (isBlank(terminalList)) {
+        if (!terminalList) {
             terminalList = [];
             map.set(name, terminalList);
         }
@@ -232,7 +232,7 @@ export var SelectorMatcher = (function () {
     };
     SelectorMatcher.prototype._addPartial = function (map, name) {
         var matcher = map.get(name);
-        if (isBlank(matcher)) {
+        if (!matcher) {
             matcher = new SelectorMatcher();
             map.set(name, matcher);
         }
@@ -290,7 +290,7 @@ export var SelectorMatcher = (function () {
     };
     /** @internal */
     SelectorMatcher.prototype._matchTerminal = function (map, name, cssSelector, matchedCallback) {
-        if (isBlank(map) || isBlank(name)) {
+        if (!map || isBlank(name)) {
             return false;
         }
         var selectables = map.get(name);
@@ -298,7 +298,7 @@ export var SelectorMatcher = (function () {
         if (isPresent(starSelectables)) {
             selectables = selectables.concat(starSelectables);
         }
-        if (isBlank(selectables)) {
+        if (!selectables) {
             return false;
         }
         var selectable;
@@ -311,11 +311,11 @@ export var SelectorMatcher = (function () {
     };
     /** @internal */
     SelectorMatcher.prototype._matchPartial = function (map, name, cssSelector, matchedCallback) {
-        if (isBlank(map) || isBlank(name)) {
+        if (!map || isBlank(name)) {
             return false;
         }
         var nestedSelector = map.get(name);
-        if (isBlank(nestedSelector)) {
+        if (!nestedSelector) {
             return false;
         }
         // TODO(perf): get rid of recursion and measure again
@@ -342,13 +342,11 @@ export var SelectorContext = (function () {
     }
     SelectorContext.prototype.finalize = function (cssSelector, callback) {
         var result = true;
-        if (this.notSelectors.length > 0 &&
-            (isBlank(this.listContext) || !this.listContext.alreadyMatched)) {
+        if (this.notSelectors.length > 0 && (!this.listContext || !this.listContext.alreadyMatched)) {
             var notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
             result = !notMatcher.match(cssSelector, null);
         }
-        if (result && isPresent(callback) &&
-            (isBlank(this.listContext) || !this.listContext.alreadyMatched)) {
+        if (result && isPresent(callback) && (!this.listContext || !this.listContext.alreadyMatched)) {
             if (isPresent(this.listContext)) {
                 this.listContext.alreadyMatched = true;
             }

@@ -134,10 +134,9 @@ export var ProviderElementContext = (function () {
     ProviderElementContext.prototype._getOrCreateLocalProvider = function (requestingProviderType, token, eager) {
         var _this = this;
         var resolvedProvider = this._allProviders.get(token.reference);
-        if (isBlank(resolvedProvider) ||
-            ((requestingProviderType === ProviderAstType.Directive ||
-                requestingProviderType === ProviderAstType.PublicService) &&
-                resolvedProvider.providerType === ProviderAstType.PrivateService) ||
+        if (!resolvedProvider || ((requestingProviderType === ProviderAstType.Directive ||
+            requestingProviderType === ProviderAstType.PublicService) &&
+            resolvedProvider.providerType === ProviderAstType.PrivateService) ||
             ((requestingProviderType === ProviderAstType.PrivateService ||
                 requestingProviderType === ProviderAstType.PublicService) &&
                 resolvedProvider.providerType === ProviderAstType.Builtin)) {
@@ -232,13 +231,13 @@ export var ProviderElementContext = (function () {
             result = this._getLocalDependency(requestingProviderType, dep, eager);
         }
         if (dep.isSelf) {
-            if (isBlank(result) && dep.isOptional) {
+            if (!result && dep.isOptional) {
                 result = new CompileDiDependencyMetadata({ isValue: true, value: null });
             }
         }
         else {
             // check parent elements
-            while (isBlank(result) && isPresent(currElement._parent)) {
+            while (!result && isPresent(currElement._parent)) {
                 var prevElement = currElement;
                 currElement = currElement._parent;
                 if (prevElement._isViewRoot) {
@@ -247,7 +246,7 @@ export var ProviderElementContext = (function () {
                 result = currElement._getLocalDependency(ProviderAstType.PublicService, dep, currEager);
             }
             // check @Host restriction
-            if (isBlank(result)) {
+            if (!result) {
                 if (!dep.isHost || this.viewContext.component.type.isHost ||
                     this.viewContext.component.type.reference === dep.token.reference ||
                     isPresent(this.viewContext.viewProviders.get(dep.token.reference))) {
@@ -260,7 +259,7 @@ export var ProviderElementContext = (function () {
                 }
             }
         }
-        if (isBlank(result)) {
+        if (!result) {
             this.viewContext.errors.push(new ProviderError("No provider for " + dep.token.name, this._sourceSpan));
         }
         return result;
@@ -295,7 +294,7 @@ export var NgModuleProviderAnalyzer = (function () {
     NgModuleProviderAnalyzer.prototype._getOrCreateLocalProvider = function (token, eager) {
         var _this = this;
         var resolvedProvider = this._allProviders.get(token.reference);
-        if (isBlank(resolvedProvider)) {
+        if (!resolvedProvider) {
             return null;
         }
         var transformedProviderAst = this._transformedProviders.get(token.reference);
@@ -387,7 +386,7 @@ function _transformProviderAst(provider, _a) {
 }
 function _normalizeProviders(providers, sourceSpan, targetErrors, targetProviders) {
     if (targetProviders === void 0) { targetProviders = null; }
-    if (isBlank(targetProviders)) {
+    if (!targetProviders) {
         targetProviders = [];
     }
     if (isPresent(providers)) {
@@ -434,7 +433,7 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
         if (isPresent(resolvedProvider) && resolvedProvider.multiProvider !== provider.multi) {
             targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + resolvedProvider.token.name, sourceSpan));
         }
-        if (isBlank(resolvedProvider)) {
+        if (!resolvedProvider) {
             var lifecycleHooks = provider.token.identifier && provider.token.identifier instanceof CompileTypeMetadata ?
                 provider.token.identifier.lifecycleHooks :
                 [];
@@ -478,7 +477,7 @@ function _getContentQueries(directives) {
 function _addQueryToTokenMap(map, query) {
     query.selectors.forEach(function (token) {
         var entry = map.get(token.reference);
-        if (isBlank(entry)) {
+        if (!entry) {
             entry = [];
             map.set(token.reference, entry);
         }

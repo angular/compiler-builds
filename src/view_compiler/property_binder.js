@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { SecurityContext } from '@angular/core';
-import { isBlank, isPresent } from '../facade/lang';
+import { isPresent } from '../facade/lang';
 import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { EMPTY_STATE as EMPTY_ANIMATION_STATE, LifecycleHooks, isDefaultChangeDetectionStrategy } from '../private_import_core';
@@ -23,7 +23,7 @@ function createCurrValueExpr(exprIndex) {
 }
 function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
     var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
-    if (isBlank(checkExpression.expression)) {
+    if (!checkExpression.expression) {
         // e.g. an empty expression was given
         return;
     }

@@ -15,7 +15,7 @@ import { removeIdentifierDuplicates } from '../compile_metadata';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { StringMapWrapper } from '../facade/collection';
-import { isBlank, isPresent, isString } from '../facade/lang';
+import { isPresent, isString } from '../facade/lang';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
 import { Identifiers, identifierToken, resolveIdentifierToken } from '../identifiers';
 import * as html from '../ml_parser/ast';
@@ -688,7 +688,7 @@ var TemplateParseVisitor = (function () {
             var boundPropsByName_1 = new Map();
             boundProps.forEach(function (boundProp) {
                 var prevValue = boundPropsByName_1.get(boundProp.name);
-                if (isBlank(prevValue) || prevValue.isLiteral) {
+                if (!prevValue || prevValue.isLiteral) {
                     // give [a]="b" a higher precedence than a="b" on the same element
                     boundPropsByName_1.set(boundProp.name, boundProp);
                 }
@@ -712,7 +712,7 @@ var TemplateParseVisitor = (function () {
             });
         });
         props.forEach(function (prop) {
-            if (!prop.isLiteral && isBlank(boundDirectivePropsIndex.get(prop.name))) {
+            if (!prop.isLiteral && !boundDirectivePropsIndex.get(prop.name)) {
                 boundElementProps.push(_this._createElementPropertyAst(elementName, prop.name, prop.expression, prop.sourceSpan));
             }
         });

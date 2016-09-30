@@ -1343,7 +1343,7 @@
                   if (isTerminal) {
                       var terminalMap = matcher._attrValueMap;
                       var terminalValuesMap = terminalMap.get(attrName);
-                      if (isBlank(terminalValuesMap)) {
+                      if (!terminalValuesMap) {
                           terminalValuesMap = new Map();
                           terminalMap.set(attrName, terminalValuesMap);
                       }
@@ -1352,7 +1352,7 @@
                   else {
                       var parttialMap = matcher._attrValuePartialMap;
                       var partialValuesMap = parttialMap.get(attrName);
-                      if (isBlank(partialValuesMap)) {
+                      if (!partialValuesMap) {
                           partialValuesMap = new Map();
                           parttialMap.set(attrName, partialValuesMap);
                       }
@@ -1363,7 +1363,7 @@
       };
       SelectorMatcher.prototype._addTerminal = function (map, name, selectable) {
           var terminalList = map.get(name);
-          if (isBlank(terminalList)) {
+          if (!terminalList) {
               terminalList = [];
               map.set(name, terminalList);
           }
@@ -1371,7 +1371,7 @@
       };
       SelectorMatcher.prototype._addPartial = function (map, name) {
           var matcher = map.get(name);
-          if (isBlank(matcher)) {
+          if (!matcher) {
               matcher = new SelectorMatcher();
               map.set(name, matcher);
           }
@@ -1429,7 +1429,7 @@
       };
       /** @internal */
       SelectorMatcher.prototype._matchTerminal = function (map, name, cssSelector, matchedCallback) {
-          if (isBlank(map) || isBlank(name)) {
+          if (!map || isBlank(name)) {
               return false;
           }
           var selectables = map.get(name);
@@ -1437,7 +1437,7 @@
           if (isPresent(starSelectables)) {
               selectables = selectables.concat(starSelectables);
           }
-          if (isBlank(selectables)) {
+          if (!selectables) {
               return false;
           }
           var selectable;
@@ -1450,11 +1450,11 @@
       };
       /** @internal */
       SelectorMatcher.prototype._matchPartial = function (map, name, cssSelector, matchedCallback) {
-          if (isBlank(map) || isBlank(name)) {
+          if (!map || isBlank(name)) {
               return false;
           }
           var nestedSelector = map.get(name);
-          if (isBlank(nestedSelector)) {
+          if (!nestedSelector) {
               return false;
           }
           // TODO(perf): get rid of recursion and measure again
@@ -1481,13 +1481,11 @@
       }
       SelectorContext.prototype.finalize = function (cssSelector, callback) {
           var result = true;
-          if (this.notSelectors.length > 0 &&
-              (isBlank(this.listContext) || !this.listContext.alreadyMatched)) {
+          if (this.notSelectors.length > 0 && (!this.listContext || !this.listContext.alreadyMatched)) {
               var notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
               result = !notMatcher.match(cssSelector, null);
           }
-          if (result && isPresent(callback) &&
-              (isBlank(this.listContext) || !this.listContext.alreadyMatched)) {
+          if (result && isPresent(callback) && (!this.listContext || !this.listContext.alreadyMatched)) {
               if (isPresent(this.listContext)) {
                   this.listContext.alreadyMatched = true;
               }
@@ -1519,7 +1517,7 @@
       function Type(modifiers) {
           if (modifiers === void 0) { modifiers = null; }
           this.modifiers = modifiers;
-          if (isBlank(modifiers)) {
+          if (!modifiers) {
               this.modifiers = [];
           }
       }
@@ -1984,7 +1982,7 @@
       function Statement(modifiers) {
           if (modifiers === void 0) { modifiers = null; }
           this.modifiers = modifiers;
-          if (isBlank(modifiers)) {
+          if (!modifiers) {
               this.modifiers = [];
           }
       }
@@ -2049,7 +2047,7 @@
           if (type === void 0) { type = null; }
           this.type = type;
           this.modifiers = modifiers;
-          if (isBlank(modifiers)) {
+          if (!modifiers) {
               this.modifiers = [];
           }
       }
@@ -5526,7 +5524,7 @@
           // read =
           while (this._peek.type === TokenType$1.EXPANSION_CASE_VALUE) {
               var expCase = this._parseExpansionCase();
-              if (isBlank(expCase))
+              if (!expCase)
                   return; // error
               cases.push(expCase);
           }
@@ -5549,7 +5547,7 @@
           // read until }
           var start = this._advance();
           var exp = this._collectExpansionExpTokens(start);
-          if (isBlank(exp))
+          if (!exp)
               return null;
           var end = this._advance();
           exp.push(new Token$1(TokenType$1.EOF, [], end.sourceSpan));
@@ -7932,10 +7930,9 @@
       ProviderElementContext.prototype._getOrCreateLocalProvider = function (requestingProviderType, token, eager) {
           var _this = this;
           var resolvedProvider = this._allProviders.get(token.reference);
-          if (isBlank(resolvedProvider) ||
-              ((requestingProviderType === exports.ProviderAstType.Directive ||
-                  requestingProviderType === exports.ProviderAstType.PublicService) &&
-                  resolvedProvider.providerType === exports.ProviderAstType.PrivateService) ||
+          if (!resolvedProvider || ((requestingProviderType === exports.ProviderAstType.Directive ||
+              requestingProviderType === exports.ProviderAstType.PublicService) &&
+              resolvedProvider.providerType === exports.ProviderAstType.PrivateService) ||
               ((requestingProviderType === exports.ProviderAstType.PrivateService ||
                   requestingProviderType === exports.ProviderAstType.PublicService) &&
                   resolvedProvider.providerType === exports.ProviderAstType.Builtin)) {
@@ -8030,13 +8027,13 @@
               result = this._getLocalDependency(requestingProviderType, dep, eager);
           }
           if (dep.isSelf) {
-              if (isBlank(result) && dep.isOptional) {
+              if (!result && dep.isOptional) {
                   result = new CompileDiDependencyMetadata({ isValue: true, value: null });
               }
           }
           else {
               // check parent elements
-              while (isBlank(result) && isPresent(currElement._parent)) {
+              while (!result && isPresent(currElement._parent)) {
                   var prevElement = currElement;
                   currElement = currElement._parent;
                   if (prevElement._isViewRoot) {
@@ -8045,7 +8042,7 @@
                   result = currElement._getLocalDependency(exports.ProviderAstType.PublicService, dep, currEager);
               }
               // check @Host restriction
-              if (isBlank(result)) {
+              if (!result) {
                   if (!dep.isHost || this.viewContext.component.type.isHost ||
                       this.viewContext.component.type.reference === dep.token.reference ||
                       isPresent(this.viewContext.viewProviders.get(dep.token.reference))) {
@@ -8058,7 +8055,7 @@
                   }
               }
           }
-          if (isBlank(result)) {
+          if (!result) {
               this.viewContext.errors.push(new ProviderError("No provider for " + dep.token.name, this._sourceSpan));
           }
           return result;
@@ -8093,7 +8090,7 @@
       NgModuleProviderAnalyzer.prototype._getOrCreateLocalProvider = function (token, eager) {
           var _this = this;
           var resolvedProvider = this._allProviders.get(token.reference);
-          if (isBlank(resolvedProvider)) {
+          if (!resolvedProvider) {
               return null;
           }
           var transformedProviderAst = this._transformedProviders.get(token.reference);
@@ -8185,7 +8182,7 @@
   }
   function _normalizeProviders(providers, sourceSpan, targetErrors, targetProviders) {
       if (targetProviders === void 0) { targetProviders = null; }
-      if (isBlank(targetProviders)) {
+      if (!targetProviders) {
           targetProviders = [];
       }
       if (isPresent(providers)) {
@@ -8232,7 +8229,7 @@
           if (isPresent(resolvedProvider) && resolvedProvider.multiProvider !== provider.multi) {
               targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + resolvedProvider.token.name, sourceSpan));
           }
-          if (isBlank(resolvedProvider)) {
+          if (!resolvedProvider) {
               var lifecycleHooks = provider.token.identifier && provider.token.identifier instanceof CompileTypeMetadata ?
                   provider.token.identifier.lifecycleHooks :
                   [];
@@ -8276,7 +8273,7 @@
   function _addQueryToTokenMap(map, query) {
       query.selectors.forEach(function (token) {
           var entry = map.get(token.reference);
-          if (isBlank(entry)) {
+          if (!entry) {
               entry = [];
               map.set(token.reference, entry);
           }
@@ -9076,7 +9073,7 @@
               var boundPropsByName_1 = new Map();
               boundProps.forEach(function (boundProp) {
                   var prevValue = boundPropsByName_1.get(boundProp.name);
-                  if (isBlank(prevValue) || prevValue.isLiteral) {
+                  if (!prevValue || prevValue.isLiteral) {
                       // give [a]="b" a higher precedence than a="b" on the same element
                       boundPropsByName_1.set(boundProp.name, boundProp);
                   }
@@ -9100,7 +9097,7 @@
               });
           });
           props.forEach(function (prop) {
-              if (!prop.isLiteral && isBlank(boundDirectivePropsIndex.get(prop.name))) {
+              if (!prop.isLiteral && !boundDirectivePropsIndex.get(prop.name)) {
                   boundElementProps.push(_this._createElementPropertyAst(elementName, prop.name, prop.expression, prop.sourceSpan));
               }
           });
@@ -9830,7 +9827,7 @@
       _AnimationBuilderStateMap.prototype.registerState = function (name, value) {
           if (value === void 0) { value = null; }
           var existingEntry = this._states[name];
-          if (isBlank(existingEntry)) {
+          if (!existingEntry) {
               this._states[name] = value;
           }
       };
@@ -10572,7 +10569,7 @@
   function createPureProxy(fn, argCount, pureProxyProp, view) {
       view.fields.push(new ClassField(pureProxyProp.name, null));
       var pureProxyId = argCount < Identifiers.pureProxies.length ? Identifiers.pureProxies[argCount] : null;
-      if (isBlank(pureProxyId)) {
+      if (!pureProxyId) {
           throw new Error("Unsupported number of argument for pure functions: " + argCount);
       }
       view.createMethod.addStmt(THIS_EXPR.prop(pureProxyProp.name)
@@ -10678,7 +10675,7 @@
   function addQueryToTokenMap(map, query) {
       query.meta.selectors.forEach(function (selector) {
           var entry = map.get(selector.reference);
-          if (isBlank(entry)) {
+          if (!entry) {
               entry = [];
               map.set(selector.reference, entry);
           }
@@ -10809,7 +10806,7 @@
           this.renderNode = renderNode;
           this.sourceAst = sourceAst;
       }
-      CompileNode.prototype.isNull = function () { return isBlank(this.renderNode); };
+      CompileNode.prototype.isNull = function () { return !this.renderNode; };
       CompileNode.prototype.isRootElement = function () { return this.view != this.parent.view; };
       return CompileNode;
   }());
@@ -11043,17 +11040,17 @@
       CompileElement.prototype._getLocalDependency = function (requestingProviderType, dep) {
           var result = null;
           // constructor content query
-          if (isBlank(result) && isPresent(dep.query)) {
+          if (!result && isPresent(dep.query)) {
               result = this._addQuery(dep.query, null).queryList;
           }
           // constructor view query
-          if (isBlank(result) && isPresent(dep.viewQuery)) {
+          if (!result && isPresent(dep.viewQuery)) {
               result = createQueryList(dep.viewQuery, null, "_viewQuery_" + dep.viewQuery.selectors[0].name + "_" + this.nodeIndex + "_" + this._componentConstructorViewQueryLists.length, this.view);
               this._componentConstructorViewQueryLists.push(result);
           }
           if (isPresent(dep.token)) {
               // access builtins with special visibility
-              if (isBlank(result)) {
+              if (!result) {
                   if (dep.token.reference ===
                       resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference) {
                       if (requestingProviderType === exports.ProviderAstType.Component) {
@@ -11065,7 +11062,7 @@
                   }
               }
               // access regular providers on the element
-              if (isBlank(result)) {
+              if (!result) {
                   var resolvedProvider = this._resolvedProviders.get(dep.token.reference);
                   // don't allow directives / public services to access private services.
                   // only components and private services can access private services.
@@ -11085,18 +11082,18 @@
           if (dep.isValue) {
               result = literal(dep.value);
           }
-          if (isBlank(result) && !dep.isSkipSelf) {
+          if (!result && !dep.isSkipSelf) {
               result = this._getLocalDependency(requestingProviderType, dep);
           }
           // check parent elements
-          while (isBlank(result) && !currElement.parent.isNull()) {
+          while (!result && !currElement.parent.isNull()) {
               currElement = currElement.parent;
               result = currElement._getLocalDependency(exports.ProviderAstType.PublicService, new CompileDiDependencyMetadata({ token: dep.token }));
           }
-          if (isBlank(result)) {
+          if (!result) {
               result = injectFromViewParentInjector(dep.token, dep.isOptional);
           }
-          if (isBlank(result)) {
+          if (!result) {
               result = NULL_EXPR;
           }
           return getPropertyInView(result, this.view, currElement.view);
@@ -11127,7 +11124,7 @@
           resolvedProviderValueExpr = providerValueExpressions[0];
           type = providerValueExpressions[0].type;
       }
-      if (isBlank(type)) {
+      if (!type) {
           type = DYNAMIC_TYPE;
       }
       if (isEager) {
@@ -11181,7 +11178,7 @@
           if (meta.pure) {
               // pure pipes live on the component view
               pipe = compView.purePipes.get(name);
-              if (isBlank(pipe)) {
+              if (!pipe) {
                   pipe = new CompilePipe(compView, meta);
                   compView.purePipes.set(name, pipe);
                   compView.pipes.push(pipe);
@@ -11225,7 +11222,7 @@
               break;
           }
       }
-      if (isBlank(pipeMeta)) {
+      if (!pipeMeta) {
           throw new Error("Illegal state: Could not find pipe " + name + " although the parser should have detected this error!");
       }
       return pipeMeta;
@@ -11317,7 +11314,7 @@
           }
           var currView = this;
           var result = currView.locals.get(name);
-          while (isBlank(result) && isPresent(currView.declarationElement.view)) {
+          while (!result && isPresent(currView.declarationElement.view)) {
               currView = currView.declarationElement.view;
               result = currView.locals.get(name);
           }
@@ -11815,7 +11812,7 @@
       CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, eventPhase, targetEventListeners) {
           var listener = targetEventListeners.find(function (listener) { return listener.eventTarget == eventTarget && listener.eventName == eventName &&
               listener.eventPhase == eventPhase; });
-          if (isBlank(listener)) {
+          if (!listener) {
               listener = new CompileEventListener(compileElement, eventTarget, eventName, eventPhase, targetEventListeners.length);
               targetEventListeners.push(listener);
           }
@@ -12008,7 +12005,7 @@
   }
   function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
       var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
-      if (isBlank(checkExpression.expression)) {
+      if (!checkExpression.expression) {
           // e.g. an empty expression was given
           return;
       }
@@ -14665,7 +14662,7 @@
               resolvedProviderValueExpr = providerValueExpressions[0];
               type = providerValueExpressions[0].type;
           }
-          if (isBlank(type)) {
+          if (!type) {
               type = DYNAMIC_TYPE;
           }
           if (isEager) {
@@ -14696,11 +14693,11 @@
                           resolveIdentifierToken(Identifiers.ComponentFactoryResolver).reference)) {
                   result = THIS_EXPR;
               }
-              if (isBlank(result)) {
+              if (!result) {
                   result = this._instances.get(dep.token.reference);
               }
           }
-          if (isBlank(result)) {
+          if (!result) {
               var args = [createDiTokenExpression(dep.token)];
               if (dep.isOptional) {
                   args.push(NULL_EXPR);
@@ -16765,7 +16762,7 @@
       };
       RuntimeCompiler.prototype._createCompiledHostTemplate = function (compType) {
           var compiledTemplate = this._compiledHostTemplateCache.get(compType);
-          if (isBlank(compiledTemplate)) {
+          if (!compiledTemplate) {
               var compMeta = this._metadataResolver.getDirectiveMetadata(compType);
               assertComponent(compMeta);
               var hostMeta = createHostComponentMeta(compMeta);
@@ -16776,7 +16773,7 @@
       };
       RuntimeCompiler.prototype._createCompiledTemplate = function (compMeta, ngModule) {
           var compiledTemplate = this._compiledTemplateCache.get(compMeta.type.reference);
-          if (isBlank(compiledTemplate)) {
+          if (!compiledTemplate) {
               assertComponent(compMeta);
               compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, ngModule.transitiveModule.directives, ngModule.transitiveModule.pipes, ngModule.schemas, this._templateNormalizer.normalizeDirective(compMeta));
               this._compiledTemplateCache.set(compMeta.type.reference, compiledTemplate);

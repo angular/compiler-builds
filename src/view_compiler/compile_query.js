@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ListWrapper } from '../facade/collection';
-import { isBlank, isPresent } from '../facade/lang';
+import { isPresent } from '../facade/lang';
 import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { getPropertyInView } from './util';
@@ -108,7 +108,7 @@ export function createQueryList(query, directiveInstance, propertyName, compileV
 export function addQueryToTokenMap(map, query) {
     query.meta.selectors.forEach(function (selector) {
         var entry = map.get(selector.reference);
-        if (isBlank(entry)) {
+        if (!entry) {
             entry = [];
             map.set(selector.reference, entry);
         }

@@ -121,7 +121,7 @@ var _TreeBuilder = (function () {
         // read =
         while (this._peek.type === lex.TokenType.EXPANSION_CASE_VALUE) {
             var expCase = this._parseExpansionCase();
-            if (isBlank(expCase))
+            if (!expCase)
                 return; // error
             cases.push(expCase);
         }
@@ -144,7 +144,7 @@ var _TreeBuilder = (function () {
         // read until }
         var start = this._advance();
         var exp = this._collectExpansionExpTokens(start);
-        if (isBlank(exp))
+        if (!exp)
             return null;
         var end = this._advance();
         exp.push(new lex.Token(lex.TokenType.EOF, [], end.sourceSpan));

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { StringMapWrapper } from '../facade/collection';
-import { StringWrapper, isBlank, isPresent } from '../facade/lang';
+import { StringWrapper, isPresent } from '../facade/lang';
 import { identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { CompileBinding } from './compile_binding';
@@ -29,7 +29,7 @@ export var CompileEventListener = (function () {
     CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, eventPhase, targetEventListeners) {
         var listener = targetEventListeners.find(function (listener) { return listener.eventTarget == eventTarget && listener.eventName == eventName &&
             listener.eventPhase == eventPhase; });
-        if (isBlank(listener)) {
+        if (!listener) {
             listener = new CompileEventListener(compileElement, eventTarget, eventName, eventPhase, targetEventListeners.length);
             targetEventListeners.push(listener);
         }

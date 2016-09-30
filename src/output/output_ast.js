@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { isBlank, isPresent, isString } from '../facade/lang';
+import { isPresent, isString } from '../facade/lang';
 //// Types
 export var TypeModifier;
 (function (TypeModifier) {
@@ -20,7 +20,7 @@ export var Type = (function () {
     function Type(modifiers) {
         if (modifiers === void 0) { modifiers = null; }
         this.modifiers = modifiers;
-        if (isBlank(modifiers)) {
+        if (!modifiers) {
             this.modifiers = [];
         }
     }
@@ -485,7 +485,7 @@ export var Statement = (function () {
     function Statement(modifiers) {
         if (modifiers === void 0) { modifiers = null; }
         this.modifiers = modifiers;
-        if (isBlank(modifiers)) {
+        if (!modifiers) {
             this.modifiers = [];
         }
     }
@@ -550,7 +550,7 @@ export var AbstractClassPart = (function () {
         if (type === void 0) { type = null; }
         this.type = type;
         this.modifiers = modifiers;
-        if (isBlank(modifiers)) {
+        if (!modifiers) {
             this.modifiers = [];
         }
     }
