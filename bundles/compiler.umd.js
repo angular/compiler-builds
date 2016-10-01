@@ -6735,6 +6735,11 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
+  var __extends$8 = (this && this.__extends) || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+      function __() { this.constructor = d; }
+      d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
   var _Visitor$1 = (function () {
       function _Visitor() {
       }
@@ -6807,6 +6812,14 @@
       Text.prototype.visit = function (visitor) { return visitor.visitText(this); };
       return Text;
   }());
+  var CR = (function (_super) {
+      __extends$8(CR, _super);
+      function CR(ws) {
+          if (ws === void 0) { ws = 0; }
+          _super.call(this, "\n" + new Array(ws + 1).join(' '));
+      }
+      return CR;
+  }(Text$2));
   var _ESCAPED_CHARS = [
       [/&/g, '&amp;'],
       [/"/g, '&quot;'],
@@ -6826,10 +6839,6 @@
   var _SOURCE_TAG = 'source';
   var _TARGET_TAG = 'target';
   var _UNIT_TAG = 'trans-unit';
-  var _CR = function (ws) {
-      if (ws === void 0) { ws = 0; }
-      return new Text$2("\n" + new Array(ws).join(' '));
-  };
   // http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
   // http://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2.html
   var Xliff = (function () {
@@ -6843,20 +6852,22 @@
           Object.keys(messageMap).forEach(function (id) {
               var message = messageMap[id];
               var transUnit = new Tag(_UNIT_TAG, { id: id, datatype: 'html' });
-              transUnit.children.push(_CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), _CR(8), new Tag(_TARGET_TAG));
+              transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new CR(8), new Tag(_TARGET_TAG));
               if (message.description) {
-                  transUnit.children.push(_CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$2(message.description)]));
+                  transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$2(message.description)]));
               }
               if (message.meaning) {
-                  transUnit.children.push(_CR(8), new Tag('note', { priority: '1', from: 'meaning' }, [new Text$2(message.meaning)]));
+                  transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'meaning' }, [new Text$2(message.meaning)]));
               }
-              transUnit.children.push(_CR(6));
-              transUnits.push(_CR(6), transUnit);
+              transUnit.children.push(new CR(6));
+              transUnits.push(new CR(6), transUnit);
           });
-          var body = new Tag('body', {}, transUnits.concat([_CR(4)]));
-          var file = new Tag('file', { 'source-language': _SOURCE_LANG, datatype: 'plaintext', original: 'ng2.template' }, [_CR(4), body, _CR(2)]);
-          var xliff = new Tag('xliff', { version: _VERSION, xmlns: _XMLNS }, [_CR(2), file, _CR()]);
-          return serialize([new Declaration({ version: '1.0', encoding: 'UTF-8' }), _CR(), xliff]);
+          var body = new Tag('body', {}, transUnits.concat([new CR(4)]));
+          var file = new Tag('file', { 'source-language': _SOURCE_LANG, datatype: 'plaintext', original: 'ng2.template' }, [new CR(4), body, new CR(2)]);
+          var xliff = new Tag('xliff', { version: _VERSION, xmlns: _XMLNS }, [new CR(2), file, new CR()]);
+          return serialize([
+              new Declaration({ version: '1.0', encoding: 'UTF-8' }), new CR(), xliff, new CR()
+          ]);
       };
       Xliff.prototype.load = function (content, url, messageBundle) {
           var _this = this;
@@ -6910,12 +6921,13 @@
           return nodes;
       };
       _WriteVisitor.prototype.visitTagPlaceholder = function (ph, context) {
-          var startTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype: ph.tag });
+          var ctype = getCtypeForTag(ph.tag);
+          var startTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype: ctype });
           if (ph.isVoid) {
               // void tags have no children nor closing tags
               return [startTagPh];
           }
-          var closeTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.closeName, ctype: ph.tag });
+          var closeTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.closeName, ctype: ctype });
           return [startTagPh].concat(this.serialize(ph.children), [closeTagPh]);
       };
       _WriteVisitor.prototype.visitPlaceholder = function (ph, context) {
@@ -7036,6 +7048,16 @@
       };
       return _LoadVisitor;
   }());
+  function getCtypeForTag(tag) {
+      switch (tag.toLowerCase()) {
+          case 'br':
+              return 'lb';
+          case 'img':
+              return 'image';
+          default:
+              return "x-" + tag;
+      }
+  }
 
   var _MESSAGES_TAG = 'messagebundle';
   var _MESSAGE_TAG = 'msg';
@@ -7048,7 +7070,6 @@
       Xmb.prototype.write = function (messageMap) {
           var visitor = new _Visitor$2();
           var rootNode = new Tag(_MESSAGES_TAG);
-          rootNode.children.push(new Text$2('\n'));
           Object.keys(messageMap).forEach(function (id) {
               var message = messageMap[id];
               var attrs = { id: id };
@@ -7058,14 +7079,16 @@
               if (message.meaning) {
                   attrs['meaning'] = message.meaning;
               }
-              rootNode.children.push(new Text$2('  '), new Tag(_MESSAGE_TAG, attrs, visitor.serialize(message.nodes)), new Text$2('\n'));
+              rootNode.children.push(new CR(2), new Tag(_MESSAGE_TAG, attrs, visitor.serialize(message.nodes)));
           });
+          rootNode.children.push(new CR());
           return serialize([
               new Declaration({ version: '1.0', encoding: 'UTF-8' }),
-              new Text$2('\n'),
+              new CR(),
               new Doctype(_MESSAGES_TAG, _DOCTYPE),
-              new Text$2('\n'),
+              new CR(),
               rootNode,
+              new CR(),
           ]);
       };
       Xmb.prototype.load = function (content, url, messageBundle) {
@@ -7655,13 +7678,13 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$8 = (this && this.__extends) || function (d, b) {
+  var __extends$9 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var HtmlParser = (function (_super) {
-      __extends$8(HtmlParser, _super);
+      __extends$9(HtmlParser, _super);
       function HtmlParser() {
           _super.call(this, getHtmlTagDefinition);
       }
@@ -7685,7 +7708,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$9 = (this && this.__extends) || function (d, b) {
+  var __extends$10 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -7728,7 +7751,7 @@
       return ExpansionResult;
   }());
   var ExpansionError = (function (_super) {
-      __extends$9(ExpansionError, _super);
+      __extends$10(ExpansionError, _super);
       function ExpansionError(span, errorMsg) {
           _super.call(this, span, errorMsg);
       }
@@ -7789,13 +7812,13 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$10 = (this && this.__extends) || function (d, b) {
+  var __extends$11 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var ProviderError = (function (_super) {
-      __extends$10(ProviderError, _super);
+      __extends$11(ProviderError, _super);
       function ProviderError(message, span) {
           _super.call(this, span, message);
       }
@@ -9433,7 +9456,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$11 = (this && this.__extends) || function (d, b) {
+  var __extends$12 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -9446,14 +9469,14 @@
       return AnimationAst;
   }());
   var AnimationStateAst = (function (_super) {
-      __extends$11(AnimationStateAst, _super);
+      __extends$12(AnimationStateAst, _super);
       function AnimationStateAst() {
           _super.apply(this, arguments);
       }
       return AnimationStateAst;
   }(AnimationAst));
   var AnimationEntryAst = (function (_super) {
-      __extends$11(AnimationEntryAst, _super);
+      __extends$12(AnimationEntryAst, _super);
       function AnimationEntryAst(name, stateDeclarations, stateTransitions) {
           _super.call(this);
           this.name = name;
@@ -9466,7 +9489,7 @@
       return AnimationEntryAst;
   }(AnimationAst));
   var AnimationStateDeclarationAst = (function (_super) {
-      __extends$11(AnimationStateDeclarationAst, _super);
+      __extends$12(AnimationStateDeclarationAst, _super);
       function AnimationStateDeclarationAst(stateName, styles) {
           _super.call(this);
           this.stateName = stateName;
@@ -9485,7 +9508,7 @@
       return AnimationStateTransitionExpression;
   }());
   var AnimationStateTransitionAst = (function (_super) {
-      __extends$11(AnimationStateTransitionAst, _super);
+      __extends$12(AnimationStateTransitionAst, _super);
       function AnimationStateTransitionAst(stateChanges, animation) {
           _super.call(this);
           this.stateChanges = stateChanges;
@@ -9497,7 +9520,7 @@
       return AnimationStateTransitionAst;
   }(AnimationStateAst));
   var AnimationStepAst = (function (_super) {
-      __extends$11(AnimationStepAst, _super);
+      __extends$12(AnimationStepAst, _super);
       function AnimationStepAst(startingStyles, keyframes, duration, delay, easing) {
           _super.call(this);
           this.startingStyles = startingStyles;
@@ -9512,7 +9535,7 @@
       return AnimationStepAst;
   }(AnimationAst));
   var AnimationStylesAst = (function (_super) {
-      __extends$11(AnimationStylesAst, _super);
+      __extends$12(AnimationStylesAst, _super);
       function AnimationStylesAst(styles) {
           _super.call(this);
           this.styles = styles;
@@ -9523,7 +9546,7 @@
       return AnimationStylesAst;
   }(AnimationAst));
   var AnimationKeyframeAst = (function (_super) {
-      __extends$11(AnimationKeyframeAst, _super);
+      __extends$12(AnimationKeyframeAst, _super);
       function AnimationKeyframeAst(offset, styles) {
           _super.call(this);
           this.offset = offset;
@@ -9535,7 +9558,7 @@
       return AnimationKeyframeAst;
   }(AnimationAst));
   var AnimationWithStepsAst = (function (_super) {
-      __extends$11(AnimationWithStepsAst, _super);
+      __extends$12(AnimationWithStepsAst, _super);
       function AnimationWithStepsAst(steps) {
           _super.call(this);
           this.steps = steps;
@@ -9543,7 +9566,7 @@
       return AnimationWithStepsAst;
   }(AnimationAst));
   var AnimationGroupAst = (function (_super) {
-      __extends$11(AnimationGroupAst, _super);
+      __extends$12(AnimationGroupAst, _super);
       function AnimationGroupAst(steps) {
           _super.call(this, steps);
       }
@@ -9553,7 +9576,7 @@
       return AnimationGroupAst;
   }(AnimationWithStepsAst));
   var AnimationSequenceAst = (function (_super) {
-      __extends$11(AnimationSequenceAst, _super);
+      __extends$12(AnimationSequenceAst, _super);
       function AnimationSequenceAst(steps) {
           _super.call(this, steps);
       }
@@ -9900,7 +9923,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$12 = (this && this.__extends) || function (d, b) {
+  var __extends$13 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -9909,7 +9932,7 @@
   var _TERMINAL_KEYFRAME = 1;
   var _ONE_SECOND = 1000;
   var AnimationParseError = (function (_super) {
-      __extends$12(AnimationParseError, _super);
+      __extends$13(AnimationParseError, _super);
       function AnimationParseError(message) {
           _super.call(this, null, message);
       }
@@ -10775,7 +10798,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$13 = (this && this.__extends) || function (d, b) {
+  var __extends$14 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -10793,7 +10816,7 @@
       return CompileNode;
   }());
   var CompileElement = (function (_super) {
-      __extends$13(CompileElement, _super);
+      __extends$14(CompileElement, _super);
       function CompileElement(parent, view, nodeIndex, renderNode, sourceAst, component, _directives, _resolvedProvidersArray, hasViewContainer, hasEmbeddedView, references) {
           var _this = this;
           _super.call(this, parent, view, nodeIndex, renderNode, sourceAst);
@@ -13792,7 +13815,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$14 = (this && this.__extends) || function (d, b) {
+  var __extends$15 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -14480,7 +14503,7 @@
       return visitValue(value, new _CompileValueConverter(), targetIdentifiers);
   }
   var _CompileValueConverter = (function (_super) {
-      __extends$14(_CompileValueConverter, _super);
+      __extends$15(_CompileValueConverter, _super);
       function _CompileValueConverter() {
           _super.apply(this, arguments);
       }
@@ -15106,7 +15129,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$15 = (this && this.__extends) || function (d, b) {
+  var __extends$16 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -15159,7 +15182,7 @@
       return TypeScriptEmitter;
   }());
   var _TsEmitterVisitor = (function (_super) {
-      __extends$15(_TsEmitterVisitor, _super);
+      __extends$16(_TsEmitterVisitor, _super);
       function _TsEmitterVisitor(_moduleUrl) {
           _super.call(this, false);
           this._moduleUrl = _moduleUrl;
@@ -15766,13 +15789,13 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$17 = (this && this.__extends) || function (d, b) {
+  var __extends$18 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var AbstractJsEmitterVisitor = (function (_super) {
-      __extends$17(AbstractJsEmitterVisitor, _super);
+      __extends$18(AbstractJsEmitterVisitor, _super);
       function AbstractJsEmitterVisitor() {
           _super.call(this, false);
       }
@@ -15931,7 +15954,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$16 = (this && this.__extends) || function (d, b) {
+  var __extends$17 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -15943,7 +15966,7 @@
       return evalExpression(sourceUrl, resultVar, ctx.toSource(), converter.getArgs());
   }
   var JitEmitterVisitor = (function (_super) {
-      __extends$16(JitEmitterVisitor, _super);
+      __extends$17(JitEmitterVisitor, _super);
       function JitEmitterVisitor() {
           _super.apply(this, arguments);
           this._evalArgNames = [];
@@ -17044,7 +17067,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$18 = (this && this.__extends) || function (d, b) {
+  var __extends$19 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -17267,7 +17290,7 @@
       'tabindex': 'tabIndex',
   };
   var DomElementSchemaRegistry = (function (_super) {
-      __extends$18(DomElementSchemaRegistry, _super);
+      __extends$19(DomElementSchemaRegistry, _super);
       function DomElementSchemaRegistry() {
           var _this = this;
           _super.call(this);
