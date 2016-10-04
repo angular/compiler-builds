@@ -7,7 +7,7 @@
  */
 import { ViewEncapsulation } from '@angular/core';
 import { CompileIdentifierMetadata } from '../compile_metadata';
-import { ListWrapper, StringMapWrapper } from '../facade/collection';
+import { ListWrapper } from '../facade/collection';
 import { StringWrapper, isPresent } from '../facade/lang';
 import { Identifiers, identifierToken, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -282,9 +282,10 @@ function _isNgContainer(node, view) {
 }
 function _mergeHtmlAndDirectiveAttrs(declaredHtmlAttrs, directives) {
     var result = {};
-    StringMapWrapper.forEach(declaredHtmlAttrs, function (value, key) { result[key] = value; });
+    Object.keys(declaredHtmlAttrs).forEach(function (key) { result[key] = declaredHtmlAttrs[key]; });
     directives.forEach(function (directiveMeta) {
-        StringMapWrapper.forEach(directiveMeta.hostAttributes, function (value, name) {
+        Object.keys(directiveMeta.hostAttributes).forEach(function (name) {
+            var value = directiveMeta.hostAttributes[name];
             var prevValue = result[name];
             result[name] = isPresent(prevValue) ? mergeAttributeValue(name, prevValue, value) : value;
         });
@@ -306,9 +307,7 @@ function mergeAttributeValue(attrName, attrValue1, attrValue2) {
 }
 function mapToKeyValueArray(data) {
     var entryArray = [];
-    StringMapWrapper.forEach(data, function (value, name) {
-        entryArray.push([name, value]);
-    });
+    Object.keys(data).forEach(function (name) { entryArray.push([name, data[name]]); });
     // We need to sort to get a defined output order
     // for tests and for caching generated artifacts...
     ListWrapper.sort(entryArray, function (entry1, entry2) { return StringWrapper.compare(entry1[0], entry2[0]); });
@@ -341,7 +340,8 @@ function createStaticNodeDebugInfo(node) {
         if (isPresent(compileElement.component)) {
             componentToken = createDiTokenExpression(identifierToken(compileElement.component.type));
         }
-        StringMapWrapper.forEach(compileElement.referenceTokens, function (token, varName) {
+        Object.keys(compileElement.referenceTokens).forEach(function (varName) {
+            var token = compileElement.referenceTokens[varName];
             varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : o.NULL_EXPR]);
         });
     }

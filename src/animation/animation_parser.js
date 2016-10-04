@@ -155,14 +155,6 @@ function _parseAnimationTransitionExpr(eventStr, errors) {
     }
     return expressions;
 }
-function _fetchSylesFromState(stateName, stateStyles) {
-    var entry = stateStyles[stateName];
-    if (isPresent(entry)) {
-        var styles = entry.styles;
-        return new CompileAnimationStyleMetadata(0, styles);
-    }
-    return null;
-}
 function _normalizeAnimationEntry(entry) {
     return isArray(entry) ? new CompileAnimationSequenceMetadata(entry) :
         entry;
@@ -301,9 +293,9 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
         var offset = styleMetadata.offset;
         var keyframeStyles = {};
         styleMetadata.styles.forEach(function (entry) {
-            StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
+            Object.keys(entry).forEach(function (prop) {
                 if (prop != 'offset') {
-                    keyframeStyles[prop] = value;
+                    keyframeStyles[prop] = entry[prop];
                 }
             });
         });
@@ -336,20 +328,23 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
     for (i = 1; i <= limit; i++) {
         var entry = rawKeyframes[i];
         var styles = entry[1];
-        StringMapWrapper.forEach(styles, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
+        Object.keys(styles).forEach(function (prop) {
             if (!isPresent(firstKeyframeStyles[prop])) {
                 firstKeyframeStyles[prop] = FILL_STYLE_FLAG;
             }
         });
     }
-    for (i = limit - 1; i >= 0; i--) {
+    var _loop_1 = function() {
         var entry = rawKeyframes[i];
         var styles = entry[1];
-        StringMapWrapper.forEach(styles, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
+        Object.keys(styles).forEach(function (prop) {
             if (!isPresent(lastKeyframeStyles[prop])) {
-                lastKeyframeStyles[prop] = value;
+                lastKeyframeStyles[prop] = styles[prop];
             }
         });
+    };
+    for (i = limit - 1; i >= 0; i--) {
+        _loop_1();
     }
     return rawKeyframes.map(function (entry) { return new AnimationKeyframeAst(entry[0], new AnimationStylesAst([entry[1]])); });
 }
@@ -369,9 +364,7 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
                 entry.styles.forEach(function (stylesEntry) {
                     // by this point we know that we only have stringmap values
                     var map = stylesEntry;
-                    StringMapWrapper.forEach(map, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
-                        collectedStyles.insertAtTime(prop, time, value);
-                    });
+                    Object.keys(map).forEach(function (prop) { collectedStyles.insertAtTime(prop, time, map[prop]); });
                 });
                 previousStyles = entry.styles;
                 return;
@@ -425,9 +418,7 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
         ast = new AnimationStepAst(new AnimationStylesAst([]), keyframes, timings.duration, timings.delay, timings.easing);
         playTime = timings.duration + timings.delay;
         currentTime += playTime;
-        keyframes.forEach(function (keyframe /** TODO #9100 */) { return keyframe.styles.styles.forEach(function (entry /** TODO #9100 */) { return StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
-            return collectedStyles.insertAtTime(prop, currentTime, value);
-        }); }); });
+        keyframes.forEach(function (keyframe /** TODO #9100 */) { return keyframe.styles.styles.forEach(function (entry /** TODO #9100 */) { return Object.keys(entry).forEach(function (prop) { collectedStyles.insertAtTime(prop, currentTime, entry[prop]); }); }); });
     }
     else {
         // if the code reaches this stage then an error
@@ -493,7 +484,8 @@ function _createStartKeyframeFromEndKeyframe(endKeyframe, startTime, duration, c
     var values = {};
     var endTime = startTime + duration;
     endKeyframe.styles.styles.forEach(function (styleData) {
-        StringMapWrapper.forEach(styleData, function (val /** TODO #9100 */, prop /** TODO #9100 */) {
+        Object.keys(styleData).forEach(function (prop) {
+            var val = styleData[prop];
             if (prop == 'offset')
                 return;
             var resultIndex = collectedStyles.indexOfAtOrBeforeTime(prop, startTime);

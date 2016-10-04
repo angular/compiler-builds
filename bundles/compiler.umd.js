@@ -580,31 +580,6 @@
   var StringMapWrapper = (function () {
       function StringMapWrapper() {
       }
-      StringMapWrapper.create = function () {
-          // Note: We are not using Object.create(null) here due to
-          // performance!
-          // http://jsperf.com/ng2-object-create-null
-          return {};
-      };
-      StringMapWrapper.contains = function (map, key) {
-          return map.hasOwnProperty(key);
-      };
-      StringMapWrapper.keys = function (map) { return Object.keys(map); };
-      StringMapWrapper.values = function (map) {
-          return Object.keys(map).map(function (k) { return map[k]; });
-      };
-      StringMapWrapper.isEmpty = function (map) {
-          for (var prop in map) {
-              return false;
-          }
-          return true;
-      };
-      StringMapWrapper.forEach = function (map, callback) {
-          for (var _i = 0, _a = Object.keys(map); _i < _a.length; _i++) {
-              var k = _a[_i];
-              callback(map[k], k);
-          }
-      };
       StringMapWrapper.merge = function (m1, m2) {
           var m = {};
           for (var _i = 0, _a = Object.keys(m1); _i < _a.length; _i++) {
@@ -2455,9 +2430,7 @@
       ValueTransformer.prototype.visitStringMap = function (map, context) {
           var _this = this;
           var result = {};
-          StringMapWrapper.forEach(map, function (value /** TODO #9100 */, key /** TODO #9100 */) {
-              result[key] = visitValue(value, _this, context);
-          });
+          Object.keys(map).forEach(function (key) { result[key] = visitValue(map[key], _this, context); });
           return result;
       };
       ValueTransformer.prototype.visitPrimitive = function (value, context) { return value; };
@@ -2789,7 +2762,8 @@
           var hostProperties = {};
           var hostAttributes = {};
           if (isPresent(host)) {
-              StringMapWrapper.forEach(host, function (value, key) {
+              Object.keys(host).forEach(function (key) {
+                  var value = host[key];
                   var matches = key.match(HOST_REG_EXP);
                   if (matches === null) {
                       hostAttributes[key] = value;
@@ -9049,7 +9023,8 @@
       TemplateParseVisitor.prototype._createDirectiveHostPropertyAsts = function (elementName, hostProps, sourceSpan, targetPropertyAsts) {
           var _this = this;
           if (hostProps) {
-              StringMapWrapper.forEach(hostProps, function (expression, propName) {
+              Object.keys(hostProps).forEach(function (propName) {
+                  var expression = hostProps[propName];
                   if (isString(expression)) {
                       var exprAst = _this._parseBinding(expression, sourceSpan);
                       targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
@@ -9063,7 +9038,8 @@
       TemplateParseVisitor.prototype._createDirectiveHostEventAsts = function (hostListeners, sourceSpan, targetEventAsts) {
           var _this = this;
           if (hostListeners) {
-              StringMapWrapper.forEach(hostListeners, function (expression, propName) {
+              Object.keys(hostListeners).forEach(function (propName) {
+                  var expression = hostListeners[propName];
                   if (isString(expression)) {
                       _this._parseEventOrAnimationEvent(propName, expression, sourceSpan, [], targetEventAsts);
                   }
@@ -9083,7 +9059,8 @@
                       boundPropsByName_1.set(boundProp.name, boundProp);
                   }
               });
-              StringMapWrapper.forEach(directiveProperties, function (elProp, dirProp) {
+              Object.keys(directiveProperties).forEach(function (dirProp) {
+                  var elProp = directiveProperties[dirProp];
                   var boundProp = boundPropsByName_1.get(elProp);
                   // Bindings are optional, so this binding only needs to be set up if an expression is given.
                   if (boundProp) {
@@ -9229,7 +9206,8 @@
           var _this = this;
           var allDirectiveEvents = new Set();
           directives.forEach(function (directive) {
-              StringMapWrapper.forEach(directive.directive.outputs, function (eventName) {
+              Object.keys(directive.directive.outputs).forEach(function (k) {
+                  var eventName = directive.directive.outputs[k];
                   allDirectiveEvents.add(eventName);
               });
           });
@@ -9632,7 +9610,7 @@
               context.isExpectingFirstStyleStep = false;
           }
           ast.styles.forEach(function (entry) {
-              stylesArr.push(literalMap(StringMapWrapper.keys(entry).map(function (key) { return [key, literal(entry[key])]; })));
+              stylesArr.push(literalMap(Object.keys(entry).map(function (key) { return [key, literal(entry[key])]; })));
           });
           return importExpr(resolveIdentifier(Identifiers.AnimationStyles)).instantiate([
               importExpr(resolveIdentifier(Identifiers.collectAndResolveStyles)).callFn([
@@ -9689,9 +9667,7 @@
       };
       _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
           var flatStyles = {};
-          _getStylesArray(ast).forEach(function (entry) {
-              StringMapWrapper.forEach(entry, function (value, key) { flatStyles[key] = value; });
-          });
+          _getStylesArray(ast).forEach(function (entry) { Object.keys(entry).forEach(function (key) { flatStyles[key] = entry[key]; }); });
           context.stateMap.registerState(ast.stateName, flatStyles);
       };
       _AnimationBuilder.prototype.visitAnimationStateTransition = function (ast, context) {
@@ -9794,13 +9770,12 @@
           var fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
           var fnVariable = variable(this._fnVarName);
           var lookupMap = [];
-          StringMapWrapper.forEach(context.stateMap.states, function (value, stateName) {
+          Object.keys(context.stateMap.states).forEach(function (stateName) {
+              var value = context.stateMap.states[stateName];
               var variableValue = EMPTY_MAP$1;
               if (isPresent(value)) {
                   var styleMap_1 = [];
-                  StringMapWrapper.forEach(value, function (value, key) {
-                      styleMap_1.push([key, literal(value)]);
-                  });
+                  Object.keys(value).forEach(function (key) { styleMap_1.push([key, literal(value[key])]); });
                   variableValue = literalMap(styleMap_1);
               }
               lookupMap.push([stateName, variableValue]);
@@ -9855,7 +9830,7 @@
       if (step instanceof AnimationStepAst && step.duration > 0 && step.keyframes.length == 2) {
           var styles1 = _getStylesArray(step.keyframes[0])[0];
           var styles2 = _getStylesArray(step.keyframes[1])[0];
-          return StringMapWrapper.isEmpty(styles1) && StringMapWrapper.isEmpty(styles2);
+          return Object.keys(styles1).length === 0 && Object.keys(styles2).length === 0;
       }
       return false;
   }
@@ -10203,9 +10178,9 @@
           var offset = styleMetadata.offset;
           var keyframeStyles = {};
           styleMetadata.styles.forEach(function (entry) {
-              StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
+              Object.keys(entry).forEach(function (prop) {
                   if (prop != 'offset') {
-                      keyframeStyles[prop] = value;
+                      keyframeStyles[prop] = entry[prop];
                   }
               });
           });
@@ -10238,20 +10213,23 @@
       for (i = 1; i <= limit; i++) {
           var entry = rawKeyframes[i];
           var styles = entry[1];
-          StringMapWrapper.forEach(styles, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
+          Object.keys(styles).forEach(function (prop) {
               if (!isPresent(firstKeyframeStyles[prop])) {
                   firstKeyframeStyles[prop] = FILL_STYLE_FLAG;
               }
           });
       }
-      for (i = limit - 1; i >= 0; i--) {
+      var _loop_1 = function() {
           var entry = rawKeyframes[i];
           var styles = entry[1];
-          StringMapWrapper.forEach(styles, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
+          Object.keys(styles).forEach(function (prop) {
               if (!isPresent(lastKeyframeStyles[prop])) {
-                  lastKeyframeStyles[prop] = value;
+                  lastKeyframeStyles[prop] = styles[prop];
               }
           });
+      };
+      for (i = limit - 1; i >= 0; i--) {
+          _loop_1();
       }
       return rawKeyframes.map(function (entry) { return new AnimationKeyframeAst(entry[0], new AnimationStylesAst([entry[1]])); });
   }
@@ -10271,9 +10249,7 @@
                   entry.styles.forEach(function (stylesEntry) {
                       // by this point we know that we only have stringmap values
                       var map = stylesEntry;
-                      StringMapWrapper.forEach(map, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
-                          collectedStyles.insertAtTime(prop, time, value);
-                      });
+                      Object.keys(map).forEach(function (prop) { collectedStyles.insertAtTime(prop, time, map[prop]); });
                   });
                   previousStyles = entry.styles;
                   return;
@@ -10327,9 +10303,7 @@
           ast = new AnimationStepAst(new AnimationStylesAst([]), keyframes, timings.duration, timings.delay, timings.easing);
           playTime = timings.duration + timings.delay;
           currentTime += playTime;
-          keyframes.forEach(function (keyframe /** TODO #9100 */) { return keyframe.styles.styles.forEach(function (entry /** TODO #9100 */) { return StringMapWrapper.forEach(entry, function (value /** TODO #9100 */, prop /** TODO #9100 */) {
-              return collectedStyles.insertAtTime(prop, currentTime, value);
-          }); }); });
+          keyframes.forEach(function (keyframe /** TODO #9100 */) { return keyframe.styles.styles.forEach(function (entry /** TODO #9100 */) { return Object.keys(entry).forEach(function (prop) { collectedStyles.insertAtTime(prop, currentTime, entry[prop]); }); }); });
       }
       else {
           // if the code reaches this stage then an error
@@ -10395,7 +10369,8 @@
       var values = {};
       var endTime = startTime + duration;
       endKeyframe.styles.styles.forEach(function (styleData) {
-          StringMapWrapper.forEach(styleData, function (val /** TODO #9100 */, prop /** TODO #9100 */) {
+          Object.keys(styleData).forEach(function (prop) {
+              var val = styleData[prop];
               if (prop == 'offset')
                   return;
               var resultIndex = collectedStyles.indexOfAtOrBeforeTime(prop, startTime);
@@ -10434,9 +10409,7 @@
       _ValueOutputAstTransformer.prototype.visitStringMap = function (map, type) {
           var _this = this;
           var entries = [];
-          StringMapWrapper.forEach(map, function (value, key) {
-              entries.push([key, visitValue(value, _this, null)]);
-          });
+          Object.keys(map).forEach(function (key) { entries.push([key, visitValue(map[key], _this, null)]); });
           return literalMap(entries, type);
       };
       _ValueOutputAstTransformer.prototype.visitPrimitive = function (value, type) { return literal(value, type); };
@@ -10942,7 +10915,7 @@
               var queriesForProvider = _this._getQueriesFor(resolvedProvider.token);
               ListWrapper.addAll(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
           });
-          StringMapWrapper.forEach(this.referenceTokens, function (_, varName) {
+          Object.keys(this.referenceTokens).forEach(function (varName) {
               var token = _this.referenceTokens[varName];
               var varValue;
               if (isPresent(token)) {
@@ -11919,7 +11892,8 @@
       return eventListeners;
   }
   function bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners) {
-      StringMapWrapper.forEach(directiveAst.directive.outputs, function (eventName /** TODO #9100 */, observablePropName /** TODO #9100 */) {
+      Object.keys(directiveAst.directive.outputs).forEach(function (observablePropName) {
+          var eventName = directiveAst.directive.outputs[observablePropName];
           eventListeners.filter(function (listener) { return listener.eventName == eventName; }).forEach(function (listener) {
               listener.listenToDirective(directiveInstance, observablePropName);
           });
@@ -12558,9 +12532,10 @@
   }
   function _mergeHtmlAndDirectiveAttrs(declaredHtmlAttrs, directives) {
       var result = {};
-      StringMapWrapper.forEach(declaredHtmlAttrs, function (value, key) { result[key] = value; });
+      Object.keys(declaredHtmlAttrs).forEach(function (key) { result[key] = declaredHtmlAttrs[key]; });
       directives.forEach(function (directiveMeta) {
-          StringMapWrapper.forEach(directiveMeta.hostAttributes, function (value, name) {
+          Object.keys(directiveMeta.hostAttributes).forEach(function (name) {
+              var value = directiveMeta.hostAttributes[name];
               var prevValue = result[name];
               result[name] = isPresent(prevValue) ? mergeAttributeValue(name, prevValue, value) : value;
           });
@@ -12582,9 +12557,7 @@
   }
   function mapToKeyValueArray(data) {
       var entryArray = [];
-      StringMapWrapper.forEach(data, function (value, name) {
-          entryArray.push([name, value]);
-      });
+      Object.keys(data).forEach(function (name) { entryArray.push([name, data[name]]); });
       // We need to sort to get a defined output order
       // for tests and for caching generated artifacts...
       ListWrapper.sort(entryArray, function (entry1, entry2) { return StringWrapper.compare(entry1[0], entry2[0]); });
@@ -12617,7 +12590,8 @@
           if (isPresent(compileElement.component)) {
               componentToken = createDiTokenExpression(identifierToken(compileElement.component.type));
           }
-          StringMapWrapper.forEach(compileElement.referenceTokens, function (token, varName) {
+          Object.keys(compileElement.referenceTokens).forEach(function (varName) {
+              var token = compileElement.referenceTokens[varName];
               varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : NULL_EXPR]);
           });
       }

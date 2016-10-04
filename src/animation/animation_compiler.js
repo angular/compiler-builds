@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { StringMapWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -57,7 +56,7 @@ var _AnimationBuilder = (function () {
             context.isExpectingFirstStyleStep = false;
         }
         ast.styles.forEach(function (entry) {
-            stylesArr.push(o.literalMap(StringMapWrapper.keys(entry).map(function (key) { return [key, o.literal(entry[key])]; })));
+            stylesArr.push(o.literalMap(Object.keys(entry).map(function (key) { return [key, o.literal(entry[key])]; })));
         });
         return o.importExpr(resolveIdentifier(Identifiers.AnimationStyles)).instantiate([
             o.importExpr(resolveIdentifier(Identifiers.collectAndResolveStyles)).callFn([
@@ -114,9 +113,7 @@ var _AnimationBuilder = (function () {
     };
     _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
         var flatStyles = {};
-        _getStylesArray(ast).forEach(function (entry) {
-            StringMapWrapper.forEach(entry, function (value, key) { flatStyles[key] = value; });
-        });
+        _getStylesArray(ast).forEach(function (entry) { Object.keys(entry).forEach(function (key) { flatStyles[key] = entry[key]; }); });
         context.stateMap.registerState(ast.stateName, flatStyles);
     };
     _AnimationBuilder.prototype.visitAnimationStateTransition = function (ast, context) {
@@ -219,13 +216,12 @@ var _AnimationBuilder = (function () {
         var fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
         var fnVariable = o.variable(this._fnVarName);
         var lookupMap = [];
-        StringMapWrapper.forEach(context.stateMap.states, function (value, stateName) {
+        Object.keys(context.stateMap.states).forEach(function (stateName) {
+            var value = context.stateMap.states[stateName];
             var variableValue = EMPTY_MAP;
             if (isPresent(value)) {
                 var styleMap_1 = [];
-                StringMapWrapper.forEach(value, function (value, key) {
-                    styleMap_1.push([key, o.literal(value)]);
-                });
+                Object.keys(value).forEach(function (key) { styleMap_1.push([key, o.literal(value[key])]); });
                 variableValue = o.literalMap(styleMap_1);
             }
             lookupMap.push([stateName, variableValue]);
@@ -280,7 +276,7 @@ function _isEndStateAnimateStep(step) {
     if (step instanceof AnimationStepAst && step.duration > 0 && step.keyframes.length == 2) {
         var styles1 = _getStylesArray(step.keyframes[0])[0];
         var styles2 = _getStylesArray(step.keyframes[1])[0];
-        return StringMapWrapper.isEmpty(styles1) && StringMapWrapper.isEmpty(styles2);
+        return Object.keys(styles1).length === 0 && Object.keys(styles2).length === 0;
     }
     return false;
 }

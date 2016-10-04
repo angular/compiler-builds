@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { StringMapWrapper } from './facade/collection';
 import { StringWrapper, isArray, isBlank, isPresent, isPrimitive, isStrictStringMap } from './facade/lang';
 import * as o from './output/output_ast';
 export var MODULE_SUFFIX = '';
@@ -52,9 +51,7 @@ export var ValueTransformer = (function () {
     ValueTransformer.prototype.visitStringMap = function (map, context) {
         var _this = this;
         var result = {};
-        StringMapWrapper.forEach(map, function (value /** TODO #9100 */, key /** TODO #9100 */) {
-            result[key] = visitValue(value, _this, context);
-        });
+        Object.keys(map).forEach(function (key) { result[key] = visitValue(map[key], _this, context); });
         return result;
     };
     ValueTransformer.prototype.visitPrimitive = function (value, context) { return value; };

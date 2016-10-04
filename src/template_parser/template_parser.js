@@ -14,7 +14,6 @@ import { Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@ang
 import { removeIdentifierDuplicates } from '../compile_metadata';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
-import { StringMapWrapper } from '../facade/collection';
 import { isPresent, isString } from '../facade/lang';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
 import { Identifiers, identifierToken, resolveIdentifierToken } from '../identifiers';
@@ -659,7 +658,8 @@ var TemplateParseVisitor = (function () {
     TemplateParseVisitor.prototype._createDirectiveHostPropertyAsts = function (elementName, hostProps, sourceSpan, targetPropertyAsts) {
         var _this = this;
         if (hostProps) {
-            StringMapWrapper.forEach(hostProps, function (expression, propName) {
+            Object.keys(hostProps).forEach(function (propName) {
+                var expression = hostProps[propName];
                 if (isString(expression)) {
                     var exprAst = _this._parseBinding(expression, sourceSpan);
                     targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
@@ -673,7 +673,8 @@ var TemplateParseVisitor = (function () {
     TemplateParseVisitor.prototype._createDirectiveHostEventAsts = function (hostListeners, sourceSpan, targetEventAsts) {
         var _this = this;
         if (hostListeners) {
-            StringMapWrapper.forEach(hostListeners, function (expression, propName) {
+            Object.keys(hostListeners).forEach(function (propName) {
+                var expression = hostListeners[propName];
                 if (isString(expression)) {
                     _this._parseEventOrAnimationEvent(propName, expression, sourceSpan, [], targetEventAsts);
                 }
@@ -693,7 +694,8 @@ var TemplateParseVisitor = (function () {
                     boundPropsByName_1.set(boundProp.name, boundProp);
                 }
             });
-            StringMapWrapper.forEach(directiveProperties, function (elProp, dirProp) {
+            Object.keys(directiveProperties).forEach(function (dirProp) {
+                var elProp = directiveProperties[dirProp];
                 var boundProp = boundPropsByName_1.get(elProp);
                 // Bindings are optional, so this binding only needs to be set up if an expression is given.
                 if (boundProp) {
@@ -839,7 +841,8 @@ var TemplateParseVisitor = (function () {
         var _this = this;
         var allDirectiveEvents = new Set();
         directives.forEach(function (directive) {
-            StringMapWrapper.forEach(directive.directive.outputs, function (eventName) {
+            Object.keys(directive.directive.outputs).forEach(function (k) {
+                var eventName = directive.directive.outputs[k];
                 allDirectiveEvents.add(eventName);
             });
         });

@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { StringMapWrapper } from '../facade/collection';
 import { StringWrapper, isPresent } from '../facade/lang';
 import { identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -131,7 +130,8 @@ export function collectEventListeners(hostEvents, dirs, compileElement) {
     return eventListeners;
 }
 export function bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners) {
-    StringMapWrapper.forEach(directiveAst.directive.outputs, function (eventName /** TODO #9100 */, observablePropName /** TODO #9100 */) {
+    Object.keys(directiveAst.directive.outputs).forEach(function (observablePropName) {
+        var eventName = directiveAst.directive.outputs[observablePropName];
         eventListeners.filter(function (listener) { return listener.eventName == eventName; }).forEach(function (listener) {
             listener.listenToDirective(directiveInstance, observablePropName);
         });
