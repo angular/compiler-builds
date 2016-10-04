@@ -10633,9 +10633,7 @@
       }));
   }
   function mapNestedViews(declarationAppElement, view, expressions) {
-      var adjustedExpressions = expressions.map(function (expr) {
-          return replaceVarInExpression(THIS_EXPR.name, variable('nestedView'), expr);
-      });
+      var adjustedExpressions = expressions.map(function (expr) { return replaceVarInExpression(THIS_EXPR.name, variable('nestedView'), expr); });
       return declarationAppElement.callMethod('mapNestedViews', [
           variable(view.className),
           fn([new FnParam('nestedView', view.classType)], [new ReturnStatement(literalArr(adjustedExpressions))], DYNAMIC_TYPE)
