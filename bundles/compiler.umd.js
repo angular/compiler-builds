@@ -16181,7 +16181,8 @@
        *  scopeName .foo { ... }
       */
       ShadowCss.prototype._scopeCssText = function (cssText, scopeSelector, hostSelector) {
-          var unscoped = this._extractUnscopedRulesFromCssText(cssText);
+          var unscopedRules = this._extractUnscopedRulesFromCssText(cssText);
+          // replace :host and :host-context -shadowcsshost and -shadowcsshost respectively
           cssText = this._insertPolyfillHostInCssText(cssText);
           cssText = this._convertColonHost(cssText);
           cssText = this._convertColonHostContext(cssText);
@@ -16189,7 +16190,7 @@
           if (scopeSelector) {
               cssText = this._scopeSelectors(cssText, scopeSelector, hostSelector);
           }
-          cssText = cssText + '\n' + unscoped;
+          cssText = cssText + '\n' + unscopedRules;
           return cssText.trim();
       };
       /*
@@ -16247,7 +16248,7 @@
           return this._convertColonRule(cssText, _cssColonHostContextRe, this._colonHostContextPartReplacer);
       };
       ShadowCss.prototype._convertColonRule = function (cssText, regExp, partReplacer) {
-          // m[1] = :host, m[2] = contents of (), m[3] rest of rule
+          // m[1] = :host(-context), m[2] = contents of (), m[3] rest of rule
           return cssText.replace(regExp, function () {
               var m = [];
               for (var _i = 0; _i < arguments.length; _i++) {
@@ -16257,10 +16258,10 @@
                   var parts = m[2].split(',');
                   var r = [];
                   for (var i = 0; i < parts.length; i++) {
-                      var p = parts[i];
+                      var p = parts[i].trim();
                       if (!p)
                           break;
-                      r.push(partReplacer(_polyfillHostNoCombinator, p.trim(), m[3]));
+                      r.push(partReplacer(_polyfillHostNoCombinator, p, m[3]));
                   }
                   return r.join(',');
               }
@@ -16382,36 +16383,33 @@
               }
               return scopedP;
           };
-          var sep = /( |>|\+|~(?!=)|\[|\])\s*/g;
-          var scopeAfter = selector.indexOf(_polyfillHostNoCombinator);
-          var scoped = '';
+          var attrSelectorIndex = 0;
+          var attrSelectors = [];
+          // replace attribute selectors with placeholders to avoid issue with white space being treated
+          // as separator
+          selector = selector.replace(/\[[^\]]*\]/g, function (attrSelector) {
+              var replaceBy = "__attr_sel_" + attrSelectorIndex + "__";
+              attrSelectors.push(attrSelector);
+              attrSelectorIndex++;
+              return replaceBy;
+          });
+          var scopedSelector = '';
           var startIndex = 0;
           var res;
-          var inAttributeSelector = false;
+          var sep = /( |>|\+|~(?!=))\s*/g;
+          var scopeAfter = selector.indexOf(_polyfillHostNoCombinator);
           while ((res = sep.exec(selector)) !== null) {
               var separator = res[1];
-              if (separator === '[') {
-                  inAttributeSelector = true;
-                  scoped += selector.slice(startIndex, res.index).trim() + '[';
-                  startIndex = sep.lastIndex;
-              }
-              if (!inAttributeSelector) {
-                  var part = selector.slice(startIndex, res.index).trim();
-                  // if a selector appears before :host-context it should not be shimmed as it
-                  // matches on ancestor elements and not on elements in the host's shadow
-                  var scopedPart = startIndex >= scopeAfter ? _scopeSelectorPart(part) : part;
-                  scoped += scopedPart + " " + separator + " ";
-                  startIndex = sep.lastIndex;
-              }
-              else if (separator === ']') {
-                  var part = selector.slice(startIndex, res.index).trim() + ']';
-                  var scopedPart = startIndex >= scopeAfter ? _scopeSelectorPart(part) : part;
-                  scoped += scopedPart + " ";
-                  startIndex = sep.lastIndex;
-                  inAttributeSelector = false;
-              }
+              var part = selector.slice(startIndex, res.index).trim();
+              // if a selector appears before :host-context it should not be shimmed as it
+              // matches on ancestor elements and not on elements in the host's shadow
+              var scopedPart = startIndex >= scopeAfter ? _scopeSelectorPart(part) : part;
+              scopedSelector += scopedPart + " " + separator + " ";
+              startIndex = sep.lastIndex;
           }
-          return scoped + _scopeSelectorPart(selector.substring(startIndex));
+          scopedSelector += _scopeSelectorPart(selector.substring(startIndex));
+          // replace the placeholders with their original values
+          return scopedSelector.replace(/__attr_sel_(\d+)__/g, function (ph, index) { return attrSelectors[+index]; });
       };
       ShadowCss.prototype._insertPolyfillHostInCssText = function (selector) {
           return selector.replace(_colonHostContextRe, _polyfillHostContext)
