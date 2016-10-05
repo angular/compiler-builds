@@ -10009,22 +10009,8 @@
           new AnimationSequenceAst([animationAst]);
       return new AnimationStateTransitionAst(transitionExprs, stepsAst);
   }
-  function _parseAnimationAlias(alias, errors) {
-      switch (alias) {
-          case ':enter':
-              return 'void => *';
-          case ':leave':
-              return '* => void';
-          default:
-              errors.push(new AnimationParseError("the transition alias value \"" + alias + "\" is not supported"));
-              return '* => *';
-      }
-  }
   function _parseAnimationTransitionExpr(eventStr, errors) {
       var expressions = [];
-      if (eventStr[0] == ':') {
-          eventStr = _parseAnimationAlias(eventStr, errors);
-      }
       var match = eventStr.match(/^(\*|[-\w]+)\s*(<?[=-]>)\s*(\*|[-\w]+)$/);
       if (!isPresent(match) || match.length < 4) {
           errors.push(new AnimationParseError("the provided " + eventStr + " is not of a supported format"));
@@ -15171,20 +15157,6 @@
       };
       _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
           _super.prototype.visitLiteralExpr.call(this, ast, ctx, '(null as any)');
-      };
-      // Temporary workaround to support strictNullCheck enabled consumers of ngc emit.
-      // In SNC mode, [] have the type never[], so we cast here to any[].
-      // TODO: narrow the cast to a more explicit type, or use a pattern that does not
-      // start with [].concat. see https://github.com/angular/angular/pull/11846
-      _TsEmitterVisitor.prototype.visitLiteralArrayExpr = function (ast, ctx) {
-          if (ast.entries.length === 0) {
-              ctx.print('(');
-          }
-          var result = _super.prototype.visitLiteralArrayExpr.call(this, ast, ctx);
-          if (ast.entries.length === 0) {
-              ctx.print(' as any[])');
-          }
-          return result;
       };
       _TsEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
           this._visitIdentifier(ast.value, ast.typeParams, ctx);
