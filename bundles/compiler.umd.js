@@ -74,74 +74,6 @@
       var newLineIndex = res.indexOf('\n');
       return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
   }
-  var StringWrapper = (function () {
-      function StringWrapper() {
-      }
-      StringWrapper.fromCharCode = function (code) { return String.fromCharCode(code); };
-      StringWrapper.charCodeAt = function (s, index) { return s.charCodeAt(index); };
-      StringWrapper.split = function (s, regExp) { return s.split(regExp); };
-      StringWrapper.equals = function (s, s2) { return s === s2; };
-      StringWrapper.stripLeft = function (s, charVal) {
-          if (s && s.length) {
-              var pos = 0;
-              for (var i = 0; i < s.length; i++) {
-                  if (s[i] != charVal)
-                      break;
-                  pos++;
-              }
-              s = s.substring(pos);
-          }
-          return s;
-      };
-      StringWrapper.stripRight = function (s, charVal) {
-          if (s && s.length) {
-              var pos = s.length;
-              for (var i = s.length - 1; i >= 0; i--) {
-                  if (s[i] != charVal)
-                      break;
-                  pos--;
-              }
-              s = s.substring(0, pos);
-          }
-          return s;
-      };
-      StringWrapper.replace = function (s, from, replace) {
-          return s.replace(from, replace);
-      };
-      StringWrapper.replaceAll = function (s, from, replace) {
-          return s.replace(from, replace);
-      };
-      StringWrapper.slice = function (s, from, to) {
-          if (from === void 0) { from = 0; }
-          if (to === void 0) { to = null; }
-          return s.slice(from, to === null ? undefined : to);
-      };
-      StringWrapper.replaceAllMapped = function (s, from, cb) {
-          return s.replace(from, function () {
-              var matches = [];
-              for (var _i = 0; _i < arguments.length; _i++) {
-                  matches[_i - 0] = arguments[_i];
-              }
-              // Remove offset & string from the result array
-              matches.splice(-2, 2);
-              // The callback receives match, p1, ..., pn
-              return cb(matches);
-          });
-      };
-      StringWrapper.contains = function (s, substr) { return s.indexOf(substr) != -1; };
-      StringWrapper.compare = function (a, b) {
-          if (a < b) {
-              return -1;
-          }
-          else if (a > b) {
-              return 1;
-          }
-          else {
-              return 0;
-          }
-      };
-      return StringWrapper;
-  }());
   var StringJoiner = (function () {
       function StringJoiner(parts) {
           if (parts === void 0) { parts = []; }
@@ -2389,7 +2321,13 @@
   var MODULE_SUFFIX = '';
   var CAMEL_CASE_REGEXP = /([A-Z])/g;
   function camelCaseToDashCase(input) {
-      return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
+      return input.replace(CAMEL_CASE_REGEXP, function () {
+          var m = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+              m[_i - 0] = arguments[_i];
+          }
+          return '-' + m[1].toLowerCase();
+      });
   }
   function splitAtColon(input, defaultValues) {
       return _splitAt(input, ':', defaultValues);
@@ -2404,7 +2342,7 @@
       return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
   }
   function sanitizeIdentifier(name) {
-      return StringWrapper.replaceAll(name, /\W/g, '_');
+      return name.replace(/\W/g, '_');
   }
   function visitValue(value, visitor, context) {
       if (isArray(value)) {
@@ -3559,7 +3497,7 @@
       return Token;
   }());
   function newCharacterToken(index, code) {
-      return new Token(index, TokenType.Character, code, StringWrapper.fromCharCode(code));
+      return new Token(index, TokenType.Character, code, String.fromCharCode(code));
   }
   function newIdentifierToken(index, text) {
       return new Token(index, TokenType.Identifier, 0, text);
@@ -3589,8 +3527,7 @@
           this.advance();
       }
       _Scanner.prototype.advance = function () {
-          this.peek =
-              ++this.index >= this.length ? $EOF : StringWrapper.charCodeAt(this.input, this.index);
+          this.peek = ++this.index >= this.length ? $EOF : this.input.charCodeAt(this.index);
       };
       _Scanner.prototype.scanToken = function () {
           var input = this.input, length = this.length, peek = this.peek, index = this.index;
@@ -3601,7 +3538,7 @@
                   break;
               }
               else {
-                  peek = StringWrapper.charCodeAt(input, index);
+                  peek = input.charCodeAt(index);
               }
           }
           this.peek = peek;
@@ -3640,15 +3577,15 @@
               case $SLASH:
               case $PERCENT:
               case $CARET:
-                  return this.scanOperator(start, StringWrapper.fromCharCode(peek));
+                  return this.scanOperator(start, String.fromCharCode(peek));
               case $QUESTION:
                   return this.scanComplexOperator(start, '?', $PERIOD, '.');
               case $LT:
               case $GT:
-                  return this.scanComplexOperator(start, StringWrapper.fromCharCode(peek), $EQ, '=');
+                  return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=');
               case $BANG:
               case $EQ:
-                  return this.scanComplexOperator(start, StringWrapper.fromCharCode(peek), $EQ, '=', $EQ, '=');
+                  return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=', $EQ, '=');
               case $AMPERSAND:
                   return this.scanComplexOperator(start, '&', $AMPERSAND, '&');
               case $BAR:
@@ -3659,7 +3596,7 @@
                   return this.scanToken();
           }
           this.advance();
-          return this.error("Unexpected character [" + StringWrapper.fromCharCode(peek) + "]", 0);
+          return this.error("Unexpected character [" + String.fromCharCode(peek) + "]", 0);
       };
       _Scanner.prototype.scanCharacter = function (start, code) {
           this.advance();
@@ -3759,7 +3696,7 @@
                       unescapedCode = unescape(this.peek);
                       this.advance();
                   }
-                  buffer.add(StringWrapper.fromCharCode(unescapedCode));
+                  buffer.add(String.fromCharCode(unescapedCode));
                   marker = this.index;
               }
               else if (this.peek == $EOF) {
@@ -3923,7 +3860,7 @@
       Parser.prototype.splitInterpolation = function (input, location, interpolationConfig) {
           if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
           var regexp = _createInterpolateRegExp(interpolationConfig);
-          var parts = StringWrapper.split(input, regexp);
+          var parts = input.split(regexp);
           if (parts.length <= 1) {
               return null;
           }
@@ -3954,8 +3891,8 @@
       Parser.prototype._commentStart = function (input) {
           var outerQuote = null;
           for (var i = 0; i < input.length - 1; i++) {
-              var char = StringWrapper.charCodeAt(input, i);
-              var nextChar = StringWrapper.charCodeAt(input, i + 1);
+              var char = input.charCodeAt(i);
+              var nextChar = input.charCodeAt(i + 1);
               if (char === $SLASH && nextChar == $SLASH && isBlank(outerQuote))
                   return i;
               if (outerQuote === char) {
@@ -3969,7 +3906,7 @@
       };
       Parser.prototype._checkNoInterpolation = function (input, location, interpolationConfig) {
           var regexp = _createInterpolateRegExp(interpolationConfig);
-          var parts = StringWrapper.split(input, regexp);
+          var parts = input.split(regexp);
           if (parts.length > 1) {
               this._reportError("Got interpolation (" + interpolationConfig.start + interpolationConfig.end + ") where expression was expected", input, "at column " + this._findInterpolationErrorColumn(parts, 1, interpolationConfig) + " in", location);
           }
@@ -4035,7 +3972,7 @@
       _ParseAST.prototype.expectCharacter = function (code) {
           if (this.optionalCharacter(code))
               return;
-          this.error("Missing expected " + StringWrapper.fromCharCode(code));
+          this.error("Missing expected " + String.fromCharCode(code));
       };
       _ParseAST.prototype.optionalOperator = function (op) {
           if (this.next.isOperator(op)) {
@@ -8292,7 +8229,11 @@
    */
   function extractStyleUrls(resolver, baseUrl, cssText) {
       var foundUrls = [];
-      var modifiedCssText = StringWrapper.replaceAllMapped(cssText, _cssImportRe, function (m) {
+      var modifiedCssText = cssText.replace(_cssImportRe, function () {
+          var m = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+              m[_i - 0] = arguments[_i];
+          }
           var url = isPresent(m[1]) ? m[1] : m[2];
           if (!isStyleUrlResolvable(url)) {
               // Do not attempt to resolve non-package absolute URLs with URI scheme
@@ -11917,7 +11858,7 @@
       return null;
   }
   function santitizeEventName(name) {
-      return StringWrapper.replaceAll(name, /[^a-zA-Z_]/g, '_');
+      return name.replace(/[^a-zA-Z_]/g, '_');
   }
 
   var STATE_IS_NEVER_CHECKED = THIS_EXPR.prop('numberOfChecks').identical(new LiteralExpr(0));
@@ -12558,7 +12499,7 @@
       Object.keys(data).forEach(function (name) { entryArray.push([name, data[name]]); });
       // We need to sort to get a defined output order
       // for tests and for caching generated artifacts...
-      ListWrapper.sort(entryArray, function (entry1, entry2) { return StringWrapper.compare(entry1[0], entry2[0]); });
+      ListWrapper.sort(entryArray);
       return entryArray;
   }
   function createViewTopLevelStmts(view, targetStatements) {
@@ -13051,8 +12992,8 @@
                   resolvedUrl = "asset:" + pathSegements[0] + "/lib/" + pathSegements.slice(1).join('/');
               }
               else {
-                  prefix = StringWrapper.stripRight(prefix, '/');
-                  path = StringWrapper.stripLeft(path, '/');
+                  prefix = prefix.replace(/\/+$/, '');
+                  path = path.replace(/^\/+/, '');
                   return prefix + "/" + path;
               }
           }
@@ -15069,7 +15010,11 @@
       if (isBlank(input)) {
           return null;
       }
-      var body = StringWrapper.replaceAllMapped(input, _SINGLE_QUOTE_ESCAPE_STRING_RE, function (match /** TODO #9100 */) {
+      var body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, function () {
+          var match = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+              match[_i - 0] = arguments[_i];
+          }
           if (match[0] == '$') {
               return escapeDollar ? '\\$' : '$';
           }
