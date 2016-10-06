@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { isPresent } from '../facade/lang';
+import { StringWrapper, isPresent } from '../facade/lang';
 import { identifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { CompileBinding } from './compile_binding';
@@ -157,6 +157,6 @@ function convertStmtIntoExpression(stmt) {
     return null;
 }
 function santitizeEventName(name) {
-    return name.replace(/[^a-zA-Z_]/g, '_');
+    return StringWrapper.replaceAll(name, /[^a-zA-Z_]/g, '_');
 }
 //# sourceMappingURL=event_binder.js.map
