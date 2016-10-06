@@ -5,12 +5,18 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { StringWrapper, isArray, isBlank, isPresent, isPrimitive, isStrictStringMap } from './facade/lang';
+import { isArray, isBlank, isPresent, isPrimitive, isStrictStringMap } from './facade/lang';
 import * as o from './output/output_ast';
 export var MODULE_SUFFIX = '';
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 export function camelCaseToDashCase(input) {
-    return StringWrapper.replaceAllMapped(input, CAMEL_CASE_REGEXP, function (m) { return '-' + m[1].toLowerCase(); });
+    return input.replace(CAMEL_CASE_REGEXP, function () {
+        var m = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            m[_i - 0] = arguments[_i];
+        }
+        return '-' + m[1].toLowerCase();
+    });
 }
 export function splitAtColon(input, defaultValues) {
     return _splitAt(input, ':', defaultValues);
@@ -25,7 +31,7 @@ function _splitAt(input, character, defaultValues) {
     return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
 }
 export function sanitizeIdentifier(name) {
-    return StringWrapper.replaceAll(name, /\W/g, '_');
+    return name.replace(/\W/g, '_');
 }
 export function visitValue(value, visitor, context) {
     if (isArray(value)) {
