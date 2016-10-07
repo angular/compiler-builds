@@ -12759,11 +12759,26 @@
       return SourceModule;
   }());
   var NgModulesSummary = (function () {
-      function NgModulesSummary(ngModuleByComponent) {
+      function NgModulesSummary(ngModuleByComponent, ngModules) {
           this.ngModuleByComponent = ngModuleByComponent;
+          this.ngModules = ngModules;
       }
       return NgModulesSummary;
   }());
+  function analyzeModules(ngModules, metadataResolver) {
+      var ngModuleByComponent = new Map();
+      var modules = [];
+      ngModules.forEach(function (ngModule) {
+          var ngModuleMeta = metadataResolver.getNgModuleMetadata(ngModule);
+          modules.push(ngModuleMeta);
+          ngModuleMeta.declaredDirectives.forEach(function (dirMeta) {
+              if (dirMeta.isComponent) {
+                  ngModuleByComponent.set(dirMeta.type.reference, ngModuleMeta);
+              }
+          });
+      });
+      return new NgModulesSummary(ngModuleByComponent, modules);
+  }
   var OfflineCompiler = (function () {
       function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat) {
           this._metadataResolver = _metadataResolver;
@@ -12779,17 +12794,7 @@
           this._animationCompiler = new AnimationCompiler();
       }
       OfflineCompiler.prototype.analyzeModules = function (ngModules) {
-          var _this = this;
-          var ngModuleByComponent = new Map();
-          ngModules.forEach(function (ngModule) {
-              var ngModuleMeta = _this._metadataResolver.getNgModuleMetadata(ngModule);
-              ngModuleMeta.declaredDirectives.forEach(function (dirMeta) {
-                  if (dirMeta.isComponent) {
-                      ngModuleByComponent.set(dirMeta.type.reference, ngModuleMeta);
-                  }
-              });
-          });
-          return new NgModulesSummary(ngModuleByComponent);
+          return analyzeModules(ngModules, this._metadataResolver);
       };
       OfflineCompiler.prototype.clearCache = function () {
           this._directiveNormalizer.clearCache();

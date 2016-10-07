@@ -13,8 +13,10 @@ export declare class SourceModule {
 }
 export declare class NgModulesSummary {
     ngModuleByComponent: Map<StaticSymbol, CompileNgModuleMetadata>;
-    constructor(ngModuleByComponent: Map<StaticSymbol, CompileNgModuleMetadata>);
+    ngModules: CompileNgModuleMetadata[];
+    constructor(ngModuleByComponent: Map<StaticSymbol, CompileNgModuleMetadata>, ngModules: CompileNgModuleMetadata[]);
 }
+export declare function analyzeModules(ngModules: StaticSymbol[], metadataResolver: CompileMetadataResolver): NgModulesSummary;
 export declare class OfflineCompiler {
     private _metadataResolver;
     private _directiveNormalizer;
