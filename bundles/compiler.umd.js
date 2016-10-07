@@ -4623,10 +4623,11 @@
       return ExpansionCase;
   }());
   var Attribute$1 = (function () {
-      function Attribute(name, value, sourceSpan) {
+      function Attribute(name, value, sourceSpan, valueSpan) {
           this.name = name;
           this.value = value;
           this.sourceSpan = sourceSpan;
+          this.valueSpan = valueSpan;
       }
       Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
       return Attribute;
@@ -5605,12 +5606,14 @@
           var fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
           var end = attrName.sourceSpan.end;
           var value = '';
+          var valueSpan;
           if (this._peek.type === TokenType$1.ATTR_VALUE) {
               var valueToken = this._advance();
               value = valueToken.parts[0];
               end = valueToken.sourceSpan.end;
+              valueSpan = valueToken.sourceSpan;
           }
-          return new Attribute$1(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end));
+          return new Attribute$1(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end), valueSpan);
       };
       _TreeBuilder.prototype._getParentElement = function () {
           return this._elementStack.length > 0 ? ListWrapper.last(this._elementStack) : null;
@@ -13550,6 +13553,13 @@
                   else if (a instanceof _angular_core.HostBinding) {
                       var hostBinding = a;
                       if (hostBinding.hostPropertyName) {
+                          var startWith = hostBinding.hostPropertyName[0];
+                          if (startWith === '(') {
+                              throw new Error("@HostBinding can not bind to events. Use @HostListener instead.");
+                          }
+                          else if (startWith === '[') {
+                              throw new Error("@HostBinding parameter should be a property name, 'class.<name>', or 'attr.<name>'.");
+                          }
                           host[("[" + hostBinding.hostPropertyName + "]")] = propName;
                       }
                       else {

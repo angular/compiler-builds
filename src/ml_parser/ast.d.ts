@@ -38,7 +38,8 @@ export declare class Attribute implements Node {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan);
+    valueSpan: ParseSourceSpan;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan?: ParseSourceSpan);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Element implements Node {

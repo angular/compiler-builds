@@ -36,10 +36,11 @@ export var ExpansionCase = (function () {
     return ExpansionCase;
 }());
 export var Attribute = (function () {
-    function Attribute(name, value, sourceSpan) {
+    function Attribute(name, value, sourceSpan, valueSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
+        this.valueSpan = valueSpan;
     }
     Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
     return Attribute;
