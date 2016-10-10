@@ -108,11 +108,7 @@ function _parseAnimationStateTransition(transitionStateMetadata, stateStyles, er
     var styles = new StylesCollection();
     var transitionExprs = [];
     var transitionStates = transitionStateMetadata.stateChangeExpr.split(/\s*,\s*/);
-    transitionStates.forEach(function (expr) {
-        _parseAnimationTransitionExpr(expr, errors).forEach(function (transExpr) {
-            transitionExprs.push(transExpr);
-        });
-    });
+    transitionStates.forEach(function (expr) { transitionExprs.push.apply(transitionExprs, _parseAnimationTransitionExpr(expr, errors)); });
     var entry = _normalizeAnimationEntry(transitionStateMetadata.steps);
     var animation = _normalizeStyleSteps(entry, stateStyles, errors);
     var animationAst = _parseTransitionAnimation(animation, 0, styles, stateStyles, errors);
@@ -312,7 +308,6 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
     if (doSortKeyframes) {
         ListWrapper.sort(rawKeyframes, function (a, b) { return a[0] <= b[0] ? -1 : 1; });
     }
-    var i;
     var firstKeyframe = rawKeyframes[0];
     if (firstKeyframe[0] != _INITIAL_KEYFRAME) {
         ListWrapper.insert(rawKeyframes, 0, firstKeyframe = [_INITIAL_KEYFRAME, {}]);
@@ -325,7 +320,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
         limit++;
     }
     var lastKeyframeStyles = lastKeyframe[1];
-    for (i = 1; i <= limit; i++) {
+    for (var i = 1; i <= limit; i++) {
         var entry = rawKeyframes[i];
         var styles = entry[1];
         Object.keys(styles).forEach(function (prop) {
@@ -334,7 +329,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
             }
         });
     }
-    var _loop_1 = function() {
+    var _loop_1 = function(i) {
         var entry = rawKeyframes[i];
         var styles = entry[1];
         Object.keys(styles).forEach(function (prop) {
@@ -343,8 +338,8 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
             }
         });
     };
-    for (i = limit - 1; i >= 0; i--) {
-        _loop_1();
+    for (var i = limit - 1; i >= 0; i--) {
+        _loop_1(i);
     }
     return rawKeyframes.map(function (entry) { return new AnimationKeyframeAst(entry[0], new AnimationStylesAst([entry[1]])); });
 }

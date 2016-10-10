@@ -22,7 +22,7 @@ export var CompileEventListener = (function () {
         this._actionResultExprs = [];
         this._method = new CompileMethod(compileElement.view);
         this._methodName =
-            "_handle_" + santitizeEventName(eventName) + "_" + compileElement.nodeIndex + "_" + listenerIndex;
+            "_handle_" + sanitizeEventName(eventName) + "_" + compileElement.nodeIndex + "_" + listenerIndex;
         this._eventParam = new o.FnParam(EventHandlerVars.event.name, o.importType(this.compileElement.view.genConfig.renderTypes.renderEvent));
     }
     CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, eventPhase, targetEventListeners) {
@@ -44,8 +44,7 @@ export var CompileEventListener = (function () {
             this._hasComponentHostListener = true;
         }
         this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
-        var context = isPresent(directiveInstance) ? directiveInstance :
-            this.compileElement.view.componentContext;
+        var context = directiveInstance || this.compileElement.view.componentContext;
         var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
         var lastIndex = actionStmts.length - 1;
         if (lastIndex >= 0) {
@@ -156,7 +155,7 @@ function convertStmtIntoExpression(stmt) {
     }
     return null;
 }
-function santitizeEventName(name) {
+function sanitizeEventName(name) {
     return name.replace(/[^a-zA-Z_]/g, '_');
 }
 //# sourceMappingURL=event_binder.js.map

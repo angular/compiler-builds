@@ -129,12 +129,12 @@ var _InjectorBuilder = (function () {
             result = this._getDependency(new CompileDiDependencyMetadata({ token: provider.useExisting }));
         }
         else if (isPresent(provider.useFactory)) {
-            var deps = isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+            var deps = provider.deps || provider.useFactory.diDeps;
             var depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
             result = o.importExpr(provider.useFactory).callFn(depsExpr);
         }
         else if (isPresent(provider.useClass)) {
-            var deps = isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+            var deps = provider.deps || provider.useClass.diDeps;
             var depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
             result =
                 o.importExpr(provider.useClass).instantiate(depsExpr, o.importType(provider.useClass));

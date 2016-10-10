@@ -1601,7 +1601,7 @@
       __extends$2(WriteVarExpr, _super);
       function WriteVarExpr(name, value, type) {
           if (type === void 0) { type = null; }
-          _super.call(this, isPresent(type) ? type : value.type);
+          _super.call(this, type || value.type);
           this.name = name;
           this.value = value;
       }
@@ -1619,7 +1619,7 @@
       __extends$2(WriteKeyExpr, _super);
       function WriteKeyExpr(receiver, index, value, type) {
           if (type === void 0) { type = null; }
-          _super.call(this, isPresent(type) ? type : value.type);
+          _super.call(this, type || value.type);
           this.receiver = receiver;
           this.index = index;
           this.value = value;
@@ -1633,7 +1633,7 @@
       __extends$2(WritePropExpr, _super);
       function WritePropExpr(receiver, name, value, type) {
           if (type === void 0) { type = null; }
-          _super.call(this, isPresent(type) ? type : value.type);
+          _super.call(this, type || value.type);
           this.receiver = receiver;
           this.name = name;
           this.value = value;
@@ -1726,7 +1726,7 @@
       function ConditionalExpr(condition, trueCase, falseCase, type) {
           if (falseCase === void 0) { falseCase = null; }
           if (type === void 0) { type = null; }
-          _super.call(this, isPresent(type) ? type : trueCase.type);
+          _super.call(this, type || trueCase.type);
           this.condition = condition;
           this.falseCase = falseCase;
           this.trueCase = trueCase;
@@ -1787,7 +1787,7 @@
       __extends$2(BinaryOperatorExpr, _super);
       function BinaryOperatorExpr(operator, lhs, rhs, type) {
           if (type === void 0) { type = null; }
-          _super.call(this, isPresent(type) ? type : lhs.type);
+          _super.call(this, type || lhs.type);
           this.operator = operator;
           this.rhs = rhs;
           this.lhs = lhs;
@@ -1887,7 +1887,7 @@
           _super.call(this, modifiers);
           this.name = name;
           this.value = value;
-          this.type = isPresent(type) ? type : value.type;
+          this.type = type || value.type;
       }
       DeclareVarStmt.prototype.visitStatement = function (visitor, context) {
           return visitor.visitDeclareVarStmt(this, context);
@@ -2056,7 +2056,7 @@
           return new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context));
       };
       ExpressionTransformer.prototype.visitInvokeMethodExpr = function (ast, context) {
-          var method = isPresent(ast.builtin) ? ast.builtin : ast.name;
+          var method = ast.builtin || ast.name;
           return new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type);
       };
       ExpressionTransformer.prototype.visitInvokeFunctionExpr = function (ast, context) {
@@ -2094,7 +2094,8 @@
       };
       ExpressionTransformer.prototype.visitLiteralMapExpr = function (ast, context) {
           var _this = this;
-          return new LiteralMapExpr(ast.entries.map(function (entry) { return [entry[0], entry[1].visitExpression(_this, context)]; }));
+          var entries = ast.entries.map(function (entry) { return [entry[0], entry[1].visitExpression(_this, context),]; });
+          return new LiteralMapExpr(entries);
       };
       ExpressionTransformer.prototype.visitAllExpressions = function (exprs, context) {
           var _this = this;
@@ -2664,7 +2665,7 @@
           this.styleUrls = _normalizeArray(styleUrls);
           this.externalStylesheets = _normalizeArray(externalStylesheets);
           this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
-          this.ngContentSelectors = isPresent(ngContentSelectors) ? ngContentSelectors : [];
+          this.ngContentSelectors = ngContentSelectors || [];
           if (isPresent(interpolation) && interpolation.length != 2) {
               throw new Error("'interpolation' should have a start and an end symbol.");
           }
@@ -2855,7 +2856,7 @@
       return MapWrapper.values(map);
   }
   function _normalizeArray(obj) {
-      return isPresent(obj) ? obj : [];
+      return obj || [];
   }
   function isStaticSymbol(value) {
       return isStringMap(value) && isPresent(value['name']) && isPresent(value['filePath']);
@@ -7841,7 +7842,7 @@
       });
       ProviderElementContext.prototype._addQueryReadsTo = function (token, queryReadTokens) {
           this._getQueriesFor(token).forEach(function (query) {
-              var queryReadToken = isPresent(query.read) ? query.read : token;
+              var queryReadToken = query.read || token;
               if (isBlank(queryReadTokens.get(queryReadToken.reference))) {
                   queryReadTokens.set(queryReadToken.reference, true);
               }
@@ -7903,12 +7904,12 @@
                   }
               }
               else if (isPresent(provider.useFactory)) {
-                  var deps = isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+                  var deps = provider.deps || provider.useFactory.diDeps;
                   transformedDeps =
                       deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep, eager); });
               }
               else if (isPresent(provider.useClass)) {
-                  var deps = isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+                  var deps = provider.deps || provider.useClass.diDeps;
                   transformedDeps =
                       deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep, eager); });
               }
@@ -8058,12 +8059,12 @@
                   }
               }
               else if (isPresent(provider.useFactory)) {
-                  var deps = isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+                  var deps = provider.deps || provider.useFactory.diDeps;
                   transformedDeps =
                       deps.map(function (dep) { return _this._getDependency(dep, eager, resolvedProvider.sourceSpan); });
               }
               else if (isPresent(provider.useClass)) {
-                  var deps = isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+                  var deps = provider.deps || provider.useClass.diDeps;
                   transformedDeps =
                       deps.map(function (dep) { return _this._getDependency(dep, eager, resolvedProvider.sourceSpan); });
               }
@@ -8259,7 +8260,7 @@
           for (var _i = 0; _i < arguments.length; _i++) {
               m[_i - 0] = arguments[_i];
           }
-          var url = isPresent(m[1]) ? m[1] : m[2];
+          var url = m[1] || m[2];
           if (!isStyleUrlResolvable(url)) {
               // Do not attempt to resolve non-package absolute URLs with URI scheme
               return m[0];
@@ -9576,7 +9577,8 @@
               context.isExpectingFirstStyleStep = false;
           }
           ast.styles.forEach(function (entry) {
-              stylesArr.push(literalMap(Object.keys(entry).map(function (key) { return [key, literal(entry[key])]; })));
+              var entries = Object.keys(entry).map(function (key) { return [key, literal(entry[key])]; });
+              stylesArr.push(literalMap(entries));
           });
           return importExpr(resolveIdentifier(Identifiers.AnimationStyles)).instantiate([
               importExpr(resolveIdentifier(Identifiers.collectAndResolveStyles)).callFn([
@@ -9959,11 +9961,7 @@
       var styles = new StylesCollection();
       var transitionExprs = [];
       var transitionStates = transitionStateMetadata.stateChangeExpr.split(/\s*,\s*/);
-      transitionStates.forEach(function (expr) {
-          _parseAnimationTransitionExpr(expr, errors).forEach(function (transExpr) {
-              transitionExprs.push(transExpr);
-          });
-      });
+      transitionStates.forEach(function (expr) { transitionExprs.push.apply(transitionExprs, _parseAnimationTransitionExpr(expr, errors)); });
       var entry = _normalizeAnimationEntry(transitionStateMetadata.steps);
       var animation = _normalizeStyleSteps(entry, stateStyles, errors);
       var animationAst = _parseTransitionAnimation(animation, 0, styles, stateStyles, errors);
@@ -10163,7 +10161,6 @@
       if (doSortKeyframes) {
           ListWrapper.sort(rawKeyframes, function (a, b) { return a[0] <= b[0] ? -1 : 1; });
       }
-      var i;
       var firstKeyframe = rawKeyframes[0];
       if (firstKeyframe[0] != _INITIAL_KEYFRAME) {
           ListWrapper.insert(rawKeyframes, 0, firstKeyframe = [_INITIAL_KEYFRAME, {}]);
@@ -10176,7 +10173,7 @@
           limit++;
       }
       var lastKeyframeStyles = lastKeyframe[1];
-      for (i = 1; i <= limit; i++) {
+      for (var i = 1; i <= limit; i++) {
           var entry = rawKeyframes[i];
           var styles = entry[1];
           Object.keys(styles).forEach(function (prop) {
@@ -10185,7 +10182,7 @@
               }
           });
       }
-      var _loop_1 = function() {
+      var _loop_1 = function(i) {
           var entry = rawKeyframes[i];
           var styles = entry[1];
           Object.keys(styles).forEach(function (prop) {
@@ -10194,8 +10191,8 @@
               }
           });
       };
-      for (i = limit - 1; i >= 0; i--) {
-          _loop_1();
+      for (var i = limit - 1; i >= 0; i--) {
+          _loop_1(i);
       }
       return rawKeyframes.map(function (entry) { return new AnimationKeyframeAst(entry[0], new AnimationStylesAst([entry[1]])); });
   }
@@ -10434,7 +10431,7 @@
       };
       CompileMethod.prototype.resetDebugInfoExpr = function (nodeIndex, templateAst) {
           var res = this._updateDebugContext(new _DebugState(nodeIndex, templateAst));
-          return isPresent(res) ? res : NULL_EXPR;
+          return res || NULL_EXPR;
       };
       CompileMethod.prototype.resetDebugInfo = function (nodeIndex, templateAst) {
           this._newState = new _DebugState(nodeIndex, templateAst);
@@ -10565,7 +10562,7 @@
       CompileQuery.prototype._isStatic = function () {
           return !this._values.values.some(function (value) { return value instanceof ViewQueryValues; });
       };
-      CompileQuery.prototype.afterChildren = function (targetStaticMethod /** TODO #9100 */, targetDynamicMethod) {
+      CompileQuery.prototype.afterChildren = function (targetStaticMethod, targetDynamicMethod) {
           var values = createQueryValues(this._values);
           var updateStmts = [this.queryList.callMethod('reset', [literalArr(values)]).toStmt()];
           if (isPresent(this.ownerDirectiveExpression)) {
@@ -10851,12 +10848,12 @@
                       return _this._getDependency(resolvedProvider.providerType, new CompileDiDependencyMetadata({ token: provider.useExisting }));
                   }
                   else if (isPresent(provider.useFactory)) {
-                      var deps = isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+                      var deps = provider.deps || provider.useFactory.diDeps;
                       var depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                       return importExpr(provider.useFactory).callFn(depsExpr);
                   }
                   else if (isPresent(provider.useClass)) {
-                      var deps = isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+                      var deps = provider.deps || provider.useClass.diDeps;
                       var depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                       return importExpr(provider.useClass)
                           .instantiate(depsExpr, importType(provider.useClass));
@@ -11088,7 +11085,7 @@
   var _QueryWithRead = (function () {
       function _QueryWithRead(query, match) {
           this.query = query;
-          this.read = isPresent(query.meta.read) ? query.meta.read : match;
+          this.read = query.meta.read || match;
       }
       return _QueryWithRead;
   }());
@@ -11748,7 +11745,7 @@
           this._actionResultExprs = [];
           this._method = new CompileMethod(compileElement.view);
           this._methodName =
-              "_handle_" + santitizeEventName(eventName) + "_" + compileElement.nodeIndex + "_" + listenerIndex;
+              "_handle_" + sanitizeEventName(eventName) + "_" + compileElement.nodeIndex + "_" + listenerIndex;
           this._eventParam = new FnParam(EventHandlerVars.event.name, importType(this.compileElement.view.genConfig.renderTypes.renderEvent));
       }
       CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, eventPhase, targetEventListeners) {
@@ -11770,8 +11767,7 @@
               this._hasComponentHostListener = true;
           }
           this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
-          var context = isPresent(directiveInstance) ? directiveInstance :
-              this.compileElement.view.componentContext;
+          var context = directiveInstance || this.compileElement.view.componentContext;
           var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
           var lastIndex = actionStmts.length - 1;
           if (lastIndex >= 0) {
@@ -11882,7 +11878,7 @@
       }
       return null;
   }
-  function santitizeEventName(name) {
+  function sanitizeEventName(name) {
       return name.replace(/[^a-zA-Z_]/g, '_');
   }
 
@@ -11994,7 +11990,6 @@
           view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileElement.nodeIndex, boundProp);
           var fieldExpr = createBindFieldExpr(bindingIndex);
           var currValExpr = createCurrValueExpr(bindingIndex);
-          var renderMethod;
           var oldRenderValue = sanitizedValue(boundProp, fieldExpr);
           var renderValue = sanitizedValue(boundProp, currValExpr);
           var updateStmts = [];
@@ -12281,11 +12276,11 @@
           if (this._isRootNode(parent)) {
               // store appElement as root node only for ViewContainers
               if (this.view.viewType !== ViewType.COMPONENT) {
-                  this.view.rootNodesOrAppElements.push(isPresent(vcAppEl) ? vcAppEl : node.renderNode);
+                  this.view.rootNodesOrAppElements.push(vcAppEl || node.renderNode);
               }
           }
           else if (isPresent(parent.component) && isPresent(ngContentIndex)) {
-              parent.addContentNode(ngContentIndex, isPresent(vcAppEl) ? vcAppEl : node.renderNode);
+              parent.addContentNode(ngContentIndex, vcAppEl || node.renderNode);
           }
       };
       ViewBuilderVisitor.prototype._getParentRenderNode = function (parent) {
@@ -12616,7 +12611,9 @@
       }
       if (view.viewIndex === 0) {
           var animationsExpr = literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; }));
-          initRenderCompTypeStmts = [new IfStmt(renderCompTypeVar.identical(NULL_EXPR), [renderCompTypeVar
+          initRenderCompTypeStmts = [
+              new IfStmt(renderCompTypeVar.identical(NULL_EXPR), [
+                  renderCompTypeVar
                       .set(ViewConstructorVars.viewUtils.callMethod('createRenderComponentType', [
                       view.genConfig.genDebugInfo ? literal(templateUrlInfo) : literal(''),
                       literal(view.component.template.ngContentSelectors.length),
@@ -12624,10 +12621,14 @@
                       view.styles,
                       animationsExpr,
                   ]))
-                      .toStmt()])];
+                      .toStmt(),
+              ]),
+          ];
       }
-      return fn(viewFactoryArgs, initRenderCompTypeStmts.concat([new ReturnStatement(variable(viewClass.name)
-              .instantiate(viewClass.constructorMethod.params.map(function (param) { return variable(param.name); })))]), importType(resolveIdentifier(Identifiers.AppView), [getContextType(view)]))
+      return fn(viewFactoryArgs, initRenderCompTypeStmts.concat([
+          new ReturnStatement(variable(viewClass.name)
+              .instantiate(viewClass.constructorMethod.params.map(function (param) { return variable(param.name); }))),
+      ]), importType(resolveIdentifier(Identifiers.AppView), [getContextType(view)]))
           .toDeclStmt(view.viewFactory.name, [StmtModifier.Final]);
   }
   function generateCreateMethod(view) {
@@ -14585,12 +14586,12 @@
               result = this._getDependency(new CompileDiDependencyMetadata({ token: provider.useExisting }));
           }
           else if (isPresent(provider.useFactory)) {
-              var deps = isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+              var deps = provider.deps || provider.useFactory.diDeps;
               var depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
               result = importExpr(provider.useFactory).callFn(depsExpr);
           }
           else if (isPresent(provider.useClass)) {
-              var deps = isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+              var deps = provider.deps || provider.useClass.diDeps;
               var depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
               result =
                   importExpr(provider.useClass).instantiate(depsExpr, importType(provider.useClass));
@@ -15011,7 +15012,7 @@
           var useNewLine = ast.entries.length > 1;
           ctx.print("{", useNewLine);
           ctx.incIndent();
-          this.visitAllObjects(function (entry /** TODO #9100 */) {
+          this.visitAllObjects(function (entry) {
               ctx.print(escapeIdentifier(entry[0], _this._escapeDollarInStrings, false) + ": ");
               entry[1].visitExpression(_this, ctx);
           }, ast.entries, ctx, ',', useNewLine);
@@ -15022,7 +15023,7 @@
       AbstractEmitterVisitor.prototype.visitAllExpressions = function (expressions, ctx, separator, newLine) {
           var _this = this;
           if (newLine === void 0) { newLine = false; }
-          this.visitAllObjects(function (expr /** TODO #9100 */) { return expr.visitExpression(_this, ctx); }, expressions, ctx, separator, newLine);
+          this.visitAllObjects(function (expr) { return expr.visitExpression(_this, ctx); }, expressions, ctx, separator, newLine);
       };
       AbstractEmitterVisitor.prototype.visitAllObjects = function (handler, expressions, ctx, separator, newLine) {
           if (newLine === void 0) { newLine = false; }
@@ -15370,7 +15371,7 @@
       };
       _TsEmitterVisitor.prototype._visitParams = function (params, ctx) {
           var _this = this;
-          this.visitAllObjects(function (param /** TODO #9100 */) {
+          this.visitAllObjects(function (param) {
               ctx.print(param.name);
               ctx.print(':');
               _this.visitType(param.type, ctx);
@@ -15399,7 +15400,7 @@
           }
           if (isPresent(typeParams) && typeParams.length > 0) {
               ctx.print("<");
-              this.visitAllObjects(function (type /** TODO #9100 */) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
+              this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
               ctx.print(">");
           }
       };
@@ -15879,7 +15880,7 @@
           return null;
       };
       AbstractJsEmitterVisitor.prototype._visitParams = function (params, ctx) {
-          this.visitAllObjects(function (param /** TODO #9100 */) { return ctx.print(param.name); }, params, ctx, ',');
+          this.visitAllObjects(function (param) { return ctx.print(param.name); }, params, ctx, ',');
       };
       AbstractJsEmitterVisitor.prototype.getBuiltinMethodName = function (method) {
           var name;

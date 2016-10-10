@@ -67,11 +67,11 @@ var ViewBuilderVisitor = (function () {
         if (this._isRootNode(parent)) {
             // store appElement as root node only for ViewContainers
             if (this.view.viewType !== ViewType.COMPONENT) {
-                this.view.rootNodesOrAppElements.push(isPresent(vcAppEl) ? vcAppEl : node.renderNode);
+                this.view.rootNodesOrAppElements.push(vcAppEl || node.renderNode);
             }
         }
         else if (isPresent(parent.component) && isPresent(ngContentIndex)) {
-            parent.addContentNode(ngContentIndex, isPresent(vcAppEl) ? vcAppEl : node.renderNode);
+            parent.addContentNode(ngContentIndex, vcAppEl || node.renderNode);
         }
     };
     ViewBuilderVisitor.prototype._getParentRenderNode = function (parent) {
@@ -402,7 +402,9 @@ function createViewFactory(view, viewClass, renderCompTypeVar) {
     }
     if (view.viewIndex === 0) {
         var animationsExpr = o.literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; }));
-        initRenderCompTypeStmts = [new o.IfStmt(renderCompTypeVar.identical(o.NULL_EXPR), [renderCompTypeVar
+        initRenderCompTypeStmts = [
+            new o.IfStmt(renderCompTypeVar.identical(o.NULL_EXPR), [
+                renderCompTypeVar
                     .set(ViewConstructorVars.viewUtils.callMethod('createRenderComponentType', [
                     view.genConfig.genDebugInfo ? o.literal(templateUrlInfo) : o.literal(''),
                     o.literal(view.component.template.ngContentSelectors.length),
@@ -410,11 +412,15 @@ function createViewFactory(view, viewClass, renderCompTypeVar) {
                     view.styles,
                     animationsExpr,
                 ]))
-                    .toStmt()])];
+                    .toStmt(),
+            ]),
+        ];
     }
     return o
-        .fn(viewFactoryArgs, initRenderCompTypeStmts.concat([new o.ReturnStatement(o.variable(viewClass.name)
-            .instantiate(viewClass.constructorMethod.params.map(function (param) { return o.variable(param.name); })))]), o.importType(resolveIdentifier(Identifiers.AppView), [getContextType(view)]))
+        .fn(viewFactoryArgs, initRenderCompTypeStmts.concat([
+        new o.ReturnStatement(o.variable(viewClass.name)
+            .instantiate(viewClass.constructorMethod.params.map(function (param) { return o.variable(param.name); }))),
+    ]), o.importType(resolveIdentifier(Identifiers.AppView), [getContextType(view)]))
         .toDeclStmt(view.viewFactory.name, [o.StmtModifier.Final]);
 }
 function generateCreateMethod(view) {

@@ -54,7 +54,7 @@ export var CompileQuery = (function () {
     CompileQuery.prototype._isStatic = function () {
         return !this._values.values.some(function (value) { return value instanceof ViewQueryValues; });
     };
-    CompileQuery.prototype.afterChildren = function (targetStaticMethod /** TODO #9100 */, targetDynamicMethod) {
+    CompileQuery.prototype.afterChildren = function (targetStaticMethod, targetDynamicMethod) {
         var values = createQueryValues(this._values);
         var updateStmts = [this.queryList.callMethod('reset', [o.literalArr(values)]).toStmt()];
         if (isPresent(this.ownerDirectiveExpression)) {

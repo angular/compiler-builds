@@ -133,12 +133,12 @@ export var CompileElement = (function (_super) {
                     return _this._getDependency(resolvedProvider.providerType, new CompileDiDependencyMetadata({ token: provider.useExisting }));
                 }
                 else if (isPresent(provider.useFactory)) {
-                    var deps = isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+                    var deps = provider.deps || provider.useFactory.diDeps;
                     var depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                     return o.importExpr(provider.useFactory).callFn(depsExpr);
                 }
                 else if (isPresent(provider.useClass)) {
-                    var deps = isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+                    var deps = provider.deps || provider.useClass.diDeps;
                     var depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                     return o.importExpr(provider.useClass)
                         .instantiate(depsExpr, o.importType(provider.useClass));
@@ -370,7 +370,7 @@ function createProviderProperty(propName, provider, providerValueExpressions, is
 var _QueryWithRead = (function () {
     function _QueryWithRead(query, match) {
         this.query = query;
-        this.read = isPresent(query.meta.read) ? query.meta.read : match;
+        this.read = query.meta.read || match;
     }
     return _QueryWithRead;
 }());

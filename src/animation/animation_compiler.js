@@ -56,7 +56,8 @@ var _AnimationBuilder = (function () {
             context.isExpectingFirstStyleStep = false;
         }
         ast.styles.forEach(function (entry) {
-            stylesArr.push(o.literalMap(Object.keys(entry).map(function (key) { return [key, o.literal(entry[key])]; })));
+            var entries = Object.keys(entry).map(function (key) { return [key, o.literal(entry[key])]; });
+            stylesArr.push(o.literalMap(entries));
         });
         return o.importExpr(resolveIdentifier(Identifiers.AnimationStyles)).instantiate([
             o.importExpr(resolveIdentifier(Identifiers.collectAndResolveStyles)).callFn([

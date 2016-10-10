@@ -104,7 +104,7 @@ export var ProviderElementContext = (function () {
     });
     ProviderElementContext.prototype._addQueryReadsTo = function (token, queryReadTokens) {
         this._getQueriesFor(token).forEach(function (query) {
-            var queryReadToken = isPresent(query.read) ? query.read : token;
+            var queryReadToken = query.read || token;
             if (isBlank(queryReadTokens.get(queryReadToken.reference))) {
                 queryReadTokens.set(queryReadToken.reference, true);
             }
@@ -166,12 +166,12 @@ export var ProviderElementContext = (function () {
                 }
             }
             else if (isPresent(provider.useFactory)) {
-                var deps = isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+                var deps = provider.deps || provider.useFactory.diDeps;
                 transformedDeps =
                     deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep, eager); });
             }
             else if (isPresent(provider.useClass)) {
-                var deps = isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+                var deps = provider.deps || provider.useClass.diDeps;
                 transformedDeps =
                     deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep, eager); });
             }
@@ -321,12 +321,12 @@ export var NgModuleProviderAnalyzer = (function () {
                 }
             }
             else if (isPresent(provider.useFactory)) {
-                var deps = isPresent(provider.deps) ? provider.deps : provider.useFactory.diDeps;
+                var deps = provider.deps || provider.useFactory.diDeps;
                 transformedDeps =
                     deps.map(function (dep) { return _this._getDependency(dep, eager, resolvedProvider.sourceSpan); });
             }
             else if (isPresent(provider.useClass)) {
-                var deps = isPresent(provider.deps) ? provider.deps : provider.useClass.diDeps;
+                var deps = provider.deps || provider.useClass.diDeps;
                 transformedDeps =
                     deps.map(function (dep) { return _this._getDependency(dep, eager, resolvedProvider.sourceSpan); });
             }

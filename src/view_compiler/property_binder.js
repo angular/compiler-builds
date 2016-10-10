@@ -69,7 +69,6 @@ function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp)
         view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileElement.nodeIndex, boundProp);
         var fieldExpr = createBindFieldExpr(bindingIndex);
         var currValExpr = createCurrValueExpr(bindingIndex);
-        var renderMethod;
         var oldRenderValue = sanitizedValue(boundProp, fieldExpr);
         var renderValue = sanitizedValue(boundProp, currValExpr);
         var updateStmts = [];

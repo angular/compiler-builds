@@ -63,6 +63,6 @@ export declare class CompileView implements NameResolver {
     callPipe(name: string, input: o.Expression, args: o.Expression[]): o.Expression;
     getLocal(name: string): o.Expression;
     createLiteralArray(values: o.Expression[]): o.Expression;
-    createLiteralMap(entries: Array<Array<string | o.Expression>>): o.Expression;
+    createLiteralMap(entries: [string, o.Expression][]): o.Expression;
     afterNodes(): void;
 }
