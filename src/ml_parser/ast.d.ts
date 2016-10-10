@@ -59,6 +59,7 @@ export declare class Comment implements Node {
     visit(visitor: Visitor, context: any): any;
 }
 export interface Visitor {
+    visit?(node: Node, context: any): any;
     visitElement(element: Element, context: any): any;
     visitAttribute(attribute: Attribute, context: any): any;
     visitText(text: Text, context: any): any;

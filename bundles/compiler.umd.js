@@ -277,7 +277,7 @@
    * An element declaration in a template.
    */
   var ElementAst = (function () {
-      function ElementAst(name, attrs, inputs, outputs, references, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan) {
+      function ElementAst(name, attrs, inputs, outputs, references, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan, endSourceSpan) {
           this.name = name;
           this.attrs = attrs;
           this.inputs = inputs;
@@ -289,6 +289,7 @@
           this.children = children;
           this.ngContentIndex = ngContentIndex;
           this.sourceSpan = sourceSpan;
+          this.endSourceSpan = endSourceSpan;
       }
       ElementAst.prototype.visit = function (visitor, context) {
           return visitor.visitElement(this, context);
@@ -4655,8 +4656,11 @@
   function visitAll(visitor, nodes, context) {
       if (context === void 0) { context = null; }
       var result = [];
+      var visit = visitor.visit ?
+          function (ast) { return visitor.visit(ast, context) || ast.visit(visitor, context); } :
+          function (ast) { return ast.visit(visitor, context); };
       nodes.forEach(function (ast) {
-          var astResult = ast.visit(visitor, context);
+          var astResult = visit(ast);
           if (astResult) {
               result.push(astResult);
           }
@@ -8704,7 +8708,7 @@
               this._assertElementExists(matchElement, element);
               this._assertOnlyOneComponent(directiveAsts, element.sourceSpan);
               var ngContentIndex_1 = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
-              parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan);
+              parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan, element.endSourceSpan);
               this._findComponentDirectives(directiveAsts)
                   .forEach(function (componentDirectiveAst) { return _this._validateElementAnimationInputOutputs(componentDirectiveAst.hostProperties, componentDirectiveAst.hostEvents, componentDirectiveAst.directive.template); });
               var componentTemplate = providerContext.viewContext.component.template;
@@ -9198,7 +9202,7 @@
           var selector = createElementCssSelector(ast.name, attrNameAndValues);
           var ngContentIndex = parent.findNgContentIndex(selector);
           var children = visitAll(this, ast.children, EMPTY_ELEMENT_CONTEXT);
-          return new ElementAst(ast.name, visitAll(this, ast.attrs), [], [], [], [], [], false, children, ngContentIndex, ast.sourceSpan);
+          return new ElementAst(ast.name, visitAll(this, ast.attrs), [], [], [], [], [], false, children, ngContentIndex, ast.sourceSpan, ast.endSourceSpan);
       };
       NonBindableVisitor.prototype.visitComment = function (comment, context) { return null; };
       NonBindableVisitor.prototype.visitAttribute = function (attribute, context) {

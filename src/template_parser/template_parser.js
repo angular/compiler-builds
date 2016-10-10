@@ -377,7 +377,7 @@ var TemplateParseVisitor = (function () {
             this._assertElementExists(matchElement, element);
             this._assertOnlyOneComponent(directiveAsts, element.sourceSpan);
             var ngContentIndex_1 = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
-            parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan);
+            parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, children, hasInlineTemplates ? null : ngContentIndex_1, element.sourceSpan, element.endSourceSpan);
             this._findComponentDirectives(directiveAsts)
                 .forEach(function (componentDirectiveAst) { return _this._validateElementAnimationInputOutputs(componentDirectiveAst.hostProperties, componentDirectiveAst.hostEvents, componentDirectiveAst.directive.template); });
             var componentTemplate = providerContext.viewContext.component.template;
@@ -871,7 +871,7 @@ var NonBindableVisitor = (function () {
         var selector = createElementCssSelector(ast.name, attrNameAndValues);
         var ngContentIndex = parent.findNgContentIndex(selector);
         var children = html.visitAll(this, ast.children, EMPTY_ELEMENT_CONTEXT);
-        return new ElementAst(ast.name, html.visitAll(this, ast.attrs), [], [], [], [], [], false, children, ngContentIndex, ast.sourceSpan);
+        return new ElementAst(ast.name, html.visitAll(this, ast.attrs), [], [], [], [], [], false, children, ngContentIndex, ast.sourceSpan, ast.endSourceSpan);
     };
     NonBindableVisitor.prototype.visitComment = function (comment, context) { return null; };
     NonBindableVisitor.prototype.visitAttribute = function (attribute, context) {

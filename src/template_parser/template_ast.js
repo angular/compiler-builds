@@ -133,7 +133,7 @@ export var VariableAst = (function () {
  * An element declaration in a template.
  */
 export var ElementAst = (function () {
-    function ElementAst(name, attrs, inputs, outputs, references, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan) {
+    function ElementAst(name, attrs, inputs, outputs, references, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan, endSourceSpan) {
         this.name = name;
         this.attrs = attrs;
         this.inputs = inputs;
@@ -145,6 +145,7 @@ export var ElementAst = (function () {
         this.children = children;
         this.ngContentIndex = ngContentIndex;
         this.sourceSpan = sourceSpan;
+        this.endSourceSpan = endSourceSpan;
     }
     ElementAst.prototype.visit = function (visitor, context) {
         return visitor.visitElement(this, context);

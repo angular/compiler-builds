@@ -118,7 +118,8 @@ export declare class ElementAst implements TemplateAst {
     children: TemplateAst[];
     ngContentIndex: number;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, attrs: AttrAst[], inputs: BoundElementPropertyAst[], outputs: BoundEventAst[], references: ReferenceAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, children: TemplateAst[], ngContentIndex: number, sourceSpan: ParseSourceSpan);
+    endSourceSpan: ParseSourceSpan;
+    constructor(name: string, attrs: AttrAst[], inputs: BoundElementPropertyAst[], outputs: BoundEventAst[], references: ReferenceAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, children: TemplateAst[], ngContentIndex: number, sourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
