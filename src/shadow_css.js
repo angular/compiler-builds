@@ -375,7 +375,8 @@ export var ShadowCss = (function () {
         _polyfillHostRe.lastIndex = 0;
         if (_polyfillHostRe.test(selector)) {
             var replaceBy_1 = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
-            return selector.replace(_polyfillHostNoCombinatorRe, function (hnc, selector) { return selector + replaceBy_1; })
+            return selector
+                .replace(_polyfillHostNoCombinatorRe, function (hnc, selector) { return selector[0] === ':' ? replaceBy_1 + selector : selector + replaceBy_1; })
                 .replace(_polyfillHostRe, replaceBy_1 + ' ');
         }
         return scopeSelector + ' ' + selector;

@@ -4656,8 +4656,11 @@
   function visitAll(visitor, nodes, context) {
       if (context === void 0) { context = null; }
       var result = [];
+      var visit = visitor.visit ?
+          function (ast) { return visitor.visit(ast, context) || ast.visit(visitor, context); } :
+          function (ast) { return ast.visit(visitor, context); };
       nodes.forEach(function (ast) {
-          var astResult = ast.visit(visitor, context);
+          var astResult = visit(ast);
           if (astResult) {
               result.push(astResult);
           }
@@ -16322,7 +16325,8 @@
           _polyfillHostRe.lastIndex = 0;
           if (_polyfillHostRe.test(selector)) {
               var replaceBy_1 = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
-              return selector.replace(_polyfillHostNoCombinatorRe, function (hnc, selector) { return selector + replaceBy_1; })
+              return selector
+                  .replace(_polyfillHostNoCombinatorRe, function (hnc, selector) { return selector[0] === ':' ? replaceBy_1 + selector : selector + replaceBy_1; })
                   .replace(_polyfillHostRe, replaceBy_1 + ' ');
           }
           return scopeSelector + ' ' + selector;
