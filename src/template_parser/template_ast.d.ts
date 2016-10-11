@@ -222,6 +222,7 @@ export declare enum PropertyBindingType {
  * A visitor for {@link TemplateAst} trees that will process each node.
  */
 export interface TemplateAstVisitor {
+    visit?(ast: TemplateAst, context: any): any;
     visitNgContent(ast: NgContentAst, context: any): any;
     visitEmbeddedTemplate(ast: EmbeddedTemplateAst, context: any): any;
     visitElement(ast: ElementAst, context: any): any;

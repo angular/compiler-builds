@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { isPresent } from '../facade/lang';
 /**
  * A segment of text within the template.
  */
@@ -84,7 +83,7 @@ export var BoundEventAst = (function () {
     };
     Object.defineProperty(BoundEventAst.prototype, "fullName", {
         get: function () {
-            if (isPresent(this.target)) {
+            if (this.target) {
                 return this.target + ":" + this.name;
             }
             else {
@@ -277,9 +276,12 @@ export var PropertyBindingType;
 export function templateVisitAll(visitor, asts, context) {
     if (context === void 0) { context = null; }
     var result = [];
+    var visit = visitor.visit ?
+        function (ast) { return visitor.visit(ast, context) || ast.visit(visitor, context); } :
+        function (ast) { return ast.visit(visitor, context); };
     asts.forEach(function (ast) {
-        var astResult = ast.visit(visitor, context);
-        if (isPresent(astResult)) {
+        var astResult = visit(ast);
+        if (astResult) {
             result.push(astResult);
         }
     });
