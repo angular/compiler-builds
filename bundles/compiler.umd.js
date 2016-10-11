@@ -8438,19 +8438,11 @@
           return result.templateAst;
       };
       TemplateParser.prototype.tryParse = function (component, template, directives, pipes, schemas, templateUrl) {
-          var interpolationConfig;
-          if (component.template) {
-              interpolationConfig = InterpolationConfig.fromArray(component.template.interpolation);
-          }
-          var htmlAstWithErrors = this._htmlParser.parse(template, templateUrl, true, interpolationConfig);
-          var errors = htmlAstWithErrors.errors;
+          return this.tryParseHtml(this.expandHtml(this._htmlParser.parse(template, templateUrl, true, this.getInterpolationConfig(component))), component, template, directives, pipes, schemas, templateUrl);
+      };
+      TemplateParser.prototype.tryParseHtml = function (htmlAstWithErrors, component, template, directives, pipes, schemas, templateUrl) {
           var result;
-          if (errors.length == 0) {
-              // Transform ICU messages to angular directives
-              var expandedHtmlAst = expandNodes(htmlAstWithErrors.rootNodes);
-              errors.push.apply(errors, expandedHtmlAst.errors);
-              htmlAstWithErrors = new ParseTreeResult(expandedHtmlAst.nodes, errors);
-          }
+          var errors = htmlAstWithErrors.errors;
           if (htmlAstWithErrors.rootNodes.length > 0) {
               var uniqDirectives = removeIdentifierDuplicates(directives);
               var uniqPipes = removeIdentifierDuplicates(pipes);
@@ -8470,6 +8462,22 @@
               this.transforms.forEach(function (transform) { result = templateVisitAll(transform, result); });
           }
           return new TemplateParseResult(result, errors);
+      };
+      TemplateParser.prototype.expandHtml = function (htmlAstWithErrors, forced) {
+          if (forced === void 0) { forced = false; }
+          var errors = htmlAstWithErrors.errors;
+          if (errors.length == 0 || forced) {
+              // Transform ICU messages to angular directives
+              var expandedHtmlAst = expandNodes(htmlAstWithErrors.rootNodes);
+              errors.push.apply(errors, expandedHtmlAst.errors);
+              htmlAstWithErrors = new ParseTreeResult(expandedHtmlAst.nodes, errors);
+          }
+          return htmlAstWithErrors;
+      };
+      TemplateParser.prototype.getInterpolationConfig = function (component) {
+          if (component.template) {
+              return InterpolationConfig.fromArray(component.template.interpolation);
+          }
       };
       /** @internal */
       TemplateParser.prototype._assertNoReferenceDuplicationOnTemplate = function (result, errors) {
