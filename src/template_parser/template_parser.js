@@ -371,8 +371,8 @@ var TemplateParseVisitor = (function () {
         var ngContentIndex = parent.findNgContentIndex(projectionSelector);
         var parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
-            if (isPresent(element.children) && element.children.length > 0) {
-                this._reportError("<ng-content> element cannot have content. <ng-content> must be immediately followed by </ng-content>", element.sourceSpan);
+            if (element.children && !element.children.every(_isEmptyTextNode)) {
+                this._reportError("<ng-content> element cannot have content.", element.sourceSpan);
             }
             parsedElement = new NgContentAst(this.ngContentCount++, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan);
         }
@@ -983,5 +983,8 @@ export var PipeCollector = (function (_super) {
 }(RecursiveAstVisitor));
 function _isAnimationLabel(name) {
     return name[0] == '@';
+}
+function _isEmptyTextNode(node) {
+    return node instanceof html.Text && node.value.trim().length == 0;
 }
 //# sourceMappingURL=template_parser.js.map

@@ -8713,8 +8713,8 @@
           var ngContentIndex = parent.findNgContentIndex(projectionSelector);
           var parsedElement;
           if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
-              if (isPresent(element.children) && element.children.length > 0) {
-                  this._reportError("<ng-content> element cannot have content. <ng-content> must be immediately followed by </ng-content>", element.sourceSpan);
+              if (element.children && !element.children.every(_isEmptyTextNode)) {
+                  this._reportError("<ng-content> element cannot have content.", element.sourceSpan);
               }
               parsedElement = new NgContentAst(this.ngContentCount++, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan);
           }
@@ -9325,6 +9325,9 @@
   }(RecursiveAstVisitor));
   function _isAnimationLabel(name) {
       return name[0] == '@';
+  }
+  function _isEmptyTextNode(node) {
+      return node instanceof Text && node.value.trim().length == 0;
   }
 
   function unimplemented$1() {
