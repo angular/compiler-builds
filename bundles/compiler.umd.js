@@ -7598,6 +7598,11 @@
           moduleUrl: assetUrl('core', 'i18n/tokens'),
           runtime: _angular_core.TRANSLATIONS_FORMAT
       };
+      Identifiers.AnimationTransitionEvent = {
+          name: 'AnimationTransitionEvent',
+          moduleUrl: assetUrl('core', 'animation/animation_transition_event'),
+          runtime: _angular_core.AnimationTransitionEvent
+      };
       return Identifiers;
   }());
   function resolveIdentifier(identifier) {
@@ -9575,6 +9580,7 @@
   var _ANIMATION_FACTORY_ELEMENT_VAR = variable('element');
   var _ANIMATION_DEFAULT_STATE_VAR = variable('defaultStateStyles');
   var _ANIMATION_FACTORY_VIEW_VAR = variable('view');
+  var _ANIMATION_FACTORY_VIEW_CONTEXT = _ANIMATION_FACTORY_VIEW_VAR.prop('animationContext');
   var _ANIMATION_FACTORY_RENDERER_VAR = _ANIMATION_FACTORY_VIEW_VAR.prop('renderer');
   var _ANIMATION_CURRENT_STATE_VAR = variable('currentState');
   var _ANIMATION_NEXT_STATE_VAR = variable('nextState');
@@ -9692,7 +9698,7 @@
           // this should always be defined even if the user overrides it
           context.stateMap.registerState(DEFAULT_STATE, {});
           var statements = [];
-          statements.push(_ANIMATION_FACTORY_VIEW_VAR
+          statements.push(_ANIMATION_FACTORY_VIEW_CONTEXT
               .callMethod('cancelActiveAnimation', [
               _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
               _ANIMATION_NEXT_STATE_VAR.equals(literal(EMPTY_ANIMATION_STATE))
@@ -9740,11 +9746,16 @@
                   ])
                       .toStmt()])])
               .toStmt());
-          statements.push(_ANIMATION_FACTORY_VIEW_VAR
+          var transitionParams = literalMap([
+              ['toState', _ANIMATION_NEXT_STATE_VAR], ['fromState', _ANIMATION_CURRENT_STATE_VAR],
+              ['totalTime', _ANIMATION_TIME_VAR]
+          ]);
+          var transitionEvent = importExpr(resolveIdentifier(Identifiers.AnimationTransitionEvent))
+              .instantiate([transitionParams]);
+          statements.push(_ANIMATION_FACTORY_VIEW_CONTEXT
               .callMethod('queueAnimation', [
               _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
-              _ANIMATION_PLAYER_VAR, _ANIMATION_TIME_VAR,
-              _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR
+              _ANIMATION_PLAYER_VAR, transitionEvent
           ])
               .toStmt());
           return fn([
@@ -11835,8 +11846,8 @@
       CompileEventListener.prototype.listenToAnimation = function () {
           var outputListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
           // tie the property callback method to the view animations map
-          var stmt = THIS_EXPR
-              .callMethod('registerAnimationOutput', [
+          var stmt = THIS_EXPR.prop('animationContext')
+              .callMethod('registerOutputHandler', [
               this.compileElement.renderNode, literal(this.eventName),
               literal(this.eventPhase), outputListener
           ])

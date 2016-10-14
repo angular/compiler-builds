@@ -91,8 +91,8 @@ export var CompileEventListener = (function () {
     CompileEventListener.prototype.listenToAnimation = function () {
         var outputListener = o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(this._methodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
         // tie the property callback method to the view animations map
-        var stmt = o.THIS_EXPR
-            .callMethod('registerAnimationOutput', [
+        var stmt = o.THIS_EXPR.prop('animationContext')
+            .callMethod('registerOutputHandler', [
             this.compileElement.renderNode, o.literal(this.eventName),
             o.literal(this.eventPhase), outputListener
         ])
