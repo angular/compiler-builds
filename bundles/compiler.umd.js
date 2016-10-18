@@ -440,41 +440,6 @@
       return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
   }
 
-  // Safari and Internet Explorer do not support the iterable parameter to the
-  // Map constructor.  We work around that by manually adding the items.
-  var createMapFromPairs = (function () {
-      try {
-          if (new Map([[1, 2]]).size === 1) {
-              return function createMapFromPairs(pairs) { return new Map(pairs); };
-          }
-      }
-      catch (e) {
-      }
-      return function createMapAndPopulateFromPairs(pairs) {
-          var map = new Map();
-          for (var i = 0; i < pairs.length; i++) {
-              var pair = pairs[i];
-              map.set(pair[0], pair[1]);
-          }
-          return map;
-      };
-  })();
-  var _clearValues = (function () {
-      if ((new Map()).keys().next) {
-          return function _clearValues(m) {
-              var keyIterator = m.keys();
-              var k;
-              while (!((k = keyIterator.next()).done)) {
-                  m.set(k.value, null);
-              }
-          };
-      }
-      else {
-          return function _clearValuesWithForeEach(m) {
-              m.forEach(function (v, k) { m.set(k, null); });
-          };
-      }
-  })();
   // Safari doesn't implement MapIterator.next(), which is used is Traceur's polyfill of Array.from
   // TODO(mlaval): remove the work around once we have a working polyfill of Array.from
   var _arrayFromMap = (function () {
@@ -506,13 +471,6 @@
           }
           return result;
       };
-      MapWrapper.toStringMap = function (m) {
-          var r = {};
-          m.forEach(function (v, k) { return r[k] = v; });
-          return r;
-      };
-      MapWrapper.createFromPairs = function (pairs) { return createMapFromPairs(pairs); };
-      MapWrapper.iterable = function (m) { return m; };
       MapWrapper.keys = function (m) { return _arrayFromMap(m, false); };
       MapWrapper.values = function (m) { return _arrayFromMap(m, true); };
       return MapWrapper;
@@ -13689,30 +13647,28 @@
       return type instanceof _angular_core.Directive;
   }
 
-  var LIFECYCLE_INTERFACES = MapWrapper.createFromPairs([
-      [LifecycleHooks.OnInit, _angular_core.OnInit],
-      [LifecycleHooks.OnDestroy, _angular_core.OnDestroy],
-      [LifecycleHooks.DoCheck, _angular_core.DoCheck],
-      [LifecycleHooks.OnChanges, _angular_core.OnChanges],
-      [LifecycleHooks.AfterContentInit, _angular_core.AfterContentInit],
-      [LifecycleHooks.AfterContentChecked, _angular_core.AfterContentChecked],
-      [LifecycleHooks.AfterViewInit, _angular_core.AfterViewInit],
-      [LifecycleHooks.AfterViewChecked, _angular_core.AfterViewChecked],
-  ]);
-  var LIFECYCLE_PROPS = MapWrapper.createFromPairs([
-      [LifecycleHooks.OnInit, 'ngOnInit'],
-      [LifecycleHooks.OnDestroy, 'ngOnDestroy'],
-      [LifecycleHooks.DoCheck, 'ngDoCheck'],
-      [LifecycleHooks.OnChanges, 'ngOnChanges'],
-      [LifecycleHooks.AfterContentInit, 'ngAfterContentInit'],
-      [LifecycleHooks.AfterContentChecked, 'ngAfterContentChecked'],
-      [LifecycleHooks.AfterViewInit, 'ngAfterViewInit'],
-      [LifecycleHooks.AfterViewChecked, 'ngAfterViewChecked'],
-  ]);
   function hasLifecycleHook(hook, token) {
-      var lcInterface = LIFECYCLE_INTERFACES.get(hook);
-      var lcProp = LIFECYCLE_PROPS.get(hook);
-      return reflector.hasLifecycleHook(token, lcInterface, lcProp);
+      return reflector.hasLifecycleHook(token, getHookName(hook));
+  }
+  function getHookName(hook) {
+      switch (hook) {
+          case LifecycleHooks.OnInit:
+              return 'ngOnInit';
+          case LifecycleHooks.OnDestroy:
+              return 'ngOnDestroy';
+          case LifecycleHooks.DoCheck:
+              return 'ngDoCheck';
+          case LifecycleHooks.OnChanges:
+              return 'ngOnChanges';
+          case LifecycleHooks.AfterContentInit:
+              return 'ngAfterContentInit';
+          case LifecycleHooks.AfterContentChecked:
+              return 'ngAfterContentChecked';
+          case LifecycleHooks.AfterViewInit:
+              return 'ngAfterViewInit';
+          case LifecycleHooks.AfterViewChecked:
+              return 'ngAfterViewChecked';
+      }
   }
 
   function _isNgModuleMetadata(obj) {
