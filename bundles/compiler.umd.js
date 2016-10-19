@@ -299,53 +299,15 @@
       return result;
   }
 
-  /**
-   * @license
-   * Copyright Google Inc. All Rights Reserved.
-   *
-   * Use of this source code is governed by an MIT-style license that can be
-   * found in the LICENSE file at https://angular.io/license
-   */
-  var globalScope;
-  if (typeof window === 'undefined') {
-      if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
-          // TODO: Replace any with WorkerGlobalScope from lib.webworker.d.ts #3492
-          globalScope = self;
-      }
-      else {
-          globalScope = global;
-      }
-  }
-  else {
-      globalScope = window;
-  }
-  // Need to declare a new variable for global here since TypeScript
-  // exports the original value of the symbol.
-  var global$1 = globalScope;
-  // TODO: remove calls to assert in production environment
-  // Note: Can't just export this and import in in other files
-  // as `assert` is a reserved keyword in Dart
-  global$1.assert = function assert(condition) {
-      // TODO: to be fixed properly via #2830, noop for now
-  };
   function isPresent(obj) {
       return obj !== undefined && obj !== null;
   }
   function isBlank(obj) {
       return obj === undefined || obj === null;
   }
-  function isString(obj) {
-      return typeof obj === 'string';
-  }
-  function isStringMap(obj) {
-      return typeof obj === 'object' && obj !== null;
-  }
   var STRING_MAP_PROTO = Object.getPrototypeOf({});
   function isStrictStringMap(obj) {
-      return isStringMap(obj) && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
-  }
-  function isArray(obj) {
-      return Array.isArray(obj);
+      return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
   }
   function stringify(token) {
       if (typeof token === 'string') {
@@ -364,20 +326,9 @@
       var newLineIndex = res.indexOf('\n');
       return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
   }
-  var StringJoiner = (function () {
-      function StringJoiner(parts) {
-          if (parts === void 0) { parts = []; }
-          this.parts = parts;
-      }
-      StringJoiner.prototype.add = function (part) { this.parts.push(part); };
-      StringJoiner.prototype.toString = function () { return this.parts.join(''); };
-      return StringJoiner;
-  }());
   var NumberWrapper = (function () {
       function NumberWrapper() {
       }
-      NumberWrapper.toFixed = function (n, fractionDigits) { return n.toFixed(fractionDigits); };
-      NumberWrapper.equal = function (a, b) { return a === b; };
       NumberWrapper.parseIntAutoRadix = function (text) {
           var result = parseInt(text);
           if (isNaN(result)) {
@@ -404,14 +355,7 @@
           }
           throw new Error('Invalid integer literal when parsing ' + text + ' in base ' + radix);
       };
-      Object.defineProperty(NumberWrapper, "NaN", {
-          get: function () { return NaN; },
-          enumerable: true,
-          configurable: true
-      });
       NumberWrapper.isNumeric = function (value) { return !isNaN(value - parseFloat(value)); };
-      NumberWrapper.isNaN = function (value) { return isNaN(value); };
-      NumberWrapper.isInteger = function (value) { return Number.isInteger(value); };
       return NumberWrapper;
   }());
   function normalizeBlank(obj) {
@@ -422,16 +366,6 @@
   }
   function isJsObject(o) {
       return o !== null && (typeof o === 'function' || typeof o === 'object');
-  }
-  function evalExpression(sourceUrl, expr, declarations, vars) {
-      var fnBody = declarations + "\nreturn " + expr + "\n//# sourceURL=" + sourceUrl;
-      var fnArgNames = [];
-      var fnArgValues = [];
-      for (var argName in vars) {
-          fnArgNames.push(argName);
-          fnArgValues.push(vars[argName]);
-      }
-      return new (Function.bind.apply(Function, [void 0].concat(fnArgNames.concat(fnBody))))().apply(void 0, fnArgValues);
   }
   function isPrimitive(obj) {
       return !isJsObject(obj);
@@ -629,7 +563,7 @@
       if (isPresent(source)) {
           for (var i = 0; i < source.length; i++) {
               var item = source[i];
-              if (isArray(item)) {
+              if (Array.isArray(item)) {
                   _flattenArray(item, target);
               }
               else {
@@ -1550,7 +1484,7 @@
       function ReadVarExpr(name, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
-          if (isString(name)) {
+          if (typeof name === 'string') {
               this.name = name;
               this.builtin = null;
           }
@@ -1624,7 +1558,7 @@
           _super.call(this, type);
           this.receiver = receiver;
           this.args = args;
-          if (isString(method)) {
+          if (typeof method === 'string') {
               this.name = method;
               this.builtin = null;
           }
@@ -2315,18 +2249,16 @@
       return name.replace(/\W/g, '_');
   }
   function visitValue(value, visitor, context) {
-      if (isArray(value)) {
+      if (Array.isArray(value)) {
           return visitor.visitArray(value, context);
       }
-      else if (isStrictStringMap(value)) {
+      if (isStrictStringMap(value)) {
           return visitor.visitStringMap(value, context);
       }
-      else if (isBlank(value) || isPrimitive(value)) {
+      if (isBlank(value) || isPrimitive(value)) {
           return visitor.visitPrimitive(value, context);
       }
-      else {
-          return visitor.visitOther(value, context);
-      }
+      return visitor.visitOther(value, context);
   }
   var ValueTransformer = (function () {
       function ValueTransformer() {
@@ -2827,7 +2759,7 @@
       return obj || [];
   }
   function isStaticSymbol(value) {
-      return isStringMap(value) && isPresent(value['name']) && isPresent(value['filePath']);
+      return typeof value === 'object' && value !== null && value['name'] && value['filePath'];
   }
   var ProviderMeta = (function () {
       function ProviderMeta(token, _a) {
@@ -3342,11 +3274,11 @@
       if (!_angular_core.isDevMode() || isBlank(value)) {
           return;
       }
-      if (!isArray(value)) {
+      if (!Array.isArray(value)) {
           throw new Error("Expected '" + identifier + "' to be an array of strings.");
       }
       for (var i = 0; i < value.length; i += 1) {
-          if (!isString(value[i])) {
+          if (typeof value[i] !== 'string') {
               throw new Error("Expected '" + identifier + "' to be an array of strings.");
           }
       }
@@ -3359,7 +3291,7 @@
       /^\/\//,
   ];
   function assertInterpolationSymbols(identifier, value) {
-      if (isPresent(value) && !(isArray(value) && value.length == 2)) {
+      if (isPresent(value) && !(Array.isArray(value) && value.length == 2)) {
           throw new Error("Expected '" + identifier + "' to be an array, [start, end].");
       }
       else if (_angular_core.isDevMode() && !isBlank(value)) {
@@ -3639,16 +3571,14 @@
           var start = this.index;
           var quote = this.peek;
           this.advance(); // Skip initial quote.
-          var buffer;
+          var buffer = '';
           var marker = this.index;
           var input = this.input;
           while (this.peek != quote) {
               if (this.peek == $BACKSLASH) {
-                  if (buffer == null)
-                      buffer = new StringJoiner();
-                  buffer.add(input.substring(marker, this.index));
+                  buffer += input.substring(marker, this.index);
                   this.advance();
-                  var unescapedCode;
+                  var unescapedCode = void 0;
                   if (this.peek == $u) {
                       // 4 character hex code for unicode character.
                       var hex = input.substring(this.index + 1, this.index + 5);
@@ -3666,7 +3596,7 @@
                       unescapedCode = unescape(this.peek);
                       this.advance();
                   }
-                  buffer.add(String.fromCharCode(unescapedCode));
+                  buffer += String.fromCharCode(unescapedCode);
                   marker = this.index;
               }
               else if (this.peek == $EOF) {
@@ -3678,13 +3608,7 @@
           }
           var last = input.substring(marker, this.index);
           this.advance(); // Skip terminating quote.
-          // Compute the unescaped string value.
-          var unescaped = last;
-          if (buffer != null) {
-              buffer.add(last);
-              unescaped = buffer.toString();
-          }
-          return newStringToken(start, unescaped);
+          return newStringToken(start, buffer + last);
       };
       _Scanner.prototype.error = function (message, offset) {
           var position = this.index + offset;
@@ -8103,7 +8027,7 @@
       }
       if (isPresent(providers)) {
           providers.forEach(function (provider) {
-              if (isArray(provider)) {
+              if (Array.isArray(provider)) {
                   _normalizeProviders(provider, sourceSpan, targetErrors, targetProviders);
               }
               else {
@@ -8974,7 +8898,7 @@
           if (hostProps) {
               Object.keys(hostProps).forEach(function (propName) {
                   var expression = hostProps[propName];
-                  if (isString(expression)) {
+                  if (typeof expression === 'string') {
                       var exprAst = _this._parseBinding(expression, sourceSpan);
                       targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
                   }
@@ -8989,7 +8913,7 @@
           if (hostListeners) {
               Object.keys(hostListeners).forEach(function (propName) {
                   var expression = hostListeners[propName];
-                  if (isString(expression)) {
+                  if (typeof expression === 'string') {
                       _this._parseEventOrAnimationEvent(propName, expression, sourceSpan, [], targetEventAsts);
                   }
                   else {
@@ -9795,8 +9719,6 @@
       return obj.styles.styles;
   }
 
-  var Math$1 = global$1.Math;
-
   var StylesCollectionEntry = (function () {
       function StylesCollectionEntry(time, value) {
           this.time = time;
@@ -9935,7 +9857,7 @@
       var styleValues = [];
       stateMetadata.styles.styles.forEach(function (stylesEntry) {
           // TODO (matsko): change this when we get CSS class integration support
-          if (isStringMap(stylesEntry)) {
+          if (typeof stylesEntry === 'object' && stylesEntry !== null) {
               styleValues.push(stylesEntry);
           }
           else {
@@ -9994,13 +9916,12 @@
       return expressions;
   }
   function _normalizeAnimationEntry(entry) {
-      return isArray(entry) ? new CompileAnimationSequenceMetadata(entry) :
-          entry;
+      return Array.isArray(entry) ? new CompileAnimationSequenceMetadata(entry) : entry;
   }
   function _normalizeStyleMetadata(entry, stateStyles, errors) {
       var normalizedStyles = [];
       entry.styles.forEach(function (styleEntry) {
-          if (isString(styleEntry)) {
+          if (typeof styleEntry === 'string') {
               ListWrapper.addAll(normalizedStyles, _resolveStylesFromState(styleEntry, stateStyles, errors));
           }
           else {
@@ -10016,10 +9937,10 @@
           new CompileAnimationSequenceMetadata(steps);
   }
   function _mergeAnimationStyles(stylesList, newItem) {
-      if (isStringMap(newItem) && stylesList.length > 0) {
+      if (typeof newItem === 'object' && newItem !== null && stylesList.length > 0) {
           var lastIndex = stylesList.length - 1;
           var lastItem = stylesList[lastIndex];
-          if (isStringMap(lastItem)) {
+          if (typeof lastItem === 'object' && lastItem !== null) {
               stylesList[lastIndex] = StringMapWrapper.merge(lastItem, newItem);
               return;
           }
@@ -10097,7 +10018,7 @@
           }
           else {
               value.styles.forEach(function (stylesEntry) {
-                  if (isStringMap(stylesEntry)) {
+                  if (typeof stylesEntry === 'object' && stylesEntry !== null) {
                       styles.push(stylesEntry);
                   }
               });
@@ -10221,7 +10142,7 @@
               var astDuration = innerAst.playTime;
               currentTime += astDuration;
               playTime += astDuration;
-              maxDuration = Math$1.max(astDuration, maxDuration);
+              maxDuration = Math.max(astDuration, maxDuration);
               steps.push(innerAst);
           });
           if (isPresent(previousStyles)) {
@@ -10286,7 +10207,7 @@
       var duration;
       var delay = 0;
       var easing = null;
-      if (isString(exp)) {
+      if (typeof exp === 'string') {
           var matches = exp.match(regex);
           if (matches === null) {
               errors.push(new AnimationParseError("The provided timing value \"" + exp + "\" is invalid."));
@@ -10297,7 +10218,7 @@
           if (durationUnit == 's') {
               durationMatch *= _ONE_SECOND;
           }
-          duration = Math$1.floor(durationMatch);
+          duration = Math.floor(durationMatch);
           var delayMatch = matches[3];
           var delayUnit = matches[4];
           if (isPresent(delayMatch)) {
@@ -10305,7 +10226,7 @@
               if (isPresent(delayUnit) && delayUnit == 's') {
                   delayVal *= _ONE_SECOND;
               }
-              delay = Math$1.floor(delayVal);
+              delay = Math.floor(delayVal);
           }
           var easingVal = matches[5];
           if (!isBlank(easingVal)) {
@@ -11716,7 +11637,7 @@
       return _AstToIrVisitor;
   }());
   function flattenStatements(arg, output) {
-      if (isArray(arg)) {
+      if (Array.isArray(arg)) {
           arg.forEach(function (entry) { return flattenStatements(entry, output); });
       }
       else {
@@ -14243,7 +14164,7 @@
       CompileMetadataResolver.prototype.getTokenMetadata = function (token) {
           token = _angular_core.resolveForwardRef(token);
           var compileToken;
-          if (isString(token)) {
+          if (typeof token === 'string') {
               compileToken = new CompileTokenMetadata({ value: token });
           }
           else {
@@ -14893,7 +14814,7 @@
       AbstractEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx, absentValue) {
           if (absentValue === void 0) { absentValue = 'null'; }
           var value = ast.value;
-          if (isString(value)) {
+          if (typeof value === 'string') {
               ctx.print(escapeIdentifier(value, this._escapeDollarInStrings));
           }
           else if (isBlank(value)) {
@@ -15085,13 +15006,7 @@
   function debugOutputAstAsTypeScript(ast) {
       var converter = new _TsEmitterVisitor(_debugModuleUrl);
       var ctx = EmitterVisitorContext.createRoot([]);
-      var asts;
-      if (isArray(ast)) {
-          asts = ast;
-      }
-      else {
-          asts = [ast];
-      }
+      var asts = Array.isArray(ast) ? ast : [ast];
       asts.forEach(function (ast) {
           if (ast instanceof Statement) {
               ast.visitStatement(converter, ctx);
@@ -15906,6 +15821,16 @@
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
+  function evalExpression(sourceUrl, expr, declarations, vars) {
+      var fnBody = declarations + "\nreturn " + expr + "\n//# sourceURL=" + sourceUrl;
+      var fnArgNames = [];
+      var fnArgValues = [];
+      for (var argName in vars) {
+          fnArgNames.push(argName);
+          fnArgValues.push(vars[argName]);
+      }
+      return new (Function.bind.apply(Function, [void 0].concat(fnArgNames.concat(fnBody))))().apply(void 0, fnArgValues);
+  }
   function jitStatements(sourceUrl, statements, resultVar) {
       var converter = new JitEmitterVisitor();
       var ctx = EmitterVisitorContext.createRoot([resultVar]);

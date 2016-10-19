@@ -14,7 +14,7 @@ import { Inject, Injectable, OpaqueToken, Optional, SecurityContext } from '@ang
 import { removeIdentifierDuplicates } from '../compile_metadata';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
-import { isPresent, isString } from '../facade/lang';
+import { isPresent } from '../facade/lang';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
 import { Identifiers, identifierToken, resolveIdentifierToken } from '../identifiers';
 import * as html from '../ml_parser/ast';
@@ -668,7 +668,7 @@ var TemplateParseVisitor = (function () {
         if (hostProps) {
             Object.keys(hostProps).forEach(function (propName) {
                 var expression = hostProps[propName];
-                if (isString(expression)) {
+                if (typeof expression === 'string') {
                     var exprAst = _this._parseBinding(expression, sourceSpan);
                     targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
                 }
@@ -683,7 +683,7 @@ var TemplateParseVisitor = (function () {
         if (hostListeners) {
             Object.keys(hostListeners).forEach(function (propName) {
                 var expression = hostListeners[propName];
-                if (isString(expression)) {
+                if (typeof expression === 'string') {
                     _this._parseEventOrAnimationEvent(propName, expression, sourceSpan, [], targetEventAsts);
                 }
                 else {
