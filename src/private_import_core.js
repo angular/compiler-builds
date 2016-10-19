@@ -64,4 +64,5 @@ export var collectAndResolveStyles = r.collectAndResolveStyles;
 export var renderStyles = r.renderStyles;
 export var ViewMetadata = r.ViewMetadata;
 export var ComponentStillLoadingError = r.ComponentStillLoadingError;
+export var AnimationTransition = r.AnimationTransition;
 //# sourceMappingURL=private_import_core.js.map

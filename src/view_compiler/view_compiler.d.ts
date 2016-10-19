@@ -13,7 +13,6 @@ export declare class ViewCompileResult {
 }
 export declare class ViewCompiler {
     private _genConfig;
-    private _animationCompiler;
     constructor(_genConfig: CompilerConfig);
     compileComponent(component: CompileDirectiveMetadata, template: TemplateAst[], styles: o.Expression, pipes: CompilePipeMetadata[], compiledAnimations: AnimationEntryCompileResult[]): ViewCompileResult;
 }

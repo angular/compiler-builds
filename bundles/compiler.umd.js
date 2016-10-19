@@ -7314,6 +7314,7 @@
   var collectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
   var renderStyles = _angular_core.__core_private__.renderStyles;
   var ComponentStillLoadingError = _angular_core.__core_private__.ComponentStillLoadingError;
+  var AnimationTransition = _angular_core.__core_private__.AnimationTransition;
 
   var APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
   var VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
@@ -7556,10 +7557,10 @@
           moduleUrl: assetUrl('core', 'i18n/tokens'),
           runtime: _angular_core.TRANSLATIONS_FORMAT
       };
-      Identifiers.AnimationTransitionEvent = {
-          name: 'AnimationTransitionEvent',
-          moduleUrl: assetUrl('core', 'animation/animation_transition_event'),
-          runtime: _angular_core.AnimationTransitionEvent
+      Identifiers.AnimationTransition = {
+          name: 'AnimationTransition',
+          moduleUrl: assetUrl('core', 'animation/animation_transition'),
+          runtime: AnimationTransition
       };
       return Identifiers;
   }());
@@ -9704,24 +9705,22 @@
                   ])
                       .toStmt()])])
               .toStmt());
-          var transitionParams = literalMap([
-              ['toState', _ANIMATION_NEXT_STATE_VAR], ['fromState', _ANIMATION_CURRENT_STATE_VAR],
-              ['totalTime', _ANIMATION_TIME_VAR]
-          ]);
-          var transitionEvent = importExpr(resolveIdentifier(Identifiers.AnimationTransitionEvent))
-              .instantiate([transitionParams]);
           statements.push(_ANIMATION_FACTORY_VIEW_CONTEXT
               .callMethod('queueAnimation', [
               _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
-              _ANIMATION_PLAYER_VAR, transitionEvent
+              _ANIMATION_PLAYER_VAR
           ])
               .toStmt());
+          statements.push(new ReturnStatement(importExpr(resolveIdentifier(Identifiers.AnimationTransition)).instantiate([
+              _ANIMATION_PLAYER_VAR, _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR,
+              _ANIMATION_TIME_VAR
+          ])));
           return fn([
               new FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
               new FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, DYNAMIC_TYPE),
               new FnParam(_ANIMATION_CURRENT_STATE_VAR.name, DYNAMIC_TYPE),
               new FnParam(_ANIMATION_NEXT_STATE_VAR.name, DYNAMIC_TYPE)
-          ], statements);
+          ], statements, importType(resolveIdentifier(Identifiers.AnimationTransition)));
       };
       _AnimationBuilder.prototype.build = function (ast) {
           var context = new _AnimationBuilderContext();
@@ -11752,6 +11751,11 @@
           enumerable: true,
           configurable: true
       });
+      Object.defineProperty(CompileEventListener.prototype, "isAnimation", {
+          get: function () { return !!this.eventPhase; },
+          enumerable: true,
+          configurable: true
+      });
       CompileEventListener.prototype.addAction = function (hostEvent, directive, directiveInstance) {
           if (isPresent(directive) && directive.isComponent) {
               this._hasComponentHostListener = true;
@@ -11801,16 +11805,11 @@
           // private is fine here as no child view will reference the event handler...
           this.compileElement.view.createMethod.addStmt(disposable.set(listenExpr).toDeclStmt(FUNCTION_TYPE, [StmtModifier.Private]));
       };
-      CompileEventListener.prototype.listenToAnimation = function () {
-          var outputListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
-          // tie the property callback method to the view animations map
-          var stmt = THIS_EXPR.prop('animationContext')
-              .callMethod('registerOutputHandler', [
-              this.compileElement.renderNode, literal(this.eventName),
-              literal(this.eventPhase), outputListener
-          ])
+      CompileEventListener.prototype.listenToAnimation = function (animationTransitionVar) {
+          var callbackMethod = this.eventPhase == 'start' ? 'onStart' : 'onDone';
+          return animationTransitionVar
+              .callMethod(callbackMethod, [THIS_EXPR.prop(this.methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])])
               .toStmt();
-          this.compileElement.view.createMethod.addStmt(stmt);
       };
       CompileEventListener.prototype.listenToDirective = function (directiveInstance, observablePropName) {
           var subscription = variable("subscription_" + this.compileElement.view.subscriptions.length);
@@ -11851,10 +11850,9 @@
   }
   function bindRenderOutputs(eventListeners) {
       eventListeners.forEach(function (listener) {
-          if (listener.eventPhase) {
-              listener.listenToAnimation();
-          }
-          else {
+          // the animation listeners are handled within property_binder.ts to
+          // allow them to be placed next to the animation factory statements
+          if (!listener.isAnimation) {
               listener.listenToRenderer();
           }
       });
@@ -11971,7 +11969,7 @@
               .callMethod('setText', [compileNode.renderNode, currValExpr])
               .toStmt()], view.detectChangesRenderPropertiesMethod, bindingIndex);
   }
-  function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp) {
+  function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp, eventListeners) {
       var view = compileElement.view;
       var renderNode = compileElement.renderNode;
       boundProps.forEach(function (boundProp) {
@@ -12016,27 +12014,34 @@
                       .toStmt());
                   break;
               case exports.PropertyBindingType.Animation:
-                  var animationName = boundProp.name;
-                  var targetViewExpr = THIS_EXPR;
-                  if (isHostProp) {
-                      targetViewExpr = compileElement.appElement.prop('componentView');
-                  }
                   compileMethod = view.animationBindingsMethod;
-                  var animationFnExpr = targetViewExpr.prop('componentType').prop('animations').key(literal(animationName));
+                  var detachStmts_1 = [];
+                  var animationName_1 = boundProp.name;
+                  var targetViewExpr = isHostProp ? compileElement.appElement.prop('componentView') : THIS_EXPR;
+                  var animationFnExpr = targetViewExpr.prop('componentType').prop('animations').key(literal(animationName_1));
                   // it's important to normalize the void value as `void` explicitly
                   // so that the styles data can be obtained from the stringmap
                   var emptyStateValue = literal(EMPTY_ANIMATION_STATE);
-                  // void => ...
-                  var oldRenderVar = variable('oldRenderVar');
-                  updateStmts.push(oldRenderVar.set(oldRenderValue).toDeclStmt());
-                  updateStmts.push(new IfStmt(oldRenderVar.equals(importExpr(resolveIdentifier(Identifiers.UNINITIALIZED))), [oldRenderVar.set(emptyStateValue).toStmt()]));
-                  // ... => void
-                  var newRenderVar = variable('newRenderVar');
-                  updateStmts.push(newRenderVar.set(renderValue).toDeclStmt());
-                  updateStmts.push(new IfStmt(newRenderVar.equals(importExpr(resolveIdentifier(Identifiers.UNINITIALIZED))), [newRenderVar.set(emptyStateValue).toStmt()]));
-                  updateStmts.push(animationFnExpr.callFn([THIS_EXPR, renderNode, oldRenderVar, newRenderVar]).toStmt());
-                  view.detachMethod.addStmt(animationFnExpr.callFn([THIS_EXPR, renderNode, oldRenderValue, emptyStateValue])
-                      .toStmt());
+                  var unitializedValue = importExpr(resolveIdentifier(Identifiers.UNINITIALIZED));
+                  var animationTransitionVar_1 = variable('animationTransition_' + animationName_1);
+                  updateStmts.push(animationTransitionVar_1
+                      .set(animationFnExpr.callFn([
+                      THIS_EXPR, renderNode, oldRenderValue.equals(unitializedValue)
+                          .conditional(emptyStateValue, oldRenderValue),
+                      renderValue.equals(unitializedValue).conditional(emptyStateValue, renderValue)
+                  ]))
+                      .toDeclStmt());
+                  detachStmts_1.push(animationTransitionVar_1
+                      .set(animationFnExpr.callFn([THIS_EXPR, renderNode, oldRenderValue, emptyStateValue]))
+                      .toDeclStmt());
+                  eventListeners.forEach(function (listener) {
+                      if (listener.isAnimation && listener.eventName === animationName_1) {
+                          var animationStmt = listener.listenToAnimation(animationTransitionVar_1);
+                          updateStmts.push(animationStmt);
+                          detachStmts_1.push(animationStmt);
+                      }
+                  });
+                  view.detachMethod.addStmts(detachStmts_1);
                   break;
           }
           bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, compileMethod, view.bindings.length);
@@ -12069,11 +12074,11 @@
       var args = [importExpr(resolveIdentifier(Identifiers.SecurityContext)).prop(enumValue), renderValue];
       return ctx.callMethod('sanitize', args);
   }
-  function bindRenderInputs(boundProps, compileElement) {
-      bindAndWriteToRenderer(boundProps, compileElement.view.componentContext, compileElement, false);
+  function bindRenderInputs(boundProps, compileElement, eventListeners) {
+      bindAndWriteToRenderer(boundProps, compileElement.view.componentContext, compileElement, false, eventListeners);
   }
-  function bindDirectiveHostProps(directiveAst, directiveInstance, compileElement) {
-      bindAndWriteToRenderer(directiveAst.hostProperties, directiveInstance, compileElement, true);
+  function bindDirectiveHostProps(directiveAst, directiveInstance, compileElement, eventListeners) {
+      bindAndWriteToRenderer(directiveAst.hostProperties, directiveInstance, compileElement, true, eventListeners);
   }
   function bindDirectiveInputs(directiveAst, directiveInstance, compileElement) {
       if (directiveAst.inputs.length === 0) {
@@ -12164,13 +12169,13 @@
           collectEventListeners(ast.outputs, ast.directives, compileElement).forEach(function (entry) {
               eventListeners.push(entry);
           });
-          bindRenderInputs(ast.inputs, compileElement);
+          bindRenderInputs(ast.inputs, compileElement, eventListeners);
           bindRenderOutputs(eventListeners);
           ast.directives.forEach(function (directiveAst) {
               var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
               bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
               bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
-              bindDirectiveHostProps(directiveAst, directiveInstance, compileElement);
+              bindDirectiveHostProps(directiveAst, directiveInstance, compileElement, eventListeners);
               bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
           });
           templateVisitAll(this, ast.children, compileElement);
@@ -12726,7 +12731,6 @@
   var ViewCompiler = (function () {
       function ViewCompiler(_genConfig) {
           this._genConfig = _genConfig;
-          this._animationCompiler = new AnimationCompiler();
       }
       ViewCompiler.prototype.compileComponent = function (component, template, styles, pipes, compiledAnimations) {
           var dependencies = [];

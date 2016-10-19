@@ -199,24 +199,22 @@ var _AnimationBuilder = (function () {
                 ])
                     .toStmt()])])
             .toStmt());
-        var transitionParams = o.literalMap([
-            ['toState', _ANIMATION_NEXT_STATE_VAR], ['fromState', _ANIMATION_CURRENT_STATE_VAR],
-            ['totalTime', _ANIMATION_TIME_VAR]
-        ]);
-        var transitionEvent = o.importExpr(resolveIdentifier(Identifiers.AnimationTransitionEvent))
-            .instantiate([transitionParams]);
         statements.push(_ANIMATION_FACTORY_VIEW_CONTEXT
             .callMethod('queueAnimation', [
             _ANIMATION_FACTORY_ELEMENT_VAR, o.literal(this.animationName),
-            _ANIMATION_PLAYER_VAR, transitionEvent
+            _ANIMATION_PLAYER_VAR
         ])
             .toStmt());
+        statements.push(new o.ReturnStatement(o.importExpr(resolveIdentifier(Identifiers.AnimationTransition)).instantiate([
+            _ANIMATION_PLAYER_VAR, _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR,
+            _ANIMATION_TIME_VAR
+        ])));
         return o.fn([
             new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
             new o.FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_CURRENT_STATE_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_NEXT_STATE_VAR.name, o.DYNAMIC_TYPE)
-        ], statements);
+        ], statements, o.importType(resolveIdentifier(Identifiers.AnimationTransition)));
     };
     _AnimationBuilder.prototype.build = function (ast) {
         var context = new _AnimationBuilderContext();
