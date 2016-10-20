@@ -248,10 +248,12 @@ var TemplateParseVisitor = (function () {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
         }
     };
-    TemplateParseVisitor.prototype._parseBinding = function (value, sourceSpan) {
+    TemplateParseVisitor.prototype._parseBinding = function (value, isHostBinding, sourceSpan) {
         var sourceInfo = sourceSpan.start.toString();
         try {
-            var ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
+            var ast = isHostBinding ?
+                this._exprParser.parseSimpleBinding(value, sourceInfo, this._interpolationConfig) :
+                this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
             if (ast)
                 this._reportParserErrors(ast.errors, sourceSpan);
             this._checkPipes(ast, sourceSpan);
@@ -536,7 +538,7 @@ var TemplateParseVisitor = (function () {
             this._parseAnimation(name.substr(animationPrefixLength), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
         }
         else {
-            this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
+            this._parsePropertyAst(name, this._parseBinding(expression, false, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
         }
     };
     TemplateParseVisitor.prototype._parseAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetAnimationProps) {
@@ -546,7 +548,7 @@ var TemplateParseVisitor = (function () {
         if (!isPresent(expression) || expression.length == 0) {
             expression = 'null';
         }
-        var ast = this._parseBinding(expression, sourceSpan);
+        var ast = this._parseBinding(expression, false, sourceSpan);
         targetMatchableAttrs.push([name, ast.source]);
         targetAnimationProps.push(new BoundElementPropertyAst(name, PropertyBindingType.Animation, SecurityContext.NONE, ast, null, sourceSpan));
     };
@@ -669,7 +671,7 @@ var TemplateParseVisitor = (function () {
             Object.keys(hostProps).forEach(function (propName) {
                 var expression = hostProps[propName];
                 if (typeof expression === 'string') {
-                    var exprAst = _this._parseBinding(expression, sourceSpan);
+                    var exprAst = _this._parseBinding(expression, true, sourceSpan);
                     targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
                 }
                 else {

@@ -11,7 +11,7 @@ import * as o from '../output/output_ast';
 import { CompileBinding } from './compile_binding';
 import { CompileMethod } from './compile_method';
 import { EventHandlerVars, ViewProperties } from './constants';
-import { convertCdStatementToIr } from './expression_converter';
+import { NoLocalsNameResolver, convertCdStatementToIr } from './expression_converter';
 export var CompileEventListener = (function () {
     function CompileEventListener(compileElement, eventTarget, eventName, eventPhase, listenerIndex) {
         this.compileElement = compileElement;
@@ -50,7 +50,7 @@ export var CompileEventListener = (function () {
         }
         this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
         var context = directiveInstance || this.compileElement.view.componentContext;
-        var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
+        var actionStmts = convertCdStatementToIr(directive ? new NoLocalsNameResolver(this.compileElement.view) : this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
         var lastIndex = actionStmts.length - 1;
         if (lastIndex >= 0) {
             var lastStatement = actionStmts[lastIndex];
