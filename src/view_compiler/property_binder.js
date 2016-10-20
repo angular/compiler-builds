@@ -9,9 +9,8 @@ import { SecurityContext } from '@angular/core';
 import { isPresent } from '../facade/lang';
 import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
-import { EMPTY_STATE as EMPTY_ANIMATION_STATE, LifecycleHooks, isDefaultChangeDetectionStrategy } from '../private_import_core';
+import { EMPTY_STATE as EMPTY_ANIMATION_STATE, isDefaultChangeDetectionStrategy } from '../private_import_core';
 import { PropertyBindingType } from '../template_parser/template_ast';
-import { camelCaseToDashCase } from '../util';
 import { CompileBinding } from './compile_binding';
 import { DetectChangesVars, ViewProperties } from './constants';
 import { convertCdExpressionToIr, temporaryDeclaration } from './expression_converter';
@@ -21,32 +20,50 @@ function createBindFieldExpr(exprIndex) {
 function createCurrValueExpr(exprIndex) {
     return o.variable("currVal_" + exprIndex); // fix syntax highlighting: `
 }
-function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
+var EvalResult = (function () {
+    function EvalResult(forceUpdate) {
+        this.forceUpdate = forceUpdate;
+    }
+    return EvalResult;
+}());
+function evalCdAst(view, currValExpr, parsedExpression, context, method, bindingIndex) {
     var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
     if (!checkExpression.expression) {
         // e.g. an empty expression was given
-        return;
+        return null;
     }
     if (checkExpression.temporaryCount) {
         for (var i = 0; i < checkExpression.temporaryCount; i++) {
             method.addStmt(temporaryDeclaration(bindingIndex, i));
         }
     }
-    // private is fine here as no child view will reference the cached value...
-    view.fields.push(new o.ClassField(fieldExpr.name, null, [o.StmtModifier.Private]));
-    view.createMethod.addStmt(o.THIS_EXPR.prop(fieldExpr.name)
-        .set(o.importExpr(resolveIdentifier(Identifiers.UNINITIALIZED)))
-        .toStmt());
     if (checkExpression.needsValueUnwrapper) {
         var initValueUnwrapperStmt = DetectChangesVars.valUnwrapper.callMethod('reset', []).toStmt();
         method.addStmt(initValueUnwrapperStmt);
     }
     method.addStmt(currValExpr.set(checkExpression.expression).toDeclStmt(null, [o.StmtModifier.Final]));
+    if (checkExpression.needsValueUnwrapper) {
+        return new EvalResult(DetectChangesVars.valUnwrapper.prop('hasWrappedValue'));
+    }
+    else {
+        return new EvalResult(null);
+    }
+}
+function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
+    var evalResult = evalCdAst(view, currValExpr, parsedExpression, context, method, bindingIndex);
+    if (!evalResult) {
+        return;
+    }
+    // private is fine here as no child view will reference the cached value...
+    view.fields.push(new o.ClassField(fieldExpr.name, null, [o.StmtModifier.Private]));
+    view.createMethod.addStmt(o.THIS_EXPR.prop(fieldExpr.name)
+        .set(o.importExpr(resolveIdentifier(Identifiers.UNINITIALIZED)))
+        .toStmt());
     var condition = o.importExpr(resolveIdentifier(Identifiers.checkBinding)).callFn([
         DetectChangesVars.throwOnChange, fieldExpr, currValExpr
     ]);
-    if (checkExpression.needsValueUnwrapper) {
-        condition = DetectChangesVars.valUnwrapper.prop('hasWrappedValue').or(condition);
+    if (evalResult.forceUpdate) {
+        condition = evalResult.forceUpdate.or(condition);
     }
     method.addStmt(new o.IfStmt(condition, actions.concat([o.THIS_EXPR.prop(fieldExpr.name).set(currValExpr).toStmt()])));
 }
@@ -171,66 +188,39 @@ export function bindRenderInputs(boundProps, compileElement, eventListeners) {
 export function bindDirectiveHostProps(directiveAst, directiveInstance, compileElement, eventListeners) {
     bindAndWriteToRenderer(directiveAst.hostProperties, directiveInstance, compileElement, true, eventListeners);
 }
-export function bindDirectiveInputs(directiveAst, directiveInstance, compileElement) {
-    if (directiveAst.inputs.length === 0) {
-        return;
-    }
+export function bindDirectiveInputs(directiveAst, directiveWrapperInstance, compileElement) {
     var view = compileElement.view;
     var detectChangesInInputsMethod = view.detectChangesInInputsMethod;
     detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-    var lifecycleHooks = directiveAst.directive.type.lifecycleHooks;
-    var calcChangesMap = lifecycleHooks.indexOf(LifecycleHooks.OnChanges) !== -1;
-    var isOnPushComp = directiveAst.directive.isComponent &&
-        !isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
-    if (calcChangesMap) {
-        detectChangesInInputsMethod.addStmt(DetectChangesVars.changes.set(o.NULL_EXPR).toStmt());
-    }
-    if (isOnPushComp) {
-        detectChangesInInputsMethod.addStmt(DetectChangesVars.changed.set(o.literal(false)).toStmt());
-    }
     directiveAst.inputs.forEach(function (input) {
         var bindingIndex = view.bindings.length;
         view.bindings.push(new CompileBinding(compileElement, input));
         detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, input);
-        var fieldExpr = createBindFieldExpr(bindingIndex);
         var currValExpr = createCurrValueExpr(bindingIndex);
-        var statements = [directiveInstance.prop(input.directiveName).set(currValExpr).toStmt()];
-        if (calcChangesMap) {
-            statements.push(new o.IfStmt(DetectChangesVars.changes.identical(o.NULL_EXPR), [DetectChangesVars.changes
-                    .set(o.literalMap([], new o.MapType(o.importType(resolveIdentifier(Identifiers.SimpleChange)))))
-                    .toStmt()]));
-            statements.push(DetectChangesVars.changes.key(o.literal(input.directiveName))
-                .set(o.importExpr(resolveIdentifier(Identifiers.SimpleChange))
-                .instantiate([fieldExpr, currValExpr]))
-                .toStmt());
+        var evalResult = evalCdAst(view, currValExpr, input.value, view.componentContext, detectChangesInInputsMethod, bindingIndex);
+        if (!evalResult) {
+            return;
         }
-        if (isOnPushComp) {
-            statements.push(DetectChangesVars.changed.set(o.literal(true)).toStmt());
-        }
-        if (view.genConfig.logBindingUpdate) {
-            statements.push(logBindingUpdateStmt(compileElement.renderNode, input.directiveName, currValExpr));
-        }
-        bind(view, currValExpr, fieldExpr, input.value, view.componentContext, statements, detectChangesInInputsMethod, bindingIndex);
+        detectChangesInInputsMethod.addStmt(directiveWrapperInstance
+            .callMethod("check_" + input.directiveName, [
+            currValExpr, DetectChangesVars.throwOnChange,
+            evalResult.forceUpdate || o.literal(false)
+        ])
+            .toStmt());
     });
-    if (isOnPushComp) {
-        detectChangesInInputsMethod.addStmt(new o.IfStmt(DetectChangesVars.changed, [
-            compileElement.appElement.prop('componentView').callMethod('markAsCheckOnce', []).toStmt()
-        ]));
-    }
+    var isOnPushComp = directiveAst.directive.isComponent &&
+        !isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
+    var directiveDetectChangesExpr = directiveWrapperInstance.callMethod('detectChangesInternal', [o.THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange]);
+    var directiveDetectChangesStmt = isOnPushComp ?
+        new o.IfStmt(directiveDetectChangesExpr, [compileElement.appElement.prop('componentView')
+                .callMethod('markAsCheckOnce', [])
+                .toStmt()]) :
+        directiveDetectChangesExpr.toStmt();
+    detectChangesInInputsMethod.addStmt(directiveDetectChangesStmt);
 }
 function logBindingUpdateStmt(renderNode, propName, value) {
-    var tryStmt = o.THIS_EXPR.prop('renderer')
-        .callMethod('setBindingDebugInfo', [
-        renderNode, o.literal("ng-reflect-" + camelCaseToDashCase(propName)),
-        value.isBlank().conditional(o.NULL_EXPR, value.callMethod('toString', []))
-    ])
+    return o.importExpr(resolveIdentifier(Identifiers.setBindingDebugInfo))
+        .callFn([o.THIS_EXPR.prop('renderer'), renderNode, o.literal(propName), value])
         .toStmt();
-    var catchStmt = o.THIS_EXPR.prop('renderer')
-        .callMethod('setBindingDebugInfo', [
-        renderNode, o.literal("ng-reflect-" + camelCaseToDashCase(propName)),
-        o.literal('[ERROR] Exception while trying to serialize the value')
-    ])
-        .toStmt();
-    return new o.TryCatchStmt([tryStmt], [catchStmt]);
 }
 //# sourceMappingURL=property_binder.js.map

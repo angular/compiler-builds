@@ -7,7 +7,7 @@
  */
 import { templateVisitAll } from '../template_parser/template_ast';
 import { bindDirectiveOutputs, bindRenderOutputs, collectEventListeners } from './event_binder';
-import { bindDirectiveAfterContentLifecycleCallbacks, bindDirectiveAfterViewLifecycleCallbacks, bindDirectiveDetectChangesLifecycleCallbacks, bindInjectableDestroyLifecycleCallbacks, bindPipeDestroyLifecycleCallbacks } from './lifecycle_binder';
+import { bindDirectiveAfterContentLifecycleCallbacks, bindDirectiveAfterViewLifecycleCallbacks, bindInjectableDestroyLifecycleCallbacks, bindPipeDestroyLifecycleCallbacks } from './lifecycle_binder';
 import { bindDirectiveHostProps, bindDirectiveInputs, bindRenderInputs, bindRenderText } from './property_binder';
 export function bindView(view, parsedTemplate) {
     var visitor = new ViewBinderVisitor(view);
@@ -39,8 +39,8 @@ var ViewBinderVisitor = (function () {
         bindRenderOutputs(eventListeners);
         ast.directives.forEach(function (directiveAst) {
             var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
-            bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
-            bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
+            var directiveWrapperInstance = compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);
+            bindDirectiveInputs(directiveAst, directiveWrapperInstance, compileElement);
             bindDirectiveHostProps(directiveAst, directiveInstance, compileElement, eventListeners);
             bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
         });
@@ -63,8 +63,8 @@ var ViewBinderVisitor = (function () {
         var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
         ast.directives.forEach(function (directiveAst) {
             var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
-            bindDirectiveInputs(directiveAst, directiveInstance, compileElement);
-            bindDirectiveDetectChangesLifecycleCallbacks(directiveAst, directiveInstance, compileElement);
+            var directiveWrapperInstance = compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);
+            bindDirectiveInputs(directiveAst, directiveWrapperInstance, compileElement);
             bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
             bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
             bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);

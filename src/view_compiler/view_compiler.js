@@ -11,7 +11,7 @@ import { CompileElement } from './compile_element';
 import { CompileView } from './compile_view';
 import { bindView } from './view_binder';
 import { buildView, finishView } from './view_builder';
-export { ComponentFactoryDependency, ViewFactoryDependency } from './view_builder';
+export { ComponentFactoryDependency, DirectiveWrapperDependency, ViewFactoryDependency } from './deps';
 export var ViewCompileResult = (function () {
     function ViewCompileResult(statements, viewFactoryVar, dependencies) {
         this.statements = statements;
