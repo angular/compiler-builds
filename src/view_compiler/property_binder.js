@@ -13,7 +13,7 @@ import { EMPTY_STATE as EMPTY_ANIMATION_STATE, isDefaultChangeDetectionStrategy 
 import { PropertyBindingType } from '../template_parser/template_ast';
 import { CompileBinding } from './compile_binding';
 import { DetectChangesVars, ViewProperties } from './constants';
-import { NoLocalsNameResolver, convertCdExpressionToIr, temporaryDeclaration } from './expression_converter';
+import { convertCdExpressionToIr, temporaryDeclaration } from './expression_converter';
 function createBindFieldExpr(exprIndex) {
     return o.THIS_EXPR.prop("_expr_" + exprIndex);
 }
@@ -26,8 +26,8 @@ var EvalResult = (function () {
     }
     return EvalResult;
 }());
-function evalCdAst(view, currValExpr, parsedExpression, context, nameResolver, method, bindingIndex) {
-    var checkExpression = convertCdExpressionToIr(nameResolver, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
+function evalCdAst(view, currValExpr, parsedExpression, context, method, bindingIndex) {
+    var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
     if (!checkExpression.expression) {
         // e.g. an empty expression was given
         return null;
@@ -49,8 +49,8 @@ function evalCdAst(view, currValExpr, parsedExpression, context, nameResolver, m
         return new EvalResult(null);
     }
 }
-function bind(view, currValExpr, fieldExpr, parsedExpression, context, nameResolver, actions, method, bindingIndex) {
-    var evalResult = evalCdAst(view, currValExpr, parsedExpression, context, nameResolver, method, bindingIndex);
+function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
+    var evalResult = evalCdAst(view, currValExpr, parsedExpression, context, method, bindingIndex);
     if (!evalResult) {
         return;
     }
@@ -73,7 +73,7 @@ export function bindRenderText(boundText, compileNode, view) {
     var currValExpr = createCurrValueExpr(bindingIndex);
     var valueField = createBindFieldExpr(bindingIndex);
     view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileNode.nodeIndex, boundText);
-    bind(view, currValExpr, valueField, boundText.value, view.componentContext, view, [o.THIS_EXPR.prop('renderer')
+    bind(view, currValExpr, valueField, boundText.value, view.componentContext, [o.THIS_EXPR.prop('renderer')
             .callMethod('setText', [compileNode.renderNode, currValExpr])
             .toStmt()], view.detectChangesRenderPropertiesMethod, bindingIndex);
 }
@@ -152,7 +152,7 @@ function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp,
                 view.detachMethod.addStmts(detachStmts_1);
                 break;
         }
-        bind(view, currValExpr, fieldExpr, boundProp.value, context, isHostProp ? new NoLocalsNameResolver(view) : view, updateStmts, compileMethod, view.bindings.length);
+        bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, compileMethod, view.bindings.length);
     });
 }
 function sanitizedValue(boundProp, renderValue) {
@@ -197,7 +197,7 @@ export function bindDirectiveInputs(directiveAst, directiveWrapperInstance, comp
         view.bindings.push(new CompileBinding(compileElement, input));
         detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, input);
         var currValExpr = createCurrValueExpr(bindingIndex);
-        var evalResult = evalCdAst(view, currValExpr, input.value, view.componentContext, view, detectChangesInInputsMethod, bindingIndex);
+        var evalResult = evalCdAst(view, currValExpr, input.value, view.componentContext, detectChangesInInputsMethod, bindingIndex);
         if (!evalResult) {
             return;
         }

@@ -3696,9 +3696,8 @@
       Parser.prototype.parseSimpleBinding = function (input, location, interpolationConfig) {
           if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
           var ast = this._parseBindingAst(input, location, interpolationConfig);
-          var errors = SimpleExpressionChecker.check(ast);
-          if (errors.length > 0) {
-              this._reportError("Host binding expression cannot contain " + errors.join(' '), input, location);
+          if (!SimpleExpressionChecker.check(ast)) {
+              this._reportError('Host binding expression can only contain field access and constants', input, location);
           }
           return new ASTWithSource(ast, input, location, this.errors);
       };
@@ -4350,36 +4349,36 @@
   }());
   var SimpleExpressionChecker = (function () {
       function SimpleExpressionChecker() {
-          this.errors = [];
+          this.simple = true;
       }
       SimpleExpressionChecker.check = function (ast) {
           var s = new SimpleExpressionChecker();
           ast.visit(s);
-          return s.errors;
+          return s.simple;
       };
       SimpleExpressionChecker.prototype.visitImplicitReceiver = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitInterpolation = function (ast, context) { };
+      SimpleExpressionChecker.prototype.visitInterpolation = function (ast, context) { this.simple = false; };
       SimpleExpressionChecker.prototype.visitLiteralPrimitive = function (ast, context) { };
       SimpleExpressionChecker.prototype.visitPropertyRead = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitPropertyWrite = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitSafePropertyRead = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitMethodCall = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitSafeMethodCall = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitFunctionCall = function (ast, context) { };
+      SimpleExpressionChecker.prototype.visitPropertyWrite = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitSafePropertyRead = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitMethodCall = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitSafeMethodCall = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitFunctionCall = function (ast, context) { this.simple = false; };
       SimpleExpressionChecker.prototype.visitLiteralArray = function (ast, context) { this.visitAll(ast.expressions); };
       SimpleExpressionChecker.prototype.visitLiteralMap = function (ast, context) { this.visitAll(ast.values); };
-      SimpleExpressionChecker.prototype.visitBinary = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitPrefixNot = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitConditional = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitPipe = function (ast, context) { this.errors.push('pipes'); };
-      SimpleExpressionChecker.prototype.visitKeyedRead = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitKeyedWrite = function (ast, context) { };
+      SimpleExpressionChecker.prototype.visitBinary = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitPrefixNot = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitConditional = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitPipe = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitKeyedRead = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitKeyedWrite = function (ast, context) { this.simple = false; };
       SimpleExpressionChecker.prototype.visitAll = function (asts) {
           var _this = this;
           return asts.map(function (node) { return node.visit(_this); });
       };
-      SimpleExpressionChecker.prototype.visitChain = function (ast, context) { };
-      SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { };
+      SimpleExpressionChecker.prototype.visitChain = function (ast, context) { this.simple = false; };
+      SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { this.simple = false; };
       return SimpleExpressionChecker;
   }());
 
@@ -8466,12 +8465,10 @@
               return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
           }
       };
-      TemplateParseVisitor.prototype._parseBinding = function (value, isHostBinding, sourceSpan) {
+      TemplateParseVisitor.prototype._parseBinding = function (value, sourceSpan) {
           var sourceInfo = sourceSpan.start.toString();
           try {
-              var ast = isHostBinding ?
-                  this._exprParser.parseSimpleBinding(value, sourceInfo, this._interpolationConfig) :
-                  this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
+              var ast = this._exprParser.parseBinding(value, sourceInfo, this._interpolationConfig);
               if (ast)
                   this._reportParserErrors(ast.errors, sourceSpan);
               this._checkPipes(ast, sourceSpan);
@@ -8756,7 +8753,7 @@
               this._parseAnimation(name.substr(animationPrefixLength), expression, sourceSpan, targetMatchableAttrs, targetAnimationProps);
           }
           else {
-              this._parsePropertyAst(name, this._parseBinding(expression, false, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
+              this._parsePropertyAst(name, this._parseBinding(expression, sourceSpan), sourceSpan, targetMatchableAttrs, targetProps);
           }
       };
       TemplateParseVisitor.prototype._parseAnimation = function (name, expression, sourceSpan, targetMatchableAttrs, targetAnimationProps) {
@@ -8766,7 +8763,7 @@
           if (!isPresent(expression) || expression.length == 0) {
               expression = 'null';
           }
-          var ast = this._parseBinding(expression, false, sourceSpan);
+          var ast = this._parseBinding(expression, sourceSpan);
           targetMatchableAttrs.push([name, ast.source]);
           targetAnimationProps.push(new BoundElementPropertyAst(name, exports.PropertyBindingType.Animation, _angular_core.SecurityContext.NONE, ast, null, sourceSpan));
       };
@@ -8889,7 +8886,7 @@
               Object.keys(hostProps).forEach(function (propName) {
                   var expression = hostProps[propName];
                   if (typeof expression === 'string') {
-                      var exprAst = _this._parseBinding(expression, true, sourceSpan);
+                      var exprAst = _this._parseBinding(expression, sourceSpan);
                       targetPropertyAsts.push(_this._createElementPropertyAst(elementName, propName, exprAst, sourceSpan));
                   }
                   else {
@@ -11457,28 +11454,6 @@
       return CompileBinding;
   }());
 
-  /**
-   * A wrapper around another NameResolver that removes all locals and pipes.
-   */
-  var NoLocalsNameResolver = (function () {
-      function NoLocalsNameResolver(_delegate) {
-          this._delegate = _delegate;
-      }
-      NoLocalsNameResolver.prototype.callPipe = function (name, input, args) { return null; };
-      NoLocalsNameResolver.prototype.getLocal = function (name) {
-          if (name == EventHandlerVars.event.name) {
-              return EventHandlerVars.event;
-          }
-          return null;
-      };
-      NoLocalsNameResolver.prototype.createLiteralArray = function (values) {
-          return this._delegate.createLiteralArray(values);
-      };
-      NoLocalsNameResolver.prototype.createLiteralMap = function (values) {
-          return this._delegate.createLiteralMap(values);
-      };
-      return NoLocalsNameResolver;
-  }());
   var ExpressionWithWrappedValueInfo = (function () {
       function ExpressionWithWrappedValueInfo(expression, needsValueUnwrapper, temporaryCount) {
           this.expression = expression;
@@ -11610,9 +11585,6 @@
           var input = this.visit(ast.exp, _Mode.Expression);
           var args = this.visitAll(ast.args, _Mode.Expression);
           var value = this._nameResolver.callPipe(ast.name, input, args);
-          if (!value) {
-              throw new Error("Illegal state: Pipe " + ast.name + " is not allowed here!");
-          }
           this.needsValueUnwrapper = true;
           return convertToStatementIfNeeded(mode, this._valueUnwrapper.callMethod('unwrap', [value]));
       };
@@ -11925,7 +11897,7 @@
           }
           this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
           var context = directiveInstance || this.compileElement.view.componentContext;
-          var actionStmts = convertCdStatementToIr(directive ? new NoLocalsNameResolver(this.compileElement.view) : this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
+          var actionStmts = convertCdStatementToIr(this.compileElement.view, context, hostEvent.handler, this.compileElement.nodeIndex);
           var lastIndex = actionStmts.length - 1;
           if (lastIndex >= 0) {
               var lastStatement = actionStmts[lastIndex];
@@ -12085,8 +12057,8 @@
       }
       return EvalResult;
   }());
-  function evalCdAst(view, currValExpr, parsedExpression, context, nameResolver, method, bindingIndex) {
-      var checkExpression = convertCdExpressionToIr(nameResolver, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
+  function evalCdAst(view, currValExpr, parsedExpression, context, method, bindingIndex) {
+      var checkExpression = convertCdExpressionToIr(view, context, parsedExpression, DetectChangesVars.valUnwrapper, bindingIndex);
       if (!checkExpression.expression) {
           // e.g. an empty expression was given
           return null;
@@ -12108,8 +12080,8 @@
           return new EvalResult(null);
       }
   }
-  function bind(view, currValExpr, fieldExpr, parsedExpression, context, nameResolver, actions, method, bindingIndex) {
-      var evalResult = evalCdAst(view, currValExpr, parsedExpression, context, nameResolver, method, bindingIndex);
+  function bind(view, currValExpr, fieldExpr, parsedExpression, context, actions, method, bindingIndex) {
+      var evalResult = evalCdAst(view, currValExpr, parsedExpression, context, method, bindingIndex);
       if (!evalResult) {
           return;
       }
@@ -12132,7 +12104,7 @@
       var currValExpr = createCurrValueExpr(bindingIndex);
       var valueField = createBindFieldExpr(bindingIndex);
       view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileNode.nodeIndex, boundText);
-      bind(view, currValExpr, valueField, boundText.value, view.componentContext, view, [THIS_EXPR.prop('renderer')
+      bind(view, currValExpr, valueField, boundText.value, view.componentContext, [THIS_EXPR.prop('renderer')
               .callMethod('setText', [compileNode.renderNode, currValExpr])
               .toStmt()], view.detectChangesRenderPropertiesMethod, bindingIndex);
   }
@@ -12211,7 +12183,7 @@
                   view.detachMethod.addStmts(detachStmts_1);
                   break;
           }
-          bind(view, currValExpr, fieldExpr, boundProp.value, context, isHostProp ? new NoLocalsNameResolver(view) : view, updateStmts, compileMethod, view.bindings.length);
+          bind(view, currValExpr, fieldExpr, boundProp.value, context, updateStmts, compileMethod, view.bindings.length);
       });
   }
   function sanitizedValue(boundProp, renderValue) {
@@ -12256,7 +12228,7 @@
           view.bindings.push(new CompileBinding(compileElement, input));
           detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, input);
           var currValExpr = createCurrValueExpr(bindingIndex);
-          var evalResult = evalCdAst(view, currValExpr, input.value, view.componentContext, view, detectChangesInInputsMethod, bindingIndex);
+          var evalResult = evalCdAst(view, currValExpr, input.value, view.componentContext, detectChangesInInputsMethod, bindingIndex);
           if (!evalResult) {
               return;
           }

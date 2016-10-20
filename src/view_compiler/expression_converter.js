@@ -9,29 +9,6 @@ import * as cdAst from '../expression_parser/ast';
 import { isBlank, isPresent } from '../facade/lang';
 import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
-import { EventHandlerVars } from './constants';
-/**
- * A wrapper around another NameResolver that removes all locals and pipes.
- */
-export var NoLocalsNameResolver = (function () {
-    function NoLocalsNameResolver(_delegate) {
-        this._delegate = _delegate;
-    }
-    NoLocalsNameResolver.prototype.callPipe = function (name, input, args) { return null; };
-    NoLocalsNameResolver.prototype.getLocal = function (name) {
-        if (name == EventHandlerVars.event.name) {
-            return EventHandlerVars.event;
-        }
-        return null;
-    };
-    NoLocalsNameResolver.prototype.createLiteralArray = function (values) {
-        return this._delegate.createLiteralArray(values);
-    };
-    NoLocalsNameResolver.prototype.createLiteralMap = function (values) {
-        return this._delegate.createLiteralMap(values);
-    };
-    return NoLocalsNameResolver;
-}());
 export var ExpressionWithWrappedValueInfo = (function () {
     function ExpressionWithWrappedValueInfo(expression, needsValueUnwrapper, temporaryCount) {
         this.expression = expression;
@@ -163,9 +140,6 @@ var _AstToIrVisitor = (function () {
         var input = this.visit(ast.exp, _Mode.Expression);
         var args = this.visitAll(ast.args, _Mode.Expression);
         var value = this._nameResolver.callPipe(ast.name, input, args);
-        if (!value) {
-            throw new Error("Illegal state: Pipe " + ast.name + " is not allowed here!");
-        }
         this.needsValueUnwrapper = true;
         return convertToStatementIfNeeded(mode, this._valueUnwrapper.callMethod('unwrap', [value]));
     };

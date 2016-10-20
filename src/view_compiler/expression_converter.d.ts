@@ -13,17 +13,6 @@ export interface NameResolver {
     createLiteralArray(values: o.Expression[]): o.Expression;
     createLiteralMap(values: Array<Array<string | o.Expression>>): o.Expression;
 }
-/**
- * A wrapper around another NameResolver that removes all locals and pipes.
- */
-export declare class NoLocalsNameResolver implements NameResolver {
-    private _delegate;
-    constructor(_delegate: NameResolver);
-    callPipe(name: string, input: o.Expression, args: o.Expression[]): o.Expression;
-    getLocal(name: string): o.Expression;
-    createLiteralArray(values: o.Expression[]): o.Expression;
-    createLiteralMap(values: Array<Array<string | o.Expression>>): o.Expression;
-}
 export declare class ExpressionWithWrappedValueInfo {
     expression: o.Expression;
     needsValueUnwrapper: boolean;
