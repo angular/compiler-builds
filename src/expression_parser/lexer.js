@@ -7,7 +7,7 @@
  */
 import { Injectable } from '@angular/core';
 import * as chars from '../chars';
-import { NumberWrapper, isPresent } from '../facade/lang';
+import { NumberWrapper, StringJoiner, isPresent } from '../facade/lang';
 export var TokenType;
 (function (TokenType) {
     TokenType[TokenType["Character"] = 0] = "Character";
@@ -256,14 +256,16 @@ var _Scanner = (function () {
         var start = this.index;
         var quote = this.peek;
         this.advance(); // Skip initial quote.
-        var buffer = '';
+        var buffer;
         var marker = this.index;
         var input = this.input;
         while (this.peek != quote) {
             if (this.peek == chars.$BACKSLASH) {
-                buffer += input.substring(marker, this.index);
+                if (buffer == null)
+                    buffer = new StringJoiner();
+                buffer.add(input.substring(marker, this.index));
                 this.advance();
-                var unescapedCode = void 0;
+                var unescapedCode;
                 if (this.peek == chars.$u) {
                     // 4 character hex code for unicode character.
                     var hex = input.substring(this.index + 1, this.index + 5);
@@ -281,7 +283,7 @@ var _Scanner = (function () {
                     unescapedCode = unescape(this.peek);
                     this.advance();
                 }
-                buffer += String.fromCharCode(unescapedCode);
+                buffer.add(String.fromCharCode(unescapedCode));
                 marker = this.index;
             }
             else if (this.peek == chars.$EOF) {
@@ -293,7 +295,13 @@ var _Scanner = (function () {
         }
         var last = input.substring(marker, this.index);
         this.advance(); // Skip terminating quote.
-        return newStringToken(start, buffer + last);
+        // Compute the unescaped string value.
+        var unescaped = last;
+        if (buffer != null) {
+            buffer.add(last);
+            unescaped = buffer.toString();
+        }
+        return newStringToken(start, unescaped);
     };
     _Scanner.prototype.error = function (message, offset) {
         var position = this.index + offset;

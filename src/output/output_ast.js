@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { isPresent } from '../facade/lang';
+import { isPresent, isString } from '../facade/lang';
 //// Types
 export var TypeModifier;
 (function (TypeModifier) {
@@ -195,7 +195,7 @@ export var ReadVarExpr = (function (_super) {
     function ReadVarExpr(name, type) {
         if (type === void 0) { type = null; }
         _super.call(this, type);
-        if (typeof name === 'string') {
+        if (isString(name)) {
             this.name = name;
             this.builtin = null;
         }
@@ -269,7 +269,7 @@ export var InvokeMethodExpr = (function (_super) {
         _super.call(this, type);
         this.receiver = receiver;
         this.args = args;
-        if (typeof method === 'string') {
+        if (isString(method)) {
             this.name = method;
             this.builtin = null;
         }
