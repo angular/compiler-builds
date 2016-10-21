@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ListWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
 var _DebugState = (function () {
@@ -60,7 +59,8 @@ export var CompileMethod = (function () {
     };
     CompileMethod.prototype.addStmts = function (stmts) {
         this._updateDebugContextIfNeeded();
-        ListWrapper.addAll(this._bodyStatements, stmts);
+        (_a = this._bodyStatements).push.apply(_a, stmts);
+        var _a;
     };
     CompileMethod.prototype.finish = function () { return this._bodyStatements; };
     CompileMethod.prototype.isEmpty = function () { return this._bodyStatements.length === 0; };

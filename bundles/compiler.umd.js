@@ -300,10 +300,10 @@
   }
 
   function isPresent(obj) {
-      return obj !== undefined && obj !== null;
+      return obj != null;
   }
   function isBlank(obj) {
-      return obj === undefined || obj === null;
+      return obj == null;
   }
   var STRING_MAP_PROTO = Object.getPrototypeOf({});
   function isStrictStringMap(obj) {
@@ -358,12 +358,6 @@
       NumberWrapper.isNumeric = function (value) { return !isNaN(value - parseFloat(value)); };
       return NumberWrapper;
   }());
-  function normalizeBlank(obj) {
-      return isBlank(obj) ? null : obj;
-  }
-  function normalizeBool(obj) {
-      return isBlank(obj) ? false : obj;
-  }
   function isJsObject(o) {
       return o !== null && (typeof o === 'function' || typeof o === 'object');
   }
@@ -446,42 +440,6 @@
   var ListWrapper = (function () {
       function ListWrapper() {
       }
-      // JS has no way to express a statically fixed size list, but dart does so we
-      // keep both methods.
-      ListWrapper.createFixedSize = function (size) { return new Array(size); };
-      ListWrapper.createGrowableSize = function (size) { return new Array(size); };
-      ListWrapper.clone = function (array) { return array.slice(0); };
-      ListWrapper.forEachWithIndex = function (array, fn) {
-          for (var i = 0; i < array.length; i++) {
-              fn(array[i], i);
-          }
-      };
-      ListWrapper.first = function (array) {
-          if (!array)
-              return null;
-          return array[0];
-      };
-      ListWrapper.last = function (array) {
-          if (!array || array.length == 0)
-              return null;
-          return array[array.length - 1];
-      };
-      ListWrapper.indexOf = function (array, value, startIndex) {
-          if (startIndex === void 0) { startIndex = 0; }
-          return array.indexOf(value, startIndex);
-      };
-      ListWrapper.contains = function (list, el) { return list.indexOf(el) !== -1; };
-      ListWrapper.reversed = function (array) {
-          var a = ListWrapper.clone(array);
-          return a.reverse();
-      };
-      ListWrapper.concat = function (a, b) { return a.concat(b); };
-      ListWrapper.insert = function (list, index, value) { list.splice(index, 0, value); };
-      ListWrapper.removeAt = function (list, index) {
-          var res = list[index];
-          list.splice(index, 1);
-          return res;
-      };
       ListWrapper.removeAll = function (list, items) {
           for (var i = 0; i < items.length; ++i) {
               var index = list.indexOf(items[i]);
@@ -496,13 +454,6 @@
           }
           return false;
       };
-      ListWrapper.clear = function (list) { list.length = 0; };
-      ListWrapper.isEmpty = function (list) { return list.length == 0; };
-      ListWrapper.fill = function (list, value, start, end) {
-          if (start === void 0) { start = 0; }
-          if (end === void 0) { end = null; }
-          list.fill(value, start, end === null ? list.length : end);
-      };
       ListWrapper.equals = function (a, b) {
           if (a.length != b.length)
               return false;
@@ -512,22 +463,6 @@
           }
           return true;
       };
-      ListWrapper.slice = function (l, from, to) {
-          if (from === void 0) { from = 0; }
-          if (to === void 0) { to = null; }
-          return l.slice(from, to === null ? undefined : to);
-      };
-      ListWrapper.splice = function (l, from, length) { return l.splice(from, length); };
-      ListWrapper.sort = function (l, compareFn) {
-          if (isPresent(compareFn)) {
-              l.sort(compareFn);
-          }
-          else {
-              l.sort();
-          }
-      };
-      ListWrapper.toString = function (l) { return l.toString(); };
-      ListWrapper.toJSON = function (l) { return JSON.stringify(l); };
       ListWrapper.maximum = function (list, predicate) {
           if (list.length == 0) {
               return null;
@@ -536,7 +471,7 @@
           var maxValue = -Infinity;
           for (var index = 0; index < list.length; index++) {
               var candidate = list[index];
-              if (isBlank(candidate)) {
+              if (candidate == null) {
                   continue;
               }
               var candidateValue = predicate(candidate);
@@ -551,11 +486,6 @@
           var target = [];
           _flattenArray(list, target);
           return target;
-      };
-      ListWrapper.addAll = function (list, source) {
-          for (var i = 0; i < source.length; i++) {
-              list.push(source[i]);
-          }
       };
       return ListWrapper;
   }());
@@ -2442,12 +2372,12 @@
   var CompileDiDependencyMetadata = (function () {
       function CompileDiDependencyMetadata(_a) {
           var _b = _a === void 0 ? {} : _a, isAttribute = _b.isAttribute, isSelf = _b.isSelf, isHost = _b.isHost, isSkipSelf = _b.isSkipSelf, isOptional = _b.isOptional, isValue = _b.isValue, query = _b.query, viewQuery = _b.viewQuery, token = _b.token, value = _b.value;
-          this.isAttribute = normalizeBool(isAttribute);
-          this.isSelf = normalizeBool(isSelf);
-          this.isHost = normalizeBool(isHost);
-          this.isSkipSelf = normalizeBool(isSkipSelf);
-          this.isOptional = normalizeBool(isOptional);
-          this.isValue = normalizeBool(isValue);
+          this.isAttribute = !!isAttribute;
+          this.isSelf = !!isSelf;
+          this.isHost = !!isHost;
+          this.isSkipSelf = !!isSkipSelf;
+          this.isOptional = !!isOptional;
+          this.isValue = !!isValue;
           this.query = query;
           this.viewQuery = viewQuery;
           this.token = token;
@@ -2463,8 +2393,8 @@
           this.useValue = useValue;
           this.useExisting = useExisting;
           this.useFactory = useFactory;
-          this.deps = normalizeBlank(deps);
-          this.multi = normalizeBool(multi);
+          this.deps = deps || null;
+          this.multi = !!multi;
       }
       return CompileProviderMetadata;
   }());
@@ -2482,7 +2412,7 @@
           var value = _a.value, identifier = _a.identifier, identifierIsInstance = _a.identifierIsInstance;
           this.value = value;
           this.identifier = identifier;
-          this.identifierIsInstance = normalizeBool(identifierIsInstance);
+          this.identifierIsInstance = !!identifierIsInstance;
       }
       Object.defineProperty(CompileTokenMetadata.prototype, "reference", {
           get: function () {
@@ -2513,7 +2443,7 @@
       function CompileTypeMetadata(_a) {
           var _b = _a === void 0 ? {} : _a, reference = _b.reference, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
           _super.call(this, { reference: reference, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
-          this.isHost = normalizeBool(isHost);
+          this.isHost = !!isHost;
           this.diDeps = _normalizeArray(diDeps);
           this.lifecycleHooks = _normalizeArray(lifecycleHooks);
       }
@@ -2523,8 +2453,8 @@
       function CompileQueryMetadata(_a) {
           var _b = _a === void 0 ? {} : _a, selectors = _b.selectors, descendants = _b.descendants, first = _b.first, propertyName = _b.propertyName, read = _b.read;
           this.selectors = selectors;
-          this.descendants = normalizeBool(descendants);
-          this.first = normalizeBool(first);
+          this.descendants = !!descendants;
+          this.first = !!first;
           this.propertyName = propertyName;
           this.read = read;
       }
@@ -2554,9 +2484,9 @@
           this.styles = _normalizeArray(styles);
           this.styleUrls = _normalizeArray(styleUrls);
           this.externalStylesheets = _normalizeArray(externalStylesheets);
-          this.animations = isPresent(animations) ? ListWrapper.flatten(animations) : [];
+          this.animations = animations ? ListWrapper.flatten(animations) : [];
           this.ngContentSelectors = ngContentSelectors || [];
-          if (isPresent(interpolation) && interpolation.length != 2) {
+          if (interpolation && interpolation.length != 2) {
               throw new Error("'interpolation' should have a start and an end symbol.");
           }
           this.interpolation = interpolation;
@@ -2626,7 +2556,7 @@
           }
           return new CompileDirectiveMetadata({
               type: type,
-              isComponent: normalizeBool(isComponent), selector: selector, exportAs: exportAs, changeDetection: changeDetection,
+              isComponent: !!isComponent, selector: selector, exportAs: exportAs, changeDetection: changeDetection,
               inputs: inputsMap,
               outputs: outputsMap,
               hostListeners: hostListeners,
@@ -2685,7 +2615,7 @@
           var _b = _a === void 0 ? {} : _a, type = _b.type, name = _b.name, pure = _b.pure;
           this.type = type;
           this.name = name;
-          this.pure = normalizeBool(pure);
+          this.pure = !!pure;
       }
       Object.defineProperty(CompilePipeMetadata.prototype, "identifier", {
           get: function () { return this.type; },
@@ -5411,7 +5341,7 @@
       };
       _TreeBuilder.prototype._closeVoidElement = function () {
           if (this._elementStack.length > 0) {
-              var el = ListWrapper.last(this._elementStack);
+              var el = this._elementStack[this._elementStack.length - 1];
               if (this.getTagDefinition(el.name).isVoid) {
                   this._elementStack.pop();
               }
@@ -5451,7 +5381,7 @@
       };
       _TreeBuilder.prototype._pushElement = function (el) {
           if (this._elementStack.length > 0) {
-              var parentEl = ListWrapper.last(this._elementStack);
+              var parentEl = this._elementStack[this._elementStack.length - 1];
               if (this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
                   this._elementStack.pop();
               }
@@ -5481,7 +5411,7 @@
           for (var stackIndex = this._elementStack.length - 1; stackIndex >= 0; stackIndex--) {
               var el = this._elementStack[stackIndex];
               if (el.name == fullName) {
-                  ListWrapper.splice(this._elementStack, stackIndex, this._elementStack.length - stackIndex);
+                  this._elementStack.splice(stackIndex, this._elementStack.length - stackIndex);
                   return true;
               }
               if (!this.getTagDefinition(el.name).closedByParent) {
@@ -5504,7 +5434,7 @@
           return new Attribute$1(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, end), valueSpan);
       };
       _TreeBuilder.prototype._getParentElement = function () {
-          return this._elementStack.length > 0 ? ListWrapper.last(this._elementStack) : null;
+          return this._elementStack.length > 0 ? this._elementStack[this._elementStack.length - 1] : null;
       };
       /**
        * Returns the parent in the DOM and the container.
@@ -5519,7 +5449,7 @@
               }
               container = this._elementStack[i];
           }
-          return { parent: ListWrapper.last(this._elementStack), container: container };
+          return { parent: this._elementStack[this._elementStack.length - 1], container: container };
       };
       _TreeBuilder.prototype._addToParent = function (node) {
           var parent = this._getParentElement();
@@ -7713,8 +7643,8 @@
       Object.defineProperty(ProviderElementContext.prototype, "transformedDirectiveAsts", {
           get: function () {
               var sortedProviderTypes = this.transformProviders.map(function (provider) { return provider.token.identifier; });
-              var sortedDirectives = ListWrapper.clone(this._directiveAsts);
-              ListWrapper.sort(sortedDirectives, function (dir1, dir2) { return sortedProviderTypes.indexOf(dir1.directive.type) -
+              var sortedDirectives = this._directiveAsts.slice();
+              sortedDirectives.sort(function (dir1, dir2) { return sortedProviderTypes.indexOf(dir1.directive.type) -
                   sortedProviderTypes.indexOf(dir2.directive.type); });
               return sortedDirectives;
           },
@@ -7742,7 +7672,7 @@
           while (currentEl !== null) {
               queries = currentEl._contentQueries.get(token.reference);
               if (isPresent(queries)) {
-                  ListWrapper.addAll(result, queries.filter(function (query) { return query.descendants || distance <= 1; }));
+                  result.push.apply(result, queries.filter(function (query) { return query.descendants || distance <= 1; }));
               }
               if (currentEl._directiveAsts.length > 0) {
                   distance++;
@@ -7751,7 +7681,7 @@
           }
           queries = this.viewContext.viewQueries.get(token.reference);
           if (isPresent(queries)) {
-              ListWrapper.addAll(result, queries);
+              result.push.apply(result, queries);
           }
           return result;
       };
@@ -7814,7 +7744,7 @@
           if (eager === void 0) { eager = null; }
           if (dep.isAttribute) {
               var attrValue = this._attrs[dep.token.value];
-              return new CompileDiDependencyMetadata({ isValue: true, value: normalizeBlank(attrValue) });
+              return new CompileDiDependencyMetadata({ isValue: true, value: attrValue == null ? null : attrValue });
           }
           if (isPresent(dep.query) || isPresent(dep.viewQuery)) {
               return dep;
@@ -8066,7 +7996,7 @@
           }
           else {
               if (!provider.multi) {
-                  ListWrapper.clear(resolvedProvider.providers);
+                  resolvedProvider.providers.length = 0;
               }
               resolvedProvider.providers.push(provider);
           }
@@ -9738,7 +9668,7 @@
                   break;
               }
           }
-          ListWrapper.insert(entries, insertionIndex, tuple);
+          entries.splice(insertionIndex, 0, tuple);
       };
       StylesCollection.prototype.getByIndex = function (property, index) {
           var items = this.styles[property];
@@ -9912,7 +9842,7 @@
       var normalizedStyles = [];
       entry.styles.forEach(function (styleEntry) {
           if (typeof styleEntry === 'string') {
-              ListWrapper.addAll(normalizedStyles, _resolveStylesFromState(styleEntry, stateStyles, errors));
+              normalizedStyles.push.apply(normalizedStyles, _resolveStylesFromState(styleEntry, stateStyles, errors));
           }
           else {
               normalizedStyles.push(styleEntry);
@@ -10059,11 +9989,11 @@
           index++;
       });
       if (doSortKeyframes) {
-          ListWrapper.sort(rawKeyframes, function (a, b) { return a[0] <= b[0] ? -1 : 1; });
+          rawKeyframes.sort(function (a, b) { return a[0] <= b[0] ? -1 : 1; });
       }
       var firstKeyframe = rawKeyframes[0];
       if (firstKeyframe[0] != _INITIAL_KEYFRAME) {
-          ListWrapper.insert(rawKeyframes, 0, firstKeyframe = [_INITIAL_KEYFRAME, {}]);
+          rawKeyframes.splice(0, 0, firstKeyframe = [_INITIAL_KEYFRAME, {}]);
       }
       var firstKeyframeStyles = firstKeyframe[1];
       limit = rawKeyframes.length - 1;
@@ -10125,7 +10055,7 @@
                   }
                   else {
                       var innerStep = innerAst;
-                      ListWrapper.addAll(innerStep.startingStyles.styles, previousStyles);
+                      (_a = innerStep.startingStyles.styles).push.apply(_a, previousStyles);
                   }
                   previousStyles = null;
               }
@@ -10134,6 +10064,7 @@
               playTime += astDuration;
               maxDuration = Math.max(astDuration, maxDuration);
               steps.push(innerAst);
+              var _a;
           });
           if (isPresent(previousStyles)) {
               var startingStyles = new AnimationStylesAst(previousStyles);
@@ -10484,7 +10415,8 @@
       };
       CompileMethod.prototype.addStmts = function (stmts) {
           this._updateDebugContextIfNeeded();
-          ListWrapper.addAll(this._bodyStatements, stmts);
+          (_a = this._bodyStatements).push.apply(_a, stmts);
+          var _a;
       };
       CompileMethod.prototype.finish = function () { return this._bodyStatements; };
       CompileMethod.prototype.isEmpty = function () { return this._bodyStatements.length === 0; };
@@ -11001,7 +10933,7 @@
           var queriesWithReads = [];
           MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
               var queriesForProvider = _this._getQueriesFor(resolvedProvider.token);
-              ListWrapper.addAll(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
+              queriesWithReads.push.apply(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
           });
           Object.keys(this.referenceTokens).forEach(function (varName) {
               var token = _this.referenceTokens[varName];
@@ -11014,7 +10946,7 @@
               }
               _this.view.locals.set(varName, varValue);
               var varToken = new CompileTokenMetadata({ value: varName });
-              ListWrapper.addAll(queriesWithReads, _this._getQueriesFor(varToken).map(function (query) { return new _QueryWithRead(query, varToken); }));
+              queriesWithReads.push.apply(queriesWithReads, _this._getQueriesFor(varToken).map(function (query) { return new _QueryWithRead(query, varToken); }));
           });
           queriesWithReads.forEach(function (queryWithRead) {
               var value;
@@ -11083,7 +11015,7 @@
           while (!currentEl.isNull()) {
               queries = currentEl._queries.get(token.reference);
               if (isPresent(queries)) {
-                  ListWrapper.addAll(result, queries.filter(function (query) { return query.meta.descendants || distance <= 1; }));
+                  result.push.apply(result, queries.filter(function (query) { return query.meta.descendants || distance <= 1; }));
               }
               if (currentEl._directives.length > 0) {
                   distance++;
@@ -11092,7 +11024,7 @@
           }
           queries = this.view.componentView.viewQueries.get(token.reference);
           if (isPresent(queries)) {
-              ListWrapper.addAll(result, queries);
+              result.push.apply(result, queries);
           }
           return result;
       };
@@ -11348,7 +11280,7 @@
           var viewQueries = new Map();
           if (this.viewType === ViewType.COMPONENT) {
               var directiveInstance = THIS_EXPR.prop('context');
-              ListWrapper.forEachWithIndex(this.component.viewQueries, function (queryMeta, queryIndex) {
+              this.component.viewQueries.forEach(function (queryMeta, queryIndex) {
                   var propName = "_viewQuery_" + queryMeta.selectors[0].name + "_" + queryIndex;
                   var queryList = createQueryList(queryMeta, directiveInstance, propName, _this);
                   var query = new CompileQuery(queryMeta, queryList, directiveInstance, _this);
@@ -12633,8 +12565,7 @@
       Object.keys(data).forEach(function (name) { entryArray.push([name, data[name]]); });
       // We need to sort to get a defined output order
       // for tests and for caching generated artifacts...
-      ListWrapper.sort(entryArray);
-      return entryArray;
+      return entryArray.sort();
   }
   function createViewTopLevelStmts(view, targetStatements) {
       var nodeDebugInfosVar = NULL_EXPR;
@@ -12781,15 +12712,15 @@
           view.updateViewQueriesMethod.isEmpty() && view.afterViewLifecycleCallbacksMethod.isEmpty()) {
           return stmts;
       }
-      ListWrapper.addAll(stmts, view.animationBindingsMethod.finish());
-      ListWrapper.addAll(stmts, view.detectChangesInInputsMethod.finish());
+      stmts.push.apply(stmts, view.animationBindingsMethod.finish());
+      stmts.push.apply(stmts, view.detectChangesInInputsMethod.finish());
       stmts.push(THIS_EXPR.callMethod('detectContentChildrenChanges', [DetectChangesVars.throwOnChange])
           .toStmt());
       var afterContentStmts = view.updateContentQueriesMethod.finish().concat(view.afterContentLifecycleCallbacksMethod.finish());
       if (afterContentStmts.length > 0) {
           stmts.push(new IfStmt(not(DetectChangesVars.throwOnChange), afterContentStmts));
       }
-      ListWrapper.addAll(stmts, view.detectChangesRenderPropertiesMethod.finish());
+      stmts.push.apply(stmts, view.detectChangesRenderPropertiesMethod.finish());
       stmts.push(THIS_EXPR.callMethod('detectViewChildrenChanges', [DetectChangesVars.throwOnChange])
           .toStmt());
       var afterViewStmts = view.updateViewQueriesMethod.finish().concat(view.afterViewLifecycleCallbacksMethod.finish());
@@ -15676,7 +15607,7 @@
           if (isPresent(expr.builtin)) {
               switch (expr.builtin) {
                   case BuiltinMethod.ConcatArray:
-                      result = ListWrapper.concat(receiver, args[0]);
+                      result = receiver.concat(args[0]);
                       break;
                   case BuiltinMethod.SubscribeObservable:
                       result = receiver.subscribe({ next: args[0] });

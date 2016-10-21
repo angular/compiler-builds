@@ -53,7 +53,7 @@
     }());
 
     function isPresent(obj) {
-        return obj !== undefined && obj !== null;
+        return obj != null;
     }
     function stringify(token) {
         if (typeof token === 'string') {

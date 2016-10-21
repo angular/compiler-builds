@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { CompileIdentifierMetadata } from '../compile_metadata';
-import { ListWrapper, MapWrapper } from '../facade/collection';
+import { MapWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -70,7 +70,7 @@ export var CompileView = (function () {
         var viewQueries = new Map();
         if (this.viewType === ViewType.COMPONENT) {
             var directiveInstance = o.THIS_EXPR.prop('context');
-            ListWrapper.forEachWithIndex(this.component.viewQueries, function (queryMeta, queryIndex) {
+            this.component.viewQueries.forEach(function (queryMeta, queryIndex) {
                 var propName = "_viewQuery_" + queryMeta.selectors[0].name + "_" + queryIndex;
                 var queryList = createQueryList(queryMeta, directiveInstance, propName, _this);
                 var query = new CompileQuery(queryMeta, queryList, directiveInstance, _this);

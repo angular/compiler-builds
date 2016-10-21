@@ -7,7 +7,6 @@
  */
 import { ViewEncapsulation } from '@angular/core';
 import { CompileIdentifierMetadata } from '../compile_metadata';
-import { ListWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import { Identifiers, identifierToken, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -290,8 +289,7 @@ function mapToKeyValueArray(data) {
     Object.keys(data).forEach(function (name) { entryArray.push([name, data[name]]); });
     // We need to sort to get a defined output order
     // for tests and for caching generated artifacts...
-    ListWrapper.sort(entryArray);
-    return entryArray;
+    return entryArray.sort();
 }
 function createViewTopLevelStmts(view, targetStatements) {
     var nodeDebugInfosVar = o.NULL_EXPR;
@@ -439,15 +437,15 @@ function generateDetectChangesMethod(view) {
         view.updateViewQueriesMethod.isEmpty() && view.afterViewLifecycleCallbacksMethod.isEmpty()) {
         return stmts;
     }
-    ListWrapper.addAll(stmts, view.animationBindingsMethod.finish());
-    ListWrapper.addAll(stmts, view.detectChangesInInputsMethod.finish());
+    stmts.push.apply(stmts, view.animationBindingsMethod.finish());
+    stmts.push.apply(stmts, view.detectChangesInInputsMethod.finish());
     stmts.push(o.THIS_EXPR.callMethod('detectContentChildrenChanges', [DetectChangesVars.throwOnChange])
         .toStmt());
     var afterContentStmts = view.updateContentQueriesMethod.finish().concat(view.afterContentLifecycleCallbacksMethod.finish());
     if (afterContentStmts.length > 0) {
         stmts.push(new o.IfStmt(o.not(DetectChangesVars.throwOnChange), afterContentStmts));
     }
-    ListWrapper.addAll(stmts, view.detectChangesRenderPropertiesMethod.finish());
+    stmts.push.apply(stmts, view.detectChangesRenderPropertiesMethod.finish());
     stmts.push(o.THIS_EXPR.callMethod('detectViewChildrenChanges', [DetectChangesVars.throwOnChange])
         .toStmt());
     var afterViewStmts = view.updateViewQueriesMethod.finish().concat(view.afterViewLifecycleCallbacksMethod.finish());
