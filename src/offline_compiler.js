@@ -8,34 +8,58 @@
 import { AnimationCompiler } from './animation/animation_compiler';
 import { AnimationParser } from './animation/animation_parser';
 import { CompileProviderMetadata, createHostComponentMeta } from './compile_metadata';
+import { ListWrapper, MapWrapper } from './facade/collection';
 import { Identifiers, resolveIdentifier, resolveIdentifierToken } from './identifiers';
 import * as o from './output/output_ast';
 import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewFactoryDependency } from './view_compiler/view_compiler';
 export var SourceModule = (function () {
-    function SourceModule(moduleUrl, source) {
+    function SourceModule(fileUrl, moduleUrl, source) {
+        this.fileUrl = fileUrl;
         this.moduleUrl = moduleUrl;
         this.source = source;
     }
     return SourceModule;
 }());
-export var NgModulesSummary = (function () {
-    function NgModulesSummary(ngModuleByDirective, ngModules) {
-        this.ngModuleByDirective = ngModuleByDirective;
-        this.ngModules = ngModules;
-    }
-    return NgModulesSummary;
-}());
-export function analyzeModules(ngModules, metadataResolver) {
-    var ngModuleByDirective = new Map();
-    var modules = [];
+// Returns all the source files and a mapping from modules to directives
+export function analyzeNgModules(ngModules, metadataResolver) {
+    var moduleMetasByRef = new Map();
+    // For every input modules add the list of transitively included modules
     ngModules.forEach(function (ngModule) {
-        var ngModuleMeta = metadataResolver.getNgModuleMetadata(ngModule);
-        modules.push(ngModuleMeta);
+        var modMeta = metadataResolver.getNgModuleMetadata(ngModule);
+        modMeta.transitiveModule.modules.forEach(function (modMeta) { moduleMetasByRef.set(modMeta.type.reference, modMeta); });
+    });
+    var ngModuleMetas = MapWrapper.values(moduleMetasByRef);
+    var ngModuleByDirective = new Map();
+    var ngModulesByFile = new Map();
+    var ngDirectivesByFile = new Map();
+    var srcFileUrls = new Set();
+    // Looping over all modules to construct:
+    // - a map from files to modules `ngModulesByFile`,
+    // - a map from files to directives `ngDirectivesByFile`,
+    // - a map from modules to directives `ngModuleByDirective`.
+    ngModuleMetas.forEach(function (ngModuleMeta) {
+        var srcFileUrl = ngModuleMeta.type.reference.filePath;
+        srcFileUrls.add(srcFileUrl);
+        ngModulesByFile.set(srcFileUrl, (ngModulesByFile.get(srcFileUrl) || []).concat(ngModuleMeta.type.reference));
         ngModuleMeta.declaredDirectives.forEach(function (dirMeta) {
+            var fileUrl = dirMeta.type.reference.filePath;
+            srcFileUrls.add(fileUrl);
+            ngDirectivesByFile.set(fileUrl, (ngDirectivesByFile.get(fileUrl) || []).concat(dirMeta.type.reference));
             ngModuleByDirective.set(dirMeta.type.reference, ngModuleMeta);
         });
     });
-    return new NgModulesSummary(ngModuleByDirective, modules);
+    var files = [];
+    srcFileUrls.forEach(function (srcUrl) {
+        var directives = ngDirectivesByFile.get(srcUrl) || [];
+        var ngModules = ngModulesByFile.get(srcUrl) || [];
+        files.push({ srcUrl: srcUrl, directives: directives, ngModules: ngModules });
+    });
+    return {
+        // map from modules to declared directives
+        ngModuleByDirective: ngModuleByDirective,
+        // list of modules and directives for every source file
+        files: files,
+    };
 }
 export var OfflineCompiler = (function () {
     function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat) {
@@ -52,16 +76,20 @@ export var OfflineCompiler = (function () {
         this._animationParser = new AnimationParser();
         this._animationCompiler = new AnimationCompiler();
     }
-    OfflineCompiler.prototype.analyzeModules = function (ngModules) {
-        return analyzeModules(ngModules, this._metadataResolver);
-    };
     OfflineCompiler.prototype.clearCache = function () {
         this._directiveNormalizer.clearCache();
         this._metadataResolver.clearCache();
     };
-    OfflineCompiler.prototype.compile = function (moduleUrl, ngModulesSummary, directives, ngModules) {
+    OfflineCompiler.prototype.compileModules = function (ngModules) {
         var _this = this;
-        var fileSuffix = _splitTypescriptSuffix(moduleUrl)[1];
+        var _a = analyzeNgModules(ngModules, this._metadataResolver), ngModuleByDirective = _a.ngModuleByDirective, files = _a.files;
+        var sourceModules = files.map(function (file) { return _this._compileSrcFile(file.srcUrl, ngModuleByDirective, file.directives, file.ngModules); });
+        return Promise.all(sourceModules)
+            .then(function (modules) { return ListWrapper.flatten(modules); });
+    };
+    OfflineCompiler.prototype._compileSrcFile = function (srcFileUrl, ngModuleByDirective, directives, ngModules) {
+        var _this = this;
+        var fileSuffix = _splitTypescriptSuffix(srcFileUrl)[1];
         var statements = [];
         var exportedVars = [];
         var outputSourceModules = [];
@@ -76,7 +104,7 @@ export var OfflineCompiler = (function () {
             if (!compMeta.isComponent) {
                 return Promise.resolve(null);
             }
-            var ngModule = ngModulesSummary.ngModuleByDirective.get(dirType);
+            var ngModule = ngModuleByDirective.get(dirType);
             if (!ngModule) {
                 throw new Error("Cannot determine the module for component " + compMeta.type.name + "!");
             }
@@ -88,7 +116,7 @@ export var OfflineCompiler = (function () {
                 // compile styles
                 var stylesCompileResults = _this._styleCompiler.compileComponent(compMeta);
                 stylesCompileResults.externalStylesheets.forEach(function (compiledStyleSheet) {
-                    outputSourceModules.push(_this._codgenStyles(compiledStyleSheet, fileSuffix));
+                    outputSourceModules.push(_this._codgenStyles(srcFileUrl, compiledStyleSheet, fileSuffix));
                 });
                 // compile components
                 exportedVars.push(_this._compileComponentFactory(compMeta, fileSuffix, statements), _this._compileComponent(compMeta, dirMetas, ngModule.transitiveModule.pipes, ngModule.schemas, stylesCompileResults.componentStylesheet, fileSuffix, statements));
@@ -96,7 +124,8 @@ export var OfflineCompiler = (function () {
         }))
             .then(function () {
             if (statements.length > 0) {
-                outputSourceModules.unshift(_this._codegenSourceModule(_ngfactoryModuleUrl(moduleUrl), statements, exportedVars));
+                var srcModule = _this._codegenSourceModule(srcFileUrl, _ngfactoryModuleUrl(srcFileUrl), statements, exportedVars);
+                outputSourceModules.unshift(srcModule);
             }
             return outputSourceModules;
         });
@@ -157,12 +186,12 @@ export var OfflineCompiler = (function () {
         targetStatements.push.apply(targetStatements, _resolveViewStatements(viewResult));
         return viewResult.viewFactoryVar;
     };
-    OfflineCompiler.prototype._codgenStyles = function (stylesCompileResult, fileSuffix) {
+    OfflineCompiler.prototype._codgenStyles = function (fileUrl, stylesCompileResult, fileSuffix) {
         _resolveStyleStatements(stylesCompileResult, fileSuffix);
-        return this._codegenSourceModule(_stylesModuleUrl(stylesCompileResult.meta.moduleUrl, stylesCompileResult.isShimmed, fileSuffix), stylesCompileResult.statements, [stylesCompileResult.stylesVar]);
+        return this._codegenSourceModule(fileUrl, _stylesModuleUrl(stylesCompileResult.meta.moduleUrl, stylesCompileResult.isShimmed, fileSuffix), stylesCompileResult.statements, [stylesCompileResult.stylesVar]);
     };
-    OfflineCompiler.prototype._codegenSourceModule = function (moduleUrl, statements, exportedVars) {
-        return new SourceModule(moduleUrl, this._outputEmitter.emitStatements(moduleUrl, statements, exportedVars));
+    OfflineCompiler.prototype._codegenSourceModule = function (fileUrl, moduleUrl, statements, exportedVars) {
+        return new SourceModule(fileUrl, moduleUrl, this._outputEmitter.emitStatements(moduleUrl, statements, exportedVars));
     };
     return OfflineCompiler;
 }());
