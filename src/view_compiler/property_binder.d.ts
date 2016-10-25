@@ -6,4 +6,4 @@ import { CompileEventListener } from './event_binder';
 export declare function bindRenderText(boundText: BoundTextAst, compileNode: CompileNode, view: CompileView): void;
 export declare function bindRenderInputs(boundProps: BoundElementPropertyAst[], compileElement: CompileElement, eventListeners: CompileEventListener[]): void;
 export declare function bindDirectiveHostProps(directiveAst: DirectiveAst, directiveInstance: o.Expression, compileElement: CompileElement, eventListeners: CompileEventListener[]): void;
-export declare function bindDirectiveInputs(directiveAst: DirectiveAst, directiveWrapperInstance: o.Expression, compileElement: CompileElement): void;
+export declare function bindDirectiveInputs(directiveAst: DirectiveAst, directiveWrapperInstance: o.Expression, dirIndex: number, compileElement: CompileElement): void;
