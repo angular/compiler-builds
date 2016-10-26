@@ -11,6 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { CompileDiDependencyMetadata, CompileIdentifierMetadata, CompileProviderMetadata, CompileTokenMetadata } from '../compile_metadata';
+import { createDiTokenExpression } from '../compiler_util/identifier_util';
 import { DirectiveWrapperCompiler } from '../directive_wrapper_compiler';
 import { MapWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
@@ -18,7 +19,6 @@ import { Identifiers, identifierToken, resolveIdentifier, resolveIdentifierToken
 import * as o from '../output/output_ast';
 import { convertValueToOutputAst } from '../output/value_util';
 import { ProviderAst, ProviderAstType } from '../template_parser/template_ast';
-import { createDiTokenExpression } from '../util';
 import { CompileMethod } from './compile_method';
 import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
 import { InjectMethodVars } from './constants';

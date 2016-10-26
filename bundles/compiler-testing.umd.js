@@ -25,7 +25,8 @@
             var value = this.existingElements[tagName.toLowerCase()];
             return value === void 0 ? true : value;
         };
-        MockSchemaRegistry.prototype.securityContext = function (tagName, property) {
+        MockSchemaRegistry.prototype.allKnownElementNames = function () { return Object.keys(this.existingElements); };
+        MockSchemaRegistry.prototype.securityContext = function (selector, property, isAttribute) {
             return _angular_core.SecurityContext.NONE;
         };
         MockSchemaRegistry.prototype.getMappedPropName = function (attrName) { return this.attrPropMapping[attrName] || attrName; };
