@@ -37,10 +37,10 @@ var ViewBinderVisitor = (function () {
         });
         bindRenderInputs(ast.inputs, compileElement, eventListeners);
         bindRenderOutputs(eventListeners);
-        ast.directives.forEach(function (directiveAst, dirIndex) {
+        ast.directives.forEach(function (directiveAst) {
             var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
             var directiveWrapperInstance = compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);
-            bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirIndex, compileElement);
+            bindDirectiveInputs(directiveAst, directiveWrapperInstance, compileElement);
             bindDirectiveHostProps(directiveAst, directiveInstance, compileElement, eventListeners);
             bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
         });
@@ -61,10 +61,10 @@ var ViewBinderVisitor = (function () {
     ViewBinderVisitor.prototype.visitEmbeddedTemplate = function (ast, parent) {
         var compileElement = this.view.nodes[this._nodeIndex++];
         var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
-        ast.directives.forEach(function (directiveAst, dirIndex) {
+        ast.directives.forEach(function (directiveAst) {
             var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
             var directiveWrapperInstance = compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);
-            bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirIndex, compileElement);
+            bindDirectiveInputs(directiveAst, directiveWrapperInstance, compileElement);
             bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
             bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
             bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);

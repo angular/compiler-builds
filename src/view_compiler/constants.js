@@ -104,6 +104,12 @@ export var ViewProperties = (function () {
     ViewProperties.viewUtils = o.THIS_EXPR.prop('viewUtils');
     return ViewProperties;
 }());
+export var EventHandlerVars = (function () {
+    function EventHandlerVars() {
+    }
+    EventHandlerVars.event = o.variable('$event');
+    return EventHandlerVars;
+}());
 export var InjectMethodVars = (function () {
     function InjectMethodVars() {
     }
@@ -118,6 +124,7 @@ export var DetectChangesVars = (function () {
     DetectChangesVars.throwOnChange = o.variable("throwOnChange");
     DetectChangesVars.changes = o.variable("changes");
     DetectChangesVars.changed = o.variable("changed");
+    DetectChangesVars.valUnwrapper = o.variable("valUnwrapper");
     return DetectChangesVars;
 }());
 //# sourceMappingURL=constants.js.map

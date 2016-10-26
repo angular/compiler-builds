@@ -22,7 +22,7 @@ export declare enum ParseErrorLevel {
     WARNING = 0,
     FATAL = 1,
 }
-export declare class ParseError {
+export declare abstract class ParseError {
     span: ParseSourceSpan;
     msg: string;
     level: ParseErrorLevel;
