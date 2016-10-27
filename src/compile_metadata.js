@@ -397,7 +397,7 @@ export var CompilePipeMetadata = (function () {
     return CompilePipeMetadata;
 }());
 /**
- * Metadata regarding compilation of a directive.
+ * Metadata regarding compilation of a module.
  */
 export var CompileNgModuleMetadata = (function () {
     function CompileNgModuleMetadata(_a) {
