@@ -88,4 +88,7 @@ export function createFlatArray(expressions) {
     }
     return result;
 }
+export function getHandleEventMethodName(elementIndex) {
+    return "handleEvent_" + elementIndex;
+}
 //# sourceMappingURL=util.js.map

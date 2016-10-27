@@ -64,6 +64,8 @@ export declare class Identifiers {
     static inlineArrays: IdentifierSpec[];
     static EMPTY_INLINE_ARRAY: IdentifierSpec;
     static InlineArrayDynamic: IdentifierSpec;
+    static subscribeToRenderElement: IdentifierSpec;
+    static noop: IdentifierSpec;
 }
 export declare function assetUrl(pkg: string, path?: string, type?: string): string;
 export declare function resolveIdentifier(identifier: IdentifierSpec): CompileIdentifierMetadata;

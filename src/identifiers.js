@@ -297,6 +297,12 @@ export var Identifiers = (function () {
         moduleUrl: VIEW_UTILS_MODULE_URL,
         runtime: view_utils.InlineArrayDynamic
     };
+    Identifiers.subscribeToRenderElement = {
+        name: 'subscribeToRenderElement',
+        moduleUrl: VIEW_UTILS_MODULE_URL,
+        runtime: view_utils.subscribeToRenderElement
+    };
+    Identifiers.noop = { name: 'noop', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.noop };
     return Identifiers;
 }());
 export function assetUrl(pkg, path, type) {

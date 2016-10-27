@@ -90,18 +90,22 @@
           this.handler = handler;
           this.sourceSpan = sourceSpan;
       }
+      BoundEventAst.calcFullName = function (name, target, phase) {
+          if (target) {
+              return target + ":" + name;
+          }
+          else if (phase) {
+              return "@" + name + "." + phase;
+          }
+          else {
+              return name;
+          }
+      };
       BoundEventAst.prototype.visit = function (visitor, context) {
           return visitor.visitEvent(this, context);
       };
       Object.defineProperty(BoundEventAst.prototype, "fullName", {
-          get: function () {
-              if (this.target) {
-                  return this.target + ":" + this.name;
-              }
-              else {
-                  return this.name;
-              }
-          },
+          get: function () { return BoundEventAst.calcFullName(this.name, this.target, this.phase); },
           enumerable: true,
           configurable: true
       });
@@ -6478,6 +6482,12 @@
           moduleUrl: VIEW_UTILS_MODULE_URL,
           runtime: view_utils.InlineArrayDynamic
       };
+      Identifiers.subscribeToRenderElement = {
+          name: 'subscribeToRenderElement',
+          moduleUrl: VIEW_UTILS_MODULE_URL,
+          runtime: view_utils.subscribeToRenderElement
+      };
+      Identifiers.noop = { name: 'noop', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.noop };
       return Identifiers;
   }());
   function assetUrl(pkg, path, type) {
@@ -10956,6 +10966,38 @@
       var args = [securityContextExpression, renderValue];
       return ctx.callMethod('sanitize', args);
   }
+  function triggerAnimation(view, componentView, boundProp, eventListener, renderElement, renderValue, lastRenderValue) {
+      var detachStmts = [];
+      var updateStmts = [];
+      var animationName = boundProp.name;
+      var animationFnExpr = componentView.prop('componentType').prop('animations').key(literal(animationName));
+      // it's important to normalize the void value as `void` explicitly
+      // so that the styles data can be obtained from the stringmap
+      var emptyStateValue = literal(EMPTY_ANIMATION_STATE);
+      var unitializedValue = importExpr(resolveIdentifier(Identifiers.UNINITIALIZED));
+      var animationTransitionVar = variable('animationTransition_' + animationName);
+      updateStmts.push(animationTransitionVar
+          .set(animationFnExpr.callFn([
+          view, renderElement,
+          lastRenderValue.equals(unitializedValue).conditional(emptyStateValue, lastRenderValue),
+          renderValue.equals(unitializedValue).conditional(emptyStateValue, renderValue)
+      ]))
+          .toDeclStmt());
+      detachStmts.push(animationTransitionVar
+          .set(animationFnExpr.callFn([view, renderElement, lastRenderValue, emptyStateValue]))
+          .toDeclStmt());
+      var registerStmts = [
+          animationTransitionVar
+              .callMethod('onStart', [eventListener.callMethod(BuiltinMethod.Bind, [view, literal(BoundEventAst.calcFullName(animationName, null, 'start'))])])
+              .toStmt(),
+          animationTransitionVar
+              .callMethod('onDone', [eventListener.callMethod(BuiltinMethod.Bind, [view, literal(BoundEventAst.calcFullName(animationName, null, 'done'))])])
+              .toStmt(),
+      ];
+      updateStmts.push.apply(updateStmts, registerStmts);
+      detachStmts.push.apply(detachStmts, registerStmts);
+      return { updateStmts: updateStmts, detachStmts: detachStmts };
+  }
 
   /**
    * Create a new class stmts based on the given data.
@@ -10987,11 +11029,14 @@
   var CONTEXT_FIELD_NAME = 'context';
   var CHANGES_FIELD_NAME = 'changes';
   var CHANGED_FIELD_NAME = 'changed';
+  var EVENT_HANDLER_FIELD_NAME = 'eventHandler';
   var CURR_VALUE_VAR = variable('currValue');
   var THROW_ON_CHANGE_VAR = variable('throwOnChange');
   var FORCE_UPDATE_VAR = variable('forceUpdate');
   var VIEW_VAR = variable('view');
+  var COMPONENT_VIEW_VAR = variable('componentView');
   var RENDER_EL_VAR = variable('el');
+  var EVENT_NAME_VAR = variable('eventName');
   var RESET_CHANGES_STMT = THIS_EXPR.prop(CHANGES_FIELD_NAME).set(literalMap([])).toStmt();
   /**
    * We generate directive wrappers to prevent code bloat when a directive is used.
@@ -11010,19 +11055,16 @@
       }
       DirectiveWrapperCompiler.dirWrapperClassName = function (id) { return "Wrapper_" + id.name; };
       DirectiveWrapperCompiler.prototype.compile = function (dirMeta) {
+          var hostParseResult = parseHostBindings(dirMeta, this._exprParser, this._schemaRegistry);
+          reportParseErrors(hostParseResult.errors, this._console);
           var builder = new DirectiveWrapperBuilder(this.compilerConfig, dirMeta);
           Object.keys(dirMeta.inputs).forEach(function (inputFieldName) {
               addCheckInputMethod(inputFieldName, builder);
           });
-          addDetectChangesInInputPropsMethod(builder);
-          var hostParseResult = parseHostBindings(dirMeta, this._exprParser, this._schemaRegistry);
-          reportParseErrors(hostParseResult.errors, this._console);
-          // host properties are change detected by the DirectiveWrappers,
-          // except for the animation properties as they need close integration with animation events
-          // and DirectiveWrappers don't support
-          // event listeners right now.
-          addDetectChangesInHostPropsMethod(hostParseResult.hostProps.filter(function (hostProp) { return !hostProp.isAnimation; }), builder);
-          // TODO(tbosch): implement hostListeners via DirectiveWrapper as well!
+          addNgDoCheckMethod(builder);
+          addCheckHostMethod(hostParseResult.hostProps, builder);
+          addHandleEventMethod(hostParseResult.hostListeners, builder);
+          addSubscribeMethod(dirMeta, builder);
           var classStmt = builder.build();
           return new DirectiveWrapperCompileResult([classStmt], classStmt.name);
       };
@@ -11046,19 +11088,34 @@
           this.getters = [];
           this.methods = [];
           this.ctorStmts = [];
+          this.detachStmts = [];
+          this.destroyStmts = [];
           var dirLifecycleHooks = dirMeta.type.lifecycleHooks;
           this.genChanges = dirLifecycleHooks.indexOf(LifecycleHooks.OnChanges) !== -1 ||
               this.compilerConfig.logBindingUpdate;
           this.ngOnChanges = dirLifecycleHooks.indexOf(LifecycleHooks.OnChanges) !== -1;
           this.ngOnInit = dirLifecycleHooks.indexOf(LifecycleHooks.OnInit) !== -1;
           this.ngDoCheck = dirLifecycleHooks.indexOf(LifecycleHooks.DoCheck) !== -1;
+          this.ngOnDestroy = dirLifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1;
+          if (this.ngOnDestroy) {
+              this.destroyStmts.push(THIS_EXPR.prop(CONTEXT_FIELD_NAME).callMethod('ngOnDestroy', []).toStmt());
+          }
       }
       DirectiveWrapperBuilder.prototype.build = function () {
           var dirDepParamNames = [];
           for (var i = 0; i < this.dirMeta.type.diDeps.length; i++) {
               dirDepParamNames.push("p" + i);
           }
+          var methods = [
+              new ClassMethod('ngOnDetach', [
+                  new FnParam(VIEW_VAR.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
+                  new FnParam(COMPONENT_VIEW_VAR.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
+                  new FnParam(RENDER_EL_VAR.name, DYNAMIC_TYPE),
+              ], this.detachStmts),
+              new ClassMethod('ngOnDestroy', [], this.destroyStmts),
+          ];
           var fields = [
+              new ClassField(EVENT_HANDLER_FIELD_NAME, FUNCTION_TYPE),
               new ClassField(CONTEXT_FIELD_NAME, importType(this.dirMeta.type)),
               new ClassField(CHANGED_FIELD_NAME, BOOL_TYPE),
           ];
@@ -11074,12 +11131,12 @@
           return createClassStmt({
               name: DirectiveWrapperCompiler.dirWrapperClassName(this.dirMeta.type),
               ctorParams: dirDepParamNames.map(function (paramName) { return new FnParam(paramName, DYNAMIC_TYPE); }),
-              builders: [{ fields: fields, ctorStmts: ctorStmts }, this]
+              builders: [{ fields: fields, ctorStmts: ctorStmts, methods: methods }, this]
           });
       };
       return DirectiveWrapperBuilder;
   }());
-  function addDetectChangesInInputPropsMethod(builder) {
+  function addNgDoCheckMethod(builder) {
       var changedVar = variable('changed');
       var stmts = [
           changedVar.set(THIS_EXPR.prop(CHANGED_FIELD_NAME)).toDeclStmt(),
@@ -11111,7 +11168,7 @@
           stmts.push(new IfStmt(not(THROW_ON_CHANGE_VAR), lifecycleStmts));
       }
       stmts.push(new ReturnStatement(changedVar));
-      builder.methods.push(new ClassMethod('detectChangesInInputProps', [
+      builder.methods.push(new ClassMethod('ngDoCheck', [
           new FnParam(VIEW_VAR.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
           new FnParam(RENDER_EL_VAR.name, DYNAMIC_TYPE),
           new FnParam(THROW_ON_CHANGE_VAR.name, BOOL_TYPE),
@@ -11137,14 +11194,15 @@
           new FnParam(FORCE_UPDATE_VAR.name, BOOL_TYPE),
       ], methodBody));
   }
-  function addDetectChangesInHostPropsMethod(hostProps, builder) {
+  function addCheckHostMethod(hostProps, builder) {
       var stmts = [];
       var methodParams = [
           new FnParam(VIEW_VAR.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
+          new FnParam(COMPONENT_VIEW_VAR.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
           new FnParam(RENDER_EL_VAR.name, DYNAMIC_TYPE),
           new FnParam(THROW_ON_CHANGE_VAR.name, BOOL_TYPE),
       ];
-      hostProps.forEach(function (hostProp) {
+      hostProps.forEach(function (hostProp, hostPropIdx) {
           var field = createCheckBindingField(builder);
           var evalResult = convertPropertyBinding(builder, null, THIS_EXPR.prop(CONTEXT_FIELD_NAME), hostProp.value, field.bindingId);
           if (!evalResult) {
@@ -11155,9 +11213,61 @@
               securityContextExpr = variable("secCtx_" + methodParams.length);
               methodParams.push(new FnParam(securityContextExpr.name, importType(resolveIdentifier(Identifiers.SecurityContext))));
           }
-          stmts.push.apply(stmts, createCheckBindingStmt(evalResult, field.expression, THROW_ON_CHANGE_VAR, writeToRenderer(VIEW_VAR, hostProp, RENDER_EL_VAR, evalResult.currValExpr, builder.compilerConfig.logBindingUpdate, securityContextExpr)));
+          var checkBindingStmts;
+          if (hostProp.isAnimation) {
+              var _a = triggerAnimation(VIEW_VAR, COMPONENT_VIEW_VAR, hostProp, THIS_EXPR.prop(EVENT_HANDLER_FIELD_NAME)
+                  .or(importExpr(resolveIdentifier(Identifiers.noop))), RENDER_EL_VAR, evalResult.currValExpr, field.expression), updateStmts = _a.updateStmts, detachStmts = _a.detachStmts;
+              checkBindingStmts = updateStmts;
+              (_b = builder.detachStmts).push.apply(_b, detachStmts);
+          }
+          else {
+              checkBindingStmts = writeToRenderer(VIEW_VAR, hostProp, RENDER_EL_VAR, evalResult.currValExpr, builder.compilerConfig.logBindingUpdate, securityContextExpr);
+          }
+          stmts.push.apply(stmts, createCheckBindingStmt(evalResult, field.expression, THROW_ON_CHANGE_VAR, checkBindingStmts));
+          var _b;
       });
-      builder.methods.push(new ClassMethod('detectChangesInHostProps', methodParams, stmts));
+      builder.methods.push(new ClassMethod('checkHost', methodParams, stmts));
+  }
+  function addHandleEventMethod(hostListeners, builder) {
+      var resultVar = variable("result");
+      var actionStmts = [resultVar.set(literal(true)).toDeclStmt(BOOL_TYPE)];
+      hostListeners.forEach(function (hostListener, eventIdx) {
+          var evalResult = convertActionBinding(builder, null, THIS_EXPR.prop(CONTEXT_FIELD_NAME), hostListener.handler, "sub_" + eventIdx);
+          var trueStmts = evalResult.stmts;
+          if (evalResult.preventDefault) {
+              trueStmts.push(resultVar.set(evalResult.preventDefault.and(resultVar)).toStmt());
+          }
+          // TODO(tbosch): convert this into a `switch` once our OutputAst supports it.
+          actionStmts.push(new IfStmt(EVENT_NAME_VAR.equals(literal(hostListener.fullName)), trueStmts));
+      });
+      actionStmts.push(new ReturnStatement(resultVar));
+      builder.methods.push(new ClassMethod('handleEvent', [
+          new FnParam(EVENT_NAME_VAR.name, STRING_TYPE),
+          new FnParam(EventHandlerVars.event.name, DYNAMIC_TYPE)
+      ], actionStmts, BOOL_TYPE));
+  }
+  function addSubscribeMethod(dirMeta, builder) {
+      var methodParams = [new FnParam(EVENT_HANDLER_FIELD_NAME, DYNAMIC_TYPE)];
+      var stmts = [
+          THIS_EXPR.prop(EVENT_HANDLER_FIELD_NAME).set(variable(EVENT_HANDLER_FIELD_NAME)).toStmt()
+      ];
+      Object.keys(dirMeta.outputs).forEach(function (emitterPropName, emitterIdx) {
+          var eventName = dirMeta.outputs[emitterPropName];
+          var paramName = "emit" + emitterIdx;
+          methodParams.push(new FnParam(paramName, BOOL_TYPE));
+          var subscriptionFieldName = "subscription" + emitterIdx;
+          builder.fields.push(new ClassField(subscriptionFieldName, DYNAMIC_TYPE));
+          stmts.push(new IfStmt(variable(paramName), [THIS_EXPR.prop(subscriptionFieldName)
+                  .set(THIS_EXPR.prop(CONTEXT_FIELD_NAME)
+                  .prop(emitterPropName)
+                  .callMethod(BuiltinMethod.SubscribeObservable, [variable(EVENT_HANDLER_FIELD_NAME)
+                      .callMethod(BuiltinMethod.Bind, [NULL_EXPR, literal(eventName)])]))
+                  .toStmt()]));
+          builder.destroyStmts.push(THIS_EXPR.prop(subscriptionFieldName)
+              .and(THIS_EXPR.prop(subscriptionFieldName).callMethod('unsubscribe', []))
+              .toStmt());
+      });
+      builder.methods.push(new ClassMethod('subscribe', methodParams, stmts));
   }
   var ParseResult = (function () {
       function ParseResult(hostProps, hostListeners, errors) {
@@ -11189,6 +11299,77 @@
           throw new Error("Directive parse errors:\n" + errors.join('\n'));
       }
   }
+  var DirectiveWrapperExpressions = (function () {
+      function DirectiveWrapperExpressions() {
+      }
+      DirectiveWrapperExpressions.create = function (dir, depsExpr) {
+          return importExpr(dir).instantiate(depsExpr, importType(dir));
+      };
+      DirectiveWrapperExpressions.context = function (dirWrapper) {
+          return dirWrapper.prop(CONTEXT_FIELD_NAME);
+      };
+      DirectiveWrapperExpressions.ngDoCheck = function (dirWrapper, view, renderElement, throwOnChange) {
+          return dirWrapper.callMethod('ngDoCheck', [view, renderElement, throwOnChange]);
+      };
+      DirectiveWrapperExpressions.checkHost = function (hostProps, dirWrapper, view, componentView, renderElement, throwOnChange, runtimeSecurityContexts) {
+          if (hostProps.length) {
+              return [dirWrapper
+                      .callMethod('checkHost', [view, componentView, renderElement, throwOnChange].concat(runtimeSecurityContexts))
+                      .toStmt()];
+          }
+          else {
+              return [];
+          }
+      };
+      DirectiveWrapperExpressions.ngOnDetach = function (hostProps, dirWrapper, view, componentView, renderEl) {
+          if (hostProps.some(function (prop) { return prop.isAnimation; })) {
+              return [dirWrapper
+                      .callMethod('ngOnDetach', [
+                      view,
+                      componentView,
+                      renderEl,
+                  ])
+                      .toStmt()];
+          }
+          else {
+              return [];
+          }
+      };
+      DirectiveWrapperExpressions.ngOnDestroy = function (dir, dirWrapper) {
+          if (dir.type.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1 ||
+              Object.keys(dir.outputs).length > 0) {
+              return [dirWrapper.callMethod('ngOnDestroy', []).toStmt()];
+          }
+          else {
+              return [];
+          }
+      };
+      DirectiveWrapperExpressions.subscribe = function (dirMeta, hostProps, usedEvents, dirWrapper, eventListener) {
+          var needsSubscribe = false;
+          var eventFlags = [];
+          Object.keys(dirMeta.outputs).forEach(function (propName) {
+              var eventName = dirMeta.outputs[propName];
+              var eventUsed = usedEvents.indexOf(eventName) > -1;
+              needsSubscribe = needsSubscribe || eventUsed;
+              eventFlags.push(literal(eventUsed));
+          });
+          hostProps.forEach(function (hostProp) {
+              if (hostProp.isAnimation && usedEvents.length > 0) {
+                  needsSubscribe = true;
+              }
+          });
+          if (needsSubscribe) {
+              return [dirWrapper.callMethod('subscribe', [eventListener].concat(eventFlags)).toStmt()];
+          }
+          else {
+              return [];
+          }
+      };
+      DirectiveWrapperExpressions.handleEvent = function (hostEvents, dirWrapper, eventName, event) {
+          return dirWrapper.callMethod('handleEvent', [eventName, event]);
+      };
+      return DirectiveWrapperExpressions;
+  }());
 
   function convertValueToOutputAst(value, type) {
       if (type === void 0) { type = null; }
@@ -11375,6 +11556,9 @@
               result.callMethod(BuiltinMethod.ConcatArray, [literalArr(lastNonArrayExpressions)]);
       }
       return result;
+  }
+  function getHandleEventMethodName(elementIndex) {
+      return "handleEvent_" + elementIndex;
   }
 
   var ViewQueryValues = (function () {
@@ -11713,8 +11897,7 @@
                       if (isDirectiveWrapper) {
                           var directiveWrapperIdentifier = new CompileIdentifierMetadata({ name: DirectiveWrapperCompiler.dirWrapperClassName(provider.useClass) });
                           _this._targetDependencies.push(new DirectiveWrapperDependency(provider.useClass, directiveWrapperIdentifier));
-                          return importExpr(directiveWrapperIdentifier)
-                              .instantiate(depsExpr, importType(directiveWrapperIdentifier));
+                          return DirectiveWrapperExpressions.create(directiveWrapperIdentifier, depsExpr);
                       }
                       else {
                           return importExpr(provider.useClass)
@@ -11729,7 +11912,7 @@
               var instance = createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, _this);
               if (isDirectiveWrapper) {
                   _this.directiveWrapperInstance.set(resolvedProvider.token.reference, instance);
-                  _this.instances.set(resolvedProvider.token.reference, instance.prop('context'));
+                  _this.instances.set(resolvedProvider.token.reference, DirectiveWrapperExpressions.context(instance));
               }
               else {
                   _this.instances.set(resolvedProvider.token.reference, instance);
@@ -12151,129 +12334,88 @@
       }
   }
 
-  var CompileEventListener = (function () {
-      function CompileEventListener(compileElement, eventTarget, eventName, eventPhase, listenerIndex) {
-          this.compileElement = compileElement;
-          this.eventTarget = eventTarget;
-          this.eventName = eventName;
-          this.eventPhase = eventPhase;
-          this._hasComponentHostListener = false;
-          this._actionResultExprs = [];
-          this._method = new CompileMethod(compileElement.view);
-          this._methodName =
-              "_handle_" + sanitizeEventName(eventName) + "_" + compileElement.nodeIndex + "_" + listenerIndex;
-          this._eventParam = new FnParam(EventHandlerVars.event.name, importType(this.compileElement.view.genConfig.renderTypes.renderEvent));
+  function bindOutputs(boundEvents, directives, compileElement, bindToRenderer) {
+      var usedEvents = collectEvents(boundEvents, directives);
+      if (!usedEvents.size) {
+          return false;
       }
-      CompileEventListener.getOrCreate = function (compileElement, eventTarget, eventName, eventPhase, targetEventListeners) {
-          var listener = targetEventListeners.find(function (listener) { return listener.eventTarget == eventTarget && listener.eventName == eventName &&
-              listener.eventPhase == eventPhase; });
-          if (!listener) {
-              listener = new CompileEventListener(compileElement, eventTarget, eventName, eventPhase, targetEventListeners.length);
-              targetEventListeners.push(listener);
-          }
-          return listener;
-      };
-      Object.defineProperty(CompileEventListener.prototype, "methodName", {
-          get: function () { return this._methodName; },
-          enumerable: true,
-          configurable: true
+      if (bindToRenderer) {
+          subscribeToRenderEvents(usedEvents, compileElement);
+      }
+      subscribeToDirectiveEvents(usedEvents, directives, compileElement);
+      generateHandleEventMethod(boundEvents, directives, compileElement);
+      return true;
+  }
+  function collectEvents(boundEvents, directives) {
+      var usedEvents = new Map();
+      boundEvents.forEach(function (event) { usedEvents.set(event.fullName, event); });
+      directives.forEach(function (dirAst) {
+          dirAst.hostEvents.forEach(function (event) { usedEvents.set(event.fullName, event); });
       });
-      Object.defineProperty(CompileEventListener.prototype, "isAnimation", {
-          get: function () { return !!this.eventPhase; },
-          enumerable: true,
-          configurable: true
-      });
-      CompileEventListener.prototype.addAction = function (hostEvent, directive, directiveInstance) {
-          if (isPresent(directive) && directive.isComponent) {
-              this._hasComponentHostListener = true;
+      return usedEvents;
+  }
+  function subscribeToRenderEvents(usedEvents, compileElement) {
+      var eventAndTargetExprs = [];
+      usedEvents.forEach(function (event) {
+          if (!event.phase) {
+              eventAndTargetExprs.push(literal(event.name), literal(event.target));
           }
-          this._method.resetDebugInfo(this.compileElement.nodeIndex, hostEvent);
-          var context = directiveInstance || this.compileElement.view.componentContext;
-          var view = this.compileElement.view;
-          var evalResult = convertActionBinding(view, directive ? null : view, context, hostEvent.handler, this.compileElement.nodeIndex + "_" + this._actionResultExprs.length);
+      });
+      if (eventAndTargetExprs.length) {
+          var disposableVar = variable("disposable_" + compileElement.view.disposables.length);
+          compileElement.view.disposables.push(disposableVar);
+          compileElement.view.createMethod.addStmt(disposableVar
+              .set(importExpr(resolveIdentifier(Identifiers.subscribeToRenderElement)).callFn([
+              ViewProperties.renderer, compileElement.renderNode,
+              createInlineArray(eventAndTargetExprs), handleEventClosure(compileElement)
+          ]))
+              .toDeclStmt(FUNCTION_TYPE, [StmtModifier.Private]));
+      }
+  }
+  function subscribeToDirectiveEvents(usedEvents, directives, compileElement) {
+      var usedEventNames = MapWrapper.keys(usedEvents);
+      directives.forEach(function (dirAst) {
+          var dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
+          compileElement.view.createMethod.addStmts(DirectiveWrapperExpressions.subscribe(dirAst.directive, dirAst.hostProperties, usedEventNames, dirWrapper, handleEventClosure(compileElement)));
+      });
+  }
+  function generateHandleEventMethod(boundEvents, directives, compileElement) {
+      var hasComponentHostListener = directives.some(function (dirAst) { return dirAst.hostEvents.some(function (event) { return dirAst.directive.isComponent; }); });
+      var markPathToRootStart = hasComponentHostListener ? compileElement.appElement.prop('componentView') : THIS_EXPR;
+      var handleEventStmts = new CompileMethod(compileElement.view);
+      handleEventStmts.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
+      handleEventStmts.push(markPathToRootStart.callMethod('markPathToRootAsCheckOnce', []).toStmt());
+      var eventNameVar = variable('eventName');
+      var resultVar = variable('result');
+      handleEventStmts.push(resultVar.set(literal(true)).toDeclStmt(BOOL_TYPE));
+      directives.forEach(function (dirAst, dirIdx) {
+          var dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
+          if (dirAst.hostEvents.length > 0) {
+              handleEventStmts.push(resultVar
+                  .set(DirectiveWrapperExpressions
+                  .handleEvent(dirAst.hostEvents, dirWrapper, eventNameVar, EventHandlerVars.event)
+                  .and(resultVar))
+                  .toStmt());
+          }
+      });
+      boundEvents.forEach(function (renderEvent, renderEventIdx) {
+          var evalResult = convertActionBinding(compileElement.view, compileElement.view, compileElement.view.componentContext, renderEvent.handler, "sub_" + renderEventIdx);
+          var trueStmts = evalResult.stmts;
           if (evalResult.preventDefault) {
-              this._actionResultExprs.push(evalResult.preventDefault);
+              trueStmts.push(resultVar.set(evalResult.preventDefault.and(resultVar)).toStmt());
           }
-          this._method.addStmts(evalResult.stmts);
-      };
-      CompileEventListener.prototype.finishMethod = function () {
-          var markPathToRootStart = this._hasComponentHostListener ?
-              this.compileElement.appElement.prop('componentView') :
-              THIS_EXPR;
-          var resultExpr = literal(true);
-          this._actionResultExprs.forEach(function (expr) { resultExpr = resultExpr.and(expr); });
-          var stmts = [markPathToRootStart.callMethod('markPathToRootAsCheckOnce', []).toStmt()]
-              .concat(this._method.finish())
-              .concat([new ReturnStatement(resultExpr)]);
-          // private is fine here as no child view will reference the event handler...
-          this.compileElement.view.methods.push(new ClassMethod(this._methodName, [this._eventParam], stmts, BOOL_TYPE, [StmtModifier.Private]));
-      };
-      CompileEventListener.prototype.listenToRenderer = function () {
-          var listenExpr;
-          var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
-          if (isPresent(this.eventTarget)) {
-              listenExpr = ViewProperties.renderer.callMethod('listenGlobal', [literal(this.eventTarget), literal(this.eventName), eventListener]);
-          }
-          else {
-              listenExpr = ViewProperties.renderer.callMethod('listen', [this.compileElement.renderNode, literal(this.eventName), eventListener]);
-          }
-          var disposable = variable("disposable_" + this.compileElement.view.disposables.length);
-          this.compileElement.view.disposables.push(disposable);
-          // private is fine here as no child view will reference the event handler...
-          this.compileElement.view.createMethod.addStmt(disposable.set(listenExpr).toDeclStmt(FUNCTION_TYPE, [StmtModifier.Private]));
-      };
-      CompileEventListener.prototype.listenToAnimation = function (animationTransitionVar) {
-          var callbackMethod = this.eventPhase == 'start' ? 'onStart' : 'onDone';
-          return animationTransitionVar
-              .callMethod(callbackMethod, [THIS_EXPR.prop(this.methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])])
-              .toStmt();
-      };
-      CompileEventListener.prototype.listenToDirective = function (directiveInstance, observablePropName) {
-          var subscription = variable("subscription_" + this.compileElement.view.subscriptions.length);
-          this.compileElement.view.subscriptions.push(subscription);
-          var eventListener = THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(this._methodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
-          this.compileElement.view.createMethod.addStmt(subscription
-              .set(directiveInstance.prop(observablePropName)
-              .callMethod(BuiltinMethod.SubscribeObservable, [eventListener]))
-              .toDeclStmt(null, [StmtModifier.Final]));
-      };
-      return CompileEventListener;
-  }());
-  function collectEventListeners(hostEvents, dirs, compileElement) {
-      var eventListeners = [];
-      hostEvents.forEach(function (hostEvent) {
-          var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, hostEvent.phase, eventListeners);
-          listener.addAction(hostEvent, null, null);
+          // TODO(tbosch): convert this into a `switch` once our OutputAst supports it.
+          handleEventStmts.push(new IfStmt(eventNameVar.equals(literal(renderEvent.fullName)), trueStmts));
       });
-      dirs.forEach(function (directiveAst) {
-          var directiveInstance = compileElement.instances.get(identifierToken(directiveAst.directive.type).reference);
-          directiveAst.hostEvents.forEach(function (hostEvent) {
-              var listener = CompileEventListener.getOrCreate(compileElement, hostEvent.target, hostEvent.name, hostEvent.phase, eventListeners);
-              listener.addAction(hostEvent, directiveAst.directive, directiveInstance);
-          });
-      });
-      eventListeners.forEach(function (listener) { return listener.finishMethod(); });
-      return eventListeners;
+      handleEventStmts.push(new ReturnStatement(resultVar));
+      compileElement.view.methods.push(new ClassMethod(getHandleEventMethodName(compileElement.nodeIndex), [
+          new FnParam(eventNameVar.name, STRING_TYPE),
+          new FnParam(EventHandlerVars.event.name, DYNAMIC_TYPE)
+      ], handleEventStmts.finish(), BOOL_TYPE));
   }
-  function bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners) {
-      Object.keys(directiveAst.directive.outputs).forEach(function (observablePropName) {
-          var eventName = directiveAst.directive.outputs[observablePropName];
-          eventListeners.filter(function (listener) { return listener.eventName == eventName; }).forEach(function (listener) {
-              listener.listenToDirective(directiveInstance, observablePropName);
-          });
-      });
-  }
-  function bindRenderOutputs(eventListeners) {
-      eventListeners.forEach(function (listener) {
-          // the animation listeners are handled within property_binder.ts to
-          // allow them to be placed next to the animation factory statements
-          if (!listener.isAnimation) {
-              listener.listenToRenderer();
-          }
-      });
-  }
-  function sanitizeEventName(name) {
-      return name.replace(/[^a-zA-Z_]/g, '_');
+  function handleEventClosure(compileElement) {
+      var handleEventMethodName = getHandleEventMethodName(compileElement.nodeIndex);
+      return THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(handleEventMethodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
   }
 
   var STATE_IS_NEVER_CHECKED = THIS_EXPR.prop('numberOfChecks').identical(new LiteralExpr(0));
@@ -12302,10 +12444,16 @@
           afterViewLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterViewChecked', []).toStmt());
       }
   }
+  function bindDirectiveWrapperLifecycleCallbacks(dir, directiveWrapperIntance, compileElement) {
+      compileElement.view.destroyMethod.addStmts(DirectiveWrapperExpressions.ngOnDestroy(dir.directive, directiveWrapperIntance));
+      compileElement.view.detachMethod.addStmts(DirectiveWrapperExpressions.ngOnDetach(dir.hostProperties, directiveWrapperIntance, THIS_EXPR, compileElement.component ? compileElement.appElement.prop('componentView') : THIS_EXPR, compileElement.renderNode));
+  }
   function bindInjectableDestroyLifecycleCallbacks(provider, providerInstance, compileElement) {
       var onDestroyMethod = compileElement.view.destroyMethod;
       onDestroyMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-      if (provider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
+      if (provider.providerType !== exports.ProviderAstType.Directive &&
+          provider.providerType !== exports.ProviderAstType.Component &&
+          provider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
           onDestroyMethod.addStmt(providerInstance.callMethod('ngOnDestroy', []).toStmt());
       }
   }
@@ -12327,71 +12475,38 @@
               .callMethod('setText', [compileNode.renderNode, evalResult.currValExpr])
               .toStmt()]));
   }
-  function bindAndWriteToRenderer(boundProps, context, compileElement, isHostProp, eventListeners) {
+  function bindRenderInputs(boundProps, hasEvents, compileElement) {
       var view = compileElement.view;
       var renderNode = compileElement.renderNode;
       boundProps.forEach(function (boundProp) {
           var bindingField = createCheckBindingField(view);
           view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileElement.nodeIndex, boundProp);
-          var evalResult = convertPropertyBinding(view, isHostProp ? null : view, context, boundProp.value, bindingField.bindingId);
-          var updateStmts = [];
+          var evalResult = convertPropertyBinding(view, view, compileElement.view.componentContext, boundProp.value, bindingField.bindingId);
+          var checkBindingStmts = [];
           var compileMethod = view.detectChangesRenderPropertiesMethod;
           switch (boundProp.type) {
               case exports.PropertyBindingType.Property:
               case exports.PropertyBindingType.Attribute:
               case exports.PropertyBindingType.Class:
               case exports.PropertyBindingType.Style:
-                  updateStmts.push.apply(updateStmts, writeToRenderer(THIS_EXPR, boundProp, renderNode, evalResult.currValExpr, view.genConfig.logBindingUpdate));
+                  checkBindingStmts.push.apply(checkBindingStmts, writeToRenderer(THIS_EXPR, boundProp, renderNode, evalResult.currValExpr, view.genConfig.logBindingUpdate));
                   break;
               case exports.PropertyBindingType.Animation:
                   compileMethod = view.animationBindingsMethod;
-                  var detachStmts_1 = [];
-                  var animationName_1 = boundProp.name;
-                  var targetViewExpr = isHostProp ? compileElement.appElement.prop('componentView') : THIS_EXPR;
-                  var animationFnExpr = targetViewExpr.prop('componentType').prop('animations').key(literal(animationName_1));
-                  // it's important to normalize the void value as `void` explicitly
-                  // so that the styles data can be obtained from the stringmap
-                  var emptyStateValue = literal(EMPTY_ANIMATION_STATE);
-                  var unitializedValue = importExpr(resolveIdentifier(Identifiers.UNINITIALIZED));
-                  var animationTransitionVar_1 = variable('animationTransition_' + animationName_1);
-                  updateStmts.push(animationTransitionVar_1
-                      .set(animationFnExpr.callFn([
-                      THIS_EXPR, renderNode,
-                      bindingField.expression.equals(unitializedValue)
-                          .conditional(emptyStateValue, bindingField.expression),
-                      evalResult.currValExpr.equals(unitializedValue)
-                          .conditional(emptyStateValue, evalResult.currValExpr)
-                  ]))
-                      .toDeclStmt());
-                  detachStmts_1.push(animationTransitionVar_1
-                      .set(animationFnExpr.callFn([THIS_EXPR, renderNode, bindingField.expression, emptyStateValue]))
-                      .toDeclStmt());
-                  eventListeners.forEach(function (listener) {
-                      if (listener.isAnimation && listener.eventName === animationName_1) {
-                          var animationStmt = listener.listenToAnimation(animationTransitionVar_1);
-                          updateStmts.push(animationStmt);
-                          detachStmts_1.push(animationStmt);
-                      }
-                  });
-                  view.detachMethod.addStmts(detachStmts_1);
+                  var _a = triggerAnimation(THIS_EXPR, THIS_EXPR, boundProp, (hasEvents ? THIS_EXPR.prop(getHandleEventMethodName(compileElement.nodeIndex)) :
+                      importExpr(resolveIdentifier(Identifiers.noop)))
+                      .callMethod(BuiltinMethod.Bind, [THIS_EXPR]), compileElement.renderNode, evalResult.currValExpr, bindingField.expression), updateStmts = _a.updateStmts, detachStmts = _a.detachStmts;
+                  checkBindingStmts.push.apply(checkBindingStmts, updateStmts);
+                  view.detachMethod.addStmts(detachStmts);
                   break;
           }
-          compileMethod.addStmts(createCheckBindingStmt(evalResult, bindingField.expression, DetectChangesVars.throwOnChange, updateStmts));
+          compileMethod.addStmts(createCheckBindingStmt(evalResult, bindingField.expression, DetectChangesVars.throwOnChange, checkBindingStmts));
       });
   }
-  function bindRenderInputs(boundProps, compileElement, eventListeners) {
-      bindAndWriteToRenderer(boundProps, compileElement.view.componentContext, compileElement, false, eventListeners);
-  }
-  function bindDirectiveHostProps(directiveAst, directiveWrapperInstance, compileElement, eventListeners, elementName, schemaRegistry) {
-      // host properties are change detected by the DirectiveWrappers,
-      // except for the animation properties as they need close integration with animation events
-      // and DirectiveWrappers don't support
-      // event listeners right now.
-      bindAndWriteToRenderer(directiveAst.hostProperties.filter(function (boundProp) { return boundProp.isAnimation; }), directiveWrapperInstance.prop('context'), compileElement, true, eventListeners);
-      var methodArgs = [THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange];
+  function bindDirectiveHostProps(directiveAst, directiveWrapperInstance, compileElement, elementName, schemaRegistry) {
       // We need to provide the SecurityContext for properties that could need sanitization.
-      directiveAst.hostProperties.filter(function (boundProp) { return boundProp.needsRuntimeSecurityContext; })
-          .forEach(function (boundProp) {
+      var runtimeSecurityCtxExprs = directiveAst.hostProperties.filter(function (boundProp) { return boundProp.needsRuntimeSecurityContext; })
+          .map(function (boundProp) {
           var ctx;
           switch (boundProp.type) {
               case exports.PropertyBindingType.Property:
@@ -12403,9 +12518,9 @@
               default:
                   throw new Error("Illegal state: Only property / attribute bindings can have an unknown security context! Binding " + boundProp.name);
           }
-          methodArgs.push(createEnumExpression(Identifiers.SecurityContext, ctx));
+          return createEnumExpression(Identifiers.SecurityContext, ctx);
       });
-      compileElement.view.detectChangesRenderPropertiesMethod.addStmt(directiveWrapperInstance.callMethod('detectChangesInHostProps', methodArgs).toStmt());
+      compileElement.view.detectChangesRenderPropertiesMethod.addStmts(DirectiveWrapperExpressions.checkHost(directiveAst.hostProperties, directiveWrapperInstance, THIS_EXPR, compileElement.component ? compileElement.appElement.prop('componentView') : THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange, runtimeSecurityCtxExprs));
   }
   function bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirIndex, compileElement) {
       var view = compileElement.view;
@@ -12429,7 +12544,7 @@
       });
       var isOnPushComp = directiveAst.directive.isComponent &&
           !isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
-      var directiveDetectChangesExpr = directiveWrapperInstance.callMethod('detectChangesInInputProps', [THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange]);
+      var directiveDetectChangesExpr = DirectiveWrapperExpressions.ngDoCheck(directiveWrapperInstance, THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange);
       var directiveDetectChangesStmt = isOnPushComp ?
           new IfStmt(directiveDetectChangesExpr, [compileElement.appElement.prop('componentView')
                   .callMethod('markAsCheckOnce', [])
@@ -12462,26 +12577,23 @@
       ViewBinderVisitor.prototype.visitElement = function (ast, parent) {
           var _this = this;
           var compileElement = this.view.nodes[this._nodeIndex++];
-          var eventListeners = [];
-          collectEventListeners(ast.outputs, ast.directives, compileElement).forEach(function (entry) {
-              eventListeners.push(entry);
-          });
-          bindRenderInputs(ast.inputs, compileElement, eventListeners);
-          bindRenderOutputs(eventListeners);
+          var hasEvents = bindOutputs(ast.outputs, ast.directives, compileElement, true);
+          bindRenderInputs(ast.inputs, hasEvents, compileElement);
           ast.directives.forEach(function (directiveAst, dirIndex) {
               var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
               var directiveWrapperInstance = compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);
               bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirIndex, compileElement);
-              bindDirectiveHostProps(directiveAst, directiveWrapperInstance, compileElement, eventListeners, ast.name, _this._schemaRegistry);
-              bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
+              bindDirectiveHostProps(directiveAst, directiveWrapperInstance, compileElement, ast.name, _this._schemaRegistry);
           });
           templateVisitAll(this, ast.children, compileElement);
           // afterContent and afterView lifecycles need to be called bottom up
           // so that children are notified before parents
           ast.directives.forEach(function (directiveAst) {
               var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
+              var directiveWrapperInstance = compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);
               bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
               bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
+              bindDirectiveWrapperLifecycleCallbacks(directiveAst, directiveWrapperInstance, compileElement);
           });
           ast.providers.forEach(function (providerAst) {
               var providerInstance = compileElement.instances.get(providerAst.token.reference);
@@ -12491,14 +12603,14 @@
       };
       ViewBinderVisitor.prototype.visitEmbeddedTemplate = function (ast, parent) {
           var compileElement = this.view.nodes[this._nodeIndex++];
-          var eventListeners = collectEventListeners(ast.outputs, ast.directives, compileElement);
+          bindOutputs(ast.outputs, ast.directives, compileElement, false);
           ast.directives.forEach(function (directiveAst, dirIndex) {
               var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
               var directiveWrapperInstance = compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);
               bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirIndex, compileElement);
-              bindDirectiveOutputs(directiveAst, directiveInstance, eventListeners);
               bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
               bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive, directiveInstance, compileElement);
+              bindDirectiveWrapperLifecycleCallbacks(directiveAst, directiveWrapperInstance, compileElement);
           });
           ast.providers.forEach(function (providerAst) {
               var providerInstance = compileElement.instances.get(providerAst.token.reference);
@@ -15902,13 +16014,13 @@
           if (isPresent(expr.builtin)) {
               switch (expr.builtin) {
                   case BuiltinMethod.ConcatArray:
-                      result = receiver.concat(args[0]);
+                      result = receiver.concat.apply(receiver, args);
                       break;
                   case BuiltinMethod.SubscribeObservable:
                       result = receiver.subscribe({ next: args[0] });
                       break;
                   case BuiltinMethod.Bind:
-                      result = receiver.bind(args[0]);
+                      result = receiver.bind.apply(receiver, args);
                       break;
                   default:
                       throw new Error("Unknown builtin method " + expr.builtin);

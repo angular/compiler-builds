@@ -12,7 +12,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { CompileDiDependencyMetadata, CompileIdentifierMetadata, CompileProviderMetadata, CompileTokenMetadata } from '../compile_metadata';
 import { createDiTokenExpression } from '../compiler_util/identifier_util';
-import { DirectiveWrapperCompiler } from '../directive_wrapper_compiler';
+import { DirectiveWrapperCompiler, DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
 import { MapWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import { Identifiers, identifierToken, resolveIdentifier, resolveIdentifierToken } from '../identifiers';
@@ -158,8 +158,7 @@ export var CompileElement = (function (_super) {
                     if (isDirectiveWrapper) {
                         var directiveWrapperIdentifier = new CompileIdentifierMetadata({ name: DirectiveWrapperCompiler.dirWrapperClassName(provider.useClass) });
                         _this._targetDependencies.push(new DirectiveWrapperDependency(provider.useClass, directiveWrapperIdentifier));
-                        return o.importExpr(directiveWrapperIdentifier)
-                            .instantiate(depsExpr, o.importType(directiveWrapperIdentifier));
+                        return DirectiveWrapperExpressions.create(directiveWrapperIdentifier, depsExpr);
                     }
                     else {
                         return o.importExpr(provider.useClass)
@@ -174,7 +173,7 @@ export var CompileElement = (function (_super) {
             var instance = createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, _this);
             if (isDirectiveWrapper) {
                 _this.directiveWrapperInstance.set(resolvedProvider.token.reference, instance);
-                _this.instances.set(resolvedProvider.token.reference, instance.prop('context'));
+                _this.instances.set(resolvedProvider.token.reference, DirectiveWrapperExpressions.context(instance));
             }
             else {
                 _this.instances.set(resolvedProvider.token.reference, instance);

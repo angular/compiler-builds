@@ -6,11 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { createEnumExpression } from '../compiler_util/identifier_util';
-import { Identifiers, resolveEnumIdentifier } from '../identifiers';
+import { Identifiers } from '../identifiers';
 import * as o from '../output/output_ast';
-function _enumExpression(classIdentifier, name) {
-    return o.importExpr(resolveEnumIdentifier(classIdentifier, name));
-}
 export var ViewTypeEnum = (function () {
     function ViewTypeEnum() {
     }
