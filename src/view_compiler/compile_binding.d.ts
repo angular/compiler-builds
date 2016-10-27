@@ -6,5 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { TemplateAst } from '../template_parser/template_ast';
-import { CompileView } from './compile_view';
-export declare function bindView(view: CompileView, parsedTemplate: TemplateAst[]): void;
+import { CompileNode } from './compile_element';
+export declare class CompileBinding {
+    node: CompileNode;
+    sourceAst: TemplateAst;
+    constructor(node: CompileNode, sourceAst: TemplateAst);
+}

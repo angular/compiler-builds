@@ -41,9 +41,11 @@ export declare class Identifiers {
     static castByValue: IdentifierSpec;
     static EMPTY_ARRAY: IdentifierSpec;
     static EMPTY_MAP: IdentifierSpec;
-    static createRenderElement: IdentifierSpec;
-    static selectOrCreateRenderHostElement: IdentifierSpec;
-    static pureProxies: IdentifierSpec[];
+    static pureProxies: {
+        name: string;
+        moduleUrl: string;
+        runtime: <P0, P1, P2, P3, P4, P5, P6, P7, P8, P9, R>(fn: (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) => R) => (p0: P0, p1: P1, p2: P2, p3: P3, p4: P4, p5: P5, p6: P6, p7: P7, p8: P8, p9: P9) => R;
+    }[];
     static SecurityContext: IdentifierSpec;
     static AnimationKeyframe: IdentifierSpec;
     static AnimationStyles: IdentifierSpec;
@@ -60,12 +62,7 @@ export declare class Identifiers {
     static setBindingDebugInfo: IdentifierSpec;
     static setBindingDebugInfoForChanges: IdentifierSpec;
     static AnimationTransition: IdentifierSpec;
-    static InlineArray: IdentifierSpec;
-    static inlineArrays: IdentifierSpec[];
-    static EMPTY_INLINE_ARRAY: IdentifierSpec;
-    static InlineArrayDynamic: IdentifierSpec;
 }
-export declare function assetUrl(pkg: string, path?: string, type?: string): string;
 export declare function resolveIdentifier(identifier: IdentifierSpec): CompileIdentifierMetadata;
 export declare function identifierToken(identifier: CompileIdentifierMetadata): CompileTokenMetadata;
 export declare function resolveIdentifierToken(identifier: IdentifierSpec): CompileTokenMetadata;
