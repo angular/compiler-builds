@@ -11027,9 +11027,9 @@
       return DirectiveWrapperCompileResult;
   }());
   var CONTEXT_FIELD_NAME = 'context';
-  var CHANGES_FIELD_NAME = 'changes';
-  var CHANGED_FIELD_NAME = 'changed';
-  var EVENT_HANDLER_FIELD_NAME = 'eventHandler';
+  var CHANGES_FIELD_NAME = '_changes';
+  var CHANGED_FIELD_NAME = '_changed';
+  var EVENT_HANDLER_FIELD_NAME = '_eventHandler';
   var CURR_VALUE_VAR = variable('currValue');
   var THROW_ON_CHANGE_VAR = variable('throwOnChange');
   var FORCE_UPDATE_VAR = variable('forceUpdate');
@@ -11115,13 +11115,13 @@
               new ClassMethod('ngOnDestroy', [], this.destroyStmts),
           ];
           var fields = [
-              new ClassField(EVENT_HANDLER_FIELD_NAME, FUNCTION_TYPE),
+              new ClassField(EVENT_HANDLER_FIELD_NAME, FUNCTION_TYPE, [StmtModifier.Private]),
               new ClassField(CONTEXT_FIELD_NAME, importType(this.dirMeta.type)),
-              new ClassField(CHANGED_FIELD_NAME, BOOL_TYPE),
+              new ClassField(CHANGED_FIELD_NAME, BOOL_TYPE, [StmtModifier.Private]),
           ];
           var ctorStmts = [THIS_EXPR.prop(CHANGED_FIELD_NAME).set(literal(false)).toStmt()];
           if (this.genChanges) {
-              fields.push(new ClassField(CHANGES_FIELD_NAME, new MapType(DYNAMIC_TYPE)));
+              fields.push(new ClassField(CHANGES_FIELD_NAME, new MapType(DYNAMIC_TYPE), [StmtModifier.Private]));
               ctorStmts.push(RESET_CHANGES_STMT);
           }
           ctorStmts.push(THIS_EXPR.prop(CONTEXT_FIELD_NAME)
@@ -11247,7 +11247,10 @@
       ], actionStmts, BOOL_TYPE));
   }
   function addSubscribeMethod(dirMeta, builder) {
-      var methodParams = [new FnParam(EVENT_HANDLER_FIELD_NAME, DYNAMIC_TYPE)];
+      var methodParams = [
+          new FnParam(VIEW_VAR.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
+          new FnParam(EVENT_HANDLER_FIELD_NAME, DYNAMIC_TYPE)
+      ];
       var stmts = [
           THIS_EXPR.prop(EVENT_HANDLER_FIELD_NAME).set(variable(EVENT_HANDLER_FIELD_NAME)).toStmt()
       ];
@@ -11257,12 +11260,14 @@
           methodParams.push(new FnParam(paramName, BOOL_TYPE));
           var subscriptionFieldName = "subscription" + emitterIdx;
           builder.fields.push(new ClassField(subscriptionFieldName, DYNAMIC_TYPE));
-          stmts.push(new IfStmt(variable(paramName), [THIS_EXPR.prop(subscriptionFieldName)
+          stmts.push(new IfStmt(variable(paramName), [
+              THIS_EXPR.prop(subscriptionFieldName)
                   .set(THIS_EXPR.prop(CONTEXT_FIELD_NAME)
                   .prop(emitterPropName)
                   .callMethod(BuiltinMethod.SubscribeObservable, [variable(EVENT_HANDLER_FIELD_NAME)
-                      .callMethod(BuiltinMethod.Bind, [NULL_EXPR, literal(eventName)])]))
-                  .toStmt()]));
+                      .callMethod(BuiltinMethod.Bind, [VIEW_VAR, literal(eventName)])]))
+                  .toStmt()
+          ]));
           builder.destroyStmts.push(THIS_EXPR.prop(subscriptionFieldName)
               .and(THIS_EXPR.prop(subscriptionFieldName).callMethod('unsubscribe', []))
               .toStmt());
@@ -11344,7 +11349,7 @@
               return [];
           }
       };
-      DirectiveWrapperExpressions.subscribe = function (dirMeta, hostProps, usedEvents, dirWrapper, eventListener) {
+      DirectiveWrapperExpressions.subscribe = function (dirMeta, hostProps, usedEvents, dirWrapper, view, eventListener) {
           var needsSubscribe = false;
           var eventFlags = [];
           Object.keys(dirMeta.outputs).forEach(function (propName) {
@@ -11359,7 +11364,9 @@
               }
           });
           if (needsSubscribe) {
-              return [dirWrapper.callMethod('subscribe', [eventListener].concat(eventFlags)).toStmt()];
+              return [
+                  dirWrapper.callMethod('subscribe', [view, eventListener].concat(eventFlags)).toStmt()
+              ];
           }
           else {
               return [];
@@ -12366,8 +12373,8 @@
           compileElement.view.disposables.push(disposableVar);
           compileElement.view.createMethod.addStmt(disposableVar
               .set(importExpr(resolveIdentifier(Identifiers.subscribeToRenderElement)).callFn([
-              ViewProperties.renderer, compileElement.renderNode,
-              createInlineArray(eventAndTargetExprs), handleEventClosure(compileElement)
+              THIS_EXPR, compileElement.renderNode, createInlineArray(eventAndTargetExprs),
+              handleEventExpr(compileElement)
           ]))
               .toDeclStmt(FUNCTION_TYPE, [StmtModifier.Private]));
       }
@@ -12376,7 +12383,7 @@
       var usedEventNames = MapWrapper.keys(usedEvents);
       directives.forEach(function (dirAst) {
           var dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
-          compileElement.view.createMethod.addStmts(DirectiveWrapperExpressions.subscribe(dirAst.directive, dirAst.hostProperties, usedEventNames, dirWrapper, handleEventClosure(compileElement)));
+          compileElement.view.createMethod.addStmts(DirectiveWrapperExpressions.subscribe(dirAst.directive, dirAst.hostProperties, usedEventNames, dirWrapper, THIS_EXPR, handleEventExpr(compileElement)));
       });
   }
   function generateHandleEventMethod(boundEvents, directives, compileElement) {
@@ -12413,9 +12420,9 @@
           new FnParam(EventHandlerVars.event.name, DYNAMIC_TYPE)
       ], handleEventStmts.finish(), BOOL_TYPE));
   }
-  function handleEventClosure(compileElement) {
+  function handleEventExpr(compileElement) {
       var handleEventMethodName = getHandleEventMethodName(compileElement.nodeIndex);
-      return THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(handleEventMethodName).callMethod(BuiltinMethod.Bind, [THIS_EXPR])]);
+      return THIS_EXPR.callMethod('eventHandler', [THIS_EXPR.prop(handleEventMethodName)]);
   }
 
   var STATE_IS_NEVER_CHECKED = THIS_EXPR.prop('numberOfChecks').identical(new LiteralExpr(0));

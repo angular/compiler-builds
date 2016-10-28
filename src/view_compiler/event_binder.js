@@ -12,7 +12,6 @@ import { MapWrapper } from '../facade/collection';
 import { Identifiers, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { CompileMethod } from './compile_method';
-import { ViewProperties } from './constants';
 import { getHandleEventMethodName } from './util';
 export function bindOutputs(boundEvents, directives, compileElement, bindToRenderer) {
     var usedEvents = collectEvents(boundEvents, directives);
@@ -46,8 +45,8 @@ function subscribeToRenderEvents(usedEvents, compileElement) {
         compileElement.view.disposables.push(disposableVar);
         compileElement.view.createMethod.addStmt(disposableVar
             .set(o.importExpr(resolveIdentifier(Identifiers.subscribeToRenderElement)).callFn([
-            ViewProperties.renderer, compileElement.renderNode,
-            createInlineArray(eventAndTargetExprs), handleEventClosure(compileElement)
+            o.THIS_EXPR, compileElement.renderNode, createInlineArray(eventAndTargetExprs),
+            handleEventExpr(compileElement)
         ]))
             .toDeclStmt(o.FUNCTION_TYPE, [o.StmtModifier.Private]));
     }
@@ -56,7 +55,7 @@ function subscribeToDirectiveEvents(usedEvents, directives, compileElement) {
     var usedEventNames = MapWrapper.keys(usedEvents);
     directives.forEach(function (dirAst) {
         var dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
-        compileElement.view.createMethod.addStmts(DirectiveWrapperExpressions.subscribe(dirAst.directive, dirAst.hostProperties, usedEventNames, dirWrapper, handleEventClosure(compileElement)));
+        compileElement.view.createMethod.addStmts(DirectiveWrapperExpressions.subscribe(dirAst.directive, dirAst.hostProperties, usedEventNames, dirWrapper, o.THIS_EXPR, handleEventExpr(compileElement)));
     });
 }
 function generateHandleEventMethod(boundEvents, directives, compileElement) {
@@ -93,8 +92,8 @@ function generateHandleEventMethod(boundEvents, directives, compileElement) {
         new o.FnParam(EventHandlerVars.event.name, o.DYNAMIC_TYPE)
     ], handleEventStmts.finish(), o.BOOL_TYPE));
 }
-function handleEventClosure(compileElement) {
+function handleEventExpr(compileElement) {
     var handleEventMethodName = getHandleEventMethodName(compileElement.nodeIndex);
-    return o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(handleEventMethodName).callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR])]);
+    return o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(handleEventMethodName)]);
 }
 //# sourceMappingURL=event_binder.js.map
