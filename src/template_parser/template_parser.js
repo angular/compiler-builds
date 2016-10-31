@@ -507,7 +507,9 @@ var TemplateParseVisitor = (function () {
     TemplateParseVisitor.prototype._assertOnlyOneComponent = function (directives, sourceSpan) {
         var componentTypeNames = this._findComponentDirectiveNames(directives);
         if (componentTypeNames.length > 1) {
-            this._reportError("More than one component: " + componentTypeNames.join(','), sourceSpan);
+            this._reportError("More than one component matched on this element.\n" +
+                "Make sure that only one component's selector can match a given element.\n" +
+                ("Conflicting components: " + componentTypeNames.join(',')), sourceSpan);
         }
     };
     /**
