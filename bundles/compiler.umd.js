@@ -12491,6 +12491,9 @@
           var bindingField = createCheckBindingField(view);
           view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileElement.nodeIndex, boundProp);
           var evalResult = convertPropertyBinding(view, view, compileElement.view.componentContext, boundProp.value, bindingField.bindingId);
+          if (!evalResult) {
+              return;
+          }
           var checkBindingStmts = [];
           var compileMethod = view.detectChangesRenderPropertiesMethod;
           switch (boundProp.type) {
@@ -14364,7 +14367,7 @@
                   moduleUrl = componentModuleUrl(this._reflector, directiveType, dirMeta);
                   if (dirMeta.entryComponents) {
                       entryComponentMetadata =
-                          flattenArray(dirMeta.entryComponents)
+                          flattenAndDedupeArray(dirMeta.entryComponents)
                               .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); })
                               .concat(entryComponentMetadata);
                   }
@@ -14429,7 +14432,7 @@
               var bootstrapComponents = [];
               var schemas = [];
               if (meta.imports) {
-                  flattenArray(meta.imports).forEach(function (importedType) {
+                  flattenAndDedupeArray(meta.imports).forEach(function (importedType) {
                       var importedModuleType;
                       if (isValidType(importedType)) {
                           importedModuleType = importedType;
@@ -14454,7 +14457,7 @@
                   });
               }
               if (meta.exports) {
-                  flattenArray(meta.exports).forEach(function (exportedType) {
+                  flattenAndDedupeArray(meta.exports).forEach(function (exportedType) {
                       if (!isValidType(exportedType)) {
                           throw new Error("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
                       }
@@ -14479,7 +14482,7 @@
               // getting a new instance every time!
               var transitiveModule_1 = this._getTransitiveNgModuleMetadata(importedModules_1, exportedModules_1);
               if (meta.declarations) {
-                  flattenArray(meta.declarations).forEach(function (declaredType) {
+                  flattenAndDedupeArray(meta.declarations).forEach(function (declaredType) {
                       if (!isValidType(declaredType)) {
                           throw new Error("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
                       }
@@ -14502,11 +14505,11 @@
                   providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1, "provider for the NgModule '" + stringify(moduleType) + "'"));
               }
               if (meta.entryComponents) {
-                  entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
+                  entryComponents_1.push.apply(entryComponents_1, flattenAndDedupeArray(meta.entryComponents)
                       .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
               }
               if (meta.bootstrap) {
-                  var typeMetadata = flattenArray(meta.bootstrap).map(function (type) {
+                  var typeMetadata = flattenAndDedupeArray(meta.bootstrap).map(function (type) {
                       if (!isValidType(type)) {
                           throw new Error("Unexpected value '" + stringify(type) + "' used in the bootstrap property of module '" + stringify(moduleType) + "'");
                       }
@@ -14516,7 +14519,7 @@
               }
               entryComponents_1.push.apply(entryComponents_1, bootstrapComponents);
               if (meta.schemas) {
-                  schemas.push.apply(schemas, flattenArray(meta.schemas));
+                  schemas.push.apply(schemas, flattenAndDedupeArray(meta.schemas));
               }
               (_a = transitiveModule_1.entryComponents).push.apply(_a, entryComponents_1);
               (_b = transitiveModule_1.providers).push.apply(_b, providers_1);
@@ -14900,6 +14903,15 @@
           }
       }
       return out;
+  }
+  function dedupeArray(array) {
+      if (array) {
+          return Array.from(new Set(array));
+      }
+      return [];
+  }
+  function flattenAndDedupeArray(tree) {
+      return dedupeArray(flattenArray(tree));
   }
   function isValidType(value) {
       return isStaticSymbol(value) || (value instanceof _angular_core.Type);
