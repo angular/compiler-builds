@@ -143,15 +143,13 @@ export var CompileIdentifierMetadata = (function () {
 }());
 export var CompileDiDependencyMetadata = (function () {
     function CompileDiDependencyMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, isAttribute = _b.isAttribute, isSelf = _b.isSelf, isHost = _b.isHost, isSkipSelf = _b.isSkipSelf, isOptional = _b.isOptional, isValue = _b.isValue, query = _b.query, viewQuery = _b.viewQuery, token = _b.token, value = _b.value;
+        var _b = _a === void 0 ? {} : _a, isAttribute = _b.isAttribute, isSelf = _b.isSelf, isHost = _b.isHost, isSkipSelf = _b.isSkipSelf, isOptional = _b.isOptional, isValue = _b.isValue, token = _b.token, value = _b.value;
         this.isAttribute = !!isAttribute;
         this.isSelf = !!isSelf;
         this.isHost = !!isHost;
         this.isSkipSelf = !!isSkipSelf;
         this.isOptional = !!isOptional;
         this.isValue = !!isValue;
-        this.query = query;
-        this.viewQuery = viewQuery;
         this.token = token;
         this.value = value;
     }

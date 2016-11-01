@@ -8,7 +8,7 @@
 import { CompileDirectiveMetadata, CompileTokenMetadata } from '../compile_metadata';
 import * as o from '../output/output_ast';
 import { ProviderAst, ReferenceAst, TemplateAst } from '../template_parser/template_ast';
-import { CompileView } from './compile_view';
+import { CompileView, CompileViewRootNode } from './compile_view';
 import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewFactoryDependency } from './deps';
 export declare class CompileNode {
     parent: CompileElement;
@@ -37,8 +37,7 @@ export declare class CompileElement extends CompileNode {
     private _resolvedProviders;
     private _queryCount;
     private _queries;
-    private _componentConstructorViewQueryLists;
-    contentNodesByNgContentIndex: Array<o.Expression>[];
+    contentNodesByNgContentIndex: Array<CompileViewRootNode>[];
     embeddedView: CompileView;
     referenceTokens: {
         [key: string]: CompileTokenMetadata;
@@ -50,7 +49,7 @@ export declare class CompileElement extends CompileNode {
     setEmbeddedView(embeddedView: CompileView): void;
     beforeChildren(): void;
     afterChildren(childNodeCount: number): void;
-    addContentNode(ngContentIndex: number, nodeExpr: o.Expression): void;
+    addContentNode(ngContentIndex: number, nodeExpr: CompileViewRootNode): void;
     getComponent(): o.Expression;
     getProviderTokens(): o.Expression[];
     private _getQueriesFor(token);

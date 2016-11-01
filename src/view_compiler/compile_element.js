@@ -52,7 +52,6 @@ export var CompileElement = (function (_super) {
         this.directiveWrapperInstance = new Map();
         this._queryCount = 0;
         this._queries = new Map();
-        this._componentConstructorViewQueryLists = [];
         this.contentNodesByNgContentIndex = null;
         this.referenceTokens = {};
         references.forEach(function (ref) { return _this.referenceTokens[ref.name] = ref.value; });
@@ -85,6 +84,9 @@ export var CompileElement = (function (_super) {
         this.view.createMethod.addStmt(statement);
         this.appElement = o.THIS_EXPR.prop(fieldName);
         this.instances.set(resolveIdentifierToken(Identifiers.AppElement).reference, this.appElement);
+        if (this.hasViewContainer) {
+            this.view.viewContainerAppElements.push(this.appElement);
+        }
     };
     CompileElement.prototype._createComponentFactoryResolver = function () {
         var _this = this;
@@ -223,13 +225,8 @@ export var CompileElement = (function (_super) {
             }
         });
         if (isPresent(this.component)) {
-            var componentConstructorViewQueryList = isPresent(this.component) ?
-                o.literalArr(this._componentConstructorViewQueryLists) :
-                o.NULL_EXPR;
             var compExpr = isPresent(this.getComponent()) ? this.getComponent() : o.NULL_EXPR;
-            this.view.createMethod.addStmt(this.appElement
-                .callMethod('initComponent', [compExpr, componentConstructorViewQueryList, this._compViewExpr])
-                .toStmt());
+            this.view.createMethod.addStmt(this.appElement.callMethod('initComponent', [compExpr, this._compViewExpr]).toStmt());
         }
     };
     CompileElement.prototype.afterChildren = function (childNodeCount) {
@@ -291,15 +288,6 @@ export var CompileElement = (function (_super) {
     };
     CompileElement.prototype._getLocalDependency = function (requestingProviderType, dep) {
         var result = null;
-        // constructor content query
-        if (!result && isPresent(dep.query)) {
-            result = this._addQuery(dep.query, null).queryList;
-        }
-        // constructor view query
-        if (!result && isPresent(dep.viewQuery)) {
-            result = createQueryList(dep.viewQuery, null, "_viewQuery_" + dep.viewQuery.selectors[0].name + "_" + this.nodeIndex + "_" + this._componentConstructorViewQueryLists.length, this.view);
-            this._componentConstructorViewQueryLists.push(result);
-        }
         if (isPresent(dep.token)) {
             // access builtins with special visibility
             if (!result) {

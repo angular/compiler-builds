@@ -27,7 +27,6 @@ export declare class ViewConstructorVars {
 }
 export declare class ViewProperties {
     static renderer: o.ReadPropExpr;
-    static projectableNodes: o.ReadPropExpr;
     static viewUtils: o.ReadPropExpr;
 }
 export declare class InjectMethodVars {

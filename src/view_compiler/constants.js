@@ -52,7 +52,6 @@ export var ViewProperties = (function () {
     function ViewProperties() {
     }
     ViewProperties.renderer = o.THIS_EXPR.prop('renderer');
-    ViewProperties.projectableNodes = o.THIS_EXPR.prop('projectableNodes');
     ViewProperties.viewUtils = o.THIS_EXPR.prop('viewUtils');
     return ViewProperties;
 }());

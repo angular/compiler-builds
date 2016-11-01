@@ -35,7 +35,6 @@ export declare class Identifiers {
     static UNINITIALIZED: IdentifierSpec;
     static ChangeDetectorStatus: IdentifierSpec;
     static checkBinding: IdentifierSpec;
-    static flattenNestedViewRenderNodes: IdentifierSpec;
     static devModeEqual: IdentifierSpec;
     static interpolate: IdentifierSpec;
     static castByValue: IdentifierSpec;

@@ -15,6 +15,17 @@ import { CompileElement, CompileNode } from './compile_element';
 import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
 import { CompileQuery } from './compile_query';
+export declare enum CompileViewRootNodeType {
+    Node = 0,
+    ViewContainer = 1,
+    NgContent = 2,
+}
+export declare class CompileViewRootNode {
+    type: CompileViewRootNodeType;
+    expr: o.Expression;
+    ngContentIndex: number;
+    constructor(type: CompileViewRootNodeType, expr: o.Expression, ngContentIndex?: number);
+}
 export declare class CompileView implements NameResolver {
     component: CompileDirectiveMetadata;
     genConfig: CompilerConfig;
@@ -26,8 +37,11 @@ export declare class CompileView implements NameResolver {
     templateVariableBindings: string[][];
     viewType: ViewType;
     viewQueries: Map<any, CompileQuery[]>;
+    viewChildren: o.Expression[];
     nodes: CompileNode[];
-    rootNodesOrAppElements: o.Expression[];
+    rootNodes: CompileViewRootNode[];
+    lastRenderNode: o.Expression;
+    viewContainerAppElements: o.Expression[];
     createMethod: CompileMethod;
     animationBindingsMethod: CompileMethod;
     injectorGetMethod: CompileMethod;
@@ -45,7 +59,6 @@ export declare class CompileView implements NameResolver {
     fields: o.ClassField[];
     getters: o.ClassGetter[];
     disposables: o.Expression[];
-    subscriptions: o.Expression[];
     componentView: CompileView;
     purePipes: Map<string, CompilePipe>;
     pipes: CompilePipe[];

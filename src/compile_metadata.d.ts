@@ -79,11 +79,9 @@ export declare class CompileDiDependencyMetadata {
     isSkipSelf: boolean;
     isOptional: boolean;
     isValue: boolean;
-    query: CompileQueryMetadata;
-    viewQuery: CompileQueryMetadata;
     token: CompileTokenMetadata;
     value: any;
-    constructor({isAttribute, isSelf, isHost, isSkipSelf, isOptional, isValue, query, viewQuery, token, value}?: {
+    constructor({isAttribute, isSelf, isHost, isSkipSelf, isOptional, isValue, token, value}?: {
         isAttribute?: boolean;
         isSelf?: boolean;
         isHost?: boolean;

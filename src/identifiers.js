@@ -149,11 +149,6 @@ export var Identifiers = (function () {
         moduleUrl: VIEW_UTILS_MODULE_URL,
         runtime: view_utils.checkBinding
     };
-    Identifiers.flattenNestedViewRenderNodes = {
-        name: 'flattenNestedViewRenderNodes',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.flattenNestedViewRenderNodes
-    };
     Identifiers.devModeEqual = { name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: devModeEqual };
     Identifiers.interpolate = {
         name: 'interpolate',

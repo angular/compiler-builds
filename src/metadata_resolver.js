@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, Attribute, Component, Host, Inject, Injectable, Optional, Query, Self, SkipSelf, Type, resolveForwardRef } from '@angular/core';
+import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, Attribute, Component, Host, Inject, Injectable, Optional, Self, SkipSelf, Type, resolveForwardRef } from '@angular/core';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { DirectiveResolver } from './directive_resolver';
@@ -144,7 +144,7 @@ export var CompileMetadataResolver = (function () {
                 moduleUrl = componentModuleUrl(this._reflector, directiveType, dirMeta);
                 if (dirMeta.entryComponents) {
                     entryComponentMetadata =
-                        flattenArray(dirMeta.entryComponents)
+                        flattenAndDedupeArray(dirMeta.entryComponents)
                             .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); })
                             .concat(entryComponentMetadata);
                 }
@@ -209,7 +209,7 @@ export var CompileMetadataResolver = (function () {
             var bootstrapComponents = [];
             var schemas = [];
             if (meta.imports) {
-                flattenArray(meta.imports).forEach(function (importedType) {
+                flattenAndDedupeArray(meta.imports).forEach(function (importedType) {
                     var importedModuleType;
                     if (isValidType(importedType)) {
                         importedModuleType = importedType;
@@ -234,7 +234,7 @@ export var CompileMetadataResolver = (function () {
                 });
             }
             if (meta.exports) {
-                flattenArray(meta.exports).forEach(function (exportedType) {
+                flattenAndDedupeArray(meta.exports).forEach(function (exportedType) {
                     if (!isValidType(exportedType)) {
                         throw new Error("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
                     }
@@ -259,7 +259,7 @@ export var CompileMetadataResolver = (function () {
             // getting a new instance every time!
             var transitiveModule_1 = this._getTransitiveNgModuleMetadata(importedModules_1, exportedModules_1);
             if (meta.declarations) {
-                flattenArray(meta.declarations).forEach(function (declaredType) {
+                flattenAndDedupeArray(meta.declarations).forEach(function (declaredType) {
                     if (!isValidType(declaredType)) {
                         throw new Error("Unexpected value '" + stringify(declaredType) + "' declared by the module '" + stringify(moduleType) + "'");
                     }
@@ -282,11 +282,11 @@ export var CompileMetadataResolver = (function () {
                 providers_1.push.apply(providers_1, this.getProvidersMetadata(meta.providers, entryComponents_1, "provider for the NgModule '" + stringify(moduleType) + "'"));
             }
             if (meta.entryComponents) {
-                entryComponents_1.push.apply(entryComponents_1, flattenArray(meta.entryComponents)
+                entryComponents_1.push.apply(entryComponents_1, flattenAndDedupeArray(meta.entryComponents)
                     .map(function (type) { return _this.getTypeMetadata(type, staticTypeModuleUrl(type)); }));
             }
             if (meta.bootstrap) {
-                var typeMetadata = flattenArray(meta.bootstrap).map(function (type) {
+                var typeMetadata = flattenAndDedupeArray(meta.bootstrap).map(function (type) {
                     if (!isValidType(type)) {
                         throw new Error("Unexpected value '" + stringify(type) + "' used in the bootstrap property of module '" + stringify(moduleType) + "'");
                     }
@@ -296,7 +296,7 @@ export var CompileMetadataResolver = (function () {
             }
             entryComponents_1.push.apply(entryComponents_1, bootstrapComponents);
             if (meta.schemas) {
-                schemas.push.apply(schemas, flattenArray(meta.schemas));
+                schemas.push.apply(schemas, flattenAndDedupeArray(meta.schemas));
             }
             (_a = transitiveModule_1.entryComponents).push.apply(_a, entryComponents_1);
             (_b = transitiveModule_1.providers).push.apply(_b, providers_1);
@@ -439,8 +439,6 @@ export var CompileMetadataResolver = (function () {
             var isSelf = false;
             var isSkipSelf = false;
             var isOptional = false;
-            var query = null;
-            var viewQuery = null;
             var token = null;
             if (Array.isArray(param)) {
                 param.forEach(function (paramEntry) {
@@ -459,14 +457,6 @@ export var CompileMetadataResolver = (function () {
                     else if (paramEntry instanceof Attribute) {
                         isAttribute = true;
                         token = paramEntry.attributeName;
-                    }
-                    else if (paramEntry instanceof Query) {
-                        if (paramEntry.isViewQuery) {
-                            viewQuery = paramEntry;
-                        }
-                        else {
-                            query = paramEntry;
-                        }
                     }
                     else if (paramEntry instanceof Inject) {
                         token = paramEntry.token;
@@ -489,8 +479,6 @@ export var CompileMetadataResolver = (function () {
                 isSelf: isSelf,
                 isSkipSelf: isSkipSelf,
                 isOptional: isOptional,
-                query: query ? _this.getQueryMetadata(query, null, typeOrFunc) : null,
-                viewQuery: viewQuery ? _this.getQueryMetadata(viewQuery, null, typeOrFunc) : null,
                 token: _this.getTokenMetadata(token)
             });
         });
@@ -680,6 +668,15 @@ function flattenArray(tree, out) {
         }
     }
     return out;
+}
+function dedupeArray(array) {
+    if (array) {
+        return Array.from(new Set(array));
+    }
+    return [];
+}
+function flattenAndDedupeArray(tree) {
+    return dedupeArray(flattenArray(tree));
 }
 function isValidType(value) {
     return cpl.isStaticSymbol(value) || (value instanceof Type);

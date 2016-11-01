@@ -15,6 +15,20 @@ import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
 import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
 import { getPropertyInView, getViewFactoryName } from './util';
+export var CompileViewRootNodeType;
+(function (CompileViewRootNodeType) {
+    CompileViewRootNodeType[CompileViewRootNodeType["Node"] = 0] = "Node";
+    CompileViewRootNodeType[CompileViewRootNodeType["ViewContainer"] = 1] = "ViewContainer";
+    CompileViewRootNodeType[CompileViewRootNodeType["NgContent"] = 2] = "NgContent";
+})(CompileViewRootNodeType || (CompileViewRootNodeType = {}));
+export var CompileViewRootNode = (function () {
+    function CompileViewRootNode(type, expr, ngContentIndex) {
+        this.type = type;
+        this.expr = expr;
+        this.ngContentIndex = ngContentIndex;
+    }
+    return CompileViewRootNode;
+}());
 export var CompileView = (function () {
     function CompileView(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings) {
         var _this = this;
@@ -26,15 +40,16 @@ export var CompileView = (function () {
         this.viewIndex = viewIndex;
         this.declarationElement = declarationElement;
         this.templateVariableBindings = templateVariableBindings;
+        this.viewChildren = [];
         this.nodes = [];
-        // root nodes or AppElements for ViewContainers
-        this.rootNodesOrAppElements = [];
+        this.rootNodes = [];
+        this.lastRenderNode = o.NULL_EXPR;
+        this.viewContainerAppElements = [];
         this.methods = [];
         this.ctorStmts = [];
         this.fields = [];
         this.getters = [];
         this.disposables = [];
-        this.subscriptions = [];
         this.purePipes = new Map();
         this.pipes = [];
         this.locals = new Map();
@@ -73,16 +88,6 @@ export var CompileView = (function () {
                 var queryList = createQueryList(queryMeta, directiveInstance, propName, _this);
                 var query = new CompileQuery(queryMeta, queryList, directiveInstance, _this);
                 addQueryToTokenMap(viewQueries, query);
-            });
-            var constructorViewQueryCount = 0;
-            this.component.type.diDeps.forEach(function (dep) {
-                if (isPresent(dep.viewQuery)) {
-                    var queryList = o.THIS_EXPR.prop('declarationAppElement')
-                        .prop('componentConstructorViewQueries')
-                        .key(o.literal(constructorViewQueryCount++));
-                    var query = new CompileQuery(dep.viewQuery, queryList, null, _this);
-                    addQueryToTokenMap(viewQueries, query);
-                }
             });
         }
         this.viewQueries = viewQueries;

@@ -65,29 +65,6 @@ export function injectFromViewParentInjector(token, optional) {
 export function getViewFactoryName(component, embeddedTemplateIndex) {
     return "viewFactory_" + component.type.name + embeddedTemplateIndex;
 }
-export function createFlatArray(expressions) {
-    var lastNonArrayExpressions = [];
-    var result = o.literalArr([]);
-    for (var i = 0; i < expressions.length; i++) {
-        var expr = expressions[i];
-        if (expr.type instanceof o.ArrayType) {
-            if (lastNonArrayExpressions.length > 0) {
-                result =
-                    result.callMethod(o.BuiltinMethod.ConcatArray, [o.literalArr(lastNonArrayExpressions)]);
-                lastNonArrayExpressions = [];
-            }
-            result = result.callMethod(o.BuiltinMethod.ConcatArray, [expr]);
-        }
-        else {
-            lastNonArrayExpressions.push(expr);
-        }
-    }
-    if (lastNonArrayExpressions.length > 0) {
-        result =
-            result.callMethod(o.BuiltinMethod.ConcatArray, [o.literalArr(lastNonArrayExpressions)]);
-    }
-    return result;
-}
 export function getHandleEventMethodName(elementIndex) {
     return "handleEvent_" + elementIndex;
 }

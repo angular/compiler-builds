@@ -192,9 +192,6 @@ export var ProviderElementContext = (function () {
             var attrValue = this._attrs[dep.token.value];
             return new CompileDiDependencyMetadata({ isValue: true, value: attrValue == null ? null : attrValue });
         }
-        if (isPresent(dep.query) || isPresent(dep.viewQuery)) {
-            return dep;
-        }
         if (isPresent(dep.token)) {
             // access builtints
             if ((requestingProviderType === ProviderAstType.Directive ||
@@ -453,11 +450,6 @@ function _getViewQueries(component) {
     if (isPresent(component.viewQueries)) {
         component.viewQueries.forEach(function (query) { return _addQueryToTokenMap(viewQueries, query); });
     }
-    component.type.diDeps.forEach(function (dep) {
-        if (isPresent(dep.viewQuery)) {
-            _addQueryToTokenMap(viewQueries, dep.viewQuery);
-        }
-    });
     return viewQueries;
 }
 function _getContentQueries(directives) {
@@ -466,11 +458,6 @@ function _getContentQueries(directives) {
         if (isPresent(directive.queries)) {
             directive.queries.forEach(function (query) { return _addQueryToTokenMap(contentQueries, query); });
         }
-        directive.type.diDeps.forEach(function (dep) {
-            if (isPresent(dep.query)) {
-                _addQueryToTokenMap(contentQueries, dep.query);
-            }
-        });
     });
     return contentQueries;
 }
