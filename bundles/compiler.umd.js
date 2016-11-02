@@ -12602,7 +12602,7 @@
       var builderVisitor = new ViewBuilderVisitor(view, targetDependencies);
       var parentEl = view.declarationElement.isNull() ? view.declarationElement : view.declarationElement.parent;
       templateVisitAll(builderVisitor, template, parentEl);
-      if (view.viewType === ViewType.EMBEDDED) {
+      if (view.viewType === ViewType.EMBEDDED || view.viewType === ViewType.HOST) {
           view.lastRenderNode = builderVisitor.getOrCreateLastRenderNode();
       }
       return builderVisitor.nestedViewCount;
