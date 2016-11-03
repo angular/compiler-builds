@@ -44,8 +44,9 @@ export var ViewConstructorVars = (function () {
     function ViewConstructorVars() {
     }
     ViewConstructorVars.viewUtils = o.variable('viewUtils');
-    ViewConstructorVars.parentInjector = o.variable('parentInjector');
-    ViewConstructorVars.declarationEl = o.variable('declarationEl');
+    ViewConstructorVars.parentView = o.variable('parentView');
+    ViewConstructorVars.parentIndex = o.variable('parentIndex');
+    ViewConstructorVars.parentElement = o.variable('parentElement');
     return ViewConstructorVars;
 }());
 export var ViewProperties = (function () {

@@ -28,10 +28,9 @@ export declare class CompileElement extends CompileNode {
     hasEmbeddedView: boolean;
     private _targetDependencies;
     static createNull(): CompileElement;
-    private _compViewExpr;
-    appElement: o.ReadPropExpr;
+    compViewExpr: o.Expression;
+    viewContainer: o.ReadPropExpr;
     elementRef: o.Expression;
-    injector: o.Expression;
     instances: Map<any, o.Expression>;
     directiveWrapperInstance: Map<any, o.Expression>;
     private _resolvedProviders;
@@ -43,7 +42,7 @@ export declare class CompileElement extends CompileNode {
         [key: string]: CompileTokenMetadata;
     };
     constructor(parent: CompileElement, view: CompileView, nodeIndex: number, renderNode: o.Expression, sourceAst: TemplateAst, component: CompileDirectiveMetadata, _directives: CompileDirectiveMetadata[], _resolvedProvidersArray: ProviderAst[], hasViewContainer: boolean, hasEmbeddedView: boolean, references: ReferenceAst[], _targetDependencies: Array<ViewFactoryDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
-    private _createAppElement();
+    private _createViewContainer();
     private _createComponentFactoryResolver();
     setComponentView(compViewExpr: o.Expression): void;
     setEmbeddedView(embeddedView: CompileView): void;

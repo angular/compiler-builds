@@ -6156,8 +6156,9 @@
   var LifecycleHooks = _angular_core.__core_private__.LifecycleHooks;
   var LIFECYCLE_HOOKS_VALUES = _angular_core.__core_private__.LIFECYCLE_HOOKS_VALUES;
   var ReflectorReader = _angular_core.__core_private__.ReflectorReader;
-  var AppElement = _angular_core.__core_private__.AppElement;
+  var ViewContainer = _angular_core.__core_private__.ViewContainer;
   var CodegenComponentFactoryResolver = _angular_core.__core_private__.CodegenComponentFactoryResolver;
+  var ComponentRef_ = _angular_core.__core_private__.ComponentRef_;
   var AppView = _angular_core.__core_private__.AppView;
   var DebugAppView = _angular_core.__core_private__.DebugAppView;
   var NgModuleInjector = _angular_core.__core_private__.NgModuleInjector;
@@ -6214,10 +6215,10 @@
           moduleUrl: APP_VIEW_MODULE_URL,
           runtime: DebugAppView
       };
-      Identifiers.AppElement = {
-          name: 'AppElement',
-          moduleUrl: assetUrl('core', 'linker/element'),
-          runtime: AppElement
+      Identifiers.ViewContainer = {
+          name: 'ViewContainer',
+          moduleUrl: assetUrl('core', 'linker/view_container'),
+          runtime: ViewContainer
       };
       Identifiers.ElementRef = {
           name: 'ElementRef',
@@ -6267,6 +6268,16 @@
       Identifiers.ComponentFactory = {
           name: 'ComponentFactory',
           runtime: _angular_core.ComponentFactory,
+          moduleUrl: assetUrl('core', 'linker/component_factory')
+      };
+      Identifiers.ComponentRef_ = {
+          name: 'ComponentRef_',
+          runtime: ComponentRef_,
+          moduleUrl: assetUrl('core', 'linker/component_factory')
+      };
+      Identifiers.ComponentRef = {
+          name: 'ComponentRef',
+          runtime: _angular_core.ComponentRef,
           moduleUrl: assetUrl('core', 'linker/component_factory')
       };
       Identifiers.NgModuleFactory = {
@@ -11480,7 +11491,7 @@
           var currView = callingView;
           while (currView !== definedView && isPresent(currView.declarationElement.view)) {
               currView = currView.declarationElement.view;
-              viewProp = viewProp.prop('parent');
+              viewProp = viewProp.prop('parentView');
           }
           if (currView !== definedView) {
               throw new Error("Internal error: Could not calculate a property in a parent view: " + property);
@@ -11513,12 +11524,19 @@
       };
       return _ReplaceViewTransformer;
   }(ExpressionTransformer));
-  function injectFromViewParentInjector(token, optional) {
-      var args = [createDiTokenExpression(token)];
+  function injectFromViewParentInjector(view, token, optional) {
+      var viewExpr;
+      if (view.viewType === ViewType.HOST) {
+          viewExpr = THIS_EXPR;
+      }
+      else {
+          viewExpr = THIS_EXPR.prop('parentView');
+      }
+      var args = [createDiTokenExpression(token), THIS_EXPR.prop('parentIndex')];
       if (optional) {
           args.push(NULL_EXPR);
       }
-      return THIS_EXPR.prop('parentInjector').callMethod('get', args);
+      return viewExpr.callMethod('injectorGet', args);
   }
   function getViewFactoryName(component, embeddedTemplateIndex) {
       return "viewFactory_" + component.type.name + embeddedTemplateIndex;
@@ -11597,16 +11615,16 @@
   function createQueryValues(viewValues) {
       return ListWrapper.flatten(viewValues.values.map(function (entry) {
           if (entry instanceof ViewQueryValues) {
-              return mapNestedViews(entry.view.declarationElement.appElement, entry.view, createQueryValues(entry));
+              return mapNestedViews(entry.view.declarationElement.viewContainer, entry.view, createQueryValues(entry));
           }
           else {
               return entry;
           }
       }));
   }
-  function mapNestedViews(declarationAppElement, view, expressions) {
+  function mapNestedViews(viewContainer, view, expressions) {
       var adjustedExpressions = expressions.map(function (expr) { return replaceVarInExpression(THIS_EXPR.name, variable('nestedView'), expr); });
-      return declarationAppElement.callMethod('mapNestedViews', [
+      return viewContainer.callMethod('mapNestedViews', [
           variable(view.className),
           fn([new FnParam('nestedView', view.classType)], [new ReturnStatement(literalArr(adjustedExpressions))], DYNAMIC_TYPE)
       ]);
@@ -11659,8 +11677,9 @@
       function ViewConstructorVars() {
       }
       ViewConstructorVars.viewUtils = variable('viewUtils');
-      ViewConstructorVars.parentInjector = variable('parentInjector');
-      ViewConstructorVars.declarationEl = variable('declarationEl');
+      ViewConstructorVars.parentView = variable('parentView');
+      ViewConstructorVars.parentIndex = variable('parentIndex');
+      ViewConstructorVars.parentElement = variable('parentElement');
       return ViewConstructorVars;
   }());
   var ViewProperties = (function () {
@@ -11751,7 +11770,7 @@
           this.hasViewContainer = hasViewContainer;
           this.hasEmbeddedView = hasEmbeddedView;
           this._targetDependencies = _targetDependencies;
-          this._compViewExpr = null;
+          this.compViewExpr = null;
           this.instances = new Map();
           this.directiveWrapperInstance = new Map();
           this._queryCount = 0;
@@ -11762,11 +11781,10 @@
           this.elementRef =
               importExpr(resolveIdentifier(Identifiers.ElementRef)).instantiate([this.renderNode]);
           this.instances.set(resolveIdentifierToken(Identifiers.ElementRef).reference, this.elementRef);
-          this.injector = THIS_EXPR.callMethod('injector', [literal(this.nodeIndex)]);
-          this.instances.set(resolveIdentifierToken(Identifiers.Injector).reference, this.injector);
+          this.instances.set(resolveIdentifierToken(Identifiers.Injector).reference, THIS_EXPR.callMethod('injector', [literal(this.nodeIndex)]));
           this.instances.set(resolveIdentifierToken(Identifiers.Renderer).reference, THIS_EXPR.prop('renderer'));
-          if (this.hasViewContainer || this.hasEmbeddedView || isPresent(this.component)) {
-              this._createAppElement();
+          if (this.hasViewContainer) {
+              this._createViewContainer();
           }
           if (this.component) {
               this._createComponentFactoryResolver();
@@ -11775,22 +11793,20 @@
       CompileElement.createNull = function () {
           return new CompileElement(null, null, null, null, null, null, [], [], false, false, [], []);
       };
-      CompileElement.prototype._createAppElement = function () {
-          var fieldName = "_appEl_" + this.nodeIndex;
+      CompileElement.prototype._createViewContainer = function () {
+          var fieldName = "_vc_" + this.nodeIndex;
           var parentNodeIndex = this.isRootElement() ? null : this.parent.nodeIndex;
-          // private is fine here as no child view will reference an AppElement
-          this.view.fields.push(new ClassField(fieldName, importType(resolveIdentifier(Identifiers.AppElement)), [StmtModifier.Private]));
+          // private is fine here as no child view will reference a ViewContainer
+          this.view.fields.push(new ClassField(fieldName, importType(resolveIdentifier(Identifiers.ViewContainer)), [StmtModifier.Private]));
           var statement = THIS_EXPR.prop(fieldName)
-              .set(importExpr(resolveIdentifier(Identifiers.AppElement)).instantiate([
+              .set(importExpr(resolveIdentifier(Identifiers.ViewContainer)).instantiate([
               literal(this.nodeIndex), literal(parentNodeIndex), THIS_EXPR, this.renderNode
           ]))
               .toStmt();
           this.view.createMethod.addStmt(statement);
-          this.appElement = THIS_EXPR.prop(fieldName);
-          this.instances.set(resolveIdentifierToken(Identifiers.AppElement).reference, this.appElement);
-          if (this.hasViewContainer) {
-              this.view.viewContainerAppElements.push(this.appElement);
-          }
+          this.viewContainer = THIS_EXPR.prop(fieldName);
+          this.instances.set(resolveIdentifierToken(Identifiers.ViewContainer).reference, this.viewContainer);
+          this.view.viewContainers.push(this.viewContainer);
       };
       CompileElement.prototype._createComponentFactoryResolver = function () {
           var _this = this;
@@ -11804,7 +11820,7 @@
           }
           var createComponentFactoryResolverExpr = importExpr(resolveIdentifier(Identifiers.CodegenComponentFactoryResolver)).instantiate([
               literalArr(entryComponents.map(function (entryComponent) { return importExpr(entryComponent); })),
-              injectFromViewParentInjector(resolveIdentifierToken(Identifiers.ComponentFactoryResolver), false)
+              injectFromViewParentInjector(this.view, resolveIdentifierToken(Identifiers.ComponentFactoryResolver), false)
           ]);
           var provider = new CompileProviderMetadata({
               token: resolveIdentifierToken(Identifiers.ComponentFactoryResolver),
@@ -11816,7 +11832,7 @@
           this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], exports.ProviderAstType.PrivateService, [], this.sourceAst.sourceSpan));
       };
       CompileElement.prototype.setComponentView = function (compViewExpr) {
-          this._compViewExpr = compViewExpr;
+          this.compViewExpr = compViewExpr;
           this.contentNodesByNgContentIndex =
               new Array(this.component.template.ngContentSelectors.length);
           for (var i = 0; i < this.contentNodesByNgContentIndex.length; i++) {
@@ -11827,7 +11843,7 @@
           this.embeddedView = embeddedView;
           if (isPresent(embeddedView)) {
               var createTemplateRefExpr = importExpr(resolveIdentifier(Identifiers.TemplateRef_)).instantiate([
-                  this.appElement, this.embeddedView.viewFactory
+                  THIS_EXPR, literal(this.nodeIndex), this.renderNode
               ]);
               var provider = new CompileProviderMetadata({
                   token: resolveIdentifierToken(Identifiers.TemplateRef),
@@ -11840,7 +11856,7 @@
       CompileElement.prototype.beforeChildren = function () {
           var _this = this;
           if (this.hasViewContainer) {
-              this.instances.set(resolveIdentifierToken(Identifiers.ViewContainerRef).reference, this.appElement.prop('vcRef'));
+              this.instances.set(resolveIdentifierToken(Identifiers.ViewContainerRef).reference, this.viewContainer.prop('vcRef'));
           }
           this._resolvedProviders = new Map();
           this._resolvedProvidersArray.forEach(function (provider) { return _this._resolvedProviders.set(provider.token.reference, provider); });
@@ -11928,10 +11944,6 @@
                   queryWithRead.query.addValue(value, _this.view);
               }
           });
-          if (isPresent(this.component)) {
-              var compExpr = isPresent(this.getComponent()) ? this.getComponent() : NULL_EXPR;
-              this.view.createMethod.addStmt(this.appElement.callMethod('initComponent', [compExpr, this._compViewExpr]).toStmt());
-          }
       };
       CompileElement.prototype.afterChildren = function (childNodeCount) {
           var _this = this;
@@ -11998,7 +12010,7 @@
                   if (dep.token.reference ===
                       resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference) {
                       if (requestingProviderType === exports.ProviderAstType.Component) {
-                          return this._compViewExpr.prop('ref');
+                          return this.compViewExpr.prop('ref');
                       }
                       else {
                           return getPropertyInView(THIS_EXPR.prop('ref'), this.view, this.view.componentView);
@@ -12035,7 +12047,7 @@
               result = currElement._getLocalDependency(exports.ProviderAstType.PublicService, new CompileDiDependencyMetadata({ token: dep.token }));
           }
           if (!result) {
-              result = injectFromViewParentInjector(dep.token, dep.isOptional);
+              result = injectFromViewParentInjector(this.view, dep.token, dep.isOptional);
           }
           if (!result) {
               result = NULL_EXPR;
@@ -12107,7 +12119,7 @@
                   resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference) {
                   return getPropertyInView(THIS_EXPR.prop('ref'), _this.view, _this.view.componentView);
               }
-              return injectFromViewParentInjector(diDep.token, false);
+              return injectFromViewParentInjector(view, diDep.token, false);
           });
           this.view.fields.push(new ClassField(this.instance.name, importType(this.meta.type)));
           this.view.createMethod.resetDebugInfo(null, null);
@@ -12201,7 +12213,7 @@
           this.nodes = [];
           this.rootNodes = [];
           this.lastRenderNode = NULL_EXPR;
-          this.viewContainerAppElements = [];
+          this.viewContainers = [];
           this.methods = [];
           this.ctorStmts = [];
           this.fields = [];
@@ -12339,7 +12351,7 @@
   }
   function generateHandleEventMethod(boundEvents, directives, compileElement) {
       var hasComponentHostListener = directives.some(function (dirAst) { return dirAst.hostEvents.some(function (event) { return dirAst.directive.isComponent; }); });
-      var markPathToRootStart = hasComponentHostListener ? compileElement.appElement.prop('componentView') : THIS_EXPR;
+      var markPathToRootStart = hasComponentHostListener ? compileElement.compViewExpr : THIS_EXPR;
       var handleEventStmts = new CompileMethod(compileElement.view);
       handleEventStmts.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
       handleEventStmts.push(markPathToRootStart.callMethod('markPathToRootAsCheckOnce', []).toStmt());
@@ -12404,7 +12416,7 @@
   }
   function bindDirectiveWrapperLifecycleCallbacks(dir, directiveWrapperIntance, compileElement) {
       compileElement.view.destroyMethod.addStmts(DirectiveWrapperExpressions.ngOnDestroy(dir.directive, directiveWrapperIntance));
-      compileElement.view.detachMethod.addStmts(DirectiveWrapperExpressions.ngOnDetach(dir.hostProperties, directiveWrapperIntance, THIS_EXPR, compileElement.component ? compileElement.appElement.prop('componentView') : THIS_EXPR, compileElement.renderNode));
+      compileElement.view.detachMethod.addStmts(DirectiveWrapperExpressions.ngOnDetach(dir.hostProperties, directiveWrapperIntance, THIS_EXPR, compileElement.compViewExpr || THIS_EXPR, compileElement.renderNode));
   }
   function bindInjectableDestroyLifecycleCallbacks(provider, providerInstance, compileElement) {
       var onDestroyMethod = compileElement.view.destroyMethod;
@@ -12481,7 +12493,7 @@
           }
           return createEnumExpression(Identifiers.SecurityContext, ctx);
       });
-      compileElement.view.detectChangesRenderPropertiesMethod.addStmts(DirectiveWrapperExpressions.checkHost(directiveAst.hostProperties, directiveWrapperInstance, THIS_EXPR, compileElement.component ? compileElement.appElement.prop('componentView') : THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange, runtimeSecurityCtxExprs));
+      compileElement.view.detectChangesRenderPropertiesMethod.addStmts(DirectiveWrapperExpressions.checkHost(directiveAst.hostProperties, directiveWrapperInstance, THIS_EXPR, compileElement.compViewExpr || THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange, runtimeSecurityCtxExprs));
   }
   function bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirIndex, compileElement) {
       var view = compileElement.view;
@@ -12507,9 +12519,7 @@
           !isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
       var directiveDetectChangesExpr = DirectiveWrapperExpressions.ngDoCheck(directiveWrapperInstance, THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange);
       var directiveDetectChangesStmt = isOnPushComp ?
-          new IfStmt(directiveDetectChangesExpr, [compileElement.appElement.prop('componentView')
-                  .callMethod('markAsCheckOnce', [])
-                  .toStmt()]) :
+          new IfStmt(directiveDetectChangesExpr, [compileElement.compViewExpr.callMethod('markAsCheckOnce', []).toStmt()]) :
           directiveDetectChangesExpr.toStmt();
       detectChangesInInputsMethod.addStmt(directiveDetectChangesStmt);
   }
@@ -12627,15 +12637,14 @@
           var projectedNode = _getOuterContainerOrSelf(node);
           var parent = projectedNode.parent;
           var ngContentIndex = projectedNode.sourceAst.ngContentIndex;
-          var vcAppEl = (node instanceof CompileElement && node.hasViewContainer) ? node.appElement : null;
+          var viewContainer = (node instanceof CompileElement && node.hasViewContainer) ? node.viewContainer : null;
           if (this._isRootNode(parent)) {
-              // store appElement as root node only for ViewContainers
               if (this.view.viewType !== ViewType.COMPONENT) {
-                  this.view.rootNodes.push(new CompileViewRootNode(vcAppEl ? CompileViewRootNodeType.ViewContainer : CompileViewRootNodeType.Node, vcAppEl || node.renderNode));
+                  this.view.rootNodes.push(new CompileViewRootNode(viewContainer ? CompileViewRootNodeType.ViewContainer : CompileViewRootNodeType.Node, viewContainer || node.renderNode));
               }
           }
           else if (isPresent(parent.component) && isPresent(ngContentIndex)) {
-              parent.addContentNode(ngContentIndex, new CompileViewRootNode(vcAppEl ? CompileViewRootNodeType.ViewContainer : CompileViewRootNodeType.Node, vcAppEl || node.renderNode));
+              parent.addContentNode(ngContentIndex, new CompileViewRootNode(viewContainer ? CompileViewRootNodeType.ViewContainer : CompileViewRootNodeType.Node, viewContainer || node.renderNode));
           }
       };
       ViewBuilderVisitor.prototype._getParentRenderNode = function (parent) {
@@ -12760,7 +12769,7 @@
               compileElement.setComponentView(compViewExpr);
               this.view.createMethod.addStmt(compViewExpr
                   .set(importExpr(nestedComponentIdentifier).callFn([
-                  ViewProperties.viewUtils, compileElement.injector, compileElement.appElement
+                  ViewProperties.viewUtils, THIS_EXPR, literal(nodeIndex), renderNode
               ]))
                   .toStmt());
           }
@@ -12769,7 +12778,7 @@
           templateVisitAll(this, ast.children, compileElement);
           compileElement.afterChildren(this.view.nodes.length - nodeIndex - 1);
           if (isPresent(compViewExpr)) {
-              this.view.createMethod.addStmt(compViewExpr.callMethod('create', [compileElement.getComponent(), NULL_EXPR]).toStmt());
+              this.view.createMethod.addStmt(compViewExpr.callMethod('create', [compileElement.getComponent()]).toStmt());
           }
           return null;
       };
@@ -12910,20 +12919,21 @@
   function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
       var viewConstructorArgs = [
           new FnParam(ViewConstructorVars.viewUtils.name, importType(resolveIdentifier(Identifiers.ViewUtils))),
-          new FnParam(ViewConstructorVars.parentInjector.name, importType(resolveIdentifier(Identifiers.Injector))),
-          new FnParam(ViewConstructorVars.declarationEl.name, importType(resolveIdentifier(Identifiers.AppElement)))
+          new FnParam(ViewConstructorVars.parentView.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
+          new FnParam(ViewConstructorVars.parentIndex.name, NUMBER_TYPE),
+          new FnParam(ViewConstructorVars.parentElement.name, DYNAMIC_TYPE)
       ];
       var superConstructorArgs = [
           variable(view.className), renderCompTypeVar, ViewTypeEnum.fromValue(view.viewType),
-          ViewConstructorVars.viewUtils, ViewConstructorVars.parentInjector,
-          ViewConstructorVars.declarationEl,
+          ViewConstructorVars.viewUtils, ViewConstructorVars.parentView, ViewConstructorVars.parentIndex,
+          ViewConstructorVars.parentElement,
           ChangeDetectorStatusEnum.fromValue(getChangeDetectionMode(view))
       ];
       if (view.genConfig.genDebugInfo) {
           superConstructorArgs.push(nodeDebugInfosVar);
       }
       var viewMethods = [
-          new ClassMethod('createInternal', [new FnParam(rootSelectorVar.name, STRING_TYPE)], generateCreateMethod(view), importType(resolveIdentifier(Identifiers.AppElement))),
+          new ClassMethod('createInternal', [new FnParam(rootSelectorVar.name, STRING_TYPE)], generateCreateMethod(view), importType(resolveIdentifier(Identifiers.ComponentRef), [DYNAMIC_TYPE])),
           new ClassMethod('injectorGetInternal', [
               new FnParam(InjectMethodVars.token.name, DYNAMIC_TYPE),
               // Note: Can't use o.INT_TYPE here as the method in AppView uses number
@@ -12934,7 +12944,8 @@
           new ClassMethod('dirtyParentQueriesInternal', [], view.dirtyParentQueriesMethod.finish()),
           new ClassMethod('destroyInternal', [], generateDestroyMethod(view)),
           new ClassMethod('detachInternal', [], view.detachMethod.finish()),
-          generateVisitRootNodesMethod(view), generateVisitProjectableNodesMethod(view)
+          generateVisitRootNodesMethod(view), generateVisitProjectableNodesMethod(view),
+          generateCreateEmbeddedViewsMethod(view)
       ].filter(function (method) { return method.body.length > 0; });
       var superClass = view.genConfig.genDebugInfo ? Identifiers.DebugAppView : Identifiers.AppView;
       var viewClass = createClassStmt({
@@ -12948,7 +12959,9 @@
   }
   function generateDestroyMethod(view) {
       var stmts = [];
-      view.viewContainerAppElements.forEach(function (appElement) { stmts.push(appElement.callMethod('destroyNestedViews', []).toStmt()); });
+      view.viewContainers.forEach(function (viewContainer) {
+          stmts.push(viewContainer.callMethod('destroyNestedViews', []).toStmt());
+      });
       view.viewChildren.forEach(function (viewChild) { stmts.push(viewChild.callMethod('destroy', []).toStmt()); });
       stmts.push.apply(stmts, view.destroyMethod.finish());
       return stmts;
@@ -12956,8 +12969,9 @@
   function createViewFactory(view, viewClass, renderCompTypeVar) {
       var viewFactoryArgs = [
           new FnParam(ViewConstructorVars.viewUtils.name, importType(resolveIdentifier(Identifiers.ViewUtils))),
-          new FnParam(ViewConstructorVars.parentInjector.name, importType(resolveIdentifier(Identifiers.Injector))),
-          new FnParam(ViewConstructorVars.declarationEl.name, importType(resolveIdentifier(Identifiers.AppElement)))
+          new FnParam(ViewConstructorVars.parentView.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
+          new FnParam(ViewConstructorVars.parentIndex.name, NUMBER_TYPE),
+          new FnParam(ViewConstructorVars.parentElement.name, DYNAMIC_TYPE)
       ];
       var initRenderCompTypeStmts = [];
       var templateUrlInfo;
@@ -12994,14 +13008,19 @@
       var parentRenderNodeExpr = NULL_EXPR;
       var parentRenderNodeStmts = [];
       if (view.viewType === ViewType.COMPONENT) {
-          parentRenderNodeExpr = ViewProperties.renderer.callMethod('createViewRoot', [THIS_EXPR.prop('declarationAppElement').prop('nativeElement')]);
+          parentRenderNodeExpr =
+              ViewProperties.renderer.callMethod('createViewRoot', [THIS_EXPR.prop('parentElement')]);
           parentRenderNodeStmts =
               [parentRenderNodeVar.set(parentRenderNodeExpr)
                       .toDeclStmt(importType(view.genConfig.renderTypes.renderNode), [StmtModifier.Final])];
       }
       var resultExpr;
       if (view.viewType === ViewType.HOST) {
-          resultExpr = view.nodes[0].appElement;
+          var hostEl = view.nodes[0];
+          resultExpr =
+              importExpr(resolveIdentifier(Identifiers.ComponentRef_), [DYNAMIC_TYPE]).instantiate([
+                  literal(hostEl.nodeIndex), THIS_EXPR, hostEl.renderNode, hostEl.getComponent()
+              ]);
       }
       else {
           resultExpr = NULL_EXPR;
@@ -13028,8 +13047,8 @@
       }
       stmts.push.apply(stmts, view.animationBindingsMethod.finish());
       stmts.push.apply(stmts, view.detectChangesInInputsMethod.finish());
-      view.viewContainerAppElements.forEach(function (appElement) {
-          stmts.push(appElement.callMethod('detectChangesInNestedViews', [DetectChangesVars.throwOnChange])
+      view.viewContainers.forEach(function (viewContainer) {
+          stmts.push(viewContainer.callMethod('detectChangesInNestedViews', [DetectChangesVars.throwOnChange])
               .toStmt());
       });
       var afterContentStmts = view.updateContentQueriesMethod.finish().concat(view.afterContentLifecycleCallbacksMethod.finish());
@@ -13126,6 +13145,22 @@
           }
       });
       return stmts;
+  }
+  function generateCreateEmbeddedViewsMethod(view) {
+      var nodeIndexVar = variable('nodeIndex');
+      var stmts = [];
+      view.nodes.forEach(function (node) {
+          if (node instanceof CompileElement) {
+              if (node.embeddedView) {
+                  var parentNodeIndex = node.isRootElement() ? null : node.parent.nodeIndex;
+                  stmts.push(new IfStmt(nodeIndexVar.equals(literal(node.nodeIndex)), [new ReturnStatement(node.embeddedView.viewFactory.callFn([
+                          ViewProperties.viewUtils, THIS_EXPR, literal(node.nodeIndex), node.renderNode
+                      ]))]));
+              }
+          }
+      });
+      stmts.push(new ReturnStatement(NULL_EXPR));
+      return new ClassMethod('createEmbeddedViewInternal', [new FnParam(nodeIndexVar.name, NUMBER_TYPE)], stmts, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE]));
   }
 
   var ViewCompileResult = (function () {

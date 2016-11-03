@@ -9,7 +9,7 @@ export declare class Identifiers {
     static ViewUtils: IdentifierSpec;
     static AppView: IdentifierSpec;
     static DebugAppView: IdentifierSpec;
-    static AppElement: IdentifierSpec;
+    static ViewContainer: IdentifierSpec;
     static ElementRef: IdentifierSpec;
     static ViewContainerRef: IdentifierSpec;
     static ChangeDetectorRef: IdentifierSpec;
@@ -20,6 +20,8 @@ export declare class Identifiers {
     static CodegenComponentFactoryResolver: IdentifierSpec;
     static ComponentFactoryResolver: IdentifierSpec;
     static ComponentFactory: IdentifierSpec;
+    static ComponentRef_: IdentifierSpec;
+    static ComponentRef: IdentifierSpec;
     static NgModuleFactory: IdentifierSpec;
     static NgModuleInjector: IdentifierSpec;
     static RegisterModuleFactoryFn: IdentifierSpec;

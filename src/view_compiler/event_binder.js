@@ -60,7 +60,7 @@ function subscribeToDirectiveEvents(usedEvents, directives, compileElement) {
 }
 function generateHandleEventMethod(boundEvents, directives, compileElement) {
     var hasComponentHostListener = directives.some(function (dirAst) { return dirAst.hostEvents.some(function (event) { return dirAst.directive.isComponent; }); });
-    var markPathToRootStart = hasComponentHostListener ? compileElement.appElement.prop('componentView') : o.THIS_EXPR;
+    var markPathToRootStart = hasComponentHostListener ? compileElement.compViewExpr : o.THIS_EXPR;
     var handleEventStmts = new CompileMethod(compileElement.view);
     handleEventStmts.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
     handleEventStmts.push(markPathToRootStart.callMethod('markPathToRootAsCheckOnce', []).toStmt());
