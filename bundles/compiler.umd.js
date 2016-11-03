@@ -12711,11 +12711,7 @@
           this.view.createMethod.resetDebugInfo(null, ast);
           var parentRenderNode = this._getParentRenderNode(parent);
           if (parentRenderNode !== NULL_EXPR) {
-              this.view.createMethod.addStmt(ViewProperties.renderer
-                  .callMethod('projectNodes', [
-                  parentRenderNode,
-                  THIS_EXPR.callMethod('projectedNodes', [literal(ast.index)])
-              ])
+              this.view.createMethod.addStmt(THIS_EXPR.callMethod('projectNodes', [parentRenderNode, literal(ast.index)])
                   .toStmt());
           }
           else if (this._isRootNode(parent)) {
@@ -13006,11 +13002,14 @@
       else {
           resultExpr = NULL_EXPR;
       }
+      var allNodesExpr = ViewProperties.renderer.cast(DYNAMIC_TYPE)
+          .prop('directRenderer')
+          .conditional(NULL_EXPR, literalArr(view.nodes.map(function (node) { return node.renderNode; })));
       return parentRenderNodeStmts.concat(view.createMethod.finish(), [
           THIS_EXPR
               .callMethod('init', [
               view.lastRenderNode,
-              literalArr(view.nodes.map(function (node) { return node.renderNode; })),
+              allNodesExpr,
               view.disposables.length ? literalArr(view.disposables) : NULL_EXPR,
           ])
               .toStmt(),

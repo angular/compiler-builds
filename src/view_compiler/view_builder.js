@@ -124,11 +124,7 @@ var ViewBuilderVisitor = (function () {
         this.view.createMethod.resetDebugInfo(null, ast);
         var parentRenderNode = this._getParentRenderNode(parent);
         if (parentRenderNode !== o.NULL_EXPR) {
-            this.view.createMethod.addStmt(ViewProperties.renderer
-                .callMethod('projectNodes', [
-                parentRenderNode,
-                o.THIS_EXPR.callMethod('projectedNodes', [o.literal(ast.index)])
-            ])
+            this.view.createMethod.addStmt(o.THIS_EXPR.callMethod('projectNodes', [parentRenderNode, o.literal(ast.index)])
                 .toStmt());
         }
         else if (this._isRootNode(parent)) {
@@ -419,11 +415,14 @@ function generateCreateMethod(view) {
     else {
         resultExpr = o.NULL_EXPR;
     }
+    var allNodesExpr = ViewProperties.renderer.cast(o.DYNAMIC_TYPE)
+        .prop('directRenderer')
+        .conditional(o.NULL_EXPR, o.literalArr(view.nodes.map(function (node) { return node.renderNode; })));
     return parentRenderNodeStmts.concat(view.createMethod.finish(), [
         o.THIS_EXPR
             .callMethod('init', [
             view.lastRenderNode,
-            o.literalArr(view.nodes.map(function (node) { return node.renderNode; })),
+            allNodesExpr,
             view.disposables.length ? o.literalArr(view.disposables) : o.NULL_EXPR,
         ])
             .toStmt(),
