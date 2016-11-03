@@ -6491,6 +6491,11 @@
           moduleUrl: VIEW_UTILS_MODULE_URL,
           runtime: view_utils.subscribeToRenderElement
       };
+      Identifiers.createRenderComponentType = {
+          name: 'createRenderComponentType',
+          moduleUrl: VIEW_UTILS_MODULE_URL,
+          runtime: view_utils.createRenderComponentType
+      };
       Identifiers.noop = { name: 'noop', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.noop };
       return Identifiers;
   }());
@@ -11538,8 +11543,8 @@
       }
       return viewExpr.callMethod('injectorGet', args);
   }
-  function getViewFactoryName(component, embeddedTemplateIndex) {
-      return "viewFactory_" + component.type.name + embeddedTemplateIndex;
+  function getViewClassName(component, embeddedTemplateIndex) {
+      return "View_" + component.type.name + embeddedTemplateIndex;
   }
   function getHandleEventMethodName(elementIndex) {
       return "handleEvent_" + elementIndex;
@@ -11713,12 +11718,12 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var ViewFactoryDependency = (function () {
-      function ViewFactoryDependency(comp, placeholder) {
+  var ViewClassDependency = (function () {
+      function ViewClassDependency(comp, placeholder) {
           this.comp = comp;
           this.placeholder = placeholder;
       }
-      return ViewFactoryDependency;
+      return ViewClassDependency;
   }());
   var ComponentFactoryDependency = (function () {
       function ComponentFactoryDependency(comp, placeholder) {
@@ -12238,9 +12243,9 @@
           this.destroyMethod = new CompileMethod(this);
           this.detachMethod = new CompileMethod(this);
           this.viewType = getViewType(component, viewIndex);
-          this.className = "_View_" + component.type.name + viewIndex;
+          this.className = getViewClassName(component, viewIndex);
           this.classType = importType(new CompileIdentifierMetadata({ name: this.className }));
-          this.viewFactory = variable(getViewFactoryName(component, viewIndex));
+          this.classExpr = variable(this.className);
           if (this.viewType === ViewType.COMPONENT || this.viewType === ViewType.HOST) {
               this.componentView = this;
           }
@@ -12761,14 +12766,14 @@
           this.view.nodes.push(compileElement);
           var compViewExpr = null;
           if (isPresent(component)) {
-              var nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewFactoryName(component, 0) });
-              this.targetDependencies.push(new ViewFactoryDependency(component.type, nestedComponentIdentifier));
+              var nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewClassName(component, 0) });
+              this.targetDependencies.push(new ViewClassDependency(component.type, nestedComponentIdentifier));
               compViewExpr = THIS_EXPR.prop("compView_" + nodeIndex); // fix highlighting: `
               this.view.fields.push(new ClassField(compViewExpr.name, importType(resolveIdentifier(Identifiers.AppView), [importType(component.type)])));
               this.view.viewChildren.push(compViewExpr);
               compileElement.setComponentView(compViewExpr);
               this.view.createMethod.addStmt(compViewExpr
-                  .set(importExpr(nestedComponentIdentifier).callFn([
+                  .set(importExpr(nestedComponentIdentifier).instantiate([
                   ViewProperties.viewUtils, THIS_EXPR, literal(nodeIndex), renderNode
               ]))
                   .toStmt());
@@ -12887,12 +12892,26 @@
       }
       var renderCompTypeVar = variable("renderType_" + view.component.type.name); // fix highlighting: `
       if (view.viewIndex === 0) {
-          targetStatements.push(renderCompTypeVar.set(NULL_EXPR)
+          var templateUrlInfo = void 0;
+          if (view.component.template.templateUrl == view.component.type.moduleUrl) {
+              templateUrlInfo =
+                  view.component.type.moduleUrl + " class " + view.component.type.name + " - inline template";
+          }
+          else {
+              templateUrlInfo = view.component.template.templateUrl;
+          }
+          targetStatements.push(renderCompTypeVar
+              .set(importExpr(resolveIdentifier(Identifiers.createRenderComponentType)).callFn([
+              view.genConfig.genDebugInfo ? literal(templateUrlInfo) : literal(''),
+              literal(view.component.template.ngContentSelectors.length),
+              ViewEncapsulationEnum.fromValue(view.component.template.encapsulation),
+              view.styles,
+              literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; })),
+          ]))
               .toDeclStmt(importType(resolveIdentifier(Identifiers.RenderComponentType))));
       }
       var viewClass = createViewClass(view, renderCompTypeVar, nodeDebugInfosVar);
       targetStatements.push(viewClass);
-      targetStatements.push(createViewFactory(view, viewClass, renderCompTypeVar));
   }
   function createStaticNodeDebugInfo(node) {
       var compileElement = node instanceof CompileElement ? node : null;
@@ -12965,44 +12984,6 @@
       view.viewChildren.forEach(function (viewChild) { stmts.push(viewChild.callMethod('destroy', []).toStmt()); });
       stmts.push.apply(stmts, view.destroyMethod.finish());
       return stmts;
-  }
-  function createViewFactory(view, viewClass, renderCompTypeVar) {
-      var viewFactoryArgs = [
-          new FnParam(ViewConstructorVars.viewUtils.name, importType(resolveIdentifier(Identifiers.ViewUtils))),
-          new FnParam(ViewConstructorVars.parentView.name, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
-          new FnParam(ViewConstructorVars.parentIndex.name, NUMBER_TYPE),
-          new FnParam(ViewConstructorVars.parentElement.name, DYNAMIC_TYPE)
-      ];
-      var initRenderCompTypeStmts = [];
-      var templateUrlInfo;
-      if (view.component.template.templateUrl == view.component.type.moduleUrl) {
-          templateUrlInfo =
-              view.component.type.moduleUrl + " class " + view.component.type.name + " - inline template";
-      }
-      else {
-          templateUrlInfo = view.component.template.templateUrl;
-      }
-      if (view.viewIndex === 0) {
-          var animationsExpr = literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; }));
-          initRenderCompTypeStmts = [
-              new IfStmt(renderCompTypeVar.identical(NULL_EXPR), [
-                  renderCompTypeVar
-                      .set(ViewConstructorVars.viewUtils.callMethod('createRenderComponentType', [
-                      view.genConfig.genDebugInfo ? literal(templateUrlInfo) : literal(''),
-                      literal(view.component.template.ngContentSelectors.length),
-                      ViewEncapsulationEnum.fromValue(view.component.template.encapsulation),
-                      view.styles,
-                      animationsExpr,
-                  ]))
-                      .toStmt(),
-              ]),
-          ];
-      }
-      return fn(viewFactoryArgs, initRenderCompTypeStmts.concat([
-          new ReturnStatement(variable(viewClass.name)
-              .instantiate(viewClass.constructorMethod.params.map(function (param) { return variable(param.name); }))),
-      ]), importType(resolveIdentifier(Identifiers.AppView), [getContextType(view)]))
-          .toDeclStmt(view.viewFactory.name, [StmtModifier.Final]);
   }
   function generateCreateMethod(view) {
       var parentRenderNodeExpr = NULL_EXPR;
@@ -13153,7 +13134,7 @@
           if (node instanceof CompileElement) {
               if (node.embeddedView) {
                   var parentNodeIndex = node.isRootElement() ? null : node.parent.nodeIndex;
-                  stmts.push(new IfStmt(nodeIndexVar.equals(literal(node.nodeIndex)), [new ReturnStatement(node.embeddedView.viewFactory.callFn([
+                  stmts.push(new IfStmt(nodeIndexVar.equals(literal(node.nodeIndex)), [new ReturnStatement(node.embeddedView.classExpr.instantiate([
                           ViewProperties.viewUtils, THIS_EXPR, literal(node.nodeIndex), node.renderNode
                       ]))]));
               }
@@ -13164,9 +13145,9 @@
   }
 
   var ViewCompileResult = (function () {
-      function ViewCompileResult(statements, viewFactoryVar, dependencies) {
+      function ViewCompileResult(statements, viewClassVar, dependencies) {
           this.statements = statements;
-          this.viewFactoryVar = viewFactoryVar;
+          this.viewClassVar = viewClassVar;
           this.dependencies = dependencies;
       }
       return ViewCompileResult;
@@ -13185,7 +13166,7 @@
           // variables that have been declared after usage.
           bindView(view, template, this._schemaRegistry);
           finishView(view, statements);
-          return new ViewCompileResult(statements, view.viewFactory.name, dependencies);
+          return new ViewCompileResult(statements, view.classExpr.name, dependencies);
       };
       ViewCompiler.decorators = [
           { type: _angular_core.Injectable },
@@ -13384,9 +13365,9 @@
           if (componentStyles) {
               targetStatements.push.apply(targetStatements, _resolveStyleStatements(componentStyles, fileSuffix));
           }
-          compiledAnimations.forEach(function (entry) { entry.statements.forEach(function (statement) { targetStatements.push(statement); }); });
+          compiledAnimations.forEach(function (entry) { return targetStatements.push.apply(targetStatements, entry.statements); });
           targetStatements.push.apply(targetStatements, _resolveViewStatements(viewResult));
-          return viewResult.viewFactoryVar;
+          return viewResult.viewClassVar;
       };
       OfflineCompiler.prototype._codgenStyles = function (fileUrl, stylesCompileResult, fileSuffix) {
           _resolveStyleStatements(stylesCompileResult, fileSuffix);
@@ -13399,7 +13380,7 @@
   }());
   function _resolveViewStatements(compileResult) {
       compileResult.dependencies.forEach(function (dep) {
-          if (dep instanceof ViewFactoryDependency) {
+          if (dep instanceof ViewClassDependency) {
               var vfd = dep;
               vfd.placeholder.moduleUrl = _ngfactoryModuleUrl(vfd.comp.moduleUrl);
           }
@@ -17364,11 +17345,11 @@
           var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), template.viewPipes, compiledAnimations);
           compileResult.dependencies.forEach(function (dep) {
               var depTemplate;
-              if (dep instanceof ViewFactoryDependency) {
+              if (dep instanceof ViewClassDependency) {
                   var vfd = dep;
                   depTemplate = _this._assertComponentLoaded(vfd.comp.reference, false);
-                  vfd.placeholder.reference = depTemplate.proxyViewFactory;
-                  vfd.placeholder.name = "viewFactory_" + vfd.comp.name;
+                  vfd.placeholder.reference = depTemplate.proxyViewClass;
+                  vfd.placeholder.name = "View_" + vfd.comp.name;
               }
               else if (dep instanceof ComponentFactoryDependency) {
                   var cfd = dep;
@@ -17381,16 +17362,17 @@
                   dwd.placeholder.reference = _this._assertDirectiveWrapper(dwd.dir.reference);
               }
           });
-          var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
-          compiledAnimations.forEach(function (entry) { entry.statements.forEach(function (statement) { statements.push(statement); }); });
-          var factory;
+          var statements = (_a = stylesCompileResult.componentStylesheet.statements).concat.apply(_a, compiledAnimations.map(function (ca) { return ca.statements; }))
+              .concat(compileResult.statements);
+          var viewClass;
           if (!this._compilerConfig.useJit) {
-              factory = interpretStatements(statements, compileResult.viewFactoryVar);
+              viewClass = interpretStatements(statements, compileResult.viewClassVar);
           }
           else {
-              factory = jitStatements("/" + template.ngModule.type.name + "/" + template.compType.name + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js", statements, compileResult.viewFactoryVar);
+              viewClass = jitStatements("/" + template.ngModule.type.name + "/" + template.compType.name + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js", statements, compileResult.viewClassVar);
           }
-          template.compiled(factory);
+          template.compiled(viewClass);
+          var _a;
       };
       RuntimeCompiler.prototype._resolveStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
           var _this = this;
@@ -17433,7 +17415,7 @@
           this.isHost = isHost;
           this.compType = compType;
           this.ngModule = ngModule;
-          this._viewFactory = null;
+          this._viewClass = null;
           this.loading = null;
           this._normalizedCompMeta = null;
           this.isCompiled = false;
@@ -17450,18 +17432,15 @@
                   _this.viewDirectives.push(dirMeta);
               }
           });
-          this.proxyViewFactory = function () {
-              var args = [];
-              for (var _i = 0; _i < arguments.length; _i++) {
-                  args[_i - 0] = arguments[_i];
+          var self = this;
+          this.proxyViewClass = function () {
+              if (!self._viewClass) {
+                  throw new Error("Illegal state: CompiledTemplate for " + stringify(self.compType) + " is not compiled yet!");
               }
-              if (!_this._viewFactory) {
-                  throw new Error("Illegal state: CompiledTemplate for " + stringify(_this.compType) + " is not compiled yet!");
-              }
-              return _this._viewFactory.apply(null, args);
+              return self._viewClass.apply(this, arguments);
           };
           this.proxyComponentFactory = isHost ?
-              new _angular_core.ComponentFactory(selector, this.proxyViewFactory, compType.reference) :
+              new _angular_core.ComponentFactory(selector, this.proxyViewClass, compType.reference) :
               null;
           if (_normalizeResult.syncResult) {
               this._normalizedCompMeta = _normalizeResult.syncResult;
@@ -17483,8 +17462,9 @@
           enumerable: true,
           configurable: true
       });
-      CompiledTemplate.prototype.compiled = function (viewFactory) {
-          this._viewFactory = viewFactory;
+      CompiledTemplate.prototype.compiled = function (viewClass) {
+          this._viewClass = viewClass;
+          this.proxyViewClass.prototype = viewClass.prototype;
           this.isCompiled = true;
       };
       CompiledTemplate.prototype.depsCompiled = function () { this.isCompiledWithDeps = true; };

@@ -66,6 +66,7 @@ export declare class Identifiers {
     static EMPTY_INLINE_ARRAY: IdentifierSpec;
     static InlineArrayDynamic: IdentifierSpec;
     static subscribeToRenderElement: IdentifierSpec;
+    static createRenderComponentType: IdentifierSpec;
     static noop: IdentifierSpec;
 }
 export declare function assetUrl(pkg: string, path?: string, type?: string): string;

@@ -65,7 +65,7 @@ export declare class CompileView implements NameResolver {
     locals: Map<string, o.Expression>;
     className: string;
     classType: o.Type;
-    viewFactory: o.ReadVarExpr;
+    classExpr: o.ReadVarExpr;
     literalArrayCount: number;
     literalMapCount: number;
     pipeCount: number;

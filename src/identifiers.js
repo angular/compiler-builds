@@ -307,6 +307,11 @@ export var Identifiers = (function () {
         moduleUrl: VIEW_UTILS_MODULE_URL,
         runtime: view_utils.subscribeToRenderElement
     };
+    Identifiers.createRenderComponentType = {
+        name: 'createRenderComponentType',
+        moduleUrl: VIEW_UTILS_MODULE_URL,
+        runtime: view_utils.createRenderComponentType
+    };
     Identifiers.noop = { name: 'noop', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.noop };
     return Identifiers;
 }());

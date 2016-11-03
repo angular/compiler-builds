@@ -70,8 +70,8 @@ export function injectFromViewParentInjector(view, token, optional) {
     }
     return viewExpr.callMethod('injectorGet', args);
 }
-export function getViewFactoryName(component, embeddedTemplateIndex) {
-    return "viewFactory_" + component.type.name + embeddedTemplateIndex;
+export function getViewClassName(component, embeddedTemplateIndex) {
+    return "View_" + component.type.name + embeddedTemplateIndex;
 }
 export function getHandleEventMethodName(elementIndex) {
     return "handleEvent_" + elementIndex;
