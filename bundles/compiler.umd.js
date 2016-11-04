@@ -11788,7 +11788,7 @@
           this.instances.set(resolveIdentifierToken(Identifiers.ElementRef).reference, this.elementRef);
           this.instances.set(resolveIdentifierToken(Identifiers.Injector).reference, THIS_EXPR.callMethod('injector', [literal(this.nodeIndex)]));
           this.instances.set(resolveIdentifierToken(Identifiers.Renderer).reference, THIS_EXPR.prop('renderer'));
-          if (this.hasViewContainer) {
+          if (this.hasViewContainer || this.hasEmbeddedView) {
               this._createViewContainer();
           }
           if (this.component) {
@@ -12947,6 +12947,10 @@
       if (view.genConfig.genDebugInfo) {
           superConstructorArgs.push(nodeDebugInfosVar);
       }
+      if (view.viewType === ViewType.EMBEDDED) {
+          viewConstructorArgs.push(new FnParam('declaredViewContainer', importType(resolveIdentifier(Identifiers.ViewContainer))));
+          superConstructorArgs.push(variable('declaredViewContainer'));
+      }
       var viewMethods = [
           new ClassMethod('createInternal', [new FnParam(rootSelectorVar.name, STRING_TYPE)], generateCreateMethod(view), importType(resolveIdentifier(Identifiers.ComponentRef), [DYNAMIC_TYPE])),
           new ClassMethod('injectorGetInternal', [
@@ -13022,7 +13026,8 @@
           view.updateContentQueriesMethod.isEmpty() &&
           view.afterContentLifecycleCallbacksMethod.isEmpty() &&
           view.detectChangesRenderPropertiesMethod.isEmpty() &&
-          view.updateViewQueriesMethod.isEmpty() && view.afterViewLifecycleCallbacksMethod.isEmpty()) {
+          view.updateViewQueriesMethod.isEmpty() && view.afterViewLifecycleCallbacksMethod.isEmpty() &&
+          view.viewContainers.length === 0 && view.viewChildren.length === 0) {
           return stmts;
       }
       stmts.push.apply(stmts, view.animationBindingsMethod.finish());
@@ -13134,12 +13139,15 @@
               if (node.embeddedView) {
                   var parentNodeIndex = node.isRootElement() ? null : node.parent.nodeIndex;
                   stmts.push(new IfStmt(nodeIndexVar.equals(literal(node.nodeIndex)), [new ReturnStatement(node.embeddedView.classExpr.instantiate([
-                          ViewProperties.viewUtils, THIS_EXPR, literal(node.nodeIndex), node.renderNode
+                          ViewProperties.viewUtils, THIS_EXPR, literal(node.nodeIndex), node.renderNode,
+                          node.viewContainer
                       ]))]));
               }
           }
       });
-      stmts.push(new ReturnStatement(NULL_EXPR));
+      if (stmts.length > 0) {
+          stmts.push(new ReturnStatement(NULL_EXPR));
+      }
       return new ClassMethod('createEmbeddedViewInternal', [new FnParam(nodeIndexVar.name, NUMBER_TYPE)], stmts, importType(resolveIdentifier(Identifiers.AppView), [DYNAMIC_TYPE]));
   }
 

@@ -60,7 +60,7 @@ export var CompileElement = (function (_super) {
         this.instances.set(resolveIdentifierToken(Identifiers.ElementRef).reference, this.elementRef);
         this.instances.set(resolveIdentifierToken(Identifiers.Injector).reference, o.THIS_EXPR.callMethod('injector', [o.literal(this.nodeIndex)]));
         this.instances.set(resolveIdentifierToken(Identifiers.Renderer).reference, o.THIS_EXPR.prop('renderer'));
-        if (this.hasViewContainer) {
+        if (this.hasViewContainer || this.hasEmbeddedView) {
             this._createViewContainer();
         }
         if (this.component) {

@@ -360,6 +360,10 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
     if (view.genConfig.genDebugInfo) {
         superConstructorArgs.push(nodeDebugInfosVar);
     }
+    if (view.viewType === ViewType.EMBEDDED) {
+        viewConstructorArgs.push(new o.FnParam('declaredViewContainer', o.importType(resolveIdentifier(Identifiers.ViewContainer))));
+        superConstructorArgs.push(o.variable('declaredViewContainer'));
+    }
     var viewMethods = [
         new o.ClassMethod('createInternal', [new o.FnParam(rootSelectorVar.name, o.STRING_TYPE)], generateCreateMethod(view), o.importType(resolveIdentifier(Identifiers.ComponentRef), [o.DYNAMIC_TYPE])),
         new o.ClassMethod('injectorGetInternal', [
@@ -435,7 +439,8 @@ function generateDetectChangesMethod(view) {
         view.updateContentQueriesMethod.isEmpty() &&
         view.afterContentLifecycleCallbacksMethod.isEmpty() &&
         view.detectChangesRenderPropertiesMethod.isEmpty() &&
-        view.updateViewQueriesMethod.isEmpty() && view.afterViewLifecycleCallbacksMethod.isEmpty()) {
+        view.updateViewQueriesMethod.isEmpty() && view.afterViewLifecycleCallbacksMethod.isEmpty() &&
+        view.viewContainers.length === 0 && view.viewChildren.length === 0) {
         return stmts;
     }
     stmts.push.apply(stmts, view.animationBindingsMethod.finish());
@@ -547,12 +552,15 @@ function generateCreateEmbeddedViewsMethod(view) {
             if (node.embeddedView) {
                 var parentNodeIndex = node.isRootElement() ? null : node.parent.nodeIndex;
                 stmts.push(new o.IfStmt(nodeIndexVar.equals(o.literal(node.nodeIndex)), [new o.ReturnStatement(node.embeddedView.classExpr.instantiate([
-                        ViewProperties.viewUtils, o.THIS_EXPR, o.literal(node.nodeIndex), node.renderNode
+                        ViewProperties.viewUtils, o.THIS_EXPR, o.literal(node.nodeIndex), node.renderNode,
+                        node.viewContainer
                     ]))]));
             }
         }
     });
-    stmts.push(new o.ReturnStatement(o.NULL_EXPR));
+    if (stmts.length > 0) {
+        stmts.push(new o.ReturnStatement(o.NULL_EXPR));
+    }
     return new o.ClassMethod('createEmbeddedViewInternal', [new o.FnParam(nodeIndexVar.name, o.NUMBER_TYPE)], stmts, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE]));
 }
 //# sourceMappingURL=view_builder.js.map
