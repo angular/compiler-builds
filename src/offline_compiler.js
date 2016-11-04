@@ -8,7 +8,7 @@
 import { AnimationCompiler } from './animation/animation_compiler';
 import { AnimationParser } from './animation/animation_parser';
 import { CompileProviderMetadata, createHostComponentMeta } from './compile_metadata';
-import { ListWrapper, MapWrapper } from './facade/collection';
+import { ListWrapper } from './facade/collection';
 import { Identifiers, resolveIdentifier, resolveIdentifierToken } from './identifiers';
 import * as o from './output/output_ast';
 import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency } from './view_compiler/view_compiler';
@@ -33,7 +33,7 @@ export function analyzeNgModules(programStaticSymbols, options, metadataResolver
             moduleMetasByRef.set(modMeta.type.reference, modMeta);
         }
     });
-    var ngModuleMetas = MapWrapper.values(moduleMetasByRef);
+    var ngModuleMetas = Array.from(moduleMetasByRef.values());
     var ngModuleByPipeOrDirective = new Map();
     var ngModulesByFile = new Map();
     var ngDirectivesByFile = new Map();

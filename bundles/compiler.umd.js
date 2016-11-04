@@ -373,41 +373,6 @@
       return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
   }
 
-  // Safari doesn't implement MapIterator.next(), which is used is Traceur's polyfill of Array.from
-  // TODO(mlaval): remove the work around once we have a working polyfill of Array.from
-  var _arrayFromMap = (function () {
-      try {
-          if ((new Map()).values().next) {
-              return function createArrayFromMap(m, getValues) {
-                  return getValues ? Array.from(m.values()) : Array.from(m.keys());
-              };
-          }
-      }
-      catch (e) {
-      }
-      return function createArrayFromMapWithForeach(m, getValues) {
-          var res = new Array(m.size), i = 0;
-          m.forEach(function (v, k) {
-              res[i] = getValues ? v : k;
-              i++;
-          });
-          return res;
-      };
-  })();
-  var MapWrapper = (function () {
-      function MapWrapper() {
-      }
-      MapWrapper.createFromStringMap = function (stringMap) {
-          var result = new Map();
-          for (var prop in stringMap) {
-              result.set(prop, stringMap[prop]);
-          }
-          return result;
-      };
-      MapWrapper.keys = function (m) { return _arrayFromMap(m, false); };
-      MapWrapper.values = function (m) { return _arrayFromMap(m, true); };
-      return MapWrapper;
-  }());
   /**
    * Wraps Javascript Objects
    */
@@ -1720,7 +1685,7 @@
               map.set(item.identifier.reference, item);
           }
       });
-      return MapWrapper.values(map);
+      return Array.from(map.values());
   }
   function _normalizeArray(obj) {
       return obj || [];
@@ -6714,7 +6679,7 @@
               _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, viewContext.errors);
           this._contentQueries = _getContentQueries(directivesMeta);
           var queriedTokens = new Map();
-          MapWrapper.values(this._allProviders).forEach(function (provider) {
+          Array.from(this._allProviders.values()).forEach(function (provider) {
               _this._addQueryReadsTo(provider.token, queriedTokens);
           });
           refs.forEach(function (refAst) {
@@ -6724,7 +6689,7 @@
               this._hasViewContainer = true;
           }
           // create the providers that we know are eager first
-          MapWrapper.values(this._allProviders).forEach(function (provider) {
+          Array.from(this._allProviders.values()).forEach(function (provider) {
               var eager = provider.eager || isPresent(queriedTokens.get(provider.token.reference));
               if (eager) {
                   _this._getOrCreateLocalProvider(provider.providerType, provider.token, true);
@@ -6734,12 +6699,14 @@
       ProviderElementContext.prototype.afterElement = function () {
           var _this = this;
           // collect lazy providers
-          MapWrapper.values(this._allProviders).forEach(function (provider) {
+          Array.from(this._allProviders.values()).forEach(function (provider) {
               _this._getOrCreateLocalProvider(provider.providerType, provider.token, false);
           });
       };
       Object.defineProperty(ProviderElementContext.prototype, "transformProviders", {
-          get: function () { return MapWrapper.values(this._transformedProviders); },
+          get: function () {
+              return Array.from(this._transformedProviders.values());
+          },
           enumerable: true,
           configurable: true
       });
@@ -6936,14 +6903,14 @@
       }
       NgModuleProviderAnalyzer.prototype.parse = function () {
           var _this = this;
-          MapWrapper.values(this._allProviders).forEach(function (provider) {
+          Array.from(this._allProviders.values()).forEach(function (provider) {
               _this._getOrCreateLocalProvider(provider.token, provider.eager);
           });
           if (this._errors.length > 0) {
               var errorString = this._errors.join('\n');
               throw new Error("Provider parse errors:\n" + errorString);
           }
-          return MapWrapper.values(this._transformedProviders);
+          return Array.from(this._transformedProviders.values());
       };
       NgModuleProviderAnalyzer.prototype._getOrCreateLocalProvider = function (token, eager) {
           var _this = this;
@@ -11867,19 +11834,19 @@
           this._resolvedProvidersArray.forEach(function (provider) { return _this._resolvedProviders.set(provider.token.reference, provider); });
           // create all the provider instances, some in the view constructor,
           // some as getters. We rely on the fact that they are already sorted topologically.
-          MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
+          Array.from(this._resolvedProviders.values()).forEach(function (resolvedProvider) {
               var isDirectiveWrapper = resolvedProvider.providerType === exports.ProviderAstType.Component ||
                   resolvedProvider.providerType === exports.ProviderAstType.Directive;
               var providerValueExpressions = resolvedProvider.providers.map(function (provider) {
-                  if (isPresent(provider.useExisting)) {
+                  if (provider.useExisting) {
                       return _this._getDependency(resolvedProvider.providerType, new CompileDiDependencyMetadata({ token: provider.useExisting }));
                   }
-                  else if (isPresent(provider.useFactory)) {
+                  else if (provider.useFactory) {
                       var deps = provider.deps || provider.useFactory.diDeps;
                       var depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                       return importExpr(provider.useFactory).callFn(depsExpr);
                   }
-                  else if (isPresent(provider.useClass)) {
+                  else if (provider.useClass) {
                       var deps = provider.deps || provider.useClass.diDeps;
                       var depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                       if (isDirectiveWrapper) {
@@ -11912,14 +11879,14 @@
               directive.queries.forEach(function (queryMeta) { _this._addQuery(queryMeta, directiveInstance); });
           }
           var queriesWithReads = [];
-          MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
+          Array.from(this._resolvedProviders.values()).forEach(function (resolvedProvider) {
               var queriesForProvider = _this._getQueriesFor(resolvedProvider.token);
               queriesWithReads.push.apply(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
           });
           Object.keys(this.referenceTokens).forEach(function (varName) {
               var token = _this.referenceTokens[varName];
               var varValue;
-              if (isPresent(token)) {
+              if (token) {
                   varValue = _this.instances.get(token.reference);
               }
               else {
@@ -11952,7 +11919,7 @@
       };
       CompileElement.prototype.afterChildren = function (childNodeCount) {
           var _this = this;
-          MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
+          Array.from(this._resolvedProviders.values()).forEach(function (resolvedProvider) {
               // Note: afterChildren is called after recursing into children.
               // This is good so that an injector match in an element that is closer to a requesting element
               // matches first.
@@ -11964,8 +11931,10 @@
               var providerChildNodeCount = resolvedProvider.providerType === exports.ProviderAstType.PrivateService ? 0 : childNodeCount;
               _this.view.injectorGetMethod.addStmt(createInjectInternalCondition(_this.nodeIndex, providerChildNodeCount, resolvedProvider, providerExpr));
           });
-          MapWrapper.values(this._queries)
-              .forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.view.createMethod, _this.view.updateContentQueriesMethod); }); });
+          Array.from(this._queries.values())
+              .forEach(function (queries) { return queries.forEach(function (q) {
+              return q.afterChildren(_this.view.createMethod, _this.view.updateContentQueriesMethod);
+          }); });
       };
       CompileElement.prototype.addContentNode = function (ngContentIndex, nodeExpr) {
           this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);
@@ -11976,7 +11945,7 @@
               null;
       };
       CompileElement.prototype.getProviderTokens = function () {
-          return MapWrapper.values(this._resolvedProviders)
+          return Array.from(this._resolvedProviders.values())
               .map(function (resolvedProvider) { return createDiTokenExpression(resolvedProvider.token); });
       };
       CompileElement.prototype._getQueriesFor = function (token) {
@@ -12292,8 +12261,8 @@
       };
       CompileView.prototype.afterNodes = function () {
           var _this = this;
-          MapWrapper.values(this.viewQueries)
-              .forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
+          Array.from(this.viewQueries.values())
+              .forEach(function (queries) { return queries.forEach(function (q) { return q.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
       };
       return CompileView;
   }());
@@ -12301,12 +12270,10 @@
       if (embeddedTemplateIndex > 0) {
           return ViewType.EMBEDDED;
       }
-      else if (component.type.isHost) {
+      if (component.type.isHost) {
           return ViewType.HOST;
       }
-      else {
-          return ViewType.COMPONENT;
-      }
+      return ViewType.COMPONENT;
   }
 
   function bindOutputs(boundEvents, directives, compileElement, bindToRenderer) {
@@ -12348,7 +12315,7 @@
       }
   }
   function subscribeToDirectiveEvents(usedEvents, directives, compileElement) {
-      var usedEventNames = MapWrapper.keys(usedEvents);
+      var usedEventNames = Array.from(usedEvents.keys());
       directives.forEach(function (dirAst) {
           var dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
           compileElement.view.createMethod.addStmts(DirectiveWrapperExpressions.subscribe(dirAst.directive, dirAst.hostProperties, usedEventNames, dirWrapper, THIS_EXPR, handleEventExpr(compileElement)));
@@ -13207,7 +13174,7 @@
               moduleMetasByRef.set(modMeta.type.reference, modMeta);
           }
       });
-      var ngModuleMetas = MapWrapper.values(moduleMetasByRef);
+      var ngModuleMetas = Array.from(moduleMetasByRef.values());
       var ngModuleByPipeOrDirective = new Map();
       var ngModulesByFile = new Map();
       var ngDirectivesByFile = new Map();
@@ -13923,7 +13890,7 @@
               loadedStylesheets.set(styleUrl, stylesheet);
               return _this._loadMissingExternalStylesheets(stylesheet.styleUrls, loadedStylesheets);
           }); }))
-              .then(function (_) { return MapWrapper.values(loadedStylesheets); });
+              .then(function (_) { return Array.from(loadedStylesheets.values()); });
       };
       DirectiveNormalizer.prototype.normalizeStylesheet = function (stylesheet) {
           var _this = this;

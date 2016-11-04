@@ -13,7 +13,6 @@ var __extends = (this && this.__extends) || function (d, b) {
 import { CompileDiDependencyMetadata, CompileIdentifierMetadata, CompileProviderMetadata, CompileTokenMetadata } from '../compile_metadata';
 import { createDiTokenExpression } from '../compiler_util/identifier_util';
 import { DirectiveWrapperCompiler, DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
-import { MapWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import { Identifiers, identifierToken, resolveIdentifier, resolveIdentifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -139,19 +138,19 @@ export var CompileElement = (function (_super) {
         this._resolvedProvidersArray.forEach(function (provider) { return _this._resolvedProviders.set(provider.token.reference, provider); });
         // create all the provider instances, some in the view constructor,
         // some as getters. We rely on the fact that they are already sorted topologically.
-        MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
+        Array.from(this._resolvedProviders.values()).forEach(function (resolvedProvider) {
             var isDirectiveWrapper = resolvedProvider.providerType === ProviderAstType.Component ||
                 resolvedProvider.providerType === ProviderAstType.Directive;
             var providerValueExpressions = resolvedProvider.providers.map(function (provider) {
-                if (isPresent(provider.useExisting)) {
+                if (provider.useExisting) {
                     return _this._getDependency(resolvedProvider.providerType, new CompileDiDependencyMetadata({ token: provider.useExisting }));
                 }
-                else if (isPresent(provider.useFactory)) {
+                else if (provider.useFactory) {
                     var deps = provider.deps || provider.useFactory.diDeps;
                     var depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                     return o.importExpr(provider.useFactory).callFn(depsExpr);
                 }
-                else if (isPresent(provider.useClass)) {
+                else if (provider.useClass) {
                     var deps = provider.deps || provider.useClass.diDeps;
                     var depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                     if (isDirectiveWrapper) {
@@ -184,14 +183,14 @@ export var CompileElement = (function (_super) {
             directive.queries.forEach(function (queryMeta) { _this._addQuery(queryMeta, directiveInstance); });
         }
         var queriesWithReads = [];
-        MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
+        Array.from(this._resolvedProviders.values()).forEach(function (resolvedProvider) {
             var queriesForProvider = _this._getQueriesFor(resolvedProvider.token);
             queriesWithReads.push.apply(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, resolvedProvider.token); }));
         });
         Object.keys(this.referenceTokens).forEach(function (varName) {
             var token = _this.referenceTokens[varName];
             var varValue;
-            if (isPresent(token)) {
+            if (token) {
                 varValue = _this.instances.get(token.reference);
             }
             else {
@@ -224,7 +223,7 @@ export var CompileElement = (function (_super) {
     };
     CompileElement.prototype.afterChildren = function (childNodeCount) {
         var _this = this;
-        MapWrapper.values(this._resolvedProviders).forEach(function (resolvedProvider) {
+        Array.from(this._resolvedProviders.values()).forEach(function (resolvedProvider) {
             // Note: afterChildren is called after recursing into children.
             // This is good so that an injector match in an element that is closer to a requesting element
             // matches first.
@@ -236,8 +235,10 @@ export var CompileElement = (function (_super) {
             var providerChildNodeCount = resolvedProvider.providerType === ProviderAstType.PrivateService ? 0 : childNodeCount;
             _this.view.injectorGetMethod.addStmt(createInjectInternalCondition(_this.nodeIndex, providerChildNodeCount, resolvedProvider, providerExpr));
         });
-        MapWrapper.values(this._queries)
-            .forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.view.createMethod, _this.view.updateContentQueriesMethod); }); });
+        Array.from(this._queries.values())
+            .forEach(function (queries) { return queries.forEach(function (q) {
+            return q.afterChildren(_this.view.createMethod, _this.view.updateContentQueriesMethod);
+        }); });
     };
     CompileElement.prototype.addContentNode = function (ngContentIndex, nodeExpr) {
         this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);
@@ -248,7 +249,7 @@ export var CompileElement = (function (_super) {
             null;
     };
     CompileElement.prototype.getProviderTokens = function () {
-        return MapWrapper.values(this._resolvedProviders)
+        return Array.from(this._resolvedProviders.values())
             .map(function (resolvedProvider) { return createDiTokenExpression(resolvedProvider.token); });
     };
     CompileElement.prototype._getQueriesFor = function (token) {
