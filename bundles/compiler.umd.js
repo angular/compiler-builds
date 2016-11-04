@@ -15412,14 +15412,10 @@
           ctx.print(")");
           return null;
       };
-      AbstractEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx, absentValue) {
-          if (absentValue === void 0) { absentValue = 'null'; }
+      AbstractEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
           var value = ast.value;
           if (typeof value === 'string') {
               ctx.print(escapeIdentifier(value, this._escapeDollarInStrings));
-          }
-          else if (isBlank(value)) {
-              ctx.print(absentValue);
           }
           else {
               ctx.print("" + value);
@@ -15661,7 +15657,12 @@
           }
       };
       _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
-          _super.prototype.visitLiteralExpr.call(this, ast, ctx, '(null as any)');
+          var value = ast.value;
+          if (isBlank(value)) {
+              ctx.print("(" + value + " as any)");
+              return null;
+          }
+          return _super.prototype.visitLiteralExpr.call(this, ast, ctx);
       };
       // Temporary workaround to support strictNullCheck enabled consumers of ngc emit.
       // In SNC mode, [] have the type never[], so we cast here to any[].
