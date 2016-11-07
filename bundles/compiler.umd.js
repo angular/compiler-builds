@@ -6309,6 +6309,11 @@
           runtime: view_utils.checkBinding
       };
       Identifiers.devModeEqual = { name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: devModeEqual };
+      Identifiers.inlineInterpolate = {
+          name: 'inlineInterpolate',
+          moduleUrl: VIEW_UTILS_MODULE_URL,
+          runtime: view_utils.inlineInterpolate
+      };
       Identifiers.interpolate = {
           name: 'interpolate',
           moduleUrl: VIEW_UTILS_MODULE_URL,
@@ -7243,10 +7248,6 @@
               if (ast)
                   this._reportExpressionParserErrors(ast.errors, sourceSpan);
               this._checkPipes(ast, sourceSpan);
-              if (ast &&
-                  ast.ast.expressions.length > view_utils.MAX_INTERPOLATION_VALUES) {
-                  throw new Error("Only support at most " + view_utils.MAX_INTERPOLATION_VALUES + " interpolation values!");
-              }
               return ast;
           }
           catch (e) {
@@ -10555,7 +10556,11 @@
               args.push(this.visit(ast.expressions[i], _Mode.Expression));
           }
           args.push(literal(ast.strings[ast.strings.length - 1]));
-          return importExpr(resolveIdentifier(Identifiers.interpolate)).callFn(args);
+          return ast.expressions.length <= 9 ?
+              importExpr(resolveIdentifier(Identifiers.inlineInterpolate)).callFn(args) :
+              importExpr(resolveIdentifier(Identifiers.interpolate)).callFn([
+                  args[0], literalArr(args.slice(1))
+              ]);
       };
       _AstToIrVisitor.prototype.visitKeyedRead = function (ast, mode) {
           return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));
