@@ -7,14 +7,13 @@
  */
 import { CompileIdentifierMetadata } from '../compile_metadata';
 import { EventHandlerVars } from '../compiler_util/expression_converter';
-import { MapWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
 import { ViewType } from '../private_import_core';
 import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
 import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
-import { getPropertyInView, getViewFactoryName } from './util';
+import { getPropertyInView, getViewClassName } from './util';
 export var CompileViewRootNodeType;
 (function (CompileViewRootNodeType) {
     CompileViewRootNodeType[CompileViewRootNodeType["Node"] = 0] = "Node";
@@ -44,7 +43,7 @@ export var CompileView = (function () {
         this.nodes = [];
         this.rootNodes = [];
         this.lastRenderNode = o.NULL_EXPR;
-        this.viewContainerAppElements = [];
+        this.viewContainers = [];
         this.methods = [];
         this.ctorStmts = [];
         this.fields = [];
@@ -69,9 +68,9 @@ export var CompileView = (function () {
         this.destroyMethod = new CompileMethod(this);
         this.detachMethod = new CompileMethod(this);
         this.viewType = getViewType(component, viewIndex);
-        this.className = "_View_" + component.type.name + viewIndex;
+        this.className = getViewClassName(component, viewIndex);
         this.classType = o.importType(new CompileIdentifierMetadata({ name: this.className }));
-        this.viewFactory = o.variable(getViewFactoryName(component, viewIndex));
+        this.classExpr = o.variable(this.className);
         if (this.viewType === ViewType.COMPONENT || this.viewType === ViewType.HOST) {
             this.componentView = this;
         }
@@ -118,8 +117,8 @@ export var CompileView = (function () {
     };
     CompileView.prototype.afterNodes = function () {
         var _this = this;
-        MapWrapper.values(this.viewQueries)
-            .forEach(function (queries) { return queries.forEach(function (query) { return query.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
+        Array.from(this.viewQueries.values())
+            .forEach(function (queries) { return queries.forEach(function (q) { return q.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
     };
     return CompileView;
 }());
@@ -127,11 +126,9 @@ function getViewType(component, embeddedTemplateIndex) {
     if (embeddedTemplateIndex > 0) {
         return ViewType.EMBEDDED;
     }
-    else if (component.type.isHost) {
+    if (component.type.isHost) {
         return ViewType.HOST;
     }
-    else {
-        return ViewType.COMPONENT;
-    }
+    return ViewType.COMPONENT;
 }
 //# sourceMappingURL=compile_view.js.map

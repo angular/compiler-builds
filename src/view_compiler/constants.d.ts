@@ -22,8 +22,9 @@ export declare class ChangeDetectorStatusEnum {
 }
 export declare class ViewConstructorVars {
     static viewUtils: o.ReadVarExpr;
-    static parentInjector: o.ReadVarExpr;
-    static declarationEl: o.ReadVarExpr;
+    static parentView: o.ReadVarExpr;
+    static parentIndex: o.ReadVarExpr;
+    static parentElement: o.ReadVarExpr;
 }
 export declare class ViewProperties {
     static renderer: o.ReadPropExpr;

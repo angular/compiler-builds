@@ -41,7 +41,7 @@ export declare class CompileView implements NameResolver {
     nodes: CompileNode[];
     rootNodes: CompileViewRootNode[];
     lastRenderNode: o.Expression;
-    viewContainerAppElements: o.Expression[];
+    viewContainers: o.Expression[];
     createMethod: CompileMethod;
     animationBindingsMethod: CompileMethod;
     injectorGetMethod: CompileMethod;
@@ -65,7 +65,7 @@ export declare class CompileView implements NameResolver {
     locals: Map<string, o.Expression>;
     className: string;
     classType: o.Type;
-    viewFactory: o.ReadVarExpr;
+    classExpr: o.ReadVarExpr;
     literalArrayCount: number;
     literalMapCount: number;
     pipeCount: number;
