@@ -160,6 +160,11 @@ export var Identifiers = (function () {
         runtime: view_utils.checkBinding
     };
     Identifiers.devModeEqual = { name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: devModeEqual };
+    Identifiers.inlineInterpolate = {
+        name: 'inlineInterpolate',
+        moduleUrl: VIEW_UTILS_MODULE_URL,
+        runtime: view_utils.inlineInterpolate
+    };
     Identifiers.interpolate = {
         name: 'interpolate',
         moduleUrl: VIEW_UTILS_MODULE_URL,
