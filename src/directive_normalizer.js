@@ -8,6 +8,7 @@
 import { Injectable, ViewEncapsulation } from '@angular/core';
 import { CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
+import { MapWrapper } from './facade/collection';
 import { isBlank, isPresent } from './facade/lang';
 import * as html from './ml_parser/ast';
 import { HtmlParser } from './ml_parser/html_parser';
@@ -142,7 +143,7 @@ export var DirectiveNormalizer = (function () {
             loadedStylesheets.set(styleUrl, stylesheet);
             return _this._loadMissingExternalStylesheets(stylesheet.styleUrls, loadedStylesheets);
         }); }))
-            .then(function (_) { return Array.from(loadedStylesheets.values()); });
+            .then(function (_) { return MapWrapper.values(loadedStylesheets); });
     };
     DirectiveNormalizer.prototype.normalizeStylesheet = function (stylesheet) {
         var _this = this;

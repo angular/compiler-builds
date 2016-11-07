@@ -5,12 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export var ViewClassDependency = (function () {
-    function ViewClassDependency(comp, placeholder) {
+export var ViewFactoryDependency = (function () {
+    function ViewFactoryDependency(comp, placeholder) {
         this.comp = comp;
         this.placeholder = placeholder;
     }
-    return ViewClassDependency;
+    return ViewFactoryDependency;
 }());
 export var ComponentFactoryDependency = (function () {
     function ComponentFactoryDependency(comp, placeholder) {

@@ -22,7 +22,7 @@ import { ComponentStillLoadingError } from './private_import_core';
 import { StyleCompiler } from './style_compiler';
 import { TemplateParser } from './template_parser/template_parser';
 import { SyncAsyncResult } from './util';
-import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency, ViewCompiler } from './view_compiler/view_compiler';
+import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewCompiler, ViewFactoryDependency } from './view_compiler/view_compiler';
 /**
  * An internal module of the Angular compiler that begins with component types,
  * extracts templates, and eventually produces a compiled version of the component
@@ -265,11 +265,11 @@ export var RuntimeCompiler = (function () {
         var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), template.viewPipes, compiledAnimations);
         compileResult.dependencies.forEach(function (dep) {
             var depTemplate;
-            if (dep instanceof ViewClassDependency) {
+            if (dep instanceof ViewFactoryDependency) {
                 var vfd = dep;
                 depTemplate = _this._assertComponentLoaded(vfd.comp.reference, false);
-                vfd.placeholder.reference = depTemplate.proxyViewClass;
-                vfd.placeholder.name = "View_" + vfd.comp.name;
+                vfd.placeholder.reference = depTemplate.proxyViewFactory;
+                vfd.placeholder.name = "viewFactory_" + vfd.comp.name;
             }
             else if (dep instanceof ComponentFactoryDependency) {
                 var cfd = dep;
@@ -282,17 +282,16 @@ export var RuntimeCompiler = (function () {
                 dwd.placeholder.reference = _this._assertDirectiveWrapper(dwd.dir.reference);
             }
         });
-        var statements = (_a = stylesCompileResult.componentStylesheet.statements).concat.apply(_a, compiledAnimations.map(function (ca) { return ca.statements; }))
-            .concat(compileResult.statements);
-        var viewClass;
+        var statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
+        compiledAnimations.forEach(function (entry) { entry.statements.forEach(function (statement) { statements.push(statement); }); });
+        var factory;
         if (!this._compilerConfig.useJit) {
-            viewClass = interpretStatements(statements, compileResult.viewClassVar);
+            factory = interpretStatements(statements, compileResult.viewFactoryVar);
         }
         else {
-            viewClass = jitStatements("/" + template.ngModule.type.name + "/" + template.compType.name + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js", statements, compileResult.viewClassVar);
+            factory = jitStatements("/" + template.ngModule.type.name + "/" + template.compType.name + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js", statements, compileResult.viewFactoryVar);
         }
-        template.compiled(viewClass);
-        var _a;
+        template.compiled(factory);
     };
     RuntimeCompiler.prototype._resolveStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
         var _this = this;
@@ -335,7 +334,7 @@ var CompiledTemplate = (function () {
         this.isHost = isHost;
         this.compType = compType;
         this.ngModule = ngModule;
-        this._viewClass = null;
+        this._viewFactory = null;
         this.loading = null;
         this._normalizedCompMeta = null;
         this.isCompiled = false;
@@ -352,15 +351,18 @@ var CompiledTemplate = (function () {
                 _this.viewDirectives.push(dirMeta);
             }
         });
-        var self = this;
-        this.proxyViewClass = function () {
-            if (!self._viewClass) {
-                throw new Error("Illegal state: CompiledTemplate for " + stringify(self.compType) + " is not compiled yet!");
+        this.proxyViewFactory = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i - 0] = arguments[_i];
             }
-            return self._viewClass.apply(this, arguments);
+            if (!_this._viewFactory) {
+                throw new Error("Illegal state: CompiledTemplate for " + stringify(_this.compType) + " is not compiled yet!");
+            }
+            return _this._viewFactory.apply(null, args);
         };
         this.proxyComponentFactory = isHost ?
-            new ComponentFactory(selector, this.proxyViewClass, compType.reference) :
+            new ComponentFactory(selector, this.proxyViewFactory, compType.reference) :
             null;
         if (_normalizeResult.syncResult) {
             this._normalizedCompMeta = _normalizeResult.syncResult;
@@ -382,9 +384,8 @@ var CompiledTemplate = (function () {
         enumerable: true,
         configurable: true
     });
-    CompiledTemplate.prototype.compiled = function (viewClass) {
-        this._viewClass = viewClass;
-        this.proxyViewClass.prototype = viewClass.prototype;
+    CompiledTemplate.prototype.compiled = function (viewFactory) {
+        this._viewFactory = viewFactory;
         this.isCompiled = true;
     };
     CompiledTemplate.prototype.depsCompiled = function () { this.isCompiledWithDeps = true; };

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { CompileIdentifierMetadata } from '../compile_metadata';
-export declare class ViewClassDependency {
+export declare class ViewFactoryDependency {
     comp: CompileIdentifierMetadata;
     placeholder: CompileIdentifierMetadata;
     constructor(comp: CompileIdentifierMetadata, placeholder: CompileIdentifierMetadata);

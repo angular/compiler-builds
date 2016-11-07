@@ -9,7 +9,7 @@ import { CompileDirectiveMetadata, CompileTokenMetadata } from '../compile_metad
 import * as o from '../output/output_ast';
 import { ProviderAst, ReferenceAst, TemplateAst } from '../template_parser/template_ast';
 import { CompileView, CompileViewRootNode } from './compile_view';
-import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency } from './deps';
+import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewFactoryDependency } from './deps';
 export declare class CompileNode {
     parent: CompileElement;
     view: CompileView;
@@ -28,9 +28,10 @@ export declare class CompileElement extends CompileNode {
     hasEmbeddedView: boolean;
     private _targetDependencies;
     static createNull(): CompileElement;
-    compViewExpr: o.Expression;
-    viewContainer: o.ReadPropExpr;
+    private _compViewExpr;
+    appElement: o.ReadPropExpr;
     elementRef: o.Expression;
+    injector: o.Expression;
     instances: Map<any, o.Expression>;
     directiveWrapperInstance: Map<any, o.Expression>;
     private _resolvedProviders;
@@ -41,8 +42,8 @@ export declare class CompileElement extends CompileNode {
     referenceTokens: {
         [key: string]: CompileTokenMetadata;
     };
-    constructor(parent: CompileElement, view: CompileView, nodeIndex: number, renderNode: o.Expression, sourceAst: TemplateAst, component: CompileDirectiveMetadata, _directives: CompileDirectiveMetadata[], _resolvedProvidersArray: ProviderAst[], hasViewContainer: boolean, hasEmbeddedView: boolean, references: ReferenceAst[], _targetDependencies: Array<ViewClassDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
-    private _createViewContainer();
+    constructor(parent: CompileElement, view: CompileView, nodeIndex: number, renderNode: o.Expression, sourceAst: TemplateAst, component: CompileDirectiveMetadata, _directives: CompileDirectiveMetadata[], _resolvedProvidersArray: ProviderAst[], hasViewContainer: boolean, hasEmbeddedView: boolean, references: ReferenceAst[], _targetDependencies: Array<ViewFactoryDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
+    private _createAppElement();
     private _createComponentFactoryResolver();
     setComponentView(compViewExpr: o.Expression): void;
     setEmbeddedView(embeddedView: CompileView): void;

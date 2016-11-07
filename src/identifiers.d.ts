@@ -9,7 +9,7 @@ export declare class Identifiers {
     static ViewUtils: IdentifierSpec;
     static AppView: IdentifierSpec;
     static DebugAppView: IdentifierSpec;
-    static ViewContainer: IdentifierSpec;
+    static AppElement: IdentifierSpec;
     static ElementRef: IdentifierSpec;
     static ViewContainerRef: IdentifierSpec;
     static ChangeDetectorRef: IdentifierSpec;
@@ -20,8 +20,6 @@ export declare class Identifiers {
     static CodegenComponentFactoryResolver: IdentifierSpec;
     static ComponentFactoryResolver: IdentifierSpec;
     static ComponentFactory: IdentifierSpec;
-    static ComponentRef_: IdentifierSpec;
-    static ComponentRef: IdentifierSpec;
     static NgModuleFactory: IdentifierSpec;
     static NgModuleInjector: IdentifierSpec;
     static RegisterModuleFactoryFn: IdentifierSpec;
@@ -66,7 +64,6 @@ export declare class Identifiers {
     static EMPTY_INLINE_ARRAY: IdentifierSpec;
     static InlineArrayDynamic: IdentifierSpec;
     static subscribeToRenderElement: IdentifierSpec;
-    static createRenderComponentType: IdentifierSpec;
     static noop: IdentifierSpec;
 }
 export declare function assetUrl(pkg: string, path?: string, type?: string): string;

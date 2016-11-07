@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
-import { ListWrapper } from './facade/collection';
+import { ListWrapper, MapWrapper } from './facade/collection';
 import { isPresent } from './facade/lang';
 import { CssSelector } from './selector';
 import { sanitizeIdentifier, splitAtColon } from './util';
@@ -443,7 +443,7 @@ export function removeIdentifierDuplicates(items) {
             map.set(item.identifier.reference, item);
         }
     });
-    return Array.from(map.values());
+    return MapWrapper.values(map);
 }
 function _normalizeArray(obj) {
     return obj || [];

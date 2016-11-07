@@ -38,7 +38,7 @@ export function bindDirectiveAfterViewLifecycleCallbacks(directiveMeta, directiv
 }
 export function bindDirectiveWrapperLifecycleCallbacks(dir, directiveWrapperIntance, compileElement) {
     compileElement.view.destroyMethod.addStmts(DirectiveWrapperExpressions.ngOnDestroy(dir.directive, directiveWrapperIntance));
-    compileElement.view.detachMethod.addStmts(DirectiveWrapperExpressions.ngOnDetach(dir.hostProperties, directiveWrapperIntance, o.THIS_EXPR, compileElement.compViewExpr || o.THIS_EXPR, compileElement.renderNode));
+    compileElement.view.detachMethod.addStmts(DirectiveWrapperExpressions.ngOnDetach(dir.hostProperties, directiveWrapperIntance, o.THIS_EXPR, compileElement.component ? compileElement.appElement.prop('componentView') : o.THIS_EXPR, compileElement.renderNode));
 }
 export function bindInjectableDestroyLifecycleCallbacks(provider, providerInstance, compileElement) {
     var onDestroyMethod = compileElement.view.destroyMethod;

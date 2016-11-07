@@ -8,10 +8,10 @@
 import { AnimationCompiler } from './animation/animation_compiler';
 import { AnimationParser } from './animation/animation_parser';
 import { CompileProviderMetadata, createHostComponentMeta } from './compile_metadata';
-import { ListWrapper } from './facade/collection';
+import { ListWrapper, MapWrapper } from './facade/collection';
 import { Identifiers, resolveIdentifier, resolveIdentifierToken } from './identifiers';
 import * as o from './output/output_ast';
-import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency } from './view_compiler/view_compiler';
+import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewFactoryDependency } from './view_compiler/view_compiler';
 export var SourceModule = (function () {
     function SourceModule(fileUrl, moduleUrl, source) {
         this.fileUrl = fileUrl;
@@ -33,7 +33,7 @@ export function analyzeNgModules(programStaticSymbols, options, metadataResolver
             moduleMetasByRef.set(modMeta.type.reference, modMeta);
         }
     });
-    var ngModuleMetas = Array.from(moduleMetasByRef.values());
+    var ngModuleMetas = MapWrapper.values(moduleMetasByRef);
     var ngModuleByPipeOrDirective = new Map();
     var ngModulesByFile = new Map();
     var ngDirectivesByFile = new Map();
@@ -198,9 +198,9 @@ export var OfflineCompiler = (function () {
         if (componentStyles) {
             targetStatements.push.apply(targetStatements, _resolveStyleStatements(componentStyles, fileSuffix));
         }
-        compiledAnimations.forEach(function (entry) { return targetStatements.push.apply(targetStatements, entry.statements); });
+        compiledAnimations.forEach(function (entry) { entry.statements.forEach(function (statement) { targetStatements.push(statement); }); });
         targetStatements.push.apply(targetStatements, _resolveViewStatements(viewResult));
-        return viewResult.viewClassVar;
+        return viewResult.viewFactoryVar;
     };
     OfflineCompiler.prototype._codgenStyles = function (fileUrl, stylesCompileResult, fileSuffix) {
         _resolveStyleStatements(stylesCompileResult, fileSuffix);
@@ -213,7 +213,7 @@ export var OfflineCompiler = (function () {
 }());
 function _resolveViewStatements(compileResult) {
     compileResult.dependencies.forEach(function (dep) {
-        if (dep instanceof ViewClassDependency) {
+        if (dep instanceof ViewFactoryDependency) {
             var vfd = dep;
             vfd.placeholder.moduleUrl = _ngfactoryModuleUrl(vfd.comp.moduleUrl);
         }
