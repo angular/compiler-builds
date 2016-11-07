@@ -38,7 +38,6 @@ export declare class Identifiers {
     static ChangeDetectorStatus: IdentifierSpec;
     static checkBinding: IdentifierSpec;
     static devModeEqual: IdentifierSpec;
-    static inlineInterpolate: IdentifierSpec;
     static interpolate: IdentifierSpec;
     static castByValue: IdentifierSpec;
     static EMPTY_ARRAY: IdentifierSpec;

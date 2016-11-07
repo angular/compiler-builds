@@ -241,11 +241,7 @@ var _AstToIrVisitor = (function () {
             args.push(this.visit(ast.expressions[i], _Mode.Expression));
         }
         args.push(o.literal(ast.strings[ast.strings.length - 1]));
-        return ast.expressions.length <= 9 ?
-            o.importExpr(resolveIdentifier(Identifiers.inlineInterpolate)).callFn(args) :
-            o.importExpr(resolveIdentifier(Identifiers.interpolate)).callFn([
-                args[0], o.literalArr(args.slice(1))
-            ]);
+        return o.importExpr(resolveIdentifier(Identifiers.interpolate)).callFn(args);
     };
     _AstToIrVisitor.prototype.visitKeyedRead = function (ast, mode) {
         return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));
