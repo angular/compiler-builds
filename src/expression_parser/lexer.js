@@ -267,10 +267,10 @@ var _Scanner = (function () {
                 if (this.peek == chars.$u) {
                     // 4 character hex code for unicode character.
                     var hex = input.substring(this.index + 1, this.index + 5);
-                    try {
-                        unescapedCode = NumberWrapper.parseInt(hex, 16);
+                    if (/^[0-9a-f]+$/i.test(hex)) {
+                        unescapedCode = parseInt(hex, 16);
                     }
-                    catch (e) {
+                    else {
                         return this.error("Invalid unicode escape [\\u" + hex + "]", 0);
                     }
                     for (var i = 0; i < 5; i++) {

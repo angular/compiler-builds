@@ -318,7 +318,7 @@
       if (typeof token === 'string') {
           return token;
       }
-      if (token === undefined || token === null) {
+      if (token == null) {
           return '' + token;
       }
       if (token.overriddenName) {
@@ -340,25 +340,6 @@
               throw new Error('Invalid integer literal when parsing ' + text);
           }
           return result;
-      };
-      NumberWrapper.parseInt = function (text, radix) {
-          if (radix == 10) {
-              if (/^(\-|\+)?[0-9]+$/.test(text)) {
-                  return parseInt(text, radix);
-              }
-          }
-          else if (radix == 16) {
-              if (/^(\-|\+)?[0-9ABCDEFabcdef]+$/.test(text)) {
-                  return parseInt(text, radix);
-              }
-          }
-          else {
-              var result = parseInt(text, radix);
-              if (!isNaN(result)) {
-                  return result;
-              }
-          }
-          throw new Error('Invalid integer literal when parsing ' + text + ' in base ' + radix);
       };
       NumberWrapper.isNumeric = function (value) { return !isNaN(value - parseFloat(value)); };
       return NumberWrapper;
@@ -413,7 +394,9 @@
       ListWrapper.removeAll = function (list, items) {
           for (var i = 0; i < items.length; ++i) {
               var index = list.indexOf(items[i]);
-              list.splice(index, 1);
+              if (index > -1) {
+                  list.splice(index, 1);
+              }
           }
       };
       ListWrapper.remove = function (list, el) {
@@ -433,46 +416,14 @@
           }
           return true;
       };
-      ListWrapper.maximum = function (list, predicate) {
-          if (list.length == 0) {
-              return null;
-          }
-          var solution = null;
-          var maxValue = -Infinity;
-          for (var index = 0; index < list.length; index++) {
-              var candidate = list[index];
-              if (candidate == null) {
-                  continue;
-              }
-              var candidateValue = predicate(candidate);
-              if (candidateValue > maxValue) {
-                  solution = candidate;
-                  maxValue = candidateValue;
-              }
-          }
-          return solution;
-      };
       ListWrapper.flatten = function (list) {
-          var target = [];
-          _flattenArray(list, target);
-          return target;
+          return list.reduce(function (flat, item) {
+              var flatItem = Array.isArray(item) ? ListWrapper.flatten(item) : item;
+              return flat.concat(flatItem);
+          }, []);
       };
       return ListWrapper;
   }());
-  function _flattenArray(source, target) {
-      if (isPresent(source)) {
-          for (var i = 0; i < source.length; i++) {
-              var item = source[i];
-              if (Array.isArray(item)) {
-                  _flattenArray(item, target);
-              }
-              else {
-                  target.push(item);
-              }
-          }
-      }
-      return target;
-  }
 
   /**
    * @license
@@ -2514,10 +2465,10 @@
                   if (this.peek == $u) {
                       // 4 character hex code for unicode character.
                       var hex = input.substring(this.index + 1, this.index + 5);
-                      try {
-                          unescapedCode = NumberWrapper.parseInt(hex, 16);
+                      if (/^[0-9a-f]+$/i.test(hex)) {
+                          unescapedCode = parseInt(hex, 16);
                       }
-                      catch (e) {
+                      else {
                           return this.error("Invalid unicode escape [\\u" + hex + "]", 0);
                       }
                       for (var i = 0; i < 5; i++) {
