@@ -6576,6 +6576,10 @@
       var children = ast.cases.map(function (c) {
           var expansionResult = expandNodes(c.expression);
           errors.push.apply(errors, expansionResult.errors);
+          if (c.value === 'other') {
+              // other is the default case when no values match
+              return new Element("template", [new Attribute$1('ngSwitchDefault', '', c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+          }
           return new Element("template", [new Attribute$1('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
       });
       var switchAttr = new Attribute$1('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
