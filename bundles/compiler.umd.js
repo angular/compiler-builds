@@ -17777,6 +17777,7 @@
   ];
   var _ATTR_TO_PROP = {
       'class': 'className',
+      'for': 'htmlFor',
       'formaction': 'formAction',
       'innerHtml': 'innerHTML',
       'readonly': 'readOnly',
