@@ -1,3 +1,4 @@
+import { AnimationParser } from './animation/animation_parser';
 import { CompileNgModuleMetadata, StaticSymbol } from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveWrapperCompiler } from './directive_wrapper_compiler';
@@ -36,7 +37,7 @@ export declare class OfflineCompiler {
     private _translationFormat;
     private _animationParser;
     private _animationCompiler;
-    constructor(_metadataResolver: CompileMetadataResolver, _directiveNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _localeId: string, _translationFormat: string);
+    constructor(_metadataResolver: CompileMetadataResolver, _directiveNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _localeId: string, _translationFormat: string, _animationParser: AnimationParser);
     clearCache(): void;
     compileModules(staticSymbols: StaticSymbol[], options: {
         transitiveModules: boolean;

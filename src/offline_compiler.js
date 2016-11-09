@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AnimationCompiler } from './animation/animation_compiler';
-import { AnimationParser } from './animation/animation_parser';
 import { CompileProviderMetadata, createHostComponentMeta } from './compile_metadata';
 import { ListWrapper } from './facade/collection';
 import { Identifiers, resolveIdentifier, resolveIdentifierToken } from './identifiers';
@@ -78,7 +77,7 @@ export function analyzeNgModules(programStaticSymbols, options, metadataResolver
     };
 }
 export var OfflineCompiler = (function () {
-    function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat) {
+    function OfflineCompiler(_metadataResolver, _directiveNormalizer, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat, _animationParser) {
         this._metadataResolver = _metadataResolver;
         this._directiveNormalizer = _directiveNormalizer;
         this._templateParser = _templateParser;
@@ -89,7 +88,7 @@ export var OfflineCompiler = (function () {
         this._outputEmitter = _outputEmitter;
         this._localeId = _localeId;
         this._translationFormat = _translationFormat;
-        this._animationParser = new AnimationParser();
+        this._animationParser = _animationParser;
         this._animationCompiler = new AnimationCompiler();
     }
     OfflineCompiler.prototype.clearCache = function () {

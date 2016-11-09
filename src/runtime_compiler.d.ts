@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Compiler, Injector, ModuleWithComponentFactories, NgModuleFactory, Type } from '@angular/core';
+import { AnimationParser } from './animation/animation_parser';
 import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveWrapperCompiler } from './directive_wrapper_compiler';
@@ -33,13 +34,13 @@ export declare class RuntimeCompiler implements Compiler {
     private _ngModuleCompiler;
     private _directiveWrapperCompiler;
     private _compilerConfig;
+    private _animationParser;
     private _compiledTemplateCache;
     private _compiledHostTemplateCache;
     private _compiledDirectiveWrapperCache;
     private _compiledNgModuleCache;
-    private _animationParser;
     private _animationCompiler;
-    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _directiveWrapperCompiler: DirectiveWrapperCompiler, _compilerConfig: CompilerConfig);
+    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _directiveWrapperCompiler: DirectiveWrapperCompiler, _compilerConfig: CompilerConfig, _animationParser: AnimationParser);
     injector: Injector;
     compileModuleSync<T>(moduleType: Type<T>): NgModuleFactory<T>;
     compileModuleAsync<T>(moduleType: Type<T>): Promise<NgModuleFactory<T>>;

@@ -33,7 +33,7 @@ import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDepend
  * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
  */
 export var RuntimeCompiler = (function () {
-    function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _directiveWrapperCompiler, _compilerConfig) {
+    function RuntimeCompiler(_injector, _metadataResolver, _templateNormalizer, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _directiveWrapperCompiler, _compilerConfig, _animationParser) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateNormalizer = _templateNormalizer;
@@ -43,11 +43,11 @@ export var RuntimeCompiler = (function () {
         this._ngModuleCompiler = _ngModuleCompiler;
         this._directiveWrapperCompiler = _directiveWrapperCompiler;
         this._compilerConfig = _compilerConfig;
+        this._animationParser = _animationParser;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledDirectiveWrapperCache = new Map();
         this._compiledNgModuleCache = new Map();
-        this._animationParser = new AnimationParser();
         this._animationCompiler = new AnimationCompiler();
     }
     Object.defineProperty(RuntimeCompiler.prototype, "injector", {
@@ -326,6 +326,7 @@ export var RuntimeCompiler = (function () {
         { type: NgModuleCompiler, },
         { type: DirectiveWrapperCompiler, },
         { type: CompilerConfig, },
+        { type: AnimationParser, },
     ];
     return RuntimeCompiler;
 }());
