@@ -189,15 +189,20 @@ var _AnimationBuilder = (function () {
         // since the destination state's values should persist once
         // the animation sequence has completed.
         statements.push(_ANIMATION_PLAYER_VAR
-            .callMethod('onDone', [o.fn([], [RENDER_STYLES_FN
+            .callMethod('onDone', [o
+                .fn([], [
+                _ANIMATION_PLAYER_VAR.callMethod('destroy', []).toStmt(),
+                RENDER_STYLES_FN
                     .callFn([
                     _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
                     o.importExpr(resolveIdentifier(Identifiers.prepareFinalAnimationStyles))
                         .callFn([
-                        _ANIMATION_START_STATE_STYLES_VAR, _ANIMATION_END_STATE_STYLES_VAR
+                        _ANIMATION_START_STATE_STYLES_VAR,
+                        _ANIMATION_END_STATE_STYLES_VAR
                     ])
                 ])
-                    .toStmt()])])
+                    .toStmt()
+            ])])
             .toStmt());
         statements.push(_ANIMATION_FACTORY_VIEW_CONTEXT
             .callMethod('queueAnimation', [
