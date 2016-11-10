@@ -36,7 +36,6 @@ var ViewBinderVisitor = (function () {
         var hasEvents = bindOutputs(ast.outputs, ast.directives, compileElement, true);
         bindRenderInputs(ast.inputs, hasEvents, compileElement);
         ast.directives.forEach(function (directiveAst, dirIndex) {
-            var directiveInstance = compileElement.instances.get(directiveAst.directive.type.reference);
             var directiveWrapperInstance = compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);
             bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirIndex, compileElement);
             bindDirectiveHostProps(directiveAst, directiveWrapperInstance, compileElement, ast.name, _this._schemaRegistry);
