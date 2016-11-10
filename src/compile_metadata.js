@@ -422,17 +422,18 @@ export var CompileNgModuleMetadata = (function () {
     return CompileNgModuleMetadata;
 }());
 export var TransitiveCompileNgModuleMetadata = (function () {
-    function TransitiveCompileNgModuleMetadata(modules, providers, entryComponents, directives, pipes) {
+    function TransitiveCompileNgModuleMetadata(modules, providers, entryComponents, directives, pipes, loadingPromises) {
         var _this = this;
         this.modules = modules;
         this.providers = providers;
         this.entryComponents = entryComponents;
         this.directives = directives;
         this.pipes = pipes;
+        this.loadingPromises = loadingPromises;
         this.directivesSet = new Set();
         this.pipesSet = new Set();
-        directives.forEach(function (dir) { return _this.directivesSet.add(dir.type.reference); });
-        pipes.forEach(function (pipe) { return _this.pipesSet.add(pipe.type.reference); });
+        directives.forEach(function (dir) { return _this.directivesSet.add(dir.reference); });
+        pipes.forEach(function (pipe) { return _this.pipesSet.add(pipe.reference); });
     }
     return TransitiveCompileNgModuleMetadata;
 }());

@@ -8,7 +8,6 @@
 import { Compiler, Injector, ModuleWithComponentFactories, NgModuleFactory, Type } from '@angular/core';
 import { AnimationParser } from './animation/animation_parser';
 import { CompilerConfig } from './config';
-import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveWrapperCompiler } from './directive_wrapper_compiler';
 import { CompileMetadataResolver } from './metadata_resolver';
 import { NgModuleCompiler } from './ng_module_compiler';
@@ -27,7 +26,6 @@ import { ViewCompiler } from './view_compiler/view_compiler';
 export declare class RuntimeCompiler implements Compiler {
     private _injector;
     private _metadataResolver;
-    private _templateNormalizer;
     private _templateParser;
     private _styleCompiler;
     private _viewCompiler;
@@ -40,7 +38,7 @@ export declare class RuntimeCompiler implements Compiler {
     private _compiledDirectiveWrapperCache;
     private _compiledNgModuleCache;
     private _animationCompiler;
-    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateNormalizer: DirectiveNormalizer, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _directiveWrapperCompiler: DirectiveWrapperCompiler, _compilerConfig: CompilerConfig, _animationParser: AnimationParser);
+    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _directiveWrapperCompiler: DirectiveWrapperCompiler, _compilerConfig: CompilerConfig, _animationParser: AnimationParser);
     injector: Injector;
     compileModuleSync<T>(moduleType: Type<T>): NgModuleFactory<T>;
     compileModuleAsync<T>(moduleType: Type<T>): Promise<NgModuleFactory<T>>;
@@ -48,13 +46,13 @@ export declare class RuntimeCompiler implements Compiler {
     compileModuleAndAllComponentsAsync<T>(moduleType: Type<T>): Promise<ModuleWithComponentFactories<T>>;
     private _compileModuleAndComponents<T>(moduleType, isSync);
     private _compileModuleAndAllComponents<T>(moduleType, isSync);
+    private _loadModules(mainModule, isSync);
     private _compileModule<T>(moduleType);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
     private _createCompiledHostTemplate(compType, ngModule);
     private _createCompiledTemplate(compMeta, ngModule);
     private _assertComponentKnown(compType, isHost);
-    private _assertComponentLoaded(compType, isHost);
     private _assertDirectiveWrapper(dirType);
     private _compileDirectiveWrapper(dirMeta, moduleMeta);
     private _compileTemplate(template);

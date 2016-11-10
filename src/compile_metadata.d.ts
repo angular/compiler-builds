@@ -224,9 +224,7 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
-        entryComponents?: CompileTypeMetadata[];
-        viewDirectives?: CompileTypeMetadata[];
-        viewPipes?: CompileTypeMetadata[];
+        entryComponents?: CompileIdentifierMetadata[];
         template?: CompileTemplateMetadata;
     }): CompileDirectiveMetadata;
     type: CompileTypeMetadata;
@@ -253,7 +251,7 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
     viewProviders: CompileProviderMetadata[];
     queries: CompileQueryMetadata[];
     viewQueries: CompileQueryMetadata[];
-    entryComponents: CompileTypeMetadata[];
+    entryComponents: CompileIdentifierMetadata[];
     template: CompileTemplateMetadata;
     constructor({type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template}?: {
         type?: CompileTypeMetadata;
@@ -280,9 +278,7 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
-        entryComponents?: CompileTypeMetadata[];
-        viewDirectives?: CompileTypeMetadata[];
-        viewPipes?: CompileTypeMetadata[];
+        entryComponents?: CompileIdentifierMetadata[];
         template?: CompileTemplateMetadata;
     });
     identifier: CompileIdentifierMetadata;
@@ -307,12 +303,12 @@ export declare class CompilePipeMetadata implements CompileMetadataWithIdentifie
  */
 export declare class CompileNgModuleMetadata implements CompileMetadataWithIdentifier {
     type: CompileTypeMetadata;
-    declaredDirectives: CompileDirectiveMetadata[];
-    exportedDirectives: CompileDirectiveMetadata[];
-    declaredPipes: CompilePipeMetadata[];
-    exportedPipes: CompilePipeMetadata[];
-    entryComponents: CompileTypeMetadata[];
-    bootstrapComponents: CompileTypeMetadata[];
+    declaredDirectives: CompileIdentifierMetadata[];
+    exportedDirectives: CompileIdentifierMetadata[];
+    declaredPipes: CompileIdentifierMetadata[];
+    exportedPipes: CompileIdentifierMetadata[];
+    entryComponents: CompileIdentifierMetadata[];
+    bootstrapComponents: CompileIdentifierMetadata[];
     providers: CompileProviderMetadata[];
     importedModules: CompileNgModuleMetadata[];
     exportedModules: CompileNgModuleMetadata[];
@@ -322,12 +318,12 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
     constructor({type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule, id}?: {
         type?: CompileTypeMetadata;
         providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
-        declaredDirectives?: CompileDirectiveMetadata[];
-        exportedDirectives?: CompileDirectiveMetadata[];
-        declaredPipes?: CompilePipeMetadata[];
-        exportedPipes?: CompilePipeMetadata[];
-        entryComponents?: CompileTypeMetadata[];
-        bootstrapComponents?: CompileTypeMetadata[];
+        declaredDirectives?: CompileIdentifierMetadata[];
+        exportedDirectives?: CompileIdentifierMetadata[];
+        declaredPipes?: CompileIdentifierMetadata[];
+        exportedPipes?: CompileIdentifierMetadata[];
+        entryComponents?: CompileIdentifierMetadata[];
+        bootstrapComponents?: CompileIdentifierMetadata[];
         importedModules?: CompileNgModuleMetadata[];
         exportedModules?: CompileNgModuleMetadata[];
         transitiveModule?: TransitiveCompileNgModuleMetadata;
@@ -339,12 +335,13 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
 export declare class TransitiveCompileNgModuleMetadata {
     modules: CompileNgModuleMetadata[];
     providers: CompileProviderMetadata[];
-    entryComponents: CompileTypeMetadata[];
-    directives: CompileDirectiveMetadata[];
-    pipes: CompilePipeMetadata[];
-    directivesSet: Set<Type<any>>;
-    pipesSet: Set<Type<any>>;
-    constructor(modules: CompileNgModuleMetadata[], providers: CompileProviderMetadata[], entryComponents: CompileTypeMetadata[], directives: CompileDirectiveMetadata[], pipes: CompilePipeMetadata[]);
+    entryComponents: CompileIdentifierMetadata[];
+    directives: CompileIdentifierMetadata[];
+    pipes: CompileIdentifierMetadata[];
+    loadingPromises: Promise<any>[];
+    directivesSet: Set<any>;
+    pipesSet: Set<any>;
+    constructor(modules: CompileNgModuleMetadata[], providers: CompileProviderMetadata[], entryComponents: CompileIdentifierMetadata[], directives: CompileIdentifierMetadata[], pipes: CompileIdentifierMetadata[], loadingPromises: Promise<any>[]);
 }
 export declare function removeIdentifierDuplicates<T extends CompileMetadataWithIdentifier>(items: T[]): T[];
 export declare function isStaticSymbol(value: any): value is StaticSymbol;
