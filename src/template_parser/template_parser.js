@@ -241,13 +241,14 @@ var TemplateParseVisitor = (function () {
         var isTemplateElement = lcElName == TEMPLATE_ELEMENT;
         element.attrs.forEach(function (attr) {
             var hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
-            var templateBindingsSource;
+            var templateBindingsSource = undefined;
+            var prefixToken = undefined;
             if (_this._normalizeAttributeName(attr.name) == TEMPLATE_ATTR) {
                 templateBindingsSource = attr.value;
             }
             else if (attr.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
-                var key = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
-                templateBindingsSource = (attr.value.length == 0) ? key : key + ' ' + attr.value;
+                templateBindingsSource = attr.value;
+                prefixToken = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
             }
             var hasTemplateBinding = isPresent(templateBindingsSource);
             if (hasTemplateBinding) {
@@ -255,7 +256,7 @@ var TemplateParseVisitor = (function () {
                     _this._reportError("Can't have multiple template bindings on one element. Use only one attribute named 'template' or prefixed with *", attr.sourceSpan);
                 }
                 hasInlineTemplates = true;
-                _this._bindingParser.parseInlineTemplateBinding(attr.name, templateBindingsSource, attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
+                _this._bindingParser.parseInlineTemplateBinding(attr.name, prefixToken, templateBindingsSource, attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
             }
             if (!hasBinding && !hasTemplateBinding) {
                 // don't include the bindings as attributes as well in the AST

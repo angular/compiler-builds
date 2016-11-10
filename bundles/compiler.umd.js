@@ -2129,7 +2129,8 @@
       return ASTWithSource;
   }(AST));
   var TemplateBinding = (function () {
-      function TemplateBinding(key, keyIsVar, name, expression) {
+      function TemplateBinding(span, key, keyIsVar, name, expression) {
+          this.span = span;
           this.key = key;
           this.keyIsVar = keyIsVar;
           this.name = name;
@@ -2633,8 +2634,16 @@
           var uninterpretedExpression = input.substring(prefixSeparatorIndex + 1);
           return new Quote(new ParseSpan(0, input.length), prefix, uninterpretedExpression, location);
       };
-      Parser.prototype.parseTemplateBindings = function (input, location) {
+      Parser.prototype.parseTemplateBindings = function (prefixToken, input, location) {
           var tokens = this._lexer.tokenize(input);
+          if (prefixToken) {
+              // Prefix the tokens with the tokens from prefixToken but have them take no space (0 index).
+              var prefixTokens = this._lexer.tokenize(prefixToken).map(function (t) {
+                  t.index = 0;
+                  return t;
+              });
+              tokens.unshift.apply(tokens, prefixTokens);
+          }
           return new _ParseAST(input, location, tokens, input.length, false, this.errors, 0)
               .parseTemplateBindings();
       };
@@ -2680,6 +2689,8 @@
               }
               else {
                   this._reportError('Blank expressions are not allowed in interpolated strings', input, "at column " + this._findInterpolationErrorColumn(parts, i, interpolationConfig) + " in", location);
+                  expressions.push('$implict');
+                  offsets.push(offset);
               }
           }
           return new SplitInterpolation(strings, expressions, offsets);
@@ -3175,6 +3186,7 @@
           var prefix = null;
           var warnings = [];
           while (this.index < this.tokens.length) {
+              var start = this.inputIndex;
               var keyIsVar = this.peekKeywordLet();
               if (keyIsVar) {
                   this.advance();
@@ -3200,12 +3212,12 @@
                   }
               }
               else if (this.next !== EOF && !this.peekKeywordLet()) {
-                  var start = this.inputIndex;
+                  var start_1 = this.inputIndex;
                   var ast = this.parsePipe();
-                  var source = this.input.substring(start, this.inputIndex);
+                  var source = this.input.substring(start_1 - this.offset, this.inputIndex - this.offset);
                   expression = new ASTWithSource(ast, source, this.location, this.errors);
               }
-              bindings.push(new TemplateBinding(key, keyIsVar, name, expression));
+              bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
               if (!this.optionalCharacter($SEMICOLON)) {
                   this.optionalCharacter($COMMA);
               }
@@ -7220,8 +7232,8 @@
               return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
           }
       };
-      BindingParser.prototype.parseInlineTemplateBinding = function (name, value, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
-          var bindings = this._parseTemplateBindings(value, sourceSpan);
+      BindingParser.prototype.parseInlineTemplateBinding = function (name, prefixToken, value, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
+          var bindings = this._parseTemplateBindings(prefixToken, value, sourceSpan);
           for (var i = 0; i < bindings.length; i++) {
               var binding = bindings[i];
               if (binding.keyIsVar) {
@@ -7236,11 +7248,11 @@
               }
           }
       };
-      BindingParser.prototype._parseTemplateBindings = function (value, sourceSpan) {
+      BindingParser.prototype._parseTemplateBindings = function (prefixToken, value, sourceSpan) {
           var _this = this;
           var sourceInfo = sourceSpan.start.toString();
           try {
-              var bindingsResult = this._exprParser.parseTemplateBindings(value, sourceInfo);
+              var bindingsResult = this._exprParser.parseTemplateBindings(prefixToken, value, sourceInfo);
               this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
               bindingsResult.templateBindings.forEach(function (binding) {
                   if (isPresent(binding.expression)) {
@@ -7793,13 +7805,14 @@
           var isTemplateElement = lcElName == TEMPLATE_ELEMENT;
           element.attrs.forEach(function (attr) {
               var hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
-              var templateBindingsSource;
+              var templateBindingsSource = undefined;
+              var prefixToken = undefined;
               if (_this._normalizeAttributeName(attr.name) == TEMPLATE_ATTR) {
                   templateBindingsSource = attr.value;
               }
               else if (attr.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
-                  var key = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
-                  templateBindingsSource = (attr.value.length == 0) ? key : key + ' ' + attr.value;
+                  templateBindingsSource = attr.value;
+                  prefixToken = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
               }
               var hasTemplateBinding = isPresent(templateBindingsSource);
               if (hasTemplateBinding) {
@@ -7807,7 +7820,7 @@
                       _this._reportError("Can't have multiple template bindings on one element. Use only one attribute named 'template' or prefixed with *", attr.sourceSpan);
                   }
                   hasInlineTemplates = true;
-                  _this._bindingParser.parseInlineTemplateBinding(attr.name, templateBindingsSource, attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
+                  _this._bindingParser.parseInlineTemplateBinding(attr.name, prefixToken, templateBindingsSource, attr.sourceSpan, templateMatchableAttrs, templateElementOrDirectiveProps, templateElementVars);
               }
               if (!hasBinding && !hasTemplateBinding) {
                   // don't include the bindings as attributes as well in the AST

@@ -110,8 +110,8 @@ export var BindingParser = (function () {
             return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo);
         }
     };
-    BindingParser.prototype.parseInlineTemplateBinding = function (name, value, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
-        var bindings = this._parseTemplateBindings(value, sourceSpan);
+    BindingParser.prototype.parseInlineTemplateBinding = function (name, prefixToken, value, sourceSpan, targetMatchableAttrs, targetProps, targetVars) {
+        var bindings = this._parseTemplateBindings(prefixToken, value, sourceSpan);
         for (var i = 0; i < bindings.length; i++) {
             var binding = bindings[i];
             if (binding.keyIsVar) {
@@ -126,11 +126,11 @@ export var BindingParser = (function () {
             }
         }
     };
-    BindingParser.prototype._parseTemplateBindings = function (value, sourceSpan) {
+    BindingParser.prototype._parseTemplateBindings = function (prefixToken, value, sourceSpan) {
         var _this = this;
         var sourceInfo = sourceSpan.start.toString();
         try {
-            var bindingsResult = this._exprParser.parseTemplateBindings(value, sourceInfo);
+            var bindingsResult = this._exprParser.parseTemplateBindings(prefixToken, value, sourceInfo);
             this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
             bindingsResult.templateBindings.forEach(function (binding) {
                 if (isPresent(binding.expression)) {
