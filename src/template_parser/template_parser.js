@@ -11,7 +11,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { Inject, Injectable, OpaqueToken, Optional } from '@angular/core';
-import { removeIdentifierDuplicates } from '../compile_metadata';
 import { Parser } from '../expression_parser/parser';
 import { isPresent } from '../facade/lang';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
@@ -106,8 +105,8 @@ export var TemplateParser = (function () {
         var result;
         var errors = htmlAstWithErrors.errors;
         if (htmlAstWithErrors.rootNodes.length > 0) {
-            var uniqDirectives = removeIdentifierDuplicates(directives);
-            var uniqPipes = removeIdentifierDuplicates(pipes);
+            var uniqDirectives = removeSummaryDuplicates(directives);
+            var uniqPipes = removeSummaryDuplicates(pipes);
             var providerViewContext = new ProviderViewContext(component, htmlAstWithErrors.rootNodes[0].sourceSpan);
             var interpolationConfig = void 0;
             if (component.template && component.template.interpolation) {
@@ -298,7 +297,7 @@ var TemplateParseVisitor = (function () {
             this._findComponentDirectives(directiveAsts)
                 .forEach(function (componentDirectiveAst) { return _this._validateElementAnimationInputOutputs(componentDirectiveAst.hostProperties, componentDirectiveAst.hostEvents, componentDirectiveAst.directive.template); });
             var componentTemplate = providerContext.viewContext.component.template;
-            this._validateElementAnimationInputOutputs(elementProps, events, componentTemplate);
+            this._validateElementAnimationInputOutputs(elementProps, events, componentTemplate.toSummary());
         }
         if (hasInlineTemplates) {
             var templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
@@ -315,7 +314,7 @@ var TemplateParseVisitor = (function () {
     TemplateParseVisitor.prototype._validateElementAnimationInputOutputs = function (inputs, outputs, template) {
         var _this = this;
         var triggerLookup = new Set();
-        template.animations.forEach(function (entry) { triggerLookup.add(entry.name); });
+        template.animations.forEach(function (entry) { triggerLookup.add(entry); });
         var animationInputs = inputs.filter(function (input) { return input.isAnimation; });
         animationInputs.forEach(function (input) {
             var name = input.name;
@@ -675,5 +674,14 @@ var EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null
 var NON_BINDABLE_VISITOR = new NonBindableVisitor();
 function _isEmptyTextNode(node) {
     return node instanceof html.Text && node.value.trim().length == 0;
+}
+export function removeSummaryDuplicates(items) {
+    var map = new Map();
+    items.forEach(function (item) {
+        if (!map.get(item.type.reference)) {
+            map.set(item.type.reference, item);
+        }
+    });
+    return Array.from(map.values());
 }
 //# sourceMappingURL=template_parser.js.map

@@ -42,7 +42,9 @@ export var CompileMetadataResolver = (function () {
         this._directiveNormalizer = _directiveNormalizer;
         this._reflector = _reflector;
         this._directiveCache = new Map();
+        this._directiveSummaryCache = new Map();
         this._pipeCache = new Map();
+        this._pipeSummaryCache = new Map();
         this._ngModuleCache = new Map();
         this._ngModuleOfTypes = new Map();
         this._anonymousTypes = new Map();
@@ -64,7 +66,9 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.clearCacheFor = function (type) {
         var dirMeta = this._directiveCache.get(type);
         this._directiveCache.delete(type);
+        this._directiveSummaryCache.delete(type);
         this._pipeCache.delete(type);
+        this._pipeSummaryCache.delete(type);
         this._ngModuleOfTypes.delete(type);
         // Clear all of the NgModule as they contain transitive information!
         this._ngModuleCache.clear();
@@ -74,7 +78,9 @@ export var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype.clearCache = function () {
         this._directiveCache.clear();
+        this._directiveSummaryCache.clear();
         this._pipeCache.clear();
+        this._pipeSummaryCache.clear();
         this._ngModuleCache.clear();
         this._ngModuleOfTypes.clear();
         this._directiveNormalizer.clearCache();
@@ -184,6 +190,7 @@ export var CompileMetadataResolver = (function () {
                 entryComponents: entryComponentMetadata
             });
             _this._directiveCache.set(directiveType, meta);
+            _this._directiveSummaryCache.set(directiveType, meta.toSummary());
             return meta;
         };
         if (dirMeta instanceof Component) {
@@ -234,6 +241,13 @@ export var CompileMetadataResolver = (function () {
         }
         return dirMeta;
     };
+    CompileMetadataResolver.prototype.getDirectiveSummary = function (dirType) {
+        var dirSummary = this._directiveSummaryCache.get(dirType);
+        if (!dirSummary) {
+            throw new Error("Illegal state: getDirectiveSummary can only be called after loadNgModuleMetadata for a module that imports it. Directive " + stringify(dirType) + ".");
+        }
+        return dirSummary;
+    };
     CompileMetadataResolver.prototype.isDirective = function (type) { return this._directiveResolver.isDirective(type); };
     CompileMetadataResolver.prototype.isPipe = function (type) { return this._pipeResolver.isPipe(type); };
     /**
@@ -246,6 +260,13 @@ export var CompileMetadataResolver = (function () {
             throw new Error("Illegal state: getNgModuleMetadata can only be called after loadNgModuleMetadata. Module " + stringify(moduleType) + ".");
         }
         return modMeta;
+    };
+    CompileMetadataResolver.prototype._loadNgModuleSummary = function (moduleType, isSync) {
+        // TODO(tbosch): add logic to read summary files!
+        // - needs to add directive / pipe summaries to this._directiveSummaryCache /
+        // this._pipeSummaryCache as well!
+        var moduleMeta = this._loadNgModuleMetadata(moduleType, isSync, false);
+        return moduleMeta ? moduleMeta.toSummary() : null;
     };
     /**
      * Loads an NgModule and all of its directives. This includes loading the exported directives of
@@ -271,9 +292,8 @@ export var CompileMetadataResolver = (function () {
             return null;
         }
         var declaredDirectives = [];
-        var exportedDirectives = [];
+        var exportedNonModuleIdentifiers = [];
         var declaredPipes = [];
-        var exportedPipes = [];
         var importedModules = [];
         var exportedModules = [];
         var providers = [];
@@ -294,11 +314,11 @@ export var CompileMetadataResolver = (function () {
                     }
                 }
                 if (importedModuleType) {
-                    var importedMeta = _this._loadNgModuleMetadata(importedModuleType, isSync, false);
-                    if (importedMeta === null) {
+                    var importedModuleSummary = _this._loadNgModuleSummary(importedModuleType, isSync);
+                    if (!importedModuleSummary) {
                         throw new Error("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
                     }
-                    importedModules.push(importedMeta);
+                    importedModules.push(importedModuleSummary);
                 }
                 else {
                     throw new Error("Unexpected value '" + stringify(importedType) + "' imported by the module '" + stringify(moduleType) + "'");
@@ -310,19 +330,12 @@ export var CompileMetadataResolver = (function () {
                 if (!isValidType(exportedType)) {
                     throw new Error("Unexpected value '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
                 }
-                var identifier = _this._getIdentifierMetadata(exportedType, staticTypeModuleUrl(exportedType));
-                var exportedModuleMeta;
-                if (_this._directiveResolver.isDirective(exportedType)) {
-                    exportedDirectives.push(identifier);
-                }
-                else if (_this._pipeResolver.isPipe(exportedType)) {
-                    exportedPipes.push(identifier);
-                }
-                else if (exportedModuleMeta = _this._loadNgModuleMetadata(exportedType, isSync, false)) {
-                    exportedModules.push(exportedModuleMeta);
+                var exportedModuleSummary = _this._loadNgModuleSummary(exportedType, isSync);
+                if (exportedModuleSummary) {
+                    exportedModules.push(exportedModuleSummary);
                 }
                 else {
-                    throw new Error("Unexpected " + _this._getTypeDescriptor(exportedType) + " '" + stringify(exportedType) + "' exported by the module '" + stringify(moduleType) + "'");
+                    exportedNonModuleIdentifiers.push(_this._getIdentifierMetadata(exportedType, staticTypeModuleUrl(exportedType)));
                 }
             });
         }
@@ -357,6 +370,19 @@ export var CompileMetadataResolver = (function () {
                 }
             });
         }
+        var exportedDirectives = [];
+        var exportedPipes = [];
+        exportedNonModuleIdentifiers.forEach(function (exportedId) {
+            if (transitiveModule.directivesSet.has(exportedId.reference)) {
+                exportedDirectives.push(exportedId);
+            }
+            else if (transitiveModule.pipesSet.has(exportedId.reference)) {
+                exportedPipes.push(exportedId);
+            }
+            else {
+                throw new Error("Can't export " + _this._getTypeDescriptor(exportedId.reference) + " " + stringify(exportedId.reference) + " from " + stringify(moduleType) + " as it was neither declared nor imported!");
+            }
+        });
         // The providers of the module have to go last
         // so that they overwrite any other provider we already added.
         if (meta.providers) {
@@ -396,23 +422,10 @@ export var CompileMetadataResolver = (function () {
             transitiveModule: transitiveModule,
             id: meta.id,
         });
-        transitiveModule.modules.push(compileMeta);
-        this._verifyModule(compileMeta);
+        transitiveModule.modules.push(compileMeta.toInjectorSummary());
         this._ngModuleCache.set(moduleType, compileMeta);
         return compileMeta;
         var _a, _b;
-    };
-    CompileMetadataResolver.prototype._verifyModule = function (moduleMeta) {
-        moduleMeta.exportedDirectives.forEach(function (dirIdentifier) {
-            if (!moduleMeta.transitiveModule.directivesSet.has(dirIdentifier.reference)) {
-                throw new Error("Can't export directive " + stringify(dirIdentifier.reference) + " from " + stringify(moduleMeta.type.reference) + " as it was neither declared nor imported!");
-            }
-        });
-        moduleMeta.exportedPipes.forEach(function (pipeIdentifier) {
-            if (!moduleMeta.transitiveModule.pipesSet.has(pipeIdentifier.reference)) {
-                throw new Error("Can't export pipe " + stringify(pipeIdentifier.reference) + " from " + stringify(moduleMeta.type.reference) + " as it was neither declared nor imported!");
-            }
-        });
     };
     CompileMetadataResolver.prototype._getTypeDescriptor = function (type) {
         if (this._directiveResolver.isDirective(type)) {
@@ -440,13 +453,13 @@ export var CompileMetadataResolver = (function () {
     };
     CompileMetadataResolver.prototype._getTransitiveNgModuleMetadata = function (importedModules, exportedModules) {
         // collect `providers` / `entryComponents` from all imported and all exported modules
-        var transitiveModules = getTransitiveModules(importedModules.concat(exportedModules), true);
+        var transitiveModules = getTransitiveImportedModules(importedModules.concat(exportedModules));
         var providers = flattenArray(transitiveModules.map(function (ngModule) { return ngModule.providers; }));
         var entryComponents = flattenArray(transitiveModules.map(function (ngModule) { return ngModule.entryComponents; }));
-        var transitiveExportedModules = getTransitiveModules(importedModules, false);
+        var transitiveExportedModules = getTransitiveExportedModules(importedModules);
         var directives = flattenArray(transitiveExportedModules.map(function (ngModule) { return ngModule.exportedDirectives; }));
         var pipes = flattenArray(transitiveExportedModules.map(function (ngModule) { return ngModule.exportedPipes; }));
-        var loadingPromises = ListWrapper.flatten(transitiveExportedModules.map(function (ngModule) { return ngModule.transitiveModule.loadingPromises; }));
+        var loadingPromises = ListWrapper.flatten(transitiveExportedModules.map(function (ngModule) { return ngModule.loadingPromises; }));
         return new cpl.TransitiveCompileNgModuleMetadata(transitiveModules, providers, entryComponents, directives, pipes, loadingPromises);
     };
     CompileMetadataResolver.prototype._getIdentifierMetadata = function (type, moduleUrl) {
@@ -485,6 +498,13 @@ export var CompileMetadataResolver = (function () {
         }
         return pipeMeta;
     };
+    CompileMetadataResolver.prototype.getPipeSummary = function (pipeType) {
+        var pipeSummary = this._pipeSummaryCache.get(pipeType);
+        if (!pipeSummary) {
+            throw new Error("Illegal state: getPipeSummary can only be called after loadNgModuleMetadata for a module that imports it. Pipe " + stringify(pipeType) + ".");
+        }
+        return pipeSummary;
+    };
     CompileMetadataResolver.prototype._loadPipeMetadata = function (pipeType) {
         pipeType = resolveForwardRef(pipeType);
         var pipeMeta = this._pipeResolver.resolve(pipeType);
@@ -497,6 +517,7 @@ export var CompileMetadataResolver = (function () {
             pure: pipeMeta.pure
         });
         this._pipeCache.set(pipeType, meta);
+        this._pipeSummaryCache.set(pipeType, meta.toSummary());
     };
     CompileMetadataResolver.prototype._getDependenciesMetadata = function (typeOrFunc, dependencies) {
         var _this = this;
@@ -707,16 +728,28 @@ export var CompileMetadataResolver = (function () {
     ];
     return CompileMetadataResolver;
 }());
-function getTransitiveModules(modules, includeImports, targetModules, visitedModules) {
+function getTransitiveExportedModules(modules, targetModules, visitedModules) {
     if (targetModules === void 0) { targetModules = []; }
     if (visitedModules === void 0) { visitedModules = new Set(); }
     modules.forEach(function (ngModule) {
         if (!visitedModules.has(ngModule.type.reference)) {
             visitedModules.add(ngModule.type.reference);
-            var nestedModules = includeImports ?
-                ngModule.importedModules.concat(ngModule.exportedModules) :
-                ngModule.exportedModules;
-            getTransitiveModules(nestedModules, includeImports, targetModules, visitedModules);
+            getTransitiveExportedModules(ngModule.exportedModules, targetModules, visitedModules);
+            // Add after recursing so imported/exported modules are before the module itself.
+            // This is important for overwriting providers of imported modules!
+            targetModules.push(ngModule);
+        }
+    });
+    return targetModules;
+}
+function getTransitiveImportedModules(modules, targetModules, visitedModules) {
+    if (targetModules === void 0) { targetModules = []; }
+    if (visitedModules === void 0) { visitedModules = new Set(); }
+    modules.forEach(function (ngModule) {
+        if (!visitedModules.has(ngModule.type.reference)) {
+            visitedModules.add(ngModule.type.reference);
+            var nestedModules = ngModule.importedModules.concat(ngModule.exportedModules);
+            getTransitiveImportedModules(nestedModules, targetModules, visitedModules);
             // Add after recursing so imported/exported modules are before the module itself.
             // This is important for overwriting providers of imported modules!
             targetModules.push(ngModule);

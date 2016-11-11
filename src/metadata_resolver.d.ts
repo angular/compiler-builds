@@ -21,7 +21,9 @@ export declare class CompileMetadataResolver {
     private _directiveNormalizer;
     private _reflector;
     private _directiveCache;
+    private _directiveSummaryCache;
     private _pipeCache;
+    private _pipeSummaryCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
     private _anonymousTypes;
@@ -40,6 +42,7 @@ export declare class CompileMetadataResolver {
      * This assumes `loadNgModuleMetadata` has been called first.
      */
     getDirectiveMetadata(directiveType: any): cpl.CompileDirectiveMetadata;
+    getDirectiveSummary(dirType: any): cpl.CompileDirectiveSummary;
     isDirective(type: any): boolean;
     isPipe(type: any): boolean;
     /**
@@ -47,6 +50,7 @@ export declare class CompileMetadataResolver {
      * This assumes `loadNgModuleMetadata` has been called first.
      */
     getNgModuleMetadata(moduleType: any): cpl.CompileNgModuleMetadata;
+    private _loadNgModuleSummary(moduleType, isSync);
     /**
      * Loads an NgModule and all of its directives. This includes loading the exported directives of
      * imported modules,
@@ -57,7 +61,6 @@ export declare class CompileMetadataResolver {
         loading: Promise<any>;
     };
     private _loadNgModuleMetadata(moduleType, isSync, throwIfNotFound?);
-    private _verifyModule(moduleMeta);
     private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
     private _getTransitiveNgModuleMetadata(importedModules, exportedModules);
@@ -69,6 +72,7 @@ export declare class CompileMetadataResolver {
      * This assumes `loadNgModuleMetadata` has been called first.
      */
     getPipeMetadata(pipeType: any): cpl.CompilePipeMetadata;
+    getPipeSummary(pipeType: any): cpl.CompilePipeSummary;
     private _loadPipeMetadata(pipeType);
     private _getDependenciesMetadata(typeOrFunc, dependencies);
     private _getTokenMetadata(token);

@@ -140,7 +140,8 @@ export var RuntimeCompiler = (function () {
         var ngModule = this._metadataResolver.getNgModuleMetadata(mainModule);
         var moduleByDirective = new Map();
         var templates = new Set();
-        ngModule.transitiveModule.modules.forEach(function (localModuleMeta) {
+        ngModule.transitiveModule.modules.forEach(function (localModuleSummary) {
+            var localModuleMeta = _this._metadataResolver.getNgModuleMetadata(localModuleSummary.type.reference);
             localModuleMeta.declaredDirectives.forEach(function (dirIdentifier) {
                 moduleByDirective.set(dirIdentifier.reference, localModuleMeta);
                 var dirMeta = _this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
@@ -155,7 +156,8 @@ export var RuntimeCompiler = (function () {
                 }
             });
         });
-        ngModule.transitiveModule.modules.forEach(function (localModuleMeta) {
+        ngModule.transitiveModule.modules.forEach(function (localModuleSummary) {
+            var localModuleMeta = _this._metadataResolver.getNgModuleMetadata(localModuleSummary.type.reference);
             localModuleMeta.declaredDirectives.forEach(function (dirIdentifier) {
                 var dirMeta = _this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
                 if (dirMeta.isComponent) {
@@ -248,8 +250,8 @@ export var RuntimeCompiler = (function () {
         stylesCompileResult.externalStylesheets.forEach(function (r) { externalStylesheetsByModuleUrl.set(r.meta.moduleUrl, r); });
         this._resolveStylesCompileResult(stylesCompileResult.componentStylesheet, externalStylesheetsByModuleUrl);
         var parsedAnimations = this._animationParser.parseComponent(compMeta);
-        var directives = template.directives.map(function (dir) { return _this._metadataResolver.getDirectiveMetadata(dir.reference); });
-        var pipes = template.ngModule.transitiveModule.pipes.map(function (pipe) { return _this._metadataResolver.getPipeMetadata(pipe.reference); });
+        var directives = template.directives.map(function (dir) { return _this._metadataResolver.getDirectiveSummary(dir.reference); });
+        var pipes = template.ngModule.transitiveModule.pipes.map(function (pipe) { return _this._metadataResolver.getPipeSummary(pipe.reference); });
         var parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, compMeta.type.name);
         var compiledAnimations = this._animationCompiler.compile(compMeta.type.name, parsedAnimations);
         var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), pipes, compiledAnimations);

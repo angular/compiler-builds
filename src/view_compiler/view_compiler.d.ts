@@ -1,5 +1,5 @@
 import { AnimationEntryCompileResult } from '../animation/animation_compiler';
-import { CompileDirectiveMetadata, CompilePipeMetadata } from '../compile_metadata';
+import { CompileDirectiveMetadata, CompilePipeSummary } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import * as o from '../output/output_ast';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
@@ -16,5 +16,5 @@ export declare class ViewCompiler {
     private _genConfig;
     private _schemaRegistry;
     constructor(_genConfig: CompilerConfig, _schemaRegistry: ElementSchemaRegistry);
-    compileComponent(component: CompileDirectiveMetadata, template: TemplateAst[], styles: o.Expression, pipes: CompilePipeMetadata[], compiledAnimations: AnimationEntryCompileResult[]): ViewCompileResult;
+    compileComponent(component: CompileDirectiveMetadata, template: TemplateAst[], styles: o.Expression, pipes: CompilePipeSummary[], compiledAnimations: AnimationEntryCompileResult[]): ViewCompileResult;
 }

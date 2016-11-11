@@ -72,6 +72,14 @@ export declare class CompileIdentifierMetadata implements CompileMetadataWithIde
     });
     identifier: CompileIdentifierMetadata;
 }
+/**
+ * A CompileSummary is the data needed to use a directive / pipe / module
+ * in other modules / components. However, this data is not enough to compile
+ * the directive / module itself.
+ */
+export interface CompileSummary {
+    isSummary: boolean;
+}
 export declare class CompileDiDependencyMetadata {
     isAttribute: boolean;
     isSelf: boolean;
@@ -181,6 +189,15 @@ export declare class CompileStylesheetMetadata {
     });
 }
 /**
+ * Summary Metadata regarding compilation of a template.
+ */
+export interface CompileTemplateSummary extends CompileSummary {
+    isSummary: boolean;
+    animations: string[];
+    ngContentSelectors: string[];
+    encapsulation: ViewEncapsulation;
+}
+/**
  * Metadata regarding compilation of a template.
  */
 export declare class CompileTemplateMetadata {
@@ -204,6 +221,35 @@ export declare class CompileTemplateMetadata {
         animations?: CompileAnimationEntryMetadata[];
         interpolation?: [string, string];
     });
+    toSummary(): CompileTemplateSummary;
+}
+export interface CompileDirectiveSummary extends CompileSummary {
+    isSummary: boolean;
+    type: CompileTypeMetadata;
+    isComponent: boolean;
+    selector: string;
+    exportAs: string;
+    inputs: {
+        [key: string]: string;
+    };
+    outputs: {
+        [key: string]: string;
+    };
+    hostListeners: {
+        [key: string]: string;
+    };
+    hostProperties: {
+        [key: string]: string;
+    };
+    hostAttributes: {
+        [key: string]: string;
+    };
+    providers: CompileProviderMetadata[];
+    viewProviders: CompileProviderMetadata[];
+    queries: CompileQueryMetadata[];
+    entryComponents: CompileIdentifierMetadata[];
+    changeDetection: ChangeDetectionStrategy;
+    template: CompileTemplateSummary;
 }
 /**
  * Metadata regarding compilation of a directive.
@@ -282,11 +328,18 @@ export declare class CompileDirectiveMetadata implements CompileMetadataWithIden
         template?: CompileTemplateMetadata;
     });
     identifier: CompileIdentifierMetadata;
+    toSummary(): CompileDirectiveSummary;
 }
 /**
  * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
  */
 export declare function createHostComponentMeta(compMeta: CompileDirectiveMetadata): CompileDirectiveMetadata;
+export interface CompilePipeSummary extends CompileSummary {
+    isSummary: boolean;
+    type: CompileTypeMetadata;
+    name: string;
+    pure: boolean;
+}
 export declare class CompilePipeMetadata implements CompileMetadataWithIdentifier {
     type: CompileTypeMetadata;
     name: string;
@@ -297,7 +350,25 @@ export declare class CompilePipeMetadata implements CompileMetadataWithIdentifie
         pure?: boolean;
     });
     identifier: CompileIdentifierMetadata;
+    toSummary(): CompilePipeSummary;
 }
+export interface CompileNgModuleInjectorSummary extends CompileSummary {
+    isSummary: boolean;
+    type: CompileTypeMetadata;
+    entryComponents: CompileIdentifierMetadata[];
+    providers: CompileProviderMetadata[];
+    importedModules: CompileNgModuleInjectorSummary[];
+    exportedModules: CompileNgModuleInjectorSummary[];
+}
+export interface CompileNgModuleDirectiveSummary extends CompileSummary {
+    isSummary: boolean;
+    type: CompileTypeMetadata;
+    exportedDirectives: CompileIdentifierMetadata[];
+    exportedPipes: CompileIdentifierMetadata[];
+    exportedModules: CompileNgModuleDirectiveSummary[];
+    loadingPromises: Promise<any>[];
+}
+export declare type CompileNgModuleSummary = CompileNgModuleInjectorSummary & CompileNgModuleDirectiveSummary;
 /**
  * Metadata regarding compilation of a module.
  */
@@ -310,8 +381,8 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
     entryComponents: CompileIdentifierMetadata[];
     bootstrapComponents: CompileIdentifierMetadata[];
     providers: CompileProviderMetadata[];
-    importedModules: CompileNgModuleMetadata[];
-    exportedModules: CompileNgModuleMetadata[];
+    importedModules: CompileNgModuleSummary[];
+    exportedModules: CompileNgModuleSummary[];
     schemas: SchemaMetadata[];
     id: string;
     transitiveModule: TransitiveCompileNgModuleMetadata;
@@ -324,16 +395,19 @@ export declare class CompileNgModuleMetadata implements CompileMetadataWithIdent
         exportedPipes?: CompileIdentifierMetadata[];
         entryComponents?: CompileIdentifierMetadata[];
         bootstrapComponents?: CompileIdentifierMetadata[];
-        importedModules?: CompileNgModuleMetadata[];
-        exportedModules?: CompileNgModuleMetadata[];
+        importedModules?: CompileNgModuleSummary[];
+        exportedModules?: CompileNgModuleSummary[];
         transitiveModule?: TransitiveCompileNgModuleMetadata;
         schemas?: SchemaMetadata[];
         id?: string;
     });
     identifier: CompileIdentifierMetadata;
+    toSummary(): CompileNgModuleSummary;
+    toInjectorSummary(): CompileNgModuleInjectorSummary;
+    toDirectiveSummary(): CompileNgModuleDirectiveSummary;
 }
 export declare class TransitiveCompileNgModuleMetadata {
-    modules: CompileNgModuleMetadata[];
+    modules: CompileNgModuleInjectorSummary[];
     providers: CompileProviderMetadata[];
     entryComponents: CompileIdentifierMetadata[];
     directives: CompileIdentifierMetadata[];
@@ -341,7 +415,7 @@ export declare class TransitiveCompileNgModuleMetadata {
     loadingPromises: Promise<any>[];
     directivesSet: Set<any>;
     pipesSet: Set<any>;
-    constructor(modules: CompileNgModuleMetadata[], providers: CompileProviderMetadata[], entryComponents: CompileIdentifierMetadata[], directives: CompileIdentifierMetadata[], pipes: CompileIdentifierMetadata[], loadingPromises: Promise<any>[]);
+    constructor(modules: CompileNgModuleInjectorSummary[], providers: CompileProviderMetadata[], entryComponents: CompileIdentifierMetadata[], directives: CompileIdentifierMetadata[], pipes: CompileIdentifierMetadata[], loadingPromises: Promise<any>[]);
 }
 export declare function removeIdentifierDuplicates<T extends CompileMetadataWithIdentifier>(items: T[]): T[];
 export declare function isStaticSymbol(value: any): value is StaticSymbol;

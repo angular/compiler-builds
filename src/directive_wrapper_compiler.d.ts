@@ -1,4 +1,4 @@
-import { CompileDirectiveMetadata, CompileIdentifierMetadata } from './compile_metadata';
+import { CompileDirectiveMetadata, CompileDirectiveSummary, CompileIdentifierMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { Parser } from './expression_parser/parser';
 import * as o from './output/output_ast';
@@ -33,7 +33,7 @@ export declare class DirectiveWrapperExpressions {
     static ngDoCheck(dirWrapper: o.Expression, view: o.Expression, renderElement: o.Expression, throwOnChange: o.Expression): o.Expression;
     static checkHost(hostProps: BoundElementPropertyAst[], dirWrapper: o.Expression, view: o.Expression, componentView: o.Expression, renderElement: o.Expression, throwOnChange: o.Expression, runtimeSecurityContexts: o.Expression[]): o.Statement[];
     static ngOnDetach(hostProps: BoundElementPropertyAst[], dirWrapper: o.Expression, view: o.Expression, componentView: o.Expression, renderEl: o.Expression): o.Statement[];
-    static ngOnDestroy(dir: CompileDirectiveMetadata, dirWrapper: o.Expression): o.Statement[];
-    static subscribe(dirMeta: CompileDirectiveMetadata, hostProps: BoundElementPropertyAst[], usedEvents: string[], dirWrapper: o.Expression, view: o.Expression, eventListener: o.Expression): o.Statement[];
+    static ngOnDestroy(dir: CompileDirectiveSummary, dirWrapper: o.Expression): o.Statement[];
+    static subscribe(dirMeta: CompileDirectiveSummary, hostProps: BoundElementPropertyAst[], usedEvents: string[], dirWrapper: o.Expression, view: o.Expression, eventListener: o.Expression): o.Statement[];
     static handleEvent(hostEvents: BoundEventAst[], dirWrapper: o.Expression, eventName: o.Expression, event: o.Expression): o.Expression;
 }

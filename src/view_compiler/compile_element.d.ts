@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileDirectiveMetadata, CompileTokenMetadata } from '../compile_metadata';
+import { CompileDirectiveSummary, CompileTokenMetadata } from '../compile_metadata';
 import * as o from '../output/output_ast';
 import { ProviderAst, ReferenceAst, TemplateAst } from '../template_parser/template_ast';
 import { CompileView, CompileViewRootNode } from './compile_view';
@@ -21,7 +21,7 @@ export declare class CompileNode {
     isRootElement(): boolean;
 }
 export declare class CompileElement extends CompileNode {
-    component: CompileDirectiveMetadata;
+    component: CompileDirectiveSummary;
     private _directives;
     private _resolvedProvidersArray;
     hasViewContainer: boolean;
@@ -41,7 +41,7 @@ export declare class CompileElement extends CompileNode {
     referenceTokens: {
         [key: string]: CompileTokenMetadata;
     };
-    constructor(parent: CompileElement, view: CompileView, nodeIndex: number, renderNode: o.Expression, sourceAst: TemplateAst, component: CompileDirectiveMetadata, _directives: CompileDirectiveMetadata[], _resolvedProvidersArray: ProviderAst[], hasViewContainer: boolean, hasEmbeddedView: boolean, references: ReferenceAst[], _targetDependencies: Array<ViewClassDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
+    constructor(parent: CompileElement, view: CompileView, nodeIndex: number, renderNode: o.Expression, sourceAst: TemplateAst, component: CompileDirectiveSummary, _directives: CompileDirectiveSummary[], _resolvedProvidersArray: ProviderAst[], hasViewContainer: boolean, hasEmbeddedView: boolean, references: ReferenceAst[], _targetDependencies: Array<ViewClassDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
     private _createViewContainer();
     private _createComponentFactoryResolver();
     setComponentView(compViewExpr: o.Expression): void;

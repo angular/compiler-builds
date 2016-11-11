@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AnimationEntryCompileResult } from '../animation/animation_compiler';
-import { CompileDirectiveMetadata, CompilePipeMetadata } from '../compile_metadata';
+import { CompileDirectiveMetadata, CompilePipeSummary } from '../compile_metadata';
 import { NameResolver } from '../compiler_util/expression_converter';
 import { CompilerConfig } from '../config';
 import * as o from '../output/output_ast';
@@ -29,7 +29,7 @@ export declare class CompileViewRootNode {
 export declare class CompileView implements NameResolver {
     component: CompileDirectiveMetadata;
     genConfig: CompilerConfig;
-    pipeMetas: CompilePipeMetadata[];
+    pipeMetas: CompilePipeSummary[];
     styles: o.Expression;
     animations: AnimationEntryCompileResult[];
     viewIndex: number;
@@ -70,7 +70,7 @@ export declare class CompileView implements NameResolver {
     literalMapCount: number;
     pipeCount: number;
     componentContext: o.Expression;
-    constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeMetadata[], styles: o.Expression, animations: AnimationEntryCompileResult[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][]);
+    constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeSummary[], styles: o.Expression, animations: AnimationEntryCompileResult[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][]);
     callPipe(name: string, input: o.Expression, args: o.Expression[]): o.Expression;
     getLocal(name: string): o.Expression;
     afterNodes(): void;
