@@ -72,7 +72,7 @@ var _TsEmitterVisitor = (function (_super) {
     };
     _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
         var value = ast.value;
-        if (isBlank(value) && ast.type != o.NULL_TYPE) {
+        if (isBlank(value)) {
             ctx.print("(" + value + " as any)");
             return null;
         }

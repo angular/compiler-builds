@@ -8436,7 +8436,6 @@
       BuiltinTypeName[BuiltinTypeName["Int"] = 3] = "Int";
       BuiltinTypeName[BuiltinTypeName["Number"] = 4] = "Number";
       BuiltinTypeName[BuiltinTypeName["Function"] = 5] = "Function";
-      BuiltinTypeName[BuiltinTypeName["Null"] = 6] = "Null";
   })(BuiltinTypeName || (BuiltinTypeName = {}));
   var BuiltinType = (function (_super) {
       __extends$12(BuiltinType, _super);
@@ -8492,7 +8491,6 @@
   var NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
   var STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
   var FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
-  var NULL_TYPE = new BuiltinType(BuiltinTypeName.Null);
   ///// Expressions
   var BinaryOperator;
   (function (BinaryOperator) {
@@ -8580,8 +8578,7 @@
       };
       Expression.prototype.isBlank = function () {
           // Note: We use equals by purpose here to compare to null and undefined in JS.
-          // We use the typed null to allow strictNullChecks to narrow types.
-          return this.equals(TYPED_NULL_EXPR);
+          return this.equals(NULL_EXPR);
       };
       Expression.prototype.cast = function (type) { return new CastExpr(this, type); };
       Expression.prototype.toStmt = function () { return new ExpressionStatement(this); };
@@ -8879,7 +8876,6 @@
   var CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
   var CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
   var NULL_EXPR = new LiteralExpr(null, null);
-  var TYPED_NULL_EXPR = new LiteralExpr(null, NULL_TYPE);
   //// Statements
   var StmtModifier;
   (function (StmtModifier) {
@@ -15785,7 +15781,7 @@
       };
       _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
           var value = ast.value;
-          if (isBlank(value) && ast.type != NULL_TYPE) {
+          if (isBlank(value)) {
               ctx.print("(" + value + " as any)");
               return null;
           }
