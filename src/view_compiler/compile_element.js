@@ -177,10 +177,14 @@ export var CompileElement = (function (_super) {
                 _this.instances.set(resolvedProvider.token.reference, instance);
             }
         });
-        for (var i = 0; i < this._directives.length; i++) {
-            var directive = this._directives[i];
-            var directiveInstance = this.instances.get(identifierToken(directive.type).reference);
+        var _loop_1 = function(i) {
+            var directive = this_1._directives[i];
+            var directiveInstance = this_1.instances.get(identifierToken(directive.type).reference);
             directive.queries.forEach(function (queryMeta) { _this._addQuery(queryMeta, directiveInstance); });
+        };
+        var this_1 = this;
+        for (var i = 0; i < this._directives.length; i++) {
+            _loop_1(i);
         }
         var queriesWithReads = [];
         Array.from(this._resolvedProviders.values()).forEach(function (resolvedProvider) {

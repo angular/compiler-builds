@@ -81,11 +81,11 @@ export var CompileView = (function () {
             getPropertyInView(o.THIS_EXPR.prop('context'), this, this.componentView);
         var viewQueries = new Map();
         if (this.viewType === ViewType.COMPONENT) {
-            var directiveInstance = o.THIS_EXPR.prop('context');
+            var directiveInstance_1 = o.THIS_EXPR.prop('context');
             this.component.viewQueries.forEach(function (queryMeta, queryIndex) {
                 var propName = "_viewQuery_" + queryMeta.selectors[0].name + "_" + queryIndex;
-                var queryList = createQueryList(queryMeta, directiveInstance, propName, _this);
-                var query = new CompileQuery(queryMeta, queryList, directiveInstance, _this);
+                var queryList = createQueryList(queryMeta, directiveInstance_1, propName, _this);
+                var query = new CompileQuery(queryMeta, queryList, directiveInstance_1, _this);
                 addQueryToTokenMap(viewQueries, query);
             });
         }

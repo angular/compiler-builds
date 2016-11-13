@@ -306,12 +306,12 @@ export var _ParseAST = (function () {
                 this.error('Cannot have a pipe in an action expression');
             }
             do {
-                var name = this.expectIdentifierOrKeyword();
+                var name_1 = this.expectIdentifierOrKeyword();
                 var args = [];
                 while (this.optionalCharacter(chars.$COLON)) {
                     args.push(this.parseExpression());
                 }
-                result = new BindingPipe(this.span(result.span.start - this.offset), result, name, args);
+                result = new BindingPipe(this.span(result.span.start - this.offset), result, name_1, args);
             } while (this.optionalOperator('|'));
         }
         return result;
@@ -654,14 +654,14 @@ export var _ParseAST = (function () {
                 }
             }
             this.optionalCharacter(chars.$COLON);
-            var name = null;
+            var name_2 = null;
             var expression = null;
             if (keyIsVar) {
                 if (this.optionalOperator('=')) {
-                    name = this.expectTemplateBindingKey();
+                    name_2 = this.expectTemplateBindingKey();
                 }
                 else {
-                    name = '\$implicit';
+                    name_2 = '\$implicit';
                 }
             }
             else if (this.next !== EOF && !this.peekKeywordLet()) {
@@ -670,7 +670,7 @@ export var _ParseAST = (function () {
                 var source = this.input.substring(start_1 - this.offset, this.inputIndex - this.offset);
                 expression = new ASTWithSource(ast, source, this.location, this.errors);
             }
-            bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
+            bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name_2, expression));
             if (!this.optionalCharacter(chars.$SEMICOLON)) {
                 this.optionalCharacter(chars.$COMMA);
             }

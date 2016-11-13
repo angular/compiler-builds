@@ -1012,7 +1012,8 @@
           this.peek = ++this.index >= this.length ? $EOF : this.input.charCodeAt(this.index);
       };
       _Scanner.prototype.scanToken = function () {
-          var input = this.input, length = this.length, peek = this.peek, index = this.index;
+          var input = this.input, length = this.length;
+          var peek = this.peek, index = this.index;
           // Skip whitespace.
           while (peek <= $SPACE) {
               if (++index >= length) {
@@ -1539,12 +1540,12 @@
                   this.error('Cannot have a pipe in an action expression');
               }
               do {
-                  var name = this.expectIdentifierOrKeyword();
+                  var name_1 = this.expectIdentifierOrKeyword();
                   var args = [];
                   while (this.optionalCharacter($COLON)) {
                       args.push(this.parseExpression());
                   }
-                  result = new BindingPipe(this.span(result.span.start - this.offset), result, name, args);
+                  result = new BindingPipe(this.span(result.span.start - this.offset), result, name_1, args);
               } while (this.optionalOperator('|'));
           }
           return result;
@@ -1887,14 +1888,14 @@
                   }
               }
               this.optionalCharacter($COLON);
-              var name = null;
+              var name_2 = null;
               var expression = null;
               if (keyIsVar) {
                   if (this.optionalOperator('=')) {
-                      name = this.expectTemplateBindingKey();
+                      name_2 = this.expectTemplateBindingKey();
                   }
                   else {
-                      name = '\$implicit';
+                      name_2 = '\$implicit';
                   }
               }
               else if (this.next !== EOF && !this.peekKeywordLet()) {
@@ -1903,7 +1904,7 @@
                   var source = this.input.substring(start_1 - this.offset, this.inputIndex - this.offset);
                   expression = new ASTWithSource(ast, source, this.location, this.errors);
               }
-              bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
+              bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name_2, expression));
               if (!this.optionalCharacter($SEMICOLON)) {
                   this.optionalCharacter($COMMA);
               }
@@ -11388,10 +11389,14 @@
                   _this.instances.set(resolvedProvider.token.reference, instance);
               }
           });
-          for (var i = 0; i < this._directives.length; i++) {
-              var directive = this._directives[i];
-              var directiveInstance = this.instances.get(identifierToken(directive.type).reference);
+          var _loop_1 = function(i) {
+              var directive = this_1._directives[i];
+              var directiveInstance = this_1.instances.get(identifierToken(directive.type).reference);
               directive.queries.forEach(function (queryMeta) { _this._addQuery(queryMeta, directiveInstance); });
+          };
+          var this_1 = this;
+          for (var i = 0; i < this._directives.length; i++) {
+              _loop_1(i);
           }
           var queriesWithReads = [];
           Array.from(this._resolvedProviders.values()).forEach(function (resolvedProvider) {
@@ -11740,11 +11745,11 @@
               getPropertyInView(THIS_EXPR.prop('context'), this, this.componentView);
           var viewQueries = new Map();
           if (this.viewType === ViewType.COMPONENT) {
-              var directiveInstance = THIS_EXPR.prop('context');
+              var directiveInstance_1 = THIS_EXPR.prop('context');
               this.component.viewQueries.forEach(function (queryMeta, queryIndex) {
                   var propName = "_viewQuery_" + queryMeta.selectors[0].name + "_" + queryIndex;
-                  var queryList = createQueryList(queryMeta, directiveInstance, propName, _this);
-                  var query = new CompileQuery(queryMeta, queryList, directiveInstance, _this);
+                  var queryList = createQueryList(queryMeta, directiveInstance_1, propName, _this);
+                  var query = new CompileQuery(queryMeta, queryList, directiveInstance_1, _this);
                   addQueryToTokenMap(viewQueries, query);
               });
           }
@@ -13146,18 +13151,18 @@
               }
           }
           else {
-              var stylesObj = styleEntry;
-              var normalizedStylesObj = {};
-              Object.keys(stylesObj).forEach(function (propName) {
+              var stylesObj_1 = styleEntry;
+              var normalizedStylesObj_1 = {};
+              Object.keys(stylesObj_1).forEach(function (propName) {
                   var normalizedProp = schema.normalizeAnimationStyleProperty(propName);
-                  var normalizedOutput = schema.normalizeAnimationStyleValue(normalizedProp, propName, stylesObj[propName]);
+                  var normalizedOutput = schema.normalizeAnimationStyleValue(normalizedProp, propName, stylesObj_1[propName]);
                   var normalizationError = normalizedOutput['error'];
                   if (normalizationError) {
                       errors.push(new AnimationParseError(normalizationError));
                   }
-                  normalizedStylesObj[normalizedProp] = normalizedOutput['value'];
+                  normalizedStylesObj_1[normalizedProp] = normalizedOutput['value'];
               });
-              normalizedStyles.push(normalizedStylesObj);
+              normalizedStyles.push(normalizedStylesObj_1);
           }
       });
       return normalizedStyles;
@@ -13345,58 +13350,58 @@
       var playTime = 0;
       var startingTime = currentTime;
       if (entry instanceof CompileAnimationWithStepsMetadata) {
-          var maxDuration = 0;
-          var steps = [];
-          var isGroup = entry instanceof CompileAnimationGroupMetadata;
-          var previousStyles;
+          var maxDuration_1 = 0;
+          var steps_1 = [];
+          var isGroup_1 = entry instanceof CompileAnimationGroupMetadata;
+          var previousStyles_1;
           entry.steps.forEach(function (entry) {
               // these will get picked up by the next step...
-              var time = isGroup ? startingTime : currentTime;
+              var time = isGroup_1 ? startingTime : currentTime;
               if (entry instanceof CompileAnimationStyleMetadata) {
                   entry.styles.forEach(function (stylesEntry) {
                       // by this point we know that we only have stringmap values
                       var map = stylesEntry;
                       Object.keys(map).forEach(function (prop) { collectedStyles.insertAtTime(prop, time, map[prop]); });
                   });
-                  previousStyles = entry.styles;
+                  previousStyles_1 = entry.styles;
                   return;
               }
               var innerAst = _parseTransitionAnimation(entry, time, collectedStyles, stateStyles, errors);
-              if (isPresent(previousStyles)) {
+              if (isPresent(previousStyles_1)) {
                   if (entry instanceof CompileAnimationWithStepsMetadata) {
-                      var startingStyles = new AnimationStylesAst(previousStyles);
-                      steps.push(new AnimationStepAst(startingStyles, [], 0, 0, ''));
+                      var startingStyles = new AnimationStylesAst(previousStyles_1);
+                      steps_1.push(new AnimationStepAst(startingStyles, [], 0, 0, ''));
                   }
                   else {
                       var innerStep = innerAst;
-                      (_a = innerStep.startingStyles.styles).push.apply(_a, previousStyles);
+                      (_a = innerStep.startingStyles.styles).push.apply(_a, previousStyles_1);
                   }
-                  previousStyles = null;
+                  previousStyles_1 = null;
               }
               var astDuration = innerAst.playTime;
               currentTime += astDuration;
               playTime += astDuration;
-              maxDuration = Math.max(astDuration, maxDuration);
-              steps.push(innerAst);
+              maxDuration_1 = Math.max(astDuration, maxDuration_1);
+              steps_1.push(innerAst);
               var _a;
           });
-          if (isPresent(previousStyles)) {
-              var startingStyles = new AnimationStylesAst(previousStyles);
-              steps.push(new AnimationStepAst(startingStyles, [], 0, 0, ''));
+          if (isPresent(previousStyles_1)) {
+              var startingStyles = new AnimationStylesAst(previousStyles_1);
+              steps_1.push(new AnimationStepAst(startingStyles, [], 0, 0, ''));
           }
-          if (isGroup) {
-              ast = new AnimationGroupAst(steps);
-              playTime = maxDuration;
+          if (isGroup_1) {
+              ast = new AnimationGroupAst(steps_1);
+              playTime = maxDuration_1;
               currentTime = startingTime + playTime;
           }
           else {
-              ast = new AnimationSequenceAst(steps);
+              ast = new AnimationSequenceAst(steps_1);
           }
       }
       else if (entry instanceof CompileAnimationAnimateMetadata) {
           var timings = _parseTimeExpression(entry.timings, errors);
           var styles = entry.styles;
-          var keyframes;
+          var keyframes = void 0;
           if (styles instanceof CompileAnimationKeyframesSequenceMetadata) {
               keyframes =
                   _parseAnimationKeyframes(styles, currentTime, collectedStyles, stateStyles, errors);
@@ -14000,13 +14005,13 @@
                   }
                   break;
               case PreparsedElementType.STYLE:
-                  var textContent = '';
+                  var textContent_1 = '';
                   ast.children.forEach(function (child) {
                       if (child instanceof Text) {
-                          textContent += child.value;
+                          textContent_1 += child.value;
                       }
                   });
-                  this.styles.push(textContent);
+                  this.styles.push(textContent_1);
                   break;
               case PreparsedElementType.STYLESHEET:
                   this.styleUrls.push(preparsedElement.hrefAttr);
@@ -16586,8 +16591,8 @@
           if (id === -1) {
               id = this._evalArgValues.length;
               this._evalArgValues.push(value);
-              var name = isPresent(ast.value.name) ? sanitizeIdentifier(ast.value.name) : 'val';
-              this._evalArgNames.push(sanitizeIdentifier("jit_" + name + id));
+              var name_1 = isPresent(ast.value.name) ? sanitizeIdentifier(ast.value.name) : 'val';
+              this._evalArgNames.push(sanitizeIdentifier("jit_" + name_1 + id));
           }
           ctx.print(this._evalArgNames[id]);
           return null;

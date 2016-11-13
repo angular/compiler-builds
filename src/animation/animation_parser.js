@@ -167,18 +167,18 @@ function _normalizeStyleMetadata(entry, stateStyles, schema, errors, permitState
             }
         }
         else {
-            var stylesObj = styleEntry;
-            var normalizedStylesObj = {};
-            Object.keys(stylesObj).forEach(function (propName) {
+            var stylesObj_1 = styleEntry;
+            var normalizedStylesObj_1 = {};
+            Object.keys(stylesObj_1).forEach(function (propName) {
                 var normalizedProp = schema.normalizeAnimationStyleProperty(propName);
-                var normalizedOutput = schema.normalizeAnimationStyleValue(normalizedProp, propName, stylesObj[propName]);
+                var normalizedOutput = schema.normalizeAnimationStyleValue(normalizedProp, propName, stylesObj_1[propName]);
                 var normalizationError = normalizedOutput['error'];
                 if (normalizationError) {
                     errors.push(new AnimationParseError(normalizationError));
                 }
-                normalizedStylesObj[normalizedProp] = normalizedOutput['value'];
+                normalizedStylesObj_1[normalizedProp] = normalizedOutput['value'];
             });
-            normalizedStyles.push(normalizedStylesObj);
+            normalizedStyles.push(normalizedStylesObj_1);
         }
     });
     return normalizedStyles;
@@ -366,58 +366,58 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
     var playTime = 0;
     var startingTime = currentTime;
     if (entry instanceof CompileAnimationWithStepsMetadata) {
-        var maxDuration = 0;
-        var steps = [];
-        var isGroup = entry instanceof CompileAnimationGroupMetadata;
-        var previousStyles;
+        var maxDuration_1 = 0;
+        var steps_1 = [];
+        var isGroup_1 = entry instanceof CompileAnimationGroupMetadata;
+        var previousStyles_1;
         entry.steps.forEach(function (entry) {
             // these will get picked up by the next step...
-            var time = isGroup ? startingTime : currentTime;
+            var time = isGroup_1 ? startingTime : currentTime;
             if (entry instanceof CompileAnimationStyleMetadata) {
                 entry.styles.forEach(function (stylesEntry) {
                     // by this point we know that we only have stringmap values
                     var map = stylesEntry;
                     Object.keys(map).forEach(function (prop) { collectedStyles.insertAtTime(prop, time, map[prop]); });
                 });
-                previousStyles = entry.styles;
+                previousStyles_1 = entry.styles;
                 return;
             }
             var innerAst = _parseTransitionAnimation(entry, time, collectedStyles, stateStyles, errors);
-            if (isPresent(previousStyles)) {
+            if (isPresent(previousStyles_1)) {
                 if (entry instanceof CompileAnimationWithStepsMetadata) {
-                    var startingStyles = new AnimationStylesAst(previousStyles);
-                    steps.push(new AnimationStepAst(startingStyles, [], 0, 0, ''));
+                    var startingStyles = new AnimationStylesAst(previousStyles_1);
+                    steps_1.push(new AnimationStepAst(startingStyles, [], 0, 0, ''));
                 }
                 else {
                     var innerStep = innerAst;
-                    (_a = innerStep.startingStyles.styles).push.apply(_a, previousStyles);
+                    (_a = innerStep.startingStyles.styles).push.apply(_a, previousStyles_1);
                 }
-                previousStyles = null;
+                previousStyles_1 = null;
             }
             var astDuration = innerAst.playTime;
             currentTime += astDuration;
             playTime += astDuration;
-            maxDuration = Math.max(astDuration, maxDuration);
-            steps.push(innerAst);
+            maxDuration_1 = Math.max(astDuration, maxDuration_1);
+            steps_1.push(innerAst);
             var _a;
         });
-        if (isPresent(previousStyles)) {
-            var startingStyles = new AnimationStylesAst(previousStyles);
-            steps.push(new AnimationStepAst(startingStyles, [], 0, 0, ''));
+        if (isPresent(previousStyles_1)) {
+            var startingStyles = new AnimationStylesAst(previousStyles_1);
+            steps_1.push(new AnimationStepAst(startingStyles, [], 0, 0, ''));
         }
-        if (isGroup) {
-            ast = new AnimationGroupAst(steps);
-            playTime = maxDuration;
+        if (isGroup_1) {
+            ast = new AnimationGroupAst(steps_1);
+            playTime = maxDuration_1;
             currentTime = startingTime + playTime;
         }
         else {
-            ast = new AnimationSequenceAst(steps);
+            ast = new AnimationSequenceAst(steps_1);
         }
     }
     else if (entry instanceof CompileAnimationAnimateMetadata) {
         var timings = _parseTimeExpression(entry.timings, errors);
         var styles = entry.styles;
-        var keyframes;
+        var keyframes = void 0;
         if (styles instanceof CompileAnimationKeyframesSequenceMetadata) {
             keyframes =
                 _parseAnimationKeyframes(styles, currentTime, collectedStyles, stateStyles, errors);

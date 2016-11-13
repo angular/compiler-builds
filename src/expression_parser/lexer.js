@@ -117,7 +117,8 @@ var _Scanner = (function () {
         this.peek = ++this.index >= this.length ? chars.$EOF : this.input.charCodeAt(this.index);
     };
     _Scanner.prototype.scanToken = function () {
-        var input = this.input, length = this.length, peek = this.peek, index = this.index;
+        var input = this.input, length = this.length;
+        var peek = this.peek, index = this.index;
         // Skip whitespace.
         while (peek <= chars.$SPACE) {
             if (++index >= length) {

@@ -173,13 +173,13 @@ var TemplatePreparseVisitor = (function () {
                 }
                 break;
             case PreparsedElementType.STYLE:
-                var textContent = '';
+                var textContent_1 = '';
                 ast.children.forEach(function (child) {
                     if (child instanceof html.Text) {
-                        textContent += child.value;
+                        textContent_1 += child.value;
                     }
                 });
-                this.styles.push(textContent);
+                this.styles.push(textContent_1);
                 break;
             case PreparsedElementType.STYLESHEET:
                 this.styleUrls.push(preparsedElement.hrefAttr);
