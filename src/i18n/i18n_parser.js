@@ -9,7 +9,6 @@ import { Lexer as ExpressionLexer } from '../expression_parser/lexer';
 import { Parser as ExpressionParser } from '../expression_parser/parser';
 import * as html from '../ml_parser/ast';
 import { getHtmlTagDefinition } from '../ml_parser/html_tags';
-import { digestMessage } from './digest';
 import * as i18n from './i18n_ast';
 import { PlaceholderRegistry } from './serializers/placeholder';
 var _expParser = new ExpressionParser(new ExpressionLexer());
@@ -32,9 +31,9 @@ var _I18nVisitor = (function () {
         this._icuDepth = 0;
         this._placeholderRegistry = new PlaceholderRegistry();
         this._placeholderToContent = {};
-        this._placeholderToIds = {};
+        this._placeholderToMessage = {};
         var i18nodes = html.visitAll(this, nodes, {});
-        return new i18n.Message(i18nodes, this._placeholderToContent, this._placeholderToIds, meaning, description);
+        return new i18n.Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description);
     };
     _I18nVisitor.prototype.visitElement = function (el, context) {
         var children = html.visitAll(this, el.children);
@@ -70,7 +69,12 @@ var _I18nVisitor = (function () {
         });
         this._icuDepth--;
         if (this._isIcu || this._icuDepth > 0) {
-            // If the message (vs a part of the message) is an ICU message returns it
+            // Returns an ICU node when:
+            // - the message (vs a part of the message) is an ICU message, or
+            // - the ICU message is nested.
+            var expPh = this._placeholderRegistry.getUniquePlaceholder("VAR_" + icu.type);
+            i18nIcu.expressionPlaceholder = expPh;
+            this._placeholderToContent[expPh] = icu.switchValue;
             return i18nIcu;
         }
         // Else returns a placeholder
@@ -80,7 +84,7 @@ var _I18nVisitor = (function () {
         // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
         var phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
         var visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
-        this._placeholderToIds[phName] = digestMessage(visitor.toI18nMessage([icu], '', ''));
+        this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '');
         return new i18n.IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
     };
     _I18nVisitor.prototype.visitExpansionCase = function (icuCase, context) {

@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ListWrapper } from '../../facade/collection';
+import { decimalDigest } from '../digest';
 import * as xml from './xml_helper';
 var _MESSAGES_TAG = 'messagebundle';
 var _MESSAGE_TAG = 'msg';
@@ -15,11 +15,17 @@ var _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class C
 export var Xmb = (function () {
     function Xmb() {
     }
-    Xmb.prototype.write = function (messageMap) {
+    Xmb.prototype.write = function (messages) {
+        var _this = this;
         var visitor = new _Visitor();
+        var visited = {};
         var rootNode = new xml.Tag(_MESSAGES_TAG);
-        Object.keys(messageMap).forEach(function (id) {
-            var message = messageMap[id];
+        messages.forEach(function (message) {
+            var id = _this.digest(message);
+            // deduplicate messages
+            if (visited[id])
+                return;
+            visited[id] = true;
             var attrs = { id: id };
             if (message.description) {
                 attrs['desc'] = message.description;
@@ -39,9 +45,10 @@ export var Xmb = (function () {
             new xml.CR(),
         ]);
     };
-    Xmb.prototype.load = function (content, url, messageBundle) {
+    Xmb.prototype.load = function (content, url) {
         throw new Error('Unsupported');
     };
+    Xmb.prototype.digest = function (message) { return digest(message); };
     return Xmb;
 }());
 var _Visitor = (function () {
@@ -56,7 +63,7 @@ var _Visitor = (function () {
     };
     _Visitor.prototype.visitIcu = function (icu, context) {
         var _this = this;
-        var nodes = [new xml.Text("{" + icu.expression + ", " + icu.type + ", ")];
+        var nodes = [new xml.Text("{" + icu.expressionPlaceholder + ", " + icu.type + ", ")];
         Object.keys(icu.cases).forEach(function (c) {
             nodes.push.apply(nodes, [new xml.Text(c + " {")].concat(icu.cases[c].visit(_this), [new xml.Text("} ")]));
         });
@@ -82,8 +89,12 @@ var _Visitor = (function () {
     };
     _Visitor.prototype.serialize = function (nodes) {
         var _this = this;
-        return ListWrapper.flatten(nodes.map(function (node) { return node.visit(_this); }));
+        return (_a = []).concat.apply(_a, nodes.map(function (node) { return node.visit(_this); }));
+        var _a;
     };
     return _Visitor;
 }());
+export function digest(message) {
+    return decimalDigest(message);
+}
 //# sourceMappingURL=xmb.js.map
