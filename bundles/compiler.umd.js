@@ -9688,7 +9688,9 @@
   var _ANIMATION_START_STATE_STYLES_VAR = variable('startStateStyles');
   var _ANIMATION_END_STATE_STYLES_VAR = variable('endStateStyles');
   var _ANIMATION_COLLECTED_STYLES = variable('collectedStyles');
-  var EMPTY_MAP = literalMap([]);
+  var _PREVIOUS_ANIMATION_PLAYERS = variable('previousPlayers');
+  var _EMPTY_MAP = literalMap([]);
+  var _EMPTY_ARRAY = literalArr([]);
   var _AnimationBuilder = (function () {
       function _AnimationBuilder(animationName, factoryName) {
           this.animationName = animationName;
@@ -9739,10 +9741,15 @@
       };
       /** @internal */
       _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr, context) {
+          var previousStylesValue = _EMPTY_ARRAY;
+          if (context.isExpectingFirstAnimateStep) {
+              previousStylesValue = _PREVIOUS_ANIMATION_PLAYERS;
+              context.isExpectingFirstAnimateStep = false;
+          }
           context.totalTransitionTime += ast.duration + ast.delay;
           return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate', [
               _ANIMATION_FACTORY_ELEMENT_VAR, startingStylesExpr, keyframesExpr, literal(ast.duration),
-              literal(ast.delay), literal(ast.easing)
+              literal(ast.delay), literal(ast.easing), previousStylesValue
           ]);
       };
       _AnimationBuilder.prototype.visitAnimationSequence = function (ast, context) {
@@ -9772,6 +9779,7 @@
           }
           context.totalTransitionTime = 0;
           context.isExpectingFirstStyleStep = true;
+          context.isExpectingFirstAnimateStep = true;
           var stateChangePreconditions = [];
           ast.stateChanges.forEach(function (stateChange) {
               stateChangePreconditions.push(_compareToAnimationStateExpr(_ANIMATION_CURRENT_STATE_VAR, stateChange.fromState)
@@ -9797,13 +9805,13 @@
           // this should always be defined even if the user overrides it
           context.stateMap.registerState(DEFAULT_STATE, {});
           var statements = [];
-          statements.push(_ANIMATION_FACTORY_VIEW_CONTEXT
-              .callMethod('cancelActiveAnimation', [
+          statements.push(_PREVIOUS_ANIMATION_PLAYERS
+              .set(_ANIMATION_FACTORY_VIEW_CONTEXT.callMethod('getAnimationPlayers', [
               _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
               _ANIMATION_NEXT_STATE_VAR.equals(literal(EMPTY_ANIMATION_STATE))
-          ])
-              .toStmt());
-          statements.push(_ANIMATION_COLLECTED_STYLES.set(EMPTY_MAP).toDeclStmt());
+          ]))
+              .toDeclStmt());
+          statements.push(_ANIMATION_COLLECTED_STYLES.set(_EMPTY_MAP).toDeclStmt());
           statements.push(_ANIMATION_PLAYER_VAR.set(NULL_EXPR).toDeclStmt());
           statements.push(_ANIMATION_TIME_VAR.set(literal(0)).toDeclStmt());
           statements.push(_ANIMATION_DEFAULT_STATE_VAR.set(this._statesMapVar.key(literal(DEFAULT_STATE)))
@@ -9815,16 +9823,6 @@
               .toDeclStmt());
           statements.push(new IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(NULL_EXPR), [_ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
           var RENDER_STYLES_FN = importExpr(resolveIdentifier(Identifiers.renderStyles));
-          // before we start any animation we want to clear out the starting
-          // styles from the element's style property (since they were placed
-          // there at the end of the last animation
-          statements.push(RENDER_STYLES_FN
-              .callFn([
-              _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-              importExpr(resolveIdentifier(Identifiers.clearStyles))
-                  .callFn([_ANIMATION_START_STATE_STYLES_VAR])
-          ])
-              .toStmt());
           ast.stateTransitions.forEach(function (transAst) { return statements.push(transAst.visit(_this, context)); });
           // this check ensures that the animation factory always returns a player
           // so that the onDone callback can be used for tracking
@@ -9848,6 +9846,20 @@
                   ])
                       .toStmt()
               ])])
+              .toStmt());
+          statements.push(importExpr(resolveIdentifier(Identifiers.AnimationSequencePlayer))
+              .instantiate([_PREVIOUS_ANIMATION_PLAYERS])
+              .callMethod('destroy', [])
+              .toStmt());
+          // before we start any animation we want to clear out the starting
+          // styles from the element's style property (since they were placed
+          // there at the end of the last animation
+          statements.push(RENDER_STYLES_FN
+              .callFn([
+              _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
+              importExpr(resolveIdentifier(Identifiers.clearStyles))
+                  .callFn([_ANIMATION_START_STATE_STYLES_VAR])
+          ])
               .toStmt());
           statements.push(_ANIMATION_FACTORY_VIEW_CONTEXT
               .callMethod('queueAnimation', [
@@ -9873,7 +9885,7 @@
           var lookupMap = [];
           Object.keys(context.stateMap.states).forEach(function (stateName) {
               var value = context.stateMap.states[stateName];
-              var variableValue = EMPTY_MAP;
+              var variableValue = _EMPTY_MAP;
               if (isPresent(value)) {
                   var styleMap_1 = [];
                   Object.keys(value).forEach(function (key) { styleMap_1.push([key, literal(value[key])]); });
@@ -9892,6 +9904,7 @@
           this.stateMap = new _AnimationBuilderStateMap();
           this.endStateAnimateStep = null;
           this.isExpectingFirstStyleStep = false;
+          this.isExpectingFirstAnimateStep = false;
           this.totalTransitionTime = 0;
       }
       return _AnimationBuilderContext;
