@@ -37,6 +37,7 @@ export declare class CompileMetadataResolver {
     private _getAnimationStyleMetadata(value);
     private _getAnimationMetadata(value);
     private _loadDirectiveMetadata(directiveType, isSync);
+    getNonNormalizedDirectiveMetadata(directiveType: any): cpl.CompileDirectiveMetadata;
     /**
      * Gets the metadata for the given directive.
      * This assumes `loadNgModuleMetadata` has been called first.
@@ -60,6 +61,10 @@ export declare class CompileMetadataResolver {
         ngModule: cpl.CompileNgModuleMetadata;
         loading: Promise<any>;
     };
+    /**
+     * Get the NgModule metadata without loading the directives.
+     */
+    getUnloadedNgModuleMetadata(moduleType: any, isSync: boolean, throwIfNotFound?: boolean): cpl.CompileNgModuleMetadata;
     private _loadNgModuleMetadata(moduleType, isSync, throwIfNotFound?);
     private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
@@ -73,6 +78,7 @@ export declare class CompileMetadataResolver {
      */
     getPipeMetadata(pipeType: any): cpl.CompilePipeMetadata;
     getPipeSummary(pipeType: any): cpl.CompilePipeSummary;
+    getOrLoadPipeMetadata(pipeType: any): cpl.CompilePipeMetadata;
     private _loadPipeMetadata(pipeType);
     private _getDependenciesMetadata(typeOrFunc, dependencies);
     private _getTokenMetadata(token);

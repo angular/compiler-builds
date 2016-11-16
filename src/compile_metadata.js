@@ -460,7 +460,7 @@ export var CompileNgModuleMetadata = (function () {
             exportedModules: this.exportedModules,
             exportedDirectives: this.exportedDirectives,
             exportedPipes: this.exportedPipes,
-            loadingPromises: this.transitiveModule.loadingPromises
+            directiveLoaders: this.transitiveModule.directiveLoaders
         };
     };
     CompileNgModuleMetadata.prototype.toInjectorSummary = function () {
@@ -480,20 +480,20 @@ export var CompileNgModuleMetadata = (function () {
             exportedDirectives: this.exportedDirectives,
             exportedPipes: this.exportedPipes,
             exportedModules: this.exportedModules,
-            loadingPromises: this.transitiveModule.loadingPromises
+            directiveLoaders: this.transitiveModule.directiveLoaders
         };
     };
     return CompileNgModuleMetadata;
 }());
 export var TransitiveCompileNgModuleMetadata = (function () {
-    function TransitiveCompileNgModuleMetadata(modules, providers, entryComponents, directives, pipes, loadingPromises) {
+    function TransitiveCompileNgModuleMetadata(modules, providers, entryComponents, directives, pipes, directiveLoaders) {
         var _this = this;
         this.modules = modules;
         this.providers = providers;
         this.entryComponents = entryComponents;
         this.directives = directives;
         this.pipes = pipes;
-        this.loadingPromises = loadingPromises;
+        this.directiveLoaders = directiveLoaders;
         this.directivesSet = new Set();
         this.pipesSet = new Set();
         directives.forEach(function (dir) { return _this.directivesSet.add(dir.reference); });

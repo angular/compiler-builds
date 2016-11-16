@@ -366,7 +366,7 @@ export interface CompileNgModuleDirectiveSummary extends CompileSummary {
     exportedDirectives: CompileIdentifierMetadata[];
     exportedPipes: CompileIdentifierMetadata[];
     exportedModules: CompileNgModuleDirectiveSummary[];
-    loadingPromises: Promise<any>[];
+    directiveLoaders: (() => Promise<void>)[];
 }
 export declare type CompileNgModuleSummary = CompileNgModuleInjectorSummary & CompileNgModuleDirectiveSummary;
 /**
@@ -412,10 +412,10 @@ export declare class TransitiveCompileNgModuleMetadata {
     entryComponents: CompileIdentifierMetadata[];
     directives: CompileIdentifierMetadata[];
     pipes: CompileIdentifierMetadata[];
-    loadingPromises: Promise<any>[];
+    directiveLoaders: (() => Promise<void>)[];
     directivesSet: Set<any>;
     pipesSet: Set<any>;
-    constructor(modules: CompileNgModuleInjectorSummary[], providers: CompileProviderMetadata[], entryComponents: CompileIdentifierMetadata[], directives: CompileIdentifierMetadata[], pipes: CompileIdentifierMetadata[], loadingPromises: Promise<any>[]);
+    constructor(modules: CompileNgModuleInjectorSummary[], providers: CompileProviderMetadata[], entryComponents: CompileIdentifierMetadata[], directives: CompileIdentifierMetadata[], pipes: CompileIdentifierMetadata[], directiveLoaders: (() => Promise<void>)[]);
 }
 export declare function removeIdentifierDuplicates<T extends CompileMetadataWithIdentifier>(items: T[]): T[];
 export declare function isStaticSymbol(value: any): value is StaticSymbol;
