@@ -8,6 +8,7 @@
 import { DEFAULT_INTERPOLATION_CONFIG } from '../ml_parser/interpolation_config';
 import { ParseTreeResult } from '../ml_parser/parser';
 import { mergeTranslations } from './extractor_merger';
+import { MessageBundle } from './message_bundle';
 import { Xliff } from './serializers/xliff';
 import { Xmb } from './serializers/xmb';
 import { Xtb } from './serializers/xtb';
@@ -30,24 +31,26 @@ export var I18NHtmlParser = (function () {
             return parseResult;
         }
         // TODO(vicb): add support for implicit tags / attributes
-        if (parseResult.errors.length) {
-            return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
+        var messageBundle = new MessageBundle(this._htmlParser, [], {});
+        var errors = messageBundle.updateFromTemplate(source, url, interpolationConfig);
+        if (errors && errors.length) {
+            return new ParseTreeResult(parseResult.rootNodes, parseResult.errors.concat(errors));
         }
-        var serializer = this._createSerializer();
-        var translationBundle = TranslationBundle.load(this._translations, url, serializer);
+        var serializer = this._createSerializer(interpolationConfig);
+        var translationBundle = TranslationBundle.load(this._translations, url, messageBundle, serializer);
         return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
     };
-    I18NHtmlParser.prototype._createSerializer = function () {
+    I18NHtmlParser.prototype._createSerializer = function (interpolationConfig) {
         var format = (this._translationsFormat || 'xlf').toLowerCase();
         switch (format) {
             case 'xmb':
                 return new Xmb();
             case 'xtb':
-                return new Xtb();
+                return new Xtb(this._htmlParser, interpolationConfig);
             case 'xliff':
             case 'xlf':
             default:
-                return new Xliff();
+                return new Xliff(this._htmlParser, interpolationConfig);
         }
     };
     return I18NHtmlParser;

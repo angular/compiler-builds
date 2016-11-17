@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { isPrimitive, isStrictStringMap } from './facade/lang';
+import { isBlank, isPrimitive, isStrictStringMap } from './facade/lang';
 export var MODULE_SUFFIX = '';
 var CAMEL_CASE_REGEXP = /([A-Z])/g;
 var DASH_CASE_REGEXP = /-+([a-z0-9])/g;
@@ -49,7 +49,7 @@ export function visitValue(value, visitor, context) {
     if (isStrictStringMap(value)) {
         return visitor.visitStringMap(value, context);
     }
-    if (value == null || isPrimitive(value)) {
+    if (isBlank(value) || isPrimitive(value)) {
         return visitor.visitPrimitive(value, context);
     }
     return visitor.visitOther(value, context);

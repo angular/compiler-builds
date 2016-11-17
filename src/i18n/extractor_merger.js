@@ -7,6 +7,7 @@
  */
 import * as html from '../ml_parser/ast';
 import { ParseTreeResult } from '../ml_parser/parser';
+import { digestMessage } from './digest';
 import * as i18n from './i18n_ast';
 import { createI18nMessageFactory } from './i18n_parser';
 import { I18nError } from './parse_util';
@@ -153,8 +154,8 @@ var _Visitor = (function () {
         // Extract only top level nodes with the (implicit) "i18n" attribute if not in a block or an ICU
         // message
         var i18nAttr = _getI18nAttr(el);
-        var isImplicit = this._implicitTags.some(function (tag) { return el.name === tag; }) && !this._inIcu &&
-            !this._isInTranslatableSection;
+        var isImplicit = this._implicitTags.some(function (tag) { return el.name === tag; }) &&
+            !this._inIcu && !this._isInTranslatableSection;
         var isTopLevelImplicit = !wasInImplicitNode && isImplicit;
         this._inImplicitNode = this._inImplicitNode || isImplicit;
         if (!this._isInTranslatableSection && !this._inIcu) {
@@ -271,11 +272,12 @@ var _Visitor = (function () {
     // no-op when called in extraction mode (returns [])
     _Visitor.prototype._translateMessage = function (el, message) {
         if (message && this._mode === _VisitorMode.Merge) {
-            var nodes = this._translations.get(message);
+            var id = digestMessage(message);
+            var nodes = this._translations.get(id);
             if (nodes) {
                 return nodes;
             }
-            this._reportError(el, "Translation unavailable for message id=\"" + this._translations.digest(message) + "\"");
+            this._reportError(el, "Translation unavailable for message id=\"" + id + "\"");
         }
         return [];
     };
@@ -299,18 +301,19 @@ var _Visitor = (function () {
             if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                 var meaning = i18nAttributeMeanings[attr.name];
                 var message = _this._createI18nMessage([attr], meaning, '');
-                var nodes = _this._translations.get(message);
+                var id = digestMessage(message);
+                var nodes = _this._translations.get(id);
                 if (nodes) {
                     if (nodes[0] instanceof html.Text) {
                         var value = nodes[0].value;
                         translatedAttributes.push(new html.Attribute(attr.name, value, attr.sourceSpan));
                     }
                     else {
-                        _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + _this._translations.digest(message) + "\")");
+                        _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + id + "\")");
                     }
                 }
                 else {
-                    _this._reportError(el, "Translation unavailable for attribute \"" + attr.name + "\" (id=\"" + _this._translations.digest(message) + "\")");
+                    _this._reportError(el, "Translation unavailable for attribute \"" + attr.name + "\" (id=\"" + id + "\")");
                 }
             }
             else {

@@ -9,14 +9,15 @@ export var Message = (function () {
     /**
      * @param nodes message AST
      * @param placeholders maps placeholder names to static content
-     * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
+     * @param placeholderToMsgIds maps placeholder names to translatable message IDs (used for ICU
+     *                            messages)
      * @param meaning
      * @param description
      */
-    function Message(nodes, placeholders, placeholderToMessage, meaning, description) {
+    function Message(nodes, placeholders, placeholderToMsgIds, meaning, description) {
         this.nodes = nodes;
         this.placeholders = placeholders;
-        this.placeholderToMessage = placeholderToMessage;
+        this.placeholderToMsgIds = placeholderToMsgIds;
         this.meaning = meaning;
         this.description = description;
     }
@@ -30,7 +31,6 @@ export var Text = (function () {
     Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
     return Text;
 }());
-// TODO(vicb): do we really need this node (vs an array) ?
 export var Container = (function () {
     function Container(children, sourceSpan) {
         this.children = children;
@@ -64,6 +64,7 @@ export var TagPlaceholder = (function () {
 }());
 export var Placeholder = (function () {
     function Placeholder(value, name, sourceSpan) {
+        if (name === void 0) { name = ''; }
         this.value = value;
         this.name = name;
         this.sourceSpan = sourceSpan;
@@ -73,6 +74,7 @@ export var Placeholder = (function () {
 }());
 export var IcuPlaceholder = (function () {
     function IcuPlaceholder(value, name, sourceSpan) {
+        if (name === void 0) { name = ''; }
         this.value = value;
         this.name = name;
         this.sourceSpan = sourceSpan;
