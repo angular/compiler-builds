@@ -3467,179 +3467,18 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  function digestMessage(message) {
-      return sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
-  }
-  /**
-   * Serialize the i18n ast to something xml-like in order to generate an UID.
-   *
-   * The visitor is also used in the i18n parser tests
-   *
-   * @internal
-   */
-  var _SerializerVisitor = (function () {
-      function _SerializerVisitor() {
-      }
-      _SerializerVisitor.prototype.visitText = function (text, context) { return text.value; };
-      _SerializerVisitor.prototype.visitContainer = function (container, context) {
-          var _this = this;
-          return "[" + container.children.map(function (child) { return child.visit(_this); }).join(', ') + "]";
-      };
-      _SerializerVisitor.prototype.visitIcu = function (icu, context) {
-          var _this = this;
-          var strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
-          return "{" + icu.expression + ", " + icu.type + ", " + strCases.join(', ') + "}";
-      };
-      _SerializerVisitor.prototype.visitTagPlaceholder = function (ph, context) {
-          var _this = this;
-          return ph.isVoid ?
-              "<ph tag name=\"" + ph.startName + "\"/>" :
-              "<ph tag name=\"" + ph.startName + "\">" + ph.children.map(function (child) { return child.visit(_this); }).join(', ') + "</ph name=\"" + ph.closeName + "\">";
-      };
-      _SerializerVisitor.prototype.visitPlaceholder = function (ph, context) {
-          return "<ph name=\"" + ph.name + "\">" + ph.value + "</ph>";
-      };
-      _SerializerVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
-          return "<ph icu name=\"" + ph.name + "\">" + ph.value.visit(this) + "</ph>";
-      };
-      return _SerializerVisitor;
-  }());
-  var serializerVisitor = new _SerializerVisitor();
-  function serializeNodes(nodes) {
-      return nodes.map(function (a) { return a.visit(serializerVisitor, null); });
-  }
-  /**
-   * Compute the SHA1 of the given string
-   *
-   * see http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
-   *
-   * WARNING: this function has not been designed not tested with security in mind.
-   *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
-   */
-  function sha1(str) {
-      var utf8 = utf8Encode(str);
-      var words32 = stringToWords32(utf8);
-      var len = utf8.length * 8;
-      var w = new Array(80);
-      var _a = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], a = _a[0], b = _a[1], c = _a[2], d = _a[3], e = _a[4];
-      words32[len >> 5] |= 0x80 << (24 - len % 32);
-      words32[((len + 64 >> 9) << 4) + 15] = len;
-      for (var i = 0; i < words32.length; i += 16) {
-          var _b = [a, b, c, d, e], h0 = _b[0], h1 = _b[1], h2 = _b[2], h3 = _b[3], h4 = _b[4];
-          for (var j = 0; j < 80; j++) {
-              if (j < 16) {
-                  w[j] = words32[i + j];
-              }
-              else {
-                  w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
-              }
-              var _c = fk(j, b, c, d), f = _c[0], k = _c[1];
-              var temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
-              _d = [d, c, rol32(b, 30), a, temp], e = _d[0], d = _d[1], c = _d[2], b = _d[3], a = _d[4];
-          }
-          _e = [add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)], a = _e[0], b = _e[1], c = _e[2], d = _e[3], e = _e[4];
-      }
-      var sha1 = words32ToString([a, b, c, d, e]);
-      var hex = '';
-      for (var i = 0; i < sha1.length; i++) {
-          var b_1 = sha1.charCodeAt(i);
-          hex += (b_1 >>> 4 & 0x0f).toString(16) + (b_1 & 0x0f).toString(16);
-      }
-      return hex.toLowerCase();
-      var _d, _e;
-  }
-  function utf8Encode(str) {
-      var encoded = '';
-      for (var index = 0; index < str.length; index++) {
-          var codePoint = decodeSurrogatePairs(str, index);
-          if (codePoint <= 0x7f) {
-              encoded += String.fromCharCode(codePoint);
-          }
-          else if (codePoint <= 0x7ff) {
-              encoded += String.fromCharCode(0xc0 | codePoint >>> 6, 0x80 | codePoint & 0x3f);
-          }
-          else if (codePoint <= 0xffff) {
-              encoded += String.fromCharCode(0xe0 | codePoint >>> 12, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-          }
-          else if (codePoint <= 0x1fffff) {
-              encoded += String.fromCharCode(0xf0 | codePoint >>> 18, 0x80 | codePoint >>> 12 & 0x3f, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-          }
-      }
-      return encoded;
-  }
-  // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
-  function decodeSurrogatePairs(str, index) {
-      if (index < 0 || index >= str.length) {
-          throw new Error("index=" + index + " is out of range in \"" + str + "\"");
-      }
-      var high = str.charCodeAt(index);
-      var low;
-      if (high >= 0xd800 && high <= 0xdfff && str.length > index + 1) {
-          low = str.charCodeAt(index + 1);
-          if (low >= 0xdc00 && low <= 0xdfff) {
-              return (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
-          }
-      }
-      return high;
-  }
-  function stringToWords32(str) {
-      var words32 = Array(str.length >>> 2);
-      for (var i = 0; i < words32.length; i++) {
-          words32[i] = 0;
-      }
-      for (var i = 0; i < str.length; i++) {
-          words32[i >>> 2] |= (str.charCodeAt(i) & 0xff) << 8 * (3 - i & 0x3);
-      }
-      return words32;
-  }
-  function words32ToString(words32) {
-      var str = '';
-      for (var i = 0; i < words32.length * 4; i++) {
-          str += String.fromCharCode((words32[i >>> 2] >>> 8 * (3 - i & 0x3)) & 0xff);
-      }
-      return str;
-  }
-  function fk(index, b, c, d) {
-      if (index < 20) {
-          return [(b & c) | (~b & d), 0x5a827999];
-      }
-      if (index < 40) {
-          return [b ^ c ^ d, 0x6ed9eba1];
-      }
-      if (index < 60) {
-          return [(b & c) | (b & d) | (c & d), 0x8f1bbcdc];
-      }
-      return [b ^ c ^ d, 0xca62c1d6];
-  }
-  function add32(a, b) {
-      var low = (a & 0xffff) + (b & 0xffff);
-      var high = (a >> 16) + (b >> 16) + (low >> 16);
-      return (high << 16) | (low & 0xffff);
-  }
-  function rol32(a, count) {
-      return (a << count) | (a >>> (32 - count));
-  }
-
-  /**
-   * @license
-   * Copyright Google Inc. All Rights Reserved.
-   *
-   * Use of this source code is governed by an MIT-style license that can be
-   * found in the LICENSE file at https://angular.io/license
-   */
   var Message = (function () {
       /**
        * @param nodes message AST
        * @param placeholders maps placeholder names to static content
-       * @param placeholderToMsgIds maps placeholder names to translatable message IDs (used for ICU
-       *                            messages)
+       * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
        * @param meaning
        * @param description
        */
-      function Message(nodes, placeholders, placeholderToMsgIds, meaning, description) {
+      function Message(nodes, placeholders, placeholderToMessage, meaning, description) {
           this.nodes = nodes;
           this.placeholders = placeholders;
-          this.placeholderToMsgIds = placeholderToMsgIds;
+          this.placeholderToMessage = placeholderToMessage;
           this.meaning = meaning;
           this.description = description;
       }
@@ -3653,6 +3492,7 @@
       Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
       return Text;
   }());
+  // TODO(vicb): do we really need this node (vs an array) ?
   var Container = (function () {
       function Container(children, sourceSpan) {
           this.children = children;
@@ -3686,7 +3526,6 @@
   }());
   var Placeholder = (function () {
       function Placeholder(value, name, sourceSpan) {
-          if (name === void 0) { name = ''; }
           this.value = value;
           this.name = name;
           this.sourceSpan = sourceSpan;
@@ -3696,7 +3535,6 @@
   }());
   var IcuPlaceholder = (function () {
       function IcuPlaceholder(value, name, sourceSpan) {
-          if (name === void 0) { name = ''; }
           this.value = value;
           this.name = name;
           this.sourceSpan = sourceSpan;
@@ -3840,7 +3678,9 @@
       'UL': 'UNORDERED_LIST',
   };
   /**
-   * Creates unique names for placeholder with different content
+   * Creates unique names for placeholder with different content.
+   *
+   * Returns the same placeholder name when the content is identical.
    *
    * @internal
    */
@@ -3883,6 +3723,9 @@
           this._signatureToName[signature] = uniqueName;
           return uniqueName;
       };
+      PlaceholderRegistry.prototype.getUniquePlaceholder = function (name) {
+          return this._generateUniqueName(name.toUpperCase());
+      };
       // Generate a hash for a tag - does not take attribute order into account
       PlaceholderRegistry.prototype._hashTag = function (tag, attrs, isVoid) {
           var start = "<" + tag;
@@ -3892,17 +3735,9 @@
       };
       PlaceholderRegistry.prototype._hashClosingTag = function (tag) { return this._hashTag("/" + tag, {}, false); };
       PlaceholderRegistry.prototype._generateUniqueName = function (base) {
-          var name = base;
-          var next = this._placeHolderNameCounts[name];
-          if (!next) {
-              next = 1;
-          }
-          else {
-              name += "_" + next;
-              next++;
-          }
-          this._placeHolderNameCounts[base] = next;
-          return name;
+          var next = this._placeHolderNameCounts[base];
+          this._placeHolderNameCounts[base] = next ? next + 1 : 1;
+          return next ? base + "_" + next : base;
       };
       return PlaceholderRegistry;
   }());
@@ -3927,9 +3762,9 @@
           this._icuDepth = 0;
           this._placeholderRegistry = new PlaceholderRegistry();
           this._placeholderToContent = {};
-          this._placeholderToIds = {};
+          this._placeholderToMessage = {};
           var i18nodes = visitAll(this, nodes, {});
-          return new Message(i18nodes, this._placeholderToContent, this._placeholderToIds, meaning, description);
+          return new Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description);
       };
       _I18nVisitor.prototype.visitElement = function (el, context) {
           var children = visitAll(this, el.children);
@@ -3965,7 +3800,12 @@
           });
           this._icuDepth--;
           if (this._isIcu || this._icuDepth > 0) {
-              // If the message (vs a part of the message) is an ICU message returns it
+              // Returns an ICU node when:
+              // - the message (vs a part of the message) is an ICU message, or
+              // - the ICU message is nested.
+              var expPh = this._placeholderRegistry.getUniquePlaceholder("VAR_" + icu.type);
+              i18nIcu.expressionPlaceholder = expPh;
+              this._placeholderToContent[expPh] = icu.switchValue;
               return i18nIcu;
           }
           // Else returns a placeholder
@@ -3975,7 +3815,7 @@
           // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
           var phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
           var visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
-          this._placeholderToIds[phName] = digestMessage(visitor.toI18nMessage([icu], '', ''));
+          this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '');
           return new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
       };
       _I18nVisitor.prototype.visitExpansionCase = function (icuCase, context) {
@@ -4182,8 +4022,8 @@
           // Extract only top level nodes with the (implicit) "i18n" attribute if not in a block or an ICU
           // message
           var i18nAttr = _getI18nAttr(el);
-          var isImplicit = this._implicitTags.some(function (tag) { return el.name === tag; }) &&
-              !this._inIcu && !this._isInTranslatableSection;
+          var isImplicit = this._implicitTags.some(function (tag) { return el.name === tag; }) && !this._inIcu &&
+              !this._isInTranslatableSection;
           var isTopLevelImplicit = !wasInImplicitNode && isImplicit;
           this._inImplicitNode = this._inImplicitNode || isImplicit;
           if (!this._isInTranslatableSection && !this._inIcu) {
@@ -4300,12 +4140,11 @@
       // no-op when called in extraction mode (returns [])
       _Visitor.prototype._translateMessage = function (el, message) {
           if (message && this._mode === _VisitorMode.Merge) {
-              var id = digestMessage(message);
-              var nodes = this._translations.get(id);
+              var nodes = this._translations.get(message);
               if (nodes) {
                   return nodes;
               }
-              this._reportError(el, "Translation unavailable for message id=\"" + id + "\"");
+              this._reportError(el, "Translation unavailable for message id=\"" + this._translations.digest(message) + "\"");
           }
           return [];
       };
@@ -4329,19 +4168,18 @@
               if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                   var meaning = i18nAttributeMeanings[attr.name];
                   var message = _this._createI18nMessage([attr], meaning, '');
-                  var id = digestMessage(message);
-                  var nodes = _this._translations.get(id);
+                  var nodes = _this._translations.get(message);
                   if (nodes) {
                       if (nodes[0] instanceof Text) {
                           var value = nodes[0].value;
                           translatedAttributes.push(new Attribute$1(attr.name, value, attr.sourceSpan));
                       }
                       else {
-                          _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + id + "\")");
+                          _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + _this._translations.digest(message) + "\")");
                       }
                   }
                   else {
-                      _this._reportError(el, "Translation unavailable for attribute \"" + attr.name + "\" (id=\"" + id + "\")");
+                      _this._reportError(el, "Translation unavailable for attribute \"" + attr.name + "\" (id=\"" + _this._translations.digest(message) + "\")");
                   }
               }
               else {
@@ -4439,33 +4277,6 @@
       return pipeIndex == -1 ? ['', i18n] : [i18n.slice(0, pipeIndex), i18n.slice(pipeIndex + 1)];
   }
 
-  /**
-   * A container for message extracted from the templates.
-   */
-  var MessageBundle = (function () {
-      function MessageBundle(_htmlParser, _implicitTags, _implicitAttrs) {
-          this._htmlParser = _htmlParser;
-          this._implicitTags = _implicitTags;
-          this._implicitAttrs = _implicitAttrs;
-          this._messageMap = {};
-      }
-      MessageBundle.prototype.updateFromTemplate = function (html, url, interpolationConfig) {
-          var _this = this;
-          var htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
-          if (htmlParserResult.errors.length) {
-              return htmlParserResult.errors;
-          }
-          var i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
-          if (i18nParserResult.errors.length) {
-              return i18nParserResult.errors;
-          }
-          i18nParserResult.messages.forEach(function (message) { _this._messageMap[digestMessage(message)] = message; });
-      };
-      MessageBundle.prototype.getMessageMap = function () { return this._messageMap; };
-      MessageBundle.prototype.write = function (serializer) { return serializer.write(this._messageMap); };
-      return MessageBundle;
-  }());
-
   var XmlTagDefinition = (function () {
       function XmlTagDefinition() {
           this.closedByParent = false;
@@ -4514,23 +4325,348 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  // Generate a map of placeholder to content indexed by message ids
-  function extractPlaceholders(messageBundle) {
-      var messageMap = messageBundle.getMessageMap();
-      var placeholders = {};
-      Object.keys(messageMap).forEach(function (msgId) {
-          placeholders[msgId] = messageMap[msgId].placeholders;
-      });
-      return placeholders;
+  var __extends$6 = (this && this.__extends) || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+      function __() { this.constructor = d; }
+      d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+  function digest(message) {
+      return sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
   }
-  // Generate a map of placeholder to message ids indexed by message ids
-  function extractPlaceholderToIds(messageBundle) {
-      var messageMap = messageBundle.getMessageMap();
-      var placeholderToIds = {};
-      Object.keys(messageMap).forEach(function (msgId) {
-          placeholderToIds[msgId] = messageMap[msgId].placeholderToMsgIds;
-      });
-      return placeholderToIds;
+  function decimalDigest(message) {
+      var visitor = new _SerializerIgnoreIcuExpVisitor();
+      var parts = message.nodes.map(function (a) { return a.visit(visitor, null); });
+      return computeMsgId(parts.join(''), message.meaning);
+  }
+  /**
+   * Serialize the i18n ast to something xml-like in order to generate an UID.
+   *
+   * The visitor is also used in the i18n parser tests
+   *
+   * @internal
+   */
+  var _SerializerVisitor = (function () {
+      function _SerializerVisitor() {
+      }
+      _SerializerVisitor.prototype.visitText = function (text, context) { return text.value; };
+      _SerializerVisitor.prototype.visitContainer = function (container, context) {
+          var _this = this;
+          return "[" + container.children.map(function (child) { return child.visit(_this); }).join(', ') + "]";
+      };
+      _SerializerVisitor.prototype.visitIcu = function (icu, context) {
+          var _this = this;
+          var strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
+          return "{" + icu.expression + ", " + icu.type + ", " + strCases.join(', ') + "}";
+      };
+      _SerializerVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+          var _this = this;
+          return ph.isVoid ?
+              "<ph tag name=\"" + ph.startName + "\"/>" :
+              "<ph tag name=\"" + ph.startName + "\">" + ph.children.map(function (child) { return child.visit(_this); }).join(', ') + "</ph name=\"" + ph.closeName + "\">";
+      };
+      _SerializerVisitor.prototype.visitPlaceholder = function (ph, context) {
+          return ph.value ? "<ph name=\"" + ph.name + "\">" + ph.value + "</ph>" : "<ph name=\"" + ph.name + "\"/>";
+      };
+      _SerializerVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
+          return "<ph icu name=\"" + ph.name + "\">" + ph.value.visit(this) + "</ph>";
+      };
+      return _SerializerVisitor;
+  }());
+  var serializerVisitor = new _SerializerVisitor();
+  function serializeNodes(nodes) {
+      return nodes.map(function (a) { return a.visit(serializerVisitor, null); });
+  }
+  /**
+   * Serialize the i18n ast to something xml-like in order to generate an UID.
+   *
+   * Ignore the ICU expressions so that message IDs stays identical if only the expression changes.
+   *
+   * @internal
+   */
+  var _SerializerIgnoreIcuExpVisitor = (function (_super) {
+      __extends$6(_SerializerIgnoreIcuExpVisitor, _super);
+      function _SerializerIgnoreIcuExpVisitor() {
+          _super.apply(this, arguments);
+      }
+      _SerializerIgnoreIcuExpVisitor.prototype.visitIcu = function (icu, context) {
+          var _this = this;
+          var strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
+          // Do not take the expression into account
+          return "{" + icu.type + ", " + strCases.join(', ') + "}";
+      };
+      return _SerializerIgnoreIcuExpVisitor;
+  }(_SerializerVisitor));
+  /**
+   * Compute the SHA1 of the given string
+   *
+   * see http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
+   *
+   * WARNING: this function has not been designed not tested with security in mind.
+   *          DO NOT USE IT IN A SECURITY SENSITIVE CONTEXT.
+   */
+  function sha1(str) {
+      var utf8 = utf8Encode(str);
+      var words32 = stringToWords32(utf8, Endian.Big);
+      var len = utf8.length * 8;
+      var w = new Array(80);
+      var _a = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0], a = _a[0], b = _a[1], c = _a[2], d = _a[3], e = _a[4];
+      words32[len >> 5] |= 0x80 << (24 - len % 32);
+      words32[((len + 64 >> 9) << 4) + 15] = len;
+      for (var i = 0; i < words32.length; i += 16) {
+          var _b = [a, b, c, d, e], h0 = _b[0], h1 = _b[1], h2 = _b[2], h3 = _b[3], h4 = _b[4];
+          for (var j = 0; j < 80; j++) {
+              if (j < 16) {
+                  w[j] = words32[i + j];
+              }
+              else {
+                  w[j] = rol32(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
+              }
+              var _c = fk(j, b, c, d), f = _c[0], k = _c[1];
+              var temp = [rol32(a, 5), f, e, k, w[j]].reduce(add32);
+              _d = [d, c, rol32(b, 30), a, temp], e = _d[0], d = _d[1], c = _d[2], b = _d[3], a = _d[4];
+          }
+          _e = [add32(a, h0), add32(b, h1), add32(c, h2), add32(d, h3), add32(e, h4)], a = _e[0], b = _e[1], c = _e[2], d = _e[3], e = _e[4];
+      }
+      return byteStringToHexString(words32ToByteString([a, b, c, d, e]));
+      var _d, _e;
+  }
+  function fk(index, b, c, d) {
+      if (index < 20) {
+          return [(b & c) | (~b & d), 0x5a827999];
+      }
+      if (index < 40) {
+          return [b ^ c ^ d, 0x6ed9eba1];
+      }
+      if (index < 60) {
+          return [(b & c) | (b & d) | (c & d), 0x8f1bbcdc];
+      }
+      return [b ^ c ^ d, 0xca62c1d6];
+  }
+  /**
+   * Compute the fingerprint of the given string
+   *
+   * The output is 64 bit number encoded as a decimal string
+   *
+   * based on:
+   * https://github.com/google/closure-compiler/blob/master/src/com/google/javascript/jscomp/GoogleJsMessageIdGenerator.java
+   */
+  function fingerprint(str) {
+      var utf8 = utf8Encode(str);
+      var _a = [hash32(utf8, 0), hash32(utf8, 102072)], hi = _a[0], lo = _a[1];
+      if (hi == 0 && (lo == 0 || lo == 1)) {
+          hi = hi ^ 0x130f9bef;
+          lo = lo ^ -0x6b5f56d8;
+      }
+      return [hi, lo];
+  }
+  function computeMsgId(msg, meaning) {
+      var _a = fingerprint(msg), hi = _a[0], lo = _a[1];
+      if (meaning) {
+          var _b = fingerprint(meaning), him = _b[0], lom = _b[1];
+          _c = add64(rol64([hi, lo], 1), [him, lom]), hi = _c[0], lo = _c[1];
+      }
+      return byteStringToDecString(words32ToByteString([hi & 0x7fffffff, lo]));
+      var _c;
+  }
+  function hash32(str, c) {
+      var _a = [0x9e3779b9, 0x9e3779b9], a = _a[0], b = _a[1];
+      var i;
+      var len = str.length;
+      for (i = 0; i + 12 <= len; i += 12) {
+          a = add32(a, wordAt(str, i, Endian.Little));
+          b = add32(b, wordAt(str, i + 4, Endian.Little));
+          c = add32(c, wordAt(str, i + 8, Endian.Little));
+          _b = mix([a, b, c]), a = _b[0], b = _b[1], c = _b[2];
+      }
+      a = add32(a, wordAt(str, i, Endian.Little));
+      b = add32(b, wordAt(str, i + 4, Endian.Little));
+      // the first byte of c is reserved for the length
+      c = add32(c, len);
+      c = add32(c, wordAt(str, i + 8, Endian.Little) << 8);
+      return mix([a, b, c])[2];
+      var _b;
+  }
+  // clang-format off
+  function mix(_a) {
+      var a = _a[0], b = _a[1], c = _a[2];
+      a = sub32(a, b);
+      a = sub32(a, c);
+      a ^= c >>> 13;
+      b = sub32(b, c);
+      b = sub32(b, a);
+      b ^= a << 8;
+      c = sub32(c, a);
+      c = sub32(c, b);
+      c ^= b >>> 13;
+      a = sub32(a, b);
+      a = sub32(a, c);
+      a ^= c >>> 12;
+      b = sub32(b, c);
+      b = sub32(b, a);
+      b ^= a << 16;
+      c = sub32(c, a);
+      c = sub32(c, b);
+      c ^= b >>> 5;
+      a = sub32(a, b);
+      a = sub32(a, c);
+      a ^= c >>> 3;
+      b = sub32(b, c);
+      b = sub32(b, a);
+      b ^= a << 10;
+      c = sub32(c, a);
+      c = sub32(c, b);
+      c ^= b >>> 15;
+      return [a, b, c];
+  }
+  // clang-format on
+  // Utils
+  var Endian;
+  (function (Endian) {
+      Endian[Endian["Little"] = 0] = "Little";
+      Endian[Endian["Big"] = 1] = "Big";
+  })(Endian || (Endian = {}));
+  function utf8Encode(str) {
+      var encoded = '';
+      for (var index = 0; index < str.length; index++) {
+          var codePoint = decodeSurrogatePairs(str, index);
+          if (codePoint <= 0x7f) {
+              encoded += String.fromCharCode(codePoint);
+          }
+          else if (codePoint <= 0x7ff) {
+              encoded += String.fromCharCode(0xc0 | codePoint >>> 6, 0x80 | codePoint & 0x3f);
+          }
+          else if (codePoint <= 0xffff) {
+              encoded += String.fromCharCode(0xe0 | codePoint >>> 12, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
+          }
+          else if (codePoint <= 0x1fffff) {
+              encoded += String.fromCharCode(0xf0 | codePoint >>> 18, 0x80 | codePoint >>> 12 & 0x3f, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
+          }
+      }
+      return encoded;
+  }
+  // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+  function decodeSurrogatePairs(str, index) {
+      if (index < 0 || index >= str.length) {
+          throw new Error("index=" + index + " is out of range in \"" + str + "\"");
+      }
+      var high = str.charCodeAt(index);
+      if (high >= 0xd800 && high <= 0xdfff && str.length > index + 1) {
+          var low = byteAt(str, index + 1);
+          if (low >= 0xdc00 && low <= 0xdfff) {
+              return (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
+          }
+      }
+      return high;
+  }
+  function add32(a, b) {
+      return add32to64(a, b)[1];
+  }
+  function add32to64(a, b) {
+      var low = (a & 0xffff) + (b & 0xffff);
+      var high = (a >>> 16) + (b >>> 16) + (low >>> 16);
+      return [high >>> 16, (high << 16) | (low & 0xffff)];
+  }
+  function add64(_a, _b) {
+      var ah = _a[0], al = _a[1];
+      var bh = _b[0], bl = _b[1];
+      var _c = add32to64(al, bl), carry = _c[0], l = _c[1];
+      var h = add32(add32(ah, bh), carry);
+      return [h, l];
+  }
+  function sub32(a, b) {
+      var low = (a & 0xffff) - (b & 0xffff);
+      var high = (a >> 16) - (b >> 16) + (low >> 16);
+      return (high << 16) | (low & 0xffff);
+  }
+  // Rotate a 32b number left `count` position
+  function rol32(a, count) {
+      return (a << count) | (a >>> (32 - count));
+  }
+  // Rotate a 64b number left `count` position
+  function rol64(_a, count) {
+      var hi = _a[0], lo = _a[1];
+      var h = (hi << count) | (lo >>> (32 - count));
+      var l = (lo << count) | (hi >>> (32 - count));
+      return [h, l];
+  }
+  function stringToWords32(str, endian) {
+      var words32 = Array((str.length + 3) >>> 2);
+      for (var i = 0; i < words32.length; i++) {
+          words32[i] = wordAt(str, i * 4, endian);
+      }
+      return words32;
+  }
+  function byteAt(str, index) {
+      return index >= str.length ? 0 : str.charCodeAt(index) & 0xff;
+  }
+  function wordAt(str, index, endian) {
+      var word = 0;
+      if (endian === Endian.Big) {
+          for (var i = 0; i < 4; i++) {
+              word += byteAt(str, index + i) << (24 - 8 * i);
+          }
+      }
+      else {
+          for (var i = 0; i < 4; i++) {
+              word += byteAt(str, index + i) << 8 * i;
+          }
+      }
+      return word;
+  }
+  function words32ToByteString(words32) {
+      return words32.reduce(function (str, word) { return str + word32ToByteString(word); }, '');
+  }
+  function word32ToByteString(word) {
+      var str = '';
+      for (var i = 0; i < 4; i++) {
+          str += String.fromCharCode((word >>> 8 * (3 - i)) & 0xff);
+      }
+      return str;
+  }
+  function byteStringToHexString(str) {
+      var hex = '';
+      for (var i = 0; i < str.length; i++) {
+          var b = byteAt(str, i);
+          hex += (b >>> 4).toString(16) + (b & 0x0f).toString(16);
+      }
+      return hex.toLowerCase();
+  }
+  // based on http://www.danvk.org/hex2dec.html (JS can not handle more than 56b)
+  function byteStringToDecString(str) {
+      var decimal = '';
+      var toThePower = '1';
+      for (var i = str.length - 1; i >= 0; i--) {
+          decimal = addBigInt(decimal, numberTimesBigInt(byteAt(str, i), toThePower));
+          toThePower = numberTimesBigInt(256, toThePower);
+      }
+      return decimal.split('').reverse().join('');
+  }
+  // x and y decimal, lowest significant digit first
+  function addBigInt(x, y) {
+      var sum = '';
+      var len = Math.max(x.length, y.length);
+      for (var i = 0, carry = 0; i < len || carry; i++) {
+          var tmpSum = carry + +(x[i] || 0) + +(y[i] || 0);
+          if (tmpSum >= 10) {
+              carry = 1;
+              sum += tmpSum - 10;
+          }
+          else {
+              carry = 0;
+              sum += tmpSum;
+          }
+      }
+      return sum;
+  }
+  function numberTimesBigInt(num, b) {
+      var product = '';
+      var bToThePower = b;
+      for (; num !== 0; num = num >>> 1) {
+          if (num & 1)
+              product = addBigInt(product, bToThePower);
+          bToThePower = addBigInt(bToThePower, bToThePower);
+      }
+      return product;
   }
 
   /**
@@ -4540,7 +4676,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$6 = (this && this.__extends) || function (d, b) {
+  var __extends$7 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -4618,7 +4754,7 @@
       return Text;
   }());
   var CR = (function (_super) {
-      __extends$6(CR, _super);
+      __extends$7(CR, _super);
       function CR(ws) {
           if (ws === void 0) { ws = 0; }
           _super.call(this, "\n" + new Array(ws + 1).join(' '));
@@ -4647,15 +4783,19 @@
   // http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
   // http://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2.html
   var Xliff = (function () {
-      function Xliff(_htmlParser, _interpolationConfig) {
-          this._htmlParser = _htmlParser;
-          this._interpolationConfig = _interpolationConfig;
+      function Xliff() {
       }
-      Xliff.prototype.write = function (messageMap) {
+      Xliff.prototype.write = function (messages) {
+          var _this = this;
           var visitor = new _WriteVisitor();
+          var visited = {};
           var transUnits = [];
-          Object.keys(messageMap).forEach(function (id) {
-              var message = messageMap[id];
+          messages.forEach(function (message) {
+              var id = _this.digest(message);
+              // deduplicate messages
+              if (visited[id])
+                  return;
+              visited[id] = true;
               var transUnit = new Tag(_UNIT_TAG, { id: id, datatype: 'html' });
               transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new CR(8), new Tag(_TARGET_TAG));
               if (message.description) {
@@ -4674,32 +4814,24 @@
               new Declaration({ version: '1.0', encoding: 'UTF-8' }), new CR(), xliff, new CR()
           ]);
       };
-      Xliff.prototype.load = function (content, url, messageBundle) {
-          var _this = this;
-          // Parse the xtb file into xml nodes
-          var result = new XmlParser().parse(content, url);
-          if (result.errors.length) {
-              throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
-          }
-          // Replace the placeholders, messages are now string
-          var _a = new _LoadVisitor().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
-          if (errors.length) {
-              throw new Error("xtb parse errors:\n" + errors.join('\n'));
-          }
-          // Convert the string messages to html ast
-          // TODO(vicb): map error message back to the original message in xtb
-          var messageMap = {};
-          var parseErrors = [];
-          Object.keys(messages).forEach(function (id) {
-              var res = _this._htmlParser.parse(messages[id], url, true, _this._interpolationConfig);
-              parseErrors.push.apply(parseErrors, res.errors);
-              messageMap[id] = res.rootNodes;
+      Xliff.prototype.load = function (content, url) {
+          // xliff to xml nodes
+          var xliffParser = new XliffParser();
+          var _a = xliffParser.parse(content, url), mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
+          // xml nodes to i18n nodes
+          var i18nNodesByMsgId = {};
+          var converter = new XmlToI18n();
+          Object.keys(mlNodesByMsgId).forEach(function (msgId) {
+              var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, e = _a.errors;
+              errors.push.apply(errors, e);
+              i18nNodesByMsgId[msgId] = i18nNodes;
           });
-          if (parseErrors.length) {
-              throw new Error("xtb parse errors:\n" + parseErrors.join('\n'));
+          if (errors.length) {
+              throw new Error("xliff parse errors:\n" + errors.join('\n'));
           }
-          return messageMap;
+          return i18nNodesByMsgId;
       };
+      Xliff.prototype.digest = function (message) { return digest(message); };
       return Xliff;
   }());
   var _WriteVisitor = (function () {
@@ -4750,109 +4882,99 @@
       return _WriteVisitor;
   }());
   // TODO(vicb): add error management (structure)
-  // TODO(vicb): factorize (xtb) ?
-  var _LoadVisitor = (function () {
-      function _LoadVisitor() {
+  // Extract messages as xml nodes from the xliff file
+  var XliffParser = (function () {
+      function XliffParser() {
       }
-      _LoadVisitor.prototype.parse = function (nodes, messageBundle) {
-          var _this = this;
-          this._messageNodes = [];
-          this._translatedMessages = {};
-          this._msgId = '';
-          this._target = [];
-          this._errors = [];
-          // Find all messages
-          visitAll(this, nodes, null);
-          var messageMap = messageBundle.getMessageMap();
-          var placeholders = extractPlaceholders(messageBundle);
-          var placeholderToIds = extractPlaceholderToIds(messageBundle);
-          this._messageNodes
-              .filter(function (message) {
-              // Remove any messages that is not present in the source message bundle.
-              return messageMap.hasOwnProperty(message[0]);
-          })
-              .sort(function (a, b) {
-              // Because there could be no ICU placeholders inside an ICU message,
-              // we do not need to take into account the `placeholderToMsgIds` of the referenced
-              // messages, those would always be empty
-              // TODO(vicb): overkill - create 2 buckets and [...woDeps, ...wDeps].process()
-              if (Object.keys(messageMap[a[0]].placeholderToMsgIds).length == 0) {
-                  return -1;
-              }
-              if (Object.keys(messageMap[b[0]].placeholderToMsgIds).length == 0) {
-                  return 1;
-              }
-              return 0;
-          })
-              .forEach(function (message) {
-              var id = message[0];
-              _this._placeholders = placeholders[id] || {};
-              _this._placeholderToIds = placeholderToIds[id] || {};
-              // TODO(vicb): make sure there is no `_TRANSLATIONS_TAG` nor `_TRANSLATION_TAG`
-              _this._translatedMessages[id] = visitAll(_this, message[1]).join('');
-          });
-          return { messages: this._translatedMessages, errors: this._errors };
+      XliffParser.prototype.parse = function (xliff, url) {
+          this._unitMlNodes = [];
+          this._mlNodesByMsgId = {};
+          var xml = new XmlParser().parse(xliff, url, false);
+          this._errors = xml.errors;
+          visitAll(this, xml.rootNodes, null);
+          return {
+              mlNodesByMsgId: this._mlNodesByMsgId,
+              errors: this._errors,
+          };
       };
-      _LoadVisitor.prototype.visitElement = function (element, context) {
+      XliffParser.prototype.visitElement = function (element, context) {
           switch (element.name) {
               case _UNIT_TAG:
-                  this._target = null;
-                  var msgId = element.attrs.find(function (attr) { return attr.name === 'id'; });
-                  if (!msgId) {
+                  this._unitMlNodes = null;
+                  var idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
+                  if (!idAttr) {
                       this._addError(element, "<" + _UNIT_TAG + "> misses the \"id\" attribute");
                   }
                   else {
-                      this._msgId = msgId.value;
-                  }
-                  visitAll(this, element.children, null);
-                  if (this._msgId !== null) {
-                      this._messageNodes.push([this._msgId, this._target]);
+                      var id = idAttr.value;
+                      if (this._mlNodesByMsgId.hasOwnProperty(id)) {
+                          this._addError(element, "Duplicated translations for msg " + id);
+                      }
+                      else {
+                          visitAll(this, element.children, null);
+                          if (this._unitMlNodes) {
+                              this._mlNodesByMsgId[id] = this._unitMlNodes;
+                          }
+                          else {
+                              this._addError(element, "Message " + id + " misses a translation");
+                          }
+                      }
                   }
                   break;
               case _SOURCE_TAG:
                   // ignore source message
                   break;
               case _TARGET_TAG:
-                  this._target = element.children;
-                  break;
-              case _PLACEHOLDER_TAG:
-                  var idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
-                  if (!idAttr) {
-                      this._addError(element, "<" + _PLACEHOLDER_TAG + "> misses the \"id\" attribute");
-                  }
-                  else {
-                      var id = idAttr.value;
-                      if (this._placeholders.hasOwnProperty(id)) {
-                          return this._placeholders[id];
-                      }
-                      if (this._placeholderToIds.hasOwnProperty(id) &&
-                          this._translatedMessages.hasOwnProperty(this._placeholderToIds[id])) {
-                          return this._translatedMessages[this._placeholderToIds[id]];
-                      }
-                      // TODO(vicb): better error message for when
-                      // !this._translatedMessages.hasOwnProperty(this._placeholderToIds[id])
-                      this._addError(element, "The placeholder \"" + id + "\" does not exists in the source message");
-                  }
+                  this._unitMlNodes = element.children;
                   break;
               default:
+                  // TODO(vicb): assert file structure, xliff version
+                  // For now only recurse on unhandled nodes
                   visitAll(this, element.children, null);
           }
       };
-      _LoadVisitor.prototype.visitAttribute = function (attribute, context) {
-          throw new Error('unreachable code');
-      };
-      _LoadVisitor.prototype.visitText = function (text, context) { return text.value; };
-      _LoadVisitor.prototype.visitComment = function (comment, context) { return ''; };
-      _LoadVisitor.prototype.visitExpansion = function (expansion, context) {
-          throw new Error('unreachable code');
-      };
-      _LoadVisitor.prototype.visitExpansionCase = function (expansionCase, context) {
-          throw new Error('unreachable code');
-      };
-      _LoadVisitor.prototype._addError = function (node, message) {
+      XliffParser.prototype.visitAttribute = function (attribute, context) { };
+      XliffParser.prototype.visitText = function (text, context) { };
+      XliffParser.prototype.visitComment = function (comment, context) { };
+      XliffParser.prototype.visitExpansion = function (expansion, context) { };
+      XliffParser.prototype.visitExpansionCase = function (expansionCase, context) { };
+      XliffParser.prototype._addError = function (node, message) {
           this._errors.push(new I18nError(node.sourceSpan, message));
       };
-      return _LoadVisitor;
+      return XliffParser;
+  }());
+  // Convert ml nodes (xliff syntax) to i18n nodes
+  var XmlToI18n = (function () {
+      function XmlToI18n() {
+      }
+      XmlToI18n.prototype.convert = function (nodes) {
+          this._errors = [];
+          return {
+              i18nNodes: visitAll(this, nodes),
+              errors: this._errors,
+          };
+      };
+      XmlToI18n.prototype.visitText = function (text, context) { return new Text$1(text.value, text.sourceSpan); };
+      XmlToI18n.prototype.visitElement = function (el, context) {
+          if (el.name === _PLACEHOLDER_TAG) {
+              var nameAttr = el.attrs.find(function (attr) { return attr.name === 'id'; });
+              if (nameAttr) {
+                  return new Placeholder('', nameAttr.value, el.sourceSpan);
+              }
+              this._addError(el, "<" + _PLACEHOLDER_TAG + "> misses the \"id\" attribute");
+          }
+          else {
+              this._addError(el, "Unexpected tag");
+          }
+      };
+      XmlToI18n.prototype.visitExpansion = function (icu, context) { };
+      XmlToI18n.prototype.visitExpansionCase = function (icuCase, context) { };
+      XmlToI18n.prototype.visitComment = function (comment, context) { };
+      XmlToI18n.prototype.visitAttribute = function (attribute, context) { };
+      XmlToI18n.prototype._addError = function (node, message) {
+          this._errors.push(new I18nError(node.sourceSpan, message));
+      };
+      return XmlToI18n;
   }());
   function getCtypeForTag(tag) {
       switch (tag.toLowerCase()) {
@@ -4873,11 +4995,17 @@
   var Xmb = (function () {
       function Xmb() {
       }
-      Xmb.prototype.write = function (messageMap) {
+      Xmb.prototype.write = function (messages) {
+          var _this = this;
           var visitor = new _Visitor$2();
+          var visited = {};
           var rootNode = new Tag(_MESSAGES_TAG);
-          Object.keys(messageMap).forEach(function (id) {
-              var message = messageMap[id];
+          messages.forEach(function (message) {
+              var id = _this.digest(message);
+              // deduplicate messages
+              if (visited[id])
+                  return;
+              visited[id] = true;
               var attrs = { id: id };
               if (message.description) {
                   attrs['desc'] = message.description;
@@ -4897,9 +5025,10 @@
               new CR(),
           ]);
       };
-      Xmb.prototype.load = function (content, url, messageBundle) {
+      Xmb.prototype.load = function (content, url) {
           throw new Error('Unsupported');
       };
+      Xmb.prototype.digest = function (message) { return digest$1(message); };
       return Xmb;
   }());
   var _Visitor$2 = (function () {
@@ -4914,7 +5043,7 @@
       };
       _Visitor.prototype.visitIcu = function (icu, context) {
           var _this = this;
-          var nodes = [new Text$2("{" + icu.expression + ", " + icu.type + ", ")];
+          var nodes = [new Text$2("{" + icu.expressionPlaceholder + ", " + icu.type + ", ")];
           Object.keys(icu.cases).forEach(function (c) {
               nodes.push.apply(nodes, [new Text$2(c + " {")].concat(icu.cases[c].visit(_this), [new Text$2("} ")]));
           });
@@ -4945,87 +5074,53 @@
       };
       return _Visitor;
   }());
+  function digest$1(message) {
+      return decimalDigest(message);
+  }
 
   var _TRANSLATIONS_TAG = 'translationbundle';
   var _TRANSLATION_TAG = 'translation';
   var _PLACEHOLDER_TAG$2 = 'ph';
   var Xtb = (function () {
-      function Xtb(_htmlParser, _interpolationConfig) {
-          this._htmlParser = _htmlParser;
-          this._interpolationConfig = _interpolationConfig;
+      function Xtb() {
       }
-      Xtb.prototype.write = function (messageMap) { throw new Error('Unsupported'); };
-      Xtb.prototype.load = function (content, url, messageBundle) {
-          var _this = this;
-          // Parse the xtb file into xml nodes
-          var result = new XmlParser().parse(content, url);
-          if (result.errors.length) {
-              throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
-          }
-          // Replace the placeholders, messages are now string
-          var _a = new _Visitor$3().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
+      Xtb.prototype.write = function (messages) { throw new Error('Unsupported'); };
+      Xtb.prototype.load = function (content, url) {
+          // xtb to xml nodes
+          var xtbParser = new XtbParser();
+          var _a = xtbParser.parse(content, url), mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
+          // xml nodes to i18n nodes
+          var i18nNodesByMsgId = {};
+          var converter = new XmlToI18n$1();
+          Object.keys(mlNodesByMsgId).forEach(function (msgId) {
+              var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, e = _a.errors;
+              errors.push.apply(errors, e);
+              i18nNodesByMsgId[msgId] = i18nNodes;
+          });
           if (errors.length) {
               throw new Error("xtb parse errors:\n" + errors.join('\n'));
           }
-          // Convert the string messages to html ast
-          // TODO(vicb): map error message back to the original message in xtb
-          var messageMap = {};
-          var parseErrors = [];
-          Object.keys(messages).forEach(function (id) {
-              var res = _this._htmlParser.parse(messages[id], url, true, _this._interpolationConfig);
-              parseErrors.push.apply(parseErrors, res.errors);
-              messageMap[id] = res.rootNodes;
-          });
-          if (parseErrors.length) {
-              throw new Error("xtb parse errors:\n" + parseErrors.join('\n'));
-          }
-          return messageMap;
+          return i18nNodesByMsgId;
       };
+      Xtb.prototype.digest = function (message) { return digest$1(message); };
       return Xtb;
   }());
-  var _Visitor$3 = (function () {
-      function _Visitor() {
+  // Extract messages as xml nodes from the xtb file
+  var XtbParser = (function () {
+      function XtbParser() {
       }
-      _Visitor.prototype.parse = function (nodes, messageBundle) {
-          var _this = this;
-          this._messageNodes = [];
-          this._translatedMessages = {};
+      XtbParser.prototype.parse = function (xtb, url) {
           this._bundleDepth = 0;
-          this._translationDepth = 0;
-          this._errors = [];
-          // Find all messages
-          visitAll(this, nodes, null);
-          var messageMap = messageBundle.getMessageMap();
-          var placeholders = extractPlaceholders(messageBundle);
-          var placeholderToIds = extractPlaceholderToIds(messageBundle);
-          this._messageNodes
-              .filter(function (message) {
-              // Remove any messages that is not present in the source message bundle.
-              return messageMap.hasOwnProperty(message[0]);
-          })
-              .sort(function (a, b) {
-              // Because there could be no ICU placeholders inside an ICU message,
-              // we do not need to take into account the `placeholderToMsgIds` of the referenced
-              // messages, those would always be empty
-              // TODO(vicb): overkill - create 2 buckets and [...woDeps, ...wDeps].process()
-              if (Object.keys(messageMap[a[0]].placeholderToMsgIds).length == 0) {
-                  return -1;
-              }
-              if (Object.keys(messageMap[b[0]].placeholderToMsgIds).length == 0) {
-                  return 1;
-              }
-              return 0;
-          })
-              .forEach(function (message) {
-              var id = message[0];
-              _this._placeholders = placeholders[id] || {};
-              _this._placeholderToIds = placeholderToIds[id] || {};
-              // TODO(vicb): make sure there is no `_TRANSLATIONS_TAG` nor `_TRANSLATION_TAG`
-              _this._translatedMessages[id] = visitAll(_this, message[1]).join('');
-          });
-          return { messages: this._translatedMessages, errors: this._errors };
+          this._mlNodesByMsgId = {};
+          var xml = new XmlParser().parse(xtb, url, true);
+          this._errors = xml.errors;
+          visitAll(this, xml.rootNodes);
+          return {
+              mlNodesByMsgId: this._mlNodesByMsgId,
+              errors: this._errors,
+          };
       };
-      _Visitor.prototype.visitElement = function (element, context) {
+      XtbParser.prototype.visitElement = function (element, context) {
           switch (element.name) {
               case _TRANSLATIONS_TAG:
                   this._bundleDepth++;
@@ -5036,63 +5131,77 @@
                   this._bundleDepth--;
                   break;
               case _TRANSLATION_TAG:
-                  this._translationDepth++;
-                  if (this._translationDepth > 1) {
-                      this._addError(element, "<" + _TRANSLATION_TAG + "> elements can not be nested");
-                  }
                   var idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
                   if (!idAttr) {
                       this._addError(element, "<" + _TRANSLATION_TAG + "> misses the \"id\" attribute");
                   }
                   else {
-                      // ICU placeholders are reference to other messages.
-                      // The referenced message might not have been decoded yet.
-                      // We need to have all messages available to make sure deps are decoded first.
-                      // TODO(vicb): report an error on duplicate id
-                      this._messageNodes.push([idAttr.value, element.children]);
-                  }
-                  this._translationDepth--;
-                  break;
-              case _PLACEHOLDER_TAG$2:
-                  var nameAttr = element.attrs.find(function (attr) { return attr.name === 'name'; });
-                  if (!nameAttr) {
-                      this._addError(element, "<" + _PLACEHOLDER_TAG$2 + "> misses the \"name\" attribute");
-                  }
-                  else {
-                      var name_1 = nameAttr.value;
-                      if (this._placeholders.hasOwnProperty(name_1)) {
-                          return this._placeholders[name_1];
+                      var id = idAttr.value;
+                      if (this._mlNodesByMsgId.hasOwnProperty(id)) {
+                          this._addError(element, "Duplicated translations for msg " + id);
                       }
-                      if (this._placeholderToIds.hasOwnProperty(name_1) &&
-                          this._translatedMessages.hasOwnProperty(this._placeholderToIds[name_1])) {
-                          return this._translatedMessages[this._placeholderToIds[name_1]];
+                      else {
+                          this._mlNodesByMsgId[id] = element.children;
                       }
-                      // TODO(vicb): better error message for when
-                      // !this._translatedMessages.hasOwnProperty(this._placeholderToIds[name])
-                      this._addError(element, "The placeholder \"" + name_1 + "\" does not exists in the source message");
                   }
                   break;
               default:
                   this._addError(element, 'Unexpected tag');
           }
       };
-      _Visitor.prototype.visitAttribute = function (attribute, context) {
-          throw new Error('unreachable code');
-      };
-      _Visitor.prototype.visitText = function (text, context) { return text.value; };
-      _Visitor.prototype.visitComment = function (comment, context) { return ''; };
-      _Visitor.prototype.visitExpansion = function (expansion, context) {
-          var _this = this;
-          var strCases = expansion.cases.map(function (c) { return c.visit(_this, null); });
-          return "{" + expansion.switchValue + ", " + expansion.type + ", strCases.join(' ')}";
-      };
-      _Visitor.prototype.visitExpansionCase = function (expansionCase, context) {
-          return expansionCase.value + " {" + visitAll(this, expansionCase.expression, null) + "}";
-      };
-      _Visitor.prototype._addError = function (node, message) {
+      XtbParser.prototype.visitAttribute = function (attribute, context) { };
+      XtbParser.prototype.visitText = function (text, context) { };
+      XtbParser.prototype.visitComment = function (comment, context) { };
+      XtbParser.prototype.visitExpansion = function (expansion, context) { };
+      XtbParser.prototype.visitExpansionCase = function (expansionCase, context) { };
+      XtbParser.prototype._addError = function (node, message) {
           this._errors.push(new I18nError(node.sourceSpan, message));
       };
-      return _Visitor;
+      return XtbParser;
+  }());
+  // Convert ml nodes (xtb syntax) to i18n nodes
+  var XmlToI18n$1 = (function () {
+      function XmlToI18n() {
+      }
+      XmlToI18n.prototype.convert = function (nodes) {
+          this._errors = [];
+          return {
+              i18nNodes: visitAll(this, nodes),
+              errors: this._errors,
+          };
+      };
+      XmlToI18n.prototype.visitText = function (text, context) { return new Text$1(text.value, text.sourceSpan); };
+      XmlToI18n.prototype.visitExpansion = function (icu, context) {
+          var caseMap = {};
+          visitAll(this, icu.cases).forEach(function (c) {
+              caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
+          });
+          return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
+      };
+      XmlToI18n.prototype.visitExpansionCase = function (icuCase, context) {
+          return {
+              value: icuCase.value,
+              nodes: visitAll(this, icuCase.expression),
+          };
+      };
+      XmlToI18n.prototype.visitElement = function (el, context) {
+          if (el.name === _PLACEHOLDER_TAG$2) {
+              var nameAttr = el.attrs.find(function (attr) { return attr.name === 'name'; });
+              if (nameAttr) {
+                  return new Placeholder('', nameAttr.value, el.sourceSpan);
+              }
+              this._addError(el, "<" + _PLACEHOLDER_TAG$2 + "> misses the \"name\" attribute");
+          }
+          else {
+              this._addError(el, "Unexpected tag");
+          }
+      };
+      XmlToI18n.prototype.visitComment = function (comment, context) { };
+      XmlToI18n.prototype.visitAttribute = function (attribute, context) { };
+      XmlToI18n.prototype._addError = function (node, message) {
+          this._errors.push(new I18nError(node.sourceSpan, message));
+      };
+      return XmlToI18n;
   }());
 
   /**
@@ -5102,20 +5211,121 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
+  var __extends$8 = (this && this.__extends) || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+      function __() { this.constructor = d; }
+      d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+  var HtmlParser = (function (_super) {
+      __extends$8(HtmlParser, _super);
+      function HtmlParser() {
+          _super.call(this, getHtmlTagDefinition);
+      }
+      HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
+          if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+          if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+          return _super.prototype.parse.call(this, source, url, parseExpansionForms, interpolationConfig);
+      };
+      HtmlParser.decorators = [
+          { type: _angular_core.Injectable },
+      ];
+      /** @nocollapse */
+      HtmlParser.ctorParameters = [];
+      return HtmlParser;
+  }(Parser$1));
+
   /**
    * A container for translated messages
    */
   var TranslationBundle = (function () {
-      function TranslationBundle(_messageMap) {
-          if (_messageMap === void 0) { _messageMap = {}; }
-          this._messageMap = _messageMap;
+      function TranslationBundle(_i18nNodesByMsgId, digest) {
+          if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
+          this._i18nNodesByMsgId = _i18nNodesByMsgId;
+          this.digest = digest;
+          this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest);
       }
-      TranslationBundle.load = function (content, url, messageBundle, serializer) {
-          return new TranslationBundle(serializer.load(content, url, messageBundle));
+      TranslationBundle.load = function (content, url, serializer) {
+          var i18nNodesByMsgId = serializer.load(content, url);
+          var digestFn = function (m) { return serializer.digest(m); };
+          return new TranslationBundle(i18nNodesByMsgId, digestFn);
       };
-      TranslationBundle.prototype.get = function (id) { return this._messageMap[id]; };
-      TranslationBundle.prototype.has = function (id) { return id in this._messageMap; };
+      TranslationBundle.prototype.get = function (srcMsg) {
+          var html = this._i18nToHtml.convert(srcMsg);
+          if (html.errors.length) {
+              throw new Error(html.errors.join('\n'));
+          }
+          return html.nodes;
+      };
+      TranslationBundle.prototype.has = function (srcMsg) { return this.digest(srcMsg) in this._i18nNodesByMsgId; };
       return TranslationBundle;
+  }());
+  var I18nToHtmlVisitor = (function () {
+      function I18nToHtmlVisitor(_i18nNodesByMsgId, _digest) {
+          if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
+          this._i18nNodesByMsgId = _i18nNodesByMsgId;
+          this._digest = _digest;
+          this._srcMsgStack = [];
+          this._errors = [];
+      }
+      I18nToHtmlVisitor.prototype.convert = function (srcMsg) {
+          this._srcMsgStack.length = 0;
+          this._errors.length = 0;
+          // i18n to text
+          var text = this._convertToText(srcMsg);
+          // text to html
+          var url = srcMsg.nodes[0].sourceSpan.start.file.url;
+          var html = new HtmlParser().parse(text, url, true);
+          return {
+              nodes: html.rootNodes,
+              errors: this._errors.concat(html.errors),
+          };
+      };
+      I18nToHtmlVisitor.prototype.visitText = function (text, context) { return text.value; };
+      I18nToHtmlVisitor.prototype.visitContainer = function (container, context) {
+          var _this = this;
+          return container.children.map(function (n) { return n.visit(_this); }).join('');
+      };
+      I18nToHtmlVisitor.prototype.visitIcu = function (icu, context) {
+          var _this = this;
+          var cases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
+          // TODO(vicb): Once all format switch to using expression placeholders
+          // we should throw when the placeholder is not in the source message
+          var exp = this._srcMsg.placeholders.hasOwnProperty(icu.expression) ?
+              this._srcMsg.placeholders[icu.expression] :
+              icu.expression;
+          return "{" + exp + ", " + icu.type + ", " + cases.join(' ') + "}";
+      };
+      I18nToHtmlVisitor.prototype.visitPlaceholder = function (ph, context) {
+          var phName = ph.name;
+          if (this._srcMsg.placeholders.hasOwnProperty(phName)) {
+              return this._srcMsg.placeholders[phName];
+          }
+          if (this._srcMsg.placeholderToMessage.hasOwnProperty(phName)) {
+              return this._convertToText(this._srcMsg.placeholderToMessage[phName]);
+          }
+          this._addError(ph, "Unknown placeholder");
+          return '';
+      };
+      I18nToHtmlVisitor.prototype.visitTagPlaceholder = function (ph, context) { throw 'unreachable code'; };
+      I18nToHtmlVisitor.prototype.visitIcuPlaceholder = function (ph, context) { throw 'unreachable code'; };
+      I18nToHtmlVisitor.prototype._convertToText = function (srcMsg) {
+          var _this = this;
+          var digest = this._digest(srcMsg);
+          if (this._i18nNodesByMsgId.hasOwnProperty(digest)) {
+              this._srcMsgStack.push(this._srcMsg);
+              this._srcMsg = srcMsg;
+              var nodes = this._i18nNodesByMsgId[digest];
+              var text = nodes.map(function (node) { return node.visit(_this); }).join('');
+              this._srcMsg = this._srcMsgStack.pop();
+              return text;
+          }
+          this._addError(srcMsg.nodes[0], "Missing translation for message " + digest);
+          return '';
+      };
+      I18nToHtmlVisitor.prototype._addError = function (el, msg) {
+          this._errors.push(new I18nError(el.sourceSpan, msg));
+      };
+      return I18nToHtmlVisitor;
   }());
 
   var I18NHtmlParser = (function () {
@@ -5136,26 +5346,24 @@
               return parseResult;
           }
           // TODO(vicb): add support for implicit tags / attributes
-          var messageBundle = new MessageBundle(this._htmlParser, [], {});
-          var errors = messageBundle.updateFromTemplate(source, url, interpolationConfig);
-          if (errors && errors.length) {
-              return new ParseTreeResult(parseResult.rootNodes, parseResult.errors.concat(errors));
+          if (parseResult.errors.length) {
+              return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
           }
-          var serializer = this._createSerializer(interpolationConfig);
-          var translationBundle = TranslationBundle.load(this._translations, url, messageBundle, serializer);
+          var serializer = this._createSerializer();
+          var translationBundle = TranslationBundle.load(this._translations, url, serializer);
           return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
       };
-      I18NHtmlParser.prototype._createSerializer = function (interpolationConfig) {
+      I18NHtmlParser.prototype._createSerializer = function () {
           var format = (this._translationsFormat || 'xlf').toLowerCase();
           switch (format) {
               case 'xmb':
                   return new Xmb();
               case 'xtb':
-                  return new Xtb(this._htmlParser, interpolationConfig);
+                  return new Xtb();
               case 'xliff':
               case 'xlf':
               default:
-                  return new Xliff(this._htmlParser, interpolationConfig);
+                  return new Xliff();
           }
       };
       return I18NHtmlParser;
@@ -5596,7 +5804,7 @@
       if (isStrictStringMap(value)) {
           return visitor.visitStringMap(value, context);
       }
-      if (isBlank(value) || isPrimitive(value)) {
+      if (value == null || isPrimitive(value)) {
           return visitor.visitPrimitive(value, context);
       }
       return visitor.visitOther(value, context);
@@ -5637,7 +5845,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$7 = (this && this.__extends) || function (d, b) {
+  var __extends$9 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -5675,7 +5883,7 @@
       return CompileAnimationStateMetadata;
   }());
   var CompileAnimationStateDeclarationMetadata = (function (_super) {
-      __extends$7(CompileAnimationStateDeclarationMetadata, _super);
+      __extends$9(CompileAnimationStateDeclarationMetadata, _super);
       function CompileAnimationStateDeclarationMetadata(stateNameExpr, styles) {
           _super.call(this);
           this.stateNameExpr = stateNameExpr;
@@ -5684,7 +5892,7 @@
       return CompileAnimationStateDeclarationMetadata;
   }(CompileAnimationStateMetadata));
   var CompileAnimationStateTransitionMetadata = (function (_super) {
-      __extends$7(CompileAnimationStateTransitionMetadata, _super);
+      __extends$9(CompileAnimationStateTransitionMetadata, _super);
       function CompileAnimationStateTransitionMetadata(stateChangeExpr, steps) {
           _super.call(this);
           this.stateChangeExpr = stateChangeExpr;
@@ -5698,7 +5906,7 @@
       return CompileAnimationMetadata;
   }());
   var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
-      __extends$7(CompileAnimationKeyframesSequenceMetadata, _super);
+      __extends$9(CompileAnimationKeyframesSequenceMetadata, _super);
       function CompileAnimationKeyframesSequenceMetadata(steps) {
           if (steps === void 0) { steps = []; }
           _super.call(this);
@@ -5707,7 +5915,7 @@
       return CompileAnimationKeyframesSequenceMetadata;
   }(CompileAnimationMetadata));
   var CompileAnimationStyleMetadata = (function (_super) {
-      __extends$7(CompileAnimationStyleMetadata, _super);
+      __extends$9(CompileAnimationStyleMetadata, _super);
       function CompileAnimationStyleMetadata(offset, styles) {
           if (styles === void 0) { styles = null; }
           _super.call(this);
@@ -5717,7 +5925,7 @@
       return CompileAnimationStyleMetadata;
   }(CompileAnimationMetadata));
   var CompileAnimationAnimateMetadata = (function (_super) {
-      __extends$7(CompileAnimationAnimateMetadata, _super);
+      __extends$9(CompileAnimationAnimateMetadata, _super);
       function CompileAnimationAnimateMetadata(timings, styles) {
           if (timings === void 0) { timings = 0; }
           if (styles === void 0) { styles = null; }
@@ -5728,7 +5936,7 @@
       return CompileAnimationAnimateMetadata;
   }(CompileAnimationMetadata));
   var CompileAnimationWithStepsMetadata = (function (_super) {
-      __extends$7(CompileAnimationWithStepsMetadata, _super);
+      __extends$9(CompileAnimationWithStepsMetadata, _super);
       function CompileAnimationWithStepsMetadata(steps) {
           if (steps === void 0) { steps = null; }
           _super.call(this);
@@ -5737,7 +5945,7 @@
       return CompileAnimationWithStepsMetadata;
   }(CompileAnimationMetadata));
   var CompileAnimationSequenceMetadata = (function (_super) {
-      __extends$7(CompileAnimationSequenceMetadata, _super);
+      __extends$9(CompileAnimationSequenceMetadata, _super);
       function CompileAnimationSequenceMetadata(steps) {
           if (steps === void 0) { steps = null; }
           _super.call(this, steps);
@@ -5745,7 +5953,7 @@
       return CompileAnimationSequenceMetadata;
   }(CompileAnimationWithStepsMetadata));
   var CompileAnimationGroupMetadata = (function (_super) {
-      __extends$7(CompileAnimationGroupMetadata, _super);
+      __extends$9(CompileAnimationGroupMetadata, _super);
       function CompileAnimationGroupMetadata(steps) {
           if (steps === void 0) { steps = null; }
           _super.call(this, steps);
@@ -5796,7 +6004,7 @@
       return CompileProviderMetadata;
   }());
   var CompileFactoryMetadata = (function (_super) {
-      __extends$7(CompileFactoryMetadata, _super);
+      __extends$9(CompileFactoryMetadata, _super);
       function CompileFactoryMetadata(_a) {
           var reference = _a.reference, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
           _super.call(this, { reference: reference, name: name, prefix: prefix, moduleUrl: moduleUrl, value: value });
@@ -5836,7 +6044,7 @@
    * Metadata regarding compilation of a type.
    */
   var CompileTypeMetadata = (function (_super) {
-      __extends$7(CompileTypeMetadata, _super);
+      __extends$9(CompileTypeMetadata, _super);
       function CompileTypeMetadata(_a) {
           var _b = _a === void 0 ? {} : _a, reference = _b.reference, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
           _super.call(this, { reference: reference, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
@@ -6545,37 +6753,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$8 = (this && this.__extends) || function (d, b) {
-      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-      function __() { this.constructor = d; }
-      d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-  var HtmlParser = (function (_super) {
-      __extends$8(HtmlParser, _super);
-      function HtmlParser() {
-          _super.call(this, getHtmlTagDefinition);
-      }
-      HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
-          if (parseExpansionForms === void 0) { parseExpansionForms = false; }
-          if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-          return _super.prototype.parse.call(this, source, url, parseExpansionForms, interpolationConfig);
-      };
-      HtmlParser.decorators = [
-          { type: _angular_core.Injectable },
-      ];
-      /** @nocollapse */
-      HtmlParser.ctorParameters = [];
-      return HtmlParser;
-  }(Parser$1));
-
-  /**
-   * @license
-   * Copyright Google Inc. All Rights Reserved.
-   *
-   * Use of this source code is governed by an MIT-style license that can be
-   * found in the LICENSE file at https://angular.io/license
-   */
-  var __extends$9 = (this && this.__extends) || function (d, b) {
+  var __extends$10 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -6618,7 +6796,7 @@
       return ExpansionResult;
   }());
   var ExpansionError = (function (_super) {
-      __extends$9(ExpansionError, _super);
+      __extends$10(ExpansionError, _super);
       function ExpansionError(span, errorMsg) {
           _super.call(this, span, errorMsg);
       }
@@ -6683,13 +6861,13 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$10 = (this && this.__extends) || function (d, b) {
+  var __extends$11 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var ProviderError = (function (_super) {
-      __extends$10(ProviderError, _super);
+      __extends$11(ProviderError, _super);
       function ProviderError(message, span) {
           _super.call(this, span, message);
       }
@@ -7203,7 +7381,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$11 = (this && this.__extends) || function (d, b) {
+  var __extends$12 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -7544,7 +7722,7 @@
       return BindingParser;
   }());
   var PipeCollector = (function (_super) {
-      __extends$11(PipeCollector, _super);
+      __extends$12(PipeCollector, _super);
       function PipeCollector() {
           _super.apply(this, arguments);
           this.pipes = new Set();
@@ -8410,7 +8588,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$12 = (this && this.__extends) || function (d, b) {
+  var __extends$13 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -8442,7 +8620,7 @@
       BuiltinTypeName[BuiltinTypeName["Null"] = 6] = "Null";
   })(BuiltinTypeName || (BuiltinTypeName = {}));
   var BuiltinType = (function (_super) {
-      __extends$12(BuiltinType, _super);
+      __extends$13(BuiltinType, _super);
       function BuiltinType(name, modifiers) {
           if (modifiers === void 0) { modifiers = null; }
           _super.call(this, modifiers);
@@ -8454,7 +8632,7 @@
       return BuiltinType;
   }(Type$1));
   var ExternalType = (function (_super) {
-      __extends$12(ExternalType, _super);
+      __extends$13(ExternalType, _super);
       function ExternalType(value, typeParams, modifiers) {
           if (typeParams === void 0) { typeParams = null; }
           if (modifiers === void 0) { modifiers = null; }
@@ -8468,7 +8646,7 @@
       return ExternalType;
   }(Type$1));
   var ArrayType = (function (_super) {
-      __extends$12(ArrayType, _super);
+      __extends$13(ArrayType, _super);
       function ArrayType(of, modifiers) {
           if (modifiers === void 0) { modifiers = null; }
           _super.call(this, modifiers);
@@ -8480,7 +8658,7 @@
       return ArrayType;
   }(Type$1));
   var MapType = (function (_super) {
-      __extends$12(MapType, _super);
+      __extends$13(MapType, _super);
       function MapType(valueType, modifiers) {
           if (modifiers === void 0) { modifiers = null; }
           _super.call(this, modifiers);
@@ -8598,7 +8776,7 @@
       BuiltinVar[BuiltinVar["CatchStack"] = 3] = "CatchStack";
   })(BuiltinVar || (BuiltinVar = {}));
   var ReadVarExpr = (function (_super) {
-      __extends$12(ReadVarExpr, _super);
+      __extends$13(ReadVarExpr, _super);
       function ReadVarExpr(name, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8618,7 +8796,7 @@
       return ReadVarExpr;
   }(Expression));
   var WriteVarExpr = (function (_super) {
-      __extends$12(WriteVarExpr, _super);
+      __extends$13(WriteVarExpr, _super);
       function WriteVarExpr(name, value, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type || value.type);
@@ -8636,7 +8814,7 @@
       return WriteVarExpr;
   }(Expression));
   var WriteKeyExpr = (function (_super) {
-      __extends$12(WriteKeyExpr, _super);
+      __extends$13(WriteKeyExpr, _super);
       function WriteKeyExpr(receiver, index, value, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type || value.type);
@@ -8650,7 +8828,7 @@
       return WriteKeyExpr;
   }(Expression));
   var WritePropExpr = (function (_super) {
-      __extends$12(WritePropExpr, _super);
+      __extends$13(WritePropExpr, _super);
       function WritePropExpr(receiver, name, value, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type || value.type);
@@ -8670,7 +8848,7 @@
       BuiltinMethod[BuiltinMethod["Bind"] = 2] = "Bind";
   })(BuiltinMethod || (BuiltinMethod = {}));
   var InvokeMethodExpr = (function (_super) {
-      __extends$12(InvokeMethodExpr, _super);
+      __extends$13(InvokeMethodExpr, _super);
       function InvokeMethodExpr(receiver, method, args, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8691,7 +8869,7 @@
       return InvokeMethodExpr;
   }(Expression));
   var InvokeFunctionExpr = (function (_super) {
-      __extends$12(InvokeFunctionExpr, _super);
+      __extends$13(InvokeFunctionExpr, _super);
       function InvokeFunctionExpr(fn, args, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8704,7 +8882,7 @@
       return InvokeFunctionExpr;
   }(Expression));
   var InstantiateExpr = (function (_super) {
-      __extends$12(InstantiateExpr, _super);
+      __extends$13(InstantiateExpr, _super);
       function InstantiateExpr(classExpr, args, type) {
           _super.call(this, type);
           this.classExpr = classExpr;
@@ -8716,7 +8894,7 @@
       return InstantiateExpr;
   }(Expression));
   var LiteralExpr = (function (_super) {
-      __extends$12(LiteralExpr, _super);
+      __extends$13(LiteralExpr, _super);
       function LiteralExpr(value, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8728,7 +8906,7 @@
       return LiteralExpr;
   }(Expression));
   var ExternalExpr = (function (_super) {
-      __extends$12(ExternalExpr, _super);
+      __extends$13(ExternalExpr, _super);
       function ExternalExpr(value, type, typeParams) {
           if (type === void 0) { type = null; }
           if (typeParams === void 0) { typeParams = null; }
@@ -8742,7 +8920,7 @@
       return ExternalExpr;
   }(Expression));
   var ConditionalExpr = (function (_super) {
-      __extends$12(ConditionalExpr, _super);
+      __extends$13(ConditionalExpr, _super);
       function ConditionalExpr(condition, trueCase, falseCase, type) {
           if (falseCase === void 0) { falseCase = null; }
           if (type === void 0) { type = null; }
@@ -8757,7 +8935,7 @@
       return ConditionalExpr;
   }(Expression));
   var NotExpr = (function (_super) {
-      __extends$12(NotExpr, _super);
+      __extends$13(NotExpr, _super);
       function NotExpr(condition) {
           _super.call(this, BOOL_TYPE);
           this.condition = condition;
@@ -8768,7 +8946,7 @@
       return NotExpr;
   }(Expression));
   var CastExpr = (function (_super) {
-      __extends$12(CastExpr, _super);
+      __extends$13(CastExpr, _super);
       function CastExpr(value, type) {
           _super.call(this, type);
           this.value = value;
@@ -8787,7 +8965,7 @@
       return FnParam;
   }());
   var FunctionExpr = (function (_super) {
-      __extends$12(FunctionExpr, _super);
+      __extends$13(FunctionExpr, _super);
       function FunctionExpr(params, statements, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8804,7 +8982,7 @@
       return FunctionExpr;
   }(Expression));
   var BinaryOperatorExpr = (function (_super) {
-      __extends$12(BinaryOperatorExpr, _super);
+      __extends$13(BinaryOperatorExpr, _super);
       function BinaryOperatorExpr(operator, lhs, rhs, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type || lhs.type);
@@ -8818,7 +8996,7 @@
       return BinaryOperatorExpr;
   }(Expression));
   var ReadPropExpr = (function (_super) {
-      __extends$12(ReadPropExpr, _super);
+      __extends$13(ReadPropExpr, _super);
       function ReadPropExpr(receiver, name, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8834,7 +9012,7 @@
       return ReadPropExpr;
   }(Expression));
   var ReadKeyExpr = (function (_super) {
-      __extends$12(ReadKeyExpr, _super);
+      __extends$13(ReadKeyExpr, _super);
       function ReadKeyExpr(receiver, index, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8850,7 +9028,7 @@
       return ReadKeyExpr;
   }(Expression));
   var LiteralArrayExpr = (function (_super) {
-      __extends$12(LiteralArrayExpr, _super);
+      __extends$13(LiteralArrayExpr, _super);
       function LiteralArrayExpr(entries, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8862,7 +9040,7 @@
       return LiteralArrayExpr;
   }(Expression));
   var LiteralMapExpr = (function (_super) {
-      __extends$12(LiteralMapExpr, _super);
+      __extends$13(LiteralMapExpr, _super);
       function LiteralMapExpr(entries, type) {
           if (type === void 0) { type = null; }
           _super.call(this, type);
@@ -8901,7 +9079,7 @@
       return Statement;
   }());
   var DeclareVarStmt = (function (_super) {
-      __extends$12(DeclareVarStmt, _super);
+      __extends$13(DeclareVarStmt, _super);
       function DeclareVarStmt(name, value, type, modifiers) {
           if (type === void 0) { type = null; }
           if (modifiers === void 0) { modifiers = null; }
@@ -8916,7 +9094,7 @@
       return DeclareVarStmt;
   }(Statement));
   var DeclareFunctionStmt = (function (_super) {
-      __extends$12(DeclareFunctionStmt, _super);
+      __extends$13(DeclareFunctionStmt, _super);
       function DeclareFunctionStmt(name, params, statements, type, modifiers) {
           if (type === void 0) { type = null; }
           if (modifiers === void 0) { modifiers = null; }
@@ -8932,7 +9110,7 @@
       return DeclareFunctionStmt;
   }(Statement));
   var ExpressionStatement = (function (_super) {
-      __extends$12(ExpressionStatement, _super);
+      __extends$13(ExpressionStatement, _super);
       function ExpressionStatement(expr) {
           _super.call(this);
           this.expr = expr;
@@ -8943,7 +9121,7 @@
       return ExpressionStatement;
   }(Statement));
   var ReturnStatement = (function (_super) {
-      __extends$12(ReturnStatement, _super);
+      __extends$13(ReturnStatement, _super);
       function ReturnStatement(value) {
           _super.call(this);
           this.value = value;
@@ -8966,7 +9144,7 @@
       return AbstractClassPart;
   }());
   var ClassField = (function (_super) {
-      __extends$12(ClassField, _super);
+      __extends$13(ClassField, _super);
       function ClassField(name, type, modifiers) {
           if (type === void 0) { type = null; }
           if (modifiers === void 0) { modifiers = null; }
@@ -8976,7 +9154,7 @@
       return ClassField;
   }(AbstractClassPart));
   var ClassMethod = (function (_super) {
-      __extends$12(ClassMethod, _super);
+      __extends$13(ClassMethod, _super);
       function ClassMethod(name, params, body, type, modifiers) {
           if (type === void 0) { type = null; }
           if (modifiers === void 0) { modifiers = null; }
@@ -8988,7 +9166,7 @@
       return ClassMethod;
   }(AbstractClassPart));
   var ClassGetter = (function (_super) {
-      __extends$12(ClassGetter, _super);
+      __extends$13(ClassGetter, _super);
       function ClassGetter(name, body, type, modifiers) {
           if (type === void 0) { type = null; }
           if (modifiers === void 0) { modifiers = null; }
@@ -8999,7 +9177,7 @@
       return ClassGetter;
   }(AbstractClassPart));
   var ClassStmt = (function (_super) {
-      __extends$12(ClassStmt, _super);
+      __extends$13(ClassStmt, _super);
       function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers) {
           if (modifiers === void 0) { modifiers = null; }
           _super.call(this, modifiers);
@@ -9016,7 +9194,7 @@
       return ClassStmt;
   }(Statement));
   var IfStmt = (function (_super) {
-      __extends$12(IfStmt, _super);
+      __extends$13(IfStmt, _super);
       function IfStmt(condition, trueCase, falseCase) {
           if (falseCase === void 0) { falseCase = []; }
           _super.call(this);
@@ -9030,7 +9208,7 @@
       return IfStmt;
   }(Statement));
   var CommentStmt = (function (_super) {
-      __extends$12(CommentStmt, _super);
+      __extends$13(CommentStmt, _super);
       function CommentStmt(comment) {
           _super.call(this);
           this.comment = comment;
@@ -9041,7 +9219,7 @@
       return CommentStmt;
   }(Statement));
   var TryCatchStmt = (function (_super) {
-      __extends$12(TryCatchStmt, _super);
+      __extends$13(TryCatchStmt, _super);
       function TryCatchStmt(bodyStmts, catchStmts) {
           _super.call(this);
           this.bodyStmts = bodyStmts;
@@ -9053,7 +9231,7 @@
       return TryCatchStmt;
   }(Statement));
   var ThrowStmt = (function (_super) {
-      __extends$12(ThrowStmt, _super);
+      __extends$13(ThrowStmt, _super);
       function ThrowStmt(error) {
           _super.call(this);
           this.error = error;
@@ -9280,7 +9458,7 @@
       return expression.visitExpression(transformer, null);
   }
   var _ReplaceVariableTransformer = (function (_super) {
-      __extends$12(_ReplaceVariableTransformer, _super);
+      __extends$13(_ReplaceVariableTransformer, _super);
       function _ReplaceVariableTransformer(_varName, _newValue) {
           _super.call(this);
           this._varName = _varName;
@@ -9297,7 +9475,7 @@
       return finder.varNames;
   }
   var _VariableFinder = (function (_super) {
-      __extends$12(_VariableFinder, _super);
+      __extends$13(_VariableFinder, _super);
       function _VariableFinder() {
           _super.apply(this, arguments);
           this.varNames = new Set();
@@ -9348,7 +9526,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$13 = (this && this.__extends) || function (d, b) {
+  var __extends$14 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -9361,14 +9539,14 @@
       return AnimationAst;
   }());
   var AnimationStateAst = (function (_super) {
-      __extends$13(AnimationStateAst, _super);
+      __extends$14(AnimationStateAst, _super);
       function AnimationStateAst() {
           _super.apply(this, arguments);
       }
       return AnimationStateAst;
   }(AnimationAst));
   var AnimationEntryAst = (function (_super) {
-      __extends$13(AnimationEntryAst, _super);
+      __extends$14(AnimationEntryAst, _super);
       function AnimationEntryAst(name, stateDeclarations, stateTransitions) {
           _super.call(this);
           this.name = name;
@@ -9381,7 +9559,7 @@
       return AnimationEntryAst;
   }(AnimationAst));
   var AnimationStateDeclarationAst = (function (_super) {
-      __extends$13(AnimationStateDeclarationAst, _super);
+      __extends$14(AnimationStateDeclarationAst, _super);
       function AnimationStateDeclarationAst(stateName, styles) {
           _super.call(this);
           this.stateName = stateName;
@@ -9400,7 +9578,7 @@
       return AnimationStateTransitionExpression;
   }());
   var AnimationStateTransitionAst = (function (_super) {
-      __extends$13(AnimationStateTransitionAst, _super);
+      __extends$14(AnimationStateTransitionAst, _super);
       function AnimationStateTransitionAst(stateChanges, animation) {
           _super.call(this);
           this.stateChanges = stateChanges;
@@ -9412,7 +9590,7 @@
       return AnimationStateTransitionAst;
   }(AnimationStateAst));
   var AnimationStepAst = (function (_super) {
-      __extends$13(AnimationStepAst, _super);
+      __extends$14(AnimationStepAst, _super);
       function AnimationStepAst(startingStyles, keyframes, duration, delay, easing) {
           _super.call(this);
           this.startingStyles = startingStyles;
@@ -9427,7 +9605,7 @@
       return AnimationStepAst;
   }(AnimationAst));
   var AnimationStylesAst = (function (_super) {
-      __extends$13(AnimationStylesAst, _super);
+      __extends$14(AnimationStylesAst, _super);
       function AnimationStylesAst(styles) {
           _super.call(this);
           this.styles = styles;
@@ -9438,7 +9616,7 @@
       return AnimationStylesAst;
   }(AnimationAst));
   var AnimationKeyframeAst = (function (_super) {
-      __extends$13(AnimationKeyframeAst, _super);
+      __extends$14(AnimationKeyframeAst, _super);
       function AnimationKeyframeAst(offset, styles) {
           _super.call(this);
           this.offset = offset;
@@ -9450,7 +9628,7 @@
       return AnimationKeyframeAst;
   }(AnimationAst));
   var AnimationWithStepsAst = (function (_super) {
-      __extends$13(AnimationWithStepsAst, _super);
+      __extends$14(AnimationWithStepsAst, _super);
       function AnimationWithStepsAst(steps) {
           _super.call(this);
           this.steps = steps;
@@ -9458,7 +9636,7 @@
       return AnimationWithStepsAst;
   }(AnimationAst));
   var AnimationGroupAst = (function (_super) {
-      __extends$13(AnimationGroupAst, _super);
+      __extends$14(AnimationGroupAst, _super);
       function AnimationGroupAst(steps) {
           _super.call(this, steps);
       }
@@ -9468,7 +9646,7 @@
       return AnimationGroupAst;
   }(AnimationWithStepsAst));
   var AnimationSequenceAst = (function (_super) {
-      __extends$13(AnimationSequenceAst, _super);
+      __extends$14(AnimationSequenceAst, _super);
       function AnimationSequenceAst(steps) {
           _super.call(this, steps);
       }
@@ -10980,7 +11158,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$15 = (this && this.__extends) || function (d, b) {
+  var __extends$16 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -11003,7 +11181,7 @@
       }
   }
   var _ReplaceViewTransformer = (function (_super) {
-      __extends$15(_ReplaceViewTransformer, _super);
+      __extends$16(_ReplaceViewTransformer, _super);
       function _ReplaceViewTransformer(_viewExpr, _view) {
           _super.call(this);
           this._viewExpr = _viewExpr;
@@ -11245,7 +11423,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$14 = (this && this.__extends) || function (d, b) {
+  var __extends$15 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -11263,7 +11441,7 @@
       return CompileNode;
   }());
   var CompileElement = (function (_super) {
-      __extends$14(CompileElement, _super);
+      __extends$15(CompileElement, _super);
       function CompileElement(parent, view, nodeIndex, renderNode, sourceAst, component, _directives, _resolvedProvidersArray, hasViewContainer, hasEmbeddedView, references, _targetDependencies) {
           var _this = this;
           _super.call(this, parent, view, nodeIndex, renderNode, sourceAst);
@@ -13022,7 +13200,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$16 = (this && this.__extends) || function (d, b) {
+  var __extends$17 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -13031,7 +13209,7 @@
   var _TERMINAL_KEYFRAME = 1;
   var _ONE_SECOND = 1000;
   var AnimationParseError = (function (_super) {
-      __extends$16(AnimationParseError, _super);
+      __extends$17(AnimationParseError, _super);
       function AnimationParseError(message) {
           _super.call(this, null, message);
       }
@@ -14332,7 +14510,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$17 = (this && this.__extends) || function (d, b) {
+  var __extends$18 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -15164,7 +15342,7 @@
       return visitValue(value, new _CompileValueConverter(), targetIdentifiers);
   }
   var _CompileValueConverter = (function (_super) {
-      __extends$17(_CompileValueConverter, _super);
+      __extends$18(_CompileValueConverter, _super);
       function _CompileValueConverter() {
           _super.apply(this, arguments);
       }
@@ -15796,7 +15974,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$18 = (this && this.__extends) || function (d, b) {
+  var __extends$19 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -15843,7 +16021,7 @@
       return TypeScriptEmitter;
   }());
   var _TsEmitterVisitor = (function (_super) {
-      __extends$18(_TsEmitterVisitor, _super);
+      __extends$19(_TsEmitterVisitor, _super);
       function _TsEmitterVisitor(_moduleUrl) {
           _super.call(this, false);
           this._moduleUrl = _moduleUrl;
@@ -16455,13 +16633,13 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$20 = (this && this.__extends) || function (d, b) {
+  var __extends$21 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var AbstractJsEmitterVisitor = (function (_super) {
-      __extends$20(AbstractJsEmitterVisitor, _super);
+      __extends$21(AbstractJsEmitterVisitor, _super);
       function AbstractJsEmitterVisitor() {
           _super.call(this, false);
       }
@@ -16620,7 +16798,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$19 = (this && this.__extends) || function (d, b) {
+  var __extends$20 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -16642,7 +16820,7 @@
       return evalExpression(sourceUrl, resultVar, ctx.toSource(), converter.getArgs());
   }
   var JitEmitterVisitor = (function (_super) {
-      __extends$19(JitEmitterVisitor, _super);
+      __extends$20(JitEmitterVisitor, _super);
       function JitEmitterVisitor() {
           _super.apply(this, arguments);
           this._evalArgNames = [];
@@ -17707,6 +17885,33 @@
       return ModuleBoundCompiler;
   }());
 
+  /**
+   * A container for message extracted from the templates.
+   */
+  var MessageBundle = (function () {
+      function MessageBundle(_htmlParser, _implicitTags, _implicitAttrs) {
+          this._htmlParser = _htmlParser;
+          this._implicitTags = _implicitTags;
+          this._implicitAttrs = _implicitAttrs;
+          this._messages = [];
+      }
+      MessageBundle.prototype.updateFromTemplate = function (html, url, interpolationConfig) {
+          var htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
+          if (htmlParserResult.errors.length) {
+              return htmlParserResult.errors;
+          }
+          var i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
+          if (i18nParserResult.errors.length) {
+              return i18nParserResult.errors;
+          }
+          (_a = this._messages).push.apply(_a, i18nParserResult.messages);
+          var _a;
+      };
+      MessageBundle.prototype.getMessages = function () { return this._messages; };
+      MessageBundle.prototype.write = function (serializer) { return serializer.write(this._messages); };
+      return MessageBundle;
+  }());
+
   // =================================================================================================
   // =================================================================================================
   // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -17762,7 +17967,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$21 = (this && this.__extends) || function (d, b) {
+  var __extends$22 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -17986,7 +18191,7 @@
       'tabindex': 'tabIndex',
   };
   var DomElementSchemaRegistry = (function (_super) {
-      __extends$21(DomElementSchemaRegistry, _super);
+      __extends$22(DomElementSchemaRegistry, _super);
       function DomElementSchemaRegistry() {
           var _this = this;
           _super.call(this);

@@ -7,8 +7,9 @@
  */
 import * as ml from '../../ml_parser/ast';
 import { XmlParser } from '../../ml_parser/xml_parser';
+import { digest } from '../digest';
+import * as i18n from '../i18n_ast';
 import { I18nError } from '../parse_util';
-import { extractPlaceholderToIds, extractPlaceholders } from './serializer';
 import * as xml from './xml_helper';
 var _VERSION = '1.2';
 var _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
@@ -21,15 +22,19 @@ var _UNIT_TAG = 'trans-unit';
 // http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
 // http://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2.html
 export var Xliff = (function () {
-    function Xliff(_htmlParser, _interpolationConfig) {
-        this._htmlParser = _htmlParser;
-        this._interpolationConfig = _interpolationConfig;
+    function Xliff() {
     }
-    Xliff.prototype.write = function (messageMap) {
+    Xliff.prototype.write = function (messages) {
+        var _this = this;
         var visitor = new _WriteVisitor();
+        var visited = {};
         var transUnits = [];
-        Object.keys(messageMap).forEach(function (id) {
-            var message = messageMap[id];
+        messages.forEach(function (message) {
+            var id = _this.digest(message);
+            // deduplicate messages
+            if (visited[id])
+                return;
+            visited[id] = true;
             var transUnit = new xml.Tag(_UNIT_TAG, { id: id, datatype: 'html' });
             transUnit.children.push(new xml.CR(8), new xml.Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new xml.CR(8), new xml.Tag(_TARGET_TAG));
             if (message.description) {
@@ -48,32 +53,24 @@ export var Xliff = (function () {
             new xml.Declaration({ version: '1.0', encoding: 'UTF-8' }), new xml.CR(), xliff, new xml.CR()
         ]);
     };
-    Xliff.prototype.load = function (content, url, messageBundle) {
-        var _this = this;
-        // Parse the xtb file into xml nodes
-        var result = new XmlParser().parse(content, url);
-        if (result.errors.length) {
-            throw new Error("xtb parse errors:\n" + result.errors.join('\n'));
-        }
-        // Replace the placeholders, messages are now string
-        var _a = new _LoadVisitor().parse(result.rootNodes, messageBundle), messages = _a.messages, errors = _a.errors;
-        if (errors.length) {
-            throw new Error("xtb parse errors:\n" + errors.join('\n'));
-        }
-        // Convert the string messages to html ast
-        // TODO(vicb): map error message back to the original message in xtb
-        var messageMap = {};
-        var parseErrors = [];
-        Object.keys(messages).forEach(function (id) {
-            var res = _this._htmlParser.parse(messages[id], url, true, _this._interpolationConfig);
-            parseErrors.push.apply(parseErrors, res.errors);
-            messageMap[id] = res.rootNodes;
+    Xliff.prototype.load = function (content, url) {
+        // xliff to xml nodes
+        var xliffParser = new XliffParser();
+        var _a = xliffParser.parse(content, url), mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
+        // xml nodes to i18n nodes
+        var i18nNodesByMsgId = {};
+        var converter = new XmlToI18n();
+        Object.keys(mlNodesByMsgId).forEach(function (msgId) {
+            var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, e = _a.errors;
+            errors.push.apply(errors, e);
+            i18nNodesByMsgId[msgId] = i18nNodes;
         });
-        if (parseErrors.length) {
-            throw new Error("xtb parse errors:\n" + parseErrors.join('\n'));
+        if (errors.length) {
+            throw new Error("xliff parse errors:\n" + errors.join('\n'));
         }
-        return messageMap;
+        return i18nNodesByMsgId;
     };
+    Xliff.prototype.digest = function (message) { return digest(message); };
     return Xliff;
 }());
 var _WriteVisitor = (function () {
@@ -124,109 +121,99 @@ var _WriteVisitor = (function () {
     return _WriteVisitor;
 }());
 // TODO(vicb): add error management (structure)
-// TODO(vicb): factorize (xtb) ?
-var _LoadVisitor = (function () {
-    function _LoadVisitor() {
+// Extract messages as xml nodes from the xliff file
+var XliffParser = (function () {
+    function XliffParser() {
     }
-    _LoadVisitor.prototype.parse = function (nodes, messageBundle) {
-        var _this = this;
-        this._messageNodes = [];
-        this._translatedMessages = {};
-        this._msgId = '';
-        this._target = [];
-        this._errors = [];
-        // Find all messages
-        ml.visitAll(this, nodes, null);
-        var messageMap = messageBundle.getMessageMap();
-        var placeholders = extractPlaceholders(messageBundle);
-        var placeholderToIds = extractPlaceholderToIds(messageBundle);
-        this._messageNodes
-            .filter(function (message) {
-            // Remove any messages that is not present in the source message bundle.
-            return messageMap.hasOwnProperty(message[0]);
-        })
-            .sort(function (a, b) {
-            // Because there could be no ICU placeholders inside an ICU message,
-            // we do not need to take into account the `placeholderToMsgIds` of the referenced
-            // messages, those would always be empty
-            // TODO(vicb): overkill - create 2 buckets and [...woDeps, ...wDeps].process()
-            if (Object.keys(messageMap[a[0]].placeholderToMsgIds).length == 0) {
-                return -1;
-            }
-            if (Object.keys(messageMap[b[0]].placeholderToMsgIds).length == 0) {
-                return 1;
-            }
-            return 0;
-        })
-            .forEach(function (message) {
-            var id = message[0];
-            _this._placeholders = placeholders[id] || {};
-            _this._placeholderToIds = placeholderToIds[id] || {};
-            // TODO(vicb): make sure there is no `_TRANSLATIONS_TAG` nor `_TRANSLATION_TAG`
-            _this._translatedMessages[id] = ml.visitAll(_this, message[1]).join('');
-        });
-        return { messages: this._translatedMessages, errors: this._errors };
+    XliffParser.prototype.parse = function (xliff, url) {
+        this._unitMlNodes = [];
+        this._mlNodesByMsgId = {};
+        var xml = new XmlParser().parse(xliff, url, false);
+        this._errors = xml.errors;
+        ml.visitAll(this, xml.rootNodes, null);
+        return {
+            mlNodesByMsgId: this._mlNodesByMsgId,
+            errors: this._errors,
+        };
     };
-    _LoadVisitor.prototype.visitElement = function (element, context) {
+    XliffParser.prototype.visitElement = function (element, context) {
         switch (element.name) {
             case _UNIT_TAG:
-                this._target = null;
-                var msgId = element.attrs.find(function (attr) { return attr.name === 'id'; });
-                if (!msgId) {
+                this._unitMlNodes = null;
+                var idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
+                if (!idAttr) {
                     this._addError(element, "<" + _UNIT_TAG + "> misses the \"id\" attribute");
                 }
                 else {
-                    this._msgId = msgId.value;
-                }
-                ml.visitAll(this, element.children, null);
-                if (this._msgId !== null) {
-                    this._messageNodes.push([this._msgId, this._target]);
+                    var id = idAttr.value;
+                    if (this._mlNodesByMsgId.hasOwnProperty(id)) {
+                        this._addError(element, "Duplicated translations for msg " + id);
+                    }
+                    else {
+                        ml.visitAll(this, element.children, null);
+                        if (this._unitMlNodes) {
+                            this._mlNodesByMsgId[id] = this._unitMlNodes;
+                        }
+                        else {
+                            this._addError(element, "Message " + id + " misses a translation");
+                        }
+                    }
                 }
                 break;
             case _SOURCE_TAG:
                 // ignore source message
                 break;
             case _TARGET_TAG:
-                this._target = element.children;
-                break;
-            case _PLACEHOLDER_TAG:
-                var idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
-                if (!idAttr) {
-                    this._addError(element, "<" + _PLACEHOLDER_TAG + "> misses the \"id\" attribute");
-                }
-                else {
-                    var id = idAttr.value;
-                    if (this._placeholders.hasOwnProperty(id)) {
-                        return this._placeholders[id];
-                    }
-                    if (this._placeholderToIds.hasOwnProperty(id) &&
-                        this._translatedMessages.hasOwnProperty(this._placeholderToIds[id])) {
-                        return this._translatedMessages[this._placeholderToIds[id]];
-                    }
-                    // TODO(vicb): better error message for when
-                    // !this._translatedMessages.hasOwnProperty(this._placeholderToIds[id])
-                    this._addError(element, "The placeholder \"" + id + "\" does not exists in the source message");
-                }
+                this._unitMlNodes = element.children;
                 break;
             default:
+                // TODO(vicb): assert file structure, xliff version
+                // For now only recurse on unhandled nodes
                 ml.visitAll(this, element.children, null);
         }
     };
-    _LoadVisitor.prototype.visitAttribute = function (attribute, context) {
-        throw new Error('unreachable code');
-    };
-    _LoadVisitor.prototype.visitText = function (text, context) { return text.value; };
-    _LoadVisitor.prototype.visitComment = function (comment, context) { return ''; };
-    _LoadVisitor.prototype.visitExpansion = function (expansion, context) {
-        throw new Error('unreachable code');
-    };
-    _LoadVisitor.prototype.visitExpansionCase = function (expansionCase, context) {
-        throw new Error('unreachable code');
-    };
-    _LoadVisitor.prototype._addError = function (node, message) {
+    XliffParser.prototype.visitAttribute = function (attribute, context) { };
+    XliffParser.prototype.visitText = function (text, context) { };
+    XliffParser.prototype.visitComment = function (comment, context) { };
+    XliffParser.prototype.visitExpansion = function (expansion, context) { };
+    XliffParser.prototype.visitExpansionCase = function (expansionCase, context) { };
+    XliffParser.prototype._addError = function (node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     };
-    return _LoadVisitor;
+    return XliffParser;
+}());
+// Convert ml nodes (xliff syntax) to i18n nodes
+var XmlToI18n = (function () {
+    function XmlToI18n() {
+    }
+    XmlToI18n.prototype.convert = function (nodes) {
+        this._errors = [];
+        return {
+            i18nNodes: ml.visitAll(this, nodes),
+            errors: this._errors,
+        };
+    };
+    XmlToI18n.prototype.visitText = function (text, context) { return new i18n.Text(text.value, text.sourceSpan); };
+    XmlToI18n.prototype.visitElement = function (el, context) {
+        if (el.name === _PLACEHOLDER_TAG) {
+            var nameAttr = el.attrs.find(function (attr) { return attr.name === 'id'; });
+            if (nameAttr) {
+                return new i18n.Placeholder('', nameAttr.value, el.sourceSpan);
+            }
+            this._addError(el, "<" + _PLACEHOLDER_TAG + "> misses the \"id\" attribute");
+        }
+        else {
+            this._addError(el, "Unexpected tag");
+        }
+    };
+    XmlToI18n.prototype.visitExpansion = function (icu, context) { };
+    XmlToI18n.prototype.visitExpansionCase = function (icuCase, context) { };
+    XmlToI18n.prototype.visitComment = function (comment, context) { };
+    XmlToI18n.prototype.visitAttribute = function (attribute, context) { };
+    XmlToI18n.prototype._addError = function (node, message) {
+        this._errors.push(new I18nError(node.sourceSpan, message));
+    };
+    return XmlToI18n;
 }());
 function getCtypeForTag(tag) {
     switch (tag.toLowerCase()) {

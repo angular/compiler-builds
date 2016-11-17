@@ -38,7 +38,9 @@ var TAG_TO_PLACEHOLDER_NAMES = {
     'UL': 'UNORDERED_LIST',
 };
 /**
- * Creates unique names for placeholder with different content
+ * Creates unique names for placeholder with different content.
+ *
+ * Returns the same placeholder name when the content is identical.
  *
  * @internal
  */
@@ -81,6 +83,9 @@ export var PlaceholderRegistry = (function () {
         this._signatureToName[signature] = uniqueName;
         return uniqueName;
     };
+    PlaceholderRegistry.prototype.getUniquePlaceholder = function (name) {
+        return this._generateUniqueName(name.toUpperCase());
+    };
     // Generate a hash for a tag - does not take attribute order into account
     PlaceholderRegistry.prototype._hashTag = function (tag, attrs, isVoid) {
         var start = "<" + tag;
@@ -90,17 +95,9 @@ export var PlaceholderRegistry = (function () {
     };
     PlaceholderRegistry.prototype._hashClosingTag = function (tag) { return this._hashTag("/" + tag, {}, false); };
     PlaceholderRegistry.prototype._generateUniqueName = function (base) {
-        var name = base;
-        var next = this._placeHolderNameCounts[name];
-        if (!next) {
-            next = 1;
-        }
-        else {
-            name += "_" + next;
-            next++;
-        }
-        this._placeHolderNameCounts[base] = next;
-        return name;
+        var next = this._placeHolderNameCounts[base];
+        this._placeHolderNameCounts[base] = next ? next + 1 : 1;
+        return next ? base + "_" + next : base;
     };
     return PlaceholderRegistry;
 }());
