@@ -14,13 +14,19 @@ import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
 import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
 import { getPropertyInView, getViewClassName } from './util';
-export var CompileViewRootNodeType;
-(function (CompileViewRootNodeType) {
-    CompileViewRootNodeType[CompileViewRootNodeType["Node"] = 0] = "Node";
-    CompileViewRootNodeType[CompileViewRootNodeType["ViewContainer"] = 1] = "ViewContainer";
-    CompileViewRootNodeType[CompileViewRootNodeType["NgContent"] = 2] = "NgContent";
-})(CompileViewRootNodeType || (CompileViewRootNodeType = {}));
+export var CompileViewRootNodeType = {};
+CompileViewRootNodeType.Node = 0;
+CompileViewRootNodeType.ViewContainer = 1;
+CompileViewRootNodeType.NgContent = 2;
+CompileViewRootNodeType[CompileViewRootNodeType.Node] = "Node";
+CompileViewRootNodeType[CompileViewRootNodeType.ViewContainer] = "ViewContainer";
+CompileViewRootNodeType[CompileViewRootNodeType.NgContent] = "NgContent";
 export var CompileViewRootNode = (function () {
+    /**
+     * @param {?} type
+     * @param {?} expr
+     * @param {?=} ngContentIndex
+     */
     function CompileViewRootNode(type, expr, ngContentIndex) {
         this.type = type;
         this.expr = expr;
@@ -28,7 +34,25 @@ export var CompileViewRootNode = (function () {
     }
     return CompileViewRootNode;
 }());
+function CompileViewRootNode_tsickle_Closure_declarations() {
+    /** @type {?} */
+    CompileViewRootNode.prototype.type;
+    /** @type {?} */
+    CompileViewRootNode.prototype.expr;
+    /** @type {?} */
+    CompileViewRootNode.prototype.ngContentIndex;
+}
 export var CompileView = (function () {
+    /**
+     * @param {?} component
+     * @param {?} genConfig
+     * @param {?} pipeMetas
+     * @param {?} styles
+     * @param {?} animations
+     * @param {?} viewIndex
+     * @param {?} declarationElement
+     * @param {?} templateVariableBindings
+     */
     function CompileView(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings) {
         var _this = this;
         this.component = component;
@@ -95,15 +119,25 @@ export var CompileView = (function () {
             this.declarationElement.setEmbeddedView(this);
         }
     }
+    /**
+     * @param {?} name
+     * @param {?} input
+     * @param {?} args
+     * @return {?}
+     */
     CompileView.prototype.callPipe = function (name, input, args) {
         return CompilePipe.call(this, name, [input].concat(args));
     };
+    /**
+     * @param {?} name
+     * @return {?}
+     */
     CompileView.prototype.getLocal = function (name) {
         if (name == EventHandlerVars.event.name) {
             return EventHandlerVars.event;
         }
-        var currView = this;
-        var result = currView.locals.get(name);
+        var /** @type {?} */ currView = this;
+        var /** @type {?} */ result = currView.locals.get(name);
         while (!result && isPresent(currView.declarationElement.view)) {
             currView = currView.declarationElement.view;
             result = currView.locals.get(name);
@@ -115,6 +149,9 @@ export var CompileView = (function () {
             return null;
         }
     };
+    /**
+     * @return {?}
+     */
     CompileView.prototype.afterNodes = function () {
         var _this = this;
         Array.from(this.viewQueries.values())
@@ -122,6 +159,99 @@ export var CompileView = (function () {
     };
     return CompileView;
 }());
+function CompileView_tsickle_Closure_declarations() {
+    /** @type {?} */
+    CompileView.prototype.viewType;
+    /** @type {?} */
+    CompileView.prototype.viewQueries;
+    /** @type {?} */
+    CompileView.prototype.viewChildren;
+    /** @type {?} */
+    CompileView.prototype.nodes;
+    /** @type {?} */
+    CompileView.prototype.rootNodes;
+    /** @type {?} */
+    CompileView.prototype.lastRenderNode;
+    /** @type {?} */
+    CompileView.prototype.viewContainers;
+    /** @type {?} */
+    CompileView.prototype.createMethod;
+    /** @type {?} */
+    CompileView.prototype.animationBindingsMethod;
+    /** @type {?} */
+    CompileView.prototype.injectorGetMethod;
+    /** @type {?} */
+    CompileView.prototype.updateContentQueriesMethod;
+    /** @type {?} */
+    CompileView.prototype.dirtyParentQueriesMethod;
+    /** @type {?} */
+    CompileView.prototype.updateViewQueriesMethod;
+    /** @type {?} */
+    CompileView.prototype.detectChangesInInputsMethod;
+    /** @type {?} */
+    CompileView.prototype.detectChangesRenderPropertiesMethod;
+    /** @type {?} */
+    CompileView.prototype.afterContentLifecycleCallbacksMethod;
+    /** @type {?} */
+    CompileView.prototype.afterViewLifecycleCallbacksMethod;
+    /** @type {?} */
+    CompileView.prototype.destroyMethod;
+    /** @type {?} */
+    CompileView.prototype.detachMethod;
+    /** @type {?} */
+    CompileView.prototype.methods;
+    /** @type {?} */
+    CompileView.prototype.ctorStmts;
+    /** @type {?} */
+    CompileView.prototype.fields;
+    /** @type {?} */
+    CompileView.prototype.getters;
+    /** @type {?} */
+    CompileView.prototype.disposables;
+    /** @type {?} */
+    CompileView.prototype.componentView;
+    /** @type {?} */
+    CompileView.prototype.purePipes;
+    /** @type {?} */
+    CompileView.prototype.pipes;
+    /** @type {?} */
+    CompileView.prototype.locals;
+    /** @type {?} */
+    CompileView.prototype.className;
+    /** @type {?} */
+    CompileView.prototype.classType;
+    /** @type {?} */
+    CompileView.prototype.classExpr;
+    /** @type {?} */
+    CompileView.prototype.literalArrayCount;
+    /** @type {?} */
+    CompileView.prototype.literalMapCount;
+    /** @type {?} */
+    CompileView.prototype.pipeCount;
+    /** @type {?} */
+    CompileView.prototype.componentContext;
+    /** @type {?} */
+    CompileView.prototype.component;
+    /** @type {?} */
+    CompileView.prototype.genConfig;
+    /** @type {?} */
+    CompileView.prototype.pipeMetas;
+    /** @type {?} */
+    CompileView.prototype.styles;
+    /** @type {?} */
+    CompileView.prototype.animations;
+    /** @type {?} */
+    CompileView.prototype.viewIndex;
+    /** @type {?} */
+    CompileView.prototype.declarationElement;
+    /** @type {?} */
+    CompileView.prototype.templateVariableBindings;
+}
+/**
+ * @param {?} component
+ * @param {?} embeddedTemplateIndex
+ * @return {?}
+ */
 function getViewType(component, embeddedTemplateIndex) {
     if (embeddedTemplateIndex > 0) {
         return ViewType.EMBEDDED;

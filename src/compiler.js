@@ -28,7 +28,11 @@ import { StyleCompiler } from './style_compiler';
 import { TemplateParser } from './template_parser/template_parser';
 import { DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver } from './url_resolver';
 import { ViewCompiler } from './view_compiler/view_compiler';
-var _NO_RESOURCE_LOADER = {
+var /** @type {?} */ _NO_RESOURCE_LOADER = {
+    /**
+     * @param {?} url
+     * @return {?}
+     */
     get: function (url) {
         throw new Error("No ResourceLoader implementation has been provided. Can't read the url \"" + url + "\"");
     }
@@ -37,7 +41,7 @@ var _NO_RESOURCE_LOADER = {
  * A set of providers that provide `RuntimeCompiler` and its dependencies to use for
  * template compilation.
  */
-export var COMPILER_PROVIDERS = [
+export var /** @type {?} */ COMPILER_PROVIDERS = [
     { provide: Reflector, useValue: reflector },
     { provide: ReflectorReader, useExisting: Reflector },
     { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
@@ -76,6 +80,9 @@ export var COMPILER_PROVIDERS = [
     AnimationParser
 ];
 export var RuntimeCompilerFactory = (function () {
+    /**
+     * @param {?} defaultOptions
+     */
     function RuntimeCompilerFactory(defaultOptions) {
         this._defaultOptions = [{
                 useDebug: isDevMode(),
@@ -83,10 +90,14 @@ export var RuntimeCompilerFactory = (function () {
                 defaultEncapsulation: ViewEncapsulation.Emulated
             }].concat(defaultOptions);
     }
+    /**
+     * @param {?=} options
+     * @return {?}
+     */
     RuntimeCompilerFactory.prototype.createCompiler = function (options) {
         if (options === void 0) { options = []; }
-        var mergedOptions = _mergeOptions(this._defaultOptions.concat(options));
-        var injector = ReflectiveInjector.resolveAndCreate([
+        var /** @type {?} */ mergedOptions = _mergeOptions(this._defaultOptions.concat(options));
+        var /** @type {?} */ injector = ReflectiveInjector.resolveAndCreate([
             COMPILER_PROVIDERS, {
                 provide: CompilerConfig,
                 useFactory: function () {
@@ -113,11 +124,25 @@ export var RuntimeCompilerFactory = (function () {
         { type: Injectable },
     ];
     /** @nocollapse */
-    RuntimeCompilerFactory.ctorParameters = [
+    RuntimeCompilerFactory.ctorParameters = function () { return [
         { type: Array, decorators: [{ type: Inject, args: [COMPILER_OPTIONS,] },] },
-    ];
+    ]; };
     return RuntimeCompilerFactory;
 }());
+function RuntimeCompilerFactory_tsickle_Closure_declarations() {
+    /** @type {?} */
+    RuntimeCompilerFactory.decorators;
+    /**
+     * @nocollapse
+     * @type {?}
+     */
+    RuntimeCompilerFactory.ctorParameters;
+    /** @type {?} */
+    RuntimeCompilerFactory.prototype._defaultOptions;
+}
+/**
+ * @return {?}
+ */
 function _initReflector() {
     reflector.reflectionCapabilities = new ReflectionCapabilities();
 }
@@ -126,11 +151,15 @@ function _initReflector() {
  *
  * @experimental
  */
-export var platformCoreDynamic = createPlatformFactory(platformCore, 'coreDynamic', [
+export var /** @type {?} */ platformCoreDynamic = createPlatformFactory(platformCore, 'coreDynamic', [
     { provide: COMPILER_OPTIONS, useValue: {}, multi: true },
     { provide: CompilerFactory, useClass: RuntimeCompilerFactory },
     { provide: PLATFORM_INITIALIZER, useValue: _initReflector, multi: true },
 ]);
+/**
+ * @param {?} optionsArr
+ * @return {?}
+ */
 function _mergeOptions(optionsArr) {
     return {
         useDebug: _lastDefined(optionsArr.map(function (options) { return options.useDebug; })),
@@ -139,16 +168,24 @@ function _mergeOptions(optionsArr) {
         providers: _mergeArrays(optionsArr.map(function (options) { return options.providers; }))
     };
 }
+/**
+ * @param {?} args
+ * @return {?}
+ */
 function _lastDefined(args) {
-    for (var i = args.length - 1; i >= 0; i--) {
+    for (var /** @type {?} */ i = args.length - 1; i >= 0; i--) {
         if (args[i] !== undefined) {
             return args[i];
         }
     }
     return undefined;
 }
+/**
+ * @param {?} parts
+ * @return {?}
+ */
 function _mergeArrays(parts) {
-    var result = [];
+    var /** @type {?} */ result = [];
     parts.forEach(function (part) { return part && result.push.apply(result, part); });
     return result;
 }

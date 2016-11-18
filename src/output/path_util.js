@@ -6,25 +6,47 @@
  * found in the LICENSE file at https://angular.io/license
  */
 // asset:<package-name>/<realm>/<path-to-module>
-var _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
+var /** @type {?} */ _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
 /**
- * Interface that defines how import statements should be generated.
+ *  Interface that defines how import statements should be generated.
+ * @abstract
  */
 export var ImportGenerator = (function () {
     function ImportGenerator() {
     }
+    /**
+     * @param {?} url
+     * @return {?}
+     */
     ImportGenerator.parseAssetUrl = function (url) { return AssetUrl.parse(url); };
+    /**
+     * @abstract
+     * @param {?} moduleUrlStr
+     * @param {?} importedUrlStr
+     * @return {?}
+     */
+    ImportGenerator.prototype.getImportPath = function (moduleUrlStr, importedUrlStr) { };
     return ImportGenerator;
 }());
 export var AssetUrl = (function () {
+    /**
+     * @param {?} packageName
+     * @param {?} firstLevelDir
+     * @param {?} modulePath
+     */
     function AssetUrl(packageName, firstLevelDir, modulePath) {
         this.packageName = packageName;
         this.firstLevelDir = firstLevelDir;
         this.modulePath = modulePath;
     }
+    /**
+     * @param {?} url
+     * @param {?=} allowNonMatching
+     * @return {?}
+     */
     AssetUrl.parse = function (url, allowNonMatching) {
         if (allowNonMatching === void 0) { allowNonMatching = true; }
-        var match = url.match(_ASSET_URL_RE);
+        var /** @type {?} */ match = url.match(_ASSET_URL_RE);
         if (match !== null) {
             return new AssetUrl(match[1], match[2], match[3]);
         }
@@ -35,4 +57,12 @@ export var AssetUrl = (function () {
     };
     return AssetUrl;
 }());
+function AssetUrl_tsickle_Closure_declarations() {
+    /** @type {?} */
+    AssetUrl.prototype.packageName;
+    /** @type {?} */
+    AssetUrl.prototype.firstLevelDir;
+    /** @type {?} */
+    AssetUrl.prototype.modulePath;
+}
 //# sourceMappingURL=path_util.js.map

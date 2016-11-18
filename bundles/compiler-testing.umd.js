@@ -212,9 +212,9 @@
             { type: _angular_core.Injectable },
         ];
         /** @nocollapse */
-        MockDirectiveResolver.ctorParameters = [
+        MockDirectiveResolver.ctorParameters = function () { return [
             { type: _angular_core.Injector, },
-        ];
+        ]; };
         return MockDirectiveResolver;
     }(_angular_compiler.DirectiveResolver));
 
@@ -264,9 +264,9 @@
             { type: _angular_core.Injectable },
         ];
         /** @nocollapse */
-        MockNgModuleResolver.ctorParameters = [
+        MockNgModuleResolver.ctorParameters = function () { return [
             { type: _angular_core.Injector, },
-        ];
+        ]; };
         return MockNgModuleResolver;
     }(_angular_compiler.NgModuleResolver));
 
@@ -320,9 +320,9 @@
             { type: _angular_core.Injectable },
         ];
         /** @nocollapse */
-        MockPipeResolver.ctorParameters = [
+        MockPipeResolver.ctorParameters = function () { return [
             { type: _angular_core.Injector, },
-        ];
+        ]; };
         return MockPipeResolver;
     }(_angular_compiler.PipeResolver));
 
@@ -454,9 +454,9 @@
             { type: _angular_core.Injectable },
         ];
         /** @nocollapse */
-        TestingCompilerFactoryImpl.ctorParameters = [
+        TestingCompilerFactoryImpl.ctorParameters = function () { return [
             { type: _angular_core.CompilerFactory, },
-        ];
+        ]; };
         return TestingCompilerFactoryImpl;
     }());
     var TestingCompilerImpl = (function () {
