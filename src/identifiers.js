@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ANALYZE_FOR_ENTRY_COMPONENTS, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ComponentRef, ElementRef, Injector, LOCALE_ID, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TRANSLATIONS_FORMAT, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
+import { isStaticSymbol } from './aot/static_symbol';
 import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
 import { AnimationGroupPlayer, AnimationKeyframe, AnimationSequencePlayer, AnimationStyles, AnimationTransition, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, ComponentRef_, DebugAppView, DebugContext, NgModuleInjector, NoOpAnimationPlayer, StaticNodeDebugInfo, TemplateRef_, UNINITIALIZED, ValueUnwrapper, ViewContainer, ViewType, balanceAnimationKeyframes, clearStyles, collectAndResolveStyles, devModeEqual, prepareFinalAnimationStyles, reflector, registerModuleFactory, renderStyles, view_utils } from './private_import_core';
 var /** @type {?} */ APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
@@ -460,10 +461,10 @@ export function assetUrl(pkg, path, type) {
     if (path === void 0) { path = null; }
     if (type === void 0) { type = 'src'; }
     if (path == null) {
-        return "asset:@angular/lib/" + pkg + "/index";
+        return "@angular/" + pkg + "/index";
     }
     else {
-        return "asset:@angular/lib/" + pkg + "/src/" + path;
+        return "@angular/" + pkg + "/" + type + "/" + path;
     }
 }
 /**
@@ -471,11 +472,12 @@ export function assetUrl(pkg, path, type) {
  * @return {?}
  */
 export function resolveIdentifier(identifier) {
-    return new CompileIdentifierMetadata({
-        name: identifier.name,
-        moduleUrl: identifier.moduleUrl,
-        reference: reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime)
-    });
+    var /** @type {?} */ moduleUrl = identifier.moduleUrl;
+    var /** @type {?} */ reference = reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime);
+    if (isStaticSymbol(reference)) {
+        moduleUrl = reference.filePath;
+    }
+    return new CompileIdentifierMetadata({ name: identifier.name, moduleUrl: moduleUrl, reference: reference });
 }
 /**
  * @param {?} identifier

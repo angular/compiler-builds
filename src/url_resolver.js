@@ -7,7 +7,6 @@
  */
 import { Inject, Injectable, PACKAGE_ROOT_URL } from '@angular/core';
 import { isBlank, isPresent } from './facade/lang';
-var /** @type {?} */ _ASSET_SCHEME = 'asset:';
 /**
  *  Create a {@link UrlResolver} with no package prefix.
  * @return {?}
@@ -19,7 +18,7 @@ export function createUrlResolverWithoutPackagePrefix() {
  * @return {?}
  */
 export function createOfflineCompileUrlResolver() {
-    return new UrlResolver(_ASSET_SCHEME);
+    return new UrlResolver('.');
 }
 /**
  * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
@@ -72,15 +71,9 @@ export var UrlResolver = (function () {
         if (isPresent(prefix) && isPresent(resolvedParts) &&
             resolvedParts[_ComponentIndex.Scheme] == 'package') {
             var /** @type {?} */ path = resolvedParts[_ComponentIndex.Path];
-            if (this._packagePrefix === _ASSET_SCHEME) {
-                var /** @type {?} */ pathSegements = path.split(/\//);
-                resolvedUrl = "asset:" + pathSegements[0] + "/lib/" + pathSegements.slice(1).join('/');
-            }
-            else {
-                prefix = prefix.replace(/\/+$/, '');
-                path = path.replace(/^\/+/, '');
-                return prefix + "/" + path;
-            }
+            prefix = prefix.replace(/\/+$/, '');
+            path = path.replace(/^\/+/, '');
+            return prefix + "/" + path;
         }
         return resolvedUrl;
     };

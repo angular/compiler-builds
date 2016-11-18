@@ -889,13 +889,6 @@ export function removeIdentifierDuplicates(items) {
 function _normalizeArray(obj) {
     return obj || [];
 }
-/**
- * @param {?} value
- * @return {?}
- */
-export function isStaticSymbol(value) {
-    return typeof value === 'object' && value !== null && value['name'] && value['filePath'];
-}
 export var ProviderMeta = (function () {
     /**
      * @param {?} token

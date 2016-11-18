@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 import { isBlank, isPresent } from '../facade/lang';
 import { AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR, EmitterVisitorContext } from './abstract_emitter';
 import * as o from './output_ast';
-var /** @type {?} */ _debugModuleUrl = 'asset://debug/lib';
+var /** @type {?} */ _debugModuleUrl = '/debug/lib';
 /**
  * @param {?} ast
  * @return {?}
@@ -60,7 +60,7 @@ export var TypeScriptEmitter = (function () {
         converter.importsWithPrefixes.forEach(function (prefix, importedModuleUrl) {
             // Note: can't write the real word for import as it screws up system.js auto detection...
             srcParts.push("imp" +
-                ("ort * as " + prefix + " from '" + _this._importGenerator.getImportPath(moduleUrl, importedModuleUrl) + "';"));
+                ("ort * as " + prefix + " from '" + _this._importGenerator.fileNameToModuleName(importedModuleUrl, moduleUrl) + "';"));
         });
         srcParts.push(ctx.toSource());
         return srcParts.join('\n');

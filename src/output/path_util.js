@@ -1,68 +1,19 @@
 /**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-// asset:<package-name>/<realm>/<path-to-module>
-var /** @type {?} */ _ASSET_URL_RE = /asset:([^\/]+)\/([^\/]+)\/(.+)/;
-/**
  *  Interface that defines how import statements should be generated.
  * @abstract
  */
-export var ImportGenerator = (function () {
-    function ImportGenerator() {
+export var ImportResolver = (function () {
+    function ImportResolver() {
     }
     /**
-     * @param {?} url
-     * @return {?}
-     */
-    ImportGenerator.parseAssetUrl = function (url) { return AssetUrl.parse(url); };
-    /**
+     *  Converts a file path to a module name that can be used as an `import.
+      * I.e. `path/to/importedFile.ts` should be imported by `path/to/containingFile.ts`.
      * @abstract
-     * @param {?} moduleUrlStr
-     * @param {?} importedUrlStr
+     * @param {?} importedFilePath
+     * @param {?} containingFilePath
      * @return {?}
      */
-    ImportGenerator.prototype.getImportPath = function (moduleUrlStr, importedUrlStr) { };
-    return ImportGenerator;
+    ImportResolver.prototype.fileNameToModuleName = function (importedFilePath, containingFilePath) { };
+    return ImportResolver;
 }());
-export var AssetUrl = (function () {
-    /**
-     * @param {?} packageName
-     * @param {?} firstLevelDir
-     * @param {?} modulePath
-     */
-    function AssetUrl(packageName, firstLevelDir, modulePath) {
-        this.packageName = packageName;
-        this.firstLevelDir = firstLevelDir;
-        this.modulePath = modulePath;
-    }
-    /**
-     * @param {?} url
-     * @param {?=} allowNonMatching
-     * @return {?}
-     */
-    AssetUrl.parse = function (url, allowNonMatching) {
-        if (allowNonMatching === void 0) { allowNonMatching = true; }
-        var /** @type {?} */ match = url.match(_ASSET_URL_RE);
-        if (match !== null) {
-            return new AssetUrl(match[1], match[2], match[3]);
-        }
-        if (allowNonMatching) {
-            return null;
-        }
-        throw new Error("Url " + url + " is not a valid asset: url");
-    };
-    return AssetUrl;
-}());
-function AssetUrl_tsickle_Closure_declarations() {
-    /** @type {?} */
-    AssetUrl.prototype.packageName;
-    /** @type {?} */
-    AssetUrl.prototype.firstLevelDir;
-    /** @type {?} */
-    AssetUrl.prototype.modulePath;
-}
 //# sourceMappingURL=path_util.js.map

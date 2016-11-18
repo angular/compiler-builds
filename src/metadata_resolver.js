@@ -11,6 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, Attribute, Component, Host, Inject, Injectable, Optional, Self, SkipSelf, Type, resolveForwardRef } from '@angular/core';
+import { isStaticSymbol } from './aot/static_symbol';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
@@ -1057,14 +1058,14 @@ function flattenAndDedupeArray(tree) {
  * @return {?}
  */
 function isValidType(value) {
-    return cpl.isStaticSymbol(value) || (value instanceof Type);
+    return isStaticSymbol(value) || (value instanceof Type);
 }
 /**
  * @param {?} value
  * @return {?}
  */
 function staticTypeModuleUrl(value) {
-    return cpl.isStaticSymbol(value) ? value.filePath : null;
+    return isStaticSymbol(value) ? value.filePath : null;
 }
 /**
  * @param {?} reflector
@@ -1073,7 +1074,7 @@ function staticTypeModuleUrl(value) {
  * @return {?}
  */
 function componentModuleUrl(reflector, type, cmpMetadata) {
-    if (cpl.isStaticSymbol(type)) {
+    if (isStaticSymbol(type)) {
         return staticTypeModuleUrl(type);
     }
     var /** @type {?} */ moduleId = cmpMetadata.moduleId;
@@ -1107,7 +1108,7 @@ var _CompileValueConverter = (function (_super) {
      */
     _CompileValueConverter.prototype.visitOther = function (value, targetIdentifiers) {
         var /** @type {?} */ identifier;
-        if (cpl.isStaticSymbol(value)) {
+        if (isStaticSymbol(value)) {
             identifier = new cpl.CompileIdentifierMetadata({ name: value.name, moduleUrl: value.filePath, reference: value });
         }
         else {
