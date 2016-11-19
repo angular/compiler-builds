@@ -22,16 +22,48 @@ var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
     provider: '@angular/core/src/di/provider'
 };
 /**
+ *  A cache of static symbol used by the StaticReflector to return the same symbol for the
+  * same symbol values.
+ */
+export var StaticSymbolCache = (function () {
+    function StaticSymbolCache() {
+        this.cache = new Map();
+    }
+    /**
+     * @param {?} declarationFile
+     * @param {?} name
+     * @param {?=} members
+     * @return {?}
+     */
+    StaticSymbolCache.prototype.get = function (declarationFile, name, members) {
+        var /** @type {?} */ memberSuffix = members ? "." + members.join('.') : '';
+        var /** @type {?} */ key = "\"" + declarationFile + "\"." + name + memberSuffix;
+        var /** @type {?} */ result = this.cache.get(key);
+        if (!result) {
+            result = new StaticSymbol(declarationFile, name, members);
+            this.cache.set(key, result);
+        }
+        return result;
+    };
+    return StaticSymbolCache;
+}());
+function StaticSymbolCache_tsickle_Closure_declarations() {
+    /** @type {?} */
+    StaticSymbolCache.prototype.cache;
+}
+/**
  *  A static reflector implements enough of the Reflector API that is necessary to compile
   * templates statically.
  */
 export var StaticReflector = (function () {
     /**
      * @param {?} host
+     * @param {?=} staticSymbolCache
      */
-    function StaticReflector(host) {
+    function StaticReflector(host, staticSymbolCache) {
+        if (staticSymbolCache === void 0) { staticSymbolCache = new StaticSymbolCache(); }
         this.host = host;
-        this.staticSymbolCache = new Map();
+        this.staticSymbolCache = staticSymbolCache;
         this.declarationCache = new Map();
         this.annotationCache = new Map();
         this.propertyCache = new Map();
@@ -230,14 +262,7 @@ export var StaticReflector = (function () {
      * @return {?}
      */
     StaticReflector.prototype.getStaticSymbol = function (declarationFile, name, members) {
-        var /** @type {?} */ memberSuffix = members ? "." + members.join('.') : '';
-        var /** @type {?} */ key = "\"" + declarationFile + "\"." + name + memberSuffix;
-        var /** @type {?} */ result = this.staticSymbolCache.get(key);
-        if (!result) {
-            result = new StaticSymbol(declarationFile, name, members);
-            this.staticSymbolCache.set(key, result);
-        }
-        return result;
+        return this.staticSymbolCache.get(declarationFile, name, members);
     };
     /**
      * @param {?} filePath
@@ -712,8 +737,6 @@ export var StaticReflector = (function () {
 }());
 function StaticReflector_tsickle_Closure_declarations() {
     /** @type {?} */
-    StaticReflector.prototype.staticSymbolCache;
-    /** @type {?} */
     StaticReflector.prototype.declarationCache;
     /** @type {?} */
     StaticReflector.prototype.annotationCache;
@@ -729,6 +752,8 @@ function StaticReflector_tsickle_Closure_declarations() {
     StaticReflector.prototype.opaqueToken;
     /** @type {?} */
     StaticReflector.prototype.host;
+    /** @type {?} */
+    StaticReflector.prototype.staticSymbolCache;
 }
 /**
  * @param {?} error

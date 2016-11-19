@@ -26,7 +26,7 @@ export { CompilerConfig, RenderTypes } from './src/config';
 export { CompileMetadataWithIdentifier, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, CompileIdentifierMetadata, CompileDiDependencyMetadata, CompileProviderMetadata, CompileFactoryMetadata, CompileTokenMetadata, CompileTypeMetadata, CompileQueryMetadata, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, removeIdentifierDuplicates, ProviderMeta } from './src/compile_metadata';
 export { createAotCompiler } from './src/aot/compiler_factory';
 export { SourceModule, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, loadNgModuleDirectives, extractProgramSymbols } from './src/aot/compiler';
-export { StaticReflector } from './src/aot/static_reflector';
+export { StaticSymbolCache, StaticReflector } from './src/aot/static_reflector';
 export { StaticAndDynamicReflectionCapabilities } from './src/aot/static_reflection_capabilities';
 export { isStaticSymbol, StaticSymbol } from './src/aot/static_symbol';
 export { JitCompiler } from './src/jit/compiler';

@@ -25,6 +25,14 @@ export interface StaticReflectorHost {
     moduleNameToFileName(moduleName: string, containingFile: string): string;
 }
 /**
+ * A cache of static symbol used by the StaticReflector to return the same symbol for the
+ * same symbol values.
+ */
+export declare class StaticSymbolCache {
+    private cache;
+    get(declarationFile: string, name: string, members?: string[]): StaticSymbol;
+}
+/**
  * A static reflector implements enough of the Reflector API that is necessary to compile
  * templates statically.
  */
@@ -38,7 +46,7 @@ export declare class StaticReflector implements ReflectorReader {
     private metadataCache;
     private conversionMap;
     private opaqueToken;
-    constructor(host: StaticReflectorHost);
+    constructor(host: StaticReflectorHost, staticSymbolCache?: StaticSymbolCache);
     importUri(typeOrFunc: StaticSymbol): string;
     resolveIdentifier(name: string, moduleUrl: string, runtime: any): any;
     resolveEnum(enumIdentifier: any, name: string): any;

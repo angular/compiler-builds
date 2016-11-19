@@ -24540,16 +24540,44 @@
       provider: '@angular/core/src/di/provider'
   };
   /**
+   *  A cache of static symbol used by the StaticReflector to return the same symbol for the
+    * same symbol values.
+   */
+  var StaticSymbolCache = (function () {
+      function StaticSymbolCache() {
+          this.cache = new Map();
+      }
+      /**
+       * @param {?} declarationFile
+       * @param {?} name
+       * @param {?=} members
+       * @return {?}
+       */
+      StaticSymbolCache.prototype.get = function (declarationFile, name, members) {
+          var /** @type {?} */ memberSuffix = members ? "." + members.join('.') : '';
+          var /** @type {?} */ key = "\"" + declarationFile + "\"." + name + memberSuffix;
+          var /** @type {?} */ result = this.cache.get(key);
+          if (!result) {
+              result = new StaticSymbol(declarationFile, name, members);
+              this.cache.set(key, result);
+          }
+          return result;
+      };
+      return StaticSymbolCache;
+  }());
+  /**
    *  A static reflector implements enough of the Reflector API that is necessary to compile
     * templates statically.
    */
   var StaticReflector = (function () {
       /**
        * @param {?} host
+       * @param {?=} staticSymbolCache
        */
-      function StaticReflector(host) {
+      function StaticReflector(host, staticSymbolCache) {
+          if (staticSymbolCache === void 0) { staticSymbolCache = new StaticSymbolCache(); }
           this.host = host;
-          this.staticSymbolCache = new Map();
+          this.staticSymbolCache = staticSymbolCache;
           this.declarationCache = new Map();
           this.annotationCache = new Map();
           this.propertyCache = new Map();
@@ -24748,14 +24776,7 @@
        * @return {?}
        */
       StaticReflector.prototype.getStaticSymbol = function (declarationFile, name, members) {
-          var /** @type {?} */ memberSuffix = members ? "." + members.join('.') : '';
-          var /** @type {?} */ key = "\"" + declarationFile + "\"." + name + memberSuffix;
-          var /** @type {?} */ result = this.staticSymbolCache.get(key);
-          if (!result) {
-              result = new StaticSymbol(declarationFile, name, members);
-              this.staticSymbolCache.set(key, result);
-          }
-          return result;
+          return this.staticSymbolCache.get(declarationFile, name, members);
       };
       /**
        * @param {?} filePath
@@ -27074,6 +27095,7 @@
   exports.analyzeAndValidateNgModules = analyzeAndValidateNgModules;
   exports.loadNgModuleDirectives = loadNgModuleDirectives;
   exports.extractProgramSymbols = extractProgramSymbols;
+  exports.StaticSymbolCache = StaticSymbolCache;
   exports.StaticReflector = StaticReflector;
   exports.StaticAndDynamicReflectionCapabilities = StaticAndDynamicReflectionCapabilities;
   exports.isStaticSymbol = isStaticSymbol;
