@@ -22,13 +22,6 @@ import { createOfflineCompileUrlResolver } from '../url_resolver';
 import { I18NHtmlParser } from './i18n_html_parser';
 import { MessageBundle } from './message_bundle';
 export var Extractor = (function () {
-    /**
-     * @param {?} options
-     * @param {?} host
-     * @param {?} staticReflector
-     * @param {?} messageBundle
-     * @param {?} metadataResolver
-     */
     function Extractor(options, host, staticReflector, messageBundle, metadataResolver) {
         this.options = options;
         this.host = host;
@@ -36,27 +29,23 @@ export var Extractor = (function () {
         this.messageBundle = messageBundle;
         this.metadataResolver = metadataResolver;
     }
-    /**
-     * @param {?} rootFiles
-     * @return {?}
-     */
     Extractor.prototype.extract = function (rootFiles) {
         var _this = this;
-        var /** @type {?} */ programSymbols = extractProgramSymbols(this.staticReflector, rootFiles, this.options);
+        var programSymbols = extractProgramSymbols(this.staticReflector, rootFiles, this.options);
         var _a = analyzeAndValidateNgModules(programSymbols, this.options, this.metadataResolver), ngModuleByPipeOrDirective = _a.ngModuleByPipeOrDirective, files = _a.files, ngModules = _a.ngModules;
         return loadNgModuleDirectives(ngModules).then(function () {
-            var /** @type {?} */ errors = [];
+            var errors = [];
             files.forEach(function (file) {
-                var /** @type {?} */ compMetas = [];
+                var compMetas = [];
                 file.directives.forEach(function (directiveType) {
-                    var /** @type {?} */ dirMeta = _this.metadataResolver.getDirectiveMetadata(directiveType);
+                    var dirMeta = _this.metadataResolver.getDirectiveMetadata(directiveType);
                     if (dirMeta && dirMeta.isComponent) {
                         compMetas.push(dirMeta);
                     }
                 });
                 compMetas.forEach(function (compMeta) {
-                    var /** @type {?} */ html = compMeta.template.template;
-                    var /** @type {?} */ interpolationConfig = InterpolationConfig.fromArray(compMeta.template.interpolation);
+                    var html = compMeta.template.template;
+                    var interpolationConfig = InterpolationConfig.fromArray(compMeta.template.interpolation);
                     errors.push.apply(errors, _this.messageBundle.updateFromTemplate(html, file.srcUrl, interpolationConfig));
                 });
             });
@@ -66,42 +55,25 @@ export var Extractor = (function () {
             return _this.messageBundle;
         });
     };
-    /**
-     * @param {?} host
-     * @param {?} options
-     * @return {?}
-     */
     Extractor.create = function (host, options) {
-        var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser());
-        var /** @type {?} */ urlResolver = createOfflineCompileUrlResolver();
-        var /** @type {?} */ staticReflector = new StaticReflector(host);
+        var htmlParser = new I18NHtmlParser(new HtmlParser());
+        var urlResolver = createOfflineCompileUrlResolver();
+        var staticReflector = new StaticReflector(host);
         StaticAndDynamicReflectionCapabilities.install(staticReflector);
-        var /** @type {?} */ config = new CompilerConfig({
+        var config = new CompilerConfig({
             genDebugInfo: false,
             defaultEncapsulation: ViewEncapsulation.Emulated,
             logBindingUpdate: false,
             useJit: false
         });
-        var /** @type {?} */ normalizer = new DirectiveNormalizer({ get: function (url) { return host.loadResource(url); } }, urlResolver, htmlParser, config);
-        var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-        var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), elementSchemaRegistry, normalizer, staticReflector);
+        var normalizer = new DirectiveNormalizer({ get: function (url) { return host.loadResource(url); } }, urlResolver, htmlParser, config);
+        var elementSchemaRegistry = new DomElementSchemaRegistry();
+        var resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), elementSchemaRegistry, normalizer, staticReflector);
         // TODO(vicb): implicit tags & attributes
-        var /** @type {?} */ messageBundle = new MessageBundle(htmlParser, [], {});
-        var /** @type {?} */ extractor = new Extractor(options, host, staticReflector, messageBundle, resolver);
+        var messageBundle = new MessageBundle(htmlParser, [], {});
+        var extractor = new Extractor(options, host, staticReflector, messageBundle, resolver);
         return { extractor: extractor, staticReflector: staticReflector };
     };
     return Extractor;
 }());
-function Extractor_tsickle_Closure_declarations() {
-    /** @type {?} */
-    Extractor.prototype.options;
-    /** @type {?} */
-    Extractor.prototype.host;
-    /** @type {?} */
-    Extractor.prototype.staticReflector;
-    /** @type {?} */
-    Extractor.prototype.messageBundle;
-    /** @type {?} */
-    Extractor.prototype.metadataResolver;
-}
 //# sourceMappingURL=extractor.js.map

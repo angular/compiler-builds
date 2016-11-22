@@ -17,12 +17,7 @@ import { SecurityContext } from '@angular/core';
 //
 // =================================================================================================
 /** Map from tagName|propertyName SecurityContext. Properties applying to all tags use '*'. */
-export var /** @type {?} */ SECURITY_SCHEMA = {};
-/**
- * @param {?} ctx
- * @param {?} specs
- * @return {?}
- */
+export var SECURITY_SCHEMA = {};
 function registerContext(ctx, specs) {
     for (var _i = 0, specs_1 = specs; _i < specs_1.length; _i++) {
         var spec = specs_1[_i];

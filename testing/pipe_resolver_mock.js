@@ -50,9 +50,9 @@ export var MockPipeResolver = (function (_super) {
         { type: Injectable },
     ];
     /** @nocollapse */
-    MockPipeResolver.ctorParameters = function () { return [
+    MockPipeResolver.ctorParameters = [
         { type: Injector, },
-    ]; };
+    ];
     return MockPipeResolver;
 }(PipeResolver));
 //# sourceMappingURL=pipe_resolver_mock.js.map

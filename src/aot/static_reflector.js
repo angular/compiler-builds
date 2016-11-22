@@ -12,8 +12,8 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { Attribute, Component, ContentChild, ContentChildren, Directive, Host, HostBinding, HostListener, Inject, Injectable, Input, NgModule, Optional, Output, Pipe, Self, SkipSelf, ViewChild, ViewChildren, animate, group, keyframes, sequence, state, style, transition, trigger } from '@angular/core';
 import { StaticSymbol } from './static_symbol';
-var /** @type {?} */ SUPPORTED_SCHEMA_VERSION = 2;
-var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
+var SUPPORTED_SCHEMA_VERSION = 2;
+var ANGULAR_IMPORT_LOCATIONS = {
     coreDecorators: '@angular/core/src/metadata',
     diDecorators: '@angular/core/src/di/metadata',
     diMetadata: '@angular/core/src/di/metadata',
@@ -22,23 +22,17 @@ var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
     provider: '@angular/core/src/di/provider'
 };
 /**
- *  A cache of static symbol used by the StaticReflector to return the same symbol for the
-  * same symbol values.
+ * A cache of static symbol used by the StaticReflector to return the same symbol for the
+ * same symbol values.
  */
 export var StaticSymbolCache = (function () {
     function StaticSymbolCache() {
         this.cache = new Map();
     }
-    /**
-     * @param {?} declarationFile
-     * @param {?} name
-     * @param {?=} members
-     * @return {?}
-     */
     StaticSymbolCache.prototype.get = function (declarationFile, name, members) {
-        var /** @type {?} */ memberSuffix = members ? "." + members.join('.') : '';
-        var /** @type {?} */ key = "\"" + declarationFile + "\"." + name + memberSuffix;
-        var /** @type {?} */ result = this.cache.get(key);
+        var memberSuffix = members ? "." + members.join('.') : '';
+        var key = "\"" + declarationFile + "\"." + name + memberSuffix;
+        var result = this.cache.get(key);
         if (!result) {
             result = new StaticSymbol(declarationFile, name, members);
             this.cache.set(key, result);
@@ -47,19 +41,11 @@ export var StaticSymbolCache = (function () {
     };
     return StaticSymbolCache;
 }());
-function StaticSymbolCache_tsickle_Closure_declarations() {
-    /** @type {?} */
-    StaticSymbolCache.prototype.cache;
-}
 /**
- *  A static reflector implements enough of the Reflector API that is necessary to compile
-  * templates statically.
+ * A static reflector implements enough of the Reflector API that is necessary to compile
+ * templates statically.
  */
 export var StaticReflector = (function () {
-    /**
-     * @param {?} host
-     * @param {?=} staticSymbolCache
-     */
     function StaticReflector(host, staticSymbolCache) {
         if (staticSymbolCache === void 0) { staticSymbolCache = new StaticSymbolCache(); }
         this.host = host;
@@ -72,40 +58,21 @@ export var StaticReflector = (function () {
         this.conversionMap = new Map();
         this.initializeConversionMap();
     }
-    /**
-     * @param {?} typeOrFunc
-     * @return {?}
-     */
     StaticReflector.prototype.importUri = function (typeOrFunc) {
-        var /** @type {?} */ staticSymbol = this.findDeclaration(typeOrFunc.filePath, typeOrFunc.name, '');
+        var staticSymbol = this.findDeclaration(typeOrFunc.filePath, typeOrFunc.name, '');
         return staticSymbol ? staticSymbol.filePath : null;
     };
-    /**
-     * @param {?} name
-     * @param {?} moduleUrl
-     * @param {?} runtime
-     * @return {?}
-     */
     StaticReflector.prototype.resolveIdentifier = function (name, moduleUrl, runtime) {
         return this.findDeclaration(moduleUrl, name, '');
     };
-    /**
-     * @param {?} enumIdentifier
-     * @param {?} name
-     * @return {?}
-     */
     StaticReflector.prototype.resolveEnum = function (enumIdentifier, name) {
-        var /** @type {?} */ staticSymbol = enumIdentifier;
+        var staticSymbol = enumIdentifier;
         return this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name, [name]);
     };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
     StaticReflector.prototype.annotations = function (type) {
-        var /** @type {?} */ annotations = this.annotationCache.get(type);
+        var annotations = this.annotationCache.get(type);
         if (!annotations) {
-            var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
+            var classMetadata = this.getTypeMetadata(type);
             if (classMetadata['decorators']) {
                 annotations = this.simplify(type, classMetadata['decorators']);
             }
@@ -116,18 +83,14 @@ export var StaticReflector = (function () {
         }
         return annotations;
     };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
     StaticReflector.prototype.propMetadata = function (type) {
         var _this = this;
-        var /** @type {?} */ propMetadata = this.propertyCache.get(type);
+        var propMetadata = this.propertyCache.get(type);
         if (!propMetadata) {
-            var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-            var /** @type {?} */ members = classMetadata ? classMetadata['members'] : {};
+            var classMetadata = this.getTypeMetadata(type);
+            var members = classMetadata ? classMetadata['members'] : {};
             propMetadata = mapStringMap(members, function (propData, propName) {
-                var /** @type {?} */ prop = ((propData))
+                var prop = propData
                     .find(function (a) { return a['__symbolic'] == 'property' || a['__symbolic'] == 'method'; });
                 if (prop && prop['decorators']) {
                     return _this.simplify(type, prop['decorators']);
@@ -140,31 +103,27 @@ export var StaticReflector = (function () {
         }
         return propMetadata;
     };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
     StaticReflector.prototype.parameters = function (type) {
         if (!(type instanceof StaticSymbol)) {
             throw new Error("parameters received " + JSON.stringify(type) + " which is not a StaticSymbol");
         }
         try {
-            var /** @type {?} */ parameters_1 = this.parameterCache.get(type);
+            var parameters_1 = this.parameterCache.get(type);
             if (!parameters_1) {
-                var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-                var /** @type {?} */ members = classMetadata ? classMetadata['members'] : null;
-                var /** @type {?} */ ctorData = members ? members['__ctor__'] : null;
+                var classMetadata = this.getTypeMetadata(type);
+                var members = classMetadata ? classMetadata['members'] : null;
+                var ctorData = members ? members['__ctor__'] : null;
                 if (ctorData) {
-                    var /** @type {?} */ ctor = ((ctorData)).find(function (a) { return a['__symbolic'] == 'constructor'; });
-                    var /** @type {?} */ parameterTypes = (this.simplify(type, ctor['parameters'] || []));
-                    var /** @type {?} */ parameterDecorators_1 = (this.simplify(type, ctor['parameterDecorators'] || []));
+                    var ctor = ctorData.find(function (a) { return a['__symbolic'] == 'constructor'; });
+                    var parameterTypes = this.simplify(type, ctor['parameters'] || []);
+                    var parameterDecorators_1 = this.simplify(type, ctor['parameterDecorators'] || []);
                     parameters_1 = [];
                     parameterTypes.forEach(function (paramType, index) {
-                        var /** @type {?} */ nestedResult = [];
+                        var nestedResult = [];
                         if (paramType) {
                             nestedResult.push(paramType);
                         }
-                        var /** @type {?} */ decorators = parameterDecorators_1 ? parameterDecorators_1[index] : null;
+                        var decorators = parameterDecorators_1 ? parameterDecorators_1[index] : null;
                         if (decorators) {
                             nestedResult.push.apply(nestedResult, decorators);
                         }
@@ -183,39 +142,21 @@ export var StaticReflector = (function () {
             throw e;
         }
     };
-    /**
-     * @param {?} type
-     * @param {?} lcProperty
-     * @return {?}
-     */
     StaticReflector.prototype.hasLifecycleHook = function (type, lcProperty) {
         if (!(type instanceof StaticSymbol)) {
             throw new Error("hasLifecycleHook received " + JSON.stringify(type) + " which is not a StaticSymbol");
         }
-        var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-        var /** @type {?} */ members = classMetadata ? classMetadata['members'] : null;
-        var /** @type {?} */ member = members && members.hasOwnProperty(lcProperty) ? members[lcProperty] : null;
+        var classMetadata = this.getTypeMetadata(type);
+        var members = classMetadata ? classMetadata['members'] : null;
+        var member = members && members.hasOwnProperty(lcProperty) ? members[lcProperty] : null;
         return member ? member.some(function (a) { return a['__symbolic'] == 'method'; }) : false;
     };
-    /**
-     * @param {?} type
-     * @param {?} ctor
-     * @return {?}
-     */
     StaticReflector.prototype.registerDecoratorOrConstructor = function (type, ctor) {
         this.conversionMap.set(type, function (context, args) { return new (ctor.bind.apply(ctor, [void 0].concat(args)))(); });
     };
-    /**
-     * @param {?} type
-     * @param {?} fn
-     * @return {?}
-     */
     StaticReflector.prototype.registerFunction = function (type, fn) {
         this.conversionMap.set(type, function (context, args) { return fn.apply(undefined, args); });
     };
-    /**
-     * @return {?}
-     */
     StaticReflector.prototype.initializeConversionMap = function () {
         var coreDecorators = ANGULAR_IMPORT_LOCATIONS.coreDecorators, diDecorators = ANGULAR_IMPORT_LOCATIONS.diDecorators, diMetadata = ANGULAR_IMPORT_LOCATIONS.diMetadata, diOpaqueToken = ANGULAR_IMPORT_LOCATIONS.diOpaqueToken, animationMetadata = ANGULAR_IMPORT_LOCATIONS.animationMetadata, provider = ANGULAR_IMPORT_LOCATIONS.provider;
         this.opaqueToken = this.findDeclaration(diOpaqueToken, 'OpaqueToken');
@@ -253,37 +194,30 @@ export var StaticReflector = (function () {
         this.registerFunction(this.findDeclaration(animationMetadata, 'group'), group);
     };
     /**
-     *  getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
-      * All types passed to the StaticResolver should be pseudo-types returned by this method.
-      * *
-     * @param {?} declarationFile the absolute path of the file where the symbol is declared
-     * @param {?} name the name of the type.
-     * @param {?=} members
-     * @return {?}
+     * getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
+     * All types passed to the StaticResolver should be pseudo-types returned by this method.
+     *
+     * @param declarationFile the absolute path of the file where the symbol is declared
+     * @param name the name of the type.
      */
     StaticReflector.prototype.getStaticSymbol = function (declarationFile, name, members) {
         return this.staticSymbolCache.get(declarationFile, name, members);
     };
-    /**
-     * @param {?} filePath
-     * @param {?} symbolName
-     * @return {?}
-     */
     StaticReflector.prototype.resolveExportedSymbol = function (filePath, symbolName) {
         var _this = this;
-        var /** @type {?} */ resolveModule = function (moduleName) {
-            var /** @type {?} */ resolvedModulePath = _this.host.moduleNameToFileName(moduleName, filePath);
+        var resolveModule = function (moduleName) {
+            var resolvedModulePath = _this.host.moduleNameToFileName(moduleName, filePath);
             if (!resolvedModulePath) {
                 throw new Error("Could not resolve module '" + moduleName + "' relative to file " + filePath);
             }
             return resolvedModulePath;
         };
-        var /** @type {?} */ cacheKey = filePath + "|" + symbolName;
-        var /** @type {?} */ staticSymbol = this.declarationCache.get(cacheKey);
+        var cacheKey = filePath + "|" + symbolName;
+        var staticSymbol = this.declarationCache.get(cacheKey);
         if (staticSymbol) {
             return staticSymbol;
         }
-        var /** @type {?} */ metadata = this.getModuleMetadata(filePath);
+        var metadata = this.getModuleMetadata(filePath);
         if (metadata) {
             // If we have metadata for the symbol, this is the original exporting location.
             if (metadata['metadata'][symbolName]) {
@@ -295,7 +229,7 @@ export var StaticReflector = (function () {
                 for (var _i = 0, _a = metadata['exports']; _i < _a.length; _i++) {
                     var moduleExport = _a[_i];
                     if (moduleExport.export) {
-                        var /** @type {?} */ exportSymbol = moduleExport.export.find(function (symbol) {
+                        var exportSymbol = moduleExport.export.find(function (symbol) {
                             if (typeof symbol === 'string') {
                                 return symbol == symbolName;
                             }
@@ -304,7 +238,7 @@ export var StaticReflector = (function () {
                             }
                         });
                         if (exportSymbol) {
-                            var /** @type {?} */ symName = symbolName;
+                            var symName = symbolName;
                             if (typeof exportSymbol !== 'string') {
                                 symName = exportSymbol.name;
                             }
@@ -317,8 +251,8 @@ export var StaticReflector = (function () {
                     for (var _b = 0, _c = metadata['exports']; _b < _c.length; _b++) {
                         var moduleExport = _c[_b];
                         if (!moduleExport.export) {
-                            var /** @type {?} */ resolvedModule = resolveModule(moduleExport.from);
-                            var /** @type {?} */ candidateSymbol = this.resolveExportedSymbol(resolvedModule, symbolName);
+                            var resolvedModule = resolveModule(moduleExport.from);
+                            var candidateSymbol = this.resolveExportedSymbol(resolvedModule, symbolName);
                             if (candidateSymbol) {
                                 staticSymbol = candidateSymbol;
                                 break;
@@ -331,16 +265,10 @@ export var StaticReflector = (function () {
         this.declarationCache.set(cacheKey, staticSymbol);
         return staticSymbol;
     };
-    /**
-     * @param {?} module
-     * @param {?} symbolName
-     * @param {?=} containingFile
-     * @return {?}
-     */
     StaticReflector.prototype.findDeclaration = function (module, symbolName, containingFile) {
         try {
-            var /** @type {?} */ filePath = this.host.moduleNameToFileName(module, containingFile);
-            var /** @type {?} */ symbol = void 0;
+            var filePath = this.host.moduleNameToFileName(module, containingFile);
+            var symbol = void 0;
             if (!filePath) {
                 // If the file cannot be found the module is probably referencing a declared module
                 // for which there is no disambiguating file and we also don't need to track
@@ -358,29 +286,14 @@ export var StaticReflector = (function () {
             throw e;
         }
     };
-    /**
-     * @param {?} context
-     * @param {?} value
-     * @return {?}
-     */
+    /** @internal */
     StaticReflector.prototype.simplify = function (context, value) {
-        var /** @type {?} */ _this = this;
-        var /** @type {?} */ scope = BindingScope.empty;
-        var /** @type {?} */ calling = new Map();
-        /**
-         * @param {?} context
-         * @param {?} value
-         * @param {?} depth
-         * @return {?}
-         */
+        var _this = this;
+        var scope = BindingScope.empty;
+        var calling = new Map();
         function simplifyInContext(context, value, depth) {
-            /**
-             * @param {?} context
-             * @param {?} expression
-             * @return {?}
-             */
             function resolveReference(context, expression) {
-                var /** @type {?} */ staticSymbol;
+                var staticSymbol;
                 if (expression['module']) {
                     staticSymbol =
                         _this.findDeclaration(expression['module'], expression['name'], context.filePath);
@@ -390,39 +303,26 @@ export var StaticReflector = (function () {
                 }
                 return staticSymbol;
             }
-            /**
-             * @param {?} staticSymbol
-             * @return {?}
-             */
             function resolveReferenceValue(staticSymbol) {
-                var /** @type {?} */ moduleMetadata = _this.getModuleMetadata(staticSymbol.filePath);
-                var /** @type {?} */ declarationValue = moduleMetadata ? moduleMetadata['metadata'][staticSymbol.name] : null;
+                var moduleMetadata = _this.getModuleMetadata(staticSymbol.filePath);
+                var declarationValue = moduleMetadata ? moduleMetadata['metadata'][staticSymbol.name] : null;
                 return declarationValue;
             }
-            /**
-             * @param {?} context
-             * @param {?} value
-             * @return {?}
-             */
             function isOpaqueToken(context, value) {
                 if (value && value.__symbolic === 'new' && value.expression) {
-                    var /** @type {?} */ target = value.expression;
+                    var target = value.expression;
                     if (target.__symbolic == 'reference') {
                         return sameSymbol(resolveReference(context, target), _this.opaqueToken);
                     }
                 }
                 return false;
             }
-            /**
-             * @param {?} expression
-             * @return {?}
-             */
             function simplifyCall(expression) {
-                var /** @type {?} */ callContext = undefined;
+                var callContext = undefined;
                 if (expression['__symbolic'] == 'call') {
-                    var /** @type {?} */ target = expression['expression'];
-                    var /** @type {?} */ functionSymbol = void 0;
-                    var /** @type {?} */ targetFunction = void 0;
+                    var target = expression['expression'];
+                    var functionSymbol = void 0;
+                    var targetFunction = void 0;
                     if (target) {
                         switch (target.__symbolic) {
                             case 'reference':
@@ -435,7 +335,7 @@ export var StaticReflector = (function () {
                                 // Find the static method to call
                                 if (target.expression.__symbolic == 'reference') {
                                     functionSymbol = resolveReference(context, target.expression);
-                                    var /** @type {?} */ classData = resolveReferenceValue(functionSymbol);
+                                    var classData = resolveReferenceValue(functionSymbol);
                                     if (classData && classData.statics) {
                                         targetFunction = classData.statics[target.member];
                                     }
@@ -449,21 +349,21 @@ export var StaticReflector = (function () {
                         }
                         calling.set(functionSymbol, true);
                         try {
-                            var /** @type {?} */ value_1 = targetFunction['value'];
+                            var value_1 = targetFunction['value'];
                             if (value_1 && (depth != 0 || value_1.__symbolic != 'error')) {
                                 // Determine the arguments
-                                var /** @type {?} */ args = (expression['arguments'] || []).map(function (arg) { return simplify(arg); });
-                                var /** @type {?} */ parameters = targetFunction['parameters'];
-                                var /** @type {?} */ defaults = targetFunction.defaults;
+                                var args = (expression['arguments'] || []).map(function (arg) { return simplify(arg); });
+                                var parameters = targetFunction['parameters'];
+                                var defaults = targetFunction.defaults;
                                 if (defaults && defaults.length > args.length) {
                                     args.push.apply(args, defaults.slice(args.length).map(function (value) { return simplify(value); }));
                                 }
-                                var /** @type {?} */ functionScope = BindingScope.build();
-                                for (var /** @type {?} */ i = 0; i < parameters.length; i++) {
+                                var functionScope = BindingScope.build();
+                                for (var i = 0; i < parameters.length; i++) {
                                     functionScope.define(parameters[i], args[i]);
                                 }
-                                var /** @type {?} */ oldScope = scope;
-                                var /** @type {?} */ result_1;
+                                var oldScope = scope;
+                                var result_1;
                                 try {
                                     scope = functionScope.done();
                                     result_1 = simplifyInContext(functionSymbol, value_1, depth + 1);
@@ -487,21 +387,17 @@ export var StaticReflector = (function () {
                 }
                 return simplify({ __symbolic: 'error', message: 'Function call not supported', context: callContext });
             }
-            /**
-             * @param {?} expression
-             * @return {?}
-             */
             function simplify(expression) {
                 if (isPrimitive(expression)) {
                     return expression;
                 }
                 if (expression instanceof Array) {
-                    var /** @type {?} */ result_2 = [];
-                    for (var _i = 0, _a = ((expression)); _i < _a.length; _i++) {
+                    var result_2 = [];
+                    for (var _i = 0, _a = expression; _i < _a.length; _i++) {
                         var item = _a[_i];
                         // Check for a spread expression
                         if (item && item.__symbolic === 'spread') {
-                            var /** @type {?} */ spreadArray = simplify(item.expression);
+                            var spreadArray = simplify(item.expression);
                             if (Array.isArray(spreadArray)) {
                                 for (var _b = 0, spreadArray_1 = spreadArray; _b < spreadArray_1.length; _b++) {
                                     var spreadItem = spreadArray_1[_b];
@@ -510,7 +406,7 @@ export var StaticReflector = (function () {
                                 continue;
                             }
                         }
-                        var /** @type {?} */ value_2 = simplify(item);
+                        var value_2 = simplify(item);
                         if (shouldIgnore(value_2)) {
                             continue;
                         }
@@ -523,13 +419,13 @@ export var StaticReflector = (function () {
                 }
                 if (expression) {
                     if (expression['__symbolic']) {
-                        var /** @type {?} */ staticSymbol = void 0;
+                        var staticSymbol = void 0;
                         switch (expression['__symbolic']) {
                             case 'binop':
-                                var /** @type {?} */ left = simplify(expression['left']);
+                                var left = simplify(expression['left']);
                                 if (shouldIgnore(left))
                                     return left;
-                                var /** @type {?} */ right = simplify(expression['right']);
+                                var right = simplify(expression['right']);
                                 if (shouldIgnore(right))
                                     return right;
                                 switch (expression['operator']) {
@@ -576,11 +472,11 @@ export var StaticReflector = (function () {
                                 }
                                 return null;
                             case 'if':
-                                var /** @type {?} */ condition = simplify(expression['condition']);
+                                var condition = simplify(expression['condition']);
                                 return condition ? simplify(expression['thenExpression']) :
                                     simplify(expression['elseExpression']);
                             case 'pre':
-                                var /** @type {?} */ operand = simplify(expression['operand']);
+                                var operand = simplify(expression['operand']);
                                 if (shouldIgnore(operand))
                                     return operand;
                                 switch (expression['operator']) {
@@ -595,42 +491,42 @@ export var StaticReflector = (function () {
                                 }
                                 return null;
                             case 'index':
-                                var /** @type {?} */ indexTarget = simplify(expression['expression']);
-                                var /** @type {?} */ index = simplify(expression['index']);
+                                var indexTarget = simplify(expression['expression']);
+                                var index = simplify(expression['index']);
                                 if (indexTarget && isPrimitive(index))
                                     return indexTarget[index];
                                 return null;
                             case 'select':
-                                var /** @type {?} */ selectTarget = simplify(expression['expression']);
+                                var selectTarget = simplify(expression['expression']);
                                 if (selectTarget instanceof StaticSymbol) {
                                     // Access to a static instance variable
-                                    var /** @type {?} */ declarationValue_1 = resolveReferenceValue(selectTarget);
+                                    var declarationValue_1 = resolveReferenceValue(selectTarget);
                                     if (declarationValue_1 && declarationValue_1.statics) {
                                         selectTarget = declarationValue_1.statics;
                                     }
                                     else {
-                                        var /** @type {?} */ member_1 = expression['member'];
-                                        var /** @type {?} */ members = selectTarget.members ?
-                                            ((selectTarget.members)).concat(member_1) :
+                                        var member_1 = expression['member'];
+                                        var members = selectTarget.members ?
+                                            selectTarget.members.concat(member_1) :
                                             [member_1];
                                         return _this.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     }
                                 }
-                                var /** @type {?} */ member = simplify(expression['member']);
+                                var member = simplify(expression['member']);
                                 if (selectTarget && isPrimitive(member))
                                     return simplify(selectTarget[member]);
                                 return null;
                             case 'reference':
                                 if (!expression.module) {
-                                    var /** @type {?} */ name_1 = expression['name'];
-                                    var /** @type {?} */ localValue = scope.resolve(name_1);
+                                    var name_1 = expression['name'];
+                                    var localValue = scope.resolve(name_1);
                                     if (localValue != BindingScope.missing) {
                                         return localValue;
                                     }
                                 }
                                 staticSymbol = resolveReference(context, expression);
-                                var /** @type {?} */ result_3 = staticSymbol;
-                                var /** @type {?} */ declarationValue = resolveReferenceValue(result_3);
+                                var result_3 = staticSymbol;
+                                var declarationValue = resolveReferenceValue(result_3);
                                 if (declarationValue) {
                                     if (isOpaqueToken(staticSymbol, declarationValue)) {
                                         // If the referenced symbol is initalized by a new OpaqueToken we can keep the
@@ -647,7 +543,7 @@ export var StaticReflector = (function () {
                             case 'new':
                             case 'call':
                                 // Determine if the function is a built-in conversion
-                                var /** @type {?} */ target = expression['expression'];
+                                var target = expression['expression'];
                                 if (target['module']) {
                                     staticSymbol =
                                         _this.findDeclaration(target['module'], target['name'], context.filePath);
@@ -655,9 +551,9 @@ export var StaticReflector = (function () {
                                 else {
                                     staticSymbol = _this.getStaticSymbol(context.filePath, target['name']);
                                 }
-                                var /** @type {?} */ converter = _this.conversionMap.get(staticSymbol);
+                                var converter = _this.conversionMap.get(staticSymbol);
                                 if (converter) {
-                                    var /** @type {?} */ args = expression['arguments'];
+                                    var args = expression['arguments'];
                                     if (!args) {
                                         args = [];
                                     }
@@ -666,7 +562,7 @@ export var StaticReflector = (function () {
                                 // Determine if the function is one we can simplify.
                                 return simplifyCall(expression);
                             case 'error':
-                                var /** @type {?} */ message = produceErrorMessage(expression);
+                                var message = produceErrorMessage(expression);
                                 if (expression['line']) {
                                     message =
                                         message + " (position " + (expression['line'] + 1) + ":" + (expression['character'] + 1) + " in the original .ts file)";
@@ -684,29 +580,28 @@ export var StaticReflector = (function () {
                 return simplify(value);
             }
             catch (e) {
-                var /** @type {?} */ message = e.message + ", resolving symbol " + context.name + " in " + context.filePath;
+                var message = e.message + ", resolving symbol " + context.name + " in " + context.filePath;
                 if (e.fileName) {
                     throw positionalError(message, e.fileName, e.line, e.column);
                 }
                 throw new Error(message);
             }
         }
-        var /** @type {?} */ result = simplifyInContext(context, value, 0);
+        var result = simplifyInContext(context, value, 0);
         if (shouldIgnore(result)) {
             return undefined;
         }
         return result;
     };
     /**
-     * @param {?} module an absolute path to a module file.
-     * @return {?}
+     * @param module an absolute path to a module file.
      */
     StaticReflector.prototype.getModuleMetadata = function (module) {
-        var /** @type {?} */ moduleMetadata = this.metadataCache.get(module);
+        var moduleMetadata = this.metadataCache.get(module);
         if (!moduleMetadata) {
-            var /** @type {?} */ moduleMetadatas = this.host.getMetadataFor(module);
+            var moduleMetadatas = this.host.getMetadataFor(module);
             if (moduleMetadatas) {
-                var /** @type {?} */ maxVersion_1 = -1;
+                var maxVersion_1 = -1;
                 moduleMetadatas.forEach(function (md) {
                     if (md['version'] > maxVersion_1) {
                         maxVersion_1 = md['version'];
@@ -725,40 +620,12 @@ export var StaticReflector = (function () {
         }
         return moduleMetadata;
     };
-    /**
-     * @param {?} type
-     * @return {?}
-     */
     StaticReflector.prototype.getTypeMetadata = function (type) {
-        var /** @type {?} */ moduleMetadata = this.getModuleMetadata(type.filePath);
+        var moduleMetadata = this.getModuleMetadata(type.filePath);
         return moduleMetadata['metadata'][type.name] || { __symbolic: 'class' };
     };
     return StaticReflector;
 }());
-function StaticReflector_tsickle_Closure_declarations() {
-    /** @type {?} */
-    StaticReflector.prototype.declarationCache;
-    /** @type {?} */
-    StaticReflector.prototype.annotationCache;
-    /** @type {?} */
-    StaticReflector.prototype.propertyCache;
-    /** @type {?} */
-    StaticReflector.prototype.parameterCache;
-    /** @type {?} */
-    StaticReflector.prototype.metadataCache;
-    /** @type {?} */
-    StaticReflector.prototype.conversionMap;
-    /** @type {?} */
-    StaticReflector.prototype.opaqueToken;
-    /** @type {?} */
-    StaticReflector.prototype.host;
-    /** @type {?} */
-    StaticReflector.prototype.staticSymbolCache;
-}
-/**
- * @param {?} error
- * @return {?}
- */
 function expandedMessage(error) {
     switch (error.message) {
         case 'Reference to non-exported class':
@@ -776,7 +643,7 @@ function expandedMessage(error) {
             }
             break;
         case 'Function call not supported':
-            var /** @type {?} */ prefix = error.context && error.context.name ? "Calling function '" + error.context.name + "', f" : 'F';
+            var prefix = error.context && error.context.name ? "Calling function '" + error.context.name + "', f" : 'F';
             return prefix +
                 'unction calls are not supported. Consider replacing the function or lambda with a reference to an exported function';
         case 'Reference to a local symbol':
@@ -787,54 +654,29 @@ function expandedMessage(error) {
     }
     return error.message;
 }
-/**
- * @param {?} error
- * @return {?}
- */
 function produceErrorMessage(error) {
     return "Error encountered resolving symbol values statically. " + expandedMessage(error);
 }
-/**
- * @param {?} input
- * @param {?} transform
- * @return {?}
- */
 function mapStringMap(input, transform) {
     if (!input)
         return {};
-    var /** @type {?} */ result = {};
+    var result = {};
     Object.keys(input).forEach(function (key) {
-        var /** @type {?} */ value = transform(input[key], key);
+        var value = transform(input[key], key);
         if (!shouldIgnore(value)) {
             result[key] = value;
         }
     });
     return result;
 }
-/**
- * @param {?} o
- * @return {?}
- */
 function isPrimitive(o) {
     return o === null || (typeof o !== 'function' && typeof o !== 'object');
 }
-/**
- * @abstract
- */
 var BindingScope = (function () {
     function BindingScope() {
     }
-    /**
-     * @abstract
-     * @param {?} name
-     * @return {?}
-     */
-    BindingScope.prototype.resolve = function (name) { };
-    /**
-     * @return {?}
-     */
     BindingScope.build = function () {
-        var /** @type {?} */ current = new Map();
+        var current = new Map();
         return {
             define: function (name, value) {
                 current.set(name, value);
@@ -849,61 +691,28 @@ var BindingScope = (function () {
     BindingScope.empty = { resolve: function (name) { return BindingScope.missing; } };
     return BindingScope;
 }());
-function BindingScope_tsickle_Closure_declarations() {
-    /** @type {?} */
-    BindingScope.missing;
-    /** @type {?} */
-    BindingScope.empty;
-}
 var PopulatedScope = (function (_super) {
     __extends(PopulatedScope, _super);
-    /**
-     * @param {?} bindings
-     */
     function PopulatedScope(bindings) {
         _super.call(this);
         this.bindings = bindings;
     }
-    /**
-     * @param {?} name
-     * @return {?}
-     */
     PopulatedScope.prototype.resolve = function (name) {
         return this.bindings.has(name) ? this.bindings.get(name) : BindingScope.missing;
     };
     return PopulatedScope;
 }(BindingScope));
-function PopulatedScope_tsickle_Closure_declarations() {
-    /** @type {?} */
-    PopulatedScope.prototype.bindings;
-}
-/**
- * @param {?} a
- * @param {?} b
- * @return {?}
- */
 function sameSymbol(a, b) {
     return a === b || (a.name == b.name && a.filePath == b.filePath);
 }
-/**
- * @param {?} value
- * @return {?}
- */
 function shouldIgnore(value) {
     return value && value.__symbolic == 'ignore';
 }
-/**
- * @param {?} message
- * @param {?} fileName
- * @param {?} line
- * @param {?} column
- * @return {?}
- */
 function positionalError(message, fileName, line, column) {
-    var /** @type {?} */ result = new Error(message);
-    ((result)).fileName = fileName;
-    ((result)).line = line;
-    ((result)).column = column;
+    var result = new Error(message);
+    result.fileName = fileName;
+    result.line = line;
+    result.column = column;
     return result;
 }
 //# sourceMappingURL=static_reflector.js.map

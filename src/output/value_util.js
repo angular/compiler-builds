@@ -8,11 +8,6 @@
 import { CompileIdentifierMetadata } from '../compile_metadata';
 import { visitValue } from '../util';
 import * as o from './output_ast';
-/**
- * @param {?} value
- * @param {?=} type
- * @return {?}
- */
 export function convertValueToOutputAst(value, type) {
     if (type === void 0) { type = null; }
     return visitValue(value, new _ValueOutputAstTransformer(), type);
@@ -20,37 +15,17 @@ export function convertValueToOutputAst(value, type) {
 var _ValueOutputAstTransformer = (function () {
     function _ValueOutputAstTransformer() {
     }
-    /**
-     * @param {?} arr
-     * @param {?} type
-     * @return {?}
-     */
     _ValueOutputAstTransformer.prototype.visitArray = function (arr, type) {
         var _this = this;
         return o.literalArr(arr.map(function (value) { return visitValue(value, _this, null); }), type);
     };
-    /**
-     * @param {?} map
-     * @param {?} type
-     * @return {?}
-     */
     _ValueOutputAstTransformer.prototype.visitStringMap = function (map, type) {
         var _this = this;
-        var /** @type {?} */ entries = [];
+        var entries = [];
         Object.keys(map).forEach(function (key) { entries.push([key, visitValue(map[key], _this, null)]); });
         return o.literalMap(entries, type);
     };
-    /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
     _ValueOutputAstTransformer.prototype.visitPrimitive = function (value, type) { return o.literal(value, type); };
-    /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
     _ValueOutputAstTransformer.prototype.visitOther = function (value, type) {
         if (value instanceof CompileIdentifierMetadata) {
             return o.importExpr(value);
