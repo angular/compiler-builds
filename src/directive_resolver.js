@@ -18,24 +18,34 @@ import { splitAtColon } from './util';
  * See {@link Compiler}
  */
 export var DirectiveResolver = (function () {
+    /**
+     * @param {?=} _reflector
+     */
     function DirectiveResolver(_reflector) {
         if (_reflector === void 0) { _reflector = reflector; }
         this._reflector = _reflector;
     }
+    /**
+     * @param {?} type
+     * @return {?}
+     */
     DirectiveResolver.prototype.isDirective = function (type) {
-        var typeMetadata = this._reflector.annotations(resolveForwardRef(type));
+        var /** @type {?} */ typeMetadata = this._reflector.annotations(resolveForwardRef(type));
         return typeMetadata && typeMetadata.some(isDirectiveMetadata);
     };
     /**
-     * Return {@link Directive} for a given `Type`.
+     *  Return {@link Directive} for a given `Type`.
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
      */
     DirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        var typeMetadata = this._reflector.annotations(resolveForwardRef(type));
+        var /** @type {?} */ typeMetadata = this._reflector.annotations(resolveForwardRef(type));
         if (typeMetadata) {
-            var metadata = typeMetadata.find(isDirectiveMetadata);
+            var /** @type {?} */ metadata = typeMetadata.find(isDirectiveMetadata);
             if (metadata) {
-                var propertyMetadata = this._reflector.propMetadata(type);
+                var /** @type {?} */ propertyMetadata = this._reflector.propMetadata(type);
                 return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
             }
         }
@@ -44,11 +54,17 @@ export var DirectiveResolver = (function () {
         }
         return null;
     };
+    /**
+     * @param {?} dm
+     * @param {?} propertyMetadata
+     * @param {?} directiveType
+     * @return {?}
+     */
     DirectiveResolver.prototype._mergeWithPropertyMetadata = function (dm, propertyMetadata, directiveType) {
-        var inputs = [];
-        var outputs = [];
-        var host = {};
-        var queries = {};
+        var /** @type {?} */ inputs = [];
+        var /** @type {?} */ outputs = [];
+        var /** @type {?} */ host = {};
+        var /** @type {?} */ queries = {};
         Object.keys(propertyMetadata).forEach(function (propName) {
             propertyMetadata[propName].forEach(function (a) {
                 if (a instanceof Input) {
@@ -60,7 +76,7 @@ export var DirectiveResolver = (function () {
                     }
                 }
                 else if (a instanceof Output) {
-                    var output = a;
+                    var /** @type {?} */ output = a;
                     if (output.bindingPropertyName) {
                         outputs.push(propName + ": " + output.bindingPropertyName);
                     }
@@ -69,9 +85,9 @@ export var DirectiveResolver = (function () {
                     }
                 }
                 else if (a instanceof HostBinding) {
-                    var hostBinding = a;
+                    var /** @type {?} */ hostBinding = a;
                     if (hostBinding.hostPropertyName) {
-                        var startWith = hostBinding.hostPropertyName[0];
+                        var /** @type {?} */ startWith = hostBinding.hostPropertyName[0];
                         if (startWith === '(') {
                             throw new Error("@HostBinding can not bind to events. Use @HostListener instead.");
                         }
@@ -85,8 +101,8 @@ export var DirectiveResolver = (function () {
                     }
                 }
                 else if (a instanceof HostListener) {
-                    var hostListener = a;
-                    var args = hostListener.args || [];
+                    var /** @type {?} */ hostListener = a;
+                    var /** @type {?} */ args = hostListener.args || [];
                     host[("(" + hostListener.eventName + ")")] = propName + "(" + args.join(',') + ")";
                 }
                 else if (a instanceof Query) {
@@ -96,33 +112,46 @@ export var DirectiveResolver = (function () {
         });
         return this._merge(dm, inputs, outputs, host, queries, directiveType);
     };
+    /**
+     * @param {?} def
+     * @return {?}
+     */
     DirectiveResolver.prototype._extractPublicName = function (def) { return splitAtColon(def, [null, def])[1].trim(); };
+    /**
+     * @param {?} directive
+     * @param {?} inputs
+     * @param {?} outputs
+     * @param {?} host
+     * @param {?} queries
+     * @param {?} directiveType
+     * @return {?}
+     */
     DirectiveResolver.prototype._merge = function (directive, inputs, outputs, host, queries, directiveType) {
         var _this = this;
-        var mergedInputs = inputs;
+        var /** @type {?} */ mergedInputs = inputs;
         if (directive.inputs) {
-            var inputNames_1 = directive.inputs.map(function (def) { return _this._extractPublicName(def); });
+            var /** @type {?} */ inputNames_1 = directive.inputs.map(function (def) { return _this._extractPublicName(def); });
             inputs.forEach(function (inputDef) {
-                var publicName = _this._extractPublicName(inputDef);
+                var /** @type {?} */ publicName = _this._extractPublicName(inputDef);
                 if (inputNames_1.indexOf(publicName) > -1) {
                     throw new Error("Input '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                 }
             });
             mergedInputs.unshift.apply(mergedInputs, directive.inputs);
         }
-        var mergedOutputs = outputs;
+        var /** @type {?} */ mergedOutputs = outputs;
         if (directive.outputs) {
-            var outputNames_1 = directive.outputs.map(function (def) { return _this._extractPublicName(def); });
+            var /** @type {?} */ outputNames_1 = directive.outputs.map(function (def) { return _this._extractPublicName(def); });
             outputs.forEach(function (outputDef) {
-                var publicName = _this._extractPublicName(outputDef);
+                var /** @type {?} */ publicName = _this._extractPublicName(outputDef);
                 if (outputNames_1.indexOf(publicName) > -1) {
                     throw new Error("Output event '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
                 }
             });
             mergedOutputs.unshift.apply(mergedOutputs, directive.outputs);
         }
-        var mergedHost = directive.host ? StringMapWrapper.merge(directive.host, host) : host;
-        var mergedQueries = directive.queries ? StringMapWrapper.merge(directive.queries, queries) : queries;
+        var /** @type {?} */ mergedHost = directive.host ? StringMapWrapper.merge(directive.host, host) : host;
+        var /** @type {?} */ mergedQueries = directive.queries ? StringMapWrapper.merge(directive.queries, queries) : queries;
         if (directive instanceof Component) {
             return new Component({
                 selector: directive.selector,
@@ -161,11 +190,26 @@ export var DirectiveResolver = (function () {
         { type: Injectable },
     ];
     /** @nocollapse */
-    DirectiveResolver.ctorParameters = [
+    DirectiveResolver.ctorParameters = function () { return [
         { type: ReflectorReader, },
-    ];
+    ]; };
     return DirectiveResolver;
 }());
+function DirectiveResolver_tsickle_Closure_declarations() {
+    /** @type {?} */
+    DirectiveResolver.decorators;
+    /**
+     * @nocollapse
+     * @type {?}
+     */
+    DirectiveResolver.ctorParameters;
+    /** @type {?} */
+    DirectiveResolver.prototype._reflector;
+}
+/**
+ * @param {?} type
+ * @return {?}
+ */
 function isDirectiveMetadata(type) {
     return type instanceof Directive;
 }

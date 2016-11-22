@@ -30,28 +30,31 @@ import { AotCompiler } from './compiler';
 import { StaticAndDynamicReflectionCapabilities } from './static_reflection_capabilities';
 import { StaticReflector } from './static_reflector';
 /**
- * Creates a new AotCompiler based on options and a host.
+ *  Creates a new AotCompiler based on options and a host.
+ * @param {?} compilerHost
+ * @param {?} options
+ * @return {?}
  */
 export function createAotCompiler(compilerHost, options) {
-    var translations = options.translations || '';
-    var urlResolver = createOfflineCompileUrlResolver();
-    var staticReflector = new StaticReflector(compilerHost);
+    var /** @type {?} */ translations = options.translations || '';
+    var /** @type {?} */ urlResolver = createOfflineCompileUrlResolver();
+    var /** @type {?} */ staticReflector = new StaticReflector(compilerHost);
     StaticAndDynamicReflectionCapabilities.install(staticReflector);
-    var htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat);
-    var config = new CompilerConfig({
+    var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat);
+    var /** @type {?} */ config = new CompilerConfig({
         genDebugInfo: options.debug === true,
         defaultEncapsulation: ViewEncapsulation.Emulated,
         logBindingUpdate: false,
         useJit: false
     });
-    var normalizer = new DirectiveNormalizer({ get: function (url) { return compilerHost.loadResource(url); } }, urlResolver, htmlParser, config);
-    var expressionParser = new Parser(new Lexer());
-    var elementSchemaRegistry = new DomElementSchemaRegistry();
-    var console = new Console();
-    var tmplParser = new TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
-    var resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), elementSchemaRegistry, normalizer, staticReflector);
+    var /** @type {?} */ normalizer = new DirectiveNormalizer({ get: function (url) { return compilerHost.loadResource(url); } }, urlResolver, htmlParser, config);
+    var /** @type {?} */ expressionParser = new Parser(new Lexer());
+    var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
+    var /** @type {?} */ console = new Console();
+    var /** @type {?} */ tmplParser = new TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
+    var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), elementSchemaRegistry, normalizer, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
-    var compiler = new AotCompiler(resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(compilerHost), options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), staticReflector, options);
+    var /** @type {?} */ compiler = new AotCompiler(resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(compilerHost), options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), staticReflector, options);
     return { compiler: compiler, reflector: staticReflector };
 }
 //# sourceMappingURL=compiler_factory.js.map
