@@ -15,9 +15,6 @@ import { ListWrapper } from './facade/collection';
 import { isPresent } from './facade/lang';
 import { CssSelector } from './selector';
 import { sanitizeIdentifier, splitAtColon } from './util';
-/**
- * @return {?}
- */
 function unimplemented() {
     throw new Error('unimplemented');
 }
@@ -25,28 +22,18 @@ function unimplemented() {
 // group 1: "prop" from "[prop]"
 // group 2: "event" from "(event)"
 // group 3: "@trigger" from "@trigger"
-var /** @type {?} */ HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
-/**
- * @abstract
- */
+var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
 export var CompileMetadataWithIdentifier = (function () {
     function CompileMetadataWithIdentifier() {
     }
     Object.defineProperty(CompileMetadataWithIdentifier.prototype, "identifier", {
-        /**
-         * @return {?}
-         */
-        get: function () { return (unimplemented()); },
+        get: function () { return unimplemented(); },
         enumerable: true,
         configurable: true
     });
     return CompileMetadataWithIdentifier;
 }());
 export var CompileAnimationEntryMetadata = (function () {
-    /**
-     * @param {?=} name
-     * @param {?=} definitions
-     */
     function CompileAnimationEntryMetadata(name, definitions) {
         if (name === void 0) { name = null; }
         if (definitions === void 0) { definitions = null; }
@@ -55,15 +42,6 @@ export var CompileAnimationEntryMetadata = (function () {
     }
     return CompileAnimationEntryMetadata;
 }());
-function CompileAnimationEntryMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileAnimationEntryMetadata.prototype.name;
-    /** @type {?} */
-    CompileAnimationEntryMetadata.prototype.definitions;
-}
-/**
- * @abstract
- */
 export var CompileAnimationStateMetadata = (function () {
     function CompileAnimationStateMetadata() {
     }
@@ -71,10 +49,6 @@ export var CompileAnimationStateMetadata = (function () {
 }());
 export var CompileAnimationStateDeclarationMetadata = (function (_super) {
     __extends(CompileAnimationStateDeclarationMetadata, _super);
-    /**
-     * @param {?} stateNameExpr
-     * @param {?} styles
-     */
     function CompileAnimationStateDeclarationMetadata(stateNameExpr, styles) {
         _super.call(this);
         this.stateNameExpr = stateNameExpr;
@@ -82,18 +56,8 @@ export var CompileAnimationStateDeclarationMetadata = (function (_super) {
     }
     return CompileAnimationStateDeclarationMetadata;
 }(CompileAnimationStateMetadata));
-function CompileAnimationStateDeclarationMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileAnimationStateDeclarationMetadata.prototype.stateNameExpr;
-    /** @type {?} */
-    CompileAnimationStateDeclarationMetadata.prototype.styles;
-}
 export var CompileAnimationStateTransitionMetadata = (function (_super) {
     __extends(CompileAnimationStateTransitionMetadata, _super);
-    /**
-     * @param {?} stateChangeExpr
-     * @param {?} steps
-     */
     function CompileAnimationStateTransitionMetadata(stateChangeExpr, steps) {
         _super.call(this);
         this.stateChangeExpr = stateChangeExpr;
@@ -101,15 +65,6 @@ export var CompileAnimationStateTransitionMetadata = (function (_super) {
     }
     return CompileAnimationStateTransitionMetadata;
 }(CompileAnimationStateMetadata));
-function CompileAnimationStateTransitionMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileAnimationStateTransitionMetadata.prototype.stateChangeExpr;
-    /** @type {?} */
-    CompileAnimationStateTransitionMetadata.prototype.steps;
-}
-/**
- * @abstract
- */
 export var CompileAnimationMetadata = (function () {
     function CompileAnimationMetadata() {
     }
@@ -117,9 +72,6 @@ export var CompileAnimationMetadata = (function () {
 }());
 export var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
     __extends(CompileAnimationKeyframesSequenceMetadata, _super);
-    /**
-     * @param {?=} steps
-     */
     function CompileAnimationKeyframesSequenceMetadata(steps) {
         if (steps === void 0) { steps = []; }
         _super.call(this);
@@ -127,16 +79,8 @@ export var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
     }
     return CompileAnimationKeyframesSequenceMetadata;
 }(CompileAnimationMetadata));
-function CompileAnimationKeyframesSequenceMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileAnimationKeyframesSequenceMetadata.prototype.steps;
-}
 export var CompileAnimationStyleMetadata = (function (_super) {
     __extends(CompileAnimationStyleMetadata, _super);
-    /**
-     * @param {?} offset
-     * @param {?=} styles
-     */
     function CompileAnimationStyleMetadata(offset, styles) {
         if (styles === void 0) { styles = null; }
         _super.call(this);
@@ -145,18 +89,8 @@ export var CompileAnimationStyleMetadata = (function (_super) {
     }
     return CompileAnimationStyleMetadata;
 }(CompileAnimationMetadata));
-function CompileAnimationStyleMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileAnimationStyleMetadata.prototype.offset;
-    /** @type {?} */
-    CompileAnimationStyleMetadata.prototype.styles;
-}
 export var CompileAnimationAnimateMetadata = (function (_super) {
     __extends(CompileAnimationAnimateMetadata, _super);
-    /**
-     * @param {?=} timings
-     * @param {?=} styles
-     */
     function CompileAnimationAnimateMetadata(timings, styles) {
         if (timings === void 0) { timings = 0; }
         if (styles === void 0) { styles = null; }
@@ -166,20 +100,8 @@ export var CompileAnimationAnimateMetadata = (function (_super) {
     }
     return CompileAnimationAnimateMetadata;
 }(CompileAnimationMetadata));
-function CompileAnimationAnimateMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileAnimationAnimateMetadata.prototype.timings;
-    /** @type {?} */
-    CompileAnimationAnimateMetadata.prototype.styles;
-}
-/**
- * @abstract
- */
 export var CompileAnimationWithStepsMetadata = (function (_super) {
     __extends(CompileAnimationWithStepsMetadata, _super);
-    /**
-     * @param {?=} steps
-     */
     function CompileAnimationWithStepsMetadata(steps) {
         if (steps === void 0) { steps = null; }
         _super.call(this);
@@ -187,15 +109,8 @@ export var CompileAnimationWithStepsMetadata = (function (_super) {
     }
     return CompileAnimationWithStepsMetadata;
 }(CompileAnimationMetadata));
-function CompileAnimationWithStepsMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileAnimationWithStepsMetadata.prototype.steps;
-}
 export var CompileAnimationSequenceMetadata = (function (_super) {
     __extends(CompileAnimationSequenceMetadata, _super);
-    /**
-     * @param {?=} steps
-     */
     function CompileAnimationSequenceMetadata(steps) {
         if (steps === void 0) { steps = null; }
         _super.call(this, steps);
@@ -204,9 +119,6 @@ export var CompileAnimationSequenceMetadata = (function (_super) {
 }(CompileAnimationWithStepsMetadata));
 export var CompileAnimationGroupMetadata = (function (_super) {
     __extends(CompileAnimationGroupMetadata, _super);
-    /**
-     * @param {?=} steps
-     */
     function CompileAnimationGroupMetadata(steps) {
         if (steps === void 0) { steps = null; }
         _super.call(this, steps);
@@ -214,9 +126,6 @@ export var CompileAnimationGroupMetadata = (function (_super) {
     return CompileAnimationGroupMetadata;
 }(CompileAnimationWithStepsMetadata));
 export var CompileIdentifierMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
     function CompileIdentifierMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, reference = _b.reference, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, value = _b.value;
         this.reference = reference;
@@ -226,31 +135,13 @@ export var CompileIdentifierMetadata = (function () {
         this.value = value;
     }
     Object.defineProperty(CompileIdentifierMetadata.prototype, "identifier", {
-        /**
-         * @return {?}
-         */
         get: function () { return this; },
         enumerable: true,
         configurable: true
     });
     return CompileIdentifierMetadata;
 }());
-function CompileIdentifierMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileIdentifierMetadata.prototype.reference;
-    /** @type {?} */
-    CompileIdentifierMetadata.prototype.name;
-    /** @type {?} */
-    CompileIdentifierMetadata.prototype.prefix;
-    /** @type {?} */
-    CompileIdentifierMetadata.prototype.moduleUrl;
-    /** @type {?} */
-    CompileIdentifierMetadata.prototype.value;
-}
 export var CompileDiDependencyMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
     function CompileDiDependencyMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, isAttribute = _b.isAttribute, isSelf = _b.isSelf, isHost = _b.isHost, isSkipSelf = _b.isSkipSelf, isOptional = _b.isOptional, isValue = _b.isValue, token = _b.token, value = _b.value;
         this.isAttribute = !!isAttribute;
@@ -264,28 +155,7 @@ export var CompileDiDependencyMetadata = (function () {
     }
     return CompileDiDependencyMetadata;
 }());
-function CompileDiDependencyMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isAttribute;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isSelf;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isHost;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isSkipSelf;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isOptional;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isValue;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.token;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.value;
-}
 export var CompileProviderMetadata = (function () {
-    /**
-     * @param {?} __0
-     */
     function CompileProviderMetadata(_a) {
         var token = _a.token, useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
         this.token = token;
@@ -298,27 +168,8 @@ export var CompileProviderMetadata = (function () {
     }
     return CompileProviderMetadata;
 }());
-function CompileProviderMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileProviderMetadata.prototype.token;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.useClass;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.useValue;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.useExisting;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.useFactory;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.deps;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.multi;
-}
 export var CompileFactoryMetadata = (function (_super) {
     __extends(CompileFactoryMetadata, _super);
-    /**
-     * @param {?} __0
-     */
     function CompileFactoryMetadata(_a) {
         var reference = _a.reference, name = _a.name, moduleUrl = _a.moduleUrl, prefix = _a.prefix, diDeps = _a.diDeps, value = _a.value;
         _super.call(this, { reference: reference, name: name, prefix: prefix, moduleUrl: moduleUrl, value: value });
@@ -326,14 +177,7 @@ export var CompileFactoryMetadata = (function (_super) {
     }
     return CompileFactoryMetadata;
 }(CompileIdentifierMetadata));
-function CompileFactoryMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileFactoryMetadata.prototype.diDeps;
-}
 export var CompileTokenMetadata = (function () {
-    /**
-     * @param {?} __0
-     */
     function CompileTokenMetadata(_a) {
         var value = _a.value, identifier = _a.identifier, identifierIsInstance = _a.identifierIsInstance;
         this.value = value;
@@ -341,9 +185,6 @@ export var CompileTokenMetadata = (function () {
         this.identifierIsInstance = !!identifierIsInstance;
     }
     Object.defineProperty(CompileTokenMetadata.prototype, "reference", {
-        /**
-         * @return {?}
-         */
         get: function () {
             if (isPresent(this.identifier)) {
                 return this.identifier.reference;
@@ -356,9 +197,6 @@ export var CompileTokenMetadata = (function () {
         configurable: true
     });
     Object.defineProperty(CompileTokenMetadata.prototype, "name", {
-        /**
-         * @return {?}
-         */
         get: function () {
             return isPresent(this.value) ? sanitizeIdentifier(this.value) : this.identifier.name;
         },
@@ -367,22 +205,11 @@ export var CompileTokenMetadata = (function () {
     });
     return CompileTokenMetadata;
 }());
-function CompileTokenMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileTokenMetadata.prototype.value;
-    /** @type {?} */
-    CompileTokenMetadata.prototype.identifier;
-    /** @type {?} */
-    CompileTokenMetadata.prototype.identifierIsInstance;
-}
 /**
- *  Metadata regarding compilation of a type.
+ * Metadata regarding compilation of a type.
  */
 export var CompileTypeMetadata = (function (_super) {
     __extends(CompileTypeMetadata, _super);
-    /**
-     * @param {?=} __0
-     */
     function CompileTypeMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, reference = _b.reference, name = _b.name, moduleUrl = _b.moduleUrl, prefix = _b.prefix, isHost = _b.isHost, value = _b.value, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
         _super.call(this, { reference: reference, name: name, moduleUrl: moduleUrl, prefix: prefix, value: value });
@@ -392,18 +219,7 @@ export var CompileTypeMetadata = (function (_super) {
     }
     return CompileTypeMetadata;
 }(CompileIdentifierMetadata));
-function CompileTypeMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileTypeMetadata.prototype.isHost;
-    /** @type {?} */
-    CompileTypeMetadata.prototype.diDeps;
-    /** @type {?} */
-    CompileTypeMetadata.prototype.lifecycleHooks;
-}
 export var CompileQueryMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
     function CompileQueryMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, selectors = _b.selectors, descendants = _b.descendants, first = _b.first, propertyName = _b.propertyName, read = _b.read;
         this.selectors = selectors;
@@ -414,25 +230,10 @@ export var CompileQueryMetadata = (function () {
     }
     return CompileQueryMetadata;
 }());
-function CompileQueryMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileQueryMetadata.prototype.selectors;
-    /** @type {?} */
-    CompileQueryMetadata.prototype.descendants;
-    /** @type {?} */
-    CompileQueryMetadata.prototype.first;
-    /** @type {?} */
-    CompileQueryMetadata.prototype.propertyName;
-    /** @type {?} */
-    CompileQueryMetadata.prototype.read;
-}
 /**
- *  Metadata about a stylesheet
+ * Metadata about a stylesheet
  */
 export var CompileStylesheetMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
     function CompileStylesheetMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, moduleUrl = _b.moduleUrl, styles = _b.styles, styleUrls = _b.styleUrls;
         this.moduleUrl = moduleUrl;
@@ -441,21 +242,10 @@ export var CompileStylesheetMetadata = (function () {
     }
     return CompileStylesheetMetadata;
 }());
-function CompileStylesheetMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileStylesheetMetadata.prototype.moduleUrl;
-    /** @type {?} */
-    CompileStylesheetMetadata.prototype.styles;
-    /** @type {?} */
-    CompileStylesheetMetadata.prototype.styleUrls;
-}
 /**
- *  Metadata regarding compilation of a template.
+ * Metadata regarding compilation of a template.
  */
 export var CompileTemplateMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
     function CompileTemplateMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, encapsulation = _b.encapsulation, template = _b.template, templateUrl = _b.templateUrl, styles = _b.styles, styleUrls = _b.styleUrls, externalStylesheets = _b.externalStylesheets, animations = _b.animations, ngContentSelectors = _b.ngContentSelectors, interpolation = _b.interpolation;
         this.encapsulation = encapsulation;
@@ -471,9 +261,6 @@ export var CompileTemplateMetadata = (function () {
         }
         this.interpolation = interpolation;
     }
-    /**
-     * @return {?}
-     */
     CompileTemplateMetadata.prototype.toSummary = function () {
         return {
             isSummary: true,
@@ -484,33 +271,10 @@ export var CompileTemplateMetadata = (function () {
     };
     return CompileTemplateMetadata;
 }());
-function CompileTemplateMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.encapsulation;
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.template;
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.templateUrl;
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.styles;
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.styleUrls;
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.externalStylesheets;
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.animations;
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.ngContentSelectors;
-    /** @type {?} */
-    CompileTemplateMetadata.prototype.interpolation;
-}
 /**
- *  Metadata regarding compilation of a directive.
+ * Metadata regarding compilation of a directive.
  */
 export var CompileDirectiveMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
     function CompileDirectiveMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template;
         this.type = type;
@@ -530,19 +294,15 @@ export var CompileDirectiveMetadata = (function () {
         this.entryComponents = _normalizeArray(entryComponents);
         this.template = template;
     }
-    /**
-     * @param {?=} __0
-     * @return {?}
-     */
     CompileDirectiveMetadata.create = function (_a) {
         var _b = _a === void 0 ? {} : _a, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template;
-        var /** @type {?} */ hostListeners = {};
-        var /** @type {?} */ hostProperties = {};
-        var /** @type {?} */ hostAttributes = {};
+        var hostListeners = {};
+        var hostProperties = {};
+        var hostAttributes = {};
         if (isPresent(host)) {
             Object.keys(host).forEach(function (key) {
-                var /** @type {?} */ value = host[key];
-                var /** @type {?} */ matches = key.match(HOST_REG_EXP);
+                var value = host[key];
+                var matches = key.match(HOST_REG_EXP);
                 if (matches === null) {
                     hostAttributes[key] = value;
                 }
@@ -554,21 +314,21 @@ export var CompileDirectiveMetadata = (function () {
                 }
             });
         }
-        var /** @type {?} */ inputsMap = {};
+        var inputsMap = {};
         if (isPresent(inputs)) {
             inputs.forEach(function (bindConfig) {
                 // canonical syntax: `dirProp: elProp`
                 // if there is no `:`, use dirProp = elProp
-                var /** @type {?} */ parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
                 inputsMap[parts[0]] = parts[1];
             });
         }
-        var /** @type {?} */ outputsMap = {};
+        var outputsMap = {};
         if (isPresent(outputs)) {
             outputs.forEach(function (bindConfig) {
                 // canonical syntax: `dirProp: elProp`
                 // if there is no `:`, use dirProp = elProp
-                var /** @type {?} */ parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
+                var parts = splitAtColon(bindConfig, [bindConfig, bindConfig]);
                 outputsMap[parts[0]] = parts[1];
             });
         }
@@ -589,16 +349,10 @@ export var CompileDirectiveMetadata = (function () {
         });
     };
     Object.defineProperty(CompileDirectiveMetadata.prototype, "identifier", {
-        /**
-         * @return {?}
-         */
         get: function () { return this.type; },
         enumerable: true,
         configurable: true
     });
-    /**
-     * @return {?}
-     */
     CompileDirectiveMetadata.prototype.toSummary = function () {
         return {
             isSummary: true,
@@ -621,47 +375,11 @@ export var CompileDirectiveMetadata = (function () {
     };
     return CompileDirectiveMetadata;
 }());
-function CompileDirectiveMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.type;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.isComponent;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.selector;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.exportAs;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.changeDetection;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.inputs;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.outputs;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.hostListeners;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.hostProperties;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.hostAttributes;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.providers;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.viewProviders;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.queries;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.viewQueries;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.entryComponents;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.template;
-}
 /**
- *  Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
- * @param {?} compMeta
- * @return {?}
+ * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
  */
 export function createHostComponentMeta(compMeta) {
-    var /** @type {?} */ template = CssSelector.parse(compMeta.selector)[0].getMatchingElementTemplate();
+    var template = CssSelector.parse(compMeta.selector)[0].getMatchingElementTemplate();
     return CompileDirectiveMetadata.create({
         type: new CompileTypeMetadata({
             reference: Object,
@@ -691,9 +409,6 @@ export function createHostComponentMeta(compMeta) {
     });
 }
 export var CompilePipeMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
     function CompilePipeMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, type = _b.type, name = _b.name, pure = _b.pure;
         this.type = type;
@@ -701,36 +416,19 @@ export var CompilePipeMetadata = (function () {
         this.pure = !!pure;
     }
     Object.defineProperty(CompilePipeMetadata.prototype, "identifier", {
-        /**
-         * @return {?}
-         */
         get: function () { return this.type; },
         enumerable: true,
         configurable: true
     });
-    /**
-     * @return {?}
-     */
     CompilePipeMetadata.prototype.toSummary = function () {
         return { isSummary: true, type: this.type, name: this.name, pure: this.pure };
     };
     return CompilePipeMetadata;
 }());
-function CompilePipeMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompilePipeMetadata.prototype.type;
-    /** @type {?} */
-    CompilePipeMetadata.prototype.name;
-    /** @type {?} */
-    CompilePipeMetadata.prototype.pure;
-}
 /**
- *  Metadata regarding compilation of a module.
+ * Metadata regarding compilation of a module.
  */
 export var CompileNgModuleMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
     function CompileNgModuleMetadata(_a) {
         var _b = _a === void 0 ? {} : _a, type = _b.type, providers = _b.providers, declaredDirectives = _b.declaredDirectives, exportedDirectives = _b.exportedDirectives, declaredPipes = _b.declaredPipes, exportedPipes = _b.exportedPipes, entryComponents = _b.entryComponents, bootstrapComponents = _b.bootstrapComponents, importedModules = _b.importedModules, exportedModules = _b.exportedModules, schemas = _b.schemas, transitiveModule = _b.transitiveModule, id = _b.id;
         this.type = type;
@@ -748,16 +446,10 @@ export var CompileNgModuleMetadata = (function () {
         this.transitiveModule = transitiveModule;
     }
     Object.defineProperty(CompileNgModuleMetadata.prototype, "identifier", {
-        /**
-         * @return {?}
-         */
         get: function () { return this.type; },
         enumerable: true,
         configurable: true
     });
-    /**
-     * @return {?}
-     */
     CompileNgModuleMetadata.prototype.toSummary = function () {
         return {
             isSummary: true,
@@ -771,9 +463,6 @@ export var CompileNgModuleMetadata = (function () {
             directiveLoaders: this.transitiveModule.directiveLoaders
         };
     };
-    /**
-     * @return {?}
-     */
     CompileNgModuleMetadata.prototype.toInjectorSummary = function () {
         return {
             isSummary: true,
@@ -784,9 +473,6 @@ export var CompileNgModuleMetadata = (function () {
             exportedModules: this.exportedModules
         };
     };
-    /**
-     * @return {?}
-     */
     CompileNgModuleMetadata.prototype.toDirectiveSummary = function () {
         return {
             isSummary: true,
@@ -799,43 +485,7 @@ export var CompileNgModuleMetadata = (function () {
     };
     return CompileNgModuleMetadata;
 }());
-function CompileNgModuleMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.type;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.declaredDirectives;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.exportedDirectives;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.declaredPipes;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.exportedPipes;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.entryComponents;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.bootstrapComponents;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.providers;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.importedModules;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.exportedModules;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.schemas;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.id;
-    /** @type {?} */
-    CompileNgModuleMetadata.prototype.transitiveModule;
-}
 export var TransitiveCompileNgModuleMetadata = (function () {
-    /**
-     * @param {?} modules
-     * @param {?} providers
-     * @param {?} entryComponents
-     * @param {?} directives
-     * @param {?} pipes
-     * @param {?} directiveLoaders
-     */
     function TransitiveCompileNgModuleMetadata(modules, providers, entryComponents, directives, pipes, directiveLoaders) {
         var _this = this;
         this.modules = modules;
@@ -851,30 +501,8 @@ export var TransitiveCompileNgModuleMetadata = (function () {
     }
     return TransitiveCompileNgModuleMetadata;
 }());
-function TransitiveCompileNgModuleMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.directivesSet;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.pipesSet;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.modules;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.providers;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.entryComponents;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.directives;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.pipes;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.directiveLoaders;
-}
-/**
- * @param {?} items
- * @return {?}
- */
 export function removeIdentifierDuplicates(items) {
-    var /** @type {?} */ map = new Map();
+    var map = new Map();
     items.forEach(function (item) {
         if (!map.get(item.identifier.reference)) {
             map.set(item.identifier.reference, item);
@@ -882,18 +510,13 @@ export function removeIdentifierDuplicates(items) {
     });
     return Array.from(map.values());
 }
-/**
- * @param {?} obj
- * @return {?}
- */
 function _normalizeArray(obj) {
     return obj || [];
 }
+export function isStaticSymbol(value) {
+    return typeof value === 'object' && value !== null && value['name'] && value['filePath'];
+}
 export var ProviderMeta = (function () {
-    /**
-     * @param {?} token
-     * @param {?} __1
-     */
     function ProviderMeta(token, _a) {
         var useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
         this.token = token;
@@ -906,20 +529,4 @@ export var ProviderMeta = (function () {
     }
     return ProviderMeta;
 }());
-function ProviderMeta_tsickle_Closure_declarations() {
-    /** @type {?} */
-    ProviderMeta.prototype.token;
-    /** @type {?} */
-    ProviderMeta.prototype.useClass;
-    /** @type {?} */
-    ProviderMeta.prototype.useValue;
-    /** @type {?} */
-    ProviderMeta.prototype.useExisting;
-    /** @type {?} */
-    ProviderMeta.prototype.useFactory;
-    /** @type {?} */
-    ProviderMeta.prototype.dependencies;
-    /** @type {?} */
-    ProviderMeta.prototype.multi;
-}
 //# sourceMappingURL=compile_metadata.js.map

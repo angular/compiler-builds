@@ -14,32 +14,19 @@ import { isPresent } from '../facade/lang';
 import { sanitizeIdentifier } from '../util';
 import { EmitterVisitorContext } from './abstract_emitter';
 import { AbstractJsEmitterVisitor } from './abstract_js_emitter';
-/**
- * @param {?} sourceUrl
- * @param {?} expr
- * @param {?} declarations
- * @param {?} vars
- * @return {?}
- */
 function evalExpression(sourceUrl, expr, declarations, vars) {
-    var /** @type {?} */ fnBody = declarations + "\nreturn " + expr + "\n//# sourceURL=" + sourceUrl;
-    var /** @type {?} */ fnArgNames = [];
-    var /** @type {?} */ fnArgValues = [];
+    var fnBody = declarations + "\nreturn " + expr + "\n//# sourceURL=" + sourceUrl;
+    var fnArgNames = [];
+    var fnArgValues = [];
     for (var argName in vars) {
         fnArgNames.push(argName);
         fnArgValues.push(vars[argName]);
     }
     return new (Function.bind.apply(Function, [void 0].concat(fnArgNames.concat(fnBody))))().apply(void 0, fnArgValues);
 }
-/**
- * @param {?} sourceUrl
- * @param {?} statements
- * @param {?} resultVar
- * @return {?}
- */
 export function jitStatements(sourceUrl, statements, resultVar) {
-    var /** @type {?} */ converter = new JitEmitterVisitor();
-    var /** @type {?} */ ctx = EmitterVisitorContext.createRoot([resultVar]);
+    var converter = new JitEmitterVisitor();
+    var ctx = EmitterVisitorContext.createRoot([resultVar]);
     converter.visitAllStatements(statements, ctx);
     return evalExpression(sourceUrl, resultVar, ctx.toSource(), converter.getArgs());
 }
@@ -50,28 +37,20 @@ var JitEmitterVisitor = (function (_super) {
         this._evalArgNames = [];
         this._evalArgValues = [];
     }
-    /**
-     * @return {?}
-     */
     JitEmitterVisitor.prototype.getArgs = function () {
-        var /** @type {?} */ result = {};
-        for (var /** @type {?} */ i = 0; i < this._evalArgNames.length; i++) {
+        var result = {};
+        for (var i = 0; i < this._evalArgNames.length; i++) {
             result[this._evalArgNames[i]] = this._evalArgValues[i];
         }
         return result;
     };
-    /**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */
     JitEmitterVisitor.prototype.visitExternalExpr = function (ast, ctx) {
-        var /** @type {?} */ value = ast.value.reference;
-        var /** @type {?} */ id = this._evalArgValues.indexOf(value);
+        var value = ast.value.reference;
+        var id = this._evalArgValues.indexOf(value);
         if (id === -1) {
             id = this._evalArgValues.length;
             this._evalArgValues.push(value);
-            var /** @type {?} */ name_1 = isPresent(ast.value.name) ? sanitizeIdentifier(ast.value.name) : 'val';
+            var name_1 = isPresent(ast.value.name) ? sanitizeIdentifier(ast.value.name) : 'val';
             this._evalArgNames.push(sanitizeIdentifier("jit_" + name_1 + id));
         }
         ctx.print(this._evalArgNames[id]);
@@ -79,10 +58,4 @@ var JitEmitterVisitor = (function (_super) {
     };
     return JitEmitterVisitor;
 }(AbstractJsEmitterVisitor));
-function JitEmitterVisitor_tsickle_Closure_declarations() {
-    /** @type {?} */
-    JitEmitterVisitor.prototype._evalArgNames;
-    /** @type {?} */
-    JitEmitterVisitor.prototype._evalArgValues;
-}
 //# sourceMappingURL=output_jit.js.map

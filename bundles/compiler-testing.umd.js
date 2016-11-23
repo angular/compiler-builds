@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-beta.1-4553948
+ * @license Angular v2.2.2-69572ac
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -212,9 +212,9 @@
             { type: _angular_core.Injectable },
         ];
         /** @nocollapse */
-        MockDirectiveResolver.ctorParameters = function () { return [
+        MockDirectiveResolver.ctorParameters = [
             { type: _angular_core.Injector, },
-        ]; };
+        ];
         return MockDirectiveResolver;
     }(_angular_compiler.DirectiveResolver));
 
@@ -264,9 +264,9 @@
             { type: _angular_core.Injectable },
         ];
         /** @nocollapse */
-        MockNgModuleResolver.ctorParameters = function () { return [
+        MockNgModuleResolver.ctorParameters = [
             { type: _angular_core.Injector, },
-        ]; };
+        ];
         return MockNgModuleResolver;
     }(_angular_compiler.NgModuleResolver));
 
@@ -320,9 +320,9 @@
             { type: _angular_core.Injectable },
         ];
         /** @nocollapse */
-        MockPipeResolver.ctorParameters = function () { return [
+        MockPipeResolver.ctorParameters = [
             { type: _angular_core.Injector, },
-        ]; };
+        ];
         return MockPipeResolver;
     }(_angular_compiler.PipeResolver));
 
@@ -454,9 +454,9 @@
             { type: _angular_core.Injectable },
         ];
         /** @nocollapse */
-        TestingCompilerFactoryImpl.ctorParameters = function () { return [
+        TestingCompilerFactoryImpl.ctorParameters = [
             { type: _angular_core.CompilerFactory, },
-        ]; };
+        ];
         return TestingCompilerFactoryImpl;
     }());
     var TestingCompilerImpl = (function () {
