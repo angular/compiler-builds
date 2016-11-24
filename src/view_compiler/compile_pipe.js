@@ -10,6 +10,10 @@ import { Identifiers, resolveIdentifier, resolveIdentifierToken } from '../ident
 import * as o from '../output/output_ast';
 import { getPropertyInView, injectFromViewParentInjector } from './util';
 export var CompilePipe = (function () {
+    /**
+     * @param {?} view
+     * @param {?} meta
+     */
     function CompilePipe(view, meta) {
         var _this = this;
         this.view = view;
@@ -29,10 +33,16 @@ export var CompilePipe = (function () {
             .set(o.importExpr(this.meta.type).instantiate(deps))
             .toStmt());
     }
+    /**
+     * @param {?} view
+     * @param {?} name
+     * @param {?} args
+     * @return {?}
+     */
     CompilePipe.call = function (view, name, args) {
-        var compView = view.componentView;
-        var meta = _findPipeMeta(compView, name);
-        var pipe;
+        var /** @type {?} */ compView = view.componentView;
+        var /** @type {?} */ meta = _findPipeMeta(compView, name);
+        var /** @type {?} */ pipe;
         if (meta.pure) {
             // pure pipes live on the component view
             pipe = compView.purePipes.get(name);
@@ -50,15 +60,23 @@ export var CompilePipe = (function () {
         return pipe._call(view, args);
     };
     Object.defineProperty(CompilePipe.prototype, "pure", {
+        /**
+         * @return {?}
+         */
         get: function () { return this.meta.pure; },
         enumerable: true,
         configurable: true
     });
+    /**
+     * @param {?} callingView
+     * @param {?} args
+     * @return {?}
+     */
     CompilePipe.prototype._call = function (callingView, args) {
         if (this.meta.pure) {
             // PurePipeProxies live on the view that called them.
-            var purePipeProxyInstance = o.THIS_EXPR.prop(this.instance.name + "_" + this._purePipeProxyCount++);
-            var pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
+            var /** @type {?} */ purePipeProxyInstance = o.THIS_EXPR.prop(this.instance.name + "_" + this._purePipeProxyCount++);
+            var /** @type {?} */ pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
             createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
                 .callMethod(o.BuiltinMethod.Bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, { fields: callingView.fields, ctorStmts: callingView.createMethod });
             return o.importExpr(resolveIdentifier(Identifiers.castByValue))
@@ -71,10 +89,25 @@ export var CompilePipe = (function () {
     };
     return CompilePipe;
 }());
+function CompilePipe_tsickle_Closure_declarations() {
+    /** @type {?} */
+    CompilePipe.prototype.instance;
+    /** @type {?} */
+    CompilePipe.prototype._purePipeProxyCount;
+    /** @type {?} */
+    CompilePipe.prototype.view;
+    /** @type {?} */
+    CompilePipe.prototype.meta;
+}
+/**
+ * @param {?} view
+ * @param {?} name
+ * @return {?}
+ */
 function _findPipeMeta(view, name) {
-    var pipeMeta = null;
-    for (var i = view.pipeMetas.length - 1; i >= 0; i--) {
-        var localPipeMeta = view.pipeMetas[i];
+    var /** @type {?} */ pipeMeta = null;
+    for (var /** @type {?} */ i = view.pipeMetas.length - 1; i >= 0; i--) {
+        var /** @type {?} */ localPipeMeta = view.pipeMetas[i];
         if (localPipeMeta.name == name) {
             pipeMeta = localPipeMeta;
             break;

@@ -6,17 +6,19 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as html from '../ml_parser/ast';
-import { MessageBundle } from './message_bundle';
+import * as i18n from './i18n_ast';
 import { Serializer } from './serializers/serializer';
 /**
  * A container for translated messages
  */
 export declare class TranslationBundle {
-    private _messageMap;
-    constructor(_messageMap?: {
-        [id: string]: html.Node[];
-    });
-    static load(content: string, url: string, messageBundle: MessageBundle, serializer: Serializer): TranslationBundle;
-    get(id: string): html.Node[];
-    has(id: string): boolean;
+    private _i18nNodesByMsgId;
+    digest: (m: i18n.Message) => string;
+    private _i18nToHtml;
+    constructor(_i18nNodesByMsgId: {
+        [msgId: string]: i18n.Node[];
+    }, digest: (m: i18n.Message) => string);
+    static load(content: string, url: string, serializer: Serializer): TranslationBundle;
+    get(srcMsg: i18n.Message): html.Node[];
+    has(srcMsg: i18n.Message): boolean;
 }
