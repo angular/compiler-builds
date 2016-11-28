@@ -6,11 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewEncapsulation } from '@angular/core';
-import { CompileIdentifierMetadata } from '../compile_metadata';
+import { CompileIdentifierMetadata, identifierModuleUrl, identifierName } from '../compile_metadata';
 import { createSharedBindingVariablesIfNeeded } from '../compiler_util/expression_converter';
 import { createDiTokenExpression, createInlineArray } from '../compiler_util/identifier_util';
 import { isPresent } from '../facade/lang';
-import { Identifiers, identifierToken, resolveIdentifier } from '../identifiers';
+import { Identifiers, createIdentifier, identifierToken } from '../identifiers';
 import { createClassStmt } from '../output/class_builder';
 import * as o from '../output/output_ast';
 import { ChangeDetectorStatus, ViewType, isDefaultChangeDetectionStrategy } from '../private_import_core';
@@ -210,14 +210,14 @@ var ViewBuilderVisitor = (function () {
             var /** @type {?} */ attrNameAndValues = createInlineArray(_mergeHtmlAndDirectiveAttrs(htmlAttrs, directives).map(function (v) { return o.literal(v); }));
             if (nodeIndex === 0 && this.view.viewType === ViewType.HOST) {
                 createRenderNodeExpr =
-                    o.importExpr(resolveIdentifier(Identifiers.selectOrCreateRenderHostElement)).callFn([
+                    o.importExpr(createIdentifier(Identifiers.selectOrCreateRenderHostElement)).callFn([
                         ViewProperties.renderer, o.literal(ast.name), attrNameAndValues, rootSelectorVar,
                         debugContextExpr
                     ]);
             }
             else {
                 createRenderNodeExpr =
-                    o.importExpr(resolveIdentifier(Identifiers.createRenderElement)).callFn([
+                    o.importExpr(createIdentifier(Identifiers.createRenderElement)).callFn([
                         ViewProperties.renderer, this._getParentRenderNode(parent), o.literal(ast.name),
                         attrNameAndValues, debugContextExpr
                     ]);
@@ -227,14 +227,14 @@ var ViewBuilderVisitor = (function () {
         this.view.fields.push(new o.ClassField(fieldName, o.importType(this.view.genConfig.renderTypes.renderElement)));
         this.view.createMethod.addStmt(o.THIS_EXPR.prop(fieldName).set(createRenderNodeExpr).toStmt());
         var /** @type {?} */ renderNode = o.THIS_EXPR.prop(fieldName);
-        var /** @type {?} */ compileElement = new CompileElement(parent, this.view, nodeIndex, renderNode, ast, component, directives, ast.providers, ast.hasViewContainer, false, ast.references, this.targetDependencies);
+        var /** @type {?} */ compileElement = new CompileElement(parent, this.view, nodeIndex, renderNode, ast, component, directives, ast.providers, ast.hasViewContainer, false, ast.references);
         this.view.nodes.push(compileElement);
         var /** @type {?} */ compViewExpr = null;
         if (isPresent(component)) {
-            var /** @type {?} */ nestedComponentIdentifier = new CompileIdentifierMetadata({ name: getViewClassName(component, 0) });
-            this.targetDependencies.push(new ViewClassDependency(component.type, nestedComponentIdentifier));
+            var /** @type {?} */ nestedComponentIdentifier = new CompileIdentifierMetadata();
+            this.targetDependencies.push(new ViewClassDependency(component.type, getViewClassName(component, 0), nestedComponentIdentifier));
             compViewExpr = o.THIS_EXPR.prop("compView_" + nodeIndex); // fix highlighting: `
-            this.view.fields.push(new o.ClassField(compViewExpr.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.importType(component.type)])));
+            this.view.fields.push(new o.ClassField(compViewExpr.name, o.importType(createIdentifier(Identifiers.AppView), [o.importType(component.type)])));
             this.view.viewChildren.push(compViewExpr);
             compileElement.setComponentView(compViewExpr);
             this.view.createMethod.addStmt(compViewExpr
@@ -270,10 +270,10 @@ var ViewBuilderVisitor = (function () {
         var /** @type {?} */ renderNode = o.THIS_EXPR.prop(fieldName);
         var /** @type {?} */ templateVariableBindings = ast.variables.map(function (varAst) { return [varAst.value.length > 0 ? varAst.value : IMPLICIT_TEMPLATE_VAR, varAst.name]; });
         var /** @type {?} */ directives = ast.directives.map(function (directiveAst) { return directiveAst.directive; });
-        var /** @type {?} */ compileElement = new CompileElement(parent, this.view, nodeIndex, renderNode, ast, null, directives, ast.providers, ast.hasViewContainer, true, ast.references, this.targetDependencies);
+        var /** @type {?} */ compileElement = new CompileElement(parent, this.view, nodeIndex, renderNode, ast, null, directives, ast.providers, ast.hasViewContainer, true, ast.references);
         this.view.nodes.push(compileElement);
         this.nestedViewCount++;
-        var /** @type {?} */ embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, o.NULL_EXPR, this.view.animations, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings);
+        var /** @type {?} */ embeddedView = new CompileView(this.view.component, this.view.genConfig, this.view.pipeMetas, o.NULL_EXPR, this.view.animations, this.view.viewIndex + this.nestedViewCount, compileElement, templateVariableBindings, this.targetDependencies);
         this.nestedViewCount += buildView(embeddedView, ast.children, this.targetDependencies);
         compileElement.beforeChildren();
         this._addRootNodeAndProject(compileElement);
@@ -425,30 +425,32 @@ function mergeAttributeValue(attrName, attrValue1, attrValue2) {
 function createViewTopLevelStmts(view, targetStatements) {
     var /** @type {?} */ nodeDebugInfosVar = o.NULL_EXPR;
     if (view.genConfig.genDebugInfo) {
-        nodeDebugInfosVar = o.variable("nodeDebugInfos_" + view.component.type.name + view.viewIndex); // fix highlighting: `
+        nodeDebugInfosVar = o.variable("nodeDebugInfos_" + identifierName(view.component.type) + view.viewIndex); // fix
+        // highlighting:
+        // `
         targetStatements.push(((nodeDebugInfosVar))
-            .set(o.literalArr(view.nodes.map(createStaticNodeDebugInfo), new o.ArrayType(new o.ExternalType(resolveIdentifier(Identifiers.StaticNodeDebugInfo)), [o.TypeModifier.Const])))
+            .set(o.literalArr(view.nodes.map(createStaticNodeDebugInfo), new o.ArrayType(o.importType(createIdentifier(Identifiers.StaticNodeDebugInfo)), [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
-    var /** @type {?} */ renderCompTypeVar = o.variable("renderType_" + view.component.type.name); // fix highlighting: `
+    var /** @type {?} */ renderCompTypeVar = o.variable("renderType_" + identifierName(view.component.type)); // fix highlighting: `
     if (view.viewIndex === 0) {
         var /** @type {?} */ templateUrlInfo = void 0;
-        if (view.component.template.templateUrl == view.component.type.moduleUrl) {
+        if (view.component.template.templateUrl == identifierModuleUrl(view.component.type)) {
             templateUrlInfo =
-                view.component.type.moduleUrl + " class " + view.component.type.name + " - inline template";
+                identifierModuleUrl(view.component.type) + " class " + identifierName(view.component.type) + " - inline template";
         }
         else {
             templateUrlInfo = view.component.template.templateUrl;
         }
         targetStatements.push(renderCompTypeVar
-            .set(o.importExpr(resolveIdentifier(Identifiers.createRenderComponentType)).callFn([
+            .set(o.importExpr(createIdentifier(Identifiers.createRenderComponentType)).callFn([
             view.genConfig.genDebugInfo ? o.literal(templateUrlInfo) : o.literal(''),
             o.literal(view.component.template.ngContentSelectors.length),
             ViewEncapsulationEnum.fromValue(view.component.template.encapsulation),
             view.styles,
             o.literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; })),
         ]))
-            .toDeclStmt(o.importType(resolveIdentifier(Identifiers.RenderComponentType))));
+            .toDeclStmt(o.importType(createIdentifier(Identifiers.RenderComponentType))));
     }
     var /** @type {?} */ viewClass = createViewClass(view, renderCompTypeVar, nodeDebugInfosVar);
     targetStatements.push(viewClass);
@@ -472,12 +474,12 @@ function createStaticNodeDebugInfo(node) {
             varTokenEntries.push([varName, isPresent(token) ? createDiTokenExpression(token) : o.NULL_EXPR]);
         });
     }
-    return o.importExpr(resolveIdentifier(Identifiers.StaticNodeDebugInfo))
+    return o.importExpr(createIdentifier(Identifiers.StaticNodeDebugInfo))
         .instantiate([
         o.literalArr(providerTokens, new o.ArrayType(o.DYNAMIC_TYPE, [o.TypeModifier.Const])),
         componentToken,
         o.literalMap(varTokenEntries, new o.MapType(o.DYNAMIC_TYPE, [o.TypeModifier.Const]))
-    ], o.importType(resolveIdentifier(Identifiers.StaticNodeDebugInfo), null, [o.TypeModifier.Const]));
+    ], o.importType(createIdentifier(Identifiers.StaticNodeDebugInfo), null, [o.TypeModifier.Const]));
 }
 /**
  * @param {?} view
@@ -487,8 +489,8 @@ function createStaticNodeDebugInfo(node) {
  */
 function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
     var /** @type {?} */ viewConstructorArgs = [
-        new o.FnParam(ViewConstructorVars.viewUtils.name, o.importType(resolveIdentifier(Identifiers.ViewUtils))),
-        new o.FnParam(ViewConstructorVars.parentView.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
+        new o.FnParam(ViewConstructorVars.viewUtils.name, o.importType(createIdentifier(Identifiers.ViewUtils))),
+        new o.FnParam(ViewConstructorVars.parentView.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
         new o.FnParam(ViewConstructorVars.parentIndex.name, o.NUMBER_TYPE),
         new o.FnParam(ViewConstructorVars.parentElement.name, o.DYNAMIC_TYPE)
     ];
@@ -502,11 +504,11 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
         superConstructorArgs.push(nodeDebugInfosVar);
     }
     if (view.viewType === ViewType.EMBEDDED) {
-        viewConstructorArgs.push(new o.FnParam('declaredViewContainer', o.importType(resolveIdentifier(Identifiers.ViewContainer))));
+        viewConstructorArgs.push(new o.FnParam('declaredViewContainer', o.importType(createIdentifier(Identifiers.ViewContainer))));
         superConstructorArgs.push(o.variable('declaredViewContainer'));
     }
     var /** @type {?} */ viewMethods = [
-        new o.ClassMethod('createInternal', [new o.FnParam(rootSelectorVar.name, o.STRING_TYPE)], generateCreateMethod(view), o.importType(resolveIdentifier(Identifiers.ComponentRef), [o.DYNAMIC_TYPE])),
+        new o.ClassMethod('createInternal', [new o.FnParam(rootSelectorVar.name, o.STRING_TYPE)], generateCreateMethod(view), o.importType(createIdentifier(Identifiers.ComponentRef), [o.DYNAMIC_TYPE])),
         new o.ClassMethod('injectorGetInternal', [
             new o.FnParam(InjectMethodVars.token.name, o.DYNAMIC_TYPE),
             // Note: Can't use o.INT_TYPE here as the method in AppView uses number
@@ -523,7 +525,7 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
     var /** @type {?} */ superClass = view.genConfig.genDebugInfo ? Identifiers.DebugAppView : Identifiers.AppView;
     var /** @type {?} */ viewClass = createClassStmt({
         name: view.className,
-        parent: o.importExpr(resolveIdentifier(superClass), [getContextType(view)]),
+        parent: o.importExpr(createIdentifier(superClass), [getContextType(view)]),
         parentArgs: superConstructorArgs,
         ctorParams: viewConstructorArgs,
         builders: [{ methods: viewMethods }, view]
@@ -561,7 +563,7 @@ function generateCreateMethod(view) {
     if (view.viewType === ViewType.HOST) {
         var /** @type {?} */ hostEl = (view.nodes[0]);
         resultExpr =
-            o.importExpr(resolveIdentifier(Identifiers.ComponentRef_), [o.DYNAMIC_TYPE]).instantiate([
+            o.importExpr(createIdentifier(Identifiers.ComponentRef_), [o.DYNAMIC_TYPE]).instantiate([
                 o.literal(hostEl.nodeIndex), o.THIS_EXPR, hostEl.renderNode, hostEl.getComponent()
             ]);
     }
@@ -621,7 +623,7 @@ function generateDetectChangesMethod(view) {
     }
     if (readVars.has(DetectChangesVars.changes.name)) {
         varStmts.push(DetectChangesVars.changes.set(o.NULL_EXPR)
-            .toDeclStmt(new o.MapType(o.importType(resolveIdentifier(Identifiers.SimpleChange)))));
+            .toDeclStmt(new o.MapType(o.importType(createIdentifier(Identifiers.SimpleChange)))));
     }
     varStmts.push.apply(varStmts, createSharedBindingVariablesIfNeeded(stmts));
     return varStmts.concat(stmts);
@@ -745,6 +747,6 @@ function generateCreateEmbeddedViewsMethod(view) {
     if (stmts.length > 0) {
         stmts.push(new o.ReturnStatement(o.NULL_EXPR));
     }
-    return new o.ClassMethod('createEmbeddedViewInternal', [new o.FnParam(nodeIndexVar.name, o.NUMBER_TYPE)], stmts, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE]));
+    return new o.ClassMethod('createEmbeddedViewInternal', [new o.FnParam(nodeIndexVar.name, o.NUMBER_TYPE)], stmts, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE]));
 }
 //# sourceMappingURL=view_builder.js.map

@@ -6,12 +6,13 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable } from '@angular/core';
+import { identifierModuleUrl, identifierName } from './compile_metadata';
 import { createCheckBindingField, createCheckBindingStmt } from './compiler_util/binding_util';
 import { EventHandlerVars, convertActionBinding, convertPropertyBinding } from './compiler_util/expression_converter';
 import { triggerAnimation, writeToRenderer } from './compiler_util/render_util';
 import { CompilerConfig } from './config';
 import { Parser } from './expression_parser/parser';
-import { Identifiers, resolveIdentifier } from './identifiers';
+import { Identifiers, createIdentifier } from './identifiers';
 import { DEFAULT_INTERPOLATION_CONFIG } from './ml_parser/interpolation_config';
 import { createClassStmt } from './output/class_builder';
 import * as o from './output/output_ast';
@@ -73,7 +74,9 @@ export var DirectiveWrapperCompiler = (function () {
      * @param {?} id
      * @return {?}
      */
-    DirectiveWrapperCompiler.dirWrapperClassName = function (id) { return "Wrapper_" + id.name; };
+    DirectiveWrapperCompiler.dirWrapperClassName = function (id) {
+        return "Wrapper_" + identifierName(id);
+    };
     /**
      * @param {?} dirMeta
      * @return {?}
@@ -156,8 +159,8 @@ var DirectiveWrapperBuilder = (function () {
         }
         var /** @type {?} */ methods = [
             new o.ClassMethod('ngOnDetach', [
-                new o.FnParam(VIEW_VAR.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
-                new o.FnParam(COMPONENT_VIEW_VAR.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
+                new o.FnParam(VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
+                new o.FnParam(COMPONENT_VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
                 new o.FnParam(RENDER_EL_VAR.name, o.DYNAMIC_TYPE),
             ], this.detachStmts),
             new o.ClassMethod('ngOnDestroy', [], this.destroyStmts),
@@ -231,7 +234,7 @@ function addNgDoCheckMethod(builder) {
                 .toStmt());
         }
         if (builder.compilerConfig.logBindingUpdate) {
-            onChangesStmts.push(o.importExpr(resolveIdentifier(Identifiers.setBindingDebugInfoForChanges))
+            onChangesStmts.push(o.importExpr(createIdentifier(Identifiers.setBindingDebugInfoForChanges))
                 .callFn([VIEW_VAR.prop('renderer'), RENDER_EL_VAR, o.THIS_EXPR.prop(CHANGES_FIELD_NAME)])
                 .toStmt());
         }
@@ -249,7 +252,7 @@ function addNgDoCheckMethod(builder) {
     }
     stmts.push(new o.ReturnStatement(changedVar));
     builder.methods.push(new o.ClassMethod('ngDoCheck', [
-        new o.FnParam(VIEW_VAR.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
+        new o.FnParam(VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
         new o.FnParam(RENDER_EL_VAR.name, o.DYNAMIC_TYPE),
         new o.FnParam(THROW_ON_CHANGE_VAR.name, o.BOOL_TYPE),
     ], stmts, o.BOOL_TYPE));
@@ -268,7 +271,7 @@ function addCheckInputMethod(input, builder) {
     if (builder.genChanges) {
         onChangeStatements.push(o.THIS_EXPR.prop(CHANGES_FIELD_NAME)
             .key(o.literal(input))
-            .set(o.importExpr(resolveIdentifier(Identifiers.SimpleChange))
+            .set(o.importExpr(createIdentifier(Identifiers.SimpleChange))
             .instantiate([field.expression, CURR_VALUE_VAR]))
             .toStmt());
     }
@@ -287,8 +290,8 @@ function addCheckInputMethod(input, builder) {
 function addCheckHostMethod(hostProps, builder) {
     var /** @type {?} */ stmts = [];
     var /** @type {?} */ methodParams = [
-        new o.FnParam(VIEW_VAR.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
-        new o.FnParam(COMPONENT_VIEW_VAR.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
+        new o.FnParam(VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
+        new o.FnParam(COMPONENT_VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
         new o.FnParam(RENDER_EL_VAR.name, o.DYNAMIC_TYPE),
         new o.FnParam(THROW_ON_CHANGE_VAR.name, o.BOOL_TYPE),
     ];
@@ -301,12 +304,12 @@ function addCheckHostMethod(hostProps, builder) {
         var /** @type {?} */ securityContextExpr;
         if (hostProp.needsRuntimeSecurityContext) {
             securityContextExpr = o.variable("secCtx_" + methodParams.length);
-            methodParams.push(new o.FnParam(securityContextExpr.name, o.importType(resolveIdentifier(Identifiers.SecurityContext))));
+            methodParams.push(new o.FnParam(securityContextExpr.name, o.importType(createIdentifier(Identifiers.SecurityContext))));
         }
         var /** @type {?} */ checkBindingStmts;
         if (hostProp.isAnimation) {
             var _a = triggerAnimation(VIEW_VAR, COMPONENT_VIEW_VAR, hostProp, o.THIS_EXPR.prop(EVENT_HANDLER_FIELD_NAME)
-                .or(o.importExpr(resolveIdentifier(Identifiers.noop))), RENDER_EL_VAR, evalResult.currValExpr, field.expression), updateStmts = _a.updateStmts, detachStmts = _a.detachStmts;
+                .or(o.importExpr(createIdentifier(Identifiers.noop))), RENDER_EL_VAR, evalResult.currValExpr, field.expression), updateStmts = _a.updateStmts, detachStmts = _a.detachStmts;
             checkBindingStmts = updateStmts;
             (_b = builder.detachStmts).push.apply(_b, detachStmts);
         }
@@ -348,7 +351,7 @@ function addHandleEventMethod(hostListeners, builder) {
  */
 function addSubscribeMethod(dirMeta, builder) {
     var /** @type {?} */ methodParams = [
-        new o.FnParam(VIEW_VAR.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
+        new o.FnParam(VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
         new o.FnParam(EVENT_HANDLER_FIELD_NAME, o.DYNAMIC_TYPE)
     ];
     var /** @type {?} */ stmts = [
@@ -404,9 +407,10 @@ function ParseResult_tsickle_Closure_declarations() {
 function parseHostBindings(dirMeta, exprParser, schemaRegistry) {
     var /** @type {?} */ errors = [];
     var /** @type {?} */ parser = new BindingParser(exprParser, DEFAULT_INTERPOLATION_CONFIG, schemaRegistry, [], errors);
-    var /** @type {?} */ sourceFileName = dirMeta.type.moduleUrl ?
-        "in Directive " + dirMeta.type.name + " in " + dirMeta.type.moduleUrl :
-        "in Directive " + dirMeta.type.name;
+    var /** @type {?} */ moduleUrl = identifierModuleUrl(dirMeta.type);
+    var /** @type {?} */ sourceFileName = moduleUrl ?
+        "in Directive " + identifierName(dirMeta.type) + " in " + moduleUrl :
+        "in Directive " + identifierName(dirMeta.type);
     var /** @type {?} */ sourceFile = new ParseSourceFile('', sourceFileName);
     var /** @type {?} */ sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
     var /** @type {?} */ parsedHostProps = parser.createDirectiveHostPropertyAsts(dirMeta.toSummary(), sourceSpan);

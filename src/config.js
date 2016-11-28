@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewEncapsulation, isDevMode } from '@angular/core';
-import { Identifiers, resolveIdentifier } from './identifiers';
+import { Identifiers, createIdentifier } from './identifiers';
 /**
  * @return {?}
  */
@@ -130,7 +130,7 @@ export var DefaultRenderTypes = (function () {
         /**
          * @return {?}
          */
-        get: function () { return resolveIdentifier(Identifiers.Renderer); },
+        get: function () { return createIdentifier(Identifiers.Renderer); },
         enumerable: true,
         configurable: true
     });

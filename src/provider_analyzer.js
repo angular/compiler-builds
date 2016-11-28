@@ -10,9 +10,9 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { CompileDiDependencyMetadata, CompileProviderMetadata, CompileTokenMetadata, CompileTypeMetadata } from './compile_metadata';
+import { CompileDiDependencyMetadata, CompileProviderMetadata, CompileTokenMetadata, CompileTypeMetadata, tokenName, tokenReference } from './compile_metadata';
 import { isBlank, isPresent } from './facade/lang';
-import { Identifiers, resolveIdentifierToken } from './identifiers';
+import { Identifiers, resolveIdentifier } from './identifiers';
 import { ParseError } from './parse_util';
 import { ProviderAst, ProviderAstType } from './template_parser/template_ast';
 export var ProviderError = (function (_super) {
@@ -39,8 +39,8 @@ export var ProviderViewContext = (function () {
         this.viewQueries = _getViewQueries(component);
         this.viewProviders = new Map();
         _normalizeProviders(component.viewProviders, sourceSpan, this.errors).forEach(function (provider) {
-            if (isBlank(_this.viewProviders.get(provider.token.reference))) {
-                _this.viewProviders.set(provider.token.reference, true);
+            if (isBlank(_this.viewProviders.get(tokenReference(provider.token)))) {
+                _this.viewProviders.set(tokenReference(provider.token), true);
             }
         });
     }
@@ -91,12 +91,12 @@ export var ProviderElementContext = (function () {
         refs.forEach(function (refAst) {
             _this._addQueryReadsTo(new CompileTokenMetadata({ value: refAst.name }), queriedTokens);
         });
-        if (isPresent(queriedTokens.get(resolveIdentifierToken(Identifiers.ViewContainerRef).reference))) {
+        if (isPresent(queriedTokens.get(resolveIdentifier(Identifiers.ViewContainerRef)))) {
             this._hasViewContainer = true;
         }
         // create the providers that we know are eager first
         Array.from(this._allProviders.values()).forEach(function (provider) {
-            var eager = provider.eager || isPresent(queriedTokens.get(provider.token.reference));
+            var eager = provider.eager || isPresent(queriedTokens.get(tokenReference(provider.token)));
             if (eager) {
                 _this._getOrCreateLocalProvider(provider.providerType, provider.token, true);
             }
@@ -152,8 +152,8 @@ export var ProviderElementContext = (function () {
     ProviderElementContext.prototype._addQueryReadsTo = function (token, queryReadTokens) {
         this._getQueriesFor(token).forEach(function (query) {
             var /** @type {?} */ queryReadToken = query.read || token;
-            if (isBlank(queryReadTokens.get(queryReadToken.reference))) {
-                queryReadTokens.set(queryReadToken.reference, true);
+            if (isBlank(queryReadTokens.get(tokenReference(queryReadToken)))) {
+                queryReadTokens.set(tokenReference(queryReadToken), true);
             }
         });
     };
@@ -167,7 +167,7 @@ export var ProviderElementContext = (function () {
         var /** @type {?} */ distance = 0;
         var /** @type {?} */ queries;
         while (currentEl !== null) {
-            queries = currentEl._contentQueries.get(token.reference);
+            queries = currentEl._contentQueries.get(tokenReference(token));
             if (isPresent(queries)) {
                 result.push.apply(result, queries.filter(function (query) { return query.descendants || distance <= 1; }));
             }
@@ -176,7 +176,7 @@ export var ProviderElementContext = (function () {
             }
             currentEl = currentEl._parent;
         }
-        queries = this.viewContext.viewQueries.get(token.reference);
+        queries = this.viewContext.viewQueries.get(tokenReference(token));
         if (isPresent(queries)) {
             result.push.apply(result, queries);
         }
@@ -190,7 +190,7 @@ export var ProviderElementContext = (function () {
      */
     ProviderElementContext.prototype._getOrCreateLocalProvider = function (requestingProviderType, token, eager) {
         var _this = this;
-        var /** @type {?} */ resolvedProvider = this._allProviders.get(token.reference);
+        var /** @type {?} */ resolvedProvider = this._allProviders.get(tokenReference(token));
         if (!resolvedProvider || ((requestingProviderType === ProviderAstType.Directive ||
             requestingProviderType === ProviderAstType.PublicService) &&
             resolvedProvider.providerType === ProviderAstType.PrivateService) ||
@@ -199,15 +199,15 @@ export var ProviderElementContext = (function () {
                 resolvedProvider.providerType === ProviderAstType.Builtin)) {
             return null;
         }
-        var /** @type {?} */ transformedProviderAst = this._transformedProviders.get(token.reference);
+        var /** @type {?} */ transformedProviderAst = this._transformedProviders.get(tokenReference(token));
         if (isPresent(transformedProviderAst)) {
             return transformedProviderAst;
         }
-        if (isPresent(this._seenProviders.get(token.reference))) {
-            this.viewContext.errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, this._sourceSpan));
+        if (isPresent(this._seenProviders.get(tokenReference(token)))) {
+            this.viewContext.errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + tokenName(token), this._sourceSpan));
             return null;
         }
-        this._seenProviders.set(token.reference, true);
+        this._seenProviders.set(tokenReference(token), true);
         var /** @type {?} */ transformedProviders = resolvedProvider.providers.map(function (provider) {
             var /** @type {?} */ transformedUseValue = provider.useValue;
             var /** @type {?} */ transformedUseExisting = provider.useExisting;
@@ -240,7 +240,7 @@ export var ProviderElementContext = (function () {
         });
         transformedProviderAst =
             _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
-        this._transformedProviders.set(token.reference, transformedProviderAst);
+        this._transformedProviders.set(tokenReference(token), transformedProviderAst);
         return transformedProviderAst;
     };
     /**
@@ -259,20 +259,18 @@ export var ProviderElementContext = (function () {
             // access builtints
             if ((requestingProviderType === ProviderAstType.Directive ||
                 requestingProviderType === ProviderAstType.Component)) {
-                if (dep.token.reference === resolveIdentifierToken(Identifiers.Renderer).reference ||
-                    dep.token.reference === resolveIdentifierToken(Identifiers.ElementRef).reference ||
-                    dep.token.reference ===
-                        resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference ||
-                    dep.token.reference === resolveIdentifierToken(Identifiers.TemplateRef).reference) {
+                if (tokenReference(dep.token) === resolveIdentifier(Identifiers.Renderer) ||
+                    tokenReference(dep.token) === resolveIdentifier(Identifiers.ElementRef) ||
+                    tokenReference(dep.token) === resolveIdentifier(Identifiers.ChangeDetectorRef) ||
+                    tokenReference(dep.token) === resolveIdentifier(Identifiers.TemplateRef)) {
                     return dep;
                 }
-                if (dep.token.reference ===
-                    resolveIdentifierToken(Identifiers.ViewContainerRef).reference) {
+                if (tokenReference(dep.token) === resolveIdentifier(Identifiers.ViewContainerRef)) {
                     this._hasViewContainer = true;
                 }
             }
             // access the injector
-            if (dep.token.reference === resolveIdentifierToken(Identifiers.Injector).reference) {
+            if (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector)) {
                 return dep;
             }
             // access providers
@@ -313,9 +311,9 @@ export var ProviderElementContext = (function () {
             }
             // check @Host restriction
             if (!result) {
-                if (!dep.isHost || this.viewContext.component.type.isHost ||
-                    this.viewContext.component.type.reference === dep.token.reference ||
-                    isPresent(this.viewContext.viewProviders.get(dep.token.reference))) {
+                if (!dep.isHost || this.viewContext.component.isHost ||
+                    this.viewContext.component.type.reference === tokenReference(dep.token) ||
+                    isPresent(this.viewContext.viewProviders.get(tokenReference(dep.token)))) {
                     result = dep;
                 }
                 else {
@@ -326,7 +324,7 @@ export var ProviderElementContext = (function () {
             }
         }
         if (!result) {
-            this.viewContext.errors.push(new ProviderError("No provider for " + dep.token.name, this._sourceSpan));
+            this.viewContext.errors.push(new ProviderError("No provider for " + tokenName(dep.token), this._sourceSpan));
         }
         return result;
     };
@@ -396,19 +394,19 @@ export var NgModuleProviderAnalyzer = (function () {
      */
     NgModuleProviderAnalyzer.prototype._getOrCreateLocalProvider = function (token, eager) {
         var _this = this;
-        var /** @type {?} */ resolvedProvider = this._allProviders.get(token.reference);
+        var /** @type {?} */ resolvedProvider = this._allProviders.get(tokenReference(token));
         if (!resolvedProvider) {
             return null;
         }
-        var /** @type {?} */ transformedProviderAst = this._transformedProviders.get(token.reference);
+        var /** @type {?} */ transformedProviderAst = this._transformedProviders.get(tokenReference(token));
         if (isPresent(transformedProviderAst)) {
             return transformedProviderAst;
         }
-        if (isPresent(this._seenProviders.get(token.reference))) {
-            this._errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + token.name, resolvedProvider.sourceSpan));
+        if (isPresent(this._seenProviders.get(tokenReference(token)))) {
+            this._errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + tokenName(token), resolvedProvider.sourceSpan));
             return null;
         }
-        this._seenProviders.set(token.reference, true);
+        this._seenProviders.set(tokenReference(token), true);
         var /** @type {?} */ transformedProviders = resolvedProvider.providers.map(function (provider) {
             var /** @type {?} */ transformedUseValue = provider.useValue;
             var /** @type {?} */ transformedUseExisting = provider.useExisting;
@@ -441,7 +439,7 @@ export var NgModuleProviderAnalyzer = (function () {
         });
         transformedProviderAst =
             _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
-        this._transformedProviders.set(token.reference, transformedProviderAst);
+        this._transformedProviders.set(tokenReference(token), transformedProviderAst);
         return transformedProviderAst;
     };
     /**
@@ -455,9 +453,8 @@ export var NgModuleProviderAnalyzer = (function () {
         var /** @type {?} */ foundLocal = false;
         if (!dep.isSkipSelf && isPresent(dep.token)) {
             // access the injector
-            if (dep.token.reference === resolveIdentifierToken(Identifiers.Injector).reference ||
-                dep.token.reference ===
-                    resolveIdentifierToken(Identifiers.ComponentFactoryResolver).reference) {
+            if (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector) ||
+                tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver)) {
                 foundLocal = true;
             }
             else if (isPresent(this._getOrCreateLocalProvider(dep.token, eager))) {
@@ -470,7 +467,7 @@ export var NgModuleProviderAnalyzer = (function () {
                 result = new CompileDiDependencyMetadata({ isValue: true, value: null });
             }
             else {
-                this._errors.push(new ProviderError("No provider for " + dep.token.name, requestorSourceSpan));
+                this._errors.push(new ProviderError("No provider for " + tokenName(dep.token), requestorSourceSpan));
             }
         }
         return result;
@@ -580,16 +577,16 @@ function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
  */
 function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken) {
     providers.forEach(function (provider) {
-        var /** @type {?} */ resolvedProvider = targetProvidersByToken.get(provider.token.reference);
+        var /** @type {?} */ resolvedProvider = targetProvidersByToken.get(tokenReference(provider.token));
         if (isPresent(resolvedProvider) && resolvedProvider.multiProvider !== provider.multi) {
-            targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + resolvedProvider.token.name, sourceSpan));
+            targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + tokenName(resolvedProvider.token), sourceSpan));
         }
         if (!resolvedProvider) {
             var /** @type {?} */ lifecycleHooks = provider.token.identifier && provider.token.identifier instanceof CompileTypeMetadata ?
                 provider.token.identifier.lifecycleHooks :
                 [];
             resolvedProvider = new ProviderAst(provider.token, provider.multi, eager || lifecycleHooks.length > 0, [provider], providerType, lifecycleHooks, sourceSpan);
-            targetProvidersByToken.set(provider.token.reference, resolvedProvider);
+            targetProvidersByToken.set(tokenReference(provider.token), resolvedProvider);
         }
         else {
             if (!provider.multi) {
@@ -630,10 +627,10 @@ function _getContentQueries(directives) {
  */
 function _addQueryToTokenMap(map, query) {
     query.selectors.forEach(function (token) {
-        var /** @type {?} */ entry = map.get(token.reference);
+        var /** @type {?} */ entry = map.get(tokenReference(token));
         if (!entry) {
             entry = [];
-            map.set(token.reference, entry);
+            map.set(tokenReference(token), entry);
         }
         entry.push(query);
     });

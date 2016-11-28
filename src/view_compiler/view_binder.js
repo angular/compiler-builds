@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { tokenReference } from '../compile_metadata';
 import { templateVisitAll } from '../template_parser/template_ast';
 import { bindOutputs } from './event_binder';
 import { bindDirectiveAfterContentLifecycleCallbacks, bindDirectiveAfterViewLifecycleCallbacks, bindDirectiveWrapperLifecycleCallbacks, bindInjectableDestroyLifecycleCallbacks, bindPipeDestroyLifecycleCallbacks } from './lifecycle_binder';
@@ -81,7 +82,7 @@ var ViewBinderVisitor = (function () {
             bindDirectiveWrapperLifecycleCallbacks(directiveAst, directiveWrapperInstance, compileElement);
         });
         ast.providers.forEach(function (providerAst) {
-            var /** @type {?} */ providerInstance = compileElement.instances.get(providerAst.token.reference);
+            var /** @type {?} */ providerInstance = compileElement.instances.get(tokenReference(providerAst.token));
             bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
         });
         return null;
@@ -103,7 +104,7 @@ var ViewBinderVisitor = (function () {
             bindDirectiveWrapperLifecycleCallbacks(directiveAst, directiveWrapperInstance, compileElement);
         });
         ast.providers.forEach(function (providerAst) {
-            var /** @type {?} */ providerInstance = compileElement.instances.get(providerAst.token.reference);
+            var /** @type {?} */ providerInstance = compileElement.instances.get(tokenReference(providerAst.token));
             bindInjectableDestroyLifecycleCallbacks(providerAst, providerInstance, compileElement);
         });
         bindView(compileElement.embeddedView, ast.children, this._schemaRegistry);

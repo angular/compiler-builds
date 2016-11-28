@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileIdentifierMetadata } from '../compile_metadata';
+import { tokenName } from '../compile_metadata';
 import { EventHandlerVars } from '../compiler_util/expression_converter';
 import { isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
@@ -52,8 +52,9 @@ export var CompileView = (function () {
      * @param {?} viewIndex
      * @param {?} declarationElement
      * @param {?} templateVariableBindings
+     * @param {?} targetDependencies
      */
-    function CompileView(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings) {
+    function CompileView(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings, targetDependencies) {
         var _this = this;
         this.component = component;
         this.genConfig = genConfig;
@@ -63,6 +64,7 @@ export var CompileView = (function () {
         this.viewIndex = viewIndex;
         this.declarationElement = declarationElement;
         this.templateVariableBindings = templateVariableBindings;
+        this.targetDependencies = targetDependencies;
         this.viewChildren = [];
         this.nodes = [];
         this.rootNodes = [];
@@ -93,7 +95,7 @@ export var CompileView = (function () {
         this.detachMethod = new CompileMethod(this);
         this.viewType = getViewType(component, viewIndex);
         this.className = getViewClassName(component, viewIndex);
-        this.classType = o.importType(new CompileIdentifierMetadata({ name: this.className }));
+        this.classType = o.expressionType(o.variable(this.className));
         this.classExpr = o.variable(this.className);
         if (this.viewType === ViewType.COMPONENT || this.viewType === ViewType.HOST) {
             this.componentView = this;
@@ -107,7 +109,7 @@ export var CompileView = (function () {
         if (this.viewType === ViewType.COMPONENT) {
             var directiveInstance_1 = o.THIS_EXPR.prop('context');
             this.component.viewQueries.forEach(function (queryMeta, queryIndex) {
-                var propName = "_viewQuery_" + queryMeta.selectors[0].name + "_" + queryIndex;
+                var propName = "_viewQuery_" + tokenName(queryMeta.selectors[0]) + "_" + queryIndex;
                 var queryList = createQueryList(queryMeta, directiveInstance_1, propName, _this);
                 var query = new CompileQuery(queryMeta, queryList, directiveInstance_1, _this);
                 addQueryToTokenMap(viewQueries, query);
@@ -246,6 +248,8 @@ function CompileView_tsickle_Closure_declarations() {
     CompileView.prototype.declarationElement;
     /** @type {?} */
     CompileView.prototype.templateVariableBindings;
+    /** @type {?} */
+    CompileView.prototype.targetDependencies;
 }
 /**
  * @param {?} component
@@ -256,7 +260,7 @@ function getViewType(component, embeddedTemplateIndex) {
     if (embeddedTemplateIndex > 0) {
         return ViewType.EMBEDDED;
     }
-    if (component.type.isHost) {
+    if (component.isHost) {
         return ViewType.HOST;
     }
     return ViewType.COMPONENT;

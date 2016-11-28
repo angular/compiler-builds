@@ -8,7 +8,7 @@
 import { Compiler, ComponentFactory, Injectable, Injector, ModuleWithComponentFactories } from '@angular/core';
 import { AnimationCompiler } from '../animation/animation_compiler';
 import { AnimationParser } from '../animation/animation_parser';
-import { ProviderMeta, createHostComponentMeta } from '../compile_metadata';
+import { ProviderMeta, createHostComponentMeta, identifierName } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import { DirectiveWrapperCompiler } from '../directive_wrapper_compiler';
 import { stringify } from '../facade/lang';
@@ -167,14 +167,13 @@ export var JitCompiler = (function () {
             compileResult.dependencies.forEach(function (dep) {
                 dep.placeholder.reference =
                     _this._assertComponentKnown(dep.comp.reference, true).proxyComponentFactory;
-                dep.placeholder.name = "compFactory_" + dep.comp.name;
             });
             if (!this._compilerConfig.useJit) {
                 ngModuleFactory =
                     interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
             }
             else {
-                ngModuleFactory = jitStatements("/" + moduleMeta_1.type.name + "/module.ngfactory.js", compileResult.statements, compileResult.ngModuleFactoryVar);
+                ngModuleFactory = jitStatements("/" + identifierName(moduleMeta_1.type) + "/module.ngfactory.js", compileResult.statements, compileResult.ngModuleFactoryVar);
             }
             this._compiledNgModuleCache.set(moduleMeta_1.type.reference, ngModuleFactory);
         }
@@ -259,7 +258,17 @@ export var JitCompiler = (function () {
         if (!compiledTemplate) {
             var /** @type {?} */ compMeta = this._metadataResolver.getDirectiveMetadata(compType);
             assertComponent(compMeta);
-            var /** @type {?} */ hostMeta = createHostComponentMeta(compMeta);
+            var HostClass_1 = (function () {
+                function HostClass_1() {
+                }
+                HostClass_1.overriddenName = identifierName(compMeta.type) + "_Host";
+                return HostClass_1;
+            }());
+            function HostClass_tsickle_Closure_declarations() {
+                /** @type {?} */
+                HostClass_1.overriddenName;
+            }
+            var /** @type {?} */ hostMeta = createHostComponentMeta(HostClass_1, compMeta);
             compiledTemplate = new CompiledTemplate(true, compMeta.selector, compMeta.type, hostMeta, ngModule, [compMeta.type]);
             this._compiledHostTemplateCache.set(compType, compiledTemplate);
         }
@@ -316,7 +325,7 @@ export var JitCompiler = (function () {
             directiveWrapperClass = interpretStatements(statements, compileResult.dirWrapperClassVar);
         }
         else {
-            directiveWrapperClass = jitStatements("/" + moduleMeta.type.name + "/" + dirMeta.type.name + "/wrapper.ngfactory.js", statements, compileResult.dirWrapperClassVar);
+            directiveWrapperClass = jitStatements("/" + identifierName(moduleMeta.type) + "/" + identifierName(dirMeta.type) + "/wrapper.ngfactory.js", statements, compileResult.dirWrapperClassVar);
         }
         this._compiledDirectiveWrapperCache.set(dirMeta.type.reference, directiveWrapperClass);
     };
@@ -337,8 +346,8 @@ export var JitCompiler = (function () {
         var /** @type {?} */ parsedAnimations = this._animationParser.parseComponent(compMeta);
         var /** @type {?} */ directives = template.directives.map(function (dir) { return _this._metadataResolver.getDirectiveSummary(dir.reference); });
         var /** @type {?} */ pipes = template.ngModule.transitiveModule.pipes.map(function (pipe) { return _this._metadataResolver.getPipeSummary(pipe.reference); });
-        var /** @type {?} */ parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, compMeta.type.name);
-        var /** @type {?} */ compiledAnimations = this._animationCompiler.compile(compMeta.type.name, parsedAnimations);
+        var /** @type {?} */ parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, identifierName(compMeta.type));
+        var /** @type {?} */ compiledAnimations = this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
         var /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), pipes, compiledAnimations);
         compileResult.dependencies.forEach(function (dep) {
             var /** @type {?} */ depTemplate;
@@ -346,13 +355,11 @@ export var JitCompiler = (function () {
                 var /** @type {?} */ vfd = (dep);
                 depTemplate = _this._assertComponentKnown(vfd.comp.reference, false);
                 vfd.placeholder.reference = depTemplate.proxyViewClass;
-                vfd.placeholder.name = "View_" + vfd.comp.name;
             }
             else if (dep instanceof ComponentFactoryDependency) {
                 var /** @type {?} */ cfd = (dep);
                 depTemplate = _this._assertComponentKnown(cfd.comp.reference, true);
                 cfd.placeholder.reference = depTemplate.proxyComponentFactory;
-                cfd.placeholder.name = "compFactory_" + cfd.comp.name;
             }
             else if (dep instanceof DirectiveWrapperDependency) {
                 var /** @type {?} */ dwd = (dep);
@@ -366,7 +373,7 @@ export var JitCompiler = (function () {
             viewClass = interpretStatements(statements, compileResult.viewClassVar);
         }
         else {
-            viewClass = jitStatements("/" + template.ngModule.type.name + "/" + template.compType.name + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js", statements, compileResult.viewClassVar);
+            viewClass = jitStatements("/" + identifierName(template.ngModule.type) + "/" + identifierName(template.compType) + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js", statements, compileResult.viewClassVar);
         }
         template.compiled(viewClass);
         var _a;
@@ -382,7 +389,6 @@ export var JitCompiler = (function () {
             var /** @type {?} */ nestedCompileResult = externalStylesheetsByModuleUrl.get(dep.moduleUrl);
             var /** @type {?} */ nestedStylesArr = _this._resolveAndEvalStylesCompileResult(nestedCompileResult, externalStylesheetsByModuleUrl);
             dep.valuePlaceholder.reference = nestedStylesArr;
-            dep.valuePlaceholder.name = "importedStyles" + i;
         });
     };
     /**
@@ -518,7 +524,7 @@ function CompiledTemplate_tsickle_Closure_declarations() {
  */
 function assertComponent(meta) {
     if (!meta.isComponent) {
-        throw new Error("Could not compile '" + meta.type.name + "' because it is not a component.");
+        throw new Error("Could not compile '" + identifierName(meta.type) + "' because it is not a component.");
     }
 }
 /**

@@ -10,7 +10,7 @@ import { convertPropertyBinding } from '../compiler_util/expression_converter';
 import { createEnumExpression } from '../compiler_util/identifier_util';
 import { triggerAnimation, writeToRenderer } from '../compiler_util/render_util';
 import { DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
-import { Identifiers, resolveIdentifier } from '../identifiers';
+import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { isDefaultChangeDetectionStrategy } from '../private_import_core';
 import { PropertyBindingType } from '../template_parser/template_ast';
@@ -61,7 +61,7 @@ export function bindRenderInputs(boundProps, hasEvents, compileElement) {
             case PropertyBindingType.Animation:
                 compileMethod = view.animationBindingsMethod;
                 var _a = triggerAnimation(o.THIS_EXPR, o.THIS_EXPR, boundProp, (hasEvents ? o.THIS_EXPR.prop(getHandleEventMethodName(compileElement.nodeIndex)) :
-                    o.importExpr(resolveIdentifier(Identifiers.noop)))
+                    o.importExpr(createIdentifier(Identifiers.noop)))
                     .callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR]), compileElement.renderNode, evalResult.currValExpr, bindingField.expression), updateStmts = _a.updateStmts, detachStmts = _a.detachStmts;
                 checkBindingStmts.push.apply(checkBindingStmts, updateStmts);
                 view.detachMethod.addStmts(detachStmts);

@@ -64,13 +64,6 @@ function _splitAt(input, character, defaultValues) {
     return [input.slice(0, characterIndex).trim(), input.slice(characterIndex + 1).trim()];
 }
 /**
- * @param {?} name
- * @return {?}
- */
-export function sanitizeIdentifier(name) {
-    return name.replace(/\W/g, '_');
-}
-/**
  * @param {?} value
  * @param {?} visitor
  * @param {?} context

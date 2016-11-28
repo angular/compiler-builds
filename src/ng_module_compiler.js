@@ -6,10 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable } from '@angular/core';
-import { CompileDiDependencyMetadata, CompileIdentifierMetadata } from './compile_metadata';
+import { CompileDiDependencyMetadata, CompileIdentifierMetadata, identifierModuleUrl, identifierName, tokenName, tokenReference } from './compile_metadata';
 import { createDiTokenExpression } from './compiler_util/identifier_util';
 import { isPresent } from './facade/lang';
-import { Identifiers, resolveIdentifier, resolveIdentifierToken } from './identifiers';
+import { Identifiers, createIdentifier, resolveIdentifier } from './identifiers';
 import { createClassStmt } from './output/class_builder';
 import * as o from './output/output_ast';
 import { convertValueToOutputAst } from './output/value_util';
@@ -63,15 +63,16 @@ export var NgModuleCompiler = (function () {
      * @return {?}
      */
     NgModuleCompiler.prototype.compile = function (ngModuleMeta, extraProviders) {
-        var /** @type {?} */ sourceFileName = isPresent(ngModuleMeta.type.moduleUrl) ?
-            "in NgModule " + ngModuleMeta.type.name + " in " + ngModuleMeta.type.moduleUrl :
-            "in NgModule " + ngModuleMeta.type.name;
+        var /** @type {?} */ moduleUrl = identifierModuleUrl(ngModuleMeta.type);
+        var /** @type {?} */ sourceFileName = isPresent(moduleUrl) ?
+            "in NgModule " + identifierName(ngModuleMeta.type) + " in " + moduleUrl :
+            "in NgModule " + identifierName(ngModuleMeta.type);
         var /** @type {?} */ sourceFile = new ParseSourceFile('', sourceFileName);
         var /** @type {?} */ sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
         var /** @type {?} */ deps = [];
         var /** @type {?} */ bootstrapComponentFactories = [];
         var /** @type {?} */ entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
-            var /** @type {?} */ id = new CompileIdentifierMetadata({ name: entryComponent.name });
+            var /** @type {?} */ id = new CompileIdentifierMetadata();
             if (ngModuleMeta.bootstrapComponents.indexOf(entryComponent) > -1) {
                 bootstrapComponentFactories.push(id);
             }
@@ -82,14 +83,14 @@ export var NgModuleCompiler = (function () {
         var /** @type {?} */ providerParser = new NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
         providerParser.parse().forEach(function (provider) { return builder.addProvider(provider); });
         var /** @type {?} */ injectorClass = builder.build();
-        var /** @type {?} */ ngModuleFactoryVar = ngModuleMeta.type.name + "NgFactory";
+        var /** @type {?} */ ngModuleFactoryVar = identifierName(ngModuleMeta.type) + "NgFactory";
         var /** @type {?} */ ngModuleFactoryStmt = o.variable(ngModuleFactoryVar)
-            .set(o.importExpr(resolveIdentifier(Identifiers.NgModuleFactory))
-            .instantiate([o.variable(injectorClass.name), o.importExpr(ngModuleMeta.type)], o.importType(resolveIdentifier(Identifiers.NgModuleFactory), [o.importType(ngModuleMeta.type)], [o.TypeModifier.Const])))
+            .set(o.importExpr(createIdentifier(Identifiers.NgModuleFactory))
+            .instantiate([o.variable(injectorClass.name), o.importExpr(ngModuleMeta.type)], o.importType(createIdentifier(Identifiers.NgModuleFactory), [o.importType(ngModuleMeta.type)], [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]);
         var /** @type {?} */ stmts = [injectorClass, ngModuleFactoryStmt];
         if (ngModuleMeta.id) {
-            var /** @type {?} */ registerFactoryStmt = o.importExpr(resolveIdentifier(Identifiers.RegisterModuleFactoryFn))
+            var /** @type {?} */ registerFactoryStmt = o.importExpr(createIdentifier(Identifiers.RegisterModuleFactoryFn))
                 .callFn([o.literal(ngModuleMeta.id), o.variable(ngModuleFactoryVar)])
                 .toStmt();
             stmts.push(registerFactoryStmt);
@@ -140,13 +141,13 @@ var _InjectorBuilder = (function () {
     _InjectorBuilder.prototype.addProvider = function (resolvedProvider) {
         var _this = this;
         var /** @type {?} */ providerValueExpressions = resolvedProvider.providers.map(function (provider) { return _this._getProviderValue(provider); });
-        var /** @type {?} */ propName = "_" + resolvedProvider.token.name + "_" + this._instances.size;
+        var /** @type {?} */ propName = "_" + tokenName(resolvedProvider.token) + "_" + this._instances.size;
         var /** @type {?} */ instance = this._createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager);
         if (resolvedProvider.lifecycleHooks.indexOf(LifecycleHooks.OnDestroy) !== -1) {
             this._destroyStmts.push(instance.callMethod('ngOnDestroy', []).toStmt());
         }
         this._tokens.push(resolvedProvider.token);
-        this._instances.set(resolvedProvider.token.reference, instance);
+        this._instances.set(tokenReference(resolvedProvider.token), instance);
     };
     /**
      * @return {?}
@@ -154,7 +155,7 @@ var _InjectorBuilder = (function () {
     _InjectorBuilder.prototype.build = function () {
         var _this = this;
         var /** @type {?} */ getMethodStmts = this._tokens.map(function (token) {
-            var /** @type {?} */ providerExpr = _this._instances.get(token.reference);
+            var /** @type {?} */ providerExpr = _this._instances.get(tokenReference(token));
             return new o.IfStmt(InjectMethodVars.token.identical(createDiTokenExpression(token)), [new o.ReturnStatement(providerExpr)]);
         });
         var /** @type {?} */ methods = [
@@ -170,11 +171,11 @@ var _InjectorBuilder = (function () {
             o.literalArr(this._entryComponentFactories.map(function (componentFactory) { return o.importExpr(componentFactory); })),
             o.literalArr(this._bootstrapComponentFactories.map(function (componentFactory) { return o.importExpr(componentFactory); }))
         ];
-        var /** @type {?} */ injClassName = this._ngModuleMeta.type.name + "Injector";
+        var /** @type {?} */ injClassName = identifierName(this._ngModuleMeta.type) + "Injector";
         return createClassStmt({
             name: injClassName,
-            ctorParams: [new o.FnParam(InjectorProps.parent.name, o.importType(resolveIdentifier(Identifiers.Injector)))],
-            parent: o.importExpr(resolveIdentifier(Identifiers.NgModuleInjector), [o.importType(this._ngModuleMeta.type)]),
+            ctorParams: [new o.FnParam(InjectorProps.parent.name, o.importType(createIdentifier(Identifiers.Injector)))],
+            parent: o.importExpr(createIdentifier(Identifiers.NgModuleInjector), [o.importType(this._ngModuleMeta.type)]),
             parentArgs: parentArgs,
             builders: [{ methods: methods }, this]
         });
@@ -254,13 +255,12 @@ var _InjectorBuilder = (function () {
         }
         if (!dep.isSkipSelf) {
             if (dep.token &&
-                (dep.token.reference === resolveIdentifierToken(Identifiers.Injector).reference ||
-                    dep.token.reference ===
-                        resolveIdentifierToken(Identifiers.ComponentFactoryResolver).reference)) {
+                (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector) ||
+                    tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver))) {
                 result = o.THIS_EXPR;
             }
             if (!result) {
-                result = this._instances.get(dep.token.reference);
+                result = this._instances.get(tokenReference(dep.token));
             }
         }
         if (!result) {

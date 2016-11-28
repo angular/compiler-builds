@@ -10,6 +10,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+import { identifierModuleUrl, identifierName } from '../compile_metadata';
 import { isBlank, isPresent } from '../facade/lang';
 import { AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR, EmitterVisitorContext } from './abstract_emitter';
 import * as o from './output_ast';
@@ -357,8 +358,14 @@ var _TsEmitterVisitor = (function (_super) {
      * @param {?} ctx
      * @return {?}
      */
-    _TsEmitterVisitor.prototype.visitExternalType = function (ast, ctx) {
-        this._visitIdentifier(ast.value, ast.typeParams, ctx);
+    _TsEmitterVisitor.prototype.visitExpressionType = function (ast, ctx) {
+        var _this = this;
+        ast.value.visitExpression(this, ctx);
+        if (isPresent(ast.typeParams) && ast.typeParams.length > 0) {
+            ctx.print("<");
+            this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, ast.typeParams, ctx, ',');
+            ctx.print(">");
+        }
         return null;
     };
     /**
@@ -424,14 +431,16 @@ var _TsEmitterVisitor = (function (_super) {
      */
     _TsEmitterVisitor.prototype._visitIdentifier = function (value, typeParams, ctx) {
         var _this = this;
-        if (isBlank(value.name)) {
+        var /** @type {?} */ name = identifierName(value);
+        var /** @type {?} */ moduleUrl = identifierModuleUrl(value);
+        if (isBlank(name)) {
             throw new Error("Internal error: unknown identifier " + value);
         }
-        if (isPresent(value.moduleUrl) && value.moduleUrl != this._moduleUrl) {
-            var /** @type {?} */ prefix = this.importsWithPrefixes.get(value.moduleUrl);
+        if (isPresent(moduleUrl) && moduleUrl != this._moduleUrl) {
+            var /** @type {?} */ prefix = this.importsWithPrefixes.get(moduleUrl);
             if (isBlank(prefix)) {
                 prefix = "import" + this.importsWithPrefixes.size;
-                this.importsWithPrefixes.set(value.moduleUrl, prefix);
+                this.importsWithPrefixes.set(moduleUrl, prefix);
             }
             ctx.print(prefix + ".");
         }
@@ -441,7 +450,7 @@ var _TsEmitterVisitor = (function (_super) {
             ctx.print(value.reference.members.join('.'));
         }
         else {
-            ctx.print(value.name);
+            ctx.print(name);
         }
         if (isPresent(typeParams) && typeParams.length > 0) {
             ctx.print("<");

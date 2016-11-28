@@ -10,8 +10,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { isPresent } from '../facade/lang';
-import { sanitizeIdentifier } from '../util';
+import { identifierName } from '../compile_metadata';
 import { EmitterVisitorContext } from './abstract_emitter';
 import { AbstractJsEmitterVisitor } from './abstract_js_emitter';
 /**
@@ -71,8 +70,8 @@ var JitEmitterVisitor = (function (_super) {
         if (id === -1) {
             id = this._evalArgValues.length;
             this._evalArgValues.push(value);
-            var /** @type {?} */ name_1 = isPresent(ast.value.name) ? sanitizeIdentifier(ast.value.name) : 'val';
-            this._evalArgNames.push(sanitizeIdentifier("jit_" + name_1 + id));
+            var /** @type {?} */ name_1 = identifierName(ast.value) || 'val';
+            this._evalArgNames.push("jit_" + name_1 + id);
         }
         ctx.print(this._evalArgNames[id]);
         return null;

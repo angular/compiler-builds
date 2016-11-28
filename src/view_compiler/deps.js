@@ -8,10 +8,12 @@
 export var ViewClassDependency = (function () {
     /**
      * @param {?} comp
+     * @param {?} name
      * @param {?} placeholder
      */
-    function ViewClassDependency(comp, placeholder) {
+    function ViewClassDependency(comp, name, placeholder) {
         this.comp = comp;
+        this.name = name;
         this.placeholder = placeholder;
     }
     return ViewClassDependency;
@@ -19,6 +21,8 @@ export var ViewClassDependency = (function () {
 function ViewClassDependency_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewClassDependency.prototype.comp;
+    /** @type {?} */
+    ViewClassDependency.prototype.name;
     /** @type {?} */
     ViewClassDependency.prototype.placeholder;
 }
@@ -42,10 +46,12 @@ function ComponentFactoryDependency_tsickle_Closure_declarations() {
 export var DirectiveWrapperDependency = (function () {
     /**
      * @param {?} dir
+     * @param {?} name
      * @param {?} placeholder
      */
-    function DirectiveWrapperDependency(dir, placeholder) {
+    function DirectiveWrapperDependency(dir, name, placeholder) {
         this.dir = dir;
+        this.name = name;
         this.placeholder = placeholder;
     }
     return DirectiveWrapperDependency;
@@ -53,6 +59,8 @@ export var DirectiveWrapperDependency = (function () {
 function DirectiveWrapperDependency_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveWrapperDependency.prototype.dir;
+    /** @type {?} */
+    DirectiveWrapperDependency.prototype.name;
     /** @type {?} */
     DirectiveWrapperDependency.prototype.placeholder;
 }

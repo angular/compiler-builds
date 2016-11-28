@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Identifiers, resolveIdentifier } from '../identifiers';
+import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 export var CheckBindingField = (function () {
     /**
@@ -34,7 +34,7 @@ export function createCheckBindingField(builder) {
     // private is fine here as no child view will reference the cached value...
     builder.fields.push(new o.ClassField(fieldExpr.name, null, [o.StmtModifier.Private]));
     builder.ctorStmts.push(o.THIS_EXPR.prop(fieldExpr.name)
-        .set(o.importExpr(resolveIdentifier(Identifiers.UNINITIALIZED)))
+        .set(o.importExpr(createIdentifier(Identifiers.UNINITIALIZED)))
         .toStmt());
     return new CheckBindingField(fieldExpr, bindingId);
 }
@@ -46,7 +46,7 @@ export function createCheckBindingField(builder) {
  * @return {?}
  */
 export function createCheckBindingStmt(evalResult, fieldExpr, throwOnChangeVar, actions) {
-    var /** @type {?} */ condition = o.importExpr(resolveIdentifier(Identifiers.checkBinding)).callFn([
+    var /** @type {?} */ condition = o.importExpr(createIdentifier(Identifiers.checkBinding)).callFn([
         throwOnChangeVar, fieldExpr, evalResult.currValExpr
     ]);
     if (evalResult.forceUpdate) {

@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { Injectable } from '@angular/core';
-import { CompileAnimationAnimateMetadata, CompileAnimationGroupMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationSequenceMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStyleMetadata, CompileAnimationWithStepsMetadata } from '../compile_metadata';
+import { CompileAnimationAnimateMetadata, CompileAnimationGroupMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationSequenceMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStyleMetadata, CompileAnimationWithStepsMetadata, identifierName } from '../compile_metadata';
 import { StringMapWrapper } from '../facade/collection';
 import { isBlank, isPresent } from '../facade/lang';
 import { ParseError } from '../parse_util';
@@ -67,7 +67,7 @@ export var AnimationParser = (function () {
     AnimationParser.prototype.parseComponent = function (component) {
         var _this = this;
         var /** @type {?} */ errors = [];
-        var /** @type {?} */ componentName = component.type.name;
+        var /** @type {?} */ componentName = identifierName(component.type);
         var /** @type {?} */ animationTriggerNames = new Set();
         var /** @type {?} */ asts = component.template.animations.map(function (entry) {
             var /** @type {?} */ result = _this.parseEntry(entry);

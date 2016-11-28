@@ -86,14 +86,14 @@ function BuiltinType_tsickle_Closure_declarations() {
     /** @type {?} */
     BuiltinType.prototype.name;
 }
-export var ExternalType = (function (_super) {
-    __extends(ExternalType, _super);
+export var ExpressionType = (function (_super) {
+    __extends(ExpressionType, _super);
     /**
      * @param {?} value
      * @param {?=} typeParams
      * @param {?=} modifiers
      */
-    function ExternalType(value, typeParams, modifiers) {
+    function ExpressionType(value, typeParams, modifiers) {
         if (typeParams === void 0) { typeParams = null; }
         if (modifiers === void 0) { modifiers = null; }
         _super.call(this, modifiers);
@@ -105,16 +105,16 @@ export var ExternalType = (function (_super) {
      * @param {?} context
      * @return {?}
      */
-    ExternalType.prototype.visitType = function (visitor, context) {
-        return visitor.visitExternalType(this, context);
+    ExpressionType.prototype.visitType = function (visitor, context) {
+        return visitor.visitExpressionType(this, context);
     };
-    return ExternalType;
+    return ExpressionType;
 }(Type));
-function ExternalType_tsickle_Closure_declarations() {
+function ExpressionType_tsickle_Closure_declarations() {
     /** @type {?} */
-    ExternalType.prototype.value;
+    ExpressionType.prototype.value;
     /** @type {?} */
-    ExternalType.prototype.typeParams;
+    ExpressionType.prototype.typeParams;
 }
 export var ArrayType = (function (_super) {
     __extends(ArrayType, _super);
@@ -2006,7 +2006,18 @@ export function importExpr(id, typeParams) {
 export function importType(id, typeParams, typeModifiers) {
     if (typeParams === void 0) { typeParams = null; }
     if (typeModifiers === void 0) { typeModifiers = null; }
-    return isPresent(id) ? new ExternalType(id, typeParams, typeModifiers) : null;
+    return isPresent(id) ? expressionType(importExpr(id), typeParams, typeModifiers) : null;
+}
+/**
+ * @param {?} expr
+ * @param {?=} typeParams
+ * @param {?=} typeModifiers
+ * @return {?}
+ */
+export function expressionType(expr, typeParams, typeModifiers) {
+    if (typeParams === void 0) { typeParams = null; }
+    if (typeModifiers === void 0) { typeModifiers = null; }
+    return isPresent(expr) ? new ExpressionType(expr, typeParams, typeModifiers) : null;
 }
 /**
  * @param {?} values

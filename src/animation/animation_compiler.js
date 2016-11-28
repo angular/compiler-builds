@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { isPresent } from '../facade/lang';
-import { Identifiers, resolveIdentifier } from '../identifiers';
+import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { ANY_STATE, DEFAULT_STATE, EMPTY_STATE } from '../private_import_core';
 import { AnimationStepAst } from './animation_ast';
@@ -89,8 +89,8 @@ var _AnimationBuilder = (function () {
             var /** @type {?} */ entries = Object.keys(entry).map(function (key) { return [key, o.literal(entry[key])]; });
             stylesArr.push(o.literalMap(entries));
         });
-        return o.importExpr(resolveIdentifier(Identifiers.AnimationStyles)).instantiate([
-            o.importExpr(resolveIdentifier(Identifiers.collectAndResolveStyles)).callFn([
+        return o.importExpr(createIdentifier(Identifiers.AnimationStyles)).instantiate([
+            o.importExpr(createIdentifier(Identifiers.collectAndResolveStyles)).callFn([
                 _ANIMATION_COLLECTED_STYLES, o.literalArr(stylesArr)
             ])
         ]);
@@ -101,7 +101,7 @@ var _AnimationBuilder = (function () {
      * @return {?}
      */
     _AnimationBuilder.prototype.visitAnimationKeyframe = function (ast, context) {
-        return o.importExpr(resolveIdentifier(Identifiers.AnimationKeyframe)).instantiate([
+        return o.importExpr(createIdentifier(Identifiers.AnimationKeyframe)).instantiate([
             o.literal(ast.offset), ast.styles.visit(this, context)
         ]);
     };
@@ -128,7 +128,7 @@ var _AnimationBuilder = (function () {
         var _this = this;
         var /** @type {?} */ startingStylesExpr = ast.startingStyles.visit(this, context);
         var /** @type {?} */ keyframeExpressions = ast.keyframes.map(function (keyframe) { return keyframe.visit(_this, context); });
-        var /** @type {?} */ keyframesExpr = o.importExpr(resolveIdentifier(Identifiers.balanceAnimationKeyframes)).callFn([
+        var /** @type {?} */ keyframesExpr = o.importExpr(createIdentifier(Identifiers.balanceAnimationKeyframes)).callFn([
             _ANIMATION_COLLECTED_STYLES, _ANIMATION_END_STATE_STYLES_VAR,
             o.literalArr(keyframeExpressions)
         ]);
@@ -161,7 +161,7 @@ var _AnimationBuilder = (function () {
     _AnimationBuilder.prototype.visitAnimationSequence = function (ast, context) {
         var _this = this;
         var /** @type {?} */ playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
-        return o.importExpr(resolveIdentifier(Identifiers.AnimationSequencePlayer)).instantiate([
+        return o.importExpr(createIdentifier(Identifiers.AnimationSequencePlayer)).instantiate([
             o.literalArr(playerExprs)
         ]);
     };
@@ -173,7 +173,7 @@ var _AnimationBuilder = (function () {
     _AnimationBuilder.prototype.visitAnimationGroup = function (ast, context) {
         var _this = this;
         var /** @type {?} */ playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
-        return o.importExpr(resolveIdentifier(Identifiers.AnimationGroupPlayer)).instantiate([
+        return o.importExpr(createIdentifier(Identifiers.AnimationGroupPlayer)).instantiate([
             o.literalArr(playerExprs)
         ]);
     };
@@ -248,12 +248,12 @@ var _AnimationBuilder = (function () {
         statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR))
             .toDeclStmt());
         statements.push(new o.IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(o.NULL_EXPR), [_ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
-        var /** @type {?} */ RENDER_STYLES_FN = o.importExpr(resolveIdentifier(Identifiers.renderStyles));
+        var /** @type {?} */ RENDER_STYLES_FN = o.importExpr(createIdentifier(Identifiers.renderStyles));
         ast.stateTransitions.forEach(function (transAst) { return statements.push(transAst.visit(_this, context)); });
         // this check ensures that the animation factory always returns a player
         // so that the onDone callback can be used for tracking
         statements.push(new o.IfStmt(_ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR), [_ANIMATION_PLAYER_VAR
-                .set(o.importExpr(resolveIdentifier(Identifiers.NoOpAnimationPlayer)).instantiate([]))
+                .set(o.importExpr(createIdentifier(Identifiers.NoOpAnimationPlayer)).instantiate([]))
                 .toStmt()]));
         // once complete we want to apply the styles on the element
         // since the destination state's values should persist once
@@ -265,7 +265,7 @@ var _AnimationBuilder = (function () {
                 RENDER_STYLES_FN
                     .callFn([
                     _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-                    o.importExpr(resolveIdentifier(Identifiers.prepareFinalAnimationStyles))
+                    o.importExpr(createIdentifier(Identifiers.prepareFinalAnimationStyles))
                         .callFn([
                         _ANIMATION_START_STATE_STYLES_VAR,
                         _ANIMATION_END_STATE_STYLES_VAR
@@ -274,7 +274,7 @@ var _AnimationBuilder = (function () {
                     .toStmt()
             ])])
             .toStmt());
-        statements.push(o.importExpr(resolveIdentifier(Identifiers.AnimationSequencePlayer))
+        statements.push(o.importExpr(createIdentifier(Identifiers.AnimationSequencePlayer))
             .instantiate([_PREVIOUS_ANIMATION_PLAYERS])
             .callMethod('destroy', [])
             .toStmt());
@@ -284,7 +284,7 @@ var _AnimationBuilder = (function () {
         statements.push(RENDER_STYLES_FN
             .callFn([
             _ANIMATION_FACTORY_ELEMENT_VAR, _ANIMATION_FACTORY_RENDERER_VAR,
-            o.importExpr(resolveIdentifier(Identifiers.clearStyles))
+            o.importExpr(createIdentifier(Identifiers.clearStyles))
                 .callFn([_ANIMATION_START_STATE_STYLES_VAR])
         ])
             .toStmt());
@@ -294,16 +294,16 @@ var _AnimationBuilder = (function () {
             _ANIMATION_PLAYER_VAR
         ])
             .toStmt());
-        statements.push(new o.ReturnStatement(o.importExpr(resolveIdentifier(Identifiers.AnimationTransition)).instantiate([
+        statements.push(new o.ReturnStatement(o.importExpr(createIdentifier(Identifiers.AnimationTransition)).instantiate([
             _ANIMATION_PLAYER_VAR, _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR,
             _ANIMATION_TIME_VAR
         ])));
         return o.fn([
-            new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(resolveIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
+            new o.FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
             new o.FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_CURRENT_STATE_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_NEXT_STATE_VAR.name, o.DYNAMIC_TYPE)
-        ], statements, o.importType(resolveIdentifier(Identifiers.AnimationTransition)));
+        ], statements, o.importType(createIdentifier(Identifiers.AnimationTransition)));
     };
     /**
      * @param {?} ast

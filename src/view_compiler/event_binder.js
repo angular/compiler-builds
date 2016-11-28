@@ -8,7 +8,7 @@
 import { EventHandlerVars, convertActionBinding } from '../compiler_util/expression_converter';
 import { createInlineArray } from '../compiler_util/identifier_util';
 import { DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
-import { Identifiers, resolveIdentifier } from '../identifiers';
+import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { CompileMethod } from './compile_method';
 import { getHandleEventMethodName } from './util';
@@ -60,7 +60,7 @@ function subscribeToRenderEvents(usedEvents, compileElement) {
         var /** @type {?} */ disposableVar = o.variable("disposable_" + compileElement.view.disposables.length);
         compileElement.view.disposables.push(disposableVar);
         compileElement.view.createMethod.addStmt(disposableVar
-            .set(o.importExpr(resolveIdentifier(Identifiers.subscribeToRenderElement)).callFn([
+            .set(o.importExpr(createIdentifier(Identifiers.subscribeToRenderElement)).callFn([
             o.THIS_EXPR, compileElement.renderNode, createInlineArray(eventAndTargetExprs),
             handleEventExpr(compileElement)
         ]))

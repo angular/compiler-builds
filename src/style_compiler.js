@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable, ViewEncapsulation } from '@angular/core';
-import { CompileIdentifierMetadata, CompileStylesheetMetadata } from './compile_metadata';
+import { CompileIdentifierMetadata, CompileStylesheetMetadata, identifierModuleUrl, identifierName } from './compile_metadata';
 import * as o from './output/output_ast';
 import { ShadowCss } from './shadow_css';
 import { UrlResolver } from './url_resolver';
@@ -15,11 +15,13 @@ var /** @type {?} */ HOST_ATTR = "_nghost-" + COMPONENT_VARIABLE;
 var /** @type {?} */ CONTENT_ATTR = "_ngcontent-" + COMPONENT_VARIABLE;
 export var StylesCompileDependency = (function () {
     /**
+     * @param {?} name
      * @param {?} moduleUrl
      * @param {?} isShimmed
      * @param {?} valuePlaceholder
      */
-    function StylesCompileDependency(moduleUrl, isShimmed, valuePlaceholder) {
+    function StylesCompileDependency(name, moduleUrl, isShimmed, valuePlaceholder) {
+        this.name = name;
         this.moduleUrl = moduleUrl;
         this.isShimmed = isShimmed;
         this.valuePlaceholder = valuePlaceholder;
@@ -27,6 +29,8 @@ export var StylesCompileDependency = (function () {
     return StylesCompileDependency;
 }());
 function StylesCompileDependency_tsickle_Closure_declarations() {
+    /** @type {?} */
+    StylesCompileDependency.prototype.name;
     /** @type {?} */
     StylesCompileDependency.prototype.moduleUrl;
     /** @type {?} */
@@ -98,7 +102,7 @@ export var StyleCompiler = (function () {
         var /** @type {?} */ componentStylesheet = this._compileStyles(comp, new CompileStylesheetMetadata({
             styles: comp.template.styles,
             styleUrls: comp.template.styleUrls,
-            moduleUrl: comp.type.moduleUrl
+            moduleUrl: identifierModuleUrl(comp.type)
         }), true);
         comp.template.externalStylesheets.forEach(function (stylesheetMeta) {
             var /** @type {?} */ compiledStylesheet = _this._compileStyles(comp, stylesheetMeta, false);
@@ -118,8 +122,8 @@ export var StyleCompiler = (function () {
         var /** @type {?} */ styleExpressions = stylesheet.styles.map(function (plainStyle) { return o.literal(_this._shimIfNeeded(plainStyle, shim)); });
         var /** @type {?} */ dependencies = [];
         for (var /** @type {?} */ i = 0; i < stylesheet.styleUrls.length; i++) {
-            var /** @type {?} */ identifier = new CompileIdentifierMetadata({ name: getStylesVarName(null) });
-            dependencies.push(new StylesCompileDependency(stylesheet.styleUrls[i], shim, identifier));
+            var /** @type {?} */ identifier = new CompileIdentifierMetadata();
+            dependencies.push(new StylesCompileDependency(getStylesVarName(null), stylesheet.styleUrls[i], shim, identifier));
             styleExpressions.push(new o.ExternalExpr(identifier));
         }
         // styles variable contains plain strings and arrays of other styles arrays (recursive),
@@ -167,7 +171,7 @@ function StyleCompiler_tsickle_Closure_declarations() {
 function getStylesVarName(component) {
     var /** @type {?} */ result = "styles";
     if (component) {
-        result += "_" + component.type.name;
+        result += "_" + identifierName(component.type);
     }
     return result;
 }

@@ -11,10 +11,11 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { Inject, Injectable, OpaqueToken, Optional } from '@angular/core';
+import { identifierName } from '../compile_metadata';
 import { Parser } from '../expression_parser/parser';
 import { isPresent } from '../facade/lang';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
-import { Identifiers, identifierToken, resolveIdentifierToken } from '../identifiers';
+import { Identifiers, createIdentifierToken, identifierToken } from '../identifiers';
 import * as html from '../ml_parser/ast';
 import { ParseTreeResult } from '../ml_parser/html_parser';
 import { expandNodes } from '../ml_parser/icu_ast_expander';
@@ -601,7 +602,7 @@ var TemplateParseVisitor = (function () {
         var /** @type {?} */ matchedReferences = new Set();
         var /** @type {?} */ component = null;
         var /** @type {?} */ directiveAsts = directives.map(function (directive) {
-            var /** @type {?} */ sourceSpan = new ParseSourceSpan(elementSourceSpan.start, elementSourceSpan.end, "Directive " + directive.type.name);
+            var /** @type {?} */ sourceSpan = new ParseSourceSpan(elementSourceSpan.start, elementSourceSpan.end, "Directive " + identifierName(directive.type));
             if (directive.isComponent) {
                 component = directive;
             }
@@ -630,7 +631,7 @@ var TemplateParseVisitor = (function () {
             else if (!component) {
                 var /** @type {?} */ refToken = null;
                 if (isTemplateElement) {
-                    refToken = resolveIdentifierToken(Identifiers.TemplateRef);
+                    refToken = createIdentifierToken(Identifiers.TemplateRef);
                 }
                 targetReferences.push(new ReferenceAst(elOrDirRef.name, refToken, elOrDirRef.sourceSpan));
             }
@@ -699,7 +700,7 @@ var TemplateParseVisitor = (function () {
      */
     TemplateParseVisitor.prototype._findComponentDirectiveNames = function (directives) {
         return this._findComponentDirectives(directives)
-            .map(function (directive) { return directive.directive.type.name; });
+            .map(function (directive) { return identifierName(directive.directive.type); });
     };
     /**
      * @param {?} directives

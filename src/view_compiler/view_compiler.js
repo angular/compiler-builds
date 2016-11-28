@@ -53,7 +53,7 @@ export var ViewCompiler = (function () {
      */
     ViewCompiler.prototype.compileComponent = function (component, template, styles, pipes, compiledAnimations) {
         var /** @type {?} */ dependencies = [];
-        var /** @type {?} */ view = new CompileView(component, this._genConfig, pipes, styles, compiledAnimations, 0, CompileElement.createNull(), []);
+        var /** @type {?} */ view = new CompileView(component, this._genConfig, pipes, styles, compiledAnimations, 0, CompileElement.createNull(), [], dependencies);
         var /** @type {?} */ statements = [];
         buildView(view, template, dependencies);
         // Need to separate binding from creation to be able to refer to

@@ -7,7 +7,7 @@
  */
 import * as cdAst from '../expression_parser/ast';
 import { isBlank, isPresent } from '../facade/lang';
-import { Identifiers, resolveIdentifier } from '../identifiers';
+import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { createPureProxy } from './identifier_util';
 var /** @type {?} */ VAL_UNWRAPPER_VAR = o.variable("valUnwrapper");
@@ -143,7 +143,7 @@ export function createSharedBindingVariablesIfNeeded(stmts) {
     var /** @type {?} */ readVars = o.findReadVarNames(stmts);
     if (readVars.has(VAL_UNWRAPPER_VAR.name)) {
         unwrapperStmts.push(VAL_UNWRAPPER_VAR
-            .set(o.importExpr(resolveIdentifier(Identifiers.ValueUnwrapper)).instantiate([]))
+            .set(o.importExpr(createIdentifier(Identifiers.ValueUnwrapper)).instantiate([]))
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
     return unwrapperStmts;
@@ -357,8 +357,8 @@ var _AstToIrVisitor = (function () {
         }
         args.push(o.literal(ast.strings[ast.strings.length - 1]));
         return ast.expressions.length <= 9 ?
-            o.importExpr(resolveIdentifier(Identifiers.inlineInterpolate)).callFn(args) :
-            o.importExpr(resolveIdentifier(Identifiers.interpolate)).callFn([
+            o.importExpr(createIdentifier(Identifiers.inlineInterpolate)).callFn(args) :
+            o.importExpr(createIdentifier(Identifiers.interpolate)).callFn([
                 args[0], o.literalArr(args.slice(1))
             ]);
     };
@@ -897,7 +897,7 @@ function flattenStatements(arg, output) {
  */
 function createCachedLiteralArray(builder, values) {
     if (values.length === 0) {
-        return o.importExpr(resolveIdentifier(Identifiers.EMPTY_ARRAY));
+        return o.importExpr(createIdentifier(Identifiers.EMPTY_ARRAY));
     }
     var /** @type {?} */ proxyExpr = o.THIS_EXPR.prop("_arr_" + builder.fields.length);
     var /** @type {?} */ proxyParams = [];
@@ -917,7 +917,7 @@ function createCachedLiteralArray(builder, values) {
  */
 function createCachedLiteralMap(builder, entries) {
     if (entries.length === 0) {
-        return o.importExpr(resolveIdentifier(Identifiers.EMPTY_MAP));
+        return o.importExpr(createIdentifier(Identifiers.EMPTY_MAP));
     }
     var /** @type {?} */ proxyExpr = o.THIS_EXPR.prop("_map_" + builder.fields.length);
     var /** @type {?} */ proxyParams = [];

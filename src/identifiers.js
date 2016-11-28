@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ANALYZE_FOR_ENTRY_COMPONENTS, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ComponentRef, ElementRef, Injector, LOCALE_ID, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TRANSLATIONS_FORMAT, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
-import { isStaticSymbol } from './aot/static_symbol';
 import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
 import { AnimationGroupPlayer, AnimationKeyframe, AnimationSequencePlayer, AnimationStyles, AnimationTransition, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, ComponentRef_, DebugAppView, DebugContext, NgModuleInjector, NoOpAnimationPlayer, StaticNodeDebugInfo, TemplateRef_, UNINITIALIZED, ValueUnwrapper, ViewContainer, ViewType, balanceAnimationKeyframes, clearStyles, collectAndResolveStyles, devModeEqual, prepareFinalAnimationStyles, reflector, registerModuleFactory, renderStyles, view_utils } from './private_import_core';
 var /** @type {?} */ APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
@@ -472,12 +471,15 @@ export function assetUrl(pkg, path, type) {
  * @return {?}
  */
 export function resolveIdentifier(identifier) {
-    var /** @type {?} */ moduleUrl = identifier.moduleUrl;
+    return reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime);
+}
+/**
+ * @param {?} identifier
+ * @return {?}
+ */
+export function createIdentifier(identifier) {
     var /** @type {?} */ reference = reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime);
-    if (isStaticSymbol(reference)) {
-        moduleUrl = reference.filePath;
-    }
-    return new CompileIdentifierMetadata({ name: identifier.name, moduleUrl: moduleUrl, reference: reference });
+    return new CompileIdentifierMetadata({ reference: reference });
 }
 /**
  * @param {?} identifier
@@ -490,16 +492,16 @@ export function identifierToken(identifier) {
  * @param {?} identifier
  * @return {?}
  */
-export function resolveIdentifierToken(identifier) {
-    return identifierToken(resolveIdentifier(identifier));
+export function createIdentifierToken(identifier) {
+    return identifierToken(createIdentifier(identifier));
 }
 /**
  * @param {?} enumType
  * @param {?} name
  * @return {?}
  */
-export function resolveEnumIdentifier(enumType, name) {
-    var /** @type {?} */ resolvedEnum = reflector.resolveEnum(enumType.reference, name);
-    return new CompileIdentifierMetadata({ name: enumType.name + "." + name, moduleUrl: enumType.moduleUrl, reference: resolvedEnum });
+export function createEnumIdentifier(enumType, name) {
+    var /** @type {?} */ resolvedEnum = reflector.resolveEnum(resolveIdentifier(enumType), name);
+    return new CompileIdentifierMetadata({ reference: resolvedEnum });
 }
 //# sourceMappingURL=identifiers.js.map

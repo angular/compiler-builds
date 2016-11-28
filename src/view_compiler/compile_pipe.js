@@ -5,8 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { tokenReference } from '../compile_metadata';
 import { createPureProxy } from '../compiler_util/identifier_util';
-import { Identifiers, resolveIdentifier, resolveIdentifierToken } from '../identifiers';
+import { Identifiers, createIdentifier, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { getPropertyInView, injectFromViewParentInjector } from './util';
 export var CompilePipe = (function () {
@@ -21,8 +22,7 @@ export var CompilePipe = (function () {
         this._purePipeProxyCount = 0;
         this.instance = o.THIS_EXPR.prop("_pipe_" + meta.name + "_" + view.pipeCount++);
         var deps = this.meta.type.diDeps.map(function (diDep) {
-            if (diDep.token.reference ===
-                resolveIdentifierToken(Identifiers.ChangeDetectorRef).reference) {
+            if (tokenReference(diDep.token) === resolveIdentifier(Identifiers.ChangeDetectorRef)) {
                 return getPropertyInView(o.THIS_EXPR.prop('ref'), _this.view, _this.view.componentView);
             }
             return injectFromViewParentInjector(view, diDep.token, false);
@@ -79,7 +79,7 @@ export var CompilePipe = (function () {
             var /** @type {?} */ pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
             createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
                 .callMethod(o.BuiltinMethod.Bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, { fields: callingView.fields, ctorStmts: callingView.createMethod });
-            return o.importExpr(resolveIdentifier(Identifiers.castByValue))
+            return o.importExpr(createIdentifier(Identifiers.castByValue))
                 .callFn([purePipeProxyInstance, pipeInstanceSeenFromPureProxy.prop('transform')])
                 .callFn(args);
         }

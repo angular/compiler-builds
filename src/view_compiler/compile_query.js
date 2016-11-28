@@ -5,9 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { tokenReference } from '../compile_metadata';
 import { ListWrapper } from '../facade/collection';
 import { isPresent } from '../facade/lang';
-import { Identifiers, resolveIdentifier } from '../identifiers';
+import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { getPropertyInView } from './util';
 var ViewQueryValues = (function () {
@@ -153,11 +154,10 @@ function mapNestedViews(viewContainer, view, expressions) {
  * @return {?}
  */
 export function createQueryList(query, directiveInstance, propertyName, compileView) {
-    compileView.fields.push(new o.ClassField(propertyName, o.importType(resolveIdentifier(Identifiers.QueryList), [o.DYNAMIC_TYPE])));
+    compileView.fields.push(new o.ClassField(propertyName, o.importType(createIdentifier(Identifiers.QueryList), [o.DYNAMIC_TYPE])));
     var /** @type {?} */ expr = o.THIS_EXPR.prop(propertyName);
     compileView.createMethod.addStmt(o.THIS_EXPR.prop(propertyName)
-        .set(o.importExpr(resolveIdentifier(Identifiers.QueryList), [o.DYNAMIC_TYPE])
-        .instantiate([]))
+        .set(o.importExpr(createIdentifier(Identifiers.QueryList), [o.DYNAMIC_TYPE]).instantiate([]))
         .toStmt());
     return expr;
 }
@@ -168,10 +168,10 @@ export function createQueryList(query, directiveInstance, propertyName, compileV
  */
 export function addQueryToTokenMap(map, query) {
     query.meta.selectors.forEach(function (selector) {
-        var /** @type {?} */ entry = map.get(selector.reference);
+        var /** @type {?} */ entry = map.get(tokenReference(selector));
         if (!entry) {
             entry = [];
-            map.set(selector.reference, entry);
+            map.set(tokenReference(selector), entry);
         }
         entry.push(query);
     });

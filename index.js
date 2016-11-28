@@ -23,7 +23,7 @@
 export { TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll } from './src/template_parser/template_ast';
 export { TEMPLATE_TRANSFORMS } from './src/template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './src/config';
-export { CompileMetadataWithIdentifier, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, CompileIdentifierMetadata, CompileDiDependencyMetadata, CompileProviderMetadata, CompileFactoryMetadata, CompileTokenMetadata, CompileTypeMetadata, CompileQueryMetadata, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, removeIdentifierDuplicates, ProviderMeta } from './src/compile_metadata';
+export { CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, CompileIdentifierMetadata, CompileDiDependencyMetadata, CompileProviderMetadata, CompileFactoryMetadata, tokenName, tokenReference, CompileTokenMetadata, CompileTypeMetadata, CompileQueryMetadata, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta } from './src/compile_metadata';
 export { createAotCompiler } from './src/aot/compiler_factory';
 export { SourceModule, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, loadNgModuleDirectives, extractProgramSymbols } from './src/aot/compiler';
 export { StaticSymbolCache, StaticReflector } from './src/aot/static_reflector';
@@ -42,7 +42,7 @@ export { Extractor, I18NHtmlParser, MessageBundle, Xliff, Xmb, Xtb } from './src
 export { DirectiveNormalizer } from './src/directive_normalizer';
 export { TokenType, Lexer, Token, EOF, isIdentifier, isQuote } from './src/expression_parser/lexer';
 export { SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST } from './src/expression_parser/parser';
-export { CompileMetadataResolver } from './src/metadata_resolver';
+export { CompileMetadataResolver, componentModuleUrl } from './src/metadata_resolver';
 export { ParseTreeResult, TreeError, HtmlParser } from './src/ml_parser/html_parser';
 export { NgModuleCompiler } from './src/ng_module_compiler';
 export { DirectiveWrapperCompiler } from './src/directive_wrapper_compiler';

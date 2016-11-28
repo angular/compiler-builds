@@ -1,6 +1,6 @@
 import { SecurityContext } from '@angular/core';
 import { isPresent } from '../facade/lang';
-import { Identifiers, resolveIdentifier } from '../identifiers';
+import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { EMPTY_STATE as EMPTY_ANIMATION_STATE } from '../private_import_core';
 import { BoundEventAst, PropertyBindingType } from '../template_parser/template_ast';
@@ -21,7 +21,7 @@ export function writeToRenderer(view, boundProp, renderElement, renderValue, log
     switch (boundProp.type) {
         case PropertyBindingType.Property:
             if (logBindingUpdate) {
-                updateStmts.push(o.importExpr(resolveIdentifier(Identifiers.setBindingDebugInfo))
+                updateStmts.push(o.importExpr(createIdentifier(Identifiers.setBindingDebugInfo))
                     .callFn([renderer, renderElement, o.literal(boundProp.name), renderValue])
                     .toStmt());
             }
@@ -96,7 +96,7 @@ export function triggerAnimation(view, componentView, boundProp, eventListener, 
     // it's important to normalize the void value as `void` explicitly
     // so that the styles data can be obtained from the stringmap
     var /** @type {?} */ emptyStateValue = o.literal(EMPTY_ANIMATION_STATE);
-    var /** @type {?} */ unitializedValue = o.importExpr(resolveIdentifier(Identifiers.UNINITIALIZED));
+    var /** @type {?} */ unitializedValue = o.importExpr(createIdentifier(Identifiers.UNINITIALIZED));
     var /** @type {?} */ animationTransitionVar = o.variable('animationTransition_' + animationName);
     updateStmts.push(animationTransitionVar
         .set(animationFnExpr.callFn([
