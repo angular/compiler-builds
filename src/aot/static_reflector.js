@@ -59,18 +59,26 @@ export var StaticReflector = (function () {
     /**
      * @param {?} host
      * @param {?=} staticSymbolCache
+     * @param {?=} knownMetadataClasses
+     * @param {?=} knownMetadataFunctions
      */
-    function StaticReflector(host, staticSymbolCache) {
+    function StaticReflector(host, staticSymbolCache, knownMetadataClasses, knownMetadataFunctions) {
+        var _this = this;
         if (staticSymbolCache === void 0) { staticSymbolCache = new StaticSymbolCache(); }
+        if (knownMetadataClasses === void 0) { knownMetadataClasses = []; }
+        if (knownMetadataFunctions === void 0) { knownMetadataFunctions = []; }
         this.host = host;
         this.staticSymbolCache = staticSymbolCache;
         this.declarationCache = new Map();
         this.annotationCache = new Map();
         this.propertyCache = new Map();
         this.parameterCache = new Map();
+        this.methodCache = new Map();
         this.metadataCache = new Map();
         this.conversionMap = new Map();
         this.initializeConversionMap();
+        knownMetadataClasses.forEach(function (kc) { return _this._registerDecoratorOrConstructor(_this.getStaticSymbol(kc.filePath, kc.name), kc.ctor); });
+        knownMetadataFunctions.forEach(function (kf) { return _this._registerFunction(_this.getStaticSymbol(kf.filePath, kf.name), kf.fn); });
     }
     /**
      * @param {?} typeOrFunc
@@ -105,12 +113,15 @@ export var StaticReflector = (function () {
     StaticReflector.prototype.annotations = function (type) {
         var /** @type {?} */ annotations = this.annotationCache.get(type);
         if (!annotations) {
+            annotations = [];
             var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-            if (classMetadata['decorators']) {
-                annotations = this.simplify(type, classMetadata['decorators']);
+            if (classMetadata['extends']) {
+                var /** @type {?} */ parentAnnotations = this.annotations(this.simplify(type, classMetadata['extends']));
+                annotations.push.apply(annotations, parentAnnotations);
             }
-            else {
-                annotations = [];
+            if (classMetadata['decorators']) {
+                var /** @type {?} */ ownAnnotations = this.simplify(type, classMetadata['decorators']);
+                annotations.push.apply(annotations, ownAnnotations);
             }
             this.annotationCache.set(type, annotations.filter(function (ann) { return !!ann; }));
         }
@@ -124,16 +135,26 @@ export var StaticReflector = (function () {
         var _this = this;
         var /** @type {?} */ propMetadata = this.propertyCache.get(type);
         if (!propMetadata) {
-            var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-            var /** @type {?} */ members = classMetadata ? classMetadata['members'] : {};
-            propMetadata = mapStringMap(members, function (propData, propName) {
+            var /** @type {?} */ classMetadata = this.getTypeMetadata(type) || {};
+            propMetadata = {};
+            if (classMetadata['extends']) {
+                var /** @type {?} */ parentPropMetadata_1 = this.propMetadata(this.simplify(type, classMetadata['extends']));
+                Object.keys(parentPropMetadata_1).forEach(function (parentProp) {
+                    propMetadata[parentProp] = parentPropMetadata_1[parentProp];
+                });
+            }
+            var /** @type {?} */ members_1 = classMetadata['members'] || {};
+            Object.keys(members_1).forEach(function (propName) {
+                var /** @type {?} */ propData = members_1[propName];
                 var /** @type {?} */ prop = ((propData))
                     .find(function (a) { return a['__symbolic'] == 'property' || a['__symbolic'] == 'method'; });
-                if (prop && prop['decorators']) {
-                    return _this.simplify(type, prop['decorators']);
+                var /** @type {?} */ decorators = [];
+                if (propMetadata[propName]) {
+                    decorators.push.apply(decorators, propMetadata[propName]);
                 }
-                else {
-                    return [];
+                propMetadata[propName] = decorators;
+                if (prop && prop['decorators']) {
+                    decorators.push.apply(decorators, _this.simplify(type, prop['decorators']));
                 }
             });
             this.propertyCache.set(type, propMetadata);
@@ -171,6 +192,9 @@ export var StaticReflector = (function () {
                         parameters_1.push(nestedResult);
                     });
                 }
+                else if (classMetadata['extends']) {
+                    parameters_1 = this.parameters(this.simplify(type, classMetadata['extends']));
+                }
                 if (!parameters_1) {
                     parameters_1 = [];
                 }
@@ -185,6 +209,31 @@ export var StaticReflector = (function () {
     };
     /**
      * @param {?} type
+     * @return {?}
+     */
+    StaticReflector.prototype._methodNames = function (type) {
+        var /** @type {?} */ methodNames = this.methodCache.get(type);
+        if (!methodNames) {
+            var /** @type {?} */ classMetadata = this.getTypeMetadata(type) || {};
+            methodNames = {};
+            if (classMetadata['extends']) {
+                var /** @type {?} */ parentMethodNames_1 = this._methodNames(this.simplify(type, classMetadata['extends']));
+                Object.keys(parentMethodNames_1).forEach(function (parentProp) {
+                    methodNames[parentProp] = parentMethodNames_1[parentProp];
+                });
+            }
+            var /** @type {?} */ members_2 = classMetadata['members'] || {};
+            Object.keys(members_2).forEach(function (propName) {
+                var /** @type {?} */ propData = members_2[propName];
+                var /** @type {?} */ isMethod = ((propData)).some(function (a) { return a['__symbolic'] == 'method'; });
+                methodNames[propName] = methodNames[propName] || isMethod;
+            });
+            this.methodCache.set(type, methodNames);
+        }
+        return methodNames;
+    };
+    /**
+     * @param {?} type
      * @param {?} lcProperty
      * @return {?}
      */
@@ -192,17 +241,20 @@ export var StaticReflector = (function () {
         if (!(type instanceof StaticSymbol)) {
             throw new Error("hasLifecycleHook received " + JSON.stringify(type) + " which is not a StaticSymbol");
         }
-        var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-        var /** @type {?} */ members = classMetadata ? classMetadata['members'] : null;
-        var /** @type {?} */ member = members && members.hasOwnProperty(lcProperty) ? members[lcProperty] : null;
-        return member ? member.some(function (a) { return a['__symbolic'] == 'method'; }) : false;
+        try {
+            return !!this._methodNames(type)[lcProperty];
+        }
+        catch (e) {
+            console.error("Failed on type " + JSON.stringify(type) + " with error " + e);
+            throw e;
+        }
     };
     /**
      * @param {?} type
      * @param {?} ctor
      * @return {?}
      */
-    StaticReflector.prototype.registerDecoratorOrConstructor = function (type, ctor) {
+    StaticReflector.prototype._registerDecoratorOrConstructor = function (type, ctor) {
         this.conversionMap.set(type, function (context, args) { return new (ctor.bind.apply(ctor, [void 0].concat(args)))(); });
     };
     /**
@@ -210,7 +262,7 @@ export var StaticReflector = (function () {
      * @param {?} fn
      * @return {?}
      */
-    StaticReflector.prototype.registerFunction = function (type, fn) {
+    StaticReflector.prototype._registerFunction = function (type, fn) {
         this.conversionMap.set(type, function (context, args) { return fn.apply(undefined, args); });
     };
     /**
@@ -219,38 +271,38 @@ export var StaticReflector = (function () {
     StaticReflector.prototype.initializeConversionMap = function () {
         var coreDecorators = ANGULAR_IMPORT_LOCATIONS.coreDecorators, diDecorators = ANGULAR_IMPORT_LOCATIONS.diDecorators, diMetadata = ANGULAR_IMPORT_LOCATIONS.diMetadata, diOpaqueToken = ANGULAR_IMPORT_LOCATIONS.diOpaqueToken, animationMetadata = ANGULAR_IMPORT_LOCATIONS.animationMetadata, provider = ANGULAR_IMPORT_LOCATIONS.provider;
         this.opaqueToken = this.findDeclaration(diOpaqueToken, 'OpaqueToken');
-        this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Host'), Host);
-        this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Injectable'), Injectable);
-        this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Self'), Self);
-        this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'SkipSelf'), SkipSelf);
-        this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Inject'), Inject);
-        this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Optional'), Optional);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Attribute'), Attribute);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChild'), ContentChild);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChildren'), ContentChildren);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChild'), ViewChild);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChildren'), ViewChildren);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Input'), Input);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Output'), Output);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Pipe'), Pipe);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostBinding'), HostBinding);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostListener'), HostListener);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Directive'), Directive);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Component'), Component);
-        this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'NgModule'), NgModule);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Host'), Host);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Injectable'), Injectable);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Self'), Self);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'SkipSelf'), SkipSelf);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Inject'), Inject);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Optional'), Optional);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Attribute'), Attribute);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChild'), ContentChild);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChildren'), ContentChildren);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChild'), ViewChild);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChildren'), ViewChildren);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Input'), Input);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Output'), Output);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Pipe'), Pipe);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostBinding'), HostBinding);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostListener'), HostListener);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Directive'), Directive);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Component'), Component);
+        this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'NgModule'), NgModule);
         // Note: Some metadata classes can be used directly with Provider.deps.
-        this.registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Host'), Host);
-        this.registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Self'), Self);
-        this.registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'SkipSelf'), SkipSelf);
-        this.registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Optional'), Optional);
-        this.registerFunction(this.findDeclaration(animationMetadata, 'trigger'), trigger);
-        this.registerFunction(this.findDeclaration(animationMetadata, 'state'), state);
-        this.registerFunction(this.findDeclaration(animationMetadata, 'transition'), transition);
-        this.registerFunction(this.findDeclaration(animationMetadata, 'style'), style);
-        this.registerFunction(this.findDeclaration(animationMetadata, 'animate'), animate);
-        this.registerFunction(this.findDeclaration(animationMetadata, 'keyframes'), keyframes);
-        this.registerFunction(this.findDeclaration(animationMetadata, 'sequence'), sequence);
-        this.registerFunction(this.findDeclaration(animationMetadata, 'group'), group);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Host'), Host);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Self'), Self);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'SkipSelf'), SkipSelf);
+        this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Optional'), Optional);
+        this._registerFunction(this.findDeclaration(animationMetadata, 'trigger'), trigger);
+        this._registerFunction(this.findDeclaration(animationMetadata, 'state'), state);
+        this._registerFunction(this.findDeclaration(animationMetadata, 'transition'), transition);
+        this._registerFunction(this.findDeclaration(animationMetadata, 'style'), style);
+        this._registerFunction(this.findDeclaration(animationMetadata, 'animate'), animate);
+        this._registerFunction(this.findDeclaration(animationMetadata, 'keyframes'), keyframes);
+        this._registerFunction(this.findDeclaration(animationMetadata, 'sequence'), sequence);
+        this._registerFunction(this.findDeclaration(animationMetadata, 'group'), group);
     };
     /**
      *  getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
@@ -364,7 +416,7 @@ export var StaticReflector = (function () {
      * @return {?}
      */
     StaticReflector.prototype.simplify = function (context, value) {
-        var /** @type {?} */ _this = this;
+        var /** @type {?} */ self = this;
         var /** @type {?} */ scope = BindingScope.empty;
         var /** @type {?} */ calling = new Map();
         /**
@@ -383,10 +435,10 @@ export var StaticReflector = (function () {
                 var /** @type {?} */ staticSymbol;
                 if (expression['module']) {
                     staticSymbol =
-                        _this.findDeclaration(expression['module'], expression['name'], context.filePath);
+                        self.findDeclaration(expression['module'], expression['name'], context.filePath);
                 }
                 else {
-                    staticSymbol = _this.getStaticSymbol(context.filePath, expression['name']);
+                    staticSymbol = self.getStaticSymbol(context.filePath, expression['name']);
                 }
                 return staticSymbol;
             }
@@ -395,7 +447,7 @@ export var StaticReflector = (function () {
              * @return {?}
              */
             function resolveReferenceValue(staticSymbol) {
-                var /** @type {?} */ moduleMetadata = _this.getModuleMetadata(staticSymbol.filePath);
+                var /** @type {?} */ moduleMetadata = self.getModuleMetadata(staticSymbol.filePath);
                 var /** @type {?} */ declarationValue = moduleMetadata ? moduleMetadata['metadata'][staticSymbol.name] : null;
                 return declarationValue;
             }
@@ -408,7 +460,7 @@ export var StaticReflector = (function () {
                 if (value && value.__symbolic === 'new' && value.expression) {
                     var /** @type {?} */ target = value.expression;
                     if (target.__symbolic == 'reference') {
-                        return sameSymbol(resolveReference(context, target), _this.opaqueToken);
+                        return sameSymbol(resolveReference(context, target), self.opaqueToken);
                     }
                 }
                 return false;
@@ -613,7 +665,7 @@ export var StaticReflector = (function () {
                                         var /** @type {?} */ members = selectTarget.members ?
                                             ((selectTarget.members)).concat(member_1) :
                                             [member_1];
-                                        return _this.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
+                                        return self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     }
                                 }
                                 var /** @type {?} */ member = simplify(expression['member']);
@@ -650,12 +702,12 @@ export var StaticReflector = (function () {
                                 var /** @type {?} */ target = expression['expression'];
                                 if (target['module']) {
                                     staticSymbol =
-                                        _this.findDeclaration(target['module'], target['name'], context.filePath);
+                                        self.findDeclaration(target['module'], target['name'], context.filePath);
                                 }
                                 else {
-                                    staticSymbol = _this.getStaticSymbol(context.filePath, target['name']);
+                                    staticSymbol = self.getStaticSymbol(context.filePath, target['name']);
                                 }
-                                var /** @type {?} */ converter = _this.conversionMap.get(staticSymbol);
+                                var /** @type {?} */ converter = self.conversionMap.get(staticSymbol);
                                 if (converter) {
                                     var /** @type {?} */ args = expression['arguments'];
                                     if (!args) {
@@ -744,6 +796,8 @@ function StaticReflector_tsickle_Closure_declarations() {
     StaticReflector.prototype.propertyCache;
     /** @type {?} */
     StaticReflector.prototype.parameterCache;
+    /** @type {?} */
+    StaticReflector.prototype.methodCache;
     /** @type {?} */
     StaticReflector.prototype.metadataCache;
     /** @type {?} */

@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable, NgModule } from '@angular/core';
+import { ListWrapper } from './facade/collection';
 import { isPresent, stringify } from './facade/lang';
 import { ReflectorReader, reflector } from './private_import_core';
 /**
@@ -38,7 +39,7 @@ export var NgModuleResolver = (function () {
      */
     NgModuleResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        var /** @type {?} */ ngModuleMeta = this._reflector.annotations(type).find(_isNgModuleMetadata);
+        var /** @type {?} */ ngModuleMeta = ListWrapper.findLast(this._reflector.annotations(type), _isNgModuleMetadata);
         if (isPresent(ngModuleMeta)) {
             return ngModuleMeta;
         }

@@ -43,21 +43,31 @@ export declare class StaticReflector implements ReflectorReader {
     private annotationCache;
     private propertyCache;
     private parameterCache;
+    private methodCache;
     private metadataCache;
     private conversionMap;
     private opaqueToken;
-    constructor(host: StaticReflectorHost, staticSymbolCache?: StaticSymbolCache);
+    constructor(host: StaticReflectorHost, staticSymbolCache?: StaticSymbolCache, knownMetadataClasses?: {
+        name: string;
+        filePath: string;
+        ctor: any;
+    }[], knownMetadataFunctions?: {
+        name: string;
+        filePath: string;
+        fn: any;
+    }[]);
     importUri(typeOrFunc: StaticSymbol): string;
     resolveIdentifier(name: string, moduleUrl: string, runtime: any): any;
     resolveEnum(enumIdentifier: any, name: string): any;
     annotations(type: StaticSymbol): any[];
     propMetadata(type: StaticSymbol): {
-        [key: string]: any;
+        [key: string]: any[];
     };
     parameters(type: StaticSymbol): any[];
+    private _methodNames(type);
     hasLifecycleHook(type: any, lcProperty: string): boolean;
-    private registerDecoratorOrConstructor(type, ctor);
-    private registerFunction(type, fn);
+    private _registerDecoratorOrConstructor(type, ctor);
+    private _registerFunction(type, fn);
     private initializeConversionMap();
     /**
      * getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.

@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-beta.0-be3784c
+ * @license Angular v2.3.0-beta.0-f5c8e09
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -7802,6 +7802,19 @@
       function ListWrapper() {
       }
       /**
+       * @param {?} arr
+       * @param {?} condition
+       * @return {?}
+       */
+      ListWrapper.findLast = function (arr, condition) {
+          for (var /** @type {?} */ i = arr.length - 1; i >= 0; i--) {
+              if (condition(arr[i])) {
+                  return arr[i];
+              }
+          }
+          return null;
+      };
+      /**
        * @param {?} list
        * @param {?} items
        * @return {?}
@@ -13621,7 +13634,7 @@
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
           var /** @type {?} */ typeMetadata = this._reflector.annotations(_angular_core.resolveForwardRef(type));
           if (typeMetadata) {
-              var /** @type {?} */ metadata = typeMetadata.find(isDirectiveMetadata);
+              var /** @type {?} */ metadata = ListWrapper.findLast(typeMetadata, isDirectiveMetadata);
               if (metadata) {
                   var /** @type {?} */ propertyMetadata = this._reflector.propMetadata(type);
                   return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
@@ -13644,49 +13657,49 @@
           var /** @type {?} */ host = {};
           var /** @type {?} */ queries = {};
           Object.keys(propertyMetadata).forEach(function (propName) {
-              propertyMetadata[propName].forEach(function (a) {
-                  if (a instanceof _angular_core.Input) {
-                      if (a.bindingPropertyName) {
-                          inputs.push(propName + ": " + a.bindingPropertyName);
-                      }
-                      else {
-                          inputs.push(propName);
-                      }
+              var /** @type {?} */ input = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Input; });
+              if (input) {
+                  if (input.bindingPropertyName) {
+                      inputs.push(propName + ": " + input.bindingPropertyName);
                   }
-                  else if (a instanceof _angular_core.Output) {
-                      var /** @type {?} */ output = a;
-                      if (output.bindingPropertyName) {
-                          outputs.push(propName + ": " + output.bindingPropertyName);
-                      }
-                      else {
-                          outputs.push(propName);
-                      }
+                  else {
+                      inputs.push(propName);
                   }
-                  else if (a instanceof _angular_core.HostBinding) {
-                      var /** @type {?} */ hostBinding = a;
-                      if (hostBinding.hostPropertyName) {
-                          var /** @type {?} */ startWith = hostBinding.hostPropertyName[0];
-                          if (startWith === '(') {
-                              throw new Error("@HostBinding can not bind to events. Use @HostListener instead.");
-                          }
-                          else if (startWith === '[') {
-                              throw new Error("@HostBinding parameter should be a property name, 'class.<name>', or 'attr.<name>'.");
-                          }
-                          host[("[" + hostBinding.hostPropertyName + "]")] = propName;
+              }
+              var /** @type {?} */ output = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Output; });
+              if (output) {
+                  if (output.bindingPropertyName) {
+                      outputs.push(propName + ": " + output.bindingPropertyName);
+                  }
+                  else {
+                      outputs.push(propName);
+                  }
+              }
+              var /** @type {?} */ hostBinding = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.HostBinding; });
+              if (hostBinding) {
+                  if (hostBinding.hostPropertyName) {
+                      var /** @type {?} */ startWith = hostBinding.hostPropertyName[0];
+                      if (startWith === '(') {
+                          throw new Error("@HostBinding can not bind to events. Use @HostListener instead.");
                       }
-                      else {
-                          host[("[" + propName + "]")] = propName;
+                      else if (startWith === '[') {
+                          throw new Error("@HostBinding parameter should be a property name, 'class.<name>', or 'attr.<name>'.");
                       }
+                      host[("[" + hostBinding.hostPropertyName + "]")] = propName;
                   }
-                  else if (a instanceof _angular_core.HostListener) {
-                      var /** @type {?} */ hostListener = a;
-                      var /** @type {?} */ args = hostListener.args || [];
-                      host[("(" + hostListener.eventName + ")")] = propName + "(" + args.join(',') + ")";
+                  else {
+                      host[("[" + propName + "]")] = propName;
                   }
-                  else if (a instanceof _angular_core.Query) {
-                      queries[propName] = a;
-                  }
-              });
+              }
+              var /** @type {?} */ hostListener = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.HostListener; });
+              if (hostListener) {
+                  var /** @type {?} */ args = hostListener.args || [];
+                  host[("(" + hostListener.eventName + ")")] = propName + "(" + args.join(',') + ")";
+              }
+              var /** @type {?} */ query = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Query; });
+              if (query) {
+                  queries[propName] = query;
+              }
           });
           return this._merge(dm, inputs, outputs, host, queries, directiveType);
       };
@@ -13695,6 +13708,24 @@
        * @return {?}
        */
       DirectiveResolver.prototype._extractPublicName = function (def) { return splitAtColon(def, [null, def])[1].trim(); };
+      /**
+       * @param {?} bindings
+       * @return {?}
+       */
+      DirectiveResolver.prototype._dedupeBindings = function (bindings) {
+          var /** @type {?} */ names = new Set();
+          var /** @type {?} */ reversedResult = [];
+          // go last to first to allow later entries to overwrite previous entries
+          for (var /** @type {?} */ i = bindings.length - 1; i >= 0; i--) {
+              var /** @type {?} */ binding = bindings[i];
+              var /** @type {?} */ name_1 = this._extractPublicName(binding);
+              if (!names.has(name_1)) {
+                  names.add(name_1);
+                  reversedResult.push(binding);
+              }
+          }
+          return reversedResult.reverse();
+      };
       /**
        * @param {?} directive
        * @param {?} inputs
@@ -13705,29 +13736,8 @@
        * @return {?}
        */
       DirectiveResolver.prototype._merge = function (directive, inputs, outputs, host, queries, directiveType) {
-          var _this = this;
-          var /** @type {?} */ mergedInputs = inputs;
-          if (directive.inputs) {
-              var /** @type {?} */ inputNames_1 = directive.inputs.map(function (def) { return _this._extractPublicName(def); });
-              inputs.forEach(function (inputDef) {
-                  var /** @type {?} */ publicName = _this._extractPublicName(inputDef);
-                  if (inputNames_1.indexOf(publicName) > -1) {
-                      throw new Error("Input '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
-                  }
-              });
-              mergedInputs.unshift.apply(mergedInputs, directive.inputs);
-          }
-          var /** @type {?} */ mergedOutputs = outputs;
-          if (directive.outputs) {
-              var /** @type {?} */ outputNames_1 = directive.outputs.map(function (def) { return _this._extractPublicName(def); });
-              outputs.forEach(function (outputDef) {
-                  var /** @type {?} */ publicName = _this._extractPublicName(outputDef);
-                  if (outputNames_1.indexOf(publicName) > -1) {
-                      throw new Error("Output event '" + publicName + "' defined multiple times in '" + stringify(directiveType) + "'");
-                  }
-              });
-              mergedOutputs.unshift.apply(mergedOutputs, directive.outputs);
-          }
+          var /** @type {?} */ mergedInputs = this._dedupeBindings(directive.inputs ? directive.inputs.concat(inputs) : inputs);
+          var /** @type {?} */ mergedOutputs = this._dedupeBindings(directive.outputs ? directive.outputs.concat(outputs) : outputs);
           var /** @type {?} */ mergedHost = directive.host ? StringMapWrapper.merge(directive.host, host) : host;
           var /** @type {?} */ mergedQueries = directive.queries ? StringMapWrapper.merge(directive.queries, queries) : queries;
           if (directive instanceof _angular_core.Component) {
@@ -17314,7 +17324,7 @@
        */
       NgModuleResolver.prototype.resolve = function (type, throwIfNotFound) {
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-          var /** @type {?} */ ngModuleMeta = this._reflector.annotations(type).find(_isNgModuleMetadata);
+          var /** @type {?} */ ngModuleMeta = ListWrapper.findLast(this._reflector.annotations(type), _isNgModuleMetadata);
           if (isPresent(ngModuleMeta)) {
               return ngModuleMeta;
           }
@@ -17375,7 +17385,7 @@
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
           var /** @type {?} */ metas = this._reflector.annotations(_angular_core.resolveForwardRef(type));
           if (isPresent(metas)) {
-              var /** @type {?} */ annotation = metas.find(_isPipeMetadata);
+              var /** @type {?} */ annotation = ListWrapper.findLast(metas, _isPipeMetadata);
               if (isPresent(annotation)) {
                   return annotation;
               }
@@ -24573,18 +24583,26 @@
       /**
        * @param {?} host
        * @param {?=} staticSymbolCache
+       * @param {?=} knownMetadataClasses
+       * @param {?=} knownMetadataFunctions
        */
-      function StaticReflector(host, staticSymbolCache) {
+      function StaticReflector(host, staticSymbolCache, knownMetadataClasses, knownMetadataFunctions) {
+          var _this = this;
           if (staticSymbolCache === void 0) { staticSymbolCache = new StaticSymbolCache(); }
+          if (knownMetadataClasses === void 0) { knownMetadataClasses = []; }
+          if (knownMetadataFunctions === void 0) { knownMetadataFunctions = []; }
           this.host = host;
           this.staticSymbolCache = staticSymbolCache;
           this.declarationCache = new Map();
           this.annotationCache = new Map();
           this.propertyCache = new Map();
           this.parameterCache = new Map();
+          this.methodCache = new Map();
           this.metadataCache = new Map();
           this.conversionMap = new Map();
           this.initializeConversionMap();
+          knownMetadataClasses.forEach(function (kc) { return _this._registerDecoratorOrConstructor(_this.getStaticSymbol(kc.filePath, kc.name), kc.ctor); });
+          knownMetadataFunctions.forEach(function (kf) { return _this._registerFunction(_this.getStaticSymbol(kf.filePath, kf.name), kf.fn); });
       }
       /**
        * @param {?} typeOrFunc
@@ -24619,12 +24637,15 @@
       StaticReflector.prototype.annotations = function (type) {
           var /** @type {?} */ annotations = this.annotationCache.get(type);
           if (!annotations) {
+              annotations = [];
               var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-              if (classMetadata['decorators']) {
-                  annotations = this.simplify(type, classMetadata['decorators']);
+              if (classMetadata['extends']) {
+                  var /** @type {?} */ parentAnnotations = this.annotations(this.simplify(type, classMetadata['extends']));
+                  annotations.push.apply(annotations, parentAnnotations);
               }
-              else {
-                  annotations = [];
+              if (classMetadata['decorators']) {
+                  var /** @type {?} */ ownAnnotations = this.simplify(type, classMetadata['decorators']);
+                  annotations.push.apply(annotations, ownAnnotations);
               }
               this.annotationCache.set(type, annotations.filter(function (ann) { return !!ann; }));
           }
@@ -24638,16 +24659,26 @@
           var _this = this;
           var /** @type {?} */ propMetadata = this.propertyCache.get(type);
           if (!propMetadata) {
-              var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-              var /** @type {?} */ members = classMetadata ? classMetadata['members'] : {};
-              propMetadata = mapStringMap(members, function (propData, propName) {
+              var /** @type {?} */ classMetadata = this.getTypeMetadata(type) || {};
+              propMetadata = {};
+              if (classMetadata['extends']) {
+                  var /** @type {?} */ parentPropMetadata_1 = this.propMetadata(this.simplify(type, classMetadata['extends']));
+                  Object.keys(parentPropMetadata_1).forEach(function (parentProp) {
+                      propMetadata[parentProp] = parentPropMetadata_1[parentProp];
+                  });
+              }
+              var /** @type {?} */ members_1 = classMetadata['members'] || {};
+              Object.keys(members_1).forEach(function (propName) {
+                  var /** @type {?} */ propData = members_1[propName];
                   var /** @type {?} */ prop = ((propData))
                       .find(function (a) { return a['__symbolic'] == 'property' || a['__symbolic'] == 'method'; });
-                  if (prop && prop['decorators']) {
-                      return _this.simplify(type, prop['decorators']);
+                  var /** @type {?} */ decorators = [];
+                  if (propMetadata[propName]) {
+                      decorators.push.apply(decorators, propMetadata[propName]);
                   }
-                  else {
-                      return [];
+                  propMetadata[propName] = decorators;
+                  if (prop && prop['decorators']) {
+                      decorators.push.apply(decorators, _this.simplify(type, prop['decorators']));
                   }
               });
               this.propertyCache.set(type, propMetadata);
@@ -24685,6 +24716,9 @@
                           parameters_1.push(nestedResult);
                       });
                   }
+                  else if (classMetadata['extends']) {
+                      parameters_1 = this.parameters(this.simplify(type, classMetadata['extends']));
+                  }
                   if (!parameters_1) {
                       parameters_1 = [];
                   }
@@ -24699,6 +24733,31 @@
       };
       /**
        * @param {?} type
+       * @return {?}
+       */
+      StaticReflector.prototype._methodNames = function (type) {
+          var /** @type {?} */ methodNames = this.methodCache.get(type);
+          if (!methodNames) {
+              var /** @type {?} */ classMetadata = this.getTypeMetadata(type) || {};
+              methodNames = {};
+              if (classMetadata['extends']) {
+                  var /** @type {?} */ parentMethodNames_1 = this._methodNames(this.simplify(type, classMetadata['extends']));
+                  Object.keys(parentMethodNames_1).forEach(function (parentProp) {
+                      methodNames[parentProp] = parentMethodNames_1[parentProp];
+                  });
+              }
+              var /** @type {?} */ members_2 = classMetadata['members'] || {};
+              Object.keys(members_2).forEach(function (propName) {
+                  var /** @type {?} */ propData = members_2[propName];
+                  var /** @type {?} */ isMethod = ((propData)).some(function (a) { return a['__symbolic'] == 'method'; });
+                  methodNames[propName] = methodNames[propName] || isMethod;
+              });
+              this.methodCache.set(type, methodNames);
+          }
+          return methodNames;
+      };
+      /**
+       * @param {?} type
        * @param {?} lcProperty
        * @return {?}
        */
@@ -24706,17 +24765,20 @@
           if (!(type instanceof StaticSymbol)) {
               throw new Error("hasLifecycleHook received " + JSON.stringify(type) + " which is not a StaticSymbol");
           }
-          var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-          var /** @type {?} */ members = classMetadata ? classMetadata['members'] : null;
-          var /** @type {?} */ member = members && members.hasOwnProperty(lcProperty) ? members[lcProperty] : null;
-          return member ? member.some(function (a) { return a['__symbolic'] == 'method'; }) : false;
+          try {
+              return !!this._methodNames(type)[lcProperty];
+          }
+          catch (e) {
+              console.error("Failed on type " + JSON.stringify(type) + " with error " + e);
+              throw e;
+          }
       };
       /**
        * @param {?} type
        * @param {?} ctor
        * @return {?}
        */
-      StaticReflector.prototype.registerDecoratorOrConstructor = function (type, ctor) {
+      StaticReflector.prototype._registerDecoratorOrConstructor = function (type, ctor) {
           this.conversionMap.set(type, function (context, args) { return new (ctor.bind.apply(ctor, [void 0].concat(args)))(); });
       };
       /**
@@ -24724,7 +24786,7 @@
        * @param {?} fn
        * @return {?}
        */
-      StaticReflector.prototype.registerFunction = function (type, fn) {
+      StaticReflector.prototype._registerFunction = function (type, fn) {
           this.conversionMap.set(type, function (context, args) { return fn.apply(undefined, args); });
       };
       /**
@@ -24733,38 +24795,38 @@
       StaticReflector.prototype.initializeConversionMap = function () {
           var coreDecorators = ANGULAR_IMPORT_LOCATIONS.coreDecorators, diDecorators = ANGULAR_IMPORT_LOCATIONS.diDecorators, diMetadata = ANGULAR_IMPORT_LOCATIONS.diMetadata, diOpaqueToken = ANGULAR_IMPORT_LOCATIONS.diOpaqueToken, animationMetadata = ANGULAR_IMPORT_LOCATIONS.animationMetadata, provider = ANGULAR_IMPORT_LOCATIONS.provider;
           this.opaqueToken = this.findDeclaration(diOpaqueToken, 'OpaqueToken');
-          this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Host'), _angular_core.Host);
-          this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Injectable'), _angular_core.Injectable);
-          this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Self'), _angular_core.Self);
-          this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'SkipSelf'), _angular_core.SkipSelf);
-          this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Inject'), _angular_core.Inject);
-          this.registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Optional'), _angular_core.Optional);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Attribute'), _angular_core.Attribute);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChild'), _angular_core.ContentChild);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChildren'), _angular_core.ContentChildren);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChild'), _angular_core.ViewChild);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChildren'), _angular_core.ViewChildren);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Input'), _angular_core.Input);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Output'), _angular_core.Output);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Pipe'), _angular_core.Pipe);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostBinding'), _angular_core.HostBinding);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostListener'), _angular_core.HostListener);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Directive'), _angular_core.Directive);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Component'), _angular_core.Component);
-          this.registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'NgModule'), _angular_core.NgModule);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Host'), _angular_core.Host);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Injectable'), _angular_core.Injectable);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Self'), _angular_core.Self);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'SkipSelf'), _angular_core.SkipSelf);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Inject'), _angular_core.Inject);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Optional'), _angular_core.Optional);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Attribute'), _angular_core.Attribute);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChild'), _angular_core.ContentChild);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChildren'), _angular_core.ContentChildren);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChild'), _angular_core.ViewChild);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChildren'), _angular_core.ViewChildren);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Input'), _angular_core.Input);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Output'), _angular_core.Output);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Pipe'), _angular_core.Pipe);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostBinding'), _angular_core.HostBinding);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostListener'), _angular_core.HostListener);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Directive'), _angular_core.Directive);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Component'), _angular_core.Component);
+          this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'NgModule'), _angular_core.NgModule);
           // Note: Some metadata classes can be used directly with Provider.deps.
-          this.registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Host'), _angular_core.Host);
-          this.registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Self'), _angular_core.Self);
-          this.registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'SkipSelf'), _angular_core.SkipSelf);
-          this.registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Optional'), _angular_core.Optional);
-          this.registerFunction(this.findDeclaration(animationMetadata, 'trigger'), _angular_core.trigger);
-          this.registerFunction(this.findDeclaration(animationMetadata, 'state'), _angular_core.state);
-          this.registerFunction(this.findDeclaration(animationMetadata, 'transition'), _angular_core.transition);
-          this.registerFunction(this.findDeclaration(animationMetadata, 'style'), _angular_core.style);
-          this.registerFunction(this.findDeclaration(animationMetadata, 'animate'), _angular_core.animate);
-          this.registerFunction(this.findDeclaration(animationMetadata, 'keyframes'), _angular_core.keyframes);
-          this.registerFunction(this.findDeclaration(animationMetadata, 'sequence'), _angular_core.sequence);
-          this.registerFunction(this.findDeclaration(animationMetadata, 'group'), _angular_core.group);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Host'), _angular_core.Host);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Self'), _angular_core.Self);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'SkipSelf'), _angular_core.SkipSelf);
+          this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Optional'), _angular_core.Optional);
+          this._registerFunction(this.findDeclaration(animationMetadata, 'trigger'), _angular_core.trigger);
+          this._registerFunction(this.findDeclaration(animationMetadata, 'state'), _angular_core.state);
+          this._registerFunction(this.findDeclaration(animationMetadata, 'transition'), _angular_core.transition);
+          this._registerFunction(this.findDeclaration(animationMetadata, 'style'), _angular_core.style);
+          this._registerFunction(this.findDeclaration(animationMetadata, 'animate'), _angular_core.animate);
+          this._registerFunction(this.findDeclaration(animationMetadata, 'keyframes'), _angular_core.keyframes);
+          this._registerFunction(this.findDeclaration(animationMetadata, 'sequence'), _angular_core.sequence);
+          this._registerFunction(this.findDeclaration(animationMetadata, 'group'), _angular_core.group);
       };
       /**
        *  getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
@@ -24878,7 +24940,7 @@
        * @return {?}
        */
       StaticReflector.prototype.simplify = function (context, value) {
-          var /** @type {?} */ _this = this;
+          var /** @type {?} */ self = this;
           var /** @type {?} */ scope = BindingScope.empty;
           var /** @type {?} */ calling = new Map();
           /**
@@ -24897,10 +24959,10 @@
                   var /** @type {?} */ staticSymbol;
                   if (expression['module']) {
                       staticSymbol =
-                          _this.findDeclaration(expression['module'], expression['name'], context.filePath);
+                          self.findDeclaration(expression['module'], expression['name'], context.filePath);
                   }
                   else {
-                      staticSymbol = _this.getStaticSymbol(context.filePath, expression['name']);
+                      staticSymbol = self.getStaticSymbol(context.filePath, expression['name']);
                   }
                   return staticSymbol;
               }
@@ -24909,7 +24971,7 @@
                * @return {?}
                */
               function resolveReferenceValue(staticSymbol) {
-                  var /** @type {?} */ moduleMetadata = _this.getModuleMetadata(staticSymbol.filePath);
+                  var /** @type {?} */ moduleMetadata = self.getModuleMetadata(staticSymbol.filePath);
                   var /** @type {?} */ declarationValue = moduleMetadata ? moduleMetadata['metadata'][staticSymbol.name] : null;
                   return declarationValue;
               }
@@ -24922,7 +24984,7 @@
                   if (value && value.__symbolic === 'new' && value.expression) {
                       var /** @type {?} */ target = value.expression;
                       if (target.__symbolic == 'reference') {
-                          return sameSymbol(resolveReference(context, target), _this.opaqueToken);
+                          return sameSymbol(resolveReference(context, target), self.opaqueToken);
                       }
                   }
                   return false;
@@ -25127,7 +25189,7 @@
                                           var /** @type {?} */ members = selectTarget.members ?
                                               ((selectTarget.members)).concat(member_1) :
                                               [member_1];
-                                          return _this.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
+                                          return self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                       }
                                   }
                                   var /** @type {?} */ member = simplify(expression['member']);
@@ -25164,12 +25226,12 @@
                                   var /** @type {?} */ target = expression['expression'];
                                   if (target['module']) {
                                       staticSymbol =
-                                          _this.findDeclaration(target['module'], target['name'], context.filePath);
+                                          self.findDeclaration(target['module'], target['name'], context.filePath);
                                   }
                                   else {
-                                      staticSymbol = _this.getStaticSymbol(context.filePath, target['name']);
+                                      staticSymbol = self.getStaticSymbol(context.filePath, target['name']);
                                   }
-                                  var /** @type {?} */ converter = _this.conversionMap.get(staticSymbol);
+                                  var /** @type {?} */ converter = self.conversionMap.get(staticSymbol);
                                   if (converter) {
                                       var /** @type {?} */ args = expression['arguments'];
                                       if (!args) {

@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable, Pipe, resolveForwardRef } from '@angular/core';
+import { ListWrapper } from './facade/collection';
 import { isPresent, stringify } from './facade/lang';
 import { ReflectorReader, reflector } from './private_import_core';
 /**
@@ -48,7 +49,7 @@ export var PipeResolver = (function () {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         var /** @type {?} */ metas = this._reflector.annotations(resolveForwardRef(type));
         if (isPresent(metas)) {
-            var /** @type {?} */ annotation = metas.find(_isPipeMetadata);
+            var /** @type {?} */ annotation = ListWrapper.findLast(metas, _isPipeMetadata);
             if (isPresent(annotation)) {
                 return annotation;
             }
