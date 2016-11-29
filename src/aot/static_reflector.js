@@ -653,24 +653,27 @@ export var StaticReflector = (function () {
                                     return indexTarget[index];
                                 return null;
                             case 'select':
+                                var /** @type {?} */ selectContext = context;
                                 var /** @type {?} */ selectTarget = simplify(expression['expression']);
                                 if (selectTarget instanceof StaticSymbol) {
                                     // Access to a static instance variable
+                                    var /** @type {?} */ member_1 = expression['member'];
+                                    var /** @type {?} */ members = selectTarget.members ?
+                                        ((selectTarget.members)).concat(member_1) :
+                                        [member_1];
                                     var /** @type {?} */ declarationValue_1 = resolveReferenceValue(selectTarget);
+                                    selectContext =
+                                        self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     if (declarationValue_1 && declarationValue_1.statics) {
                                         selectTarget = declarationValue_1.statics;
                                     }
                                     else {
-                                        var /** @type {?} */ member_1 = expression['member'];
-                                        var /** @type {?} */ members = selectTarget.members ?
-                                            ((selectTarget.members)).concat(member_1) :
-                                            [member_1];
-                                        return self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
+                                        return selectContext;
                                     }
                                 }
-                                var /** @type {?} */ member = simplify(expression['member']);
+                                var /** @type {?} */ member = simplifyInContext(selectContext, expression['member'], depth + 1);
                                 if (selectTarget && isPrimitive(member))
-                                    return simplify(selectTarget[member]);
+                                    return simplifyInContext(selectContext, selectTarget[member], depth + 1);
                                 return null;
                             case 'reference':
                                 if (!expression.module) {

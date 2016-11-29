@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-beta.0-2f7492c
+ * @license Angular v2.3.0-beta.0-627282d
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -25108,24 +25108,27 @@
                                       return indexTarget[index];
                                   return null;
                               case 'select':
+                                  var /** @type {?} */ selectContext = context;
                                   var /** @type {?} */ selectTarget = simplify(expression['expression']);
                                   if (selectTarget instanceof StaticSymbol) {
                                       // Access to a static instance variable
+                                      var /** @type {?} */ member_1 = expression['member'];
+                                      var /** @type {?} */ members = selectTarget.members ?
+                                          ((selectTarget.members)).concat(member_1) :
+                                          [member_1];
                                       var /** @type {?} */ declarationValue_1 = resolveReferenceValue(selectTarget);
+                                      selectContext =
+                                          self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                       if (declarationValue_1 && declarationValue_1.statics) {
                                           selectTarget = declarationValue_1.statics;
                                       }
                                       else {
-                                          var /** @type {?} */ member_1 = expression['member'];
-                                          var /** @type {?} */ members = selectTarget.members ?
-                                              ((selectTarget.members)).concat(member_1) :
-                                              [member_1];
-                                          return self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
+                                          return selectContext;
                                       }
                                   }
-                                  var /** @type {?} */ member = simplify(expression['member']);
+                                  var /** @type {?} */ member = simplifyInContext(selectContext, expression['member'], depth + 1);
                                   if (selectTarget && isPrimitive$1(member))
-                                      return simplify(selectTarget[member]);
+                                      return simplifyInContext(selectContext, selectTarget[member], depth + 1);
                                   return null;
                               case 'reference':
                                   if (!expression.module) {
