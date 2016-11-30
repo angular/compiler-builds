@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-beta.0-f275f36
+ * @license Angular v2.3.0-beta.0-2975d89
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -17403,7 +17403,7 @@
               return normalizedDirMeta;
           };
           if (metadata.isComponent) {
-              var /** @type {?} */ templateMeta = this._directiveNormalizer.normalizeTemplate({
+              var /** @type {?} */ templateMeta_1 = this._directiveNormalizer.normalizeTemplate({
                   componentType: directiveType,
                   moduleUrl: componentModuleUrl(this._reflector, directiveType, annotation),
                   encapsulation: metadata.template.encapsulation,
@@ -17414,15 +17414,15 @@
                   animations: metadata.template.animations,
                   interpolation: metadata.template.interpolation
               });
-              if (templateMeta.syncResult) {
-                  createDirectiveMetadata(templateMeta.syncResult);
+              if (templateMeta_1.syncResult) {
+                  createDirectiveMetadata(templateMeta_1.syncResult);
                   return null;
               }
               else {
                   if (isSync) {
                       throw new ComponentStillLoadingError(directiveType);
                   }
-                  return templateMeta.asyncResult.then(createDirectiveMetadata);
+                  return function () { return templateMeta_1.asyncResult.then(createDirectiveMetadata); };
               }
           }
           else {
@@ -17681,7 +17681,10 @@
                       transitiveModule.directives.push(declaredIdentifier);
                       declaredDirectives.push(declaredIdentifier);
                       _this._addTypeToModule(declaredType, moduleType);
-                      transitiveModule.directiveLoaders.push(function () { return _this._loadDirectiveMetadata(declaredType, isSync); });
+                      var /** @type {?} */ loader = _this._loadDirectiveMetadata(declaredType, isSync);
+                      if (loader) {
+                          transitiveModule.directiveLoaders.push(loader);
+                      }
                   }
                   else if (_this._pipeResolver.isPipe(declaredType)) {
                       transitiveModule.pipesSet.add(declaredType);
@@ -26910,7 +26913,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-beta.0-f275f36');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-beta.0-2975d89');
 
   exports.VERSION = VERSION;
   exports.TextAst = TextAst;
