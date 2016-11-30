@@ -9,6 +9,7 @@ import { CompileDirectiveSummary, CompileTokenMetadata } from '../compile_metada
 import * as o from '../output/output_ast';
 import { ProviderAst, ReferenceAst, TemplateAst } from '../template_parser/template_ast';
 import { CompileView, CompileViewRootNode } from './compile_view';
+import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency } from './deps';
 export declare class CompileNode {
     parent: CompileElement;
     view: CompileView;
@@ -25,6 +26,7 @@ export declare class CompileElement extends CompileNode {
     private _resolvedProvidersArray;
     hasViewContainer: boolean;
     hasEmbeddedView: boolean;
+    private _targetDependencies;
     static createNull(): CompileElement;
     compViewExpr: o.Expression;
     viewContainer: o.ReadPropExpr;
@@ -39,7 +41,7 @@ export declare class CompileElement extends CompileNode {
     referenceTokens: {
         [key: string]: CompileTokenMetadata;
     };
-    constructor(parent: CompileElement, view: CompileView, nodeIndex: number, renderNode: o.Expression, sourceAst: TemplateAst, component: CompileDirectiveSummary, _directives: CompileDirectiveSummary[], _resolvedProvidersArray: ProviderAst[], hasViewContainer: boolean, hasEmbeddedView: boolean, references: ReferenceAst[]);
+    constructor(parent: CompileElement, view: CompileView, nodeIndex: number, renderNode: o.Expression, sourceAst: TemplateAst, component: CompileDirectiveSummary, _directives: CompileDirectiveSummary[], _resolvedProvidersArray: ProviderAst[], hasViewContainer: boolean, hasEmbeddedView: boolean, references: ReferenceAst[], _targetDependencies: Array<ViewClassDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
     private _createViewContainer();
     private _createComponentFactoryResolver();
     setComponentView(compViewExpr: o.Expression): void;

@@ -1,36 +1,29 @@
-export var TagContentType = {};
-TagContentType.RAW_TEXT = 0;
-TagContentType.ESCAPABLE_RAW_TEXT = 1;
-TagContentType.PARSABLE_DATA = 2;
-TagContentType[TagContentType.RAW_TEXT] = "RAW_TEXT";
-TagContentType[TagContentType.ESCAPABLE_RAW_TEXT] = "ESCAPABLE_RAW_TEXT";
-TagContentType[TagContentType.PARSABLE_DATA] = "PARSABLE_DATA";
 /**
- * @param {?} elementName
- * @return {?}
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
  */
+export var TagContentType;
+(function (TagContentType) {
+    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
+    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
+    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
+})(TagContentType || (TagContentType = {}));
 export function splitNsName(elementName) {
     if (elementName[0] != ':') {
         return [null, elementName];
     }
-    var /** @type {?} */ colonIndex = elementName.indexOf(':', 1);
+    var colonIndex = elementName.indexOf(':', 1);
     if (colonIndex == -1) {
         throw new Error("Unsupported format \"" + elementName + "\" expecting \":namespace:name\"");
     }
     return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
 }
-/**
- * @param {?} fullName
- * @return {?}
- */
 export function getNsPrefix(fullName) {
     return fullName === null ? null : splitNsName(fullName)[0];
 }
-/**
- * @param {?} prefix
- * @param {?} localName
- * @return {?}
- */
 export function mergeNsAndName(prefix, localName) {
     return prefix ? ":" + prefix + ":" + localName : localName;
 }
@@ -38,7 +31,7 @@ export function mergeNsAndName(prefix, localName) {
 // see https://html.spec.whatwg.org/multipage/entities.json
 // This list is not exhaustive to keep the compiler footprint low.
 // The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not exist.
-export var /** @type {?} */ NAMED_ENTITIES = {
+export var NAMED_ENTITIES = {
     'Aacute': '\u00C1',
     'aacute': '\u00E1',
     'Acirc': '\u00C2',

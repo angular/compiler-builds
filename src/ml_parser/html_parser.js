@@ -20,13 +20,6 @@ export var HtmlParser = (function (_super) {
     function HtmlParser() {
         _super.call(this, getHtmlTagDefinition);
     }
-    /**
-     * @param {?} source
-     * @param {?} url
-     * @param {?=} parseExpansionForms
-     * @param {?=} interpolationConfig
-     * @return {?}
-     */
     HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
         if (parseExpansionForms === void 0) { parseExpansionForms = false; }
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
@@ -36,16 +29,7 @@ export var HtmlParser = (function (_super) {
         { type: Injectable },
     ];
     /** @nocollapse */
-    HtmlParser.ctorParameters = function () { return []; };
+    HtmlParser.ctorParameters = [];
     return HtmlParser;
 }(Parser));
-function HtmlParser_tsickle_Closure_declarations() {
-    /** @type {?} */
-    HtmlParser.decorators;
-    /**
-     * @nocollapse
-     * @type {?}
-     */
-    HtmlParser.ctorParameters;
-}
 //# sourceMappingURL=html_parser.js.map

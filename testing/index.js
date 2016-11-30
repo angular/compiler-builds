@@ -43,9 +43,9 @@ export var TestingCompilerFactoryImpl = (function () {
         { type: Injectable },
     ];
     /** @nocollapse */
-    TestingCompilerFactoryImpl.ctorParameters = function () { return [
+    TestingCompilerFactoryImpl.ctorParameters = [
         { type: CompilerFactory, },
-    ]; };
+    ];
     return TestingCompilerFactoryImpl;
 }());
 export var TestingCompilerImpl = (function () {

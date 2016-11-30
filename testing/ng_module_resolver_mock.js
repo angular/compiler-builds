@@ -46,9 +46,9 @@ export var MockNgModuleResolver = (function (_super) {
         { type: Injectable },
     ];
     /** @nocollapse */
-    MockNgModuleResolver.ctorParameters = function () { return [
+    MockNgModuleResolver.ctorParameters = [
         { type: Injector, },
-    ]; };
+    ];
     return MockNgModuleResolver;
 }(NgModuleResolver));
 //# sourceMappingURL=ng_module_resolver_mock.js.map

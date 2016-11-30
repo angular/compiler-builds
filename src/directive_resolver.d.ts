@@ -17,6 +17,5 @@ export declare class DirectiveResolver {
     resolve(type: Type<any>, throwIfNotFound?: boolean): Directive;
     private _mergeWithPropertyMetadata(dm, propertyMetadata, directiveType);
     private _extractPublicName(def);
-    private _dedupeBindings(bindings);
     private _merge(directive, inputs, outputs, host, queries, directiveType);
 }
