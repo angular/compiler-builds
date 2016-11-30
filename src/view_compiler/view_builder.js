@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewEncapsulation } from '@angular/core';
-import { CompileIdentifierMetadata, identifierModuleUrl, identifierName } from '../compile_metadata';
+import { identifierModuleUrl, identifierName } from '../compile_metadata';
 import { createSharedBindingVariablesIfNeeded } from '../compiler_util/expression_converter';
 import { createDiTokenExpression, createInlineArray } from '../compiler_util/identifier_util';
 import { isPresent } from '../facade/lang';
@@ -231,7 +231,7 @@ var ViewBuilderVisitor = (function () {
         this.view.nodes.push(compileElement);
         var /** @type {?} */ compViewExpr = null;
         if (isPresent(component)) {
-            var /** @type {?} */ nestedComponentIdentifier = new CompileIdentifierMetadata();
+            var /** @type {?} */ nestedComponentIdentifier = { reference: null };
             this.targetDependencies.push(new ViewClassDependency(component.type, getViewClassName(component, 0), nestedComponentIdentifier));
             compViewExpr = o.THIS_EXPR.prop("compView_" + nodeIndex); // fix highlighting: `
             this.view.fields.push(new o.ClassField(compViewExpr.name, o.importType(createIdentifier(Identifiers.AppView), [o.importType(component.type)])));

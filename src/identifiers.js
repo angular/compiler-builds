@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ANALYZE_FOR_ENTRY_COMPONENTS, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ComponentRef, ElementRef, Injector, LOCALE_ID, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TRANSLATIONS_FORMAT, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
-import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metadata';
 import { AnimationGroupPlayer, AnimationKeyframe, AnimationSequencePlayer, AnimationStyles, AnimationTransition, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, ComponentRef_, DebugAppView, DebugContext, NgModuleInjector, NoOpAnimationPlayer, StaticNodeDebugInfo, TemplateRef_, UNINITIALIZED, ValueUnwrapper, ViewContainer, ViewType, balanceAnimationKeyframes, clearStyles, collectAndResolveStyles, devModeEqual, prepareFinalAnimationStyles, reflector, registerModuleFactory, renderStyles, view_utils } from './private_import_core';
 var /** @type {?} */ APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
 var /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
@@ -479,14 +478,14 @@ export function resolveIdentifier(identifier) {
  */
 export function createIdentifier(identifier) {
     var /** @type {?} */ reference = reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime);
-    return new CompileIdentifierMetadata({ reference: reference });
+    return { reference: reference };
 }
 /**
  * @param {?} identifier
  * @return {?}
  */
 export function identifierToken(identifier) {
-    return new CompileTokenMetadata({ identifier: identifier });
+    return { identifier: identifier };
 }
 /**
  * @param {?} identifier
@@ -502,6 +501,6 @@ export function createIdentifierToken(identifier) {
  */
 export function createEnumIdentifier(enumType, name) {
     var /** @type {?} */ resolvedEnum = reflector.resolveEnum(resolveIdentifier(enumType), name);
-    return new CompileIdentifierMetadata({ reference: resolvedEnum });
+    return { reference: resolvedEnum };
 }
 //# sourceMappingURL=identifiers.js.map

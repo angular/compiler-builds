@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-beta.0-42cf06f
+ * @license Angular v2.3.0-beta.0-3e73bea
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -1862,61 +1862,6 @@
       }
       return reflector.importUri(ref);
   }
-  var CompileIdentifierMetadata = (function () {
-      /**
-       * @param {?=} __0
-       */
-      function CompileIdentifierMetadata(_a) {
-          var reference = (_a === void 0 ? {} : _a).reference;
-          this.reference = reference;
-      }
-      return CompileIdentifierMetadata;
-  }());
-  var CompileDiDependencyMetadata = (function () {
-      /**
-       * @param {?=} __0
-       */
-      function CompileDiDependencyMetadata(_a) {
-          var _b = _a === void 0 ? {} : _a, isAttribute = _b.isAttribute, isSelf = _b.isSelf, isHost = _b.isHost, isSkipSelf = _b.isSkipSelf, isOptional = _b.isOptional, isValue = _b.isValue, token = _b.token, value = _b.value;
-          this.isAttribute = !!isAttribute;
-          this.isSelf = !!isSelf;
-          this.isHost = !!isHost;
-          this.isSkipSelf = !!isSkipSelf;
-          this.isOptional = !!isOptional;
-          this.isValue = !!isValue;
-          this.token = token;
-          this.value = value;
-      }
-      return CompileDiDependencyMetadata;
-  }());
-  var CompileProviderMetadata = (function () {
-      /**
-       * @param {?} __0
-       */
-      function CompileProviderMetadata(_a) {
-          var token = _a.token, useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
-          this.token = token;
-          this.useClass = useClass;
-          this.useValue = useValue;
-          this.useExisting = useExisting;
-          this.useFactory = useFactory;
-          this.deps = deps || null;
-          this.multi = !!multi;
-      }
-      return CompileProviderMetadata;
-  }());
-  var CompileFactoryMetadata = (function (_super) {
-      __extends$1(CompileFactoryMetadata, _super);
-      /**
-       * @param {?} __0
-       */
-      function CompileFactoryMetadata(_a) {
-          var reference = _a.reference, diDeps = _a.diDeps;
-          _super.call(this, { reference: reference });
-          this.diDeps = _normalizeArray(diDeps);
-      }
-      return CompileFactoryMetadata;
-  }(CompileIdentifierMetadata));
   /**
    * @param {?} token
    * @return {?}
@@ -1937,47 +1882,6 @@
           return token.value;
       }
   }
-  var CompileTokenMetadata = (function () {
-      /**
-       * @param {?} __0
-       */
-      function CompileTokenMetadata(_a) {
-          var value = _a.value, identifier = _a.identifier;
-          this.value = value;
-          this.identifier = identifier;
-      }
-      return CompileTokenMetadata;
-  }());
-  /**
-   *  Metadata regarding compilation of a type.
-   */
-  var CompileTypeMetadata = (function (_super) {
-      __extends$1(CompileTypeMetadata, _super);
-      /**
-       * @param {?=} __0
-       */
-      function CompileTypeMetadata(_a) {
-          var _b = _a === void 0 ? {} : _a, reference = _b.reference, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
-          _super.call(this, { reference: reference });
-          this.diDeps = _normalizeArray(diDeps);
-          this.lifecycleHooks = _normalizeArray(lifecycleHooks);
-      }
-      return CompileTypeMetadata;
-  }(CompileIdentifierMetadata));
-  var CompileQueryMetadata = (function () {
-      /**
-       * @param {?=} __0
-       */
-      function CompileQueryMetadata(_a) {
-          var _b = _a === void 0 ? {} : _a, selectors = _b.selectors, descendants = _b.descendants, first = _b.first, propertyName = _b.propertyName, read = _b.read;
-          this.selectors = selectors;
-          this.descendants = !!descendants;
-          this.first = !!first;
-          this.propertyName = propertyName;
-          this.read = read;
-      }
-      return CompileQueryMetadata;
-  }());
   /**
    *  Metadata about a stylesheet
    */
@@ -2149,7 +2053,7 @@
       var /** @type {?} */ template = CssSelector.parse(compMeta.selector)[0].getMatchingElementTemplate();
       return CompileDirectiveMetadata.create({
           isHost: true,
-          type: new CompileTypeMetadata({ reference: typeReference }),
+          type: { reference: typeReference, diDeps: [], lifecycleHooks: [] },
           template: new CompileTemplateMetadata({
               encapsulation: _angular_core.ViewEncapsulation.None,
               template: template,
@@ -9408,14 +9312,14 @@
    */
   function createIdentifier(identifier) {
       var /** @type {?} */ reference = reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime);
-      return new CompileIdentifierMetadata({ reference: reference });
+      return { reference: reference };
   }
   /**
    * @param {?} identifier
    * @return {?}
    */
   function identifierToken(identifier) {
-      return new CompileTokenMetadata({ identifier: identifier });
+      return { identifier: identifier };
   }
   /**
    * @param {?} identifier
@@ -9431,7 +9335,7 @@
    */
   function createEnumIdentifier(enumType, name) {
       var /** @type {?} */ resolvedEnum = reflector.resolveEnum(resolveIdentifier(enumType), name);
-      return new CompileIdentifierMetadata({ reference: resolvedEnum });
+      return { reference: resolvedEnum };
   }
 
   /**
@@ -9627,7 +9531,7 @@
           this.errors = [];
           this.viewQueries = _getViewQueries(component);
           this.viewProviders = new Map();
-          _normalizeProviders(component.viewProviders, sourceSpan, this.errors).forEach(function (provider) {
+          component.viewProviders.forEach(function (provider) {
               if (isBlank(_this.viewProviders.get(tokenReference(provider.token)))) {
                   _this.viewProviders.set(tokenReference(provider.token), true);
               }
@@ -9665,9 +9569,7 @@
           Array.from(this._allProviders.values()).forEach(function (provider) {
               _this._addQueryReadsTo(provider.token, queriedTokens);
           });
-          refs.forEach(function (refAst) {
-              _this._addQueryReadsTo(new CompileTokenMetadata({ value: refAst.name }), queriedTokens);
-          });
+          refs.forEach(function (refAst) { _this._addQueryReadsTo({ value: refAst.name }, queriedTokens); });
           if (isPresent(queriedTokens.get(resolveIdentifier(Identifiers.ViewContainerRef)))) {
               this._hasViewContainer = true;
           }
@@ -9790,7 +9692,7 @@
               var /** @type {?} */ transformedUseExisting = provider.useExisting;
               var /** @type {?} */ transformedDeps;
               if (isPresent(provider.useExisting)) {
-                  var /** @type {?} */ existingDiDep = _this._getDependency(resolvedProvider.providerType, new CompileDiDependencyMetadata({ token: provider.useExisting }), eager);
+                  var /** @type {?} */ existingDiDep = _this._getDependency(resolvedProvider.providerType, { token: provider.useExisting }, eager);
                   if (isPresent(existingDiDep.token)) {
                       transformedUseExisting = existingDiDep.token;
                   }
@@ -9830,7 +9732,7 @@
           if (eager === void 0) { eager = null; }
           if (dep.isAttribute) {
               var /** @type {?} */ attrValue = this._attrs[dep.token.value];
-              return new CompileDiDependencyMetadata({ isValue: true, value: attrValue == null ? null : attrValue });
+              return { isValue: true, value: attrValue == null ? null : attrValue };
           }
           if (isPresent(dep.token)) {
               // access builtints
@@ -9873,7 +9775,7 @@
           }
           if (dep.isSelf) {
               if (!result && dep.isOptional) {
-                  result = new CompileDiDependencyMetadata({ isValue: true, value: null });
+                  result = { isValue: true, value: null };
               }
           }
           else {
@@ -9894,9 +9796,7 @@
                       result = dep;
                   }
                   else {
-                      result = dep.isOptional ?
-                          result = new CompileDiDependencyMetadata({ isValue: true, value: null }) :
-                          null;
+                      result = dep.isOptional ? result = { isValue: true, value: null } : null;
                   }
               }
           }
@@ -9921,10 +9821,10 @@
           this._allProviders = new Map();
           var ngModuleTypes = ngModule.transitiveModule.modules.map(function (moduleMeta) { return moduleMeta.type; });
           ngModuleTypes.forEach(function (ngModuleType) {
-              var ngModuleProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: ngModuleType }), useClass: ngModuleType });
+              var ngModuleProvider = { token: { identifier: ngModuleType }, useClass: ngModuleType };
               _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders);
           });
-          _resolveProviders(_normalizeProviders(ngModule.transitiveModule.providers.concat(extraProviders), sourceSpan, this._errors), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
+          _resolveProviders(ngModule.transitiveModule.providers.concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
       }
       /**
        * @return {?}
@@ -9965,7 +9865,7 @@
               var /** @type {?} */ transformedUseExisting = provider.useExisting;
               var /** @type {?} */ transformedDeps;
               if (isPresent(provider.useExisting)) {
-                  var /** @type {?} */ existingDiDep = _this._getDependency(new CompileDiDependencyMetadata({ token: provider.useExisting }), eager, resolvedProvider.sourceSpan);
+                  var /** @type {?} */ existingDiDep = _this._getDependency({ token: provider.useExisting }, eager, resolvedProvider.sourceSpan);
                   if (isPresent(existingDiDep.token)) {
                       transformedUseExisting = existingDiDep.token;
                   }
@@ -10017,7 +9917,7 @@
           var /** @type {?} */ result = dep;
           if (dep.isSelf && !foundLocal) {
               if (dep.isOptional) {
-                  result = new CompileDiDependencyMetadata({ isValue: true, value: null });
+                  result = { isValue: true, value: null };
               }
               else {
                   this._errors.push(new ProviderError("No provider for " + tokenName(dep.token), requestorSourceSpan));
@@ -10034,7 +9934,7 @@
    */
   function _transformProvider(provider, _a) {
       var useExisting = _a.useExisting, useValue = _a.useValue, deps = _a.deps;
-      return new CompileProviderMetadata({
+      return {
           token: provider.token,
           useClass: provider.useClass,
           useExisting: useExisting,
@@ -10042,7 +9942,7 @@
           useValue: useValue,
           deps: deps,
           multi: provider.multi
-      });
+      };
   }
   /**
    * @param {?} provider
@@ -10054,42 +9954,6 @@
       return new ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.lifecycleHooks, provider.sourceSpan);
   }
   /**
-   * @param {?} providers
-   * @param {?} sourceSpan
-   * @param {?} targetErrors
-   * @param {?=} targetProviders
-   * @return {?}
-   */
-  function _normalizeProviders(providers, sourceSpan, targetErrors, targetProviders) {
-      if (targetProviders === void 0) { targetProviders = null; }
-      if (!targetProviders) {
-          targetProviders = [];
-      }
-      if (isPresent(providers)) {
-          providers.forEach(function (provider) {
-              if (Array.isArray(provider)) {
-                  _normalizeProviders(/** @type {?} */ (provider), sourceSpan, targetErrors, targetProviders);
-              }
-              else {
-                  var /** @type {?} */ normalizeProvider = void 0;
-                  if (provider instanceof CompileProviderMetadata) {
-                      normalizeProvider = provider;
-                  }
-                  else if (provider instanceof CompileTypeMetadata) {
-                      normalizeProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: provider }), useClass: provider });
-                  }
-                  else {
-                      targetErrors.push(new ProviderError("Unknown provider type " + provider, sourceSpan));
-                  }
-                  if (isPresent(normalizeProvider)) {
-                      targetProviders.push(normalizeProvider);
-                  }
-              }
-          });
-      }
-      return targetProviders;
-  }
-  /**
    * @param {?} directives
    * @param {?} sourceSpan
    * @param {?} targetErrors
@@ -10098,14 +9962,14 @@
   function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
       var /** @type {?} */ providersByToken = new Map();
       directives.forEach(function (directive) {
-          var /** @type {?} */ dirProvider = new CompileProviderMetadata({ token: new CompileTokenMetadata({ identifier: directive.type }), useClass: directive.type });
+          var /** @type {?} */ dirProvider = { token: { identifier: directive.type }, useClass: directive.type };
           _resolveProviders([dirProvider], directive.isComponent ? ProviderAstType.Component : ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken);
       });
       // Note: directives need to be able to overwrite providers of a component!
       var /** @type {?} */ directivesWithComponentFirst = directives.filter(function (dir) { return dir.isComponent; }).concat(directives.filter(function (dir) { return !dir.isComponent; }));
       directivesWithComponentFirst.forEach(function (directive) {
-          _resolveProviders(_normalizeProviders(directive.providers, sourceSpan, targetErrors), ProviderAstType.PublicService, false, sourceSpan, targetErrors, providersByToken);
-          _resolveProviders(_normalizeProviders(directive.viewProviders, sourceSpan, targetErrors), ProviderAstType.PrivateService, false, sourceSpan, targetErrors, providersByToken);
+          _resolveProviders(directive.providers, ProviderAstType.PublicService, false, sourceSpan, targetErrors, providersByToken);
+          _resolveProviders(directive.viewProviders, ProviderAstType.PrivateService, false, sourceSpan, targetErrors, providersByToken);
       });
       return providersByToken;
   }
@@ -10121,12 +9985,13 @@
   function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken) {
       providers.forEach(function (provider) {
           var /** @type {?} */ resolvedProvider = targetProvidersByToken.get(tokenReference(provider.token));
-          if (isPresent(resolvedProvider) && resolvedProvider.multiProvider !== provider.multi) {
+          if (isPresent(resolvedProvider) && !!resolvedProvider.multiProvider !== !!provider.multi) {
               targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + tokenName(resolvedProvider.token), sourceSpan));
           }
           if (!resolvedProvider) {
-              var /** @type {?} */ lifecycleHooks = provider.token.identifier && provider.token.identifier instanceof CompileTypeMetadata ?
-                  provider.token.identifier.lifecycleHooks :
+              var /** @type {?} */ lifecycleHooks = provider.token.identifier &&
+                  ((provider.token.identifier)).lifecycleHooks ?
+                  ((provider.token.identifier)).lifecycleHooks :
                   [];
               resolvedProvider = new ProviderAst(provider.token, provider.multi, eager || lifecycleHooks.length > 0, [provider], providerType, lifecycleHooks, sourceSpan);
               targetProvidersByToken.set(tokenReference(provider.token), resolvedProvider);
@@ -17941,7 +17806,7 @@
        */
       CompileMetadataResolver.prototype._getIdentifierMetadata = function (type) {
           type = _angular_core.resolveForwardRef(type);
-          return new CompileIdentifierMetadata({ reference: type });
+          return { reference: type };
       };
       /**
        * @param {?} type
@@ -17951,11 +17816,11 @@
       CompileMetadataResolver.prototype._getTypeMetadata = function (type, dependencies) {
           if (dependencies === void 0) { dependencies = null; }
           var /** @type {?} */ identifier = this._getIdentifierMetadata(type);
-          return new CompileTypeMetadata({
+          return {
               reference: identifier.reference,
               diDeps: this._getDependenciesMetadata(identifier.reference, dependencies),
               lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(hook, identifier.reference); }),
-          });
+          };
       };
       /**
        * @param {?} factory
@@ -17965,7 +17830,7 @@
       CompileMetadataResolver.prototype._getFactoryMetadata = function (factory, dependencies) {
           if (dependencies === void 0) { dependencies = null; }
           factory = _angular_core.resolveForwardRef(factory);
-          return new CompileFactoryMetadata({ reference: factory, diDeps: this._getDependenciesMetadata(factory, dependencies) });
+          return { reference: factory, diDeps: this._getDependenciesMetadata(factory, dependencies) };
       };
       /**
        *  Gets the metadata for the given pipe.
@@ -18067,14 +17932,14 @@
                   hasUnknownDeps = true;
                   return null;
               }
-              return new CompileDiDependencyMetadata({
+              return {
                   isAttribute: isAttribute,
                   isHost: isHost,
                   isSelf: isSelf,
                   isSkipSelf: isSkipSelf,
                   isOptional: isOptional,
                   token: _this._getTokenMetadata(token)
-              });
+              };
           });
           if (hasUnknownDeps) {
               var /** @type {?} */ depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringify(dep.token) : '?'; }).join(', ');
@@ -18090,10 +17955,10 @@
           token = _angular_core.resolveForwardRef(token);
           var /** @type {?} */ compileToken;
           if (typeof token === 'string') {
-              compileToken = new CompileTokenMetadata({ value: token });
+              compileToken = { value: token };
           }
           else {
-              compileToken = new CompileTokenMetadata({ identifier: new CompileIdentifierMetadata({ reference: token }) });
+              compileToken = { identifier: { reference: token } };
           }
           return compileToken;
       };
@@ -18101,51 +17966,47 @@
        * @param {?} providers
        * @param {?} targetEntryComponents
        * @param {?=} debugInfo
+       * @param {?=} compileProviders
        * @return {?}
        */
-      CompileMetadataResolver.prototype._getProvidersMetadata = function (providers, targetEntryComponents, debugInfo) {
+      CompileMetadataResolver.prototype._getProvidersMetadata = function (providers, targetEntryComponents, debugInfo, compileProviders) {
           var _this = this;
-          var /** @type {?} */ compileProviders = [];
+          if (compileProviders === void 0) { compileProviders = []; }
           providers.forEach(function (provider, providerIdx) {
-              provider = _angular_core.resolveForwardRef(provider);
-              if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
-                  provider = new ProviderMeta(provider.provide, provider);
-              }
-              var /** @type {?} */ compileProvider;
               if (Array.isArray(provider)) {
-                  compileProvider = _this._getProvidersMetadata(provider, targetEntryComponents, debugInfo);
-              }
-              else if (provider instanceof ProviderMeta) {
-                  var /** @type {?} */ tokenMeta = _this._getTokenMetadata(provider.token);
-                  if (tokenReference(tokenMeta) ===
-                      resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
-                      targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(provider));
-                  }
-                  else {
-                      compileProvider = _this.getProviderMetadata(provider);
-                  }
-              }
-              else if (isValidType(provider)) {
-                  compileProvider = _this._getTypeMetadata(provider);
+                  _this._getProvidersMetadata(provider, targetEntryComponents, debugInfo, compileProviders);
               }
               else {
-                  var /** @type {?} */ providersInfo = ((providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
-                      if (seenProviderIdx < providerIdx) {
-                          soFar.push("" + stringify(seenProvider));
-                      }
-                      else if (seenProviderIdx == providerIdx) {
-                          soFar.push("?" + stringify(seenProvider) + "?");
-                      }
-                      else if (seenProviderIdx == providerIdx + 1) {
-                          soFar.push('...');
-                      }
-                      return soFar;
-                  }, [])))
-                      .join(', ');
-                  throw new Error("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]");
-              }
-              if (compileProvider) {
-                  compileProviders.push(compileProvider);
+                  provider = _angular_core.resolveForwardRef(provider);
+                  var /** @type {?} */ providerMeta = void 0;
+                  if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
+                      providerMeta = new ProviderMeta(provider.provide, provider);
+                  }
+                  else if (isValidType(provider)) {
+                      providerMeta = new ProviderMeta(provider, { useClass: provider });
+                  }
+                  else {
+                      var /** @type {?} */ providersInfo = ((providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
+                          if (seenProviderIdx < providerIdx) {
+                              soFar.push("" + stringify(seenProvider));
+                          }
+                          else if (seenProviderIdx == providerIdx) {
+                              soFar.push("?" + stringify(seenProvider) + "?");
+                          }
+                          else if (seenProviderIdx == providerIdx + 1) {
+                              soFar.push('...');
+                          }
+                          return soFar;
+                      }, [])))
+                          .join(', ');
+                      throw new Error("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]");
+                  }
+                  if (providerMeta.token === resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
+                      targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(providerMeta));
+                  }
+                  else {
+                      compileProviders.push(_this.getProviderMetadata(providerMeta));
+                  }
               }
           });
           return compileProviders;
@@ -18164,7 +18025,7 @@
           if (!provider.multi) {
               throw new Error("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
           }
-          convertToCompileValue(provider.useValue, collectedIdentifiers);
+          extractIdentifiers(provider.useValue, collectedIdentifiers);
           collectedIdentifiers.forEach(function (identifier) {
               if (_this._directiveResolver.isDirective(identifier.reference)) {
                   components.push(identifier);
@@ -18180,23 +18041,28 @@
           var /** @type {?} */ compileDeps;
           var /** @type {?} */ compileTypeMetadata = null;
           var /** @type {?} */ compileFactoryMetadata = null;
+          var /** @type {?} */ token = this._getTokenMetadata(provider.token);
           if (provider.useClass) {
               compileTypeMetadata = this._getTypeMetadata(provider.useClass, provider.dependencies);
               compileDeps = compileTypeMetadata.diDeps;
+              if (provider.token === provider.useClass) {
+                  // use the compileTypeMetadata as it contains information about lifecycleHooks...
+                  token = { identifier: compileTypeMetadata };
+              }
           }
           else if (provider.useFactory) {
               compileFactoryMetadata = this._getFactoryMetadata(provider.useFactory, provider.dependencies);
               compileDeps = compileFactoryMetadata.diDeps;
           }
-          return new CompileProviderMetadata({
-              token: this._getTokenMetadata(provider.token),
+          return {
+              token: token,
               useClass: compileTypeMetadata,
-              useValue: convertToCompileValue(provider.useValue, []),
+              useValue: provider.useValue,
               useFactory: compileFactoryMetadata,
               useExisting: provider.useExisting ? this._getTokenMetadata(provider.useExisting) : null,
               deps: compileDeps,
               multi: provider.multi
-          });
+          };
       };
       /**
        * @param {?} queries
@@ -18239,12 +18105,12 @@
               }
               selectors = [this._getTokenMetadata(q.selector)];
           }
-          return new CompileQueryMetadata({
+          return {
               selectors: selectors,
               first: q.first,
               descendants: q.descendants, propertyName: propertyName,
               read: q.read ? this._getTokenMetadata(q.read) : null
-          });
+          };
       };
       CompileMetadataResolver.decorators = [
           { type: _angular_core.Injectable },
@@ -18371,8 +18237,8 @@
    * @param {?} targetIdentifiers
    * @return {?}
    */
-  function convertToCompileValue(value, targetIdentifiers) {
-      return visitValue(value, new _CompileValueConverter(), targetIdentifiers);
+  function extractIdentifiers(value, targetIdentifiers) {
+      visitValue(value, new _CompileValueConverter(), targetIdentifiers);
   }
   var _CompileValueConverter = (function (_super) {
       __extends$16(_CompileValueConverter, _super);
@@ -18385,9 +18251,7 @@
        * @return {?}
        */
       _CompileValueConverter.prototype.visitOther = function (value, targetIdentifiers) {
-          var /** @type {?} */ identifier = new CompileIdentifierMetadata({ reference: value });
-          targetIdentifiers.push(identifier);
-          return identifier;
+          targetIdentifiers.push({ reference: value });
       };
       return _CompileValueConverter;
   }(ValueTransformer));
@@ -18436,14 +18300,11 @@
        * @return {?}
        */
       _ValueOutputAstTransformer.prototype.visitOther = function (value, type) {
-          if (value instanceof CompileIdentifierMetadata) {
-              return importExpr(value);
-          }
-          else if (value instanceof Expression) {
+          if (value instanceof Expression) {
               return value;
           }
           else {
-              throw new Error("Illegal state: Don't now how to compile value " + value);
+              return importExpr({ reference: value });
           }
       };
       return _ValueOutputAstTransformer;
@@ -18491,7 +18352,7 @@
           var /** @type {?} */ deps = [];
           var /** @type {?} */ bootstrapComponentFactories = [];
           var /** @type {?} */ entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
-              var /** @type {?} */ id = new CompileIdentifierMetadata();
+              var /** @type {?} */ id = { reference: null };
               if (ngModuleMeta.bootstrapComponents.indexOf(entryComponent) > -1) {
                   bootstrapComponentFactories.push(id);
               }
@@ -18598,7 +18459,7 @@
           var _this = this;
           var /** @type {?} */ result;
           if (isPresent(provider.useExisting)) {
-              result = this._getDependency(new CompileDiDependencyMetadata({ token: provider.useExisting }));
+              result = this._getDependency({ token: provider.useExisting });
           }
           else if (isPresent(provider.useFactory)) {
               var /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
@@ -21030,7 +20891,7 @@
           var /** @type {?} */ styleExpressions = stylesheet.styles.map(function (plainStyle) { return literal(_this._shimIfNeeded(plainStyle, shim)); });
           var /** @type {?} */ dependencies = [];
           for (var /** @type {?} */ i = 0; i < stylesheet.styleUrls.length; i++) {
-              var /** @type {?} */ identifier = new CompileIdentifierMetadata();
+              var /** @type {?} */ identifier = { reference: null };
               dependencies.push(new StylesCompileDependency(getStylesVarName(null), stylesheet.styleUrls[i], shim, identifier));
               styleExpressions.push(new ExternalExpr(identifier));
           }
@@ -21666,7 +21527,7 @@
       CompileElement.prototype._createComponentFactoryResolver = function () {
           var _this = this;
           var /** @type {?} */ entryComponents = this.component.entryComponents.map(function (entryComponent) {
-              var /** @type {?} */ id = new CompileIdentifierMetadata();
+              var /** @type {?} */ id = { reference: null };
               _this.view.targetDependencies.push(new ComponentFactoryDependency$1(entryComponent, id));
               return id;
           });
@@ -21677,10 +21538,10 @@
               literalArr(entryComponents.map(function (entryComponent) { return importExpr(entryComponent); })),
               injectFromViewParentInjector(this.view, createIdentifierToken(Identifiers.ComponentFactoryResolver), false)
           ]);
-          var /** @type {?} */ provider = new CompileProviderMetadata({
+          var /** @type {?} */ provider = {
               token: createIdentifierToken(Identifiers.ComponentFactoryResolver),
               useValue: createComponentFactoryResolverExpr
-          });
+          };
           // Add ComponentFactoryResolver as first provider as it does not have deps on other providers
           // ProviderAstType.PrivateService as only the component and its view can see it,
           // but nobody else
@@ -21708,7 +21569,10 @@
               var /** @type {?} */ createTemplateRefExpr = importExpr(createIdentifier(Identifiers.TemplateRef_)).instantiate([
                   THIS_EXPR, literal(this.nodeIndex), this.renderNode
               ]);
-              var /** @type {?} */ provider = new CompileProviderMetadata({ token: createIdentifierToken(Identifiers.TemplateRef), useValue: createTemplateRefExpr });
+              var /** @type {?} */ provider = {
+                  token: createIdentifierToken(Identifiers.TemplateRef),
+                  useValue: createTemplateRefExpr
+              };
               // Add TemplateRef as first provider as it does not have deps on other providers
               this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], ProviderAstType.Builtin, [], this.sourceAst.sourceSpan));
           }
@@ -21730,7 +21594,7 @@
                   resolvedProvider.providerType === ProviderAstType.Directive;
               var /** @type {?} */ providerValueExpressions = resolvedProvider.providers.map(function (provider) {
                   if (provider.useExisting) {
-                      return _this._getDependency(resolvedProvider.providerType, new CompileDiDependencyMetadata({ token: provider.useExisting }));
+                      return _this._getDependency(resolvedProvider.providerType, { token: provider.useExisting });
                   }
                   else if (provider.useFactory) {
                       var /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
@@ -21741,7 +21605,7 @@
                       var /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
                       var /** @type {?} */ depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                       if (isDirectiveWrapper) {
-                          var /** @type {?} */ directiveWrapperIdentifier = new CompileIdentifierMetadata();
+                          var /** @type {?} */ directiveWrapperIdentifier = { reference: null };
                           _this.view.targetDependencies.push(new DirectiveWrapperDependency(provider.useClass, DirectiveWrapperCompiler.dirWrapperClassName(provider.useClass), directiveWrapperIdentifier));
                           return DirectiveWrapperExpressions.create(directiveWrapperIdentifier, depsExpr);
                       }
@@ -21788,7 +21652,7 @@
                   varValue = _this.renderNode;
               }
               _this.view.locals.set(varName, varValue);
-              var /** @type {?} */ varToken = new CompileTokenMetadata({ value: varName });
+              var /** @type {?} */ varToken = { value: varName };
               queriesWithReads.push.apply(queriesWithReads, _this._getQueriesFor(varToken).map(function (query) { return new _QueryWithRead(query, varToken); }));
           });
           queriesWithReads.forEach(function (queryWithRead) {
@@ -21946,7 +21810,7 @@
           // check parent elements
           while (!result && !currElement.parent.isNull()) {
               currElement = currElement.parent;
-              result = currElement._getLocalDependency(ProviderAstType.PublicService, new CompileDiDependencyMetadata({ token: dep.token }));
+              result = currElement._getLocalDependency(ProviderAstType.PublicService, { token: dep.token });
           }
           if (!result) {
               result = injectFromViewParentInjector(this.view, dep.token, dep.isOptional);
@@ -22950,7 +22814,7 @@
           this.view.nodes.push(compileElement);
           var /** @type {?} */ compViewExpr = null;
           if (isPresent(component)) {
-              var /** @type {?} */ nestedComponentIdentifier = new CompileIdentifierMetadata();
+              var /** @type {?} */ nestedComponentIdentifier = { reference: null };
               this.targetDependencies.push(new ViewClassDependency(component.type, getViewClassName(component, 0), nestedComponentIdentifier));
               compViewExpr = THIS_EXPR.prop("compView_" + nodeIndex); // fix highlighting: `
               this.view.fields.push(new ClassField(compViewExpr.name, importType(createIdentifier(Identifiers.AppView), [importType(component.type)])));
@@ -24010,16 +23874,16 @@
           var /** @type {?} */ ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
           var /** @type {?} */ providers = [];
           if (this._localeId) {
-              providers.push(new CompileProviderMetadata({
+              providers.push({
                   token: createIdentifierToken(Identifiers.LOCALE_ID),
                   useValue: this._localeId,
-              }));
+              });
           }
           if (this._translationFormat) {
-              providers.push(new CompileProviderMetadata({
+              providers.push({
                   token: createIdentifierToken(Identifiers.TRANSLATIONS_FORMAT),
                   useValue: this._translationFormat
-              }));
+              });
           }
           var /** @type {?} */ appCompileResult = this._ngModuleCompiler.compile(ngModule, providers);
           appCompileResult.dependencies.forEach(function (dep) {
@@ -27075,15 +26939,8 @@
   exports.CompileAnimationGroupMetadata = CompileAnimationGroupMetadata;
   exports.identifierName = identifierName;
   exports.identifierModuleUrl = identifierModuleUrl;
-  exports.CompileIdentifierMetadata = CompileIdentifierMetadata;
-  exports.CompileDiDependencyMetadata = CompileDiDependencyMetadata;
-  exports.CompileProviderMetadata = CompileProviderMetadata;
-  exports.CompileFactoryMetadata = CompileFactoryMetadata;
   exports.tokenName = tokenName;
   exports.tokenReference = tokenReference;
-  exports.CompileTokenMetadata = CompileTokenMetadata;
-  exports.CompileTypeMetadata = CompileTypeMetadata;
-  exports.CompileQueryMetadata = CompileQueryMetadata;
   exports.CompileStylesheetMetadata = CompileStylesheetMetadata;
   exports.CompileTemplateMetadata = CompileTemplateMetadata;
   exports.CompileDirectiveMetadata = CompileDirectiveMetadata;

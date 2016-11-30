@@ -10,7 +10,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { CompileDiDependencyMetadata, CompileIdentifierMetadata, CompileProviderMetadata, CompileTokenMetadata, tokenName, tokenReference } from '../compile_metadata';
+import { tokenName, tokenReference } from '../compile_metadata';
 import { createDiTokenExpression } from '../compiler_util/identifier_util';
 import { DirectiveWrapperCompiler, DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
 import { isPresent } from '../facade/lang';
@@ -133,7 +133,7 @@ export var CompileElement = (function (_super) {
     CompileElement.prototype._createComponentFactoryResolver = function () {
         var _this = this;
         var /** @type {?} */ entryComponents = this.component.entryComponents.map(function (entryComponent) {
-            var /** @type {?} */ id = new CompileIdentifierMetadata();
+            var /** @type {?} */ id = { reference: null };
             _this.view.targetDependencies.push(new ComponentFactoryDependency(entryComponent, id));
             return id;
         });
@@ -144,10 +144,10 @@ export var CompileElement = (function (_super) {
             o.literalArr(entryComponents.map(function (entryComponent) { return o.importExpr(entryComponent); })),
             injectFromViewParentInjector(this.view, createIdentifierToken(Identifiers.ComponentFactoryResolver), false)
         ]);
-        var /** @type {?} */ provider = new CompileProviderMetadata({
+        var /** @type {?} */ provider = {
             token: createIdentifierToken(Identifiers.ComponentFactoryResolver),
             useValue: createComponentFactoryResolverExpr
-        });
+        };
         // Add ComponentFactoryResolver as first provider as it does not have deps on other providers
         // ProviderAstType.PrivateService as only the component and its view can see it,
         // but nobody else
@@ -175,7 +175,10 @@ export var CompileElement = (function (_super) {
             var /** @type {?} */ createTemplateRefExpr = o.importExpr(createIdentifier(Identifiers.TemplateRef_)).instantiate([
                 o.THIS_EXPR, o.literal(this.nodeIndex), this.renderNode
             ]);
-            var /** @type {?} */ provider = new CompileProviderMetadata({ token: createIdentifierToken(Identifiers.TemplateRef), useValue: createTemplateRefExpr });
+            var /** @type {?} */ provider = {
+                token: createIdentifierToken(Identifiers.TemplateRef),
+                useValue: createTemplateRefExpr
+            };
             // Add TemplateRef as first provider as it does not have deps on other providers
             this._resolvedProvidersArray.unshift(new ProviderAst(provider.token, false, true, [provider], ProviderAstType.Builtin, [], this.sourceAst.sourceSpan));
         }
@@ -197,7 +200,7 @@ export var CompileElement = (function (_super) {
                 resolvedProvider.providerType === ProviderAstType.Directive;
             var /** @type {?} */ providerValueExpressions = resolvedProvider.providers.map(function (provider) {
                 if (provider.useExisting) {
-                    return _this._getDependency(resolvedProvider.providerType, new CompileDiDependencyMetadata({ token: provider.useExisting }));
+                    return _this._getDependency(resolvedProvider.providerType, { token: provider.useExisting });
                 }
                 else if (provider.useFactory) {
                     var /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
@@ -208,7 +211,7 @@ export var CompileElement = (function (_super) {
                     var /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
                     var /** @type {?} */ depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                     if (isDirectiveWrapper) {
-                        var /** @type {?} */ directiveWrapperIdentifier = new CompileIdentifierMetadata();
+                        var /** @type {?} */ directiveWrapperIdentifier = { reference: null };
                         _this.view.targetDependencies.push(new DirectiveWrapperDependency(provider.useClass, DirectiveWrapperCompiler.dirWrapperClassName(provider.useClass), directiveWrapperIdentifier));
                         return DirectiveWrapperExpressions.create(directiveWrapperIdentifier, depsExpr);
                     }
@@ -255,7 +258,7 @@ export var CompileElement = (function (_super) {
                 varValue = _this.renderNode;
             }
             _this.view.locals.set(varName, varValue);
-            var /** @type {?} */ varToken = new CompileTokenMetadata({ value: varName });
+            var /** @type {?} */ varToken = { value: varName };
             queriesWithReads.push.apply(queriesWithReads, _this._getQueriesFor(varToken).map(function (query) { return new _QueryWithRead(query, varToken); }));
         });
         queriesWithReads.forEach(function (queryWithRead) {
@@ -413,7 +416,7 @@ export var CompileElement = (function (_super) {
         // check parent elements
         while (!result && !currElement.parent.isNull()) {
             currElement = currElement.parent;
-            result = currElement._getLocalDependency(ProviderAstType.PublicService, new CompileDiDependencyMetadata({ token: dep.token }));
+            result = currElement._getLocalDependency(ProviderAstType.PublicService, { token: dep.token });
         }
         if (!result) {
             result = injectFromViewParentInjector(this.view, dep.token, dep.isOptional);

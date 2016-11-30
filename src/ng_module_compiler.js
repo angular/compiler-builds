@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable } from '@angular/core';
-import { CompileDiDependencyMetadata, CompileIdentifierMetadata, identifierModuleUrl, identifierName, tokenName, tokenReference } from './compile_metadata';
+import { identifierModuleUrl, identifierName, tokenName, tokenReference } from './compile_metadata';
 import { createDiTokenExpression } from './compiler_util/identifier_util';
 import { isPresent } from './facade/lang';
 import { Identifiers, createIdentifier, resolveIdentifier } from './identifiers';
@@ -72,7 +72,7 @@ export var NgModuleCompiler = (function () {
         var /** @type {?} */ deps = [];
         var /** @type {?} */ bootstrapComponentFactories = [];
         var /** @type {?} */ entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
-            var /** @type {?} */ id = new CompileIdentifierMetadata();
+            var /** @type {?} */ id = { reference: null };
             if (ngModuleMeta.bootstrapComponents.indexOf(entryComponent) > -1) {
                 bootstrapComponentFactories.push(id);
             }
@@ -188,7 +188,7 @@ var _InjectorBuilder = (function () {
         var _this = this;
         var /** @type {?} */ result;
         if (isPresent(provider.useExisting)) {
-            result = this._getDependency(new CompileDiDependencyMetadata({ token: provider.useExisting }));
+            result = this._getDependency({ token: provider.useExisting });
         }
         else if (isPresent(provider.useFactory)) {
             var /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;

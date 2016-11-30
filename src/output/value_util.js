@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileIdentifierMetadata } from '../compile_metadata';
 import { visitValue } from '../util';
 import * as o from './output_ast';
 /**
@@ -52,14 +51,11 @@ var _ValueOutputAstTransformer = (function () {
      * @return {?}
      */
     _ValueOutputAstTransformer.prototype.visitOther = function (value, type) {
-        if (value instanceof CompileIdentifierMetadata) {
-            return o.importExpr(value);
-        }
-        else if (value instanceof o.Expression) {
+        if (value instanceof o.Expression) {
             return value;
         }
         else {
-            throw new Error("Illegal state: Don't now how to compile value " + value);
+            return o.importExpr({ reference: value });
         }
     };
     return _ValueOutputAstTransformer;

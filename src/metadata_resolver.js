@@ -581,7 +581,7 @@ export var CompileMetadataResolver = (function () {
      */
     CompileMetadataResolver.prototype._getIdentifierMetadata = function (type) {
         type = resolveForwardRef(type);
-        return new cpl.CompileIdentifierMetadata({ reference: type });
+        return { reference: type };
     };
     /**
      * @param {?} type
@@ -591,11 +591,11 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype._getTypeMetadata = function (type, dependencies) {
         if (dependencies === void 0) { dependencies = null; }
         var /** @type {?} */ identifier = this._getIdentifierMetadata(type);
-        return new cpl.CompileTypeMetadata({
+        return {
             reference: identifier.reference,
             diDeps: this._getDependenciesMetadata(identifier.reference, dependencies),
             lifecycleHooks: LIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(hook, identifier.reference); }),
-        });
+        };
     };
     /**
      * @param {?} factory
@@ -605,7 +605,7 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype._getFactoryMetadata = function (factory, dependencies) {
         if (dependencies === void 0) { dependencies = null; }
         factory = resolveForwardRef(factory);
-        return new cpl.CompileFactoryMetadata({ reference: factory, diDeps: this._getDependenciesMetadata(factory, dependencies) });
+        return { reference: factory, diDeps: this._getDependenciesMetadata(factory, dependencies) };
     };
     /**
      *  Gets the metadata for the given pipe.
@@ -707,14 +707,14 @@ export var CompileMetadataResolver = (function () {
                 hasUnknownDeps = true;
                 return null;
             }
-            return new cpl.CompileDiDependencyMetadata({
+            return {
                 isAttribute: isAttribute,
                 isHost: isHost,
                 isSelf: isSelf,
                 isSkipSelf: isSkipSelf,
                 isOptional: isOptional,
                 token: _this._getTokenMetadata(token)
-            });
+            };
         });
         if (hasUnknownDeps) {
             var /** @type {?} */ depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringify(dep.token) : '?'; }).join(', ');
@@ -730,10 +730,10 @@ export var CompileMetadataResolver = (function () {
         token = resolveForwardRef(token);
         var /** @type {?} */ compileToken;
         if (typeof token === 'string') {
-            compileToken = new cpl.CompileTokenMetadata({ value: token });
+            compileToken = { value: token };
         }
         else {
-            compileToken = new cpl.CompileTokenMetadata({ identifier: new cpl.CompileIdentifierMetadata({ reference: token }) });
+            compileToken = { identifier: { reference: token } };
         }
         return compileToken;
     };
@@ -741,51 +741,47 @@ export var CompileMetadataResolver = (function () {
      * @param {?} providers
      * @param {?} targetEntryComponents
      * @param {?=} debugInfo
+     * @param {?=} compileProviders
      * @return {?}
      */
-    CompileMetadataResolver.prototype._getProvidersMetadata = function (providers, targetEntryComponents, debugInfo) {
+    CompileMetadataResolver.prototype._getProvidersMetadata = function (providers, targetEntryComponents, debugInfo, compileProviders) {
         var _this = this;
-        var /** @type {?} */ compileProviders = [];
+        if (compileProviders === void 0) { compileProviders = []; }
         providers.forEach(function (provider, providerIdx) {
-            provider = resolveForwardRef(provider);
-            if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
-                provider = new cpl.ProviderMeta(provider.provide, provider);
-            }
-            var /** @type {?} */ compileProvider;
             if (Array.isArray(provider)) {
-                compileProvider = _this._getProvidersMetadata(provider, targetEntryComponents, debugInfo);
-            }
-            else if (provider instanceof cpl.ProviderMeta) {
-                var /** @type {?} */ tokenMeta = _this._getTokenMetadata(provider.token);
-                if (cpl.tokenReference(tokenMeta) ===
-                    resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
-                    targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(provider));
-                }
-                else {
-                    compileProvider = _this.getProviderMetadata(provider);
-                }
-            }
-            else if (isValidType(provider)) {
-                compileProvider = _this._getTypeMetadata(provider);
+                _this._getProvidersMetadata(provider, targetEntryComponents, debugInfo, compileProviders);
             }
             else {
-                var /** @type {?} */ providersInfo = ((providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
-                    if (seenProviderIdx < providerIdx) {
-                        soFar.push("" + stringify(seenProvider));
-                    }
-                    else if (seenProviderIdx == providerIdx) {
-                        soFar.push("?" + stringify(seenProvider) + "?");
-                    }
-                    else if (seenProviderIdx == providerIdx + 1) {
-                        soFar.push('...');
-                    }
-                    return soFar;
-                }, [])))
-                    .join(', ');
-                throw new Error("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]");
-            }
-            if (compileProvider) {
-                compileProviders.push(compileProvider);
+                provider = resolveForwardRef(provider);
+                var /** @type {?} */ providerMeta = void 0;
+                if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
+                    providerMeta = new cpl.ProviderMeta(provider.provide, provider);
+                }
+                else if (isValidType(provider)) {
+                    providerMeta = new cpl.ProviderMeta(provider, { useClass: provider });
+                }
+                else {
+                    var /** @type {?} */ providersInfo = ((providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
+                        if (seenProviderIdx < providerIdx) {
+                            soFar.push("" + stringify(seenProvider));
+                        }
+                        else if (seenProviderIdx == providerIdx) {
+                            soFar.push("?" + stringify(seenProvider) + "?");
+                        }
+                        else if (seenProviderIdx == providerIdx + 1) {
+                            soFar.push('...');
+                        }
+                        return soFar;
+                    }, [])))
+                        .join(', ');
+                    throw new Error("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]");
+                }
+                if (providerMeta.token === resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
+                    targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(providerMeta));
+                }
+                else {
+                    compileProviders.push(_this.getProviderMetadata(providerMeta));
+                }
             }
         });
         return compileProviders;
@@ -804,7 +800,7 @@ export var CompileMetadataResolver = (function () {
         if (!provider.multi) {
             throw new Error("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!");
         }
-        convertToCompileValue(provider.useValue, collectedIdentifiers);
+        extractIdentifiers(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach(function (identifier) {
             if (_this._directiveResolver.isDirective(identifier.reference)) {
                 components.push(identifier);
@@ -820,23 +816,28 @@ export var CompileMetadataResolver = (function () {
         var /** @type {?} */ compileDeps;
         var /** @type {?} */ compileTypeMetadata = null;
         var /** @type {?} */ compileFactoryMetadata = null;
+        var /** @type {?} */ token = this._getTokenMetadata(provider.token);
         if (provider.useClass) {
             compileTypeMetadata = this._getTypeMetadata(provider.useClass, provider.dependencies);
             compileDeps = compileTypeMetadata.diDeps;
+            if (provider.token === provider.useClass) {
+                // use the compileTypeMetadata as it contains information about lifecycleHooks...
+                token = { identifier: compileTypeMetadata };
+            }
         }
         else if (provider.useFactory) {
             compileFactoryMetadata = this._getFactoryMetadata(provider.useFactory, provider.dependencies);
             compileDeps = compileFactoryMetadata.diDeps;
         }
-        return new cpl.CompileProviderMetadata({
-            token: this._getTokenMetadata(provider.token),
+        return {
+            token: token,
             useClass: compileTypeMetadata,
-            useValue: convertToCompileValue(provider.useValue, []),
+            useValue: provider.useValue,
             useFactory: compileFactoryMetadata,
             useExisting: provider.useExisting ? this._getTokenMetadata(provider.useExisting) : null,
             deps: compileDeps,
             multi: provider.multi
-        });
+        };
     };
     /**
      * @param {?} queries
@@ -879,12 +880,12 @@ export var CompileMetadataResolver = (function () {
             }
             selectors = [this._getTokenMetadata(q.selector)];
         }
-        return new cpl.CompileQueryMetadata({
+        return {
             selectors: selectors,
             first: q.first,
             descendants: q.descendants, propertyName: propertyName,
             read: q.read ? this._getTokenMetadata(q.read) : null
-        });
+        };
     };
     CompileMetadataResolver.decorators = [
         { type: Injectable },
@@ -1044,8 +1045,8 @@ export function componentModuleUrl(reflector, type, cmpMetadata) {
  * @param {?} targetIdentifiers
  * @return {?}
  */
-function convertToCompileValue(value, targetIdentifiers) {
-    return visitValue(value, new _CompileValueConverter(), targetIdentifiers);
+function extractIdentifiers(value, targetIdentifiers) {
+    visitValue(value, new _CompileValueConverter(), targetIdentifiers);
 }
 var _CompileValueConverter = (function (_super) {
     __extends(_CompileValueConverter, _super);
@@ -1058,9 +1059,7 @@ var _CompileValueConverter = (function (_super) {
      * @return {?}
      */
     _CompileValueConverter.prototype.visitOther = function (value, targetIdentifiers) {
-        var /** @type {?} */ identifier = new cpl.CompileIdentifierMetadata({ reference: value });
-        targetIdentifiers.push(identifier);
-        return identifier;
+        targetIdentifiers.push({ reference: value });
     };
     return _CompileValueConverter;
 }(ValueTransformer));

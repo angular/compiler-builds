@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AnimationCompiler } from '../animation/animation_compiler';
-import { CompileProviderMetadata, createHostComponentMeta, identifierModuleUrl, identifierName } from '../compile_metadata';
+import { createHostComponentMeta, identifierModuleUrl, identifierName } from '../compile_metadata';
 import { ListWrapper } from '../facade/collection';
 import { Identifiers, createIdentifier, createIdentifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -131,16 +131,16 @@ export var AotCompiler = (function () {
         var /** @type {?} */ ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
         var /** @type {?} */ providers = [];
         if (this._localeId) {
-            providers.push(new CompileProviderMetadata({
+            providers.push({
                 token: createIdentifierToken(Identifiers.LOCALE_ID),
                 useValue: this._localeId,
-            }));
+            });
         }
         if (this._translationFormat) {
-            providers.push(new CompileProviderMetadata({
+            providers.push({
                 token: createIdentifierToken(Identifiers.TRANSLATIONS_FORMAT),
                 useValue: this._translationFormat
-            }));
+            });
         }
         var /** @type {?} */ appCompileResult = this._ngModuleCompiler.compile(ngModule, providers);
         appCompileResult.dependencies.forEach(function (dep) {

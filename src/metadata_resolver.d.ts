@@ -82,7 +82,7 @@ export declare class CompileMetadataResolver {
     private _loadPipeMetadata(pipeType);
     private _getDependenciesMetadata(typeOrFunc, dependencies);
     private _getTokenMetadata(token);
-    private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?);
+    private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?);
     private _getEntryComponentsFromProvider(provider);
     getProviderMetadata(provider: cpl.ProviderMeta): cpl.CompileProviderMetadata;
     private _getQueriesMetadata(queries, isViewQuery, directiveType);

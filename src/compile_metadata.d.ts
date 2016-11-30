@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from '@angular/core';
-import { StaticSymbol } from './aot/static_symbol';
 import { LifecycleHooks } from './private_import_core';
 export declare class CompileAnimationEntryMetadata {
     name: string;
@@ -57,11 +56,8 @@ export declare class CompileAnimationGroupMetadata extends CompileAnimationWithS
 }
 export declare function identifierName(compileIdentifier: CompileIdentifierMetadata): string;
 export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
-export declare class CompileIdentifierMetadata {
+export interface CompileIdentifierMetadata {
     reference: any;
-    constructor({reference}?: {
-        reference?: any;
-    });
 }
 /**
  * A CompileSummary is the data needed to use a directive / pipe / module
@@ -71,88 +67,49 @@ export declare class CompileIdentifierMetadata {
 export interface CompileSummary {
     isSummary: boolean;
 }
-export declare class CompileDiDependencyMetadata {
-    isAttribute: boolean;
-    isSelf: boolean;
-    isHost: boolean;
-    isSkipSelf: boolean;
-    isOptional: boolean;
-    isValue: boolean;
-    token: CompileTokenMetadata;
-    value: any;
-    constructor({isAttribute, isSelf, isHost, isSkipSelf, isOptional, isValue, token, value}?: {
-        isAttribute?: boolean;
-        isSelf?: boolean;
-        isHost?: boolean;
-        isSkipSelf?: boolean;
-        isOptional?: boolean;
-        isValue?: boolean;
-        query?: CompileQueryMetadata;
-        viewQuery?: CompileQueryMetadata;
-        token?: CompileTokenMetadata;
-        value?: any;
-    });
+export interface CompileDiDependencyMetadata {
+    isAttribute?: boolean;
+    isSelf?: boolean;
+    isHost?: boolean;
+    isSkipSelf?: boolean;
+    isOptional?: boolean;
+    isValue?: boolean;
+    token?: CompileTokenMetadata;
+    value?: any;
 }
-export declare class CompileProviderMetadata {
+export interface CompileProviderMetadata {
     token: CompileTokenMetadata;
-    useClass: CompileTypeMetadata;
-    useValue: any;
-    useExisting: CompileTokenMetadata;
-    useFactory: CompileFactoryMetadata;
-    deps: CompileDiDependencyMetadata[];
-    multi: boolean;
-    constructor({token, useClass, useValue, useExisting, useFactory, deps, multi}: {
-        token?: CompileTokenMetadata;
-        useClass?: CompileTypeMetadata;
-        useValue?: any;
-        useExisting?: CompileTokenMetadata;
-        useFactory?: CompileFactoryMetadata;
-        deps?: CompileDiDependencyMetadata[];
-        multi?: boolean;
-    });
+    useClass?: CompileTypeMetadata;
+    useValue?: any;
+    useExisting?: CompileTokenMetadata;
+    useFactory?: CompileFactoryMetadata;
+    deps?: CompileDiDependencyMetadata[];
+    multi?: boolean;
 }
-export declare class CompileFactoryMetadata extends CompileIdentifierMetadata {
+export interface CompileFactoryMetadata extends CompileIdentifierMetadata {
     diDeps: CompileDiDependencyMetadata[];
-    constructor({reference, diDeps}: {
-        reference?: Function;
-        diDeps?: CompileDiDependencyMetadata[];
-    });
+    reference: any;
 }
 export declare function tokenName(token: CompileTokenMetadata): string;
 export declare function tokenReference(token: CompileTokenMetadata): any;
-export declare class CompileTokenMetadata {
-    value: any;
-    identifier: CompileIdentifierMetadata;
-    constructor({value, identifier}: {
-        value?: any;
-        identifier?: CompileIdentifierMetadata;
-    });
+export interface CompileTokenMetadata {
+    value?: any;
+    identifier?: CompileIdentifierMetadata | CompileTypeMetadata;
 }
 /**
  * Metadata regarding compilation of a type.
  */
-export declare class CompileTypeMetadata extends CompileIdentifierMetadata {
+export interface CompileTypeMetadata extends CompileIdentifierMetadata {
     diDeps: CompileDiDependencyMetadata[];
     lifecycleHooks: LifecycleHooks[];
-    constructor({reference, diDeps, lifecycleHooks}?: {
-        reference?: Type<any> | StaticSymbol;
-        diDeps?: CompileDiDependencyMetadata[];
-        lifecycleHooks?: LifecycleHooks[];
-    });
+    reference: any;
 }
-export declare class CompileQueryMetadata {
+export interface CompileQueryMetadata {
     selectors: Array<CompileTokenMetadata>;
     descendants: boolean;
     first: boolean;
     propertyName: string;
     read: CompileTokenMetadata;
-    constructor({selectors, descendants, first, propertyName, read}?: {
-        selectors?: Array<CompileTokenMetadata>;
-        descendants?: boolean;
-        first?: boolean;
-        propertyName?: string;
-        read?: CompileTokenMetadata;
-    });
 }
 /**
  * Metadata about a stylesheet
@@ -246,8 +203,8 @@ export declare class CompileDirectiveMetadata {
         host?: {
             [key: string]: string;
         };
-        providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
-        viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
+        providers?: CompileProviderMetadata[];
+        viewProviders?: CompileProviderMetadata[];
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
         entryComponents?: CompileIdentifierMetadata[];
@@ -302,8 +259,8 @@ export declare class CompileDirectiveMetadata {
         hostAttributes?: {
             [key: string]: string;
         };
-        providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
-        viewProviders?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
+        providers?: CompileProviderMetadata[];
+        viewProviders?: CompileProviderMetadata[];
         queries?: CompileQueryMetadata[];
         viewQueries?: CompileQueryMetadata[];
         entryComponents?: CompileIdentifierMetadata[];
@@ -368,7 +325,7 @@ export declare class CompileNgModuleMetadata {
     transitiveModule: TransitiveCompileNgModuleMetadata;
     constructor({type, providers, declaredDirectives, exportedDirectives, declaredPipes, exportedPipes, entryComponents, bootstrapComponents, importedModules, exportedModules, schemas, transitiveModule, id}?: {
         type?: CompileTypeMetadata;
-        providers?: Array<CompileProviderMetadata | CompileTypeMetadata | CompileIdentifierMetadata | any[]>;
+        providers?: CompileProviderMetadata[];
         declaredDirectives?: CompileIdentifierMetadata[];
         exportedDirectives?: CompileIdentifierMetadata[];
         declaredPipes?: CompileIdentifierMetadata[];

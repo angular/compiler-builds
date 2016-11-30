@@ -244,103 +244,6 @@ export function identifierModuleUrl(compileIdentifier) {
     }
     return reflector.importUri(ref);
 }
-export var CompileIdentifierMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
-    function CompileIdentifierMetadata(_a) {
-        var reference = (_a === void 0 ? {} : _a).reference;
-        this.reference = reference;
-    }
-    return CompileIdentifierMetadata;
-}());
-function CompileIdentifierMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileIdentifierMetadata.prototype.reference;
-}
-export var CompileDiDependencyMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
-    function CompileDiDependencyMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, isAttribute = _b.isAttribute, isSelf = _b.isSelf, isHost = _b.isHost, isSkipSelf = _b.isSkipSelf, isOptional = _b.isOptional, isValue = _b.isValue, token = _b.token, value = _b.value;
-        this.isAttribute = !!isAttribute;
-        this.isSelf = !!isSelf;
-        this.isHost = !!isHost;
-        this.isSkipSelf = !!isSkipSelf;
-        this.isOptional = !!isOptional;
-        this.isValue = !!isValue;
-        this.token = token;
-        this.value = value;
-    }
-    return CompileDiDependencyMetadata;
-}());
-function CompileDiDependencyMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isAttribute;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isSelf;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isHost;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isSkipSelf;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isOptional;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.isValue;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.token;
-    /** @type {?} */
-    CompileDiDependencyMetadata.prototype.value;
-}
-export var CompileProviderMetadata = (function () {
-    /**
-     * @param {?} __0
-     */
-    function CompileProviderMetadata(_a) {
-        var token = _a.token, useClass = _a.useClass, useValue = _a.useValue, useExisting = _a.useExisting, useFactory = _a.useFactory, deps = _a.deps, multi = _a.multi;
-        this.token = token;
-        this.useClass = useClass;
-        this.useValue = useValue;
-        this.useExisting = useExisting;
-        this.useFactory = useFactory;
-        this.deps = deps || null;
-        this.multi = !!multi;
-    }
-    return CompileProviderMetadata;
-}());
-function CompileProviderMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileProviderMetadata.prototype.token;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.useClass;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.useValue;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.useExisting;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.useFactory;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.deps;
-    /** @type {?} */
-    CompileProviderMetadata.prototype.multi;
-}
-export var CompileFactoryMetadata = (function (_super) {
-    __extends(CompileFactoryMetadata, _super);
-    /**
-     * @param {?} __0
-     */
-    function CompileFactoryMetadata(_a) {
-        var reference = _a.reference, diDeps = _a.diDeps;
-        _super.call(this, { reference: reference });
-        this.diDeps = _normalizeArray(diDeps);
-    }
-    return CompileFactoryMetadata;
-}(CompileIdentifierMetadata));
-function CompileFactoryMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileFactoryMetadata.prototype.diDeps;
-}
 /**
  * @param {?} token
  * @return {?}
@@ -360,71 +263,6 @@ export function tokenReference(token) {
     else {
         return token.value;
     }
-}
-export var CompileTokenMetadata = (function () {
-    /**
-     * @param {?} __0
-     */
-    function CompileTokenMetadata(_a) {
-        var value = _a.value, identifier = _a.identifier;
-        this.value = value;
-        this.identifier = identifier;
-    }
-    return CompileTokenMetadata;
-}());
-function CompileTokenMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileTokenMetadata.prototype.value;
-    /** @type {?} */
-    CompileTokenMetadata.prototype.identifier;
-}
-/**
- *  Metadata regarding compilation of a type.
- */
-export var CompileTypeMetadata = (function (_super) {
-    __extends(CompileTypeMetadata, _super);
-    /**
-     * @param {?=} __0
-     */
-    function CompileTypeMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, reference = _b.reference, diDeps = _b.diDeps, lifecycleHooks = _b.lifecycleHooks;
-        _super.call(this, { reference: reference });
-        this.diDeps = _normalizeArray(diDeps);
-        this.lifecycleHooks = _normalizeArray(lifecycleHooks);
-    }
-    return CompileTypeMetadata;
-}(CompileIdentifierMetadata));
-function CompileTypeMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileTypeMetadata.prototype.diDeps;
-    /** @type {?} */
-    CompileTypeMetadata.prototype.lifecycleHooks;
-}
-export var CompileQueryMetadata = (function () {
-    /**
-     * @param {?=} __0
-     */
-    function CompileQueryMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, selectors = _b.selectors, descendants = _b.descendants, first = _b.first, propertyName = _b.propertyName, read = _b.read;
-        this.selectors = selectors;
-        this.descendants = !!descendants;
-        this.first = !!first;
-        this.propertyName = propertyName;
-        this.read = read;
-    }
-    return CompileQueryMetadata;
-}());
-function CompileQueryMetadata_tsickle_Closure_declarations() {
-    /** @type {?} */
-    CompileQueryMetadata.prototype.selectors;
-    /** @type {?} */
-    CompileQueryMetadata.prototype.descendants;
-    /** @type {?} */
-    CompileQueryMetadata.prototype.first;
-    /** @type {?} */
-    CompileQueryMetadata.prototype.propertyName;
-    /** @type {?} */
-    CompileQueryMetadata.prototype.read;
 }
 /**
  *  Metadata about a stylesheet
@@ -661,7 +499,7 @@ export function createHostComponentMeta(typeReference, compMeta) {
     var /** @type {?} */ template = CssSelector.parse(compMeta.selector)[0].getMatchingElementTemplate();
     return CompileDirectiveMetadata.create({
         isHost: true,
-        type: new CompileTypeMetadata({ reference: typeReference }),
+        type: { reference: typeReference, diDeps: [], lifecycleHooks: [] },
         template: new CompileTemplateMetadata({
             encapsulation: ViewEncapsulation.None,
             template: template,

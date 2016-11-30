@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Injectable, ViewEncapsulation } from '@angular/core';
-import { CompileIdentifierMetadata, CompileStylesheetMetadata, identifierModuleUrl, identifierName } from './compile_metadata';
+import { CompileStylesheetMetadata, identifierModuleUrl, identifierName } from './compile_metadata';
 import * as o from './output/output_ast';
 import { ShadowCss } from './shadow_css';
 import { UrlResolver } from './url_resolver';
@@ -122,7 +122,7 @@ export var StyleCompiler = (function () {
         var /** @type {?} */ styleExpressions = stylesheet.styles.map(function (plainStyle) { return o.literal(_this._shimIfNeeded(plainStyle, shim)); });
         var /** @type {?} */ dependencies = [];
         for (var /** @type {?} */ i = 0; i < stylesheet.styleUrls.length; i++) {
-            var /** @type {?} */ identifier = new CompileIdentifierMetadata();
+            var /** @type {?} */ identifier = { reference: null };
             dependencies.push(new StylesCompileDependency(getStylesVarName(null), stylesheet.styleUrls[i], shim, identifier));
             styleExpressions.push(new o.ExternalExpr(identifier));
         }
