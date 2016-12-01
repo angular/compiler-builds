@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationEntryMetadata, Type } from '@angular/core';
+import { AnimationEntryMetadata, Component, Directive, Type } from '@angular/core';
 import * as cpl from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveResolver } from './directive_resolver';
@@ -26,10 +26,7 @@ export declare class CompileMetadataResolver {
     private _pipeSummaryCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    private _anonymousTypes;
-    private _anonymousTypeIndex;
     constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader);
-    private sanitizeTokenName(token);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
@@ -37,7 +34,10 @@ export declare class CompileMetadataResolver {
     private _getAnimationStyleMetadata(value);
     private _getAnimationMetadata(value);
     private _loadDirectiveMetadata(directiveType, isSync);
-    getNonNormalizedDirectiveMetadata(directiveType: any): cpl.CompileDirectiveMetadata;
+    getNonNormalizedDirectiveMetadata(directiveType: any): {
+        annotation: Directive;
+        metadata: cpl.CompileDirectiveMetadata;
+    };
     /**
      * Gets the metadata for the given directive.
      * This assumes `loadNgModuleMetadata` has been called first.
@@ -69,9 +69,9 @@ export declare class CompileMetadataResolver {
     private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
     private _getTransitiveNgModuleMetadata(importedModules, exportedModules);
-    private _getIdentifierMetadata(type, moduleUrl);
-    private _getTypeMetadata(type, moduleUrl, dependencies?);
-    private _getFactoryMetadata(factory, moduleUrl, dependencies?);
+    private _getIdentifierMetadata(type);
+    private _getTypeMetadata(type, dependencies?);
+    private _getFactoryMetadata(factory, dependencies?);
     /**
      * Gets the metadata for the given pipe.
      * This assumes `loadNgModuleMetadata` has been called first.
@@ -82,10 +82,11 @@ export declare class CompileMetadataResolver {
     private _loadPipeMetadata(pipeType);
     private _getDependenciesMetadata(typeOrFunc, dependencies);
     private _getTokenMetadata(token);
-    private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?);
+    private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?);
     private _getEntryComponentsFromProvider(provider);
     getProviderMetadata(provider: cpl.ProviderMeta): cpl.CompileProviderMetadata;
     private _getQueriesMetadata(queries, isViewQuery, directiveType);
     private _queryVarBindings(selector);
     private _getQueryMetadata(q, propertyName, typeOrFunc);
 }
+export declare function componentModuleUrl(reflector: ReflectorReader, type: Type<any>, cmpMetadata: Component): string;

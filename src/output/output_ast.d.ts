@@ -29,10 +29,10 @@ export declare class BuiltinType extends Type {
     constructor(name: BuiltinTypeName, modifiers?: TypeModifier[]);
     visitType(visitor: TypeVisitor, context: any): any;
 }
-export declare class ExternalType extends Type {
-    value: CompileIdentifierMetadata;
+export declare class ExpressionType extends Type {
+    value: Expression;
     typeParams: Type[];
-    constructor(value: CompileIdentifierMetadata, typeParams?: Type[], modifiers?: TypeModifier[]);
+    constructor(value: Expression, typeParams?: Type[], modifiers?: TypeModifier[]);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class ArrayType extends Type {
@@ -54,7 +54,7 @@ export declare var FUNCTION_TYPE: BuiltinType;
 export declare var NULL_TYPE: BuiltinType;
 export interface TypeVisitor {
     visitBuiltintType(type: BuiltinType, context: any): any;
-    visitExternalType(type: ExternalType, context: any): any;
+    visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
 }
@@ -427,7 +427,8 @@ export declare function replaceVarInExpression(varName: string, newValue: Expres
 export declare function findReadVarNames(stmts: Statement[]): Set<string>;
 export declare function variable(name: string, type?: Type): ReadVarExpr;
 export declare function importExpr(id: CompileIdentifierMetadata, typeParams?: Type[]): ExternalExpr;
-export declare function importType(id: CompileIdentifierMetadata, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExternalType;
+export declare function importType(id: CompileIdentifierMetadata, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExpressionType;
+export declare function expressionType(expr: Expression, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExpressionType;
 export declare function literalArr(values: Expression[], type?: Type): LiteralArrayExpr;
 export declare function literalMap(values: [string, Expression][], type?: MapType): LiteralMapExpr;
 export declare function not(expr: Expression): NotExpr;
