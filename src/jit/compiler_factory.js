@@ -24,6 +24,7 @@ import { ResourceLoader } from '../resource_loader';
 import { DomElementSchemaRegistry } from '../schema/dom_element_schema_registry';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
 import { StyleCompiler } from '../style_compiler';
+import { SummaryResolver } from '../summary_resolver';
 import { TemplateParser } from '../template_parser/template_parser';
 import { DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver } from '../url_resolver';
 import { ViewCompiler } from '../view_compiler/view_compiler';
@@ -45,6 +46,7 @@ export var /** @type {?} */ COMPILER_PROVIDERS = [
     { provide: Reflector, useValue: reflector },
     { provide: ReflectorReader, useExisting: Reflector },
     { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
+    SummaryResolver,
     Console,
     Lexer,
     Parser,

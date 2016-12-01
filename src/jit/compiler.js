@@ -140,15 +140,13 @@ export var JitCompiler = (function () {
     JitCompiler.prototype._loadModules = function (mainModule, isSync) {
         var _this = this;
         var /** @type {?} */ loadingPromises = [];
-        var _a = this._metadataResolver.loadNgModuleMetadata(mainModule, isSync), ngModule = _a.ngModule, loading = _a.loading;
-        loadingPromises.push(loading);
+        var /** @type {?} */ ngModule = this._metadataResolver.getNgModuleMetadata(mainModule);
         // Note: the loadingPromise for a module only includes the loading of the exported directives
         // of imported modules.
         // However, for runtime compilation, we want to transitively compile all modules,
         // so we also need to call loadNgModuleMetadata for all nested modules.
         ngModule.transitiveModule.modules.forEach(function (localModuleMeta) {
-            loadingPromises.push(_this._metadataResolver.loadNgModuleMetadata(localModuleMeta.type.reference, isSync)
-                .loading);
+            loadingPromises.push(_this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(localModuleMeta.reference, isSync));
         });
         return Promise.all(loadingPromises);
     };
@@ -190,7 +188,7 @@ export var JitCompiler = (function () {
         var /** @type {?} */ moduleByDirective = new Map();
         var /** @type {?} */ templates = new Set();
         ngModule.transitiveModule.modules.forEach(function (localModuleSummary) {
-            var /** @type {?} */ localModuleMeta = _this._metadataResolver.getNgModuleMetadata(localModuleSummary.type.reference);
+            var /** @type {?} */ localModuleMeta = _this._metadataResolver.getNgModuleMetadata(localModuleSummary.reference);
             localModuleMeta.declaredDirectives.forEach(function (dirIdentifier) {
                 moduleByDirective.set(dirIdentifier.reference, localModuleMeta);
                 var /** @type {?} */ dirMeta = _this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
@@ -206,7 +204,7 @@ export var JitCompiler = (function () {
             });
         });
         ngModule.transitiveModule.modules.forEach(function (localModuleSummary) {
-            var /** @type {?} */ localModuleMeta = _this._metadataResolver.getNgModuleMetadata(localModuleSummary.type.reference);
+            var /** @type {?} */ localModuleMeta = _this._metadataResolver.getNgModuleMetadata(localModuleSummary.reference);
             localModuleMeta.declaredDirectives.forEach(function (dirIdentifier) {
                 var /** @type {?} */ dirMeta = _this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
                 if (dirMeta.isComponent) {

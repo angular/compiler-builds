@@ -362,12 +362,11 @@ export var NgModuleProviderAnalyzer = (function () {
         this._seenProviders = new Map();
         this._errors = [];
         this._allProviders = new Map();
-        var ngModuleTypes = ngModule.transitiveModule.modules.map(function (moduleMeta) { return moduleMeta.type; });
-        ngModuleTypes.forEach(function (ngModuleType) {
+        ngModule.transitiveModule.modules.forEach(function (ngModuleType) {
             var ngModuleProvider = { token: { identifier: ngModuleType }, useClass: ngModuleType };
             _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders);
         });
-        _resolveProviders(ngModule.transitiveModule.providers.concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
+        _resolveProviders(ngModule.transitiveModule.providers.map(function (entry) { return entry.provider; }).concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
     }
     /**
      * @return {?}

@@ -67,6 +67,9 @@ export interface CompileIdentifierMetadata {
 export interface CompileSummary {
     isSummary: boolean;
 }
+export interface CompileTypeSummary extends CompileSummary {
+    type: CompileTypeMetadata;
+}
 export interface CompileDiDependencyMetadata {
     isAttribute?: boolean;
     isSelf?: boolean;
@@ -159,7 +162,7 @@ export declare class CompileTemplateMetadata {
     });
     toSummary(): CompileTemplateSummary;
 }
-export interface CompileDirectiveSummary extends CompileSummary {
+export interface CompileDirectiveSummary extends CompileTypeSummary {
     isSummary: boolean;
     type: CompileTypeMetadata;
     isComponent: boolean;
@@ -272,7 +275,7 @@ export declare class CompileDirectiveMetadata {
  * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
  */
 export declare function createHostComponentMeta(typeReference: any, compMeta: CompileDirectiveMetadata): CompileDirectiveMetadata;
-export interface CompilePipeSummary extends CompileSummary {
+export interface CompilePipeSummary extends CompileTypeSummary {
     isSummary: boolean;
     type: CompileTypeMetadata;
     name: string;
@@ -289,23 +292,19 @@ export declare class CompilePipeMetadata {
     });
     toSummary(): CompilePipeSummary;
 }
-export interface CompileNgModuleInjectorSummary extends CompileSummary {
-    isSummary: boolean;
-    type: CompileTypeMetadata;
-    entryComponents: CompileIdentifierMetadata[];
-    providers: CompileProviderMetadata[];
-    importedModules: CompileNgModuleInjectorSummary[];
-    exportedModules: CompileNgModuleInjectorSummary[];
-}
-export interface CompileNgModuleDirectiveSummary extends CompileSummary {
+export interface CompileNgModuleSummary extends CompileTypeSummary {
     isSummary: boolean;
     type: CompileTypeMetadata;
     exportedDirectives: CompileIdentifierMetadata[];
     exportedPipes: CompileIdentifierMetadata[];
-    exportedModules: CompileNgModuleDirectiveSummary[];
-    directiveLoaders: (() => Promise<void>)[];
+    exportedModules: CompileIdentifierMetadata[];
+    entryComponents: CompileIdentifierMetadata[];
+    providers: {
+        provider: CompileProviderMetadata;
+        module: CompileIdentifierMetadata;
+    }[];
+    modules: CompileTypeMetadata[];
 }
-export declare type CompileNgModuleSummary = CompileNgModuleInjectorSummary & CompileNgModuleDirectiveSummary;
 /**
  * Metadata regarding compilation of a module.
  */
@@ -339,19 +338,22 @@ export declare class CompileNgModuleMetadata {
         id?: string;
     });
     toSummary(): CompileNgModuleSummary;
-    toInjectorSummary(): CompileNgModuleInjectorSummary;
-    toDirectiveSummary(): CompileNgModuleDirectiveSummary;
 }
 export declare class TransitiveCompileNgModuleMetadata {
-    modules: CompileNgModuleInjectorSummary[];
-    providers: CompileProviderMetadata[];
+    modules: CompileTypeMetadata[];
+    providers: {
+        provider: CompileProviderMetadata;
+        module: CompileIdentifierMetadata;
+    }[];
     entryComponents: CompileIdentifierMetadata[];
     directives: CompileIdentifierMetadata[];
     pipes: CompileIdentifierMetadata[];
-    directiveLoaders: (() => Promise<void>)[];
     directivesSet: Set<any>;
     pipesSet: Set<any>;
-    constructor(modules: CompileNgModuleInjectorSummary[], providers: CompileProviderMetadata[], entryComponents: CompileIdentifierMetadata[], directives: CompileIdentifierMetadata[], pipes: CompileIdentifierMetadata[], directiveLoaders: (() => Promise<void>)[]);
+    constructor(modules: CompileTypeMetadata[], providers: {
+        provider: CompileProviderMetadata;
+        module: CompileIdentifierMetadata;
+    }[], entryComponents: CompileIdentifierMetadata[], directives: CompileIdentifierMetadata[], pipes: CompileIdentifierMetadata[]);
 }
 export declare class ProviderMeta {
     token: any;

@@ -577,39 +577,12 @@ export var CompileNgModuleMetadata = (function () {
         return {
             isSummary: true,
             type: this.type,
-            entryComponents: this.entryComponents,
-            providers: this.providers,
-            importedModules: this.importedModules,
-            exportedModules: this.exportedModules,
+            entryComponents: this.transitiveModule.entryComponents,
+            providers: this.transitiveModule.providers,
+            modules: this.transitiveModule.modules,
             exportedDirectives: this.exportedDirectives,
             exportedPipes: this.exportedPipes,
-            directiveLoaders: this.transitiveModule.directiveLoaders
-        };
-    };
-    /**
-     * @return {?}
-     */
-    CompileNgModuleMetadata.prototype.toInjectorSummary = function () {
-        return {
-            isSummary: true,
-            type: this.type,
-            entryComponents: this.entryComponents,
-            providers: this.providers,
-            importedModules: this.importedModules,
-            exportedModules: this.exportedModules
-        };
-    };
-    /**
-     * @return {?}
-     */
-    CompileNgModuleMetadata.prototype.toDirectiveSummary = function () {
-        return {
-            isSummary: true,
-            type: this.type,
-            exportedDirectives: this.exportedDirectives,
-            exportedPipes: this.exportedPipes,
-            exportedModules: this.exportedModules,
-            directiveLoaders: this.transitiveModule.directiveLoaders
+            exportedModules: this.exportedModules.map(function (m) { return m.type; })
         };
     };
     return CompileNgModuleMetadata;
@@ -649,16 +622,14 @@ export var TransitiveCompileNgModuleMetadata = (function () {
      * @param {?} entryComponents
      * @param {?} directives
      * @param {?} pipes
-     * @param {?} directiveLoaders
      */
-    function TransitiveCompileNgModuleMetadata(modules, providers, entryComponents, directives, pipes, directiveLoaders) {
+    function TransitiveCompileNgModuleMetadata(modules, providers, entryComponents, directives, pipes) {
         var _this = this;
         this.modules = modules;
         this.providers = providers;
         this.entryComponents = entryComponents;
         this.directives = directives;
         this.pipes = pipes;
-        this.directiveLoaders = directiveLoaders;
         this.directivesSet = new Set();
         this.pipesSet = new Set();
         directives.forEach(function (dir) { return _this.directivesSet.add(dir.reference); });
@@ -681,8 +652,6 @@ function TransitiveCompileNgModuleMetadata_tsickle_Closure_declarations() {
     TransitiveCompileNgModuleMetadata.prototype.directives;
     /** @type {?} */
     TransitiveCompileNgModuleMetadata.prototype.pipes;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.directiveLoaders;
 }
 /**
  * @param {?} obj

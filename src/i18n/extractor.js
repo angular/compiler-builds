@@ -6,9 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ViewEncapsulation } from '@angular/core';
-import { analyzeAndValidateNgModules, extractProgramSymbols, loadNgModuleDirectives } from '../aot/compiler';
+import { analyzeAndValidateNgModules, extractProgramSymbols } from '../aot/compiler';
 import { StaticAndDynamicReflectionCapabilities } from '../aot/static_reflection_capabilities';
 import { StaticReflector } from '../aot/static_reflector';
+import { AotSummaryResolver } from '../aot/summary_resolver';
 import { CompilerConfig } from '../config';
 import { DirectiveNormalizer } from '../directive_normalizer';
 import { DirectiveResolver } from '../directive_resolver';
@@ -44,7 +45,9 @@ export var Extractor = (function () {
         var _this = this;
         var /** @type {?} */ programSymbols = extractProgramSymbols(this.staticReflector, rootFiles, this.options);
         var _a = analyzeAndValidateNgModules(programSymbols, this.options, this.metadataResolver), ngModuleByPipeOrDirective = _a.ngModuleByPipeOrDirective, files = _a.files, ngModules = _a.ngModules;
-        return loadNgModuleDirectives(ngModules).then(function () {
+        return Promise
+            .all(ngModules.map(function (ngModule) { return _this.metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false); }))
+            .then(function () {
             var /** @type {?} */ errors = [];
             files.forEach(function (file) {
                 var /** @type {?} */ compMetas = [];
@@ -84,7 +87,7 @@ export var Extractor = (function () {
         });
         var /** @type {?} */ normalizer = new DirectiveNormalizer({ get: function (url) { return host.loadResource(url); } }, urlResolver, htmlParser, config);
         var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-        var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), elementSchemaRegistry, normalizer, staticReflector);
+        var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), new AotSummaryResolver(host, staticReflector, options), elementSchemaRegistry, normalizer, staticReflector);
         // TODO(vicb): implicit tags & attributes
         var /** @type {?} */ messageBundle = new MessageBundle(htmlParser, [], {});
         var /** @type {?} */ extractor = new Extractor(options, host, staticReflector, messageBundle, resolver);

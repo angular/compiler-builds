@@ -7,11 +7,12 @@
  */
 import { ImportResolver } from '../output/path_util';
 import { StaticReflectorHost } from './static_reflector';
+import { AotSummaryResolverHost } from './summary_resolver';
 /**
  * The host of the AotCompiler disconnects the implementation from TypeScript / other language
  * services and from underlying file systems.
  */
-export interface AotCompilerHost extends StaticReflectorHost, ImportResolver {
+export interface AotCompilerHost extends StaticReflectorHost, ImportResolver, AotSummaryResolverHost {
     /**
      * Loads a resource (e.g. html / css)
      */

@@ -1,4 +1,5 @@
 import { StaticReflector, StaticReflectorHost } from '../aot/static_reflector';
+import { AotSummaryResolverHost } from '../aot/summary_resolver';
 import { CompileMetadataResolver } from '../metadata_resolver';
 import { MessageBundle } from './message_bundle';
 export interface ExtractorOptions {
@@ -9,7 +10,7 @@ export interface ExtractorOptions {
  * The host of the Extractor disconnects the implementation from TypeScript / other language
  * services and from underlying file systems.
  */
-export interface ExtractorHost extends StaticReflectorHost {
+export interface ExtractorHost extends StaticReflectorHost, AotSummaryResolverHost {
     /**
      * Loads a resource (e.g. html / css)
      */

@@ -29,6 +29,7 @@ import { ViewCompiler } from '../view_compiler/view_compiler';
 import { AotCompiler } from './compiler';
 import { StaticAndDynamicReflectionCapabilities } from './static_reflection_capabilities';
 import { StaticReflector } from './static_reflector';
+import { AotSummaryResolver } from './summary_resolver';
 /**
  *  Creates a new AotCompiler based on options and a host.
  * @param {?} compilerHost
@@ -52,9 +53,10 @@ export function createAotCompiler(compilerHost, options) {
     var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
     var /** @type {?} */ console = new Console();
     var /** @type {?} */ tmplParser = new TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
-    var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), elementSchemaRegistry, normalizer, staticReflector);
+    var /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, staticReflector, options);
+    var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
-    var /** @type {?} */ compiler = new AotCompiler(resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(compilerHost), options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), staticReflector, options);
+    var /** @type {?} */ compiler = new AotCompiler(resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(compilerHost), summaryResolver, options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), staticReflector, options);
     return { compiler: compiler, reflector: staticReflector };
 }
 //# sourceMappingURL=compiler_factory.js.map

@@ -11,27 +11,8 @@ import { ListWrapper } from '../facade/collection';
 import { Identifiers, createIdentifier, createIdentifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
 import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency } from '../view_compiler/view_compiler';
-export var SourceModule = (function () {
-    /**
-     * @param {?} fileUrl
-     * @param {?} moduleUrl
-     * @param {?} source
-     */
-    function SourceModule(fileUrl, moduleUrl, source) {
-        this.fileUrl = fileUrl;
-        this.moduleUrl = moduleUrl;
-        this.source = source;
-    }
-    return SourceModule;
-}());
-function SourceModule_tsickle_Closure_declarations() {
-    /** @type {?} */
-    SourceModule.prototype.fileUrl;
-    /** @type {?} */
-    SourceModule.prototype.moduleUrl;
-    /** @type {?} */
-    SourceModule.prototype.source;
-}
+import { GeneratedFile } from './generated_file';
+import { filterFileByPatterns } from './utils';
 export var AotCompiler = (function () {
     /**
      * @param {?} _metadataResolver
@@ -41,13 +22,14 @@ export var AotCompiler = (function () {
      * @param {?} _dirWrapperCompiler
      * @param {?} _ngModuleCompiler
      * @param {?} _outputEmitter
+     * @param {?} _summaryResolver
      * @param {?} _localeId
      * @param {?} _translationFormat
      * @param {?} _animationParser
      * @param {?} _staticReflector
      * @param {?} _options
      */
-    function AotCompiler(_metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _localeId, _translationFormat, _animationParser, _staticReflector, _options) {
+    function AotCompiler(_metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _animationParser, _staticReflector, _options) {
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
@@ -55,6 +37,7 @@ export var AotCompiler = (function () {
         this._dirWrapperCompiler = _dirWrapperCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
         this._outputEmitter = _outputEmitter;
+        this._summaryResolver = _summaryResolver;
         this._localeId = _localeId;
         this._translationFormat = _translationFormat;
         this._animationParser = _animationParser;
@@ -74,8 +57,10 @@ export var AotCompiler = (function () {
         var _this = this;
         var /** @type {?} */ programSymbols = extractProgramSymbols(this._staticReflector, rootFiles, this._options);
         var _a = analyzeAndValidateNgModules(programSymbols, this._options, this._metadataResolver), ngModuleByPipeOrDirective = _a.ngModuleByPipeOrDirective, files = _a.files, ngModules = _a.ngModules;
-        return loadNgModuleDirectives(ngModules).then(function () {
-            var /** @type {?} */ sourceModules = files.map(function (file) { return _this._compileSrcFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.ngModules); });
+        return Promise
+            .all(ngModules.map(function (ngModule) { return _this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false); }))
+            .then(function () {
+            var /** @type {?} */ sourceModules = files.map(function (file) { return _this._compileSrcFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules); });
             return ListWrapper.flatten(sourceModules);
         });
     };
@@ -83,15 +68,19 @@ export var AotCompiler = (function () {
      * @param {?} srcFileUrl
      * @param {?} ngModuleByPipeOrDirective
      * @param {?} directives
+     * @param {?} pipes
      * @param {?} ngModules
      * @return {?}
      */
-    AotCompiler.prototype._compileSrcFile = function (srcFileUrl, ngModuleByPipeOrDirective, directives, ngModules) {
+    AotCompiler.prototype._compileSrcFile = function (srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules) {
         var _this = this;
         var /** @type {?} */ fileSuffix = _splitTypescriptSuffix(srcFileUrl)[1];
         var /** @type {?} */ statements = [];
         var /** @type {?} */ exportedVars = [];
-        var /** @type {?} */ outputSourceModules = [];
+        var /** @type {?} */ generatedFiles = [];
+        // write summary files
+        var /** @type {?} */ summaries = pipes.map(function (ref) { return _this._metadataResolver.getPipeSummary(ref); }).concat(directives.map(function (ref) { return _this._metadataResolver.getDirectiveSummary(ref); }), ngModules.map(function (ref) { return _this._metadataResolver.getNgModuleSummary(ref); }));
+        generatedFiles.push(this._summaryResolver.serializeSummaries(srcFileUrl, summaries));
         // compile all ng modules
         exportedVars.push.apply(exportedVars, ngModules.map(function (ngModuleType) { return _this._compileModule(ngModuleType, statements); }));
         // compile directive wrappers
@@ -110,16 +99,16 @@ export var AotCompiler = (function () {
             // compile styles
             var /** @type {?} */ stylesCompileResults = _this._styleCompiler.compileComponent(compMeta);
             stylesCompileResults.externalStylesheets.forEach(function (compiledStyleSheet) {
-                outputSourceModules.push(_this._codgenStyles(srcFileUrl, compiledStyleSheet, fileSuffix));
+                generatedFiles.push(_this._codgenStyles(srcFileUrl, compiledStyleSheet, fileSuffix));
             });
             // compile components
             exportedVars.push(_this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), _this._compileComponent(compMeta, ngModule, ngModule.transitiveModule.directives, stylesCompileResults.componentStylesheet, fileSuffix, statements));
         });
         if (statements.length > 0) {
             var /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, _ngfactoryModuleUrl(srcFileUrl), statements, exportedVars);
-            outputSourceModules.unshift(srcModule);
+            generatedFiles.unshift(srcModule);
         }
-        return outputSourceModules;
+        return generatedFiles;
     };
     /**
      * @param {?} ngModuleType
@@ -217,14 +206,14 @@ export var AotCompiler = (function () {
         return this._codegenSourceModule(fileUrl, _stylesModuleUrl(stylesCompileResult.meta.moduleUrl, stylesCompileResult.isShimmed, fileSuffix), stylesCompileResult.statements, [stylesCompileResult.stylesVar]);
     };
     /**
-     * @param {?} fileUrl
-     * @param {?} moduleUrl
+     * @param {?} srcFileUrl
+     * @param {?} genFileUrl
      * @param {?} statements
      * @param {?} exportedVars
      * @return {?}
      */
-    AotCompiler.prototype._codegenSourceModule = function (fileUrl, moduleUrl, statements, exportedVars) {
-        return new SourceModule(fileUrl, moduleUrl, this._outputEmitter.emitStatements(moduleUrl, statements, exportedVars));
+    AotCompiler.prototype._codegenSourceModule = function (srcFileUrl, genFileUrl, statements, exportedVars) {
+        return new GeneratedFile(srcFileUrl, genFileUrl, this._outputEmitter.emitStatements(genFileUrl, statements, exportedVars));
     };
     return AotCompiler;
 }());
@@ -245,6 +234,8 @@ function AotCompiler_tsickle_Closure_declarations() {
     AotCompiler.prototype._ngModuleCompiler;
     /** @type {?} */
     AotCompiler.prototype._outputEmitter;
+    /** @type {?} */
+    AotCompiler.prototype._summaryResolver;
     /** @type {?} */
     AotCompiler.prototype._localeId;
     /** @type {?} */
@@ -364,15 +355,6 @@ export function analyzeAndValidateNgModules(programStaticSymbols, options, metad
     return result;
 }
 /**
- * @param {?} ngModules
- * @return {?}
- */
-export function loadNgModuleDirectives(ngModules) {
-    return Promise
-        .all(ListWrapper.flatten(ngModules.map(function (ngModule) { return ngModule.transitiveModule.directiveLoaders.map(function (loader) { return loader(); }); })))
-        .then(function () { });
-}
-/**
  * @param {?} ngModuleMetas
  * @param {?} symbolsMissingModule
  * @return {?}
@@ -383,10 +365,12 @@ function _analyzeNgModules(ngModuleMetas, symbolsMissingModule) {
     var /** @type {?} */ ngModuleByPipeOrDirective = new Map();
     var /** @type {?} */ ngModulesByFile = new Map();
     var /** @type {?} */ ngDirectivesByFile = new Map();
+    var /** @type {?} */ ngPipesByFile = new Map();
     var /** @type {?} */ filePaths = new Set();
     // Looping over all modules to construct:
     // - a map from file to modules `ngModulesByFile`,
     // - a map from file to directives `ngDirectivesByFile`,
+    // - a map from file to pipes `ngPipesByFile`,
     // - a map from directive/pipe to module `ngModuleByPipeOrDirective`.
     ngModuleMetas.forEach(function (ngModuleMeta) {
         var /** @type {?} */ srcFileUrl = ngModuleMeta.type.reference.filePath;
@@ -401,14 +385,16 @@ function _analyzeNgModules(ngModuleMetas, symbolsMissingModule) {
         ngModuleMeta.declaredPipes.forEach(function (pipeIdentifier) {
             var /** @type {?} */ fileUrl = pipeIdentifier.reference.filePath;
             filePaths.add(fileUrl);
+            ngPipesByFile.set(fileUrl, (ngPipesByFile.get(fileUrl) || []).concat(pipeIdentifier.reference));
             ngModuleByPipeOrDirective.set(pipeIdentifier.reference, ngModuleMeta);
         });
     });
     var /** @type {?} */ files = [];
     filePaths.forEach(function (srcUrl) {
         var /** @type {?} */ directives = ngDirectivesByFile.get(srcUrl) || [];
+        var /** @type {?} */ pipes = ngPipesByFile.get(srcUrl) || [];
         var /** @type {?} */ ngModules = ngModulesByFile.get(srcUrl) || [];
-        files.push({ srcUrl: srcUrl, directives: directives, ngModules: ngModules });
+        files.push({ srcUrl: srcUrl, directives: directives, pipes: pipes, ngModules: ngModules });
     });
     return {
         // map directive/pipe to module
@@ -427,7 +413,7 @@ function _analyzeNgModules(ngModuleMetas, symbolsMissingModule) {
 export function extractProgramSymbols(staticReflector, files, options) {
     if (options === void 0) { options = {}; }
     var /** @type {?} */ staticSymbols = [];
-    files.filter(function (fileName) { return _filterFileByPatterns(fileName, options); }).forEach(function (sourceFile) {
+    files.filter(function (fileName) { return filterFileByPatterns(fileName, options); }).forEach(function (sourceFile) {
         var /** @type {?} */ moduleMetadata = staticReflector.getModuleMetadata(sourceFile);
         if (!moduleMetadata) {
             console.error("WARNING: no metadata found for " + sourceFile);
@@ -459,16 +445,16 @@ function _createNgModules(programStaticSymbols, options, metadataResolver) {
     var /** @type {?} */ programPipesAndDirectives = [];
     var /** @type {?} */ ngModulePipesAndDirective = new Set();
     var /** @type {?} */ addNgModule = function (staticSymbol) {
-        if (ngModules.has(staticSymbol) || !_filterFileByPatterns(staticSymbol.filePath, options)) {
+        if (ngModules.has(staticSymbol) || !filterFileByPatterns(staticSymbol.filePath, options)) {
             return false;
         }
-        var /** @type {?} */ ngModule = metadataResolver.getUnloadedNgModuleMetadata(staticSymbol, false, false);
+        var /** @type {?} */ ngModule = metadataResolver.getNgModuleMetadata(staticSymbol, false);
         if (ngModule) {
             ngModules.set(ngModule.type.reference, ngModule);
             ngModule.declaredDirectives.forEach(function (dir) { return ngModulePipesAndDirective.add(dir.reference); });
             ngModule.declaredPipes.forEach(function (pipe) { return ngModulePipesAndDirective.add(pipe.reference); });
             // For every input module add the list of transitively included modules
-            ngModule.transitiveModule.modules.forEach(function (modMeta) { return addNgModule(modMeta.type.reference); });
+            ngModule.transitiveModule.modules.forEach(function (modMeta) { return addNgModule(modMeta.reference); });
         }
         return !!ngModule;
     };
@@ -481,21 +467,5 @@ function _createNgModules(programStaticSymbols, options, metadataResolver) {
     // Throw an error if any of the program pipe or directives is not declared by a module
     var /** @type {?} */ symbolsMissingModule = programPipesAndDirectives.filter(function (s) { return !ngModulePipesAndDirective.has(s); });
     return { ngModules: Array.from(ngModules.values()), symbolsMissingModule: symbolsMissingModule };
-}
-/**
- * @param {?} fileName
- * @param {?=} options
- * @return {?}
- */
-function _filterFileByPatterns(fileName, options) {
-    if (options === void 0) { options = {}; }
-    var /** @type {?} */ match = true;
-    if (options.includeFilePattern) {
-        match = match && !!options.includeFilePattern.exec(fileName);
-    }
-    if (options.excludeFilePattern) {
-        match = match && !options.excludeFilePattern.exec(fileName);
-    }
-    return match;
 }
 //# sourceMappingURL=compiler.js.map

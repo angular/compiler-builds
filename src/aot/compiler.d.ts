@@ -8,14 +8,10 @@ import { StyleCompiler } from '../style_compiler';
 import { TemplateParser } from '../template_parser/template_parser';
 import { ViewCompiler } from '../view_compiler/view_compiler';
 import { AotCompilerOptions } from './compiler_options';
+import { GeneratedFile } from './generated_file';
 import { StaticReflector } from './static_reflector';
 import { StaticSymbol } from './static_symbol';
-export declare class SourceModule {
-    fileUrl: string;
-    moduleUrl: string;
-    source: string;
-    constructor(fileUrl: string, moduleUrl: string, source: string);
-}
+import { AotSummaryResolver } from './summary_resolver';
 export declare class AotCompiler {
     private _metadataResolver;
     private _templateParser;
@@ -24,22 +20,23 @@ export declare class AotCompiler {
     private _dirWrapperCompiler;
     private _ngModuleCompiler;
     private _outputEmitter;
+    private _summaryResolver;
     private _localeId;
     private _translationFormat;
     private _animationParser;
     private _staticReflector;
     private _options;
     private _animationCompiler;
-    constructor(_metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _localeId: string, _translationFormat: string, _animationParser: AnimationParser, _staticReflector: StaticReflector, _options: AotCompilerOptions);
+    constructor(_metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: AotSummaryResolver, _localeId: string, _translationFormat: string, _animationParser: AnimationParser, _staticReflector: StaticReflector, _options: AotCompilerOptions);
     clearCache(): void;
-    compileAll(rootFiles: string[]): Promise<SourceModule[]>;
-    private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, ngModules);
+    compileAll(rootFiles: string[]): Promise<GeneratedFile[]>;
+    private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules);
     private _compileModule(ngModuleType, targetStatements);
     private _compileDirectiveWrapper(directiveType, targetStatements);
     private _compileComponentFactory(compMeta, ngModule, fileSuffix, targetStatements);
     private _compileComponent(compMeta, ngModule, directiveIdentifiers, componentStyles, fileSuffix, targetStatements);
     private _codgenStyles(fileUrl, stylesCompileResult, fileSuffix);
-    private _codegenSourceModule(fileUrl, moduleUrl, statements, exportedVars);
+    private _codegenSourceModule(srcFileUrl, genFileUrl, statements, exportedVars);
 }
 export interface NgAnalyzedModules {
     ngModules: CompileNgModuleMetadata[];
@@ -47,6 +44,7 @@ export interface NgAnalyzedModules {
     files: Array<{
         srcUrl: string;
         directives: StaticSymbol[];
+        pipes: StaticSymbol[];
         ngModules: StaticSymbol[];
     }>;
     symbolsMissingModule?: StaticSymbol[];
@@ -59,7 +57,6 @@ export declare function analyzeAndValidateNgModules(programStaticSymbols: Static
     includeFilePattern?: RegExp;
     excludeFilePattern?: RegExp;
 }, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
-export declare function loadNgModuleDirectives(ngModules: CompileNgModuleMetadata[]): Promise<void>;
 export declare function extractProgramSymbols(staticReflector: StaticReflector, files: string[], options?: {
     includeFilePattern?: RegExp;
     excludeFilePattern?: RegExp;

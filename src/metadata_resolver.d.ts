@@ -13,10 +13,12 @@ import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
 import { ReflectorReader } from './private_import_core';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
+import { SummaryResolver } from './summary_resolver';
 export declare class CompileMetadataResolver {
     private _ngModuleResolver;
     private _directiveResolver;
     private _pipeResolver;
+    private _summaryResolver;
     private _schemaRegistry;
     private _directiveNormalizer;
     private _reflector;
@@ -24,9 +26,10 @@ export declare class CompileMetadataResolver {
     private _directiveSummaryCache;
     private _pipeCache;
     private _pipeSummaryCache;
+    private _ngModuleSummaryCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader);
+    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
@@ -46,29 +49,16 @@ export declare class CompileMetadataResolver {
     getDirectiveSummary(dirType: any): cpl.CompileDirectiveSummary;
     isDirective(type: any): boolean;
     isPipe(type: any): boolean;
+    getNgModuleSummary(moduleType: any): cpl.CompileNgModuleSummary;
     /**
-     * Gets the metadata for the given module.
-     * This assumes `loadNgModuleMetadata` has been called first.
+     * Loads the declared directives and pipes of an NgModule.
      */
-    getNgModuleMetadata(moduleType: any): cpl.CompileNgModuleMetadata;
-    private _loadNgModuleSummary(moduleType, isSync);
-    /**
-     * Loads an NgModule and all of its directives. This includes loading the exported directives of
-     * imported modules,
-     * but not private directives of imported modules.
-     */
-    loadNgModuleMetadata(moduleType: any, isSync: boolean, throwIfNotFound?: boolean): {
-        ngModule: cpl.CompileNgModuleMetadata;
-        loading: Promise<any>;
-    };
-    /**
-     * Get the NgModule metadata without loading the directives.
-     */
-    getUnloadedNgModuleMetadata(moduleType: any, isSync: boolean, throwIfNotFound?: boolean): cpl.CompileNgModuleMetadata;
-    private _loadNgModuleMetadata(moduleType, isSync, throwIfNotFound?);
+    loadNgModuleDirectiveAndPipeMetadata(moduleType: any, isSync: boolean, throwIfNotFound?: boolean): Promise<any>;
+    getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean): cpl.CompileNgModuleMetadata;
     private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
     private _getTransitiveNgModuleMetadata(importedModules, exportedModules);
+    private _getTransitiveExportedModules(modules, targetModules?, visitedModules?);
     private _getIdentifierMetadata(type);
     private _getTypeMetadata(type, dependencies?);
     private _getFactoryMetadata(factory, dependencies?);
