@@ -79,7 +79,7 @@ export var AotCompiler = (function () {
         var /** @type {?} */ exportedVars = [];
         var /** @type {?} */ generatedFiles = [];
         // write summary files
-        var /** @type {?} */ summaries = pipes.map(function (ref) { return _this._metadataResolver.getPipeSummary(ref); }).concat(directives.map(function (ref) { return _this._metadataResolver.getDirectiveSummary(ref); }), ngModules.map(function (ref) { return _this._metadataResolver.getNgModuleSummary(ref); }));
+        var /** @type {?} */ summaries = ngModules.map(function (ref) { return _this._metadataResolver.getNgModuleSummary(ref); }).concat(directives.map(function (ref) { return _this._metadataResolver.getDirectiveSummary(ref); }), pipes.map(function (ref) { return _this._metadataResolver.getPipeSummary(ref); }));
         generatedFiles.push(this._summaryResolver.serializeSummaries(srcFileUrl, summaries));
         // compile all ng modules
         exportedVars.push.apply(exportedVars, ngModules.map(function (ngModuleType) { return _this._compileModule(ngModuleType, statements); }));

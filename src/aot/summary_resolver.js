@@ -1,3 +1,4 @@
+import { CompileSummaryKind } from '../compile_metadata';
 import { GeneratedFile } from './generated_file';
 import { isStaticSymbol } from './static_symbol';
 import { filterFileByPatterns } from './utils';
@@ -35,8 +36,24 @@ export var AotSummaryResolver = (function () {
             }
             return value;
         };
-        return new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), JSON.stringify(summaries, jsonReplacer));
+        var /** @type {?} */ allSummaries = summaries.slice();
+        summaries.forEach(function (summary) {
+            if (summary.summaryKind === CompileSummaryKind.NgModule) {
+                var /** @type {?} */ moduleMeta = (summary);
+                moduleMeta.exportedDirectives.concat(moduleMeta.exportedPipes).forEach(function (id) {
+                    if (!filterFileByPatterns(id.reference.filePath, _this.options)) {
+                        allSummaries.push(_this.resolveSummary(id.reference));
+                    }
+                });
+            }
+        });
+        return new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), JSON.stringify(allSummaries, jsonReplacer));
     };
+    /**
+     * @param {?} symbol
+     * @return {?}
+     */
+    AotSummaryResolver.prototype._cacheKey = function (symbol) { return symbol.filePath + "|" + symbol.name; };
     /**
      * @param {?} staticSymbol
      * @return {?}
@@ -45,10 +62,11 @@ export var AotSummaryResolver = (function () {
         var _this = this;
         var /** @type {?} */ filePath = staticSymbol.filePath;
         var /** @type {?} */ name = staticSymbol.name;
+        var /** @type {?} */ cacheKey = this._cacheKey(staticSymbol);
         if (!filterFileByPatterns(filePath, this.options)) {
-            var /** @type {?} */ summaries = this.summaryCache[filePath];
+            var /** @type {?} */ summary = this.summaryCache[cacheKey];
             var /** @type {?} */ summaryFilePath = summaryFileName(filePath);
-            if (!summaries) {
+            if (!summary) {
                 try {
                     var /** @type {?} */ jsonReviver = function (key, value) {
                         if (key === 'reference' && value && value['__symbolic__'] === 'symbol') {
@@ -62,19 +80,22 @@ export var AotSummaryResolver = (function () {
                             return value;
                         }
                     };
-                    summaries = JSON.parse(this.host.loadSummary(summaryFilePath), jsonReviver);
+                    var /** @type {?} */ readSummaries = JSON.parse(this.host.loadSummary(summaryFilePath), jsonReviver);
+                    readSummaries.forEach(function (summary) {
+                        var /** @type {?} */ filePath = summary.type.reference.filePath;
+                        _this.summaryCache[_this._cacheKey(summary.type.reference)] = summary;
+                    });
+                    summary = this.summaryCache[cacheKey];
                 }
                 catch (e) {
                     console.error("Error loading summary file " + summaryFilePath);
                     throw e;
                 }
-                this.summaryCache[filePath] = summaries;
             }
-            var /** @type {?} */ result = summaries.find(function (summary) { return summary.type.reference === staticSymbol; });
-            if (!result) {
+            if (!summary) {
                 throw new Error("Could not find the symbol " + name + " in the summary file " + summaryFilePath + "!");
             }
-            return result;
+            return summary;
         }
         else {
             return null;

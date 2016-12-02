@@ -23,10 +23,8 @@ export declare class CompileMetadataResolver {
     private _directiveNormalizer;
     private _reflector;
     private _directiveCache;
-    private _directiveSummaryCache;
+    private _summaryCache;
     private _pipeCache;
-    private _pipeSummaryCache;
-    private _ngModuleSummaryCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
     constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader);
@@ -36,6 +34,7 @@ export declare class CompileMetadataResolver {
     private _getAnimationStateMetadata(value);
     private _getAnimationStyleMetadata(value);
     private _getAnimationMetadata(value);
+    private _loadSummary(type, kind);
     private _loadDirectiveMetadata(directiveType, isSync);
     getNonNormalizedDirectiveMetadata(directiveType: any): {
         annotation: Directive;
@@ -58,7 +57,6 @@ export declare class CompileMetadataResolver {
     private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
     private _getTransitiveNgModuleMetadata(importedModules, exportedModules);
-    private _getTransitiveExportedModules(modules, targetModules?, visitedModules?);
     private _getIdentifierMetadata(type);
     private _getTypeMetadata(type, dependencies?);
     private _getFactoryMetadata(factory, dependencies?);

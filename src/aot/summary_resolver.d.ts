@@ -33,5 +33,6 @@ export declare class AotSummaryResolver implements SummaryResolver {
     private summaryCache;
     constructor(host: AotSummaryResolverHost, staticReflector: StaticReflector, options: AotSummaryResolverOptions);
     serializeSummaries(srcFileUrl: string, summaries: CompileTypeSummary[]): GeneratedFile;
+    private _cacheKey(symbol);
     resolveSummary(staticSymbol: StaticSymbol): any;
 }

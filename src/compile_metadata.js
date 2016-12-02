@@ -244,6 +244,15 @@ export function identifierModuleUrl(compileIdentifier) {
     }
     return reflector.importUri(ref);
 }
+export var CompileSummaryKind = {};
+CompileSummaryKind.Template = 0;
+CompileSummaryKind.Pipe = 1;
+CompileSummaryKind.Directive = 2;
+CompileSummaryKind.NgModule = 3;
+CompileSummaryKind[CompileSummaryKind.Template] = "Template";
+CompileSummaryKind[CompileSummaryKind.Pipe] = "Pipe";
+CompileSummaryKind[CompileSummaryKind.Directive] = "Directive";
+CompileSummaryKind[CompileSummaryKind.NgModule] = "NgModule";
 /**
  * @param {?} token
  * @return {?}
@@ -314,7 +323,7 @@ export var CompileTemplateMetadata = (function () {
      */
     CompileTemplateMetadata.prototype.toSummary = function () {
         return {
-            isSummary: true,
+            summaryKind: CompileSummaryKind.Template,
             animations: this.animations.map(function (anim) { return anim.name; }),
             ngContentSelectors: this.ngContentSelectors,
             encapsulation: this.encapsulation
@@ -433,7 +442,7 @@ export var CompileDirectiveMetadata = (function () {
      */
     CompileDirectiveMetadata.prototype.toSummary = function () {
         return {
-            isSummary: true,
+            summaryKind: CompileSummaryKind.Directive,
             type: this.type,
             isComponent: this.isComponent,
             selector: this.selector,
@@ -535,7 +544,12 @@ export var CompilePipeMetadata = (function () {
      * @return {?}
      */
     CompilePipeMetadata.prototype.toSummary = function () {
-        return { isSummary: true, type: this.type, name: this.name, pure: this.pure };
+        return {
+            summaryKind: CompileSummaryKind.Pipe,
+            type: this.type,
+            name: this.name,
+            pure: this.pure
+        };
     };
     return CompilePipeMetadata;
 }());
@@ -575,14 +589,13 @@ export var CompileNgModuleMetadata = (function () {
      */
     CompileNgModuleMetadata.prototype.toSummary = function () {
         return {
-            isSummary: true,
+            summaryKind: CompileSummaryKind.NgModule,
             type: this.type,
             entryComponents: this.transitiveModule.entryComponents,
             providers: this.transitiveModule.providers,
             modules: this.transitiveModule.modules,
-            exportedDirectives: this.exportedDirectives,
-            exportedPipes: this.exportedPipes,
-            exportedModules: this.exportedModules.map(function (m) { return m.type; })
+            exportedDirectives: this.transitiveModule.exportedDirectives,
+            exportedPipes: this.transitiveModule.exportedPipes
         };
     };
     return CompileNgModuleMetadata;
@@ -616,42 +629,118 @@ function CompileNgModuleMetadata_tsickle_Closure_declarations() {
     CompileNgModuleMetadata.prototype.transitiveModule;
 }
 export var TransitiveCompileNgModuleMetadata = (function () {
-    /**
-     * @param {?} modules
-     * @param {?} providers
-     * @param {?} entryComponents
-     * @param {?} directives
-     * @param {?} pipes
-     */
-    function TransitiveCompileNgModuleMetadata(modules, providers, entryComponents, directives, pipes) {
-        var _this = this;
-        this.modules = modules;
-        this.providers = providers;
-        this.entryComponents = entryComponents;
-        this.directives = directives;
-        this.pipes = pipes;
+    function TransitiveCompileNgModuleMetadata() {
         this.directivesSet = new Set();
+        this.directives = [];
+        this.exportedDirectivesSet = new Set();
+        this.exportedDirectives = [];
         this.pipesSet = new Set();
-        directives.forEach(function (dir) { return _this.directivesSet.add(dir.reference); });
-        pipes.forEach(function (pipe) { return _this.pipesSet.add(pipe.reference); });
+        this.pipes = [];
+        this.exportedPipesSet = new Set();
+        this.exportedPipes = [];
+        this.modulesSet = new Set();
+        this.modules = [];
+        this.entryComponentsSet = new Set();
+        this.entryComponents = [];
+        this.providers = [];
     }
+    /**
+     * @param {?} provider
+     * @param {?} module
+     * @return {?}
+     */
+    TransitiveCompileNgModuleMetadata.prototype.addProvider = function (provider, module) {
+        this.providers.push({ provider: provider, module: module });
+    };
+    /**
+     * @param {?} id
+     * @return {?}
+     */
+    TransitiveCompileNgModuleMetadata.prototype.addDirective = function (id) {
+        if (!this.directivesSet.has(id.reference)) {
+            this.directivesSet.add(id.reference);
+            this.directives.push(id);
+        }
+    };
+    /**
+     * @param {?} id
+     * @return {?}
+     */
+    TransitiveCompileNgModuleMetadata.prototype.addExportedDirective = function (id) {
+        if (!this.exportedDirectivesSet.has(id.reference)) {
+            this.exportedDirectivesSet.add(id.reference);
+            this.exportedDirectives.push(id);
+        }
+    };
+    /**
+     * @param {?} id
+     * @return {?}
+     */
+    TransitiveCompileNgModuleMetadata.prototype.addPipe = function (id) {
+        if (!this.pipesSet.has(id.reference)) {
+            this.pipesSet.add(id.reference);
+            this.pipes.push(id);
+        }
+    };
+    /**
+     * @param {?} id
+     * @return {?}
+     */
+    TransitiveCompileNgModuleMetadata.prototype.addExportedPipe = function (id) {
+        if (!this.exportedPipesSet.has(id.reference)) {
+            this.exportedPipesSet.add(id.reference);
+            this.exportedPipes.push(id);
+        }
+    };
+    /**
+     * @param {?} id
+     * @return {?}
+     */
+    TransitiveCompileNgModuleMetadata.prototype.addModule = function (id) {
+        if (!this.modulesSet.has(id.reference)) {
+            this.modulesSet.add(id.reference);
+            this.modules.push(id);
+        }
+    };
+    /**
+     * @param {?} id
+     * @return {?}
+     */
+    TransitiveCompileNgModuleMetadata.prototype.addEntryComponent = function (id) {
+        if (!this.entryComponentsSet.has(id.reference)) {
+            this.entryComponentsSet.add(id.reference);
+            this.entryComponents.push(id);
+        }
+    };
     return TransitiveCompileNgModuleMetadata;
 }());
 function TransitiveCompileNgModuleMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     TransitiveCompileNgModuleMetadata.prototype.directivesSet;
     /** @type {?} */
+    TransitiveCompileNgModuleMetadata.prototype.directives;
+    /** @type {?} */
+    TransitiveCompileNgModuleMetadata.prototype.exportedDirectivesSet;
+    /** @type {?} */
+    TransitiveCompileNgModuleMetadata.prototype.exportedDirectives;
+    /** @type {?} */
     TransitiveCompileNgModuleMetadata.prototype.pipesSet;
+    /** @type {?} */
+    TransitiveCompileNgModuleMetadata.prototype.pipes;
+    /** @type {?} */
+    TransitiveCompileNgModuleMetadata.prototype.exportedPipesSet;
+    /** @type {?} */
+    TransitiveCompileNgModuleMetadata.prototype.exportedPipes;
+    /** @type {?} */
+    TransitiveCompileNgModuleMetadata.prototype.modulesSet;
     /** @type {?} */
     TransitiveCompileNgModuleMetadata.prototype.modules;
     /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.providers;
+    TransitiveCompileNgModuleMetadata.prototype.entryComponentsSet;
     /** @type {?} */
     TransitiveCompileNgModuleMetadata.prototype.entryComponents;
     /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.directives;
-    /** @type {?} */
-    TransitiveCompileNgModuleMetadata.prototype.pipes;
+    TransitiveCompileNgModuleMetadata.prototype.providers;
 }
 /**
  * @param {?} obj

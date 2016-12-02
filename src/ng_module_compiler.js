@@ -73,7 +73,7 @@ export var NgModuleCompiler = (function () {
         var /** @type {?} */ bootstrapComponentFactories = [];
         var /** @type {?} */ entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
             var /** @type {?} */ id = { reference: null };
-            if (ngModuleMeta.bootstrapComponents.indexOf(entryComponent) > -1) {
+            if (ngModuleMeta.bootstrapComponents.some(function (id) { return id.reference === entryComponent.reference; })) {
                 bootstrapComponentFactories.push(id);
             }
             deps.push(new ComponentFactoryDependency(entryComponent, id));
