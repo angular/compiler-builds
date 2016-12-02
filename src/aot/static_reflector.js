@@ -61,14 +61,16 @@ export var StaticReflector = (function () {
      * @param {?=} staticSymbolCache
      * @param {?=} knownMetadataClasses
      * @param {?=} knownMetadataFunctions
+     * @param {?=} errorRecorder
      */
-    function StaticReflector(host, staticSymbolCache, knownMetadataClasses, knownMetadataFunctions) {
+    function StaticReflector(host, staticSymbolCache, knownMetadataClasses, knownMetadataFunctions, errorRecorder) {
         var _this = this;
         if (staticSymbolCache === void 0) { staticSymbolCache = new StaticSymbolCache(); }
         if (knownMetadataClasses === void 0) { knownMetadataClasses = []; }
         if (knownMetadataFunctions === void 0) { knownMetadataFunctions = []; }
         this.host = host;
         this.staticSymbolCache = staticSymbolCache;
+        this.errorRecorder = errorRecorder;
         this.declarationCache = new Map();
         this.annotationCache = new Map();
         this.propertyCache = new Map();
@@ -167,7 +169,8 @@ export var StaticReflector = (function () {
      */
     StaticReflector.prototype.parameters = function (type) {
         if (!(type instanceof StaticSymbol)) {
-            throw new Error("parameters received " + JSON.stringify(type) + " which is not a StaticSymbol");
+            this.reportError(new Error("parameters received " + JSON.stringify(type) + " which is not a StaticSymbol"), type);
+            return [];
         }
         try {
             var /** @type {?} */ parameters_1 = this.parameterCache.get(type);
@@ -239,7 +242,7 @@ export var StaticReflector = (function () {
      */
     StaticReflector.prototype.hasLifecycleHook = function (type, lcProperty) {
         if (!(type instanceof StaticSymbol)) {
-            throw new Error("hasLifecycleHook received " + JSON.stringify(type) + " which is not a StaticSymbol");
+            this.reportError(new Error("hasLifecycleHook received " + JSON.stringify(type) + " which is not a StaticSymbol"), type);
         }
         try {
             return !!this._methodNames(type)[lcProperty];
@@ -317,6 +320,20 @@ export var StaticReflector = (function () {
         return this.staticSymbolCache.get(declarationFile, name, members);
     };
     /**
+     * @param {?} error
+     * @param {?} context
+     * @param {?=} path
+     * @return {?}
+     */
+    StaticReflector.prototype.reportError = function (error, context, path) {
+        if (this.errorRecorder) {
+            this.errorRecorder(error, (context && context.filePath) || path);
+        }
+        else {
+            throw error;
+        }
+    };
+    /**
      * @param {?} filePath
      * @param {?} symbolName
      * @return {?}
@@ -326,7 +343,7 @@ export var StaticReflector = (function () {
         var /** @type {?} */ resolveModule = function (moduleName) {
             var /** @type {?} */ resolvedModulePath = _this.host.moduleNameToFileName(moduleName, filePath);
             if (!resolvedModulePath) {
-                throw new Error("Could not resolve module '" + moduleName + "' relative to file " + filePath);
+                _this.reportError(new Error("Could not resolve module '" + moduleName + "' relative to file " + filePath), null, filePath);
             }
             return resolvedModulePath;
         };
@@ -360,7 +377,12 @@ export var StaticReflector = (function () {
                             if (typeof exportSymbol !== 'string') {
                                 symName = exportSymbol.name;
                             }
-                            staticSymbol = this.resolveExportedSymbol(resolveModule(moduleExport.from), symName);
+                            var /** @type {?} */ resolvedModule = resolveModule(moduleExport.from);
+                            if (resolvedModule) {
+                                staticSymbol =
+                                    this.resolveExportedSymbol(resolveModule(moduleExport.from), symName);
+                                break;
+                            }
                         }
                     }
                 }
@@ -370,10 +392,12 @@ export var StaticReflector = (function () {
                         var moduleExport = _c[_b];
                         if (!moduleExport.export) {
                             var /** @type {?} */ resolvedModule = resolveModule(moduleExport.from);
-                            var /** @type {?} */ candidateSymbol = this.resolveExportedSymbol(resolvedModule, symbolName);
-                            if (candidateSymbol) {
-                                staticSymbol = candidateSymbol;
-                                break;
+                            if (resolvedModule) {
+                                var /** @type {?} */ candidateSymbol = this.resolveExportedSymbol(resolvedModule, symbolName);
+                                if (candidateSymbol) {
+                                    staticSymbol = candidateSymbol;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -416,6 +440,7 @@ export var StaticReflector = (function () {
      * @return {?}
      */
     StaticReflector.prototype.simplify = function (context, value) {
+        var _this = this;
         var /** @type {?} */ self = this;
         var /** @type {?} */ scope = BindingScope.empty;
         var /** @type {?} */ calling = new Map();
@@ -746,7 +771,16 @@ export var StaticReflector = (function () {
                 throw new Error(message);
             }
         }
-        var /** @type {?} */ result = simplifyInContext(context, value, 0);
+        var /** @type {?} */ recordedSimplifyInContext = function (context, value, depth) {
+            try {
+                return simplifyInContext(context, value, depth);
+            }
+            catch (e) {
+                _this.reportError(e, context);
+            }
+        };
+        var /** @type {?} */ result = this.errorRecorder ? recordedSimplifyInContext(context, value, 0) :
+            simplifyInContext(context, value, 0);
         if (shouldIgnore(result)) {
             return undefined;
         }
@@ -774,7 +808,7 @@ export var StaticReflector = (function () {
                     { __symbolic: 'module', version: SUPPORTED_SCHEMA_VERSION, module: module, metadata: {} };
             }
             if (moduleMetadata['version'] != SUPPORTED_SCHEMA_VERSION) {
-                throw new Error("Metadata version mismatch for module " + module + ", found version " + moduleMetadata['version'] + ", expected " + SUPPORTED_SCHEMA_VERSION);
+                this.reportError(new Error("Metadata version mismatch for module " + module + ", found version " + moduleMetadata['version'] + ", expected " + SUPPORTED_SCHEMA_VERSION), null);
             }
             this.metadataCache.set(module, moduleMetadata);
         }
@@ -811,6 +845,8 @@ function StaticReflector_tsickle_Closure_declarations() {
     StaticReflector.prototype.host;
     /** @type {?} */
     StaticReflector.prototype.staticSymbolCache;
+    /** @type {?} */
+    StaticReflector.prototype.errorRecorder;
 }
 /**
  * @param {?} error

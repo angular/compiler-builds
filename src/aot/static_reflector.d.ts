@@ -39,6 +39,7 @@ export declare class StaticSymbolCache {
 export declare class StaticReflector implements ReflectorReader {
     private host;
     private staticSymbolCache;
+    private errorRecorder;
     private declarationCache;
     private annotationCache;
     private propertyCache;
@@ -55,7 +56,7 @@ export declare class StaticReflector implements ReflectorReader {
         name: string;
         filePath: string;
         fn: any;
-    }[]);
+    }[], errorRecorder?: (error: any, fileName: string) => void);
     importUri(typeOrFunc: StaticSymbol): string;
     resolveIdentifier(name: string, moduleUrl: string, runtime: any): any;
     resolveEnum(enumIdentifier: any, name: string): any;
@@ -77,6 +78,7 @@ export declare class StaticReflector implements ReflectorReader {
      * @param name the name of the type.
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
+    private reportError(error, context, path?);
     private resolveExportedSymbol(filePath, symbolName);
     findDeclaration(module: string, symbolName: string, containingFile?: string): StaticSymbol;
     /**
