@@ -9,7 +9,7 @@ import { Version } from '@angular/core';
 /**
  * @stable
  */
-export var /** @type {?} */ VERSION = new Version('2.3.0-rc.0-d2e5198');
+export var /** @type {?} */ VERSION = new Version('2.3.0-rc.0-b8c839b');
 export { TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll } from './src/template_parser/template_ast';
 export { TEMPLATE_TRANSFORMS } from './src/template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './src/config';
