@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export declare function isStaticSymbol(value: any): value is StaticSymbol;
 /**
  * A token representing the a reference to a static type.
  *

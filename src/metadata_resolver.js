@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, Attribute, Component, Host, Inject, Injectable, Optional, Self, SkipSelf, Type, resolveForwardRef } from '@angular/core';
-import { isStaticSymbol } from './aot/static_symbol';
+import { StaticSymbol } from './aot/static_symbol';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
@@ -995,7 +995,7 @@ function flattenAndDedupeArray(tree) {
  * @return {?}
  */
 function isValidType(value) {
-    return isStaticSymbol(value) || (value instanceof Type);
+    return (value instanceof StaticSymbol) || (value instanceof Type);
 }
 /**
  * @param {?} reflector
@@ -1004,7 +1004,7 @@ function isValidType(value) {
  * @return {?}
  */
 export function componentModuleUrl(reflector, type, cmpMetadata) {
-    if (isStaticSymbol(type)) {
+    if (type instanceof StaticSymbol) {
         return type.filePath;
     }
     var /** @type {?} */ moduleId = cmpMetadata.moduleId;

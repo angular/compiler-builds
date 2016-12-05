@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-rc.0-c767df0
+ * @license Angular v2.3.0-rc.0-5614c4f
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -470,18 +470,6 @@
       return result;
   }
 
-  /**
-   * @license undefined
-    * Copyright Google Inc. All Rights Reserved.
-    * *
-    * Use of this source code is governed by an MIT-style license that can be
-    * found in the LICENSE file at https://angular.io/license
-   * @param {?} value
-   * @return {?}
-   */
-  function isStaticSymbol(value) {
-      return typeof value === 'object' && value !== null && value['name'] && value['filePath'];
-  }
   /**
    *  A token representing the a reference to a static type.
     * *
@@ -1834,7 +1822,7 @@
           return null;
       }
       var /** @type {?} */ ref = compileIdentifier.reference;
-      if (isStaticSymbol(ref)) {
+      if (ref instanceof StaticSymbol) {
           return ref.name;
       }
       if (ref['__anonymousType']) {
@@ -1857,7 +1845,7 @@
    */
   function identifierModuleUrl(compileIdentifier) {
       var /** @type {?} */ ref = compileIdentifier.reference;
-      if (isStaticSymbol(ref)) {
+      if (ref instanceof StaticSymbol) {
           return ref.filePath;
       }
       return reflector.importUri(ref);
@@ -18250,7 +18238,7 @@
    * @return {?}
    */
   function isValidType(value) {
-      return isStaticSymbol(value) || (value instanceof _angular_core.Type);
+      return (value instanceof StaticSymbol) || (value instanceof _angular_core.Type);
   }
   /**
    * @param {?} reflector
@@ -18259,7 +18247,7 @@
    * @return {?}
    */
   function componentModuleUrl(reflector, type, cmpMetadata) {
-      if (isStaticSymbol(type)) {
+      if (type instanceof StaticSymbol) {
           return type.filePath;
       }
       var /** @type {?} */ moduleId = cmpMetadata.moduleId;
@@ -25364,7 +25352,7 @@
       AotSummaryResolver.prototype.serializeSummaries = function (srcFileUrl, summaries) {
           var _this = this;
           var /** @type {?} */ jsonReplacer = function (key, value) {
-              if (key === 'reference' && isStaticSymbol(value)) {
+              if (value instanceof StaticSymbol) {
                   // We convert the source filenames into output filenames,
                   // as the generated summary file will be used when the current
                   // compilation unit is used as a library
@@ -25410,7 +25398,7 @@
               if (!summary) {
                   try {
                       var /** @type {?} */ jsonReviver = function (key, value) {
-                          if (key === 'reference' && value && value['__symbolic__'] === 'symbol') {
+                          if (value && value['__symbolic__'] === 'symbol') {
                               // Note: We can't use staticReflector.findDeclaration here:
                               // Summary files can contain symbols of transitive compilation units
                               // (via the providers), and findDeclaration needs .metadata.json / .d.ts files,
@@ -27114,7 +27102,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-rc.0-c767df0');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-rc.0-5614c4f');
 
   exports.VERSION = VERSION;
   exports.TextAst = TextAst;
@@ -27168,7 +27156,6 @@
   exports.StaticSymbolCache = StaticSymbolCache;
   exports.StaticReflector = StaticReflector;
   exports.StaticAndDynamicReflectionCapabilities = StaticAndDynamicReflectionCapabilities;
-  exports.isStaticSymbol = isStaticSymbol;
   exports.StaticSymbol = StaticSymbol;
   exports.AotSummaryResolver = AotSummaryResolver;
   exports.JitCompiler = JitCompiler;

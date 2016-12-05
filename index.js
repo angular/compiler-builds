@@ -9,7 +9,7 @@ import { Version } from '@angular/core';
 /**
  * @stable
  */
-export var /** @type {?} */ VERSION = new Version('2.3.0-rc.0-c767df0');
+export var /** @type {?} */ VERSION = new Version('2.3.0-rc.0-5614c4f');
 export { TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll } from './src/template_parser/template_ast';
 export { TEMPLATE_TRANSFORMS } from './src/template_parser/template_parser';
 export { CompilerConfig, RenderTypes } from './src/config';
@@ -18,7 +18,7 @@ export { createAotCompiler } from './src/aot/compiler_factory';
 export { AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols } from './src/aot/compiler';
 export { StaticSymbolCache, StaticReflector } from './src/aot/static_reflector';
 export { StaticAndDynamicReflectionCapabilities } from './src/aot/static_reflection_capabilities';
-export { isStaticSymbol, StaticSymbol } from './src/aot/static_symbol';
+export { StaticSymbol } from './src/aot/static_symbol';
 export { AotSummaryResolver } from './src/aot/summary_resolver';
 export { JitCompiler } from './src/jit/compiler';
 export { COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic } from './src/jit/compiler_factory';

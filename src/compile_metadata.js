@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
-import { isStaticSymbol } from './aot/static_symbol';
+import { StaticSymbol } from './aot/static_symbol';
 import { ListWrapper } from './facade/collection';
 import { isPresent, stringify } from './facade/lang';
 import { reflector } from './private_import_core';
@@ -216,7 +216,7 @@ export function identifierName(compileIdentifier) {
         return null;
     }
     var /** @type {?} */ ref = compileIdentifier.reference;
-    if (isStaticSymbol(ref)) {
+    if (ref instanceof StaticSymbol) {
         return ref.name;
     }
     if (ref['__anonymousType']) {
@@ -239,7 +239,7 @@ export function identifierName(compileIdentifier) {
  */
 export function identifierModuleUrl(compileIdentifier) {
     var /** @type {?} */ ref = compileIdentifier.reference;
-    if (isStaticSymbol(ref)) {
+    if (ref instanceof StaticSymbol) {
         return ref.filePath;
     }
     return reflector.importUri(ref);
