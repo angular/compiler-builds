@@ -368,7 +368,13 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitKeyedRead = function (ast, mode) {
-        return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));
+        var /** @type {?} */ leftMostSafe = this.leftMostSafeNode(ast);
+        if (leftMostSafe) {
+            return this.convertSafeAccess(ast, leftMostSafe, mode);
+        }
+        else {
+            return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));
+        }
     };
     /**
      * @param {?} ast
