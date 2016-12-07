@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-rc.0-986abbe
+ * @license Angular v2.3.0-rc.0-16efb13
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,6 +8,11 @@
   typeof define === 'function' && define.amd ? define(['exports', '@angular/core'], factory) :
   (factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}),global.ng.core));
 }(this, function (exports,_angular_core) { 'use strict';
+
+  /**
+   * @stable
+   */
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-rc.0-16efb13');
 
   /**
    * @license
@@ -27104,11 +27109,6 @@
       ImportResolver.prototype.fileNameToModuleName = function (importedFilePath, containingFilePath) { };
       return ImportResolver;
   }());
-
-  /**
-   * @stable
-   */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-rc.0-986abbe');
 
   exports.VERSION = VERSION;
   exports.TextAst = TextAst;
