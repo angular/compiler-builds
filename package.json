@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "2.3.0-rc.0-cf52284",
+  "version": "2.3.0-13b41bd",
   "description": "Angular - the compiler library",
   "main": "bundles/compiler.umd.js",
   "module": "index.js",
@@ -8,7 +8,7 @@
   "author": "angular",
   "license": "MIT",
   "peerDependencies": {
-    "@angular/core": "2.3.0-rc.0-cf52284"
+    "@angular/core": "2.3.0-13b41bd"
   },
   "repository": {
     "type": "git",
