@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationEntryMetadata, Component, Directive, Type } from '@angular/core';
+import { AnimationEntryMetadata, Component, Directive, OpaqueToken, Type } from '@angular/core';
 import * as cpl from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveResolver } from './directive_resolver';
@@ -14,6 +14,8 @@ import { PipeResolver } from './pipe_resolver';
 import { ReflectorReader } from './private_import_core';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { SummaryResolver } from './summary_resolver';
+export declare type ErrorCollector = (error: any, type?: any) => void;
+export declare const ERROR_COLLECTOR_TOKEN: OpaqueToken;
 export declare class CompileMetadataResolver {
     private _ngModuleResolver;
     private _directiveResolver;
@@ -22,12 +24,13 @@ export declare class CompileMetadataResolver {
     private _schemaRegistry;
     private _directiveNormalizer;
     private _reflector;
+    private _errorCollector;
     private _directiveCache;
     private _summaryCache;
     private _pipeCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader);
+    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
@@ -70,11 +73,12 @@ export declare class CompileMetadataResolver {
     private _loadPipeMetadata(pipeType);
     private _getDependenciesMetadata(typeOrFunc, dependencies);
     private _getTokenMetadata(token);
-    private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?);
-    private _getEntryComponentsFromProvider(provider);
+    private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?, type?);
+    private _getEntryComponentsFromProvider(provider, type?);
     getProviderMetadata(provider: cpl.ProviderMeta): cpl.CompileProviderMetadata;
     private _getQueriesMetadata(queries, isViewQuery, directiveType);
     private _queryVarBindings(selector);
     private _getQueryMetadata(q, propertyName, typeOrFunc);
+    private _reportError(error, type?, otherType?);
 }
 export declare function componentModuleUrl(reflector: ReflectorReader, type: Type<any>, cmpMetadata: Component): string;

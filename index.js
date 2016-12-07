@@ -44,7 +44,7 @@ export { Extractor, I18NHtmlParser, MessageBundle, Xliff, Xmb, Xtb } from './src
 export { DirectiveNormalizer } from './src/directive_normalizer';
 export { TokenType, Lexer, Token, EOF, isIdentifier, isQuote } from './src/expression_parser/lexer';
 export { SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST } from './src/expression_parser/parser';
-export { CompileMetadataResolver, componentModuleUrl } from './src/metadata_resolver';
+export { ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl } from './src/metadata_resolver';
 export { ParseTreeResult, TreeError, HtmlParser } from './src/ml_parser/html_parser';
 export { NgModuleCompiler } from './src/ng_module_compiler';
 export { DirectiveWrapperCompiler } from './src/directive_wrapper_compiler';
