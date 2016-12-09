@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-b5c4bf1
+ * @license Angular v2.3.0-f0b0762
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-b5c4bf1');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-f0b0762');
 
   /**
    * @license
@@ -23674,8 +23674,9 @@
           var /** @type {?} */ statements = [];
           statements.push(_PREVIOUS_ANIMATION_PLAYERS
               .set(_ANIMATION_FACTORY_VIEW_CONTEXT.callMethod('getAnimationPlayers', [
-              _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
+              _ANIMATION_FACTORY_ELEMENT_VAR,
               _ANIMATION_NEXT_STATE_VAR.equals(literal(EMPTY_STATE))
+                  .conditional(NULL_EXPR, literal(this.animationName))
           ]))
               .toDeclStmt());
           statements.push(_ANIMATION_COLLECTED_STYLES.set(_EMPTY_MAP).toDeclStmt());
