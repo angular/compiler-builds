@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-c8baf51
+ * @license Angular v2.3.0-4022173
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-c8baf51');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-4022173');
 
   /**
    * @license
@@ -26589,17 +26589,9 @@
           if (!compiledTemplate) {
               var /** @type {?} */ compMeta = this._metadataResolver.getDirectiveMetadata(compType);
               assertComponent(compMeta);
-              var HostClass_1 = (function () {
-                  function HostClass_1() {
-                  }
-                  HostClass_1.overriddenName = identifierName(compMeta.type) + "_Host";
-                  return HostClass_1;
-              }());
-              function HostClass_tsickle_Closure_declarations() {
-                  /** @type {?} */
-                  HostClass_1.overriddenName;
-              }
-              var /** @type {?} */ hostMeta = createHostComponentMeta(HostClass_1, compMeta);
+              var /** @type {?} */ HostClass = function HostClass() { };
+              ((HostClass)).overriddenName = identifierName(compMeta.type) + "_Host";
+              var /** @type {?} */ hostMeta = createHostComponentMeta(HostClass, compMeta);
               compiledTemplate = new CompiledTemplate(true, compMeta.selector, compMeta.type, hostMeta, ngModule, [compMeta.type]);
               this._compiledHostTemplateCache.set(compType, compiledTemplate);
           }

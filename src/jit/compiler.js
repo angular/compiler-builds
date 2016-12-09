@@ -256,17 +256,9 @@ export var JitCompiler = (function () {
         if (!compiledTemplate) {
             var /** @type {?} */ compMeta = this._metadataResolver.getDirectiveMetadata(compType);
             assertComponent(compMeta);
-            var HostClass_1 = (function () {
-                function HostClass_1() {
-                }
-                HostClass_1.overriddenName = identifierName(compMeta.type) + "_Host";
-                return HostClass_1;
-            }());
-            function HostClass_tsickle_Closure_declarations() {
-                /** @type {?} */
-                HostClass_1.overriddenName;
-            }
-            var /** @type {?} */ hostMeta = createHostComponentMeta(HostClass_1, compMeta);
+            var /** @type {?} */ HostClass = function HostClass() { };
+            ((HostClass)).overriddenName = identifierName(compMeta.type) + "_Host";
+            var /** @type {?} */ hostMeta = createHostComponentMeta(HostClass, compMeta);
             compiledTemplate = new CompiledTemplate(true, compMeta.selector, compMeta.type, hostMeta, ngModule, [compMeta.type]);
             this._compiledHostTemplateCache.set(compType, compiledTemplate);
         }
