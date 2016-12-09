@@ -552,9 +552,9 @@ function _parseMessageMeta(i18n) {
         return { meaning: '', description: '', id: '' };
     var /** @type {?} */ idIndex = i18n.indexOf(ID_SEPARATOR);
     var /** @type {?} */ descIndex = i18n.indexOf(MEANING_SEPARATOR);
-    var _a = (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] :
-        [i18n, ''], meaningAndDesc = _a[0], id = _a[1];
-    var _b = (descIndex > -1) ? [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
+    var _a = (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] : [i18n, ''], meaningAndDesc = _a[0], id = _a[1];
+    var _b = (descIndex > -1) ?
+        [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
         ['', meaningAndDesc], meaning = _b[0], description = _b[1];
     return { meaning: meaning, description: description, id: id };
 }

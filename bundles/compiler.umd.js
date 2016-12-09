@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-9a8423d
+ * @license Angular v2.3.0-c8baf51
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-9a8423d');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-c8baf51');
 
   /**
    * @license
@@ -7343,9 +7343,9 @@
           return { meaning: '', description: '', id: '' };
       var /** @type {?} */ idIndex = i18n.indexOf(ID_SEPARATOR);
       var /** @type {?} */ descIndex = i18n.indexOf(MEANING_SEPARATOR);
-      var _a = (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] :
-          [i18n, ''], meaningAndDesc = _a[0], id = _a[1];
-      var _b = (descIndex > -1) ? [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
+      var _a = (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] : [i18n, ''], meaningAndDesc = _a[0], id = _a[1];
+      var _b = (descIndex > -1) ?
+          [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
           ['', meaningAndDesc], meaning = _b[0], description = _b[1];
       return { meaning: meaning, description: description, id: id };
   }
@@ -11563,7 +11563,7 @@
               this._reportError("Components on an embedded template: " + componentTypeNames.join(','), sourceSpan);
           }
           elementProps.forEach(function (prop) {
-              _this._reportError("Property binding " + prop.name + " not used by any directive on an embedded template. Make sure that the property name is spelled correctly and all directives are listed in the \"directives\" section.", sourceSpan);
+              _this._reportError("Property binding " + prop.name + " not used by any directive on an embedded template. Make sure that the property name is spelled correctly and all directives are listed in the \"@NgModule.declarations\".", sourceSpan);
           });
       };
       /**
@@ -11582,7 +11582,7 @@
           });
           events.forEach(function (event) {
               if (isPresent(event.target) || !allDirectiveEvents.has(event.name)) {
-                  _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the \"directives\" section.", event.sourceSpan);
+                  _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the \"@NgModule.declarations\".", event.sourceSpan);
               }
           });
       };
