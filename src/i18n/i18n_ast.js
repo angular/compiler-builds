@@ -12,13 +12,15 @@ export var Message = (function () {
      * @param {?} placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
      * @param {?} meaning
      * @param {?} description
+     * @param {?} id
      */
-    function Message(nodes, placeholders, placeholderToMessage, meaning, description) {
+    function Message(nodes, placeholders, placeholderToMessage, meaning, description, id) {
         this.nodes = nodes;
         this.placeholders = placeholders;
         this.placeholderToMessage = placeholderToMessage;
         this.meaning = meaning;
         this.description = description;
+        this.id = id;
     }
     return Message;
 }());
@@ -33,6 +35,8 @@ function Message_tsickle_Closure_declarations() {
     Message.prototype.meaning;
     /** @type {?} */
     Message.prototype.description;
+    /** @type {?} */
+    Message.prototype.id;
 }
 export var Text = (function () {
     /**

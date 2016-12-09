@@ -15,7 +15,7 @@ var __extends = (this && this.__extends) || function (d, b) {
  * @return {?}
  */
 export function digest(message) {
-    return sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
+    return message.id || sha1(serializeNodes(message.nodes).join('') + ("[" + message.meaning + "]"));
 }
 /**
  * @param {?} message
@@ -24,7 +24,7 @@ export function digest(message) {
 export function decimalDigest(message) {
     var /** @type {?} */ visitor = new _SerializerIgnoreIcuExpVisitor();
     var /** @type {?} */ parts = message.nodes.map(function (a) { return a.visit(visitor, null); });
-    return computeMsgId(parts.join(''), message.meaning);
+    return message.id || computeMsgId(parts.join(''), message.meaning);
 }
 /**
  *  Serialize the i18n ast to something xml-like in order to generate an UID.
