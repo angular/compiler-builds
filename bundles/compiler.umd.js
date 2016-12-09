@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-f0b0762
+ * @license Angular v2.3.0-9a8423d
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-f0b0762');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-9a8423d');
 
   /**
    * @license
@@ -1463,12 +1463,12 @@
           if (!map || typeof name !== 'string') {
               return false;
           }
-          var /** @type {?} */ selectables = map.get(name);
+          var /** @type {?} */ selectables = map.get(name) || [];
           var /** @type {?} */ starSelectables = map.get('*');
           if (starSelectables) {
               selectables = selectables.concat(starSelectables);
           }
-          if (!selectables) {
+          if (selectables.length === 0) {
               return false;
           }
           var /** @type {?} */ selectable;
