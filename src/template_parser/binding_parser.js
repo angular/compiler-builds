@@ -330,17 +330,11 @@ export var BindingParser = (function () {
         }
         var /** @type {?} */ unit = null;
         var /** @type {?} */ bindingType;
-        var /** @type {?} */ boundPropertyName;
+        var /** @type {?} */ boundPropertyName = null;
         var /** @type {?} */ parts = boundProp.name.split(PROPERTY_PARTS_SEPARATOR);
         var /** @type {?} */ securityContexts;
-        if (parts.length === 1) {
-            var /** @type {?} */ partValue = parts[0];
-            boundPropertyName = this._schemaRegistry.getMappedPropName(partValue);
-            securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, false);
-            bindingType = PropertyBindingType.Property;
-            this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
-        }
-        else {
+        // Check check for special cases (prefix style, attr, class)
+        if (parts.length > 1) {
             if (parts[0] == ATTRIBUTE_PREFIX) {
                 boundPropertyName = parts[1];
                 this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
@@ -364,11 +358,13 @@ export var BindingParser = (function () {
                 bindingType = PropertyBindingType.Style;
                 securityContexts = [SecurityContext.STYLE];
             }
-            else {
-                this._reportError("Invalid property name '" + boundProp.name + "'", boundProp.sourceSpan);
-                bindingType = null;
-                securityContexts = [];
-            }
+        }
+        // If not a special case, use the full property name
+        if (boundPropertyName === null) {
+            boundPropertyName = this._schemaRegistry.getMappedPropName(boundProp.name);
+            securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, false);
+            bindingType = PropertyBindingType.Property;
+            this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, false);
         }
         return new BoundElementPropertyAst(boundPropertyName, bindingType, securityContexts.length === 1 ? securityContexts[0] : null, securityContexts.length > 1, boundProp.expression, unit, boundProp.sourceSpan);
     };
