@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-1d0ed6f
+ * @license Angular v2.3.0-4b3d135
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-1d0ed6f');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-4b3d135');
 
   /**
    * @license
@@ -7926,7 +7926,8 @@
           var _this = this;
           var /** @type {?} */ strAttrs = this._serializeAttributes(tag.attrs);
           if (tag.children.length == 0) {
-              return "<" + tag.name + strAttrs + "/>";
+              return tag.canSelfClose ? "<" + tag.name + strAttrs + "/>" :
+                  "<" + tag.name + strAttrs + "></" + tag.name + ">";
           }
           var /** @type {?} */ strChildren = tag.children.map(function (node) { return node.visit(_this); });
           return "<" + tag.name + strAttrs + ">" + strChildren.join('') + "</" + tag.name + ">";
@@ -8008,13 +8009,16 @@
        * @param {?} name
        * @param {?=} unescapedAttrs
        * @param {?=} children
+       * @param {?=} canSelfClose
        */
-      function Tag(name, unescapedAttrs, children) {
+      function Tag(name, unescapedAttrs, children, canSelfClose) {
           var _this = this;
           if (unescapedAttrs === void 0) { unescapedAttrs = {}; }
           if (children === void 0) { children = []; }
+          if (canSelfClose === void 0) { canSelfClose = true; }
           this.name = name;
           this.children = children;
+          this.canSelfClose = canSelfClose;
           this.attrs = {};
           Object.keys(unescapedAttrs).forEach(function (k) {
               _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
@@ -8526,7 +8530,7 @@
        * @return {?}
        */
       _Visitor.prototype.visitPlaceholder = function (ph, context) {
-          return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name })];
+          return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name }, [], false)];
       };
       /**
        * @param {?} ph
@@ -8534,7 +8538,7 @@
        * @return {?}
        */
       _Visitor.prototype.visitIcuPlaceholder = function (ph, context) {
-          return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name })];
+          return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name }, [], false)];
       };
       /**
        * @param {?} nodes

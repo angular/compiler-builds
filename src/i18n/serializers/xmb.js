@@ -120,7 +120,7 @@ var _Visitor = (function () {
      * @return {?}
      */
     _Visitor.prototype.visitPlaceholder = function (ph, context) {
-        return [new xml.Tag(_PLACEHOLDER_TAG, { name: ph.name })];
+        return [new xml.Tag(_PLACEHOLDER_TAG, { name: ph.name }, [], false)];
     };
     /**
      * @param {?} ph
@@ -128,7 +128,7 @@ var _Visitor = (function () {
      * @return {?}
      */
     _Visitor.prototype.visitIcuPlaceholder = function (ph, context) {
-        return [new xml.Tag(_PLACEHOLDER_TAG, { name: ph.name })];
+        return [new xml.Tag(_PLACEHOLDER_TAG, { name: ph.name }, [], false)];
     };
     /**
      * @param {?} nodes

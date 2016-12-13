@@ -33,12 +33,13 @@ export declare class Doctype implements Node {
 export declare class Tag implements Node {
     name: string;
     children: Node[];
+    canSelfClose: boolean;
     attrs: {
         [k: string]: string;
     };
     constructor(name: string, unescapedAttrs?: {
         [k: string]: string;
-    }, children?: Node[]);
+    }, children?: Node[], canSelfClose?: boolean);
     visit(visitor: IVisitor): any;
 }
 export declare class Text implements Node {
