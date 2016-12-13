@@ -5,6 +5,7 @@ export declare class ParseLocation {
     col: number;
     constructor(file: ParseSourceFile, offset: number, line: number, col: number);
     toString(): string;
+    moveBy(delta: number): ParseLocation;
 }
 export declare class ParseSourceFile {
     content: string;

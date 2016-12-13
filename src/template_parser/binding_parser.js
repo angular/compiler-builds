@@ -14,7 +14,7 @@ import { SecurityContext } from '@angular/core';
 import { EmptyExpr, RecursiveAstVisitor } from '../expression_parser/ast';
 import { isPresent } from '../facade/lang';
 import { mergeNsAndName } from '../ml_parser/tags';
-import { ParseError, ParseErrorLevel } from '../parse_util';
+import { ParseError, ParseErrorLevel, ParseSourceSpan } from '../parse_util';
 import { CssSelector } from '../selector';
 import { splitAtColon, splitAtPeriod } from '../util';
 import { BoundElementPropertyAst, BoundEventAst, PropertyBindingType, VariableAst } from './template_ast';
@@ -484,9 +484,9 @@ export var BindingParser = (function () {
         if (isPresent(ast)) {
             var /** @type {?} */ collector = new PipeCollector();
             ast.visit(collector);
-            collector.pipes.forEach(function (pipeName) {
+            collector.pipes.forEach(function (ast, pipeName) {
                 if (!_this.pipesByName.has(pipeName)) {
-                    _this._reportError("The pipe '" + pipeName + "' could not be found", sourceSpan);
+                    _this._reportError("The pipe '" + pipeName + "' could not be found", new ParseSourceSpan(sourceSpan.start.moveBy(ast.span.start), sourceSpan.start.moveBy(ast.span.end)));
                 }
             });
         }
@@ -522,7 +522,7 @@ export var PipeCollector = (function (_super) {
     __extends(PipeCollector, _super);
     function PipeCollector() {
         _super.apply(this, arguments);
-        this.pipes = new Set();
+        this.pipes = new Map();
     }
     /**
      * @param {?} ast
@@ -530,7 +530,7 @@ export var PipeCollector = (function (_super) {
      * @return {?}
      */
     PipeCollector.prototype.visitPipe = function (ast, context) {
-        this.pipes.add(ast.name);
+        this.pipes.set(ast.name, ast);
         ast.exp.visit(this);
         this.visitAll(ast.args, context);
         return null;

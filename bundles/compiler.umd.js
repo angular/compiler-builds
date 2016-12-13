@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-9ec0a4e
+ * @license Angular v2.3.0-2b90cd5
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-9ec0a4e');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-2b90cd5');
 
   /**
    * @license
@@ -4126,7 +4126,7 @@
                   while (this.optionalCharacter($COLON)) {
                       args.push(this.parseExpression());
                   }
-                  result = new BindingPipe(this.span(result.span.start - this.offset), result, name_1, args);
+                  result = new BindingPipe(this.span(result.span.start), result, name_1, args);
               } while (this.optionalOperator('|'));
           }
           return result;
@@ -4739,6 +4739,43 @@
        */
       ParseLocation.prototype.toString = function () {
           return isPresent(this.offset) ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
+      };
+      /**
+       * @param {?} delta
+       * @return {?}
+       */
+      ParseLocation.prototype.moveBy = function (delta) {
+          var /** @type {?} */ source = this.file.content;
+          var /** @type {?} */ len = source.length;
+          var /** @type {?} */ offset = this.offset;
+          var /** @type {?} */ line = this.line;
+          var /** @type {?} */ col = this.col;
+          while (offset > 0 && delta < 0) {
+              offset--;
+              delta++;
+              var /** @type {?} */ ch = source.charCodeAt(offset);
+              if (ch == $LF) {
+                  line--;
+                  var /** @type {?} */ priorLine = source.substr(0, offset - 1).lastIndexOf(String.fromCharCode($LF));
+                  col = priorLine > 0 ? offset - priorLine : offset;
+              }
+              else {
+                  col--;
+              }
+          }
+          while (offset < len && delta > 0) {
+              var /** @type {?} */ ch = source.charCodeAt(offset);
+              offset++;
+              delta--;
+              if (ch == $LF) {
+                  line++;
+                  col = 0;
+              }
+              else {
+                  col++;
+              }
+          }
+          return new ParseLocation(this.file, offset, line, col);
       };
       return ParseLocation;
   }());
@@ -10696,9 +10733,9 @@
           if (isPresent(ast)) {
               var /** @type {?} */ collector = new PipeCollector();
               ast.visit(collector);
-              collector.pipes.forEach(function (pipeName) {
+              collector.pipes.forEach(function (ast, pipeName) {
                   if (!_this.pipesByName.has(pipeName)) {
-                      _this._reportError("The pipe '" + pipeName + "' could not be found", sourceSpan);
+                      _this._reportError("The pipe '" + pipeName + "' could not be found", new ParseSourceSpan(sourceSpan.start.moveBy(ast.span.start), sourceSpan.start.moveBy(ast.span.end)));
                   }
               });
           }
@@ -10722,7 +10759,7 @@
       __extends$12(PipeCollector, _super);
       function PipeCollector() {
           _super.apply(this, arguments);
-          this.pipes = new Set();
+          this.pipes = new Map();
       }
       /**
        * @param {?} ast
@@ -10730,7 +10767,7 @@
        * @return {?}
        */
       PipeCollector.prototype.visitPipe = function (ast, context) {
-          this.pipes.add(ast.name);
+          this.pipes.set(ast.name, ast);
           ast.exp.visit(this);
           this.visitAll(ast.args, context);
           return null;
