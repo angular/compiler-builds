@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-c65b4fa
+ * @license Angular v2.3.0-fa9e21e
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-c65b4fa');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-fa9e21e');
 
   /**
    * @license
@@ -24498,7 +24498,7 @@
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
-  var /** @type {?} */ SUPPORTED_SCHEMA_VERSION = 2;
+  var /** @type {?} */ SUPPORTED_SCHEMA_VERSION = 3;
   var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
       coreDecorators: '@angular/core/src/metadata',
       diDecorators: '@angular/core/src/di/metadata',
@@ -25294,7 +25294,10 @@
                       { __symbolic: 'module', version: SUPPORTED_SCHEMA_VERSION, module: module, metadata: {} };
               }
               if (moduleMetadata['version'] != SUPPORTED_SCHEMA_VERSION) {
-                  this.reportError(new Error("Metadata version mismatch for module " + module + ", found version " + moduleMetadata['version'] + ", expected " + SUPPORTED_SCHEMA_VERSION), null);
+                  var /** @type {?} */ errorMessage = moduleMetadata['version'] == 2 ?
+                      "Unsupported metadata version " + moduleMetadata['version'] + " for module " + module + ". This module should be compiled with a newer version of ngc" :
+                      "Metadata version mismatch for module " + module + ", found version " + moduleMetadata['version'] + ", expected " + SUPPORTED_SCHEMA_VERSION;
+                  this.reportError(new Error(errorMessage), null);
               }
               this.metadataCache.set(module, moduleMetadata);
           }
