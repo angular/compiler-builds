@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-d4ddb60
+ * @license Angular v2.3.0-aa3769b
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-d4ddb60');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-aa3769b');
 
   /**
    * @license
@@ -13586,8 +13586,8 @@
                       outputs.push(propName);
                   }
               }
-              var /** @type {?} */ hostBinding = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.HostBinding; });
-              if (hostBinding) {
+              var /** @type {?} */ hostBindings = propertyMetadata[propName].filter(function (a) { return a && a instanceof _angular_core.HostBinding; });
+              hostBindings.forEach(function (hostBinding) {
                   if (hostBinding.hostPropertyName) {
                       var /** @type {?} */ startWith = hostBinding.hostPropertyName[0];
                       if (startWith === '(') {
@@ -13601,12 +13601,12 @@
                   else {
                       host[("[" + propName + "]")] = propName;
                   }
-              }
-              var /** @type {?} */ hostListener = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.HostListener; });
-              if (hostListener) {
+              });
+              var /** @type {?} */ hostListeners = propertyMetadata[propName].filter(function (a) { return a && a instanceof _angular_core.HostListener; });
+              hostListeners.forEach(function (hostListener) {
                   var /** @type {?} */ args = hostListener.args || [];
                   host[("(" + hostListener.eventName + ")")] = propName + "(" + args.join(',') + ")";
-              }
+              });
               var /** @type {?} */ query = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Query; });
               if (query) {
                   queries[propName] = query;
