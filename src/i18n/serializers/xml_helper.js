@@ -21,8 +21,7 @@ var _Visitor = (function () {
         var _this = this;
         var /** @type {?} */ strAttrs = this._serializeAttributes(tag.attrs);
         if (tag.children.length == 0) {
-            return tag.canSelfClose ? "<" + tag.name + strAttrs + "/>" :
-                "<" + tag.name + strAttrs + "></" + tag.name + ">";
+            return "<" + tag.name + strAttrs + "/>";
         }
         var /** @type {?} */ strChildren = tag.children.map(function (node) { return node.visit(_this); });
         return "<" + tag.name + strAttrs + ">" + strChildren.join('') + "</" + tag.name + ">";
@@ -114,16 +113,13 @@ export var Tag = (function () {
      * @param {?} name
      * @param {?=} unescapedAttrs
      * @param {?=} children
-     * @param {?=} canSelfClose
      */
-    function Tag(name, unescapedAttrs, children, canSelfClose) {
+    function Tag(name, unescapedAttrs, children) {
         var _this = this;
         if (unescapedAttrs === void 0) { unescapedAttrs = {}; }
         if (children === void 0) { children = []; }
-        if (canSelfClose === void 0) { canSelfClose = true; }
         this.name = name;
         this.children = children;
-        this.canSelfClose = canSelfClose;
         this.attrs = {};
         Object.keys(unescapedAttrs).forEach(function (k) {
             _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
@@ -143,8 +139,6 @@ function Tag_tsickle_Closure_declarations() {
     Tag.prototype.name;
     /** @type {?} */
     Tag.prototype.children;
-    /** @type {?} */
-    Tag.prototype.canSelfClose;
 }
 export var Text = (function () {
     /**

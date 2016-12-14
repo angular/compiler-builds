@@ -94,6 +94,17 @@ export var JitCompiler = (function () {
         return this._compileModuleAndAllComponents(moduleType, false).asyncResult;
     };
     /**
+     * @param {?} component
+     * @return {?}
+     */
+    JitCompiler.prototype.getNgContentSelectors = function (component) {
+        var /** @type {?} */ template = this._compiledTemplateCache.get(component);
+        if (!template) {
+            throw new Error("The component " + stringify(component) + " is not yet compiled!");
+        }
+        return template.compMeta.template.ngContentSelectors;
+    };
+    /**
      * @param {?} moduleType
      * @param {?} isSync
      * @return {?}
@@ -564,6 +575,13 @@ var ModuleBoundCompiler = (function () {
      */
     ModuleBoundCompiler.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
         return this._delegate.compileModuleAndAllComponentsAsync(moduleType);
+    };
+    /**
+     * @param {?} component
+     * @return {?}
+     */
+    ModuleBoundCompiler.prototype.getNgContentSelectors = function (component) {
+        return this._delegate.getNgContentSelectors(component);
     };
     /**
      *  Clears all caches

@@ -976,7 +976,7 @@ function ElementContext_tsickle_Closure_declarations() {
  * @param {?} matchableAttrs
  * @return {?}
  */
-function createElementCssSelector(elementName, matchableAttrs) {
+export function createElementCssSelector(elementName, matchableAttrs) {
     var /** @type {?} */ cssSelector = new CssSelector();
     var /** @type {?} */ elNameNoNs = splitNsName(elementName)[1];
     cssSelector.setElement(elNameNoNs);

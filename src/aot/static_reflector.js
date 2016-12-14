@@ -21,6 +21,7 @@ var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
     animationMetadata: '@angular/core/src/animation/metadata',
     provider: '@angular/core/src/di/provider'
 };
+var /** @type {?} */ HIDDEN_KEY = /^\$.*\$$/;
 /**
  *  A cache of static symbol used by the StaticReflector to return the same symbol for the
   * same symbol values.
@@ -899,7 +900,12 @@ function mapStringMap(input, transform) {
     Object.keys(input).forEach(function (key) {
         var /** @type {?} */ value = transform(input[key], key);
         if (!shouldIgnore(value)) {
-            result[key] = value;
+            if (HIDDEN_KEY.test(key)) {
+                Object.defineProperty(result, key, { enumerable: false, configurable: true, value: value });
+            }
+            else {
+                result[key] = value;
+            }
         }
     });
     return result;

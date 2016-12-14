@@ -44,6 +44,7 @@ export declare class JitCompiler implements Compiler {
     compileModuleAsync<T>(moduleType: Type<T>): Promise<NgModuleFactory<T>>;
     compileModuleAndAllComponentsSync<T>(moduleType: Type<T>): ModuleWithComponentFactories<T>;
     compileModuleAndAllComponentsAsync<T>(moduleType: Type<T>): Promise<ModuleWithComponentFactories<T>>;
+    getNgContentSelectors(component: Type<any>): string[];
     private _compileModuleAndComponents<T>(moduleType, isSync);
     private _compileModuleAndAllComponents<T>(moduleType, isSync);
     private _loadModules(mainModule, isSync);

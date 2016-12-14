@@ -229,10 +229,16 @@ export declare class LiteralArrayExpr extends Expression {
     constructor(entries: Expression[], type?: Type);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
+export declare class LiteralMapEntry {
+    key: string;
+    value: Expression;
+    quoted: boolean;
+    constructor(key: string, value: Expression, quoted?: boolean);
+}
 export declare class LiteralMapExpr extends Expression {
-    entries: [string, Expression][];
+    entries: LiteralMapEntry[];
     valueType: Type;
-    constructor(entries: [string, Expression][], type?: MapType);
+    constructor(entries: LiteralMapEntry[], type?: MapType);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export interface ExpressionVisitor {

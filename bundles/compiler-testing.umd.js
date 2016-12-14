@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-5031adc
+ * @license Angular v2.3.0-d4ddb60
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -483,6 +483,9 @@
         };
         TestingCompilerImpl.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
             return this._compiler.compileModuleAndAllComponentsAsync(moduleType);
+        };
+        TestingCompilerImpl.prototype.getNgContentSelectors = function (component) {
+            return this._compiler.getNgContentSelectors(component);
         };
         TestingCompilerImpl.prototype.overrideModule = function (ngModule, override) {
             var oldMetadata = this._moduleResolver.resolve(ngModule, false);
