@@ -702,6 +702,9 @@ export var StaticReflector = (function () {
                                     return simplifyInContext(selectContext, selectTarget[member], depth + 1);
                                 return null;
                             case 'reference':
+                                if (!expression['name']) {
+                                    return context;
+                                }
                                 if (!expression.module) {
                                     var /** @type {?} */ name_1 = expression['name'];
                                     var /** @type {?} */ localValue = scope.resolve(name_1);
