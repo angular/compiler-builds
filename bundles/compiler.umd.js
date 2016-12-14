@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.3.0-f5f1d5f
+ * @license Angular v2.3.0-7256d0e
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-f5f1d5f');
+  var /** @type {?} */ VERSION = new _angular_core.Version('2.3.0-7256d0e');
 
   /**
    * @license
@@ -24187,7 +24187,7 @@
    * @return {?}
    */
   function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
-      return shim ? stylesheetUrl + ".shim" + suffix : "" + stylesheetUrl + suffix;
+      return "" + stylesheetUrl + (shim ? '.shim' : '') + ".ngstyle" + suffix;
   }
   /**
    * @param {?} meta
@@ -26762,7 +26762,7 @@
               return interpretStatements(result.statements, result.stylesVar);
           }
           else {
-              return jitStatements("/" + result.meta.moduleUrl + ".css.js", result.statements, result.stylesVar);
+              return jitStatements("/" + result.meta.moduleUrl + ".ngstyle.js", result.statements, result.stylesVar);
           }
       };
       JitCompiler.decorators = [
