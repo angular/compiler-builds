@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.0-0c19898
+ * @license Angular v4.0.0-beta.0-0fe3cd9
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.0-0c19898');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.0-0fe3cd9');
 
   /**
    * @license
@@ -8636,6 +8636,7 @@
        */
       Xmb.prototype.write = function (messages) {
           var _this = this;
+          var /** @type {?} */ exampleVisitor = new ExampleVisitor();
           var /** @type {?} */ visitor = new _Visitor$2();
           var /** @type {?} */ visited = {};
           var /** @type {?} */ rootNode = new Tag(_MESSAGES_TAG);
@@ -8660,7 +8661,7 @@
               new CR(),
               new Doctype(_MESSAGES_TAG, _DOCTYPE),
               new CR(),
-              rootNode,
+              exampleVisitor.addDefaultExamples(rootNode),
               new CR(),
           ]);
       };
@@ -8763,6 +8764,51 @@
   function digest$1(message) {
       return decimalDigest(message);
   }
+  // TC requires at least one non-empty example on placeholders
+  var ExampleVisitor = (function () {
+      function ExampleVisitor() {
+      }
+      /**
+       * @param {?} node
+       * @return {?}
+       */
+      ExampleVisitor.prototype.addDefaultExamples = function (node) {
+          node.visit(this);
+          return node;
+      };
+      /**
+       * @param {?} tag
+       * @return {?}
+       */
+      ExampleVisitor.prototype.visitTag = function (tag) {
+          var _this = this;
+          if (tag.name === _PLACEHOLDER_TAG$1) {
+              if (!tag.children || tag.children.length == 0) {
+                  var /** @type {?} */ exText = new Text$2(tag.attrs['name'] || '...');
+                  tag.children = [new Tag(_EXEMPLE_TAG, {}, [exText])];
+              }
+          }
+          else if (tag.children) {
+              tag.children.forEach(function (node) { return node.visit(_this); });
+          }
+      };
+      /**
+       * @param {?} text
+       * @return {?}
+       */
+      ExampleVisitor.prototype.visitText = function (text) { };
+      /**
+       * @param {?} decl
+       * @return {?}
+       */
+      ExampleVisitor.prototype.visitDeclaration = function (decl) { };
+      /**
+       * @param {?} doctype
+       * @return {?}
+       */
+      ExampleVisitor.prototype.visitDoctype = function (doctype) { };
+      return ExampleVisitor;
+  }());
 
   var /** @type {?} */ _TRANSLATIONS_TAG = 'translationbundle';
   var /** @type {?} */ _TRANSLATION_TAG = 'translation';

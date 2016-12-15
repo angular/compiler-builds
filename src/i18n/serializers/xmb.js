@@ -21,6 +21,7 @@ export var Xmb = (function () {
      */
     Xmb.prototype.write = function (messages) {
         var _this = this;
+        var /** @type {?} */ exampleVisitor = new ExampleVisitor();
         var /** @type {?} */ visitor = new _Visitor();
         var /** @type {?} */ visited = {};
         var /** @type {?} */ rootNode = new xml.Tag(_MESSAGES_TAG);
@@ -45,7 +46,7 @@ export var Xmb = (function () {
             new xml.CR(),
             new xml.Doctype(_MESSAGES_TAG, _DOCTYPE),
             new xml.CR(),
-            rootNode,
+            exampleVisitor.addDefaultExamples(rootNode),
             new xml.CR(),
         ]);
     };
@@ -148,4 +149,49 @@ var _Visitor = (function () {
 export function digest(message) {
     return decimalDigest(message);
 }
+// TC requires at least one non-empty example on placeholders
+var ExampleVisitor = (function () {
+    function ExampleVisitor() {
+    }
+    /**
+     * @param {?} node
+     * @return {?}
+     */
+    ExampleVisitor.prototype.addDefaultExamples = function (node) {
+        node.visit(this);
+        return node;
+    };
+    /**
+     * @param {?} tag
+     * @return {?}
+     */
+    ExampleVisitor.prototype.visitTag = function (tag) {
+        var _this = this;
+        if (tag.name === _PLACEHOLDER_TAG) {
+            if (!tag.children || tag.children.length == 0) {
+                var /** @type {?} */ exText = new xml.Text(tag.attrs['name'] || '...');
+                tag.children = [new xml.Tag(_EXEMPLE_TAG, {}, [exText])];
+            }
+        }
+        else if (tag.children) {
+            tag.children.forEach(function (node) { return node.visit(_this); });
+        }
+    };
+    /**
+     * @param {?} text
+     * @return {?}
+     */
+    ExampleVisitor.prototype.visitText = function (text) { };
+    /**
+     * @param {?} decl
+     * @return {?}
+     */
+    ExampleVisitor.prototype.visitDeclaration = function (decl) { };
+    /**
+     * @param {?} doctype
+     * @return {?}
+     */
+    ExampleVisitor.prototype.visitDoctype = function (doctype) { };
+    return ExampleVisitor;
+}());
 //# sourceMappingURL=xmb.js.map
