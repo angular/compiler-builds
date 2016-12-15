@@ -35,7 +35,7 @@ import { ComponentStillLoadingError, LIFECYCLE_HOOKS_VALUES, ReflectorReader, re
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { SummaryResolver } from './summary_resolver';
 import { getUrlScheme } from './url_resolver';
-import { MODULE_SUFFIX, ValueTransformer, visitValue } from './util';
+import { MODULE_SUFFIX, SyntaxError, ValueTransformer, visitValue } from './util';
 export var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new OpaqueToken('ErrorCollector');
 // Design notes:
 // - don't lazily create metadata:
@@ -285,7 +285,7 @@ export var CompileMetadataResolver = (function () {
         else {
             // Directive
             if (!selector) {
-                this._reportError(new Error("Directive " + stringifyType(directiveType) + " has no selector, please add it!"), directiveType);
+                this._reportError(new SyntaxError("Directive " + stringifyType(directiveType) + " has no selector, please add it!"), directiveType);
                 selector = 'error';
             }
         }
@@ -326,7 +326,7 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getDirectiveMetadata = function (directiveType) {
         var /** @type {?} */ dirMeta = this._directiveCache.get(directiveType);
         if (!dirMeta) {
-            this._reportError(new Error("Illegal state: getDirectiveMetadata can only be called after loadNgModuleMetadata for a module that declares it. Directive " + stringifyType(directiveType) + "."), directiveType);
+            this._reportError(new SyntaxError("Illegal state: getDirectiveMetadata can only be called after loadNgModuleMetadata for a module that declares it. Directive " + stringifyType(directiveType) + "."), directiveType);
         }
         return dirMeta;
     };
@@ -337,7 +337,7 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getDirectiveSummary = function (dirType) {
         var /** @type {?} */ dirSummary = (this._loadSummary(dirType, cpl.CompileSummaryKind.Directive));
         if (!dirSummary) {
-            this._reportError(new Error("Illegal state: Could not load the summary for directive " + stringifyType(dirType) + "."), dirType);
+            this._reportError(new SyntaxError("Illegal state: Could not load the summary for directive " + stringifyType(dirType) + "."), dirType);
         }
         return dirSummary;
     };
@@ -431,13 +431,13 @@ export var CompileMetadataResolver = (function () {
                 if (importedModuleType) {
                     var /** @type {?} */ importedModuleSummary = _this.getNgModuleSummary(importedModuleType);
                     if (!importedModuleSummary) {
-                        _this._reportError(new Error("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                        _this._reportError(new SyntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
                         return;
                     }
                     importedModules.push(importedModuleSummary);
                 }
                 else {
-                    _this._reportError(new Error("Unexpected value '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    _this._reportError(new SyntaxError("Unexpected value '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
                     return;
                 }
             });
@@ -445,7 +445,7 @@ export var CompileMetadataResolver = (function () {
         if (meta.exports) {
             flattenAndDedupeArray(meta.exports).forEach(function (exportedType) {
                 if (!isValidType(exportedType)) {
-                    _this._reportError(new Error("Unexpected value '" + stringifyType(exportedType) + "' exported by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    _this._reportError(new SyntaxError("Unexpected value '" + stringifyType(exportedType) + "' exported by the module '" + stringifyType(moduleType) + "'"), moduleType);
                     return;
                 }
                 var /** @type {?} */ exportedModuleSummary = _this.getNgModuleSummary(exportedType);
@@ -463,7 +463,7 @@ export var CompileMetadataResolver = (function () {
         if (meta.declarations) {
             flattenAndDedupeArray(meta.declarations).forEach(function (declaredType) {
                 if (!isValidType(declaredType)) {
-                    _this._reportError(new Error("Unexpected value '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    _this._reportError(new SyntaxError("Unexpected value '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
                     return;
                 }
                 var /** @type {?} */ declaredIdentifier = _this._getIdentifierMetadata(declaredType);
@@ -479,7 +479,7 @@ export var CompileMetadataResolver = (function () {
                     _this._addTypeToModule(declaredType, moduleType);
                 }
                 else {
-                    _this._reportError(new Error("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    _this._reportError(new SyntaxError("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
                     return;
                 }
             });
@@ -496,7 +496,7 @@ export var CompileMetadataResolver = (function () {
                 transitiveModule.addExportedPipe(exportedId);
             }
             else {
-                _this._reportError(new Error("Can't export " + _this._getTypeDescriptor(exportedId.reference) + " " + stringifyType(exportedId.reference) + " from " + stringifyType(moduleType) + " as it was neither declared nor imported!"), moduleType);
+                _this._reportError(new SyntaxError("Can't export " + _this._getTypeDescriptor(exportedId.reference) + " " + stringifyType(exportedId.reference) + " from " + stringifyType(moduleType) + " as it was neither declared nor imported!"), moduleType);
             }
         });
         // The providers of the module have to go last
@@ -511,7 +511,7 @@ export var CompileMetadataResolver = (function () {
         if (meta.bootstrap) {
             flattenAndDedupeArray(meta.bootstrap).forEach(function (type) {
                 if (!isValidType(type)) {
-                    _this._reportError(new Error("Unexpected value '" + stringifyType(type) + "' used in the bootstrap property of module '" + stringifyType(moduleType) + "'"), moduleType);
+                    _this._reportError(new SyntaxError("Unexpected value '" + stringifyType(type) + "' used in the bootstrap property of module '" + stringifyType(moduleType) + "'"), moduleType);
                     return;
                 }
                 bootstrapComponents.push(_this._getIdentifierMetadata(type));
@@ -569,7 +569,7 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype._addTypeToModule = function (type, moduleType) {
         var /** @type {?} */ oldModule = this._ngModuleOfTypes.get(type);
         if (oldModule && oldModule !== moduleType) {
-            this._reportError(new Error(("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! ") +
+            this._reportError(new SyntaxError(("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! ") +
                 ("Please consider moving " + stringifyType(type) + " to a higher module that imports " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ". ") +
                 ("You can also create a new NgModule that exports and includes " + stringifyType(type) + " then import that NgModule in " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ".")), moduleType);
         }
@@ -686,7 +686,7 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getPipeMetadata = function (pipeType) {
         var /** @type {?} */ pipeMeta = this._pipeCache.get(pipeType);
         if (!pipeMeta) {
-            this._reportError(new Error("Illegal state: getPipeMetadata can only be called after loadNgModuleMetadata for a module that declares it. Pipe " + stringifyType(pipeType) + "."), pipeType);
+            this._reportError(new SyntaxError("Illegal state: getPipeMetadata can only be called after loadNgModuleMetadata for a module that declares it. Pipe " + stringifyType(pipeType) + "."), pipeType);
         }
         return pipeMeta;
     };
@@ -697,7 +697,7 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getPipeSummary = function (pipeType) {
         var /** @type {?} */ pipeSummary = (this._loadSummary(pipeType, cpl.CompileSummaryKind.Pipe));
         if (!pipeSummary) {
-            this._reportError(new Error("Illegal state: Could not load the summary for pipe " + stringifyType(pipeType) + "."), pipeType);
+            this._reportError(new SyntaxError("Illegal state: Could not load the summary for pipe " + stringifyType(pipeType) + "."), pipeType);
         }
         return pipeSummary;
     };
@@ -788,7 +788,7 @@ export var CompileMetadataResolver = (function () {
         });
         if (hasUnknownDeps) {
             var /** @type {?} */ depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringifyType(dep.token) : '?'; }).join(', ');
-            this._reportError(new Error("Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ")."), typeOrFunc);
+            this._reportError(new SyntaxError("Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ")."), typeOrFunc);
         }
         return dependenciesMetadata;
     };
@@ -845,7 +845,7 @@ export var CompileMetadataResolver = (function () {
                         return soFar;
                     }, [])))
                         .join(', ');
-                    _this._reportError(new Error("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]"), type);
+                    _this._reportError(new SyntaxError("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]"), type);
                 }
                 if (providerMeta.token === resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
                     targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(providerMeta, type));
@@ -867,11 +867,11 @@ export var CompileMetadataResolver = (function () {
         var /** @type {?} */ components = [];
         var /** @type {?} */ collectedIdentifiers = [];
         if (provider.useFactory || provider.useExisting || provider.useClass) {
-            this._reportError(new Error("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!"), type);
+            this._reportError(new SyntaxError("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!"), type);
             return [];
         }
         if (!provider.multi) {
-            this._reportError(new Error("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!"), type);
+            this._reportError(new SyntaxError("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!"), type);
             return [];
         }
         extractIdentifiers(provider.useValue, collectedIdentifiers);
@@ -951,7 +951,7 @@ export var CompileMetadataResolver = (function () {
         }
         else {
             if (!q.selector) {
-                this._reportError(new Error("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringifyType(typeOrFunc) + "\" since the query selector wasn't defined."), typeOrFunc);
+                this._reportError(new SyntaxError("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringifyType(typeOrFunc) + "\" since the query selector wasn't defined."), typeOrFunc);
             }
             selectors = [this._getTokenMetadata(q.selector)];
         }
@@ -1089,7 +1089,7 @@ export function componentModuleUrl(reflector, type, cmpMetadata) {
         return scheme ? moduleId : "package:" + moduleId + MODULE_SUFFIX;
     }
     else if (moduleId !== null && moduleId !== void 0) {
-        throw new Error(("moduleId should be a string in \"" + stringifyType(type) + "\". See https://goo.gl/wIDDiL for more information.\n") +
+        throw new SyntaxError(("moduleId should be a string in \"" + stringifyType(type) + "\". See https://goo.gl/wIDDiL for more information.\n") +
             "If you're using Webpack you should inline the template and the styles, see https://goo.gl/X2J8zc.");
     }
     return reflector.importUri(type);

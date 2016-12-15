@@ -26,7 +26,7 @@ import { ResourceLoader } from './resource_loader';
 import { extractStyleUrls, isStyleUrlResolvable } from './style_url_resolver';
 import { PreparsedElementType, preparseElement } from './template_parser/template_preparser';
 import { UrlResolver } from './url_resolver';
-import { SyncAsyncResult } from './util';
+import { SyncAsyncResult, SyntaxError } from './util';
 export var DirectiveNormalizer = (function () {
     /**
      * @param {?} _resourceLoader
@@ -85,7 +85,7 @@ export var DirectiveNormalizer = (function () {
             normalizedTemplateAsync = this.normalizeTemplateAsync(prenormData);
         }
         else {
-            throw new Error("No template specified for component " + stringify(prenormData.componentType));
+            throw new SyntaxError("No template specified for component " + stringify(prenormData.componentType));
         }
         if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
             // sync case
@@ -124,7 +124,7 @@ export var DirectiveNormalizer = (function () {
         var /** @type {?} */ rootNodesAndErrors = this._htmlParser.parse(template, stringify(prenomData.componentType), false, interpolationConfig);
         if (rootNodesAndErrors.errors.length > 0) {
             var /** @type {?} */ errorString = rootNodesAndErrors.errors.join('\n');
-            throw new Error("Template parse errors:\n" + errorString);
+            throw new SyntaxError("Template parse errors:\n" + errorString);
         }
         var /** @type {?} */ templateMetadataStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({
             styles: prenomData.styles,

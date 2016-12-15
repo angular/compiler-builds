@@ -61,3 +61,4 @@ export * from './src/style_compiler';
 export * from './src/template_parser/template_parser';
 export { ViewCompiler } from './src/view_compiler/view_compiler';
 export { AnimationParser } from './src/animation/animation_parser';
+export { SyntaxError } from './src/util';

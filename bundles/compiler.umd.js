@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.0-14e785f
+ * @license Angular v4.0.0-beta.0-f0e0925
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.0-14e785f');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.0-f0e0925');
 
   /**
    * @license
@@ -1573,6 +1573,107 @@
       return SelectorContext;
   }());
 
+  var __extends$3 = (this && this.__extends) || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+      function __() { this.constructor = d; }
+      d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+  /**
+   * @stable
+   */
+  var BaseError = (function (_super) {
+      __extends$3(BaseError, _super);
+      /**
+       * @param {?} message
+       */
+      function BaseError(message) {
+          _super.call(this, message);
+          // Errors don't use current this, instead they create a new instance.
+          // We have to do forward all of our api to the nativeInstance.
+          // TODO(bradfordcsmith): Remove this hack when
+          //     google/closure-compiler/issues/2102 is fixed.
+          var nativeError = new Error(message);
+          this._nativeError = nativeError;
+      }
+      Object.defineProperty(BaseError.prototype, "message", {
+          /**
+           * @return {?}
+           */
+          get: function () { return this._nativeError.message; },
+          /**
+           * @param {?} message
+           * @return {?}
+           */
+          set: function (message) { this._nativeError.message = message; },
+          enumerable: true,
+          configurable: true
+      });
+      Object.defineProperty(BaseError.prototype, "name", {
+          /**
+           * @return {?}
+           */
+          get: function () { return this._nativeError.name; },
+          enumerable: true,
+          configurable: true
+      });
+      Object.defineProperty(BaseError.prototype, "stack", {
+          /**
+           * @return {?}
+           */
+          get: function () { return ((this._nativeError)).stack; },
+          /**
+           * @param {?} value
+           * @return {?}
+           */
+          set: function (value) { ((this._nativeError)).stack = value; },
+          enumerable: true,
+          configurable: true
+      });
+      /**
+       * @return {?}
+       */
+      BaseError.prototype.toString = function () { return this._nativeError.toString(); };
+      return BaseError;
+  }(Error));
+  /**
+   * @stable
+   */
+  var WrappedError = (function (_super) {
+      __extends$3(WrappedError, _super);
+      /**
+       * @param {?} message
+       * @param {?} error
+       */
+      function WrappedError(message, error) {
+          _super.call(this, message + " caused by: " + (error instanceof Error ? error.message : error));
+          this.originalError = error;
+      }
+      Object.defineProperty(WrappedError.prototype, "stack", {
+          /**
+           * @return {?}
+           */
+          get: function () {
+              return (((this.originalError instanceof Error ? this.originalError : this._nativeError)))
+                  .stack;
+          },
+          enumerable: true,
+          configurable: true
+      });
+      return WrappedError;
+  }(BaseError));
+
+  /**
+   * @license
+   * Copyright Google Inc. All Rights Reserved.
+   *
+   * Use of this source code is governed by an MIT-style license that can be
+   * found in the LICENSE file at https://angular.io/license
+   */
+  var __extends$2 = (this && this.__extends) || function (d, b) {
+      for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+      function __() { this.constructor = d; }
+      d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
   var /** @type {?} */ MODULE_SUFFIX = '';
   var /** @type {?} */ DASH_CASE_REGEXP = /-+([a-z0-9])/g;
   /**
@@ -1686,6 +1787,13 @@
       }
       return SyncAsyncResult;
   }());
+  var SyntaxError = (function (_super) {
+      __extends$2(SyntaxError, _super);
+      function SyntaxError() {
+          _super.apply(this, arguments);
+      }
+      return SyntaxError;
+  }(BaseError));
 
   /**
    * @license
@@ -2455,7 +2563,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$2 = (this && this.__extends) || function (d, b) {
+  var __extends$4 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -2522,7 +2630,7 @@
     * therefore not interpreted by the Angular's own expression parser.
    */
   var Quote = (function (_super) {
-      __extends$2(Quote, _super);
+      __extends$4(Quote, _super);
       /**
        * @param {?} span
        * @param {?} prefix
@@ -2551,7 +2659,7 @@
       return Quote;
   }(AST));
   var EmptyExpr = (function (_super) {
-      __extends$2(EmptyExpr, _super);
+      __extends$4(EmptyExpr, _super);
       function EmptyExpr() {
           _super.apply(this, arguments);
       }
@@ -2567,7 +2675,7 @@
       return EmptyExpr;
   }(AST));
   var ImplicitReceiver = (function (_super) {
-      __extends$2(ImplicitReceiver, _super);
+      __extends$4(ImplicitReceiver, _super);
       function ImplicitReceiver() {
           _super.apply(this, arguments);
       }
@@ -2586,7 +2694,7 @@
    *  Multiple expressions separated by a semicolon.
    */
   var Chain = (function (_super) {
-      __extends$2(Chain, _super);
+      __extends$4(Chain, _super);
       /**
        * @param {?} span
        * @param {?} expressions
@@ -2607,7 +2715,7 @@
       return Chain;
   }(AST));
   var Conditional = (function (_super) {
-      __extends$2(Conditional, _super);
+      __extends$4(Conditional, _super);
       /**
        * @param {?} span
        * @param {?} condition
@@ -2632,7 +2740,7 @@
       return Conditional;
   }(AST));
   var PropertyRead = (function (_super) {
-      __extends$2(PropertyRead, _super);
+      __extends$4(PropertyRead, _super);
       /**
        * @param {?} span
        * @param {?} receiver
@@ -2655,7 +2763,7 @@
       return PropertyRead;
   }(AST));
   var PropertyWrite = (function (_super) {
-      __extends$2(PropertyWrite, _super);
+      __extends$4(PropertyWrite, _super);
       /**
        * @param {?} span
        * @param {?} receiver
@@ -2680,7 +2788,7 @@
       return PropertyWrite;
   }(AST));
   var SafePropertyRead = (function (_super) {
-      __extends$2(SafePropertyRead, _super);
+      __extends$4(SafePropertyRead, _super);
       /**
        * @param {?} span
        * @param {?} receiver
@@ -2703,7 +2811,7 @@
       return SafePropertyRead;
   }(AST));
   var KeyedRead = (function (_super) {
-      __extends$2(KeyedRead, _super);
+      __extends$4(KeyedRead, _super);
       /**
        * @param {?} span
        * @param {?} obj
@@ -2726,7 +2834,7 @@
       return KeyedRead;
   }(AST));
   var KeyedWrite = (function (_super) {
-      __extends$2(KeyedWrite, _super);
+      __extends$4(KeyedWrite, _super);
       /**
        * @param {?} span
        * @param {?} obj
@@ -2751,7 +2859,7 @@
       return KeyedWrite;
   }(AST));
   var BindingPipe = (function (_super) {
-      __extends$2(BindingPipe, _super);
+      __extends$4(BindingPipe, _super);
       /**
        * @param {?} span
        * @param {?} exp
@@ -2776,7 +2884,7 @@
       return BindingPipe;
   }(AST));
   var LiteralPrimitive = (function (_super) {
-      __extends$2(LiteralPrimitive, _super);
+      __extends$4(LiteralPrimitive, _super);
       /**
        * @param {?} span
        * @param {?} value
@@ -2797,7 +2905,7 @@
       return LiteralPrimitive;
   }(AST));
   var LiteralArray = (function (_super) {
-      __extends$2(LiteralArray, _super);
+      __extends$4(LiteralArray, _super);
       /**
        * @param {?} span
        * @param {?} expressions
@@ -2818,7 +2926,7 @@
       return LiteralArray;
   }(AST));
   var LiteralMap = (function (_super) {
-      __extends$2(LiteralMap, _super);
+      __extends$4(LiteralMap, _super);
       /**
        * @param {?} span
        * @param {?} keys
@@ -2841,7 +2949,7 @@
       return LiteralMap;
   }(AST));
   var Interpolation = (function (_super) {
-      __extends$2(Interpolation, _super);
+      __extends$4(Interpolation, _super);
       /**
        * @param {?} span
        * @param {?} strings
@@ -2864,7 +2972,7 @@
       return Interpolation;
   }(AST));
   var Binary = (function (_super) {
-      __extends$2(Binary, _super);
+      __extends$4(Binary, _super);
       /**
        * @param {?} span
        * @param {?} operation
@@ -2889,7 +2997,7 @@
       return Binary;
   }(AST));
   var PrefixNot = (function (_super) {
-      __extends$2(PrefixNot, _super);
+      __extends$4(PrefixNot, _super);
       /**
        * @param {?} span
        * @param {?} expression
@@ -2910,7 +3018,7 @@
       return PrefixNot;
   }(AST));
   var MethodCall = (function (_super) {
-      __extends$2(MethodCall, _super);
+      __extends$4(MethodCall, _super);
       /**
        * @param {?} span
        * @param {?} receiver
@@ -2935,7 +3043,7 @@
       return MethodCall;
   }(AST));
   var SafeMethodCall = (function (_super) {
-      __extends$2(SafeMethodCall, _super);
+      __extends$4(SafeMethodCall, _super);
       /**
        * @param {?} span
        * @param {?} receiver
@@ -2960,7 +3068,7 @@
       return SafeMethodCall;
   }(AST));
   var FunctionCall = (function (_super) {
-      __extends$2(FunctionCall, _super);
+      __extends$4(FunctionCall, _super);
       /**
        * @param {?} span
        * @param {?} target
@@ -2983,7 +3091,7 @@
       return FunctionCall;
   }(AST));
   var ASTWithSource = (function (_super) {
-      __extends$2(ASTWithSource, _super);
+      __extends$4(ASTWithSource, _super);
       /**
        * @param {?} ast
        * @param {?} source
@@ -5099,7 +5207,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$4 = (this && this.__extends) || function (d, b) {
+  var __extends$6 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -5159,7 +5267,7 @@
       return Token;
   }());
   var TokenError = (function (_super) {
-      __extends$4(TokenError, _super);
+      __extends$6(TokenError, _super);
       /**
        * @param {?} errorMsg
        * @param {?} tokenType
@@ -6006,13 +6114,13 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$3 = (this && this.__extends) || function (d, b) {
+  var __extends$5 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var TreeError = (function (_super) {
-      __extends$3(TreeError, _super);
+      __extends$5(TreeError, _super);
       /**
        * @param {?} elementName
        * @param {?} span
@@ -6922,7 +7030,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$5 = (this && this.__extends) || function (d, b) {
+  var __extends$7 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -6931,7 +7039,7 @@
    *  An i18n error.
    */
   var I18nError = (function (_super) {
-      __extends$5(I18nError, _super);
+      __extends$7(I18nError, _super);
       /**
        * @param {?} span
        * @param {?} msg
@@ -7487,13 +7595,13 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$6 = (this && this.__extends) || function (d, b) {
+  var __extends$8 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var XmlParser = (function (_super) {
-      __extends$6(XmlParser, _super);
+      __extends$8(XmlParser, _super);
       function XmlParser() {
           _super.call(this, getXmlTagDefinition);
       }
@@ -7517,7 +7625,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$7 = (this && this.__extends) || function (d, b) {
+  var __extends$9 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -7616,7 +7724,7 @@
     * *
    */
   var _SerializerIgnoreIcuExpVisitor = (function (_super) {
-      __extends$7(_SerializerIgnoreIcuExpVisitor, _super);
+      __extends$9(_SerializerIgnoreIcuExpVisitor, _super);
       function _SerializerIgnoreIcuExpVisitor() {
           _super.apply(this, arguments);
       }
@@ -8011,7 +8119,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$8 = (this && this.__extends) || function (d, b) {
+  var __extends$10 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -8144,7 +8252,7 @@
       return Text;
   }());
   var CR = (function (_super) {
-      __extends$8(CR, _super);
+      __extends$10(CR, _super);
       /**
        * @param {?=} ws
        */
@@ -8881,7 +8989,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$9 = (this && this.__extends) || function (d, b) {
+  var __extends$11 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -8896,7 +9004,7 @@
       if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
   };
   var HtmlParser = (function (_super) {
-      __extends$9(HtmlParser, _super);
+      __extends$11(HtmlParser, _super);
       function HtmlParser() {
           _super.call(this, getHtmlTagDefinition);
       }
@@ -9505,7 +9613,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$10 = (this && this.__extends) || function (d, b) {
+  var __extends$12 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -9555,7 +9663,7 @@
       return ExpansionResult;
   }());
   var ExpansionError = (function (_super) {
-      __extends$10(ExpansionError, _super);
+      __extends$12(ExpansionError, _super);
       /**
        * @param {?} span
        * @param {?} errorMsg
@@ -9663,13 +9771,13 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$11 = (this && this.__extends) || function (d, b) {
+  var __extends$13 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   var ProviderError = (function (_super) {
-      __extends$11(ProviderError, _super);
+      __extends$13(ProviderError, _super);
       /**
        * @param {?} message
        * @param {?} span
@@ -10340,7 +10448,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$12 = (this && this.__extends) || function (d, b) {
+  var __extends$14 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -10824,7 +10932,7 @@
       return BindingParser;
   }());
   var PipeCollector = (function (_super) {
-      __extends$12(PipeCollector, _super);
+      __extends$14(PipeCollector, _super);
       function PipeCollector() {
           _super.apply(this, arguments);
           this.pipes = new Map();
@@ -11075,7 +11183,7 @@
           }
           if (errors.length > 0) {
               var /** @type {?} */ errorString = errors.join('\n');
-              throw new Error("Template parse errors:\n" + errorString);
+              throw new SyntaxError("Template parse errors:\n" + errorString);
           }
           return result.templateAst;
       };
@@ -11913,7 +12021,7 @@
   /**
    * @return {?}
    */
-  function unimplemented$1() {
+  function unimplemented$2() {
       throw new Error('unimplemented');
   }
   var CompilerConfig = (function () {
@@ -11963,7 +12071,7 @@
           /**
            * @return {?}
            */
-          get: function () { return unimplemented$1(); },
+          get: function () { return unimplemented$2(); },
           enumerable: true,
           configurable: true
       });
@@ -11971,7 +12079,7 @@
           /**
            * @return {?}
            */
-          get: function () { return unimplemented$1(); },
+          get: function () { return unimplemented$2(); },
           enumerable: true,
           configurable: true
       });
@@ -11979,7 +12087,7 @@
           /**
            * @return {?}
            */
-          get: function () { return unimplemented$1(); },
+          get: function () { return unimplemented$2(); },
           enumerable: true,
           configurable: true
       });
@@ -11987,7 +12095,7 @@
           /**
            * @return {?}
            */
-          get: function () { return unimplemented$1(); },
+          get: function () { return unimplemented$2(); },
           enumerable: true,
           configurable: true
       });
@@ -11995,7 +12103,7 @@
           /**
            * @return {?}
            */
-          get: function () { return unimplemented$1(); },
+          get: function () { return unimplemented$2(); },
           enumerable: true,
           configurable: true
       });
@@ -12003,7 +12111,7 @@
           /**
            * @return {?}
            */
-          get: function () { return unimplemented$1(); },
+          get: function () { return unimplemented$2(); },
           enumerable: true,
           configurable: true
       });
@@ -12029,7 +12137,7 @@
       return DefaultRenderTypes;
   }());
 
-  var __extends$14 = (this && this.__extends) || function (d, b) {
+  var __extends$16 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -12060,7 +12168,7 @@
    * @abstract
    */
   var AnimationStateAst = (function (_super) {
-      __extends$14(AnimationStateAst, _super);
+      __extends$16(AnimationStateAst, _super);
       function AnimationStateAst() {
           _super.apply(this, arguments);
       }
@@ -12074,7 +12182,7 @@
       return AnimationStateAst;
   }(AnimationAst));
   var AnimationEntryAst = (function (_super) {
-      __extends$14(AnimationEntryAst, _super);
+      __extends$16(AnimationEntryAst, _super);
       /**
        * @param {?} name
        * @param {?} stateDeclarations
@@ -12097,7 +12205,7 @@
       return AnimationEntryAst;
   }(AnimationAst));
   var AnimationStateDeclarationAst = (function (_super) {
-      __extends$14(AnimationStateDeclarationAst, _super);
+      __extends$16(AnimationStateDeclarationAst, _super);
       /**
        * @param {?} stateName
        * @param {?} styles
@@ -12129,7 +12237,7 @@
       return AnimationStateTransitionExpression;
   }());
   var AnimationStateTransitionAst = (function (_super) {
-      __extends$14(AnimationStateTransitionAst, _super);
+      __extends$16(AnimationStateTransitionAst, _super);
       /**
        * @param {?} stateChanges
        * @param {?} animation
@@ -12150,7 +12258,7 @@
       return AnimationStateTransitionAst;
   }(AnimationStateAst));
   var AnimationStepAst = (function (_super) {
-      __extends$14(AnimationStepAst, _super);
+      __extends$16(AnimationStepAst, _super);
       /**
        * @param {?} startingStyles
        * @param {?} keyframes
@@ -12177,7 +12285,7 @@
       return AnimationStepAst;
   }(AnimationAst));
   var AnimationStylesAst = (function (_super) {
-      __extends$14(AnimationStylesAst, _super);
+      __extends$16(AnimationStylesAst, _super);
       /**
        * @param {?} styles
        */
@@ -12196,7 +12304,7 @@
       return AnimationStylesAst;
   }(AnimationAst));
   var AnimationKeyframeAst = (function (_super) {
-      __extends$14(AnimationKeyframeAst, _super);
+      __extends$16(AnimationKeyframeAst, _super);
       /**
        * @param {?} offset
        * @param {?} styles
@@ -12220,7 +12328,7 @@
    * @abstract
    */
   var AnimationWithStepsAst = (function (_super) {
-      __extends$14(AnimationWithStepsAst, _super);
+      __extends$16(AnimationWithStepsAst, _super);
       /**
        * @param {?} steps
        */
@@ -12231,7 +12339,7 @@
       return AnimationWithStepsAst;
   }(AnimationAst));
   var AnimationGroupAst = (function (_super) {
-      __extends$14(AnimationGroupAst, _super);
+      __extends$16(AnimationGroupAst, _super);
       /**
        * @param {?} steps
        */
@@ -12249,7 +12357,7 @@
       return AnimationGroupAst;
   }(AnimationWithStepsAst));
   var AnimationSequenceAst = (function (_super) {
-      __extends$14(AnimationSequenceAst, _super);
+      __extends$16(AnimationSequenceAst, _super);
       /**
        * @param {?} steps
        */
@@ -12350,7 +12458,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$13 = (this && this.__extends) || function (d, b) {
+  var __extends$15 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -12368,7 +12476,7 @@
   var /** @type {?} */ _TERMINAL_KEYFRAME = 1;
   var /** @type {?} */ _ONE_SECOND = 1000;
   var AnimationParseError = (function (_super) {
-      __extends$13(AnimationParseError, _super);
+      __extends$15(AnimationParseError, _super);
       /**
        * @param {?} message
        */
@@ -13426,7 +13534,7 @@
               normalizedTemplateAsync = this.normalizeTemplateAsync(prenormData);
           }
           else {
-              throw new Error("No template specified for component " + stringify(prenormData.componentType));
+              throw new SyntaxError("No template specified for component " + stringify(prenormData.componentType));
           }
           if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
               // sync case
@@ -13465,7 +13573,7 @@
           var /** @type {?} */ rootNodesAndErrors = this._htmlParser.parse(template, stringify(prenomData.componentType), false, interpolationConfig);
           if (rootNodesAndErrors.errors.length > 0) {
               var /** @type {?} */ errorString = rootNodesAndErrors.errors.join('\n');
-              throw new Error("Template parse errors:\n" + errorString);
+              throw new SyntaxError("Template parse errors:\n" + errorString);
           }
           var /** @type {?} */ templateMetadataStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({
               styles: prenomData.styles,
@@ -13837,7 +13945,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$15 = (this && this.__extends) || function (d, b) {
+  var __extends$17 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -13889,7 +13997,7 @@
   BuiltinTypeName[BuiltinTypeName.Function] = "Function";
   BuiltinTypeName[BuiltinTypeName.Null] = "Null";
   var BuiltinType = (function (_super) {
-      __extends$15(BuiltinType, _super);
+      __extends$17(BuiltinType, _super);
       /**
        * @param {?} name
        * @param {?=} modifiers
@@ -13910,7 +14018,7 @@
       return BuiltinType;
   }(Type$1));
   var ExpressionType = (function (_super) {
-      __extends$15(ExpressionType, _super);
+      __extends$17(ExpressionType, _super);
       /**
        * @param {?} value
        * @param {?=} typeParams
@@ -13934,7 +14042,7 @@
       return ExpressionType;
   }(Type$1));
   var ArrayType = (function (_super) {
-      __extends$15(ArrayType, _super);
+      __extends$17(ArrayType, _super);
       /**
        * @param {?} of
        * @param {?=} modifiers
@@ -13955,7 +14063,7 @@
       return ArrayType;
   }(Type$1));
   var MapType = (function (_super) {
-      __extends$15(MapType, _super);
+      __extends$17(MapType, _super);
       /**
        * @param {?} valueType
        * @param {?=} modifiers
@@ -14207,7 +14315,7 @@
   BuiltinVar[BuiltinVar.CatchError] = "CatchError";
   BuiltinVar[BuiltinVar.CatchStack] = "CatchStack";
   var ReadVarExpr = (function (_super) {
-      __extends$15(ReadVarExpr, _super);
+      __extends$17(ReadVarExpr, _super);
       /**
        * @param {?} name
        * @param {?=} type
@@ -14240,7 +14348,7 @@
       return ReadVarExpr;
   }(Expression));
   var WriteVarExpr = (function (_super) {
-      __extends$15(WriteVarExpr, _super);
+      __extends$17(WriteVarExpr, _super);
       /**
        * @param {?} name
        * @param {?} value
@@ -14273,7 +14381,7 @@
       return WriteVarExpr;
   }(Expression));
   var WriteKeyExpr = (function (_super) {
-      __extends$15(WriteKeyExpr, _super);
+      __extends$17(WriteKeyExpr, _super);
       /**
        * @param {?} receiver
        * @param {?} index
@@ -14298,7 +14406,7 @@
       return WriteKeyExpr;
   }(Expression));
   var WritePropExpr = (function (_super) {
-      __extends$15(WritePropExpr, _super);
+      __extends$17(WritePropExpr, _super);
       /**
        * @param {?} receiver
        * @param {?} name
@@ -14330,7 +14438,7 @@
   BuiltinMethod[BuiltinMethod.SubscribeObservable] = "SubscribeObservable";
   BuiltinMethod[BuiltinMethod.Bind] = "Bind";
   var InvokeMethodExpr = (function (_super) {
-      __extends$15(InvokeMethodExpr, _super);
+      __extends$17(InvokeMethodExpr, _super);
       /**
        * @param {?} receiver
        * @param {?} method
@@ -14362,7 +14470,7 @@
       return InvokeMethodExpr;
   }(Expression));
   var InvokeFunctionExpr = (function (_super) {
-      __extends$15(InvokeFunctionExpr, _super);
+      __extends$17(InvokeFunctionExpr, _super);
       /**
        * @param {?} fn
        * @param {?} args
@@ -14385,7 +14493,7 @@
       return InvokeFunctionExpr;
   }(Expression));
   var InstantiateExpr = (function (_super) {
-      __extends$15(InstantiateExpr, _super);
+      __extends$17(InstantiateExpr, _super);
       /**
        * @param {?} classExpr
        * @param {?} args
@@ -14407,7 +14515,7 @@
       return InstantiateExpr;
   }(Expression));
   var LiteralExpr = (function (_super) {
-      __extends$15(LiteralExpr, _super);
+      __extends$17(LiteralExpr, _super);
       /**
        * @param {?} value
        * @param {?=} type
@@ -14428,7 +14536,7 @@
       return LiteralExpr;
   }(Expression));
   var ExternalExpr = (function (_super) {
-      __extends$15(ExternalExpr, _super);
+      __extends$17(ExternalExpr, _super);
       /**
        * @param {?} value
        * @param {?=} type
@@ -14452,7 +14560,7 @@
       return ExternalExpr;
   }(Expression));
   var ConditionalExpr = (function (_super) {
-      __extends$15(ConditionalExpr, _super);
+      __extends$17(ConditionalExpr, _super);
       /**
        * @param {?} condition
        * @param {?} trueCase
@@ -14478,7 +14586,7 @@
       return ConditionalExpr;
   }(Expression));
   var NotExpr = (function (_super) {
-      __extends$15(NotExpr, _super);
+      __extends$17(NotExpr, _super);
       /**
        * @param {?} condition
        */
@@ -14497,7 +14605,7 @@
       return NotExpr;
   }(Expression));
   var CastExpr = (function (_super) {
-      __extends$15(CastExpr, _super);
+      __extends$17(CastExpr, _super);
       /**
        * @param {?} value
        * @param {?} type
@@ -14529,7 +14637,7 @@
       return FnParam;
   }());
   var FunctionExpr = (function (_super) {
-      __extends$15(FunctionExpr, _super);
+      __extends$17(FunctionExpr, _super);
       /**
        * @param {?} params
        * @param {?} statements
@@ -14561,7 +14669,7 @@
       return FunctionExpr;
   }(Expression));
   var BinaryOperatorExpr = (function (_super) {
-      __extends$15(BinaryOperatorExpr, _super);
+      __extends$17(BinaryOperatorExpr, _super);
       /**
        * @param {?} operator
        * @param {?} lhs
@@ -14586,7 +14694,7 @@
       return BinaryOperatorExpr;
   }(Expression));
   var ReadPropExpr = (function (_super) {
-      __extends$15(ReadPropExpr, _super);
+      __extends$17(ReadPropExpr, _super);
       /**
        * @param {?} receiver
        * @param {?} name
@@ -14616,7 +14724,7 @@
       return ReadPropExpr;
   }(Expression));
   var ReadKeyExpr = (function (_super) {
-      __extends$15(ReadKeyExpr, _super);
+      __extends$17(ReadKeyExpr, _super);
       /**
        * @param {?} receiver
        * @param {?} index
@@ -14646,7 +14754,7 @@
       return ReadKeyExpr;
   }(Expression));
   var LiteralArrayExpr = (function (_super) {
-      __extends$15(LiteralArrayExpr, _super);
+      __extends$17(LiteralArrayExpr, _super);
       /**
        * @param {?} entries
        * @param {?=} type
@@ -14681,7 +14789,7 @@
       return LiteralMapEntry;
   }());
   var LiteralMapExpr = (function (_super) {
-      __extends$15(LiteralMapExpr, _super);
+      __extends$17(LiteralMapExpr, _super);
       /**
        * @param {?} entries
        * @param {?=} type
@@ -14745,7 +14853,7 @@
       return Statement;
   }());
   var DeclareVarStmt = (function (_super) {
-      __extends$15(DeclareVarStmt, _super);
+      __extends$17(DeclareVarStmt, _super);
       /**
        * @param {?} name
        * @param {?} value
@@ -14771,7 +14879,7 @@
       return DeclareVarStmt;
   }(Statement));
   var DeclareFunctionStmt = (function (_super) {
-      __extends$15(DeclareFunctionStmt, _super);
+      __extends$17(DeclareFunctionStmt, _super);
       /**
        * @param {?} name
        * @param {?} params
@@ -14799,7 +14907,7 @@
       return DeclareFunctionStmt;
   }(Statement));
   var ExpressionStatement = (function (_super) {
-      __extends$15(ExpressionStatement, _super);
+      __extends$17(ExpressionStatement, _super);
       /**
        * @param {?} expr
        */
@@ -14818,7 +14926,7 @@
       return ExpressionStatement;
   }(Statement));
   var ReturnStatement = (function (_super) {
-      __extends$15(ReturnStatement, _super);
+      __extends$17(ReturnStatement, _super);
       /**
        * @param {?} value
        */
@@ -14857,7 +14965,7 @@
       return AbstractClassPart;
   }());
   var ClassField = (function (_super) {
-      __extends$15(ClassField, _super);
+      __extends$17(ClassField, _super);
       /**
        * @param {?} name
        * @param {?=} type
@@ -14872,7 +14980,7 @@
       return ClassField;
   }(AbstractClassPart));
   var ClassMethod = (function (_super) {
-      __extends$15(ClassMethod, _super);
+      __extends$17(ClassMethod, _super);
       /**
        * @param {?} name
        * @param {?} params
@@ -14891,7 +14999,7 @@
       return ClassMethod;
   }(AbstractClassPart));
   var ClassGetter = (function (_super) {
-      __extends$15(ClassGetter, _super);
+      __extends$17(ClassGetter, _super);
       /**
        * @param {?} name
        * @param {?} body
@@ -14908,7 +15016,7 @@
       return ClassGetter;
   }(AbstractClassPart));
   var ClassStmt = (function (_super) {
-      __extends$15(ClassStmt, _super);
+      __extends$17(ClassStmt, _super);
       /**
        * @param {?} name
        * @param {?} parent
@@ -14939,7 +15047,7 @@
       return ClassStmt;
   }(Statement));
   var IfStmt = (function (_super) {
-      __extends$15(IfStmt, _super);
+      __extends$17(IfStmt, _super);
       /**
        * @param {?} condition
        * @param {?} trueCase
@@ -14963,7 +15071,7 @@
       return IfStmt;
   }(Statement));
   var CommentStmt = (function (_super) {
-      __extends$15(CommentStmt, _super);
+      __extends$17(CommentStmt, _super);
       /**
        * @param {?} comment
        */
@@ -14982,7 +15090,7 @@
       return CommentStmt;
   }(Statement));
   var TryCatchStmt = (function (_super) {
-      __extends$15(TryCatchStmt, _super);
+      __extends$17(TryCatchStmt, _super);
       /**
        * @param {?} bodyStmts
        * @param {?} catchStmts
@@ -15003,7 +15111,7 @@
       return TryCatchStmt;
   }(Statement));
   var ThrowStmt = (function (_super) {
-      __extends$15(ThrowStmt, _super);
+      __extends$17(ThrowStmt, _super);
       /**
        * @param {?} error
        */
@@ -15534,7 +15642,7 @@
       return expression.visitExpression(transformer, null);
   }
   var _ReplaceVariableTransformer = (function (_super) {
-      __extends$15(_ReplaceVariableTransformer, _super);
+      __extends$17(_ReplaceVariableTransformer, _super);
       /**
        * @param {?} _varName
        * @param {?} _newValue
@@ -15564,7 +15672,7 @@
       return finder.varNames;
   }
   var _VariableFinder = (function (_super) {
-      __extends$15(_VariableFinder, _super);
+      __extends$17(_VariableFinder, _super);
       function _VariableFinder() {
           _super.apply(this, arguments);
           this.varNames = new Set();
@@ -17554,7 +17662,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$16 = (this && this.__extends) || function (d, b) {
+  var __extends$18 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -17817,7 +17925,7 @@
           else {
               // Directive
               if (!selector) {
-                  this._reportError(new Error("Directive " + stringifyType(directiveType) + " has no selector, please add it!"), directiveType);
+                  this._reportError(new SyntaxError("Directive " + stringifyType(directiveType) + " has no selector, please add it!"), directiveType);
                   selector = 'error';
               }
           }
@@ -17858,7 +17966,7 @@
       CompileMetadataResolver.prototype.getDirectiveMetadata = function (directiveType) {
           var /** @type {?} */ dirMeta = this._directiveCache.get(directiveType);
           if (!dirMeta) {
-              this._reportError(new Error("Illegal state: getDirectiveMetadata can only be called after loadNgModuleMetadata for a module that declares it. Directive " + stringifyType(directiveType) + "."), directiveType);
+              this._reportError(new SyntaxError("Illegal state: getDirectiveMetadata can only be called after loadNgModuleMetadata for a module that declares it. Directive " + stringifyType(directiveType) + "."), directiveType);
           }
           return dirMeta;
       };
@@ -17869,7 +17977,7 @@
       CompileMetadataResolver.prototype.getDirectiveSummary = function (dirType) {
           var /** @type {?} */ dirSummary = (this._loadSummary(dirType, CompileSummaryKind.Directive));
           if (!dirSummary) {
-              this._reportError(new Error("Illegal state: Could not load the summary for directive " + stringifyType(dirType) + "."), dirType);
+              this._reportError(new SyntaxError("Illegal state: Could not load the summary for directive " + stringifyType(dirType) + "."), dirType);
           }
           return dirSummary;
       };
@@ -17963,13 +18071,13 @@
                   if (importedModuleType) {
                       var /** @type {?} */ importedModuleSummary = _this.getNgModuleSummary(importedModuleType);
                       if (!importedModuleSummary) {
-                          _this._reportError(new Error("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                          _this._reportError(new SyntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
                           return;
                       }
                       importedModules.push(importedModuleSummary);
                   }
                   else {
-                      _this._reportError(new Error("Unexpected value '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                      _this._reportError(new SyntaxError("Unexpected value '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
                       return;
                   }
               });
@@ -17977,7 +18085,7 @@
           if (meta.exports) {
               flattenAndDedupeArray(meta.exports).forEach(function (exportedType) {
                   if (!isValidType(exportedType)) {
-                      _this._reportError(new Error("Unexpected value '" + stringifyType(exportedType) + "' exported by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                      _this._reportError(new SyntaxError("Unexpected value '" + stringifyType(exportedType) + "' exported by the module '" + stringifyType(moduleType) + "'"), moduleType);
                       return;
                   }
                   var /** @type {?} */ exportedModuleSummary = _this.getNgModuleSummary(exportedType);
@@ -17995,7 +18103,7 @@
           if (meta.declarations) {
               flattenAndDedupeArray(meta.declarations).forEach(function (declaredType) {
                   if (!isValidType(declaredType)) {
-                      _this._reportError(new Error("Unexpected value '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                      _this._reportError(new SyntaxError("Unexpected value '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
                       return;
                   }
                   var /** @type {?} */ declaredIdentifier = _this._getIdentifierMetadata(declaredType);
@@ -18011,7 +18119,7 @@
                       _this._addTypeToModule(declaredType, moduleType);
                   }
                   else {
-                      _this._reportError(new Error("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                      _this._reportError(new SyntaxError("Unexpected " + _this._getTypeDescriptor(declaredType) + " '" + stringifyType(declaredType) + "' declared by the module '" + stringifyType(moduleType) + "'"), moduleType);
                       return;
                   }
               });
@@ -18028,7 +18136,7 @@
                   transitiveModule.addExportedPipe(exportedId);
               }
               else {
-                  _this._reportError(new Error("Can't export " + _this._getTypeDescriptor(exportedId.reference) + " " + stringifyType(exportedId.reference) + " from " + stringifyType(moduleType) + " as it was neither declared nor imported!"), moduleType);
+                  _this._reportError(new SyntaxError("Can't export " + _this._getTypeDescriptor(exportedId.reference) + " " + stringifyType(exportedId.reference) + " from " + stringifyType(moduleType) + " as it was neither declared nor imported!"), moduleType);
               }
           });
           // The providers of the module have to go last
@@ -18043,7 +18151,7 @@
           if (meta.bootstrap) {
               flattenAndDedupeArray(meta.bootstrap).forEach(function (type) {
                   if (!isValidType(type)) {
-                      _this._reportError(new Error("Unexpected value '" + stringifyType(type) + "' used in the bootstrap property of module '" + stringifyType(moduleType) + "'"), moduleType);
+                      _this._reportError(new SyntaxError("Unexpected value '" + stringifyType(type) + "' used in the bootstrap property of module '" + stringifyType(moduleType) + "'"), moduleType);
                       return;
                   }
                   bootstrapComponents.push(_this._getIdentifierMetadata(type));
@@ -18101,7 +18209,7 @@
       CompileMetadataResolver.prototype._addTypeToModule = function (type, moduleType) {
           var /** @type {?} */ oldModule = this._ngModuleOfTypes.get(type);
           if (oldModule && oldModule !== moduleType) {
-              this._reportError(new Error(("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! ") +
+              this._reportError(new SyntaxError(("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! ") +
                   ("Please consider moving " + stringifyType(type) + " to a higher module that imports " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ". ") +
                   ("You can also create a new NgModule that exports and includes " + stringifyType(type) + " then import that NgModule in " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ".")), moduleType);
           }
@@ -18218,7 +18326,7 @@
       CompileMetadataResolver.prototype.getPipeMetadata = function (pipeType) {
           var /** @type {?} */ pipeMeta = this._pipeCache.get(pipeType);
           if (!pipeMeta) {
-              this._reportError(new Error("Illegal state: getPipeMetadata can only be called after loadNgModuleMetadata for a module that declares it. Pipe " + stringifyType(pipeType) + "."), pipeType);
+              this._reportError(new SyntaxError("Illegal state: getPipeMetadata can only be called after loadNgModuleMetadata for a module that declares it. Pipe " + stringifyType(pipeType) + "."), pipeType);
           }
           return pipeMeta;
       };
@@ -18229,7 +18337,7 @@
       CompileMetadataResolver.prototype.getPipeSummary = function (pipeType) {
           var /** @type {?} */ pipeSummary = (this._loadSummary(pipeType, CompileSummaryKind.Pipe));
           if (!pipeSummary) {
-              this._reportError(new Error("Illegal state: Could not load the summary for pipe " + stringifyType(pipeType) + "."), pipeType);
+              this._reportError(new SyntaxError("Illegal state: Could not load the summary for pipe " + stringifyType(pipeType) + "."), pipeType);
           }
           return pipeSummary;
       };
@@ -18320,7 +18428,7 @@
           });
           if (hasUnknownDeps) {
               var /** @type {?} */ depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringifyType(dep.token) : '?'; }).join(', ');
-              this._reportError(new Error("Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ")."), typeOrFunc);
+              this._reportError(new SyntaxError("Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ")."), typeOrFunc);
           }
           return dependenciesMetadata;
       };
@@ -18377,7 +18485,7 @@
                           return soFar;
                       }, [])))
                           .join(', ');
-                      _this._reportError(new Error("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]"), type);
+                      _this._reportError(new SyntaxError("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]"), type);
                   }
                   if (providerMeta.token === resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
                       targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(providerMeta, type));
@@ -18399,11 +18507,11 @@
           var /** @type {?} */ components = [];
           var /** @type {?} */ collectedIdentifiers = [];
           if (provider.useFactory || provider.useExisting || provider.useClass) {
-              this._reportError(new Error("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!"), type);
+              this._reportError(new SyntaxError("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!"), type);
               return [];
           }
           if (!provider.multi) {
-              this._reportError(new Error("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!"), type);
+              this._reportError(new SyntaxError("The ANALYZE_FOR_ENTRY_COMPONENTS token only supports 'multi = true'!"), type);
               return [];
           }
           extractIdentifiers(provider.useValue, collectedIdentifiers);
@@ -18483,7 +18591,7 @@
           }
           else {
               if (!q.selector) {
-                  this._reportError(new Error("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringifyType(typeOrFunc) + "\" since the query selector wasn't defined."), typeOrFunc);
+                  this._reportError(new SyntaxError("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringifyType(typeOrFunc) + "\" since the query selector wasn't defined."), typeOrFunc);
               }
               selectors = [this._getTokenMetadata(q.selector)];
           }
@@ -18588,7 +18696,7 @@
           return scheme ? moduleId : "package:" + moduleId + MODULE_SUFFIX;
       }
       else if (moduleId !== null && moduleId !== void 0) {
-          throw new Error(("moduleId should be a string in \"" + stringifyType(type) + "\". See https://goo.gl/wIDDiL for more information.\n") +
+          throw new SyntaxError(("moduleId should be a string in \"" + stringifyType(type) + "\". See https://goo.gl/wIDDiL for more information.\n") +
               "If you're using Webpack you should inline the template and the styles, see https://goo.gl/X2J8zc.");
       }
       return reflector.importUri(type);
@@ -18602,7 +18710,7 @@
       visitValue(value, new _CompileValueConverter(), targetIdentifiers);
   }
   var _CompileValueConverter = (function (_super) {
-      __extends$16(_CompileValueConverter, _super);
+      __extends$18(_CompileValueConverter, _super);
       function _CompileValueConverter() {
           _super.apply(this, arguments);
       }
@@ -19602,7 +19710,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$17 = (this && this.__extends) || function (d, b) {
+  var __extends$19 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -19662,7 +19770,7 @@
       return TypeScriptEmitter;
   }());
   var _TsEmitterVisitor = (function (_super) {
-      __extends$17(_TsEmitterVisitor, _super);
+      __extends$19(_TsEmitterVisitor, _super);
       /**
        * @param {?} _moduleUrl
        */
@@ -20110,7 +20218,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$18 = (this && this.__extends) || function (d, b) {
+  var __extends$20 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -20343,7 +20451,7 @@
       'tabindex': 'tabIndex',
   };
   var DomElementSchemaRegistry = (function (_super) {
-      __extends$18(DomElementSchemaRegistry, _super);
+      __extends$20(DomElementSchemaRegistry, _super);
       function DomElementSchemaRegistry() {
           var _this = this;
           _super.call(this);
@@ -21461,7 +21569,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$20 = (this && this.__extends) || function (d, b) {
+  var __extends$22 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -21490,7 +21598,7 @@
       }
   }
   var _ReplaceViewTransformer = (function (_super) {
-      __extends$20(_ReplaceViewTransformer, _super);
+      __extends$22(_ReplaceViewTransformer, _super);
       /**
        * @param {?} _viewExpr
        * @param {?} _view
@@ -21837,7 +21945,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$19 = (this && this.__extends) || function (d, b) {
+  var __extends$21 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -21868,7 +21976,7 @@
       return CompileNode;
   }());
   var CompileElement = (function (_super) {
-      __extends$19(CompileElement, _super);
+      __extends$21(CompileElement, _super);
       /**
        * @param {?} parent
        * @param {?} view
@@ -24210,7 +24318,7 @@
       return GeneratedFile;
   }());
 
-  var __extends$21 = (this && this.__extends) || function (d, b) {
+  var __extends$23 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -24287,7 +24395,7 @@
       return fileNameWithoutSuffix + ".ngsummary.json";
   }
   var Serializer = (function (_super) {
-      __extends$21(Serializer, _super);
+      __extends$23(Serializer, _super);
       /**
        * @param {?} host
        */
@@ -24370,7 +24478,7 @@
       return Serializer;
   }(ValueTransformer));
   var Deserializer = (function (_super) {
-      __extends$21(Deserializer, _super);
+      __extends$23(Deserializer, _super);
       /**
        * @param {?} symbolCache
        */
@@ -24965,7 +25073,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$22 = (this && this.__extends) || function (d, b) {
+  var __extends$24 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -25685,7 +25793,7 @@
       return BindingScope;
   }());
   var PopulatedScope = (function (_super) {
-      __extends$22(PopulatedScope, _super);
+      __extends$24(PopulatedScope, _super);
       /**
        * @param {?} bindings
        */
@@ -25731,7 +25839,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$23 = (this && this.__extends) || function (d, b) {
+  var __extends$25 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -25923,7 +26031,7 @@
       StaticSymbolResolver.prototype.createResolvedSymbol = function (sourceSymbol, metadata) {
           var /** @type {?} */ self = this;
           var ReferenceTransformer = (function (_super) {
-              __extends$23(ReferenceTransformer, _super);
+              __extends$25(ReferenceTransformer, _super);
               function ReferenceTransformer() {
                   _super.apply(this, arguments);
               }
@@ -26680,7 +26788,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$25 = (this && this.__extends) || function (d, b) {
+  var __extends$27 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -26689,7 +26797,7 @@
    * @abstract
    */
   var AbstractJsEmitterVisitor = (function (_super) {
-      __extends$25(AbstractJsEmitterVisitor, _super);
+      __extends$27(AbstractJsEmitterVisitor, _super);
       function AbstractJsEmitterVisitor() {
           _super.call(this, false);
       }
@@ -26914,7 +27022,7 @@
    * Use of this source code is governed by an MIT-style license that can be
    * found in the LICENSE file at https://angular.io/license
    */
-  var __extends$24 = (this && this.__extends) || function (d, b) {
+  var __extends$26 = (this && this.__extends) || function (d, b) {
       for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -26949,7 +27057,7 @@
       return evalExpression(sourceUrl, resultVar, ctx.toSource(), converter.getArgs());
   }
   var JitEmitterVisitor = (function (_super) {
-      __extends$24(JitEmitterVisitor, _super);
+      __extends$26(JitEmitterVisitor, _super);
       function JitEmitterVisitor() {
           _super.apply(this, arguments);
           this._evalArgNames = [];
@@ -27939,5 +28047,6 @@
   exports.removeSummaryDuplicates = removeSummaryDuplicates;
   exports.ViewCompiler = ViewCompiler;
   exports.AnimationParser = AnimationParser;
+  exports.SyntaxError = SyntaxError;
 
 }));
