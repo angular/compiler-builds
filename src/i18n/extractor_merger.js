@@ -13,8 +13,6 @@ import { I18nError } from './parse_util';
 var /** @type {?} */ _I18N_ATTR = 'i18n';
 var /** @type {?} */ _I18N_ATTR_PREFIX = 'i18n-';
 var /** @type {?} */ _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
-var /** @type {?} */ MEANING_SEPARATOR = '|';
-var /** @type {?} */ ID_SEPARATOR = '@@';
 /**
  *  Extract translatable messages from an html AST
  * @param {?} nodes
@@ -330,17 +328,17 @@ var _Visitor = (function () {
     };
     /**
      * @param {?} ast
-     * @param {?=} msgMeta
+     * @param {?=} meaningAndDesc
      * @return {?}
      */
-    _Visitor.prototype._addMessage = function (ast, msgMeta) {
+    _Visitor.prototype._addMessage = function (ast, meaningAndDesc) {
         if (ast.length == 0 ||
             ast.length == 1 && ast[0] instanceof html.Attribute && !((ast[0])).value) {
             // Do not create empty messages
             return;
         }
-        var _a = _parseMessageMeta(msgMeta), meaning = _a.meaning, description = _a.description, id = _a.id;
-        var /** @type {?} */ message = this._createI18nMessage(ast, meaning, description, id);
+        var _a = _splitMeaningAndDesc(meaningAndDesc), meaning = _a[0], description = _a[1];
+        var /** @type {?} */ message = this._createI18nMessage(ast, meaning, description);
         this._messages.push(message);
         return message;
     };
@@ -370,7 +368,7 @@ var _Visitor = (function () {
         attributes.forEach(function (attr) {
             if (attr.name.startsWith(_I18N_ATTR_PREFIX)) {
                 i18nAttributeMeanings[attr.name.slice(_I18N_ATTR_PREFIX.length)] =
-                    _parseMessageMeta(attr.value).meaning;
+                    _splitMeaningAndDesc(attr.value)[0];
             }
         });
         var /** @type {?} */ translatedAttributes = [];
@@ -381,7 +379,7 @@ var _Visitor = (function () {
             }
             if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                 var /** @type {?} */ meaning = i18nAttributeMeanings[attr.name];
-                var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '', '');
+                var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '');
                 var /** @type {?} */ nodes = _this._translations.get(message);
                 if (nodes) {
                     if (nodes[0] instanceof html.Text) {
@@ -547,15 +545,10 @@ function _getI18nAttr(p) {
  * @param {?} i18n
  * @return {?}
  */
-function _parseMessageMeta(i18n) {
+function _splitMeaningAndDesc(i18n) {
     if (!i18n)
-        return { meaning: '', description: '', id: '' };
-    var /** @type {?} */ idIndex = i18n.indexOf(ID_SEPARATOR);
-    var /** @type {?} */ descIndex = i18n.indexOf(MEANING_SEPARATOR);
-    var _a = (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] : [i18n, ''], meaningAndDesc = _a[0], id = _a[1];
-    var _b = (descIndex > -1) ?
-        [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
-        ['', meaningAndDesc], meaning = _b[0], description = _b[1];
-    return { meaning: meaning, description: description, id: id };
+        return ['', ''];
+    var /** @type {?} */ pipeIndex = i18n.indexOf('|');
+    return pipeIndex == -1 ? ['', i18n] : [i18n.slice(0, pipeIndex), i18n.slice(pipeIndex + 1)];
 }
 //# sourceMappingURL=extractor_merger.js.map
