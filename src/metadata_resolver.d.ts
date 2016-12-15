@@ -30,7 +30,7 @@ export declare class CompileMetadataResolver {
     private _pipeCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector);
+    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
@@ -61,6 +61,9 @@ export declare class CompileMetadataResolver {
     private _addTypeToModule(type, moduleType);
     private _getTransitiveNgModuleMetadata(importedModules, exportedModules);
     private _getIdentifierMetadata(type);
+    isInjectable(type: any): boolean;
+    getInjectableSummary(type: any): cpl.CompileTypeSummary;
+    private _getInjectableMetadata(type, dependencies?);
     private _getTypeMetadata(type, dependencies?);
     private _getFactoryMetadata(factory, dependencies?);
     /**

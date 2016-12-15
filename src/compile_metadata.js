@@ -245,14 +245,14 @@ export function identifierModuleUrl(compileIdentifier) {
     return reflector.importUri(ref);
 }
 export var CompileSummaryKind = {};
-CompileSummaryKind.Template = 0;
-CompileSummaryKind.Pipe = 1;
-CompileSummaryKind.Directive = 2;
-CompileSummaryKind.NgModule = 3;
-CompileSummaryKind[CompileSummaryKind.Template] = "Template";
+CompileSummaryKind.Pipe = 0;
+CompileSummaryKind.Directive = 1;
+CompileSummaryKind.NgModule = 2;
+CompileSummaryKind.Injectable = 3;
 CompileSummaryKind[CompileSummaryKind.Pipe] = "Pipe";
 CompileSummaryKind[CompileSummaryKind.Directive] = "Directive";
 CompileSummaryKind[CompileSummaryKind.NgModule] = "NgModule";
+CompileSummaryKind[CompileSummaryKind.Injectable] = "Injectable";
 /**
  * @param {?} token
  * @return {?}
@@ -323,7 +323,6 @@ export var CompileTemplateMetadata = (function () {
      */
     CompileTemplateMetadata.prototype.toSummary = function () {
         return {
-            summaryKind: CompileSummaryKind.Template,
             animations: this.animations.map(function (anim) { return anim.name; }),
             ngContentSelectors: this.ngContentSelectors,
             encapsulation: this.encapsulation

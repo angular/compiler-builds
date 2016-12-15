@@ -5,10 +5,20 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Injectable, ViewEncapsulation } from '@angular/core';
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+import { ViewEncapsulation } from '@angular/core';
 import { CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
 import { isBlank, isPresent, stringify } from './facade/lang';
+import { CompilerInjectable } from './injectable';
 import * as html from './ml_parser/ast';
 import { HtmlParser } from './ml_parser/html_parser';
 import { InterpolationConfig } from './ml_parser/interpolation_config';
@@ -193,26 +203,13 @@ export var DirectiveNormalizer = (function () {
         });
         return new CompileStylesheetMetadata({ styles: allStyles, styleUrls: allStyleUrls, moduleUrl: stylesheet.moduleUrl });
     };
-    DirectiveNormalizer.decorators = [
-        { type: Injectable },
-    ];
-    /** @nocollapse */
-    DirectiveNormalizer.ctorParameters = function () { return [
-        { type: ResourceLoader, },
-        { type: UrlResolver, },
-        { type: HtmlParser, },
-        { type: CompilerConfig, },
-    ]; };
+    DirectiveNormalizer = __decorate([
+        CompilerInjectable(), 
+        __metadata('design:paramtypes', [ResourceLoader, UrlResolver, HtmlParser, CompilerConfig])
+    ], DirectiveNormalizer);
     return DirectiveNormalizer;
 }());
 function DirectiveNormalizer_tsickle_Closure_declarations() {
-    /** @type {?} */
-    DirectiveNormalizer.decorators;
-    /**
-     * @nocollapse
-     * @type {?}
-     */
-    DirectiveNormalizer.ctorParameters;
     /** @type {?} */
     DirectiveNormalizer.prototype._resourceLoaderCache;
     /** @type {?} */
