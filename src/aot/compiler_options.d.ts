@@ -10,4 +10,6 @@ export interface AotCompilerOptions {
     locale?: string;
     i18nFormat?: string;
     translations?: string;
+    includeFilePattern?: RegExp;
+    excludeFilePattern?: RegExp;
 }

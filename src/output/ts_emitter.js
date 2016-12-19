@@ -444,7 +444,7 @@ var _TsEmitterVisitor = (function (_super) {
             }
             ctx.print(prefix + ".");
         }
-        if (value.reference && value.reference.members && value.reference.members.length) {
+        if (value.reference && value.reference.members) {
             ctx.print(value.reference.name);
             ctx.print('.');
             ctx.print(value.reference.members.join('.'));

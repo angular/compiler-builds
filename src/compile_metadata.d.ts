@@ -60,18 +60,20 @@ export interface CompileIdentifierMetadata {
     reference: any;
 }
 export declare enum CompileSummaryKind {
-    Pipe = 0,
-    Directive = 1,
-    NgModule = 2,
-    Injectable = 3,
+    Template = 0,
+    Pipe = 1,
+    Directive = 2,
+    NgModule = 3,
 }
 /**
  * A CompileSummary is the data needed to use a directive / pipe / module
  * in other modules / components. However, this data is not enough to compile
  * the directive / module itself.
  */
-export interface CompileTypeSummary {
+export interface CompileSummary {
     summaryKind: CompileSummaryKind;
+}
+export interface CompileTypeSummary extends CompileSummary {
     type: CompileTypeMetadata;
 }
 export interface CompileDiDependencyMetadata {
@@ -134,7 +136,7 @@ export declare class CompileStylesheetMetadata {
 /**
  * Summary Metadata regarding compilation of a template.
  */
-export interface CompileTemplateSummary {
+export interface CompileTemplateSummary extends CompileSummary {
     animations: string[];
     ngContentSelectors: string[];
     encapsulation: ViewEncapsulation;

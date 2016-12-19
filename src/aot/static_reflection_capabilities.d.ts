@@ -7,7 +7,6 @@
  */
 import { GetterFn, MethodFn, SetterFn } from '../private_import_core';
 import { StaticReflector } from './static_reflector';
-import { StaticSymbol } from './static_symbol';
 export declare class StaticAndDynamicReflectionCapabilities {
     private staticDelegate;
     static install(staticDelegate: StaticReflector): void;
@@ -25,6 +24,6 @@ export declare class StaticAndDynamicReflectionCapabilities {
     setter(name: string): SetterFn;
     method(name: string): MethodFn;
     importUri(type: any): string;
-    resolveIdentifier(name: string, moduleUrl: string, runtime: any): StaticSymbol;
+    resolveIdentifier(name: string, moduleUrl: string, runtime: any): any;
     resolveEnum(enumIdentifier: any, name: string): any;
 }
