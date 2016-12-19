@@ -5,14 +5,15 @@ import { CompileMetadataResolver } from '../metadata_resolver';
 import { NgModuleCompiler } from '../ng_module_compiler';
 import { OutputEmitter } from '../output/abstract_emitter';
 import { StyleCompiler } from '../style_compiler';
+import { SummaryResolver } from '../summary_resolver';
 import { TemplateParser } from '../template_parser/template_parser';
 import { ViewCompiler } from '../view_compiler/view_compiler';
-import { AotCompilerOptions } from './compiler_options';
+import { AotCompilerHost } from './compiler_host';
 import { GeneratedFile } from './generated_file';
-import { StaticReflector } from './static_reflector';
 import { StaticSymbol } from './static_symbol';
-import { AotSummaryResolver } from './summary_resolver';
+import { StaticSymbolResolver } from './static_symbol_resolver';
 export declare class AotCompiler {
+    private _host;
     private _metadataResolver;
     private _templateParser;
     private _styleCompiler;
@@ -24,13 +25,13 @@ export declare class AotCompiler {
     private _localeId;
     private _translationFormat;
     private _animationParser;
-    private _staticReflector;
-    private _options;
+    private _symbolResolver;
     private _animationCompiler;
-    constructor(_metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: AotSummaryResolver, _localeId: string, _translationFormat: string, _animationParser: AnimationParser, _staticReflector: StaticReflector, _options: AotCompilerOptions);
+    constructor(_host: AotCompilerHost, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string, _translationFormat: string, _animationParser: AnimationParser, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     compileAll(rootFiles: string[]): Promise<GeneratedFile[]>;
-    private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules);
+    private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
+    private _createSummary(srcFileUrl, directives, pipes, ngModules, injectables);
     private _compileModule(ngModuleType, targetStatements);
     private _compileDirectiveWrapper(directiveType, targetStatements);
     private _compileComponentFactory(compMeta, ngModule, fileSuffix, targetStatements);
@@ -46,18 +47,13 @@ export interface NgAnalyzedModules {
         directives: StaticSymbol[];
         pipes: StaticSymbol[];
         ngModules: StaticSymbol[];
+        injectables: StaticSymbol[];
     }>;
     symbolsMissingModule?: StaticSymbol[];
 }
-export declare function analyzeNgModules(programStaticSymbols: StaticSymbol[], options: {
-    includeFilePattern?: RegExp;
-    excludeFilePattern?: RegExp;
-}, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
-export declare function analyzeAndValidateNgModules(programStaticSymbols: StaticSymbol[], options: {
-    includeFilePattern?: RegExp;
-    excludeFilePattern?: RegExp;
-}, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
-export declare function extractProgramSymbols(staticReflector: StaticReflector, files: string[], options?: {
-    includeFilePattern?: RegExp;
-    excludeFilePattern?: RegExp;
-}): StaticSymbol[];
+export interface NgAnalyzeModulesHost {
+    isSourceFile(filePath: string): boolean;
+}
+export declare function analyzeNgModules(programStaticSymbols: StaticSymbol[], host: NgAnalyzeModulesHost, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
+export declare function analyzeAndValidateNgModules(programStaticSymbols: StaticSymbol[], host: NgAnalyzeModulesHost, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
+export declare function extractProgramSymbols(staticSymbolResolver: StaticSymbolResolver, files: string[], host: NgAnalyzeModulesHost): StaticSymbol[];

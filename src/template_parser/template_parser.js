@@ -10,12 +10,22 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { Inject, Injectable, OpaqueToken, Optional } from '@angular/core';
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+import { Inject, OpaqueToken, Optional } from '@angular/core';
 import { identifierName } from '../compile_metadata';
 import { Parser } from '../expression_parser/parser';
 import { isPresent } from '../facade/lang';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
 import { Identifiers, createIdentifierToken, identifierToken } from '../identifiers';
+import { CompilerInjectable } from '../injectable';
 import * as html from '../ml_parser/ast';
 import { ParseTreeResult } from '../ml_parser/html_parser';
 import { expandNodes } from '../ml_parser/icu_ast_expander';
@@ -27,6 +37,7 @@ import { ProviderElementContext, ProviderViewContext } from '../provider_analyze
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
 import { CssSelector, SelectorMatcher } from '../selector';
 import { isStyleUrlResolvable } from '../style_url_resolver';
+import { SyntaxError } from '../util';
 import { BindingParser } from './binding_parser';
 import { AttrAst, BoundDirectivePropertyAst, BoundTextAst, DirectiveAst, ElementAst, EmbeddedTemplateAst, NgContentAst, PropertyBindingType, ReferenceAst, TextAst, VariableAst, templateVisitAll } from './template_ast';
 import { PreparsedElementType, preparseElement } from './template_preparser';
@@ -126,7 +137,7 @@ export var TemplateParser = (function () {
         }
         if (errors.length > 0) {
             var /** @type {?} */ errorString = errors.join('\n');
-            throw new Error("Template parse errors:\n" + errorString);
+            throw new SyntaxError("Template parse errors:\n" + errorString);
         }
         return result.templateAst;
     };
@@ -227,9 +238,6 @@ export var TemplateParser = (function () {
             }
         }); });
     };
-    TemplateParser.decorators = [
-        { type: Injectable },
-    ];
     /** @nocollapse */
     TemplateParser.ctorParameters = function () { return [
         { type: Parser, },
@@ -238,11 +246,13 @@ export var TemplateParser = (function () {
         { type: Console, },
         { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [TEMPLATE_TRANSFORMS,] },] },
     ]; };
+    TemplateParser = __decorate([
+        CompilerInjectable(), 
+        __metadata('design:paramtypes', [Parser, ElementSchemaRegistry, I18NHtmlParser, Console, Array])
+    ], TemplateParser);
     return TemplateParser;
 }());
 function TemplateParser_tsickle_Closure_declarations() {
-    /** @type {?} */
-    TemplateParser.decorators;
     /**
      * @nocollapse
      * @type {?}
