@@ -16,18 +16,20 @@ export declare class Message {
     };
     meaning: string;
     description: string;
+    id: string;
     /**
      * @param nodes message AST
      * @param placeholders maps placeholder names to static content
      * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
      * @param meaning
      * @param description
+     * @param id
      */
     constructor(nodes: Node[], placeholders: {
         [phName: string]: string;
     }, placeholderToMessage: {
         [phName: string]: Message;
-    }, meaning: string, description: string);
+    }, meaning: string, description: string, id: string);
 }
 export interface Node {
     sourceSpan: ParseSourceSpan;
