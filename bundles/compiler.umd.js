@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.0-bcd37f5
+ * @license Angular v4.0.0-beta.0-c0f750a
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.0-bcd37f5');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.0-c0f750a');
 
   /**
    * @license
@@ -10438,6 +10438,13 @@
       return ElementSchemaRegistry;
   }());
 
+  /**
+   * @license
+   * Copyright Google Inc. All Rights Reserved.
+   *
+   * Use of this source code is governed by an MIT-style license that can be
+   * found in the LICENSE file at https://angular.io/license
+   */
   var StyleWithImports = (function () {
       /**
        * @param {?} style
@@ -10454,9 +10461,9 @@
    * @return {?}
    */
   function isStyleUrlResolvable(url) {
-      if (isBlank(url) || url.length === 0 || url[0] == '/')
+      if (url == null || url.length === 0 || url[0] == '/')
           return false;
-      var /** @type {?} */ schemeMatch = url.match(_urlWithSchemaRe);
+      var /** @type {?} */ schemeMatch = url.match(URL_WITH_SCHEMA_REGEXP);
       return schemeMatch === null || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';
   }
   /**
@@ -10469,7 +10476,7 @@
    */
   function extractStyleUrls(resolver, baseUrl, cssText) {
       var /** @type {?} */ foundUrls = [];
-      var /** @type {?} */ modifiedCssText = cssText.replace(_cssImportRe, function () {
+      var /** @type {?} */ modifiedCssText = cssText.replace(CSS_COMMENT_REGEXP, '').replace(CSS_IMPORT_REGEXP, function () {
           var m = [];
           for (var _i = 0; _i < arguments.length; _i++) {
               m[_i - 0] = arguments[_i];
@@ -10484,8 +10491,9 @@
       });
       return new StyleWithImports(modifiedCssText, foundUrls);
   }
-  var /** @type {?} */ _cssImportRe = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-  var /** @type {?} */ _urlWithSchemaRe = /^([^:/?#]+):/;
+  var /** @type {?} */ CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
+  var /** @type {?} */ CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
+  var /** @type {?} */ URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 
   /**
    * @license
