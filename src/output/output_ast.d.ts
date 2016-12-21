@@ -436,7 +436,7 @@ export declare function importExpr(id: CompileIdentifierMetadata, typeParams?: T
 export declare function importType(id: CompileIdentifierMetadata, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExpressionType;
 export declare function expressionType(expr: Expression, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExpressionType;
 export declare function literalArr(values: Expression[], type?: Type): LiteralArrayExpr;
-export declare function literalMap(values: [string, Expression][], type?: MapType): LiteralMapExpr;
+export declare function literalMap(values: [string, Expression][], type?: MapType, quoted?: boolean): LiteralMapExpr;
 export declare function not(expr: Expression): NotExpr;
 export declare function fn(params: FnParam[], body: Statement[], type?: Type): FunctionExpr;
 export declare function literal(value: any, type?: Type): LiteralExpr;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.0-c0f750a
+ * @license Angular v4.0.0-beta.0-f49ab56
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.0-c0f750a');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.0-f49ab56');
 
   /**
    * @license
@@ -15794,11 +15794,13 @@
   /**
    * @param {?} values
    * @param {?=} type
+   * @param {?=} quoted
    * @return {?}
    */
-  function literalMap(values, type) {
+  function literalMap(values, type, quoted) {
       if (type === void 0) { type = null; }
-      return new LiteralMapExpr(values.map(function (entry) { return new LiteralMapEntry(entry[0], entry[1]); }), type);
+      if (quoted === void 0) { quoted = false; }
+      return new LiteralMapExpr(values.map(function (entry) { return new LiteralMapEntry(entry[0], entry[1], quoted); }), type);
   }
   /**
    * @param {?} expr
@@ -24034,7 +24036,7 @@
           }
           ast.styles.forEach(function (entry) {
               var /** @type {?} */ entries = Object.keys(entry).map(function (key) { return [key, literal(entry[key])]; });
-              stylesArr.push(literalMap(entries));
+              stylesArr.push(literalMap(entries, null, true));
           });
           return importExpr(createIdentifier(Identifiers.AnimationStyles)).instantiate([
               importExpr(createIdentifier(Identifiers.collectAndResolveStyles)).callFn([
@@ -24267,11 +24269,11 @@
               if (isPresent(value)) {
                   var /** @type {?} */ styleMap_1 = [];
                   Object.keys(value).forEach(function (key) { styleMap_1.push([key, literal(value[key])]); });
-                  variableValue = literalMap(styleMap_1);
+                  variableValue = literalMap(styleMap_1, null, true);
               }
               lookupMap.push([stateName, variableValue]);
           });
-          var /** @type {?} */ compiledStatesMapStmt = this._statesMapVar.set(literalMap(lookupMap)).toDeclStmt();
+          var /** @type {?} */ compiledStatesMapStmt = this._statesMapVar.set(literalMap(lookupMap, null, true)).toDeclStmt();
           var /** @type {?} */ statements = [compiledStatesMapStmt, fnStatement];
           return new AnimationEntryCompileResult(this.animationName, statements, fnVariable);
       };
