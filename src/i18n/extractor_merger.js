@@ -416,7 +416,7 @@ var _Visitor = (function () {
         }
     };
     /**
-     *  Marks the start of a section, see `_endSection`
+     *  Marks the start of a section, see `_closeTranslatableSection`
      * @param {?} node
      * @return {?}
      */
