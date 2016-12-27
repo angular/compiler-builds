@@ -12,7 +12,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { tokenName, tokenReference } from '../compile_metadata';
 import { createDiTokenExpression } from '../compiler_util/identifier_util';
-import { DirectiveWrapperCompiler, DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
+import { DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
 import { isPresent } from '../facade/lang';
 import { Identifiers, createIdentifier, createIdentifierToken, identifierToken, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -133,9 +133,8 @@ export var CompileElement = (function (_super) {
     CompileElement.prototype._createComponentFactoryResolver = function () {
         var _this = this;
         var /** @type {?} */ entryComponents = this.component.entryComponents.map(function (entryComponent) {
-            var /** @type {?} */ id = { reference: null };
-            _this.view.targetDependencies.push(new ComponentFactoryDependency(entryComponent, id));
-            return id;
+            _this.view.targetDependencies.push(new ComponentFactoryDependency(entryComponent.componentType));
+            return { reference: entryComponent.componentFactory };
         });
         if (!entryComponents || entryComponents.length === 0) {
             return;
@@ -211,9 +210,9 @@ export var CompileElement = (function (_super) {
                     var /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
                     var /** @type {?} */ depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                     if (isDirectiveWrapper) {
-                        var /** @type {?} */ directiveWrapperIdentifier = { reference: null };
-                        _this.view.targetDependencies.push(new DirectiveWrapperDependency(provider.useClass, DirectiveWrapperCompiler.dirWrapperClassName(provider.useClass), directiveWrapperIdentifier));
-                        return DirectiveWrapperExpressions.create(directiveWrapperIdentifier, depsExpr);
+                        var /** @type {?} */ dirMeta = _this._directives.find(function (dir) { return dir.type.reference === provider.useClass.reference; });
+                        _this.view.targetDependencies.push(new DirectiveWrapperDependency(dirMeta.type.reference));
+                        return DirectiveWrapperExpressions.create({ reference: dirMeta.wrapperType }, depsExpr);
                     }
                     else {
                         return o.importExpr(provider.useClass)

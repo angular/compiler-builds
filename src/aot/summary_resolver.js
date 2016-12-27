@@ -1,5 +1,5 @@
-import { deserializeSummaries, summaryFileName } from './summary_serializer';
-var /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
+import { deserializeSummaries } from './summary_serializer';
+import { ngfactoryFilePath, stripNgFactory, summaryFileName } from './util';
 export var AotSummaryResolver = (function () {
     /**
      * @param {?} host
@@ -10,22 +10,29 @@ export var AotSummaryResolver = (function () {
         this.staticSymbolCache = staticSymbolCache;
         this.summaryCache = new Map();
         this.loadedFilePaths = new Set();
+        this.importAs = new Map();
     }
     /**
-     * @param {?} symbol
+     * @param {?} filePath
      * @return {?}
      */
-    AotSummaryResolver.prototype._assertNoMembers = function (symbol) {
-        if (symbol.members.length) {
-            throw new Error("Internal state: StaticSymbols in summaries can't have members! " + JSON.stringify(symbol));
-        }
+    AotSummaryResolver.prototype.isLibraryFile = function (filePath) {
+        // Note: We need to strip the .ngfactory. file path,
+        // so this method also works for generated files
+        // (for which host.isSourceFile will always return false).
+        return !this.host.isSourceFile(stripNgFactory(filePath));
     };
+    /**
+     * @param {?} filePath
+     * @return {?}
+     */
+    AotSummaryResolver.prototype.getLibraryFileName = function (filePath) { return this.host.getOutputFileName(filePath); };
     /**
      * @param {?} staticSymbol
      * @return {?}
      */
     AotSummaryResolver.prototype.resolveSummary = function (staticSymbol) {
-        this._assertNoMembers(staticSymbol);
+        staticSymbol.assertNoMembers();
         var /** @type {?} */ summary = this.summaryCache.get(staticSymbol);
         if (!summary) {
             this._loadSummaryFile(staticSymbol.filePath);
@@ -42,6 +49,14 @@ export var AotSummaryResolver = (function () {
         return Array.from(this.summaryCache.keys()).filter(function (symbol) { return symbol.filePath === filePath; });
     };
     /**
+     * @param {?} staticSymbol
+     * @return {?}
+     */
+    AotSummaryResolver.prototype.getImportAs = function (staticSymbol) {
+        staticSymbol.assertNoMembers();
+        return this.importAs.get(staticSymbol);
+    };
+    /**
      * @param {?} filePath
      * @return {?}
      */
@@ -51,7 +66,7 @@ export var AotSummaryResolver = (function () {
             return;
         }
         this.loadedFilePaths.add(filePath);
-        if (!this.host.isSourceFile(filePath)) {
+        if (this.isLibraryFile(filePath)) {
             var /** @type {?} */ summaryFilePath = summaryFileName(filePath);
             var /** @type {?} */ json = void 0;
             try {
@@ -62,8 +77,11 @@ export var AotSummaryResolver = (function () {
                 throw e;
             }
             if (json) {
-                var /** @type {?} */ readSummaries = deserializeSummaries(this.staticSymbolCache, json);
-                readSummaries.forEach(function (summary) { _this.summaryCache.set(summary.symbol, summary); });
+                var _a = deserializeSummaries(this.staticSymbolCache, json), summaries = _a.summaries, importAs = _a.importAs;
+                summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
+                importAs.forEach(function (importAs) {
+                    _this.importAs.set(importAs.symbol, _this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
+                });
             }
         }
     };
@@ -74,6 +92,8 @@ function AotSummaryResolver_tsickle_Closure_declarations() {
     AotSummaryResolver.prototype.summaryCache;
     /** @type {?} */
     AotSummaryResolver.prototype.loadedFilePaths;
+    /** @type {?} */
+    AotSummaryResolver.prototype.importAs;
     /** @type {?} */
     AotSummaryResolver.prototype.host;
     /** @type {?} */

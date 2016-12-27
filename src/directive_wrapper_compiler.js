@@ -14,7 +14,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { identifierModuleUrl, identifierName } from './compile_metadata';
+import { dirWrapperClassName, identifierModuleUrl, identifierName } from './compile_metadata';
 import { createCheckBindingField, createCheckBindingStmt } from './compiler_util/binding_util';
 import { EventHandlerVars, convertActionBinding, convertPropertyBinding } from './compiler_util/expression_converter';
 import { triggerAnimation, writeToRenderer } from './compiler_util/render_util';
@@ -79,13 +79,6 @@ export var DirectiveWrapperCompiler = (function () {
         this._schemaRegistry = _schemaRegistry;
         this._console = _console;
     }
-    /**
-     * @param {?} id
-     * @return {?}
-     */
-    DirectiveWrapperCompiler.dirWrapperClassName = function (id) {
-        return "Wrapper_" + identifierName(id);
-    };
     /**
      * @param {?} dirMeta
      * @return {?}
@@ -176,7 +169,7 @@ var DirectiveWrapperBuilder = (function () {
             .instantiate(dirDepParamNames.map(function (paramName) { return o.variable(paramName); })))
             .toStmt());
         return createClassStmt({
-            name: DirectiveWrapperCompiler.dirWrapperClassName(this.dirMeta.type),
+            name: dirWrapperClassName(this.dirMeta.type.reference),
             ctorParams: dirDepParamNames.map(function (paramName) { return new o.FnParam(paramName, o.DYNAMIC_TYPE); }),
             builders: [{ fields: fields, ctorStmts: ctorStmts, methods: methods }, this]
         });

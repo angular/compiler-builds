@@ -18,8 +18,7 @@ import { templateVisitAll } from '../template_parser/template_ast';
 import { CompileElement, CompileNode } from './compile_element';
 import { CompileView, CompileViewRootNode, CompileViewRootNodeType } from './compile_view';
 import { ChangeDetectorStatusEnum, DetectChangesVars, InjectMethodVars, ViewConstructorVars, ViewEncapsulationEnum, ViewProperties, ViewTypeEnum } from './constants';
-import { ViewClassDependency } from './deps';
-import { getViewClassName } from './util';
+import { ComponentViewDependency } from './deps';
 var /** @type {?} */ IMPLICIT_TEMPLATE_VAR = '\$implicit';
 var /** @type {?} */ CLASS_ATTR = 'class';
 var /** @type {?} */ STYLE_ATTR = 'style';
@@ -231,14 +230,13 @@ var ViewBuilderVisitor = (function () {
         this.view.nodes.push(compileElement);
         var /** @type {?} */ compViewExpr = null;
         if (isPresent(component)) {
-            var /** @type {?} */ nestedComponentIdentifier = { reference: null };
-            this.targetDependencies.push(new ViewClassDependency(component.type, getViewClassName(component, 0), nestedComponentIdentifier));
+            this.targetDependencies.push(new ComponentViewDependency(component.type.reference));
             compViewExpr = o.THIS_EXPR.prop("compView_" + nodeIndex); // fix highlighting: `
             this.view.fields.push(new o.ClassField(compViewExpr.name, o.importType(createIdentifier(Identifiers.AppView), [o.importType(component.type)])));
             this.view.viewChildren.push(compViewExpr);
             compileElement.setComponentView(compViewExpr);
             this.view.createMethod.addStmt(compViewExpr
-                .set(o.importExpr(nestedComponentIdentifier).instantiate([
+                .set(o.importExpr({ reference: component.componentViewType }).instantiate([
                 ViewProperties.viewUtils, o.THIS_EXPR, o.literal(nodeIndex), renderNode
             ]))
                 .toStmt());

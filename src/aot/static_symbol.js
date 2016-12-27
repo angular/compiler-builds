@@ -7,13 +7,21 @@ export var StaticSymbol = (function () {
     /**
      * @param {?} filePath
      * @param {?} name
-     * @param {?=} members
+     * @param {?} members
      */
     function StaticSymbol(filePath, name, members) {
         this.filePath = filePath;
         this.name = name;
         this.members = members;
     }
+    /**
+     * @return {?}
+     */
+    StaticSymbol.prototype.assertNoMembers = function () {
+        if (this.members.length) {
+            throw new Error("Illegal state: symbol without members expected, but got " + JSON.stringify(this) + ".");
+        }
+    };
     return StaticSymbol;
 }());
 function StaticSymbol_tsickle_Closure_declarations() {

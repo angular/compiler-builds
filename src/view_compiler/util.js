@@ -10,7 +10,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { identifierName } from '../compile_metadata';
 import { createDiTokenExpression } from '../compiler_util/identifier_util';
 import { isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
@@ -106,14 +105,6 @@ export function injectFromViewParentInjector(view, token, optional) {
         args.push(o.NULL_EXPR);
     }
     return viewExpr.callMethod('injectorGet', args);
-}
-/**
- * @param {?} component
- * @param {?} embeddedTemplateIndex
- * @return {?}
- */
-export function getViewClassName(component, embeddedTemplateIndex) {
-    return "View_" + identifierName(component.type) + embeddedTemplateIndex;
 }
 /**
  * @param {?} elementIndex

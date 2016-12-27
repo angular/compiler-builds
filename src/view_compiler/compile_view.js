@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { tokenName } from '../compile_metadata';
+import { tokenName, viewClassName } from '../compile_metadata';
 import { EventHandlerVars } from '../compiler_util/expression_converter';
 import { isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
@@ -13,7 +13,7 @@ import { ViewType } from '../private_import_core';
 import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
 import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
-import { getPropertyInView, getViewClassName } from './util';
+import { getPropertyInView } from './util';
 export var CompileViewRootNodeType = {};
 CompileViewRootNodeType.Node = 0;
 CompileViewRootNodeType.ViewContainer = 1;
@@ -94,7 +94,7 @@ export var CompileView = (function () {
         this.destroyMethod = new CompileMethod(this);
         this.detachMethod = new CompileMethod(this);
         this.viewType = getViewType(component, viewIndex);
-        this.className = getViewClassName(component, viewIndex);
+        this.className = viewClassName(component.type.reference, viewIndex);
         this.classType = o.expressionType(o.variable(this.className));
         this.classExpr = o.variable(this.className);
         if (this.viewType === ViewType.COMPONENT || this.viewType === ViewType.HOST) {

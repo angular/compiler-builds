@@ -33,6 +33,10 @@ var /** @type {?} */ SUPPORTED_SCHEMA_VERSION = 3;
 /**
  *  This class is responsible for loading metadata per symbol,
   * and normalizing references between symbols.
+  * *
+  * Internally, it only uses symbols without members,
+  * and deduces the values for symbols with members based
+  * on these symbols.
  */
 export var StaticSymbolResolver = (function () {
     /**
@@ -49,6 +53,7 @@ export var StaticSymbolResolver = (function () {
         this.metadataCache = new Map();
         this.resolvedSymbols = new Map();
         this.resolvedFilePaths = new Set();
+        this.importAs = new Map();
     }
     /**
      * @param {?} staticSymbol
@@ -58,13 +63,36 @@ export var StaticSymbolResolver = (function () {
         if (staticSymbol.members.length > 0) {
             return this._resolveSymbolMembers(staticSymbol);
         }
-        var /** @type {?} */ result = this._resolveSymbolFromSummary(staticSymbol);
+        var /** @type {?} */ result = this.resolvedSymbols.get(staticSymbol);
+        if (result) {
+            return result;
+        }
+        result = this._resolveSymbolFromSummary(staticSymbol);
+        if (result) {
+            return result;
+        }
+        // Note: Some users use libraries that were not compiled with ngc, i.e. they don't
+        // have summaries, only .d.ts files. So we always need to check both, the summary
+        // and metadata.
+        this._createSymbolsOf(staticSymbol.filePath);
+        result = this.resolvedSymbols.get(staticSymbol);
+        return result;
+    };
+    /**
+     * @param {?} staticSymbol
+     * @return {?}
+     */
+    StaticSymbolResolver.prototype.getImportAs = function (staticSymbol) {
+        if (staticSymbol.members.length) {
+            var /** @type {?} */ baseSymbol = this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name);
+            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol);
+            return baseImportAs ?
+                this.getStaticSymbol(baseImportAs.filePath, baseImportAs.name, staticSymbol.members) :
+                null;
+        }
+        var /** @type {?} */ result = this.summaryResolver.getImportAs(staticSymbol);
         if (!result) {
-            // Note: Some users use libraries that were not compiled with ngc, i.e. they don't
-            // have summaries, only .d.ts files. So we always need to check both, the summary
-            // and metadata.
-            this._createSymbolsOf(staticSymbol.filePath);
-            result = this.resolvedSymbols.get(staticSymbol);
+            result = this.importAs.get(staticSymbol);
         }
         return result;
     };
@@ -147,9 +175,10 @@ export var StaticSymbolResolver = (function () {
         var /** @type {?} */ metadata = this.getModuleMetadata(filePath);
         if (metadata['metadata']) {
             // handle direct declarations of the symbol
-            Object.keys(metadata['metadata']).forEach(function (symbolName) {
-                var /** @type {?} */ symbolMeta = metadata['metadata'][symbolName];
-                resolvedSymbols.push(_this.createResolvedSymbol(_this.getStaticSymbol(filePath, symbolName), symbolMeta));
+            var /** @type {?} */ topLevelSymbolNames_1 = new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));
+            Object.keys(metadata['metadata']).forEach(function (metadataKey) {
+                var /** @type {?} */ symbolMeta = metadata['metadata'][metadataKey];
+                resolvedSymbols.push(_this.createResolvedSymbol(_this.getStaticSymbol(filePath, unescapeIdentifier(metadataKey)), topLevelSymbolNames_1, symbolMeta));
             });
         }
         // handle the symbols in one of the re-export location
@@ -165,15 +194,16 @@ export var StaticSymbolResolver = (function () {
                         else {
                             symbolName = exportSymbol.as;
                         }
+                        symbolName = unescapeIdentifier(symbolName);
                         var /** @type {?} */ symName = symbolName;
                         if (typeof exportSymbol !== 'string') {
-                            symName = exportSymbol.name;
+                            symName = unescapeIdentifier(exportSymbol.name);
                         }
                         var /** @type {?} */ resolvedModule = _this.resolveModule(moduleExport.from, filePath);
                         if (resolvedModule) {
                             var /** @type {?} */ targetSymbol = _this.getStaticSymbol(resolvedModule, symName);
                             var /** @type {?} */ sourceSymbol = _this.getStaticSymbol(filePath, symbolName);
-                            resolvedSymbols.push(new ResolvedStaticSymbol(sourceSymbol, targetSymbol));
+                            resolvedSymbols.push(_this.createExport(sourceSymbol, targetSymbol));
                         }
                     });
                 }
@@ -184,7 +214,7 @@ export var StaticSymbolResolver = (function () {
                         var /** @type {?} */ nestedExports = this_1.getSymbolsOf(resolvedModule);
                         nestedExports.forEach(function (targetSymbol) {
                             var /** @type {?} */ sourceSymbol = _this.getStaticSymbol(filePath, targetSymbol.name);
-                            resolvedSymbols.push(new ResolvedStaticSymbol(sourceSymbol, targetSymbol));
+                            resolvedSymbols.push(_this.createExport(sourceSymbol, targetSymbol));
                         });
                     }
                 }
@@ -199,10 +229,11 @@ export var StaticSymbolResolver = (function () {
     };
     /**
      * @param {?} sourceSymbol
+     * @param {?} topLevelSymbolNames
      * @param {?} metadata
      * @return {?}
      */
-    StaticSymbolResolver.prototype.createResolvedSymbol = function (sourceSymbol, metadata) {
+    StaticSymbolResolver.prototype.createResolvedSymbol = function (sourceSymbol, topLevelSymbolNames, metadata) {
         var /** @type {?} */ self = this;
         var ReferenceTransformer = (function (_super) {
             __extends(ReferenceTransformer, _super);
@@ -225,7 +256,7 @@ export var StaticSymbolResolver = (function () {
                 }
                 else if (symbolic === 'reference') {
                     var /** @type {?} */ module_1 = map['module'];
-                    var /** @type {?} */ name_1 = map['name'];
+                    var /** @type {?} */ name_1 = map['name'] ? unescapeIdentifier(map['name']) : map['name'];
                     if (!name_1) {
                         return null;
                     }
@@ -238,19 +269,18 @@ export var StaticSymbolResolver = (function () {
                                 message: "Could not resolve " + module_1 + " relative to " + sourceSymbol.filePath + "."
                             };
                         }
-                    }
-                    else {
-                        var /** @type {?} */ isFunctionParam = functionParams.indexOf(name_1) >= 0;
-                        if (!isFunctionParam) {
-                            filePath = sourceSymbol.filePath;
-                        }
-                    }
-                    if (filePath) {
                         return self.getStaticSymbol(filePath, name_1);
                     }
-                    else {
+                    else if (functionParams.indexOf(name_1) >= 0) {
                         // reference to a function parameter
                         return { __symbolic: 'reference', name: name_1 };
+                    }
+                    else {
+                        if (topLevelSymbolNames.has(name_1)) {
+                            return self.getStaticSymbol(sourceSymbol.filePath, name_1);
+                        }
+                        // ambient value
+                        null;
                     }
                 }
                 else {
@@ -260,7 +290,27 @@ export var StaticSymbolResolver = (function () {
             return ReferenceTransformer;
         }(ValueTransformer));
         var /** @type {?} */ transformedMeta = visitValue(metadata, new ReferenceTransformer(), []);
+        if (transformedMeta instanceof StaticSymbol) {
+            return this.createExport(sourceSymbol, transformedMeta);
+        }
         return new ResolvedStaticSymbol(sourceSymbol, transformedMeta);
+    };
+    /**
+     * @param {?} sourceSymbol
+     * @param {?} targetSymbol
+     * @return {?}
+     */
+    StaticSymbolResolver.prototype.createExport = function (sourceSymbol, targetSymbol) {
+        sourceSymbol.assertNoMembers();
+        targetSymbol.assertNoMembers();
+        if (this.summaryResolver.isLibraryFile(sourceSymbol.filePath)) {
+            // This case is for an ng library importing symbols from a plain ts library
+            // transitively.
+            // Note: We rely on the fact that we discover symbols in the direction
+            // from source files to library files
+            this.importAs.set(targetSymbol, this.getImportAs(sourceSymbol) || sourceSymbol);
+        }
+        return new ResolvedStaticSymbol(sourceSymbol, targetSymbol);
     };
     /**
      * @param {?} error
@@ -344,6 +394,8 @@ function StaticSymbolResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticSymbolResolver.prototype.resolvedFilePaths;
     /** @type {?} */
+    StaticSymbolResolver.prototype.importAs;
+    /** @type {?} */
     StaticSymbolResolver.prototype.host;
     /** @type {?} */
     StaticSymbolResolver.prototype.staticSymbolCache;
@@ -351,5 +403,13 @@ function StaticSymbolResolver_tsickle_Closure_declarations() {
     StaticSymbolResolver.prototype.summaryResolver;
     /** @type {?} */
     StaticSymbolResolver.prototype.errorRecorder;
+}
+var /** @type {?} */ UNDERSCORE_CHAR_CODE = 95;
+/**
+ * @param {?} identifier
+ * @return {?}
+ */
+export function unescapeIdentifier(identifier) {
+    return identifier.startsWith('___') ? identifier.substr(1) : identifier;
 }
 //# sourceMappingURL=static_symbol_resolver.js.map

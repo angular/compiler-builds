@@ -1,25 +1,24 @@
 /**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * This is currently not read, but will probably be used in the future.
+ * We keep it as we already pass it through all the rigth places...
  */
-import { CompileIdentifierMetadata } from '../compile_metadata';
-export declare class ViewClassDependency {
-    comp: CompileIdentifierMetadata;
-    name: string;
-    placeholder: CompileIdentifierMetadata;
-    constructor(comp: CompileIdentifierMetadata, name: string, placeholder: CompileIdentifierMetadata);
+export declare class ComponentViewDependency {
+    compType: any;
+    constructor(compType: any);
 }
+/**
+ * This is currently not read, but will probably be used in the future.
+ * We keep it as we already pass it through all the rigth places...
+ */
 export declare class ComponentFactoryDependency {
-    comp: CompileIdentifierMetadata;
-    placeholder: CompileIdentifierMetadata;
-    constructor(comp: CompileIdentifierMetadata, placeholder: CompileIdentifierMetadata);
+    compType: any;
+    constructor(compType: any);
 }
+/**
+ * This is currently not read, but will probably be used in the future.
+ * We keep it as we already pass it through all the rigth places...
+ */
 export declare class DirectiveWrapperDependency {
-    dir: CompileIdentifierMetadata;
-    name: string;
-    placeholder: CompileIdentifierMetadata;
-    constructor(dir: CompileIdentifierMetadata, name: string, placeholder: CompileIdentifierMetadata);
+    dirType: any;
+    constructor(dirType: any);
 }

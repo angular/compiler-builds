@@ -8,15 +8,14 @@ import { ValueTransformer, visitValue } from '../util';
 import { StaticSymbol } from './static_symbol';
 var /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
 /**
- * @param {?} host
  * @param {?} summaryResolver
  * @param {?} symbolResolver
  * @param {?} symbols
  * @param {?} types
  * @return {?}
  */
-export function serializeSummaries(host, summaryResolver, symbolResolver, symbols, types) {
-    var /** @type {?} */ serializer = new Serializer(host);
+export function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
+    var /** @type {?} */ serializer = new Serializer(symbolResolver, summaryResolver);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
     // CompileTypeSummary.
@@ -26,7 +25,7 @@ export function serializeSummaries(host, summaryResolver, symbolResolver, symbol
     // we execute the loop!
     for (var /** @type {?} */ processedIndex = 0; processedIndex < serializer.symbols.length; processedIndex++) {
         var /** @type {?} */ symbol = serializer.symbols[processedIndex];
-        if (!host.isSourceFile(symbol.filePath)) {
+        if (summaryResolver.isLibraryFile(symbol.filePath)) {
             var /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
             if (!summary) {
                 // some symbols might originate from a plain typescript library
@@ -52,8 +51,11 @@ export function serializeSummaries(host, summaryResolver, symbolResolver, symbol
             var /** @type {?} */ ngModuleSummary = (typeSummary);
             ngModuleSummary.exportedDirectives.concat(ngModuleSummary.exportedPipes).forEach(function (id) {
                 var /** @type {?} */ symbol = id.reference;
-                if (!host.isSourceFile(symbol.filePath)) {
-                    serializer.addOrMergeSummary(summaryResolver.resolveSummary(symbol));
+                if (summaryResolver.isLibraryFile(symbol.filePath)) {
+                    var /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
+                    if (summary) {
+                        serializer.addOrMergeSummary(summary);
+                    }
                 }
             });
         }
@@ -69,22 +71,17 @@ export function deserializeSummaries(symbolCache, json) {
     var /** @type {?} */ deserializer = new Deserializer(symbolCache);
     return deserializer.deserialize(json);
 }
-/**
- * @param {?} fileName
- * @return {?}
- */
-export function summaryFileName(fileName) {
-    var /** @type {?} */ fileNameWithoutSuffix = fileName.replace(STRIP_SRC_FILE_SUFFIXES, '');
-    return fileNameWithoutSuffix + ".ngsummary.json";
-}
 var Serializer = (function (_super) {
     __extends(Serializer, _super);
     /**
-     * @param {?} host
+     * @param {?} symbolResolver
+     * @param {?} summaryResolver
      */
-    function Serializer(host) {
+    function Serializer(symbolResolver, summaryResolver) {
         _super.call(this);
-        this.host = host;
+        this.symbolResolver = symbolResolver;
+        this.summaryResolver = summaryResolver;
+        // Note: This only contains symbols without members.
         this.symbols = [];
         this.indexBySymbol = new Map();
         this.processedSummaryBySymbol = new Map();
@@ -122,19 +119,28 @@ var Serializer = (function (_super) {
      */
     Serializer.prototype.serialize = function () {
         var _this = this;
-        return JSON.stringify({
+        var /** @type {?} */ exportAs = [];
+        var /** @type {?} */ json = JSON.stringify({
             summaries: this.processedSummaries,
             symbols: this.symbols.map(function (symbol, index) {
+                symbol.assertNoMembers();
+                var /** @type {?} */ importAs;
+                if (_this.summaryResolver.isLibraryFile(symbol.filePath)) {
+                    importAs = symbol.name + "_" + index;
+                    exportAs.push({ symbol: symbol, exportAs: importAs });
+                }
                 return {
                     __symbol: index,
                     name: symbol.name,
                     // We convert the source filenames tinto output filenames,
                     // as the generated summary file will be used when teh current
                     // compilation unit is used as a library
-                    filePath: _this.host.getOutputFileName(symbol.filePath)
+                    filePath: _this.summaryResolver.getLibraryFileName(symbol.filePath),
+                    importAs: importAs
                 };
             })
         });
+        return { json: json, exportAs: exportAs };
     };
     /**
      * @param {?} value
@@ -148,14 +154,15 @@ var Serializer = (function (_super) {
      */
     Serializer.prototype.visitOther = function (value, context) {
         if (value instanceof StaticSymbol) {
-            var /** @type {?} */ index = this.indexBySymbol.get(value);
+            var /** @type {?} */ baseSymbol = this.symbolResolver.getStaticSymbol(value.filePath, value.name);
+            var /** @type {?} */ index = this.indexBySymbol.get(baseSymbol);
             // Note: == by purpose to compare with undefined!
             if (index == null) {
                 index = this.indexBySymbol.size;
-                this.indexBySymbol.set(value, index);
-                this.symbols.push(value);
+                this.indexBySymbol.set(baseSymbol, index);
+                this.symbols.push(baseSymbol);
             }
-            return { __symbol: index };
+            return { __symbol: index, members: value.members };
         }
     };
     return Serializer;
@@ -170,7 +177,9 @@ function Serializer_tsickle_Closure_declarations() {
     /** @type {?} */
     Serializer.prototype.processedSummaries;
     /** @type {?} */
-    Serializer.prototype.host;
+    Serializer.prototype.symbolResolver;
+    /** @type {?} */
+    Serializer.prototype.summaryResolver;
 }
 var Deserializer = (function (_super) {
     __extends(Deserializer, _super);
@@ -188,8 +197,17 @@ var Deserializer = (function (_super) {
     Deserializer.prototype.deserialize = function (json) {
         var _this = this;
         var /** @type {?} */ data = JSON.parse(json);
-        this.symbols = data.symbols.map(function (serializedSymbol) { return _this.symbolCache.get(serializedSymbol.filePath, serializedSymbol.name); });
-        return visitValue(data.summaries, this, null);
+        var /** @type {?} */ importAs = [];
+        this.symbols = [];
+        data.symbols.forEach(function (serializedSymbol) {
+            var /** @type {?} */ symbol = _this.symbolCache.get(serializedSymbol.filePath, serializedSymbol.name);
+            _this.symbols.push(symbol);
+            if (serializedSymbol.importAs) {
+                importAs.push({ symbol: symbol, importAs: serializedSymbol.importAs });
+            }
+        });
+        var /** @type {?} */ summaries = visitValue(data.summaries, this, null);
+        return { summaries: summaries, importAs: importAs };
     };
     /**
      * @param {?} map
@@ -198,7 +216,10 @@ var Deserializer = (function (_super) {
      */
     Deserializer.prototype.visitStringMap = function (map, context) {
         if ('__symbol' in map) {
-            return this.symbols[map['__symbol']];
+            var /** @type {?} */ baseSymbol = this.symbols[map['__symbol']];
+            var /** @type {?} */ members = map['members'];
+            return members.length ? this.symbolCache.get(baseSymbol.filePath, baseSymbol.name, members) :
+                baseSymbol;
         }
         else {
             return _super.prototype.visitStringMap.call(this, map, context);

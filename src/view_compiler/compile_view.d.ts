@@ -15,7 +15,7 @@ import { CompileElement, CompileNode } from './compile_element';
 import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
 import { CompileQuery } from './compile_query';
-import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency } from './deps';
+import { ComponentFactoryDependency, ComponentViewDependency, DirectiveWrapperDependency } from './deps';
 export declare enum CompileViewRootNodeType {
     Node = 0,
     ViewContainer = 1,
@@ -36,7 +36,7 @@ export declare class CompileView implements NameResolver {
     viewIndex: number;
     declarationElement: CompileElement;
     templateVariableBindings: string[][];
-    targetDependencies: Array<ViewClassDependency | ComponentFactoryDependency | DirectiveWrapperDependency>;
+    targetDependencies: Array<ComponentViewDependency | ComponentFactoryDependency | DirectiveWrapperDependency>;
     viewType: ViewType;
     viewQueries: Map<any, CompileQuery[]>;
     viewChildren: o.Expression[];
@@ -72,7 +72,7 @@ export declare class CompileView implements NameResolver {
     literalMapCount: number;
     pipeCount: number;
     componentContext: o.Expression;
-    constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeSummary[], styles: o.Expression, animations: AnimationEntryCompileResult[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][], targetDependencies: Array<ViewClassDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
+    constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeSummary[], styles: o.Expression, animations: AnimationEntryCompileResult[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][], targetDependencies: Array<ComponentViewDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
     callPipe(name: string, input: o.Expression, args: o.Expression[]): o.Expression;
     getLocal(name: string): o.Expression;
     afterNodes(): void;

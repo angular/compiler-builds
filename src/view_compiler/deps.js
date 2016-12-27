@@ -5,63 +5,55 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export var ViewClassDependency = (function () {
+/**
+ *  This is currently not read, but will probably be used in the future.
+  * We keep it as we already pass it through all the rigth places...
+ */
+export var ComponentViewDependency = (function () {
     /**
-     * @param {?} comp
-     * @param {?} name
-     * @param {?} placeholder
+     * @param {?} compType
      */
-    function ViewClassDependency(comp, name, placeholder) {
-        this.comp = comp;
-        this.name = name;
-        this.placeholder = placeholder;
+    function ComponentViewDependency(compType) {
+        this.compType = compType;
     }
-    return ViewClassDependency;
+    return ComponentViewDependency;
 }());
-function ViewClassDependency_tsickle_Closure_declarations() {
+function ComponentViewDependency_tsickle_Closure_declarations() {
     /** @type {?} */
-    ViewClassDependency.prototype.comp;
-    /** @type {?} */
-    ViewClassDependency.prototype.name;
-    /** @type {?} */
-    ViewClassDependency.prototype.placeholder;
+    ComponentViewDependency.prototype.compType;
 }
+/**
+ *  This is currently not read, but will probably be used in the future.
+  * We keep it as we already pass it through all the rigth places...
+ */
 export var ComponentFactoryDependency = (function () {
     /**
-     * @param {?} comp
-     * @param {?} placeholder
+     * @param {?} compType
      */
-    function ComponentFactoryDependency(comp, placeholder) {
-        this.comp = comp;
-        this.placeholder = placeholder;
+    function ComponentFactoryDependency(compType) {
+        this.compType = compType;
     }
     return ComponentFactoryDependency;
 }());
 function ComponentFactoryDependency_tsickle_Closure_declarations() {
     /** @type {?} */
-    ComponentFactoryDependency.prototype.comp;
-    /** @type {?} */
-    ComponentFactoryDependency.prototype.placeholder;
+    ComponentFactoryDependency.prototype.compType;
 }
+/**
+ *  This is currently not read, but will probably be used in the future.
+  * We keep it as we already pass it through all the rigth places...
+ */
 export var DirectiveWrapperDependency = (function () {
     /**
-     * @param {?} dir
-     * @param {?} name
-     * @param {?} placeholder
+     * @param {?} dirType
      */
-    function DirectiveWrapperDependency(dir, name, placeholder) {
-        this.dir = dir;
-        this.name = name;
-        this.placeholder = placeholder;
+    function DirectiveWrapperDependency(dirType) {
+        this.dirType = dirType;
     }
     return DirectiveWrapperDependency;
 }());
 function DirectiveWrapperDependency_tsickle_Closure_declarations() {
     /** @type {?} */
-    DirectiveWrapperDependency.prototype.dir;
-    /** @type {?} */
-    DirectiveWrapperDependency.prototype.name;
-    /** @type {?} */
-    DirectiveWrapperDependency.prototype.placeholder;
+    DirectiveWrapperDependency.prototype.dirType;
 }
 //# sourceMappingURL=deps.js.map

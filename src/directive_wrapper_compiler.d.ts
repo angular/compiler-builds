@@ -30,7 +30,6 @@ export declare class DirectiveWrapperCompiler {
     private _exprParser;
     private _schemaRegistry;
     private _console;
-    static dirWrapperClassName(id: CompileIdentifierMetadata): string;
     constructor(compilerConfig: CompilerConfig, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _console: Console);
     compile(dirMeta: CompileDirectiveMetadata): DirectiveWrapperCompileResult;
 }
