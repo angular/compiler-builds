@@ -189,7 +189,7 @@ export var TemplateParser = (function () {
         if (errors.length > 0) {
             return new TemplateParseResult(result, errors);
         }
-        if (isPresent(this.transforms)) {
+        if (this.transforms) {
             this.transforms.forEach(function (transform) { result = templateVisitAll(transform, result); });
         }
         return new TemplateParseResult(result, errors);
@@ -314,7 +314,7 @@ var TemplateParseVisitor = (function () {
     TemplateParseVisitor.prototype.visitText = function (text, parent) {
         var /** @type {?} */ ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
         var /** @type {?} */ expr = this._bindingParser.parseInterpolation(text.value, text.sourceSpan);
-        if (isPresent(expr)) {
+        if (expr) {
             return new BoundTextAst(expr, ngContentIndex, text.sourceSpan);
         }
         else {
@@ -371,14 +371,15 @@ var TemplateParseVisitor = (function () {
         var /** @type {?} */ isTemplateElement = lcElName == TEMPLATE_ELEMENT;
         element.attrs.forEach(function (attr) {
             var /** @type {?} */ hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
-            var /** @type {?} */ templateBindingsSource = undefined;
-            var /** @type {?} */ prefixToken = undefined;
-            if (_this._normalizeAttributeName(attr.name) == TEMPLATE_ATTR) {
+            var /** @type {?} */ templateBindingsSource;
+            var /** @type {?} */ prefixToken;
+            var /** @type {?} */ normalizedName = _this._normalizeAttributeName(attr.name);
+            if (normalizedName == TEMPLATE_ATTR) {
                 templateBindingsSource = attr.value;
             }
-            else if (attr.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
+            else if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
                 templateBindingsSource = attr.value;
-                prefixToken = attr.name.substring(TEMPLATE_ATTR_PREFIX.length); // remove the star
+                prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
             }
             var /** @type {?} */ hasTemplateBinding = isPresent(templateBindingsSource);
             if (hasTemplateBinding) {
@@ -645,7 +646,7 @@ var TemplateParseVisitor = (function () {
                 }
                 targetReferences.push(new ReferenceAst(elOrDirRef.name, refToken, elOrDirRef.sourceSpan));
             }
-        }); // fix syntax highlighting issue: `
+        });
         return directiveAsts;
     };
     /**
@@ -848,7 +849,7 @@ var NonBindableVisitor = (function () {
             // in the StyleCompiler
             return null;
         }
-        var /** @type {?} */ attrNameAndValues = ast.attrs.map(function (attrAst) { return [attrAst.name, attrAst.value]; });
+        var /** @type {?} */ attrNameAndValues = ast.attrs.map(function (attr) { return [attr.name, attr.value]; });
         var /** @type {?} */ selector = createElementCssSelector(ast.name, attrNameAndValues);
         var /** @type {?} */ ngContentIndex = parent.findNgContentIndex(selector);
         var /** @type {?} */ children = html.visitAll(this, ast.children, EMPTY_ELEMENT_CONTEXT);
@@ -983,17 +984,17 @@ function ElementContext_tsickle_Closure_declarations() {
 }
 /**
  * @param {?} elementName
- * @param {?} matchableAttrs
+ * @param {?} attributes
  * @return {?}
  */
-export function createElementCssSelector(elementName, matchableAttrs) {
+export function createElementCssSelector(elementName, attributes) {
     var /** @type {?} */ cssSelector = new CssSelector();
     var /** @type {?} */ elNameNoNs = splitNsName(elementName)[1];
     cssSelector.setElement(elNameNoNs);
-    for (var /** @type {?} */ i = 0; i < matchableAttrs.length; i++) {
-        var /** @type {?} */ attrName = matchableAttrs[i][0];
+    for (var /** @type {?} */ i = 0; i < attributes.length; i++) {
+        var /** @type {?} */ attrName = attributes[i][0];
         var /** @type {?} */ attrNameNoNs = splitNsName(attrName)[1];
-        var /** @type {?} */ attrValue = matchableAttrs[i][1];
+        var /** @type {?} */ attrValue = attributes[i][1];
         cssSelector.addAttribute(attrNameNoNs, attrValue);
         if (attrName.toLowerCase() == CLASS_ATTR) {
             var /** @type {?} */ classes = splitClasses(attrValue);

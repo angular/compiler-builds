@@ -9,7 +9,7 @@ import { getHtmlTagDefinition } from './ml_parser/html_tags';
 var /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
-    '(?:\\[([-\\w*]+)(?:=([^\\]]*))?\\])|' +
+    '(?:\\[([.-\\w*]+)(?:=([^\\]]*))?\\])|' +
     '(\\))|' +
     '(\\s*,\\s*)', // ","
 'g');

@@ -46,7 +46,7 @@ export declare class TemplateParser {
     getInterpolationConfig(component: CompileDirectiveMetadata): InterpolationConfig;
 }
 export declare function splitClasses(classAttrValue: string): string[];
-export declare function createElementCssSelector(elementName: string, matchableAttrs: string[][]): CssSelector;
+export declare function createElementCssSelector(elementName: string, attributes: [string, string][]): CssSelector;
 export declare function removeSummaryDuplicates<T extends {
     type: CompileTypeMetadata;
 }>(items: T[]): T[];
