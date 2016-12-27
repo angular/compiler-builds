@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.1-174334d
+ * @license Angular v4.0.0-beta.1-445ed43
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.1-174334d');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.1-445ed43');
 
   /**
    * @license
@@ -18188,12 +18188,12 @@
               }
           }
           var /** @type {?} */ providers = [];
-          if (isPresent(dirMeta.providers)) {
+          if (dirMeta.providers != null) {
               providers = this._getProvidersMetadata(dirMeta.providers, entryComponentMetadata, "providers for \"" + stringifyType(directiveType) + "\"", [], directiveType);
           }
           var /** @type {?} */ queries = [];
           var /** @type {?} */ viewQueries = [];
-          if (isPresent(dirMeta.queries)) {
+          if (dirMeta.queries != null) {
               queries = this._getQueriesMetadata(dirMeta.queries, false, directiveType);
               viewQueries = this._getQueriesMetadata(dirMeta.queries, true, directiveType);
           }
@@ -18671,7 +18671,7 @@
                       else if (paramEntry instanceof _angular_core.Inject) {
                           token = paramEntry.token;
                       }
-                      else if (isValidType(paramEntry) && isBlank(token)) {
+                      else if (isValidType(paramEntry) && token == null) {
                           token = paramEntry;
                       }
                   });
@@ -18679,7 +18679,7 @@
               else {
                   token = param;
               }
-              if (isBlank(token)) {
+              if (token == null) {
                   hasUnknownDeps = true;
                   return null;
               }
@@ -18732,6 +18732,7 @@
                   provider = _angular_core.resolveForwardRef(provider);
                   var /** @type {?} */ providerMeta = void 0;
                   if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
+                      _this._validateProvider(provider);
                       providerMeta = new ProviderMeta(provider.provide, provider);
                   }
                   else if (isValidType(provider)) {
@@ -18762,6 +18763,15 @@
               }
           });
           return compileProviders;
+      };
+      /**
+       * @param {?} provider
+       * @return {?}
+       */
+      CompileMetadataResolver.prototype._validateProvider = function (provider) {
+          if (provider.hasOwnProperty('useClass') && provider.useClass == null) {
+              this._reportError(new SyntaxError("Invalid provider for " + stringifyType(provider.provide) + ". useClass cannot be " + provider.useClass + ".\n           Usually it happens when:\n           1. There's a circular dependency (might be caused by using index.ts (barrel) files).\n           2. Class was used before it was declared. Use forwardRef in this case."));
+          }
       };
       /**
        * @param {?} provider

@@ -87,6 +87,7 @@ export declare class CompileMetadataResolver {
     private _getDependenciesMetadata(typeOrFunc, dependencies);
     private _getTokenMetadata(token);
     private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?, type?);
+    private _validateProvider(provider);
     private _getEntryComponentsFromProvider(provider, type?);
     private _getEntryComponentMetadata(dirType);
     getProviderMetadata(provider: cpl.ProviderMeta): cpl.CompileProviderMetadata;
