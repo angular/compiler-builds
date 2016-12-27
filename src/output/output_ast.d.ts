@@ -45,13 +45,13 @@ export declare class MapType extends Type {
     constructor(valueType: Type, modifiers?: TypeModifier[]);
     visitType(visitor: TypeVisitor, context: any): any;
 }
-export declare var DYNAMIC_TYPE: BuiltinType;
-export declare var BOOL_TYPE: BuiltinType;
-export declare var INT_TYPE: BuiltinType;
-export declare var NUMBER_TYPE: BuiltinType;
-export declare var STRING_TYPE: BuiltinType;
-export declare var FUNCTION_TYPE: BuiltinType;
-export declare var NULL_TYPE: BuiltinType;
+export declare const DYNAMIC_TYPE: BuiltinType;
+export declare const BOOL_TYPE: BuiltinType;
+export declare const INT_TYPE: BuiltinType;
+export declare const NUMBER_TYPE: BuiltinType;
+export declare const STRING_TYPE: BuiltinType;
+export declare const FUNCTION_TYPE: BuiltinType;
+export declare const NULL_TYPE: BuiltinType;
 export interface TypeVisitor {
     visitBuiltintType(type: BuiltinType, context: any): any;
     visitExpressionType(type: ExpressionType, context: any): any;
@@ -261,12 +261,12 @@ export interface ExpressionVisitor {
     visitLiteralArrayExpr(ast: LiteralArrayExpr, context: any): any;
     visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
 }
-export declare var THIS_EXPR: ReadVarExpr;
-export declare var SUPER_EXPR: ReadVarExpr;
-export declare var CATCH_ERROR_VAR: ReadVarExpr;
-export declare var CATCH_STACK_VAR: ReadVarExpr;
-export declare var NULL_EXPR: LiteralExpr;
-export declare var TYPED_NULL_EXPR: LiteralExpr;
+export declare const THIS_EXPR: ReadVarExpr;
+export declare const SUPER_EXPR: ReadVarExpr;
+export declare const CATCH_ERROR_VAR: ReadVarExpr;
+export declare const CATCH_STACK_VAR: ReadVarExpr;
+export declare const NULL_EXPR: LiteralExpr;
+export declare const TYPED_NULL_EXPR: LiteralExpr;
 export declare enum StmtModifier {
     Final = 0,
     Private = 1,
