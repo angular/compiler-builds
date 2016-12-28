@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.1-b2ae7b6
+ * @license Angular v4.0.0-beta.1-2c0c86e
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.1-b2ae7b6');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.1-2c0c86e');
 
   /**
    * @license
@@ -13629,11 +13629,17 @@
           var _this = this;
           var /** @type {?} */ normalizedTemplateSync = null;
           var /** @type {?} */ normalizedTemplateAsync;
-          if (isPresent(prenormData.template)) {
+          if (prenormData.template != null) {
+              if (typeof prenormData.template !== 'string') {
+                  throw new SyntaxError("The template specified for component " + stringify(prenormData.componentType) + " is not a string");
+              }
               normalizedTemplateSync = this.normalizeTemplateSync(prenormData);
               normalizedTemplateAsync = Promise.resolve(normalizedTemplateSync);
           }
           else if (prenormData.templateUrl) {
+              if (typeof prenormData.templateUrl !== 'string') {
+                  throw new SyntaxError("The templateUrl specified for component " + stringify(prenormData.componentType) + " is not a string");
+              }
               normalizedTemplateAsync = this.normalizeTemplateAsync(prenormData);
           }
           else {
@@ -13687,7 +13693,7 @@
           visitAll(visitor, rootNodesAndErrors.rootNodes);
           var /** @type {?} */ templateStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({ styles: visitor.styles, styleUrls: visitor.styleUrls, moduleUrl: templateAbsUrl }));
           var /** @type {?} */ encapsulation = prenomData.encapsulation;
-          if (isBlank(encapsulation)) {
+          if (encapsulation == null) {
               encapsulation = this._config.defaultEncapsulation;
           }
           var /** @type {?} */ styles = templateMetadataStyles.styles.concat(templateStyles.styles);

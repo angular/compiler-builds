@@ -17,7 +17,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 import { ViewEncapsulation } from '@angular/core';
 import { CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
-import { isBlank, isPresent, stringify } from './facade/lang';
+import { stringify } from './facade/lang';
 import { CompilerInjectable } from './injectable';
 import * as html from './ml_parser/ast';
 import { HtmlParser } from './ml_parser/html_parser';
@@ -77,11 +77,17 @@ export var DirectiveNormalizer = (function () {
         var _this = this;
         var /** @type {?} */ normalizedTemplateSync = null;
         var /** @type {?} */ normalizedTemplateAsync;
-        if (isPresent(prenormData.template)) {
+        if (prenormData.template != null) {
+            if (typeof prenormData.template !== 'string') {
+                throw new SyntaxError("The template specified for component " + stringify(prenormData.componentType) + " is not a string");
+            }
             normalizedTemplateSync = this.normalizeTemplateSync(prenormData);
             normalizedTemplateAsync = Promise.resolve(normalizedTemplateSync);
         }
         else if (prenormData.templateUrl) {
+            if (typeof prenormData.templateUrl !== 'string') {
+                throw new SyntaxError("The templateUrl specified for component " + stringify(prenormData.componentType) + " is not a string");
+            }
             normalizedTemplateAsync = this.normalizeTemplateAsync(prenormData);
         }
         else {
@@ -135,7 +141,7 @@ export var DirectiveNormalizer = (function () {
         html.visitAll(visitor, rootNodesAndErrors.rootNodes);
         var /** @type {?} */ templateStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({ styles: visitor.styles, styleUrls: visitor.styleUrls, moduleUrl: templateAbsUrl }));
         var /** @type {?} */ encapsulation = prenomData.encapsulation;
-        if (isBlank(encapsulation)) {
+        if (encapsulation == null) {
             encapsulation = this._config.defaultEncapsulation;
         }
         var /** @type {?} */ styles = templateMetadataStyles.styles.concat(templateStyles.styles);
