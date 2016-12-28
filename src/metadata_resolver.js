@@ -933,12 +933,15 @@ export var CompileMetadataResolver = (function () {
             else {
                 provider = resolveForwardRef(provider);
                 var /** @type {?} */ providerMeta = void 0;
-                if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
+                if (provider && typeof provider === 'object' && provider.hasOwnProperty('provide')) {
                     _this._validateProvider(provider);
                     providerMeta = new cpl.ProviderMeta(provider.provide, provider);
                 }
                 else if (isValidType(provider)) {
                     providerMeta = new cpl.ProviderMeta(provider, { useClass: provider });
+                }
+                else if (provider === void 0) {
+                    _this._reportError(new SyntaxError("Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using 'barrel' index.ts files."));
                 }
                 else {
                     var /** @type {?} */ providersInfo = ((providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
