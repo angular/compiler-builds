@@ -154,10 +154,10 @@ export var CompileView = (function () {
     /**
      * @return {?}
      */
-    CompileView.prototype.afterNodes = function () {
+    CompileView.prototype.finish = function () {
         var _this = this;
         Array.from(this.viewQueries.values())
-            .forEach(function (queries) { return queries.forEach(function (q) { return q.afterChildren(_this.createMethod, _this.updateViewQueriesMethod); }); });
+            .forEach(function (queries) { return queries.forEach(function (q) { return q.generateStatements(_this.createMethod, _this.updateViewQueriesMethod); }); });
     };
     return CompileView;
 }());
