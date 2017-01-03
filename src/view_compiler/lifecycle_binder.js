@@ -5,13 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { isFirstViewCheck } from '../compiler_util/binding_util';
 import { DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
 import * as o from '../output/output_ast';
 import { LifecycleHooks } from '../private_import_core';
 import { ProviderAstType } from '../template_parser/template_ast';
-import { DetectChangesVars } from './constants';
-var /** @type {?} */ STATE_IS_NEVER_CHECKED = o.THIS_EXPR.prop('numberOfChecks').identical(new o.LiteralExpr(0));
-var /** @type {?} */ NOT_THROW_ON_CHANGES = o.not(DetectChangesVars.throwOnChange);
 /**
  * @param {?} directiveMeta
  * @param {?} directiveInstance
@@ -24,7 +22,7 @@ export function bindDirectiveAfterContentLifecycleCallbacks(directiveMeta, direc
     var /** @type {?} */ afterContentLifecycleCallbacksMethod = view.afterContentLifecycleCallbacksMethod;
     afterContentLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
     if (lifecycleHooks.indexOf(LifecycleHooks.AfterContentInit) !== -1) {
-        afterContentLifecycleCallbacksMethod.addStmt(new o.IfStmt(STATE_IS_NEVER_CHECKED, [directiveInstance.callMethod('ngAfterContentInit', []).toStmt()]));
+        afterContentLifecycleCallbacksMethod.addStmt(new o.IfStmt(isFirstViewCheck(o.THIS_EXPR), [directiveInstance.callMethod('ngAfterContentInit', []).toStmt()]));
     }
     if (lifecycleHooks.indexOf(LifecycleHooks.AfterContentChecked) !== -1) {
         afterContentLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterContentChecked', []).toStmt());
@@ -42,7 +40,7 @@ export function bindDirectiveAfterViewLifecycleCallbacks(directiveMeta, directiv
     var /** @type {?} */ afterViewLifecycleCallbacksMethod = view.afterViewLifecycleCallbacksMethod;
     afterViewLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
     if (lifecycleHooks.indexOf(LifecycleHooks.AfterViewInit) !== -1) {
-        afterViewLifecycleCallbacksMethod.addStmt(new o.IfStmt(STATE_IS_NEVER_CHECKED, [directiveInstance.callMethod('ngAfterViewInit', []).toStmt()]));
+        afterViewLifecycleCallbacksMethod.addStmt(new o.IfStmt(isFirstViewCheck(o.THIS_EXPR), [directiveInstance.callMethod('ngAfterViewInit', []).toStmt()]));
     }
     if (lifecycleHooks.indexOf(LifecycleHooks.AfterViewChecked) !== -1) {
         afterViewLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterViewChecked', []).toStmt());

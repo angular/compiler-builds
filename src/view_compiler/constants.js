@@ -80,6 +80,7 @@ export var ViewProperties = (function () {
     }
     ViewProperties.renderer = o.THIS_EXPR.prop('renderer');
     ViewProperties.viewUtils = o.THIS_EXPR.prop('viewUtils');
+    ViewProperties.throwOnChange = o.THIS_EXPR.prop('throwOnChange');
     return ViewProperties;
 }());
 function ViewProperties_tsickle_Closure_declarations() {
@@ -87,6 +88,8 @@ function ViewProperties_tsickle_Closure_declarations() {
     ViewProperties.renderer;
     /** @type {?} */
     ViewProperties.viewUtils;
+    /** @type {?} */
+    ViewProperties.throwOnChange;
 }
 export var InjectMethodVars = (function () {
     function InjectMethodVars() {
@@ -103,21 +106,5 @@ function InjectMethodVars_tsickle_Closure_declarations() {
     InjectMethodVars.requestNodeIndex;
     /** @type {?} */
     InjectMethodVars.notFoundResult;
-}
-export var DetectChangesVars = (function () {
-    function DetectChangesVars() {
-    }
-    DetectChangesVars.throwOnChange = o.variable("throwOnChange");
-    DetectChangesVars.changes = o.variable("changes");
-    DetectChangesVars.changed = o.variable("changed");
-    return DetectChangesVars;
-}());
-function DetectChangesVars_tsickle_Closure_declarations() {
-    /** @type {?} */
-    DetectChangesVars.throwOnChange;
-    /** @type {?} */
-    DetectChangesVars.changes;
-    /** @type {?} */
-    DetectChangesVars.changed;
 }
 //# sourceMappingURL=constants.js.map

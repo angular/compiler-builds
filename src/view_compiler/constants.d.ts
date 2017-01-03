@@ -29,14 +29,10 @@ export declare class ViewConstructorVars {
 export declare class ViewProperties {
     static renderer: o.ReadPropExpr;
     static viewUtils: o.ReadPropExpr;
+    static throwOnChange: o.ReadPropExpr;
 }
 export declare class InjectMethodVars {
     static token: o.ReadVarExpr;
     static requestNodeIndex: o.ReadVarExpr;
     static notFoundResult: o.ReadVarExpr;
-}
-export declare class DetectChangesVars {
-    static throwOnChange: o.ReadVarExpr;
-    static changes: o.ReadVarExpr;
-    static changed: o.ReadVarExpr;
 }
