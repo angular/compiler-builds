@@ -75,5 +75,5 @@ export declare class CompileView implements NameResolver {
     constructor(component: CompileDirectiveMetadata, genConfig: CompilerConfig, pipeMetas: CompilePipeSummary[], styles: o.Expression, animations: AnimationEntryCompileResult[], viewIndex: number, declarationElement: CompileElement, templateVariableBindings: string[][], targetDependencies: Array<ViewClassDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
     callPipe(name: string, input: o.Expression, args: o.Expression[]): o.Expression;
     getLocal(name: string): o.Expression;
-    afterNodes(): void;
+    finish(): void;
 }

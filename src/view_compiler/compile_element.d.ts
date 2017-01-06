@@ -8,6 +8,7 @@
 import { CompileDirectiveSummary, CompileTokenMetadata } from '../compile_metadata';
 import * as o from '../output/output_ast';
 import { ProviderAst, ReferenceAst, TemplateAst } from '../template_parser/template_ast';
+import { CompileQuery } from './compile_query';
 import { CompileView, CompileViewRootNode } from './compile_view';
 export declare class CompileNode {
     parent: CompileElement;
@@ -46,10 +47,11 @@ export declare class CompileElement extends CompileNode {
     setEmbeddedView(embeddedView: CompileView): void;
     beforeChildren(): void;
     afterChildren(childNodeCount: number): void;
+    finish(): void;
     addContentNode(ngContentIndex: number, nodeExpr: CompileViewRootNode): void;
     getComponent(): o.Expression;
-    getProviderTokens(): o.Expression[];
-    private _getQueriesFor(token);
+    getProviderTokens(): CompileTokenMetadata[];
+    getQueriesFor(token: CompileTokenMetadata): CompileQuery[];
     private _addQuery(queryMeta, directiveInstance);
     private _getLocalDependency(requestingProviderType, dep);
     private _getDependency(requestingProviderType, dep);

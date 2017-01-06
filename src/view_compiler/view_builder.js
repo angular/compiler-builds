@@ -47,13 +47,16 @@ export function buildView(view, template, targetDependencies) {
  * @return {?}
  */
 export function finishView(view, targetStatements) {
-    view.afterNodes();
-    createViewTopLevelStmts(view, targetStatements);
     view.nodes.forEach(function (node) {
-        if (node instanceof CompileElement && node.hasEmbeddedView) {
-            finishView(node.embeddedView, targetStatements);
+        if (node instanceof CompileElement) {
+            node.finish();
+            if (node.hasEmbeddedView) {
+                finishView(node.embeddedView, targetStatements);
+            }
         }
     });
+    view.finish();
+    createViewTopLevelStmts(view, targetStatements);
 }
 var ViewBuilderVisitor = (function () {
     /**
@@ -465,7 +468,8 @@ function createStaticNodeDebugInfo(node) {
     var /** @type {?} */ componentToken = o.NULL_EXPR;
     var /** @type {?} */ varTokenEntries = [];
     if (isPresent(compileElement)) {
-        providerTokens = compileElement.getProviderTokens();
+        providerTokens =
+            compileElement.getProviderTokens().map(function (token) { return createDiTokenExpression(token); });
         if (isPresent(compileElement.component)) {
             componentToken = createDiTokenExpression(identifierToken(compileElement.component.type));
         }

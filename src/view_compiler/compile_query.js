@@ -84,7 +84,7 @@ export var CompileQuery = (function () {
      * @param {?} targetDynamicMethod
      * @return {?}
      */
-    CompileQuery.prototype.afterChildren = function (targetStaticMethod, targetDynamicMethod) {
+    CompileQuery.prototype.generateStatements = function (targetStaticMethod, targetDynamicMethod) {
         var /** @type {?} */ values = createQueryValues(this._values);
         var /** @type {?} */ updateStmts = [this.queryList.callMethod('reset', [o.literalArr(values)]).toStmt()];
         if (isPresent(this.ownerDirectiveExpression)) {
