@@ -21,9 +21,9 @@ export declare class CompileAnimationStateDeclarationMetadata extends CompileAni
     constructor(stateNameExpr: string, styles: CompileAnimationStyleMetadata);
 }
 export declare class CompileAnimationStateTransitionMetadata extends CompileAnimationStateMetadata {
-    stateChangeExpr: string;
+    stateChangeExpr: string | StaticSymbol | ((stateA: string, stateB: string) => boolean);
     steps: CompileAnimationMetadata;
-    constructor(stateChangeExpr: string, steps: CompileAnimationMetadata);
+    constructor(stateChangeExpr: string | StaticSymbol | ((stateA: string, stateB: string) => boolean), steps: CompileAnimationMetadata);
 }
 export declare abstract class CompileAnimationMetadata {
 }

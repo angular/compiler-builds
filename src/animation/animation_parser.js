@@ -26,7 +26,7 @@ import { CompilerInjectable } from '../injectable';
 import { ParseError } from '../parse_util';
 import { ANY_STATE, FILL_STYLE_FLAG } from '../private_import_core';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
-import { AnimationEntryAst, AnimationGroupAst, AnimationKeyframeAst, AnimationSequenceAst, AnimationStateDeclarationAst, AnimationStateTransitionAst, AnimationStateTransitionExpression, AnimationStepAst, AnimationStylesAst, AnimationWithStepsAst } from './animation_ast';
+import { AnimationEntryAst, AnimationGroupAst, AnimationKeyframeAst, AnimationSequenceAst, AnimationStateDeclarationAst, AnimationStateTransitionAst, AnimationStateTransitionExpression, AnimationStateTransitionFnExpression, AnimationStepAst, AnimationStylesAst, AnimationWithStepsAst } from './animation_ast';
 import { StylesCollection } from './styles_collection';
 var /** @type {?} */ _INITIAL_KEYFRAME = 0;
 var /** @type {?} */ _TERMINAL_KEYFRAME = 1;
@@ -158,8 +158,11 @@ function _parseAnimationDeclarationStates(stateMetadata, schema, errors) {
 function _parseAnimationStateTransition(transitionStateMetadata, stateStyles, schema, errors) {
     var /** @type {?} */ styles = new StylesCollection();
     var /** @type {?} */ transitionExprs = [];
-    var /** @type {?} */ transitionStates = transitionStateMetadata.stateChangeExpr.split(/\s*,\s*/);
-    transitionStates.forEach(function (expr) { transitionExprs.push.apply(transitionExprs, _parseAnimationTransitionExpr(expr, errors)); });
+    var /** @type {?} */ stateChangeExpr = transitionStateMetadata.stateChangeExpr;
+    var /** @type {?} */ transitionStates = typeof stateChangeExpr == 'string' ?
+        ((stateChangeExpr)).split(/\s*,\s*/) :
+        [(stateChangeExpr)];
+    transitionStates.forEach(function (expr) { return transitionExprs.push.apply(transitionExprs, _parseAnimationTransitionExpr(expr, errors)); });
     var /** @type {?} */ entry = _normalizeAnimationEntry(transitionStateMetadata.steps);
     var /** @type {?} */ animation = _normalizeStyleSteps(entry, stateStyles, schema, errors);
     var /** @type {?} */ animationAst = _parseTransitionAnimation(animation, 0, styles, stateStyles, errors);
@@ -188,27 +191,33 @@ function _parseAnimationAlias(alias, errors) {
     }
 }
 /**
- * @param {?} eventStr
+ * @param {?} transitionValue
  * @param {?} errors
  * @return {?}
  */
-function _parseAnimationTransitionExpr(eventStr, errors) {
+function _parseAnimationTransitionExpr(transitionValue, errors) {
     var /** @type {?} */ expressions = [];
-    if (eventStr[0] == ':') {
-        eventStr = _parseAnimationAlias(eventStr, errors);
+    if (typeof transitionValue == 'string') {
+        var /** @type {?} */ eventStr = (transitionValue);
+        if (eventStr[0] == ':') {
+            eventStr = _parseAnimationAlias(eventStr, errors);
+        }
+        var /** @type {?} */ match = eventStr.match(/^(\*|[-\w]+)\s*(<?[=-]>)\s*(\*|[-\w]+)$/);
+        if (!isPresent(match) || match.length < 4) {
+            errors.push(new AnimationParseError("the provided " + eventStr + " is not of a supported format"));
+            return expressions;
+        }
+        var /** @type {?} */ fromState = match[1];
+        var /** @type {?} */ separator = match[2];
+        var /** @type {?} */ toState = match[3];
+        expressions.push(new AnimationStateTransitionExpression(fromState, toState));
+        var /** @type {?} */ isFullAnyStateExpr = fromState == ANY_STATE && toState == ANY_STATE;
+        if (separator[0] == '<' && !isFullAnyStateExpr) {
+            expressions.push(new AnimationStateTransitionExpression(toState, fromState));
+        }
     }
-    var /** @type {?} */ match = eventStr.match(/^(\*|[-\w]+)\s*(<?[=-]>)\s*(\*|[-\w]+)$/);
-    if (!isPresent(match) || match.length < 4) {
-        errors.push(new AnimationParseError("the provided " + eventStr + " is not of a supported format"));
-        return expressions;
-    }
-    var /** @type {?} */ fromState = match[1];
-    var /** @type {?} */ separator = match[2];
-    var /** @type {?} */ toState = match[3];
-    expressions.push(new AnimationStateTransitionExpression(fromState, toState));
-    var /** @type {?} */ isFullAnyStateExpr = fromState == ANY_STATE && toState == ANY_STATE;
-    if (separator[0] == '<' && !isFullAnyStateExpr) {
-        expressions.push(new AnimationStateTransitionExpression(toState, fromState));
+    else {
+        expressions.push(new AnimationStateTransitionFnExpression(/** @type {?} */ (transitionValue)));
     }
     return expressions;
 }

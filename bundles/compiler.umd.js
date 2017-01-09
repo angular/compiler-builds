@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.2-02dd90f
+ * @license Angular v4.0.0-beta.2-8578682
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.2-02dd90f');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.2-8578682');
 
   /**
    * @license
@@ -12274,11 +12274,6 @@
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   /**
-   * @license undefined
-    * Copyright Google Inc. All Rights Reserved.
-    * *
-    * Use of this source code is governed by an MIT-style license that can be
-    * found in the LICENSE file at https://angular.io/license
    * @abstract
    */
   var AnimationAst = (function () {
@@ -12367,6 +12362,17 @@
       }
       return AnimationStateTransitionExpression;
   }());
+  var AnimationStateTransitionFnExpression = (function (_super) {
+      __extends$16(AnimationStateTransitionFnExpression, _super);
+      /**
+       * @param {?} fn
+       */
+      function AnimationStateTransitionFnExpression(fn) {
+          _super.call(this, null, null);
+          this.fn = fn;
+      }
+      return AnimationStateTransitionFnExpression;
+  }(AnimationStateTransitionExpression));
   var AnimationStateTransitionAst = (function (_super) {
       __extends$16(AnimationStateTransitionAst, _super);
       /**
@@ -12723,8 +12729,11 @@
   function _parseAnimationStateTransition(transitionStateMetadata, stateStyles, schema, errors) {
       var /** @type {?} */ styles = new StylesCollection();
       var /** @type {?} */ transitionExprs = [];
-      var /** @type {?} */ transitionStates = transitionStateMetadata.stateChangeExpr.split(/\s*,\s*/);
-      transitionStates.forEach(function (expr) { transitionExprs.push.apply(transitionExprs, _parseAnimationTransitionExpr(expr, errors)); });
+      var /** @type {?} */ stateChangeExpr = transitionStateMetadata.stateChangeExpr;
+      var /** @type {?} */ transitionStates = typeof stateChangeExpr == 'string' ?
+          ((stateChangeExpr)).split(/\s*,\s*/) :
+          [(stateChangeExpr)];
+      transitionStates.forEach(function (expr) { return transitionExprs.push.apply(transitionExprs, _parseAnimationTransitionExpr(expr, errors)); });
       var /** @type {?} */ entry = _normalizeAnimationEntry(transitionStateMetadata.steps);
       var /** @type {?} */ animation = _normalizeStyleSteps(entry, stateStyles, schema, errors);
       var /** @type {?} */ animationAst = _parseTransitionAnimation(animation, 0, styles, stateStyles, errors);
@@ -12753,27 +12762,33 @@
       }
   }
   /**
-   * @param {?} eventStr
+   * @param {?} transitionValue
    * @param {?} errors
    * @return {?}
    */
-  function _parseAnimationTransitionExpr(eventStr, errors) {
+  function _parseAnimationTransitionExpr(transitionValue, errors) {
       var /** @type {?} */ expressions = [];
-      if (eventStr[0] == ':') {
-          eventStr = _parseAnimationAlias(eventStr, errors);
+      if (typeof transitionValue == 'string') {
+          var /** @type {?} */ eventStr = (transitionValue);
+          if (eventStr[0] == ':') {
+              eventStr = _parseAnimationAlias(eventStr, errors);
+          }
+          var /** @type {?} */ match = eventStr.match(/^(\*|[-\w]+)\s*(<?[=-]>)\s*(\*|[-\w]+)$/);
+          if (!isPresent(match) || match.length < 4) {
+              errors.push(new AnimationParseError("the provided " + eventStr + " is not of a supported format"));
+              return expressions;
+          }
+          var /** @type {?} */ fromState = match[1];
+          var /** @type {?} */ separator = match[2];
+          var /** @type {?} */ toState = match[3];
+          expressions.push(new AnimationStateTransitionExpression(fromState, toState));
+          var /** @type {?} */ isFullAnyStateExpr = fromState == ANY_STATE && toState == ANY_STATE;
+          if (separator[0] == '<' && !isFullAnyStateExpr) {
+              expressions.push(new AnimationStateTransitionExpression(toState, fromState));
+          }
       }
-      var /** @type {?} */ match = eventStr.match(/^(\*|[-\w]+)\s*(<?[=-]>)\s*(\*|[-\w]+)$/);
-      if (!isPresent(match) || match.length < 4) {
-          errors.push(new AnimationParseError("the provided " + eventStr + " is not of a supported format"));
-          return expressions;
-      }
-      var /** @type {?} */ fromState = match[1];
-      var /** @type {?} */ separator = match[2];
-      var /** @type {?} */ toState = match[3];
-      expressions.push(new AnimationStateTransitionExpression(fromState, toState));
-      var /** @type {?} */ isFullAnyStateExpr = fromState == ANY_STATE && toState == ANY_STATE;
-      if (separator[0] == '<' && !isFullAnyStateExpr) {
-          expressions.push(new AnimationStateTransitionExpression(toState, fromState));
+      else {
+          expressions.push(new AnimationStateTransitionFnExpression(/** @type {?} */ (transitionValue)));
       }
       return expressions;
   }
@@ -24457,13 +24472,20 @@
           context.isExpectingFirstAnimateStep = true;
           var /** @type {?} */ stateChangePreconditions = [];
           ast.stateChanges.forEach(function (stateChange) {
-              stateChangePreconditions.push(_compareToAnimationStateExpr(_ANIMATION_CURRENT_STATE_VAR, stateChange.fromState)
-                  .and(_compareToAnimationStateExpr(_ANIMATION_NEXT_STATE_VAR, stateChange.toState)));
-              if (stateChange.fromState != ANY_STATE) {
-                  context.stateMap.registerState(stateChange.fromState);
+              if (stateChange instanceof AnimationStateTransitionFnExpression) {
+                  stateChangePreconditions.push(importExpr({ reference: stateChange.fn }).callFn([
+                      _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR
+                  ]));
               }
-              if (stateChange.toState != ANY_STATE) {
-                  context.stateMap.registerState(stateChange.toState);
+              else {
+                  stateChangePreconditions.push(_compareToAnimationStateExpr(_ANIMATION_CURRENT_STATE_VAR, stateChange.fromState)
+                      .and(_compareToAnimationStateExpr(_ANIMATION_NEXT_STATE_VAR, stateChange.toState)));
+                  if (stateChange.fromState != ANY_STATE) {
+                      context.stateMap.registerState(stateChange.fromState);
+                  }
+                  if (stateChange.toState != ANY_STATE) {
+                      context.stateMap.registerState(stateChange.toState);
+                  }
               }
           });
           var /** @type {?} */ animationPlayerExpr = ast.animation.visit(this, context);
@@ -24549,8 +24571,8 @@
           ])
               .toStmt());
           statements.push(new ReturnStatement(importExpr(createIdentifier(Identifiers.AnimationTransition)).instantiate([
-              _ANIMATION_PLAYER_VAR, _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR,
-              _ANIMATION_TIME_VAR
+              _ANIMATION_PLAYER_VAR, _ANIMATION_FACTORY_ELEMENT_VAR, literal(this.animationName),
+              _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR, _ANIMATION_TIME_VAR
           ])));
           return fn([
               new FnParam(_ANIMATION_FACTORY_VIEW_VAR.name, importType(createIdentifier(Identifiers.AppView), [DYNAMIC_TYPE])),
