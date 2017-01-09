@@ -379,7 +379,7 @@ var TemplateParseVisitor = (function () {
             }
             else if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
                 templateBindingsSource = attr.value;
-                prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
+                prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
             }
             var /** @type {?} */ hasTemplateBinding = isPresent(templateBindingsSource);
             if (hasTemplateBinding) {

@@ -105,7 +105,7 @@ export var StaticReflector = (function () {
             var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             if (classMetadata['extends']) {
                 var /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
-                if (parentType instanceof StaticSymbol) {
+                if (parentType && (parentType instanceof StaticSymbol)) {
                     var /** @type {?} */ parentAnnotations = this.annotations(parentType);
                     annotations.push.apply(annotations, parentAnnotations);
                 }

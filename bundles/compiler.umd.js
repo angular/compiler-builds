@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.2-fb6c458
+ * @license Angular v4.0.0-beta.2-99aa49a
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.2-fb6c458');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.2-99aa49a');
 
   /**
    * @license
@@ -11538,7 +11538,7 @@
               }
               else if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
                   templateBindingsSource = attr.value;
-                  prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
+                  prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
               }
               var /** @type {?} */ hasTemplateBinding = isPresent(templateBindingsSource);
               if (hasTemplateBinding) {
@@ -25522,7 +25522,7 @@
               var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
               if (classMetadata['extends']) {
                   var /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
-                  if (parentType instanceof StaticSymbol) {
+                  if (parentType && (parentType instanceof StaticSymbol)) {
                       var /** @type {?} */ parentAnnotations = this.annotations(parentType);
                       annotations.push.apply(annotations, parentAnnotations);
                   }
