@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.2-99aa49a
+ * @license Angular v4.0.0-beta.2-5d9cbd7
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.2-99aa49a');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.2-5d9cbd7');
 
   /**
    * @license
@@ -25790,6 +25790,7 @@
                           if (value_1 && (depth != 0 || value_1.__symbolic != 'error')) {
                               var /** @type {?} */ parameters = targetFunction['parameters'];
                               var /** @type {?} */ defaults = targetFunction.defaults;
+                              args = args.map(function (arg) { return simplifyInContext(context, arg, depth + 1); });
                               if (defaults && defaults.length > args.length) {
                                   args.push.apply(args, defaults.slice(args.length).map(function (value) { return simplify(value); }));
                               }
@@ -25991,15 +25992,15 @@
                                           return context;
                                       }
                                       var /** @type {?} */ argExpressions = expression['arguments'] || [];
-                                      var /** @type {?} */ args = argExpressions.map(function (arg) { return simplifyInContext(context, arg, depth + 1); });
                                       var /** @type {?} */ converter = self.conversionMap.get(staticSymbol);
                                       if (converter) {
+                                          var /** @type {?} */ args = argExpressions.map(function (arg) { return simplifyInContext(context, arg, depth + 1); });
                                           return converter(context, args);
                                       }
                                       else {
                                           // Determine if the function is one we can simplify.
                                           var /** @type {?} */ targetFunction = resolveReferenceValue(staticSymbol);
-                                          return simplifyCall(staticSymbol, targetFunction, args);
+                                          return simplifyCall(staticSymbol, targetFunction, argExpressions);
                                       }
                                   }
                                   break;
