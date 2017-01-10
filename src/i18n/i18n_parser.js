@@ -19,8 +19,8 @@ var /** @type {?} */ _expParser = new ExpressionParser(new ExpressionLexer());
  */
 export function createI18nMessageFactory(interpolationConfig) {
     var /** @type {?} */ visitor = new _I18nVisitor(_expParser, interpolationConfig);
-    return function (nodes, meaning, description) {
-        return visitor.toI18nMessage(nodes, meaning, description);
+    return function (nodes, meaning, description, id) {
+        return visitor.toI18nMessage(nodes, meaning, description, id);
     };
 }
 var _I18nVisitor = (function () {
@@ -36,16 +36,17 @@ var _I18nVisitor = (function () {
      * @param {?} nodes
      * @param {?} meaning
      * @param {?} description
+     * @param {?} id
      * @return {?}
      */
-    _I18nVisitor.prototype.toI18nMessage = function (nodes, meaning, description) {
+    _I18nVisitor.prototype.toI18nMessage = function (nodes, meaning, description, id) {
         this._isIcu = nodes.length == 1 && nodes[0] instanceof html.Expansion;
         this._icuDepth = 0;
         this._placeholderRegistry = new PlaceholderRegistry();
         this._placeholderToContent = {};
         this._placeholderToMessage = {};
         var /** @type {?} */ i18nodes = html.visitAll(this, nodes, {});
-        return new i18n.Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description);
+        return new i18n.Message(i18nodes, this._placeholderToContent, this._placeholderToMessage, meaning, description, id);
     };
     /**
      * @param {?} el
@@ -121,7 +122,7 @@ var _I18nVisitor = (function () {
         // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
         var /** @type {?} */ phName = this._placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
         var /** @type {?} */ visitor = new _I18nVisitor(this._expressionParser, this._interpolationConfig);
-        this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '');
+        this._placeholderToMessage[phName] = visitor.toI18nMessage([icu], '', '', '');
         return new i18n.IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
     };
     /**

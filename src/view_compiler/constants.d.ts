@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { ViewEncapsulation } from '@angular/core';
 import * as o from '../output/output_ast';
 import { ViewType } from '../private_import_core';
 export declare class ViewTypeEnum {
@@ -13,9 +13,6 @@ export declare class ViewTypeEnum {
 }
 export declare class ViewEncapsulationEnum {
     static fromValue(value: ViewEncapsulation): o.Expression;
-}
-export declare class ChangeDetectionStrategyEnum {
-    static fromValue(value: ChangeDetectionStrategy): o.Expression;
 }
 export declare class ChangeDetectorStatusEnum {
     static fromValue(value: ChangeDetectorStatusEnum): o.Expression;
@@ -29,14 +26,10 @@ export declare class ViewConstructorVars {
 export declare class ViewProperties {
     static renderer: o.ReadPropExpr;
     static viewUtils: o.ReadPropExpr;
+    static throwOnChange: o.ReadPropExpr;
 }
 export declare class InjectMethodVars {
     static token: o.ReadVarExpr;
     static requestNodeIndex: o.ReadVarExpr;
     static notFoundResult: o.ReadVarExpr;
-}
-export declare class DetectChangesVars {
-    static throwOnChange: o.ReadVarExpr;
-    static changes: o.ReadVarExpr;
-    static changed: o.ReadVarExpr;
 }

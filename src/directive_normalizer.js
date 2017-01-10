@@ -17,7 +17,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 import { ViewEncapsulation } from '@angular/core';
 import { CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
-import { isBlank, isPresent, stringify } from './facade/lang';
+import { stringify } from './facade/lang';
 import { CompilerInjectable } from './injectable';
 import * as html from './ml_parser/ast';
 import { HtmlParser } from './ml_parser/html_parser';
@@ -77,11 +77,17 @@ export var DirectiveNormalizer = (function () {
         var _this = this;
         var /** @type {?} */ normalizedTemplateSync = null;
         var /** @type {?} */ normalizedTemplateAsync;
-        if (isPresent(prenormData.template)) {
+        if (prenormData.template != null) {
+            if (typeof prenormData.template !== 'string') {
+                throw new SyntaxError("The template specified for component " + stringify(prenormData.componentType) + " is not a string");
+            }
             normalizedTemplateSync = this.normalizeTemplateSync(prenormData);
             normalizedTemplateAsync = Promise.resolve(normalizedTemplateSync);
         }
         else if (prenormData.templateUrl) {
+            if (typeof prenormData.templateUrl !== 'string') {
+                throw new SyntaxError("The templateUrl specified for component " + stringify(prenormData.componentType) + " is not a string");
+            }
             normalizedTemplateAsync = this.normalizeTemplateAsync(prenormData);
         }
         else {
@@ -121,7 +127,7 @@ export var DirectiveNormalizer = (function () {
      */
     DirectiveNormalizer.prototype.normalizeLoadedTemplate = function (prenomData, template, templateAbsUrl) {
         var /** @type {?} */ interpolationConfig = InterpolationConfig.fromArray(prenomData.interpolation);
-        var /** @type {?} */ rootNodesAndErrors = this._htmlParser.parse(template, stringify(prenomData.componentType), false, interpolationConfig);
+        var /** @type {?} */ rootNodesAndErrors = this._htmlParser.parse(template, stringify(prenomData.componentType), true, interpolationConfig);
         if (rootNodesAndErrors.errors.length > 0) {
             var /** @type {?} */ errorString = rootNodesAndErrors.errors.join('\n');
             throw new SyntaxError("Template parse errors:\n" + errorString);
@@ -135,7 +141,7 @@ export var DirectiveNormalizer = (function () {
         html.visitAll(visitor, rootNodesAndErrors.rootNodes);
         var /** @type {?} */ templateStyles = this.normalizeStylesheet(new CompileStylesheetMetadata({ styles: visitor.styles, styleUrls: visitor.styleUrls, moduleUrl: templateAbsUrl }));
         var /** @type {?} */ encapsulation = prenomData.encapsulation;
-        if (isBlank(encapsulation)) {
+        if (encapsulation == null) {
             encapsulation = this._config.defaultEncapsulation;
         }
         var /** @type {?} */ styles = templateMetadataStyles.styles.concat(templateStyles.styles);
@@ -270,6 +276,20 @@ var TemplatePreparseVisitor = (function () {
      * @param {?} context
      * @return {?}
      */
+    TemplatePreparseVisitor.prototype.visitExpansion = function (ast, context) { html.visitAll(this, ast.cases); };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    TemplatePreparseVisitor.prototype.visitExpansionCase = function (ast, context) {
+        html.visitAll(this, ast.expression);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
     TemplatePreparseVisitor.prototype.visitComment = function (ast, context) { return null; };
     /**
      * @param {?} ast
@@ -283,18 +303,6 @@ var TemplatePreparseVisitor = (function () {
      * @return {?}
      */
     TemplatePreparseVisitor.prototype.visitText = function (ast, context) { return null; };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    TemplatePreparseVisitor.prototype.visitExpansion = function (ast, context) { return null; };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    TemplatePreparseVisitor.prototype.visitExpansionCase = function (ast, context) { return null; };
     return TemplatePreparseVisitor;
 }());
 function TemplatePreparseVisitor_tsickle_Closure_declarations() {

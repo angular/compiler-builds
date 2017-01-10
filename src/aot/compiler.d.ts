@@ -31,7 +31,7 @@ export declare class AotCompiler {
     clearCache(): void;
     compileAll(rootFiles: string[]): Promise<GeneratedFile[]>;
     private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
-    private _createSummary(srcFileUrl, directives, pipes, ngModules, injectables);
+    private _createSummary(srcFileUrl, directives, pipes, ngModules, injectables, targetStatements, targetExportedVars);
     private _compileModule(ngModuleType, targetStatements);
     private _compileDirectiveWrapper(directiveType, targetStatements);
     private _compileComponentFactory(compMeta, ngModule, fileSuffix, targetStatements);

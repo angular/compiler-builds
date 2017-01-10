@@ -4,11 +4,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license undefined
-  * Copyright Google Inc. All Rights Reserved.
-  * *
-  * Use of this source code is governed by an MIT-style license that can be
-  * found in the LICENSE file at https://angular.io/license
  * @abstract
  */
 export var AnimationAst = (function () {
@@ -122,6 +117,21 @@ function AnimationStateTransitionExpression_tsickle_Closure_declarations() {
     AnimationStateTransitionExpression.prototype.fromState;
     /** @type {?} */
     AnimationStateTransitionExpression.prototype.toState;
+}
+export var AnimationStateTransitionFnExpression = (function (_super) {
+    __extends(AnimationStateTransitionFnExpression, _super);
+    /**
+     * @param {?} fn
+     */
+    function AnimationStateTransitionFnExpression(fn) {
+        _super.call(this, null, null);
+        this.fn = fn;
+    }
+    return AnimationStateTransitionFnExpression;
+}(AnimationStateTransitionExpression));
+function AnimationStateTransitionFnExpression_tsickle_Closure_declarations() {
+    /** @type {?} */
+    AnimationStateTransitionFnExpression.prototype.fn;
 }
 export var AnimationStateTransitionAst = (function (_super) {
     __extends(AnimationStateTransitionAst, _super);

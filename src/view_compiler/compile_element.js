@@ -12,7 +12,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { tokenName, tokenReference } from '../compile_metadata';
 import { createDiTokenExpression } from '../compiler_util/identifier_util';
-import { DirectiveWrapperCompiler, DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
+import { DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
 import { isPresent } from '../facade/lang';
 import { Identifiers, createIdentifier, createIdentifierToken, identifierToken, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
@@ -133,9 +133,8 @@ export var CompileElement = (function (_super) {
     CompileElement.prototype._createComponentFactoryResolver = function () {
         var _this = this;
         var /** @type {?} */ entryComponents = this.component.entryComponents.map(function (entryComponent) {
-            var /** @type {?} */ id = { reference: null };
-            _this.view.targetDependencies.push(new ComponentFactoryDependency(entryComponent, id));
-            return id;
+            _this.view.targetDependencies.push(new ComponentFactoryDependency(entryComponent.componentType));
+            return { reference: entryComponent.componentFactory };
         });
         if (!entryComponents || entryComponents.length === 0) {
             return;
@@ -211,9 +210,9 @@ export var CompileElement = (function (_super) {
                     var /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
                     var /** @type {?} */ depsExpr = deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep); });
                     if (isDirectiveWrapper) {
-                        var /** @type {?} */ directiveWrapperIdentifier = { reference: null };
-                        _this.view.targetDependencies.push(new DirectiveWrapperDependency(provider.useClass, DirectiveWrapperCompiler.dirWrapperClassName(provider.useClass), directiveWrapperIdentifier));
-                        return DirectiveWrapperExpressions.create(directiveWrapperIdentifier, depsExpr);
+                        var /** @type {?} */ dirMeta = _this._directives.find(function (dir) { return dir.type.reference === provider.useClass.reference; });
+                        _this.view.targetDependencies.push(new DirectiveWrapperDependency(dirMeta.type.reference));
+                        return DirectiveWrapperExpressions.create({ reference: dirMeta.wrapperType }, depsExpr);
                     }
                     else {
                         return o.importExpr(provider.useClass)
@@ -225,7 +224,7 @@ export var CompileElement = (function (_super) {
                 }
             });
             var /** @type {?} */ propName = "_" + tokenName(resolvedProvider.token) + "_" + _this.nodeIndex + "_" + _this.instances.size;
-            var /** @type {?} */ instance = createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, _this);
+            var /** @type {?} */ instance = createProviderProperty(propName, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, _this);
             if (isDirectiveWrapper) {
                 _this.directiveWrapperInstance.set(tokenReference(resolvedProvider.token), instance);
                 _this.instances.set(tokenReference(resolvedProvider.token), DirectiveWrapperExpressions.context(instance));
@@ -336,7 +335,7 @@ export var CompileElement = (function (_super) {
      */
     CompileElement.prototype._addQuery = function (queryMeta, directiveInstance) {
         var /** @type {?} */ propName = "_query_" + tokenName(queryMeta.selectors[0]) + "_" + this.nodeIndex + "_" + this._queryCount++;
-        var /** @type {?} */ queryList = createQueryList(queryMeta, directiveInstance, propName, this.view);
+        var /** @type {?} */ queryList = createQueryList(propName, this.view);
         var /** @type {?} */ query = new CompileQuery(queryMeta, queryList, directiveInstance, this.view);
         addQueryToTokenMap(this._queries, query);
         return query;
@@ -459,14 +458,13 @@ function createInjectInternalCondition(nodeIndex, childNodeCount, provider, prov
 }
 /**
  * @param {?} propName
- * @param {?} provider
  * @param {?} providerValueExpressions
  * @param {?} isMulti
  * @param {?} isEager
  * @param {?} compileElement
  * @return {?}
  */
-function createProviderProperty(propName, provider, providerValueExpressions, isMulti, isEager, compileElement) {
+function createProviderProperty(propName, providerValueExpressions, isMulti, isEager, compileElement) {
     var /** @type {?} */ view = compileElement.view;
     var /** @type {?} */ resolvedProviderValueExpr;
     var /** @type {?} */ type;

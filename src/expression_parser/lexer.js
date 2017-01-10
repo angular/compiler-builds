@@ -15,7 +15,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import * as chars from '../chars';
-import { NumberWrapper, isPresent } from '../facade/lang';
+import { NumberWrapper } from '../facade/lang';
 import { CompilerInjectable } from '../injectable';
 export var TokenType = {};
 TokenType.Character = 0;
@@ -346,7 +346,7 @@ var _Scanner = (function () {
             this.advance();
             str += two;
         }
-        if (isPresent(threeCode) && this.peek == threeCode) {
+        if (threeCode != null && this.peek == threeCode) {
             this.advance();
             str += three;
         }

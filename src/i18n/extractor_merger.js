@@ -13,6 +13,8 @@ import { I18nError } from './parse_util';
 var /** @type {?} */ _I18N_ATTR = 'i18n';
 var /** @type {?} */ _I18N_ATTR_PREFIX = 'i18n-';
 var /** @type {?} */ _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
+var /** @type {?} */ MEANING_SEPARATOR = '|';
+var /** @type {?} */ ID_SEPARATOR = '@@';
 /**
  *  Extract translatable messages from an html AST
  * @param {?} nodes
@@ -207,47 +209,30 @@ var _Visitor = (function () {
         this._depth++;
         var /** @type {?} */ wasInI18nNode = this._inI18nNode;
         var /** @type {?} */ wasInImplicitNode = this._inImplicitNode;
-        var /** @type {?} */ childNodes;
-        // Extract only top level nodes with the (implicit) "i18n" attribute if not in a block or an ICU
-        // message
+        var /** @type {?} */ childNodes = [];
+        var /** @type {?} */ translatedChildNodes;
+        // Extract:
+        // - top level nodes with the (implicit) "i18n" attribute if not already in a section
+        // - ICU messages
         var /** @type {?} */ i18nAttr = _getI18nAttr(el);
+        var /** @type {?} */ i18nMeta = i18nAttr ? i18nAttr.value : '';
         var /** @type {?} */ isImplicit = this._implicitTags.some(function (tag) { return el.name === tag; }) && !this._inIcu &&
             !this._isInTranslatableSection;
         var /** @type {?} */ isTopLevelImplicit = !wasInImplicitNode && isImplicit;
-        this._inImplicitNode = this._inImplicitNode || isImplicit;
+        this._inImplicitNode = wasInImplicitNode || isImplicit;
         if (!this._isInTranslatableSection && !this._inIcu) {
-            if (i18nAttr) {
-                // explicit translation
+            if (i18nAttr || isTopLevelImplicit) {
                 this._inI18nNode = true;
-                var /** @type {?} */ message = this._addMessage(el.children, i18nAttr.value);
-                childNodes = this._translateMessage(el, message);
-            }
-            else if (isTopLevelImplicit) {
-                // implicit translation
-                this._inI18nNode = true;
-                var /** @type {?} */ message = this._addMessage(el.children);
-                childNodes = this._translateMessage(el, message);
+                var /** @type {?} */ message = this._addMessage(el.children, i18nMeta);
+                translatedChildNodes = this._translateMessage(el, message);
             }
             if (this._mode == _VisitorMode.Extract) {
                 var /** @type {?} */ isTranslatable = i18nAttr || isTopLevelImplicit;
-                if (isTranslatable) {
+                if (isTranslatable)
                     this._openTranslatableSection(el);
-                }
                 html.visitAll(this, el.children);
-                if (isTranslatable) {
+                if (isTranslatable)
                     this._closeTranslatableSection(el, el.children);
-                }
-            }
-            if (this._mode === _VisitorMode.Merge && !i18nAttr && !isTopLevelImplicit) {
-                childNodes = [];
-                el.children.forEach(function (child) {
-                    var /** @type {?} */ visited = child.visit(_this, context);
-                    if (visited && !_this._isInTranslatableSection) {
-                        // Do not add the children from translatable sections (= i18n blocks here)
-                        // They will be added when the section is close (i.e. on `<!-- /i18n -->`)
-                        childNodes = childNodes.concat(visited);
-                    }
-                });
             }
         }
         else {
@@ -258,25 +243,23 @@ var _Visitor = (function () {
                 // Descend into child nodes for extraction
                 html.visitAll(this, el.children);
             }
-            if (this._mode == _VisitorMode.Merge) {
-                // Translate attributes in ICU messages
-                childNodes = [];
-                el.children.forEach(function (child) {
-                    var /** @type {?} */ visited = child.visit(_this, context);
-                    if (visited && !_this._isInTranslatableSection) {
-                        // Do not add the children from translatable sections (= i18n blocks here)
-                        // They will be added when the section is close (i.e. on `<!-- /i18n -->`)
-                        childNodes = childNodes.concat(visited);
-                    }
-                });
-            }
+        }
+        if (this._mode === _VisitorMode.Merge) {
+            var /** @type {?} */ visitNodes = translatedChildNodes || el.children;
+            visitNodes.forEach(function (child) {
+                var /** @type {?} */ visited = child.visit(_this, context);
+                if (visited && !_this._isInTranslatableSection) {
+                    // Do not add the children from translatable sections (= i18n blocks here)
+                    // They will be added later in this loop when the block closes (i.e. on `<!-- /i18n -->`)
+                    childNodes = childNodes.concat(visited);
+                }
+            });
         }
         this._visitAttributesOf(el);
         this._depth--;
         this._inI18nNode = wasInI18nNode;
         this._inImplicitNode = wasInImplicitNode;
         if (this._mode === _VisitorMode.Merge) {
-            // There are no childNodes in translatable sections - those nodes will be replace anyway
             var /** @type {?} */ translatedAttrs = this._translateAttributes(el);
             return new html.Element(el.name, translatedAttrs, childNodes, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
         }
@@ -328,17 +311,17 @@ var _Visitor = (function () {
     };
     /**
      * @param {?} ast
-     * @param {?=} meaningAndDesc
+     * @param {?=} msgMeta
      * @return {?}
      */
-    _Visitor.prototype._addMessage = function (ast, meaningAndDesc) {
+    _Visitor.prototype._addMessage = function (ast, msgMeta) {
         if (ast.length == 0 ||
             ast.length == 1 && ast[0] instanceof html.Attribute && !((ast[0])).value) {
             // Do not create empty messages
             return;
         }
-        var _a = _splitMeaningAndDesc(meaningAndDesc), meaning = _a[0], description = _a[1];
-        var /** @type {?} */ message = this._createI18nMessage(ast, meaning, description);
+        var _a = _parseMessageMeta(msgMeta), meaning = _a.meaning, description = _a.description, id = _a.id;
+        var /** @type {?} */ message = this._createI18nMessage(ast, meaning, description, id);
         this._messages.push(message);
         return message;
     };
@@ -368,7 +351,7 @@ var _Visitor = (function () {
         attributes.forEach(function (attr) {
             if (attr.name.startsWith(_I18N_ATTR_PREFIX)) {
                 i18nAttributeMeanings[attr.name.slice(_I18N_ATTR_PREFIX.length)] =
-                    _splitMeaningAndDesc(attr.value)[0];
+                    _parseMessageMeta(attr.value).meaning;
             }
         });
         var /** @type {?} */ translatedAttributes = [];
@@ -379,7 +362,7 @@ var _Visitor = (function () {
             }
             if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
                 var /** @type {?} */ meaning = i18nAttributeMeanings[attr.name];
-                var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '');
+                var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '', '');
                 var /** @type {?} */ nodes = _this._translations.get(message);
                 if (nodes) {
                     if (nodes[0] instanceof html.Text) {
@@ -414,7 +397,7 @@ var _Visitor = (function () {
         }
     };
     /**
-     *  Marks the start of a section, see `_endSection`
+     *  Marks the start of a section, see `_closeTranslatableSection`
      * @param {?} node
      * @return {?}
      */
@@ -429,7 +412,7 @@ var _Visitor = (function () {
     Object.defineProperty(_Visitor.prototype, "_isInTranslatableSection", {
         /**
          *  A translatable section could be:
-          * - a translatable element,
+          * - the content of translatable element,
           * - nodes between `<!-- i18n -->` and `<!-- /i18n -->` comments
          * @return {?}
          */
@@ -488,19 +471,19 @@ var _Visitor = (function () {
 }());
 function _Visitor_tsickle_Closure_declarations() {
     /** @type {?} */
-    _Visitor.prototype._inI18nNode;
-    /** @type {?} */
     _Visitor.prototype._depth;
     /** @type {?} */
+    _Visitor.prototype._inI18nNode;
+    /** @type {?} */
     _Visitor.prototype._inImplicitNode;
+    /** @type {?} */
+    _Visitor.prototype._inI18nBlock;
     /** @type {?} */
     _Visitor.prototype._blockMeaningAndDesc;
     /** @type {?} */
     _Visitor.prototype._blockChildren;
     /** @type {?} */
     _Visitor.prototype._blockStartDepth;
-    /** @type {?} */
-    _Visitor.prototype._inI18nBlock;
     /** @type {?} */
     _Visitor.prototype._inIcu;
     /** @type {?} */
@@ -545,10 +528,15 @@ function _getI18nAttr(p) {
  * @param {?} i18n
  * @return {?}
  */
-function _splitMeaningAndDesc(i18n) {
+function _parseMessageMeta(i18n) {
     if (!i18n)
-        return ['', ''];
-    var /** @type {?} */ pipeIndex = i18n.indexOf('|');
-    return pipeIndex == -1 ? ['', i18n] : [i18n.slice(0, pipeIndex), i18n.slice(pipeIndex + 1)];
+        return { meaning: '', description: '', id: '' };
+    var /** @type {?} */ idIndex = i18n.indexOf(ID_SEPARATOR);
+    var /** @type {?} */ descIndex = i18n.indexOf(MEANING_SEPARATOR);
+    var _a = (idIndex > -1) ? [i18n.slice(0, idIndex), i18n.slice(idIndex + 2)] : [i18n, ''], meaningAndDesc = _a[0], id = _a[1];
+    var _b = (descIndex > -1) ?
+        [meaningAndDesc.slice(0, descIndex), meaningAndDesc.slice(descIndex + 1)] :
+        ['', meaningAndDesc], meaning = _b[0], description = _b[1];
+    return { meaning: meaning, description: description, id: id };
 }
 //# sourceMappingURL=extractor_merger.js.map

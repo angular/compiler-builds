@@ -34,9 +34,14 @@ export declare class Identifiers {
     static DebugContext: IdentifierSpec;
     static Renderer: IdentifierSpec;
     static SimpleChange: IdentifierSpec;
-    static UNINITIALIZED: IdentifierSpec;
     static ChangeDetectorStatus: IdentifierSpec;
     static checkBinding: IdentifierSpec;
+    static checkBindingChange: IdentifierSpec;
+    static checkRenderText: IdentifierSpec;
+    static checkRenderProperty: IdentifierSpec;
+    static checkRenderAttribute: IdentifierSpec;
+    static checkRenderClass: IdentifierSpec;
+    static checkRenderStyle: IdentifierSpec;
     static devModeEqual: IdentifierSpec;
     static inlineInterpolate: IdentifierSpec;
     static interpolate: IdentifierSpec;

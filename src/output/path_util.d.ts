@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { StaticSymbol } from '../aot/static_symbol';
 /**
  * Interface that defines how import statements should be generated.
  */
@@ -14,4 +15,9 @@ export declare abstract class ImportResolver {
      * I.e. `path/to/importedFile.ts` should be imported by `path/to/containingFile.ts`.
      */
     abstract fileNameToModuleName(importedFilePath: string, containingFilePath: string): string;
+    /**
+     * Converts the given StaticSymbol into another StaticSymbol that should be used
+     * to generate the import from.
+     */
+    abstract getImportAs(symbol: StaticSymbol): StaticSymbol;
 }

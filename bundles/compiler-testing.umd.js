@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.4.2-d43e5dd
+ * @license Angular v4.0.0-beta.2-aeed737
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -517,9 +517,12 @@
             provide: _angular_core.COMPILER_OPTIONS,
             useValue: {
                 providers: [
-                    MockPipeResolver, { provide: _angular_compiler.PipeResolver, useExisting: MockPipeResolver },
-                    MockDirectiveResolver, { provide: _angular_compiler.DirectiveResolver, useExisting: MockDirectiveResolver },
-                    MockNgModuleResolver, { provide: _angular_compiler.NgModuleResolver, useExisting: MockNgModuleResolver }
+                    MockPipeResolver,
+                    { provide: _angular_compiler.PipeResolver, useExisting: MockPipeResolver },
+                    MockDirectiveResolver,
+                    { provide: _angular_compiler.DirectiveResolver, useExisting: MockDirectiveResolver },
+                    MockNgModuleResolver,
+                    { provide: _angular_compiler.NgModuleResolver, useExisting: MockNgModuleResolver },
                 ]
             },
             multi: true
