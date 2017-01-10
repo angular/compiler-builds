@@ -106,12 +106,9 @@ export var platformCoreDynamicTesting = createPlatformFactory(platformCoreDynami
         provide: COMPILER_OPTIONS,
         useValue: {
             providers: [
-                MockPipeResolver,
-                { provide: PipeResolver, useExisting: MockPipeResolver },
-                MockDirectiveResolver,
-                { provide: DirectiveResolver, useExisting: MockDirectiveResolver },
-                MockNgModuleResolver,
-                { provide: NgModuleResolver, useExisting: MockNgModuleResolver },
+                MockPipeResolver, { provide: PipeResolver, useExisting: MockPipeResolver },
+                MockDirectiveResolver, { provide: DirectiveResolver, useExisting: MockDirectiveResolver },
+                MockNgModuleResolver, { provide: NgModuleResolver, useExisting: MockNgModuleResolver }
             ]
         },
         multi: true

@@ -104,11 +104,8 @@ export var StaticReflector = (function () {
             annotations = [];
             var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             if (classMetadata['extends']) {
-                var /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
-                if (parentType && (parentType instanceof StaticSymbol)) {
-                    var /** @type {?} */ parentAnnotations = this.annotations(parentType);
-                    annotations.push.apply(annotations, parentAnnotations);
-                }
+                var /** @type {?} */ parentAnnotations = this.annotations(this.simplify(type, classMetadata['extends']));
+                annotations.push.apply(annotations, parentAnnotations);
             }
             if (classMetadata['decorators']) {
                 var /** @type {?} */ ownAnnotations = this.simplify(type, classMetadata['decorators']);
@@ -129,13 +126,10 @@ export var StaticReflector = (function () {
             var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             propMetadata = {};
             if (classMetadata['extends']) {
-                var /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
-                if (parentType instanceof StaticSymbol) {
-                    var /** @type {?} */ parentPropMetadata_1 = this.propMetadata(parentType);
-                    Object.keys(parentPropMetadata_1).forEach(function (parentProp) {
-                        propMetadata[parentProp] = parentPropMetadata_1[parentProp];
-                    });
-                }
+                var /** @type {?} */ parentPropMetadata_1 = this.propMetadata(this.simplify(type, classMetadata['extends']));
+                Object.keys(parentPropMetadata_1).forEach(function (parentProp) {
+                    propMetadata[parentProp] = parentPropMetadata_1[parentProp];
+                });
             }
             var /** @type {?} */ members_1 = classMetadata['members'] || {};
             Object.keys(members_1).forEach(function (propName) {
@@ -188,10 +182,7 @@ export var StaticReflector = (function () {
                     });
                 }
                 else if (classMetadata['extends']) {
-                    var /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
-                    if (parentType instanceof StaticSymbol) {
-                        parameters_1 = this.parameters(parentType);
-                    }
+                    parameters_1 = this.parameters(this.simplify(type, classMetadata['extends']));
                 }
                 if (!parameters_1) {
                     parameters_1 = [];
@@ -215,13 +206,10 @@ export var StaticReflector = (function () {
             var /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             methodNames = {};
             if (classMetadata['extends']) {
-                var /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
-                if (parentType instanceof StaticSymbol) {
-                    var /** @type {?} */ parentMethodNames_1 = this._methodNames(parentType);
-                    Object.keys(parentMethodNames_1).forEach(function (parentProp) {
-                        methodNames[parentProp] = parentMethodNames_1[parentProp];
-                    });
-                }
+                var /** @type {?} */ parentMethodNames_1 = this._methodNames(this.simplify(type, classMetadata['extends']));
+                Object.keys(parentMethodNames_1).forEach(function (parentProp) {
+                    methodNames[parentProp] = parentMethodNames_1[parentProp];
+                });
             }
             var /** @type {?} */ members_2 = classMetadata['members'] || {};
             Object.keys(members_2).forEach(function (propName) {
@@ -784,6 +772,14 @@ var PopulatedScope = (function (_super) {
 function PopulatedScope_tsickle_Closure_declarations() {
     /** @type {?} */
     PopulatedScope.prototype.bindings;
+}
+/**
+ * @param {?} a
+ * @param {?} b
+ * @return {?}
+ */
+function sameSymbol(a, b) {
+    return a === b;
 }
 /**
  * @param {?} value

@@ -1,52 +1,67 @@
 /**
- *  This is currently not read, but will probably be used in the future.
-  * We keep it as we already pass it through all the right places...
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
  */
-export var ComponentViewDependency = (function () {
+export var ViewClassDependency = (function () {
     /**
-     * @param {?} compType
+     * @param {?} comp
+     * @param {?} name
+     * @param {?} placeholder
      */
-    function ComponentViewDependency(compType) {
-        this.compType = compType;
+    function ViewClassDependency(comp, name, placeholder) {
+        this.comp = comp;
+        this.name = name;
+        this.placeholder = placeholder;
     }
-    return ComponentViewDependency;
+    return ViewClassDependency;
 }());
-function ComponentViewDependency_tsickle_Closure_declarations() {
+function ViewClassDependency_tsickle_Closure_declarations() {
     /** @type {?} */
-    ComponentViewDependency.prototype.compType;
+    ViewClassDependency.prototype.comp;
+    /** @type {?} */
+    ViewClassDependency.prototype.name;
+    /** @type {?} */
+    ViewClassDependency.prototype.placeholder;
 }
-/**
- *  This is currently not read, but will probably be used in the future.
-  * We keep it as we already pass it through all the right places...
- */
 export var ComponentFactoryDependency = (function () {
     /**
-     * @param {?} compType
+     * @param {?} comp
+     * @param {?} placeholder
      */
-    function ComponentFactoryDependency(compType) {
-        this.compType = compType;
+    function ComponentFactoryDependency(comp, placeholder) {
+        this.comp = comp;
+        this.placeholder = placeholder;
     }
     return ComponentFactoryDependency;
 }());
 function ComponentFactoryDependency_tsickle_Closure_declarations() {
     /** @type {?} */
-    ComponentFactoryDependency.prototype.compType;
+    ComponentFactoryDependency.prototype.comp;
+    /** @type {?} */
+    ComponentFactoryDependency.prototype.placeholder;
 }
-/**
- *  This is currently not read, but will probably be used in the future.
-  * We keep it as we already pass it through all the right places...
- */
 export var DirectiveWrapperDependency = (function () {
     /**
-     * @param {?} dirType
+     * @param {?} dir
+     * @param {?} name
+     * @param {?} placeholder
      */
-    function DirectiveWrapperDependency(dirType) {
-        this.dirType = dirType;
+    function DirectiveWrapperDependency(dir, name, placeholder) {
+        this.dir = dir;
+        this.name = name;
+        this.placeholder = placeholder;
     }
     return DirectiveWrapperDependency;
 }());
 function DirectiveWrapperDependency_tsickle_Closure_declarations() {
     /** @type {?} */
-    DirectiveWrapperDependency.prototype.dirType;
+    DirectiveWrapperDependency.prototype.dir;
+    /** @type {?} */
+    DirectiveWrapperDependency.prototype.name;
+    /** @type {?} */
+    DirectiveWrapperDependency.prototype.placeholder;
 }
 //# sourceMappingURL=deps.js.map

@@ -23,6 +23,7 @@ export var /** @type {?} */ view_utils = r.view_utils;
 export var /** @type {?} */ DebugContext = r.DebugContext;
 export var /** @type {?} */ StaticNodeDebugInfo = r.StaticNodeDebugInfo;
 export var /** @type {?} */ devModeEqual = r.devModeEqual;
+export var /** @type {?} */ UNINITIALIZED = r.UNINITIALIZED;
 export var /** @type {?} */ ValueUnwrapper = r.ValueUnwrapper;
 export var /** @type {?} */ TemplateRef_ = r.TemplateRef_;
 export var /** @type {?} */ RenderDebugInfo = r.RenderDebugInfo;

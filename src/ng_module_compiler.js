@@ -25,22 +25,22 @@ import { convertValueToOutputAst } from './output/value_util';
 import { ParseLocation, ParseSourceFile, ParseSourceSpan } from './parse_util';
 import { LifecycleHooks } from './private_import_core';
 import { NgModuleProviderAnalyzer } from './provider_analyzer';
-/**
- *  This is currently not read, but will probably be used in the future.
-  * We keep it as we already pass it through all the rigth places...
- */
 export var ComponentFactoryDependency = (function () {
     /**
-     * @param {?} compType
+     * @param {?} comp
+     * @param {?} placeholder
      */
-    function ComponentFactoryDependency(compType) {
-        this.compType = compType;
+    function ComponentFactoryDependency(comp, placeholder) {
+        this.comp = comp;
+        this.placeholder = placeholder;
     }
     return ComponentFactoryDependency;
 }());
 function ComponentFactoryDependency_tsickle_Closure_declarations() {
     /** @type {?} */
-    ComponentFactoryDependency.prototype.compType;
+    ComponentFactoryDependency.prototype.comp;
+    /** @type {?} */
+    ComponentFactoryDependency.prototype.placeholder;
 }
 export var NgModuleCompileResult = (function () {
     /**
@@ -81,11 +81,12 @@ export var NgModuleCompiler = (function () {
         var /** @type {?} */ deps = [];
         var /** @type {?} */ bootstrapComponentFactories = [];
         var /** @type {?} */ entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
-            if (ngModuleMeta.bootstrapComponents.some(function (id) { return id.reference === entryComponent.componentType; })) {
-                bootstrapComponentFactories.push({ reference: entryComponent.componentFactory });
+            var /** @type {?} */ id = { reference: null };
+            if (ngModuleMeta.bootstrapComponents.some(function (id) { return id.reference === entryComponent.reference; })) {
+                bootstrapComponentFactories.push(id);
             }
-            deps.push(new ComponentFactoryDependency(entryComponent.componentType));
-            return { reference: entryComponent.componentFactory };
+            deps.push(new ComponentFactoryDependency(entryComponent, id));
+            return id;
         });
         var /** @type {?} */ builder = new _InjectorBuilder(ngModuleMeta, entryComponentFactories, bootstrapComponentFactories, sourceSpan);
         var /** @type {?} */ providerParser = new NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);

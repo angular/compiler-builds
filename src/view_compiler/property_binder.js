@@ -5,15 +5,16 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { createCheckBindingField } from '../compiler_util/binding_util';
+import { createCheckBindingField, createCheckBindingStmt } from '../compiler_util/binding_util';
 import { convertPropertyBinding } from '../compiler_util/expression_converter';
 import { createEnumExpression } from '../compiler_util/identifier_util';
-import { createCheckAnimationBindingStmts, createCheckRenderBindingStmt } from '../compiler_util/render_util';
+import { triggerAnimation, writeToRenderer } from '../compiler_util/render_util';
 import { DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
 import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { isDefaultChangeDetectionStrategy } from '../private_import_core';
 import { PropertyBindingType } from '../template_parser/template_ast';
+import { DetectChangesVars } from './constants';
 import { getHandleEventMethodName } from './util';
 /**
  * @param {?} boundText
@@ -28,14 +29,9 @@ export function bindRenderText(boundText, compileNode, view) {
         return null;
     }
     view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileNode.nodeIndex, boundText);
-    view.detectChangesRenderPropertiesMethod.addStmts(evalResult.stmts);
-    view.detectChangesRenderPropertiesMethod.addStmt(o.importExpr(createIdentifier(Identifiers.checkRenderText))
-        .callFn([
-        o.THIS_EXPR, compileNode.renderNode, valueField.expression,
-        valueField.expression.set(evalResult.currValExpr),
-        evalResult.forceUpdate || o.literal(false)
-    ])
-        .toStmt());
+    view.detectChangesRenderPropertiesMethod.addStmts(createCheckBindingStmt(evalResult, valueField.expression, DetectChangesVars.throwOnChange, [o.THIS_EXPR.prop('renderer')
+            .callMethod('setText', [compileNode.renderNode, evalResult.currValExpr])
+            .toStmt()]));
 }
 /**
  * @param {?} boundProps
@@ -54,23 +50,25 @@ export function bindRenderInputs(boundProps, boundOutputs, hasEvents, compileEle
         if (!evalResult) {
             return;
         }
+        var /** @type {?} */ checkBindingStmts = [];
         var /** @type {?} */ compileMethod = view.detectChangesRenderPropertiesMethod;
         switch (boundProp.type) {
             case PropertyBindingType.Property:
             case PropertyBindingType.Attribute:
             case PropertyBindingType.Class:
             case PropertyBindingType.Style:
-                compileMethod.addStmts(createCheckRenderBindingStmt(o.THIS_EXPR, renderNode, boundProp, bindingField.expression, evalResult));
+                checkBindingStmts.push.apply(checkBindingStmts, writeToRenderer(o.THIS_EXPR, boundProp, renderNode, evalResult.currValExpr, view.genConfig.logBindingUpdate));
                 break;
             case PropertyBindingType.Animation:
                 compileMethod = view.animationBindingsMethod;
-                var _a = createCheckAnimationBindingStmts(o.THIS_EXPR, o.THIS_EXPR, boundProp, boundOutputs, (hasEvents ? o.THIS_EXPR.prop(getHandleEventMethodName(compileElement.nodeIndex)) :
+                var _a = triggerAnimation(o.THIS_EXPR, o.THIS_EXPR, boundProp, boundOutputs, (hasEvents ? o.THIS_EXPR.prop(getHandleEventMethodName(compileElement.nodeIndex)) :
                     o.importExpr(createIdentifier(Identifiers.noop)))
-                    .callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR]), compileElement.renderNode, bindingField.expression, evalResult), checkUpdateStmts = _a.checkUpdateStmts, checkDetachStmts = _a.checkDetachStmts;
-                view.detachMethod.addStmts(checkDetachStmts);
-                compileMethod.addStmts(checkUpdateStmts);
+                    .callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR]), compileElement.renderNode, evalResult.currValExpr, bindingField.expression), updateStmts = _a.updateStmts, detachStmts = _a.detachStmts;
+                checkBindingStmts.push.apply(checkBindingStmts, updateStmts);
+                view.detachMethod.addStmts(detachStmts);
                 break;
         }
+        compileMethod.addStmts(createCheckBindingStmt(evalResult, bindingField.expression, DetectChangesVars.throwOnChange, checkBindingStmts));
     });
 }
 /**
@@ -98,7 +96,7 @@ export function bindDirectiveHostProps(directiveAst, directiveWrapperInstance, c
         }
         return createEnumExpression(Identifiers.SecurityContext, ctx);
     });
-    compileElement.view.detectChangesRenderPropertiesMethod.addStmts(DirectiveWrapperExpressions.checkHost(directiveAst.hostProperties, directiveWrapperInstance, o.THIS_EXPR, compileElement.compViewExpr || o.THIS_EXPR, compileElement.renderNode, runtimeSecurityCtxExprs));
+    compileElement.view.detectChangesRenderPropertiesMethod.addStmts(DirectiveWrapperExpressions.checkHost(directiveAst.hostProperties, directiveWrapperInstance, o.THIS_EXPR, compileElement.compViewExpr || o.THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange, runtimeSecurityCtxExprs));
 }
 /**
  * @param {?} directiveAst
@@ -121,12 +119,15 @@ export function bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirI
         }
         detectChangesInInputsMethod.addStmts(evalResult.stmts);
         detectChangesInInputsMethod.addStmt(directiveWrapperInstance
-            .callMethod("check_" + input.directiveName, [o.THIS_EXPR, evalResult.currValExpr, evalResult.forceUpdate || o.literal(false)])
+            .callMethod("check_" + input.directiveName, [
+            evalResult.currValExpr, DetectChangesVars.throwOnChange,
+            evalResult.forceUpdate || o.literal(false)
+        ])
             .toStmt());
     });
     var /** @type {?} */ isOnPushComp = directiveAst.directive.isComponent &&
         !isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
-    var /** @type {?} */ directiveDetectChangesExpr = DirectiveWrapperExpressions.ngDoCheck(directiveWrapperInstance, o.THIS_EXPR, compileElement.renderNode);
+    var /** @type {?} */ directiveDetectChangesExpr = DirectiveWrapperExpressions.ngDoCheck(directiveWrapperInstance, o.THIS_EXPR, compileElement.renderNode, DetectChangesVars.throwOnChange);
     var /** @type {?} */ directiveDetectChangesStmt = isOnPushComp ?
         new o.IfStmt(directiveDetectChangesExpr, [compileElement.compViewExpr.callMethod('markAsCheckOnce', []).toStmt()]) :
         directiveDetectChangesExpr.toStmt();

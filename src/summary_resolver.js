@@ -12,17 +12,6 @@ export var SummaryResolver = (function () {
     function SummaryResolver() {
     }
     /**
-     * @param {?} fileName
-     * @return {?}
-     */
-    SummaryResolver.prototype.isLibraryFile = function (fileName) { return false; };
-    ;
-    /**
-     * @param {?} fileName
-     * @return {?}
-     */
-    SummaryResolver.prototype.getLibraryFileName = function (fileName) { return null; };
-    /**
      * @param {?} reference
      * @return {?}
      */
@@ -33,11 +22,6 @@ export var SummaryResolver = (function () {
      * @return {?}
      */
     SummaryResolver.prototype.getSymbolsOf = function (filePath) { return []; };
-    /**
-     * @param {?} reference
-     * @return {?}
-     */
-    SummaryResolver.prototype.getImportAs = function (reference) { return reference; };
     SummaryResolver = __decorate([
         CompilerInjectable(), 
         __metadata('design:paramtypes', [])

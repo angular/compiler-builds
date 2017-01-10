@@ -10,29 +10,17 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-import { StaticSymbol } from '../aot/static_symbol';
+import { identifierModuleUrl, identifierName } from '../compile_metadata';
 import { isBlank, isPresent } from '../facade/lang';
 import { AbstractEmitterVisitor, CATCH_ERROR_VAR, CATCH_STACK_VAR, EmitterVisitorContext } from './abstract_emitter';
 import * as o from './output_ast';
-var /** @type {?} */ _debugFilePath = '/debug/lib';
+var /** @type {?} */ _debugModuleUrl = '/debug/lib';
 /**
  * @param {?} ast
  * @return {?}
  */
 export function debugOutputAstAsTypeScript(ast) {
-    var /** @type {?} */ converter = new _TsEmitterVisitor(_debugFilePath, {
-        /**
-         * @param {?} filePath
-         * @param {?} containingFilePath
-         * @return {?}
-         */
-        fileNameToModuleName: function (filePath, containingFilePath) { return filePath; },
-        /**
-         * @param {?} symbol
-         * @return {?}
-         */
-        getImportAs: function (symbol) { return null; }
-    });
+    var /** @type {?} */ converter = new _TsEmitterVisitor(_debugModuleUrl);
     var /** @type {?} */ ctx = EmitterVisitorContext.createRoot([]);
     var /** @type {?} */ asts = Array.isArray(ast) ? ast : [ast];
     asts.forEach(function (ast) {
@@ -53,31 +41,27 @@ export function debugOutputAstAsTypeScript(ast) {
 }
 export var TypeScriptEmitter = (function () {
     /**
-     * @param {?} _importResolver
+     * @param {?} _importGenerator
      */
-    function TypeScriptEmitter(_importResolver) {
-        this._importResolver = _importResolver;
+    function TypeScriptEmitter(_importGenerator) {
+        this._importGenerator = _importGenerator;
     }
     /**
-     * @param {?} genFilePath
+     * @param {?} moduleUrl
      * @param {?} stmts
      * @param {?} exportedVars
      * @return {?}
      */
-    TypeScriptEmitter.prototype.emitStatements = function (genFilePath, stmts, exportedVars) {
+    TypeScriptEmitter.prototype.emitStatements = function (moduleUrl, stmts, exportedVars) {
         var _this = this;
-        var /** @type {?} */ converter = new _TsEmitterVisitor(genFilePath, this._importResolver);
+        var /** @type {?} */ converter = new _TsEmitterVisitor(moduleUrl);
         var /** @type {?} */ ctx = EmitterVisitorContext.createRoot(exportedVars);
         converter.visitAllStatements(stmts, ctx);
         var /** @type {?} */ srcParts = [];
-        converter.reexports.forEach(function (reexports, exportedFilePath) {
-            var /** @type {?} */ reexportsCode = reexports.map(function (reexport) { return (reexport.name + " as " + reexport.as); }).join(',');
-            srcParts.push("export {" + reexportsCode + "} from '" + _this._importResolver.fileNameToModuleName(exportedFilePath, genFilePath) + "';");
-        });
-        converter.importsWithPrefixes.forEach(function (prefix, importedFilePath) {
+        converter.importsWithPrefixes.forEach(function (prefix, importedModuleUrl) {
             // Note: can't write the real word for import as it screws up system.js auto detection...
             srcParts.push("imp" +
-                ("ort * as " + prefix + " from '" + _this._importResolver.fileNameToModuleName(importedFilePath, genFilePath) + "';"));
+                ("ort * as " + prefix + " from '" + _this._importGenerator.fileNameToModuleName(importedModuleUrl, moduleUrl) + "';"));
         });
         srcParts.push(ctx.toSource());
         return srcParts.join('\n');
@@ -86,20 +70,17 @@ export var TypeScriptEmitter = (function () {
 }());
 function TypeScriptEmitter_tsickle_Closure_declarations() {
     /** @type {?} */
-    TypeScriptEmitter.prototype._importResolver;
+    TypeScriptEmitter.prototype._importGenerator;
 }
 var _TsEmitterVisitor = (function (_super) {
     __extends(_TsEmitterVisitor, _super);
     /**
-     * @param {?} _genFilePath
-     * @param {?} _importResolver
+     * @param {?} _moduleUrl
      */
-    function _TsEmitterVisitor(_genFilePath, _importResolver) {
+    function _TsEmitterVisitor(_moduleUrl) {
         _super.call(this, false);
-        this._genFilePath = _genFilePath;
-        this._importResolver = _importResolver;
+        this._moduleUrl = _moduleUrl;
         this.importsWithPrefixes = new Map();
-        this.reexports = new Map();
     }
     /**
      * @param {?} t
@@ -159,19 +140,6 @@ var _TsEmitterVisitor = (function (_super) {
      * @return {?}
      */
     _TsEmitterVisitor.prototype.visitDeclareVarStmt = function (stmt, ctx) {
-        if (ctx.isExportedVar(stmt.name) && stmt.value instanceof o.ExternalExpr && !stmt.type) {
-            // check for a reexport
-            var _a = this._resolveStaticSymbol(stmt.value.value), name_1 = _a.name, filePath = _a.filePath, members = _a.members;
-            if (members.length === 0 && filePath !== this._genFilePath) {
-                var /** @type {?} */ reexports = this.reexports.get(filePath);
-                if (!reexports) {
-                    reexports = [];
-                    this.reexports.set(filePath, reexports);
-                }
-                reexports.push({ name: name_1, as: stmt.name });
-                return null;
-            }
-        }
         if (ctx.isExportedVar(stmt.name)) {
             ctx.print("export ");
         }
@@ -457,36 +425,29 @@ var _TsEmitterVisitor = (function (_super) {
     };
     /**
      * @param {?} value
-     * @return {?}
-     */
-    _TsEmitterVisitor.prototype._resolveStaticSymbol = function (value) {
-        var /** @type {?} */ reference = value.reference;
-        if (!(reference instanceof StaticSymbol)) {
-            throw new Error("Internal error: unknown identifier " + JSON.stringify(value));
-        }
-        return this._importResolver.getImportAs(reference) || reference;
-    };
-    /**
-     * @param {?} value
      * @param {?} typeParams
      * @param {?} ctx
      * @return {?}
      */
     _TsEmitterVisitor.prototype._visitIdentifier = function (value, typeParams, ctx) {
         var _this = this;
-        var _a = this._resolveStaticSymbol(value), name = _a.name, filePath = _a.filePath, members = _a.members;
-        if (filePath != this._genFilePath) {
-            var /** @type {?} */ prefix = this.importsWithPrefixes.get(filePath);
+        var /** @type {?} */ name = identifierName(value);
+        var /** @type {?} */ moduleUrl = identifierModuleUrl(value);
+        if (isBlank(name)) {
+            throw new Error("Internal error: unknown identifier " + value);
+        }
+        if (isPresent(moduleUrl) && moduleUrl != this._moduleUrl) {
+            var /** @type {?} */ prefix = this.importsWithPrefixes.get(moduleUrl);
             if (isBlank(prefix)) {
                 prefix = "import" + this.importsWithPrefixes.size;
-                this.importsWithPrefixes.set(filePath, prefix);
+                this.importsWithPrefixes.set(moduleUrl, prefix);
             }
             ctx.print(prefix + ".");
         }
-        if (members.length) {
-            ctx.print(name);
+        if (value.reference && value.reference.members && value.reference.members.length) {
+            ctx.print(value.reference.name);
             ctx.print('.');
-            ctx.print(members.join('.'));
+            ctx.print(value.reference.members.join('.'));
         }
         else {
             ctx.print(name);
@@ -503,10 +464,6 @@ function _TsEmitterVisitor_tsickle_Closure_declarations() {
     /** @type {?} */
     _TsEmitterVisitor.prototype.importsWithPrefixes;
     /** @type {?} */
-    _TsEmitterVisitor.prototype.reexports;
-    /** @type {?} */
-    _TsEmitterVisitor.prototype._genFilePath;
-    /** @type {?} */
-    _TsEmitterVisitor.prototype._importResolver;
+    _TsEmitterVisitor.prototype._moduleUrl;
 }
 //# sourceMappingURL=ts_emitter.js.map

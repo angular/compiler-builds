@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ANALYZE_FOR_ENTRY_COMPONENTS, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ComponentRef, ElementRef, Injector, LOCALE_ID, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TRANSLATIONS_FORMAT, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
-import { AnimationGroupPlayer, AnimationKeyframe, AnimationSequencePlayer, AnimationStyles, AnimationTransition, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, ComponentRef_, DebugAppView, DebugContext, NgModuleInjector, NoOpAnimationPlayer, StaticNodeDebugInfo, TemplateRef_, ValueUnwrapper, ViewContainer, ViewType, balanceAnimationKeyframes, clearStyles, collectAndResolveStyles, devModeEqual, prepareFinalAnimationStyles, reflector, registerModuleFactory, renderStyles, view_utils } from './private_import_core';
+import { AnimationGroupPlayer, AnimationKeyframe, AnimationSequencePlayer, AnimationStyles, AnimationTransition, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, ComponentRef_, DebugAppView, DebugContext, NgModuleInjector, NoOpAnimationPlayer, StaticNodeDebugInfo, TemplateRef_, UNINITIALIZED, ValueUnwrapper, ViewContainer, ViewType, balanceAnimationKeyframes, clearStyles, collectAndResolveStyles, devModeEqual, prepareFinalAnimationStyles, reflector, registerModuleFactory, renderStyles, view_utils } from './private_import_core';
 var /** @type {?} */ APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
 var /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
 var /** @type {?} */ CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
@@ -147,6 +147,7 @@ export var Identifiers = (function () {
         runtime: Renderer
     };
     Identifiers.SimpleChange = { name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: SimpleChange };
+    Identifiers.UNINITIALIZED = { name: 'UNINITIALIZED', moduleUrl: CD_MODULE_URL, runtime: UNINITIALIZED };
     Identifiers.ChangeDetectorStatus = {
         name: 'ChangeDetectorStatus',
         moduleUrl: CD_MODULE_URL,
@@ -156,36 +157,6 @@ export var Identifiers = (function () {
         name: 'checkBinding',
         moduleUrl: VIEW_UTILS_MODULE_URL,
         runtime: view_utils.checkBinding
-    };
-    Identifiers.checkBindingChange = {
-        name: 'checkBindingChange',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkBindingChange
-    };
-    Identifiers.checkRenderText = {
-        name: 'checkRenderText',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderText
-    };
-    Identifiers.checkRenderProperty = {
-        name: 'checkRenderProperty',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderProperty
-    };
-    Identifiers.checkRenderAttribute = {
-        name: 'checkRenderAttribute',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderAttribute
-    };
-    Identifiers.checkRenderClass = {
-        name: 'checkRenderClass',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderClass
-    };
-    Identifiers.checkRenderStyle = {
-        name: 'checkRenderStyle',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderStyle
     };
     Identifiers.devModeEqual = { name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: devModeEqual };
     Identifiers.inlineInterpolate = {
@@ -408,21 +379,11 @@ function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.SimpleChange;
     /** @type {?} */
+    Identifiers.UNINITIALIZED;
+    /** @type {?} */
     Identifiers.ChangeDetectorStatus;
     /** @type {?} */
     Identifiers.checkBinding;
-    /** @type {?} */
-    Identifiers.checkBindingChange;
-    /** @type {?} */
-    Identifiers.checkRenderText;
-    /** @type {?} */
-    Identifiers.checkRenderProperty;
-    /** @type {?} */
-    Identifiers.checkRenderAttribute;
-    /** @type {?} */
-    Identifiers.checkRenderClass;
-    /** @type {?} */
-    Identifiers.checkRenderStyle;
     /** @type {?} */
     Identifiers.devModeEqual;
     /** @type {?} */

@@ -14,7 +14,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { Compiler, Injector, ModuleWithComponentFactories } from '@angular/core';
+import { Compiler, ComponentFactory, Injector, ModuleWithComponentFactories } from '@angular/core';
 import { AnimationCompiler } from '../animation/animation_compiler';
 import { AnimationParser } from '../animation/animation_parser';
 import { ProviderMeta, createHostComponentMeta, identifierName } from '../compile_metadata';
@@ -27,11 +27,10 @@ import { NgModuleCompiler } from '../ng_module_compiler';
 import * as ir from '../output/output_ast';
 import { interpretStatements } from '../output/output_interpreter';
 import { jitStatements } from '../output/output_jit';
-import { view_utils } from '../private_import_core';
 import { StyleCompiler } from '../style_compiler';
 import { TemplateParser } from '../template_parser/template_parser';
 import { SyncAsyncResult } from '../util';
-import { ViewCompiler } from '../view_compiler/view_compiler';
+import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency, ViewCompiler } from '../view_compiler/view_compiler';
 /**
  *  An internal module of the Angular compiler that begins with component types,
   * extracts templates, and eventually produces a compiled version of the component
@@ -184,6 +183,10 @@ export var JitCompiler = (function () {
             // Always provide a bound Compiler
             var /** @type {?} */ extraProviders = [this._metadataResolver.getProviderMetadata(new ProviderMeta(Compiler, { useFactory: function () { return new ModuleBoundCompiler(_this, moduleMeta_1.type.reference); } }))];
             var /** @type {?} */ compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
+            compileResult.dependencies.forEach(function (dep) {
+                dep.placeholder.reference =
+                    _this._assertComponentKnown(dep.comp.reference, true).proxyComponentFactory;
+            });
             if (!this._compilerConfig.useJit) {
                 ngModuleFactory =
                     interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
@@ -216,7 +219,7 @@ export var JitCompiler = (function () {
                     if (allComponentFactories) {
                         var /** @type {?} */ template = _this._createCompiledHostTemplate(dirMeta.type.reference, localModuleMeta);
                         templates.add(template);
-                        allComponentFactories.push(/** @type {?} */ (dirMeta.componentFactory));
+                        allComponentFactories.push(template.proxyComponentFactory);
                     }
                 }
             });
@@ -227,14 +230,14 @@ export var JitCompiler = (function () {
                 var /** @type {?} */ dirMeta = _this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
                 if (dirMeta.isComponent) {
                     dirMeta.entryComponents.forEach(function (entryComponentType) {
-                        var /** @type {?} */ moduleMeta = moduleByDirective.get(entryComponentType.componentType);
-                        templates.add(_this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
+                        var /** @type {?} */ moduleMeta = moduleByDirective.get(entryComponentType.reference);
+                        templates.add(_this._createCompiledHostTemplate(entryComponentType.reference, moduleMeta));
                     });
                 }
             });
             localModuleMeta.entryComponents.forEach(function (entryComponentType) {
-                var /** @type {?} */ moduleMeta = moduleByDirective.get(entryComponentType.componentType);
-                templates.add(_this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
+                var /** @type {?} */ moduleMeta = moduleByDirective.get(entryComponentType.reference);
+                templates.add(_this._createCompiledHostTemplate(entryComponentType.reference, moduleMeta));
             });
         });
         templates.forEach(function (template) { return _this._compileTemplate(template); });
@@ -274,11 +277,10 @@ export var JitCompiler = (function () {
         if (!compiledTemplate) {
             var /** @type {?} */ compMeta = this._metadataResolver.getDirectiveMetadata(compType);
             assertComponent(compMeta);
-            var /** @type {?} */ componentFactory = (compMeta.componentFactory);
-            var /** @type {?} */ hostClass = this._metadataResolver.getHostComponentType(compType);
-            var /** @type {?} */ hostMeta = createHostComponentMeta(hostClass, compMeta, /** @type {?} */ (view_utils.getComponentFactoryViewClass(componentFactory)));
-            compiledTemplate =
-                new CompiledTemplate(true, compMeta.type, hostMeta, ngModule, [compMeta.type]);
+            var /** @type {?} */ HostClass = function HostClass() { };
+            ((HostClass)).overriddenName = identifierName(compMeta.type) + "_Host";
+            var /** @type {?} */ hostMeta = createHostComponentMeta(HostClass, compMeta);
+            compiledTemplate = new CompiledTemplate(true, compMeta.selector, compMeta.type, hostMeta, ngModule, [compMeta.type]);
             this._compiledHostTemplateCache.set(compType, compiledTemplate);
         }
         return compiledTemplate;
@@ -292,10 +294,34 @@ export var JitCompiler = (function () {
         var /** @type {?} */ compiledTemplate = this._compiledTemplateCache.get(compMeta.type.reference);
         if (!compiledTemplate) {
             assertComponent(compMeta);
-            compiledTemplate = new CompiledTemplate(false, compMeta.type, compMeta, ngModule, ngModule.transitiveModule.directives);
+            compiledTemplate = new CompiledTemplate(false, compMeta.selector, compMeta.type, compMeta, ngModule, ngModule.transitiveModule.directives);
             this._compiledTemplateCache.set(compMeta.type.reference, compiledTemplate);
         }
         return compiledTemplate;
+    };
+    /**
+     * @param {?} compType
+     * @param {?} isHost
+     * @return {?}
+     */
+    JitCompiler.prototype._assertComponentKnown = function (compType, isHost) {
+        var /** @type {?} */ compiledTemplate = isHost ? this._compiledHostTemplateCache.get(compType) :
+            this._compiledTemplateCache.get(compType);
+        if (!compiledTemplate) {
+            throw new Error("Illegal state: Compiled view for component " + stringify(compType) + " (host: " + isHost + ") does not exist!");
+        }
+        return compiledTemplate;
+    };
+    /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    JitCompiler.prototype._assertDirectiveWrapper = function (dirType) {
+        var /** @type {?} */ dirWrapper = this._compiledDirectiveWrapperCache.get(dirType);
+        if (!dirWrapper) {
+            throw new Error("Illegal state: Directive wrapper for " + stringify(dirType) + " has not been compiled!");
+        }
+        return dirWrapper;
     };
     /**
      * @param {?} dirMeta
@@ -312,7 +338,6 @@ export var JitCompiler = (function () {
         else {
             directiveWrapperClass = jitStatements("/" + identifierName(moduleMeta.type) + "/" + identifierName(dirMeta.type) + "/wrapper.ngfactory.js", statements, compileResult.dirWrapperClassVar);
         }
-        ((dirMeta.wrapperType)).setDelegate(directiveWrapperClass);
         this._compiledDirectiveWrapperCache.set(dirMeta.type.reference, directiveWrapperClass);
     };
     /**
@@ -335,6 +360,23 @@ export var JitCompiler = (function () {
         var /** @type {?} */ parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, identifierName(compMeta.type));
         var /** @type {?} */ compiledAnimations = this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
         var /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), pipes, compiledAnimations);
+        compileResult.dependencies.forEach(function (dep) {
+            var /** @type {?} */ depTemplate;
+            if (dep instanceof ViewClassDependency) {
+                var /** @type {?} */ vfd = (dep);
+                depTemplate = _this._assertComponentKnown(vfd.comp.reference, false);
+                vfd.placeholder.reference = depTemplate.proxyViewClass;
+            }
+            else if (dep instanceof ComponentFactoryDependency) {
+                var /** @type {?} */ cfd = (dep);
+                depTemplate = _this._assertComponentKnown(cfd.comp.reference, true);
+                cfd.placeholder.reference = depTemplate.proxyComponentFactory;
+            }
+            else if (dep instanceof DirectiveWrapperDependency) {
+                var /** @type {?} */ dwd = (dep);
+                dwd.placeholder.reference = _this._assertDirectiveWrapper(dwd.dir.reference);
+            }
+        });
         var /** @type {?} */ statements = (_a = stylesCompileResult.componentStylesheet.statements).concat.apply(_a, compiledAnimations.map(function (ca) { return ca.statements; }))
             .concat(compileResult.statements);
         var /** @type {?} */ viewClass;
@@ -413,12 +455,13 @@ function JitCompiler_tsickle_Closure_declarations() {
 var CompiledTemplate = (function () {
     /**
      * @param {?} isHost
+     * @param {?} selector
      * @param {?} compType
      * @param {?} compMeta
      * @param {?} ngModule
      * @param {?} directives
      */
-    function CompiledTemplate(isHost, compType, compMeta, ngModule, directives) {
+    function CompiledTemplate(isHost, selector, compType, compMeta, ngModule, directives) {
         this.isHost = isHost;
         this.compType = compType;
         this.compMeta = compMeta;
@@ -426,6 +469,16 @@ var CompiledTemplate = (function () {
         this.directives = directives;
         this._viewClass = null;
         this.isCompiled = false;
+        var self = this;
+        this.proxyViewClass = function () {
+            if (!self._viewClass) {
+                throw new Error("Illegal state: CompiledTemplate for " + stringify(self.compType) + " is not compiled yet!");
+            }
+            return self._viewClass.apply(this, arguments);
+        };
+        this.proxyComponentFactory = isHost ?
+            new ComponentFactory(selector, this.proxyViewClass, compType.reference) :
+            null;
     }
     /**
      * @param {?} viewClass
@@ -433,7 +486,7 @@ var CompiledTemplate = (function () {
      */
     CompiledTemplate.prototype.compiled = function (viewClass) {
         this._viewClass = viewClass;
-        ((this.compMeta.componentViewType)).setDelegate(viewClass);
+        this.proxyViewClass.prototype = viewClass.prototype;
         this.isCompiled = true;
     };
     return CompiledTemplate;
@@ -441,6 +494,10 @@ var CompiledTemplate = (function () {
 function CompiledTemplate_tsickle_Closure_declarations() {
     /** @type {?} */
     CompiledTemplate.prototype._viewClass;
+    /** @type {?} */
+    CompiledTemplate.prototype.proxyViewClass;
+    /** @type {?} */
+    CompiledTemplate.prototype.proxyComponentFactory;
     /** @type {?} */
     CompiledTemplate.prototype.isCompiled;
     /** @type {?} */

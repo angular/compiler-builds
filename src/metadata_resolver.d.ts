@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { AnimationEntryMetadata, Component, Directive, OpaqueToken, Type } from '@angular/core';
-import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
 import * as cpl from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveResolver } from './directive_resolver';
@@ -24,25 +23,16 @@ export declare class CompileMetadataResolver {
     private _summaryResolver;
     private _schemaRegistry;
     private _directiveNormalizer;
-    private _staticSymbolCache;
     private _reflector;
     private _errorCollector;
-    private _nonNormalizedDirectiveCache;
     private _directiveCache;
     private _summaryCache;
     private _pipeCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _staticSymbolCache: StaticSymbolCache, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector);
+    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
-    private _createProxyClass(baseType, name);
-    private getGeneratedClass(dirType, name);
-    private getDirectiveWrapperClass(dirType);
-    private getComponentViewClass(dirType);
-    getHostComponentViewClass(dirType: any): StaticSymbol | cpl.ProxyClass;
-    getHostComponentType(dirType: any): StaticSymbol | Type<any>;
-    private getComponentFactory(selector, dirType);
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
     private _getAnimationStateMetadata(value);
     private _getAnimationStyleMetadata(value);
@@ -87,9 +77,7 @@ export declare class CompileMetadataResolver {
     private _getDependenciesMetadata(typeOrFunc, dependencies);
     private _getTokenMetadata(token);
     private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?, type?);
-    private _validateProvider(provider);
     private _getEntryComponentsFromProvider(provider, type?);
-    private _getEntryComponentMetadata(dirType);
     getProviderMetadata(provider: cpl.ProviderMeta): cpl.CompileProviderMetadata;
     private _getQueriesMetadata(queries, isViewQuery, directiveType);
     private _queryVarBindings(selector);

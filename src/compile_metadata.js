@@ -244,35 +244,6 @@ export function identifierModuleUrl(compileIdentifier) {
     }
     return reflector.importUri(ref);
 }
-/**
- * @param {?} compType
- * @param {?} embeddedTemplateIndex
- * @return {?}
- */
-export function viewClassName(compType, embeddedTemplateIndex) {
-    return "View_" + identifierName({ reference: compType }) + "_" + embeddedTemplateIndex;
-}
-/**
- * @param {?} compType
- * @return {?}
- */
-export function hostViewClassName(compType) {
-    return "HostView_" + identifierName({ reference: compType });
-}
-/**
- * @param {?} dirType
- * @return {?}
- */
-export function dirWrapperClassName(dirType) {
-    return "Wrapper_" + identifierName({ reference: dirType });
-}
-/**
- * @param {?} compType
- * @return {?}
- */
-export function componentFactoryName(compType) {
-    return identifierName({ reference: compType }) + "NgFactory";
-}
 export var CompileSummaryKind = {};
 CompileSummaryKind.Pipe = 0;
 CompileSummaryKind.Directive = 1;
@@ -354,7 +325,7 @@ export var CompileTemplateMetadata = (function () {
         return {
             animations: this.animations.map(function (anim) { return anim.name; }),
             ngContentSelectors: this.ngContentSelectors,
-            encapsulation: this.encapsulation,
+            encapsulation: this.encapsulation
         };
     };
     return CompileTemplateMetadata;
@@ -387,7 +358,7 @@ export var CompileDirectiveMetadata = (function () {
      * @param {?=} __0
      */
     function CompileDirectiveMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentFactory = _b.componentFactory;
+        var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template;
         this.isHost = !!isHost;
         this.type = type;
         this.isComponent = isComponent;
@@ -405,16 +376,13 @@ export var CompileDirectiveMetadata = (function () {
         this.viewQueries = _normalizeArray(viewQueries);
         this.entryComponents = _normalizeArray(entryComponents);
         this.template = template;
-        this.wrapperType = wrapperType;
-        this.componentViewType = componentViewType;
-        this.componentFactory = componentFactory;
     }
     /**
      * @param {?=} __0
      * @return {?}
      */
     CompileDirectiveMetadata.create = function (_a) {
-        var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentFactory = _b.componentFactory;
+        var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template;
         var /** @type {?} */ hostListeners = {};
         var /** @type {?} */ hostProperties = {};
         var /** @type {?} */ hostAttributes = {};
@@ -466,9 +434,6 @@ export var CompileDirectiveMetadata = (function () {
             viewQueries: viewQueries,
             entryComponents: entryComponents,
             template: template,
-            wrapperType: wrapperType,
-            componentViewType: componentViewType,
-            componentFactory: componentFactory,
         });
     };
     /**
@@ -491,10 +456,7 @@ export var CompileDirectiveMetadata = (function () {
             queries: this.queries,
             entryComponents: this.entryComponents,
             changeDetection: this.changeDetection,
-            template: this.template && this.template.toSummary(),
-            wrapperType: this.wrapperType,
-            componentViewType: this.componentViewType,
-            componentFactory: this.componentFactory
+            template: this.template && this.template.toSummary()
         };
     };
     return CompileDirectiveMetadata;
@@ -534,25 +496,18 @@ function CompileDirectiveMetadata_tsickle_Closure_declarations() {
     CompileDirectiveMetadata.prototype.entryComponents;
     /** @type {?} */
     CompileDirectiveMetadata.prototype.template;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.wrapperType;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.componentViewType;
-    /** @type {?} */
-    CompileDirectiveMetadata.prototype.componentFactory;
 }
 /**
  *  Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
- * @param {?} hostTypeReference
+ * @param {?} typeReference
  * @param {?} compMeta
- * @param {?} hostViewType
  * @return {?}
  */
-export function createHostComponentMeta(hostTypeReference, compMeta, hostViewType) {
+export function createHostComponentMeta(typeReference, compMeta) {
     var /** @type {?} */ template = CssSelector.parse(compMeta.selector)[0].getMatchingElementTemplate();
     return CompileDirectiveMetadata.create({
         isHost: true,
-        type: { reference: hostTypeReference, diDeps: [], lifecycleHooks: [] },
+        type: { reference: typeReference, diDeps: [], lifecycleHooks: [] },
         template: new CompileTemplateMetadata({
             encapsulation: ViewEncapsulation.None,
             template: template,
@@ -571,8 +526,7 @@ export function createHostComponentMeta(hostTypeReference, compMeta, hostViewTyp
         providers: [],
         viewProviders: [],
         queries: [],
-        viewQueries: [],
-        componentViewType: hostViewType
+        viewQueries: []
     });
 }
 export var CompilePipeMetadata = (function () {
@@ -748,13 +702,13 @@ export var TransitiveCompileNgModuleMetadata = (function () {
         }
     };
     /**
-     * @param {?} ec
+     * @param {?} id
      * @return {?}
      */
-    TransitiveCompileNgModuleMetadata.prototype.addEntryComponent = function (ec) {
-        if (!this.entryComponentsSet.has(ec.componentType)) {
-            this.entryComponentsSet.add(ec.componentType);
-            this.entryComponents.push(ec);
+    TransitiveCompileNgModuleMetadata.prototype.addEntryComponent = function (id) {
+        if (!this.entryComponentsSet.has(id.reference)) {
+            this.entryComponentsSet.add(id.reference);
+            this.entryComponents.push(id);
         }
     };
     return TransitiveCompileNgModuleMetadata;

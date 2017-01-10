@@ -17,8 +17,9 @@ import { ChangeDetectorStatus, ViewType, isDefaultChangeDetectionStrategy } from
 import { templateVisitAll } from '../template_parser/template_ast';
 import { CompileElement, CompileNode } from './compile_element';
 import { CompileView, CompileViewRootNode, CompileViewRootNodeType } from './compile_view';
-import { ChangeDetectorStatusEnum, InjectMethodVars, ViewConstructorVars, ViewEncapsulationEnum, ViewProperties, ViewTypeEnum } from './constants';
-import { ComponentViewDependency } from './deps';
+import { ChangeDetectorStatusEnum, DetectChangesVars, InjectMethodVars, ViewConstructorVars, ViewEncapsulationEnum, ViewProperties, ViewTypeEnum } from './constants';
+import { ViewClassDependency } from './deps';
+import { getViewClassName } from './util';
 var /** @type {?} */ IMPLICIT_TEMPLATE_VAR = '\$implicit';
 var /** @type {?} */ CLASS_ATTR = 'class';
 var /** @type {?} */ STYLE_ATTR = 'style';
@@ -233,13 +234,14 @@ var ViewBuilderVisitor = (function () {
         this.view.nodes.push(compileElement);
         var /** @type {?} */ compViewExpr = null;
         if (isPresent(component)) {
-            this.targetDependencies.push(new ComponentViewDependency(component.type.reference));
+            var /** @type {?} */ nestedComponentIdentifier = { reference: null };
+            this.targetDependencies.push(new ViewClassDependency(component.type, getViewClassName(component, 0), nestedComponentIdentifier));
             compViewExpr = o.THIS_EXPR.prop("compView_" + nodeIndex); // fix highlighting: `
             this.view.fields.push(new o.ClassField(compViewExpr.name, o.importType(createIdentifier(Identifiers.AppView), [o.importType(component.type)])));
             this.view.viewChildren.push(compViewExpr);
             compileElement.setComponentView(compViewExpr);
             this.view.createMethod.addStmt(compViewExpr
-                .set(o.importExpr({ reference: component.componentViewType }).instantiate([
+                .set(o.importExpr(nestedComponentIdentifier).instantiate([
                 ViewProperties.viewUtils, o.THIS_EXPR, o.literal(nodeIndex), renderNode
             ]))
                 .toStmt());
@@ -517,7 +519,7 @@ function createViewClass(view, renderCompTypeVar, nodeDebugInfosVar) {
             new o.FnParam(InjectMethodVars.requestNodeIndex.name, o.NUMBER_TYPE),
             new o.FnParam(InjectMethodVars.notFoundResult.name, o.DYNAMIC_TYPE)
         ], addReturnValuefNotEmpty(view.injectorGetMethod.finish(), InjectMethodVars.notFoundResult), o.DYNAMIC_TYPE),
-        new o.ClassMethod('detectChangesInternal', [], generateDetectChangesMethod(view)),
+        new o.ClassMethod('detectChangesInternal', [new o.FnParam(DetectChangesVars.throwOnChange.name, o.BOOL_TYPE)], generateDetectChangesMethod(view)),
         new o.ClassMethod('dirtyParentQueriesInternal', [], view.dirtyParentQueriesMethod.finish()),
         new o.ClassMethod('destroyInternal', [], generateDestroyMethod(view)),
         new o.ClassMethod('detachInternal', [], view.detachMethod.finish()),
@@ -603,22 +605,31 @@ function generateDetectChangesMethod(view) {
     stmts.push.apply(stmts, view.animationBindingsMethod.finish());
     stmts.push.apply(stmts, view.detectChangesInInputsMethod.finish());
     view.viewContainers.forEach(function (viewContainer) {
-        stmts.push(viewContainer.callMethod('detectChangesInNestedViews', [ViewProperties.throwOnChange])
+        stmts.push(viewContainer.callMethod('detectChangesInNestedViews', [DetectChangesVars.throwOnChange])
             .toStmt());
     });
     var /** @type {?} */ afterContentStmts = view.updateContentQueriesMethod.finish().concat(view.afterContentLifecycleCallbacksMethod.finish());
     if (afterContentStmts.length > 0) {
-        stmts.push(new o.IfStmt(o.not(ViewProperties.throwOnChange), afterContentStmts));
+        stmts.push(new o.IfStmt(o.not(DetectChangesVars.throwOnChange), afterContentStmts));
     }
     stmts.push.apply(stmts, view.detectChangesRenderPropertiesMethod.finish());
     view.viewChildren.forEach(function (viewChild) {
-        stmts.push(viewChild.callMethod('internalDetectChanges', [ViewProperties.throwOnChange]).toStmt());
+        stmts.push(viewChild.callMethod('internalDetectChanges', [DetectChangesVars.throwOnChange]).toStmt());
     });
     var /** @type {?} */ afterViewStmts = view.updateViewQueriesMethod.finish().concat(view.afterViewLifecycleCallbacksMethod.finish());
     if (afterViewStmts.length > 0) {
-        stmts.push(new o.IfStmt(o.not(ViewProperties.throwOnChange), afterViewStmts));
+        stmts.push(new o.IfStmt(o.not(DetectChangesVars.throwOnChange), afterViewStmts));
     }
-    var /** @type {?} */ varStmts = createSharedBindingVariablesIfNeeded(stmts);
+    var /** @type {?} */ varStmts = [];
+    var /** @type {?} */ readVars = o.findReadVarNames(stmts);
+    if (readVars.has(DetectChangesVars.changed.name)) {
+        varStmts.push(DetectChangesVars.changed.set(o.literal(true)).toDeclStmt(o.BOOL_TYPE));
+    }
+    if (readVars.has(DetectChangesVars.changes.name)) {
+        varStmts.push(DetectChangesVars.changes.set(o.NULL_EXPR)
+            .toDeclStmt(new o.MapType(o.importType(createIdentifier(Identifiers.SimpleChange)))));
+    }
+    varStmts.push.apply(varStmts, createSharedBindingVariablesIfNeeded(stmts));
     return varStmts.concat(stmts);
 }
 /**
@@ -729,6 +740,7 @@ function generateCreateEmbeddedViewsMethod(view) {
     view.nodes.forEach(function (node) {
         if (node instanceof CompileElement) {
             if (node.embeddedView) {
+                var /** @type {?} */ parentNodeIndex = node.isRootElement() ? null : node.parent.nodeIndex;
                 stmts.push(new o.IfStmt(nodeIndexVar.equals(o.literal(node.nodeIndex)), [new o.ReturnStatement(node.embeddedView.classExpr.instantiate([
                         ViewProperties.viewUtils, o.THIS_EXPR, o.literal(node.nodeIndex), node.renderNode,
                         node.viewContainer

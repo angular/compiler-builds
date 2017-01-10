@@ -30,14 +30,15 @@ export declare class DirectiveWrapperCompiler {
     private _exprParser;
     private _schemaRegistry;
     private _console;
+    static dirWrapperClassName(id: CompileIdentifierMetadata): string;
     constructor(compilerConfig: CompilerConfig, _exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _console: Console);
     compile(dirMeta: CompileDirectiveMetadata): DirectiveWrapperCompileResult;
 }
 export declare class DirectiveWrapperExpressions {
     static create(dir: CompileIdentifierMetadata, depsExpr: o.Expression[]): o.Expression;
     static context(dirWrapper: o.Expression): o.ReadPropExpr;
-    static ngDoCheck(dirWrapper: o.Expression, view: o.Expression, renderElement: o.Expression): o.Expression;
-    static checkHost(hostProps: BoundElementPropertyAst[], dirWrapper: o.Expression, view: o.Expression, componentView: o.Expression, renderElement: o.Expression, runtimeSecurityContexts: o.Expression[]): o.Statement[];
+    static ngDoCheck(dirWrapper: o.Expression, view: o.Expression, renderElement: o.Expression, throwOnChange: o.Expression): o.Expression;
+    static checkHost(hostProps: BoundElementPropertyAst[], dirWrapper: o.Expression, view: o.Expression, componentView: o.Expression, renderElement: o.Expression, throwOnChange: o.Expression, runtimeSecurityContexts: o.Expression[]): o.Statement[];
     static ngOnDetach(hostProps: BoundElementPropertyAst[], dirWrapper: o.Expression, view: o.Expression, componentView: o.Expression, renderEl: o.Expression): o.Statement[];
     static ngOnDestroy(dir: CompileDirectiveSummary, dirWrapper: o.Expression): o.Statement[];
     static subscribe(dirMeta: CompileDirectiveSummary, hostProps: BoundElementPropertyAst[], usedEvents: string[], dirWrapper: o.Expression, view: o.Expression, eventListener: o.Expression): o.Statement[];

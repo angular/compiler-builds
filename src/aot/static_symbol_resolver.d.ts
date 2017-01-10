@@ -40,10 +40,6 @@ export interface StaticSymbolResolverHost {
 /**
  * This class is responsible for loading metadata per symbol,
  * and normalizing references between symbols.
- *
- * Internally, it only uses symbols without members,
- * and deduces the values for symbols with members based
- * on these symbols.
  */
 export declare class StaticSymbolResolver {
     private host;
@@ -53,10 +49,8 @@ export declare class StaticSymbolResolver {
     private metadataCache;
     private resolvedSymbols;
     private resolvedFilePaths;
-    private importAs;
     constructor(host: StaticSymbolResolverHost, staticSymbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, errorRecorder?: (error: any, fileName: string) => void);
     resolveSymbol(staticSymbol: StaticSymbol): ResolvedStaticSymbol;
-    getImportAs(staticSymbol: StaticSymbol): StaticSymbol;
     private _resolveSymbolMembers(staticSymbol);
     private _resolveSymbolFromSummary(staticSymbol);
     /**
@@ -69,8 +63,7 @@ export declare class StaticSymbolResolver {
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
     getSymbolsOf(filePath: string): StaticSymbol[];
     private _createSymbolsOf(filePath);
-    private createResolvedSymbol(sourceSymbol, topLevelSymbolNames, metadata);
-    private createExport(sourceSymbol, targetSymbol);
+    private createResolvedSymbol(sourceSymbol, metadata);
     private reportError(error, context, path?);
     /**
      * @param module an absolute path to a module file.
@@ -79,4 +72,3 @@ export declare class StaticSymbolResolver {
     getSymbolByModule(module: string, symbolName: string, containingFile?: string): StaticSymbol;
     private resolveModule(module, containingFile);
 }
-export declare function unescapeIdentifier(identifier: string): string;

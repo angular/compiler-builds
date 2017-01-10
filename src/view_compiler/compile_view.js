@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { tokenName, viewClassName } from '../compile_metadata';
+import { tokenName } from '../compile_metadata';
 import { EventHandlerVars } from '../compiler_util/expression_converter';
 import { isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
@@ -13,7 +13,7 @@ import { ViewType } from '../private_import_core';
 import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
 import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
-import { getPropertyInView } from './util';
+import { getPropertyInView, getViewClassName } from './util';
 export var CompileViewRootNodeType = {};
 CompileViewRootNodeType.Node = 0;
 CompileViewRootNodeType.ViewContainer = 1;
@@ -94,7 +94,7 @@ export var CompileView = (function () {
         this.destroyMethod = new CompileMethod(this);
         this.detachMethod = new CompileMethod(this);
         this.viewType = getViewType(component, viewIndex);
-        this.className = viewClassName(component.type.reference, viewIndex);
+        this.className = getViewClassName(component, viewIndex);
         this.classType = o.expressionType(o.variable(this.className));
         this.classExpr = o.variable(this.className);
         if (this.viewType === ViewType.COMPONENT || this.viewType === ViewType.HOST) {
@@ -110,7 +110,7 @@ export var CompileView = (function () {
             var directiveInstance_1 = o.THIS_EXPR.prop('context');
             this.component.viewQueries.forEach(function (queryMeta, queryIndex) {
                 var propName = "_viewQuery_" + tokenName(queryMeta.selectors[0]) + "_" + queryIndex;
-                var queryList = createQueryList(propName, _this);
+                var queryList = createQueryList(queryMeta, directiveInstance_1, propName, _this);
                 var query = new CompileQuery(queryMeta, queryList, directiveInstance_1, _this);
                 addQueryToTokenMap(viewQueries, query);
             });

@@ -14,10 +14,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { dirWrapperClassName, identifierModuleUrl, identifierName } from './compile_metadata';
-import { createCheckBindingField, isFirstViewCheck } from './compiler_util/binding_util';
+import { identifierModuleUrl, identifierName } from './compile_metadata';
+import { createCheckBindingField, createCheckBindingStmt } from './compiler_util/binding_util';
 import { EventHandlerVars, convertActionBinding, convertPropertyBinding } from './compiler_util/expression_converter';
-import { createCheckAnimationBindingStmts, createCheckRenderBindingStmt } from './compiler_util/render_util';
+import { triggerAnimation, writeToRenderer } from './compiler_util/render_util';
 import { CompilerConfig } from './config';
 import { Parser } from './expression_parser/parser';
 import { Identifiers, createIdentifier } from './identifiers';
@@ -50,8 +50,8 @@ var /** @type {?} */ CONTEXT_FIELD_NAME = 'context';
 var /** @type {?} */ CHANGES_FIELD_NAME = '_changes';
 var /** @type {?} */ CHANGED_FIELD_NAME = '_changed';
 var /** @type {?} */ EVENT_HANDLER_FIELD_NAME = '_eventHandler';
-var /** @type {?} */ CHANGE_VAR = o.variable('change');
 var /** @type {?} */ CURR_VALUE_VAR = o.variable('currValue');
+var /** @type {?} */ THROW_ON_CHANGE_VAR = o.variable('throwOnChange');
 var /** @type {?} */ FORCE_UPDATE_VAR = o.variable('forceUpdate');
 var /** @type {?} */ VIEW_VAR = o.variable('view');
 var /** @type {?} */ COMPONENT_VIEW_VAR = o.variable('componentView');
@@ -79,6 +79,13 @@ export var DirectiveWrapperCompiler = (function () {
         this._schemaRegistry = _schemaRegistry;
         this._console = _console;
     }
+    /**
+     * @param {?} id
+     * @return {?}
+     */
+    DirectiveWrapperCompiler.dirWrapperClassName = function (id) {
+        return "Wrapper_" + identifierName(id);
+    };
     /**
      * @param {?} dirMeta
      * @return {?}
@@ -159,9 +166,7 @@ var DirectiveWrapperBuilder = (function () {
             new o.ClassField(CONTEXT_FIELD_NAME, o.importType(this.dirMeta.type)),
             new o.ClassField(CHANGED_FIELD_NAME, o.BOOL_TYPE, [o.StmtModifier.Private]),
         ];
-        var /** @type {?} */ ctorStmts = [
-            o.THIS_EXPR.prop(CHANGED_FIELD_NAME).set(o.literal(false)).toStmt(),
-        ];
+        var /** @type {?} */ ctorStmts = [o.THIS_EXPR.prop(CHANGED_FIELD_NAME).set(o.literal(false)).toStmt()];
         if (this.genChanges) {
             fields.push(new o.ClassField(CHANGES_FIELD_NAME, new o.MapType(o.DYNAMIC_TYPE), [o.StmtModifier.Private]));
             ctorStmts.push(RESET_CHANGES_STMT);
@@ -171,7 +176,7 @@ var DirectiveWrapperBuilder = (function () {
             .instantiate(dirDepParamNames.map(function (paramName) { return o.variable(paramName); })))
             .toStmt());
         return createClassStmt({
-            name: dirWrapperClassName(this.dirMeta.type.reference),
+            name: DirectiveWrapperCompiler.dirWrapperClassName(this.dirMeta.type),
             ctorParams: dirDepParamNames.map(function (paramName) { return new o.FnParam(paramName, o.DYNAMIC_TYPE); }),
             builders: [{ fields: fields, ctorStmts: ctorStmts, methods: methods }, this]
         });
@@ -233,18 +238,19 @@ function addNgDoCheckMethod(builder) {
         lifecycleStmts.push(new o.IfStmt(changedVar, onChangesStmts));
     }
     if (builder.ngOnInit) {
-        lifecycleStmts.push(new o.IfStmt(isFirstViewCheck(VIEW_VAR), [o.THIS_EXPR.prop(CONTEXT_FIELD_NAME).callMethod('ngOnInit', []).toStmt()]));
+        lifecycleStmts.push(new o.IfStmt(VIEW_VAR.prop('numberOfChecks').identical(new o.LiteralExpr(0)), [o.THIS_EXPR.prop(CONTEXT_FIELD_NAME).callMethod('ngOnInit', []).toStmt()]));
     }
     if (builder.ngDoCheck) {
         lifecycleStmts.push(o.THIS_EXPR.prop(CONTEXT_FIELD_NAME).callMethod('ngDoCheck', []).toStmt());
     }
     if (lifecycleStmts.length > 0) {
-        stmts.push(new o.IfStmt(o.not(VIEW_VAR.prop('throwOnChange')), lifecycleStmts));
+        stmts.push(new o.IfStmt(o.not(THROW_ON_CHANGE_VAR), lifecycleStmts));
     }
     stmts.push(new o.ReturnStatement(changedVar));
     builder.methods.push(new o.ClassMethod('ngDoCheck', [
         new o.FnParam(VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
         new o.FnParam(RENDER_EL_VAR.name, o.DYNAMIC_TYPE),
+        new o.FnParam(THROW_ON_CHANGE_VAR.name, o.BOOL_TYPE),
     ], stmts, o.BOOL_TYPE));
 }
 /**
@@ -257,29 +263,19 @@ function addCheckInputMethod(input, builder) {
     var /** @type {?} */ onChangeStatements = [
         o.THIS_EXPR.prop(CHANGED_FIELD_NAME).set(o.literal(true)).toStmt(),
         o.THIS_EXPR.prop(CONTEXT_FIELD_NAME).prop(input).set(CURR_VALUE_VAR).toStmt(),
-        field.expression.set(CURR_VALUE_VAR).toStmt()
     ];
-    var /** @type {?} */ methodBody;
     if (builder.genChanges) {
-        onChangeStatements.push(o.THIS_EXPR.prop(CHANGES_FIELD_NAME).key(o.literal(input)).set(CHANGE_VAR).toStmt());
-        methodBody = [
-            CHANGE_VAR
-                .set(o.importExpr(createIdentifier(Identifiers.checkBindingChange)).callFn([
-                VIEW_VAR, field.expression, CURR_VALUE_VAR, FORCE_UPDATE_VAR
-            ]))
-                .toDeclStmt(),
-            new o.IfStmt(CHANGE_VAR, onChangeStatements)
-        ];
+        onChangeStatements.push(o.THIS_EXPR.prop(CHANGES_FIELD_NAME)
+            .key(o.literal(input))
+            .set(o.importExpr(createIdentifier(Identifiers.SimpleChange))
+            .instantiate([field.expression, CURR_VALUE_VAR]))
+            .toStmt());
     }
-    else {
-        methodBody = [new o.IfStmt(o.importExpr(createIdentifier(Identifiers.checkBinding)).callFn([
-                VIEW_VAR, field.expression, CURR_VALUE_VAR, FORCE_UPDATE_VAR
-            ]), onChangeStatements)];
-    }
+    var /** @type {?} */ methodBody = createCheckBindingStmt({ currValExpr: CURR_VALUE_VAR, forceUpdate: FORCE_UPDATE_VAR, stmts: [] }, field.expression, THROW_ON_CHANGE_VAR, onChangeStatements);
     builder.methods.push(new o.ClassMethod("check_" + input, [
-        new o.FnParam(VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
         new o.FnParam(CURR_VALUE_VAR.name, o.DYNAMIC_TYPE),
-        new o.FnParam(FORCE_UPDATE_VAR.name, o.BOOL_TYPE)
+        new o.FnParam(THROW_ON_CHANGE_VAR.name, o.BOOL_TYPE),
+        new o.FnParam(FORCE_UPDATE_VAR.name, o.BOOL_TYPE),
     ], methodBody));
 }
 /**
@@ -294,6 +290,7 @@ function addCheckHostMethod(hostProps, hostEvents, builder) {
         new o.FnParam(VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
         new o.FnParam(COMPONENT_VIEW_VAR.name, o.importType(createIdentifier(Identifiers.AppView), [o.DYNAMIC_TYPE])),
         new o.FnParam(RENDER_EL_VAR.name, o.DYNAMIC_TYPE),
+        new o.FnParam(THROW_ON_CHANGE_VAR.name, o.BOOL_TYPE),
     ];
     hostProps.forEach(function (hostProp, hostPropIdx) {
         var /** @type {?} */ field = createCheckBindingField(builder);
@@ -306,15 +303,17 @@ function addCheckHostMethod(hostProps, hostEvents, builder) {
             securityContextExpr = o.variable("secCtx_" + methodParams.length);
             methodParams.push(new o.FnParam(securityContextExpr.name, o.importType(createIdentifier(Identifiers.SecurityContext))));
         }
+        var /** @type {?} */ checkBindingStmts;
         if (hostProp.isAnimation) {
-            var _a = createCheckAnimationBindingStmts(VIEW_VAR, COMPONENT_VIEW_VAR, hostProp, hostEvents, o.THIS_EXPR.prop(EVENT_HANDLER_FIELD_NAME)
-                .or(o.importExpr(createIdentifier(Identifiers.noop))), RENDER_EL_VAR, field.expression, evalResult), checkUpdateStmts = _a.checkUpdateStmts, checkDetachStmts = _a.checkDetachStmts;
-            (_b = builder.detachStmts).push.apply(_b, checkDetachStmts);
-            stmts.push.apply(stmts, checkUpdateStmts);
+            var _a = triggerAnimation(VIEW_VAR, COMPONENT_VIEW_VAR, hostProp, hostEvents, o.THIS_EXPR.prop(EVENT_HANDLER_FIELD_NAME)
+                .or(o.importExpr(createIdentifier(Identifiers.noop))), RENDER_EL_VAR, evalResult.currValExpr, field.expression), updateStmts = _a.updateStmts, detachStmts = _a.detachStmts;
+            checkBindingStmts = updateStmts;
+            (_b = builder.detachStmts).push.apply(_b, detachStmts);
         }
         else {
-            stmts.push.apply(stmts, createCheckRenderBindingStmt(VIEW_VAR, RENDER_EL_VAR, hostProp, field.expression, evalResult, securityContextExpr));
+            checkBindingStmts = writeToRenderer(VIEW_VAR, hostProp, RENDER_EL_VAR, evalResult.currValExpr, builder.compilerConfig.logBindingUpdate, securityContextExpr);
         }
+        stmts.push.apply(stmts, createCheckBindingStmt(evalResult, field.expression, THROW_ON_CHANGE_VAR, checkBindingStmts));
         var _b;
     });
     builder.methods.push(new o.ClassMethod('checkHost', methodParams, stmts));
@@ -452,10 +451,11 @@ export var DirectiveWrapperExpressions = (function () {
      * @param {?} dirWrapper
      * @param {?} view
      * @param {?} renderElement
+     * @param {?} throwOnChange
      * @return {?}
      */
-    DirectiveWrapperExpressions.ngDoCheck = function (dirWrapper, view, renderElement) {
-        return dirWrapper.callMethod('ngDoCheck', [view, renderElement]);
+    DirectiveWrapperExpressions.ngDoCheck = function (dirWrapper, view, renderElement, throwOnChange) {
+        return dirWrapper.callMethod('ngDoCheck', [view, renderElement, throwOnChange]);
     };
     /**
      * @param {?} hostProps
@@ -463,13 +463,14 @@ export var DirectiveWrapperExpressions = (function () {
      * @param {?} view
      * @param {?} componentView
      * @param {?} renderElement
+     * @param {?} throwOnChange
      * @param {?} runtimeSecurityContexts
      * @return {?}
      */
-    DirectiveWrapperExpressions.checkHost = function (hostProps, dirWrapper, view, componentView, renderElement, runtimeSecurityContexts) {
+    DirectiveWrapperExpressions.checkHost = function (hostProps, dirWrapper, view, componentView, renderElement, throwOnChange, runtimeSecurityContexts) {
         if (hostProps.length) {
             return [dirWrapper
-                    .callMethod('checkHost', [view, componentView, renderElement].concat(runtimeSecurityContexts))
+                    .callMethod('checkHost', [view, componentView, renderElement, throwOnChange].concat(runtimeSecurityContexts))
                     .toStmt()];
         }
         else {

@@ -1,12 +1,5 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-import { deserializeSummaries } from './summary_serializer';
-import { ngfactoryFilePath, stripNgFactory, summaryFileName } from './util';
+import { deserializeSummaries, summaryFileName } from './summary_serializer';
+var /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
 export var AotSummaryResolver = (function () {
     /**
      * @param {?} host
@@ -17,29 +10,22 @@ export var AotSummaryResolver = (function () {
         this.staticSymbolCache = staticSymbolCache;
         this.summaryCache = new Map();
         this.loadedFilePaths = new Set();
-        this.importAs = new Map();
     }
     /**
-     * @param {?} filePath
+     * @param {?} symbol
      * @return {?}
      */
-    AotSummaryResolver.prototype.isLibraryFile = function (filePath) {
-        // Note: We need to strip the .ngfactory. file path,
-        // so this method also works for generated files
-        // (for which host.isSourceFile will always return false).
-        return !this.host.isSourceFile(stripNgFactory(filePath));
+    AotSummaryResolver.prototype._assertNoMembers = function (symbol) {
+        if (symbol.members.length) {
+            throw new Error("Internal state: StaticSymbols in summaries can't have members! " + JSON.stringify(symbol));
+        }
     };
-    /**
-     * @param {?} filePath
-     * @return {?}
-     */
-    AotSummaryResolver.prototype.getLibraryFileName = function (filePath) { return this.host.getOutputFileName(filePath); };
     /**
      * @param {?} staticSymbol
      * @return {?}
      */
     AotSummaryResolver.prototype.resolveSummary = function (staticSymbol) {
-        staticSymbol.assertNoMembers();
+        this._assertNoMembers(staticSymbol);
         var /** @type {?} */ summary = this.summaryCache.get(staticSymbol);
         if (!summary) {
             this._loadSummaryFile(staticSymbol.filePath);
@@ -56,14 +42,6 @@ export var AotSummaryResolver = (function () {
         return Array.from(this.summaryCache.keys()).filter(function (symbol) { return symbol.filePath === filePath; });
     };
     /**
-     * @param {?} staticSymbol
-     * @return {?}
-     */
-    AotSummaryResolver.prototype.getImportAs = function (staticSymbol) {
-        staticSymbol.assertNoMembers();
-        return this.importAs.get(staticSymbol);
-    };
-    /**
      * @param {?} filePath
      * @return {?}
      */
@@ -73,7 +51,7 @@ export var AotSummaryResolver = (function () {
             return;
         }
         this.loadedFilePaths.add(filePath);
-        if (this.isLibraryFile(filePath)) {
+        if (!this.host.isSourceFile(filePath)) {
             var /** @type {?} */ summaryFilePath = summaryFileName(filePath);
             var /** @type {?} */ json = void 0;
             try {
@@ -84,11 +62,8 @@ export var AotSummaryResolver = (function () {
                 throw e;
             }
             if (json) {
-                var _a = deserializeSummaries(this.staticSymbolCache, json), summaries = _a.summaries, importAs = _a.importAs;
-                summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
-                importAs.forEach(function (importAs) {
-                    _this.importAs.set(importAs.symbol, _this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
-                });
+                var /** @type {?} */ readSummaries = deserializeSummaries(this.staticSymbolCache, json);
+                readSummaries.forEach(function (summary) { _this.summaryCache.set(summary.symbol, summary); });
             }
         }
     };
@@ -99,8 +74,6 @@ function AotSummaryResolver_tsickle_Closure_declarations() {
     AotSummaryResolver.prototype.summaryCache;
     /** @type {?} */
     AotSummaryResolver.prototype.loadedFilePaths;
-    /** @type {?} */
-    AotSummaryResolver.prototype.importAs;
     /** @type {?} */
     AotSummaryResolver.prototype.host;
     /** @type {?} */

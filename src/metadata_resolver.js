@@ -19,14 +19,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, Attribute, Component, ComponentFactory, Host, Inject, Injectable, OpaqueToken, Optional, Self, SkipSelf, Type, resolveForwardRef } from '@angular/core';
-import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
-import { ngfactoryFilePath } from './aot/util';
+import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, Attribute, Component, Host, Inject, Injectable, OpaqueToken, Optional, Self, SkipSelf, Type, resolveForwardRef } from '@angular/core';
+import { StaticSymbol } from './aot/static_symbol';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveResolver } from './directive_resolver';
-import { stringify } from './facade/lang';
+import { isBlank, isPresent, stringify } from './facade/lang';
 import { Identifiers, resolveIdentifier } from './identifiers';
 import { CompilerInjectable } from './injectable';
 import { hasLifecycleHook } from './lifecycle_reflector';
@@ -53,11 +52,10 @@ export var CompileMetadataResolver = (function () {
      * @param {?} _summaryResolver
      * @param {?} _schemaRegistry
      * @param {?} _directiveNormalizer
-     * @param {?} _staticSymbolCache
      * @param {?=} _reflector
      * @param {?=} _errorCollector
      */
-    function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector, _errorCollector) {
+    function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _reflector, _errorCollector) {
         if (_reflector === void 0) { _reflector = reflector; }
         this._ngModuleResolver = _ngModuleResolver;
         this._directiveResolver = _directiveResolver;
@@ -65,10 +63,8 @@ export var CompileMetadataResolver = (function () {
         this._summaryResolver = _summaryResolver;
         this._schemaRegistry = _schemaRegistry;
         this._directiveNormalizer = _directiveNormalizer;
-        this._staticSymbolCache = _staticSymbolCache;
         this._reflector = _reflector;
         this._errorCollector = _errorCollector;
-        this._nonNormalizedDirectiveCache = new Map();
         this._directiveCache = new Map();
         this._summaryCache = new Map();
         this._pipeCache = new Map();
@@ -82,7 +78,6 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.clearCacheFor = function (type) {
         var /** @type {?} */ dirMeta = this._directiveCache.get(type);
         this._directiveCache.delete(type);
-        this._nonNormalizedDirectiveCache.delete(type);
         this._summaryCache.delete(type);
         this._pipeCache.delete(type);
         this._ngModuleOfTypes.delete(type);
@@ -97,96 +92,11 @@ export var CompileMetadataResolver = (function () {
      */
     CompileMetadataResolver.prototype.clearCache = function () {
         this._directiveCache.clear();
-        this._nonNormalizedDirectiveCache.clear();
         this._summaryCache.clear();
         this._pipeCache.clear();
         this._ngModuleCache.clear();
         this._ngModuleOfTypes.clear();
         this._directiveNormalizer.clearCache();
-    };
-    /**
-     * @param {?} baseType
-     * @param {?} name
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._createProxyClass = function (baseType, name) {
-        var /** @type {?} */ delegate = null;
-        var /** @type {?} */ proxyClass = (function () {
-            if (!delegate) {
-                throw new Error("Illegal state: Class " + name + " for type " + stringify(baseType) + " is not compiled yet!");
-            }
-            return delegate.apply(this, arguments);
-        });
-        proxyClass.setDelegate = function (d) {
-            delegate = d;
-            ((proxyClass)).prototype = d.prototype;
-        };
-        // Make stringify work correctly
-        ((proxyClass)).overriddenName = name;
-        return proxyClass;
-    };
-    /**
-     * @param {?} dirType
-     * @param {?} name
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getGeneratedClass = function (dirType, name) {
-        if (dirType instanceof StaticSymbol) {
-            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), name);
-        }
-        else {
-            return this._createProxyClass(dirType, name);
-        }
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getDirectiveWrapperClass = function (dirType) {
-        return this.getGeneratedClass(dirType, cpl.dirWrapperClassName(dirType));
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getComponentViewClass = function (dirType) {
-        return this.getGeneratedClass(dirType, cpl.viewClassName(dirType, 0));
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getHostComponentViewClass = function (dirType) {
-        return this.getGeneratedClass(dirType, cpl.hostViewClassName(dirType));
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getHostComponentType = function (dirType) {
-        var /** @type {?} */ name = cpl.identifierName({ reference: dirType }) + "_Host";
-        if (dirType instanceof StaticSymbol) {
-            return this._staticSymbolCache.get(dirType.filePath, name);
-        }
-        else {
-            var /** @type {?} */ HostClass = (function HostClass() { });
-            HostClass.overriddenName = name;
-            return HostClass;
-        }
-    };
-    /**
-     * @param {?} selector
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.getComponentFactory = function (selector, dirType) {
-        if (dirType instanceof StaticSymbol) {
-            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), cpl.componentFactoryName(dirType));
-        }
-        else {
-            var /** @type {?} */ hostView = this.getHostComponentViewClass(dirType);
-            return new ComponentFactory(selector, /** @type {?} */ (hostView), dirType);
-        }
     };
     /**
      * @param {?} entry
@@ -287,9 +197,6 @@ export var CompileMetadataResolver = (function () {
                 queries: metadata.queries,
                 viewQueries: metadata.viewQueries,
                 entryComponents: metadata.entryComponents,
-                wrapperType: metadata.wrapperType,
-                componentViewType: metadata.componentViewType,
-                componentFactory: metadata.componentFactory,
                 template: templateMetadata
             });
             _this._directiveCache.set(directiveType, normalizedDirMeta);
@@ -333,14 +240,7 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype.getNonNormalizedDirectiveMetadata = function (directiveType) {
         var _this = this;
         directiveType = resolveForwardRef(directiveType);
-        if (!directiveType) {
-            return null;
-        }
-        var /** @type {?} */ cacheEntry = this._nonNormalizedDirectiveCache.get(directiveType);
-        if (cacheEntry) {
-            return cacheEntry;
-        }
-        var /** @type {?} */ dirMeta = this._directiveResolver.resolve(directiveType, false);
+        var /** @type {?} */ dirMeta = this._directiveResolver.resolve(directiveType);
         if (!dirMeta) {
             return null;
         }
@@ -375,7 +275,7 @@ export var CompileMetadataResolver = (function () {
             }
             if (dirMeta.entryComponents) {
                 entryComponentMetadata = flattenAndDedupeArray(dirMeta.entryComponents)
-                    .map(function (type) { return _this._getEntryComponentMetadata(type); })
+                    .map(function (type) { return _this._getIdentifierMetadata(type); })
                     .concat(entryComponentMetadata);
             }
             if (!selector) {
@@ -390,12 +290,12 @@ export var CompileMetadataResolver = (function () {
             }
         }
         var /** @type {?} */ providers = [];
-        if (dirMeta.providers != null) {
+        if (isPresent(dirMeta.providers)) {
             providers = this._getProvidersMetadata(dirMeta.providers, entryComponentMetadata, "providers for \"" + stringifyType(directiveType) + "\"", [], directiveType);
         }
         var /** @type {?} */ queries = [];
         var /** @type {?} */ viewQueries = [];
-        if (dirMeta.queries != null) {
+        if (isPresent(dirMeta.queries)) {
             queries = this._getQueriesMetadata(dirMeta.queries, false, directiveType);
             viewQueries = this._getQueriesMetadata(dirMeta.queries, true, directiveType);
         }
@@ -413,17 +313,9 @@ export var CompileMetadataResolver = (function () {
             viewProviders: viewProviders,
             queries: queries,
             viewQueries: viewQueries,
-            entryComponents: entryComponentMetadata,
-            wrapperType: this.getDirectiveWrapperClass(directiveType),
-            componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
-                undefined,
-            componentFactory: nonNormalizedTemplateMetadata ?
-                this.getComponentFactory(selector, directiveType) :
-                undefined
+            entryComponents: entryComponentMetadata
         });
-        cacheEntry = { metadata: metadata, annotation: dirMeta };
-        this._nonNormalizedDirectiveCache.set(directiveType, cacheEntry);
-        return cacheEntry;
+        return { metadata: metadata, annotation: dirMeta };
     };
     /**
      *  Gets the metadata for the given directive.
@@ -614,7 +506,7 @@ export var CompileMetadataResolver = (function () {
         }
         if (meta.entryComponents) {
             entryComponents.push.apply(entryComponents, flattenAndDedupeArray(meta.entryComponents)
-                .map(function (type) { return _this._getEntryComponentMetadata(type); }));
+                .map(function (type) { return _this._getIdentifierMetadata(type); }));
         }
         if (meta.bootstrap) {
             flattenAndDedupeArray(meta.bootstrap).forEach(function (type) {
@@ -625,7 +517,7 @@ export var CompileMetadataResolver = (function () {
                 bootstrapComponents.push(_this._getIdentifierMetadata(type));
             });
         }
-        entryComponents.push.apply(entryComponents, bootstrapComponents.map(function (type) { return _this._getEntryComponentMetadata(type.reference); }));
+        entryComponents.push.apply(entryComponents, bootstrapComponents);
         if (meta.schemas) {
             schemas.push.apply(schemas, flattenAndDedupeArray(meta.schemas));
         }
@@ -873,7 +765,7 @@ export var CompileMetadataResolver = (function () {
                     else if (paramEntry instanceof Inject) {
                         token = paramEntry.token;
                     }
-                    else if (isValidType(paramEntry) && token == null) {
+                    else if (isValidType(paramEntry) && isBlank(token)) {
                         token = paramEntry;
                     }
                 });
@@ -881,7 +773,7 @@ export var CompileMetadataResolver = (function () {
             else {
                 token = param;
             }
-            if (token == null) {
+            if (isBlank(token)) {
                 hasUnknownDeps = true;
                 return null;
             }
@@ -933,15 +825,11 @@ export var CompileMetadataResolver = (function () {
             else {
                 provider = resolveForwardRef(provider);
                 var /** @type {?} */ providerMeta = void 0;
-                if (provider && typeof provider === 'object' && provider.hasOwnProperty('provide')) {
-                    _this._validateProvider(provider);
+                if (provider && typeof provider == 'object' && provider.hasOwnProperty('provide')) {
                     providerMeta = new cpl.ProviderMeta(provider.provide, provider);
                 }
                 else if (isValidType(provider)) {
                     providerMeta = new cpl.ProviderMeta(provider, { useClass: provider });
-                }
-                else if (provider === void 0) {
-                    _this._reportError(new SyntaxError("Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using 'barrel' index.ts files."));
                 }
                 else {
                     var /** @type {?} */ providersInfo = ((providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
@@ -971,15 +859,6 @@ export var CompileMetadataResolver = (function () {
     };
     /**
      * @param {?} provider
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._validateProvider = function (provider) {
-        if (provider.hasOwnProperty('useClass') && provider.useClass == null) {
-            this._reportError(new SyntaxError("Invalid provider for " + stringifyType(provider.provide) + ". useClass cannot be " + provider.useClass + ".\n           Usually it happens when:\n           1. There's a circular dependency (might be caused by using index.ts (barrel) files).\n           2. Class was used before it was declared. Use forwardRef in this case."));
-        }
-    };
-    /**
-     * @param {?} provider
      * @param {?=} type
      * @return {?}
      */
@@ -997,28 +876,12 @@ export var CompileMetadataResolver = (function () {
         }
         extractIdentifiers(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach(function (identifier) {
-            var /** @type {?} */ entry = _this._getEntryComponentMetadata(identifier.reference);
-            if (entry) {
-                components.push(entry);
+            if (_this._directiveResolver.isDirective(identifier.reference) ||
+                _this._loadSummary(identifier.reference, cpl.CompileSummaryKind.Directive)) {
+                components.push(identifier);
             }
         });
         return components;
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype._getEntryComponentMetadata = function (dirType) {
-        var /** @type {?} */ dirMeta = this.getNonNormalizedDirectiveMetadata(dirType);
-        if (dirMeta) {
-            return { componentType: dirType, componentFactory: dirMeta.metadata.componentFactory };
-        }
-        else {
-            var /** @type {?} */ dirSummary = (this._loadSummary(dirType, cpl.CompileSummaryKind.Directive));
-            if (dirSummary) {
-                return { componentType: dirType, componentFactory: dirSummary.componentFactory };
-            }
-        }
     };
     /**
      * @param {?} provider
@@ -1124,13 +987,12 @@ export var CompileMetadataResolver = (function () {
         { type: SummaryResolver, },
         { type: ElementSchemaRegistry, },
         { type: DirectiveNormalizer, },
-        { type: StaticSymbolCache, decorators: [{ type: Optional },] },
         { type: ReflectorReader, },
         { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
     ]; };
     CompileMetadataResolver = __decorate([
         CompilerInjectable(), 
-        __metadata('design:paramtypes', [NgModuleResolver, DirectiveResolver, PipeResolver, SummaryResolver, ElementSchemaRegistry, DirectiveNormalizer, StaticSymbolCache, ReflectorReader, Function])
+        __metadata('design:paramtypes', [NgModuleResolver, DirectiveResolver, PipeResolver, SummaryResolver, ElementSchemaRegistry, DirectiveNormalizer, ReflectorReader, Function])
     ], CompileMetadataResolver);
     return CompileMetadataResolver;
 }());
@@ -1140,8 +1002,6 @@ function CompileMetadataResolver_tsickle_Closure_declarations() {
      * @type {?}
      */
     CompileMetadataResolver.ctorParameters;
-    /** @type {?} */
-    CompileMetadataResolver.prototype._nonNormalizedDirectiveCache;
     /** @type {?} */
     CompileMetadataResolver.prototype._directiveCache;
     /** @type {?} */
@@ -1164,8 +1024,6 @@ function CompileMetadataResolver_tsickle_Closure_declarations() {
     CompileMetadataResolver.prototype._schemaRegistry;
     /** @type {?} */
     CompileMetadataResolver.prototype._directiveNormalizer;
-    /** @type {?} */
-    CompileMetadataResolver.prototype._staticSymbolCache;
     /** @type {?} */
     CompileMetadataResolver.prototype._reflector;
     /** @type {?} */
