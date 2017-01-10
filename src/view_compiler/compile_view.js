@@ -110,7 +110,7 @@ export var CompileView = (function () {
             var directiveInstance_1 = o.THIS_EXPR.prop('context');
             this.component.viewQueries.forEach(function (queryMeta, queryIndex) {
                 var propName = "_viewQuery_" + tokenName(queryMeta.selectors[0]) + "_" + queryIndex;
-                var queryList = createQueryList(queryMeta, directiveInstance_1, propName, _this);
+                var queryList = createQueryList(propName, _this);
                 var query = new CompileQuery(queryMeta, queryList, directiveInstance_1, _this);
                 addQueryToTokenMap(viewQueries, query);
             });

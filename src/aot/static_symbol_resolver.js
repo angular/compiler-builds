@@ -404,7 +404,6 @@ function StaticSymbolResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticSymbolResolver.prototype.errorRecorder;
 }
-var /** @type {?} */ UNDERSCORE_CHAR_CODE = 95;
 /**
  * @param {?} identifier
  * @return {?}

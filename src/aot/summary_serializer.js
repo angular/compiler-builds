@@ -6,7 +6,6 @@ var __extends = (this && this.__extends) || function (d, b) {
 import { CompileSummaryKind } from '../compile_metadata';
 import { ValueTransformer, visitValue } from '../util';
 import { StaticSymbol } from './static_symbol';
-var /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
 /**
  * @param {?} summaryResolver
  * @param {?} symbolResolver

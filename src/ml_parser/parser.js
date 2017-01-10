@@ -341,7 +341,7 @@ var _TreeBuilder = (function () {
         }
         var /** @type {?} */ tagDef = this.getTagDefinition(el.name);
         var _a = this._getParentElementSkippingContainers(), parent = _a.parent, container = _a.container;
-        if (isPresent(parent) && tagDef.requireExtraParent(parent.name)) {
+        if (parent && tagDef.requireExtraParent(parent.name)) {
             var /** @type {?} */ newParent = new html.Element(tagDef.parentToAdd, [], [], el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
             this._insertBeforeContainer(parent, container, newParent);
         }

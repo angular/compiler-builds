@@ -16,7 +16,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { Pipe, resolveForwardRef } from '@angular/core';
 import { ListWrapper } from './facade/collection';
-import { isPresent, stringify } from './facade/lang';
+import { stringify } from './facade/lang';
 import { CompilerInjectable } from './injectable';
 import { ReflectorReader, reflector } from './private_import_core';
 /**
@@ -58,9 +58,9 @@ export var PipeResolver = (function () {
     PipeResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         var /** @type {?} */ metas = this._reflector.annotations(resolveForwardRef(type));
-        if (isPresent(metas)) {
+        if (metas) {
             var /** @type {?} */ annotation = ListWrapper.findLast(metas, _isPipeMetadata);
-            if (isPresent(annotation)) {
+            if (annotation) {
                 return annotation;
             }
         }

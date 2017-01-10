@@ -298,30 +298,6 @@ export var JitCompiler = (function () {
         return compiledTemplate;
     };
     /**
-     * @param {?} compType
-     * @param {?} isHost
-     * @return {?}
-     */
-    JitCompiler.prototype._assertComponentKnown = function (compType, isHost) {
-        var /** @type {?} */ compiledTemplate = isHost ? this._compiledHostTemplateCache.get(compType) :
-            this._compiledTemplateCache.get(compType);
-        if (!compiledTemplate) {
-            throw new Error("Illegal state: Compiled view for component " + stringify(compType) + " (host: " + isHost + ") does not exist!");
-        }
-        return compiledTemplate;
-    };
-    /**
-     * @param {?} dirType
-     * @return {?}
-     */
-    JitCompiler.prototype._assertDirectiveWrapper = function (dirType) {
-        var /** @type {?} */ dirWrapper = this._compiledDirectiveWrapperCache.get(dirType);
-        if (!dirWrapper) {
-            throw new Error("Illegal state: Directive wrapper for " + stringify(dirType) + " has not been compiled!");
-        }
-        return dirWrapper;
-    };
-    /**
      * @param {?} dirMeta
      * @param {?} moduleMeta
      * @return {?}
@@ -450,7 +426,6 @@ var CompiledTemplate = (function () {
         this.directives = directives;
         this._viewClass = null;
         this.isCompiled = false;
-        var self = this;
     }
     /**
      * @param {?} viewClass
