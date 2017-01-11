@@ -17,7 +17,6 @@ export function bindQueryValues(ce) {
         queriesWithReads.push.apply(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, token); }));
     });
     Object.keys(ce.referenceTokens).forEach(function (varName) {
-        var /** @type {?} */ token = ce.referenceTokens[varName];
         var /** @type {?} */ varToken = { value: varName };
         queriesWithReads.push.apply(queriesWithReads, ce.getQueriesFor(varToken).map(function (query) { return new _QueryWithRead(query, varToken); }));
     });

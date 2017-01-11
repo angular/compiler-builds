@@ -20,5 +20,5 @@ export declare class CompileQuery {
     private _isStatic();
     generateStatements(targetStaticMethod: CompileMethod, targetDynamicMethod: CompileMethod): void;
 }
-export declare function createQueryList(query: CompileQueryMetadata, directiveInstance: o.Expression, propertyName: string, compileView: CompileView): o.Expression;
+export declare function createQueryList(propertyName: string, compileView: CompileView): o.Expression;
 export declare function addQueryToTokenMap(map: Map<any, CompileQuery[]>, query: CompileQuery): void;

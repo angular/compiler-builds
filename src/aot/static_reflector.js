@@ -786,14 +786,6 @@ function PopulatedScope_tsickle_Closure_declarations() {
     PopulatedScope.prototype.bindings;
 }
 /**
- * @param {?} a
- * @param {?} b
- * @return {?}
- */
-function sameSymbol(a, b) {
-    return a === b;
-}
-/**
  * @param {?} value
  * @return {?}
  */

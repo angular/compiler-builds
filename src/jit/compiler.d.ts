@@ -53,8 +53,6 @@ export declare class JitCompiler implements Compiler {
     clearCache(): void;
     private _createCompiledHostTemplate(compType, ngModule);
     private _createCompiledTemplate(compMeta, ngModule);
-    private _assertComponentKnown(compType, isHost);
-    private _assertDirectiveWrapper(dirType);
     private _compileDirectiveWrapper(dirMeta, moduleMeta);
     private _compileTemplate(template);
     private _resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
