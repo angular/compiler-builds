@@ -225,7 +225,7 @@ export var CompileElement = (function (_super) {
                 }
             });
             var /** @type {?} */ propName = "_" + tokenName(resolvedProvider.token) + "_" + _this.nodeIndex + "_" + _this.instances.size;
-            var /** @type {?} */ instance = createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, _this);
+            var /** @type {?} */ instance = createProviderProperty(propName, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager, _this);
             if (isDirectiveWrapper) {
                 _this.directiveWrapperInstance.set(tokenReference(resolvedProvider.token), instance);
                 _this.instances.set(tokenReference(resolvedProvider.token), DirectiveWrapperExpressions.context(instance));
@@ -336,7 +336,7 @@ export var CompileElement = (function (_super) {
      */
     CompileElement.prototype._addQuery = function (queryMeta, directiveInstance) {
         var /** @type {?} */ propName = "_query_" + tokenName(queryMeta.selectors[0]) + "_" + this.nodeIndex + "_" + this._queryCount++;
-        var /** @type {?} */ queryList = createQueryList(queryMeta, directiveInstance, propName, this.view);
+        var /** @type {?} */ queryList = createQueryList(propName, this.view);
         var /** @type {?} */ query = new CompileQuery(queryMeta, queryList, directiveInstance, this.view);
         addQueryToTokenMap(this._queries, query);
         return query;
@@ -459,14 +459,13 @@ function createInjectInternalCondition(nodeIndex, childNodeCount, provider, prov
 }
 /**
  * @param {?} propName
- * @param {?} provider
  * @param {?} providerValueExpressions
  * @param {?} isMulti
  * @param {?} isEager
  * @param {?} compileElement
  * @return {?}
  */
-function createProviderProperty(propName, provider, providerValueExpressions, isMulti, isEager, compileElement) {
+function createProviderProperty(propName, providerValueExpressions, isMulti, isEager, compileElement) {
     var /** @type {?} */ view = compileElement.view;
     var /** @type {?} */ resolvedProviderValueExpr;
     var /** @type {?} */ type;

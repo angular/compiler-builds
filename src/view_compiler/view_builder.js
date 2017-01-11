@@ -740,7 +740,6 @@ function generateCreateEmbeddedViewsMethod(view) {
     view.nodes.forEach(function (node) {
         if (node instanceof CompileElement) {
             if (node.embeddedView) {
-                var /** @type {?} */ parentNodeIndex = node.isRootElement() ? null : node.parent.nodeIndex;
                 stmts.push(new o.IfStmt(nodeIndexVar.equals(o.literal(node.nodeIndex)), [new o.ReturnStatement(node.embeddedView.classExpr.instantiate([
                         ViewProperties.viewUtils, o.THIS_EXPR, o.literal(node.nodeIndex), node.renderNode,
                         node.viewContainer
