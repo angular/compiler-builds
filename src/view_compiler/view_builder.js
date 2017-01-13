@@ -449,7 +449,7 @@ function createViewTopLevelStmts(view, targetStatements) {
             o.literal(view.component.template.ngContentSelectors.length),
             ViewEncapsulationEnum.fromValue(view.component.template.encapsulation),
             view.styles,
-            o.literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; })),
+            o.literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; }), null, true),
         ]))
             .toDeclStmt(o.importType(createIdentifier(Identifiers.RenderComponentType))));
     }
