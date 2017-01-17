@@ -19,7 +19,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, Attribute, Component, ComponentFactory, Host, Inject, Injectable, OpaqueToken, Optional, Self, SkipSelf, Type, resolveForwardRef } from '@angular/core';
+import { AnimationAnimateMetadata, AnimationGroupMetadata, AnimationKeyframesSequenceMetadata, AnimationStateDeclarationMetadata, AnimationStateTransitionMetadata, AnimationStyleMetadata, AnimationWithStepsMetadata, Attribute, Component, ComponentFactory, Host, Inject, Injectable, InjectionToken, Optional, Self, SkipSelf, Type, resolveForwardRef } from '@angular/core';
 import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
 import { ngfactoryFilePath } from './aot/util';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
@@ -37,7 +37,7 @@ import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { SummaryResolver } from './summary_resolver';
 import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, SyntaxError, ValueTransformer, visitValue } from './util';
-export var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new OpaqueToken('ErrorCollector');
+export var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
 // Design notes:
 // - don't lazily create metadata:
 //   For some metadata, we need to do async work sometimes,

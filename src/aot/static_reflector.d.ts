@@ -13,6 +13,7 @@ export declare class StaticReflector implements ReflectorReader {
     private parameterCache;
     private methodCache;
     private conversionMap;
+    private injectionToken;
     private opaqueToken;
     constructor(symbolResolver: StaticSymbolResolver, knownMetadataClasses?: {
         name: string;

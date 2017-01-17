@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.3-5237b1c
+ * @license Angular v4.0.0-beta.3-d169c24
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
   /**
    * @stable
    */
-  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.3-5237b1c');
+  var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.3-d169c24');
 
   /**
    * @license
@@ -11236,7 +11236,7 @@
    *
    * This is currently an internal-only feature and not meant for general use.
    */
-  var /** @type {?} */ TEMPLATE_TRANSFORMS = new _angular_core.OpaqueToken('TemplateTransforms');
+  var /** @type {?} */ TEMPLATE_TRANSFORMS = new _angular_core.InjectionToken('TemplateTransforms');
   var TemplateParseError = (function (_super) {
       __extends(TemplateParseError, _super);
       /**
@@ -17862,7 +17862,7 @@
   var __metadata$9 = (this && this.__metadata) || function (k, v) {
       if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
   };
-  var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new _angular_core.OpaqueToken('ErrorCollector');
+  var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new _angular_core.InjectionToken('ErrorCollector');
   // Design notes:
   // - don't lazily create metadata:
   //   For some metadata, we need to do async work sometimes,
@@ -25401,7 +25401,8 @@
       coreDecorators: '@angular/core/src/metadata',
       diDecorators: '@angular/core/src/di/metadata',
       diMetadata: '@angular/core/src/di/metadata',
-      diOpaqueToken: '@angular/core/src/di/opaque_token',
+      diInjectionToken: '@angular/core/src/di/injection_token',
+      diOpaqueToken: '@angular/core/src/di/injection_token',
       animationMetadata: '@angular/core/src/animation/metadata',
       provider: '@angular/core/src/di/provider'
   };
@@ -25655,8 +25656,9 @@
        * @return {?}
        */
       StaticReflector.prototype.initializeConversionMap = function () {
-          var coreDecorators = ANGULAR_IMPORT_LOCATIONS.coreDecorators, diDecorators = ANGULAR_IMPORT_LOCATIONS.diDecorators, diMetadata = ANGULAR_IMPORT_LOCATIONS.diMetadata, diOpaqueToken = ANGULAR_IMPORT_LOCATIONS.diOpaqueToken, animationMetadata = ANGULAR_IMPORT_LOCATIONS.animationMetadata, provider = ANGULAR_IMPORT_LOCATIONS.provider;
-          this.opaqueToken = this.findDeclaration(diOpaqueToken, 'OpaqueToken');
+          var coreDecorators = ANGULAR_IMPORT_LOCATIONS.coreDecorators, diDecorators = ANGULAR_IMPORT_LOCATIONS.diDecorators, diMetadata = ANGULAR_IMPORT_LOCATIONS.diMetadata, diInjectionToken = ANGULAR_IMPORT_LOCATIONS.diInjectionToken, diOpaqueToken = ANGULAR_IMPORT_LOCATIONS.diOpaqueToken, animationMetadata = ANGULAR_IMPORT_LOCATIONS.animationMetadata, provider = ANGULAR_IMPORT_LOCATIONS.provider;
+          this.injectionToken = this.findDeclaration(diInjectionToken, 'InjectionToken');
+          this.opaqueToken = this.findDeclaration(diInjectionToken, 'OpaqueToken');
           this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Host'), _angular_core.Host);
           this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Injectable'), _angular_core.Injectable);
           this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Self'), _angular_core.Self);
@@ -25823,7 +25825,8 @@
                   }
                   if (expression instanceof StaticSymbol) {
                       // Stop simplification at builtin symbols
-                      if (expression === self.opaqueToken || self.conversionMap.has(expression)) {
+                      if (expression === self.injectionToken || expression === self.opaqueToken ||
+                          self.conversionMap.has(expression)) {
                           return expression;
                       }
                       else {
@@ -25954,9 +25957,9 @@
                                   // Determine if the function is a built-in conversion
                                   staticSymbol = simplifyInContext(context, expression['expression'], depth + 1);
                                   if (staticSymbol instanceof StaticSymbol) {
-                                      if (staticSymbol === self.opaqueToken) {
-                                          // if somebody calls new OpaqueToken, don't create an OpaqueToken,
-                                          // but rather return the symbol to which the OpaqueToken is assigned to.
+                                      if (staticSymbol === self.injectionToken || staticSymbol === self.opaqueToken) {
+                                          // if somebody calls new InjectionToken, don't create an InjectionToken,
+                                          // but rather return the symbol to which the InjectionToken is assigned to.
                                           return context;
                                       }
                                       var /** @type {?} */ argExpressions = expression['arguments'] || [];
@@ -28120,7 +28123,7 @@
           throw new Error("No ResourceLoader implementation has been provided. Can't read the url \"" + url + "\"");
       }
   };
-  var /** @type {?} */ baseHtmlParser = new _angular_core.OpaqueToken('HtmlParser');
+  var /** @type {?} */ baseHtmlParser = new _angular_core.InjectionToken('HtmlParser');
   /**
    * A set of providers that provide `JitCompiler` and its dependencies to use for
    * template compilation.

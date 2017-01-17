@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationEntryMetadata, Component, Directive, OpaqueToken, Type } from '@angular/core';
+import { AnimationEntryMetadata, Component, Directive, InjectionToken, Type } from '@angular/core';
 import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
 import * as cpl from './compile_metadata';
 import { DirectiveNormalizer } from './directive_normalizer';
@@ -16,7 +16,7 @@ import { ReflectorReader } from './private_import_core';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { SummaryResolver } from './summary_resolver';
 export declare type ErrorCollector = (error: any, type?: any) => void;
-export declare const ERROR_COLLECTOR_TOKEN: OpaqueToken;
+export declare const ERROR_COLLECTOR_TOKEN: InjectionToken<{}>;
 export declare class CompileMetadataResolver {
     private _ngModuleResolver;
     private _directiveResolver;

@@ -16,7 +16,8 @@ var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
     coreDecorators: '@angular/core/src/metadata',
     diDecorators: '@angular/core/src/di/metadata',
     diMetadata: '@angular/core/src/di/metadata',
-    diOpaqueToken: '@angular/core/src/di/opaque_token',
+    diInjectionToken: '@angular/core/src/di/injection_token',
+    diOpaqueToken: '@angular/core/src/di/injection_token',
     animationMetadata: '@angular/core/src/animation/metadata',
     provider: '@angular/core/src/di/provider'
 };
@@ -270,8 +271,9 @@ export var StaticReflector = (function () {
      * @return {?}
      */
     StaticReflector.prototype.initializeConversionMap = function () {
-        var coreDecorators = ANGULAR_IMPORT_LOCATIONS.coreDecorators, diDecorators = ANGULAR_IMPORT_LOCATIONS.diDecorators, diMetadata = ANGULAR_IMPORT_LOCATIONS.diMetadata, diOpaqueToken = ANGULAR_IMPORT_LOCATIONS.diOpaqueToken, animationMetadata = ANGULAR_IMPORT_LOCATIONS.animationMetadata, provider = ANGULAR_IMPORT_LOCATIONS.provider;
-        this.opaqueToken = this.findDeclaration(diOpaqueToken, 'OpaqueToken');
+        var coreDecorators = ANGULAR_IMPORT_LOCATIONS.coreDecorators, diDecorators = ANGULAR_IMPORT_LOCATIONS.diDecorators, diMetadata = ANGULAR_IMPORT_LOCATIONS.diMetadata, diInjectionToken = ANGULAR_IMPORT_LOCATIONS.diInjectionToken, diOpaqueToken = ANGULAR_IMPORT_LOCATIONS.diOpaqueToken, animationMetadata = ANGULAR_IMPORT_LOCATIONS.animationMetadata, provider = ANGULAR_IMPORT_LOCATIONS.provider;
+        this.injectionToken = this.findDeclaration(diInjectionToken, 'InjectionToken');
+        this.opaqueToken = this.findDeclaration(diInjectionToken, 'OpaqueToken');
         this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Host'), Host);
         this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Injectable'), Injectable);
         this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Self'), Self);
@@ -438,7 +440,8 @@ export var StaticReflector = (function () {
                 }
                 if (expression instanceof StaticSymbol) {
                     // Stop simplification at builtin symbols
-                    if (expression === self.opaqueToken || self.conversionMap.has(expression)) {
+                    if (expression === self.injectionToken || expression === self.opaqueToken ||
+                        self.conversionMap.has(expression)) {
                         return expression;
                     }
                     else {
@@ -569,9 +572,9 @@ export var StaticReflector = (function () {
                                 // Determine if the function is a built-in conversion
                                 staticSymbol = simplifyInContext(context, expression['expression'], depth + 1);
                                 if (staticSymbol instanceof StaticSymbol) {
-                                    if (staticSymbol === self.opaqueToken) {
-                                        // if somebody calls new OpaqueToken, don't create an OpaqueToken,
-                                        // but rather return the symbol to which the OpaqueToken is assigned to.
+                                    if (staticSymbol === self.injectionToken || staticSymbol === self.opaqueToken) {
+                                        // if somebody calls new InjectionToken, don't create an InjectionToken,
+                                        // but rather return the symbol to which the InjectionToken is assigned to.
                                         return context;
                                     }
                                     var /** @type {?} */ argExpressions = expression['arguments'] || [];
@@ -651,6 +654,8 @@ function StaticReflector_tsickle_Closure_declarations() {
     StaticReflector.prototype.methodCache;
     /** @type {?} */
     StaticReflector.prototype.conversionMap;
+    /** @type {?} */
+    StaticReflector.prototype.injectionToken;
     /** @type {?} */
     StaticReflector.prototype.opaqueToken;
     /** @type {?} */

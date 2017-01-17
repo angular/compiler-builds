@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { OpaqueToken, SchemaMetadata } from '@angular/core';
+import { InjectionToken, SchemaMetadata } from '@angular/core';
 import { CompileDirectiveMetadata, CompileDirectiveSummary, CompilePipeSummary, CompileTypeMetadata } from '../compile_metadata';
 import { Parser } from '../expression_parser/parser';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
@@ -23,7 +23,7 @@ import { TemplateAst, TemplateAstVisitor } from './template_ast';
  *
  * This is currently an internal-only feature and not meant for general use.
  */
-export declare const TEMPLATE_TRANSFORMS: OpaqueToken;
+export declare const TEMPLATE_TRANSFORMS: InjectionToken<{}>;
 export declare class TemplateParseError extends ParseError {
     constructor(message: string, span: ParseSourceSpan, level: ParseErrorLevel);
 }

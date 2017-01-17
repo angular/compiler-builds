@@ -19,7 +19,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { Inject, OpaqueToken, Optional } from '@angular/core';
+import { Inject, InjectionToken, Optional } from '@angular/core';
 import { identifierName } from '../compile_metadata';
 import { Parser } from '../expression_parser/parser';
 import { isPresent } from '../facade/lang';
@@ -74,7 +74,7 @@ var /** @type {?} */ TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
  *
  * This is currently an internal-only feature and not meant for general use.
  */
-export var /** @type {?} */ TEMPLATE_TRANSFORMS = new OpaqueToken('TemplateTransforms');
+export var /** @type {?} */ TEMPLATE_TRANSFORMS = new InjectionToken('TemplateTransforms');
 export var TemplateParseError = (function (_super) {
     __extends(TemplateParseError, _super);
     /**
