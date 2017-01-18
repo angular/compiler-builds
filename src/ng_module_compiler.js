@@ -26,8 +26,8 @@ import { ParseLocation, ParseSourceFile, ParseSourceSpan } from './parse_util';
 import { LifecycleHooks } from './private_import_core';
 import { NgModuleProviderAnalyzer } from './provider_analyzer';
 /**
- *  This is currently not read, but will probably be used in the future.
-  * We keep it as we already pass it through all the rigth places...
+ * This is currently not read, but will probably be used in the future.
+ * We keep it as we already pass it through all the rigth places...
  */
 export var ComponentFactoryDependency = (function () {
     /**

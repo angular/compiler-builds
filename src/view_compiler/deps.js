@@ -1,6 +1,6 @@
 /**
- *  This is currently not read, but will probably be used in the future.
-  * We keep it as we already pass it through all the right places...
+ * This is currently not read, but will probably be used in the future.
+ * We keep it as we already pass it through all the right places...
  */
 export var ComponentViewDependency = (function () {
     /**
@@ -16,8 +16,8 @@ function ComponentViewDependency_tsickle_Closure_declarations() {
     ComponentViewDependency.prototype.compType;
 }
 /**
- *  This is currently not read, but will probably be used in the future.
-  * We keep it as we already pass it through all the right places...
+ * This is currently not read, but will probably be used in the future.
+ * We keep it as we already pass it through all the right places...
  */
 export var ComponentFactoryDependency = (function () {
     /**
@@ -33,8 +33,8 @@ function ComponentFactoryDependency_tsickle_Closure_declarations() {
     ComponentFactoryDependency.prototype.compType;
 }
 /**
- *  This is currently not read, but will probably be used in the future.
-  * We keep it as we already pass it through all the right places...
+ * This is currently not read, but will probably be used in the future.
+ * We keep it as we already pass it through all the right places...
  */
 export var DirectiveWrapperDependency = (function () {
     /**

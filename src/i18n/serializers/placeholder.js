@@ -38,10 +38,11 @@ var /** @type {?} */ TAG_TO_PLACEHOLDER_NAMES = {
     'UL': 'UNORDERED_LIST',
 };
 /**
- *  Creates unique names for placeholder with different content.
-  * *
-  * Returns the same placeholder name when the content is identical.
-  * *
+ * Creates unique names for placeholder with different content.
+ *
+ * Returns the same placeholder name when the content is identical.
+ *
+ * \@internal
  */
 export var PlaceholderRegistry = (function () {
     function PlaceholderRegistry() {

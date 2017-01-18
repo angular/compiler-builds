@@ -50,7 +50,6 @@ export var Xtb = (function () {
     Xtb.prototype.digest = function (message) { return digest(message); };
     return Xtb;
 }());
-// Extract messages as xml nodes from the xtb file
 var XtbParser = (function () {
     function XtbParser() {
     }
@@ -152,7 +151,6 @@ function XtbParser_tsickle_Closure_declarations() {
     /** @type {?} */
     XtbParser.prototype._mlNodesByMsgId;
 }
-// Convert ml nodes (xtb syntax) to i18n nodes
 var XmlToI18n = (function () {
     function XmlToI18n() {
     }

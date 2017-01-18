@@ -20,13 +20,6 @@ import { stringify } from './facade/lang';
 import { CompilerInjectable } from './injectable';
 import { ReflectorReader, reflector } from './private_import_core';
 import { splitAtColon } from './util';
-/*
- * Resolve a `Type` for {@link Directive}.
- *
- * This interface can be overridden by the application developer to create custom behavior.
- *
- * See {@link Compiler}
- */
 export var DirectiveResolver = (function () {
     /**
      * @param {?=} _reflector
@@ -44,7 +37,7 @@ export var DirectiveResolver = (function () {
         return typeMetadata && typeMetadata.some(isDirectiveMetadata);
     };
     /**
-     *  Return {@link Directive} for a given `Type`.
+     * Return {\@link Directive} for a given `Type`.
      * @param {?} type
      * @param {?=} throwIfNotFound
      * @return {?}

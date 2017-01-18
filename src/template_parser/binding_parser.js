@@ -30,7 +30,7 @@ BoundPropertyType[BoundPropertyType.DEFAULT] = "DEFAULT";
 BoundPropertyType[BoundPropertyType.LITERAL_ATTR] = "LITERAL_ATTR";
 BoundPropertyType[BoundPropertyType.ANIMATION] = "ANIMATION";
 /**
- *  Represents a parsed property.
+ * Represents a parsed property.
  */
 export var BoundProperty = (function () {
     /**
@@ -74,7 +74,7 @@ function BoundProperty_tsickle_Closure_declarations() {
     BoundProperty.prototype.sourceSpan;
 }
 /**
- *  Parses bindings in templates and in the directive host area.
+ * Parses bindings in templates and in the directive host area.
  */
 export var BindingParser = (function () {
     /**

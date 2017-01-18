@@ -16,7 +16,7 @@ var /** @type {?} */ _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
 var /** @type {?} */ MEANING_SEPARATOR = '|';
 var /** @type {?} */ ID_SEPARATOR = '@@';
 /**
- *  Extract translatable messages from an html AST
+ * Extract translatable messages from an html AST
  * @param {?} nodes
  * @param {?} interpolationConfig
  * @param {?} implicitTags
@@ -62,10 +62,11 @@ _VisitorMode.Merge = 1;
 _VisitorMode[_VisitorMode.Extract] = "Extract";
 _VisitorMode[_VisitorMode.Merge] = "Merge";
 /**
- *  This Visitor is used:
-  * 1. to extract all the translatable strings from an html AST (see `extract()`),
-  * 2. to replace the translatable strings with the actual translations (see `merge()`)
-  * *
+ * This Visitor is used:
+ * 1. to extract all the translatable strings from an html AST (see `extract()`),
+ * 2. to replace the translatable strings with the actual translations (see `merge()`)
+ *
+ * \@internal
  */
 var _Visitor = (function () {
     /**
@@ -77,7 +78,7 @@ var _Visitor = (function () {
         this._implicitAttrs = _implicitAttrs;
     }
     /**
-     *  Extracts the messages from the tree
+     * Extracts the messages from the tree
      * @param {?} nodes
      * @param {?} interpolationConfig
      * @return {?}
@@ -92,7 +93,7 @@ var _Visitor = (function () {
         return new ExtractionResult(this._messages, this._errors);
     };
     /**
-     *  Returns a tree where all translatable nodes are translated
+     * Returns a tree where all translatable nodes are translated
      * @param {?} nodes
      * @param {?} translations
      * @param {?} interpolationConfig
@@ -384,10 +385,10 @@ var _Visitor = (function () {
         return translatedAttributes;
     };
     /**
-     *  Add the node as a child of the block when:
-      * - we are in a block,
-      * - we are not inside a ICU message (those are handled separately),
-      * - the node is a "direct child" of the block
+     * Add the node as a child of the block when:
+     * - we are in a block,
+     * - we are not inside a ICU message (those are handled separately),
+     * - the node is a "direct child" of the block
      * @param {?} node
      * @return {?}
      */
@@ -397,7 +398,7 @@ var _Visitor = (function () {
         }
     };
     /**
-     *  Marks the start of a section, see `_closeTranslatableSection`
+     * Marks the start of a section, see `_closeTranslatableSection`
      * @param {?} node
      * @return {?}
      */
@@ -411,9 +412,9 @@ var _Visitor = (function () {
     };
     Object.defineProperty(_Visitor.prototype, "_isInTranslatableSection", {
         /**
-         *  A translatable section could be:
-          * - the content of translatable element,
-          * - nodes between `<!-- i18n -->` and `<!-- /i18n -->` comments
+         * A translatable section could be:
+         * - the content of translatable element,
+         * - nodes between `<!-- i18n -->` and `<!-- /i18n -->` comments
          * @return {?}
          */
         get: function () {
@@ -423,20 +424,20 @@ var _Visitor = (function () {
         configurable: true
     });
     /**
-     *  Terminates a section.
-      * *
-      * If a section has only one significant children (comments not significant) then we should not
-      * keep the message from this children:
-      * *
-      * `<p i18n="meaning|description">{ICU message}</p>` would produce two messages:
-      * - one for the <p> content with meaning and description,
-      * - another one for the ICU message.
-      * *
-      * In this case the last message is discarded as it contains less information (the AST is
-      * otherwise identical).
-      * *
-      * Note that we should still keep messages extracted from attributes inside the section (ie in the
-      * ICU message here)
+     * Terminates a section.
+     *
+     * If a section has only one significant children (comments not significant) then we should not
+     * keep the message from this children:
+     *
+     * `<p i18n="meaning|description">{ICU message}</p>` would produce two messages:
+     * - one for the <p> content with meaning and description,
+     * - another one for the ICU message.
+     *
+     * In this case the last message is discarded as it contains less information (the AST is
+     * otherwise identical).
+     *
+     * Note that we should still keep messages extracted from attributes inside the section (ie in the
+     * ICU message here)
      * @param {?} node
      * @param {?} directChildren
      * @return {?}

@@ -33,7 +33,7 @@ import { StaticSymbolCache } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
 import { AotSummaryResolver } from './summary_resolver';
 /**
- *  Creates a new AotCompiler based on options and a host.
+ * Creates a new AotCompiler based on options and a host.
  * @param {?} compilerHost
  * @param {?} options
  * @return {?}

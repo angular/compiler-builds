@@ -149,7 +149,6 @@ var _Visitor = (function () {
 export function digest(message) {
     return decimalDigest(message);
 }
-// TC requires at least one non-empty example on placeholders
 var ExampleVisitor = (function () {
     function ExampleVisitor() {
     }

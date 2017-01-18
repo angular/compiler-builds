@@ -33,8 +33,8 @@ export function isStyleUrlResolvable(url) {
     return schemeMatch === null || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';
 }
 /**
- *  Rewrites stylesheets by resolving and removing the @import urls that
-  * are either relative or don't have a `package:` scheme
+ * Rewrites stylesheets by resolving and removing the \@import urls that
+ * are either relative or don't have a `package:` scheme
  * @param {?} resolver
  * @param {?} baseUrl
  * @param {?} cssText

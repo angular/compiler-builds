@@ -31,12 +31,12 @@ function ResolvedStaticSymbol_tsickle_Closure_declarations() {
 }
 var /** @type {?} */ SUPPORTED_SCHEMA_VERSION = 3;
 /**
- *  This class is responsible for loading metadata per symbol,
-  * and normalizing references between symbols.
-  * *
-  * Internally, it only uses symbols without members,
-  * and deduces the values for symbols with members based
-  * on these symbols.
+ * This class is responsible for loading metadata per symbol,
+ * and normalizing references between symbols.
+ *
+ * Internally, it only uses symbols without members,
+ * and deduces the values for symbols with members based
+ * on these symbols.
  */
 export var StaticSymbolResolver = (function () {
     /**
@@ -133,9 +133,9 @@ export var StaticSymbolResolver = (function () {
         return summary ? new ResolvedStaticSymbol(staticSymbol, summary.metadata) : null;
     };
     /**
-     *  getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
-      * All types passed to the StaticResolver should be pseudo-types returned by this method.
-      * *
+     * getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
+     * All types passed to the StaticResolver should be pseudo-types returned by this method.
+     *
      * @param {?} declarationFile the absolute path of the file where the symbol is declared
      * @param {?} name the name of the type.
      * @param {?=} members

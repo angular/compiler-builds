@@ -27,11 +27,11 @@ function _isPipeMetadata(type) {
     return type instanceof Pipe;
 }
 /**
- *  Resolve a `Type` for {@link Pipe}.
-  * *
-  * This interface can be overridden by the application developer to create custom behavior.
-  * *
-  * See {@link Compiler}
+ * Resolve a `Type` for {\@link Pipe}.
+ *
+ * This interface can be overridden by the application developer to create custom behavior.
+ *
+ * See {\@link Compiler}
  */
 export var PipeResolver = (function () {
     /**
@@ -50,7 +50,7 @@ export var PipeResolver = (function () {
         return typeMetadata && typeMetadata.some(_isPipeMetadata);
     };
     /**
-     *  Return {@link Pipe} for a given `Type`.
+     * Return {\@link Pipe} for a given `Type`.
      * @param {?} type
      * @param {?=} throwIfNotFound
      * @return {?}
