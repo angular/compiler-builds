@@ -20,18 +20,19 @@ import { CompilerInjectable } from '../injectable';
 import { DEFAULT_INTERPOLATION_CONFIG } from '../ml_parser/interpolation_config';
 import { ASTWithSource, Binary, BindingPipe, Chain, Conditional, EmptyExpr, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding } from './ast';
 import { EOF, Lexer, TokenType, isIdentifier, isQuote } from './lexer';
-export class SplitInterpolation {
+export var SplitInterpolation = (function () {
     /**
      * @param {?} strings
      * @param {?} expressions
      * @param {?} offsets
      */
-    constructor(strings, expressions, offsets) {
+    function SplitInterpolation(strings, expressions, offsets) {
         this.strings = strings;
         this.expressions = expressions;
         this.offsets = offsets;
     }
-}
+    return SplitInterpolation;
+}());
 function SplitInterpolation_tsickle_Closure_declarations() {
     /** @type {?} */
     SplitInterpolation.prototype.strings;
@@ -40,18 +41,19 @@ function SplitInterpolation_tsickle_Closure_declarations() {
     /** @type {?} */
     SplitInterpolation.prototype.offsets;
 }
-export class TemplateBindingParseResult {
+export var TemplateBindingParseResult = (function () {
     /**
      * @param {?} templateBindings
      * @param {?} warnings
      * @param {?} errors
      */
-    constructor(templateBindings, warnings, errors) {
+    function TemplateBindingParseResult(templateBindings, warnings, errors) {
         this.templateBindings = templateBindings;
         this.warnings = warnings;
         this.errors = errors;
     }
-}
+    return TemplateBindingParseResult;
+}());
 function TemplateBindingParseResult_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateBindingParseResult.prototype.templateBindings;
@@ -65,14 +67,14 @@ function TemplateBindingParseResult_tsickle_Closure_declarations() {
  * @return {?}
  */
 function _createInterpolateRegExp(config) {
-    const /** @type {?} */ pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
+    var /** @type {?} */ pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
     return new RegExp(pattern, 'g');
 }
-export let Parser = class Parser {
+export var Parser = (function () {
     /**
      * @param {?} _lexer
      */
-    constructor(_lexer) {
+    function Parser(_lexer) {
         this._lexer = _lexer;
         this.errors = [];
     }
@@ -82,38 +84,41 @@ export let Parser = class Parser {
      * @param {?=} interpolationConfig
      * @return {?}
      */
-    parseAction(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    Parser.prototype.parseAction = function (input, location, interpolationConfig) {
+        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
         this._checkNoInterpolation(input, location, interpolationConfig);
-        const /** @type {?} */ sourceToLex = this._stripComments(input);
-        const /** @type {?} */ tokens = this._lexer.tokenize(this._stripComments(input));
-        const /** @type {?} */ ast = new _ParseAST(input, location, tokens, sourceToLex.length, true, this.errors, input.length - sourceToLex.length)
+        var /** @type {?} */ sourceToLex = this._stripComments(input);
+        var /** @type {?} */ tokens = this._lexer.tokenize(this._stripComments(input));
+        var /** @type {?} */ ast = new _ParseAST(input, location, tokens, sourceToLex.length, true, this.errors, input.length - sourceToLex.length)
             .parseChain();
         return new ASTWithSource(ast, input, location, this.errors);
-    }
+    };
     /**
      * @param {?} input
      * @param {?} location
      * @param {?=} interpolationConfig
      * @return {?}
      */
-    parseBinding(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const /** @type {?} */ ast = this._parseBindingAst(input, location, interpolationConfig);
+    Parser.prototype.parseBinding = function (input, location, interpolationConfig) {
+        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+        var /** @type {?} */ ast = this._parseBindingAst(input, location, interpolationConfig);
         return new ASTWithSource(ast, input, location, this.errors);
-    }
+    };
     /**
      * @param {?} input
      * @param {?} location
      * @param {?=} interpolationConfig
      * @return {?}
      */
-    parseSimpleBinding(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const /** @type {?} */ ast = this._parseBindingAst(input, location, interpolationConfig);
-        const /** @type {?} */ errors = SimpleExpressionChecker.check(ast);
+    Parser.prototype.parseSimpleBinding = function (input, location, interpolationConfig) {
+        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+        var /** @type {?} */ ast = this._parseBindingAst(input, location, interpolationConfig);
+        var /** @type {?} */ errors = SimpleExpressionChecker.check(ast);
         if (errors.length > 0) {
-            this._reportError(`Host binding expression cannot contain ${errors.join(' ')}`, input, location);
+            this._reportError("Host binding expression cannot contain " + errors.join(' '), input, location);
         }
         return new ASTWithSource(ast, input, location, this.errors);
-    }
+    };
     /**
      * @param {?} message
      * @param {?} input
@@ -121,103 +126,105 @@ export let Parser = class Parser {
      * @param {?=} ctxLocation
      * @return {?}
      */
-    _reportError(message, input, errLocation, ctxLocation) {
+    Parser.prototype._reportError = function (message, input, errLocation, ctxLocation) {
         this.errors.push(new ParserError(message, input, errLocation, ctxLocation));
-    }
+    };
     /**
      * @param {?} input
      * @param {?} location
      * @param {?} interpolationConfig
      * @return {?}
      */
-    _parseBindingAst(input, location, interpolationConfig) {
+    Parser.prototype._parseBindingAst = function (input, location, interpolationConfig) {
         // Quotes expressions use 3rd-party expression language. We don't want to use
         // our lexer or parser for that, so we check for that ahead of time.
-        const /** @type {?} */ quote = this._parseQuote(input, location);
+        var /** @type {?} */ quote = this._parseQuote(input, location);
         if (isPresent(quote)) {
             return quote;
         }
         this._checkNoInterpolation(input, location, interpolationConfig);
-        const /** @type {?} */ sourceToLex = this._stripComments(input);
-        const /** @type {?} */ tokens = this._lexer.tokenize(sourceToLex);
+        var /** @type {?} */ sourceToLex = this._stripComments(input);
+        var /** @type {?} */ tokens = this._lexer.tokenize(sourceToLex);
         return new _ParseAST(input, location, tokens, sourceToLex.length, false, this.errors, input.length - sourceToLex.length)
             .parseChain();
-    }
+    };
     /**
      * @param {?} input
      * @param {?} location
      * @return {?}
      */
-    _parseQuote(input, location) {
+    Parser.prototype._parseQuote = function (input, location) {
         if (isBlank(input))
             return null;
-        const /** @type {?} */ prefixSeparatorIndex = input.indexOf(':');
+        var /** @type {?} */ prefixSeparatorIndex = input.indexOf(':');
         if (prefixSeparatorIndex == -1)
             return null;
-        const /** @type {?} */ prefix = input.substring(0, prefixSeparatorIndex).trim();
+        var /** @type {?} */ prefix = input.substring(0, prefixSeparatorIndex).trim();
         if (!isIdentifier(prefix))
             return null;
-        const /** @type {?} */ uninterpretedExpression = input.substring(prefixSeparatorIndex + 1);
+        var /** @type {?} */ uninterpretedExpression = input.substring(prefixSeparatorIndex + 1);
         return new Quote(new ParseSpan(0, input.length), prefix, uninterpretedExpression, location);
-    }
+    };
     /**
      * @param {?} prefixToken
      * @param {?} input
      * @param {?} location
      * @return {?}
      */
-    parseTemplateBindings(prefixToken, input, location) {
-        const /** @type {?} */ tokens = this._lexer.tokenize(input);
+    Parser.prototype.parseTemplateBindings = function (prefixToken, input, location) {
+        var /** @type {?} */ tokens = this._lexer.tokenize(input);
         if (prefixToken) {
             // Prefix the tokens with the tokens from prefixToken but have them take no space (0 index).
-            const /** @type {?} */ prefixTokens = this._lexer.tokenize(prefixToken).map(t => {
+            var /** @type {?} */ prefixTokens = this._lexer.tokenize(prefixToken).map(function (t) {
                 t.index = 0;
                 return t;
             });
-            tokens.unshift(...prefixTokens);
+            tokens.unshift.apply(tokens, prefixTokens);
         }
         return new _ParseAST(input, location, tokens, input.length, false, this.errors, 0)
             .parseTemplateBindings();
-    }
+    };
     /**
      * @param {?} input
      * @param {?} location
      * @param {?=} interpolationConfig
      * @return {?}
      */
-    parseInterpolation(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const /** @type {?} */ split = this.splitInterpolation(input, location, interpolationConfig);
+    Parser.prototype.parseInterpolation = function (input, location, interpolationConfig) {
+        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+        var /** @type {?} */ split = this.splitInterpolation(input, location, interpolationConfig);
         if (split == null)
             return null;
-        const /** @type {?} */ expressions = [];
-        for (let /** @type {?} */ i = 0; i < split.expressions.length; ++i) {
-            const /** @type {?} */ expressionText = split.expressions[i];
-            const /** @type {?} */ sourceToLex = this._stripComments(expressionText);
-            const /** @type {?} */ tokens = this._lexer.tokenize(this._stripComments(split.expressions[i]));
-            const /** @type {?} */ ast = new _ParseAST(input, location, tokens, sourceToLex.length, false, this.errors, split.offsets[i] + (expressionText.length - sourceToLex.length))
+        var /** @type {?} */ expressions = [];
+        for (var /** @type {?} */ i = 0; i < split.expressions.length; ++i) {
+            var /** @type {?} */ expressionText = split.expressions[i];
+            var /** @type {?} */ sourceToLex = this._stripComments(expressionText);
+            var /** @type {?} */ tokens = this._lexer.tokenize(this._stripComments(split.expressions[i]));
+            var /** @type {?} */ ast = new _ParseAST(input, location, tokens, sourceToLex.length, false, this.errors, split.offsets[i] + (expressionText.length - sourceToLex.length))
                 .parseChain();
             expressions.push(ast);
         }
         return new ASTWithSource(new Interpolation(new ParseSpan(0, isBlank(input) ? 0 : input.length), split.strings, expressions), input, location, this.errors);
-    }
+    };
     /**
      * @param {?} input
      * @param {?} location
      * @param {?=} interpolationConfig
      * @return {?}
      */
-    splitInterpolation(input, location, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const /** @type {?} */ regexp = _createInterpolateRegExp(interpolationConfig);
-        const /** @type {?} */ parts = input.split(regexp);
+    Parser.prototype.splitInterpolation = function (input, location, interpolationConfig) {
+        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+        var /** @type {?} */ regexp = _createInterpolateRegExp(interpolationConfig);
+        var /** @type {?} */ parts = input.split(regexp);
         if (parts.length <= 1) {
             return null;
         }
-        const /** @type {?} */ strings = [];
-        const /** @type {?} */ expressions = [];
-        const /** @type {?} */ offsets = [];
-        let /** @type {?} */ offset = 0;
-        for (let /** @type {?} */ i = 0; i < parts.length; i++) {
-            const /** @type {?} */ part = parts[i];
+        var /** @type {?} */ strings = [];
+        var /** @type {?} */ expressions = [];
+        var /** @type {?} */ offsets = [];
+        var /** @type {?} */ offset = 0;
+        for (var /** @type {?} */ i = 0; i < parts.length; i++) {
+            var /** @type {?} */ part = parts[i];
             if (i % 2 === 0) {
                 // fixed string
                 strings.push(part);
@@ -230,38 +237,38 @@ export let Parser = class Parser {
                 offset += part.length + interpolationConfig.end.length;
             }
             else {
-                this._reportError('Blank expressions are not allowed in interpolated strings', input, `at column ${this._findInterpolationErrorColumn(parts, i, interpolationConfig)} in`, location);
+                this._reportError('Blank expressions are not allowed in interpolated strings', input, "at column " + this._findInterpolationErrorColumn(parts, i, interpolationConfig) + " in", location);
                 expressions.push('$implict');
                 offsets.push(offset);
             }
         }
         return new SplitInterpolation(strings, expressions, offsets);
-    }
+    };
     /**
      * @param {?} input
      * @param {?} location
      * @return {?}
      */
-    wrapLiteralPrimitive(input, location) {
+    Parser.prototype.wrapLiteralPrimitive = function (input, location) {
         return new ASTWithSource(new LiteralPrimitive(new ParseSpan(0, isBlank(input) ? 0 : input.length), input), input, location, this.errors);
-    }
+    };
     /**
      * @param {?} input
      * @return {?}
      */
-    _stripComments(input) {
-        const /** @type {?} */ i = this._commentStart(input);
+    Parser.prototype._stripComments = function (input) {
+        var /** @type {?} */ i = this._commentStart(input);
         return isPresent(i) ? input.substring(0, i).trim() : input;
-    }
+    };
     /**
      * @param {?} input
      * @return {?}
      */
-    _commentStart(input) {
-        let /** @type {?} */ outerQuote = null;
-        for (let /** @type {?} */ i = 0; i < input.length - 1; i++) {
-            const /** @type {?} */ char = input.charCodeAt(i);
-            const /** @type {?} */ nextChar = input.charCodeAt(i + 1);
+    Parser.prototype._commentStart = function (input) {
+        var /** @type {?} */ outerQuote = null;
+        for (var /** @type {?} */ i = 0; i < input.length - 1; i++) {
+            var /** @type {?} */ char = input.charCodeAt(i);
+            var /** @type {?} */ nextChar = input.charCodeAt(i + 1);
             if (char === chars.$SLASH && nextChar == chars.$SLASH && isBlank(outerQuote))
                 return i;
             if (outerQuote === char) {
@@ -272,47 +279,48 @@ export let Parser = class Parser {
             }
         }
         return null;
-    }
+    };
     /**
      * @param {?} input
      * @param {?} location
      * @param {?} interpolationConfig
      * @return {?}
      */
-    _checkNoInterpolation(input, location, interpolationConfig) {
-        const /** @type {?} */ regexp = _createInterpolateRegExp(interpolationConfig);
-        const /** @type {?} */ parts = input.split(regexp);
+    Parser.prototype._checkNoInterpolation = function (input, location, interpolationConfig) {
+        var /** @type {?} */ regexp = _createInterpolateRegExp(interpolationConfig);
+        var /** @type {?} */ parts = input.split(regexp);
         if (parts.length > 1) {
-            this._reportError(`Got interpolation (${interpolationConfig.start}${interpolationConfig.end}) where expression was expected`, input, `at column ${this._findInterpolationErrorColumn(parts, 1, interpolationConfig)} in`, location);
+            this._reportError("Got interpolation (" + interpolationConfig.start + interpolationConfig.end + ") where expression was expected", input, "at column " + this._findInterpolationErrorColumn(parts, 1, interpolationConfig) + " in", location);
         }
-    }
+    };
     /**
      * @param {?} parts
      * @param {?} partInErrIdx
      * @param {?} interpolationConfig
      * @return {?}
      */
-    _findInterpolationErrorColumn(parts, partInErrIdx, interpolationConfig) {
-        let /** @type {?} */ errLocation = '';
-        for (let /** @type {?} */ j = 0; j < partInErrIdx; j++) {
+    Parser.prototype._findInterpolationErrorColumn = function (parts, partInErrIdx, interpolationConfig) {
+        var /** @type {?} */ errLocation = '';
+        for (var /** @type {?} */ j = 0; j < partInErrIdx; j++) {
             errLocation += j % 2 === 0 ?
                 parts[j] :
-                `${interpolationConfig.start}${parts[j]}${interpolationConfig.end}`;
+                "" + interpolationConfig.start + parts[j] + interpolationConfig.end;
         }
         return errLocation.length;
-    }
-};
-Parser = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [Lexer])
-], Parser);
+    };
+    Parser = __decorate([
+        CompilerInjectable(), 
+        __metadata('design:paramtypes', [Lexer])
+    ], Parser);
+    return Parser;
+}());
 function Parser_tsickle_Closure_declarations() {
     /** @type {?} */
     Parser.prototype.errors;
     /** @type {?} */
     Parser.prototype._lexer;
 }
-export class _ParseAST {
+export var _ParseAST = (function () {
     /**
      * @param {?} input
      * @param {?} location
@@ -322,7 +330,7 @@ export class _ParseAST {
      * @param {?} errors
      * @param {?} offset
      */
-    constructor(input, location, tokens, inputLength, parseAction, errors, offset) {
+    function _ParseAST(input, location, tokens, inputLength, parseAction, errors, offset) {
         this.input = input;
         this.location = location;
         this.tokens = tokens;
@@ -339,35 +347,43 @@ export class _ParseAST {
      * @param {?} offset
      * @return {?}
      */
-    peek(offset) {
-        const /** @type {?} */ i = this.index + offset;
+    _ParseAST.prototype.peek = function (offset) {
+        var /** @type {?} */ i = this.index + offset;
         return i < this.tokens.length ? this.tokens[i] : EOF;
-    }
-    /**
-     * @return {?}
-     */
-    get next() { return this.peek(0); }
-    /**
-     * @return {?}
-     */
-    get inputIndex() {
-        return (this.index < this.tokens.length) ? this.next.index + this.offset :
-            this.inputLength + this.offset;
-    }
+    };
+    Object.defineProperty(_ParseAST.prototype, "next", {
+        /**
+         * @return {?}
+         */
+        get: function () { return this.peek(0); },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(_ParseAST.prototype, "inputIndex", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            return (this.index < this.tokens.length) ? this.next.index + this.offset :
+                this.inputLength + this.offset;
+        },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * @param {?} start
      * @return {?}
      */
-    span(start) { return new ParseSpan(start, this.inputIndex); }
+    _ParseAST.prototype.span = function (start) { return new ParseSpan(start, this.inputIndex); };
     /**
      * @return {?}
      */
-    advance() { this.index++; }
+    _ParseAST.prototype.advance = function () { this.index++; };
     /**
      * @param {?} code
      * @return {?}
      */
-    optionalCharacter(code) {
+    _ParseAST.prototype.optionalCharacter = function (code) {
         if (this.next.isCharacter(code)) {
             this.advance();
             return true;
@@ -375,25 +391,25 @@ export class _ParseAST {
         else {
             return false;
         }
-    }
+    };
     /**
      * @return {?}
      */
-    peekKeywordLet() { return this.next.isKeywordLet(); }
+    _ParseAST.prototype.peekKeywordLet = function () { return this.next.isKeywordLet(); };
     /**
      * @param {?} code
      * @return {?}
      */
-    expectCharacter(code) {
+    _ParseAST.prototype.expectCharacter = function (code) {
         if (this.optionalCharacter(code))
             return;
-        this.error(`Missing expected ${String.fromCharCode(code)}`);
-    }
+        this.error("Missing expected " + String.fromCharCode(code));
+    };
     /**
      * @param {?} op
      * @return {?}
      */
-    optionalOperator(op) {
+    _ParseAST.prototype.optionalOperator = function (op) {
         if (this.next.isOperator(op)) {
             this.advance();
             return true;
@@ -401,48 +417,48 @@ export class _ParseAST {
         else {
             return false;
         }
-    }
+    };
     /**
      * @param {?} operator
      * @return {?}
      */
-    expectOperator(operator) {
+    _ParseAST.prototype.expectOperator = function (operator) {
         if (this.optionalOperator(operator))
             return;
-        this.error(`Missing expected operator ${operator}`);
-    }
+        this.error("Missing expected operator " + operator);
+    };
     /**
      * @return {?}
      */
-    expectIdentifierOrKeyword() {
-        const /** @type {?} */ n = this.next;
+    _ParseAST.prototype.expectIdentifierOrKeyword = function () {
+        var /** @type {?} */ n = this.next;
         if (!n.isIdentifier() && !n.isKeyword()) {
-            this.error(`Unexpected token ${n}, expected identifier or keyword`);
+            this.error("Unexpected token " + n + ", expected identifier or keyword");
             return '';
         }
         this.advance();
         return n.toString();
-    }
+    };
     /**
      * @return {?}
      */
-    expectIdentifierOrKeywordOrString() {
-        const /** @type {?} */ n = this.next;
+    _ParseAST.prototype.expectIdentifierOrKeywordOrString = function () {
+        var /** @type {?} */ n = this.next;
         if (!n.isIdentifier() && !n.isKeyword() && !n.isString()) {
-            this.error(`Unexpected token ${n}, expected identifier, keyword, or string`);
+            this.error("Unexpected token " + n + ", expected identifier, keyword, or string");
             return '';
         }
         this.advance();
         return n.toString();
-    }
+    };
     /**
      * @return {?}
      */
-    parseChain() {
-        const /** @type {?} */ exprs = [];
-        const /** @type {?} */ start = this.inputIndex;
+    _ParseAST.prototype.parseChain = function () {
+        var /** @type {?} */ exprs = [];
+        var /** @type {?} */ start = this.inputIndex;
         while (this.index < this.tokens.length) {
-            const /** @type {?} */ expr = this.parsePipe();
+            var /** @type {?} */ expr = this.parsePipe();
             exprs.push(expr);
             if (this.optionalCharacter(chars.$SEMICOLON)) {
                 if (!this.parseAction) {
@@ -452,7 +468,7 @@ export class _ParseAST {
                 } // read all semicolons
             }
             else if (this.index < this.tokens.length) {
-                this.error(`Unexpected token '${this.next}'`);
+                this.error("Unexpected token '" + this.next + "'");
             }
         }
         if (exprs.length == 0)
@@ -460,44 +476,44 @@ export class _ParseAST {
         if (exprs.length == 1)
             return exprs[0];
         return new Chain(this.span(start), exprs);
-    }
+    };
     /**
      * @return {?}
      */
-    parsePipe() {
-        let /** @type {?} */ result = this.parseExpression();
+    _ParseAST.prototype.parsePipe = function () {
+        var /** @type {?} */ result = this.parseExpression();
         if (this.optionalOperator('|')) {
             if (this.parseAction) {
                 this.error('Cannot have a pipe in an action expression');
             }
             do {
-                const /** @type {?} */ name = this.expectIdentifierOrKeyword();
-                const /** @type {?} */ args = [];
+                var /** @type {?} */ name_1 = this.expectIdentifierOrKeyword();
+                var /** @type {?} */ args = [];
                 while (this.optionalCharacter(chars.$COLON)) {
                     args.push(this.parseExpression());
                 }
-                result = new BindingPipe(this.span(result.span.start), result, name, args);
+                result = new BindingPipe(this.span(result.span.start), result, name_1, args);
             } while (this.optionalOperator('|'));
         }
         return result;
-    }
+    };
     /**
      * @return {?}
      */
-    parseExpression() { return this.parseConditional(); }
+    _ParseAST.prototype.parseExpression = function () { return this.parseConditional(); };
     /**
      * @return {?}
      */
-    parseConditional() {
-        const /** @type {?} */ start = this.inputIndex;
-        const /** @type {?} */ result = this.parseLogicalOr();
+    _ParseAST.prototype.parseConditional = function () {
+        var /** @type {?} */ start = this.inputIndex;
+        var /** @type {?} */ result = this.parseLogicalOr();
         if (this.optionalOperator('?')) {
-            const /** @type {?} */ yes = this.parsePipe();
-            let /** @type {?} */ no;
+            var /** @type {?} */ yes = this.parsePipe();
+            var /** @type {?} */ no = void 0;
             if (!this.optionalCharacter(chars.$COLON)) {
-                const /** @type {?} */ end = this.inputIndex;
-                const /** @type {?} */ expression = this.input.substring(start, end);
-                this.error(`Conditional expression ${expression} requires all 3 expressions`);
+                var /** @type {?} */ end = this.inputIndex;
+                var /** @type {?} */ expression = this.input.substring(start, end);
+                this.error("Conditional expression " + expression + " requires all 3 expressions");
                 no = new EmptyExpr(this.span(start));
             }
             else {
@@ -508,124 +524,124 @@ export class _ParseAST {
         else {
             return result;
         }
-    }
+    };
     /**
      * @return {?}
      */
-    parseLogicalOr() {
+    _ParseAST.prototype.parseLogicalOr = function () {
         // '||'
-        let /** @type {?} */ result = this.parseLogicalAnd();
+        var /** @type {?} */ result = this.parseLogicalAnd();
         while (this.optionalOperator('||')) {
-            const /** @type {?} */ right = this.parseLogicalAnd();
+            var /** @type {?} */ right = this.parseLogicalAnd();
             result = new Binary(this.span(result.span.start), '||', result, right);
         }
         return result;
-    }
+    };
     /**
      * @return {?}
      */
-    parseLogicalAnd() {
+    _ParseAST.prototype.parseLogicalAnd = function () {
         // '&&'
-        let /** @type {?} */ result = this.parseEquality();
+        var /** @type {?} */ result = this.parseEquality();
         while (this.optionalOperator('&&')) {
-            const /** @type {?} */ right = this.parseEquality();
+            var /** @type {?} */ right = this.parseEquality();
             result = new Binary(this.span(result.span.start), '&&', result, right);
         }
         return result;
-    }
+    };
     /**
      * @return {?}
      */
-    parseEquality() {
+    _ParseAST.prototype.parseEquality = function () {
         // '==','!=','===','!=='
-        let /** @type {?} */ result = this.parseRelational();
+        var /** @type {?} */ result = this.parseRelational();
         while (this.next.type == TokenType.Operator) {
-            const /** @type {?} */ operator = this.next.strValue;
+            var /** @type {?} */ operator = this.next.strValue;
             switch (operator) {
                 case '==':
                 case '===':
                 case '!=':
                 case '!==':
                     this.advance();
-                    const /** @type {?} */ right = this.parseRelational();
+                    var /** @type {?} */ right = this.parseRelational();
                     result = new Binary(this.span(result.span.start), operator, result, right);
                     continue;
             }
             break;
         }
         return result;
-    }
+    };
     /**
      * @return {?}
      */
-    parseRelational() {
+    _ParseAST.prototype.parseRelational = function () {
         // '<', '>', '<=', '>='
-        let /** @type {?} */ result = this.parseAdditive();
+        var /** @type {?} */ result = this.parseAdditive();
         while (this.next.type == TokenType.Operator) {
-            const /** @type {?} */ operator = this.next.strValue;
+            var /** @type {?} */ operator = this.next.strValue;
             switch (operator) {
                 case '<':
                 case '>':
                 case '<=':
                 case '>=':
                     this.advance();
-                    const /** @type {?} */ right = this.parseAdditive();
+                    var /** @type {?} */ right = this.parseAdditive();
                     result = new Binary(this.span(result.span.start), operator, result, right);
                     continue;
             }
             break;
         }
         return result;
-    }
+    };
     /**
      * @return {?}
      */
-    parseAdditive() {
+    _ParseAST.prototype.parseAdditive = function () {
         // '+', '-'
-        let /** @type {?} */ result = this.parseMultiplicative();
+        var /** @type {?} */ result = this.parseMultiplicative();
         while (this.next.type == TokenType.Operator) {
-            const /** @type {?} */ operator = this.next.strValue;
+            var /** @type {?} */ operator = this.next.strValue;
             switch (operator) {
                 case '+':
                 case '-':
                     this.advance();
-                    let /** @type {?} */ right = this.parseMultiplicative();
+                    var /** @type {?} */ right = this.parseMultiplicative();
                     result = new Binary(this.span(result.span.start), operator, result, right);
                     continue;
             }
             break;
         }
         return result;
-    }
+    };
     /**
      * @return {?}
      */
-    parseMultiplicative() {
+    _ParseAST.prototype.parseMultiplicative = function () {
         // '*', '%', '/'
-        let /** @type {?} */ result = this.parsePrefix();
+        var /** @type {?} */ result = this.parsePrefix();
         while (this.next.type == TokenType.Operator) {
-            const /** @type {?} */ operator = this.next.strValue;
+            var /** @type {?} */ operator = this.next.strValue;
             switch (operator) {
                 case '*':
                 case '%':
                 case '/':
                     this.advance();
-                    let /** @type {?} */ right = this.parsePrefix();
+                    var /** @type {?} */ right = this.parsePrefix();
                     result = new Binary(this.span(result.span.start), operator, result, right);
                     continue;
             }
             break;
         }
         return result;
-    }
+    };
     /**
      * @return {?}
      */
-    parsePrefix() {
+    _ParseAST.prototype.parsePrefix = function () {
         if (this.next.type == TokenType.Operator) {
-            const /** @type {?} */ start = this.inputIndex;
-            const /** @type {?} */ operator = this.next.strValue;
-            let /** @type {?} */ result;
+            var /** @type {?} */ start = this.inputIndex;
+            var /** @type {?} */ operator = this.next.strValue;
+            var /** @type {?} */ result = void 0;
             switch (operator) {
                 case '+':
                     this.advance();
@@ -641,12 +657,12 @@ export class _ParseAST {
             }
         }
         return this.parseCallChain();
-    }
+    };
     /**
      * @return {?}
      */
-    parseCallChain() {
-        let /** @type {?} */ result = this.parsePrimary();
+    _ParseAST.prototype.parseCallChain = function () {
+        var /** @type {?} */ result = this.parsePrimary();
         while (true) {
             if (this.optionalCharacter(chars.$PERIOD)) {
                 result = this.parseAccessMemberOrMethodCall(result, false);
@@ -656,11 +672,11 @@ export class _ParseAST {
             }
             else if (this.optionalCharacter(chars.$LBRACKET)) {
                 this.rbracketsExpected++;
-                const /** @type {?} */ key = this.parsePipe();
+                var /** @type {?} */ key = this.parsePipe();
                 this.rbracketsExpected--;
                 this.expectCharacter(chars.$RBRACKET);
                 if (this.optionalOperator('=')) {
-                    const /** @type {?} */ value = this.parseConditional();
+                    var /** @type {?} */ value = this.parseConditional();
                     result = new KeyedWrite(this.span(result.span.start), result, key, value);
                 }
                 else {
@@ -669,7 +685,7 @@ export class _ParseAST {
             }
             else if (this.optionalCharacter(chars.$LPAREN)) {
                 this.rparensExpected++;
-                const /** @type {?} */ args = this.parseCallArguments();
+                var /** @type {?} */ args = this.parseCallArguments();
                 this.rparensExpected--;
                 this.expectCharacter(chars.$RPAREN);
                 result = new FunctionCall(this.span(result.span.start), result, args);
@@ -678,15 +694,15 @@ export class _ParseAST {
                 return result;
             }
         }
-    }
+    };
     /**
      * @return {?}
      */
-    parsePrimary() {
-        const /** @type {?} */ start = this.inputIndex;
+    _ParseAST.prototype.parsePrimary = function () {
+        var /** @type {?} */ start = this.inputIndex;
         if (this.optionalCharacter(chars.$LPAREN)) {
             this.rparensExpected++;
-            const /** @type {?} */ result = this.parsePipe();
+            var /** @type {?} */ result = this.parsePipe();
             this.rparensExpected--;
             this.expectCharacter(chars.$RPAREN);
             return result;
@@ -713,7 +729,7 @@ export class _ParseAST {
         }
         else if (this.optionalCharacter(chars.$LBRACKET)) {
             this.rbracketsExpected++;
-            const /** @type {?} */ elements = this.parseExpressionList(chars.$RBRACKET);
+            var /** @type {?} */ elements = this.parseExpressionList(chars.$RBRACKET);
             this.rbracketsExpected--;
             this.expectCharacter(chars.$RBRACKET);
             return new LiteralArray(this.span(start), elements);
@@ -725,49 +741,49 @@ export class _ParseAST {
             return this.parseAccessMemberOrMethodCall(new ImplicitReceiver(this.span(start)), false);
         }
         else if (this.next.isNumber()) {
-            const /** @type {?} */ value = this.next.toNumber();
+            var /** @type {?} */ value = this.next.toNumber();
             this.advance();
             return new LiteralPrimitive(this.span(start), value);
         }
         else if (this.next.isString()) {
-            const /** @type {?} */ literalValue = this.next.toString();
+            var /** @type {?} */ literalValue = this.next.toString();
             this.advance();
             return new LiteralPrimitive(this.span(start), literalValue);
         }
         else if (this.index >= this.tokens.length) {
-            this.error(`Unexpected end of expression: ${this.input}`);
+            this.error("Unexpected end of expression: " + this.input);
             return new EmptyExpr(this.span(start));
         }
         else {
-            this.error(`Unexpected token ${this.next}`);
+            this.error("Unexpected token " + this.next);
             return new EmptyExpr(this.span(start));
         }
-    }
+    };
     /**
      * @param {?} terminator
      * @return {?}
      */
-    parseExpressionList(terminator) {
-        const /** @type {?} */ result = [];
+    _ParseAST.prototype.parseExpressionList = function (terminator) {
+        var /** @type {?} */ result = [];
         if (!this.next.isCharacter(terminator)) {
             do {
                 result.push(this.parsePipe());
             } while (this.optionalCharacter(chars.$COMMA));
         }
         return result;
-    }
+    };
     /**
      * @return {?}
      */
-    parseLiteralMap() {
-        const /** @type {?} */ keys = [];
-        const /** @type {?} */ values = [];
-        const /** @type {?} */ start = this.inputIndex;
+    _ParseAST.prototype.parseLiteralMap = function () {
+        var /** @type {?} */ keys = [];
+        var /** @type {?} */ values = [];
+        var /** @type {?} */ start = this.inputIndex;
         this.expectCharacter(chars.$LBRACE);
         if (!this.optionalCharacter(chars.$RBRACE)) {
             this.rbracesExpected++;
             do {
-                const /** @type {?} */ key = this.expectIdentifierOrKeywordOrString();
+                var /** @type {?} */ key = this.expectIdentifierOrKeywordOrString();
                 keys.push(key);
                 this.expectCharacter(chars.$COLON);
                 values.push(this.parsePipe());
@@ -776,21 +792,22 @@ export class _ParseAST {
             this.expectCharacter(chars.$RBRACE);
         }
         return new LiteralMap(this.span(start), keys, values);
-    }
+    };
     /**
      * @param {?} receiver
      * @param {?=} isSafe
      * @return {?}
      */
-    parseAccessMemberOrMethodCall(receiver, isSafe = false) {
-        const /** @type {?} */ start = receiver.span.start;
-        const /** @type {?} */ id = this.expectIdentifierOrKeyword();
+    _ParseAST.prototype.parseAccessMemberOrMethodCall = function (receiver, isSafe) {
+        if (isSafe === void 0) { isSafe = false; }
+        var /** @type {?} */ start = receiver.span.start;
+        var /** @type {?} */ id = this.expectIdentifierOrKeyword();
         if (this.optionalCharacter(chars.$LPAREN)) {
             this.rparensExpected++;
-            const /** @type {?} */ args = this.parseCallArguments();
+            var /** @type {?} */ args = this.parseCallArguments();
             this.expectCharacter(chars.$RPAREN);
             this.rparensExpected--;
-            const /** @type {?} */ span = this.span(start);
+            var /** @type {?} */ span = this.span(start);
             return isSafe ? new SafeMethodCall(span, receiver, id, args) :
                 new MethodCall(span, receiver, id, args);
         }
@@ -810,7 +827,7 @@ export class _ParseAST {
                         this.error('Bindings cannot contain assignments');
                         return new EmptyExpr(this.span(start));
                     }
-                    const /** @type {?} */ value = this.parseConditional();
+                    var /** @type {?} */ value = this.parseConditional();
                     return new PropertyWrite(this.span(start), receiver, id, value);
                 }
                 else {
@@ -818,26 +835,26 @@ export class _ParseAST {
                 }
             }
         }
-    }
+    };
     /**
      * @return {?}
      */
-    parseCallArguments() {
+    _ParseAST.prototype.parseCallArguments = function () {
         if (this.next.isCharacter(chars.$RPAREN))
             return [];
-        const /** @type {?} */ positionals = [];
+        var /** @type {?} */ positionals = [];
         do {
             positionals.push(this.parsePipe());
         } while (this.optionalCharacter(chars.$COMMA));
         return (positionals);
-    }
+    };
     /**
      * An identifier, a keyword, a string with an optional `-` inbetween.
      * @return {?}
      */
-    expectTemplateBindingKey() {
-        let /** @type {?} */ result = '';
-        let /** @type {?} */ operatorFound = false;
+    _ParseAST.prototype.expectTemplateBindingKey = function () {
+        var /** @type {?} */ result = '';
+        var /** @type {?} */ operatorFound = false;
         do {
             result += this.expectIdentifierOrKeywordOrString();
             operatorFound = this.optionalOperator('-');
@@ -846,21 +863,21 @@ export class _ParseAST {
             }
         } while (operatorFound);
         return result.toString();
-    }
+    };
     /**
      * @return {?}
      */
-    parseTemplateBindings() {
-        const /** @type {?} */ bindings = [];
-        let /** @type {?} */ prefix = null;
-        const /** @type {?} */ warnings = [];
+    _ParseAST.prototype.parseTemplateBindings = function () {
+        var /** @type {?} */ bindings = [];
+        var /** @type {?} */ prefix = null;
+        var /** @type {?} */ warnings = [];
         while (this.index < this.tokens.length) {
-            const /** @type {?} */ start = this.inputIndex;
-            const /** @type {?} */ keyIsVar = this.peekKeywordLet();
+            var /** @type {?} */ start = this.inputIndex;
+            var /** @type {?} */ keyIsVar = this.peekKeywordLet();
             if (keyIsVar) {
                 this.advance();
             }
-            let /** @type {?} */ key = this.expectTemplateBindingKey();
+            var /** @type {?} */ key = this.expectTemplateBindingKey();
             if (!keyIsVar) {
                 if (prefix == null) {
                     prefix = key;
@@ -870,53 +887,55 @@ export class _ParseAST {
                 }
             }
             this.optionalCharacter(chars.$COLON);
-            let /** @type {?} */ name = null;
-            let /** @type {?} */ expression = null;
+            var /** @type {?} */ name_2 = null;
+            var /** @type {?} */ expression = null;
             if (keyIsVar) {
                 if (this.optionalOperator('=')) {
-                    name = this.expectTemplateBindingKey();
+                    name_2 = this.expectTemplateBindingKey();
                 }
                 else {
-                    name = '\$implicit';
+                    name_2 = '\$implicit';
                 }
             }
             else if (this.next !== EOF && !this.peekKeywordLet()) {
-                const /** @type {?} */ start = this.inputIndex;
-                const /** @type {?} */ ast = this.parsePipe();
-                const /** @type {?} */ source = this.input.substring(start - this.offset, this.inputIndex - this.offset);
+                var /** @type {?} */ start_1 = this.inputIndex;
+                var /** @type {?} */ ast = this.parsePipe();
+                var /** @type {?} */ source = this.input.substring(start_1 - this.offset, this.inputIndex - this.offset);
                 expression = new ASTWithSource(ast, source, this.location, this.errors);
             }
-            bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
+            bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name_2, expression));
             if (!this.optionalCharacter(chars.$SEMICOLON)) {
                 this.optionalCharacter(chars.$COMMA);
             }
         }
         return new TemplateBindingParseResult(bindings, warnings, this.errors);
-    }
+    };
     /**
      * @param {?} message
      * @param {?=} index
      * @return {?}
      */
-    error(message, index = null) {
+    _ParseAST.prototype.error = function (message, index) {
+        if (index === void 0) { index = null; }
         this.errors.push(new ParserError(message, this.input, this.locationText(index), this.location));
         this.skip();
-    }
+    };
     /**
      * @param {?=} index
      * @return {?}
      */
-    locationText(index = null) {
+    _ParseAST.prototype.locationText = function (index) {
+        if (index === void 0) { index = null; }
         if (isBlank(index))
             index = this.index;
-        return (index < this.tokens.length) ? `at column ${this.tokens[index].index + 1} in` :
-            `at the end of the expression`;
-    }
+        return (index < this.tokens.length) ? "at column " + (this.tokens[index].index + 1) + " in" :
+            "at the end of the expression";
+    };
     /**
      * @return {?}
      */
-    skip() {
-        let /** @type {?} */ n = this.next;
+    _ParseAST.prototype.skip = function () {
+        var /** @type {?} */ n = this.next;
         while (this.index < this.tokens.length && !n.isCharacter(chars.$SEMICOLON) &&
             (this.rparensExpected <= 0 || !n.isCharacter(chars.$RPAREN)) &&
             (this.rbracesExpected <= 0 || !n.isCharacter(chars.$RBRACE)) &&
@@ -927,8 +946,9 @@ export class _ParseAST {
             this.advance();
             n = this.next;
         }
-    }
-}
+    };
+    return _ParseAST;
+}());
 function _ParseAST_tsickle_Closure_declarations() {
     /** @type {?} */
     _ParseAST.prototype.rparensExpected;
@@ -953,139 +973,143 @@ function _ParseAST_tsickle_Closure_declarations() {
     /** @type {?} */
     _ParseAST.prototype.offset;
 }
-class SimpleExpressionChecker {
-    constructor() {
+var SimpleExpressionChecker = (function () {
+    function SimpleExpressionChecker() {
         this.errors = [];
     }
     /**
      * @param {?} ast
      * @return {?}
      */
-    static check(ast) {
-        const /** @type {?} */ s = new SimpleExpressionChecker();
+    SimpleExpressionChecker.check = function (ast) {
+        var /** @type {?} */ s = new SimpleExpressionChecker();
         ast.visit(s);
         return s.errors;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitImplicitReceiver(ast, context) { }
+    SimpleExpressionChecker.prototype.visitImplicitReceiver = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitInterpolation(ast, context) { }
+    SimpleExpressionChecker.prototype.visitInterpolation = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralPrimitive(ast, context) { }
+    SimpleExpressionChecker.prototype.visitLiteralPrimitive = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitPropertyRead(ast, context) { }
+    SimpleExpressionChecker.prototype.visitPropertyRead = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitPropertyWrite(ast, context) { }
+    SimpleExpressionChecker.prototype.visitPropertyWrite = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitSafePropertyRead(ast, context) { }
+    SimpleExpressionChecker.prototype.visitSafePropertyRead = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitMethodCall(ast, context) { }
+    SimpleExpressionChecker.prototype.visitMethodCall = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitSafeMethodCall(ast, context) { }
+    SimpleExpressionChecker.prototype.visitSafeMethodCall = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitFunctionCall(ast, context) { }
+    SimpleExpressionChecker.prototype.visitFunctionCall = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralArray(ast, context) { this.visitAll(ast.expressions); }
+    SimpleExpressionChecker.prototype.visitLiteralArray = function (ast, context) { this.visitAll(ast.expressions); };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralMap(ast, context) { this.visitAll(ast.values); }
+    SimpleExpressionChecker.prototype.visitLiteralMap = function (ast, context) { this.visitAll(ast.values); };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitBinary(ast, context) { }
+    SimpleExpressionChecker.prototype.visitBinary = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitPrefixNot(ast, context) { }
+    SimpleExpressionChecker.prototype.visitPrefixNot = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitConditional(ast, context) { }
+    SimpleExpressionChecker.prototype.visitConditional = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitPipe(ast, context) { this.errors.push('pipes'); }
+    SimpleExpressionChecker.prototype.visitPipe = function (ast, context) { this.errors.push('pipes'); };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitKeyedRead(ast, context) { }
+    SimpleExpressionChecker.prototype.visitKeyedRead = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitKeyedWrite(ast, context) { }
+    SimpleExpressionChecker.prototype.visitKeyedWrite = function (ast, context) { };
     /**
      * @param {?} asts
      * @return {?}
      */
-    visitAll(asts) { return asts.map(node => node.visit(this)); }
+    SimpleExpressionChecker.prototype.visitAll = function (asts) {
+        var _this = this;
+        return asts.map(function (node) { return node.visit(_this); });
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitChain(ast, context) { }
+    SimpleExpressionChecker.prototype.visitChain = function (ast, context) { };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitQuote(ast, context) { }
-}
+    SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { };
+    return SimpleExpressionChecker;
+}());
 function SimpleExpressionChecker_tsickle_Closure_declarations() {
     /** @type {?} */
     SimpleExpressionChecker.prototype.errors;

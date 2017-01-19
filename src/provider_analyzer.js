@@ -5,38 +5,47 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 import { tokenName, tokenReference } from './compile_metadata';
 import { isBlank, isPresent } from './facade/lang';
 import { Identifiers, resolveIdentifier } from './identifiers';
 import { ParseError } from './parse_util';
 import { ProviderAst, ProviderAstType } from './template_parser/template_ast';
-export class ProviderError extends ParseError {
+export var ProviderError = (function (_super) {
+    __extends(ProviderError, _super);
     /**
      * @param {?} message
      * @param {?} span
      */
-    constructor(message, span) {
-        super(span, message);
+    function ProviderError(message, span) {
+        _super.call(this, span, message);
     }
-}
-export class ProviderViewContext {
+    return ProviderError;
+}(ParseError));
+export var ProviderViewContext = (function () {
     /**
      * @param {?} component
      * @param {?} sourceSpan
      */
-    constructor(component, sourceSpan) {
+    function ProviderViewContext(component, sourceSpan) {
+        var _this = this;
         this.component = component;
         this.sourceSpan = sourceSpan;
         this.errors = [];
         this.viewQueries = _getViewQueries(component);
         this.viewProviders = new Map();
-        component.viewProviders.forEach((provider) => {
-            if (isBlank(this.viewProviders.get(tokenReference(provider.token)))) {
-                this.viewProviders.set(tokenReference(provider.token), true);
+        component.viewProviders.forEach(function (provider) {
+            if (isBlank(_this.viewProviders.get(tokenReference(provider.token)))) {
+                _this.viewProviders.set(tokenReference(provider.token), true);
             }
         });
     }
-}
+    return ProviderViewContext;
+}());
 function ProviderViewContext_tsickle_Closure_declarations() {
     /**
      * \@internal
@@ -55,7 +64,7 @@ function ProviderViewContext_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderViewContext.prototype.sourceSpan;
 }
-export class ProviderElementContext {
+export var ProviderElementContext = (function () {
     /**
      * @param {?} viewContext
      * @param {?} _parent
@@ -65,7 +74,8 @@ export class ProviderElementContext {
      * @param {?} refs
      * @param {?} _sourceSpan
      */
-    constructor(viewContext, _parent, _isViewRoot, _directiveAsts, attrs, refs, _sourceSpan) {
+    function ProviderElementContext(viewContext, _parent, _isViewRoot, _directiveAsts, attrs, refs, _sourceSpan) {
+        var _this = this;
         this.viewContext = viewContext;
         this._parent = _parent;
         this._isViewRoot = _isViewRoot;
@@ -75,82 +85,95 @@ export class ProviderElementContext {
         this._seenProviders = new Map();
         this._hasViewContainer = false;
         this._attrs = {};
-        attrs.forEach((attrAst) => this._attrs[attrAst.name] = attrAst.value);
-        const directivesMeta = _directiveAsts.map(directiveAst => directiveAst.directive);
+        attrs.forEach(function (attrAst) { return _this._attrs[attrAst.name] = attrAst.value; });
+        var directivesMeta = _directiveAsts.map(function (directiveAst) { return directiveAst.directive; });
         this._allProviders =
             _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, viewContext.errors);
         this._contentQueries = _getContentQueries(directivesMeta);
-        const queriedTokens = new Map();
-        Array.from(this._allProviders.values()).forEach((provider) => {
-            this._addQueryReadsTo(provider.token, queriedTokens);
+        var queriedTokens = new Map();
+        Array.from(this._allProviders.values()).forEach(function (provider) {
+            _this._addQueryReadsTo(provider.token, queriedTokens);
         });
-        refs.forEach((refAst) => { this._addQueryReadsTo({ value: refAst.name }, queriedTokens); });
+        refs.forEach(function (refAst) { _this._addQueryReadsTo({ value: refAst.name }, queriedTokens); });
         if (isPresent(queriedTokens.get(resolveIdentifier(Identifiers.ViewContainerRef)))) {
             this._hasViewContainer = true;
         }
         // create the providers that we know are eager first
-        Array.from(this._allProviders.values()).forEach((provider) => {
-            const eager = provider.eager || isPresent(queriedTokens.get(tokenReference(provider.token)));
+        Array.from(this._allProviders.values()).forEach(function (provider) {
+            var eager = provider.eager || isPresent(queriedTokens.get(tokenReference(provider.token)));
             if (eager) {
-                this._getOrCreateLocalProvider(provider.providerType, provider.token, true);
+                _this._getOrCreateLocalProvider(provider.providerType, provider.token, true);
             }
         });
     }
     /**
      * @return {?}
      */
-    afterElement() {
+    ProviderElementContext.prototype.afterElement = function () {
+        var _this = this;
         // collect lazy providers
-        Array.from(this._allProviders.values()).forEach((provider) => {
-            this._getOrCreateLocalProvider(provider.providerType, provider.token, false);
+        Array.from(this._allProviders.values()).forEach(function (provider) {
+            _this._getOrCreateLocalProvider(provider.providerType, provider.token, false);
         });
-    }
-    /**
-     * @return {?}
-     */
-    get transformProviders() {
-        return Array.from(this._transformedProviders.values());
-    }
-    /**
-     * @return {?}
-     */
-    get transformedDirectiveAsts() {
-        const /** @type {?} */ sortedProviderTypes = this.transformProviders.map(provider => provider.token.identifier);
-        const /** @type {?} */ sortedDirectives = this._directiveAsts.slice();
-        sortedDirectives.sort((dir1, dir2) => sortedProviderTypes.indexOf(dir1.directive.type) -
-            sortedProviderTypes.indexOf(dir2.directive.type));
-        return sortedDirectives;
-    }
-    /**
-     * @return {?}
-     */
-    get transformedHasViewContainer() { return this._hasViewContainer; }
+    };
+    Object.defineProperty(ProviderElementContext.prototype, "transformProviders", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            return Array.from(this._transformedProviders.values());
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ProviderElementContext.prototype, "transformedDirectiveAsts", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            var /** @type {?} */ sortedProviderTypes = this.transformProviders.map(function (provider) { return provider.token.identifier; });
+            var /** @type {?} */ sortedDirectives = this._directiveAsts.slice();
+            sortedDirectives.sort(function (dir1, dir2) { return sortedProviderTypes.indexOf(dir1.directive.type) -
+                sortedProviderTypes.indexOf(dir2.directive.type); });
+            return sortedDirectives;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ProviderElementContext.prototype, "transformedHasViewContainer", {
+        /**
+         * @return {?}
+         */
+        get: function () { return this._hasViewContainer; },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * @param {?} token
      * @param {?} queryReadTokens
      * @return {?}
      */
-    _addQueryReadsTo(token, queryReadTokens) {
-        this._getQueriesFor(token).forEach((query) => {
-            const /** @type {?} */ queryReadToken = query.read || token;
+    ProviderElementContext.prototype._addQueryReadsTo = function (token, queryReadTokens) {
+        this._getQueriesFor(token).forEach(function (query) {
+            var /** @type {?} */ queryReadToken = query.read || token;
             if (isBlank(queryReadTokens.get(tokenReference(queryReadToken)))) {
                 queryReadTokens.set(tokenReference(queryReadToken), true);
             }
         });
-    }
+    };
     /**
      * @param {?} token
      * @return {?}
      */
-    _getQueriesFor(token) {
-        const /** @type {?} */ result = [];
-        let /** @type {?} */ currentEl = this;
-        let /** @type {?} */ distance = 0;
-        let /** @type {?} */ queries;
+    ProviderElementContext.prototype._getQueriesFor = function (token) {
+        var /** @type {?} */ result = [];
+        var /** @type {?} */ currentEl = this;
+        var /** @type {?} */ distance = 0;
+        var /** @type {?} */ queries;
         while (currentEl !== null) {
             queries = currentEl._contentQueries.get(tokenReference(token));
             if (queries) {
-                result.push(...queries.filter((query) => query.descendants || distance <= 1));
+                result.push.apply(result, queries.filter(function (query) { return query.descendants || distance <= 1; }));
             }
             if (currentEl._directiveAsts.length > 0) {
                 distance++;
@@ -159,18 +182,19 @@ export class ProviderElementContext {
         }
         queries = this.viewContext.viewQueries.get(tokenReference(token));
         if (queries) {
-            result.push(...queries);
+            result.push.apply(result, queries);
         }
         return result;
-    }
+    };
     /**
      * @param {?} requestingProviderType
      * @param {?} token
      * @param {?} eager
      * @return {?}
      */
-    _getOrCreateLocalProvider(requestingProviderType, token, eager) {
-        const /** @type {?} */ resolvedProvider = this._allProviders.get(tokenReference(token));
+    ProviderElementContext.prototype._getOrCreateLocalProvider = function (requestingProviderType, token, eager) {
+        var _this = this;
+        var /** @type {?} */ resolvedProvider = this._allProviders.get(tokenReference(token));
         if (!resolvedProvider || ((requestingProviderType === ProviderAstType.Directive ||
             requestingProviderType === ProviderAstType.PublicService) &&
             resolvedProvider.providerType === ProviderAstType.PrivateService) ||
@@ -179,21 +203,21 @@ export class ProviderElementContext {
                 resolvedProvider.providerType === ProviderAstType.Builtin)) {
             return null;
         }
-        let /** @type {?} */ transformedProviderAst = this._transformedProviders.get(tokenReference(token));
+        var /** @type {?} */ transformedProviderAst = this._transformedProviders.get(tokenReference(token));
         if (transformedProviderAst) {
             return transformedProviderAst;
         }
         if (isPresent(this._seenProviders.get(tokenReference(token)))) {
-            this.viewContext.errors.push(new ProviderError(`Cannot instantiate cyclic dependency! ${tokenName(token)}`, this._sourceSpan));
+            this.viewContext.errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + tokenName(token), this._sourceSpan));
             return null;
         }
         this._seenProviders.set(tokenReference(token), true);
-        const /** @type {?} */ transformedProviders = resolvedProvider.providers.map((provider) => {
-            let /** @type {?} */ transformedUseValue = provider.useValue;
-            let /** @type {?} */ transformedUseExisting = provider.useExisting;
-            let /** @type {?} */ transformedDeps;
+        var /** @type {?} */ transformedProviders = resolvedProvider.providers.map(function (provider) {
+            var /** @type {?} */ transformedUseValue = provider.useValue;
+            var /** @type {?} */ transformedUseExisting = provider.useExisting;
+            var /** @type {?} */ transformedDeps;
             if (isPresent(provider.useExisting)) {
-                const /** @type {?} */ existingDiDep = this._getDependency(resolvedProvider.providerType, { token: provider.useExisting }, eager);
+                var /** @type {?} */ existingDiDep = _this._getDependency(resolvedProvider.providerType, { token: provider.useExisting }, eager);
                 if (isPresent(existingDiDep.token)) {
                     transformedUseExisting = existingDiDep.token;
                 }
@@ -203,14 +227,14 @@ export class ProviderElementContext {
                 }
             }
             else if (provider.useFactory) {
-                const /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
+                var /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
                 transformedDeps =
-                    deps.map((dep) => this._getDependency(resolvedProvider.providerType, dep, eager));
+                    deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep, eager); });
             }
             else if (provider.useClass) {
-                const /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
+                var /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
                 transformedDeps =
-                    deps.map((dep) => this._getDependency(resolvedProvider.providerType, dep, eager));
+                    deps.map(function (dep) { return _this._getDependency(resolvedProvider.providerType, dep, eager); });
             }
             return _transformProvider(provider, {
                 useExisting: transformedUseExisting,
@@ -222,16 +246,17 @@ export class ProviderElementContext {
             _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
         this._transformedProviders.set(tokenReference(token), transformedProviderAst);
         return transformedProviderAst;
-    }
+    };
     /**
      * @param {?} requestingProviderType
      * @param {?} dep
      * @param {?=} eager
      * @return {?}
      */
-    _getLocalDependency(requestingProviderType, dep, eager = null) {
+    ProviderElementContext.prototype._getLocalDependency = function (requestingProviderType, dep, eager) {
+        if (eager === void 0) { eager = null; }
         if (dep.isAttribute) {
-            const /** @type {?} */ attrValue = this._attrs[dep.token.value];
+            var /** @type {?} */ attrValue = this._attrs[dep.token.value];
             return { isValue: true, value: attrValue == null ? null : attrValue };
         }
         if (isPresent(dep.token)) {
@@ -258,17 +283,18 @@ export class ProviderElementContext {
             }
         }
         return null;
-    }
+    };
     /**
      * @param {?} requestingProviderType
      * @param {?} dep
      * @param {?=} eager
      * @return {?}
      */
-    _getDependency(requestingProviderType, dep, eager = null) {
-        let /** @type {?} */ currElement = this;
-        let /** @type {?} */ currEager = eager;
-        let /** @type {?} */ result = null;
+    ProviderElementContext.prototype._getDependency = function (requestingProviderType, dep, eager) {
+        if (eager === void 0) { eager = null; }
+        var /** @type {?} */ currElement = this;
+        var /** @type {?} */ currEager = eager;
+        var /** @type {?} */ result = null;
         if (!dep.isSkipSelf) {
             result = this._getLocalDependency(requestingProviderType, dep, eager);
         }
@@ -280,7 +306,7 @@ export class ProviderElementContext {
         else {
             // check parent elements
             while (!result && currElement._parent) {
-                const /** @type {?} */ prevElement = currElement;
+                var /** @type {?} */ prevElement = currElement;
                 currElement = currElement._parent;
                 if (prevElement._isViewRoot) {
                     currEager = false;
@@ -300,11 +326,12 @@ export class ProviderElementContext {
             }
         }
         if (!result) {
-            this.viewContext.errors.push(new ProviderError(`No provider for ${tokenName(dep.token)}`, this._sourceSpan));
+            this.viewContext.errors.push(new ProviderError("No provider for " + tokenName(dep.token), this._sourceSpan));
         }
         return result;
-    }
-}
+    };
+    return ProviderElementContext;
+}());
 function ProviderElementContext_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderElementContext.prototype._contentQueries;
@@ -329,61 +356,64 @@ function ProviderElementContext_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderElementContext.prototype._sourceSpan;
 }
-export class NgModuleProviderAnalyzer {
+export var NgModuleProviderAnalyzer = (function () {
     /**
      * @param {?} ngModule
      * @param {?} extraProviders
      * @param {?} sourceSpan
      */
-    constructor(ngModule, extraProviders, sourceSpan) {
+    function NgModuleProviderAnalyzer(ngModule, extraProviders, sourceSpan) {
+        var _this = this;
         this._transformedProviders = new Map();
         this._seenProviders = new Map();
         this._errors = [];
         this._allProviders = new Map();
-        ngModule.transitiveModule.modules.forEach((ngModuleType) => {
-            const ngModuleProvider = { token: { identifier: ngModuleType }, useClass: ngModuleType };
-            _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, this._errors, this._allProviders);
+        ngModule.transitiveModule.modules.forEach(function (ngModuleType) {
+            var ngModuleProvider = { token: { identifier: ngModuleType }, useClass: ngModuleType };
+            _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders);
         });
-        _resolveProviders(ngModule.transitiveModule.providers.map(entry => entry.provider).concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
+        _resolveProviders(ngModule.transitiveModule.providers.map(function (entry) { return entry.provider; }).concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
     }
     /**
      * @return {?}
      */
-    parse() {
-        Array.from(this._allProviders.values()).forEach((provider) => {
-            this._getOrCreateLocalProvider(provider.token, provider.eager);
+    NgModuleProviderAnalyzer.prototype.parse = function () {
+        var _this = this;
+        Array.from(this._allProviders.values()).forEach(function (provider) {
+            _this._getOrCreateLocalProvider(provider.token, provider.eager);
         });
         if (this._errors.length > 0) {
-            const /** @type {?} */ errorString = this._errors.join('\n');
-            throw new Error(`Provider parse errors:\n${errorString}`);
+            var /** @type {?} */ errorString = this._errors.join('\n');
+            throw new Error("Provider parse errors:\n" + errorString);
         }
         return Array.from(this._transformedProviders.values());
-    }
+    };
     /**
      * @param {?} token
      * @param {?} eager
      * @return {?}
      */
-    _getOrCreateLocalProvider(token, eager) {
-        const /** @type {?} */ resolvedProvider = this._allProviders.get(tokenReference(token));
+    NgModuleProviderAnalyzer.prototype._getOrCreateLocalProvider = function (token, eager) {
+        var _this = this;
+        var /** @type {?} */ resolvedProvider = this._allProviders.get(tokenReference(token));
         if (!resolvedProvider) {
             return null;
         }
-        let /** @type {?} */ transformedProviderAst = this._transformedProviders.get(tokenReference(token));
+        var /** @type {?} */ transformedProviderAst = this._transformedProviders.get(tokenReference(token));
         if (transformedProviderAst) {
             return transformedProviderAst;
         }
         if (isPresent(this._seenProviders.get(tokenReference(token)))) {
-            this._errors.push(new ProviderError(`Cannot instantiate cyclic dependency! ${tokenName(token)}`, resolvedProvider.sourceSpan));
+            this._errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + tokenName(token), resolvedProvider.sourceSpan));
             return null;
         }
         this._seenProviders.set(tokenReference(token), true);
-        const /** @type {?} */ transformedProviders = resolvedProvider.providers.map((provider) => {
-            let /** @type {?} */ transformedUseValue = provider.useValue;
-            let /** @type {?} */ transformedUseExisting = provider.useExisting;
-            let /** @type {?} */ transformedDeps;
+        var /** @type {?} */ transformedProviders = resolvedProvider.providers.map(function (provider) {
+            var /** @type {?} */ transformedUseValue = provider.useValue;
+            var /** @type {?} */ transformedUseExisting = provider.useExisting;
+            var /** @type {?} */ transformedDeps;
             if (isPresent(provider.useExisting)) {
-                const /** @type {?} */ existingDiDep = this._getDependency({ token: provider.useExisting }, eager, resolvedProvider.sourceSpan);
+                var /** @type {?} */ existingDiDep = _this._getDependency({ token: provider.useExisting }, eager, resolvedProvider.sourceSpan);
                 if (isPresent(existingDiDep.token)) {
                     transformedUseExisting = existingDiDep.token;
                 }
@@ -393,14 +423,14 @@ export class NgModuleProviderAnalyzer {
                 }
             }
             else if (provider.useFactory) {
-                const /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
+                var /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
                 transformedDeps =
-                    deps.map((dep) => this._getDependency(dep, eager, resolvedProvider.sourceSpan));
+                    deps.map(function (dep) { return _this._getDependency(dep, eager, resolvedProvider.sourceSpan); });
             }
             else if (provider.useClass) {
-                const /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
+                var /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
                 transformedDeps =
-                    deps.map((dep) => this._getDependency(dep, eager, resolvedProvider.sourceSpan));
+                    deps.map(function (dep) { return _this._getDependency(dep, eager, resolvedProvider.sourceSpan); });
             }
             return _transformProvider(provider, {
                 useExisting: transformedUseExisting,
@@ -412,15 +442,16 @@ export class NgModuleProviderAnalyzer {
             _transformProviderAst(resolvedProvider, { eager: eager, providers: transformedProviders });
         this._transformedProviders.set(tokenReference(token), transformedProviderAst);
         return transformedProviderAst;
-    }
+    };
     /**
      * @param {?} dep
      * @param {?=} eager
      * @param {?} requestorSourceSpan
      * @return {?}
      */
-    _getDependency(dep, eager = null, requestorSourceSpan) {
-        let /** @type {?} */ foundLocal = false;
+    NgModuleProviderAnalyzer.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
+        if (eager === void 0) { eager = null; }
+        var /** @type {?} */ foundLocal = false;
         if (!dep.isSkipSelf && isPresent(dep.token)) {
             // access the injector
             if (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector) ||
@@ -431,18 +462,19 @@ export class NgModuleProviderAnalyzer {
                 foundLocal = true;
             }
         }
-        let /** @type {?} */ result = dep;
+        var /** @type {?} */ result = dep;
         if (dep.isSelf && !foundLocal) {
             if (dep.isOptional) {
                 result = { isValue: true, value: null };
             }
             else {
-                this._errors.push(new ProviderError(`No provider for ${tokenName(dep.token)}`, requestorSourceSpan));
+                this._errors.push(new ProviderError("No provider for " + tokenName(dep.token), requestorSourceSpan));
             }
         }
         return result;
-    }
-}
+    };
+    return NgModuleProviderAnalyzer;
+}());
 function NgModuleProviderAnalyzer_tsickle_Closure_declarations() {
     /** @type {?} */
     NgModuleProviderAnalyzer.prototype._transformedProviders;
@@ -458,7 +490,8 @@ function NgModuleProviderAnalyzer_tsickle_Closure_declarations() {
  * @param {?} __1
  * @return {?}
  */
-function _transformProvider(provider, { useExisting, useValue, deps }) {
+function _transformProvider(provider, _a) {
+    var useExisting = _a.useExisting, useValue = _a.useValue, deps = _a.deps;
     return {
         token: provider.token,
         useClass: provider.useClass,
@@ -474,7 +507,8 @@ function _transformProvider(provider, { useExisting, useValue, deps }) {
  * @param {?} __1
  * @return {?}
  */
-function _transformProviderAst(provider, { eager, providers }) {
+function _transformProviderAst(provider, _a) {
+    var eager = _a.eager, providers = _a.providers;
     return new ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.lifecycleHooks, provider.sourceSpan);
 }
 /**
@@ -484,14 +518,14 @@ function _transformProviderAst(provider, { eager, providers }) {
  * @return {?}
  */
 function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
-    const /** @type {?} */ providersByToken = new Map();
-    directives.forEach((directive) => {
-        const /** @type {?} */ dirProvider = { token: { identifier: directive.type }, useClass: directive.type };
+    var /** @type {?} */ providersByToken = new Map();
+    directives.forEach(function (directive) {
+        var /** @type {?} */ dirProvider = { token: { identifier: directive.type }, useClass: directive.type };
         _resolveProviders([dirProvider], directive.isComponent ? ProviderAstType.Component : ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken);
     });
     // Note: directives need to be able to overwrite providers of a component!
-    const /** @type {?} */ directivesWithComponentFirst = directives.filter(dir => dir.isComponent).concat(directives.filter(dir => !dir.isComponent));
-    directivesWithComponentFirst.forEach((directive) => {
+    var /** @type {?} */ directivesWithComponentFirst = directives.filter(function (dir) { return dir.isComponent; }).concat(directives.filter(function (dir) { return !dir.isComponent; }));
+    directivesWithComponentFirst.forEach(function (directive) {
         _resolveProviders(directive.providers, ProviderAstType.PublicService, false, sourceSpan, targetErrors, providersByToken);
         _resolveProviders(directive.viewProviders, ProviderAstType.PrivateService, false, sourceSpan, targetErrors, providersByToken);
     });
@@ -507,13 +541,13 @@ function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
  * @return {?}
  */
 function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken) {
-    providers.forEach((provider) => {
-        let /** @type {?} */ resolvedProvider = targetProvidersByToken.get(tokenReference(provider.token));
+    providers.forEach(function (provider) {
+        var /** @type {?} */ resolvedProvider = targetProvidersByToken.get(tokenReference(provider.token));
         if (isPresent(resolvedProvider) && !!resolvedProvider.multiProvider !== !!provider.multi) {
-            targetErrors.push(new ProviderError(`Mixing multi and non multi provider is not possible for token ${tokenName(resolvedProvider.token)}`, sourceSpan));
+            targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + tokenName(resolvedProvider.token), sourceSpan));
         }
         if (!resolvedProvider) {
-            const /** @type {?} */ lifecycleHooks = provider.token.identifier &&
+            var /** @type {?} */ lifecycleHooks = provider.token.identifier &&
                 ((provider.token.identifier)).lifecycleHooks ?
                 ((provider.token.identifier)).lifecycleHooks :
                 [];
@@ -533,9 +567,9 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
  * @return {?}
  */
 function _getViewQueries(component) {
-    const /** @type {?} */ viewQueries = new Map();
+    var /** @type {?} */ viewQueries = new Map();
     if (component.viewQueries) {
-        component.viewQueries.forEach((query) => _addQueryToTokenMap(viewQueries, query));
+        component.viewQueries.forEach(function (query) { return _addQueryToTokenMap(viewQueries, query); });
     }
     return viewQueries;
 }
@@ -544,10 +578,10 @@ function _getViewQueries(component) {
  * @return {?}
  */
 function _getContentQueries(directives) {
-    const /** @type {?} */ contentQueries = new Map();
-    directives.forEach(directive => {
+    var /** @type {?} */ contentQueries = new Map();
+    directives.forEach(function (directive) {
         if (directive.queries) {
-            directive.queries.forEach((query) => _addQueryToTokenMap(contentQueries, query));
+            directive.queries.forEach(function (query) { return _addQueryToTokenMap(contentQueries, query); });
         }
     });
     return contentQueries;
@@ -558,8 +592,8 @@ function _getContentQueries(directives) {
  * @return {?}
  */
 function _addQueryToTokenMap(map, query) {
-    query.selectors.forEach((token) => {
-        let /** @type {?} */ entry = map.get(tokenReference(token));
+    query.selectors.forEach(function (token) {
+        var /** @type {?} */ entry = map.get(tokenReference(token));
         if (!entry) {
             entry = [];
             map.set(tokenReference(token), entry);

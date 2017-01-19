@@ -14,7 +14,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { NgModule } from '@angular/core/index';
+import { NgModule } from '@angular/core';
 import { ListWrapper } from './facade/collection';
 import { stringify } from './facade/lang';
 import { CompilerInjectable } from './injectable';
@@ -29,43 +29,45 @@ function _isNgModuleMetadata(obj) {
 /**
  * Resolves types to {\@link NgModule}.
  */
-export let NgModuleResolver = class NgModuleResolver {
+export var NgModuleResolver = (function () {
     /**
      * @param {?=} _reflector
      */
-    constructor(_reflector = reflector) {
+    function NgModuleResolver(_reflector) {
+        if (_reflector === void 0) { _reflector = reflector; }
         this._reflector = _reflector;
     }
     /**
      * @param {?} type
      * @return {?}
      */
-    isNgModule(type) { return this._reflector.annotations(type).some(_isNgModuleMetadata); }
+    NgModuleResolver.prototype.isNgModule = function (type) { return this._reflector.annotations(type).some(_isNgModuleMetadata); };
     /**
      * @param {?} type
      * @param {?=} throwIfNotFound
      * @return {?}
      */
-    resolve(type, throwIfNotFound = true) {
-        const /** @type {?} */ ngModuleMeta = ListWrapper.findLast(this._reflector.annotations(type), _isNgModuleMetadata);
+    NgModuleResolver.prototype.resolve = function (type, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        var /** @type {?} */ ngModuleMeta = ListWrapper.findLast(this._reflector.annotations(type), _isNgModuleMetadata);
         if (ngModuleMeta) {
             return ngModuleMeta;
         }
         else {
             if (throwIfNotFound) {
-                throw new Error(`No NgModule metadata found for '${stringify(type)}'.`);
+                throw new Error("No NgModule metadata found for '" + stringify(type) + "'.");
             }
             return null;
         }
-    }
-};
-NgModuleResolver = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [(typeof (_a = typeof ReflectorReader !== 'undefined' && ReflectorReader) === 'function' && _a) || Object])
-], NgModuleResolver);
+    };
+    NgModuleResolver = __decorate([
+        CompilerInjectable(), 
+        __metadata('design:paramtypes', [ReflectorReader])
+    ], NgModuleResolver);
+    return NgModuleResolver;
+}());
 function NgModuleResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     NgModuleResolver.prototype._reflector;
 }
-var _a;
 //# sourceMappingURL=ng_module_resolver.js.map

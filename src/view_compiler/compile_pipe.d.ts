@@ -15,6 +15,6 @@ export declare class CompilePipe {
     instance: o.ReadPropExpr;
     private _purePipeProxyCount;
     constructor(view: CompileView, meta: CompilePipeSummary);
-    readonly pure: boolean;
+    pure: boolean;
     private _call(callingView, args);
 }

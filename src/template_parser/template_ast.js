@@ -8,13 +8,13 @@
 /**
  * A segment of text within the template.
  */
-export class TextAst {
+export var TextAst = (function () {
     /**
      * @param {?} value
      * @param {?} ngContentIndex
      * @param {?} sourceSpan
      */
-    constructor(value, ngContentIndex, sourceSpan) {
+    function TextAst(value, ngContentIndex, sourceSpan) {
         this.value = value;
         this.ngContentIndex = ngContentIndex;
         this.sourceSpan = sourceSpan;
@@ -24,8 +24,9 @@ export class TextAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) { return visitor.visitText(this, context); }
-}
+    TextAst.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
+    return TextAst;
+}());
 function TextAst_tsickle_Closure_declarations() {
     /** @type {?} */
     TextAst.prototype.value;
@@ -37,13 +38,13 @@ function TextAst_tsickle_Closure_declarations() {
 /**
  * A bound expression within the text of a template.
  */
-export class BoundTextAst {
+export var BoundTextAst = (function () {
     /**
      * @param {?} value
      * @param {?} ngContentIndex
      * @param {?} sourceSpan
      */
-    constructor(value, ngContentIndex, sourceSpan) {
+    function BoundTextAst(value, ngContentIndex, sourceSpan) {
         this.value = value;
         this.ngContentIndex = ngContentIndex;
         this.sourceSpan = sourceSpan;
@@ -53,10 +54,11 @@ export class BoundTextAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    BoundTextAst.prototype.visit = function (visitor, context) {
         return visitor.visitBoundText(this, context);
-    }
-}
+    };
+    return BoundTextAst;
+}());
 function BoundTextAst_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundTextAst.prototype.value;
@@ -68,13 +70,13 @@ function BoundTextAst_tsickle_Closure_declarations() {
 /**
  * A plain attribute on an element.
  */
-export class AttrAst {
+export var AttrAst = (function () {
     /**
      * @param {?} name
      * @param {?} value
      * @param {?} sourceSpan
      */
-    constructor(name, value, sourceSpan) {
+    function AttrAst(name, value, sourceSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -84,8 +86,9 @@ export class AttrAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) { return visitor.visitAttr(this, context); }
-}
+    AttrAst.prototype.visit = function (visitor, context) { return visitor.visitAttr(this, context); };
+    return AttrAst;
+}());
 function AttrAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AttrAst.prototype.name;
@@ -98,7 +101,7 @@ function AttrAst_tsickle_Closure_declarations() {
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
  * `[\@trigger]="stateExp"`)
  */
-export class BoundElementPropertyAst {
+export var BoundElementPropertyAst = (function () {
     /**
      * @param {?} name
      * @param {?} type
@@ -108,7 +111,7 @@ export class BoundElementPropertyAst {
      * @param {?} unit
      * @param {?} sourceSpan
      */
-    constructor(name, type, securityContext, needsRuntimeSecurityContext, value, unit, sourceSpan) {
+    function BoundElementPropertyAst(name, type, securityContext, needsRuntimeSecurityContext, value, unit, sourceSpan) {
         this.name = name;
         this.type = type;
         this.securityContext = securityContext;
@@ -122,14 +125,19 @@ export class BoundElementPropertyAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    BoundElementPropertyAst.prototype.visit = function (visitor, context) {
         return visitor.visitElementProperty(this, context);
-    }
-    /**
-     * @return {?}
-     */
-    get isAnimation() { return this.type === PropertyBindingType.Animation; }
-}
+    };
+    Object.defineProperty(BoundElementPropertyAst.prototype, "isAnimation", {
+        /**
+         * @return {?}
+         */
+        get: function () { return this.type === PropertyBindingType.Animation; },
+        enumerable: true,
+        configurable: true
+    });
+    return BoundElementPropertyAst;
+}());
 function BoundElementPropertyAst_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundElementPropertyAst.prototype.name;
@@ -150,7 +158,7 @@ function BoundElementPropertyAst_tsickle_Closure_declarations() {
  * A binding for an element event (e.g. `(event)="handler()"`) or an animation trigger event (e.g.
  * `(\@trigger.phase)="callback($event)"`).
  */
-export class BoundEventAst {
+export var BoundEventAst = (function () {
     /**
      * @param {?} name
      * @param {?} target
@@ -158,7 +166,7 @@ export class BoundEventAst {
      * @param {?} handler
      * @param {?} sourceSpan
      */
-    constructor(name, target, phase, handler, sourceSpan) {
+    function BoundEventAst(name, target, phase, handler, sourceSpan) {
         this.name = name;
         this.target = target;
         this.phase = phase;
@@ -171,34 +179,43 @@ export class BoundEventAst {
      * @param {?} phase
      * @return {?}
      */
-    static calcFullName(name, target, phase) {
+    BoundEventAst.calcFullName = function (name, target, phase) {
         if (target) {
-            return `${target}:${name}`;
+            return target + ":" + name;
         }
         else if (phase) {
-            return `@${name}.${phase}`;
+            return "@" + name + "." + phase;
         }
         else {
             return name;
         }
-    }
+    };
     /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    BoundEventAst.prototype.visit = function (visitor, context) {
         return visitor.visitEvent(this, context);
-    }
-    /**
-     * @return {?}
-     */
-    get fullName() { return BoundEventAst.calcFullName(this.name, this.target, this.phase); }
-    /**
-     * @return {?}
-     */
-    get isAnimation() { return !!this.phase; }
-}
+    };
+    Object.defineProperty(BoundEventAst.prototype, "fullName", {
+        /**
+         * @return {?}
+         */
+        get: function () { return BoundEventAst.calcFullName(this.name, this.target, this.phase); },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(BoundEventAst.prototype, "isAnimation", {
+        /**
+         * @return {?}
+         */
+        get: function () { return !!this.phase; },
+        enumerable: true,
+        configurable: true
+    });
+    return BoundEventAst;
+}());
 function BoundEventAst_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundEventAst.prototype.name;
@@ -214,13 +231,13 @@ function BoundEventAst_tsickle_Closure_declarations() {
 /**
  * A reference declaration on an element (e.g. `let someName="expression"`).
  */
-export class ReferenceAst {
+export var ReferenceAst = (function () {
     /**
      * @param {?} name
      * @param {?} value
      * @param {?} sourceSpan
      */
-    constructor(name, value, sourceSpan) {
+    function ReferenceAst(name, value, sourceSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -230,10 +247,11 @@ export class ReferenceAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    ReferenceAst.prototype.visit = function (visitor, context) {
         return visitor.visitReference(this, context);
-    }
-}
+    };
+    return ReferenceAst;
+}());
 function ReferenceAst_tsickle_Closure_declarations() {
     /** @type {?} */
     ReferenceAst.prototype.name;
@@ -245,13 +263,13 @@ function ReferenceAst_tsickle_Closure_declarations() {
 /**
  * A variable declaration on a <template> (e.g. `var-someName="someLocalName"`).
  */
-export class VariableAst {
+export var VariableAst = (function () {
     /**
      * @param {?} name
      * @param {?} value
      * @param {?} sourceSpan
      */
-    constructor(name, value, sourceSpan) {
+    function VariableAst(name, value, sourceSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -261,10 +279,11 @@ export class VariableAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    VariableAst.prototype.visit = function (visitor, context) {
         return visitor.visitVariable(this, context);
-    }
-}
+    };
+    return VariableAst;
+}());
 function VariableAst_tsickle_Closure_declarations() {
     /** @type {?} */
     VariableAst.prototype.name;
@@ -276,7 +295,7 @@ function VariableAst_tsickle_Closure_declarations() {
 /**
  * An element declaration in a template.
  */
-export class ElementAst {
+export var ElementAst = (function () {
     /**
      * @param {?} name
      * @param {?} attrs
@@ -291,7 +310,7 @@ export class ElementAst {
      * @param {?} sourceSpan
      * @param {?} endSourceSpan
      */
-    constructor(name, attrs, inputs, outputs, references, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan, endSourceSpan) {
+    function ElementAst(name, attrs, inputs, outputs, references, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan, endSourceSpan) {
         this.name = name;
         this.attrs = attrs;
         this.inputs = inputs;
@@ -310,10 +329,11 @@ export class ElementAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    ElementAst.prototype.visit = function (visitor, context) {
         return visitor.visitElement(this, context);
-    }
-}
+    };
+    return ElementAst;
+}());
 function ElementAst_tsickle_Closure_declarations() {
     /** @type {?} */
     ElementAst.prototype.name;
@@ -343,7 +363,7 @@ function ElementAst_tsickle_Closure_declarations() {
 /**
  * A `<template>` element included in an Angular template.
  */
-export class EmbeddedTemplateAst {
+export var EmbeddedTemplateAst = (function () {
     /**
      * @param {?} attrs
      * @param {?} outputs
@@ -356,7 +376,7 @@ export class EmbeddedTemplateAst {
      * @param {?} ngContentIndex
      * @param {?} sourceSpan
      */
-    constructor(attrs, outputs, references, variables, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan) {
+    function EmbeddedTemplateAst(attrs, outputs, references, variables, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan) {
         this.attrs = attrs;
         this.outputs = outputs;
         this.references = references;
@@ -373,10 +393,11 @@ export class EmbeddedTemplateAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    EmbeddedTemplateAst.prototype.visit = function (visitor, context) {
         return visitor.visitEmbeddedTemplate(this, context);
-    }
-}
+    };
+    return EmbeddedTemplateAst;
+}());
 function EmbeddedTemplateAst_tsickle_Closure_declarations() {
     /** @type {?} */
     EmbeddedTemplateAst.prototype.attrs;
@@ -402,14 +423,14 @@ function EmbeddedTemplateAst_tsickle_Closure_declarations() {
 /**
  * A directive property with a bound value (e.g. `*ngIf="condition").
  */
-export class BoundDirectivePropertyAst {
+export var BoundDirectivePropertyAst = (function () {
     /**
      * @param {?} directiveName
      * @param {?} templateName
      * @param {?} value
      * @param {?} sourceSpan
      */
-    constructor(directiveName, templateName, value, sourceSpan) {
+    function BoundDirectivePropertyAst(directiveName, templateName, value, sourceSpan) {
         this.directiveName = directiveName;
         this.templateName = templateName;
         this.value = value;
@@ -420,10 +441,11 @@ export class BoundDirectivePropertyAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    BoundDirectivePropertyAst.prototype.visit = function (visitor, context) {
         return visitor.visitDirectiveProperty(this, context);
-    }
-}
+    };
+    return BoundDirectivePropertyAst;
+}());
 function BoundDirectivePropertyAst_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundDirectivePropertyAst.prototype.directiveName;
@@ -437,7 +459,7 @@ function BoundDirectivePropertyAst_tsickle_Closure_declarations() {
 /**
  * A directive declared on an element.
  */
-export class DirectiveAst {
+export var DirectiveAst = (function () {
     /**
      * @param {?} directive
      * @param {?} inputs
@@ -445,7 +467,7 @@ export class DirectiveAst {
      * @param {?} hostEvents
      * @param {?} sourceSpan
      */
-    constructor(directive, inputs, hostProperties, hostEvents, sourceSpan) {
+    function DirectiveAst(directive, inputs, hostProperties, hostEvents, sourceSpan) {
         this.directive = directive;
         this.inputs = inputs;
         this.hostProperties = hostProperties;
@@ -457,10 +479,11 @@ export class DirectiveAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    DirectiveAst.prototype.visit = function (visitor, context) {
         return visitor.visitDirective(this, context);
-    }
-}
+    };
+    return DirectiveAst;
+}());
 function DirectiveAst_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveAst.prototype.directive;
@@ -476,7 +499,7 @@ function DirectiveAst_tsickle_Closure_declarations() {
 /**
  * A provider declared on an element
  */
-export class ProviderAst {
+export var ProviderAst = (function () {
     /**
      * @param {?} token
      * @param {?} multiProvider
@@ -486,7 +509,7 @@ export class ProviderAst {
      * @param {?} lifecycleHooks
      * @param {?} sourceSpan
      */
-    constructor(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan) {
+    function ProviderAst(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan) {
         this.token = token;
         this.multiProvider = multiProvider;
         this.eager = eager;
@@ -500,11 +523,12 @@ export class ProviderAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    ProviderAst.prototype.visit = function (visitor, context) {
         // No visit method in the visitor for now...
         return null;
-    }
-}
+    };
+    return ProviderAst;
+}());
 function ProviderAst_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderAst.prototype.token;
@@ -521,7 +545,7 @@ function ProviderAst_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderAst.prototype.sourceSpan;
 }
-export let ProviderAstType = {};
+export var ProviderAstType = {};
 ProviderAstType.PublicService = 0;
 ProviderAstType.PrivateService = 1;
 ProviderAstType.Component = 2;
@@ -535,13 +559,13 @@ ProviderAstType[ProviderAstType.Builtin] = "Builtin";
 /**
  * Position where content is to be projected (instance of `<ng-content>` in a template).
  */
-export class NgContentAst {
+export var NgContentAst = (function () {
     /**
      * @param {?} index
      * @param {?} ngContentIndex
      * @param {?} sourceSpan
      */
-    constructor(index, ngContentIndex, sourceSpan) {
+    function NgContentAst(index, ngContentIndex, sourceSpan) {
         this.index = index;
         this.ngContentIndex = ngContentIndex;
         this.sourceSpan = sourceSpan;
@@ -551,10 +575,11 @@ export class NgContentAst {
      * @param {?} context
      * @return {?}
      */
-    visit(visitor, context) {
+    NgContentAst.prototype.visit = function (visitor, context) {
         return visitor.visitNgContent(this, context);
-    }
-}
+    };
+    return NgContentAst;
+}());
 function NgContentAst_tsickle_Closure_declarations() {
     /** @type {?} */
     NgContentAst.prototype.index;
@@ -563,7 +588,7 @@ function NgContentAst_tsickle_Closure_declarations() {
     /** @type {?} */
     NgContentAst.prototype.sourceSpan;
 }
-export let PropertyBindingType = {};
+export var PropertyBindingType = {};
 PropertyBindingType.Property = 0;
 PropertyBindingType.Attribute = 1;
 PropertyBindingType.Class = 2;
@@ -581,13 +606,14 @@ PropertyBindingType[PropertyBindingType.Animation] = "Animation";
  * @param {?=} context
  * @return {?}
  */
-export function templateVisitAll(visitor, asts, context = null) {
-    const /** @type {?} */ result = [];
-    const /** @type {?} */ visit = visitor.visit ?
-            (ast) => visitor.visit(ast, context) || ast.visit(visitor, context) :
-            (ast) => ast.visit(visitor, context);
-    asts.forEach(ast => {
-        const /** @type {?} */ astResult = visit(ast);
+export function templateVisitAll(visitor, asts, context) {
+    if (context === void 0) { context = null; }
+    var /** @type {?} */ result = [];
+    var /** @type {?} */ visit = visitor.visit ?
+        function (ast) { return visitor.visit(ast, context) || ast.visit(visitor, context); } :
+        function (ast) { return ast.visit(visitor, context); };
+    asts.forEach(function (ast) {
+        var /** @type {?} */ astResult = visit(ast);
         if (astResult) {
             result.push(astResult);
         }

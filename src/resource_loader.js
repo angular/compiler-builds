@@ -2,11 +2,14 @@
  * An interface for retrieving documents by URL that the compiler uses
  * to load templates.
  */
-export class ResourceLoader {
+export var ResourceLoader = (function () {
+    function ResourceLoader() {
+    }
     /**
      * @param {?} url
      * @return {?}
      */
-    get(url) { return null; }
-}
+    ResourceLoader.prototype.get = function (url) { return null; };
+    return ResourceLoader;
+}());
 //# sourceMappingURL=resource_loader.js.map

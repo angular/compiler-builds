@@ -6,16 +6,17 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as o from '../output/output_ast';
-export class CheckBindingField {
+export var CheckBindingField = (function () {
     /**
      * @param {?} expression
      * @param {?} bindingId
      */
-    constructor(expression, bindingId) {
+    function CheckBindingField(expression, bindingId) {
         this.expression = expression;
         this.bindingId = bindingId;
     }
-}
+    return CheckBindingField;
+}());
 function CheckBindingField_tsickle_Closure_declarations() {
     /** @type {?} */
     CheckBindingField.prototype.expression;
@@ -27,8 +28,8 @@ function CheckBindingField_tsickle_Closure_declarations() {
  * @return {?}
  */
 export function createCheckBindingField(builder) {
-    const /** @type {?} */ bindingId = `${builder.fields.length}`;
-    const /** @type {?} */ fieldExpr = createBindFieldExpr(bindingId);
+    var /** @type {?} */ bindingId = "" + builder.fields.length;
+    var /** @type {?} */ fieldExpr = createBindFieldExpr(bindingId);
     // private is fine here as no child view will reference the cached value...
     builder.fields.push(new o.ClassField(fieldExpr.name, null, [o.StmtModifier.Private]));
     builder.ctorStmts.push(o.THIS_EXPR.prop(fieldExpr.name).set(o.literal(undefined)).toStmt());
@@ -39,7 +40,7 @@ export function createCheckBindingField(builder) {
  * @return {?}
  */
 function createBindFieldExpr(bindingId) {
-    return o.THIS_EXPR.prop(`_expr_${bindingId}`);
+    return o.THIS_EXPR.prop("_expr_" + bindingId);
 }
 /**
  * @param {?} view

@@ -5,6 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -19,9 +24,10 @@ import { getHtmlTagDefinition } from './html_tags';
 import { DEFAULT_INTERPOLATION_CONFIG } from './interpolation_config';
 import { Parser } from './parser';
 export { ParseTreeResult, TreeError } from './parser';
-export let HtmlParser = class HtmlParser extends Parser {
-    constructor() {
-        super(getHtmlTagDefinition);
+export var HtmlParser = (function (_super) {
+    __extends(HtmlParser, _super);
+    function HtmlParser() {
+        _super.call(this, getHtmlTagDefinition);
     }
     /**
      * @param {?} source
@@ -30,12 +36,15 @@ export let HtmlParser = class HtmlParser extends Parser {
      * @param {?=} interpolationConfig
      * @return {?}
      */
-    parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        return super.parse(source, url, parseExpansionForms, interpolationConfig);
-    }
-};
-HtmlParser = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [])
-], HtmlParser);
+    HtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
+        if (parseExpansionForms === void 0) { parseExpansionForms = false; }
+        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
+        return _super.prototype.parse.call(this, source, url, parseExpansionForms, interpolationConfig);
+    };
+    HtmlParser = __decorate([
+        CompilerInjectable(), 
+        __metadata('design:paramtypes', [])
+    ], HtmlParser);
+    return HtmlParser;
+}(Parser));
 //# sourceMappingURL=html_parser.js.map

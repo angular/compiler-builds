@@ -1,3 +1,8 @@
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 import { CompileSummaryKind } from '../compile_metadata';
 import { ValueTransformer, visitValue } from '../util';
 import { StaticSymbol } from './static_symbol';
@@ -9,23 +14,23 @@ import { StaticSymbol } from './static_symbol';
  * @return {?}
  */
 export function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
-    const /** @type {?} */ serializer = new Serializer(symbolResolver, summaryResolver);
+    var /** @type {?} */ serializer = new Serializer(symbolResolver, summaryResolver);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
     // CompileTypeSummary.
-    symbols.forEach((resolvedSymbol) => serializer.addOrMergeSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }));
+    symbols.forEach(function (resolvedSymbol) { return serializer.addOrMergeSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }); });
     // Add summaries that are referenced by the given symbols (transitively)
     // Note: the serializer.symbols array might be growing while
     // we execute the loop!
-    for (let /** @type {?} */ processedIndex = 0; processedIndex < serializer.symbols.length; processedIndex++) {
-        const /** @type {?} */ symbol = serializer.symbols[processedIndex];
+    for (var /** @type {?} */ processedIndex = 0; processedIndex < serializer.symbols.length; processedIndex++) {
+        var /** @type {?} */ symbol = serializer.symbols[processedIndex];
         if (summaryResolver.isLibraryFile(symbol.filePath)) {
-            let /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
+            var /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
             if (!summary) {
                 // some symbols might originate from a plain typescript library
                 // that just exported .d.ts and .metadata.json files, i.e. where no summary
                 // files were created.
-                const /** @type {?} */ resolvedSymbol = symbolResolver.resolveSymbol(symbol);
+                var /** @type {?} */ resolvedSymbol = symbolResolver.resolveSymbol(symbol);
                 if (resolvedSymbol) {
                     summary = { symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata };
                 }
@@ -39,14 +44,14 @@ export function serializeSummaries(summaryResolver, symbolResolver, symbols, typ
     // Note: We don't add the summaries of all referenced symbols as for the ResolvedSymbols,
     // as the type summaries already contain the transitive data that they require
     // (in a minimal way).
-    types.forEach((typeSummary) => {
+    types.forEach(function (typeSummary) {
         serializer.addOrMergeSummary({ symbol: typeSummary.type.reference, metadata: { __symbolic: 'class' }, type: typeSummary });
         if (typeSummary.summaryKind === CompileSummaryKind.NgModule) {
-            const /** @type {?} */ ngModuleSummary = (typeSummary);
-            ngModuleSummary.exportedDirectives.concat(ngModuleSummary.exportedPipes).forEach((id) => {
-                const /** @type {?} */ symbol = id.reference;
+            var /** @type {?} */ ngModuleSummary = (typeSummary);
+            ngModuleSummary.exportedDirectives.concat(ngModuleSummary.exportedPipes).forEach(function (id) {
+                var /** @type {?} */ symbol = id.reference;
                 if (summaryResolver.isLibraryFile(symbol.filePath)) {
-                    const /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
+                    var /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
                     if (summary) {
                         serializer.addOrMergeSummary(summary);
                     }
@@ -62,16 +67,17 @@ export function serializeSummaries(summaryResolver, symbolResolver, symbols, typ
  * @return {?}
  */
 export function deserializeSummaries(symbolCache, json) {
-    const /** @type {?} */ deserializer = new Deserializer(symbolCache);
+    var /** @type {?} */ deserializer = new Deserializer(symbolCache);
     return deserializer.deserialize(json);
 }
-class Serializer extends ValueTransformer {
+var Serializer = (function (_super) {
+    __extends(Serializer, _super);
     /**
      * @param {?} symbolResolver
      * @param {?} summaryResolver
      */
-    constructor(symbolResolver, summaryResolver) {
-        super();
+    function Serializer(symbolResolver, summaryResolver) {
+        _super.call(this);
         this.symbolResolver = symbolResolver;
         this.summaryResolver = summaryResolver;
         // Note: This only contains symbols without members.
@@ -84,15 +90,15 @@ class Serializer extends ValueTransformer {
      * @param {?} summary
      * @return {?}
      */
-    addOrMergeSummary(summary) {
-        let /** @type {?} */ symbolMeta = summary.metadata;
+    Serializer.prototype.addOrMergeSummary = function (summary) {
+        var /** @type {?} */ symbolMeta = summary.metadata;
         if (symbolMeta && symbolMeta.__symbolic === 'class') {
             // For classes, we only keep their statics, but not the metadata
             // of the class itself as that has been captured already via other summaries
             // (e.g. DirectiveSummary, ...).
             symbolMeta = { __symbolic: 'class', statics: symbolMeta.statics };
         }
-        let /** @type {?} */ processedSummary = this.processedSummaryBySymbol.get(summary.symbol);
+        var /** @type {?} */ processedSummary = this.processedSummaryBySymbol.get(summary.symbol);
         if (!processedSummary) {
             processedSummary = this.processValue({ symbol: summary.symbol });
             this.processedSummaries.push(processedSummary);
@@ -106,20 +112,21 @@ class Serializer extends ValueTransformer {
         if (processedSummary.type == null && summary.type != null) {
             processedSummary.type = this.processValue(summary.type);
         }
-    }
+    };
     /**
      * @return {?}
      */
-    serialize() {
-        const /** @type {?} */ exportAs = [];
-        const /** @type {?} */ json = JSON.stringify({
+    Serializer.prototype.serialize = function () {
+        var _this = this;
+        var /** @type {?} */ exportAs = [];
+        var /** @type {?} */ json = JSON.stringify({
             summaries: this.processedSummaries,
-            symbols: this.symbols.map((symbol, index) => {
+            symbols: this.symbols.map(function (symbol, index) {
                 symbol.assertNoMembers();
-                let /** @type {?} */ importAs;
-                if (this.summaryResolver.isLibraryFile(symbol.filePath)) {
-                    importAs = `${symbol.name}_${index}`;
-                    exportAs.push({ symbol, exportAs: importAs });
+                var /** @type {?} */ importAs;
+                if (_this.summaryResolver.isLibraryFile(symbol.filePath)) {
+                    importAs = symbol.name + "_" + index;
+                    exportAs.push({ symbol: symbol, exportAs: importAs });
                 }
                 return {
                     __symbol: index,
@@ -127,27 +134,27 @@ class Serializer extends ValueTransformer {
                     // We convert the source filenames tinto output filenames,
                     // as the generated summary file will be used when teh current
                     // compilation unit is used as a library
-                    filePath: this.summaryResolver.getLibraryFileName(symbol.filePath),
+                    filePath: _this.summaryResolver.getLibraryFileName(symbol.filePath),
                     importAs: importAs
                 };
             })
         });
-        return { json, exportAs };
-    }
+        return { json: json, exportAs: exportAs };
+    };
     /**
      * @param {?} value
      * @return {?}
      */
-    processValue(value) { return visitValue(value, this, null); }
+    Serializer.prototype.processValue = function (value) { return visitValue(value, this, null); };
     /**
      * @param {?} value
      * @param {?} context
      * @return {?}
      */
-    visitOther(value, context) {
+    Serializer.prototype.visitOther = function (value, context) {
         if (value instanceof StaticSymbol) {
-            const /** @type {?} */ baseSymbol = this.symbolResolver.getStaticSymbol(value.filePath, value.name);
-            let /** @type {?} */ index = this.indexBySymbol.get(baseSymbol);
+            var /** @type {?} */ baseSymbol = this.symbolResolver.getStaticSymbol(value.filePath, value.name);
+            var /** @type {?} */ index = this.indexBySymbol.get(baseSymbol);
             // Note: == by purpose to compare with undefined!
             if (index == null) {
                 index = this.indexBySymbol.size;
@@ -156,8 +163,9 @@ class Serializer extends ValueTransformer {
             }
             return { __symbol: index, members: value.members };
         }
-    }
-}
+    };
+    return Serializer;
+}(ValueTransformer));
 function Serializer_tsickle_Closure_declarations() {
     /** @type {?} */
     Serializer.prototype.symbols;
@@ -172,49 +180,52 @@ function Serializer_tsickle_Closure_declarations() {
     /** @type {?} */
     Serializer.prototype.summaryResolver;
 }
-class Deserializer extends ValueTransformer {
+var Deserializer = (function (_super) {
+    __extends(Deserializer, _super);
     /**
      * @param {?} symbolCache
      */
-    constructor(symbolCache) {
-        super();
+    function Deserializer(symbolCache) {
+        _super.call(this);
         this.symbolCache = symbolCache;
     }
     /**
      * @param {?} json
      * @return {?}
      */
-    deserialize(json) {
-        const /** @type {?} */ data = JSON.parse(json);
-        const /** @type {?} */ importAs = [];
+    Deserializer.prototype.deserialize = function (json) {
+        var _this = this;
+        var /** @type {?} */ data = JSON.parse(json);
+        var /** @type {?} */ importAs = [];
         this.symbols = [];
-        data.symbols.forEach((serializedSymbol) => {
-            const /** @type {?} */ symbol = this.symbolCache.get(serializedSymbol.filePath, serializedSymbol.name);
-            this.symbols.push(symbol);
+        data.symbols.forEach(function (serializedSymbol) {
+            var /** @type {?} */ symbol = _this.symbolCache.get(serializedSymbol.filePath, serializedSymbol.name);
+            _this.symbols.push(symbol);
             if (serializedSymbol.importAs) {
                 importAs.push({ symbol: symbol, importAs: serializedSymbol.importAs });
             }
         });
-        const /** @type {?} */ summaries = visitValue(data.summaries, this, null);
-        return { summaries, importAs };
-    }
+        var /** @type {?} */ summaries = visitValue(data.summaries, this, null);
+        return { summaries: summaries, importAs: importAs };
+    };
     /**
      * @param {?} map
      * @param {?} context
      * @return {?}
      */
-    visitStringMap(map, context) {
+    Deserializer.prototype.visitStringMap = function (map, context) {
         if ('__symbol' in map) {
-            const /** @type {?} */ baseSymbol = this.symbols[map['__symbol']];
-            const /** @type {?} */ members = map['members'];
+            var /** @type {?} */ baseSymbol = this.symbols[map['__symbol']];
+            var /** @type {?} */ members = map['members'];
             return members.length ? this.symbolCache.get(baseSymbol.filePath, baseSymbol.name, members) :
                 baseSymbol;
         }
         else {
-            return super.visitStringMap(map, context);
+            return _super.prototype.visitStringMap.call(this, map, context);
         }
-    }
-}
+    };
+    return Deserializer;
+}(ValueTransformer));
 function Deserializer_tsickle_Closure_declarations() {
     /** @type {?} */
     Deserializer.prototype.symbols;

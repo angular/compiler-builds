@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { getHtmlTagDefinition } from './ml_parser/html_tags';
-const /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
+var /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
     '(?:\\[([.-\\w*]+)(?:=([^\\]]*))?\\])|' +
@@ -18,8 +18,8 @@ const /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
  * css classes and attribute/value pairs with the purpose
  * of selecting subsets out of them.
  */
-export class CssSelector {
-    constructor() {
+export var CssSelector = (function () {
+    function CssSelector() {
         this.element = null;
         this.classNames = [];
         this.attrs = [];
@@ -29,19 +29,19 @@ export class CssSelector {
      * @param {?} selector
      * @return {?}
      */
-    static parse(selector) {
-        const /** @type {?} */ results = [];
-        const /** @type {?} */ _addResult = (res, cssSel) => {
+    CssSelector.parse = function (selector) {
+        var /** @type {?} */ results = [];
+        var /** @type {?} */ _addResult = function (res, cssSel) {
             if (cssSel.notSelectors.length > 0 && !cssSel.element && cssSel.classNames.length == 0 &&
                 cssSel.attrs.length == 0) {
                 cssSel.element = '*';
             }
             res.push(cssSel);
         };
-        let /** @type {?} */ cssSelector = new CssSelector();
-        let /** @type {?} */ match;
-        let /** @type {?} */ current = cssSelector;
-        let /** @type {?} */ inNot = false;
+        var /** @type {?} */ cssSelector = new CssSelector();
+        var /** @type {?} */ match;
+        var /** @type {?} */ current = cssSelector;
+        var /** @type {?} */ inNot = false;
         _SELECTOR_REGEXP.lastIndex = 0;
         while (match = _SELECTOR_REGEXP.exec(selector)) {
             if (match[1]) {
@@ -75,71 +75,76 @@ export class CssSelector {
         }
         _addResult(results, cssSelector);
         return results;
-    }
+    };
     /**
      * @return {?}
      */
-    isElementSelector() {
+    CssSelector.prototype.isElementSelector = function () {
         return this.hasElementSelector() && this.classNames.length == 0 && this.attrs.length == 0 &&
             this.notSelectors.length === 0;
-    }
+    };
     /**
      * @return {?}
      */
-    hasElementSelector() { return !!this.element; }
+    CssSelector.prototype.hasElementSelector = function () { return !!this.element; };
     /**
      * @param {?=} element
      * @return {?}
      */
-    setElement(element = null) { this.element = element; }
+    CssSelector.prototype.setElement = function (element) {
+        if (element === void 0) { element = null; }
+        this.element = element;
+    };
     /**
      * Gets a template string for an element that matches the selector.
      * @return {?}
      */
-    getMatchingElementTemplate() {
-        const /** @type {?} */ tagName = this.element || 'div';
-        const /** @type {?} */ classAttr = this.classNames.length > 0 ? ` class="${this.classNames.join(' ')}"` : '';
-        let /** @type {?} */ attrs = '';
-        for (let /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
-            const /** @type {?} */ attrName = this.attrs[i];
-            const /** @type {?} */ attrValue = this.attrs[i + 1] !== '' ? `="${this.attrs[i + 1]}"` : '';
-            attrs += ` ${attrName}${attrValue}`;
+    CssSelector.prototype.getMatchingElementTemplate = function () {
+        var /** @type {?} */ tagName = this.element || 'div';
+        var /** @type {?} */ classAttr = this.classNames.length > 0 ? " class=\"" + this.classNames.join(' ') + "\"" : '';
+        var /** @type {?} */ attrs = '';
+        for (var /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
+            var /** @type {?} */ attrName = this.attrs[i];
+            var /** @type {?} */ attrValue = this.attrs[i + 1] !== '' ? "=\"" + this.attrs[i + 1] + "\"" : '';
+            attrs += " " + attrName + attrValue;
         }
-        return getHtmlTagDefinition(tagName).isVoid ? `<${tagName}${classAttr}${attrs}/>` :
-            `<${tagName}${classAttr}${attrs}></${tagName}>`;
-    }
+        return getHtmlTagDefinition(tagName).isVoid ? "<" + tagName + classAttr + attrs + "/>" :
+            "<" + tagName + classAttr + attrs + "></" + tagName + ">";
+    };
     /**
      * @param {?} name
      * @param {?=} value
      * @return {?}
      */
-    addAttribute(name, value = '') {
+    CssSelector.prototype.addAttribute = function (name, value) {
+        if (value === void 0) { value = ''; }
         this.attrs.push(name, value && value.toLowerCase() || '');
-    }
+    };
     /**
      * @param {?} name
      * @return {?}
      */
-    addClassName(name) { this.classNames.push(name.toLowerCase()); }
+    CssSelector.prototype.addClassName = function (name) { this.classNames.push(name.toLowerCase()); };
     /**
      * @return {?}
      */
-    toString() {
-        let /** @type {?} */ res = this.element || '';
+    CssSelector.prototype.toString = function () {
+        var /** @type {?} */ res = this.element || '';
         if (this.classNames) {
-            this.classNames.forEach(klass => res += `.${klass}`);
+            this.classNames.forEach(function (klass) { return res += "." + klass; });
         }
         if (this.attrs) {
-            for (let /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
-                const /** @type {?} */ name = this.attrs[i];
-                const /** @type {?} */ value = this.attrs[i + 1];
-                res += `[${name}${value ? '=' + value : ''}]`;
+            for (var /** @type {?} */ i = 0; i < this.attrs.length; i += 2) {
+                var /** @type {?} */ name_1 = this.attrs[i];
+                var /** @type {?} */ value = this.attrs[i + 1];
+                res += "[" + name_1 + (value ? '=' + value : '') + "]";
             }
         }
-        this.notSelectors.forEach(notSelector => res += `:not(${notSelector})`);
+        this.notSelectors.forEach(function (notSelector) { return res += ":not(" + notSelector + ")"; });
         return res;
-    }
-}
+    };
+    return CssSelector;
+}());
 function CssSelector_tsickle_Closure_declarations() {
     /** @type {?} */
     CssSelector.prototype.element;
@@ -154,8 +159,8 @@ function CssSelector_tsickle_Closure_declarations() {
  * Reads a list of CssSelectors and allows to calculate which ones
  * are contained in a given CssSelector.
  */
-export class SelectorMatcher {
-    constructor() {
+export var SelectorMatcher = (function () {
+    function SelectorMatcher() {
         this._elementMap = new Map();
         this._elementPartialMap = new Map();
         this._classMap = new Map();
@@ -168,26 +173,26 @@ export class SelectorMatcher {
      * @param {?} notSelectors
      * @return {?}
      */
-    static createNotMatcher(notSelectors) {
-        const /** @type {?} */ notMatcher = new SelectorMatcher();
+    SelectorMatcher.createNotMatcher = function (notSelectors) {
+        var /** @type {?} */ notMatcher = new SelectorMatcher();
         notMatcher.addSelectables(notSelectors, null);
         return notMatcher;
-    }
+    };
     /**
      * @param {?} cssSelectors
      * @param {?=} callbackCtxt
      * @return {?}
      */
-    addSelectables(cssSelectors, callbackCtxt) {
-        let /** @type {?} */ listContext = null;
+    SelectorMatcher.prototype.addSelectables = function (cssSelectors, callbackCtxt) {
+        var /** @type {?} */ listContext = null;
         if (cssSelectors.length > 1) {
             listContext = new SelectorListContext(cssSelectors);
             this._listContexts.push(listContext);
         }
-        for (let /** @type {?} */ i = 0; i < cssSelectors.length; i++) {
+        for (var /** @type {?} */ i = 0; i < cssSelectors.length; i++) {
             this._addSelectable(cssSelectors[i], callbackCtxt, listContext);
         }
-    }
+    };
     /**
      * Add an object that can be found later on by calling `match`.
      * @param {?} cssSelector A css selector
@@ -195,14 +200,14 @@ export class SelectorMatcher {
      * @param {?} listContext
      * @return {?}
      */
-    _addSelectable(cssSelector, callbackCtxt, listContext) {
-        let /** @type {?} */ matcher = this;
-        const /** @type {?} */ element = cssSelector.element;
-        const /** @type {?} */ classNames = cssSelector.classNames;
-        const /** @type {?} */ attrs = cssSelector.attrs;
-        const /** @type {?} */ selectable = new SelectorContext(cssSelector, callbackCtxt, listContext);
+    SelectorMatcher.prototype._addSelectable = function (cssSelector, callbackCtxt, listContext) {
+        var /** @type {?} */ matcher = this;
+        var /** @type {?} */ element = cssSelector.element;
+        var /** @type {?} */ classNames = cssSelector.classNames;
+        var /** @type {?} */ attrs = cssSelector.attrs;
+        var /** @type {?} */ selectable = new SelectorContext(cssSelector, callbackCtxt, listContext);
         if (element) {
-            const /** @type {?} */ isTerminal = attrs.length === 0 && classNames.length === 0;
+            var /** @type {?} */ isTerminal = attrs.length === 0 && classNames.length === 0;
             if (isTerminal) {
                 this._addTerminal(matcher._elementMap, element, selectable);
             }
@@ -211,9 +216,9 @@ export class SelectorMatcher {
             }
         }
         if (classNames) {
-            for (let /** @type {?} */ i = 0; i < classNames.length; i++) {
-                const /** @type {?} */ isTerminal = attrs.length === 0 && i === classNames.length - 1;
-                const /** @type {?} */ className = classNames[i];
+            for (var /** @type {?} */ i = 0; i < classNames.length; i++) {
+                var /** @type {?} */ isTerminal = attrs.length === 0 && i === classNames.length - 1;
+                var /** @type {?} */ className = classNames[i];
                 if (isTerminal) {
                     this._addTerminal(matcher._classMap, className, selectable);
                 }
@@ -223,58 +228,58 @@ export class SelectorMatcher {
             }
         }
         if (attrs) {
-            for (let /** @type {?} */ i = 0; i < attrs.length; i += 2) {
-                const /** @type {?} */ isTerminal = i === attrs.length - 2;
-                const /** @type {?} */ name = attrs[i];
-                const /** @type {?} */ value = attrs[i + 1];
+            for (var /** @type {?} */ i = 0; i < attrs.length; i += 2) {
+                var /** @type {?} */ isTerminal = i === attrs.length - 2;
+                var /** @type {?} */ name_2 = attrs[i];
+                var /** @type {?} */ value = attrs[i + 1];
                 if (isTerminal) {
-                    const /** @type {?} */ terminalMap = matcher._attrValueMap;
-                    let /** @type {?} */ terminalValuesMap = terminalMap.get(name);
+                    var /** @type {?} */ terminalMap = matcher._attrValueMap;
+                    var /** @type {?} */ terminalValuesMap = terminalMap.get(name_2);
                     if (!terminalValuesMap) {
                         terminalValuesMap = new Map();
-                        terminalMap.set(name, terminalValuesMap);
+                        terminalMap.set(name_2, terminalValuesMap);
                     }
                     this._addTerminal(terminalValuesMap, value, selectable);
                 }
                 else {
-                    const /** @type {?} */ partialMap = matcher._attrValuePartialMap;
-                    let /** @type {?} */ partialValuesMap = partialMap.get(name);
+                    var /** @type {?} */ partialMap = matcher._attrValuePartialMap;
+                    var /** @type {?} */ partialValuesMap = partialMap.get(name_2);
                     if (!partialValuesMap) {
                         partialValuesMap = new Map();
-                        partialMap.set(name, partialValuesMap);
+                        partialMap.set(name_2, partialValuesMap);
                     }
                     matcher = this._addPartial(partialValuesMap, value);
                 }
             }
         }
-    }
+    };
     /**
      * @param {?} map
      * @param {?} name
      * @param {?} selectable
      * @return {?}
      */
-    _addTerminal(map, name, selectable) {
-        let /** @type {?} */ terminalList = map.get(name);
+    SelectorMatcher.prototype._addTerminal = function (map, name, selectable) {
+        var /** @type {?} */ terminalList = map.get(name);
         if (!terminalList) {
             terminalList = [];
             map.set(name, terminalList);
         }
         terminalList.push(selectable);
-    }
+    };
     /**
      * @param {?} map
      * @param {?} name
      * @return {?}
      */
-    _addPartial(map, name) {
-        let /** @type {?} */ matcher = map.get(name);
+    SelectorMatcher.prototype._addPartial = function (map, name) {
+        var /** @type {?} */ matcher = map.get(name);
         if (!matcher) {
             matcher = new SelectorMatcher();
             map.set(name, matcher);
         }
         return matcher;
-    }
+    };
     /**
      * Find the objects that have been added via `addSelectable`
      * whose css selector is contained in the given css selector.
@@ -282,20 +287,20 @@ export class SelectorMatcher {
      * @param {?} matchedCallback This callback will be called with the object handed into `addSelectable`
      * @return {?} boolean true if a match was found
      */
-    match(cssSelector, matchedCallback) {
-        let /** @type {?} */ result = false;
-        const /** @type {?} */ element = cssSelector.element;
-        const /** @type {?} */ classNames = cssSelector.classNames;
-        const /** @type {?} */ attrs = cssSelector.attrs;
-        for (let /** @type {?} */ i = 0; i < this._listContexts.length; i++) {
+    SelectorMatcher.prototype.match = function (cssSelector, matchedCallback) {
+        var /** @type {?} */ result = false;
+        var /** @type {?} */ element = cssSelector.element;
+        var /** @type {?} */ classNames = cssSelector.classNames;
+        var /** @type {?} */ attrs = cssSelector.attrs;
+        for (var /** @type {?} */ i = 0; i < this._listContexts.length; i++) {
             this._listContexts[i].alreadyMatched = false;
         }
         result = this._matchTerminal(this._elementMap, element, cssSelector, matchedCallback) || result;
         result = this._matchPartial(this._elementPartialMap, element, cssSelector, matchedCallback) ||
             result;
         if (classNames) {
-            for (let /** @type {?} */ i = 0; i < classNames.length; i++) {
-                const /** @type {?} */ className = classNames[i];
+            for (var /** @type {?} */ i = 0; i < classNames.length; i++) {
+                var /** @type {?} */ className = classNames[i];
                 result =
                     this._matchTerminal(this._classMap, className, cssSelector, matchedCallback) || result;
                 result =
@@ -304,17 +309,17 @@ export class SelectorMatcher {
             }
         }
         if (attrs) {
-            for (let /** @type {?} */ i = 0; i < attrs.length; i += 2) {
-                const /** @type {?} */ name = attrs[i];
-                const /** @type {?} */ value = attrs[i + 1];
-                const /** @type {?} */ terminalValuesMap = this._attrValueMap.get(name);
+            for (var /** @type {?} */ i = 0; i < attrs.length; i += 2) {
+                var /** @type {?} */ name_3 = attrs[i];
+                var /** @type {?} */ value = attrs[i + 1];
+                var /** @type {?} */ terminalValuesMap = this._attrValueMap.get(name_3);
                 if (value) {
                     result =
                         this._matchTerminal(terminalValuesMap, '', cssSelector, matchedCallback) || result;
                 }
                 result =
                     this._matchTerminal(terminalValuesMap, value, cssSelector, matchedCallback) || result;
-                const /** @type {?} */ partialValuesMap = this._attrValuePartialMap.get(name);
+                var /** @type {?} */ partialValuesMap = this._attrValuePartialMap.get(name_3);
                 if (value) {
                     result = this._matchPartial(partialValuesMap, '', cssSelector, matchedCallback) || result;
                 }
@@ -323,7 +328,7 @@ export class SelectorMatcher {
             }
         }
         return result;
-    }
+    };
     /**
      * \@internal
      * @param {?} map
@@ -332,26 +337,26 @@ export class SelectorMatcher {
      * @param {?} matchedCallback
      * @return {?}
      */
-    _matchTerminal(map, name, cssSelector, matchedCallback) {
+    SelectorMatcher.prototype._matchTerminal = function (map, name, cssSelector, matchedCallback) {
         if (!map || typeof name !== 'string') {
             return false;
         }
-        let /** @type {?} */ selectables = map.get(name) || [];
-        const /** @type {?} */ starSelectables = map.get('*');
+        var /** @type {?} */ selectables = map.get(name) || [];
+        var /** @type {?} */ starSelectables = map.get('*');
         if (starSelectables) {
             selectables = selectables.concat(starSelectables);
         }
         if (selectables.length === 0) {
             return false;
         }
-        let /** @type {?} */ selectable;
-        let /** @type {?} */ result = false;
-        for (let /** @type {?} */ i = 0; i < selectables.length; i++) {
+        var /** @type {?} */ selectable;
+        var /** @type {?} */ result = false;
+        for (var /** @type {?} */ i = 0; i < selectables.length; i++) {
             selectable = selectables[i];
             result = selectable.finalize(cssSelector, matchedCallback) || result;
         }
         return result;
-    }
+    };
     /**
      * \@internal
      * @param {?} map
@@ -360,11 +365,11 @@ export class SelectorMatcher {
      * @param {?} matchedCallback
      * @return {?}
      */
-    _matchPartial(map, name, cssSelector, matchedCallback) {
+    SelectorMatcher.prototype._matchPartial = function (map, name, cssSelector, matchedCallback) {
         if (!map || typeof name !== 'string') {
             return false;
         }
-        const /** @type {?} */ nestedSelector = map.get(name);
+        var /** @type {?} */ nestedSelector = map.get(name);
         if (!nestedSelector) {
             return false;
         }
@@ -372,8 +377,9 @@ export class SelectorMatcher {
         // TODO(perf): don't pass the whole selector into the recursion,
         // but only the not processed parts
         return nestedSelector.match(cssSelector, matchedCallback);
-    }
-}
+    };
+    return SelectorMatcher;
+}());
 function SelectorMatcher_tsickle_Closure_declarations() {
     /** @type {?} */
     SelectorMatcher.prototype._elementMap;
@@ -390,28 +396,29 @@ function SelectorMatcher_tsickle_Closure_declarations() {
     /** @type {?} */
     SelectorMatcher.prototype._listContexts;
 }
-export class SelectorListContext {
+export var SelectorListContext = (function () {
     /**
      * @param {?} selectors
      */
-    constructor(selectors) {
+    function SelectorListContext(selectors) {
         this.selectors = selectors;
         this.alreadyMatched = false;
     }
-}
+    return SelectorListContext;
+}());
 function SelectorListContext_tsickle_Closure_declarations() {
     /** @type {?} */
     SelectorListContext.prototype.alreadyMatched;
     /** @type {?} */
     SelectorListContext.prototype.selectors;
 }
-export class SelectorContext {
+export var SelectorContext = (function () {
     /**
      * @param {?} selector
      * @param {?} cbContext
      * @param {?} listContext
      */
-    constructor(selector, cbContext, listContext) {
+    function SelectorContext(selector, cbContext, listContext) {
         this.selector = selector;
         this.cbContext = cbContext;
         this.listContext = listContext;
@@ -422,10 +429,10 @@ export class SelectorContext {
      * @param {?} callback
      * @return {?}
      */
-    finalize(cssSelector, callback) {
-        let /** @type {?} */ result = true;
+    SelectorContext.prototype.finalize = function (cssSelector, callback) {
+        var /** @type {?} */ result = true;
         if (this.notSelectors.length > 0 && (!this.listContext || !this.listContext.alreadyMatched)) {
-            const /** @type {?} */ notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
+            var /** @type {?} */ notMatcher = SelectorMatcher.createNotMatcher(this.notSelectors);
             result = !notMatcher.match(cssSelector, null);
         }
         if (result && callback && (!this.listContext || !this.listContext.alreadyMatched)) {
@@ -435,8 +442,9 @@ export class SelectorContext {
             callback(this.selector, this.cbContext);
         }
         return result;
-    }
-}
+    };
+    return SelectorContext;
+}());
 function SelectorContext_tsickle_Closure_declarations() {
     /** @type {?} */
     SelectorContext.prototype.notSelectors;

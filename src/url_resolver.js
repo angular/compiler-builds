@@ -14,7 +14,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { Inject, PACKAGE_ROOT_URL } from '@angular/core/index';
+import { Inject, PACKAGE_ROOT_URL } from '@angular/core';
 import { isBlank, isPresent } from './facade/lang';
 import { CompilerInjectable } from './injectable';
 /**
@@ -33,7 +33,7 @@ export function createOfflineCompileUrlResolver() {
 /**
  * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
  */
-export const /** @type {?} */ DEFAULT_PACKAGE_URL_PROVIDER = {
+export var /** @type {?} */ DEFAULT_PACKAGE_URL_PROVIDER = {
     provide: PACKAGE_ROOT_URL,
     useValue: '/'
 };
@@ -53,11 +53,12 @@ export const /** @type {?} */ DEFAULT_PACKAGE_URL_PROVIDER = {
  * Attacker-controlled data introduced by a template could expose your
  * application to XSS risks. For more detail, see the [Security Guide](http://g.co/ng/security).
  */
-export let UrlResolver = class UrlResolver {
+export var UrlResolver = (function () {
     /**
      * @param {?=} _packagePrefix
      */
-    constructor(_packagePrefix = null) {
+    function UrlResolver(_packagePrefix) {
+        if (_packagePrefix === void 0) { _packagePrefix = null; }
         this._packagePrefix = _packagePrefix;
     }
     /**
@@ -71,31 +72,32 @@ export let UrlResolver = class UrlResolver {
      * @param {?} url
      * @return {?}
      */
-    resolve(baseUrl, url) {
-        let /** @type {?} */ resolvedUrl = url;
+    UrlResolver.prototype.resolve = function (baseUrl, url) {
+        var /** @type {?} */ resolvedUrl = url;
         if (isPresent(baseUrl) && baseUrl.length > 0) {
             resolvedUrl = _resolveUrl(baseUrl, resolvedUrl);
         }
-        const /** @type {?} */ resolvedParts = _split(resolvedUrl);
-        let /** @type {?} */ prefix = this._packagePrefix;
+        var /** @type {?} */ resolvedParts = _split(resolvedUrl);
+        var /** @type {?} */ prefix = this._packagePrefix;
         if (isPresent(prefix) && isPresent(resolvedParts) &&
             resolvedParts[_ComponentIndex.Scheme] == 'package') {
-            let /** @type {?} */ path = resolvedParts[_ComponentIndex.Path];
+            var /** @type {?} */ path = resolvedParts[_ComponentIndex.Path];
             prefix = prefix.replace(/\/+$/, '');
             path = path.replace(/^\/+/, '');
-            return `${prefix}/${path}`;
+            return prefix + "/" + path;
         }
         return resolvedUrl;
-    }
-};
-/** @nocollapse */
-UrlResolver.ctorParameters = () => [
-    { type: undefined, decorators: [{ type: Inject, args: [PACKAGE_ROOT_URL,] },] },
-];
-UrlResolver = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [String])
-], UrlResolver);
+    };
+    /** @nocollapse */
+    UrlResolver.ctorParameters = function () { return [
+        { type: undefined, decorators: [{ type: Inject, args: [PACKAGE_ROOT_URL,] },] },
+    ]; };
+    UrlResolver = __decorate([
+        CompilerInjectable(), 
+        __metadata('design:paramtypes', [String])
+    ], UrlResolver);
+    return UrlResolver;
+}());
 function UrlResolver_tsickle_Closure_declarations() {
     /**
      * @nocollapse
@@ -111,7 +113,7 @@ function UrlResolver_tsickle_Closure_declarations() {
  * @return {?}
  */
 export function getUrlScheme(url) {
-    const /** @type {?} */ match = _split(url);
+    var /** @type {?} */ match = _split(url);
     return (match && match[_ComponentIndex.Scheme]) || '';
 }
 /**
@@ -132,7 +134,7 @@ export function getUrlScheme(url) {
  * @return {?} The fully combined URI.
  */
 function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, opt_path, opt_queryData, opt_fragment) {
-    const /** @type {?} */ out = [];
+    var /** @type {?} */ out = [];
     if (isPresent(opt_scheme)) {
         out.push(opt_scheme + ':');
     }
@@ -219,7 +221,7 @@ function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, 
  * @type {!RegExp}
  * @internal
  */
-const /** @type {?} */ _splitRe = new RegExp('^' +
+var /** @type {?} */ _splitRe = new RegExp('^' +
     '(?:' +
     '([^:/?#.]+)' +
     // used by other URL parts such as :,
@@ -236,7 +238,7 @@ const /** @type {?} */ _splitRe = new RegExp('^' +
     '(?:\\?([^#]*))?' +
     '(?:#(.*))?' +
     '$');
-let _ComponentIndex = {};
+var _ComponentIndex = {};
 _ComponentIndex.Scheme = 1;
 _ComponentIndex.UserInfo = 2;
 _ComponentIndex.Domain = 3;
@@ -279,13 +281,13 @@ function _split(uri) {
 function _removeDotSegments(path) {
     if (path == '/')
         return '/';
-    const /** @type {?} */ leadingSlash = path[0] == '/' ? '/' : '';
-    const /** @type {?} */ trailingSlash = path[path.length - 1] === '/' ? '/' : '';
-    const /** @type {?} */ segments = path.split('/');
-    const /** @type {?} */ out = [];
-    let /** @type {?} */ up = 0;
-    for (let /** @type {?} */ pos = 0; pos < segments.length; pos++) {
-        const /** @type {?} */ segment = segments[pos];
+    var /** @type {?} */ leadingSlash = path[0] == '/' ? '/' : '';
+    var /** @type {?} */ trailingSlash = path[path.length - 1] === '/' ? '/' : '';
+    var /** @type {?} */ segments = path.split('/');
+    var /** @type {?} */ out = [];
+    var /** @type {?} */ up = 0;
+    for (var /** @type {?} */ pos = 0; pos < segments.length; pos++) {
+        var /** @type {?} */ segment = segments[pos];
         switch (segment) {
             case '':
             case '.':
@@ -318,7 +320,7 @@ function _removeDotSegments(path) {
  * @return {?}
  */
 function _joinAndCanonicalizePath(parts) {
-    let /** @type {?} */ path = parts[_ComponentIndex.Path];
+    var /** @type {?} */ path = parts[_ComponentIndex.Path];
     path = isBlank(path) ? '' : _removeDotSegments(path);
     parts[_ComponentIndex.Path] = path;
     return _buildFromEncodedParts(parts[_ComponentIndex.Scheme], parts[_ComponentIndex.UserInfo], parts[_ComponentIndex.Domain], parts[_ComponentIndex.Port], path, parts[_ComponentIndex.QueryData], parts[_ComponentIndex.Fragment]);
@@ -330,15 +332,15 @@ function _joinAndCanonicalizePath(parts) {
  * @return {?}
  */
 function _resolveUrl(base, url) {
-    const /** @type {?} */ parts = _split(encodeURI(url));
-    const /** @type {?} */ baseParts = _split(base);
+    var /** @type {?} */ parts = _split(encodeURI(url));
+    var /** @type {?} */ baseParts = _split(base);
     if (isPresent(parts[_ComponentIndex.Scheme])) {
         return _joinAndCanonicalizePath(parts);
     }
     else {
         parts[_ComponentIndex.Scheme] = baseParts[_ComponentIndex.Scheme];
     }
-    for (let /** @type {?} */ i = _ComponentIndex.Scheme; i <= _ComponentIndex.Port; i++) {
+    for (var /** @type {?} */ i = _ComponentIndex.Scheme; i <= _ComponentIndex.Port; i++) {
         if (isBlank(parts[i])) {
             parts[i] = baseParts[i];
         }
@@ -346,10 +348,10 @@ function _resolveUrl(base, url) {
     if (parts[_ComponentIndex.Path][0] == '/') {
         return _joinAndCanonicalizePath(parts);
     }
-    let /** @type {?} */ path = baseParts[_ComponentIndex.Path];
+    var /** @type {?} */ path = baseParts[_ComponentIndex.Path];
     if (isBlank(path))
         path = '/';
-    const /** @type {?} */ index = path.lastIndexOf('/');
+    var /** @type {?} */ index = path.lastIndexOf('/');
     path = path.substring(0, index + 1) + parts[_ComponentIndex.Path];
     parts[_ComponentIndex.Path] = path;
     return _joinAndCanonicalizePath(parts);

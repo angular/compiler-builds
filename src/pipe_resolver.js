@@ -14,7 +14,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { Pipe, resolveForwardRef } from '@angular/core/index';
+import { Pipe, resolveForwardRef } from '@angular/core';
 import { ListWrapper } from './facade/collection';
 import { stringify } from './facade/lang';
 import { CompilerInjectable } from './injectable';
@@ -33,48 +33,50 @@ function _isPipeMetadata(type) {
  *
  * See {\@link Compiler}
  */
-export let PipeResolver = class PipeResolver {
+export var PipeResolver = (function () {
     /**
      * @param {?=} _reflector
      */
-    constructor(_reflector = reflector) {
+    function PipeResolver(_reflector) {
+        if (_reflector === void 0) { _reflector = reflector; }
         this._reflector = _reflector;
     }
     /**
      * @param {?} type
      * @return {?}
      */
-    isPipe(type) {
-        const /** @type {?} */ typeMetadata = this._reflector.annotations(resolveForwardRef(type));
+    PipeResolver.prototype.isPipe = function (type) {
+        var /** @type {?} */ typeMetadata = this._reflector.annotations(resolveForwardRef(type));
         return typeMetadata && typeMetadata.some(_isPipeMetadata);
-    }
+    };
     /**
      * Return {\@link Pipe} for a given `Type`.
      * @param {?} type
      * @param {?=} throwIfNotFound
      * @return {?}
      */
-    resolve(type, throwIfNotFound = true) {
-        const /** @type {?} */ metas = this._reflector.annotations(resolveForwardRef(type));
+    PipeResolver.prototype.resolve = function (type, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        var /** @type {?} */ metas = this._reflector.annotations(resolveForwardRef(type));
         if (metas) {
-            const /** @type {?} */ annotation = ListWrapper.findLast(metas, _isPipeMetadata);
+            var /** @type {?} */ annotation = ListWrapper.findLast(metas, _isPipeMetadata);
             if (annotation) {
                 return annotation;
             }
         }
         if (throwIfNotFound) {
-            throw new Error(`No Pipe decorator found on ${stringify(type)}`);
+            throw new Error("No Pipe decorator found on " + stringify(type));
         }
         return null;
-    }
-};
-PipeResolver = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [(typeof (_a = typeof ReflectorReader !== 'undefined' && ReflectorReader) === 'function' && _a) || Object])
-], PipeResolver);
+    };
+    PipeResolver = __decorate([
+        CompilerInjectable(), 
+        __metadata('design:paramtypes', [ReflectorReader])
+    ], PipeResolver);
+    return PipeResolver;
+}());
 function PipeResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     PipeResolver.prototype._reflector;
 }
-var _a;
 //# sourceMappingURL=pipe_resolver.js.map

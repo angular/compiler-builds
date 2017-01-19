@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export class Message {
+export var Message = (function () {
     /**
      * @param {?} nodes message AST
      * @param {?} placeholders maps placeholder names to static content
@@ -14,7 +14,7 @@ export class Message {
      * @param {?} description
      * @param {?} id
      */
-    constructor(nodes, placeholders, placeholderToMessage, meaning, description, id) {
+    function Message(nodes, placeholders, placeholderToMessage, meaning, description, id) {
         this.nodes = nodes;
         this.placeholders = placeholders;
         this.placeholderToMessage = placeholderToMessage;
@@ -22,7 +22,8 @@ export class Message {
         this.description = description;
         this.id = id;
     }
-}
+    return Message;
+}());
 function Message_tsickle_Closure_declarations() {
     /** @type {?} */
     Message.prototype.nodes;
@@ -37,12 +38,12 @@ function Message_tsickle_Closure_declarations() {
     /** @type {?} */
     Message.prototype.id;
 }
-export class Text {
+export var Text = (function () {
     /**
      * @param {?} value
      * @param {?} sourceSpan
      */
-    constructor(value, sourceSpan) {
+    function Text(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
@@ -51,20 +52,21 @@ export class Text {
      * @param {?=} context
      * @return {?}
      */
-    visit(visitor, context) { return visitor.visitText(this, context); }
-}
+    Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
+    return Text;
+}());
 function Text_tsickle_Closure_declarations() {
     /** @type {?} */
     Text.prototype.value;
     /** @type {?} */
     Text.prototype.sourceSpan;
 }
-export class Container {
+export var Container = (function () {
     /**
      * @param {?} children
      * @param {?} sourceSpan
      */
-    constructor(children, sourceSpan) {
+    function Container(children, sourceSpan) {
         this.children = children;
         this.sourceSpan = sourceSpan;
     }
@@ -73,22 +75,23 @@ export class Container {
      * @param {?=} context
      * @return {?}
      */
-    visit(visitor, context) { return visitor.visitContainer(this, context); }
-}
+    Container.prototype.visit = function (visitor, context) { return visitor.visitContainer(this, context); };
+    return Container;
+}());
 function Container_tsickle_Closure_declarations() {
     /** @type {?} */
     Container.prototype.children;
     /** @type {?} */
     Container.prototype.sourceSpan;
 }
-export class Icu {
+export var Icu = (function () {
     /**
      * @param {?} expression
      * @param {?} type
      * @param {?} cases
      * @param {?} sourceSpan
      */
-    constructor(expression, type, cases, sourceSpan) {
+    function Icu(expression, type, cases, sourceSpan) {
         this.expression = expression;
         this.type = type;
         this.cases = cases;
@@ -99,8 +102,9 @@ export class Icu {
      * @param {?=} context
      * @return {?}
      */
-    visit(visitor, context) { return visitor.visitIcu(this, context); }
-}
+    Icu.prototype.visit = function (visitor, context) { return visitor.visitIcu(this, context); };
+    return Icu;
+}());
 function Icu_tsickle_Closure_declarations() {
     /** @type {?} */
     Icu.prototype.expressionPlaceholder;
@@ -113,7 +117,7 @@ function Icu_tsickle_Closure_declarations() {
     /** @type {?} */
     Icu.prototype.sourceSpan;
 }
-export class TagPlaceholder {
+export var TagPlaceholder = (function () {
     /**
      * @param {?} tag
      * @param {?} attrs
@@ -123,7 +127,7 @@ export class TagPlaceholder {
      * @param {?} isVoid
      * @param {?} sourceSpan
      */
-    constructor(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
+    function TagPlaceholder(tag, attrs, startName, closeName, children, isVoid, sourceSpan) {
         this.tag = tag;
         this.attrs = attrs;
         this.startName = startName;
@@ -137,8 +141,9 @@ export class TagPlaceholder {
      * @param {?=} context
      * @return {?}
      */
-    visit(visitor, context) { return visitor.visitTagPlaceholder(this, context); }
-}
+    TagPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitTagPlaceholder(this, context); };
+    return TagPlaceholder;
+}());
 function TagPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     TagPlaceholder.prototype.tag;
@@ -155,13 +160,13 @@ function TagPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     TagPlaceholder.prototype.sourceSpan;
 }
-export class Placeholder {
+export var Placeholder = (function () {
     /**
      * @param {?} value
      * @param {?} name
      * @param {?} sourceSpan
      */
-    constructor(value, name, sourceSpan) {
+    function Placeholder(value, name, sourceSpan) {
         this.value = value;
         this.name = name;
         this.sourceSpan = sourceSpan;
@@ -171,8 +176,9 @@ export class Placeholder {
      * @param {?=} context
      * @return {?}
      */
-    visit(visitor, context) { return visitor.visitPlaceholder(this, context); }
-}
+    Placeholder.prototype.visit = function (visitor, context) { return visitor.visitPlaceholder(this, context); };
+    return Placeholder;
+}());
 function Placeholder_tsickle_Closure_declarations() {
     /** @type {?} */
     Placeholder.prototype.value;
@@ -181,13 +187,13 @@ function Placeholder_tsickle_Closure_declarations() {
     /** @type {?} */
     Placeholder.prototype.sourceSpan;
 }
-export class IcuPlaceholder {
+export var IcuPlaceholder = (function () {
     /**
      * @param {?} value
      * @param {?} name
      * @param {?} sourceSpan
      */
-    constructor(value, name, sourceSpan) {
+    function IcuPlaceholder(value, name, sourceSpan) {
         this.value = value;
         this.name = name;
         this.sourceSpan = sourceSpan;
@@ -197,8 +203,9 @@ export class IcuPlaceholder {
      * @param {?=} context
      * @return {?}
      */
-    visit(visitor, context) { return visitor.visitIcuPlaceholder(this, context); }
-}
+    IcuPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitIcuPlaceholder(this, context); };
+    return IcuPlaceholder;
+}());
 function IcuPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     IcuPlaceholder.prototype.value;

@@ -6,16 +6,18 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { TagContentType } from './tags';
-export class HtmlTagDefinition {
+export var HtmlTagDefinition = (function () {
     /**
      * @param {?=} __0
      */
-    constructor({ closedByChildren, requiredParents, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false } = {}) {
+    function HtmlTagDefinition(_a) {
+        var _this = this;
+        var _b = _a === void 0 ? {} : _a, closedByChildren = _b.closedByChildren, requiredParents = _b.requiredParents, implicitNamespacePrefix = _b.implicitNamespacePrefix, _c = _b.contentType, contentType = _c === void 0 ? TagContentType.PARSABLE_DATA : _c, _d = _b.closedByParent, closedByParent = _d === void 0 ? false : _d, _e = _b.isVoid, isVoid = _e === void 0 ? false : _e, _f = _b.ignoreFirstLf, ignoreFirstLf = _f === void 0 ? false : _f;
         this.closedByChildren = {};
         this.closedByParent = false;
         this.canSelfClose = false;
         if (closedByChildren && closedByChildren.length > 0) {
-            closedByChildren.forEach(tagName => this.closedByChildren[tagName] = true);
+            closedByChildren.forEach(function (tagName) { return _this.closedByChildren[tagName] = true; });
         }
         this.isVoid = isVoid;
         this.closedByParent = closedByParent || isVoid;
@@ -23,7 +25,7 @@ export class HtmlTagDefinition {
             this.requiredParents = {};
             // The first parent is the list is automatically when none of the listed parents are present
             this.parentToAdd = requiredParents[0];
-            requiredParents.forEach(tagName => this.requiredParents[tagName] = true);
+            requiredParents.forEach(function (tagName) { return _this.requiredParents[tagName] = true; });
         }
         this.implicitNamespacePrefix = implicitNamespacePrefix;
         this.contentType = contentType;
@@ -33,24 +35,25 @@ export class HtmlTagDefinition {
      * @param {?} currentParent
      * @return {?}
      */
-    requireExtraParent(currentParent) {
+    HtmlTagDefinition.prototype.requireExtraParent = function (currentParent) {
         if (!this.requiredParents) {
             return false;
         }
         if (!currentParent) {
             return true;
         }
-        const /** @type {?} */ lcParent = currentParent.toLowerCase();
+        var /** @type {?} */ lcParent = currentParent.toLowerCase();
         return this.requiredParents[lcParent] != true && lcParent != 'template';
-    }
+    };
     /**
      * @param {?} name
      * @return {?}
      */
-    isClosedByChild(name) {
+    HtmlTagDefinition.prototype.isClosedByChild = function (name) {
         return this.isVoid || name.toLowerCase() in this.closedByChildren;
-    }
-}
+    };
+    return HtmlTagDefinition;
+}());
 function HtmlTagDefinition_tsickle_Closure_declarations() {
     /** @type {?} */
     HtmlTagDefinition.prototype.closedByChildren;
@@ -73,7 +76,7 @@ function HtmlTagDefinition_tsickle_Closure_declarations() {
 }
 // see http://www.w3.org/TR/html51/syntax.html#optional-tags
 // This implementation does not fully conform to the HTML5 spec.
-const /** @type {?} */ TAG_DEFINITIONS = {
+var /** @type {?} */ TAG_DEFINITIONS = {
     'base': new HtmlTagDefinition({ isVoid: true }),
     'meta': new HtmlTagDefinition({ isVoid: true }),
     'area': new HtmlTagDefinition({ isVoid: true }),
@@ -124,7 +127,7 @@ const /** @type {?} */ TAG_DEFINITIONS = {
     'title': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT }),
     'textarea': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
 };
-const /** @type {?} */ _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
+var /** @type {?} */ _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
 /**
  * @param {?} tagName
  * @return {?}

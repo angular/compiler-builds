@@ -5,6 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 import { createDiTokenExpression } from '../compiler_util/identifier_util';
 import * as o from '../output/output_ast';
 import { ViewType } from '../private_import_core';
@@ -19,25 +24,26 @@ export function getPropertyInView(property, callingView, definedView) {
         return property;
     }
     else {
-        let /** @type {?} */ viewProp = o.THIS_EXPR;
-        let /** @type {?} */ currView = callingView;
+        var /** @type {?} */ viewProp = o.THIS_EXPR;
+        var /** @type {?} */ currView = callingView;
         while (currView !== definedView && currView.declarationElement.view) {
             currView = currView.declarationElement.view;
             viewProp = viewProp.prop('parentView');
         }
         if (currView !== definedView) {
-            throw new Error(`Internal error: Could not calculate a property in a parent view: ${property}`);
+            throw new Error("Internal error: Could not calculate a property in a parent view: " + property);
         }
         return property.visitExpression(new _ReplaceViewTransformer(viewProp, definedView), null);
     }
 }
-class _ReplaceViewTransformer extends o.ExpressionTransformer {
+var _ReplaceViewTransformer = (function (_super) {
+    __extends(_ReplaceViewTransformer, _super);
     /**
      * @param {?} _viewExpr
      * @param {?} _view
      */
-    constructor(_viewExpr, _view) {
-        super();
+    function _ReplaceViewTransformer(_viewExpr, _view) {
+        _super.call(this);
         this._viewExpr = _viewExpr;
         this._view = _view;
     }
@@ -45,33 +51,34 @@ class _ReplaceViewTransformer extends o.ExpressionTransformer {
      * @param {?} expr
      * @return {?}
      */
-    _isThis(expr) {
+    _ReplaceViewTransformer.prototype._isThis = function (expr) {
         return expr instanceof o.ReadVarExpr && expr.builtin === o.BuiltinVar.This;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitReadVarExpr(ast, context) {
+    _ReplaceViewTransformer.prototype.visitReadVarExpr = function (ast, context) {
         return this._isThis(ast) ? this._viewExpr : ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitReadPropExpr(ast, context) {
+    _ReplaceViewTransformer.prototype.visitReadPropExpr = function (ast, context) {
         if (this._isThis(ast.receiver)) {
             // Note: Don't cast for members of the AppView base class...
-            if (this._view.fields.some((field) => field.name == ast.name) ||
-                this._view.getters.some((field) => field.name == ast.name)) {
+            if (this._view.fields.some(function (field) { return field.name == ast.name; }) ||
+                this._view.getters.some(function (field) { return field.name == ast.name; })) {
                 return this._viewExpr.cast(this._view.classType).prop(ast.name);
             }
         }
-        return super.visitReadPropExpr(ast, context);
-    }
-}
+        return _super.prototype.visitReadPropExpr.call(this, ast, context);
+    };
+    return _ReplaceViewTransformer;
+}(o.ExpressionTransformer));
 function _ReplaceViewTransformer_tsickle_Closure_declarations() {
     /** @type {?} */
     _ReplaceViewTransformer.prototype._viewExpr;
@@ -85,14 +92,14 @@ function _ReplaceViewTransformer_tsickle_Closure_declarations() {
  * @return {?}
  */
 export function injectFromViewParentInjector(view, token, optional) {
-    let /** @type {?} */ viewExpr;
+    var /** @type {?} */ viewExpr;
     if (view.viewType === ViewType.HOST) {
         viewExpr = o.THIS_EXPR;
     }
     else {
         viewExpr = o.THIS_EXPR.prop('parentView');
     }
-    const /** @type {?} */ args = [createDiTokenExpression(token), o.THIS_EXPR.prop('parentIndex')];
+    var /** @type {?} */ args = [createDiTokenExpression(token), o.THIS_EXPR.prop('parentIndex')];
     if (optional) {
         args.push(o.NULL_EXPR);
     }
@@ -103,6 +110,6 @@ export function injectFromViewParentInjector(view, token, optional) {
  * @return {?}
  */
 export function getHandleEventMethodName(elementIndex) {
-    return `handleEvent_${elementIndex}`;
+    return "handleEvent_" + elementIndex;
 }
 //# sourceMappingURL=util.js.map

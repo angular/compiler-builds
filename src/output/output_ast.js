@@ -5,18 +5,24 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 import { isPresent } from '../facade/lang';
-export let TypeModifier = {};
+export var TypeModifier = {};
 TypeModifier.Const = 0;
 TypeModifier[TypeModifier.Const] = "Const";
 /**
  * @abstract
  */
-export class Type {
+export var Type = (function () {
     /**
      * @param {?=} modifiers
      */
-    constructor(modifiers = null) {
+    function Type(modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
         this.modifiers = modifiers;
         if (!modifiers) {
             this.modifiers = [];
@@ -28,18 +34,19 @@ export class Type {
      * @param {?} context
      * @return {?}
      */
-    visitType(visitor, context) { }
+    Type.prototype.visitType = function (visitor, context) { };
     /**
      * @param {?} modifier
      * @return {?}
      */
-    hasModifier(modifier) { return this.modifiers.indexOf(modifier) !== -1; }
-}
+    Type.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
+    return Type;
+}());
 function Type_tsickle_Closure_declarations() {
     /** @type {?} */
     Type.prototype.modifiers;
 }
-export let BuiltinTypeName = {};
+export var BuiltinTypeName = {};
 BuiltinTypeName.Dynamic = 0;
 BuiltinTypeName.Bool = 1;
 BuiltinTypeName.String = 2;
@@ -54,13 +61,15 @@ BuiltinTypeName[BuiltinTypeName.Int] = "Int";
 BuiltinTypeName[BuiltinTypeName.Number] = "Number";
 BuiltinTypeName[BuiltinTypeName.Function] = "Function";
 BuiltinTypeName[BuiltinTypeName.Null] = "Null";
-export class BuiltinType extends Type {
+export var BuiltinType = (function (_super) {
+    __extends(BuiltinType, _super);
     /**
      * @param {?} name
      * @param {?=} modifiers
      */
-    constructor(name, modifiers = null) {
-        super(modifiers);
+    function BuiltinType(name, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, modifiers);
         this.name = name;
     }
     /**
@@ -68,22 +77,26 @@ export class BuiltinType extends Type {
      * @param {?} context
      * @return {?}
      */
-    visitType(visitor, context) {
+    BuiltinType.prototype.visitType = function (visitor, context) {
         return visitor.visitBuiltintType(this, context);
-    }
-}
+    };
+    return BuiltinType;
+}(Type));
 function BuiltinType_tsickle_Closure_declarations() {
     /** @type {?} */
     BuiltinType.prototype.name;
 }
-export class ExpressionType extends Type {
+export var ExpressionType = (function (_super) {
+    __extends(ExpressionType, _super);
     /**
      * @param {?} value
      * @param {?=} typeParams
      * @param {?=} modifiers
      */
-    constructor(value, typeParams = null, modifiers = null) {
-        super(modifiers);
+    function ExpressionType(value, typeParams, modifiers) {
+        if (typeParams === void 0) { typeParams = null; }
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, modifiers);
         this.value = value;
         this.typeParams = typeParams;
     }
@@ -92,23 +105,26 @@ export class ExpressionType extends Type {
      * @param {?} context
      * @return {?}
      */
-    visitType(visitor, context) {
+    ExpressionType.prototype.visitType = function (visitor, context) {
         return visitor.visitExpressionType(this, context);
-    }
-}
+    };
+    return ExpressionType;
+}(Type));
 function ExpressionType_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpressionType.prototype.value;
     /** @type {?} */
     ExpressionType.prototype.typeParams;
 }
-export class ArrayType extends Type {
+export var ArrayType = (function (_super) {
+    __extends(ArrayType, _super);
     /**
      * @param {?} of
      * @param {?=} modifiers
      */
-    constructor(of, modifiers = null) {
-        super(modifiers);
+    function ArrayType(of, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, modifiers);
         this.of = of;
     }
     /**
@@ -116,21 +132,24 @@ export class ArrayType extends Type {
      * @param {?} context
      * @return {?}
      */
-    visitType(visitor, context) {
+    ArrayType.prototype.visitType = function (visitor, context) {
         return visitor.visitArrayType(this, context);
-    }
-}
+    };
+    return ArrayType;
+}(Type));
 function ArrayType_tsickle_Closure_declarations() {
     /** @type {?} */
     ArrayType.prototype.of;
 }
-export class MapType extends Type {
+export var MapType = (function (_super) {
+    __extends(MapType, _super);
     /**
      * @param {?} valueType
      * @param {?=} modifiers
      */
-    constructor(valueType, modifiers = null) {
-        super(modifiers);
+    function MapType(valueType, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, modifiers);
         this.valueType = valueType;
     }
     /**
@@ -138,20 +157,21 @@ export class MapType extends Type {
      * @param {?} context
      * @return {?}
      */
-    visitType(visitor, context) { return visitor.visitMapType(this, context); }
-}
+    MapType.prototype.visitType = function (visitor, context) { return visitor.visitMapType(this, context); };
+    return MapType;
+}(Type));
 function MapType_tsickle_Closure_declarations() {
     /** @type {?} */
     MapType.prototype.valueType;
 }
-export const /** @type {?} */ DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
-export const /** @type {?} */ BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
-export const /** @type {?} */ INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
-export const /** @type {?} */ NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
-export const /** @type {?} */ STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
-export const /** @type {?} */ FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
-export const /** @type {?} */ NULL_TYPE = new BuiltinType(BuiltinTypeName.Null);
-export let BinaryOperator = {};
+export var /** @type {?} */ DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
+export var /** @type {?} */ BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
+export var /** @type {?} */ INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
+export var /** @type {?} */ NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
+export var /** @type {?} */ STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
+export var /** @type {?} */ FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
+export var /** @type {?} */ NULL_TYPE = new BuiltinType(BuiltinTypeName.Null);
+export var BinaryOperator = {};
 BinaryOperator.Equals = 0;
 BinaryOperator.NotEquals = 1;
 BinaryOperator.Identical = 2;
@@ -185,11 +205,11 @@ BinaryOperator[BinaryOperator.BiggerEquals] = "BiggerEquals";
 /**
  * @abstract
  */
-export class Expression {
+export var Expression = (function () {
     /**
      * @param {?} type
      */
-    constructor(type) {
+    function Expression(type) {
         this.type = type;
     }
     /**
@@ -198,177 +218,181 @@ export class Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) { }
+    Expression.prototype.visitExpression = function (visitor, context) { };
     /**
      * @param {?} name
      * @return {?}
      */
-    prop(name) { return new ReadPropExpr(this, name); }
+    Expression.prototype.prop = function (name) { return new ReadPropExpr(this, name); };
     /**
      * @param {?} index
      * @param {?=} type
      * @return {?}
      */
-    key(index, type = null) {
+    Expression.prototype.key = function (index, type) {
+        if (type === void 0) { type = null; }
         return new ReadKeyExpr(this, index, type);
-    }
+    };
     /**
      * @param {?} name
      * @param {?} params
      * @return {?}
      */
-    callMethod(name, params) {
+    Expression.prototype.callMethod = function (name, params) {
         return new InvokeMethodExpr(this, name, params);
-    }
+    };
     /**
      * @param {?} params
      * @return {?}
      */
-    callFn(params) { return new InvokeFunctionExpr(this, params); }
+    Expression.prototype.callFn = function (params) { return new InvokeFunctionExpr(this, params); };
     /**
      * @param {?} params
      * @param {?=} type
      * @return {?}
      */
-    instantiate(params, type = null) {
+    Expression.prototype.instantiate = function (params, type) {
+        if (type === void 0) { type = null; }
         return new InstantiateExpr(this, params, type);
-    }
+    };
     /**
      * @param {?} trueCase
      * @param {?=} falseCase
      * @return {?}
      */
-    conditional(trueCase, falseCase = null) {
+    Expression.prototype.conditional = function (trueCase, falseCase) {
+        if (falseCase === void 0) { falseCase = null; }
         return new ConditionalExpr(this, trueCase, falseCase);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    equals(rhs) {
+    Expression.prototype.equals = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Equals, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    notEquals(rhs) {
+    Expression.prototype.notEquals = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.NotEquals, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    identical(rhs) {
+    Expression.prototype.identical = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Identical, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    notIdentical(rhs) {
+    Expression.prototype.notIdentical = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.NotIdentical, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    minus(rhs) {
+    Expression.prototype.minus = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Minus, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    plus(rhs) {
+    Expression.prototype.plus = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Plus, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    divide(rhs) {
+    Expression.prototype.divide = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Divide, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    multiply(rhs) {
+    Expression.prototype.multiply = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Multiply, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    modulo(rhs) {
+    Expression.prototype.modulo = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Modulo, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    and(rhs) {
+    Expression.prototype.and = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.And, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    or(rhs) {
+    Expression.prototype.or = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Or, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    lower(rhs) {
+    Expression.prototype.lower = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Lower, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    lowerEquals(rhs) {
+    Expression.prototype.lowerEquals = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.LowerEquals, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    bigger(rhs) {
+    Expression.prototype.bigger = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.Bigger, this, rhs);
-    }
+    };
     /**
      * @param {?} rhs
      * @return {?}
      */
-    biggerEquals(rhs) {
+    Expression.prototype.biggerEquals = function (rhs) {
         return new BinaryOperatorExpr(BinaryOperator.BiggerEquals, this, rhs);
-    }
+    };
     /**
      * @return {?}
      */
-    isBlank() {
+    Expression.prototype.isBlank = function () {
         // Note: We use equals by purpose here to compare to null and undefined in JS.
         // We use the typed null to allow strictNullChecks to narrow types.
         return this.equals(TYPED_NULL_EXPR);
-    }
+    };
     /**
      * @param {?} type
      * @return {?}
      */
-    cast(type) { return new CastExpr(this, type); }
+    Expression.prototype.cast = function (type) { return new CastExpr(this, type); };
     /**
      * @return {?}
      */
-    toStmt() { return new ExpressionStatement(this); }
-}
+    Expression.prototype.toStmt = function () { return new ExpressionStatement(this); };
+    return Expression;
+}());
 function Expression_tsickle_Closure_declarations() {
     /** @type {?} */
     Expression.prototype.type;
 }
-export let BuiltinVar = {};
+export var BuiltinVar = {};
 BuiltinVar.This = 0;
 BuiltinVar.Super = 1;
 BuiltinVar.CatchError = 2;
@@ -377,13 +401,15 @@ BuiltinVar[BuiltinVar.This] = "This";
 BuiltinVar[BuiltinVar.Super] = "Super";
 BuiltinVar[BuiltinVar.CatchError] = "CatchError";
 BuiltinVar[BuiltinVar.CatchStack] = "CatchStack";
-export class ReadVarExpr extends Expression {
+export var ReadVarExpr = (function (_super) {
+    __extends(ReadVarExpr, _super);
     /**
      * @param {?} name
      * @param {?=} type
      */
-    constructor(name, type = null) {
-        super(type);
+    function ReadVarExpr(name, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         if (typeof name === 'string') {
             this.name = name;
             this.builtin = null;
@@ -398,29 +424,32 @@ export class ReadVarExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    ReadVarExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitReadVarExpr(this, context);
-    }
+    };
     /**
      * @param {?} value
      * @return {?}
      */
-    set(value) { return new WriteVarExpr(this.name, value); }
-}
+    ReadVarExpr.prototype.set = function (value) { return new WriteVarExpr(this.name, value); };
+    return ReadVarExpr;
+}(Expression));
 function ReadVarExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ReadVarExpr.prototype.name;
     /** @type {?} */
     ReadVarExpr.prototype.builtin;
 }
-export class WriteVarExpr extends Expression {
+export var WriteVarExpr = (function (_super) {
+    __extends(WriteVarExpr, _super);
     /**
      * @param {?} name
      * @param {?} value
      * @param {?=} type
      */
-    constructor(name, value, type = null) {
-        super(type || value.type);
+    function WriteVarExpr(name, value, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type || value.type);
         this.name = name;
         this.value = value;
     }
@@ -429,33 +458,38 @@ export class WriteVarExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    WriteVarExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitWriteVarExpr(this, context);
-    }
+    };
     /**
      * @param {?=} type
      * @param {?=} modifiers
      * @return {?}
      */
-    toDeclStmt(type = null, modifiers = null) {
+    WriteVarExpr.prototype.toDeclStmt = function (type, modifiers) {
+        if (type === void 0) { type = null; }
+        if (modifiers === void 0) { modifiers = null; }
         return new DeclareVarStmt(this.name, this.value, type, modifiers);
-    }
-}
+    };
+    return WriteVarExpr;
+}(Expression));
 function WriteVarExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WriteVarExpr.prototype.value;
     /** @type {?} */
     WriteVarExpr.prototype.name;
 }
-export class WriteKeyExpr extends Expression {
+export var WriteKeyExpr = (function (_super) {
+    __extends(WriteKeyExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} index
      * @param {?} value
      * @param {?=} type
      */
-    constructor(receiver, index, value, type = null) {
-        super(type || value.type);
+    function WriteKeyExpr(receiver, index, value, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type || value.type);
         this.receiver = receiver;
         this.index = index;
         this.value = value;
@@ -465,10 +499,11 @@ export class WriteKeyExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    WriteKeyExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitWriteKeyExpr(this, context);
-    }
-}
+    };
+    return WriteKeyExpr;
+}(Expression));
 function WriteKeyExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WriteKeyExpr.prototype.value;
@@ -477,15 +512,17 @@ function WriteKeyExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WriteKeyExpr.prototype.index;
 }
-export class WritePropExpr extends Expression {
+export var WritePropExpr = (function (_super) {
+    __extends(WritePropExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} name
      * @param {?} value
      * @param {?=} type
      */
-    constructor(receiver, name, value, type = null) {
-        super(type || value.type);
+    function WritePropExpr(receiver, name, value, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type || value.type);
         this.receiver = receiver;
         this.name = name;
         this.value = value;
@@ -495,10 +532,11 @@ export class WritePropExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    WritePropExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitWritePropExpr(this, context);
-    }
-}
+    };
+    return WritePropExpr;
+}(Expression));
 function WritePropExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WritePropExpr.prototype.value;
@@ -507,22 +545,24 @@ function WritePropExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WritePropExpr.prototype.name;
 }
-export let BuiltinMethod = {};
+export var BuiltinMethod = {};
 BuiltinMethod.ConcatArray = 0;
 BuiltinMethod.SubscribeObservable = 1;
 BuiltinMethod.Bind = 2;
 BuiltinMethod[BuiltinMethod.ConcatArray] = "ConcatArray";
 BuiltinMethod[BuiltinMethod.SubscribeObservable] = "SubscribeObservable";
 BuiltinMethod[BuiltinMethod.Bind] = "Bind";
-export class InvokeMethodExpr extends Expression {
+export var InvokeMethodExpr = (function (_super) {
+    __extends(InvokeMethodExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} method
      * @param {?} args
      * @param {?=} type
      */
-    constructor(receiver, method, args, type = null) {
-        super(type);
+    function InvokeMethodExpr(receiver, method, args, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         this.receiver = receiver;
         this.args = args;
         if (typeof method === 'string') {
@@ -539,10 +579,11 @@ export class InvokeMethodExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    InvokeMethodExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitInvokeMethodExpr(this, context);
-    }
-}
+    };
+    return InvokeMethodExpr;
+}(Expression));
 function InvokeMethodExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     InvokeMethodExpr.prototype.name;
@@ -553,14 +594,16 @@ function InvokeMethodExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     InvokeMethodExpr.prototype.args;
 }
-export class InvokeFunctionExpr extends Expression {
+export var InvokeFunctionExpr = (function (_super) {
+    __extends(InvokeFunctionExpr, _super);
     /**
      * @param {?} fn
      * @param {?} args
      * @param {?=} type
      */
-    constructor(fn, args, type = null) {
-        super(type);
+    function InvokeFunctionExpr(fn, args, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         this.fn = fn;
         this.args = args;
     }
@@ -569,24 +612,26 @@ export class InvokeFunctionExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    InvokeFunctionExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitInvokeFunctionExpr(this, context);
-    }
-}
+    };
+    return InvokeFunctionExpr;
+}(Expression));
 function InvokeFunctionExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     InvokeFunctionExpr.prototype.fn;
     /** @type {?} */
     InvokeFunctionExpr.prototype.args;
 }
-export class InstantiateExpr extends Expression {
+export var InstantiateExpr = (function (_super) {
+    __extends(InstantiateExpr, _super);
     /**
      * @param {?} classExpr
      * @param {?} args
      * @param {?=} type
      */
-    constructor(classExpr, args, type) {
-        super(type);
+    function InstantiateExpr(classExpr, args, type) {
+        _super.call(this, type);
         this.classExpr = classExpr;
         this.args = args;
     }
@@ -595,23 +640,26 @@ export class InstantiateExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    InstantiateExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitInstantiateExpr(this, context);
-    }
-}
+    };
+    return InstantiateExpr;
+}(Expression));
 function InstantiateExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     InstantiateExpr.prototype.classExpr;
     /** @type {?} */
     InstantiateExpr.prototype.args;
 }
-export class LiteralExpr extends Expression {
+export var LiteralExpr = (function (_super) {
+    __extends(LiteralExpr, _super);
     /**
      * @param {?} value
      * @param {?=} type
      */
-    constructor(value, type = null) {
-        super(type);
+    function LiteralExpr(value, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         this.value = value;
     }
     /**
@@ -619,22 +667,26 @@ export class LiteralExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    LiteralExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitLiteralExpr(this, context);
-    }
-}
+    };
+    return LiteralExpr;
+}(Expression));
 function LiteralExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralExpr.prototype.value;
 }
-export class ExternalExpr extends Expression {
+export var ExternalExpr = (function (_super) {
+    __extends(ExternalExpr, _super);
     /**
      * @param {?} value
      * @param {?=} type
      * @param {?=} typeParams
      */
-    constructor(value, type = null, typeParams = null) {
-        super(type);
+    function ExternalExpr(value, type, typeParams) {
+        if (type === void 0) { type = null; }
+        if (typeParams === void 0) { typeParams = null; }
+        _super.call(this, type);
         this.value = value;
         this.typeParams = typeParams;
     }
@@ -643,25 +695,29 @@ export class ExternalExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    ExternalExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitExternalExpr(this, context);
-    }
-}
+    };
+    return ExternalExpr;
+}(Expression));
 function ExternalExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ExternalExpr.prototype.value;
     /** @type {?} */
     ExternalExpr.prototype.typeParams;
 }
-export class ConditionalExpr extends Expression {
+export var ConditionalExpr = (function (_super) {
+    __extends(ConditionalExpr, _super);
     /**
      * @param {?} condition
      * @param {?} trueCase
      * @param {?=} falseCase
      * @param {?=} type
      */
-    constructor(condition, trueCase, falseCase = null, type = null) {
-        super(type || trueCase.type);
+    function ConditionalExpr(condition, trueCase, falseCase, type) {
+        if (falseCase === void 0) { falseCase = null; }
+        if (type === void 0) { type = null; }
+        _super.call(this, type || trueCase.type);
         this.condition = condition;
         this.falseCase = falseCase;
         this.trueCase = trueCase;
@@ -671,10 +727,11 @@ export class ConditionalExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    ConditionalExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitConditionalExpr(this, context);
-    }
-}
+    };
+    return ConditionalExpr;
+}(Expression));
 function ConditionalExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ConditionalExpr.prototype.trueCase;
@@ -683,12 +740,13 @@ function ConditionalExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ConditionalExpr.prototype.falseCase;
 }
-export class NotExpr extends Expression {
+export var NotExpr = (function (_super) {
+    __extends(NotExpr, _super);
     /**
      * @param {?} condition
      */
-    constructor(condition) {
-        super(BOOL_TYPE);
+    function NotExpr(condition) {
+        _super.call(this, BOOL_TYPE);
         this.condition = condition;
     }
     /**
@@ -696,21 +754,23 @@ export class NotExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    NotExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitNotExpr(this, context);
-    }
-}
+    };
+    return NotExpr;
+}(Expression));
 function NotExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     NotExpr.prototype.condition;
 }
-export class CastExpr extends Expression {
+export var CastExpr = (function (_super) {
+    __extends(CastExpr, _super);
     /**
      * @param {?} value
      * @param {?} type
      */
-    constructor(value, type) {
-        super(type);
+    function CastExpr(value, type) {
+        _super.call(this, type);
         this.value = value;
     }
     /**
@@ -718,38 +778,43 @@ export class CastExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    CastExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitCastExpr(this, context);
-    }
-}
+    };
+    return CastExpr;
+}(Expression));
 function CastExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     CastExpr.prototype.value;
 }
-export class FnParam {
+export var FnParam = (function () {
     /**
      * @param {?} name
      * @param {?=} type
      */
-    constructor(name, type = null) {
+    function FnParam(name, type) {
+        if (type === void 0) { type = null; }
         this.name = name;
         this.type = type;
     }
-}
+    return FnParam;
+}());
 function FnParam_tsickle_Closure_declarations() {
     /** @type {?} */
     FnParam.prototype.name;
     /** @type {?} */
     FnParam.prototype.type;
 }
-export class FunctionExpr extends Expression {
+export var FunctionExpr = (function (_super) {
+    __extends(FunctionExpr, _super);
     /**
      * @param {?} params
      * @param {?} statements
      * @param {?=} type
      */
-    constructor(params, statements, type = null) {
-        super(type);
+    function FunctionExpr(params, statements, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         this.params = params;
         this.statements = statements;
     }
@@ -758,33 +823,37 @@ export class FunctionExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    FunctionExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitFunctionExpr(this, context);
-    }
+    };
     /**
      * @param {?} name
      * @param {?=} modifiers
      * @return {?}
      */
-    toDeclStmt(name, modifiers = null) {
+    FunctionExpr.prototype.toDeclStmt = function (name, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
         return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers);
-    }
-}
+    };
+    return FunctionExpr;
+}(Expression));
 function FunctionExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     FunctionExpr.prototype.params;
     /** @type {?} */
     FunctionExpr.prototype.statements;
 }
-export class BinaryOperatorExpr extends Expression {
+export var BinaryOperatorExpr = (function (_super) {
+    __extends(BinaryOperatorExpr, _super);
     /**
      * @param {?} operator
      * @param {?} lhs
      * @param {?} rhs
      * @param {?=} type
      */
-    constructor(operator, lhs, rhs, type = null) {
-        super(type || lhs.type);
+    function BinaryOperatorExpr(operator, lhs, rhs, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type || lhs.type);
         this.operator = operator;
         this.rhs = rhs;
         this.lhs = lhs;
@@ -794,10 +863,11 @@ export class BinaryOperatorExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    BinaryOperatorExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitBinaryOperatorExpr(this, context);
-    }
-}
+    };
+    return BinaryOperatorExpr;
+}(Expression));
 function BinaryOperatorExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     BinaryOperatorExpr.prototype.lhs;
@@ -806,14 +876,16 @@ function BinaryOperatorExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     BinaryOperatorExpr.prototype.rhs;
 }
-export class ReadPropExpr extends Expression {
+export var ReadPropExpr = (function (_super) {
+    __extends(ReadPropExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} name
      * @param {?=} type
      */
-    constructor(receiver, name, type = null) {
-        super(type);
+    function ReadPropExpr(receiver, name, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         this.receiver = receiver;
         this.name = name;
     }
@@ -822,31 +894,34 @@ export class ReadPropExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    ReadPropExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitReadPropExpr(this, context);
-    }
+    };
     /**
      * @param {?} value
      * @return {?}
      */
-    set(value) {
+    ReadPropExpr.prototype.set = function (value) {
         return new WritePropExpr(this.receiver, this.name, value);
-    }
-}
+    };
+    return ReadPropExpr;
+}(Expression));
 function ReadPropExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ReadPropExpr.prototype.receiver;
     /** @type {?} */
     ReadPropExpr.prototype.name;
 }
-export class ReadKeyExpr extends Expression {
+export var ReadKeyExpr = (function (_super) {
+    __extends(ReadKeyExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} index
      * @param {?=} type
      */
-    constructor(receiver, index, type = null) {
-        super(type);
+    function ReadKeyExpr(receiver, index, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         this.receiver = receiver;
         this.index = index;
     }
@@ -855,30 +930,33 @@ export class ReadKeyExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    ReadKeyExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitReadKeyExpr(this, context);
-    }
+    };
     /**
      * @param {?} value
      * @return {?}
      */
-    set(value) {
+    ReadKeyExpr.prototype.set = function (value) {
         return new WriteKeyExpr(this.receiver, this.index, value);
-    }
-}
+    };
+    return ReadKeyExpr;
+}(Expression));
 function ReadKeyExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ReadKeyExpr.prototype.receiver;
     /** @type {?} */
     ReadKeyExpr.prototype.index;
 }
-export class LiteralArrayExpr extends Expression {
+export var LiteralArrayExpr = (function (_super) {
+    __extends(LiteralArrayExpr, _super);
     /**
      * @param {?} entries
      * @param {?=} type
      */
-    constructor(entries, type = null) {
-        super(type);
+    function LiteralArrayExpr(entries, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         this.entries = entries;
     }
     /**
@@ -886,26 +964,29 @@ export class LiteralArrayExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    LiteralArrayExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitLiteralArrayExpr(this, context);
-    }
-}
+    };
+    return LiteralArrayExpr;
+}(Expression));
 function LiteralArrayExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralArrayExpr.prototype.entries;
 }
-export class LiteralMapEntry {
+export var LiteralMapEntry = (function () {
     /**
      * @param {?} key
      * @param {?} value
      * @param {?=} quoted
      */
-    constructor(key, value, quoted = false) {
+    function LiteralMapEntry(key, value, quoted) {
+        if (quoted === void 0) { quoted = false; }
         this.key = key;
         this.value = value;
         this.quoted = quoted;
     }
-}
+    return LiteralMapEntry;
+}());
 function LiteralMapEntry_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralMapEntry.prototype.key;
@@ -914,13 +995,15 @@ function LiteralMapEntry_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralMapEntry.prototype.quoted;
 }
-export class LiteralMapExpr extends Expression {
+export var LiteralMapExpr = (function (_super) {
+    __extends(LiteralMapExpr, _super);
     /**
      * @param {?} entries
      * @param {?=} type
      */
-    constructor(entries, type = null) {
-        super(type);
+    function LiteralMapExpr(entries, type) {
+        if (type === void 0) { type = null; }
+        _super.call(this, type);
         this.entries = entries;
         this.valueType = null;
         if (isPresent(type)) {
@@ -932,23 +1015,24 @@ export class LiteralMapExpr extends Expression {
      * @param {?} context
      * @return {?}
      */
-    visitExpression(visitor, context) {
+    LiteralMapExpr.prototype.visitExpression = function (visitor, context) {
         return visitor.visitLiteralMapExpr(this, context);
-    }
-}
+    };
+    return LiteralMapExpr;
+}(Expression));
 function LiteralMapExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralMapExpr.prototype.valueType;
     /** @type {?} */
     LiteralMapExpr.prototype.entries;
 }
-export const /** @type {?} */ THIS_EXPR = new ReadVarExpr(BuiltinVar.This);
-export const /** @type {?} */ SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super);
-export const /** @type {?} */ CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
-export const /** @type {?} */ CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
-export const /** @type {?} */ NULL_EXPR = new LiteralExpr(null, null);
-export const /** @type {?} */ TYPED_NULL_EXPR = new LiteralExpr(null, NULL_TYPE);
-export let StmtModifier = {};
+export var /** @type {?} */ THIS_EXPR = new ReadVarExpr(BuiltinVar.This);
+export var /** @type {?} */ SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super);
+export var /** @type {?} */ CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
+export var /** @type {?} */ CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
+export var /** @type {?} */ NULL_EXPR = new LiteralExpr(null, null);
+export var /** @type {?} */ TYPED_NULL_EXPR = new LiteralExpr(null, NULL_TYPE);
+export var StmtModifier = {};
 StmtModifier.Final = 0;
 StmtModifier.Private = 1;
 StmtModifier[StmtModifier.Final] = "Final";
@@ -956,11 +1040,12 @@ StmtModifier[StmtModifier.Private] = "Private";
 /**
  * @abstract
  */
-export class Statement {
+export var Statement = (function () {
     /**
      * @param {?=} modifiers
      */
-    constructor(modifiers = null) {
+    function Statement(modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
         this.modifiers = modifiers;
         if (!modifiers) {
             this.modifiers = [];
@@ -972,26 +1057,30 @@ export class Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) { }
+    Statement.prototype.visitStatement = function (visitor, context) { };
     /**
      * @param {?} modifier
      * @return {?}
      */
-    hasModifier(modifier) { return this.modifiers.indexOf(modifier) !== -1; }
-}
+    Statement.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
+    return Statement;
+}());
 function Statement_tsickle_Closure_declarations() {
     /** @type {?} */
     Statement.prototype.modifiers;
 }
-export class DeclareVarStmt extends Statement {
+export var DeclareVarStmt = (function (_super) {
+    __extends(DeclareVarStmt, _super);
     /**
      * @param {?} name
      * @param {?} value
      * @param {?=} type
      * @param {?=} modifiers
      */
-    constructor(name, value, type = null, modifiers = null) {
-        super(modifiers);
+    function DeclareVarStmt(name, value, type, modifiers) {
+        if (type === void 0) { type = null; }
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, modifiers);
         this.name = name;
         this.value = value;
         this.type = type || value.type;
@@ -1001,10 +1090,11 @@ export class DeclareVarStmt extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    DeclareVarStmt.prototype.visitStatement = function (visitor, context) {
         return visitor.visitDeclareVarStmt(this, context);
-    }
-}
+    };
+    return DeclareVarStmt;
+}(Statement));
 function DeclareVarStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     DeclareVarStmt.prototype.type;
@@ -1013,7 +1103,8 @@ function DeclareVarStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     DeclareVarStmt.prototype.value;
 }
-export class DeclareFunctionStmt extends Statement {
+export var DeclareFunctionStmt = (function (_super) {
+    __extends(DeclareFunctionStmt, _super);
     /**
      * @param {?} name
      * @param {?} params
@@ -1021,8 +1112,10 @@ export class DeclareFunctionStmt extends Statement {
      * @param {?=} type
      * @param {?=} modifiers
      */
-    constructor(name, params, statements, type = null, modifiers = null) {
-        super(modifiers);
+    function DeclareFunctionStmt(name, params, statements, type, modifiers) {
+        if (type === void 0) { type = null; }
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, modifiers);
         this.name = name;
         this.params = params;
         this.statements = statements;
@@ -1033,10 +1126,11 @@ export class DeclareFunctionStmt extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    DeclareFunctionStmt.prototype.visitStatement = function (visitor, context) {
         return visitor.visitDeclareFunctionStmt(this, context);
-    }
-}
+    };
+    return DeclareFunctionStmt;
+}(Statement));
 function DeclareFunctionStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     DeclareFunctionStmt.prototype.name;
@@ -1047,12 +1141,13 @@ function DeclareFunctionStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     DeclareFunctionStmt.prototype.type;
 }
-export class ExpressionStatement extends Statement {
+export var ExpressionStatement = (function (_super) {
+    __extends(ExpressionStatement, _super);
     /**
      * @param {?} expr
      */
-    constructor(expr) {
-        super();
+    function ExpressionStatement(expr) {
+        _super.call(this);
         this.expr = expr;
     }
     /**
@@ -1060,20 +1155,22 @@ export class ExpressionStatement extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    ExpressionStatement.prototype.visitStatement = function (visitor, context) {
         return visitor.visitExpressionStmt(this, context);
-    }
-}
+    };
+    return ExpressionStatement;
+}(Statement));
 function ExpressionStatement_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpressionStatement.prototype.expr;
 }
-export class ReturnStatement extends Statement {
+export var ReturnStatement = (function (_super) {
+    __extends(ReturnStatement, _super);
     /**
      * @param {?} value
      */
-    constructor(value) {
-        super();
+    function ReturnStatement(value) {
+        _super.call(this);
         this.value = value;
     }
     /**
@@ -1081,20 +1178,22 @@ export class ReturnStatement extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    ReturnStatement.prototype.visitStatement = function (visitor, context) {
         return visitor.visitReturnStmt(this, context);
-    }
-}
+    };
+    return ReturnStatement;
+}(Statement));
 function ReturnStatement_tsickle_Closure_declarations() {
     /** @type {?} */
     ReturnStatement.prototype.value;
 }
-export class AbstractClassPart {
+export var AbstractClassPart = (function () {
     /**
      * @param {?=} type
      * @param {?} modifiers
      */
-    constructor(type = null, modifiers) {
+    function AbstractClassPart(type, modifiers) {
+        if (type === void 0) { type = null; }
         this.type = type;
         this.modifiers = modifiers;
         if (!modifiers) {
@@ -1105,30 +1204,36 @@ export class AbstractClassPart {
      * @param {?} modifier
      * @return {?}
      */
-    hasModifier(modifier) { return this.modifiers.indexOf(modifier) !== -1; }
-}
+    AbstractClassPart.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
+    return AbstractClassPart;
+}());
 function AbstractClassPart_tsickle_Closure_declarations() {
     /** @type {?} */
     AbstractClassPart.prototype.type;
     /** @type {?} */
     AbstractClassPart.prototype.modifiers;
 }
-export class ClassField extends AbstractClassPart {
+export var ClassField = (function (_super) {
+    __extends(ClassField, _super);
     /**
      * @param {?} name
      * @param {?=} type
      * @param {?=} modifiers
      */
-    constructor(name, type = null, modifiers = null) {
-        super(type, modifiers);
+    function ClassField(name, type, modifiers) {
+        if (type === void 0) { type = null; }
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, type, modifiers);
         this.name = name;
     }
-}
+    return ClassField;
+}(AbstractClassPart));
 function ClassField_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassField.prototype.name;
 }
-export class ClassMethod extends AbstractClassPart {
+export var ClassMethod = (function (_super) {
+    __extends(ClassMethod, _super);
     /**
      * @param {?} name
      * @param {?} params
@@ -1136,13 +1241,16 @@ export class ClassMethod extends AbstractClassPart {
      * @param {?=} type
      * @param {?=} modifiers
      */
-    constructor(name, params, body, type = null, modifiers = null) {
-        super(type, modifiers);
+    function ClassMethod(name, params, body, type, modifiers) {
+        if (type === void 0) { type = null; }
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, type, modifiers);
         this.name = name;
         this.params = params;
         this.body = body;
     }
-}
+    return ClassMethod;
+}(AbstractClassPart));
 function ClassMethod_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassMethod.prototype.name;
@@ -1151,26 +1259,31 @@ function ClassMethod_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassMethod.prototype.body;
 }
-export class ClassGetter extends AbstractClassPart {
+export var ClassGetter = (function (_super) {
+    __extends(ClassGetter, _super);
     /**
      * @param {?} name
      * @param {?} body
      * @param {?=} type
      * @param {?=} modifiers
      */
-    constructor(name, body, type = null, modifiers = null) {
-        super(type, modifiers);
+    function ClassGetter(name, body, type, modifiers) {
+        if (type === void 0) { type = null; }
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, type, modifiers);
         this.name = name;
         this.body = body;
     }
-}
+    return ClassGetter;
+}(AbstractClassPart));
 function ClassGetter_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassGetter.prototype.name;
     /** @type {?} */
     ClassGetter.prototype.body;
 }
-export class ClassStmt extends Statement {
+export var ClassStmt = (function (_super) {
+    __extends(ClassStmt, _super);
     /**
      * @param {?} name
      * @param {?} parent
@@ -1180,8 +1293,9 @@ export class ClassStmt extends Statement {
      * @param {?} methods
      * @param {?=} modifiers
      */
-    constructor(name, parent, fields, getters, constructorMethod, methods, modifiers = null) {
-        super(modifiers);
+    function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        _super.call(this, modifiers);
         this.name = name;
         this.parent = parent;
         this.fields = fields;
@@ -1194,10 +1308,11 @@ export class ClassStmt extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    ClassStmt.prototype.visitStatement = function (visitor, context) {
         return visitor.visitDeclareClassStmt(this, context);
-    }
-}
+    };
+    return ClassStmt;
+}(Statement));
 function ClassStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassStmt.prototype.name;
@@ -1212,14 +1327,16 @@ function ClassStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassStmt.prototype.methods;
 }
-export class IfStmt extends Statement {
+export var IfStmt = (function (_super) {
+    __extends(IfStmt, _super);
     /**
      * @param {?} condition
      * @param {?} trueCase
      * @param {?=} falseCase
      */
-    constructor(condition, trueCase, falseCase = []) {
-        super();
+    function IfStmt(condition, trueCase, falseCase) {
+        if (falseCase === void 0) { falseCase = []; }
+        _super.call(this);
         this.condition = condition;
         this.trueCase = trueCase;
         this.falseCase = falseCase;
@@ -1229,10 +1346,11 @@ export class IfStmt extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    IfStmt.prototype.visitStatement = function (visitor, context) {
         return visitor.visitIfStmt(this, context);
-    }
-}
+    };
+    return IfStmt;
+}(Statement));
 function IfStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     IfStmt.prototype.condition;
@@ -1241,12 +1359,13 @@ function IfStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     IfStmt.prototype.falseCase;
 }
-export class CommentStmt extends Statement {
+export var CommentStmt = (function (_super) {
+    __extends(CommentStmt, _super);
     /**
      * @param {?} comment
      */
-    constructor(comment) {
-        super();
+    function CommentStmt(comment) {
+        _super.call(this);
         this.comment = comment;
     }
     /**
@@ -1254,21 +1373,23 @@ export class CommentStmt extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    CommentStmt.prototype.visitStatement = function (visitor, context) {
         return visitor.visitCommentStmt(this, context);
-    }
-}
+    };
+    return CommentStmt;
+}(Statement));
 function CommentStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     CommentStmt.prototype.comment;
 }
-export class TryCatchStmt extends Statement {
+export var TryCatchStmt = (function (_super) {
+    __extends(TryCatchStmt, _super);
     /**
      * @param {?} bodyStmts
      * @param {?} catchStmts
      */
-    constructor(bodyStmts, catchStmts) {
-        super();
+    function TryCatchStmt(bodyStmts, catchStmts) {
+        _super.call(this);
         this.bodyStmts = bodyStmts;
         this.catchStmts = catchStmts;
     }
@@ -1277,22 +1398,24 @@ export class TryCatchStmt extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    TryCatchStmt.prototype.visitStatement = function (visitor, context) {
         return visitor.visitTryCatchStmt(this, context);
-    }
-}
+    };
+    return TryCatchStmt;
+}(Statement));
 function TryCatchStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     TryCatchStmt.prototype.bodyStmts;
     /** @type {?} */
     TryCatchStmt.prototype.catchStmts;
 }
-export class ThrowStmt extends Statement {
+export var ThrowStmt = (function (_super) {
+    __extends(ThrowStmt, _super);
     /**
      * @param {?} error
      */
-    constructor(error) {
-        super();
+    function ThrowStmt(error) {
+        _super.call(this);
         this.error = error;
     }
     /**
@@ -1300,504 +1423,517 @@ export class ThrowStmt extends Statement {
      * @param {?} context
      * @return {?}
      */
-    visitStatement(visitor, context) {
+    ThrowStmt.prototype.visitStatement = function (visitor, context) {
         return visitor.visitThrowStmt(this, context);
-    }
-}
+    };
+    return ThrowStmt;
+}(Statement));
 function ThrowStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     ThrowStmt.prototype.error;
 }
-export class ExpressionTransformer {
+export var ExpressionTransformer = (function () {
+    function ExpressionTransformer() {
+    }
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitReadVarExpr(ast, context) { return ast; }
+    ExpressionTransformer.prototype.visitReadVarExpr = function (ast, context) { return ast; };
     /**
      * @param {?} expr
      * @param {?} context
      * @return {?}
      */
-    visitWriteVarExpr(expr, context) {
+    ExpressionTransformer.prototype.visitWriteVarExpr = function (expr, context) {
         return new WriteVarExpr(expr.name, expr.value.visitExpression(this, context));
-    }
+    };
     /**
      * @param {?} expr
      * @param {?} context
      * @return {?}
      */
-    visitWriteKeyExpr(expr, context) {
+    ExpressionTransformer.prototype.visitWriteKeyExpr = function (expr, context) {
         return new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context));
-    }
+    };
     /**
      * @param {?} expr
      * @param {?} context
      * @return {?}
      */
-    visitWritePropExpr(expr, context) {
+    ExpressionTransformer.prototype.visitWritePropExpr = function (expr, context) {
         return new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context));
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitInvokeMethodExpr(ast, context) {
-        const /** @type {?} */ method = ast.builtin || ast.name;
+    ExpressionTransformer.prototype.visitInvokeMethodExpr = function (ast, context) {
+        var /** @type {?} */ method = ast.builtin || ast.name;
         return new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type);
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitInvokeFunctionExpr(ast, context) {
+    ExpressionTransformer.prototype.visitInvokeFunctionExpr = function (ast, context) {
         return new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type);
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitInstantiateExpr(ast, context) {
+    ExpressionTransformer.prototype.visitInstantiateExpr = function (ast, context) {
         return new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type);
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralExpr(ast, context) { return ast; }
+    ExpressionTransformer.prototype.visitLiteralExpr = function (ast, context) { return ast; };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitExternalExpr(ast, context) { return ast; }
+    ExpressionTransformer.prototype.visitExternalExpr = function (ast, context) { return ast; };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitConditionalExpr(ast, context) {
+    ExpressionTransformer.prototype.visitConditionalExpr = function (ast, context) {
         return new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), ast.falseCase.visitExpression(this, context));
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitNotExpr(ast, context) {
+    ExpressionTransformer.prototype.visitNotExpr = function (ast, context) {
         return new NotExpr(ast.condition.visitExpression(this, context));
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitCastExpr(ast, context) {
+    ExpressionTransformer.prototype.visitCastExpr = function (ast, context) {
         return new CastExpr(ast.value.visitExpression(this, context), context);
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitFunctionExpr(ast, context) {
+    ExpressionTransformer.prototype.visitFunctionExpr = function (ast, context) {
         // Don't descend into nested functions
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitBinaryOperatorExpr(ast, context) {
+    ExpressionTransformer.prototype.visitBinaryOperatorExpr = function (ast, context) {
         return new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type);
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitReadPropExpr(ast, context) {
+    ExpressionTransformer.prototype.visitReadPropExpr = function (ast, context) {
         return new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type);
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitReadKeyExpr(ast, context) {
+    ExpressionTransformer.prototype.visitReadKeyExpr = function (ast, context) {
         return new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type);
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralArrayExpr(ast, context) {
+    ExpressionTransformer.prototype.visitLiteralArrayExpr = function (ast, context) {
         return new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context));
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralMapExpr(ast, context) {
-        const /** @type {?} */ entries = ast.entries.map((entry) => new LiteralMapEntry(entry.key, entry.value.visitExpression(this, context), entry.quoted));
+    ExpressionTransformer.prototype.visitLiteralMapExpr = function (ast, context) {
+        var _this = this;
+        var /** @type {?} */ entries = ast.entries.map(function (entry) { return new LiteralMapEntry(entry.key, entry.value.visitExpression(_this, context), entry.quoted); });
         return new LiteralMapExpr(entries);
-    }
+    };
     /**
      * @param {?} exprs
      * @param {?} context
      * @return {?}
      */
-    visitAllExpressions(exprs, context) {
-        return exprs.map(expr => expr.visitExpression(this, context));
-    }
+    ExpressionTransformer.prototype.visitAllExpressions = function (exprs, context) {
+        var _this = this;
+        return exprs.map(function (expr) { return expr.visitExpression(_this, context); });
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitDeclareVarStmt(stmt, context) {
+    ExpressionTransformer.prototype.visitDeclareVarStmt = function (stmt, context) {
         return new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers);
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitDeclareFunctionStmt(stmt, context) {
+    ExpressionTransformer.prototype.visitDeclareFunctionStmt = function (stmt, context) {
         // Don't descend into nested functions
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitExpressionStmt(stmt, context) {
+    ExpressionTransformer.prototype.visitExpressionStmt = function (stmt, context) {
         return new ExpressionStatement(stmt.expr.visitExpression(this, context));
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitReturnStmt(stmt, context) {
+    ExpressionTransformer.prototype.visitReturnStmt = function (stmt, context) {
         return new ReturnStatement(stmt.value.visitExpression(this, context));
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitDeclareClassStmt(stmt, context) {
+    ExpressionTransformer.prototype.visitDeclareClassStmt = function (stmt, context) {
         // Don't descend into nested functions
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitIfStmt(stmt, context) {
+    ExpressionTransformer.prototype.visitIfStmt = function (stmt, context) {
         return new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context));
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitTryCatchStmt(stmt, context) {
+    ExpressionTransformer.prototype.visitTryCatchStmt = function (stmt, context) {
         return new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context));
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitThrowStmt(stmt, context) {
+    ExpressionTransformer.prototype.visitThrowStmt = function (stmt, context) {
         return new ThrowStmt(stmt.error.visitExpression(this, context));
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitCommentStmt(stmt, context) { return stmt; }
+    ExpressionTransformer.prototype.visitCommentStmt = function (stmt, context) { return stmt; };
     /**
      * @param {?} stmts
      * @param {?} context
      * @return {?}
      */
-    visitAllStatements(stmts, context) {
-        return stmts.map(stmt => stmt.visitStatement(this, context));
+    ExpressionTransformer.prototype.visitAllStatements = function (stmts, context) {
+        var _this = this;
+        return stmts.map(function (stmt) { return stmt.visitStatement(_this, context); });
+    };
+    return ExpressionTransformer;
+}());
+export var RecursiveExpressionVisitor = (function () {
+    function RecursiveExpressionVisitor() {
     }
-}
-export class RecursiveExpressionVisitor {
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitReadVarExpr(ast, context) { return ast; }
+    RecursiveExpressionVisitor.prototype.visitReadVarExpr = function (ast, context) { return ast; };
     /**
      * @param {?} expr
      * @param {?} context
      * @return {?}
      */
-    visitWriteVarExpr(expr, context) {
+    RecursiveExpressionVisitor.prototype.visitWriteVarExpr = function (expr, context) {
         expr.value.visitExpression(this, context);
         return expr;
-    }
+    };
     /**
      * @param {?} expr
      * @param {?} context
      * @return {?}
      */
-    visitWriteKeyExpr(expr, context) {
+    RecursiveExpressionVisitor.prototype.visitWriteKeyExpr = function (expr, context) {
         expr.receiver.visitExpression(this, context);
         expr.index.visitExpression(this, context);
         expr.value.visitExpression(this, context);
         return expr;
-    }
+    };
     /**
      * @param {?} expr
      * @param {?} context
      * @return {?}
      */
-    visitWritePropExpr(expr, context) {
+    RecursiveExpressionVisitor.prototype.visitWritePropExpr = function (expr, context) {
         expr.receiver.visitExpression(this, context);
         expr.value.visitExpression(this, context);
         return expr;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitInvokeMethodExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitInvokeMethodExpr = function (ast, context) {
         ast.receiver.visitExpression(this, context);
         this.visitAllExpressions(ast.args, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitInvokeFunctionExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitInvokeFunctionExpr = function (ast, context) {
         ast.fn.visitExpression(this, context);
         this.visitAllExpressions(ast.args, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitInstantiateExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitInstantiateExpr = function (ast, context) {
         ast.classExpr.visitExpression(this, context);
         this.visitAllExpressions(ast.args, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralExpr(ast, context) { return ast; }
+    RecursiveExpressionVisitor.prototype.visitLiteralExpr = function (ast, context) { return ast; };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitExternalExpr(ast, context) { return ast; }
+    RecursiveExpressionVisitor.prototype.visitExternalExpr = function (ast, context) { return ast; };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitConditionalExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitConditionalExpr = function (ast, context) {
         ast.condition.visitExpression(this, context);
         ast.trueCase.visitExpression(this, context);
         ast.falseCase.visitExpression(this, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitNotExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitNotExpr = function (ast, context) {
         ast.condition.visitExpression(this, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitCastExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitCastExpr = function (ast, context) {
         ast.value.visitExpression(this, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitFunctionExpr(ast, context) { return ast; }
+    RecursiveExpressionVisitor.prototype.visitFunctionExpr = function (ast, context) { return ast; };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitBinaryOperatorExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitBinaryOperatorExpr = function (ast, context) {
         ast.lhs.visitExpression(this, context);
         ast.rhs.visitExpression(this, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitReadPropExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitReadPropExpr = function (ast, context) {
         ast.receiver.visitExpression(this, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitReadKeyExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitReadKeyExpr = function (ast, context) {
         ast.receiver.visitExpression(this, context);
         ast.index.visitExpression(this, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralArrayExpr(ast, context) {
+    RecursiveExpressionVisitor.prototype.visitLiteralArrayExpr = function (ast, context) {
         this.visitAllExpressions(ast.entries, context);
         return ast;
-    }
+    };
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    visitLiteralMapExpr(ast, context) {
-        ast.entries.forEach((entry) => entry.value.visitExpression(this, context));
+    RecursiveExpressionVisitor.prototype.visitLiteralMapExpr = function (ast, context) {
+        var _this = this;
+        ast.entries.forEach(function (entry) { return entry.value.visitExpression(_this, context); });
         return ast;
-    }
+    };
     /**
      * @param {?} exprs
      * @param {?} context
      * @return {?}
      */
-    visitAllExpressions(exprs, context) {
-        exprs.forEach(expr => expr.visitExpression(this, context));
-    }
+    RecursiveExpressionVisitor.prototype.visitAllExpressions = function (exprs, context) {
+        var _this = this;
+        exprs.forEach(function (expr) { return expr.visitExpression(_this, context); });
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitDeclareVarStmt(stmt, context) {
+    RecursiveExpressionVisitor.prototype.visitDeclareVarStmt = function (stmt, context) {
         stmt.value.visitExpression(this, context);
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitDeclareFunctionStmt(stmt, context) {
+    RecursiveExpressionVisitor.prototype.visitDeclareFunctionStmt = function (stmt, context) {
         // Don't descend into nested functions
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitExpressionStmt(stmt, context) {
+    RecursiveExpressionVisitor.prototype.visitExpressionStmt = function (stmt, context) {
         stmt.expr.visitExpression(this, context);
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitReturnStmt(stmt, context) {
+    RecursiveExpressionVisitor.prototype.visitReturnStmt = function (stmt, context) {
         stmt.value.visitExpression(this, context);
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitDeclareClassStmt(stmt, context) {
+    RecursiveExpressionVisitor.prototype.visitDeclareClassStmt = function (stmt, context) {
         // Don't descend into nested functions
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitIfStmt(stmt, context) {
+    RecursiveExpressionVisitor.prototype.visitIfStmt = function (stmt, context) {
         stmt.condition.visitExpression(this, context);
         this.visitAllStatements(stmt.trueCase, context);
         this.visitAllStatements(stmt.falseCase, context);
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitTryCatchStmt(stmt, context) {
+    RecursiveExpressionVisitor.prototype.visitTryCatchStmt = function (stmt, context) {
         this.visitAllStatements(stmt.bodyStmts, context);
         this.visitAllStatements(stmt.catchStmts, context);
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitThrowStmt(stmt, context) {
+    RecursiveExpressionVisitor.prototype.visitThrowStmt = function (stmt, context) {
         stmt.error.visitExpression(this, context);
         return stmt;
-    }
+    };
     /**
      * @param {?} stmt
      * @param {?} context
      * @return {?}
      */
-    visitCommentStmt(stmt, context) { return stmt; }
+    RecursiveExpressionVisitor.prototype.visitCommentStmt = function (stmt, context) { return stmt; };
     /**
      * @param {?} stmts
      * @param {?} context
      * @return {?}
      */
-    visitAllStatements(stmts, context) {
-        stmts.forEach(stmt => stmt.visitStatement(this, context));
-    }
-}
+    RecursiveExpressionVisitor.prototype.visitAllStatements = function (stmts, context) {
+        var _this = this;
+        stmts.forEach(function (stmt) { return stmt.visitStatement(_this, context); });
+    };
+    return RecursiveExpressionVisitor;
+}());
 /**
  * @param {?} varName
  * @param {?} newValue
@@ -1805,16 +1941,17 @@ export class RecursiveExpressionVisitor {
  * @return {?}
  */
 export function replaceVarInExpression(varName, newValue, expression) {
-    const /** @type {?} */ transformer = new _ReplaceVariableTransformer(varName, newValue);
+    var /** @type {?} */ transformer = new _ReplaceVariableTransformer(varName, newValue);
     return expression.visitExpression(transformer, null);
 }
-class _ReplaceVariableTransformer extends ExpressionTransformer {
+var _ReplaceVariableTransformer = (function (_super) {
+    __extends(_ReplaceVariableTransformer, _super);
     /**
      * @param {?} _varName
      * @param {?} _newValue
      */
-    constructor(_varName, _newValue) {
-        super();
+    function _ReplaceVariableTransformer(_varName, _newValue) {
+        _super.call(this);
         this._varName = _varName;
         this._newValue = _newValue;
     }
@@ -1823,10 +1960,11 @@ class _ReplaceVariableTransformer extends ExpressionTransformer {
      * @param {?} context
      * @return {?}
      */
-    visitReadVarExpr(ast, context) {
+    _ReplaceVariableTransformer.prototype.visitReadVarExpr = function (ast, context) {
         return ast.name == this._varName ? this._newValue : ast;
-    }
-}
+    };
+    return _ReplaceVariableTransformer;
+}(ExpressionTransformer));
 function _ReplaceVariableTransformer_tsickle_Closure_declarations() {
     /** @type {?} */
     _ReplaceVariableTransformer.prototype._varName;
@@ -1838,13 +1976,14 @@ function _ReplaceVariableTransformer_tsickle_Closure_declarations() {
  * @return {?}
  */
 export function findReadVarNames(stmts) {
-    const /** @type {?} */ finder = new _VariableFinder();
+    var /** @type {?} */ finder = new _VariableFinder();
     finder.visitAllStatements(stmts, null);
     return finder.varNames;
 }
-class _VariableFinder extends RecursiveExpressionVisitor {
-    constructor() {
-        super(...arguments);
+var _VariableFinder = (function (_super) {
+    __extends(_VariableFinder, _super);
+    function _VariableFinder() {
+        _super.apply(this, arguments);
         this.varNames = new Set();
     }
     /**
@@ -1852,11 +1991,12 @@ class _VariableFinder extends RecursiveExpressionVisitor {
      * @param {?} context
      * @return {?}
      */
-    visitReadVarExpr(ast, context) {
+    _VariableFinder.prototype.visitReadVarExpr = function (ast, context) {
         this.varNames.add(ast.name);
         return null;
-    }
-}
+    };
+    return _VariableFinder;
+}(RecursiveExpressionVisitor));
 function _VariableFinder_tsickle_Closure_declarations() {
     /** @type {?} */
     _VariableFinder.prototype.varNames;
@@ -1866,7 +2006,8 @@ function _VariableFinder_tsickle_Closure_declarations() {
  * @param {?=} type
  * @return {?}
  */
-export function variable(name, type = null) {
+export function variable(name, type) {
+    if (type === void 0) { type = null; }
     return new ReadVarExpr(name, type);
 }
 /**
@@ -1874,7 +2015,8 @@ export function variable(name, type = null) {
  * @param {?=} typeParams
  * @return {?}
  */
-export function importExpr(id, typeParams = null) {
+export function importExpr(id, typeParams) {
+    if (typeParams === void 0) { typeParams = null; }
     return new ExternalExpr(id, null, typeParams);
 }
 /**
@@ -1883,7 +2025,9 @@ export function importExpr(id, typeParams = null) {
  * @param {?=} typeModifiers
  * @return {?}
  */
-export function importType(id, typeParams = null, typeModifiers = null) {
+export function importType(id, typeParams, typeModifiers) {
+    if (typeParams === void 0) { typeParams = null; }
+    if (typeModifiers === void 0) { typeModifiers = null; }
     return isPresent(id) ? expressionType(importExpr(id), typeParams, typeModifiers) : null;
 }
 /**
@@ -1892,7 +2036,9 @@ export function importType(id, typeParams = null, typeModifiers = null) {
  * @param {?=} typeModifiers
  * @return {?}
  */
-export function expressionType(expr, typeParams = null, typeModifiers = null) {
+export function expressionType(expr, typeParams, typeModifiers) {
+    if (typeParams === void 0) { typeParams = null; }
+    if (typeModifiers === void 0) { typeModifiers = null; }
     return isPresent(expr) ? new ExpressionType(expr, typeParams, typeModifiers) : null;
 }
 /**
@@ -1900,7 +2046,8 @@ export function expressionType(expr, typeParams = null, typeModifiers = null) {
  * @param {?=} type
  * @return {?}
  */
-export function literalArr(values, type = null) {
+export function literalArr(values, type) {
+    if (type === void 0) { type = null; }
     return new LiteralArrayExpr(values, type);
 }
 /**
@@ -1909,8 +2056,10 @@ export function literalArr(values, type = null) {
  * @param {?=} quoted
  * @return {?}
  */
-export function literalMap(values, type = null, quoted = false) {
-    return new LiteralMapExpr(values.map(entry => new LiteralMapEntry(entry[0], entry[1], quoted)), type);
+export function literalMap(values, type, quoted) {
+    if (type === void 0) { type = null; }
+    if (quoted === void 0) { quoted = false; }
+    return new LiteralMapExpr(values.map(function (entry) { return new LiteralMapEntry(entry[0], entry[1], quoted); }), type);
 }
 /**
  * @param {?} expr
@@ -1925,7 +2074,8 @@ export function not(expr) {
  * @param {?=} type
  * @return {?}
  */
-export function fn(params, body, type = null) {
+export function fn(params, body, type) {
+    if (type === void 0) { type = null; }
     return new FunctionExpr(params, body, type);
 }
 /**
@@ -1933,7 +2083,8 @@ export function fn(params, body, type = null) {
  * @param {?=} type
  * @return {?}
  */
-export function literal(value, type = null) {
+export function literal(value, type) {
+    if (type === void 0) { type = null; }
     return new LiteralExpr(value, type);
 }
 //# sourceMappingURL=output_ast.js.map

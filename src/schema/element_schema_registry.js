@@ -8,7 +8,9 @@
 /**
  * @abstract
  */
-export class ElementSchemaRegistry {
+export var ElementSchemaRegistry = (function () {
+    function ElementSchemaRegistry() {
+    }
     /**
      * @abstract
      * @param {?} tagName
@@ -16,14 +18,14 @@ export class ElementSchemaRegistry {
      * @param {?} schemaMetas
      * @return {?}
      */
-    hasProperty(tagName, propName, schemaMetas) { }
+    ElementSchemaRegistry.prototype.hasProperty = function (tagName, propName, schemaMetas) { };
     /**
      * @abstract
      * @param {?} tagName
      * @param {?} schemaMetas
      * @return {?}
      */
-    hasElement(tagName, schemaMetas) { }
+    ElementSchemaRegistry.prototype.hasElement = function (tagName, schemaMetas) { };
     /**
      * @abstract
      * @param {?} elementName
@@ -31,41 +33,41 @@ export class ElementSchemaRegistry {
      * @param {?} isAttribute
      * @return {?}
      */
-    securityContext(elementName, propName, isAttribute) { }
+    ElementSchemaRegistry.prototype.securityContext = function (elementName, propName, isAttribute) { };
     /**
      * @abstract
      * @return {?}
      */
-    allKnownElementNames() { }
-    /**
-     * @abstract
-     * @param {?} propName
-     * @return {?}
-     */
-    getMappedPropName(propName) { }
-    /**
-     * @abstract
-     * @return {?}
-     */
-    getDefaultComponentElementName() { }
-    /**
-     * @abstract
-     * @param {?} name
-     * @return {?}
-     */
-    validateProperty(name) { }
-    /**
-     * @abstract
-     * @param {?} name
-     * @return {?}
-     */
-    validateAttribute(name) { }
+    ElementSchemaRegistry.prototype.allKnownElementNames = function () { };
     /**
      * @abstract
      * @param {?} propName
      * @return {?}
      */
-    normalizeAnimationStyleProperty(propName) { }
+    ElementSchemaRegistry.prototype.getMappedPropName = function (propName) { };
+    /**
+     * @abstract
+     * @return {?}
+     */
+    ElementSchemaRegistry.prototype.getDefaultComponentElementName = function () { };
+    /**
+     * @abstract
+     * @param {?} name
+     * @return {?}
+     */
+    ElementSchemaRegistry.prototype.validateProperty = function (name) { };
+    /**
+     * @abstract
+     * @param {?} name
+     * @return {?}
+     */
+    ElementSchemaRegistry.prototype.validateAttribute = function (name) { };
+    /**
+     * @abstract
+     * @param {?} propName
+     * @return {?}
+     */
+    ElementSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) { };
     /**
      * @abstract
      * @param {?} camelCaseProp
@@ -73,6 +75,7 @@ export class ElementSchemaRegistry {
      * @param {?} val
      * @return {?}
      */
-    normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) { }
-}
+    ElementSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) { };
+    return ElementSchemaRegistry;
+}());
 //# sourceMappingURL=element_schema_registry.js.map

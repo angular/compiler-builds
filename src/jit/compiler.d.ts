@@ -39,7 +39,7 @@ export declare class JitCompiler implements Compiler {
     private _compiledNgModuleCache;
     private _animationCompiler;
     constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _directiveWrapperCompiler: DirectiveWrapperCompiler, _compilerConfig: CompilerConfig, _animationParser: AnimationParser);
-    readonly injector: Injector;
+    injector: Injector;
     compileModuleSync<T>(moduleType: Type<T>): NgModuleFactory<T>;
     compileModuleAsync<T>(moduleType: Type<T>): Promise<NgModuleFactory<T>>;
     compileModuleAndAllComponentsSync<T>(moduleType: Type<T>): ModuleWithComponentFactories<T>;

@@ -17,7 +17,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 import * as chars from '../chars';
 import { NumberWrapper } from '../facade/lang';
 import { CompilerInjectable } from '../injectable';
-export let TokenType = {};
+export var TokenType = {};
 TokenType.Character = 0;
 TokenType.Identifier = 1;
 TokenType.Keyword = 2;
@@ -32,35 +32,38 @@ TokenType[TokenType.String] = "String";
 TokenType[TokenType.Operator] = "Operator";
 TokenType[TokenType.Number] = "Number";
 TokenType[TokenType.Error] = "Error";
-const /** @type {?} */ KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
-export let Lexer = class Lexer {
+var /** @type {?} */ KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
+export var Lexer = (function () {
+    function Lexer() {
+    }
     /**
      * @param {?} text
      * @return {?}
      */
-    tokenize(text) {
-        const /** @type {?} */ scanner = new _Scanner(text);
-        const /** @type {?} */ tokens = [];
-        let /** @type {?} */ token = scanner.scanToken();
+    Lexer.prototype.tokenize = function (text) {
+        var /** @type {?} */ scanner = new _Scanner(text);
+        var /** @type {?} */ tokens = [];
+        var /** @type {?} */ token = scanner.scanToken();
         while (token != null) {
             tokens.push(token);
             token = scanner.scanToken();
         }
         return tokens;
-    }
-};
-Lexer = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [])
-], Lexer);
-export class Token {
+    };
+    Lexer = __decorate([
+        CompilerInjectable(), 
+        __metadata('design:paramtypes', [])
+    ], Lexer);
+    return Lexer;
+}());
+export var Token = (function () {
     /**
      * @param {?} index
      * @param {?} type
      * @param {?} numValue
      * @param {?} strValue
      */
-    constructor(index, type, numValue, strValue) {
+    function Token(index, type, numValue, strValue) {
         this.index = index;
         this.type = type;
         this.numValue = numValue;
@@ -70,70 +73,70 @@ export class Token {
      * @param {?} code
      * @return {?}
      */
-    isCharacter(code) {
+    Token.prototype.isCharacter = function (code) {
         return this.type == TokenType.Character && this.numValue == code;
-    }
+    };
     /**
      * @return {?}
      */
-    isNumber() { return this.type == TokenType.Number; }
+    Token.prototype.isNumber = function () { return this.type == TokenType.Number; };
     /**
      * @return {?}
      */
-    isString() { return this.type == TokenType.String; }
+    Token.prototype.isString = function () { return this.type == TokenType.String; };
     /**
      * @param {?} operater
      * @return {?}
      */
-    isOperator(operater) {
+    Token.prototype.isOperator = function (operater) {
         return this.type == TokenType.Operator && this.strValue == operater;
-    }
+    };
     /**
      * @return {?}
      */
-    isIdentifier() { return this.type == TokenType.Identifier; }
+    Token.prototype.isIdentifier = function () { return this.type == TokenType.Identifier; };
     /**
      * @return {?}
      */
-    isKeyword() { return this.type == TokenType.Keyword; }
+    Token.prototype.isKeyword = function () { return this.type == TokenType.Keyword; };
     /**
      * @return {?}
      */
-    isKeywordLet() { return this.type == TokenType.Keyword && this.strValue == 'let'; }
+    Token.prototype.isKeywordLet = function () { return this.type == TokenType.Keyword && this.strValue == 'let'; };
     /**
      * @return {?}
      */
-    isKeywordNull() { return this.type == TokenType.Keyword && this.strValue == 'null'; }
+    Token.prototype.isKeywordNull = function () { return this.type == TokenType.Keyword && this.strValue == 'null'; };
     /**
      * @return {?}
      */
-    isKeywordUndefined() {
+    Token.prototype.isKeywordUndefined = function () {
         return this.type == TokenType.Keyword && this.strValue == 'undefined';
-    }
+    };
     /**
      * @return {?}
      */
-    isKeywordTrue() { return this.type == TokenType.Keyword && this.strValue == 'true'; }
+    Token.prototype.isKeywordTrue = function () { return this.type == TokenType.Keyword && this.strValue == 'true'; };
     /**
      * @return {?}
      */
-    isKeywordFalse() { return this.type == TokenType.Keyword && this.strValue == 'false'; }
+    Token.prototype.isKeywordFalse = function () { return this.type == TokenType.Keyword && this.strValue == 'false'; };
     /**
      * @return {?}
      */
-    isKeywordThis() { return this.type == TokenType.Keyword && this.strValue == 'this'; }
+    Token.prototype.isKeywordThis = function () { return this.type == TokenType.Keyword && this.strValue == 'this'; };
     /**
      * @return {?}
      */
-    isError() { return this.type == TokenType.Error; }
+    Token.prototype.isError = function () { return this.type == TokenType.Error; };
     /**
      * @return {?}
      */
-    toNumber() { return this.type == TokenType.Number ? this.numValue : -1; }
+    Token.prototype.toNumber = function () { return this.type == TokenType.Number ? this.numValue : -1; };
     /**
      * @return {?}
      */
-    toString() {
+    Token.prototype.toString = function () {
         switch (this.type) {
             case TokenType.Character:
             case TokenType.Identifier:
@@ -147,8 +150,9 @@ export class Token {
             default:
                 return null;
         }
-    }
-}
+    };
+    return Token;
+}());
 function Token_tsickle_Closure_declarations() {
     /** @type {?} */
     Token.prototype.index;
@@ -215,12 +219,12 @@ function newNumberToken(index, n) {
 function newErrorToken(index, message) {
     return new Token(index, TokenType.Error, 0, message);
 }
-export const /** @type {?} */ EOF = new Token(-1, TokenType.Character, 0, '');
-class _Scanner {
+export var /** @type {?} */ EOF = new Token(-1, TokenType.Character, 0, '');
+var _Scanner = (function () {
     /**
      * @param {?} input
      */
-    constructor(input) {
+    function _Scanner(input) {
         this.input = input;
         this.peek = 0;
         this.index = -1;
@@ -230,15 +234,15 @@ class _Scanner {
     /**
      * @return {?}
      */
-    advance() {
+    _Scanner.prototype.advance = function () {
         this.peek = ++this.index >= this.length ? chars.$EOF : this.input.charCodeAt(this.index);
-    }
+    };
     /**
      * @return {?}
      */
-    scanToken() {
-        const /** @type {?} */ input = this.input, /** @type {?} */ length = this.length;
-        let /** @type {?} */ peek = this.peek, /** @type {?} */ index = this.index;
+    _Scanner.prototype.scanToken = function () {
+        var /** @type {?} */ input = this.input, /** @type {?} */ length = this.length;
+        var /** @type {?} */ peek = this.peek, /** @type {?} */ index = this.index;
         // Skip whitespace.
         while (peek <= chars.$SPACE) {
             if (++index >= length) {
@@ -259,7 +263,7 @@ class _Scanner {
             return this.scanIdentifier();
         if (chars.isDigit(peek))
             return this.scanNumber(index);
-        const /** @type {?} */ start = index;
+        var /** @type {?} */ start = index;
         switch (peek) {
             case chars.$PERIOD:
                 this.advance();
@@ -304,26 +308,26 @@ class _Scanner {
                 return this.scanToken();
         }
         this.advance();
-        return this.error(`Unexpected character [${String.fromCharCode(peek)}]`, 0);
-    }
+        return this.error("Unexpected character [" + String.fromCharCode(peek) + "]", 0);
+    };
     /**
      * @param {?} start
      * @param {?} code
      * @return {?}
      */
-    scanCharacter(start, code) {
+    _Scanner.prototype.scanCharacter = function (start, code) {
         this.advance();
         return newCharacterToken(start, code);
-    }
+    };
     /**
      * @param {?} start
      * @param {?} str
      * @return {?}
      */
-    scanOperator(start, str) {
+    _Scanner.prototype.scanOperator = function (start, str) {
         this.advance();
         return newOperatorToken(start, str);
-    }
+    };
     /**
      * Tokenize a 2/3 char long operator
      *
@@ -335,9 +339,9 @@ class _Scanner {
      * @param {?=} three third symbol (part of the operator when provided and matches source expression)
      * @return {?}
      */
-    scanComplexOperator(start, one, twoCode, two, threeCode, three) {
+    _Scanner.prototype.scanComplexOperator = function (start, one, twoCode, two, threeCode, three) {
         this.advance();
-        let /** @type {?} */ str = one;
+        var /** @type {?} */ str = one;
         if (this.peek == twoCode) {
             this.advance();
             str += two;
@@ -347,25 +351,25 @@ class _Scanner {
             str += three;
         }
         return newOperatorToken(start, str);
-    }
+    };
     /**
      * @return {?}
      */
-    scanIdentifier() {
-        const /** @type {?} */ start = this.index;
+    _Scanner.prototype.scanIdentifier = function () {
+        var /** @type {?} */ start = this.index;
         this.advance();
         while (isIdentifierPart(this.peek))
             this.advance();
-        const /** @type {?} */ str = this.input.substring(start, this.index);
+        var /** @type {?} */ str = this.input.substring(start, this.index);
         return KEYWORDS.indexOf(str) > -1 ? newKeywordToken(start, str) :
             newIdentifierToken(start, str);
-    }
+    };
     /**
      * @param {?} start
      * @return {?}
      */
-    scanNumber(start) {
-        let /** @type {?} */ simple = (this.index === start);
+    _Scanner.prototype.scanNumber = function (start) {
+        var /** @type {?} */ simple = (this.index === start);
         this.advance(); // Skip initial digit.
         while (true) {
             if (chars.isDigit(this.peek)) {
@@ -386,35 +390,35 @@ class _Scanner {
             }
             this.advance();
         }
-        const /** @type {?} */ str = this.input.substring(start, this.index);
-        const /** @type {?} */ value = simple ? NumberWrapper.parseIntAutoRadix(str) : parseFloat(str);
+        var /** @type {?} */ str = this.input.substring(start, this.index);
+        var /** @type {?} */ value = simple ? NumberWrapper.parseIntAutoRadix(str) : parseFloat(str);
         return newNumberToken(start, value);
-    }
+    };
     /**
      * @return {?}
      */
-    scanString() {
-        const /** @type {?} */ start = this.index;
-        const /** @type {?} */ quote = this.peek;
+    _Scanner.prototype.scanString = function () {
+        var /** @type {?} */ start = this.index;
+        var /** @type {?} */ quote = this.peek;
         this.advance(); // Skip initial quote.
-        let /** @type {?} */ buffer = '';
-        let /** @type {?} */ marker = this.index;
-        const /** @type {?} */ input = this.input;
+        var /** @type {?} */ buffer = '';
+        var /** @type {?} */ marker = this.index;
+        var /** @type {?} */ input = this.input;
         while (this.peek != quote) {
             if (this.peek == chars.$BACKSLASH) {
                 buffer += input.substring(marker, this.index);
                 this.advance();
-                let /** @type {?} */ unescapedCode;
+                var /** @type {?} */ unescapedCode = void 0;
                 if (this.peek == chars.$u) {
                     // 4 character hex code for unicode character.
-                    const /** @type {?} */ hex = input.substring(this.index + 1, this.index + 5);
+                    var /** @type {?} */ hex = input.substring(this.index + 1, this.index + 5);
                     if (/^[0-9a-f]+$/i.test(hex)) {
                         unescapedCode = parseInt(hex, 16);
                     }
                     else {
-                        return this.error(`Invalid unicode escape [\\u${hex}]`, 0);
+                        return this.error("Invalid unicode escape [\\u" + hex + "]", 0);
                     }
-                    for (let /** @type {?} */ i = 0; i < 5; i++) {
+                    for (var /** @type {?} */ i = 0; i < 5; i++) {
                         this.advance();
                     }
                 }
@@ -432,20 +436,21 @@ class _Scanner {
                 this.advance();
             }
         }
-        const /** @type {?} */ last = input.substring(marker, this.index);
+        var /** @type {?} */ last = input.substring(marker, this.index);
         this.advance(); // Skip terminating quote.
         return newStringToken(start, buffer + last);
-    }
+    };
     /**
      * @param {?} message
      * @param {?} offset
      * @return {?}
      */
-    error(message, offset) {
-        const /** @type {?} */ position = this.index + offset;
-        return newErrorToken(position, `Lexer Error: ${message} at column ${position} in expression [${this.input}]`);
-    }
-}
+    _Scanner.prototype.error = function (message, offset) {
+        var /** @type {?} */ position = this.index + offset;
+        return newErrorToken(position, "Lexer Error: " + message + " at column " + position + " in expression [" + this.input + "]");
+    };
+    return _Scanner;
+}());
 function _Scanner_tsickle_Closure_declarations() {
     /** @type {?} */
     _Scanner.prototype.length;
@@ -471,7 +476,7 @@ function isIdentifierStart(code) {
 export function isIdentifier(input) {
     if (input.length == 0)
         return false;
-    const /** @type {?} */ scanner = new _Scanner(input);
+    var /** @type {?} */ scanner = new _Scanner(input);
     if (!isIdentifierStart(scanner.peek))
         return false;
     scanner.advance();

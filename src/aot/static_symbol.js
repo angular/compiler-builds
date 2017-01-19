@@ -3,13 +3,13 @@
  *
  * This token is unique for a filePath and name and can be used as a hash table key.
  */
-export class StaticSymbol {
+export var StaticSymbol = (function () {
     /**
      * @param {?} filePath
      * @param {?} name
      * @param {?} members
      */
-    constructor(filePath, name, members) {
+    function StaticSymbol(filePath, name, members) {
         this.filePath = filePath;
         this.name = name;
         this.members = members;
@@ -17,12 +17,13 @@ export class StaticSymbol {
     /**
      * @return {?}
      */
-    assertNoMembers() {
+    StaticSymbol.prototype.assertNoMembers = function () {
         if (this.members.length) {
-            throw new Error(`Illegal state: symbol without members expected, but got ${JSON.stringify(this)}.`);
+            throw new Error("Illegal state: symbol without members expected, but got " + JSON.stringify(this) + ".");
         }
-    }
-}
+    };
+    return StaticSymbol;
+}());
 function StaticSymbol_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticSymbol.prototype.filePath;
@@ -35,8 +36,8 @@ function StaticSymbol_tsickle_Closure_declarations() {
  * A cache of static symbol used by the StaticReflector to return the same symbol for the
  * same symbol values.
  */
-export class StaticSymbolCache {
-    constructor() {
+export var StaticSymbolCache = (function () {
+    function StaticSymbolCache() {
         this.cache = new Map();
     }
     /**
@@ -45,18 +46,19 @@ export class StaticSymbolCache {
      * @param {?=} members
      * @return {?}
      */
-    get(declarationFile, name, members) {
+    StaticSymbolCache.prototype.get = function (declarationFile, name, members) {
         members = members || [];
-        const /** @type {?} */ memberSuffix = members.length ? `.${members.join('.')}` : '';
-        const /** @type {?} */ key = `"${declarationFile}".${name}${memberSuffix}`;
-        let /** @type {?} */ result = this.cache.get(key);
+        var /** @type {?} */ memberSuffix = members.length ? "." + members.join('.') : '';
+        var /** @type {?} */ key = "\"" + declarationFile + "\"." + name + memberSuffix;
+        var /** @type {?} */ result = this.cache.get(key);
         if (!result) {
             result = new StaticSymbol(declarationFile, name, members);
             this.cache.set(key, result);
         }
         return result;
-    }
-}
+    };
+    return StaticSymbolCache;
+}());
 function StaticSymbolCache_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticSymbolCache.prototype.cache;

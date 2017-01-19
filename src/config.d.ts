@@ -20,8 +20,8 @@ export declare class CompilerConfig {
         logBindingUpdate?: boolean;
         useJit?: boolean;
     });
-    readonly genDebugInfo: boolean;
-    readonly logBindingUpdate: boolean;
+    genDebugInfo: boolean;
+    logBindingUpdate: boolean;
 }
 /**
  * Types used for the renderer.
@@ -29,15 +29,15 @@ export declare class CompilerConfig {
  * to help tree shaking.
  */
 export declare abstract class RenderTypes {
-    readonly renderer: CompileIdentifierMetadata;
-    readonly renderText: CompileIdentifierMetadata;
-    readonly renderElement: CompileIdentifierMetadata;
-    readonly renderComment: CompileIdentifierMetadata;
-    readonly renderNode: CompileIdentifierMetadata;
-    readonly renderEvent: CompileIdentifierMetadata;
+    renderer: CompileIdentifierMetadata;
+    renderText: CompileIdentifierMetadata;
+    renderElement: CompileIdentifierMetadata;
+    renderComment: CompileIdentifierMetadata;
+    renderNode: CompileIdentifierMetadata;
+    renderEvent: CompileIdentifierMetadata;
 }
 export declare class DefaultRenderTypes implements RenderTypes {
-    readonly renderer: CompileIdentifierMetadata;
+    renderer: CompileIdentifierMetadata;
     renderText: any;
     renderElement: any;
     renderComment: any;

@@ -6,11 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ReflectionCapabilities, reflector } from '../private_import_core';
-export class StaticAndDynamicReflectionCapabilities {
+export var StaticAndDynamicReflectionCapabilities = (function () {
     /**
      * @param {?} staticDelegate
      */
-    constructor(staticDelegate) {
+    function StaticAndDynamicReflectionCapabilities(staticDelegate) {
         this.staticDelegate = staticDelegate;
         this.dynamicDelegate = new ReflectionCapabilities();
     }
@@ -18,94 +18,95 @@ export class StaticAndDynamicReflectionCapabilities {
      * @param {?} staticDelegate
      * @return {?}
      */
-    static install(staticDelegate) {
+    StaticAndDynamicReflectionCapabilities.install = function (staticDelegate) {
         reflector.updateCapabilities(new StaticAndDynamicReflectionCapabilities(staticDelegate));
-    }
+    };
     /**
      * @return {?}
      */
-    isReflectionEnabled() { return true; }
+    StaticAndDynamicReflectionCapabilities.prototype.isReflectionEnabled = function () { return true; };
     /**
      * @param {?} type
      * @return {?}
      */
-    factory(type) { return this.dynamicDelegate.factory(type); }
+    StaticAndDynamicReflectionCapabilities.prototype.factory = function (type) { return this.dynamicDelegate.factory(type); };
     /**
      * @param {?} type
      * @param {?} lcProperty
      * @return {?}
      */
-    hasLifecycleHook(type, lcProperty) {
+    StaticAndDynamicReflectionCapabilities.prototype.hasLifecycleHook = function (type, lcProperty) {
         return isStaticType(type) ? this.staticDelegate.hasLifecycleHook(type, lcProperty) :
             this.dynamicDelegate.hasLifecycleHook(type, lcProperty);
-    }
+    };
     /**
      * @param {?} type
      * @return {?}
      */
-    parameters(type) {
+    StaticAndDynamicReflectionCapabilities.prototype.parameters = function (type) {
         return isStaticType(type) ? this.staticDelegate.parameters(type) :
             this.dynamicDelegate.parameters(type);
-    }
+    };
     /**
      * @param {?} type
      * @return {?}
      */
-    annotations(type) {
+    StaticAndDynamicReflectionCapabilities.prototype.annotations = function (type) {
         return isStaticType(type) ? this.staticDelegate.annotations(type) :
             this.dynamicDelegate.annotations(type);
-    }
+    };
     /**
      * @param {?} typeOrFunc
      * @return {?}
      */
-    propMetadata(typeOrFunc) {
+    StaticAndDynamicReflectionCapabilities.prototype.propMetadata = function (typeOrFunc) {
         return isStaticType(typeOrFunc) ? this.staticDelegate.propMetadata(typeOrFunc) :
             this.dynamicDelegate.propMetadata(typeOrFunc);
-    }
+    };
     /**
      * @param {?} name
      * @return {?}
      */
-    getter(name) { return this.dynamicDelegate.getter(name); }
+    StaticAndDynamicReflectionCapabilities.prototype.getter = function (name) { return this.dynamicDelegate.getter(name); };
     /**
      * @param {?} name
      * @return {?}
      */
-    setter(name) { return this.dynamicDelegate.setter(name); }
+    StaticAndDynamicReflectionCapabilities.prototype.setter = function (name) { return this.dynamicDelegate.setter(name); };
     /**
      * @param {?} name
      * @return {?}
      */
-    method(name) { return this.dynamicDelegate.method(name); }
+    StaticAndDynamicReflectionCapabilities.prototype.method = function (name) { return this.dynamicDelegate.method(name); };
     /**
      * @param {?} type
      * @return {?}
      */
-    importUri(type) { return this.staticDelegate.importUri(type); }
+    StaticAndDynamicReflectionCapabilities.prototype.importUri = function (type) { return this.staticDelegate.importUri(type); };
     /**
      * @param {?} name
      * @param {?} moduleUrl
      * @param {?} runtime
      * @return {?}
      */
-    resolveIdentifier(name, moduleUrl, runtime) {
+    StaticAndDynamicReflectionCapabilities.prototype.resolveIdentifier = function (name, moduleUrl, runtime) {
         return this.staticDelegate.resolveIdentifier(name, moduleUrl);
-    }
+    };
     /**
      * @param {?} enumIdentifier
      * @param {?} name
      * @return {?}
      */
-    resolveEnum(enumIdentifier, name) {
+    StaticAndDynamicReflectionCapabilities.prototype.resolveEnum = function (enumIdentifier, name) {
         if (isStaticType(enumIdentifier)) {
             return this.staticDelegate.resolveEnum(enumIdentifier, name);
         }
         else {
             return null;
         }
-    }
-}
+    };
+    return StaticAndDynamicReflectionCapabilities;
+}());
 function StaticAndDynamicReflectionCapabilities_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticAndDynamicReflectionCapabilities.prototype.dynamicDelegate;

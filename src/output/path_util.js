@@ -9,7 +9,9 @@
  * Interface that defines how import statements should be generated.
  * @abstract
  */
-export class ImportResolver {
+export var ImportResolver = (function () {
+    function ImportResolver() {
+    }
     /**
      * Converts a file path to a module name that can be used as an `import.
      * I.e. `path/to/importedFile.ts` should be imported by `path/to/containingFile.ts`.
@@ -18,7 +20,7 @@ export class ImportResolver {
      * @param {?} containingFilePath
      * @return {?}
      */
-    fileNameToModuleName(importedFilePath, containingFilePath) { }
+    ImportResolver.prototype.fileNameToModuleName = function (importedFilePath, containingFilePath) { };
     /**
      * Converts the given StaticSymbol into another StaticSymbol that should be used
      * to generate the import from.
@@ -26,6 +28,7 @@ export class ImportResolver {
      * @param {?} symbol
      * @return {?}
      */
-    getImportAs(symbol) { }
-}
+    ImportResolver.prototype.getImportAs = function (symbol) { };
+    return ImportResolver;
+}());
 //# sourceMappingURL=path_util.js.map

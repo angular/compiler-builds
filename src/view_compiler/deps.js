@@ -2,14 +2,15 @@
  * This is currently not read, but will probably be used in the future.
  * We keep it as we already pass it through all the right places...
  */
-export class ComponentViewDependency {
+export var ComponentViewDependency = (function () {
     /**
      * @param {?} compType
      */
-    constructor(compType) {
+    function ComponentViewDependency(compType) {
         this.compType = compType;
     }
-}
+    return ComponentViewDependency;
+}());
 function ComponentViewDependency_tsickle_Closure_declarations() {
     /** @type {?} */
     ComponentViewDependency.prototype.compType;
@@ -18,14 +19,15 @@ function ComponentViewDependency_tsickle_Closure_declarations() {
  * This is currently not read, but will probably be used in the future.
  * We keep it as we already pass it through all the right places...
  */
-export class ComponentFactoryDependency {
+export var ComponentFactoryDependency = (function () {
     /**
      * @param {?} compType
      */
-    constructor(compType) {
+    function ComponentFactoryDependency(compType) {
         this.compType = compType;
     }
-}
+    return ComponentFactoryDependency;
+}());
 function ComponentFactoryDependency_tsickle_Closure_declarations() {
     /** @type {?} */
     ComponentFactoryDependency.prototype.compType;
@@ -34,14 +36,15 @@ function ComponentFactoryDependency_tsickle_Closure_declarations() {
  * This is currently not read, but will probably be used in the future.
  * We keep it as we already pass it through all the right places...
  */
-export class DirectiveWrapperDependency {
+export var DirectiveWrapperDependency = (function () {
     /**
      * @param {?} dirType
      */
-    constructor(dirType) {
+    function DirectiveWrapperDependency(dirType) {
         this.dirType = dirType;
     }
-}
+    return DirectiveWrapperDependency;
+}());
 function DirectiveWrapperDependency_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveWrapperDependency.prototype.dirType;

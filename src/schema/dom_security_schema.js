@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { SecurityContext } from '@angular/core/index';
+import { SecurityContext } from '@angular/core';
 // =================================================================================================
 // =================================================================================================
 // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -17,15 +17,17 @@ import { SecurityContext } from '@angular/core/index';
 //
 // =================================================================================================
 /** Map from tagName|propertyName SecurityContext. Properties applying to all tags use '*'. */
-export const /** @type {?} */ SECURITY_SCHEMA = {};
+export var /** @type {?} */ SECURITY_SCHEMA = {};
 /**
  * @param {?} ctx
  * @param {?} specs
  * @return {?}
  */
 function registerContext(ctx, specs) {
-    for (const spec of specs)
+    for (var _i = 0, specs_1 = specs; _i < specs_1.length; _i++) {
+        var spec = specs_1[_i];
         SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
+    }
 }
 // Case is insignificant below, all element and attribute names are lower-cased for lookup.
 registerContext(SecurityContext.HTML, [

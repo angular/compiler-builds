@@ -11,30 +11,33 @@ import { digest } from '../digest';
 import * as i18n from '../i18n_ast';
 import { I18nError } from '../parse_util';
 import * as xml from './xml_helper';
-const /** @type {?} */ _VERSION = '1.2';
-const /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
+var /** @type {?} */ _VERSION = '1.2';
+var /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
-const /** @type {?} */ _SOURCE_LANG = 'en';
-const /** @type {?} */ _PLACEHOLDER_TAG = 'x';
-const /** @type {?} */ _SOURCE_TAG = 'source';
-const /** @type {?} */ _TARGET_TAG = 'target';
-const /** @type {?} */ _UNIT_TAG = 'trans-unit';
-export class Xliff {
+var /** @type {?} */ _SOURCE_LANG = 'en';
+var /** @type {?} */ _PLACEHOLDER_TAG = 'x';
+var /** @type {?} */ _SOURCE_TAG = 'source';
+var /** @type {?} */ _TARGET_TAG = 'target';
+var /** @type {?} */ _UNIT_TAG = 'trans-unit';
+export var Xliff = (function () {
+    function Xliff() {
+    }
     /**
      * @param {?} messages
      * @return {?}
      */
-    write(messages) {
-        const /** @type {?} */ visitor = new _WriteVisitor();
-        const /** @type {?} */ visited = {};
-        const /** @type {?} */ transUnits = [];
-        messages.forEach(message => {
-            const /** @type {?} */ id = this.digest(message);
+    Xliff.prototype.write = function (messages) {
+        var _this = this;
+        var /** @type {?} */ visitor = new _WriteVisitor();
+        var /** @type {?} */ visited = {};
+        var /** @type {?} */ transUnits = [];
+        messages.forEach(function (message) {
+            var /** @type {?} */ id = _this.digest(message);
             // deduplicate messages
             if (visited[id])
                 return;
             visited[id] = true;
-            const /** @type {?} */ transUnit = new xml.Tag(_UNIT_TAG, { id, datatype: 'html' });
+            var /** @type {?} */ transUnit = new xml.Tag(_UNIT_TAG, { id: id, datatype: 'html' });
             transUnit.children.push(new xml.CR(8), new xml.Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new xml.CR(8), new xml.Tag(_TARGET_TAG));
             if (message.description) {
                 transUnit.children.push(new xml.CR(8), new xml.Tag('note', { priority: '1', from: 'description' }, [new xml.Text(message.description)]));
@@ -45,64 +48,68 @@ export class Xliff {
             transUnit.children.push(new xml.CR(6));
             transUnits.push(new xml.CR(6), transUnit);
         });
-        const /** @type {?} */ body = new xml.Tag('body', {}, [...transUnits, new xml.CR(4)]);
-        const /** @type {?} */ file = new xml.Tag('file', { 'source-language': _SOURCE_LANG, datatype: 'plaintext', original: 'ng2.template' }, [new xml.CR(4), body, new xml.CR(2)]);
-        const /** @type {?} */ xliff = new xml.Tag('xliff', { version: _VERSION, xmlns: _XMLNS }, [new xml.CR(2), file, new xml.CR()]);
+        var /** @type {?} */ body = new xml.Tag('body', {}, transUnits.concat([new xml.CR(4)]));
+        var /** @type {?} */ file = new xml.Tag('file', { 'source-language': _SOURCE_LANG, datatype: 'plaintext', original: 'ng2.template' }, [new xml.CR(4), body, new xml.CR(2)]);
+        var /** @type {?} */ xliff = new xml.Tag('xliff', { version: _VERSION, xmlns: _XMLNS }, [new xml.CR(2), file, new xml.CR()]);
         return xml.serialize([
             new xml.Declaration({ version: '1.0', encoding: 'UTF-8' }), new xml.CR(), xliff, new xml.CR()
         ]);
-    }
+    };
     /**
      * @param {?} content
      * @param {?} url
      * @return {?}
      */
-    load(content, url) {
+    Xliff.prototype.load = function (content, url) {
         // xliff to xml nodes
-        const /** @type {?} */ xliffParser = new XliffParser();
-        const { mlNodesByMsgId, errors } = xliffParser.parse(content, url);
+        var /** @type {?} */ xliffParser = new XliffParser();
+        var _a = xliffParser.parse(content, url), mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
         // xml nodes to i18n nodes
-        const /** @type {?} */ i18nNodesByMsgId = {};
-        const /** @type {?} */ converter = new XmlToI18n();
-        Object.keys(mlNodesByMsgId).forEach(msgId => {
-            const { i18nNodes, errors: e } = converter.convert(mlNodesByMsgId[msgId]);
-            errors.push(...e);
+        var /** @type {?} */ i18nNodesByMsgId = {};
+        var /** @type {?} */ converter = new XmlToI18n();
+        Object.keys(mlNodesByMsgId).forEach(function (msgId) {
+            var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, e = _a.errors;
+            errors.push.apply(errors, e);
             i18nNodesByMsgId[msgId] = i18nNodes;
         });
         if (errors.length) {
-            throw new Error(`xliff parse errors:\n${errors.join('\n')}`);
+            throw new Error("xliff parse errors:\n" + errors.join('\n'));
         }
         return i18nNodesByMsgId;
-    }
+    };
     /**
      * @param {?} message
      * @return {?}
      */
-    digest(message) { return digest(message); }
-}
-class _WriteVisitor {
+    Xliff.prototype.digest = function (message) { return digest(message); };
+    return Xliff;
+}());
+var _WriteVisitor = (function () {
+    function _WriteVisitor() {
+    }
     /**
      * @param {?} text
      * @param {?=} context
      * @return {?}
      */
-    visitText(text, context) { return [new xml.Text(text.value)]; }
+    _WriteVisitor.prototype.visitText = function (text, context) { return [new xml.Text(text.value)]; };
     /**
      * @param {?} container
      * @param {?=} context
      * @return {?}
      */
-    visitContainer(container, context) {
-        const /** @type {?} */ nodes = [];
-        container.children.forEach((node) => nodes.push(...node.visit(this)));
+    _WriteVisitor.prototype.visitContainer = function (container, context) {
+        var _this = this;
+        var /** @type {?} */ nodes = [];
+        container.children.forEach(function (node) { return nodes.push.apply(nodes, node.visit(_this)); });
         return nodes;
-    }
+    };
     /**
      * @param {?} icu
      * @param {?=} context
      * @return {?}
      */
-    visitIcu(icu, context) {
+    _WriteVisitor.prototype.visitIcu = function (icu, context) {
         if (this._isInIcu) {
             // nested ICU is not supported
             throw new Error('xliff does not support nested ICU messages');
@@ -111,88 +118,93 @@ class _WriteVisitor {
         // TODO(vicb): support ICU messages
         // https://lists.oasis-open.org/archives/xliff/201201/msg00028.html
         // http://docs.oasis-open.org/xliff/v1.2/xliff-profile-po/xliff-profile-po-1.2-cd02.html
-        const /** @type {?} */ nodes = [];
+        var /** @type {?} */ nodes = [];
         this._isInIcu = false;
         return nodes;
-    }
+    };
     /**
      * @param {?} ph
      * @param {?=} context
      * @return {?}
      */
-    visitTagPlaceholder(ph, context) {
-        const /** @type {?} */ ctype = getCtypeForTag(ph.tag);
-        const /** @type {?} */ startTagPh = new xml.Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype });
+    _WriteVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+        var /** @type {?} */ ctype = getCtypeForTag(ph.tag);
+        var /** @type {?} */ startTagPh = new xml.Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype: ctype });
         if (ph.isVoid) {
             // void tags have no children nor closing tags
             return [startTagPh];
         }
-        const /** @type {?} */ closeTagPh = new xml.Tag(_PLACEHOLDER_TAG, { id: ph.closeName, ctype });
-        return [startTagPh, ...this.serialize(ph.children), closeTagPh];
-    }
+        var /** @type {?} */ closeTagPh = new xml.Tag(_PLACEHOLDER_TAG, { id: ph.closeName, ctype: ctype });
+        return [startTagPh].concat(this.serialize(ph.children), [closeTagPh]);
+    };
     /**
      * @param {?} ph
      * @param {?=} context
      * @return {?}
      */
-    visitPlaceholder(ph, context) {
+    _WriteVisitor.prototype.visitPlaceholder = function (ph, context) {
         return [new xml.Tag(_PLACEHOLDER_TAG, { id: ph.name })];
-    }
+    };
     /**
      * @param {?} ph
      * @param {?=} context
      * @return {?}
      */
-    visitIcuPlaceholder(ph, context) {
+    _WriteVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
         return [new xml.Tag(_PLACEHOLDER_TAG, { id: ph.name })];
-    }
+    };
     /**
      * @param {?} nodes
      * @return {?}
      */
-    serialize(nodes) {
+    _WriteVisitor.prototype.serialize = function (nodes) {
+        var _this = this;
         this._isInIcu = false;
-        return [].concat(...nodes.map(node => node.visit(this)));
-    }
-}
+        return (_a = []).concat.apply(_a, nodes.map(function (node) { return node.visit(_this); }));
+        var _a;
+    };
+    return _WriteVisitor;
+}());
 function _WriteVisitor_tsickle_Closure_declarations() {
     /** @type {?} */
     _WriteVisitor.prototype._isInIcu;
 }
-class XliffParser {
+var XliffParser = (function () {
+    function XliffParser() {
+    }
     /**
      * @param {?} xliff
      * @param {?} url
      * @return {?}
      */
-    parse(xliff, url) {
+    XliffParser.prototype.parse = function (xliff, url) {
         this._unitMlNodes = [];
         this._mlNodesByMsgId = {};
-        const /** @type {?} */ xml = new XmlParser().parse(xliff, url, false);
+        var /** @type {?} */ xml = new XmlParser().parse(xliff, url, false);
         this._errors = xml.errors;
         ml.visitAll(this, xml.rootNodes, null);
         return {
             mlNodesByMsgId: this._mlNodesByMsgId,
             errors: this._errors,
         };
-    }
+    };
     /**
      * @param {?} element
      * @param {?} context
      * @return {?}
      */
-    visitElement(element, context) {
+    XliffParser.prototype.visitElement = function (element, context) {
         switch (element.name) {
             case _UNIT_TAG:
                 this._unitMlNodes = null;
-                const /** @type {?} */ idAttr = element.attrs.find((attr) => attr.name === 'id');
+                var /** @type {?} */ idAttr = element.attrs.find(function (attr) { return attr.name === 'id'; });
                 if (!idAttr) {
-                    this._addError(element, `<${_UNIT_TAG}> misses the "id" attribute`);
+                    this._addError(element, "<" + _UNIT_TAG + "> misses the \"id\" attribute");
                 }
                 else {
-                    const /** @type {?} */ id = idAttr.value;
+                    var /** @type {?} */ id = idAttr.value;
                     if (this._mlNodesByMsgId.hasOwnProperty(id)) {
-                        this._addError(element, `Duplicated translations for msg ${id}`);
+                        this._addError(element, "Duplicated translations for msg " + id);
                     }
                     else {
                         ml.visitAll(this, element.children, null);
@@ -200,7 +212,7 @@ class XliffParser {
                             this._mlNodesByMsgId[id] = this._unitMlNodes;
                         }
                         else {
-                            this._addError(element, `Message ${id} misses a translation`);
+                            this._addError(element, "Message " + id + " misses a translation");
                         }
                     }
                 }
@@ -216,46 +228,47 @@ class XliffParser {
                 // For now only recurse on unhandled nodes
                 ml.visitAll(this, element.children, null);
         }
-    }
+    };
     /**
      * @param {?} attribute
      * @param {?} context
      * @return {?}
      */
-    visitAttribute(attribute, context) { }
+    XliffParser.prototype.visitAttribute = function (attribute, context) { };
     /**
      * @param {?} text
      * @param {?} context
      * @return {?}
      */
-    visitText(text, context) { }
+    XliffParser.prototype.visitText = function (text, context) { };
     /**
      * @param {?} comment
      * @param {?} context
      * @return {?}
      */
-    visitComment(comment, context) { }
+    XliffParser.prototype.visitComment = function (comment, context) { };
     /**
      * @param {?} expansion
      * @param {?} context
      * @return {?}
      */
-    visitExpansion(expansion, context) { }
+    XliffParser.prototype.visitExpansion = function (expansion, context) { };
     /**
      * @param {?} expansionCase
      * @param {?} context
      * @return {?}
      */
-    visitExpansionCase(expansionCase, context) { }
+    XliffParser.prototype.visitExpansionCase = function (expansionCase, context) { };
     /**
      * @param {?} node
      * @param {?} message
      * @return {?}
      */
-    _addError(node, message) {
+    XliffParser.prototype._addError = function (node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
-    }
-}
+    };
+    return XliffParser;
+}());
 function XliffParser_tsickle_Closure_declarations() {
     /** @type {?} */
     XliffParser.prototype._unitMlNodes;
@@ -264,74 +277,77 @@ function XliffParser_tsickle_Closure_declarations() {
     /** @type {?} */
     XliffParser.prototype._mlNodesByMsgId;
 }
-class XmlToI18n {
+var XmlToI18n = (function () {
+    function XmlToI18n() {
+    }
     /**
      * @param {?} nodes
      * @return {?}
      */
-    convert(nodes) {
+    XmlToI18n.prototype.convert = function (nodes) {
         this._errors = [];
         return {
             i18nNodes: ml.visitAll(this, nodes),
             errors: this._errors,
         };
-    }
+    };
     /**
      * @param {?} text
      * @param {?} context
      * @return {?}
      */
-    visitText(text, context) { return new i18n.Text(text.value, text.sourceSpan); }
+    XmlToI18n.prototype.visitText = function (text, context) { return new i18n.Text(text.value, text.sourceSpan); };
     /**
      * @param {?} el
      * @param {?} context
      * @return {?}
      */
-    visitElement(el, context) {
+    XmlToI18n.prototype.visitElement = function (el, context) {
         if (el.name === _PLACEHOLDER_TAG) {
-            const /** @type {?} */ nameAttr = el.attrs.find((attr) => attr.name === 'id');
+            var /** @type {?} */ nameAttr = el.attrs.find(function (attr) { return attr.name === 'id'; });
             if (nameAttr) {
                 return new i18n.Placeholder('', nameAttr.value, el.sourceSpan);
             }
-            this._addError(el, `<${_PLACEHOLDER_TAG}> misses the "id" attribute`);
+            this._addError(el, "<" + _PLACEHOLDER_TAG + "> misses the \"id\" attribute");
         }
         else {
-            this._addError(el, `Unexpected tag`);
+            this._addError(el, "Unexpected tag");
         }
-    }
+    };
     /**
      * @param {?} icu
      * @param {?} context
      * @return {?}
      */
-    visitExpansion(icu, context) { }
+    XmlToI18n.prototype.visitExpansion = function (icu, context) { };
     /**
      * @param {?} icuCase
      * @param {?} context
      * @return {?}
      */
-    visitExpansionCase(icuCase, context) { }
+    XmlToI18n.prototype.visitExpansionCase = function (icuCase, context) { };
     /**
      * @param {?} comment
      * @param {?} context
      * @return {?}
      */
-    visitComment(comment, context) { }
+    XmlToI18n.prototype.visitComment = function (comment, context) { };
     /**
      * @param {?} attribute
      * @param {?} context
      * @return {?}
      */
-    visitAttribute(attribute, context) { }
+    XmlToI18n.prototype.visitAttribute = function (attribute, context) { };
     /**
      * @param {?} node
      * @param {?} message
      * @return {?}
      */
-    _addError(node, message) {
+    XmlToI18n.prototype._addError = function (node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
-    }
-}
+    };
+    return XmlToI18n;
+}());
 function XmlToI18n_tsickle_Closure_declarations() {
     /** @type {?} */
     XmlToI18n.prototype._errors;
@@ -347,7 +363,7 @@ function getCtypeForTag(tag) {
         case 'img':
             return 'image';
         default:
-            return `x-${tag}`;
+            return "x-" + tag;
     }
 }
 //# sourceMappingURL=xliff.js.map

@@ -1,4 +1,4 @@
-import { SecurityContext } from '@angular/core/index';
+import { SecurityContext } from '@angular/core';
 import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { EMPTY_STATE as EMPTY_ANIMATION_STATE } from '../private_import_core';
@@ -15,8 +15,8 @@ import { createEnumExpression } from './identifier_util';
  * @return {?}
  */
 export function createCheckRenderBindingStmt(view, renderElement, boundProp, oldValue, evalResult, securityContextExpression) {
-    const /** @type {?} */ checkStmts = [...evalResult.stmts];
-    const /** @type {?} */ securityContext = calcSecurityContext(boundProp, securityContextExpression);
+    var /** @type {?} */ checkStmts = evalResult.stmts.slice();
+    var /** @type {?} */ securityContext = calcSecurityContext(boundProp, securityContextExpression);
     switch (boundProp.type) {
         case PropertyBindingType.Property:
             checkStmts.push(o.importExpr(createIdentifier(Identifiers.checkRenderProperty))
@@ -72,7 +72,7 @@ function calcSecurityContext(boundProp, securityContextExpression) {
             createEnumExpression(Identifiers.SecurityContext, boundProp.securityContext);
     }
     if (!securityContextExpression) {
-        throw new Error(`internal error, no SecurityContext given ${boundProp.name}`);
+        throw new Error("internal error, no SecurityContext given " + boundProp.name);
     }
     return securityContextExpression;
 }
@@ -88,14 +88,14 @@ function calcSecurityContext(boundProp, securityContextExpression) {
  * @return {?}
  */
 export function createCheckAnimationBindingStmts(view, componentView, boundProp, boundOutputs, eventListener, renderElement, oldValue, evalResult) {
-    const /** @type {?} */ detachStmts = [];
-    const /** @type {?} */ updateStmts = [];
-    const /** @type {?} */ animationName = boundProp.name;
-    const /** @type {?} */ animationFnExpr = componentView.prop('componentType').prop('animations').key(o.literal(animationName));
+    var /** @type {?} */ detachStmts = [];
+    var /** @type {?} */ updateStmts = [];
+    var /** @type {?} */ animationName = boundProp.name;
+    var /** @type {?} */ animationFnExpr = componentView.prop('componentType').prop('animations').key(o.literal(animationName));
     // it's important to normalize the void value as `void` explicitly
     // so that the styles data can be obtained from the stringmap
-    const /** @type {?} */ emptyStateValue = o.literal(EMPTY_ANIMATION_STATE);
-    const /** @type {?} */ animationTransitionVar = o.variable('animationTransition_' + animationName);
+    var /** @type {?} */ emptyStateValue = o.literal(EMPTY_ANIMATION_STATE);
+    var /** @type {?} */ animationTransitionVar = o.variable('animationTransition_' + animationName);
     updateStmts.push(animationTransitionVar
         .set(animationFnExpr.callFn([
         view, renderElement, isFirstViewCheck(view).conditional(emptyStateValue, oldValue),
@@ -106,28 +106,27 @@ export function createCheckAnimationBindingStmts(view, componentView, boundProp,
     detachStmts.push(animationTransitionVar
         .set(animationFnExpr.callFn([view, renderElement, evalResult.currValExpr, emptyStateValue]))
         .toDeclStmt());
-    const /** @type {?} */ registerStmts = [];
-    const /** @type {?} */ animationStartMethodExists = boundOutputs.find(event => event.isAnimation && event.name == animationName && event.phase == 'start');
+    var /** @type {?} */ registerStmts = [];
+    var /** @type {?} */ animationStartMethodExists = boundOutputs.find(function (event) { return event.isAnimation && event.name == animationName && event.phase == 'start'; });
     if (animationStartMethodExists) {
         registerStmts.push(animationTransitionVar
             .callMethod('onStart', [eventListener.callMethod(o.BuiltinMethod.Bind, [view, o.literal(BoundEventAst.calcFullName(animationName, null, 'start'))])])
             .toStmt());
     }
-    const /** @type {?} */ animationDoneMethodExists = boundOutputs.find(event => event.isAnimation && event.name == animationName && event.phase == 'done');
+    var /** @type {?} */ animationDoneMethodExists = boundOutputs.find(function (event) { return event.isAnimation && event.name == animationName && event.phase == 'done'; });
     if (animationDoneMethodExists) {
         registerStmts.push(animationTransitionVar
             .callMethod('onDone', [eventListener.callMethod(o.BuiltinMethod.Bind, [view, o.literal(BoundEventAst.calcFullName(animationName, null, 'done'))])])
             .toStmt());
     }
-    updateStmts.push(...registerStmts);
-    detachStmts.push(...registerStmts);
-    const /** @type {?} */ checkUpdateStmts = [
-        ...evalResult.stmts,
+    updateStmts.push.apply(updateStmts, registerStmts);
+    detachStmts.push.apply(detachStmts, registerStmts);
+    var /** @type {?} */ checkUpdateStmts = evalResult.stmts.concat([
         new o.IfStmt(o.importExpr(createIdentifier(Identifiers.checkBinding)).callFn([
             view, oldValue, evalResult.currValExpr, evalResult.forceUpdate || o.literal(false)
         ]), updateStmts)
-    ];
-    const /** @type {?} */ checkDetachStmts = [...evalResult.stmts, ...detachStmts];
-    return { checkUpdateStmts, checkDetachStmts };
+    ]);
+    var /** @type {?} */ checkDetachStmts = evalResult.stmts.concat(detachStmts);
+    return { checkUpdateStmts: checkUpdateStmts, checkDetachStmts: checkDetachStmts };
 }
 //# sourceMappingURL=render_util.js.map
