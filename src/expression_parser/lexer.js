@@ -329,8 +329,8 @@ var _Scanner = (function () {
         return newOperatorToken(start, str);
     };
     /**
-     *  Tokenize a 2/3 char long operator
-      * *
+     * Tokenize a 2/3 char long operator
+     *
      * @param {?} start start index in the expression
      * @param {?} one first symbol (always part of the operator)
      * @param {?} twoCode code point for the second symbol

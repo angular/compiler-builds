@@ -19,8 +19,6 @@ var /** @type {?} */ _PLACEHOLDER_TAG = 'x';
 var /** @type {?} */ _SOURCE_TAG = 'source';
 var /** @type {?} */ _TARGET_TAG = 'target';
 var /** @type {?} */ _UNIT_TAG = 'trans-unit';
-// http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
-// http://docs.oasis-open.org/xliff/v1.2/xliff-profile-html/xliff-profile-html-1.2.html
 export var Xliff = (function () {
     function Xliff() {
     }
@@ -171,8 +169,6 @@ function _WriteVisitor_tsickle_Closure_declarations() {
     /** @type {?} */
     _WriteVisitor.prototype._isInIcu;
 }
-// TODO(vicb): add error management (structure)
-// Extract messages as xml nodes from the xliff file
 var XliffParser = (function () {
     function XliffParser() {
     }
@@ -281,7 +277,6 @@ function XliffParser_tsickle_Closure_declarations() {
     /** @type {?} */
     XliffParser.prototype._mlNodesByMsgId;
 }
-// Convert ml nodes (xliff syntax) to i18n nodes
 var XmlToI18n = (function () {
     function XmlToI18n() {
     }

@@ -27,7 +27,7 @@ function _isNgModuleMetadata(obj) {
     return obj instanceof NgModule;
 }
 /**
- *  Resolves types to {@link NgModule}.
+ * Resolves types to {\@link NgModule}.
  */
 export var NgModuleResolver = (function () {
     /**

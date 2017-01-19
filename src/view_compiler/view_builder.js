@@ -338,10 +338,11 @@ function ViewBuilderVisitor_tsickle_Closure_declarations() {
     ViewBuilderVisitor.prototype.targetDependencies;
 }
 /**
- *  Walks up the nodes while the direct parent is a container.
-  * *
-  * Returns the outer container or the node itself when it is not a direct child of a container.
-  * *
+ * Walks up the nodes while the direct parent is a container.
+ *
+ * Returns the outer container or the node itself when it is not a direct child of a container.
+ *
+ * \@internal
  * @param {?} node
  * @return {?}
  */
@@ -353,10 +354,11 @@ function _getOuterContainerOrSelf(node) {
     return node;
 }
 /**
- *  Walks up the nodes while they are container and returns the first parent which is not.
-  * *
-  * Returns the parent of the outer container or the node itself when it is not a container.
-  * *
+ * Walks up the nodes while they are container and returns the first parent which is not.
+ *
+ * Returns the parent of the outer container or the node itself when it is not a container.
+ *
+ * \@internal
  * @param {?} el
  * @return {?}
  */
@@ -451,7 +453,7 @@ function createViewTopLevelStmts(view, targetStatements) {
             o.literal(view.component.template.ngContentSelectors.length),
             ViewEncapsulationEnum.fromValue(view.component.template.encapsulation),
             view.styles,
-            o.literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; })),
+            o.literalMap(view.animations.map(function (entry) { return [entry.name, entry.fnExp]; }), null, true),
         ]))
             .toDeclStmt(o.importType(createIdentifier(Identifiers.RenderComponentType))));
     }

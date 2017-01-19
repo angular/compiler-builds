@@ -8,7 +8,7 @@
 import { HtmlParser } from '../ml_parser/html_parser';
 import { I18nError } from './parse_util';
 /**
- *  A container for translated messages
+ * A container for translated messages
  */
 export var TranslationBundle = (function () {
     /**

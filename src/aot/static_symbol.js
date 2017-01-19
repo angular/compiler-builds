@@ -1,7 +1,7 @@
 /**
- *  A token representing the a reference to a static type.
-  * *
-  * This token is unique for a filePath and name and can be used as a hash table key.
+ * A token representing the a reference to a static type.
+ *
+ * This token is unique for a filePath and name and can be used as a hash table key.
  */
 export var StaticSymbol = (function () {
     /**
@@ -25,8 +25,8 @@ function StaticSymbol_tsickle_Closure_declarations() {
     StaticSymbol.prototype.members;
 }
 /**
- *  A cache of static symbol used by the StaticReflector to return the same symbol for the
-  * same symbol values.
+ * A cache of static symbol used by the StaticReflector to return the same symbol for the
+ * same symbol values.
  */
 export var StaticSymbolCache = (function () {
     function StaticSymbolCache() {

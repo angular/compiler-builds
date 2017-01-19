@@ -22,8 +22,8 @@ var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
 };
 var /** @type {?} */ HIDDEN_KEY = /^\$.*\$$/;
 /**
- *  A static reflector implements enough of the Reflector API that is necessary to compile
-  * templates statically.
+ * A static reflector implements enough of the Reflector API that is necessary to compile
+ * templates statically.
  */
 export var StaticReflector = (function () {
     /**
@@ -294,9 +294,9 @@ export var StaticReflector = (function () {
         this._registerFunction(this.findDeclaration(animationMetadata, 'group'), group);
     };
     /**
-     *  getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
-      * All types passed to the StaticResolver should be pseudo-types returned by this method.
-      * *
+     * getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
+     * All types passed to the StaticResolver should be pseudo-types returned by this method.
+     *
      * @param {?} declarationFile the absolute path of the file where the symbol is declared
      * @param {?} name the name of the type.
      * @param {?=} members
@@ -320,6 +320,7 @@ export var StaticReflector = (function () {
         }
     };
     /**
+     * \@internal
      * @param {?} context
      * @param {?} value
      * @return {?}

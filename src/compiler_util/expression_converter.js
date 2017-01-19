@@ -43,8 +43,8 @@ function ConvertPropertyBindingResult_tsickle_Closure_declarations() {
     ConvertPropertyBindingResult.prototype.forceUpdate;
 }
 /**
- *  Converts the given expression AST into an executable output AST, assuming the expression is
-  * used in a property binding.
+ * Converts the given expression AST into an executable output AST, assuming the expression is
+ * used in a property binding.
  * @param {?} builder
  * @param {?} nameResolver
  * @param {?} implicitReceiver
@@ -99,8 +99,8 @@ function ConvertActionBindingResult_tsickle_Closure_declarations() {
     ConvertActionBindingResult.prototype.preventDefault;
 }
 /**
- *  Converts the given expression AST into an executable output AST, assuming the expression is
-  * used in an action binding (e.g. an event handler).
+ * Converts the given expression AST into an executable output AST, assuming the expression is
+ * used in an action binding (e.g. an event handler).
  * @param {?} builder
  * @param {?} nameResolver
  * @param {?} implicitReceiver
@@ -133,8 +133,8 @@ export function convertActionBinding(builder, nameResolver, implicitReceiver, ac
     return new ConvertActionBindingResult(actionStmts, preventDefaultVar);
 }
 /**
- *  Creates variables that are shared by multiple calls to `convertActionBinding` /
-  * `convertPropertyBinding`
+ * Creates variables that are shared by multiple calls to `convertActionBinding` /
+ * `convertPropertyBinding`
  * @param {?} stmts
  * @return {?}
  */

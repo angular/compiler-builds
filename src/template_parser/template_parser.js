@@ -220,6 +220,7 @@ export var TemplateParser = (function () {
         }
     };
     /**
+     * \@internal
      * @param {?} result
      * @param {?} errors
      * @return {?}
@@ -727,11 +728,11 @@ var TemplateParseVisitor = (function () {
         }
     };
     /**
-     *  Make sure that non-angular tags conform to the schemas.
-      * *
-      * Note: An element is considered an angular tag when at least one directive selector matches the
-      * tag name.
-      * *
+     * Make sure that non-angular tags conform to the schemas.
+     *
+     * Note: An element is considered an angular tag when at least one directive selector matches the
+     * tag name.
+     *
      * @param {?} matchElement Whether any directive has matched on the tag name
      * @param {?} element the html element
      * @return {?}

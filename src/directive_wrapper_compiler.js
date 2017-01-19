@@ -59,12 +59,12 @@ var /** @type {?} */ RENDER_EL_VAR = o.variable('el');
 var /** @type {?} */ EVENT_NAME_VAR = o.variable('eventName');
 var /** @type {?} */ RESET_CHANGES_STMT = o.THIS_EXPR.prop(CHANGES_FIELD_NAME).set(o.literalMap([])).toStmt();
 /**
- *  We generate directive wrappers to prevent code bloat when a directive is used.
-  * A directive wrapper encapsulates
-  * the dirty checking for `@Input`, the handling of `@HostListener` / `@HostBinding`
-  * and calling the lifecyclehooks `ngOnInit`, `ngOnChanges`, `ngDoCheck`.
-  * *
-  * So far, only `@Input` and the lifecycle hooks have been implemented.
+ * We generate directive wrappers to prevent code bloat when a directive is used.
+ * A directive wrapper encapsulates
+ * the dirty checking for `\@Input`, the handling of `\@HostListener` / `\@HostBinding`
+ * and calling the lifecyclehooks `ngOnInit`, `ngOnChanges`, `ngDoCheck`.
+ *
+ * So far, only `\@Input` and the lifecycle hooks have been implemented.
  */
 export var DirectiveWrapperCompiler = (function () {
     /**

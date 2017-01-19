@@ -153,7 +153,6 @@ function _ControlFlowError_tsickle_Closure_declarations() {
     /** @type {?} */
     _ControlFlowError.prototype.error;
 }
-// See http://www.w3.org/TR/html51/syntax.html#writing
 var _Tokenizer = (function () {
     /**
      * @param {?} _file The html source
@@ -235,6 +234,7 @@ var _Tokenizer = (function () {
         return new TokenizeResult(mergeTextTokens(this.tokens), this.errors);
     };
     /**
+     * \@internal
      * @return {?}
      */
     _Tokenizer.prototype._tokenizeExpansionForm = function () {

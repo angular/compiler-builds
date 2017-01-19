@@ -37,13 +37,6 @@ import { SummaryResolver } from './summary_resolver';
 import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, SyntaxError, ValueTransformer, visitValue } from './util';
 export var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new OpaqueToken('ErrorCollector');
-// Design notes:
-// - don't lazily create metadata:
-//   For some metadata, we need to do async work sometimes,
-//   so the user has to kick off this loading.
-//   But we want to report errors even when the async work is
-//   not required to check that the user would have been able
-//   to wait correctly.
 export var CompileMetadataResolver = (function () {
     /**
      * @param {?} _ngModuleResolver
@@ -318,8 +311,8 @@ export var CompileMetadataResolver = (function () {
         return { metadata: metadata, annotation: dirMeta };
     };
     /**
-     *  Gets the metadata for the given directive.
-      * This assumes `loadNgModuleMetadata` has been called first.
+     * Gets the metadata for the given directive.
+     * This assumes `loadNgModuleMetadata` has been called first.
      * @param {?} directiveType
      * @return {?}
      */
@@ -367,7 +360,7 @@ export var CompileMetadataResolver = (function () {
         return moduleSummary;
     };
     /**
-     *  Loads the declared directives and pipes of an NgModule.
+     * Loads the declared directives and pipes of an NgModule.
      * @param {?} moduleType
      * @param {?} isSync
      * @param {?=} throwIfNotFound
@@ -678,8 +671,8 @@ export var CompileMetadataResolver = (function () {
         return { reference: factory, diDeps: this._getDependenciesMetadata(factory, dependencies) };
     };
     /**
-     *  Gets the metadata for the given pipe.
-      * This assumes `loadNgModuleMetadata` has been called first.
+     * Gets the metadata for the given pipe.
+     * This assumes `loadNgModuleMetadata` has been called first.
      * @param {?} pipeType
      * @return {?}
      */

@@ -849,7 +849,7 @@ export var _ParseAST = (function () {
         return (positionals);
     };
     /**
-     *  An identifier, a keyword, a string with an optional `-` inbetween.
+     * An identifier, a keyword, a string with an optional `-` inbetween.
      * @return {?}
      */
     _ParseAST.prototype.expectTemplateBindingKey = function () {

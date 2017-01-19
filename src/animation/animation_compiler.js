@@ -120,6 +120,7 @@ var _AnimationBuilder = (function () {
         return this._callAnimateMethod(ast, startingStylesExpr, o.literalArr(keyframeExpressions), context);
     };
     /**
+     * \@internal
      * @param {?} ast
      * @param {?} context
      * @return {?}
@@ -135,6 +136,7 @@ var _AnimationBuilder = (function () {
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr, context);
     };
     /**
+     * \@internal
      * @param {?} ast
      * @param {?} startingStylesExpr
      * @param {?} keyframesExpr

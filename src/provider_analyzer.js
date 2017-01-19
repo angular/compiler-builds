@@ -47,9 +47,15 @@ export var ProviderViewContext = (function () {
     return ProviderViewContext;
 }());
 function ProviderViewContext_tsickle_Closure_declarations() {
-    /** @type {?} */
+    /**
+     * \@internal
+     * @type {?}
+     */
     ProviderViewContext.prototype.viewQueries;
-    /** @type {?} */
+    /**
+     * \@internal
+     * @type {?}
+     */
     ProviderViewContext.prototype.viewProviders;
     /** @type {?} */
     ProviderViewContext.prototype.errors;

@@ -32,12 +32,13 @@ import { TemplateParser } from '../template_parser/template_parser';
 import { SyncAsyncResult } from '../util';
 import { ComponentFactoryDependency, DirectiveWrapperDependency, ViewClassDependency, ViewCompiler } from '../view_compiler/view_compiler';
 /**
- *  An internal module of the Angular compiler that begins with component types,
-  * extracts templates, and eventually produces a compiled version of the component
-  * ready for linking into an application.
-  * *
-  * from a trusted source. Attacker-controlled data introduced by a template could expose your
-  * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
+ * An internal module of the Angular compiler that begins with component types,
+ * extracts templates, and eventually produces a compiled version of the component
+ * ready for linking into an application.
+ *
+ * \@security When compiling templates at runtime, you must ensure that the entire template comes
+ * from a trusted source. Attacker-controlled data introduced by a template could expose your
+ * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
  */
 export var JitCompiler = (function () {
     /**
@@ -199,6 +200,7 @@ export var JitCompiler = (function () {
         return ngModuleFactory;
     };
     /**
+     * \@internal
      * @param {?} mainModule
      * @param {?} allComponentFactories
      * @return {?}
@@ -521,7 +523,7 @@ function assertComponent(meta) {
     }
 }
 /**
- *  Implements `Compiler` by delegating to the JitCompiler using a known module.
+ * Implements `Compiler` by delegating to the JitCompiler using a known module.
  */
 var ModuleBoundCompiler = (function () {
     /**
@@ -576,12 +578,12 @@ var ModuleBoundCompiler = (function () {
         return this._delegate.getNgContentSelectors(component);
     };
     /**
-     *  Clears all caches
+     * Clears all caches
      * @return {?}
      */
     ModuleBoundCompiler.prototype.clearCache = function () { this._delegate.clearCache(); };
     /**
-     *  Clears the cache for the given component/ngModule.
+     * Clears the cache for the given component/ngModule.
      * @param {?} type
      * @return {?}
      */
