@@ -1,4 +1,4 @@
-export var TagContentType = {};
+export let TagContentType = {};
 TagContentType.RAW_TEXT = 0;
 TagContentType.ESCAPABLE_RAW_TEXT = 1;
 TagContentType.PARSABLE_DATA = 2;
@@ -13,9 +13,9 @@ export function splitNsName(elementName) {
     if (elementName[0] != ':') {
         return [null, elementName];
     }
-    var /** @type {?} */ colonIndex = elementName.indexOf(':', 1);
+    const /** @type {?} */ colonIndex = elementName.indexOf(':', 1);
     if (colonIndex == -1) {
-        throw new Error("Unsupported format \"" + elementName + "\" expecting \":namespace:name\"");
+        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
     }
     return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
 }
@@ -32,13 +32,13 @@ export function getNsPrefix(fullName) {
  * @return {?}
  */
 export function mergeNsAndName(prefix, localName) {
-    return prefix ? ":" + prefix + ":" + localName : localName;
+    return prefix ? `:${prefix}:${localName}` : localName;
 }
 // see http://www.w3.org/TR/html51/syntax.html#named-character-references
 // see https://html.spec.whatwg.org/multipage/entities.json
 // This list is not exhaustive to keep the compiler footprint low.
 // The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not exist.
-export var /** @type {?} */ NAMED_ENTITIES = {
+export const /** @type {?} */ NAMED_ENTITIES = {
     'Aacute': '\u00C1',
     'aacute': '\u00E1',
     'Acirc': '\u00C2',

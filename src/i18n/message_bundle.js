@@ -9,13 +9,13 @@ import { extractMessages } from './extractor_merger';
 /**
  * A container for message extracted from the templates.
  */
-export var MessageBundle = (function () {
+export class MessageBundle {
     /**
      * @param {?} _htmlParser
      * @param {?} _implicitTags
      * @param {?} _implicitAttrs
      */
-    function MessageBundle(_htmlParser, _implicitTags, _implicitAttrs) {
+    constructor(_htmlParser, _implicitTags, _implicitAttrs) {
         this._htmlParser = _htmlParser;
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
@@ -27,29 +27,27 @@ export var MessageBundle = (function () {
      * @param {?} interpolationConfig
      * @return {?}
      */
-    MessageBundle.prototype.updateFromTemplate = function (html, url, interpolationConfig) {
-        var /** @type {?} */ htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
+    updateFromTemplate(html, url, interpolationConfig) {
+        const /** @type {?} */ htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
         if (htmlParserResult.errors.length) {
             return htmlParserResult.errors;
         }
-        var /** @type {?} */ i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
+        const /** @type {?} */ i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
         if (i18nParserResult.errors.length) {
             return i18nParserResult.errors;
         }
-        (_a = this._messages).push.apply(_a, i18nParserResult.messages);
-        var _a;
-    };
+        this._messages.push(...i18nParserResult.messages);
+    }
     /**
      * @return {?}
      */
-    MessageBundle.prototype.getMessages = function () { return this._messages; };
+    getMessages() { return this._messages; }
     /**
      * @param {?} serializer
      * @return {?}
      */
-    MessageBundle.prototype.write = function (serializer) { return serializer.write(this._messages); };
-    return MessageBundle;
-}());
+    write(serializer) { return serializer.write(this._messages); }
+}
 function MessageBundle_tsickle_Closure_declarations() {
     /** @type {?} */
     MessageBundle.prototype._messages;

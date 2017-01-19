@@ -1,5 +1,5 @@
-export var ShadowCss = (function () {
-    function ShadowCss() {
+export class ShadowCss {
+    constructor() {
         this.strictStyling = true;
     }
     /**
@@ -8,58 +8,47 @@ export var ShadowCss = (function () {
      * @param {?=} hostSelector
      * @return {?}
      */
-    ShadowCss.prototype.shimCssText = function (cssText, selector, hostSelector) {
-        if (hostSelector === void 0) { hostSelector = ''; }
-        var /** @type {?} */ sourceMappingUrl = extractSourceMappingUrl(cssText);
+    shimCssText(cssText, selector, hostSelector = '') {
+        const /** @type {?} */ sourceMappingUrl = extractSourceMappingUrl(cssText);
         cssText = stripComments(cssText);
         cssText = this._insertDirectives(cssText);
         return this._scopeCssText(cssText, selector, hostSelector) + sourceMappingUrl;
-    };
+    }
     /**
      * @param {?} cssText
      * @return {?}
      */
-    ShadowCss.prototype._insertDirectives = function (cssText) {
+    _insertDirectives(cssText) {
         cssText = this._insertPolyfillDirectivesInCssText(cssText);
         return this._insertPolyfillRulesInCssText(cssText);
-    };
+    }
     /**
      * @param {?} cssText
      * @return {?}
      */
-    ShadowCss.prototype._insertPolyfillDirectivesInCssText = function (cssText) {
+    _insertPolyfillDirectivesInCssText(cssText) {
         // Difference with webcomponents.js: does not handle comments
-        return cssText.replace(_cssContentNextSelectorRe, function () {
-            var m = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                m[_i - 0] = arguments[_i];
-            }
-            return m[2] + '{';
-        });
-    };
+        return cssText.replace(_cssContentNextSelectorRe, function (...m) { return m[2] + '{'; });
+    }
     /**
      * @param {?} cssText
      * @return {?}
      */
-    ShadowCss.prototype._insertPolyfillRulesInCssText = function (cssText) {
+    _insertPolyfillRulesInCssText(cssText) {
         // Difference with webcomponents.js: does not handle comments
-        return cssText.replace(_cssContentRuleRe, function () {
-            var m = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                m[_i - 0] = arguments[_i];
-            }
-            var /** @type {?} */ rule = m[0].replace(m[1], '').replace(m[2], '');
+        return cssText.replace(_cssContentRuleRe, (...m) => {
+            const /** @type {?} */ rule = m[0].replace(m[1], '').replace(m[2], '');
             return m[4] + rule;
         });
-    };
+    }
     /**
      * @param {?} cssText
      * @param {?} scopeSelector
      * @param {?} hostSelector
      * @return {?}
      */
-    ShadowCss.prototype._scopeCssText = function (cssText, scopeSelector, hostSelector) {
-        var /** @type {?} */ unscopedRules = this._extractUnscopedRulesFromCssText(cssText);
+    _scopeCssText(cssText, scopeSelector, hostSelector) {
+        const /** @type {?} */ unscopedRules = this._extractUnscopedRulesFromCssText(cssText);
         // replace :host and :host-context -shadowcsshost and -shadowcsshost respectively
         cssText = this._insertPolyfillHostInCssText(cssText);
         cssText = this._convertColonHost(cssText);
@@ -70,54 +59,50 @@ export var ShadowCss = (function () {
         }
         cssText = cssText + '\n' + unscopedRules;
         return cssText.trim();
-    };
+    }
     /**
      * @param {?} cssText
      * @return {?}
      */
-    ShadowCss.prototype._extractUnscopedRulesFromCssText = function (cssText) {
+    _extractUnscopedRulesFromCssText(cssText) {
         // Difference with webcomponents.js: does not handle comments
-        var /** @type {?} */ r = '';
-        var /** @type {?} */ m;
+        let /** @type {?} */ r = '';
+        let /** @type {?} */ m;
         _cssContentUnscopedRuleRe.lastIndex = 0;
         while ((m = _cssContentUnscopedRuleRe.exec(cssText)) !== null) {
-            var /** @type {?} */ rule = m[0].replace(m[2], '').replace(m[1], m[4]);
+            const /** @type {?} */ rule = m[0].replace(m[2], '').replace(m[1], m[4]);
             r += rule + '\n\n';
         }
         return r;
-    };
+    }
     /**
      * @param {?} cssText
      * @return {?}
      */
-    ShadowCss.prototype._convertColonHost = function (cssText) {
+    _convertColonHost(cssText) {
         return this._convertColonRule(cssText, _cssColonHostRe, this._colonHostPartReplacer);
-    };
+    }
     /**
      * @param {?} cssText
      * @return {?}
      */
-    ShadowCss.prototype._convertColonHostContext = function (cssText) {
+    _convertColonHostContext(cssText) {
         return this._convertColonRule(cssText, _cssColonHostContextRe, this._colonHostContextPartReplacer);
-    };
+    }
     /**
      * @param {?} cssText
      * @param {?} regExp
      * @param {?} partReplacer
      * @return {?}
      */
-    ShadowCss.prototype._convertColonRule = function (cssText, regExp, partReplacer) {
+    _convertColonRule(cssText, regExp, partReplacer) {
         // m[1] = :host(-context), m[2] = contents of (), m[3] rest of rule
-        return cssText.replace(regExp, function () {
-            var m = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                m[_i - 0] = arguments[_i];
-            }
+        return cssText.replace(regExp, function (...m) {
             if (m[2]) {
-                var /** @type {?} */ parts = m[2].split(',');
-                var /** @type {?} */ r = [];
-                for (var /** @type {?} */ i = 0; i < parts.length; i++) {
-                    var /** @type {?} */ p = parts[i].trim();
+                const /** @type {?} */ parts = m[2].split(',');
+                const /** @type {?} */ r = [];
+                for (let /** @type {?} */ i = 0; i < parts.length; i++) {
+                    const /** @type {?} */ p = parts[i].trim();
                     if (!p)
                         break;
                     r.push(partReplacer(_polyfillHostNoCombinator, p, m[3]));
@@ -128,59 +113,58 @@ export var ShadowCss = (function () {
                 return _polyfillHostNoCombinator + m[3];
             }
         });
-    };
+    }
     /**
      * @param {?} host
      * @param {?} part
      * @param {?} suffix
      * @return {?}
      */
-    ShadowCss.prototype._colonHostContextPartReplacer = function (host, part, suffix) {
+    _colonHostContextPartReplacer(host, part, suffix) {
         if (part.indexOf(_polyfillHost) > -1) {
             return this._colonHostPartReplacer(host, part, suffix);
         }
         else {
             return host + part + suffix + ', ' + part + ' ' + host + suffix;
         }
-    };
+    }
     /**
      * @param {?} host
      * @param {?} part
      * @param {?} suffix
      * @return {?}
      */
-    ShadowCss.prototype._colonHostPartReplacer = function (host, part, suffix) {
+    _colonHostPartReplacer(host, part, suffix) {
         return host + part.replace(_polyfillHost, '') + suffix;
-    };
+    }
     /**
      * @param {?} cssText
      * @return {?}
      */
-    ShadowCss.prototype._convertShadowDOMSelectors = function (cssText) {
-        return _shadowDOMSelectorsRe.reduce(function (result, pattern) { return result.replace(pattern, ' '); }, cssText);
-    };
+    _convertShadowDOMSelectors(cssText) {
+        return _shadowDOMSelectorsRe.reduce((result, pattern) => result.replace(pattern, ' '), cssText);
+    }
     /**
      * @param {?} cssText
      * @param {?} scopeSelector
      * @param {?} hostSelector
      * @return {?}
      */
-    ShadowCss.prototype._scopeSelectors = function (cssText, scopeSelector, hostSelector) {
-        var _this = this;
-        return processRules(cssText, function (rule) {
-            var /** @type {?} */ selector = rule.selector;
-            var /** @type {?} */ content = rule.content;
+    _scopeSelectors(cssText, scopeSelector, hostSelector) {
+        return processRules(cssText, (rule) => {
+            let /** @type {?} */ selector = rule.selector;
+            let /** @type {?} */ content = rule.content;
             if (rule.selector[0] != '@') {
                 selector =
-                    _this._scopeSelector(rule.selector, scopeSelector, hostSelector, _this.strictStyling);
+                    this._scopeSelector(rule.selector, scopeSelector, hostSelector, this.strictStyling);
             }
             else if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports') ||
                 rule.selector.startsWith('@page') || rule.selector.startsWith('@document')) {
-                content = _this._scopeSelectors(rule.content, scopeSelector, hostSelector);
+                content = this._scopeSelectors(rule.content, scopeSelector, hostSelector);
             }
             return new CssRule(selector, content);
         });
-    };
+    }
     /**
      * @param {?} selector
      * @param {?} scopeSelector
@@ -188,106 +172,98 @@ export var ShadowCss = (function () {
      * @param {?} strict
      * @return {?}
      */
-    ShadowCss.prototype._scopeSelector = function (selector, scopeSelector, hostSelector, strict) {
-        var _this = this;
+    _scopeSelector(selector, scopeSelector, hostSelector, strict) {
         return selector.split(',')
-            .map(function (part) { return part.trim().split(_shadowDeepSelectors); })
-            .map(function (deepParts) {
-            var shallowPart = deepParts[0], otherParts = deepParts.slice(1);
-            var /** @type {?} */ applyScope = function (shallowPart) {
-                if (_this._selectorNeedsScoping(shallowPart, scopeSelector)) {
+            .map(part => part.trim().split(_shadowDeepSelectors))
+            .map((deepParts) => {
+            const [shallowPart, ...otherParts] = deepParts;
+            const /** @type {?} */ applyScope = (shallowPart) => {
+                if (this._selectorNeedsScoping(shallowPart, scopeSelector)) {
                     return strict ?
-                        _this._applyStrictSelectorScope(shallowPart, scopeSelector, hostSelector) :
-                        _this._applySelectorScope(shallowPart, scopeSelector, hostSelector);
+                        this._applyStrictSelectorScope(shallowPart, scopeSelector, hostSelector) :
+                        this._applySelectorScope(shallowPart, scopeSelector, hostSelector);
                 }
                 else {
                     return shallowPart;
                 }
             };
-            return [applyScope(shallowPart)].concat(otherParts).join(' ');
+            return [applyScope(shallowPart), ...otherParts].join(' ');
         })
             .join(', ');
-    };
+    }
     /**
      * @param {?} selector
      * @param {?} scopeSelector
      * @return {?}
      */
-    ShadowCss.prototype._selectorNeedsScoping = function (selector, scopeSelector) {
-        var /** @type {?} */ re = this._makeScopeMatcher(scopeSelector);
+    _selectorNeedsScoping(selector, scopeSelector) {
+        const /** @type {?} */ re = this._makeScopeMatcher(scopeSelector);
         return !re.test(selector);
-    };
+    }
     /**
      * @param {?} scopeSelector
      * @return {?}
      */
-    ShadowCss.prototype._makeScopeMatcher = function (scopeSelector) {
-        var /** @type {?} */ lre = /\[/g;
-        var /** @type {?} */ rre = /\]/g;
+    _makeScopeMatcher(scopeSelector) {
+        const /** @type {?} */ lre = /\[/g;
+        const /** @type {?} */ rre = /\]/g;
         scopeSelector = scopeSelector.replace(lre, '\\[').replace(rre, '\\]');
         return new RegExp('^(' + scopeSelector + ')' + _selectorReSuffix, 'm');
-    };
+    }
     /**
      * @param {?} selector
      * @param {?} scopeSelector
      * @param {?} hostSelector
      * @return {?}
      */
-    ShadowCss.prototype._applySelectorScope = function (selector, scopeSelector, hostSelector) {
+    _applySelectorScope(selector, scopeSelector, hostSelector) {
         // Difference from webcomponents.js: scopeSelector could not be an array
         return this._applySimpleSelectorScope(selector, scopeSelector, hostSelector);
-    };
+    }
     /**
      * @param {?} selector
      * @param {?} scopeSelector
      * @param {?} hostSelector
      * @return {?}
      */
-    ShadowCss.prototype._applySimpleSelectorScope = function (selector, scopeSelector, hostSelector) {
+    _applySimpleSelectorScope(selector, scopeSelector, hostSelector) {
         // In Android browser, the lastIndex is not reset when the regex is used in String.replace()
         _polyfillHostRe.lastIndex = 0;
         if (_polyfillHostRe.test(selector)) {
-            var /** @type {?} */ replaceBy_1 = this.strictStyling ? "[" + hostSelector + "]" : scopeSelector;
+            const /** @type {?} */ replaceBy = this.strictStyling ? `[${hostSelector}]` : scopeSelector;
             return selector
-                .replace(_polyfillHostNoCombinatorRe, function (hnc, selector) {
-                return selector.replace(/([^:]*)(:*)(.*)/, function (_, before, colon, after) {
-                    return before + replaceBy_1 + colon + after;
+                .replace(_polyfillHostNoCombinatorRe, (hnc, selector) => {
+                return selector.replace(/([^:]*)(:*)(.*)/, (_, before, colon, after) => {
+                    return before + replaceBy + colon + after;
                 });
             })
-                .replace(_polyfillHostRe, replaceBy_1 + ' ');
+                .replace(_polyfillHostRe, replaceBy + ' ');
         }
         return scopeSelector + ' ' + selector;
-    };
+    }
     /**
      * @param {?} selector
      * @param {?} scopeSelector
      * @param {?} hostSelector
      * @return {?}
      */
-    ShadowCss.prototype._applyStrictSelectorScope = function (selector, scopeSelector, hostSelector) {
-        var _this = this;
-        var /** @type {?} */ isRe = /\[is=([^\]]*)\]/g;
-        scopeSelector = scopeSelector.replace(isRe, function (_) {
-            var parts = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                parts[_i - 1] = arguments[_i];
-            }
-            return parts[0];
-        });
-        var /** @type {?} */ attrName = '[' + scopeSelector + ']';
-        var /** @type {?} */ _scopeSelectorPart = function (p) {
-            var /** @type {?} */ scopedP = p.trim();
+    _applyStrictSelectorScope(selector, scopeSelector, hostSelector) {
+        const /** @type {?} */ isRe = /\[is=([^\]]*)\]/g;
+        scopeSelector = scopeSelector.replace(isRe, (_, ...parts) => parts[0]);
+        const /** @type {?} */ attrName = '[' + scopeSelector + ']';
+        const /** @type {?} */ _scopeSelectorPart = (p) => {
+            let /** @type {?} */ scopedP = p.trim();
             if (!scopedP) {
                 return '';
             }
             if (p.indexOf(_polyfillHostNoCombinator) > -1) {
-                scopedP = _this._applySimpleSelectorScope(p, scopeSelector, hostSelector);
+                scopedP = this._applySimpleSelectorScope(p, scopeSelector, hostSelector);
             }
             else {
                 // remove :host since it should be unnecessary
-                var /** @type {?} */ t = p.replace(_polyfillHostRe, '');
+                const /** @type {?} */ t = p.replace(_polyfillHostRe, '');
                 if (t.length > 0) {
-                    var /** @type {?} */ matches = t.match(/([^:]*)(:*)(.*)/);
+                    const /** @type {?} */ matches = t.match(/([^:]*)(:*)(.*)/);
                     if (matches) {
                         scopedP = matches[1] + attrName + matches[2] + matches[3];
                     }
@@ -295,62 +271,60 @@ export var ShadowCss = (function () {
             }
             return scopedP;
         };
-        var /** @type {?} */ safeContent = new SafeSelector(selector);
+        const /** @type {?} */ safeContent = new SafeSelector(selector);
         selector = safeContent.content();
-        var /** @type {?} */ scopedSelector = '';
-        var /** @type {?} */ startIndex = 0;
-        var /** @type {?} */ res;
-        var /** @type {?} */ sep = /( |>|\+|~(?!=))\s*/g;
-        var /** @type {?} */ scopeAfter = selector.indexOf(_polyfillHostNoCombinator);
+        let /** @type {?} */ scopedSelector = '';
+        let /** @type {?} */ startIndex = 0;
+        let /** @type {?} */ res;
+        const /** @type {?} */ sep = /( |>|\+|~(?!=))\s*/g;
+        const /** @type {?} */ scopeAfter = selector.indexOf(_polyfillHostNoCombinator);
         while ((res = sep.exec(selector)) !== null) {
-            var /** @type {?} */ separator = res[1];
-            var /** @type {?} */ part = selector.slice(startIndex, res.index).trim();
+            const /** @type {?} */ separator = res[1];
+            const /** @type {?} */ part = selector.slice(startIndex, res.index).trim();
             // if a selector appears before :host-context it should not be shimmed as it
             // matches on ancestor elements and not on elements in the host's shadow
-            var /** @type {?} */ scopedPart = startIndex >= scopeAfter ? _scopeSelectorPart(part) : part;
-            scopedSelector += scopedPart + " " + separator + " ";
+            const /** @type {?} */ scopedPart = startIndex >= scopeAfter ? _scopeSelectorPart(part) : part;
+            scopedSelector += `${scopedPart} ${separator} `;
             startIndex = sep.lastIndex;
         }
         scopedSelector += _scopeSelectorPart(selector.substring(startIndex));
         // replace the placeholders with their original values
         return safeContent.restore(scopedSelector);
-    };
+    }
     /**
      * @param {?} selector
      * @return {?}
      */
-    ShadowCss.prototype._insertPolyfillHostInCssText = function (selector) {
+    _insertPolyfillHostInCssText(selector) {
         return selector.replace(_colonHostContextRe, _polyfillHostContext)
             .replace(_colonHostRe, _polyfillHost);
-    };
-    return ShadowCss;
-}());
+    }
+}
 function ShadowCss_tsickle_Closure_declarations() {
     /** @type {?} */
     ShadowCss.prototype.strictStyling;
 }
-var SafeSelector = (function () {
+class SafeSelector {
     /**
      * @param {?} selector
      */
-    function SafeSelector(selector) {
-        var _this = this;
+    constructor(selector) {
         this.placeholders = [];
         this.index = 0;
         // Replaces attribute selectors with placeholders.
         // The WS in [attr="va lue"] would otherwise be interpreted as a selector separator.
-        selector = selector.replace(/(\[[^\]]*\])/g, function (_, keep) {
-            var replaceBy = "__ph-" + _this.index + "__";
-            _this.placeholders.push(keep);
-            _this.index++;
+        selector = selector.replace(/(\[[^\]]*\])/g, (_, keep) => {
+            const replaceBy = `__ph-${this.index}__`;
+            this.placeholders.push(keep);
+            this.index++;
             return replaceBy;
         });
         // Replaces the expression in `:nth-child(2n + 1)` with a placeholder.
         // WS and "+" would otherwise be interpreted as selector separators.
-        this._content = selector.replace(/(:nth-[-\w]+)(\([^)]+\))/g, function (_, pseudo, exp) {
-            var replaceBy = "__ph-" + _this.index + "__";
-            _this.placeholders.push(exp);
-            _this.index++;
+        this._content = selector.replace(/(:nth-[-\w]+)(\([^)]+\))/g, (_, pseudo, exp) => {
+            const replaceBy = `__ph-${this.index}__`;
+            this.placeholders.push(exp);
+            this.index++;
             return pseudo + replaceBy;
         });
     }
@@ -359,16 +333,14 @@ var SafeSelector = (function () {
      * @param {?} content
      * @return {?}
      */
-    SafeSelector.prototype.restore = function (content) {
-        var _this = this;
-        return content.replace(/__ph-(\d+)__/g, function (ph, index) { return _this.placeholders[+index]; });
-    };
+    restore(content) {
+        return content.replace(/__ph-(\d+)__/g, (ph, index) => this.placeholders[+index]);
+    }
     /**
      * @return {?}
      */
-    SafeSelector.prototype.content = function () { return this._content; };
-    return SafeSelector;
-}());
+    content() { return this._content; }
+}
 function SafeSelector_tsickle_Closure_declarations() {
     /** @type {?} */
     SafeSelector.prototype.placeholders;
@@ -377,32 +349,32 @@ function SafeSelector_tsickle_Closure_declarations() {
     /** @type {?} */
     SafeSelector.prototype._content;
 }
-var /** @type {?} */ _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
-var /** @type {?} */ _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
-var /** @type {?} */ _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
-var /** @type {?} */ _polyfillHost = '-shadowcsshost';
+const /** @type {?} */ _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
+const /** @type {?} */ _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
+const /** @type {?} */ _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
+const /** @type {?} */ _polyfillHost = '-shadowcsshost';
 // note: :host-context pre-processed to -shadowcsshostcontext.
-var /** @type {?} */ _polyfillHostContext = '-shadowcsscontext';
-var /** @type {?} */ _parenSuffix = ')(?:\\((' +
+const /** @type {?} */ _polyfillHostContext = '-shadowcsscontext';
+const /** @type {?} */ _parenSuffix = ')(?:\\((' +
     '(?:\\([^)(]*\\)|[^)(]*)+?' +
     ')\\))?([^,{]*)';
-var /** @type {?} */ _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
-var /** @type {?} */ _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
-var /** @type {?} */ _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
-var /** @type {?} */ _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
-var /** @type {?} */ _shadowDOMSelectorsRe = [
+const /** @type {?} */ _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
+const /** @type {?} */ _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
+const /** @type {?} */ _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
+const /** @type {?} */ _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
+const /** @type {?} */ _shadowDOMSelectorsRe = [
     /::shadow/g,
     /::content/g,
     // Deprecated selectors
     /\/shadow-deep\//g,
     /\/shadow\//g,
 ];
-var /** @type {?} */ _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
-var /** @type {?} */ _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
-var /** @type {?} */ _polyfillHostRe = /-shadowcsshost/gim;
-var /** @type {?} */ _colonHostRe = /:host/gim;
-var /** @type {?} */ _colonHostContextRe = /:host-context/gim;
-var /** @type {?} */ _commentRe = /\/\*\s*[\s\S]*?\*\//g;
+const /** @type {?} */ _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
+const /** @type {?} */ _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
+const /** @type {?} */ _polyfillHostRe = /-shadowcsshost/gim;
+const /** @type {?} */ _colonHostRe = /:host/gim;
+const /** @type {?} */ _colonHostContextRe = /:host-context/gim;
+const /** @type {?} */ _commentRe = /\/\*\s*[\s\S]*?\*\//g;
 /**
  * @param {?} input
  * @return {?}
@@ -411,31 +383,30 @@ function stripComments(input) {
     return input.replace(_commentRe, '');
 }
 // all comments except inline source mapping
-var /** @type {?} */ _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
+const /** @type {?} */ _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
 /**
  * @param {?} input
  * @return {?}
  */
 function extractSourceMappingUrl(input) {
-    var /** @type {?} */ matcher = input.match(_sourceMappingUrlRe);
+    const /** @type {?} */ matcher = input.match(_sourceMappingUrlRe);
     return matcher ? matcher[0] : '';
 }
-var /** @type {?} */ _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
-var /** @type {?} */ _curlyRe = /([{}])/g;
-var /** @type {?} */ OPEN_CURLY = '{';
-var /** @type {?} */ CLOSE_CURLY = '}';
-var /** @type {?} */ BLOCK_PLACEHOLDER = '%BLOCK%';
-export var CssRule = (function () {
+const /** @type {?} */ _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
+const /** @type {?} */ _curlyRe = /([{}])/g;
+const /** @type {?} */ OPEN_CURLY = '{';
+const /** @type {?} */ CLOSE_CURLY = '}';
+const /** @type {?} */ BLOCK_PLACEHOLDER = '%BLOCK%';
+export class CssRule {
     /**
      * @param {?} selector
      * @param {?} content
      */
-    function CssRule(selector, content) {
+    constructor(selector, content) {
         this.selector = selector;
         this.content = content;
     }
-    return CssRule;
-}());
+}
 function CssRule_tsickle_Closure_declarations() {
     /** @type {?} */
     CssRule.prototype.selector;
@@ -448,37 +419,32 @@ function CssRule_tsickle_Closure_declarations() {
  * @return {?}
  */
 export function processRules(input, ruleCallback) {
-    var /** @type {?} */ inputWithEscapedBlocks = escapeBlocks(input);
-    var /** @type {?} */ nextBlockIndex = 0;
-    return inputWithEscapedBlocks.escapedString.replace(_ruleRe, function () {
-        var m = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            m[_i - 0] = arguments[_i];
-        }
-        var /** @type {?} */ selector = m[2];
-        var /** @type {?} */ content = '';
-        var /** @type {?} */ suffix = m[4];
-        var /** @type {?} */ contentPrefix = '';
+    const /** @type {?} */ inputWithEscapedBlocks = escapeBlocks(input);
+    let /** @type {?} */ nextBlockIndex = 0;
+    return inputWithEscapedBlocks.escapedString.replace(_ruleRe, function (...m) {
+        const /** @type {?} */ selector = m[2];
+        let /** @type {?} */ content = '';
+        let /** @type {?} */ suffix = m[4];
+        let /** @type {?} */ contentPrefix = '';
         if (suffix && suffix.startsWith('{' + BLOCK_PLACEHOLDER)) {
             content = inputWithEscapedBlocks.blocks[nextBlockIndex++];
             suffix = suffix.substring(BLOCK_PLACEHOLDER.length + 1);
             contentPrefix = '{';
         }
-        var /** @type {?} */ rule = ruleCallback(new CssRule(selector, content));
-        return "" + m[1] + rule.selector + m[3] + contentPrefix + rule.content + suffix;
+        const /** @type {?} */ rule = ruleCallback(new CssRule(selector, content));
+        return `${m[1]}${rule.selector}${m[3]}${contentPrefix}${rule.content}${suffix}`;
     });
 }
-var StringWithEscapedBlocks = (function () {
+class StringWithEscapedBlocks {
     /**
      * @param {?} escapedString
      * @param {?} blocks
      */
-    function StringWithEscapedBlocks(escapedString, blocks) {
+    constructor(escapedString, blocks) {
         this.escapedString = escapedString;
         this.blocks = blocks;
     }
-    return StringWithEscapedBlocks;
-}());
+}
 function StringWithEscapedBlocks_tsickle_Closure_declarations() {
     /** @type {?} */
     StringWithEscapedBlocks.prototype.escapedString;
@@ -490,13 +456,13 @@ function StringWithEscapedBlocks_tsickle_Closure_declarations() {
  * @return {?}
  */
 function escapeBlocks(input) {
-    var /** @type {?} */ inputParts = input.split(_curlyRe);
-    var /** @type {?} */ resultParts = [];
-    var /** @type {?} */ escapedBlocks = [];
-    var /** @type {?} */ bracketCount = 0;
-    var /** @type {?} */ currentBlockParts = [];
-    for (var /** @type {?} */ partIndex = 0; partIndex < inputParts.length; partIndex++) {
-        var /** @type {?} */ part = inputParts[partIndex];
+    const /** @type {?} */ inputParts = input.split(_curlyRe);
+    const /** @type {?} */ resultParts = [];
+    const /** @type {?} */ escapedBlocks = [];
+    let /** @type {?} */ bracketCount = 0;
+    let /** @type {?} */ currentBlockParts = [];
+    for (let /** @type {?} */ partIndex = 0; partIndex < inputParts.length; partIndex++) {
+        const /** @type {?} */ part = inputParts[partIndex];
         if (part == CLOSE_CURLY) {
             bracketCount--;
         }

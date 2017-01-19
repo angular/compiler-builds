@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { isDevMode } from '@angular/core';
+import { isDevMode } from '@angular/core/index';
 import { isBlank, isPresent } from '../src/facade/lang';
 /**
  * @param {?} identifier
@@ -17,15 +17,15 @@ export function assertArrayOfStrings(identifier, value) {
         return;
     }
     if (!Array.isArray(value)) {
-        throw new Error("Expected '" + identifier + "' to be an array of strings.");
+        throw new Error(`Expected '${identifier}' to be an array of strings.`);
     }
-    for (var /** @type {?} */ i = 0; i < value.length; i += 1) {
+    for (let /** @type {?} */ i = 0; i < value.length; i += 1) {
         if (typeof value[i] !== 'string') {
-            throw new Error("Expected '" + identifier + "' to be an array of strings.");
+            throw new Error(`Expected '${identifier}' to be an array of strings.`);
         }
     }
 }
-var /** @type {?} */ INTERPOLATION_BLACKLIST_REGEXPS = [
+const /** @type {?} */ INTERPOLATION_BLACKLIST_REGEXPS = [
     /^\s*$/,
     /[<>]/,
     /^[{}]$/,
@@ -39,15 +39,15 @@ var /** @type {?} */ INTERPOLATION_BLACKLIST_REGEXPS = [
  */
 export function assertInterpolationSymbols(identifier, value) {
     if (isPresent(value) && !(Array.isArray(value) && value.length == 2)) {
-        throw new Error("Expected '" + identifier + "' to be an array, [start, end].");
+        throw new Error(`Expected '${identifier}' to be an array, [start, end].`);
     }
     else if (isDevMode() && !isBlank(value)) {
-        var /** @type {?} */ start_1 = (value[0]);
-        var /** @type {?} */ end_1 = (value[1]);
+        const /** @type {?} */ start = (value[0]);
+        const /** @type {?} */ end = (value[1]);
         // black list checking
-        INTERPOLATION_BLACKLIST_REGEXPS.forEach(function (regexp) {
-            if (regexp.test(start_1) || regexp.test(end_1)) {
-                throw new Error("['" + start_1 + "', '" + end_1 + "'] contains unusable interpolation symbol.");
+        INTERPOLATION_BLACKLIST_REGEXPS.forEach(regexp => {
+            if (regexp.test(start) || regexp.test(end)) {
+                throw new Error(`['${start}', '${end}'] contains unusable interpolation symbol.`);
             }
         });
     }

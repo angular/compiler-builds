@@ -5,14 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
+const /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
 /**
  * @param {?} filePath
  * @return {?}
  */
 export function ngfactoryFilePath(filePath) {
-    var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath);
-    return urlWithSuffix[0] + ".ngfactory" + urlWithSuffix[1];
+    const /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath);
+    return `${urlWithSuffix[0]}.ngfactory${urlWithSuffix[1]}`;
 }
 /**
  * @param {?} filePath
@@ -29,7 +29,7 @@ export function splitTypescriptSuffix(path) {
     if (path.endsWith('.d.ts')) {
         return [path.slice(0, -5), '.ts'];
     }
-    var /** @type {?} */ lastDot = path.lastIndexOf('.');
+    const /** @type {?} */ lastDot = path.lastIndexOf('.');
     if (lastDot !== -1) {
         return [path.substring(0, lastDot), path.substring(lastDot)];
     }
@@ -40,7 +40,7 @@ export function splitTypescriptSuffix(path) {
  * @return {?}
  */
 export function summaryFileName(fileName) {
-    var /** @type {?} */ fileNameWithoutSuffix = fileName.replace(STRIP_SRC_FILE_SUFFIXES, '');
-    return fileNameWithoutSuffix + ".ngsummary.json";
+    const /** @type {?} */ fileNameWithoutSuffix = fileName.replace(STRIP_SRC_FILE_SUFFIXES, '');
+    return `${fileNameWithoutSuffix}.ngsummary.json`;
 }
 //# sourceMappingURL=util.js.map

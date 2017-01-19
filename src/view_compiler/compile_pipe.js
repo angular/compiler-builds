@@ -10,20 +10,19 @@ import { createPureProxy } from '../compiler_util/identifier_util';
 import { Identifiers, createIdentifier, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { getPropertyInView, injectFromViewParentInjector } from './util';
-export var CompilePipe = (function () {
+export class CompilePipe {
     /**
      * @param {?} view
      * @param {?} meta
      */
-    function CompilePipe(view, meta) {
-        var _this = this;
+    constructor(view, meta) {
         this.view = view;
         this.meta = meta;
         this._purePipeProxyCount = 0;
-        this.instance = o.THIS_EXPR.prop("_pipe_" + meta.name + "_" + view.pipeCount++);
-        var deps = this.meta.type.diDeps.map(function (diDep) {
+        this.instance = o.THIS_EXPR.prop(`_pipe_${meta.name}_${view.pipeCount++}`);
+        const deps = this.meta.type.diDeps.map((diDep) => {
             if (tokenReference(diDep.token) === resolveIdentifier(Identifiers.ChangeDetectorRef)) {
-                return getPropertyInView(o.THIS_EXPR.prop('ref'), _this.view, _this.view.componentView);
+                return getPropertyInView(o.THIS_EXPR.prop('ref'), this.view, this.view.componentView);
             }
             return injectFromViewParentInjector(view, diDep.token, false);
         });
@@ -39,10 +38,10 @@ export var CompilePipe = (function () {
      * @param {?} args
      * @return {?}
      */
-    CompilePipe.call = function (view, name, args) {
-        var /** @type {?} */ compView = view.componentView;
-        var /** @type {?} */ meta = _findPipeMeta(compView, name);
-        var /** @type {?} */ pipe;
+    static call(view, name, args) {
+        const /** @type {?} */ compView = view.componentView;
+        const /** @type {?} */ meta = _findPipeMeta(compView, name);
+        let /** @type {?} */ pipe;
         if (meta.pure) {
             // pure pipes live on the component view
             pipe = compView.purePipes.get(name);
@@ -58,25 +57,21 @@ export var CompilePipe = (function () {
             view.pipes.push(pipe);
         }
         return pipe._call(view, args);
-    };
-    Object.defineProperty(CompilePipe.prototype, "pure", {
-        /**
-         * @return {?}
-         */
-        get: function () { return this.meta.pure; },
-        enumerable: true,
-        configurable: true
-    });
+    }
+    /**
+     * @return {?}
+     */
+    get pure() { return this.meta.pure; }
     /**
      * @param {?} callingView
      * @param {?} args
      * @return {?}
      */
-    CompilePipe.prototype._call = function (callingView, args) {
+    _call(callingView, args) {
         if (this.meta.pure) {
             // PurePipeProxies live on the view that called them.
-            var /** @type {?} */ purePipeProxyInstance = o.THIS_EXPR.prop(this.instance.name + "_" + this._purePipeProxyCount++);
-            var /** @type {?} */ pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
+            const /** @type {?} */ purePipeProxyInstance = o.THIS_EXPR.prop(`${this.instance.name}_${this._purePipeProxyCount++}`);
+            const /** @type {?} */ pipeInstanceSeenFromPureProxy = getPropertyInView(this.instance, callingView, this.view);
             createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform')
                 .callMethod(o.BuiltinMethod.Bind, [pipeInstanceSeenFromPureProxy]), args.length, purePipeProxyInstance, { fields: callingView.fields, ctorStmts: callingView.createMethod });
             return o.importExpr(createIdentifier(Identifiers.castByValue))
@@ -86,9 +81,8 @@ export var CompilePipe = (function () {
         else {
             return getPropertyInView(this.instance, callingView, this.view).callMethod('transform', args);
         }
-    };
-    return CompilePipe;
-}());
+    }
+}
 function CompilePipe_tsickle_Closure_declarations() {
     /** @type {?} */
     CompilePipe.prototype.instance;
@@ -105,16 +99,16 @@ function CompilePipe_tsickle_Closure_declarations() {
  * @return {?}
  */
 function _findPipeMeta(view, name) {
-    var /** @type {?} */ pipeMeta = null;
-    for (var /** @type {?} */ i = view.pipeMetas.length - 1; i >= 0; i--) {
-        var /** @type {?} */ localPipeMeta = view.pipeMetas[i];
+    let /** @type {?} */ pipeMeta = null;
+    for (let /** @type {?} */ i = view.pipeMetas.length - 1; i >= 0; i--) {
+        const /** @type {?} */ localPipeMeta = view.pipeMetas[i];
         if (localPipeMeta.name == name) {
             pipeMeta = localPipeMeta;
             break;
         }
     }
     if (!pipeMeta) {
-        throw new Error("Illegal state: Could not find pipe " + name + " although the parser should have detected this error!");
+        throw new Error(`Illegal state: Could not find pipe ${name} although the parser should have detected this error!`);
     }
     return pipeMeta;
 }

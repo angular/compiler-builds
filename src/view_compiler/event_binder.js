@@ -20,7 +20,7 @@ import { getHandleEventMethodName } from './util';
  * @return {?}
  */
 export function bindOutputs(boundEvents, directives, compileElement, bindToRenderer) {
-    var /** @type {?} */ usedEvents = collectEvents(boundEvents, directives);
+    const /** @type {?} */ usedEvents = collectEvents(boundEvents, directives);
     if (!usedEvents.size) {
         return false;
     }
@@ -37,10 +37,10 @@ export function bindOutputs(boundEvents, directives, compileElement, bindToRende
  * @return {?}
  */
 function collectEvents(boundEvents, directives) {
-    var /** @type {?} */ usedEvents = new Map();
-    boundEvents.forEach(function (event) { usedEvents.set(event.fullName, event); });
-    directives.forEach(function (dirAst) {
-        dirAst.hostEvents.forEach(function (event) { usedEvents.set(event.fullName, event); });
+    const /** @type {?} */ usedEvents = new Map();
+    boundEvents.forEach((event) => { usedEvents.set(event.fullName, event); });
+    directives.forEach((dirAst) => {
+        dirAst.hostEvents.forEach((event) => { usedEvents.set(event.fullName, event); });
     });
     return usedEvents;
 }
@@ -50,14 +50,14 @@ function collectEvents(boundEvents, directives) {
  * @return {?}
  */
 function subscribeToRenderEvents(usedEvents, compileElement) {
-    var /** @type {?} */ eventAndTargetExprs = [];
-    usedEvents.forEach(function (event) {
+    const /** @type {?} */ eventAndTargetExprs = [];
+    usedEvents.forEach((event) => {
         if (!event.phase) {
             eventAndTargetExprs.push(o.literal(event.name), o.literal(event.target));
         }
     });
     if (eventAndTargetExprs.length) {
-        var /** @type {?} */ disposableVar = o.variable("disposable_" + compileElement.view.disposables.length);
+        const /** @type {?} */ disposableVar = o.variable(`disposable_${compileElement.view.disposables.length}`);
         compileElement.view.disposables.push(disposableVar);
         compileElement.view.createMethod.addStmt(disposableVar
             .set(o.importExpr(createIdentifier(Identifiers.subscribeToRenderElement)).callFn([
@@ -74,9 +74,9 @@ function subscribeToRenderEvents(usedEvents, compileElement) {
  * @return {?}
  */
 function subscribeToDirectiveEvents(usedEvents, directives, compileElement) {
-    var /** @type {?} */ usedEventNames = Array.from(usedEvents.keys());
-    directives.forEach(function (dirAst) {
-        var /** @type {?} */ dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
+    const /** @type {?} */ usedEventNames = Array.from(usedEvents.keys());
+    directives.forEach((dirAst) => {
+        const /** @type {?} */ dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
         compileElement.view.createMethod.addStmts(DirectiveWrapperExpressions.subscribe(dirAst.directive, dirAst.hostProperties, usedEventNames, dirWrapper, o.THIS_EXPR, handleEventExpr(compileElement)));
     });
 }
@@ -87,16 +87,16 @@ function subscribeToDirectiveEvents(usedEvents, directives, compileElement) {
  * @return {?}
  */
 function generateHandleEventMethod(boundEvents, directives, compileElement) {
-    var /** @type {?} */ hasComponentHostListener = directives.some(function (dirAst) { return dirAst.hostEvents.some(function (event) { return dirAst.directive.isComponent; }); });
-    var /** @type {?} */ markPathToRootStart = hasComponentHostListener ? compileElement.compViewExpr : o.THIS_EXPR;
-    var /** @type {?} */ handleEventStmts = new CompileMethod(compileElement.view);
+    const /** @type {?} */ hasComponentHostListener = directives.some((dirAst) => dirAst.hostEvents.some((event) => dirAst.directive.isComponent));
+    const /** @type {?} */ markPathToRootStart = hasComponentHostListener ? compileElement.compViewExpr : o.THIS_EXPR;
+    const /** @type {?} */ handleEventStmts = new CompileMethod(compileElement.view);
     handleEventStmts.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
     handleEventStmts.push(markPathToRootStart.callMethod('markPathToRootAsCheckOnce', []).toStmt());
-    var /** @type {?} */ eventNameVar = o.variable('eventName');
-    var /** @type {?} */ resultVar = o.variable('result');
+    const /** @type {?} */ eventNameVar = o.variable('eventName');
+    const /** @type {?} */ resultVar = o.variable('result');
     handleEventStmts.push(resultVar.set(o.literal(true)).toDeclStmt(o.BOOL_TYPE));
-    directives.forEach(function (dirAst, dirIdx) {
-        var /** @type {?} */ dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
+    directives.forEach((dirAst, dirIdx) => {
+        const /** @type {?} */ dirWrapper = compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);
         if (dirAst.hostEvents.length > 0) {
             handleEventStmts.push(resultVar
                 .set(DirectiveWrapperExpressions
@@ -105,9 +105,9 @@ function generateHandleEventMethod(boundEvents, directives, compileElement) {
                 .toStmt());
         }
     });
-    boundEvents.forEach(function (renderEvent, renderEventIdx) {
-        var /** @type {?} */ evalResult = convertActionBinding(compileElement.view, compileElement.view, compileElement.view.componentContext, renderEvent.handler, "sub_" + renderEventIdx);
-        var /** @type {?} */ trueStmts = evalResult.stmts;
+    boundEvents.forEach((renderEvent, renderEventIdx) => {
+        const /** @type {?} */ evalResult = convertActionBinding(compileElement.view, compileElement.view, compileElement.view.componentContext, renderEvent.handler, `sub_${renderEventIdx}`);
+        const /** @type {?} */ trueStmts = evalResult.stmts;
         if (evalResult.preventDefault) {
             trueStmts.push(resultVar.set(evalResult.preventDefault.and(resultVar)).toStmt());
         }
@@ -125,7 +125,7 @@ function generateHandleEventMethod(boundEvents, directives, compileElement) {
  * @return {?}
  */
 function handleEventExpr(compileElement) {
-    var /** @type {?} */ handleEventMethodName = getHandleEventMethodName(compileElement.nodeIndex);
+    const /** @type {?} */ handleEventMethodName = getHandleEventMethodName(compileElement.nodeIndex);
     return o.THIS_EXPR.callMethod('eventHandler', [o.THIS_EXPR.prop(handleEventMethodName)]);
 }
 //# sourceMappingURL=event_binder.js.map

@@ -11,7 +11,7 @@ export declare class EmitterVisitorContext {
     private _lines;
     private _classes;
     constructor(_exportedVars: string[], _indent: number);
-    private _currentLine;
+    private readonly _currentLine;
     isExportedVar(varName: string): boolean;
     println(lastPart?: string): void;
     lineIsEmpty(): boolean;
@@ -21,7 +21,7 @@ export declare class EmitterVisitorContext {
     decIndent(): void;
     pushClass(clazz: o.ClassStmt): void;
     popClass(): o.ClassStmt;
-    currentClass: o.ClassStmt;
+    readonly currentClass: o.ClassStmt;
     toSource(): any;
 }
 export declare abstract class AbstractEmitterVisitor implements o.StatementVisitor, o.ExpressionVisitor {

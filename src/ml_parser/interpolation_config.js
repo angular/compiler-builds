@@ -6,12 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { assertInterpolationSymbols } from '../assertions';
-export var InterpolationConfig = (function () {
+export class InterpolationConfig {
     /**
      * @param {?} start
      * @param {?} end
      */
-    function InterpolationConfig(start, end) {
+    constructor(start, end) {
         this.start = start;
         this.end = end;
     }
@@ -19,21 +19,20 @@ export var InterpolationConfig = (function () {
      * @param {?} markers
      * @return {?}
      */
-    InterpolationConfig.fromArray = function (markers) {
+    static fromArray(markers) {
         if (!markers) {
             return DEFAULT_INTERPOLATION_CONFIG;
         }
         assertInterpolationSymbols('interpolation', markers);
         return new InterpolationConfig(markers[0], markers[1]);
-    };
+    }
     ;
-    return InterpolationConfig;
-}());
+}
 function InterpolationConfig_tsickle_Closure_declarations() {
     /** @type {?} */
     InterpolationConfig.prototype.start;
     /** @type {?} */
     InterpolationConfig.prototype.end;
 }
-export var /** @type {?} */ DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
+export const /** @type {?} */ DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
 //# sourceMappingURL=interpolation_config.js.map

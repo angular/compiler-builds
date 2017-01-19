@@ -8,40 +8,37 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { CompilerInjectable } from './injectable';
-export var SummaryResolver = (function () {
-    function SummaryResolver() {
-    }
+export let SummaryResolver = class SummaryResolver {
     /**
      * @param {?} fileName
      * @return {?}
      */
-    SummaryResolver.prototype.isLibraryFile = function (fileName) { return false; };
+    isLibraryFile(fileName) { return false; }
     ;
     /**
      * @param {?} fileName
      * @return {?}
      */
-    SummaryResolver.prototype.getLibraryFileName = function (fileName) { return null; };
+    getLibraryFileName(fileName) { return null; }
     /**
      * @param {?} reference
      * @return {?}
      */
-    SummaryResolver.prototype.resolveSummary = function (reference) { return null; };
+    resolveSummary(reference) { return null; }
     ;
     /**
      * @param {?} filePath
      * @return {?}
      */
-    SummaryResolver.prototype.getSymbolsOf = function (filePath) { return []; };
+    getSymbolsOf(filePath) { return []; }
     /**
      * @param {?} reference
      * @return {?}
      */
-    SummaryResolver.prototype.getImportAs = function (reference) { return reference; };
-    SummaryResolver = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [])
-    ], SummaryResolver);
-    return SummaryResolver;
-}());
+    getImportAs(reference) { return reference; }
+};
+SummaryResolver = __decorate([
+    CompilerInjectable(), 
+    __metadata('design:paramtypes', [])
+], SummaryResolver);
 //# sourceMappingURL=summary_resolver.js.map

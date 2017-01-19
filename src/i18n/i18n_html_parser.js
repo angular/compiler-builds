@@ -12,13 +12,13 @@ import { Xliff } from './serializers/xliff';
 import { Xmb } from './serializers/xmb';
 import { Xtb } from './serializers/xtb';
 import { TranslationBundle } from './translation_bundle';
-export var I18NHtmlParser = (function () {
+export class I18NHtmlParser {
     /**
      * @param {?} _htmlParser
      * @param {?=} _translations
      * @param {?=} _translationsFormat
      */
-    function I18NHtmlParser(_htmlParser, _translations, _translationsFormat) {
+    constructor(_htmlParser, _translations, _translationsFormat) {
         this._htmlParser = _htmlParser;
         this._translations = _translations;
         this._translationsFormat = _translationsFormat;
@@ -30,10 +30,8 @@ export var I18NHtmlParser = (function () {
      * @param {?=} interpolationConfig
      * @return {?}
      */
-    I18NHtmlParser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
-        if (parseExpansionForms === void 0) { parseExpansionForms = false; }
-        if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
-        var /** @type {?} */ parseResult = this._htmlParser.parse(source, url, parseExpansionForms, interpolationConfig);
+    parse(source, url, parseExpansionForms = false, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const /** @type {?} */ parseResult = this._htmlParser.parse(source, url, parseExpansionForms, interpolationConfig);
         if (!this._translations || this._translations === '') {
             // Do not enable i18n when no translation bundle is provided
             return parseResult;
@@ -42,15 +40,15 @@ export var I18NHtmlParser = (function () {
         if (parseResult.errors.length) {
             return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
         }
-        var /** @type {?} */ serializer = this._createSerializer();
-        var /** @type {?} */ translationBundle = TranslationBundle.load(this._translations, url, serializer);
+        const /** @type {?} */ serializer = this._createSerializer();
+        const /** @type {?} */ translationBundle = TranslationBundle.load(this._translations, url, serializer);
         return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
-    };
+    }
     /**
      * @return {?}
      */
-    I18NHtmlParser.prototype._createSerializer = function () {
-        var /** @type {?} */ format = (this._translationsFormat || 'xlf').toLowerCase();
+    _createSerializer() {
+        const /** @type {?} */ format = (this._translationsFormat || 'xlf').toLowerCase();
         switch (format) {
             case 'xmb':
                 return new Xmb();
@@ -61,9 +59,8 @@ export var I18NHtmlParser = (function () {
             default:
                 return new Xliff();
         }
-    };
-    return I18NHtmlParser;
-}());
+    }
+}
 function I18NHtmlParser_tsickle_Closure_declarations() {
     /** @type {?} */
     I18NHtmlParser.prototype.getTagDefinition;

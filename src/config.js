@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ViewEncapsulation, isDevMode } from '@angular/core';
+import { ViewEncapsulation, isDevMode } from '@angular/core/index';
 import { Identifiers, createIdentifier } from './identifiers';
 /**
  * @return {?}
@@ -13,40 +13,30 @@ import { Identifiers, createIdentifier } from './identifiers';
 function unimplemented() {
     throw new Error('unimplemented');
 }
-export var CompilerConfig = (function () {
+export class CompilerConfig {
     /**
      * @param {?=} __0
      */
-    function CompilerConfig(_a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e;
+    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true } = {}) {
         this.renderTypes = renderTypes;
         this.defaultEncapsulation = defaultEncapsulation;
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
     }
-    Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
-        /**
-         * @return {?}
-         */
-        get: function () {
-            return this._genDebugInfo === void 0 ? isDevMode() : this._genDebugInfo;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(CompilerConfig.prototype, "logBindingUpdate", {
-        /**
-         * @return {?}
-         */
-        get: function () {
-            return this._logBindingUpdate === void 0 ? isDevMode() : this._logBindingUpdate;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return CompilerConfig;
-}());
+    /**
+     * @return {?}
+     */
+    get genDebugInfo() {
+        return this._genDebugInfo === void 0 ? isDevMode() : this._genDebugInfo;
+    }
+    /**
+     * @return {?}
+     */
+    get logBindingUpdate() {
+        return this._logBindingUpdate === void 0 ? isDevMode() : this._logBindingUpdate;
+    }
+}
 function CompilerConfig_tsickle_Closure_declarations() {
     /** @type {?} */
     CompilerConfig.prototype.renderTypes;
@@ -65,78 +55,46 @@ function CompilerConfig_tsickle_Closure_declarations() {
  * to help tree shaking.
  * @abstract
  */
-export var RenderTypes = (function () {
-    function RenderTypes() {
-    }
-    Object.defineProperty(RenderTypes.prototype, "renderer", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderText", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderElement", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderComment", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderNode", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderEvent", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    return RenderTypes;
-}());
-export var DefaultRenderTypes = (function () {
-    function DefaultRenderTypes() {
+export class RenderTypes {
+    /**
+     * @return {?}
+     */
+    get renderer() { return unimplemented(); }
+    /**
+     * @return {?}
+     */
+    get renderText() { return unimplemented(); }
+    /**
+     * @return {?}
+     */
+    get renderElement() { return unimplemented(); }
+    /**
+     * @return {?}
+     */
+    get renderComment() { return unimplemented(); }
+    /**
+     * @return {?}
+     */
+    get renderNode() { return unimplemented(); }
+    /**
+     * @return {?}
+     */
+    get renderEvent() { return unimplemented(); }
+}
+export class DefaultRenderTypes {
+    constructor() {
         this.renderText = null;
         this.renderElement = null;
         this.renderComment = null;
         this.renderNode = null;
         this.renderEvent = null;
     }
-    Object.defineProperty(DefaultRenderTypes.prototype, "renderer", {
-        /**
-         * @return {?}
-         */
-        get: function () { return createIdentifier(Identifiers.Renderer); },
-        enumerable: true,
-        configurable: true
-    });
+    /**
+     * @return {?}
+     */
+    get renderer() { return createIdentifier(Identifiers.Renderer); }
     ;
-    return DefaultRenderTypes;
-}());
+}
 function DefaultRenderTypes_tsickle_Closure_declarations() {
     /** @type {?} */
     DefaultRenderTypes.prototype.renderText;

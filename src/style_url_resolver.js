@@ -5,17 +5,16 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export var StyleWithImports = (function () {
+export class StyleWithImports {
     /**
      * @param {?} style
      * @param {?} styleUrls
      */
-    function StyleWithImports(style, styleUrls) {
+    constructor(style, styleUrls) {
         this.style = style;
         this.styleUrls = styleUrls;
     }
-    return StyleWithImports;
-}());
+}
 function StyleWithImports_tsickle_Closure_declarations() {
     /** @type {?} */
     StyleWithImports.prototype.style;
@@ -29,7 +28,7 @@ function StyleWithImports_tsickle_Closure_declarations() {
 export function isStyleUrlResolvable(url) {
     if (url == null || url.length === 0 || url[0] == '/')
         return false;
-    var /** @type {?} */ schemeMatch = url.match(URL_WITH_SCHEMA_REGEXP);
+    const /** @type {?} */ schemeMatch = url.match(URL_WITH_SCHEMA_REGEXP);
     return schemeMatch === null || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';
 }
 /**
@@ -41,13 +40,9 @@ export function isStyleUrlResolvable(url) {
  * @return {?}
  */
 export function extractStyleUrls(resolver, baseUrl, cssText) {
-    var /** @type {?} */ foundUrls = [];
-    var /** @type {?} */ modifiedCssText = cssText.replace(CSS_COMMENT_REGEXP, '').replace(CSS_IMPORT_REGEXP, function () {
-        var m = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            m[_i - 0] = arguments[_i];
-        }
-        var /** @type {?} */ url = m[1] || m[2];
+    const /** @type {?} */ foundUrls = [];
+    const /** @type {?} */ modifiedCssText = cssText.replace(CSS_COMMENT_REGEXP, '').replace(CSS_IMPORT_REGEXP, (...m) => {
+        const /** @type {?} */ url = m[1] || m[2];
         if (!isStyleUrlResolvable(url)) {
             // Do not attempt to resolve non-package absolute URLs with URI scheme
             return m[0];
@@ -57,7 +52,7 @@ export function extractStyleUrls(resolver, baseUrl, cssText) {
     });
     return new StyleWithImports(modifiedCssText, foundUrls);
 }
-var /** @type {?} */ CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-var /** @type {?} */ CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
-var /** @type {?} */ URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
+const /** @type {?} */ CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
+const /** @type {?} */ CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
+const /** @type {?} */ URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 //# sourceMappingURL=style_url_resolver.js.map

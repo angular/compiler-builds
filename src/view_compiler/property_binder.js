@@ -22,8 +22,8 @@ import { getHandleEventMethodName } from './util';
  * @return {?}
  */
 export function bindRenderText(boundText, compileNode, view) {
-    var /** @type {?} */ valueField = createCheckBindingField(view);
-    var /** @type {?} */ evalResult = convertPropertyBinding(view, view, view.componentContext, boundText.value, valueField.bindingId);
+    const /** @type {?} */ valueField = createCheckBindingField(view);
+    const /** @type {?} */ evalResult = convertPropertyBinding(view, view, view.componentContext, boundText.value, valueField.bindingId);
     if (!evalResult) {
         return null;
     }
@@ -45,16 +45,16 @@ export function bindRenderText(boundText, compileNode, view) {
  * @return {?}
  */
 export function bindRenderInputs(boundProps, boundOutputs, hasEvents, compileElement) {
-    var /** @type {?} */ view = compileElement.view;
-    var /** @type {?} */ renderNode = compileElement.renderNode;
-    boundProps.forEach(function (boundProp) {
-        var /** @type {?} */ bindingField = createCheckBindingField(view);
+    const /** @type {?} */ view = compileElement.view;
+    const /** @type {?} */ renderNode = compileElement.renderNode;
+    boundProps.forEach((boundProp) => {
+        const /** @type {?} */ bindingField = createCheckBindingField(view);
         view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileElement.nodeIndex, boundProp);
-        var /** @type {?} */ evalResult = convertPropertyBinding(view, view, compileElement.view.componentContext, boundProp.value, bindingField.bindingId);
+        const /** @type {?} */ evalResult = convertPropertyBinding(view, view, compileElement.view.componentContext, boundProp.value, bindingField.bindingId);
         if (!evalResult) {
             return;
         }
-        var /** @type {?} */ compileMethod = view.detectChangesRenderPropertiesMethod;
+        let /** @type {?} */ compileMethod = view.detectChangesRenderPropertiesMethod;
         switch (boundProp.type) {
             case PropertyBindingType.Property:
             case PropertyBindingType.Attribute:
@@ -64,9 +64,9 @@ export function bindRenderInputs(boundProps, boundOutputs, hasEvents, compileEle
                 break;
             case PropertyBindingType.Animation:
                 compileMethod = view.animationBindingsMethod;
-                var _a = createCheckAnimationBindingStmts(o.THIS_EXPR, o.THIS_EXPR, boundProp, boundOutputs, (hasEvents ? o.THIS_EXPR.prop(getHandleEventMethodName(compileElement.nodeIndex)) :
+                const { checkUpdateStmts, checkDetachStmts } = createCheckAnimationBindingStmts(o.THIS_EXPR, o.THIS_EXPR, boundProp, boundOutputs, (hasEvents ? o.THIS_EXPR.prop(getHandleEventMethodName(compileElement.nodeIndex)) :
                     o.importExpr(createIdentifier(Identifiers.noop)))
-                    .callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR]), compileElement.renderNode, bindingField.expression, evalResult), checkUpdateStmts = _a.checkUpdateStmts, checkDetachStmts = _a.checkDetachStmts;
+                    .callMethod(o.BuiltinMethod.Bind, [o.THIS_EXPR]), compileElement.renderNode, bindingField.expression, evalResult);
                 view.detachMethod.addStmts(checkDetachStmts);
                 compileMethod.addStmts(checkUpdateStmts);
                 break;
@@ -83,9 +83,9 @@ export function bindRenderInputs(boundProps, boundOutputs, hasEvents, compileEle
  */
 export function bindDirectiveHostProps(directiveAst, directiveWrapperInstance, compileElement, elementName, schemaRegistry) {
     // We need to provide the SecurityContext for properties that could need sanitization.
-    var /** @type {?} */ runtimeSecurityCtxExprs = directiveAst.hostProperties.filter(function (boundProp) { return boundProp.needsRuntimeSecurityContext; })
-        .map(function (boundProp) {
-        var /** @type {?} */ ctx;
+    const /** @type {?} */ runtimeSecurityCtxExprs = directiveAst.hostProperties.filter(boundProp => boundProp.needsRuntimeSecurityContext)
+        .map((boundProp) => {
+        let /** @type {?} */ ctx;
         switch (boundProp.type) {
             case PropertyBindingType.Property:
                 ctx = schemaRegistry.securityContext(elementName, boundProp.name, false);
@@ -94,7 +94,7 @@ export function bindDirectiveHostProps(directiveAst, directiveWrapperInstance, c
                 ctx = schemaRegistry.securityContext(elementName, boundProp.name, true);
                 break;
             default:
-                throw new Error("Illegal state: Only property / attribute bindings can have an unknown security context! Binding " + boundProp.name);
+                throw new Error(`Illegal state: Only property / attribute bindings can have an unknown security context! Binding ${boundProp.name}`);
         }
         return createEnumExpression(Identifiers.SecurityContext, ctx);
     });
@@ -108,26 +108,26 @@ export function bindDirectiveHostProps(directiveAst, directiveWrapperInstance, c
  * @return {?}
  */
 export function bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirIndex, compileElement) {
-    var /** @type {?} */ view = compileElement.view;
-    var /** @type {?} */ detectChangesInInputsMethod = view.detectChangesInInputsMethod;
+    const /** @type {?} */ view = compileElement.view;
+    const /** @type {?} */ detectChangesInInputsMethod = view.detectChangesInInputsMethod;
     detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, compileElement.sourceAst);
-    directiveAst.inputs.forEach(function (input, inputIdx) {
+    directiveAst.inputs.forEach((input, inputIdx) => {
         // Note: We can't use `fields.length` here, as we are not adding a field!
-        var /** @type {?} */ bindingId = compileElement.nodeIndex + "_" + dirIndex + "_" + inputIdx;
+        const /** @type {?} */ bindingId = `${compileElement.nodeIndex}_${dirIndex}_${inputIdx}`;
         detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, input);
-        var /** @type {?} */ evalResult = convertPropertyBinding(view, view, view.componentContext, input.value, bindingId);
+        const /** @type {?} */ evalResult = convertPropertyBinding(view, view, view.componentContext, input.value, bindingId);
         if (!evalResult) {
             return;
         }
         detectChangesInInputsMethod.addStmts(evalResult.stmts);
         detectChangesInInputsMethod.addStmt(directiveWrapperInstance
-            .callMethod("check_" + input.directiveName, [o.THIS_EXPR, evalResult.currValExpr, evalResult.forceUpdate || o.literal(false)])
+            .callMethod(`check_${input.directiveName}`, [o.THIS_EXPR, evalResult.currValExpr, evalResult.forceUpdate || o.literal(false)])
             .toStmt());
     });
-    var /** @type {?} */ isOnPushComp = directiveAst.directive.isComponent &&
+    const /** @type {?} */ isOnPushComp = directiveAst.directive.isComponent &&
         !isDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);
-    var /** @type {?} */ directiveDetectChangesExpr = DirectiveWrapperExpressions.ngDoCheck(directiveWrapperInstance, o.THIS_EXPR, compileElement.renderNode);
-    var /** @type {?} */ directiveDetectChangesStmt = isOnPushComp ?
+    const /** @type {?} */ directiveDetectChangesExpr = DirectiveWrapperExpressions.ngDoCheck(directiveWrapperInstance, o.THIS_EXPR, compileElement.renderNode);
+    const /** @type {?} */ directiveDetectChangesStmt = isOnPushComp ?
         new o.IfStmt(directiveDetectChangesExpr, [compileElement.compViewExpr.callMethod('markAsCheckOnce', []).toStmt()]) :
         directiveDetectChangesExpr.toStmt();
     detectChangesInInputsMethod.addStmt(directiveDetectChangesStmt);

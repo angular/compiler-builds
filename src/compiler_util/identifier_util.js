@@ -28,11 +28,11 @@ export function createInlineArray(values) {
     if (values.length === 0) {
         return o.importExpr(createIdentifier(Identifiers.EMPTY_INLINE_ARRAY));
     }
-    var /** @type {?} */ log2 = Math.log(values.length) / Math.log(2);
-    var /** @type {?} */ index = Math.ceil(log2);
-    var /** @type {?} */ identifierSpec = index < Identifiers.inlineArrays.length ? Identifiers.inlineArrays[index] :
+    const /** @type {?} */ log2 = Math.log(values.length) / Math.log(2);
+    const /** @type {?} */ index = Math.ceil(log2);
+    const /** @type {?} */ identifierSpec = index < Identifiers.inlineArrays.length ? Identifiers.inlineArrays[index] :
         Identifiers.InlineArrayDynamic;
-    var /** @type {?} */ identifier = createIdentifier(identifierSpec);
+    const /** @type {?} */ identifier = createIdentifier(identifierSpec);
     return o.importExpr(identifier).instantiate([(o.literal(values.length))
     ].concat(values));
 }
@@ -45,9 +45,9 @@ export function createInlineArray(values) {
  */
 export function createPureProxy(fn, argCount, pureProxyProp, builder) {
     builder.fields.push(new o.ClassField(pureProxyProp.name, null));
-    var /** @type {?} */ pureProxyId = argCount < Identifiers.pureProxies.length ? Identifiers.pureProxies[argCount] : null;
+    const /** @type {?} */ pureProxyId = argCount < Identifiers.pureProxies.length ? Identifiers.pureProxies[argCount] : null;
     if (!pureProxyId) {
-        throw new Error("Unsupported number of argument for pure functions: " + argCount);
+        throw new Error(`Unsupported number of argument for pure functions: ${argCount}`);
     }
     builder.ctorStmts.push(o.THIS_EXPR.prop(pureProxyProp.name)
         .set(o.importExpr(createIdentifier(pureProxyId)).callFn([fn]))
@@ -59,9 +59,9 @@ export function createPureProxy(fn, argCount, pureProxyProp, builder) {
  * @return {?}
  */
 export function createEnumExpression(enumType, enumValue) {
-    var /** @type {?} */ enumName = Object.keys(enumType.runtime).find(function (propName) { return enumType.runtime[propName] === enumValue; });
+    const /** @type {?} */ enumName = Object.keys(enumType.runtime).find((propName) => enumType.runtime[propName] === enumValue);
     if (!enumName) {
-        throw new Error("Unknown enum value " + enumValue + " in " + enumType.name);
+        throw new Error(`Unknown enum value ${enumValue} in ${enumType.name}`);
     }
     return o.importExpr(createEnumIdentifier(enumType, enumName));
 }

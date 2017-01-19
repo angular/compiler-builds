@@ -27,8 +27,8 @@ export declare class BoundProperty {
     type: BoundPropertyType;
     sourceSpan: ParseSourceSpan;
     constructor(name: string, expression: ASTWithSource, type: BoundPropertyType, sourceSpan: ParseSourceSpan);
-    isLiteral: boolean;
-    isAnimation: boolean;
+    readonly isLiteral: boolean;
+    readonly isAnimation: boolean;
 }
 /**
  * Parses bindings in templates and in the directive host area.

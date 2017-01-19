@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ViewEncapsulation } from '@angular/core';
+import { ViewEncapsulation } from '@angular/core/index';
 import { AnimationParser } from '../animation/animation_parser';
 import { CompilerConfig } from '../config';
 import { DirectiveNormalizer } from '../directive_normalizer';
@@ -39,34 +39,32 @@ import { AotSummaryResolver } from './summary_resolver';
  * @return {?}
  */
 export function createAotCompiler(compilerHost, options) {
-    var /** @type {?} */ translations = options.translations || '';
-    var /** @type {?} */ urlResolver = createOfflineCompileUrlResolver();
-    var /** @type {?} */ symbolCache = new StaticSymbolCache();
-    var /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
-    var /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
-    var /** @type {?} */ staticReflector = new StaticReflector(symbolResolver);
+    let /** @type {?} */ translations = options.translations || '';
+    const /** @type {?} */ urlResolver = createOfflineCompileUrlResolver();
+    const /** @type {?} */ symbolCache = new StaticSymbolCache();
+    const /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
+    const /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
+    const /** @type {?} */ staticReflector = new StaticReflector(symbolResolver);
     StaticAndDynamicReflectionCapabilities.install(staticReflector);
-    var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat);
-    var /** @type {?} */ config = new CompilerConfig({
+    const /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat);
+    const /** @type {?} */ config = new CompilerConfig({
         genDebugInfo: options.debug === true,
         defaultEncapsulation: ViewEncapsulation.Emulated,
         logBindingUpdate: false,
         useJit: false
     });
-    var /** @type {?} */ normalizer = new DirectiveNormalizer({ get: function (url) { return compilerHost.loadResource(url); } }, urlResolver, htmlParser, config);
-    var /** @type {?} */ expressionParser = new Parser(new Lexer());
-    var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-    var /** @type {?} */ console = new Console();
-    var /** @type {?} */ tmplParser = new TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
-    var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+    const /** @type {?} */ normalizer = new DirectiveNormalizer({ get: (url) => compilerHost.loadResource(url) }, urlResolver, htmlParser, config);
+    const /** @type {?} */ expressionParser = new Parser(new Lexer());
+    const /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
+    const /** @type {?} */ console = new Console();
+    const /** @type {?} */ tmplParser = new TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
+    const /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
-    var /** @type {?} */ importResolver = {
-        getImportAs: function (symbol) { return symbolResolver.getImportAs(symbol); },
-        fileNameToModuleName: function (fileName, containingFilePath) {
-            return compilerHost.fileNameToModuleName(fileName, containingFilePath);
-        }
+    const /** @type {?} */ importResolver = {
+        getImportAs: (symbol) => symbolResolver.getImportAs(symbol),
+        fileNameToModuleName: (fileName, containingFilePath) => compilerHost.fileNameToModuleName(fileName, containingFilePath)
     };
-    var /** @type {?} */ compiler = new AotCompiler(compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), symbolResolver);
-    return { compiler: compiler, reflector: staticReflector };
+    const /** @type {?} */ compiler = new AotCompiler(compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), symbolResolver);
+    return { compiler, reflector: staticReflector };
 }
 //# sourceMappingURL=compiler_factory.js.map

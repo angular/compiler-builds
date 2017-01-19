@@ -6,28 +6,28 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { splitNsName } from '../ml_parser/tags';
-var /** @type {?} */ NG_CONTENT_SELECT_ATTR = 'select';
-var /** @type {?} */ NG_CONTENT_ELEMENT = 'ng-content';
-var /** @type {?} */ LINK_ELEMENT = 'link';
-var /** @type {?} */ LINK_STYLE_REL_ATTR = 'rel';
-var /** @type {?} */ LINK_STYLE_HREF_ATTR = 'href';
-var /** @type {?} */ LINK_STYLE_REL_VALUE = 'stylesheet';
-var /** @type {?} */ STYLE_ELEMENT = 'style';
-var /** @type {?} */ SCRIPT_ELEMENT = 'script';
-var /** @type {?} */ NG_NON_BINDABLE_ATTR = 'ngNonBindable';
-var /** @type {?} */ NG_PROJECT_AS = 'ngProjectAs';
+const /** @type {?} */ NG_CONTENT_SELECT_ATTR = 'select';
+const /** @type {?} */ NG_CONTENT_ELEMENT = 'ng-content';
+const /** @type {?} */ LINK_ELEMENT = 'link';
+const /** @type {?} */ LINK_STYLE_REL_ATTR = 'rel';
+const /** @type {?} */ LINK_STYLE_HREF_ATTR = 'href';
+const /** @type {?} */ LINK_STYLE_REL_VALUE = 'stylesheet';
+const /** @type {?} */ STYLE_ELEMENT = 'style';
+const /** @type {?} */ SCRIPT_ELEMENT = 'script';
+const /** @type {?} */ NG_NON_BINDABLE_ATTR = 'ngNonBindable';
+const /** @type {?} */ NG_PROJECT_AS = 'ngProjectAs';
 /**
  * @param {?} ast
  * @return {?}
  */
 export function preparseElement(ast) {
-    var /** @type {?} */ selectAttr = null;
-    var /** @type {?} */ hrefAttr = null;
-    var /** @type {?} */ relAttr = null;
-    var /** @type {?} */ nonBindable = false;
-    var /** @type {?} */ projectAs = null;
-    ast.attrs.forEach(function (attr) {
-        var /** @type {?} */ lcAttrName = attr.name.toLowerCase();
+    let /** @type {?} */ selectAttr = null;
+    let /** @type {?} */ hrefAttr = null;
+    let /** @type {?} */ relAttr = null;
+    let /** @type {?} */ nonBindable = false;
+    let /** @type {?} */ projectAs = null;
+    ast.attrs.forEach(attr => {
+        const /** @type {?} */ lcAttrName = attr.name.toLowerCase();
         if (lcAttrName == NG_CONTENT_SELECT_ATTR) {
             selectAttr = attr.value;
         }
@@ -47,8 +47,8 @@ export function preparseElement(ast) {
         }
     });
     selectAttr = normalizeNgContentSelect(selectAttr);
-    var /** @type {?} */ nodeName = ast.name.toLowerCase();
-    var /** @type {?} */ type = PreparsedElementType.OTHER;
+    const /** @type {?} */ nodeName = ast.name.toLowerCase();
+    let /** @type {?} */ type = PreparsedElementType.OTHER;
     if (splitNsName(nodeName)[1] == NG_CONTENT_ELEMENT) {
         type = PreparsedElementType.NG_CONTENT;
     }
@@ -63,7 +63,7 @@ export function preparseElement(ast) {
     }
     return new PreparsedElement(type, selectAttr, hrefAttr, nonBindable, projectAs);
 }
-export var PreparsedElementType = {};
+export let PreparsedElementType = {};
 PreparsedElementType.NG_CONTENT = 0;
 PreparsedElementType.STYLE = 1;
 PreparsedElementType.STYLESHEET = 2;
@@ -74,7 +74,7 @@ PreparsedElementType[PreparsedElementType.STYLE] = "STYLE";
 PreparsedElementType[PreparsedElementType.STYLESHEET] = "STYLESHEET";
 PreparsedElementType[PreparsedElementType.SCRIPT] = "SCRIPT";
 PreparsedElementType[PreparsedElementType.OTHER] = "OTHER";
-export var PreparsedElement = (function () {
+export class PreparsedElement {
     /**
      * @param {?} type
      * @param {?} selectAttr
@@ -82,15 +82,14 @@ export var PreparsedElement = (function () {
      * @param {?} nonBindable
      * @param {?} projectAs
      */
-    function PreparsedElement(type, selectAttr, hrefAttr, nonBindable, projectAs) {
+    constructor(type, selectAttr, hrefAttr, nonBindable, projectAs) {
         this.type = type;
         this.selectAttr = selectAttr;
         this.hrefAttr = hrefAttr;
         this.nonBindable = nonBindable;
         this.projectAs = projectAs;
     }
-    return PreparsedElement;
-}());
+}
 function PreparsedElement_tsickle_Closure_declarations() {
     /** @type {?} */
     PreparsedElement.prototype.type;

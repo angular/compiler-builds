@@ -10,19 +10,18 @@ import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { ANY_STATE, DEFAULT_STATE, EMPTY_STATE } from '../private_import_core';
 import { AnimationStateTransitionFnExpression, AnimationStepAst } from './animation_ast';
-export var AnimationEntryCompileResult = (function () {
+export class AnimationEntryCompileResult {
     /**
      * @param {?} name
      * @param {?} statements
      * @param {?} fnExp
      */
-    function AnimationEntryCompileResult(name, statements, fnExp) {
+    constructor(name, statements, fnExp) {
         this.name = name;
         this.statements = statements;
         this.fnExp = fnExp;
     }
-    return AnimationEntryCompileResult;
-}());
+}
 function AnimationEntryCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationEntryCompileResult.prototype.name;
@@ -31,44 +30,41 @@ function AnimationEntryCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationEntryCompileResult.prototype.fnExp;
 }
-export var AnimationCompiler = (function () {
-    function AnimationCompiler() {
-    }
+export class AnimationCompiler {
     /**
      * @param {?} factoryNamePrefix
      * @param {?} parsedAnimations
      * @return {?}
      */
-    AnimationCompiler.prototype.compile = function (factoryNamePrefix, parsedAnimations) {
-        return parsedAnimations.map(function (entry) {
-            var /** @type {?} */ factoryName = factoryNamePrefix + "_" + entry.name;
-            var /** @type {?} */ visitor = new _AnimationBuilder(entry.name, factoryName);
+    compile(factoryNamePrefix, parsedAnimations) {
+        return parsedAnimations.map(entry => {
+            const /** @type {?} */ factoryName = `${factoryNamePrefix}_${entry.name}`;
+            const /** @type {?} */ visitor = new _AnimationBuilder(entry.name, factoryName);
             return visitor.build(entry);
         });
-    };
-    return AnimationCompiler;
-}());
-var /** @type {?} */ _ANIMATION_FACTORY_ELEMENT_VAR = o.variable('element');
-var /** @type {?} */ _ANIMATION_DEFAULT_STATE_VAR = o.variable('defaultStateStyles');
-var /** @type {?} */ _ANIMATION_FACTORY_VIEW_VAR = o.variable('view');
-var /** @type {?} */ _ANIMATION_FACTORY_VIEW_CONTEXT = _ANIMATION_FACTORY_VIEW_VAR.prop('animationContext');
-var /** @type {?} */ _ANIMATION_FACTORY_RENDERER_VAR = _ANIMATION_FACTORY_VIEW_VAR.prop('renderer');
-var /** @type {?} */ _ANIMATION_CURRENT_STATE_VAR = o.variable('currentState');
-var /** @type {?} */ _ANIMATION_NEXT_STATE_VAR = o.variable('nextState');
-var /** @type {?} */ _ANIMATION_PLAYER_VAR = o.variable('player');
-var /** @type {?} */ _ANIMATION_TIME_VAR = o.variable('totalTime');
-var /** @type {?} */ _ANIMATION_START_STATE_STYLES_VAR = o.variable('startStateStyles');
-var /** @type {?} */ _ANIMATION_END_STATE_STYLES_VAR = o.variable('endStateStyles');
-var /** @type {?} */ _ANIMATION_COLLECTED_STYLES = o.variable('collectedStyles');
-var /** @type {?} */ _PREVIOUS_ANIMATION_PLAYERS = o.variable('previousPlayers');
-var /** @type {?} */ _EMPTY_MAP = o.literalMap([]);
-var /** @type {?} */ _EMPTY_ARRAY = o.literalArr([]);
-var _AnimationBuilder = (function () {
+    }
+}
+const /** @type {?} */ _ANIMATION_FACTORY_ELEMENT_VAR = o.variable('element');
+const /** @type {?} */ _ANIMATION_DEFAULT_STATE_VAR = o.variable('defaultStateStyles');
+const /** @type {?} */ _ANIMATION_FACTORY_VIEW_VAR = o.variable('view');
+const /** @type {?} */ _ANIMATION_FACTORY_VIEW_CONTEXT = _ANIMATION_FACTORY_VIEW_VAR.prop('animationContext');
+const /** @type {?} */ _ANIMATION_FACTORY_RENDERER_VAR = _ANIMATION_FACTORY_VIEW_VAR.prop('renderer');
+const /** @type {?} */ _ANIMATION_CURRENT_STATE_VAR = o.variable('currentState');
+const /** @type {?} */ _ANIMATION_NEXT_STATE_VAR = o.variable('nextState');
+const /** @type {?} */ _ANIMATION_PLAYER_VAR = o.variable('player');
+const /** @type {?} */ _ANIMATION_TIME_VAR = o.variable('totalTime');
+const /** @type {?} */ _ANIMATION_START_STATE_STYLES_VAR = o.variable('startStateStyles');
+const /** @type {?} */ _ANIMATION_END_STATE_STYLES_VAR = o.variable('endStateStyles');
+const /** @type {?} */ _ANIMATION_COLLECTED_STYLES = o.variable('collectedStyles');
+const /** @type {?} */ _PREVIOUS_ANIMATION_PLAYERS = o.variable('previousPlayers');
+const /** @type {?} */ _EMPTY_MAP = o.literalMap([]);
+const /** @type {?} */ _EMPTY_ARRAY = o.literalArr([]);
+class _AnimationBuilder {
     /**
      * @param {?} animationName
      * @param {?} factoryName
      */
-    function _AnimationBuilder(animationName, factoryName) {
+    constructor(animationName, factoryName) {
         this.animationName = animationName;
         this._fnVarName = factoryName + '_factory';
         this._statesMapVarName = factoryName + '_states';
@@ -79,14 +75,14 @@ var _AnimationBuilder = (function () {
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype.visitAnimationStyles = function (ast, context) {
-        var /** @type {?} */ stylesArr = [];
+    visitAnimationStyles(ast, context) {
+        const /** @type {?} */ stylesArr = [];
         if (context.isExpectingFirstStyleStep) {
             stylesArr.push(_ANIMATION_START_STATE_STYLES_VAR);
             context.isExpectingFirstStyleStep = false;
         }
-        ast.styles.forEach(function (entry) {
-            var /** @type {?} */ entries = Object.keys(entry).map(function (key) { return [key, o.literal(entry[key])]; });
+        ast.styles.forEach(entry => {
+            const /** @type {?} */ entries = Object.keys(entry).map((key) => [key, o.literal(entry[key])]);
             stylesArr.push(o.literalMap(entries, null, true));
         });
         return o.importExpr(createIdentifier(Identifiers.AnimationStyles)).instantiate([
@@ -94,47 +90,45 @@ var _AnimationBuilder = (function () {
                 _ANIMATION_COLLECTED_STYLES, o.literalArr(stylesArr)
             ])
         ]);
-    };
+    }
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype.visitAnimationKeyframe = function (ast, context) {
+    visitAnimationKeyframe(ast, context) {
         return o.importExpr(createIdentifier(Identifiers.AnimationKeyframe)).instantiate([
             o.literal(ast.offset), ast.styles.visit(this, context)
         ]);
-    };
+    }
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype.visitAnimationStep = function (ast, context) {
-        var _this = this;
+    visitAnimationStep(ast, context) {
         if (context.endStateAnimateStep === ast) {
             return this._visitEndStateAnimation(ast, context);
         }
-        var /** @type {?} */ startingStylesExpr = ast.startingStyles.visit(this, context);
-        var /** @type {?} */ keyframeExpressions = ast.keyframes.map(function (keyframeEntry) { return keyframeEntry.visit(_this, context); });
+        const /** @type {?} */ startingStylesExpr = ast.startingStyles.visit(this, context);
+        const /** @type {?} */ keyframeExpressions = ast.keyframes.map(keyframeEntry => keyframeEntry.visit(this, context));
         return this._callAnimateMethod(ast, startingStylesExpr, o.literalArr(keyframeExpressions), context);
-    };
+    }
     /**
      * \@internal
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype._visitEndStateAnimation = function (ast, context) {
-        var _this = this;
-        var /** @type {?} */ startingStylesExpr = ast.startingStyles.visit(this, context);
-        var /** @type {?} */ keyframeExpressions = ast.keyframes.map(function (keyframe) { return keyframe.visit(_this, context); });
-        var /** @type {?} */ keyframesExpr = o.importExpr(createIdentifier(Identifiers.balanceAnimationKeyframes)).callFn([
+    _visitEndStateAnimation(ast, context) {
+        const /** @type {?} */ startingStylesExpr = ast.startingStyles.visit(this, context);
+        const /** @type {?} */ keyframeExpressions = ast.keyframes.map(keyframe => keyframe.visit(this, context));
+        const /** @type {?} */ keyframesExpr = o.importExpr(createIdentifier(Identifiers.balanceAnimationKeyframes)).callFn([
             _ANIMATION_COLLECTED_STYLES, _ANIMATION_END_STATE_STYLES_VAR,
             o.literalArr(keyframeExpressions)
         ]);
         return this._callAnimateMethod(ast, startingStylesExpr, keyframesExpr, context);
-    };
+    }
     /**
      * \@internal
      * @param {?} ast
@@ -143,8 +137,8 @@ var _AnimationBuilder = (function () {
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype._callAnimateMethod = function (ast, startingStylesExpr, keyframesExpr, context) {
-        var /** @type {?} */ previousStylesValue = _EMPTY_ARRAY;
+    _callAnimateMethod(ast, startingStylesExpr, keyframesExpr, context) {
+        let /** @type {?} */ previousStylesValue = _EMPTY_ARRAY;
         if (context.isExpectingFirstAnimateStep) {
             previousStylesValue = _PREVIOUS_ANIMATION_PLAYERS;
             context.isExpectingFirstAnimateStep = false;
@@ -154,57 +148,55 @@ var _AnimationBuilder = (function () {
             _ANIMATION_FACTORY_ELEMENT_VAR, startingStylesExpr, keyframesExpr, o.literal(ast.duration),
             o.literal(ast.delay), o.literal(ast.easing), previousStylesValue
         ]);
-    };
+    }
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype.visitAnimationSequence = function (ast, context) {
-        var _this = this;
-        var /** @type {?} */ playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
+    visitAnimationSequence(ast, context) {
+        const /** @type {?} */ playerExprs = ast.steps.map(step => step.visit(this, context));
         return o.importExpr(createIdentifier(Identifiers.AnimationSequencePlayer)).instantiate([
             o.literalArr(playerExprs)
         ]);
-    };
+    }
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype.visitAnimationGroup = function (ast, context) {
-        var _this = this;
-        var /** @type {?} */ playerExprs = ast.steps.map(function (step) { return step.visit(_this, context); });
+    visitAnimationGroup(ast, context) {
+        const /** @type {?} */ playerExprs = ast.steps.map(step => step.visit(this, context));
         return o.importExpr(createIdentifier(Identifiers.AnimationGroupPlayer)).instantiate([
             o.literalArr(playerExprs)
         ]);
-    };
+    }
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype.visitAnimationStateDeclaration = function (ast, context) {
-        var /** @type {?} */ flatStyles = {};
-        _getStylesArray(ast).forEach(function (entry) { Object.keys(entry).forEach(function (key) { flatStyles[key] = entry[key]; }); });
+    visitAnimationStateDeclaration(ast, context) {
+        const /** @type {?} */ flatStyles = {};
+        _getStylesArray(ast).forEach(entry => { Object.keys(entry).forEach(key => { flatStyles[key] = entry[key]; }); });
         context.stateMap.registerState(ast.stateName, flatStyles);
-    };
+    }
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype.visitAnimationStateTransition = function (ast, context) {
-        var /** @type {?} */ steps = ast.animation.steps;
-        var /** @type {?} */ lastStep = steps[steps.length - 1];
+    visitAnimationStateTransition(ast, context) {
+        const /** @type {?} */ steps = ast.animation.steps;
+        const /** @type {?} */ lastStep = steps[steps.length - 1];
         if (_isEndStateAnimateStep(lastStep)) {
             context.endStateAnimateStep = (lastStep);
         }
         context.totalTransitionTime = 0;
         context.isExpectingFirstStyleStep = true;
         context.isExpectingFirstAnimateStep = true;
-        var /** @type {?} */ stateChangePreconditions = [];
-        ast.stateChanges.forEach(function (stateChange) {
+        const /** @type {?} */ stateChangePreconditions = [];
+        ast.stateChanges.forEach(stateChange => {
             if (stateChange instanceof AnimationStateTransitionFnExpression) {
                 stateChangePreconditions.push(o.importExpr({ reference: stateChange.fn }).callFn([
                     _ANIMATION_CURRENT_STATE_VAR, _ANIMATION_NEXT_STATE_VAR
@@ -221,25 +213,24 @@ var _AnimationBuilder = (function () {
                 }
             }
         });
-        var /** @type {?} */ animationPlayerExpr = ast.animation.visit(this, context);
-        var /** @type {?} */ reducedStateChangesPrecondition = stateChangePreconditions.reduce(function (a, b) { return a.or(b); });
-        var /** @type {?} */ precondition = _ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR).and(reducedStateChangesPrecondition);
-        var /** @type {?} */ animationStmt = _ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt();
-        var /** @type {?} */ totalTimeStmt = _ANIMATION_TIME_VAR.set(o.literal(context.totalTransitionTime)).toStmt();
+        const /** @type {?} */ animationPlayerExpr = ast.animation.visit(this, context);
+        const /** @type {?} */ reducedStateChangesPrecondition = stateChangePreconditions.reduce((a, b) => a.or(b));
+        const /** @type {?} */ precondition = _ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR).and(reducedStateChangesPrecondition);
+        const /** @type {?} */ animationStmt = _ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt();
+        const /** @type {?} */ totalTimeStmt = _ANIMATION_TIME_VAR.set(o.literal(context.totalTransitionTime)).toStmt();
         return new o.IfStmt(precondition, [animationStmt, totalTimeStmt]);
-    };
+    }
     /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
      */
-    _AnimationBuilder.prototype.visitAnimationEntry = function (ast, context) {
-        var _this = this;
+    visitAnimationEntry(ast, context) {
         // visit each of the declarations first to build the context state map
-        ast.stateDeclarations.forEach(function (def) { return def.visit(_this, context); });
+        ast.stateDeclarations.forEach(def => def.visit(this, context));
         // this should always be defined even if the user overrides it
         context.stateMap.registerState(DEFAULT_STATE, {});
-        var /** @type {?} */ statements = [];
+        const /** @type {?} */ statements = [];
         statements.push(_PREVIOUS_ANIMATION_PLAYERS
             .set(_ANIMATION_FACTORY_VIEW_CONTEXT.callMethod('getAnimationPlayers', [
             _ANIMATION_FACTORY_ELEMENT_VAR,
@@ -258,8 +249,8 @@ var _AnimationBuilder = (function () {
         statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR))
             .toDeclStmt());
         statements.push(new o.IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(o.NULL_EXPR), [_ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));
-        var /** @type {?} */ RENDER_STYLES_FN = o.importExpr(createIdentifier(Identifiers.renderStyles));
-        ast.stateTransitions.forEach(function (transAst) { return statements.push(transAst.visit(_this, context)); });
+        const /** @type {?} */ RENDER_STYLES_FN = o.importExpr(createIdentifier(Identifiers.renderStyles));
+        ast.stateTransitions.forEach(transAst => statements.push(transAst.visit(this, context)));
         // this check ensures that the animation factory always returns a player
         // so that the onDone callback can be used for tracking
         statements.push(new o.IfStmt(_ANIMATION_PLAYER_VAR.equals(o.NULL_EXPR), [_ANIMATION_PLAYER_VAR
@@ -314,32 +305,31 @@ var _AnimationBuilder = (function () {
             new o.FnParam(_ANIMATION_CURRENT_STATE_VAR.name, o.DYNAMIC_TYPE),
             new o.FnParam(_ANIMATION_NEXT_STATE_VAR.name, o.DYNAMIC_TYPE)
         ], statements, o.importType(createIdentifier(Identifiers.AnimationTransition)));
-    };
+    }
     /**
      * @param {?} ast
      * @return {?}
      */
-    _AnimationBuilder.prototype.build = function (ast) {
-        var /** @type {?} */ context = new _AnimationBuilderContext();
-        var /** @type {?} */ fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
-        var /** @type {?} */ fnVariable = o.variable(this._fnVarName);
-        var /** @type {?} */ lookupMap = [];
-        Object.keys(context.stateMap.states).forEach(function (stateName) {
-            var /** @type {?} */ value = context.stateMap.states[stateName];
-            var /** @type {?} */ variableValue = _EMPTY_MAP;
+    build(ast) {
+        const /** @type {?} */ context = new _AnimationBuilderContext();
+        const /** @type {?} */ fnStatement = ast.visit(this, context).toDeclStmt(this._fnVarName);
+        const /** @type {?} */ fnVariable = o.variable(this._fnVarName);
+        const /** @type {?} */ lookupMap = [];
+        Object.keys(context.stateMap.states).forEach(stateName => {
+            const /** @type {?} */ value = context.stateMap.states[stateName];
+            let /** @type {?} */ variableValue = _EMPTY_MAP;
             if (isPresent(value)) {
-                var /** @type {?} */ styleMap_1 = [];
-                Object.keys(value).forEach(function (key) { styleMap_1.push([key, o.literal(value[key])]); });
-                variableValue = o.literalMap(styleMap_1, null, true);
+                const /** @type {?} */ styleMap = [];
+                Object.keys(value).forEach(key => { styleMap.push([key, o.literal(value[key])]); });
+                variableValue = o.literalMap(styleMap, null, true);
             }
             lookupMap.push([stateName, variableValue]);
         });
-        var /** @type {?} */ compiledStatesMapStmt = this._statesMapVar.set(o.literalMap(lookupMap, null, true)).toDeclStmt();
-        var /** @type {?} */ statements = [compiledStatesMapStmt, fnStatement];
+        const /** @type {?} */ compiledStatesMapStmt = this._statesMapVar.set(o.literalMap(lookupMap, null, true)).toDeclStmt();
+        const /** @type {?} */ statements = [compiledStatesMapStmt, fnStatement];
         return new AnimationEntryCompileResult(this.animationName, statements, fnVariable);
-    };
-    return _AnimationBuilder;
-}());
+    }
+}
 function _AnimationBuilder_tsickle_Closure_declarations() {
     /** @type {?} */
     _AnimationBuilder.prototype._fnVarName;
@@ -350,16 +340,15 @@ function _AnimationBuilder_tsickle_Closure_declarations() {
     /** @type {?} */
     _AnimationBuilder.prototype.animationName;
 }
-var _AnimationBuilderContext = (function () {
-    function _AnimationBuilderContext() {
+class _AnimationBuilderContext {
+    constructor() {
         this.stateMap = new _AnimationBuilderStateMap();
         this.endStateAnimateStep = null;
         this.isExpectingFirstStyleStep = false;
         this.isExpectingFirstAnimateStep = false;
         this.totalTransitionTime = 0;
     }
-    return _AnimationBuilderContext;
-}());
+}
 function _AnimationBuilderContext_tsickle_Closure_declarations() {
     /** @type {?} */
     _AnimationBuilderContext.prototype.stateMap;
@@ -372,32 +361,26 @@ function _AnimationBuilderContext_tsickle_Closure_declarations() {
     /** @type {?} */
     _AnimationBuilderContext.prototype.totalTransitionTime;
 }
-var _AnimationBuilderStateMap = (function () {
-    function _AnimationBuilderStateMap() {
+class _AnimationBuilderStateMap {
+    constructor() {
         this._states = {};
     }
-    Object.defineProperty(_AnimationBuilderStateMap.prototype, "states", {
-        /**
-         * @return {?}
-         */
-        get: function () { return this._states; },
-        enumerable: true,
-        configurable: true
-    });
+    /**
+     * @return {?}
+     */
+    get states() { return this._states; }
     /**
      * @param {?} name
      * @param {?=} value
      * @return {?}
      */
-    _AnimationBuilderStateMap.prototype.registerState = function (name, value) {
-        if (value === void 0) { value = null; }
-        var /** @type {?} */ existingEntry = this._states[name];
+    registerState(name, value = null) {
+        const /** @type {?} */ existingEntry = this._states[name];
         if (!existingEntry) {
             this._states[name] = value;
         }
-    };
-    return _AnimationBuilderStateMap;
-}());
+    }
+}
 function _AnimationBuilderStateMap_tsickle_Closure_declarations() {
     /** @type {?} */
     _AnimationBuilderStateMap.prototype._states;
@@ -408,7 +391,7 @@ function _AnimationBuilderStateMap_tsickle_Closure_declarations() {
  * @return {?}
  */
 function _compareToAnimationStateExpr(value, animationState) {
-    var /** @type {?} */ emptyStateLiteral = o.literal(EMPTY_STATE);
+    const /** @type {?} */ emptyStateLiteral = o.literal(EMPTY_STATE);
     switch (animationState) {
         case EMPTY_STATE:
             return value.equals(emptyStateLiteral);
@@ -426,8 +409,8 @@ function _isEndStateAnimateStep(step) {
     // the final animation step is characterized by having only TWO
     // keyframe values and it must have zero styles for both keyframes
     if (step instanceof AnimationStepAst && step.duration > 0 && step.keyframes.length == 2) {
-        var /** @type {?} */ styles1 = _getStylesArray(step.keyframes[0])[0];
-        var /** @type {?} */ styles2 = _getStylesArray(step.keyframes[1])[0];
+        const /** @type {?} */ styles1 = _getStylesArray(step.keyframes[0])[0];
+        const /** @type {?} */ styles2 = _getStylesArray(step.keyframes[1])[0];
         return Object.keys(styles1).length === 0 && Object.keys(styles2).length === 0;
     }
     return false;

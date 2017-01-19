@@ -5,6 +5,6 @@
  * @return {?}
  */
 export function CompilerInjectable() {
-    return function (x) { return x; };
+    return (x) => x;
 }
 //# sourceMappingURL=injectable.js.map

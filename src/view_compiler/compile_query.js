@@ -10,31 +10,30 @@ import { ListWrapper } from '../facade/collection';
 import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { getPropertyInView } from './util';
-var ViewQueryValues = (function () {
+class ViewQueryValues {
     /**
      * @param {?} view
      * @param {?} values
      */
-    function ViewQueryValues(view, values) {
+    constructor(view, values) {
         this.view = view;
         this.values = values;
     }
-    return ViewQueryValues;
-}());
+}
 function ViewQueryValues_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewQueryValues.prototype.view;
     /** @type {?} */
     ViewQueryValues.prototype.values;
 }
-export var CompileQuery = (function () {
+export class CompileQuery {
     /**
      * @param {?} meta
      * @param {?} queryList
      * @param {?} ownerDirectiveExpression
      * @param {?} view
      */
-    function CompileQuery(meta, queryList, ownerDirectiveExpression, view) {
+    constructor(meta, queryList, ownerDirectiveExpression, view) {
         this.meta = meta;
         this.queryList = queryList;
         this.ownerDirectiveExpression = ownerDirectiveExpression;
@@ -46,23 +45,23 @@ export var CompileQuery = (function () {
      * @param {?} view
      * @return {?}
      */
-    CompileQuery.prototype.addValue = function (value, view) {
-        var /** @type {?} */ currentView = view;
-        var /** @type {?} */ elPath = [];
+    addValue(value, view) {
+        let /** @type {?} */ currentView = view;
+        const /** @type {?} */ elPath = [];
         while (currentView && currentView !== this.view) {
-            var /** @type {?} */ parentEl = currentView.declarationElement;
+            const /** @type {?} */ parentEl = currentView.declarationElement;
             elPath.unshift(parentEl);
             currentView = parentEl.view;
         }
-        var /** @type {?} */ queryListForDirtyExpr = getPropertyInView(this.queryList, view, this.view);
-        var /** @type {?} */ viewValues = this._values;
-        elPath.forEach(function (el) {
-            var /** @type {?} */ last = viewValues.values.length > 0 ? viewValues.values[viewValues.values.length - 1] : null;
+        const /** @type {?} */ queryListForDirtyExpr = getPropertyInView(this.queryList, view, this.view);
+        let /** @type {?} */ viewValues = this._values;
+        elPath.forEach((el) => {
+            const /** @type {?} */ last = viewValues.values.length > 0 ? viewValues.values[viewValues.values.length - 1] : null;
             if (last instanceof ViewQueryValues && last.view === el.embeddedView) {
                 viewValues = last;
             }
             else {
-                var /** @type {?} */ newViewValues = new ViewQueryValues(el.embeddedView, []);
+                const /** @type {?} */ newViewValues = new ViewQueryValues(el.embeddedView, []);
                 viewValues.values.push(newViewValues);
                 viewValues = newViewValues;
             }
@@ -71,23 +70,23 @@ export var CompileQuery = (function () {
         if (elPath.length > 0) {
             view.dirtyParentQueriesMethod.addStmt(queryListForDirtyExpr.callMethod('setDirty', []).toStmt());
         }
-    };
+    }
     /**
      * @return {?}
      */
-    CompileQuery.prototype._isStatic = function () {
-        return !this._values.values.some(function (value) { return value instanceof ViewQueryValues; });
-    };
+    _isStatic() {
+        return !this._values.values.some(value => value instanceof ViewQueryValues);
+    }
     /**
      * @param {?} targetStaticMethod
      * @param {?} targetDynamicMethod
      * @return {?}
      */
-    CompileQuery.prototype.generateStatements = function (targetStaticMethod, targetDynamicMethod) {
-        var /** @type {?} */ values = createQueryValues(this._values);
-        var /** @type {?} */ updateStmts = [this.queryList.callMethod('reset', [o.literalArr(values)]).toStmt()];
+    generateStatements(targetStaticMethod, targetDynamicMethod) {
+        const /** @type {?} */ values = createQueryValues(this._values);
+        const /** @type {?} */ updateStmts = [this.queryList.callMethod('reset', [o.literalArr(values)]).toStmt()];
         if (this.ownerDirectiveExpression) {
-            var /** @type {?} */ valueExpr = this.meta.first ? this.queryList.prop('first') : this.queryList;
+            const /** @type {?} */ valueExpr = this.meta.first ? this.queryList.prop('first') : this.queryList;
             updateStmts.push(this.ownerDirectiveExpression.prop(this.meta.propertyName).set(valueExpr).toStmt());
         }
         if (!this.meta.first) {
@@ -103,9 +102,8 @@ export var CompileQuery = (function () {
         else {
             targetDynamicMethod.addStmt(new o.IfStmt(this.queryList.prop('dirty'), updateStmts));
         }
-    };
-    return CompileQuery;
-}());
+    }
+}
 function CompileQuery_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileQuery.prototype._values;
@@ -123,7 +121,7 @@ function CompileQuery_tsickle_Closure_declarations() {
  * @return {?}
  */
 function createQueryValues(viewValues) {
-    return ListWrapper.flatten(viewValues.values.map(function (entry) {
+    return ListWrapper.flatten(viewValues.values.map((entry) => {
         if (entry instanceof ViewQueryValues) {
             return mapNestedViews(entry.view.declarationElement.viewContainer, entry.view, createQueryValues(entry));
         }
@@ -139,7 +137,7 @@ function createQueryValues(viewValues) {
  * @return {?}
  */
 function mapNestedViews(viewContainer, view, expressions) {
-    var /** @type {?} */ adjustedExpressions = expressions.map(function (expr) { return o.replaceVarInExpression(o.THIS_EXPR.name, o.variable('nestedView'), expr); });
+    const /** @type {?} */ adjustedExpressions = expressions.map((expr) => o.replaceVarInExpression(o.THIS_EXPR.name, o.variable('nestedView'), expr));
     return viewContainer.callMethod('mapNestedViews', [
         o.variable(view.className),
         o.fn([new o.FnParam('nestedView', view.classType)], [new o.ReturnStatement(o.literalArr(adjustedExpressions))], o.DYNAMIC_TYPE)
@@ -152,7 +150,7 @@ function mapNestedViews(viewContainer, view, expressions) {
  */
 export function createQueryList(propertyName, compileView) {
     compileView.fields.push(new o.ClassField(propertyName, o.importType(createIdentifier(Identifiers.QueryList), [o.DYNAMIC_TYPE])));
-    var /** @type {?} */ expr = o.THIS_EXPR.prop(propertyName);
+    const /** @type {?} */ expr = o.THIS_EXPR.prop(propertyName);
     compileView.createMethod.addStmt(o.THIS_EXPR.prop(propertyName)
         .set(o.importExpr(createIdentifier(Identifiers.QueryList), [o.DYNAMIC_TYPE]).instantiate([]))
         .toStmt());
@@ -164,8 +162,8 @@ export function createQueryList(propertyName, compileView) {
  * @return {?}
  */
 export function addQueryToTokenMap(map, query) {
-    query.meta.selectors.forEach(function (selector) {
-        var /** @type {?} */ entry = map.get(tokenReference(selector));
+    query.meta.selectors.forEach((selector) => {
+        let /** @type {?} */ entry = map.get(tokenReference(selector));
         if (!entry) {
             entry = [];
             map.set(tokenReference(selector), entry);

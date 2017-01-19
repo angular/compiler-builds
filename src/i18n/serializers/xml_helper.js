@@ -5,92 +5,81 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-var _Visitor = (function () {
-    function _Visitor() {
-    }
+class _Visitor {
     /**
      * @param {?} tag
      * @return {?}
      */
-    _Visitor.prototype.visitTag = function (tag) {
-        var _this = this;
-        var /** @type {?} */ strAttrs = this._serializeAttributes(tag.attrs);
+    visitTag(tag) {
+        const /** @type {?} */ strAttrs = this._serializeAttributes(tag.attrs);
         if (tag.children.length == 0) {
-            return "<" + tag.name + strAttrs + "/>";
+            return `<${tag.name}${strAttrs}/>`;
         }
-        var /** @type {?} */ strChildren = tag.children.map(function (node) { return node.visit(_this); });
-        return "<" + tag.name + strAttrs + ">" + strChildren.join('') + "</" + tag.name + ">";
-    };
+        const /** @type {?} */ strChildren = tag.children.map(node => node.visit(this));
+        return `<${tag.name}${strAttrs}>${strChildren.join('')}</${tag.name}>`;
+    }
     /**
      * @param {?} text
      * @return {?}
      */
-    _Visitor.prototype.visitText = function (text) { return text.value; };
+    visitText(text) { return text.value; }
     /**
      * @param {?} decl
      * @return {?}
      */
-    _Visitor.prototype.visitDeclaration = function (decl) {
-        return "<?xml" + this._serializeAttributes(decl.attrs) + " ?>";
-    };
+    visitDeclaration(decl) {
+        return `<?xml${this._serializeAttributes(decl.attrs)} ?>`;
+    }
     /**
      * @param {?} attrs
      * @return {?}
      */
-    _Visitor.prototype._serializeAttributes = function (attrs) {
-        var /** @type {?} */ strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');
+    _serializeAttributes(attrs) {
+        const /** @type {?} */ strAttrs = Object.keys(attrs).map((name) => `${name}="${attrs[name]}"`).join(' ');
         return strAttrs.length > 0 ? ' ' + strAttrs : '';
-    };
+    }
     /**
      * @param {?} doctype
      * @return {?}
      */
-    _Visitor.prototype.visitDoctype = function (doctype) {
-        return "<!DOCTYPE " + doctype.rootTag + " [\n" + doctype.dtd + "\n]>";
-    };
-    return _Visitor;
-}());
-var /** @type {?} */ _visitor = new _Visitor();
+    visitDoctype(doctype) {
+        return `<!DOCTYPE ${doctype.rootTag} [\n${doctype.dtd}\n]>`;
+    }
+}
+const /** @type {?} */ _visitor = new _Visitor();
 /**
  * @param {?} nodes
  * @return {?}
  */
 export function serialize(nodes) {
-    return nodes.map(function (node) { return node.visit(_visitor); }).join('');
+    return nodes.map((node) => node.visit(_visitor)).join('');
 }
-export var Declaration = (function () {
+export class Declaration {
     /**
      * @param {?} unescapedAttrs
      */
-    function Declaration(unescapedAttrs) {
-        var _this = this;
+    constructor(unescapedAttrs) {
         this.attrs = {};
-        Object.keys(unescapedAttrs).forEach(function (k) {
-            _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+        Object.keys(unescapedAttrs).forEach((k) => {
+            this.attrs[k] = _escapeXml(unescapedAttrs[k]);
         });
     }
     /**
      * @param {?} visitor
      * @return {?}
      */
-    Declaration.prototype.visit = function (visitor) { return visitor.visitDeclaration(this); };
-    return Declaration;
-}());
+    visit(visitor) { return visitor.visitDeclaration(this); }
+}
 function Declaration_tsickle_Closure_declarations() {
     /** @type {?} */
     Declaration.prototype.attrs;
 }
-export var Doctype = (function () {
+export class Doctype {
     /**
      * @param {?} rootTag
      * @param {?} dtd
      */
-    function Doctype(rootTag, dtd) {
+    constructor(rootTag, dtd) {
         this.rootTag = rootTag;
         this.dtd = dtd;
     }
@@ -99,39 +88,34 @@ export var Doctype = (function () {
      * @param {?} visitor
      * @return {?}
      */
-    Doctype.prototype.visit = function (visitor) { return visitor.visitDoctype(this); };
-    return Doctype;
-}());
+    visit(visitor) { return visitor.visitDoctype(this); }
+}
 function Doctype_tsickle_Closure_declarations() {
     /** @type {?} */
     Doctype.prototype.rootTag;
     /** @type {?} */
     Doctype.prototype.dtd;
 }
-export var Tag = (function () {
+export class Tag {
     /**
      * @param {?} name
      * @param {?=} unescapedAttrs
      * @param {?=} children
      */
-    function Tag(name, unescapedAttrs, children) {
-        var _this = this;
-        if (unescapedAttrs === void 0) { unescapedAttrs = {}; }
-        if (children === void 0) { children = []; }
+    constructor(name, unescapedAttrs = {}, children = []) {
         this.name = name;
         this.children = children;
         this.attrs = {};
-        Object.keys(unescapedAttrs).forEach(function (k) {
-            _this.attrs[k] = _escapeXml(unescapedAttrs[k]);
+        Object.keys(unescapedAttrs).forEach((k) => {
+            this.attrs[k] = _escapeXml(unescapedAttrs[k]);
         });
     }
     /**
      * @param {?} visitor
      * @return {?}
      */
-    Tag.prototype.visit = function (visitor) { return visitor.visitTag(this); };
-    return Tag;
-}());
+    visit(visitor) { return visitor.visitTag(this); }
+}
 function Tag_tsickle_Closure_declarations() {
     /** @type {?} */
     Tag.prototype.attrs;
@@ -140,11 +124,11 @@ function Tag_tsickle_Closure_declarations() {
     /** @type {?} */
     Tag.prototype.children;
 }
-export var Text = (function () {
+export class Text {
     /**
      * @param {?} unescapedValue
      */
-    function Text(unescapedValue) {
+    constructor(unescapedValue) {
         this.value = _escapeXml(unescapedValue);
     }
     ;
@@ -152,25 +136,21 @@ export var Text = (function () {
      * @param {?} visitor
      * @return {?}
      */
-    Text.prototype.visit = function (visitor) { return visitor.visitText(this); };
-    return Text;
-}());
+    visit(visitor) { return visitor.visitText(this); }
+}
 function Text_tsickle_Closure_declarations() {
     /** @type {?} */
     Text.prototype.value;
 }
-export var CR = (function (_super) {
-    __extends(CR, _super);
+export class CR extends Text {
     /**
      * @param {?=} ws
      */
-    function CR(ws) {
-        if (ws === void 0) { ws = 0; }
-        _super.call(this, "\n" + new Array(ws + 1).join(' '));
+    constructor(ws = 0) {
+        super(`\n${new Array(ws + 1).join(' ')}`);
     }
-    return CR;
-}(Text));
-var /** @type {?} */ _ESCAPED_CHARS = [
+}
+const /** @type {?} */ _ESCAPED_CHARS = [
     [/&/g, '&amp;'],
     [/"/g, '&quot;'],
     [/'/g, '&apos;'],
@@ -182,6 +162,6 @@ var /** @type {?} */ _ESCAPED_CHARS = [
  * @return {?}
  */
 function _escapeXml(text) {
-    return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
+    return _ESCAPED_CHARS.reduce((text, entry) => text.replace(entry[0], entry[1]), text);
 }
 //# sourceMappingURL=xml_helper.js.map

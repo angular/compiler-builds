@@ -14,26 +14,25 @@ import { CompileMethod } from './compile_method';
 import { CompilePipe } from './compile_pipe';
 import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_query';
 import { getPropertyInView } from './util';
-export var CompileViewRootNodeType = {};
+export let CompileViewRootNodeType = {};
 CompileViewRootNodeType.Node = 0;
 CompileViewRootNodeType.ViewContainer = 1;
 CompileViewRootNodeType.NgContent = 2;
 CompileViewRootNodeType[CompileViewRootNodeType.Node] = "Node";
 CompileViewRootNodeType[CompileViewRootNodeType.ViewContainer] = "ViewContainer";
 CompileViewRootNodeType[CompileViewRootNodeType.NgContent] = "NgContent";
-export var CompileViewRootNode = (function () {
+export class CompileViewRootNode {
     /**
      * @param {?} type
      * @param {?} expr
      * @param {?=} ngContentIndex
      */
-    function CompileViewRootNode(type, expr, ngContentIndex) {
+    constructor(type, expr, ngContentIndex) {
         this.type = type;
         this.expr = expr;
         this.ngContentIndex = ngContentIndex;
     }
-    return CompileViewRootNode;
-}());
+}
 function CompileViewRootNode_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileViewRootNode.prototype.type;
@@ -42,7 +41,7 @@ function CompileViewRootNode_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileViewRootNode.prototype.ngContentIndex;
 }
-export var CompileView = (function () {
+export class CompileView {
     /**
      * @param {?} component
      * @param {?} genConfig
@@ -54,8 +53,7 @@ export var CompileView = (function () {
      * @param {?} templateVariableBindings
      * @param {?} targetDependencies
      */
-    function CompileView(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings, targetDependencies) {
-        var _this = this;
+    constructor(component, genConfig, pipeMetas, styles, animations, viewIndex, declarationElement, templateVariableBindings, targetDependencies) {
         this.component = component;
         this.genConfig = genConfig;
         this.pipeMetas = pipeMetas;
@@ -105,18 +103,18 @@ export var CompileView = (function () {
         }
         this.componentContext =
             getPropertyInView(o.THIS_EXPR.prop('context'), this, this.componentView);
-        var viewQueries = new Map();
+        const viewQueries = new Map();
         if (this.viewType === ViewType.COMPONENT) {
-            var directiveInstance_1 = o.THIS_EXPR.prop('context');
-            this.component.viewQueries.forEach(function (queryMeta, queryIndex) {
-                var propName = "_viewQuery_" + tokenName(queryMeta.selectors[0]) + "_" + queryIndex;
-                var queryList = createQueryList(propName, _this);
-                var query = new CompileQuery(queryMeta, queryList, directiveInstance_1, _this);
+            const directiveInstance = o.THIS_EXPR.prop('context');
+            this.component.viewQueries.forEach((queryMeta, queryIndex) => {
+                const propName = `_viewQuery_${tokenName(queryMeta.selectors[0])}_${queryIndex}`;
+                const queryList = createQueryList(propName, this);
+                const query = new CompileQuery(queryMeta, queryList, directiveInstance, this);
                 addQueryToTokenMap(viewQueries, query);
             });
         }
         this.viewQueries = viewQueries;
-        templateVariableBindings.forEach(function (entry) { _this.locals.set(entry[1], o.THIS_EXPR.prop('context').prop(entry[0])); });
+        templateVariableBindings.forEach((entry) => { this.locals.set(entry[1], o.THIS_EXPR.prop('context').prop(entry[0])); });
         if (!this.declarationElement.isNull()) {
             this.declarationElement.setEmbeddedView(this);
         }
@@ -127,19 +125,19 @@ export var CompileView = (function () {
      * @param {?} args
      * @return {?}
      */
-    CompileView.prototype.callPipe = function (name, input, args) {
+    callPipe(name, input, args) {
         return CompilePipe.call(this, name, [input].concat(args));
-    };
+    }
     /**
      * @param {?} name
      * @return {?}
      */
-    CompileView.prototype.getLocal = function (name) {
+    getLocal(name) {
         if (name == EventHandlerVars.event.name) {
             return EventHandlerVars.event;
         }
-        var /** @type {?} */ currView = this;
-        var /** @type {?} */ result = currView.locals.get(name);
+        let /** @type {?} */ currView = this;
+        let /** @type {?} */ result = currView.locals.get(name);
         while (!result && isPresent(currView.declarationElement.view)) {
             currView = currView.declarationElement.view;
             result = currView.locals.get(name);
@@ -150,17 +148,15 @@ export var CompileView = (function () {
         else {
             return null;
         }
-    };
+    }
     /**
      * @return {?}
      */
-    CompileView.prototype.finish = function () {
-        var _this = this;
+    finish() {
         Array.from(this.viewQueries.values())
-            .forEach(function (queries) { return queries.forEach(function (q) { return q.generateStatements(_this.createMethod, _this.updateViewQueriesMethod); }); });
-    };
-    return CompileView;
-}());
+            .forEach(queries => queries.forEach(q => q.generateStatements(this.createMethod, this.updateViewQueriesMethod)));
+    }
+}
 function CompileView_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileView.prototype.viewType;

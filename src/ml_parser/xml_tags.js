@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { TagContentType } from './tags';
-export var XmlTagDefinition = (function () {
-    function XmlTagDefinition() {
+export class XmlTagDefinition {
+    constructor() {
         this.closedByParent = false;
         this.contentType = TagContentType.PARSABLE_DATA;
         this.isVoid = false;
@@ -18,14 +18,13 @@ export var XmlTagDefinition = (function () {
      * @param {?} currentParent
      * @return {?}
      */
-    XmlTagDefinition.prototype.requireExtraParent = function (currentParent) { return false; };
+    requireExtraParent(currentParent) { return false; }
     /**
      * @param {?} name
      * @return {?}
      */
-    XmlTagDefinition.prototype.isClosedByChild = function (name) { return false; };
-    return XmlTagDefinition;
-}());
+    isClosedByChild(name) { return false; }
+}
 function XmlTagDefinition_tsickle_Closure_declarations() {
     /** @type {?} */
     XmlTagDefinition.prototype.closedByParent;
@@ -44,7 +43,7 @@ function XmlTagDefinition_tsickle_Closure_declarations() {
     /** @type {?} */
     XmlTagDefinition.prototype.canSelfClose;
 }
-var /** @type {?} */ _TAG_DEFINITION = new XmlTagDefinition();
+const /** @type {?} */ _TAG_DEFINITION = new XmlTagDefinition();
 /**
  * @param {?} tagName
  * @return {?}

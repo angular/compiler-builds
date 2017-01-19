@@ -5,12 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export var Text = (function () {
+export class Text {
     /**
      * @param {?} value
      * @param {?} sourceSpan
      */
-    function Text(value, sourceSpan) {
+    constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
@@ -19,16 +19,15 @@ export var Text = (function () {
      * @param {?} context
      * @return {?}
      */
-    Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
-    return Text;
-}());
+    visit(visitor, context) { return visitor.visitText(this, context); }
+}
 function Text_tsickle_Closure_declarations() {
     /** @type {?} */
     Text.prototype.value;
     /** @type {?} */
     Text.prototype.sourceSpan;
 }
-export var Expansion = (function () {
+export class Expansion {
     /**
      * @param {?} switchValue
      * @param {?} type
@@ -36,7 +35,7 @@ export var Expansion = (function () {
      * @param {?} sourceSpan
      * @param {?} switchValueSourceSpan
      */
-    function Expansion(switchValue, type, cases, sourceSpan, switchValueSourceSpan) {
+    constructor(switchValue, type, cases, sourceSpan, switchValueSourceSpan) {
         this.switchValue = switchValue;
         this.type = type;
         this.cases = cases;
@@ -48,9 +47,8 @@ export var Expansion = (function () {
      * @param {?} context
      * @return {?}
      */
-    Expansion.prototype.visit = function (visitor, context) { return visitor.visitExpansion(this, context); };
-    return Expansion;
-}());
+    visit(visitor, context) { return visitor.visitExpansion(this, context); }
+}
 function Expansion_tsickle_Closure_declarations() {
     /** @type {?} */
     Expansion.prototype.switchValue;
@@ -63,7 +61,7 @@ function Expansion_tsickle_Closure_declarations() {
     /** @type {?} */
     Expansion.prototype.switchValueSourceSpan;
 }
-export var ExpansionCase = (function () {
+export class ExpansionCase {
     /**
      * @param {?} value
      * @param {?} expression
@@ -71,7 +69,7 @@ export var ExpansionCase = (function () {
      * @param {?} valueSourceSpan
      * @param {?} expSourceSpan
      */
-    function ExpansionCase(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
+    constructor(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
         this.value = value;
         this.expression = expression;
         this.sourceSpan = sourceSpan;
@@ -83,9 +81,8 @@ export var ExpansionCase = (function () {
      * @param {?} context
      * @return {?}
      */
-    ExpansionCase.prototype.visit = function (visitor, context) { return visitor.visitExpansionCase(this, context); };
-    return ExpansionCase;
-}());
+    visit(visitor, context) { return visitor.visitExpansionCase(this, context); }
+}
 function ExpansionCase_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpansionCase.prototype.value;
@@ -98,14 +95,14 @@ function ExpansionCase_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpansionCase.prototype.expSourceSpan;
 }
-export var Attribute = (function () {
+export class Attribute {
     /**
      * @param {?} name
      * @param {?} value
      * @param {?} sourceSpan
      * @param {?=} valueSpan
      */
-    function Attribute(name, value, sourceSpan, valueSpan) {
+    constructor(name, value, sourceSpan, valueSpan) {
         this.name = name;
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -116,9 +113,8 @@ export var Attribute = (function () {
      * @param {?} context
      * @return {?}
      */
-    Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
-    return Attribute;
-}());
+    visit(visitor, context) { return visitor.visitAttribute(this, context); }
+}
 function Attribute_tsickle_Closure_declarations() {
     /** @type {?} */
     Attribute.prototype.name;
@@ -129,7 +125,7 @@ function Attribute_tsickle_Closure_declarations() {
     /** @type {?} */
     Attribute.prototype.valueSpan;
 }
-export var Element = (function () {
+export class Element {
     /**
      * @param {?} name
      * @param {?} attrs
@@ -138,7 +134,7 @@ export var Element = (function () {
      * @param {?} startSourceSpan
      * @param {?} endSourceSpan
      */
-    function Element(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan) {
         this.name = name;
         this.attrs = attrs;
         this.children = children;
@@ -151,9 +147,8 @@ export var Element = (function () {
      * @param {?} context
      * @return {?}
      */
-    Element.prototype.visit = function (visitor, context) { return visitor.visitElement(this, context); };
-    return Element;
-}());
+    visit(visitor, context) { return visitor.visitElement(this, context); }
+}
 function Element_tsickle_Closure_declarations() {
     /** @type {?} */
     Element.prototype.name;
@@ -168,12 +163,12 @@ function Element_tsickle_Closure_declarations() {
     /** @type {?} */
     Element.prototype.endSourceSpan;
 }
-export var Comment = (function () {
+export class Comment {
     /**
      * @param {?} value
      * @param {?} sourceSpan
      */
-    function Comment(value, sourceSpan) {
+    constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
@@ -182,9 +177,8 @@ export var Comment = (function () {
      * @param {?} context
      * @return {?}
      */
-    Comment.prototype.visit = function (visitor, context) { return visitor.visitComment(this, context); };
-    return Comment;
-}());
+    visit(visitor, context) { return visitor.visitComment(this, context); }
+}
 function Comment_tsickle_Closure_declarations() {
     /** @type {?} */
     Comment.prototype.value;
@@ -197,14 +191,13 @@ function Comment_tsickle_Closure_declarations() {
  * @param {?=} context
  * @return {?}
  */
-export function visitAll(visitor, nodes, context) {
-    if (context === void 0) { context = null; }
-    var /** @type {?} */ result = [];
-    var /** @type {?} */ visit = visitor.visit ?
-        function (ast) { return visitor.visit(ast, context) || ast.visit(visitor, context); } :
-        function (ast) { return ast.visit(visitor, context); };
-    nodes.forEach(function (ast) {
-        var /** @type {?} */ astResult = visit(ast);
+export function visitAll(visitor, nodes, context = null) {
+    const /** @type {?} */ result = [];
+    const /** @type {?} */ visit = visitor.visit ?
+            (ast) => visitor.visit(ast, context) || ast.visit(visitor, context) :
+            (ast) => ast.visit(visitor, context);
+    nodes.forEach(ast => {
+        const /** @type {?} */ astResult = visit(ast);
         if (astResult) {
             result.push(astResult);
         }

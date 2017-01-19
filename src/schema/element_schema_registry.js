@@ -8,9 +8,7 @@
 /**
  * @abstract
  */
-export var ElementSchemaRegistry = (function () {
-    function ElementSchemaRegistry() {
-    }
+export class ElementSchemaRegistry {
     /**
      * @abstract
      * @param {?} tagName
@@ -18,14 +16,14 @@ export var ElementSchemaRegistry = (function () {
      * @param {?} schemaMetas
      * @return {?}
      */
-    ElementSchemaRegistry.prototype.hasProperty = function (tagName, propName, schemaMetas) { };
+    hasProperty(tagName, propName, schemaMetas) { }
     /**
      * @abstract
      * @param {?} tagName
      * @param {?} schemaMetas
      * @return {?}
      */
-    ElementSchemaRegistry.prototype.hasElement = function (tagName, schemaMetas) { };
+    hasElement(tagName, schemaMetas) { }
     /**
      * @abstract
      * @param {?} elementName
@@ -33,41 +31,41 @@ export var ElementSchemaRegistry = (function () {
      * @param {?} isAttribute
      * @return {?}
      */
-    ElementSchemaRegistry.prototype.securityContext = function (elementName, propName, isAttribute) { };
+    securityContext(elementName, propName, isAttribute) { }
     /**
      * @abstract
      * @return {?}
      */
-    ElementSchemaRegistry.prototype.allKnownElementNames = function () { };
-    /**
-     * @abstract
-     * @param {?} propName
-     * @return {?}
-     */
-    ElementSchemaRegistry.prototype.getMappedPropName = function (propName) { };
-    /**
-     * @abstract
-     * @return {?}
-     */
-    ElementSchemaRegistry.prototype.getDefaultComponentElementName = function () { };
-    /**
-     * @abstract
-     * @param {?} name
-     * @return {?}
-     */
-    ElementSchemaRegistry.prototype.validateProperty = function (name) { };
-    /**
-     * @abstract
-     * @param {?} name
-     * @return {?}
-     */
-    ElementSchemaRegistry.prototype.validateAttribute = function (name) { };
+    allKnownElementNames() { }
     /**
      * @abstract
      * @param {?} propName
      * @return {?}
      */
-    ElementSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) { };
+    getMappedPropName(propName) { }
+    /**
+     * @abstract
+     * @return {?}
+     */
+    getDefaultComponentElementName() { }
+    /**
+     * @abstract
+     * @param {?} name
+     * @return {?}
+     */
+    validateProperty(name) { }
+    /**
+     * @abstract
+     * @param {?} name
+     * @return {?}
+     */
+    validateAttribute(name) { }
+    /**
+     * @abstract
+     * @param {?} propName
+     * @return {?}
+     */
+    normalizeAnimationStyleProperty(propName) { }
     /**
      * @abstract
      * @param {?} camelCaseProp
@@ -75,7 +73,6 @@ export var ElementSchemaRegistry = (function () {
      * @param {?} val
      * @return {?}
      */
-    ElementSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) { };
-    return ElementSchemaRegistry;
-}());
+    normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) { }
+}
 //# sourceMappingURL=element_schema_registry.js.map

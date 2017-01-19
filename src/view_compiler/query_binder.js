@@ -11,24 +11,24 @@ import { tokenReference } from '../compile_metadata';
  * @return {?}
  */
 export function bindQueryValues(ce) {
-    var /** @type {?} */ queriesWithReads = [];
-    ce.getProviderTokens().forEach(function (token) {
-        var /** @type {?} */ queriesForProvider = ce.getQueriesFor(token);
-        queriesWithReads.push.apply(queriesWithReads, queriesForProvider.map(function (query) { return new _QueryWithRead(query, token); }));
+    const /** @type {?} */ queriesWithReads = [];
+    ce.getProviderTokens().forEach((token) => {
+        const /** @type {?} */ queriesForProvider = ce.getQueriesFor(token);
+        queriesWithReads.push(...queriesForProvider.map(query => new _QueryWithRead(query, token)));
     });
-    Object.keys(ce.referenceTokens).forEach(function (varName) {
-        var /** @type {?} */ varToken = { value: varName };
-        queriesWithReads.push.apply(queriesWithReads, ce.getQueriesFor(varToken).map(function (query) { return new _QueryWithRead(query, varToken); }));
+    Object.keys(ce.referenceTokens).forEach(varName => {
+        const /** @type {?} */ varToken = { value: varName };
+        queriesWithReads.push(...ce.getQueriesFor(varToken).map(query => new _QueryWithRead(query, varToken)));
     });
-    queriesWithReads.forEach(function (queryWithRead) {
-        var /** @type {?} */ value;
+    queriesWithReads.forEach((queryWithRead) => {
+        let /** @type {?} */ value;
         if (queryWithRead.read.identifier) {
             // query for an identifier
             value = ce.instances.get(tokenReference(queryWithRead.read));
         }
         else {
             // query for a reference
-            var /** @type {?} */ token = ce.referenceTokens[queryWithRead.read.value];
+            const /** @type {?} */ token = ce.referenceTokens[queryWithRead.read.value];
             if (token) {
                 value = ce.instances.get(tokenReference(token));
             }
@@ -41,17 +41,16 @@ export function bindQueryValues(ce) {
         }
     });
 }
-var _QueryWithRead = (function () {
+class _QueryWithRead {
     /**
      * @param {?} query
      * @param {?} match
      */
-    function _QueryWithRead(query, match) {
+    constructor(query, match) {
         this.query = query;
         this.read = query.meta.read || match;
     }
-    return _QueryWithRead;
-}());
+}
 function _QueryWithRead_tsickle_Closure_declarations() {
     /** @type {?} */
     _QueryWithRead.prototype.read;

@@ -5,11 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -19,15 +14,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, SecurityContext } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, SecurityContext } from '@angular/core/index';
 import { CompilerInjectable } from '../injectable';
 import { dashCaseToCamelCase } from '../util';
 import { SECURITY_SCHEMA } from './dom_security_schema';
 import { ElementSchemaRegistry } from './element_schema_registry';
-var /** @type {?} */ BOOLEAN = 'boolean';
-var /** @type {?} */ NUMBER = 'number';
-var /** @type {?} */ STRING = 'string';
-var /** @type {?} */ OBJECT = 'object';
+const /** @type {?} */ BOOLEAN = 'boolean';
+const /** @type {?} */ NUMBER = 'number';
+const /** @type {?} */ STRING = 'string';
+const /** @type {?} */ OBJECT = 'object';
 /**
  * This array represents the DOM schema. It encodes inheritance, properties, and events.
  *
@@ -82,7 +77,7 @@ var /** @type {?} */ OBJECT = 'object';
 // dom_security_schema.ts. Reach out to mprobst & rjamet for details.
 //
 // =================================================================================================
-var /** @type {?} */ SCHEMA = [
+const /** @type {?} */ SCHEMA = [
     '[Element]|textContent,%classList,className,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*copy,*cut,*paste,*search,*selectstart,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerHTML,#scrollLeft,#scrollTop',
     '[HTMLElement]^[Element]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
     'abbr,address,article,aside,b,bdi,bdo,cite,code,dd,dfn,dt,em,figcaption,figure,footer,header,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
@@ -234,7 +229,7 @@ var /** @type {?} */ SCHEMA = [
     'summary^[HTMLElement]|',
     'time^[HTMLElement]|dateTime',
 ];
-var /** @type {?} */ _ATTR_TO_PROP = {
+const /** @type {?} */ _ATTR_TO_PROP = {
     'class': 'className',
     'for': 'htmlFor',
     'formaction': 'formAction',
@@ -242,23 +237,21 @@ var /** @type {?} */ _ATTR_TO_PROP = {
     'readonly': 'readOnly',
     'tabindex': 'tabIndex',
 };
-export var DomElementSchemaRegistry = (function (_super) {
-    __extends(DomElementSchemaRegistry, _super);
-    function DomElementSchemaRegistry() {
-        var _this = this;
-        _super.call(this);
+export let DomElementSchemaRegistry = class DomElementSchemaRegistry extends ElementSchemaRegistry {
+    constructor() {
+        super();
         this._schema = {};
-        SCHEMA.forEach(function (encodedType) {
-            var type = {};
-            var _a = encodedType.split('|'), strType = _a[0], strProperties = _a[1];
-            var properties = strProperties.split(',');
-            var _b = strType.split('^'), typeNames = _b[0], superName = _b[1];
-            typeNames.split(',').forEach(function (tag) { return _this._schema[tag.toLowerCase()] = type; });
-            var superType = superName && _this._schema[superName.toLowerCase()];
+        SCHEMA.forEach(encodedType => {
+            const type = {};
+            const [strType, strProperties] = encodedType.split('|');
+            const properties = strProperties.split(',');
+            const [typeNames, superName] = strType.split('^');
+            typeNames.split(',').forEach(tag => this._schema[tag.toLowerCase()] = type);
+            const superType = superName && this._schema[superName.toLowerCase()];
             if (superType) {
-                Object.keys(superType).forEach(function (prop) { type[prop] = superType[prop]; });
+                Object.keys(superType).forEach((prop) => { type[prop] = superType[prop]; });
             }
-            properties.forEach(function (property) {
+            properties.forEach((property) => {
                 if (property.length > 0) {
                     switch (property[0]) {
                         case '*':
@@ -290,43 +283,43 @@ export var DomElementSchemaRegistry = (function (_super) {
      * @param {?} schemaMetas
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.hasProperty = function (tagName, propName, schemaMetas) {
-        if (schemaMetas.some(function (schema) { return schema.name === NO_ERRORS_SCHEMA.name; })) {
+    hasProperty(tagName, propName, schemaMetas) {
+        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
             return true;
         }
         if (tagName.indexOf('-') > -1) {
             if (tagName === 'ng-container' || tagName === 'ng-content') {
                 return false;
             }
-            if (schemaMetas.some(function (schema) { return schema.name === CUSTOM_ELEMENTS_SCHEMA.name; })) {
+            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
                 // Can't tell now as we don't know which properties a custom element will get
                 // once it is instantiated
                 return true;
             }
         }
-        var /** @type {?} */ elementProperties = this._schema[tagName.toLowerCase()] || this._schema['unknown'];
+        const /** @type {?} */ elementProperties = this._schema[tagName.toLowerCase()] || this._schema['unknown'];
         return !!elementProperties[propName];
-    };
+    }
     /**
      * @param {?} tagName
      * @param {?} schemaMetas
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.hasElement = function (tagName, schemaMetas) {
-        if (schemaMetas.some(function (schema) { return schema.name === NO_ERRORS_SCHEMA.name; })) {
+    hasElement(tagName, schemaMetas) {
+        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
             return true;
         }
         if (tagName.indexOf('-') > -1) {
             if (tagName === 'ng-container' || tagName === 'ng-content') {
                 return true;
             }
-            if (schemaMetas.some(function (schema) { return schema.name === CUSTOM_ELEMENTS_SCHEMA.name; })) {
+            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
                 // Allow any custom elements
                 return true;
             }
         }
         return !!this._schema[tagName.toLowerCase()];
-    };
+    }
     /**
      * securityContext returns the security context for the given property on the given DOM tag.
      *
@@ -341,7 +334,7 @@ export var DomElementSchemaRegistry = (function (_super) {
      * @param {?} isAttribute
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.securityContext = function (tagName, propName, isAttribute) {
+    securityContext(tagName, propName, isAttribute) {
         if (isAttribute) {
             // NB: For security purposes, use the mapped property name, not the attribute name.
             propName = this.getMappedPropName(propName);
@@ -350,92 +343,91 @@ export var DomElementSchemaRegistry = (function (_super) {
         // property names do not have a security impact.
         tagName = tagName.toLowerCase();
         propName = propName.toLowerCase();
-        var /** @type {?} */ ctx = SECURITY_SCHEMA[tagName + '|' + propName];
+        let /** @type {?} */ ctx = SECURITY_SCHEMA[tagName + '|' + propName];
         if (ctx) {
             return ctx;
         }
         ctx = SECURITY_SCHEMA['*|' + propName];
         return ctx ? ctx : SecurityContext.NONE;
-    };
+    }
     /**
      * @param {?} propName
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.getMappedPropName = function (propName) { return _ATTR_TO_PROP[propName] || propName; };
+    getMappedPropName(propName) { return _ATTR_TO_PROP[propName] || propName; }
     /**
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
+    getDefaultComponentElementName() { return 'ng-component'; }
     /**
      * @param {?} name
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.validateProperty = function (name) {
+    validateProperty(name) {
         if (name.toLowerCase().startsWith('on')) {
-            var /** @type {?} */ msg = ("Binding to event property '" + name + "' is disallowed for security reasons, ") +
-                ("please use (" + name.slice(2) + ")=...") +
-                ("\nIf '" + name + "' is a directive input, make sure the directive is imported by the") +
-                " current module.";
+            const /** @type {?} */ msg = `Binding to event property '${name}' is disallowed for security reasons, ` +
+                `please use (${name.slice(2)})=...` +
+                `\nIf '${name}' is a directive input, make sure the directive is imported by the` +
+                ` current module.`;
             return { error: true, msg: msg };
         }
         else {
             return { error: false };
         }
-    };
+    }
     /**
      * @param {?} name
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.validateAttribute = function (name) {
+    validateAttribute(name) {
         if (name.toLowerCase().startsWith('on')) {
-            var /** @type {?} */ msg = ("Binding to event attribute '" + name + "' is disallowed for security reasons, ") +
-                ("please use (" + name.slice(2) + ")=...");
+            const /** @type {?} */ msg = `Binding to event attribute '${name}' is disallowed for security reasons, ` +
+                `please use (${name.slice(2)})=...`;
             return { error: true, msg: msg };
         }
         else {
             return { error: false };
         }
-    };
+    }
     /**
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.allKnownElementNames = function () { return Object.keys(this._schema); };
+    allKnownElementNames() { return Object.keys(this._schema); }
     /**
      * @param {?} propName
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) {
+    normalizeAnimationStyleProperty(propName) {
         return dashCaseToCamelCase(propName);
-    };
+    }
     /**
      * @param {?} camelCaseProp
      * @param {?} userProvidedProp
      * @param {?} val
      * @return {?}
      */
-    DomElementSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) {
-        var /** @type {?} */ unit = '';
-        var /** @type {?} */ strVal = val.toString().trim();
-        var /** @type {?} */ errorMsg = null;
+    normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) {
+        let /** @type {?} */ unit = '';
+        const /** @type {?} */ strVal = val.toString().trim();
+        let /** @type {?} */ errorMsg = null;
         if (_isPixelDimensionStyle(camelCaseProp) && val !== 0 && val !== '0') {
             if (typeof val === 'number') {
                 unit = 'px';
             }
             else {
-                var /** @type {?} */ valAndSuffixMatch = val.match(/^[+-]?[\d\.]+([a-z]*)$/);
+                const /** @type {?} */ valAndSuffixMatch = val.match(/^[+-]?[\d\.]+([a-z]*)$/);
                 if (valAndSuffixMatch && valAndSuffixMatch[1].length == 0) {
-                    errorMsg = "Please provide a CSS unit value for " + userProvidedProp + ":" + val;
+                    errorMsg = `Please provide a CSS unit value for ${userProvidedProp}:${val}`;
                 }
             }
         }
         return { error: errorMsg, value: strVal + unit };
-    };
-    DomElementSchemaRegistry = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [])
-    ], DomElementSchemaRegistry);
-    return DomElementSchemaRegistry;
-}(ElementSchemaRegistry));
+    }
+};
+DomElementSchemaRegistry = __decorate([
+    CompilerInjectable(), 
+    __metadata('design:paramtypes', [])
+], DomElementSchemaRegistry);
 function DomElementSchemaRegistry_tsickle_Closure_declarations() {
     /** @type {?} */
     DomElementSchemaRegistry.prototype._schema;

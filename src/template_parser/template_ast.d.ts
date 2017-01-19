@@ -67,7 +67,7 @@ export declare class BoundElementPropertyAst implements TemplateAst {
     sourceSpan: ParseSourceSpan;
     constructor(name: string, type: PropertyBindingType, securityContext: SecurityContext, needsRuntimeSecurityContext: boolean, value: AST, unit: string, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
-    isAnimation: boolean;
+    readonly isAnimation: boolean;
 }
 /**
  * A binding for an element event (e.g. `(event)="handler()"`) or an animation trigger event (e.g.
@@ -82,8 +82,8 @@ export declare class BoundEventAst implements TemplateAst {
     static calcFullName(name: string, target: string, phase: string): string;
     constructor(name: string, target: string, phase: string, handler: AST, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
-    fullName: string;
-    isAnimation: boolean;
+    readonly fullName: string;
+    readonly isAnimation: boolean;
 }
 /**
  * A reference declaration on an element (e.g. `let someName="expression"`).

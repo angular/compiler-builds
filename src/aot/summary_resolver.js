@@ -7,12 +7,12 @@
  */
 import { deserializeSummaries } from './summary_serializer';
 import { ngfactoryFilePath, stripNgFactory, summaryFileName } from './util';
-export var AotSummaryResolver = (function () {
+export class AotSummaryResolver {
     /**
      * @param {?} host
      * @param {?} staticSymbolCache
      */
-    function AotSummaryResolver(host, staticSymbolCache) {
+    constructor(host, staticSymbolCache) {
         this.host = host;
         this.staticSymbolCache = staticSymbolCache;
         this.summaryCache = new Map();
@@ -23,77 +23,75 @@ export var AotSummaryResolver = (function () {
      * @param {?} filePath
      * @return {?}
      */
-    AotSummaryResolver.prototype.isLibraryFile = function (filePath) {
+    isLibraryFile(filePath) {
         // Note: We need to strip the .ngfactory. file path,
         // so this method also works for generated files
         // (for which host.isSourceFile will always return false).
         return !this.host.isSourceFile(stripNgFactory(filePath));
-    };
+    }
     /**
      * @param {?} filePath
      * @return {?}
      */
-    AotSummaryResolver.prototype.getLibraryFileName = function (filePath) { return this.host.getOutputFileName(filePath); };
+    getLibraryFileName(filePath) { return this.host.getOutputFileName(filePath); }
     /**
      * @param {?} staticSymbol
      * @return {?}
      */
-    AotSummaryResolver.prototype.resolveSummary = function (staticSymbol) {
+    resolveSummary(staticSymbol) {
         staticSymbol.assertNoMembers();
-        var /** @type {?} */ summary = this.summaryCache.get(staticSymbol);
+        let /** @type {?} */ summary = this.summaryCache.get(staticSymbol);
         if (!summary) {
             this._loadSummaryFile(staticSymbol.filePath);
             summary = this.summaryCache.get(staticSymbol);
         }
         return summary;
-    };
+    }
     /**
      * @param {?} filePath
      * @return {?}
      */
-    AotSummaryResolver.prototype.getSymbolsOf = function (filePath) {
+    getSymbolsOf(filePath) {
         this._loadSummaryFile(filePath);
-        return Array.from(this.summaryCache.keys()).filter(function (symbol) { return symbol.filePath === filePath; });
-    };
+        return Array.from(this.summaryCache.keys()).filter((symbol) => symbol.filePath === filePath);
+    }
     /**
      * @param {?} staticSymbol
      * @return {?}
      */
-    AotSummaryResolver.prototype.getImportAs = function (staticSymbol) {
+    getImportAs(staticSymbol) {
         staticSymbol.assertNoMembers();
         return this.importAs.get(staticSymbol);
-    };
+    }
     /**
      * @param {?} filePath
      * @return {?}
      */
-    AotSummaryResolver.prototype._loadSummaryFile = function (filePath) {
-        var _this = this;
+    _loadSummaryFile(filePath) {
         if (this.loadedFilePaths.has(filePath)) {
             return;
         }
         this.loadedFilePaths.add(filePath);
         if (this.isLibraryFile(filePath)) {
-            var /** @type {?} */ summaryFilePath = summaryFileName(filePath);
-            var /** @type {?} */ json = void 0;
+            const /** @type {?} */ summaryFilePath = summaryFileName(filePath);
+            let /** @type {?} */ json;
             try {
                 json = this.host.loadSummary(summaryFilePath);
             }
             catch (e) {
-                console.error("Error loading summary file " + summaryFilePath);
+                console.error(`Error loading summary file ${summaryFilePath}`);
                 throw e;
             }
             if (json) {
-                var _a = deserializeSummaries(this.staticSymbolCache, json), summaries = _a.summaries, importAs = _a.importAs;
-                summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
-                importAs.forEach(function (importAs) {
-                    _this.importAs.set(importAs.symbol, _this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
+                const { summaries, importAs } = deserializeSummaries(this.staticSymbolCache, json);
+                summaries.forEach((summary) => this.summaryCache.set(summary.symbol, summary));
+                importAs.forEach((importAs) => {
+                    this.importAs.set(importAs.symbol, this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
                 });
             }
         }
-    };
-    return AotSummaryResolver;
-}());
+    }
+}
 function AotSummaryResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     AotSummaryResolver.prototype.summaryCache;
