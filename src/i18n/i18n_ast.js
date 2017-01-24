@@ -214,4 +214,117 @@ function IcuPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     IcuPlaceholder.prototype.sourceSpan;
 }
+export var CloneVisitor = (function () {
+    function CloneVisitor() {
+    }
+    /**
+     * @param {?} text
+     * @param {?=} context
+     * @return {?}
+     */
+    CloneVisitor.prototype.visitText = function (text, context) { return new Text(text.value, text.sourceSpan); };
+    /**
+     * @param {?} container
+     * @param {?=} context
+     * @return {?}
+     */
+    CloneVisitor.prototype.visitContainer = function (container, context) {
+        var _this = this;
+        var /** @type {?} */ children = container.children.map(function (n) { return n.visit(_this, context); });
+        return new Container(children, container.sourceSpan);
+    };
+    /**
+     * @param {?} icu
+     * @param {?=} context
+     * @return {?}
+     */
+    CloneVisitor.prototype.visitIcu = function (icu, context) {
+        var _this = this;
+        var /** @type {?} */ cases = {};
+        Object.keys(icu.cases).forEach(function (key) { return cases[key] = icu.cases[key].visit(_this, context); });
+        var /** @type {?} */ msg = new Icu(icu.expression, icu.type, cases, icu.sourceSpan);
+        msg.expressionPlaceholder = icu.expressionPlaceholder;
+        return msg;
+    };
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    CloneVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+        var _this = this;
+        var /** @type {?} */ children = ph.children.map(function (n) { return n.visit(_this, context); });
+        return new TagPlaceholder(ph.tag, ph.attrs, ph.startName, ph.closeName, children, ph.isVoid, ph.sourceSpan);
+    };
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    CloneVisitor.prototype.visitPlaceholder = function (ph, context) {
+        return new Placeholder(ph.value, ph.name, ph.sourceSpan);
+    };
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    CloneVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
+        return new IcuPlaceholder(ph.value, ph.name, ph.sourceSpan);
+    };
+    return CloneVisitor;
+}());
+export var RecurseVisitor = (function () {
+    function RecurseVisitor() {
+    }
+    /**
+     * @param {?} text
+     * @param {?=} context
+     * @return {?}
+     */
+    RecurseVisitor.prototype.visitText = function (text, context) { };
+    ;
+    /**
+     * @param {?} container
+     * @param {?=} context
+     * @return {?}
+     */
+    RecurseVisitor.prototype.visitContainer = function (container, context) {
+        var _this = this;
+        container.children.forEach(function (child) { return child.visit(_this); });
+    };
+    /**
+     * @param {?} icu
+     * @param {?=} context
+     * @return {?}
+     */
+    RecurseVisitor.prototype.visitIcu = function (icu, context) {
+        var _this = this;
+        Object.keys(icu.cases).forEach(function (k) { icu.cases[k].visit(_this); });
+    };
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    RecurseVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+        var _this = this;
+        ph.children.forEach(function (child) { return child.visit(_this); });
+    };
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    RecurseVisitor.prototype.visitPlaceholder = function (ph, context) { };
+    ;
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    RecurseVisitor.prototype.visitIcuPlaceholder = function (ph, context) { };
+    ;
+    return RecurseVisitor;
+}());
 //# sourceMappingURL=i18n_ast.js.map

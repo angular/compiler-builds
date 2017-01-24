@@ -5,33 +5,34 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 import { decimalDigest } from '../digest';
+import { Serializer, SimplePlaceholderMapper } from './serializer';
 import * as xml from './xml_helper';
 var /** @type {?} */ _MESSAGES_TAG = 'messagebundle';
 var /** @type {?} */ _MESSAGE_TAG = 'msg';
 var /** @type {?} */ _PLACEHOLDER_TAG = 'ph';
 var /** @type {?} */ _EXEMPLE_TAG = 'ex';
 var /** @type {?} */ _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
-export var Xmb = (function () {
+export var Xmb = (function (_super) {
+    __extends(Xmb, _super);
     function Xmb() {
+        _super.apply(this, arguments);
     }
     /**
      * @param {?} messages
      * @return {?}
      */
     Xmb.prototype.write = function (messages) {
-        var _this = this;
         var /** @type {?} */ exampleVisitor = new ExampleVisitor();
         var /** @type {?} */ visitor = new _Visitor();
-        var /** @type {?} */ visited = {};
         var /** @type {?} */ rootNode = new xml.Tag(_MESSAGES_TAG);
         messages.forEach(function (message) {
-            var /** @type {?} */ id = _this.digest(message);
-            // deduplicate messages
-            if (visited[id])
-                return;
-            visited[id] = true;
-            var /** @type {?} */ attrs = { id: id };
+            var /** @type {?} */ attrs = { id: message.id };
             if (message.description) {
                 attrs['desc'] = message.description;
             }
@@ -63,8 +64,15 @@ export var Xmb = (function () {
      * @return {?}
      */
     Xmb.prototype.digest = function (message) { return digest(message); };
+    /**
+     * @param {?} message
+     * @return {?}
+     */
+    Xmb.prototype.createNameMapper = function (message) {
+        return new SimplePlaceholderMapper(message, toPublicName);
+    };
     return Xmb;
-}());
+}(Serializer));
 var _Visitor = (function () {
     function _Visitor() {
     }
@@ -76,7 +84,7 @@ var _Visitor = (function () {
     _Visitor.prototype.visitText = function (text, context) { return [new xml.Text(text.value)]; };
     /**
      * @param {?} container
-     * @param {?=} context
+     * @param {?} context
      * @return {?}
      */
     _Visitor.prototype.visitContainer = function (container, context) {
@@ -193,4 +201,11 @@ var ExampleVisitor = (function () {
     ExampleVisitor.prototype.visitDoctype = function (doctype) { };
     return ExampleVisitor;
 }());
+/**
+ * @param {?} internalName
+ * @return {?}
+ */
+export function toPublicName(internalName) {
+    return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+}
 //# sourceMappingURL=xmb.js.map

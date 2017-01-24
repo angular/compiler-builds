@@ -5,11 +5,17 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 import * as ml from '../../ml_parser/ast';
 import { XmlParser } from '../../ml_parser/xml_parser';
 import { digest } from '../digest';
 import * as i18n from '../i18n_ast';
 import { I18nError } from '../parse_util';
+import { Serializer } from './serializer';
 import * as xml from './xml_helper';
 var /** @type {?} */ _VERSION = '1.2';
 var /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
@@ -19,25 +25,20 @@ var /** @type {?} */ _PLACEHOLDER_TAG = 'x';
 var /** @type {?} */ _SOURCE_TAG = 'source';
 var /** @type {?} */ _TARGET_TAG = 'target';
 var /** @type {?} */ _UNIT_TAG = 'trans-unit';
-export var Xliff = (function () {
+export var Xliff = (function (_super) {
+    __extends(Xliff, _super);
     function Xliff() {
+        _super.apply(this, arguments);
     }
     /**
      * @param {?} messages
      * @return {?}
      */
     Xliff.prototype.write = function (messages) {
-        var _this = this;
         var /** @type {?} */ visitor = new _WriteVisitor();
-        var /** @type {?} */ visited = {};
         var /** @type {?} */ transUnits = [];
         messages.forEach(function (message) {
-            var /** @type {?} */ id = _this.digest(message);
-            // deduplicate messages
-            if (visited[id])
-                return;
-            visited[id] = true;
-            var /** @type {?} */ transUnit = new xml.Tag(_UNIT_TAG, { id: id, datatype: 'html' });
+            var /** @type {?} */ transUnit = new xml.Tag(_UNIT_TAG, { id: message.id, datatype: 'html' });
             transUnit.children.push(new xml.CR(8), new xml.Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new xml.CR(8), new xml.Tag(_TARGET_TAG));
             if (message.description) {
                 transUnit.children.push(new xml.CR(8), new xml.Tag('note', { priority: '1', from: 'description' }, [new xml.Text(message.description)]));
@@ -83,7 +84,7 @@ export var Xliff = (function () {
      */
     Xliff.prototype.digest = function (message) { return digest(message); };
     return Xliff;
-}());
+}(Serializer));
 var _WriteVisitor = (function () {
     function _WriteVisitor() {
     }

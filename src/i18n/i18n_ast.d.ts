@@ -97,3 +97,19 @@ export interface Visitor {
     visitPlaceholder(ph: Placeholder, context?: any): any;
     visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): any;
 }
+export declare class CloneVisitor implements Visitor {
+    visitText(text: Text, context?: any): Text;
+    visitContainer(container: Container, context?: any): Container;
+    visitIcu(icu: Icu, context?: any): Icu;
+    visitTagPlaceholder(ph: TagPlaceholder, context?: any): TagPlaceholder;
+    visitPlaceholder(ph: Placeholder, context?: any): Placeholder;
+    visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): IcuPlaceholder;
+}
+export declare class RecurseVisitor implements Visitor {
+    visitText(text: Text, context?: any): any;
+    visitContainer(container: Container, context?: any): any;
+    visitIcu(icu: Icu, context?: any): any;
+    visitTagPlaceholder(ph: TagPlaceholder, context?: any): any;
+    visitPlaceholder(ph: Placeholder, context?: any): any;
+    visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): any;
+}
