@@ -17,9 +17,12 @@ export function digest(message) {
  * @return {?}
  */
 export function decimalDigest(message) {
+    if (message.id) {
+        return message.id;
+    }
     const /** @type {?} */ visitor = new _SerializerIgnoreIcuExpVisitor();
     const /** @type {?} */ parts = message.nodes.map(a => a.visit(visitor, null));
-    return message.id || computeMsgId(parts.join(''), message.meaning);
+    return computeMsgId(parts.join(''), message.meaning);
 }
 /**
  * Serialize the i18n ast to something xml-like in order to generate an UID.

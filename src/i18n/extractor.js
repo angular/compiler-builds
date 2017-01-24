@@ -43,7 +43,7 @@ export class Extractor {
      */
     extract(rootFiles) {
         const /** @type {?} */ programSymbols = extractProgramSymbols(this.staticSymbolResolver, rootFiles, this.host);
-        const { ngModuleByPipeOrDirective, files, ngModules } = analyzeAndValidateNgModules(programSymbols, this.host, this.metadataResolver);
+        const { files, ngModules } = analyzeAndValidateNgModules(programSymbols, this.host, this.metadataResolver);
         return Promise
             .all(ngModules.map(ngModule => this.metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false)))
             .then(() => {

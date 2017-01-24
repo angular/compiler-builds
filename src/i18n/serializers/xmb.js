@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { decimalDigest } from '../digest';
+import { Serializer, SimplePlaceholderMapper } from './serializer';
 import * as xml from './xml_helper';
 const /** @type {?} */ _MESSAGES_TAG = 'messagebundle';
 const /** @type {?} */ _MESSAGE_TAG = 'msg';
@@ -30,7 +31,7 @@ const /** @type {?} */ _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
 <!ATTLIST ph name CDATA #REQUIRED>
 
 <!ELEMENT ex (#PCDATA)>`;
-export class Xmb {
+export class Xmb extends Serializer {
     /**
      * @param {?} messages
      * @return {?}
@@ -38,15 +39,9 @@ export class Xmb {
     write(messages) {
         const /** @type {?} */ exampleVisitor = new ExampleVisitor();
         const /** @type {?} */ visitor = new _Visitor();
-        const /** @type {?} */ visited = {};
         let /** @type {?} */ rootNode = new xml.Tag(_MESSAGES_TAG);
         messages.forEach(message => {
-            const /** @type {?} */ id = this.digest(message);
-            // deduplicate messages
-            if (visited[id])
-                return;
-            visited[id] = true;
-            const /** @type {?} */ attrs = { id };
+            const /** @type {?} */ attrs = { id: message.id };
             if (message.description) {
                 attrs['desc'] = message.description;
             }
@@ -78,6 +73,13 @@ export class Xmb {
      * @return {?}
      */
     digest(message) { return digest(message); }
+    /**
+     * @param {?} message
+     * @return {?}
+     */
+    createNameMapper(message) {
+        return new SimplePlaceholderMapper(message, toPublicName);
+    }
 }
 class _Visitor {
     /**
@@ -88,7 +90,7 @@ class _Visitor {
     visitText(text, context) { return [new xml.Text(text.value)]; }
     /**
      * @param {?} container
-     * @param {?=} context
+     * @param {?} context
      * @return {?}
      */
     visitContainer(container, context) {
@@ -195,5 +197,12 @@ class ExampleVisitor {
      * @return {?}
      */
     visitDoctype(doctype) { }
+}
+/**
+ * @param {?} internalName
+ * @return {?}
+ */
+export function toPublicName(internalName) {
+    return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 }
 //# sourceMappingURL=xmb.js.map

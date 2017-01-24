@@ -42,7 +42,7 @@ export { PipeResolver } from './src/pipe_resolver';
 export { NgModuleResolver } from './src/ng_module_resolver';
 export { DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig } from './src/ml_parser/interpolation_config';
 export { ElementSchemaRegistry } from './src/schema/element_schema_registry';
-export { Extractor, I18NHtmlParser, MessageBundle, Xliff, Xmb, Xtb } from './src/i18n/index';
+export { Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xmb, Xtb } from './src/i18n/index';
 export { DirectiveNormalizer } from './src/directive_normalizer';
 export { TokenType, Lexer, Token, EOF, isIdentifier, isQuote } from './src/expression_parser/lexer';
 export { SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST } from './src/expression_parser/parser';

@@ -14,11 +14,13 @@ export class TranslationBundle {
     /**
      * @param {?=} _i18nNodesByMsgId
      * @param {?} digest
+     * @param {?=} mapperFactory
      */
-    constructor(_i18nNodesByMsgId = {}, digest) {
+    constructor(_i18nNodesByMsgId = {}, digest, mapperFactory) {
         this._i18nNodesByMsgId = _i18nNodesByMsgId;
         this.digest = digest;
-        this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest);
+        this.mapperFactory = mapperFactory;
+        this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest, mapperFactory);
     }
     /**
      * @param {?} content
@@ -29,7 +31,8 @@ export class TranslationBundle {
     static load(content, url, serializer) {
         const /** @type {?} */ i18nNodesByMsgId = serializer.load(content, url);
         const /** @type {?} */ digestFn = (m) => serializer.digest(m);
-        return new TranslationBundle(i18nNodesByMsgId, digestFn);
+        const /** @type {?} */ mapperFactory = (m) => serializer.createNameMapper(m);
+        return new TranslationBundle(i18nNodesByMsgId, digestFn, mapperFactory);
     }
     /**
      * @param {?} srcMsg
@@ -55,16 +58,20 @@ function TranslationBundle_tsickle_Closure_declarations() {
     TranslationBundle.prototype._i18nNodesByMsgId;
     /** @type {?} */
     TranslationBundle.prototype.digest;
+    /** @type {?} */
+    TranslationBundle.prototype.mapperFactory;
 }
 class I18nToHtmlVisitor {
     /**
      * @param {?=} _i18nNodesByMsgId
      * @param {?} _digest
+     * @param {?} _mapperFactory
      */
-    constructor(_i18nNodesByMsgId = {}, _digest) {
+    constructor(_i18nNodesByMsgId = {}, _digest, _mapperFactory) {
         this._i18nNodesByMsgId = _i18nNodesByMsgId;
         this._digest = _digest;
-        this._srcMsgStack = [];
+        this._mapperFactory = _mapperFactory;
+        this._contextStack = [];
         this._errors = [];
     }
     /**
@@ -72,7 +79,7 @@ class I18nToHtmlVisitor {
      * @return {?}
      */
     convert(srcMsg) {
-        this._srcMsgStack.length = 0;
+        this._contextStack.length = 0;
         this._errors.length = 0;
         // i18n to text
         const /** @type {?} */ text = this._convertToText(srcMsg);
@@ -118,7 +125,7 @@ class I18nToHtmlVisitor {
      * @return {?}
      */
     visitPlaceholder(ph, context) {
-        const /** @type {?} */ phName = ph.name;
+        const /** @type {?} */ phName = this._mapper(ph.name);
         if (this._srcMsg.placeholders.hasOwnProperty(phName)) {
             return this._srcMsg.placeholders[phName];
         }
@@ -141,17 +148,25 @@ class I18nToHtmlVisitor {
      */
     visitIcuPlaceholder(ph, context) { throw 'unreachable code'; }
     /**
+     * Convert a source message to a translated text string:
+     * - text nodes are replaced with their translation,
+     * - placeholders are replaced with their content,
+     * - ICU nodes are converted to ICU expressions.
      * @param {?} srcMsg
      * @return {?}
      */
     _convertToText(srcMsg) {
         const /** @type {?} */ digest = this._digest(srcMsg);
+        const /** @type {?} */ mapper = this._mapperFactory ? this._mapperFactory(srcMsg) : null;
         if (this._i18nNodesByMsgId.hasOwnProperty(digest)) {
-            this._srcMsgStack.push(this._srcMsg);
+            this._contextStack.push({ msg: this._srcMsg, mapper: this._mapper });
             this._srcMsg = srcMsg;
+            this._mapper = (name) => mapper ? mapper.toInternalName(name) : name;
             const /** @type {?} */ nodes = this._i18nNodesByMsgId[digest];
             const /** @type {?} */ text = nodes.map(node => node.visit(this)).join('');
-            this._srcMsg = this._srcMsgStack.pop();
+            const /** @type {?} */ context = this._contextStack.pop();
+            this._srcMsg = context.msg;
+            this._mapper = context.mapper;
             return text;
         }
         this._addError(srcMsg.nodes[0], `Missing translation for message ${digest}`);
@@ -170,12 +185,16 @@ function I18nToHtmlVisitor_tsickle_Closure_declarations() {
     /** @type {?} */
     I18nToHtmlVisitor.prototype._srcMsg;
     /** @type {?} */
-    I18nToHtmlVisitor.prototype._srcMsgStack;
+    I18nToHtmlVisitor.prototype._contextStack;
     /** @type {?} */
     I18nToHtmlVisitor.prototype._errors;
+    /** @type {?} */
+    I18nToHtmlVisitor.prototype._mapper;
     /** @type {?} */
     I18nToHtmlVisitor.prototype._i18nNodesByMsgId;
     /** @type {?} */
     I18nToHtmlVisitor.prototype._digest;
+    /** @type {?} */
+    I18nToHtmlVisitor.prototype._mapperFactory;
 }
 //# sourceMappingURL=translation_bundle.js.map

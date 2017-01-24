@@ -9,11 +9,12 @@ import * as ml from '../../ml_parser/ast';
 import { XmlParser } from '../../ml_parser/xml_parser';
 import * as i18n from '../i18n_ast';
 import { I18nError } from '../parse_util';
-import { digest } from './xmb';
+import { Serializer, SimplePlaceholderMapper } from './serializer';
+import { digest, toPublicName } from './xmb';
 const /** @type {?} */ _TRANSLATIONS_TAG = 'translationbundle';
 const /** @type {?} */ _TRANSLATION_TAG = 'translation';
 const /** @type {?} */ _PLACEHOLDER_TAG = 'ph';
-export class Xtb {
+export class Xtb extends Serializer {
     /**
      * @param {?} messages
      * @return {?}
@@ -46,6 +47,13 @@ export class Xtb {
      * @return {?}
      */
     digest(message) { return digest(message); }
+    /**
+     * @param {?} message
+     * @return {?}
+     */
+    createNameMapper(message) {
+        return new SimplePlaceholderMapper(message, toPublicName);
+    }
 }
 class XtbParser {
     /**

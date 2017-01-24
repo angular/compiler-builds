@@ -10,6 +10,7 @@ import { XmlParser } from '../../ml_parser/xml_parser';
 import { digest } from '../digest';
 import * as i18n from '../i18n_ast';
 import { I18nError } from '../parse_util';
+import { Serializer } from './serializer';
 import * as xml from './xml_helper';
 const /** @type {?} */ _VERSION = '1.2';
 const /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
@@ -19,22 +20,16 @@ const /** @type {?} */ _PLACEHOLDER_TAG = 'x';
 const /** @type {?} */ _SOURCE_TAG = 'source';
 const /** @type {?} */ _TARGET_TAG = 'target';
 const /** @type {?} */ _UNIT_TAG = 'trans-unit';
-export class Xliff {
+export class Xliff extends Serializer {
     /**
      * @param {?} messages
      * @return {?}
      */
     write(messages) {
         const /** @type {?} */ visitor = new _WriteVisitor();
-        const /** @type {?} */ visited = {};
         const /** @type {?} */ transUnits = [];
         messages.forEach(message => {
-            const /** @type {?} */ id = this.digest(message);
-            // deduplicate messages
-            if (visited[id])
-                return;
-            visited[id] = true;
-            const /** @type {?} */ transUnit = new xml.Tag(_UNIT_TAG, { id, datatype: 'html' });
+            const /** @type {?} */ transUnit = new xml.Tag(_UNIT_TAG, { id: message.id, datatype: 'html' });
             transUnit.children.push(new xml.CR(8), new xml.Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new xml.CR(8), new xml.Tag(_TARGET_TAG));
             if (message.description) {
                 transUnit.children.push(new xml.CR(8), new xml.Tag('note', { priority: '1', from: 'description' }, [new xml.Text(message.description)]));

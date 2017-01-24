@@ -207,4 +207,105 @@ function IcuPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     IcuPlaceholder.prototype.sourceSpan;
 }
+export class CloneVisitor {
+    /**
+     * @param {?} text
+     * @param {?=} context
+     * @return {?}
+     */
+    visitText(text, context) { return new Text(text.value, text.sourceSpan); }
+    /**
+     * @param {?} container
+     * @param {?=} context
+     * @return {?}
+     */
+    visitContainer(container, context) {
+        const /** @type {?} */ children = container.children.map(n => n.visit(this, context));
+        return new Container(children, container.sourceSpan);
+    }
+    /**
+     * @param {?} icu
+     * @param {?=} context
+     * @return {?}
+     */
+    visitIcu(icu, context) {
+        const /** @type {?} */ cases = {};
+        Object.keys(icu.cases).forEach(key => cases[key] = icu.cases[key].visit(this, context));
+        const /** @type {?} */ msg = new Icu(icu.expression, icu.type, cases, icu.sourceSpan);
+        msg.expressionPlaceholder = icu.expressionPlaceholder;
+        return msg;
+    }
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitTagPlaceholder(ph, context) {
+        const /** @type {?} */ children = ph.children.map(n => n.visit(this, context));
+        return new TagPlaceholder(ph.tag, ph.attrs, ph.startName, ph.closeName, children, ph.isVoid, ph.sourceSpan);
+    }
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitPlaceholder(ph, context) {
+        return new Placeholder(ph.value, ph.name, ph.sourceSpan);
+    }
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitIcuPlaceholder(ph, context) {
+        return new IcuPlaceholder(ph.value, ph.name, ph.sourceSpan);
+    }
+}
+export class RecurseVisitor {
+    /**
+     * @param {?} text
+     * @param {?=} context
+     * @return {?}
+     */
+    visitText(text, context) { }
+    ;
+    /**
+     * @param {?} container
+     * @param {?=} context
+     * @return {?}
+     */
+    visitContainer(container, context) {
+        container.children.forEach(child => child.visit(this));
+    }
+    /**
+     * @param {?} icu
+     * @param {?=} context
+     * @return {?}
+     */
+    visitIcu(icu, context) {
+        Object.keys(icu.cases).forEach(k => { icu.cases[k].visit(this); });
+    }
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitTagPlaceholder(ph, context) {
+        ph.children.forEach(child => child.visit(this));
+    }
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitPlaceholder(ph, context) { }
+    ;
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitIcuPlaceholder(ph, context) { }
+    ;
+}
 //# sourceMappingURL=i18n_ast.js.map
