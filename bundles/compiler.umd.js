@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.4-1c24271
+ * @license Angular v4.0.0-beta.4-6152eb2
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.4-1c24271');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.4-6152eb2');
 
     /**
      * @license
@@ -1176,7 +1176,7 @@
     var /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
         '([-\\w]+)|' +
         '(?:\\.([-\\w]+))|' +
-        '(?:\\[([.-\\w*]+)(?:=([^\\]]*))?\\])|' +
+        '(?:\\[([-.\\w*]+)(?:=([^\\]]*))?\\])|' +
         '(\\))|' +
         '(\\s*,\\s*)', // ","
     'g');
