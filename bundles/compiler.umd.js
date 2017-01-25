@@ -1176,6 +1176,7 @@
     var /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
         '([-\\w]+)|' +
         '(?:\\.([-\\w]+))|' +
+        // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
         '(?:\\[([-.\\w*]+)(?:=([^\\]]*))?\\])|' +
         '(\\))|' +
         '(\\s*,\\s*)', // ","
