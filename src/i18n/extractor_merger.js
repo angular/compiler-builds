@@ -361,7 +361,10 @@ class _Visitor {
                 const /** @type {?} */ message = this._createI18nMessage([attr], meaning, '', '');
                 const /** @type {?} */ nodes = this._translations.get(message);
                 if (nodes) {
-                    if (nodes[0] instanceof html.Text) {
+                    if (nodes.length == 0) {
+                        translatedAttributes.push(new html.Attribute(attr.name, '', attr.sourceSpan));
+                    }
+                    else if (nodes[0] instanceof html.Text) {
                         const /** @type {?} */ value = ((nodes[0])).value;
                         translatedAttributes.push(new html.Attribute(attr.name, value, attr.sourceSpan));
                     }

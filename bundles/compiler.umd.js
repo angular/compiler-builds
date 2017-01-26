@@ -7568,7 +7568,10 @@
                     var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '', '');
                     var /** @type {?} */ nodes = _this._translations.get(message);
                     if (nodes) {
-                        if (nodes[0] instanceof Text) {
+                        if (nodes.length == 0) {
+                            translatedAttributes.push(new Attribute$1(attr.name, '', attr.sourceSpan));
+                        }
+                        else if (nodes[0] instanceof Text) {
                             var /** @type {?} */ value = ((nodes[0])).value;
                             translatedAttributes.push(new Attribute$1(attr.name, value, attr.sourceSpan));
                         }
