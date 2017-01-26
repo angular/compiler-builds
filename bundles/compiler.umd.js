@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.5-3ef73c2
+ * @license Angular v4.0.0-beta.5-05b2b49
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.5-3ef73c2');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.5-05b2b49');
 
     /**
      * @license
@@ -7568,7 +7568,10 @@
                     var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '', '');
                     var /** @type {?} */ nodes = _this._translations.get(message);
                     if (nodes) {
-                        if (nodes[0] instanceof Text) {
+                        if (nodes.length == 0) {
+                            translatedAttributes.push(new Attribute$1(attr.name, '', attr.sourceSpan));
+                        }
+                        else if (nodes[0] instanceof Text) {
                             var /** @type {?} */ value = ((nodes[0])).value;
                             translatedAttributes.push(new Attribute$1(attr.name, value, attr.sourceSpan));
                         }
