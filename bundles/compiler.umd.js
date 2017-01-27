@@ -4998,6 +4998,48 @@
             }
             return new ParseLocation(this.file, offset, line, col);
         };
+        /**
+         * @param {?} maxChars
+         * @param {?} maxLines
+         * @return {?}
+         */
+        ParseLocation.prototype.getContext = function (maxChars, maxLines) {
+            var /** @type {?} */ content = this.file.content;
+            var /** @type {?} */ startOffset = this.offset;
+            if (isPresent(startOffset)) {
+                if (startOffset > content.length - 1) {
+                    startOffset = content.length - 1;
+                }
+                var /** @type {?} */ endOffset = startOffset;
+                var /** @type {?} */ ctxChars = 0;
+                var /** @type {?} */ ctxLines = 0;
+                while (ctxChars < maxChars && startOffset > 0) {
+                    startOffset--;
+                    ctxChars++;
+                    if (content[startOffset] == '\n') {
+                        if (++ctxLines == maxLines) {
+                            break;
+                        }
+                    }
+                }
+                ctxChars = 0;
+                ctxLines = 0;
+                while (ctxChars < maxChars && endOffset < content.length - 1) {
+                    endOffset++;
+                    ctxChars++;
+                    if (content[endOffset] == '\n') {
+                        if (++ctxLines == maxLines) {
+                            break;
+                        }
+                    }
+                }
+                return {
+                    before: content.substring(startOffset, this.offset),
+                    after: content.substring(this.offset, endOffset + 1),
+                };
+            }
+            return null;
+        };
         return ParseLocation;
     }());
     var ParseSourceFile = (function () {
@@ -5052,44 +5094,9 @@
          * @return {?}
          */
         ParseError.prototype.toString = function () {
-            var /** @type {?} */ source = this.span.start.file.content;
-            var /** @type {?} */ ctxStart = this.span.start.offset;
-            var /** @type {?} */ contextStr = '';
-            var /** @type {?} */ details = '';
-            if (isPresent(ctxStart)) {
-                if (ctxStart > source.length - 1) {
-                    ctxStart = source.length - 1;
-                }
-                var /** @type {?} */ ctxEnd = ctxStart;
-                var /** @type {?} */ ctxLen = 0;
-                var /** @type {?} */ ctxLines = 0;
-                while (ctxLen < 100 && ctxStart > 0) {
-                    ctxStart--;
-                    ctxLen++;
-                    if (source[ctxStart] == '\n') {
-                        if (++ctxLines == 3) {
-                            break;
-                        }
-                    }
-                }
-                ctxLen = 0;
-                ctxLines = 0;
-                while (ctxLen < 100 && ctxEnd < source.length - 1) {
-                    ctxEnd++;
-                    ctxLen++;
-                    if (source[ctxEnd] == '\n') {
-                        if (++ctxLines == 3) {
-                            break;
-                        }
-                    }
-                }
-                var /** @type {?} */ context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
-                    source.substring(this.span.start.offset, ctxEnd + 1);
-                contextStr = " (\"" + context + "\")";
-            }
-            if (this.span.details) {
-                details = ", " + this.span.details;
-            }
+            var /** @type {?} */ ctx = this.span.start.getContext(100, 3);
+            var /** @type {?} */ contextStr = ctx ? " (\"" + ctx.before + "[ERROR ->]" + ctx.after + "\")" : '';
+            var /** @type {?} */ details = this.span.details ? ", " + this.span.details : '';
             return "" + this.msg + contextStr + ": " + this.span.start + details;
         };
         return ParseError;
@@ -9160,10 +9167,18 @@
             // xml nodes to i18n nodes
             var /** @type {?} */ i18nNodesByMsgId = {};
             var /** @type {?} */ converter = new XmlToI18n$1();
+            // Because we should be able to load xtb files that rely on features not supported by angular,
+            // we need to delay the conversion of html to i18n nodes so that non angular messages are not
+            // converted
             Object.keys(mlNodesByMsgId).forEach(function (msgId) {
-                var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, e = _a.errors;
-                errors.push.apply(errors, e);
-                i18nNodesByMsgId[msgId] = i18nNodes;
+                var /** @type {?} */ valueFn = function () {
+                    var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, errors = _a.errors;
+                    if (errors.length) {
+                        throw new Error("xtb parse errors:\n" + errors.join('\n'));
+                    }
+                    return i18nNodes;
+                };
+                createLazyProperty(i18nNodesByMsgId, msgId, valueFn);
             });
             if (errors.length) {
                 throw new Error("xtb parse errors:\n" + errors.join('\n'));
@@ -9184,6 +9199,24 @@
         };
         return Xtb;
     }(Serializer));
+    /**
+     * @param {?} messages
+     * @param {?} id
+     * @param {?} valueFn
+     * @return {?}
+     */
+    function createLazyProperty(messages, id, valueFn) {
+        Object.defineProperty(messages, id, {
+            configurable: true,
+            enumerable: true,
+            get: function () {
+                var /** @type {?} */ value = valueFn();
+                Object.defineProperty(messages, id, { enumerable: true, value: value });
+                return value;
+            },
+            set: function (_) { throw new Error('Could not overwrite an XTB translation'); },
+        });
+    }
     var XtbParser = (function () {
         function XtbParser() {
         }
@@ -9413,25 +9446,30 @@
          * @param {?=} _i18nNodesByMsgId
          * @param {?} digest
          * @param {?=} mapperFactory
+         * @param {?=} missingTranslationStrategy
+         * @param {?=} console
          */
-        function TranslationBundle(_i18nNodesByMsgId, digest, mapperFactory) {
+        function TranslationBundle(_i18nNodesByMsgId, digest, mapperFactory, missingTranslationStrategy, console) {
             if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
+            if (missingTranslationStrategy === void 0) { missingTranslationStrategy = _angular_core.MissingTranslationStrategy.Warning; }
             this._i18nNodesByMsgId = _i18nNodesByMsgId;
             this.digest = digest;
             this.mapperFactory = mapperFactory;
-            this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest, mapperFactory);
+            this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest, mapperFactory, missingTranslationStrategy, console);
         }
         /**
          * @param {?} content
          * @param {?} url
          * @param {?} serializer
+         * @param {?} missingTranslationStrategy
+         * @param {?=} console
          * @return {?}
          */
-        TranslationBundle.load = function (content, url, serializer) {
+        TranslationBundle.load = function (content, url, serializer, missingTranslationStrategy, console) {
             var /** @type {?} */ i18nNodesByMsgId = serializer.load(content, url);
             var /** @type {?} */ digestFn = function (m) { return serializer.digest(m); };
             var /** @type {?} */ mapperFactory = function (m) { return serializer.createNameMapper(m); };
-            return new TranslationBundle(i18nNodesByMsgId, digestFn, mapperFactory);
+            return new TranslationBundle(i18nNodesByMsgId, digestFn, mapperFactory, missingTranslationStrategy, console);
         };
         /**
          * @param {?} srcMsg
@@ -9456,12 +9494,16 @@
          * @param {?=} _i18nNodesByMsgId
          * @param {?} _digest
          * @param {?} _mapperFactory
+         * @param {?} _missingTranslationStrategy
+         * @param {?=} _console
          */
-        function I18nToHtmlVisitor(_i18nNodesByMsgId, _digest, _mapperFactory) {
+        function I18nToHtmlVisitor(_i18nNodesByMsgId, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
             if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
             this._i18nNodesByMsgId = _i18nNodesByMsgId;
             this._digest = _digest;
             this._mapperFactory = _mapperFactory;
+            this._missingTranslationStrategy = _missingTranslationStrategy;
+            this._console = _console;
             this._contextStack = [];
             this._errors = [];
         }
@@ -9525,7 +9567,7 @@
             if (this._srcMsg.placeholderToMessage.hasOwnProperty(phName)) {
                 return this._convertToText(this._srcMsg.placeholderToMessage[phName]);
             }
-            this._addError(ph, "Unknown placeholder");
+            this._addError(ph, "Unknown placeholder \"" + ph.name + "\"");
             return '';
         };
         /**
@@ -9533,13 +9575,25 @@
          * @param {?=} context
          * @return {?}
          */
-        I18nToHtmlVisitor.prototype.visitTagPlaceholder = function (ph, context) { throw 'unreachable code'; };
+        I18nToHtmlVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+            var _this = this;
+            var /** @type {?} */ tag = "" + ph.tag;
+            var /** @type {?} */ attrs = Object.keys(ph.attrs).map(function (name) { return (name + "=\"" + ph.attrs[name] + "\""); }).join(' ');
+            if (ph.isVoid) {
+                return "<" + tag + " " + attrs + "/>";
+            }
+            var /** @type {?} */ children = ph.children.map(function (c) { return c.visit(_this); }).join('');
+            return "<" + tag + " " + attrs + ">" + children + "</" + tag + ">";
+        };
         /**
          * @param {?} ph
          * @param {?=} context
          * @return {?}
          */
-        I18nToHtmlVisitor.prototype.visitIcuPlaceholder = function (ph, context) { throw 'unreachable code'; };
+        I18nToHtmlVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
+            // An ICU placeholder references the source message to be serialized
+            return this._convertToText(this._srcMsg.placeholderToMessage[ph.name]);
+        };
         /**
          * Convert a source message to a translated text string:
          * - text nodes are replaced with their translation,
@@ -9550,21 +9604,37 @@
          */
         I18nToHtmlVisitor.prototype._convertToText = function (srcMsg) {
             var _this = this;
-            var /** @type {?} */ digest = this._digest(srcMsg);
+            var /** @type {?} */ id = this._digest(srcMsg);
             var /** @type {?} */ mapper = this._mapperFactory ? this._mapperFactory(srcMsg) : null;
-            if (this._i18nNodesByMsgId.hasOwnProperty(digest)) {
-                this._contextStack.push({ msg: this._srcMsg, mapper: this._mapper });
-                this._srcMsg = srcMsg;
+            var /** @type {?} */ nodes;
+            this._contextStack.push({ msg: this._srcMsg, mapper: this._mapper });
+            this._srcMsg = srcMsg;
+            if (this._i18nNodesByMsgId.hasOwnProperty(id)) {
+                // When there is a translation use its nodes as the source
+                // And create a mapper to convert serialized placeholder names to internal names
+                nodes = this._i18nNodesByMsgId[id];
                 this._mapper = function (name) { return mapper ? mapper.toInternalName(name) : name; };
-                var /** @type {?} */ nodes = this._i18nNodesByMsgId[digest];
-                var /** @type {?} */ text = nodes.map(function (node) { return node.visit(_this); }).join('');
-                var /** @type {?} */ context = this._contextStack.pop();
-                this._srcMsg = context.msg;
-                this._mapper = context.mapper;
-                return text;
             }
-            this._addError(srcMsg.nodes[0], "Missing translation for message " + digest);
-            return '';
+            else {
+                // When no translation has been found
+                // - report an error / a warning / nothing,
+                // - use the nodes from the original message
+                // - placeholders are already internal and need no mapper
+                if (this._missingTranslationStrategy === _angular_core.MissingTranslationStrategy.Error) {
+                    this._addError(srcMsg.nodes[0], "Missing translation for message \"" + id + "\"");
+                }
+                else if (this._console &&
+                    this._missingTranslationStrategy === _angular_core.MissingTranslationStrategy.Warning) {
+                    this._console.warn("Missing translation for message \"" + id + "\"");
+                }
+                nodes = srcMsg.nodes;
+                this._mapper = function (name) { return name; };
+            }
+            var /** @type {?} */ text = nodes.map(function (node) { return node.visit(_this); }).join('');
+            var /** @type {?} */ context = this._contextStack.pop();
+            this._srcMsg = context.msg;
+            this._mapper = context.mapper;
+            return text;
         };
         /**
          * @param {?} el
@@ -9582,11 +9652,16 @@
          * @param {?} _htmlParser
          * @param {?=} _translations
          * @param {?=} _translationsFormat
+         * @param {?=} _missingTranslation
+         * @param {?=} _console
          */
-        function I18NHtmlParser(_htmlParser, _translations, _translationsFormat) {
+        function I18NHtmlParser(_htmlParser, _translations, _translationsFormat, _missingTranslation, _console) {
+            if (_missingTranslation === void 0) { _missingTranslation = _angular_core.MissingTranslationStrategy.Warning; }
             this._htmlParser = _htmlParser;
             this._translations = _translations;
             this._translationsFormat = _translationsFormat;
+            this._missingTranslation = _missingTranslation;
+            this._console = _console;
         }
         /**
          * @param {?} source
@@ -9608,7 +9683,7 @@
                 return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
             }
             var /** @type {?} */ serializer = this._createSerializer();
-            var /** @type {?} */ translationBundle = TranslationBundle.load(this._translations, url, serializer);
+            var /** @type {?} */ translationBundle = TranslationBundle.load(this._translations, url, serializer, this._missingTranslation, this._console);
             return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
         };
         /**
@@ -12448,23 +12523,18 @@
         return Array.from(map.values());
     }
 
-    /**
-     * @return {?}
-     */
-    function unimplemented$2() {
-        throw new Error('unimplemented');
-    }
     var CompilerConfig = (function () {
         /**
          * @param {?=} __0
          */
         function CompilerConfig(_a) {
-            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e;
+            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, missingTranslation = _b.missingTranslation;
             this.renderTypes = renderTypes;
             this.defaultEncapsulation = defaultEncapsulation;
             this._genDebugInfo = genDebugInfo;
             this._logBindingUpdate = logBindingUpdate;
             this.useJit = useJit;
+            this.missingTranslation = missingTranslation;
         }
         Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
             /**
@@ -12497,54 +12567,36 @@
     var RenderTypes = (function () {
         function RenderTypes() {
         }
-        Object.defineProperty(RenderTypes.prototype, "renderer", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderText", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderElement", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderComment", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderNode", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderEvent", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderer = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderText = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderElement = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderComment = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderNode = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderEvent = function () { };
         return RenderTypes;
     }());
     var DefaultRenderTypes = (function () {
@@ -26179,7 +26231,7 @@
                     if (e.fileName) {
                         throw positionalError(message, e.fileName, e.line, e.column);
                     }
-                    throw new Error(message);
+                    throw new SyntaxError(message);
                 }
             }
             var /** @type {?} */ recordedSimplifyInContext = function (context, value, depth) {
@@ -26837,7 +26889,8 @@
         var /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
         var /** @type {?} */ staticReflector = new StaticReflector(symbolResolver);
         StaticAndDynamicReflectionCapabilities.install(staticReflector);
-        var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat);
+        var /** @type {?} */ console = new Console();
+        var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, _angular_core.MissingTranslationStrategy.Warning, console);
         var /** @type {?} */ config = new CompilerConfig({
             genDebugInfo: options.debug === true,
             defaultEncapsulation: _angular_core.ViewEncapsulation.Emulated,
@@ -26847,7 +26900,6 @@
         var /** @type {?} */ normalizer = new DirectiveNormalizer({ get: function (url) { return compilerHost.loadResource(url); } }, urlResolver, htmlParser, config);
         var /** @type {?} */ expressionParser = new Parser(new Lexer());
         var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-        var /** @type {?} */ console = new Console();
         var /** @type {?} */ tmplParser = new TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
         var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
         // TODO(vicb): do not pass options.i18nFormat here
@@ -28398,13 +28450,15 @@
         },
         {
             provide: I18NHtmlParser,
-            useFactory: function (parser, translations, format) {
-                return new I18NHtmlParser(parser, translations, format);
+            useFactory: function (parser, translations, format, config, console) {
+                return new I18NHtmlParser(parser, translations, format, config.missingTranslation, console);
             },
             deps: [
                 baseHtmlParser,
                 [new _angular_core.Optional(), new _angular_core.Inject(_angular_core.TRANSLATIONS)],
                 [new _angular_core.Optional(), new _angular_core.Inject(_angular_core.TRANSLATIONS_FORMAT)],
+                [CompilerConfig],
+                [Console],
             ]
         },
         {
@@ -28428,7 +28482,7 @@
         DirectiveResolver,
         PipeResolver,
         NgModuleResolver,
-        AnimationParser
+        AnimationParser,
     ];
     var JitCompilerFactory = (function () {
         /**
@@ -28438,7 +28492,8 @@
             this._defaultOptions = [{
                     useDebug: _angular_core.isDevMode(),
                     useJit: true,
-                    defaultEncapsulation: _angular_core.ViewEncapsulation.Emulated
+                    defaultEncapsulation: _angular_core.ViewEncapsulation.Emulated,
+                    missingTranslation: _angular_core.MissingTranslationStrategy.Warning,
                 }].concat(defaultOptions);
         }
         /**
@@ -28447,7 +28502,7 @@
          */
         JitCompilerFactory.prototype.createCompiler = function (options) {
             if (options === void 0) { options = []; }
-            var /** @type {?} */ mergedOptions = _mergeOptions(this._defaultOptions.concat(options));
+            var /** @type {?} */ opts = _mergeOptions(this._defaultOptions.concat(options));
             var /** @type {?} */ injector = _angular_core.ReflectiveInjector.resolveAndCreate([
                 COMPILER_PROVIDERS, {
                     provide: CompilerConfig,
@@ -28455,19 +28510,20 @@
                         return new CompilerConfig({
                             // let explicit values from the compiler options overwrite options
                             // from the app providers. E.g. important for the testing platform.
-                            genDebugInfo: mergedOptions.useDebug,
+                            genDebugInfo: opts.useDebug,
                             // let explicit values from the compiler options overwrite options
                             // from the app providers
-                            useJit: mergedOptions.useJit,
+                            useJit: opts.useJit,
                             // let explicit values from the compiler options overwrite options
                             // from the app providers
-                            defaultEncapsulation: mergedOptions.defaultEncapsulation,
-                            logBindingUpdate: mergedOptions.useDebug
+                            defaultEncapsulation: opts.defaultEncapsulation,
+                            logBindingUpdate: opts.useDebug,
+                            missingTranslation: opts.missingTranslation,
                         });
                     },
                     deps: []
                 },
-                mergedOptions.providers
+                opts.providers
             ]);
             return injector.get(_angular_core.Compiler);
         };
@@ -28506,7 +28562,8 @@
             useDebug: _lastDefined(optionsArr.map(function (options) { return options.useDebug; })),
             useJit: _lastDefined(optionsArr.map(function (options) { return options.useJit; })),
             defaultEncapsulation: _lastDefined(optionsArr.map(function (options) { return options.defaultEncapsulation; })),
-            providers: _mergeArrays(optionsArr.map(function (options) { return options.providers; }))
+            providers: _mergeArrays(optionsArr.map(function (options) { return options.providers; })),
+            missingTranslation: _lastDefined(optionsArr.map(function (options) { return options.missingTranslation; })),
         };
     }
     /**

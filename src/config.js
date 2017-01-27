@@ -7,22 +7,17 @@
  */
 import { ViewEncapsulation, isDevMode } from '@angular/core/index';
 import { Identifiers, createIdentifier } from './identifiers';
-/**
- * @return {?}
- */
-function unimplemented() {
-    throw new Error('unimplemented');
-}
 export class CompilerConfig {
     /**
      * @param {?=} __0
      */
-    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true } = {}) {
+    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true, missingTranslation } = {}) {
         this.renderTypes = renderTypes;
         this.defaultEncapsulation = defaultEncapsulation;
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
+        this.missingTranslation = missingTranslation;
     }
     /**
      * @return {?}
@@ -48,6 +43,8 @@ function CompilerConfig_tsickle_Closure_declarations() {
     CompilerConfig.prototype._logBindingUpdate;
     /** @type {?} */
     CompilerConfig.prototype.useJit;
+    /** @type {?} */
+    CompilerConfig.prototype.missingTranslation;
 }
 /**
  * Types used for the renderer.
@@ -57,29 +54,35 @@ function CompilerConfig_tsickle_Closure_declarations() {
  */
 export class RenderTypes {
     /**
+     * @abstract
      * @return {?}
      */
-    get renderer() { return unimplemented(); }
+    renderer() { }
     /**
+     * @abstract
      * @return {?}
      */
-    get renderText() { return unimplemented(); }
+    renderText() { }
     /**
+     * @abstract
      * @return {?}
      */
-    get renderElement() { return unimplemented(); }
+    renderElement() { }
     /**
+     * @abstract
      * @return {?}
      */
-    get renderComment() { return unimplemented(); }
+    renderComment() { }
     /**
+     * @abstract
      * @return {?}
      */
-    get renderNode() { return unimplemented(); }
+    renderNode() { }
     /**
+     * @abstract
      * @return {?}
      */
-    get renderEvent() { return unimplemented(); }
+    renderEvent() { }
 }
 export class DefaultRenderTypes {
     constructor() {

@@ -14,7 +14,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { COMPILER_OPTIONS, Compiler, CompilerFactory, Inject, InjectionToken, Optional, PLATFORM_INITIALIZER, ReflectiveInjector, TRANSLATIONS, TRANSLATIONS_FORMAT, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core/index';
+import { COMPILER_OPTIONS, Compiler, CompilerFactory, Inject, InjectionToken, MissingTranslationStrategy, Optional, PLATFORM_INITIALIZER, ReflectiveInjector, TRANSLATIONS, TRANSLATIONS_FORMAT, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core/index';
 import { AnimationParser } from '../animation/animation_parser';
 import { CompilerConfig } from '../config';
 import { DirectiveNormalizer } from '../directive_normalizer';
@@ -67,11 +67,13 @@ export const /** @type {?} */ COMPILER_PROVIDERS = [
     },
     {
         provide: i18n.I18NHtmlParser,
-        useFactory: (parser, translations, format) => new i18n.I18NHtmlParser(parser, translations, format),
+        useFactory: (parser, translations, format, config, console) => new i18n.I18NHtmlParser(parser, translations, format, config.missingTranslation, console),
         deps: [
             baseHtmlParser,
             [new Optional(), new Inject(TRANSLATIONS)],
             [new Optional(), new Inject(TRANSLATIONS_FORMAT)],
+            [CompilerConfig],
+            [Console],
         ]
     },
     {
@@ -95,7 +97,7 @@ export const /** @type {?} */ COMPILER_PROVIDERS = [
     DirectiveResolver,
     PipeResolver,
     NgModuleResolver,
-    AnimationParser
+    AnimationParser,
 ];
 export let JitCompilerFactory = class JitCompilerFactory {
     /**
@@ -105,7 +107,8 @@ export let JitCompilerFactory = class JitCompilerFactory {
         this._defaultOptions = [{
                 useDebug: isDevMode(),
                 useJit: true,
-                defaultEncapsulation: ViewEncapsulation.Emulated
+                defaultEncapsulation: ViewEncapsulation.Emulated,
+                missingTranslation: MissingTranslationStrategy.Warning,
             }].concat(defaultOptions);
     }
     /**
@@ -113,7 +116,7 @@ export let JitCompilerFactory = class JitCompilerFactory {
      * @return {?}
      */
     createCompiler(options = []) {
-        const /** @type {?} */ mergedOptions = _mergeOptions(this._defaultOptions.concat(options));
+        const /** @type {?} */ opts = _mergeOptions(this._defaultOptions.concat(options));
         const /** @type {?} */ injector = ReflectiveInjector.resolveAndCreate([
             COMPILER_PROVIDERS, {
                 provide: CompilerConfig,
@@ -121,19 +124,20 @@ export let JitCompilerFactory = class JitCompilerFactory {
                     return new CompilerConfig({
                         // let explicit values from the compiler options overwrite options
                         // from the app providers. E.g. important for the testing platform.
-                        genDebugInfo: mergedOptions.useDebug,
+                        genDebugInfo: opts.useDebug,
                         // let explicit values from the compiler options overwrite options
                         // from the app providers
-                        useJit: mergedOptions.useJit,
+                        useJit: opts.useJit,
                         // let explicit values from the compiler options overwrite options
                         // from the app providers
-                        defaultEncapsulation: mergedOptions.defaultEncapsulation,
-                        logBindingUpdate: mergedOptions.useDebug
+                        defaultEncapsulation: opts.defaultEncapsulation,
+                        logBindingUpdate: opts.useDebug,
+                        missingTranslation: opts.missingTranslation,
                     });
                 },
                 deps: []
             },
-            mergedOptions.providers
+            opts.providers
         ]);
         return injector.get(Compiler);
     }
@@ -180,7 +184,8 @@ function _mergeOptions(optionsArr) {
         useDebug: _lastDefined(optionsArr.map(options => options.useDebug)),
         useJit: _lastDefined(optionsArr.map(options => options.useJit)),
         defaultEncapsulation: _lastDefined(optionsArr.map(options => options.defaultEncapsulation)),
-        providers: _mergeArrays(optionsArr.map(options => options.providers))
+        providers: _mergeArrays(optionsArr.map(options => options.providers)),
+        missingTranslation: _lastDefined(optionsArr.map(options => options.missingTranslation)),
     };
 }
 /**

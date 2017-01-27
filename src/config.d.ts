@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ViewEncapsulation } from '@angular/core';
+import { MissingTranslationStrategy, ViewEncapsulation } from '@angular/core';
 import { CompileIdentifierMetadata } from './compile_metadata';
 export declare class CompilerConfig {
     renderTypes: RenderTypes;
@@ -13,12 +13,14 @@ export declare class CompilerConfig {
     private _genDebugInfo;
     private _logBindingUpdate;
     useJit: boolean;
-    constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit}?: {
+    missingTranslation: MissingTranslationStrategy;
+    constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, missingTranslation}?: {
         renderTypes?: RenderTypes;
         defaultEncapsulation?: ViewEncapsulation;
         genDebugInfo?: boolean;
         logBindingUpdate?: boolean;
         useJit?: boolean;
+        missingTranslation?: MissingTranslationStrategy;
     });
     readonly genDebugInfo: boolean;
     readonly logBindingUpdate: boolean;
@@ -29,12 +31,12 @@ export declare class CompilerConfig {
  * to help tree shaking.
  */
 export declare abstract class RenderTypes {
-    readonly renderer: CompileIdentifierMetadata;
-    readonly renderText: CompileIdentifierMetadata;
-    readonly renderElement: CompileIdentifierMetadata;
-    readonly renderComment: CompileIdentifierMetadata;
-    readonly renderNode: CompileIdentifierMetadata;
-    readonly renderEvent: CompileIdentifierMetadata;
+    readonly abstract renderer: CompileIdentifierMetadata;
+    readonly abstract renderText: CompileIdentifierMetadata;
+    readonly abstract renderElement: CompileIdentifierMetadata;
+    readonly abstract renderComment: CompileIdentifierMetadata;
+    readonly abstract renderNode: CompileIdentifierMetadata;
+    readonly abstract renderEvent: CompileIdentifierMetadata;
 }
 export declare class DefaultRenderTypes implements RenderTypes {
     readonly renderer: CompileIdentifierMetadata;

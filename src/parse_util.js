@@ -56,6 +56,48 @@ export class ParseLocation {
         }
         return new ParseLocation(this.file, offset, line, col);
     }
+    /**
+     * @param {?} maxChars
+     * @param {?} maxLines
+     * @return {?}
+     */
+    getContext(maxChars, maxLines) {
+        const /** @type {?} */ content = this.file.content;
+        let /** @type {?} */ startOffset = this.offset;
+        if (isPresent(startOffset)) {
+            if (startOffset > content.length - 1) {
+                startOffset = content.length - 1;
+            }
+            let /** @type {?} */ endOffset = startOffset;
+            let /** @type {?} */ ctxChars = 0;
+            let /** @type {?} */ ctxLines = 0;
+            while (ctxChars < maxChars && startOffset > 0) {
+                startOffset--;
+                ctxChars++;
+                if (content[startOffset] == '\n') {
+                    if (++ctxLines == maxLines) {
+                        break;
+                    }
+                }
+            }
+            ctxChars = 0;
+            ctxLines = 0;
+            while (ctxChars < maxChars && endOffset < content.length - 1) {
+                endOffset++;
+                ctxChars++;
+                if (content[endOffset] == '\n') {
+                    if (++ctxLines == maxLines) {
+                        break;
+                    }
+                }
+            }
+            return {
+                before: content.substring(startOffset, this.offset),
+                after: content.substring(this.offset, endOffset + 1),
+            };
+        }
+        return null;
+    }
 }
 function ParseLocation_tsickle_Closure_declarations() {
     /** @type {?} */
@@ -129,44 +171,9 @@ export class ParseError {
      * @return {?}
      */
     toString() {
-        const /** @type {?} */ source = this.span.start.file.content;
-        let /** @type {?} */ ctxStart = this.span.start.offset;
-        let /** @type {?} */ contextStr = '';
-        let /** @type {?} */ details = '';
-        if (isPresent(ctxStart)) {
-            if (ctxStart > source.length - 1) {
-                ctxStart = source.length - 1;
-            }
-            let /** @type {?} */ ctxEnd = ctxStart;
-            let /** @type {?} */ ctxLen = 0;
-            let /** @type {?} */ ctxLines = 0;
-            while (ctxLen < 100 && ctxStart > 0) {
-                ctxStart--;
-                ctxLen++;
-                if (source[ctxStart] == '\n') {
-                    if (++ctxLines == 3) {
-                        break;
-                    }
-                }
-            }
-            ctxLen = 0;
-            ctxLines = 0;
-            while (ctxLen < 100 && ctxEnd < source.length - 1) {
-                ctxEnd++;
-                ctxLen++;
-                if (source[ctxEnd] == '\n') {
-                    if (++ctxLines == 3) {
-                        break;
-                    }
-                }
-            }
-            const /** @type {?} */ context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
-                source.substring(this.span.start.offset, ctxEnd + 1);
-            contextStr = ` ("${context}")`;
-        }
-        if (this.span.details) {
-            details = `, ${this.span.details}`;
-        }
+        const /** @type {?} */ ctx = this.span.start.getContext(100, 3);
+        const /** @type {?} */ contextStr = ctx ? ` ("${ctx.before}[ERROR ->]${ctx.after}")` : '';
+        const /** @type {?} */ details = this.span.details ? `, ${this.span.details}` : '';
         return `${this.msg}${contextStr}: ${this.span.start}${details}`;
     }
 }
