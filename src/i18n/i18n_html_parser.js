@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { MissingTranslationStrategy } from '@angular/core';
 import { DEFAULT_INTERPOLATION_CONFIG } from '../ml_parser/interpolation_config';
 import { ParseTreeResult } from '../ml_parser/parser';
 import { mergeTranslations } from './extractor_merger';
@@ -17,11 +18,16 @@ export var I18NHtmlParser = (function () {
      * @param {?} _htmlParser
      * @param {?=} _translations
      * @param {?=} _translationsFormat
+     * @param {?=} _missingTranslation
+     * @param {?=} _console
      */
-    function I18NHtmlParser(_htmlParser, _translations, _translationsFormat) {
+    function I18NHtmlParser(_htmlParser, _translations, _translationsFormat, _missingTranslation, _console) {
+        if (_missingTranslation === void 0) { _missingTranslation = MissingTranslationStrategy.Warning; }
         this._htmlParser = _htmlParser;
         this._translations = _translations;
         this._translationsFormat = _translationsFormat;
+        this._missingTranslation = _missingTranslation;
+        this._console = _console;
     }
     /**
      * @param {?} source
@@ -43,7 +49,7 @@ export var I18NHtmlParser = (function () {
             return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
         }
         var /** @type {?} */ serializer = this._createSerializer();
-        var /** @type {?} */ translationBundle = TranslationBundle.load(this._translations, url, serializer);
+        var /** @type {?} */ translationBundle = TranslationBundle.load(this._translations, url, serializer, this._missingTranslation, this._console);
         return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
     };
     /**
@@ -73,5 +79,9 @@ function I18NHtmlParser_tsickle_Closure_declarations() {
     I18NHtmlParser.prototype._translations;
     /** @type {?} */
     I18NHtmlParser.prototype._translationsFormat;
+    /** @type {?} */
+    I18NHtmlParser.prototype._missingTranslation;
+    /** @type {?} */
+    I18NHtmlParser.prototype._console;
 }
 //# sourceMappingURL=i18n_html_parser.js.map

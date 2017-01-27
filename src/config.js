@@ -7,23 +7,18 @@
  */
 import { ViewEncapsulation, isDevMode } from '@angular/core';
 import { Identifiers, createIdentifier } from './identifiers';
-/**
- * @return {?}
- */
-function unimplemented() {
-    throw new Error('unimplemented');
-}
 export var CompilerConfig = (function () {
     /**
      * @param {?=} __0
      */
     function CompilerConfig(_a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e;
+        var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, missingTranslation = _b.missingTranslation;
         this.renderTypes = renderTypes;
         this.defaultEncapsulation = defaultEncapsulation;
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
+        this.missingTranslation = missingTranslation;
     }
     Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
         /**
@@ -58,6 +53,8 @@ function CompilerConfig_tsickle_Closure_declarations() {
     CompilerConfig.prototype._logBindingUpdate;
     /** @type {?} */
     CompilerConfig.prototype.useJit;
+    /** @type {?} */
+    CompilerConfig.prototype.missingTranslation;
 }
 /**
  * Types used for the renderer.
@@ -68,54 +65,36 @@ function CompilerConfig_tsickle_Closure_declarations() {
 export var RenderTypes = (function () {
     function RenderTypes() {
     }
-    Object.defineProperty(RenderTypes.prototype, "renderer", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderText", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderElement", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderComment", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderNode", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(RenderTypes.prototype, "renderEvent", {
-        /**
-         * @return {?}
-         */
-        get: function () { return unimplemented(); },
-        enumerable: true,
-        configurable: true
-    });
+    /**
+     * @abstract
+     * @return {?}
+     */
+    RenderTypes.prototype.renderer = function () { };
+    /**
+     * @abstract
+     * @return {?}
+     */
+    RenderTypes.prototype.renderText = function () { };
+    /**
+     * @abstract
+     * @return {?}
+     */
+    RenderTypes.prototype.renderElement = function () { };
+    /**
+     * @abstract
+     * @return {?}
+     */
+    RenderTypes.prototype.renderComment = function () { };
+    /**
+     * @abstract
+     * @return {?}
+     */
+    RenderTypes.prototype.renderNode = function () { };
+    /**
+     * @abstract
+     * @return {?}
+     */
+    RenderTypes.prototype.renderEvent = function () { };
     return RenderTypes;
 }());
 export var DefaultRenderTypes = (function () {

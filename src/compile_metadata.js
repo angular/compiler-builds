@@ -17,12 +17,6 @@ import { isPresent, stringify } from './facade/lang';
 import { reflector } from './private_import_core';
 import { CssSelector } from './selector';
 import { splitAtColon } from './util';
-/**
- * @return {?}
- */
-function unimplemented() {
-    throw new Error('unimplemented');
-}
 // group 0: "[prop] or (event) or @trigger"
 // group 1: "prop" from "[prop]"
 // group 2: "event" from "(event)"

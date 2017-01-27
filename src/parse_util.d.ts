@@ -6,6 +6,10 @@ export declare class ParseLocation {
     constructor(file: ParseSourceFile, offset: number, line: number, col: number);
     toString(): string;
     moveBy(delta: number): ParseLocation;
+    getContext(maxChars: number, maxLines: number): {
+        before: string;
+        after: string;
+    };
 }
 export declare class ParseSourceFile {
     content: string;

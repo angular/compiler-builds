@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { MissingTranslationStrategy } from '@angular/core';
 import { HtmlParser } from '../ml_parser/html_parser';
 import { I18nError } from './parse_util';
 /**
@@ -15,25 +16,30 @@ export var TranslationBundle = (function () {
      * @param {?=} _i18nNodesByMsgId
      * @param {?} digest
      * @param {?=} mapperFactory
+     * @param {?=} missingTranslationStrategy
+     * @param {?=} console
      */
-    function TranslationBundle(_i18nNodesByMsgId, digest, mapperFactory) {
+    function TranslationBundle(_i18nNodesByMsgId, digest, mapperFactory, missingTranslationStrategy, console) {
         if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
+        if (missingTranslationStrategy === void 0) { missingTranslationStrategy = MissingTranslationStrategy.Warning; }
         this._i18nNodesByMsgId = _i18nNodesByMsgId;
         this.digest = digest;
         this.mapperFactory = mapperFactory;
-        this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest, mapperFactory);
+        this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest, mapperFactory, missingTranslationStrategy, console);
     }
     /**
      * @param {?} content
      * @param {?} url
      * @param {?} serializer
+     * @param {?} missingTranslationStrategy
+     * @param {?=} console
      * @return {?}
      */
-    TranslationBundle.load = function (content, url, serializer) {
+    TranslationBundle.load = function (content, url, serializer, missingTranslationStrategy, console) {
         var /** @type {?} */ i18nNodesByMsgId = serializer.load(content, url);
         var /** @type {?} */ digestFn = function (m) { return serializer.digest(m); };
         var /** @type {?} */ mapperFactory = function (m) { return serializer.createNameMapper(m); };
-        return new TranslationBundle(i18nNodesByMsgId, digestFn, mapperFactory);
+        return new TranslationBundle(i18nNodesByMsgId, digestFn, mapperFactory, missingTranslationStrategy, console);
     };
     /**
      * @param {?} srcMsg
@@ -68,12 +74,16 @@ var I18nToHtmlVisitor = (function () {
      * @param {?=} _i18nNodesByMsgId
      * @param {?} _digest
      * @param {?} _mapperFactory
+     * @param {?} _missingTranslationStrategy
+     * @param {?=} _console
      */
-    function I18nToHtmlVisitor(_i18nNodesByMsgId, _digest, _mapperFactory) {
+    function I18nToHtmlVisitor(_i18nNodesByMsgId, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
         if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
         this._i18nNodesByMsgId = _i18nNodesByMsgId;
         this._digest = _digest;
         this._mapperFactory = _mapperFactory;
+        this._missingTranslationStrategy = _missingTranslationStrategy;
+        this._console = _console;
         this._contextStack = [];
         this._errors = [];
     }
@@ -137,7 +147,7 @@ var I18nToHtmlVisitor = (function () {
         if (this._srcMsg.placeholderToMessage.hasOwnProperty(phName)) {
             return this._convertToText(this._srcMsg.placeholderToMessage[phName]);
         }
-        this._addError(ph, "Unknown placeholder");
+        this._addError(ph, "Unknown placeholder \"" + ph.name + "\"");
         return '';
     };
     /**
@@ -145,13 +155,25 @@ var I18nToHtmlVisitor = (function () {
      * @param {?=} context
      * @return {?}
      */
-    I18nToHtmlVisitor.prototype.visitTagPlaceholder = function (ph, context) { throw 'unreachable code'; };
+    I18nToHtmlVisitor.prototype.visitTagPlaceholder = function (ph, context) {
+        var _this = this;
+        var /** @type {?} */ tag = "" + ph.tag;
+        var /** @type {?} */ attrs = Object.keys(ph.attrs).map(function (name) { return (name + "=\"" + ph.attrs[name] + "\""); }).join(' ');
+        if (ph.isVoid) {
+            return "<" + tag + " " + attrs + "/>";
+        }
+        var /** @type {?} */ children = ph.children.map(function (c) { return c.visit(_this); }).join('');
+        return "<" + tag + " " + attrs + ">" + children + "</" + tag + ">";
+    };
     /**
      * @param {?} ph
      * @param {?=} context
      * @return {?}
      */
-    I18nToHtmlVisitor.prototype.visitIcuPlaceholder = function (ph, context) { throw 'unreachable code'; };
+    I18nToHtmlVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
+        // An ICU placeholder references the source message to be serialized
+        return this._convertToText(this._srcMsg.placeholderToMessage[ph.name]);
+    };
     /**
      * Convert a source message to a translated text string:
      * - text nodes are replaced with their translation,
@@ -162,21 +184,37 @@ var I18nToHtmlVisitor = (function () {
      */
     I18nToHtmlVisitor.prototype._convertToText = function (srcMsg) {
         var _this = this;
-        var /** @type {?} */ digest = this._digest(srcMsg);
+        var /** @type {?} */ id = this._digest(srcMsg);
         var /** @type {?} */ mapper = this._mapperFactory ? this._mapperFactory(srcMsg) : null;
-        if (this._i18nNodesByMsgId.hasOwnProperty(digest)) {
-            this._contextStack.push({ msg: this._srcMsg, mapper: this._mapper });
-            this._srcMsg = srcMsg;
+        var /** @type {?} */ nodes;
+        this._contextStack.push({ msg: this._srcMsg, mapper: this._mapper });
+        this._srcMsg = srcMsg;
+        if (this._i18nNodesByMsgId.hasOwnProperty(id)) {
+            // When there is a translation use its nodes as the source
+            // And create a mapper to convert serialized placeholder names to internal names
+            nodes = this._i18nNodesByMsgId[id];
             this._mapper = function (name) { return mapper ? mapper.toInternalName(name) : name; };
-            var /** @type {?} */ nodes = this._i18nNodesByMsgId[digest];
-            var /** @type {?} */ text = nodes.map(function (node) { return node.visit(_this); }).join('');
-            var /** @type {?} */ context = this._contextStack.pop();
-            this._srcMsg = context.msg;
-            this._mapper = context.mapper;
-            return text;
         }
-        this._addError(srcMsg.nodes[0], "Missing translation for message " + digest);
-        return '';
+        else {
+            // When no translation has been found
+            // - report an error / a warning / nothing,
+            // - use the nodes from the original message
+            // - placeholders are already internal and need no mapper
+            if (this._missingTranslationStrategy === MissingTranslationStrategy.Error) {
+                this._addError(srcMsg.nodes[0], "Missing translation for message \"" + id + "\"");
+            }
+            else if (this._console &&
+                this._missingTranslationStrategy === MissingTranslationStrategy.Warning) {
+                this._console.warn("Missing translation for message \"" + id + "\"");
+            }
+            nodes = srcMsg.nodes;
+            this._mapper = function (name) { return name; };
+        }
+        var /** @type {?} */ text = nodes.map(function (node) { return node.visit(_this); }).join('');
+        var /** @type {?} */ context = this._contextStack.pop();
+        this._srcMsg = context.msg;
+        this._mapper = context.mapper;
+        return text;
     };
     /**
      * @param {?} el
@@ -203,5 +241,9 @@ function I18nToHtmlVisitor_tsickle_Closure_declarations() {
     I18nToHtmlVisitor.prototype._digest;
     /** @type {?} */
     I18nToHtmlVisitor.prototype._mapperFactory;
+    /** @type {?} */
+    I18nToHtmlVisitor.prototype._missingTranslationStrategy;
+    /** @type {?} */
+    I18nToHtmlVisitor.prototype._console;
 }
 //# sourceMappingURL=translation_bundle.js.map

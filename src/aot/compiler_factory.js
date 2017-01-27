@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ViewEncapsulation } from '@angular/core';
+import { MissingTranslationStrategy, ViewEncapsulation } from '@angular/core';
 import { AnimationParser } from '../animation/animation_parser';
 import { CompilerConfig } from '../config';
 import { DirectiveNormalizer } from '../directive_normalizer';
@@ -46,7 +46,8 @@ export function createAotCompiler(compilerHost, options) {
     var /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
     var /** @type {?} */ staticReflector = new StaticReflector(symbolResolver);
     StaticAndDynamicReflectionCapabilities.install(staticReflector);
-    var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat);
+    var /** @type {?} */ console = new Console();
+    var /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, MissingTranslationStrategy.Warning, console);
     var /** @type {?} */ config = new CompilerConfig({
         genDebugInfo: options.debug === true,
         defaultEncapsulation: ViewEncapsulation.Emulated,
@@ -56,7 +57,6 @@ export function createAotCompiler(compilerHost, options) {
     var /** @type {?} */ normalizer = new DirectiveNormalizer({ get: function (url) { return compilerHost.loadResource(url); } }, urlResolver, htmlParser, config);
     var /** @type {?} */ expressionParser = new Parser(new Lexer());
     var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-    var /** @type {?} */ console = new Console();
     var /** @type {?} */ tmplParser = new TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
     var /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here

@@ -41,10 +41,18 @@ export var Xtb = (function (_super) {
         // xml nodes to i18n nodes
         var /** @type {?} */ i18nNodesByMsgId = {};
         var /** @type {?} */ converter = new XmlToI18n();
+        // Because we should be able to load xtb files that rely on features not supported by angular,
+        // we need to delay the conversion of html to i18n nodes so that non angular messages are not
+        // converted
         Object.keys(mlNodesByMsgId).forEach(function (msgId) {
-            var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, e = _a.errors;
-            errors.push.apply(errors, e);
-            i18nNodesByMsgId[msgId] = i18nNodes;
+            var /** @type {?} */ valueFn = function () {
+                var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, errors = _a.errors;
+                if (errors.length) {
+                    throw new Error("xtb parse errors:\n" + errors.join('\n'));
+                }
+                return i18nNodes;
+            };
+            createLazyProperty(i18nNodesByMsgId, msgId, valueFn);
         });
         if (errors.length) {
             throw new Error("xtb parse errors:\n" + errors.join('\n'));
@@ -65,6 +73,24 @@ export var Xtb = (function (_super) {
     };
     return Xtb;
 }(Serializer));
+/**
+ * @param {?} messages
+ * @param {?} id
+ * @param {?} valueFn
+ * @return {?}
+ */
+function createLazyProperty(messages, id, valueFn) {
+    Object.defineProperty(messages, id, {
+        configurable: true,
+        enumerable: true,
+        get: function () {
+            var /** @type {?} */ value = valueFn();
+            Object.defineProperty(messages, id, { enumerable: true, value: value });
+            return value;
+        },
+        set: function (_) { throw new Error('Could not overwrite an XTB translation'); },
+    });
+}
 var XtbParser = (function () {
     function XtbParser() {
     }
