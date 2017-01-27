@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.4.5-7ed39eb
+ * @license Angular v2.4.5-14e9751
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('2.4.5-7ed39eb');
+    var /** @type {?} */ VERSION = new _angular_core.Version('2.4.5-14e9751');
 
     /**
      * @license
@@ -4951,6 +4951,48 @@
             }
             return new ParseLocation(this.file, offset, line, col);
         };
+        /**
+         * @param {?} maxChars
+         * @param {?} maxLines
+         * @return {?}
+         */
+        ParseLocation.prototype.getContext = function (maxChars, maxLines) {
+            var /** @type {?} */ content = this.file.content;
+            var /** @type {?} */ startOffset = this.offset;
+            if (isPresent(startOffset)) {
+                if (startOffset > content.length - 1) {
+                    startOffset = content.length - 1;
+                }
+                var /** @type {?} */ endOffset = startOffset;
+                var /** @type {?} */ ctxChars = 0;
+                var /** @type {?} */ ctxLines = 0;
+                while (ctxChars < maxChars && startOffset > 0) {
+                    startOffset--;
+                    ctxChars++;
+                    if (content[startOffset] == '\n') {
+                        if (++ctxLines == maxLines) {
+                            break;
+                        }
+                    }
+                }
+                ctxChars = 0;
+                ctxLines = 0;
+                while (ctxChars < maxChars && endOffset < content.length - 1) {
+                    endOffset++;
+                    ctxChars++;
+                    if (content[endOffset] == '\n') {
+                        if (++ctxLines == maxLines) {
+                            break;
+                        }
+                    }
+                }
+                return {
+                    before: content.substring(startOffset, this.offset),
+                    after: content.substring(this.offset, endOffset + 1),
+                };
+            }
+            return null;
+        };
         return ParseLocation;
     }());
     var ParseSourceFile = (function () {
@@ -5005,44 +5047,9 @@
          * @return {?}
          */
         ParseError.prototype.toString = function () {
-            var /** @type {?} */ source = this.span.start.file.content;
-            var /** @type {?} */ ctxStart = this.span.start.offset;
-            var /** @type {?} */ contextStr = '';
-            var /** @type {?} */ details = '';
-            if (isPresent(ctxStart)) {
-                if (ctxStart > source.length - 1) {
-                    ctxStart = source.length - 1;
-                }
-                var /** @type {?} */ ctxEnd = ctxStart;
-                var /** @type {?} */ ctxLen = 0;
-                var /** @type {?} */ ctxLines = 0;
-                while (ctxLen < 100 && ctxStart > 0) {
-                    ctxStart--;
-                    ctxLen++;
-                    if (source[ctxStart] == '\n') {
-                        if (++ctxLines == 3) {
-                            break;
-                        }
-                    }
-                }
-                ctxLen = 0;
-                ctxLines = 0;
-                while (ctxLen < 100 && ctxEnd < source.length - 1) {
-                    ctxEnd++;
-                    ctxLen++;
-                    if (source[ctxEnd] == '\n') {
-                        if (++ctxLines == 3) {
-                            break;
-                        }
-                    }
-                }
-                var /** @type {?} */ context = source.substring(ctxStart, this.span.start.offset) + '[ERROR ->]' +
-                    source.substring(this.span.start.offset, ctxEnd + 1);
-                contextStr = " (\"" + context + "\")";
-            }
-            if (this.span.details) {
-                details = ", " + this.span.details;
-            }
+            var /** @type {?} */ ctx = this.span.start.getContext(100, 3);
+            var /** @type {?} */ contextStr = ctx ? " (\"" + ctx.before + "[ERROR ->]" + ctx.after + "\")" : '';
+            var /** @type {?} */ details = this.span.details ? ", " + this.span.details : '';
             return "" + this.msg + contextStr + ": " + this.span.start + details;
         };
         return ParseError;
@@ -7403,7 +7410,10 @@
                     var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '');
                     var /** @type {?} */ nodes = _this._translations.get(message);
                     if (nodes) {
-                        if (nodes[0] instanceof Text) {
+                        if (nodes.length == 0) {
+                            translatedAttributes.push(new Attribute$1(attr.name, '', attr.sourceSpan));
+                        }
+                        else if (nodes[0] instanceof Text) {
                             var /** @type {?} */ value = ((nodes[0])).value;
                             translatedAttributes.push(new Attribute$1(attr.name, value, attr.sourceSpan));
                         }
@@ -12268,12 +12278,6 @@
         return Array.from(map.values());
     }
 
-    /**
-     * @return {?}
-     */
-    function unimplemented$2() {
-        throw new Error('unimplemented');
-    }
     var CompilerConfig = (function () {
         /**
          * @param {?=} __0
@@ -12317,54 +12321,36 @@
     var RenderTypes = (function () {
         function RenderTypes() {
         }
-        Object.defineProperty(RenderTypes.prototype, "renderer", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderText", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderElement", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderComment", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderNode", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(RenderTypes.prototype, "renderEvent", {
-            /**
-             * @return {?}
-             */
-            get: function () { return unimplemented$2(); },
-            enumerable: true,
-            configurable: true
-        });
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderer = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderText = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderElement = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderComment = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderNode = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderEvent = function () { };
         return RenderTypes;
     }());
     var DefaultRenderTypes = (function () {
@@ -25792,7 +25778,7 @@
                     if (e.fileName) {
                         throw positionalError(message, e.fileName, e.line, e.column);
                     }
-                    throw new Error(message);
+                    throw new SyntaxError(message);
                 }
             }
             var /** @type {?} */ recordedSimplifyInContext = function (context, value, depth) {
