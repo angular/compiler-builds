@@ -28,16 +28,16 @@ export class Xtb extends Serializer {
     load(content, url) {
         // xtb to xml nodes
         const /** @type {?} */ xtbParser = new XtbParser();
-        const { mlNodesByMsgId, errors } = xtbParser.parse(content, url);
+        const { msgIdToHtml, errors } = xtbParser.parse(content, url);
         // xml nodes to i18n nodes
         const /** @type {?} */ i18nNodesByMsgId = {};
         const /** @type {?} */ converter = new XmlToI18n();
         // Because we should be able to load xtb files that rely on features not supported by angular,
         // we need to delay the conversion of html to i18n nodes so that non angular messages are not
         // converted
-        Object.keys(mlNodesByMsgId).forEach(msgId => {
+        Object.keys(msgIdToHtml).forEach(msgId => {
             const /** @type {?} */ valueFn = function () {
-                const { i18nNodes, errors } = converter.convert(mlNodesByMsgId[msgId]);
+                const { i18nNodes, errors } = converter.convert(msgIdToHtml[msgId], url);
                 if (errors.length) {
                     throw new Error(`xtb parse errors:\n${errors.join('\n')}`);
                 }
@@ -89,12 +89,14 @@ class XtbParser {
      */
     parse(xtb, url) {
         this._bundleDepth = 0;
-        this._mlNodesByMsgId = {};
-        const /** @type {?} */ xml = new XmlParser().parse(xtb, url, true);
+        this._msgIdToHtml = {};
+        // We can not parse the ICU messages at this point as some messages might not originate
+        // from Angular that could not be lex'd.
+        const /** @type {?} */ xml = new XmlParser().parse(xtb, url, false);
         this._errors = xml.errors;
         ml.visitAll(this, xml.rootNodes);
         return {
-            mlNodesByMsgId: this._mlNodesByMsgId,
+            msgIdToHtml: this._msgIdToHtml,
             errors: this._errors,
         };
     }
@@ -120,11 +122,15 @@ class XtbParser {
                 }
                 else {
                     const /** @type {?} */ id = idAttr.value;
-                    if (this._mlNodesByMsgId.hasOwnProperty(id)) {
+                    if (this._msgIdToHtml.hasOwnProperty(id)) {
                         this._addError(element, `Duplicated translations for msg ${id}`);
                     }
                     else {
-                        this._mlNodesByMsgId[id] = element.children;
+                        const /** @type {?} */ innerTextStart = element.startSourceSpan.end.offset;
+                        const /** @type {?} */ innerTextEnd = element.endSourceSpan.start.offset;
+                        const /** @type {?} */ content = element.startSourceSpan.start.file.content;
+                        const /** @type {?} */ innerText = content.slice(innerTextStart, innerTextEnd);
+                        this._msgIdToHtml[id] = innerText;
                     }
                 }
                 break;
@@ -177,17 +183,22 @@ function XtbParser_tsickle_Closure_declarations() {
     /** @type {?} */
     XtbParser.prototype._errors;
     /** @type {?} */
-    XtbParser.prototype._mlNodesByMsgId;
+    XtbParser.prototype._msgIdToHtml;
 }
 class XmlToI18n {
     /**
-     * @param {?} nodes
+     * @param {?} message
+     * @param {?} url
      * @return {?}
      */
-    convert(nodes) {
-        this._errors = [];
+    convert(message, url) {
+        const /** @type {?} */ xmlIcu = new XmlParser().parse(message, url, true);
+        this._errors = xmlIcu.errors;
+        const /** @type {?} */ i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
+            [] :
+            ml.visitAll(this, xmlIcu.rootNodes);
         return {
-            i18nNodes: ml.visitAll(this, nodes),
+            i18nNodes,
             errors: this._errors,
         };
     }

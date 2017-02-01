@@ -349,7 +349,10 @@ export class StaticSymbolResolver {
     getSymbolByModule(module, symbolName, containingFile) {
         const /** @type {?} */ filePath = this.resolveModule(module, containingFile);
         if (!filePath) {
-            throw new Error(`Could not resolve module ${module} relative to ${containingFile}`);
+            this.reportError(new Error(`Could not resolve module ${module}${containingFile ? ` relative to $ {
+            containingFile
+          } ` : ''}`), null);
+            return this.getStaticSymbol(`ERROR:${module}`, symbolName);
         }
         return this.getStaticSymbol(filePath, symbolName);
     }

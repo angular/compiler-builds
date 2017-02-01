@@ -9163,16 +9163,16 @@
         Xtb.prototype.load = function (content, url) {
             // xtb to xml nodes
             var /** @type {?} */ xtbParser = new XtbParser();
-            var _a = xtbParser.parse(content, url), mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
+            var _a = xtbParser.parse(content, url), msgIdToHtml = _a.msgIdToHtml, errors = _a.errors;
             // xml nodes to i18n nodes
             var /** @type {?} */ i18nNodesByMsgId = {};
             var /** @type {?} */ converter = new XmlToI18n$1();
             // Because we should be able to load xtb files that rely on features not supported by angular,
             // we need to delay the conversion of html to i18n nodes so that non angular messages are not
             // converted
-            Object.keys(mlNodesByMsgId).forEach(function (msgId) {
+            Object.keys(msgIdToHtml).forEach(function (msgId) {
                 var /** @type {?} */ valueFn = function () {
-                    var _a = converter.convert(mlNodesByMsgId[msgId]), i18nNodes = _a.i18nNodes, errors = _a.errors;
+                    var _a = converter.convert(msgIdToHtml[msgId], url), i18nNodes = _a.i18nNodes, errors = _a.errors;
                     if (errors.length) {
                         throw new Error("xtb parse errors:\n" + errors.join('\n'));
                     }
@@ -9227,12 +9227,14 @@
          */
         XtbParser.prototype.parse = function (xtb, url) {
             this._bundleDepth = 0;
-            this._mlNodesByMsgId = {};
-            var /** @type {?} */ xml = new XmlParser().parse(xtb, url, true);
+            this._msgIdToHtml = {};
+            // We can not parse the ICU messages at this point as some messages might not originate
+            // from Angular that could not be lex'd.
+            var /** @type {?} */ xml = new XmlParser().parse(xtb, url, false);
             this._errors = xml.errors;
             visitAll(this, xml.rootNodes);
             return {
-                mlNodesByMsgId: this._mlNodesByMsgId,
+                msgIdToHtml: this._msgIdToHtml,
                 errors: this._errors,
             };
         };
@@ -9258,11 +9260,15 @@
                     }
                     else {
                         var /** @type {?} */ id = idAttr.value;
-                        if (this._mlNodesByMsgId.hasOwnProperty(id)) {
+                        if (this._msgIdToHtml.hasOwnProperty(id)) {
                             this._addError(element, "Duplicated translations for msg " + id);
                         }
                         else {
-                            this._mlNodesByMsgId[id] = element.children;
+                            var /** @type {?} */ innerTextStart = element.startSourceSpan.end.offset;
+                            var /** @type {?} */ innerTextEnd = element.endSourceSpan.start.offset;
+                            var /** @type {?} */ content = element.startSourceSpan.start.file.content;
+                            var /** @type {?} */ innerText = content.slice(innerTextStart, innerTextEnd);
+                            this._msgIdToHtml[id] = innerText;
                         }
                     }
                     break;
@@ -9314,13 +9320,18 @@
         function XmlToI18n() {
         }
         /**
-         * @param {?} nodes
+         * @param {?} message
+         * @param {?} url
          * @return {?}
          */
-        XmlToI18n.prototype.convert = function (nodes) {
-            this._errors = [];
+        XmlToI18n.prototype.convert = function (message, url) {
+            var /** @type {?} */ xmlIcu = new XmlParser().parse(message, url, true);
+            this._errors = xmlIcu.errors;
+            var /** @type {?} */ i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
+                [] :
+                visitAll(this, xmlIcu.rootNodes);
             return {
-                i18nNodes: visitAll(this, nodes),
+                i18nNodes: i18nNodes,
                 errors: this._errors,
             };
         };
@@ -26759,7 +26770,8 @@
         StaticSymbolResolver.prototype.getSymbolByModule = function (module, symbolName, containingFile) {
             var /** @type {?} */ filePath = this.resolveModule(module, containingFile);
             if (!filePath) {
-                throw new Error("Could not resolve module " + module + " relative to " + containingFile);
+                this.reportError(new Error("Could not resolve module " + module + (containingFile ? " relative to $ {\n            containingFile\n          } " : '')), null);
+                return this.getStaticSymbol("ERROR:" + module, symbolName);
             }
             return this.getStaticSymbol(filePath, symbolName);
         };
