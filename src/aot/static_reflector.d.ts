@@ -48,5 +48,9 @@ export declare class StaticReflector implements ReflectorReader {
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
     private reportError(error, context, path?);
+    /**
+     * Simplify but discard any errors
+     */
+    private trySimplify(context, value);
     private getTypeMetadata(type);
 }
