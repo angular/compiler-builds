@@ -64,7 +64,8 @@ export function createAotCompiler(compilerHost, options) {
         getImportAs: function (symbol) { return symbolResolver.getImportAs(symbol); },
         fileNameToModuleName: function (fileName, containingFilePath) {
             return compilerHost.fileNameToModuleName(fileName, containingFilePath);
-        }
+        },
+        getTypeArity: function (symbol) { return symbolResolver.getTypeArity(symbol); }
     };
     var /** @type {?} */ compiler = new AotCompiler(compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), symbolResolver);
     return { compiler: compiler, reflector: staticReflector };

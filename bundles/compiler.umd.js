@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.5-e0e5e78
+ * @license Angular v4.0.0-beta.5-bc20e8a
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.5-e0e5e78');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.5-bc20e8a');
 
     /**
      * @license
@@ -14531,15 +14531,12 @@
         __extends$21(ExpressionType, _super);
         /**
          * @param {?} value
-         * @param {?=} typeParams
          * @param {?=} modifiers
          */
-        function ExpressionType(value, typeParams, modifiers) {
-            if (typeParams === void 0) { typeParams = null; }
+        function ExpressionType(value, modifiers) {
             if (modifiers === void 0) { modifiers = null; }
             _super.call(this, modifiers);
             this.value = value;
-            this.typeParams = typeParams;
         }
         /**
          * @param {?} visitor
@@ -16225,18 +16222,16 @@
     function importType(id, typeParams, typeModifiers) {
         if (typeParams === void 0) { typeParams = null; }
         if (typeModifiers === void 0) { typeModifiers = null; }
-        return isPresent(id) ? expressionType(importExpr(id), typeParams, typeModifiers) : null;
+        return isPresent(id) ? expressionType(importExpr(id, typeParams), typeModifiers) : null;
     }
     /**
      * @param {?} expr
-     * @param {?=} typeParams
      * @param {?=} typeModifiers
      * @return {?}
      */
-    function expressionType(expr, typeParams, typeModifiers) {
-        if (typeParams === void 0) { typeParams = null; }
+    function expressionType(expr, typeModifiers) {
         if (typeModifiers === void 0) { typeModifiers = null; }
-        return isPresent(expr) ? new ExpressionType(expr, typeParams, typeModifiers) : null;
+        return isPresent(expr) ? new ExpressionType(expr, typeModifiers) : null;
     }
     /**
      * @param {?} values
@@ -17963,6 +17958,7 @@
      * found in the LICENSE file at https://angular.io/license
      */
     var /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
+    var /** @type {?} */ NG_FACTORY = /\.ngfactory\./;
     /**
      * @param {?} filePath
      * @return {?}
@@ -17976,7 +17972,14 @@
      * @return {?}
      */
     function stripNgFactory(filePath) {
-        return filePath.replace(/\.ngfactory\./, '.');
+        return filePath.replace(NG_FACTORY, '.');
+    }
+    /**
+     * @param {?} filePath
+     * @return {?}
+     */
+    function isNgFactoryFile(filePath) {
+        return NG_FACTORY.test(filePath);
     }
     /**
      * @param {?} path
@@ -20425,7 +20428,8 @@
              * @param {?} symbol
              * @return {?}
              */
-            getImportAs: function (symbol) { return null; }
+            getImportAs: function (symbol) { return null; },
+            getTypeArity: function (symbol) { return null; }
         });
         var /** @type {?} */ ctx = EmitterVisitorContext.createRoot([]);
         var /** @type {?} */ asts = Array.isArray(ast) ? ast : [ast];
@@ -20488,6 +20492,7 @@
             _super.call(this, false);
             this._genFilePath = _genFilePath;
             this._importResolver = _importResolver;
+            this.typeExpression = 0;
             this.importsWithPrefixes = new Map();
             this.reexports = new Map();
         }
@@ -20500,7 +20505,9 @@
         _TsEmitterVisitor.prototype.visitType = function (t, ctx, defaultType) {
             if (defaultType === void 0) { defaultType = 'any'; }
             if (isPresent(t)) {
+                this.typeExpression++;
                 t.visitType(this, ctx);
+                this.typeExpression--;
             }
             else {
                 ctx.print(defaultType);
@@ -20592,6 +20599,21 @@
             return null;
         };
         /**
+         * @param {?} ast
+         * @param {?} ctx
+         * @return {?}
+         */
+        _TsEmitterVisitor.prototype.visitInstantiateExpr = function (ast, ctx) {
+            ctx.print("new ");
+            this.typeExpression++;
+            ast.classExpr.visitExpression(this, ctx);
+            this.typeExpression--;
+            ctx.print("(");
+            this.visitAllExpressions(ast.args, ctx, ',');
+            ctx.print(")");
+            return null;
+        };
+        /**
          * @param {?} stmt
          * @param {?} ctx
          * @return {?}
@@ -20605,7 +20627,9 @@
             ctx.print("class " + stmt.name);
             if (isPresent(stmt.parent)) {
                 ctx.print(" extends ");
+                this.typeExpression++;
                 stmt.parent.visitExpression(this, ctx);
+                this.typeExpression--;
             }
             ctx.println(" {");
             ctx.incIndent();
@@ -20781,13 +20805,7 @@
          * @return {?}
          */
         _TsEmitterVisitor.prototype.visitExpressionType = function (ast, ctx) {
-            var _this = this;
             ast.value.visitExpression(this, ctx);
-            if (isPresent(ast.typeParams) && ast.typeParams.length > 0) {
-                ctx.print("<");
-                this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, ast.typeParams, ctx, ',');
-                ctx.print(">");
-            }
             return null;
         };
         /**
@@ -20854,7 +20872,13 @@
             if (!(reference instanceof StaticSymbol)) {
                 throw new Error("Internal error: unknown identifier " + JSON.stringify(value));
             }
-            return this._importResolver.getImportAs(reference) || reference;
+            var /** @type {?} */ arity = this._importResolver.getTypeArity(reference) || undefined;
+            var /** @type {?} */ importReference = this._importResolver.getImportAs(reference) || reference;
+            return {
+                name: importReference.name,
+                filePath: importReference.filePath,
+                members: importReference.members, arity: arity
+            };
         };
         /**
          * @param {?} value
@@ -20864,7 +20888,7 @@
          */
         _TsEmitterVisitor.prototype._visitIdentifier = function (value, typeParams, ctx) {
             var _this = this;
-            var _a = this._resolveStaticSymbol(value), name = _a.name, filePath = _a.filePath, members = _a.members;
+            var _a = this._resolveStaticSymbol(value), name = _a.name, filePath = _a.filePath, members = _a.members, arity = _a.arity;
             if (filePath != this._genFilePath) {
                 var /** @type {?} */ prefix = this.importsWithPrefixes.get(filePath);
                 if (isBlank(prefix)) {
@@ -20881,10 +20905,28 @@
             else {
                 ctx.print(name);
             }
-            if (isPresent(typeParams) && typeParams.length > 0) {
-                ctx.print("<");
-                this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
-                ctx.print(">");
+            if (this.typeExpression > 0) {
+                // If we are in a type expreession that refers to a generic type then supply
+                // the required type parameters. If there were not enough type parameters
+                // supplied, supply any as the type. Outside a type expression the reference
+                // should not supply type parameters and be treated as a simple value reference
+                // to the constructor function itself.
+                var /** @type {?} */ suppliedParameters = (typeParams && typeParams.length) || 0;
+                var /** @type {?} */ additionalParameters = (arity || 0) - suppliedParameters;
+                if (suppliedParameters > 0 || additionalParameters > 0) {
+                    ctx.print("<");
+                    if (suppliedParameters > 0) {
+                        this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
+                    }
+                    if (additionalParameters > 0) {
+                        for (var /** @type {?} */ i = 0; i < additionalParameters; i++) {
+                            if (i > 0 || suppliedParameters > 0)
+                                ctx.print(',');
+                            ctx.print('any');
+                        }
+                    }
+                    ctx.print(">");
+                }
             }
         };
         return _TsEmitterVisitor;
@@ -25003,10 +25045,10 @@
         Serializer.prototype.addOrMergeSummary = function (summary) {
             var /** @type {?} */ symbolMeta = summary.metadata;
             if (symbolMeta && symbolMeta.__symbolic === 'class') {
-                // For classes, we only keep their statics, but not the metadata
+                // For classes, we only keep their statics and arity, but not the metadata
                 // of the class itself as that has been captured already via other summaries
                 // (e.g. DirectiveSummary, ...).
-                symbolMeta = { __symbolic: 'class', statics: symbolMeta.statics };
+                symbolMeta = { __symbolic: 'class', statics: symbolMeta.statics, arity: symbolMeta.arity };
             }
             var /** @type {?} */ processedSummary = this.processedSummaryBySymbol.get(summary.symbol);
             if (!processedSummary) {
@@ -25014,11 +25056,11 @@
                 this.processedSummaries.push(processedSummary);
                 this.processedSummaryBySymbol.set(summary.symbol, processedSummary);
             }
-            // Note: == by purpose to compare with undefined!
+            // Note: == on purpose to compare with undefined!
             if (processedSummary.metadata == null && symbolMeta != null) {
                 processedSummary.metadata = this.processValue(symbolMeta);
             }
-            // Note: == by purpose to compare with undefined!
+            // Note: == on purpose to compare with undefined!
             if (processedSummary.type == null && summary.type != null) {
                 processedSummary.type = this.processValue(summary.type);
             }
@@ -25065,7 +25107,7 @@
             if (value instanceof StaticSymbol) {
                 var /** @type {?} */ baseSymbol = this.symbolResolver.getStaticSymbol(value.filePath, value.name);
                 var /** @type {?} */ index = this.indexBySymbol.get(baseSymbol);
-                // Note: == by purpose to compare with undefined!
+                // Note: == on purpose to compare with undefined!
                 if (index == null) {
                     index = this.indexBySymbol.size;
                     this.indexBySymbol.set(baseSymbol, index);
@@ -26496,7 +26538,13 @@
             return result;
         };
         /**
-         * @param {?} staticSymbol
+         * getImportAs produces a symbol that can be used to import the given symbol.
+         * The import might be different than the symbol if the symbol is exported from
+         * a library with a summary; in which case we want to import the symbol from the
+         * ngfactory re-export instead of directly to avoid introducing a direct dependency
+         * on an otherwise indirect dependency.
+         *
+         * @param {?} staticSymbol the symbol for which to generate a import symbol
          * @return {?}
          */
         StaticSymbolResolver.prototype.getImportAs = function (staticSymbol) {
@@ -26512,6 +26560,26 @@
                 result = this.importAs.get(staticSymbol);
             }
             return result;
+        };
+        /**
+         * getTypeArity returns the number of generic type parameters the given symbol
+         * has. If the symbol is not a type the result is null.
+         * @param {?} staticSymbol
+         * @return {?}
+         */
+        StaticSymbolResolver.prototype.getTypeArity = function (staticSymbol) {
+            // If the file is a factory file, don't resolve the symbol as doing so would
+            // cause the metadata for an factory file to be loaded which doesn't exist.
+            // All references to generated classes must include the correct arity whenever
+            // generating code.
+            if (isNgFactoryFile(staticSymbol.filePath)) {
+                return null;
+            }
+            var /** @type {?} */ resolvedSymbol = this.resolveSymbol(staticSymbol);
+            while (resolvedSymbol && resolvedSymbol.metadata instanceof StaticSymbol) {
+                resolvedSymbol = this.resolveSymbol(resolvedSymbol.metadata);
+            }
+            return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
         };
         /**
          * @param {?} staticSymbol
@@ -26555,7 +26623,7 @@
          *
          * @param {?} declarationFile the absolute path of the file where the symbol is declared
          * @param {?} name the name of the type.
-         * @param {?=} members
+         * @param {?=} members a symbol for a static member of the named type
          * @return {?}
          */
         StaticSymbolResolver.prototype.getStaticSymbol = function (declarationFile, name, members) {
@@ -26932,7 +27000,8 @@
             getImportAs: function (symbol) { return symbolResolver.getImportAs(symbol); },
             fileNameToModuleName: function (fileName, containingFilePath) {
                 return compilerHost.fileNameToModuleName(fileName, containingFilePath);
-            }
+            },
+            getTypeArity: function (symbol) { return symbolResolver.getTypeArity(symbol); }
         };
         var /** @type {?} */ compiler = new AotCompiler(compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), symbolResolver);
         return { compiler: compiler, reflector: staticReflector };
@@ -28644,6 +28713,13 @@
          * @return {?}
          */
         ImportResolver.prototype.getImportAs = function (symbol) { };
+        /**
+         * Determine the airty of a type.
+         * @abstract
+         * @param {?} symbol
+         * @return {?}
+         */
+        ImportResolver.prototype.getTypeArity = function (symbol) { };
         return ImportResolver;
     }());
 

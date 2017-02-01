@@ -29,6 +29,13 @@ export var ImportResolver = (function () {
      * @return {?}
      */
     ImportResolver.prototype.getImportAs = function (symbol) { };
+    /**
+     * Determine the airty of a type.
+     * @abstract
+     * @param {?} symbol
+     * @return {?}
+     */
+    ImportResolver.prototype.getTypeArity = function (symbol) { };
     return ImportResolver;
 }());
 //# sourceMappingURL=path_util.js.map

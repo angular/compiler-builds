@@ -12,6 +12,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { ValueTransformer, visitValue } from '../util';
 import { StaticSymbol } from './static_symbol';
+import { isNgFactoryFile } from './util';
 export var ResolvedStaticSymbol = (function () {
     /**
      * @param {?} symbol
@@ -79,7 +80,13 @@ export var StaticSymbolResolver = (function () {
         return result;
     };
     /**
-     * @param {?} staticSymbol
+     * getImportAs produces a symbol that can be used to import the given symbol.
+     * The import might be different than the symbol if the symbol is exported from
+     * a library with a summary; in which case we want to import the symbol from the
+     * ngfactory re-export instead of directly to avoid introducing a direct dependency
+     * on an otherwise indirect dependency.
+     *
+     * @param {?} staticSymbol the symbol for which to generate a import symbol
      * @return {?}
      */
     StaticSymbolResolver.prototype.getImportAs = function (staticSymbol) {
@@ -95,6 +102,26 @@ export var StaticSymbolResolver = (function () {
             result = this.importAs.get(staticSymbol);
         }
         return result;
+    };
+    /**
+     * getTypeArity returns the number of generic type parameters the given symbol
+     * has. If the symbol is not a type the result is null.
+     * @param {?} staticSymbol
+     * @return {?}
+     */
+    StaticSymbolResolver.prototype.getTypeArity = function (staticSymbol) {
+        // If the file is a factory file, don't resolve the symbol as doing so would
+        // cause the metadata for an factory file to be loaded which doesn't exist.
+        // All references to generated classes must include the correct arity whenever
+        // generating code.
+        if (isNgFactoryFile(staticSymbol.filePath)) {
+            return null;
+        }
+        var /** @type {?} */ resolvedSymbol = this.resolveSymbol(staticSymbol);
+        while (resolvedSymbol && resolvedSymbol.metadata instanceof StaticSymbol) {
+            resolvedSymbol = this.resolveSymbol(resolvedSymbol.metadata);
+        }
+        return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
     };
     /**
      * @param {?} staticSymbol
@@ -138,7 +165,7 @@ export var StaticSymbolResolver = (function () {
      *
      * @param {?} declarationFile the absolute path of the file where the symbol is declared
      * @param {?} name the name of the type.
-     * @param {?=} members
+     * @param {?=} members a symbol for a static member of the named type
      * @return {?}
      */
     StaticSymbolResolver.prototype.getStaticSymbol = function (declarationFile, name, members) {

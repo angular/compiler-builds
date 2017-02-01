@@ -31,7 +31,8 @@ export function debugOutputAstAsTypeScript(ast) {
          * @param {?} symbol
          * @return {?}
          */
-        getImportAs: function (symbol) { return null; }
+        getImportAs: function (symbol) { return null; },
+        getTypeArity: function (symbol) { return null; }
     });
     var /** @type {?} */ ctx = EmitterVisitorContext.createRoot([]);
     var /** @type {?} */ asts = Array.isArray(ast) ? ast : [ast];
@@ -98,6 +99,7 @@ var _TsEmitterVisitor = (function (_super) {
         _super.call(this, false);
         this._genFilePath = _genFilePath;
         this._importResolver = _importResolver;
+        this.typeExpression = 0;
         this.importsWithPrefixes = new Map();
         this.reexports = new Map();
     }
@@ -110,7 +112,9 @@ var _TsEmitterVisitor = (function (_super) {
     _TsEmitterVisitor.prototype.visitType = function (t, ctx, defaultType) {
         if (defaultType === void 0) { defaultType = 'any'; }
         if (isPresent(t)) {
+            this.typeExpression++;
             t.visitType(this, ctx);
+            this.typeExpression--;
         }
         else {
             ctx.print(defaultType);
@@ -202,6 +206,21 @@ var _TsEmitterVisitor = (function (_super) {
         return null;
     };
     /**
+     * @param {?} ast
+     * @param {?} ctx
+     * @return {?}
+     */
+    _TsEmitterVisitor.prototype.visitInstantiateExpr = function (ast, ctx) {
+        ctx.print("new ");
+        this.typeExpression++;
+        ast.classExpr.visitExpression(this, ctx);
+        this.typeExpression--;
+        ctx.print("(");
+        this.visitAllExpressions(ast.args, ctx, ',');
+        ctx.print(")");
+        return null;
+    };
+    /**
      * @param {?} stmt
      * @param {?} ctx
      * @return {?}
@@ -215,7 +234,9 @@ var _TsEmitterVisitor = (function (_super) {
         ctx.print("class " + stmt.name);
         if (isPresent(stmt.parent)) {
             ctx.print(" extends ");
+            this.typeExpression++;
             stmt.parent.visitExpression(this, ctx);
+            this.typeExpression--;
         }
         ctx.println(" {");
         ctx.incIndent();
@@ -391,13 +412,7 @@ var _TsEmitterVisitor = (function (_super) {
      * @return {?}
      */
     _TsEmitterVisitor.prototype.visitExpressionType = function (ast, ctx) {
-        var _this = this;
         ast.value.visitExpression(this, ctx);
-        if (isPresent(ast.typeParams) && ast.typeParams.length > 0) {
-            ctx.print("<");
-            this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, ast.typeParams, ctx, ',');
-            ctx.print(">");
-        }
         return null;
     };
     /**
@@ -464,7 +479,13 @@ var _TsEmitterVisitor = (function (_super) {
         if (!(reference instanceof StaticSymbol)) {
             throw new Error("Internal error: unknown identifier " + JSON.stringify(value));
         }
-        return this._importResolver.getImportAs(reference) || reference;
+        var /** @type {?} */ arity = this._importResolver.getTypeArity(reference) || undefined;
+        var /** @type {?} */ importReference = this._importResolver.getImportAs(reference) || reference;
+        return {
+            name: importReference.name,
+            filePath: importReference.filePath,
+            members: importReference.members, arity: arity
+        };
     };
     /**
      * @param {?} value
@@ -474,7 +495,7 @@ var _TsEmitterVisitor = (function (_super) {
      */
     _TsEmitterVisitor.prototype._visitIdentifier = function (value, typeParams, ctx) {
         var _this = this;
-        var _a = this._resolveStaticSymbol(value), name = _a.name, filePath = _a.filePath, members = _a.members;
+        var _a = this._resolveStaticSymbol(value), name = _a.name, filePath = _a.filePath, members = _a.members, arity = _a.arity;
         if (filePath != this._genFilePath) {
             var /** @type {?} */ prefix = this.importsWithPrefixes.get(filePath);
             if (isBlank(prefix)) {
@@ -491,15 +512,35 @@ var _TsEmitterVisitor = (function (_super) {
         else {
             ctx.print(name);
         }
-        if (isPresent(typeParams) && typeParams.length > 0) {
-            ctx.print("<");
-            this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
-            ctx.print(">");
+        if (this.typeExpression > 0) {
+            // If we are in a type expreession that refers to a generic type then supply
+            // the required type parameters. If there were not enough type parameters
+            // supplied, supply any as the type. Outside a type expression the reference
+            // should not supply type parameters and be treated as a simple value reference
+            // to the constructor function itself.
+            var /** @type {?} */ suppliedParameters = (typeParams && typeParams.length) || 0;
+            var /** @type {?} */ additionalParameters = (arity || 0) - suppliedParameters;
+            if (suppliedParameters > 0 || additionalParameters > 0) {
+                ctx.print("<");
+                if (suppliedParameters > 0) {
+                    this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
+                }
+                if (additionalParameters > 0) {
+                    for (var /** @type {?} */ i = 0; i < additionalParameters; i++) {
+                        if (i > 0 || suppliedParameters > 0)
+                            ctx.print(',');
+                        ctx.print('any');
+                    }
+                }
+                ctx.print(">");
+            }
         }
     };
     return _TsEmitterVisitor;
 }(AbstractEmitterVisitor));
 function _TsEmitterVisitor_tsickle_Closure_declarations() {
+    /** @type {?} */
+    _TsEmitterVisitor.prototype.typeExpression;
     /** @type {?} */
     _TsEmitterVisitor.prototype.importsWithPrefixes;
     /** @type {?} */

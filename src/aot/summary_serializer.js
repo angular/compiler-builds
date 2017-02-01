@@ -93,10 +93,10 @@ var Serializer = (function (_super) {
     Serializer.prototype.addOrMergeSummary = function (summary) {
         var /** @type {?} */ symbolMeta = summary.metadata;
         if (symbolMeta && symbolMeta.__symbolic === 'class') {
-            // For classes, we only keep their statics, but not the metadata
+            // For classes, we only keep their statics and arity, but not the metadata
             // of the class itself as that has been captured already via other summaries
             // (e.g. DirectiveSummary, ...).
-            symbolMeta = { __symbolic: 'class', statics: symbolMeta.statics };
+            symbolMeta = { __symbolic: 'class', statics: symbolMeta.statics, arity: symbolMeta.arity };
         }
         var /** @type {?} */ processedSummary = this.processedSummaryBySymbol.get(summary.symbol);
         if (!processedSummary) {
@@ -104,11 +104,11 @@ var Serializer = (function (_super) {
             this.processedSummaries.push(processedSummary);
             this.processedSummaryBySymbol.set(summary.symbol, processedSummary);
         }
-        // Note: == by purpose to compare with undefined!
+        // Note: == on purpose to compare with undefined!
         if (processedSummary.metadata == null && symbolMeta != null) {
             processedSummary.metadata = this.processValue(symbolMeta);
         }
-        // Note: == by purpose to compare with undefined!
+        // Note: == on purpose to compare with undefined!
         if (processedSummary.type == null && summary.type != null) {
             processedSummary.type = this.processValue(summary.type);
         }
@@ -155,7 +155,7 @@ var Serializer = (function (_super) {
         if (value instanceof StaticSymbol) {
             var /** @type {?} */ baseSymbol = this.symbolResolver.getStaticSymbol(value.filePath, value.name);
             var /** @type {?} */ index = this.indexBySymbol.get(baseSymbol);
-            // Note: == by purpose to compare with undefined!
+            // Note: == on purpose to compare with undefined!
             if (index == null) {
                 index = this.indexBySymbol.size;
                 this.indexBySymbol.set(baseSymbol, index);

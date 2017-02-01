@@ -90,15 +90,12 @@ export var ExpressionType = (function (_super) {
     __extends(ExpressionType, _super);
     /**
      * @param {?} value
-     * @param {?=} typeParams
      * @param {?=} modifiers
      */
-    function ExpressionType(value, typeParams, modifiers) {
-        if (typeParams === void 0) { typeParams = null; }
+    function ExpressionType(value, modifiers) {
         if (modifiers === void 0) { modifiers = null; }
         _super.call(this, modifiers);
         this.value = value;
-        this.typeParams = typeParams;
     }
     /**
      * @param {?} visitor
@@ -113,8 +110,6 @@ export var ExpressionType = (function (_super) {
 function ExpressionType_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpressionType.prototype.value;
-    /** @type {?} */
-    ExpressionType.prototype.typeParams;
 }
 export var ArrayType = (function (_super) {
     __extends(ArrayType, _super);
@@ -2028,18 +2023,16 @@ export function importExpr(id, typeParams) {
 export function importType(id, typeParams, typeModifiers) {
     if (typeParams === void 0) { typeParams = null; }
     if (typeModifiers === void 0) { typeModifiers = null; }
-    return isPresent(id) ? expressionType(importExpr(id), typeParams, typeModifiers) : null;
+    return isPresent(id) ? expressionType(importExpr(id, typeParams), typeModifiers) : null;
 }
 /**
  * @param {?} expr
- * @param {?=} typeParams
  * @param {?=} typeModifiers
  * @return {?}
  */
-export function expressionType(expr, typeParams, typeModifiers) {
-    if (typeParams === void 0) { typeParams = null; }
+export function expressionType(expr, typeModifiers) {
     if (typeModifiers === void 0) { typeModifiers = null; }
-    return isPresent(expr) ? new ExpressionType(expr, typeParams, typeModifiers) : null;
+    return isPresent(expr) ? new ExpressionType(expr, typeModifiers) : null;
 }
 /**
  * @param {?} values
