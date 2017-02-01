@@ -26,7 +26,8 @@ export function debugOutputAstAsTypeScript(ast) {
          * @param {?} symbol
          * @return {?}
          */
-        getImportAs(symbol) { return null; }
+        getImportAs(symbol) { return null; },
+        getTypeArity: symbol => null
     });
     const /** @type {?} */ ctx = EmitterVisitorContext.createRoot([]);
     const /** @type {?} */ asts = Array.isArray(ast) ? ast : [ast];
@@ -90,6 +91,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         super(false);
         this._genFilePath = _genFilePath;
         this._importResolver = _importResolver;
+        this.typeExpression = 0;
         this.importsWithPrefixes = new Map();
         this.reexports = new Map();
     }
@@ -101,7 +103,9 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
      */
     visitType(t, ctx, defaultType = 'any') {
         if (isPresent(t)) {
+            this.typeExpression++;
             t.visitType(this, ctx);
+            this.typeExpression--;
         }
         else {
             ctx.print(defaultType);
@@ -193,6 +197,21 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         return null;
     }
     /**
+     * @param {?} ast
+     * @param {?} ctx
+     * @return {?}
+     */
+    visitInstantiateExpr(ast, ctx) {
+        ctx.print(`new `);
+        this.typeExpression++;
+        ast.classExpr.visitExpression(this, ctx);
+        this.typeExpression--;
+        ctx.print(`(`);
+        this.visitAllExpressions(ast.args, ctx, ',');
+        ctx.print(`)`);
+        return null;
+    }
+    /**
      * @param {?} stmt
      * @param {?} ctx
      * @return {?}
@@ -205,7 +224,9 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         ctx.print(`class ${stmt.name}`);
         if (isPresent(stmt.parent)) {
             ctx.print(` extends `);
+            this.typeExpression++;
             stmt.parent.visitExpression(this, ctx);
+            this.typeExpression--;
         }
         ctx.println(` {`);
         ctx.incIndent();
@@ -382,11 +403,6 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
      */
     visitExpressionType(ast, ctx) {
         ast.value.visitExpression(this, ctx);
-        if (isPresent(ast.typeParams) && ast.typeParams.length > 0) {
-            ctx.print(`<`);
-            this.visitAllObjects(type => type.visitType(this, ctx), ast.typeParams, ctx, ',');
-            ctx.print(`>`);
-        }
         return null;
     }
     /**
@@ -452,7 +468,13 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         if (!(reference instanceof StaticSymbol)) {
             throw new Error(`Internal error: unknown identifier ${JSON.stringify(value)}`);
         }
-        return this._importResolver.getImportAs(reference) || reference;
+        const /** @type {?} */ arity = this._importResolver.getTypeArity(reference) || undefined;
+        const /** @type {?} */ importReference = this._importResolver.getImportAs(reference) || reference;
+        return {
+            name: importReference.name,
+            filePath: importReference.filePath,
+            members: importReference.members, arity
+        };
     }
     /**
      * @param {?} value
@@ -461,7 +483,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     _visitIdentifier(value, typeParams, ctx) {
-        const { name, filePath, members } = this._resolveStaticSymbol(value);
+        const { name, filePath, members, arity } = this._resolveStaticSymbol(value);
         if (filePath != this._genFilePath) {
             let /** @type {?} */ prefix = this.importsWithPrefixes.get(filePath);
             if (isBlank(prefix)) {
@@ -478,14 +500,34 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         else {
             ctx.print(name);
         }
-        if (isPresent(typeParams) && typeParams.length > 0) {
-            ctx.print(`<`);
-            this.visitAllObjects(type => type.visitType(this, ctx), typeParams, ctx, ',');
-            ctx.print(`>`);
+        if (this.typeExpression > 0) {
+            // If we are in a type expreession that refers to a generic type then supply
+            // the required type parameters. If there were not enough type parameters
+            // supplied, supply any as the type. Outside a type expression the reference
+            // should not supply type parameters and be treated as a simple value reference
+            // to the constructor function itself.
+            const /** @type {?} */ suppliedParameters = (typeParams && typeParams.length) || 0;
+            const /** @type {?} */ additionalParameters = (arity || 0) - suppliedParameters;
+            if (suppliedParameters > 0 || additionalParameters > 0) {
+                ctx.print(`<`);
+                if (suppliedParameters > 0) {
+                    this.visitAllObjects(type => type.visitType(this, ctx), typeParams, ctx, ',');
+                }
+                if (additionalParameters > 0) {
+                    for (let /** @type {?} */ i = 0; i < additionalParameters; i++) {
+                        if (i > 0 || suppliedParameters > 0)
+                            ctx.print(',');
+                        ctx.print('any');
+                    }
+                }
+                ctx.print(`>`);
+            }
         }
     }
 }
 function _TsEmitterVisitor_tsickle_Closure_declarations() {
+    /** @type {?} */
+    _TsEmitterVisitor.prototype.typeExpression;
     /** @type {?} */
     _TsEmitterVisitor.prototype.importsWithPrefixes;
     /** @type {?} */

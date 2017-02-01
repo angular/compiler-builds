@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 const /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
+const /** @type {?} */ NG_FACTORY = /\.ngfactory\./;
 /**
  * @param {?} filePath
  * @return {?}
@@ -19,7 +20,14 @@ export function ngfactoryFilePath(filePath) {
  * @return {?}
  */
 export function stripNgFactory(filePath) {
-    return filePath.replace(/\.ngfactory\./, '.');
+    return filePath.replace(NG_FACTORY, '.');
+}
+/**
+ * @param {?} filePath
+ * @return {?}
+ */
+export function isNgFactoryFile(filePath) {
+    return NG_FACTORY.test(filePath);
 }
 /**
  * @param {?} path

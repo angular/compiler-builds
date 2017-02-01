@@ -79,13 +79,11 @@ function BuiltinType_tsickle_Closure_declarations() {
 export class ExpressionType extends Type {
     /**
      * @param {?} value
-     * @param {?=} typeParams
      * @param {?=} modifiers
      */
-    constructor(value, typeParams = null, modifiers = null) {
+    constructor(value, modifiers = null) {
         super(modifiers);
         this.value = value;
-        this.typeParams = typeParams;
     }
     /**
      * @param {?} visitor
@@ -99,8 +97,6 @@ export class ExpressionType extends Type {
 function ExpressionType_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpressionType.prototype.value;
-    /** @type {?} */
-    ExpressionType.prototype.typeParams;
 }
 export class ArrayType extends Type {
     /**
@@ -1884,16 +1880,15 @@ export function importExpr(id, typeParams = null) {
  * @return {?}
  */
 export function importType(id, typeParams = null, typeModifiers = null) {
-    return isPresent(id) ? expressionType(importExpr(id), typeParams, typeModifiers) : null;
+    return isPresent(id) ? expressionType(importExpr(id, typeParams), typeModifiers) : null;
 }
 /**
  * @param {?} expr
- * @param {?=} typeParams
  * @param {?=} typeModifiers
  * @return {?}
  */
-export function expressionType(expr, typeParams = null, typeModifiers = null) {
-    return isPresent(expr) ? new ExpressionType(expr, typeParams, typeModifiers) : null;
+export function expressionType(expr, typeModifiers = null) {
+    return isPresent(expr) ? new ExpressionType(expr, typeModifiers) : null;
 }
 /**
  * @param {?} values

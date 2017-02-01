@@ -27,5 +27,12 @@ export class ImportResolver {
      * @return {?}
      */
     getImportAs(symbol) { }
+    /**
+     * Determine the airty of a type.
+     * @abstract
+     * @param {?} symbol
+     * @return {?}
+     */
+    getTypeArity(symbol) { }
 }
 //# sourceMappingURL=path_util.js.map

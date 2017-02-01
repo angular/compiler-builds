@@ -31,8 +31,7 @@ export declare class BuiltinType extends Type {
 }
 export declare class ExpressionType extends Type {
     value: Expression;
-    typeParams: Type[];
-    constructor(value: Expression, typeParams?: Type[], modifiers?: TypeModifier[]);
+    constructor(value: Expression, modifiers?: TypeModifier[]);
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare class ArrayType extends Type {
@@ -434,7 +433,7 @@ export declare function findReadVarNames(stmts: Statement[]): Set<string>;
 export declare function variable(name: string, type?: Type): ReadVarExpr;
 export declare function importExpr(id: CompileIdentifierMetadata, typeParams?: Type[]): ExternalExpr;
 export declare function importType(id: CompileIdentifierMetadata, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExpressionType;
-export declare function expressionType(expr: Expression, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExpressionType;
+export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[]): ExpressionType;
 export declare function literalArr(values: Expression[], type?: Type): LiteralArrayExpr;
 export declare function literalMap(values: [string, Expression][], type?: MapType, quoted?: boolean): LiteralMapExpr;
 export declare function not(expr: Expression): NotExpr;
