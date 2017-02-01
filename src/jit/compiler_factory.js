@@ -14,7 +14,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { COMPILER_OPTIONS, Compiler, CompilerFactory, Inject, Optional, PLATFORM_INITIALIZER, ReflectiveInjector, TRANSLATIONS, TRANSLATIONS_FORMAT, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
+import { COMPILER_OPTIONS, Compiler, CompilerFactory, Inject, OpaqueToken, Optional, PLATFORM_INITIALIZER, ReflectiveInjector, TRANSLATIONS, TRANSLATIONS_FORMAT, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
 import { AnimationParser } from '../animation/animation_parser';
 import { CompilerConfig } from '../config';
 import { DirectiveNormalizer } from '../directive_normalizer';
@@ -48,6 +48,7 @@ var /** @type {?} */ _NO_RESOURCE_LOADER = {
         throw new Error("No ResourceLoader implementation has been provided. Can't read the url \"" + url + "\"");
     }
 };
+var /** @type {?} */ baseHtmlParser = new OpaqueToken('HtmlParser');
 /**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
@@ -60,17 +61,24 @@ export var /** @type {?} */ COMPILER_PROVIDERS = [
     Console,
     Lexer,
     Parser,
-    HtmlParser,
+    {
+        provide: baseHtmlParser,
+        useClass: HtmlParser,
+    },
     {
         provide: i18n.I18NHtmlParser,
         useFactory: function (parser, translations, format) {
             return new i18n.I18NHtmlParser(parser, translations, format);
         },
         deps: [
-            HtmlParser,
+            baseHtmlParser,
             [new Optional(), new Inject(TRANSLATIONS)],
             [new Optional(), new Inject(TRANSLATIONS_FORMAT)],
         ]
+    },
+    {
+        provide: HtmlParser,
+        useExisting: i18n.I18NHtmlParser,
     },
     TemplateParser,
     DirectiveNormalizer,

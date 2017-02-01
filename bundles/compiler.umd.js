@@ -1,5 +1,5 @@
 /**
- * @license Angular v2.4.5-14e9751
+ * @license Angular v2.4.5-8d4aa82
  * (c) 2010-2016 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('2.4.5-14e9751');
+    var /** @type {?} */ VERSION = new _angular_core.Version('2.4.5-8d4aa82');
 
     /**
      * @license
@@ -7445,7 +7445,7 @@
             }
         };
         /**
-         * Marks the start of a section, see `_endSection`
+         * Marks the start of a section, see `_closeTranslatableSection`
          * @param {?} node
          * @return {?}
          */
@@ -13807,7 +13807,7 @@
          */
         DirectiveNormalizer.prototype.normalizeLoadedTemplate = function (prenomData, template, templateAbsUrl) {
             var /** @type {?} */ interpolationConfig = InterpolationConfig.fromArray(prenomData.interpolation);
-            var /** @type {?} */ rootNodesAndErrors = this._htmlParser.parse(template, stringify(prenomData.componentType), false, interpolationConfig);
+            var /** @type {?} */ rootNodesAndErrors = this._htmlParser.parse(template, stringify(prenomData.componentType), true, interpolationConfig);
             if (rootNodesAndErrors.errors.length > 0) {
                 var /** @type {?} */ errorString = rootNodesAndErrors.errors.join('\n');
                 throw new SyntaxError("Template parse errors:\n" + errorString);
@@ -13944,6 +13944,20 @@
          * @param {?} context
          * @return {?}
          */
+        TemplatePreparseVisitor.prototype.visitExpansion = function (ast, context) { visitAll(this, ast.cases); };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        TemplatePreparseVisitor.prototype.visitExpansionCase = function (ast, context) {
+            visitAll(this, ast.expression);
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
         TemplatePreparseVisitor.prototype.visitComment = function (ast, context) { return null; };
         /**
          * @param {?} ast
@@ -13957,18 +13971,6 @@
          * @return {?}
          */
         TemplatePreparseVisitor.prototype.visitText = function (ast, context) { return null; };
-        /**
-         * @param {?} ast
-         * @param {?} context
-         * @return {?}
-         */
-        TemplatePreparseVisitor.prototype.visitExpansion = function (ast, context) { return null; };
-        /**
-         * @param {?} ast
-         * @param {?} context
-         * @return {?}
-         */
-        TemplatePreparseVisitor.prototype.visitExpansionCase = function (ast, context) { return null; };
         return TemplatePreparseVisitor;
     }());
 
@@ -27877,6 +27879,7 @@
             throw new Error("No ResourceLoader implementation has been provided. Can't read the url \"" + url + "\"");
         }
     };
+    var /** @type {?} */ baseHtmlParser = new _angular_core.OpaqueToken('HtmlParser');
     /**
      * A set of providers that provide `JitCompiler` and its dependencies to use for
      * template compilation.
@@ -27889,17 +27892,24 @@
         Console,
         Lexer,
         Parser,
-        HtmlParser,
+        {
+            provide: baseHtmlParser,
+            useClass: HtmlParser,
+        },
         {
             provide: I18NHtmlParser,
             useFactory: function (parser, translations, format) {
                 return new I18NHtmlParser(parser, translations, format);
             },
             deps: [
-                HtmlParser,
+                baseHtmlParser,
                 [new _angular_core.Optional(), new _angular_core.Inject(_angular_core.TRANSLATIONS)],
                 [new _angular_core.Optional(), new _angular_core.Inject(_angular_core.TRANSLATIONS_FORMAT)],
             ]
+        },
+        {
+            provide: HtmlParser,
+            useExisting: I18NHtmlParser,
         },
         TemplateParser,
         DirectiveNormalizer,
