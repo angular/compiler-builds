@@ -98,7 +98,7 @@ export class StaticReflector {
             annotations = [];
             const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             if (classMetadata['extends']) {
-                const /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
+                const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
                 if (parentType && (parentType instanceof StaticSymbol)) {
                     const /** @type {?} */ parentAnnotations = this.annotations(parentType);
                     annotations.push(...parentAnnotations);
@@ -324,6 +324,19 @@ export class StaticReflector {
         else {
             throw error;
         }
+    }
+    /**
+     * Simplify but discard any errors
+     * @param {?} context
+     * @param {?} value
+     * @return {?}
+     */
+    trySimplify(context, value) {
+        const /** @type {?} */ originalRecorder = this.errorRecorder;
+        this.errorRecorder = (error, fileName) => { };
+        const /** @type {?} */ result = this.simplify(context, value);
+        this.errorRecorder = originalRecorder;
+        return result;
     }
     /**
      * \@internal
