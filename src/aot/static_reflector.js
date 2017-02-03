@@ -11,7 +11,6 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { Attribute, Component, ContentChild, ContentChildren, Directive, Host, HostBinding, HostListener, Inject, Injectable, Input, NgModule, Optional, Output, Pipe, Self, SkipSelf, ViewChild, ViewChildren, animate, group, keyframes, sequence, state, style, transition, trigger } from '@angular/core';
-import { SyntaxError } from '../util';
 import { StaticSymbol } from './static_symbol';
 var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
     coreDecorators: '@angular/core/src/metadata',
@@ -601,7 +600,7 @@ export var StaticReflector = (function () {
                 if (e.fileName) {
                     throw positionalError(message, e.fileName, e.line, e.column);
                 }
-                throw new SyntaxError(message);
+                throw new Error(message);
             }
         }
         var /** @type {?} */ recordedSimplifyInContext = function (context, value, depth) {
