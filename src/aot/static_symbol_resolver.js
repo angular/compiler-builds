@@ -316,7 +316,8 @@ export var StaticSymbolResolver = (function () {
     StaticSymbolResolver.prototype.getSymbolByModule = function (module, symbolName, containingFile) {
         var /** @type {?} */ filePath = this.resolveModule(module, containingFile);
         if (!filePath) {
-            throw new Error("Could not resolve module " + module + " relative to " + containingFile);
+            this.reportError(new Error("Could not resolve module " + module + (containingFile ? " relative to $ {\n            containingFile\n          } " : '')), null);
+            return this.getStaticSymbol("ERROR:" + module, symbolName);
         }
         return this.getStaticSymbol(filePath, symbolName);
     };

@@ -364,7 +364,10 @@ var _Visitor = (function () {
                 var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '');
                 var /** @type {?} */ nodes = _this._translations.get(message);
                 if (nodes) {
-                    if (nodes[0] instanceof html.Text) {
+                    if (nodes.length == 0) {
+                        translatedAttributes.push(new html.Attribute(attr.name, '', attr.sourceSpan));
+                    }
+                    else if (nodes[0] instanceof html.Text) {
                         var /** @type {?} */ value = ((nodes[0])).value;
                         translatedAttributes.push(new html.Attribute(attr.name, value, attr.sourceSpan));
                     }
@@ -396,7 +399,7 @@ var _Visitor = (function () {
         }
     };
     /**
-     * Marks the start of a section, see `_endSection`
+     * Marks the start of a section, see `_closeTranslatableSection`
      * @param {?} node
      * @return {?}
      */
