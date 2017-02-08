@@ -55,7 +55,7 @@ TokenType[TokenType.EXPANSION_CASE_EXP_START] = "EXPANSION_CASE_EXP_START";
 TokenType[TokenType.EXPANSION_CASE_EXP_END] = "EXPANSION_CASE_EXP_END";
 TokenType[TokenType.EXPANSION_FORM_END] = "EXPANSION_FORM_END";
 TokenType[TokenType.EOF] = "EOF";
-export var Token = (function () {
+var Token = (function () {
     /**
      * @param {?} type
      * @param {?} parts
@@ -68,6 +68,7 @@ export var Token = (function () {
     }
     return Token;
 }());
+export { Token };
 function Token_tsickle_Closure_declarations() {
     /** @type {?} */
     Token.prototype.type;
@@ -76,7 +77,7 @@ function Token_tsickle_Closure_declarations() {
     /** @type {?} */
     Token.prototype.sourceSpan;
 }
-export var TokenError = (function (_super) {
+var TokenError = (function (_super) {
     __extends(TokenError, _super);
     /**
      * @param {?} errorMsg
@@ -84,16 +85,18 @@ export var TokenError = (function (_super) {
      * @param {?} span
      */
     function TokenError(errorMsg, tokenType, span) {
-        _super.call(this, span, errorMsg);
-        this.tokenType = tokenType;
+        var _this = _super.call(this, span, errorMsg) || this;
+        _this.tokenType = tokenType;
+        return _this;
     }
     return TokenError;
 }(ParseError));
+export { TokenError };
 function TokenError_tsickle_Closure_declarations() {
     /** @type {?} */
     TokenError.prototype.tokenType;
 }
-export var TokenizeResult = (function () {
+var TokenizeResult = (function () {
     /**
      * @param {?} tokens
      * @param {?} errors
@@ -104,6 +107,7 @@ export var TokenizeResult = (function () {
     }
     return TokenizeResult;
 }());
+export { TokenizeResult };
 function TokenizeResult_tsickle_Closure_declarations() {
     /** @type {?} */
     TokenizeResult.prototype.tokens;

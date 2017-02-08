@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export var Message = (function () {
+var Message = (function () {
     /**
      * @param {?} nodes message AST
      * @param {?} placeholders maps placeholder names to static content
@@ -24,6 +24,7 @@ export var Message = (function () {
     }
     return Message;
 }());
+export { Message };
 function Message_tsickle_Closure_declarations() {
     /** @type {?} */
     Message.prototype.nodes;
@@ -38,7 +39,7 @@ function Message_tsickle_Closure_declarations() {
     /** @type {?} */
     Message.prototype.id;
 }
-export var Text = (function () {
+var Text = (function () {
     /**
      * @param {?} value
      * @param {?} sourceSpan
@@ -55,13 +56,14 @@ export var Text = (function () {
     Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
     return Text;
 }());
+export { Text };
 function Text_tsickle_Closure_declarations() {
     /** @type {?} */
     Text.prototype.value;
     /** @type {?} */
     Text.prototype.sourceSpan;
 }
-export var Container = (function () {
+var Container = (function () {
     /**
      * @param {?} children
      * @param {?} sourceSpan
@@ -78,13 +80,14 @@ export var Container = (function () {
     Container.prototype.visit = function (visitor, context) { return visitor.visitContainer(this, context); };
     return Container;
 }());
+export { Container };
 function Container_tsickle_Closure_declarations() {
     /** @type {?} */
     Container.prototype.children;
     /** @type {?} */
     Container.prototype.sourceSpan;
 }
-export var Icu = (function () {
+var Icu = (function () {
     /**
      * @param {?} expression
      * @param {?} type
@@ -105,6 +108,7 @@ export var Icu = (function () {
     Icu.prototype.visit = function (visitor, context) { return visitor.visitIcu(this, context); };
     return Icu;
 }());
+export { Icu };
 function Icu_tsickle_Closure_declarations() {
     /** @type {?} */
     Icu.prototype.expressionPlaceholder;
@@ -117,7 +121,7 @@ function Icu_tsickle_Closure_declarations() {
     /** @type {?} */
     Icu.prototype.sourceSpan;
 }
-export var TagPlaceholder = (function () {
+var TagPlaceholder = (function () {
     /**
      * @param {?} tag
      * @param {?} attrs
@@ -144,6 +148,7 @@ export var TagPlaceholder = (function () {
     TagPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitTagPlaceholder(this, context); };
     return TagPlaceholder;
 }());
+export { TagPlaceholder };
 function TagPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     TagPlaceholder.prototype.tag;
@@ -160,7 +165,7 @@ function TagPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     TagPlaceholder.prototype.sourceSpan;
 }
-export var Placeholder = (function () {
+var Placeholder = (function () {
     /**
      * @param {?} value
      * @param {?} name
@@ -179,6 +184,7 @@ export var Placeholder = (function () {
     Placeholder.prototype.visit = function (visitor, context) { return visitor.visitPlaceholder(this, context); };
     return Placeholder;
 }());
+export { Placeholder };
 function Placeholder_tsickle_Closure_declarations() {
     /** @type {?} */
     Placeholder.prototype.value;
@@ -187,7 +193,7 @@ function Placeholder_tsickle_Closure_declarations() {
     /** @type {?} */
     Placeholder.prototype.sourceSpan;
 }
-export var IcuPlaceholder = (function () {
+var IcuPlaceholder = (function () {
     /**
      * @param {?} value
      * @param {?} name
@@ -206,6 +212,7 @@ export var IcuPlaceholder = (function () {
     IcuPlaceholder.prototype.visit = function (visitor, context) { return visitor.visitIcuPlaceholder(this, context); };
     return IcuPlaceholder;
 }());
+export { IcuPlaceholder };
 function IcuPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     IcuPlaceholder.prototype.value;
@@ -214,7 +221,7 @@ function IcuPlaceholder_tsickle_Closure_declarations() {
     /** @type {?} */
     IcuPlaceholder.prototype.sourceSpan;
 }
-export var CloneVisitor = (function () {
+var CloneVisitor = (function () {
     function CloneVisitor() {
     }
     /**
@@ -274,7 +281,8 @@ export var CloneVisitor = (function () {
     };
     return CloneVisitor;
 }());
-export var RecurseVisitor = (function () {
+export { CloneVisitor };
+var RecurseVisitor = (function () {
     function RecurseVisitor() {
     }
     /**
@@ -327,4 +335,5 @@ export var RecurseVisitor = (function () {
     ;
     return RecurseVisitor;
 }());
+export { RecurseVisitor };
 //# sourceMappingURL=i18n_ast.js.map

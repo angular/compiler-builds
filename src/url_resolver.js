@@ -53,7 +53,7 @@ export var /** @type {?} */ DEFAULT_PACKAGE_URL_PROVIDER = {
  * Attacker-controlled data introduced by a template could expose your
  * application to XSS risks. For more detail, see the [Security Guide](http://g.co/ng/security).
  */
-export var UrlResolver = (function () {
+var UrlResolver = (function () {
     /**
      * @param {?=} _packagePrefix
      */
@@ -88,16 +88,17 @@ export var UrlResolver = (function () {
         }
         return resolvedUrl;
     };
-    /** @nocollapse */
-    UrlResolver.ctorParameters = function () { return [
-        { type: undefined, decorators: [{ type: Inject, args: [PACKAGE_ROOT_URL,] },] },
-    ]; };
-    UrlResolver = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [String])
-    ], UrlResolver);
     return UrlResolver;
 }());
+/** @nocollapse */
+UrlResolver.ctorParameters = function () { return [
+    { type: undefined, decorators: [{ type: Inject, args: [PACKAGE_ROOT_URL,] },] },
+]; };
+UrlResolver = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [String])
+], UrlResolver);
+export { UrlResolver };
 function UrlResolver_tsickle_Closure_declarations() {
     /**
      * @nocollapse

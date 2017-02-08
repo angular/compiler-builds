@@ -52,7 +52,7 @@ export function debugOutputAstAsTypeScript(ast) {
     });
     return ctx.toSource();
 }
-export var TypeScriptEmitter = (function () {
+var TypeScriptEmitter = (function () {
     /**
      * @param {?} _importResolver
      */
@@ -72,7 +72,7 @@ export var TypeScriptEmitter = (function () {
         converter.visitAllStatements(stmts, ctx);
         var /** @type {?} */ srcParts = [];
         converter.reexports.forEach(function (reexports, exportedFilePath) {
-            var /** @type {?} */ reexportsCode = reexports.map(function (reexport) { return (reexport.name + " as " + reexport.as); }).join(',');
+            var /** @type {?} */ reexportsCode = reexports.map(function (reexport) { return reexport.name + " as " + reexport.as; }).join(',');
             srcParts.push("export {" + reexportsCode + "} from '" + _this._importResolver.fileNameToModuleName(exportedFilePath, genFilePath) + "';");
         });
         converter.importsWithPrefixes.forEach(function (prefix, importedFilePath) {
@@ -85,6 +85,7 @@ export var TypeScriptEmitter = (function () {
     };
     return TypeScriptEmitter;
 }());
+export { TypeScriptEmitter };
 function TypeScriptEmitter_tsickle_Closure_declarations() {
     /** @type {?} */
     TypeScriptEmitter.prototype._importResolver;
@@ -96,12 +97,13 @@ var _TsEmitterVisitor = (function (_super) {
      * @param {?} _importResolver
      */
     function _TsEmitterVisitor(_genFilePath, _importResolver) {
-        _super.call(this, false);
-        this._genFilePath = _genFilePath;
-        this._importResolver = _importResolver;
-        this.typeExpression = 0;
-        this.importsWithPrefixes = new Map();
-        this.reexports = new Map();
+        var _this = _super.call(this, false) || this;
+        _this._genFilePath = _genFilePath;
+        _this._importResolver = _importResolver;
+        _this.typeExpression = 0;
+        _this.importsWithPrefixes = new Map();
+        _this.reexports = new Map();
+        return _this;
     }
     /**
      * @param {?} t
@@ -366,7 +368,7 @@ var _TsEmitterVisitor = (function (_super) {
         ctx.decIndent();
         ctx.println("} catch (" + CATCH_ERROR_VAR.name + ") {");
         ctx.incIndent();
-        var /** @type {?} */ catchStmts = [(CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
+        var /** @type {?} */ catchStmts = [/** @type {?} */ (CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
                 o.StmtModifier.Final
             ]))].concat(stmt.catchStmts);
         this.visitAllStatements(catchStmts, ctx);

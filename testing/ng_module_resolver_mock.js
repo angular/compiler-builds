@@ -12,12 +12,13 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { NgModuleResolver } from '@angular/compiler';
 import { Compiler, Injectable, Injector } from '@angular/core';
-export var MockNgModuleResolver = (function (_super) {
+var MockNgModuleResolver = (function (_super) {
     __extends(MockNgModuleResolver, _super);
     function MockNgModuleResolver(_injector) {
-        _super.call(this);
-        this._injector = _injector;
-        this._ngModules = new Map();
+        var _this = _super.call(this) || this;
+        _this._injector = _injector;
+        _this._ngModules = new Map();
+        return _this;
     }
     /**
      * Overrides the {@link NgModule} for a module.
@@ -42,13 +43,14 @@ export var MockNgModuleResolver = (function (_super) {
         configurable: true
     });
     MockNgModuleResolver.prototype._clearCacheFor = function (component) { this._compiler.clearCacheFor(component); };
-    MockNgModuleResolver.decorators = [
-        { type: Injectable },
-    ];
-    /** @nocollapse */
-    MockNgModuleResolver.ctorParameters = function () { return [
-        { type: Injector, },
-    ]; };
     return MockNgModuleResolver;
 }(NgModuleResolver));
+export { MockNgModuleResolver };
+MockNgModuleResolver.decorators = [
+    { type: Injectable },
+];
+/** @nocollapse */
+MockNgModuleResolver.ctorParameters = function () { return [
+    { type: Injector, },
+]; };
 //# sourceMappingURL=ng_module_resolver_mock.js.map

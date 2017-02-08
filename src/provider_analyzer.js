@@ -15,18 +15,19 @@ import { isBlank, isPresent } from './facade/lang';
 import { Identifiers, resolveIdentifier } from './identifiers';
 import { ParseError } from './parse_util';
 import { ProviderAst, ProviderAstType } from './template_parser/template_ast';
-export var ProviderError = (function (_super) {
+var ProviderError = (function (_super) {
     __extends(ProviderError, _super);
     /**
      * @param {?} message
      * @param {?} span
      */
     function ProviderError(message, span) {
-        _super.call(this, span, message);
+        return _super.call(this, span, message) || this;
     }
     return ProviderError;
 }(ParseError));
-export var ProviderViewContext = (function () {
+export { ProviderError };
+var ProviderViewContext = (function () {
     /**
      * @param {?} component
      * @param {?} sourceSpan
@@ -46,6 +47,7 @@ export var ProviderViewContext = (function () {
     }
     return ProviderViewContext;
 }());
+export { ProviderViewContext };
 function ProviderViewContext_tsickle_Closure_declarations() {
     /**
      * \@internal
@@ -64,7 +66,7 @@ function ProviderViewContext_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderViewContext.prototype.sourceSpan;
 }
-export var ProviderElementContext = (function () {
+var ProviderElementContext = (function () {
     /**
      * @param {?} viewContext
      * @param {?} _parent
@@ -332,6 +334,7 @@ export var ProviderElementContext = (function () {
     };
     return ProviderElementContext;
 }());
+export { ProviderElementContext };
 function ProviderElementContext_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderElementContext.prototype._contentQueries;
@@ -356,7 +359,7 @@ function ProviderElementContext_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderElementContext.prototype._sourceSpan;
 }
-export var NgModuleProviderAnalyzer = (function () {
+var NgModuleProviderAnalyzer = (function () {
     /**
      * @param {?} ngModule
      * @param {?} extraProviders
@@ -475,6 +478,7 @@ export var NgModuleProviderAnalyzer = (function () {
     };
     return NgModuleProviderAnalyzer;
 }());
+export { NgModuleProviderAnalyzer };
 function NgModuleProviderAnalyzer_tsickle_Closure_declarations() {
     /** @type {?} */
     NgModuleProviderAnalyzer.prototype._transformedProviders;

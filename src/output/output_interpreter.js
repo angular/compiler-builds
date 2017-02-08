@@ -107,7 +107,7 @@ function createDynamicClass(_classStmt, _ctx, _visitor) {
             value: function () {
                 var args = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i - 0] = arguments[_i];
+                    args[_i] = arguments[_i];
                 }
                 var /** @type {?} */ instanceCtx = new _ExecutionContext(_ctx, this, _classStmt.name, _ctx.vars);
                 return _executeFunctionStatements(paramNames, args, method.body, instanceCtx, _visitor);
@@ -120,7 +120,7 @@ function createDynamicClass(_classStmt, _ctx, _visitor) {
         var _this = this;
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i - 0] = arguments[_i];
+            args[_i] = arguments[_i];
         }
         var /** @type {?} */ instanceCtx = new _ExecutionContext(_ctx, this, _classStmt.name, _ctx.vars);
         _classStmt.fields.forEach(function (field) { _this[field.name] = undefined; });
@@ -530,7 +530,7 @@ function _declareFn(varNames, statements, ctx, visitor) {
     return function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i - 0] = arguments[_i];
+            args[_i] = arguments[_i];
         }
         return _executeFunctionStatements(varNames, args, statements, ctx, visitor);
     };

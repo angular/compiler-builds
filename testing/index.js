@@ -31,7 +31,7 @@ import { MockDirectiveResolver } from './directive_resolver_mock';
 import { MockNgModuleResolver } from './ng_module_resolver_mock';
 import { MockPipeResolver } from './pipe_resolver_mock';
 import { MetadataOverrider } from './metadata_overrider';
-export var TestingCompilerFactoryImpl = (function () {
+var TestingCompilerFactoryImpl = (function () {
     function TestingCompilerFactoryImpl(_compilerFactory) {
         this._compilerFactory = _compilerFactory;
     }
@@ -39,16 +39,17 @@ export var TestingCompilerFactoryImpl = (function () {
         var compiler = this._compilerFactory.createCompiler(options);
         return new TestingCompilerImpl(compiler, compiler.injector.get(MockDirectiveResolver), compiler.injector.get(MockPipeResolver), compiler.injector.get(MockNgModuleResolver));
     };
-    TestingCompilerFactoryImpl.decorators = [
-        { type: Injectable },
-    ];
-    /** @nocollapse */
-    TestingCompilerFactoryImpl.ctorParameters = function () { return [
-        { type: CompilerFactory, },
-    ]; };
     return TestingCompilerFactoryImpl;
 }());
-export var TestingCompilerImpl = (function () {
+export { TestingCompilerFactoryImpl };
+TestingCompilerFactoryImpl.decorators = [
+    { type: Injectable },
+];
+/** @nocollapse */
+TestingCompilerFactoryImpl.ctorParameters = function () { return [
+    { type: CompilerFactory, },
+]; };
+var TestingCompilerImpl = (function () {
     function TestingCompilerImpl(_compiler, _directiveResolver, _pipeResolver, _moduleResolver) {
         this._compiler = _compiler;
         this._directiveResolver = _directiveResolver;
@@ -96,6 +97,7 @@ export var TestingCompilerImpl = (function () {
     TestingCompilerImpl.prototype.clearCacheFor = function (type) { this._compiler.clearCacheFor(type); };
     return TestingCompilerImpl;
 }());
+export { TestingCompilerImpl };
 /**
  * Platform for dynamic tests
  *

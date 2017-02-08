@@ -8,7 +8,7 @@
 /**
  * @abstract
  */
-export var ElementSchemaRegistry = (function () {
+var ElementSchemaRegistry = (function () {
     function ElementSchemaRegistry() {
     }
     /**
@@ -78,4 +78,5 @@ export var ElementSchemaRegistry = (function () {
     ElementSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) { };
     return ElementSchemaRegistry;
 }());
+export { ElementSchemaRegistry };
 //# sourceMappingURL=element_schema_registry.js.map

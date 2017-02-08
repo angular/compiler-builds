@@ -11,7 +11,7 @@ export declare class MockPipeResolver extends PipeResolver {
     private _injector;
     private _pipes;
     constructor(_injector: Injector);
-    private _compiler;
+    private readonly _compiler;
     private _clearCacheFor(pipe);
     /**
      * Overrides the {@link Pipe} for a pipe.

@@ -21,7 +21,7 @@ CompileViewRootNodeType.NgContent = 2;
 CompileViewRootNodeType[CompileViewRootNodeType.Node] = "Node";
 CompileViewRootNodeType[CompileViewRootNodeType.ViewContainer] = "ViewContainer";
 CompileViewRootNodeType[CompileViewRootNodeType.NgContent] = "NgContent";
-export var CompileViewRootNode = (function () {
+var CompileViewRootNode = (function () {
     /**
      * @param {?} type
      * @param {?} expr
@@ -34,6 +34,7 @@ export var CompileViewRootNode = (function () {
     }
     return CompileViewRootNode;
 }());
+export { CompileViewRootNode };
 function CompileViewRootNode_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileViewRootNode.prototype.type;
@@ -42,7 +43,7 @@ function CompileViewRootNode_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileViewRootNode.prototype.ngContentIndex;
 }
-export var CompileView = (function () {
+var CompileView = (function () {
     /**
      * @param {?} component
      * @param {?} genConfig
@@ -161,6 +162,7 @@ export var CompileView = (function () {
     };
     return CompileView;
 }());
+export { CompileView };
 function CompileView_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileView.prototype.viewType;

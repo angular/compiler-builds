@@ -24,7 +24,7 @@ function evalExpression(sourceUrl, expr, declarations, vars) {
     var /** @type {?} */ fnBody = declarations + "\nreturn " + expr + "\n//# sourceURL=" + sourceUrl;
     var /** @type {?} */ fnArgNames = [];
     var /** @type {?} */ fnArgValues = [];
-    for (var argName in vars) {
+    for (var /** @type {?} */ argName in vars) {
         fnArgNames.push(argName);
         fnArgValues.push(vars[argName]);
     }
@@ -45,9 +45,10 @@ export function jitStatements(sourceUrl, statements, resultVar) {
 var JitEmitterVisitor = (function (_super) {
     __extends(JitEmitterVisitor, _super);
     function JitEmitterVisitor() {
-        _super.apply(this, arguments);
-        this._evalArgNames = [];
-        this._evalArgValues = [];
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this._evalArgNames = [];
+        _this._evalArgValues = [];
+        return _this;
     }
     /**
      * @return {?}

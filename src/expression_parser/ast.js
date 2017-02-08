@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 import { isBlank } from '../facade/lang';
-export var ParserError = (function () {
+var ParserError = (function () {
     /**
      * @param {?} message
      * @param {?} input
@@ -26,6 +26,7 @@ export var ParserError = (function () {
     }
     return ParserError;
 }());
+export { ParserError };
 function ParserError_tsickle_Closure_declarations() {
     /** @type {?} */
     ParserError.prototype.message;
@@ -36,7 +37,7 @@ function ParserError_tsickle_Closure_declarations() {
     /** @type {?} */
     ParserError.prototype.ctxLocation;
 }
-export var ParseSpan = (function () {
+var ParseSpan = (function () {
     /**
      * @param {?} start
      * @param {?} end
@@ -47,13 +48,14 @@ export var ParseSpan = (function () {
     }
     return ParseSpan;
 }());
+export { ParseSpan };
 function ParseSpan_tsickle_Closure_declarations() {
     /** @type {?} */
     ParseSpan.prototype.start;
     /** @type {?} */
     ParseSpan.prototype.end;
 }
-export var AST = (function () {
+var AST = (function () {
     /**
      * @param {?} span
      */
@@ -75,6 +77,7 @@ export var AST = (function () {
     AST.prototype.toString = function () { return 'AST'; };
     return AST;
 }());
+export { AST };
 function AST_tsickle_Closure_declarations() {
     /** @type {?} */
     AST.prototype.span;
@@ -92,7 +95,7 @@ function AST_tsickle_Closure_declarations() {
  * expression language. The `uninterpretedExpression` part of the quote is
  * therefore not interpreted by the Angular's own expression parser.
  */
-export var Quote = (function (_super) {
+var Quote = (function (_super) {
     __extends(Quote, _super);
     /**
      * @param {?} span
@@ -101,10 +104,11 @@ export var Quote = (function (_super) {
      * @param {?} location
      */
     function Quote(span, prefix, uninterpretedExpression, location) {
-        _super.call(this, span);
-        this.prefix = prefix;
-        this.uninterpretedExpression = uninterpretedExpression;
-        this.location = location;
+        var _this = _super.call(this, span) || this;
+        _this.prefix = prefix;
+        _this.uninterpretedExpression = uninterpretedExpression;
+        _this.location = location;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -121,6 +125,7 @@ export var Quote = (function (_super) {
     Quote.prototype.toString = function () { return 'Quote'; };
     return Quote;
 }(AST));
+export { Quote };
 function Quote_tsickle_Closure_declarations() {
     /** @type {?} */
     Quote.prototype.prefix;
@@ -129,10 +134,10 @@ function Quote_tsickle_Closure_declarations() {
     /** @type {?} */
     Quote.prototype.location;
 }
-export var EmptyExpr = (function (_super) {
+var EmptyExpr = (function (_super) {
     __extends(EmptyExpr, _super);
     function EmptyExpr() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @param {?} visitor
@@ -145,10 +150,11 @@ export var EmptyExpr = (function (_super) {
     };
     return EmptyExpr;
 }(AST));
-export var ImplicitReceiver = (function (_super) {
+export { EmptyExpr };
+var ImplicitReceiver = (function (_super) {
     __extends(ImplicitReceiver, _super);
     function ImplicitReceiver() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @param {?} visitor
@@ -161,18 +167,20 @@ export var ImplicitReceiver = (function (_super) {
     };
     return ImplicitReceiver;
 }(AST));
+export { ImplicitReceiver };
 /**
  * Multiple expressions separated by a semicolon.
  */
-export var Chain = (function (_super) {
+var Chain = (function (_super) {
     __extends(Chain, _super);
     /**
      * @param {?} span
      * @param {?} expressions
      */
     function Chain(span, expressions) {
-        _super.call(this, span);
-        this.expressions = expressions;
+        var _this = _super.call(this, span) || this;
+        _this.expressions = expressions;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -185,11 +193,12 @@ export var Chain = (function (_super) {
     };
     return Chain;
 }(AST));
+export { Chain };
 function Chain_tsickle_Closure_declarations() {
     /** @type {?} */
     Chain.prototype.expressions;
 }
-export var Conditional = (function (_super) {
+var Conditional = (function (_super) {
     __extends(Conditional, _super);
     /**
      * @param {?} span
@@ -198,10 +207,11 @@ export var Conditional = (function (_super) {
      * @param {?} falseExp
      */
     function Conditional(span, condition, trueExp, falseExp) {
-        _super.call(this, span);
-        this.condition = condition;
-        this.trueExp = trueExp;
-        this.falseExp = falseExp;
+        var _this = _super.call(this, span) || this;
+        _this.condition = condition;
+        _this.trueExp = trueExp;
+        _this.falseExp = falseExp;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -214,6 +224,7 @@ export var Conditional = (function (_super) {
     };
     return Conditional;
 }(AST));
+export { Conditional };
 function Conditional_tsickle_Closure_declarations() {
     /** @type {?} */
     Conditional.prototype.condition;
@@ -222,7 +233,7 @@ function Conditional_tsickle_Closure_declarations() {
     /** @type {?} */
     Conditional.prototype.falseExp;
 }
-export var PropertyRead = (function (_super) {
+var PropertyRead = (function (_super) {
     __extends(PropertyRead, _super);
     /**
      * @param {?} span
@@ -230,9 +241,10 @@ export var PropertyRead = (function (_super) {
      * @param {?} name
      */
     function PropertyRead(span, receiver, name) {
-        _super.call(this, span);
-        this.receiver = receiver;
-        this.name = name;
+        var _this = _super.call(this, span) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -245,13 +257,14 @@ export var PropertyRead = (function (_super) {
     };
     return PropertyRead;
 }(AST));
+export { PropertyRead };
 function PropertyRead_tsickle_Closure_declarations() {
     /** @type {?} */
     PropertyRead.prototype.receiver;
     /** @type {?} */
     PropertyRead.prototype.name;
 }
-export var PropertyWrite = (function (_super) {
+var PropertyWrite = (function (_super) {
     __extends(PropertyWrite, _super);
     /**
      * @param {?} span
@@ -260,10 +273,11 @@ export var PropertyWrite = (function (_super) {
      * @param {?} value
      */
     function PropertyWrite(span, receiver, name, value) {
-        _super.call(this, span);
-        this.receiver = receiver;
-        this.name = name;
-        this.value = value;
+        var _this = _super.call(this, span) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -276,6 +290,7 @@ export var PropertyWrite = (function (_super) {
     };
     return PropertyWrite;
 }(AST));
+export { PropertyWrite };
 function PropertyWrite_tsickle_Closure_declarations() {
     /** @type {?} */
     PropertyWrite.prototype.receiver;
@@ -284,7 +299,7 @@ function PropertyWrite_tsickle_Closure_declarations() {
     /** @type {?} */
     PropertyWrite.prototype.value;
 }
-export var SafePropertyRead = (function (_super) {
+var SafePropertyRead = (function (_super) {
     __extends(SafePropertyRead, _super);
     /**
      * @param {?} span
@@ -292,9 +307,10 @@ export var SafePropertyRead = (function (_super) {
      * @param {?} name
      */
     function SafePropertyRead(span, receiver, name) {
-        _super.call(this, span);
-        this.receiver = receiver;
-        this.name = name;
+        var _this = _super.call(this, span) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -307,13 +323,14 @@ export var SafePropertyRead = (function (_super) {
     };
     return SafePropertyRead;
 }(AST));
+export { SafePropertyRead };
 function SafePropertyRead_tsickle_Closure_declarations() {
     /** @type {?} */
     SafePropertyRead.prototype.receiver;
     /** @type {?} */
     SafePropertyRead.prototype.name;
 }
-export var KeyedRead = (function (_super) {
+var KeyedRead = (function (_super) {
     __extends(KeyedRead, _super);
     /**
      * @param {?} span
@@ -321,9 +338,10 @@ export var KeyedRead = (function (_super) {
      * @param {?} key
      */
     function KeyedRead(span, obj, key) {
-        _super.call(this, span);
-        this.obj = obj;
-        this.key = key;
+        var _this = _super.call(this, span) || this;
+        _this.obj = obj;
+        _this.key = key;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -336,13 +354,14 @@ export var KeyedRead = (function (_super) {
     };
     return KeyedRead;
 }(AST));
+export { KeyedRead };
 function KeyedRead_tsickle_Closure_declarations() {
     /** @type {?} */
     KeyedRead.prototype.obj;
     /** @type {?} */
     KeyedRead.prototype.key;
 }
-export var KeyedWrite = (function (_super) {
+var KeyedWrite = (function (_super) {
     __extends(KeyedWrite, _super);
     /**
      * @param {?} span
@@ -351,10 +370,11 @@ export var KeyedWrite = (function (_super) {
      * @param {?} value
      */
     function KeyedWrite(span, obj, key, value) {
-        _super.call(this, span);
-        this.obj = obj;
-        this.key = key;
-        this.value = value;
+        var _this = _super.call(this, span) || this;
+        _this.obj = obj;
+        _this.key = key;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -367,6 +387,7 @@ export var KeyedWrite = (function (_super) {
     };
     return KeyedWrite;
 }(AST));
+export { KeyedWrite };
 function KeyedWrite_tsickle_Closure_declarations() {
     /** @type {?} */
     KeyedWrite.prototype.obj;
@@ -375,7 +396,7 @@ function KeyedWrite_tsickle_Closure_declarations() {
     /** @type {?} */
     KeyedWrite.prototype.value;
 }
-export var BindingPipe = (function (_super) {
+var BindingPipe = (function (_super) {
     __extends(BindingPipe, _super);
     /**
      * @param {?} span
@@ -384,10 +405,11 @@ export var BindingPipe = (function (_super) {
      * @param {?} args
      */
     function BindingPipe(span, exp, name, args) {
-        _super.call(this, span);
-        this.exp = exp;
-        this.name = name;
-        this.args = args;
+        var _this = _super.call(this, span) || this;
+        _this.exp = exp;
+        _this.name = name;
+        _this.args = args;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -400,6 +422,7 @@ export var BindingPipe = (function (_super) {
     };
     return BindingPipe;
 }(AST));
+export { BindingPipe };
 function BindingPipe_tsickle_Closure_declarations() {
     /** @type {?} */
     BindingPipe.prototype.exp;
@@ -408,15 +431,16 @@ function BindingPipe_tsickle_Closure_declarations() {
     /** @type {?} */
     BindingPipe.prototype.args;
 }
-export var LiteralPrimitive = (function (_super) {
+var LiteralPrimitive = (function (_super) {
     __extends(LiteralPrimitive, _super);
     /**
      * @param {?} span
      * @param {?} value
      */
     function LiteralPrimitive(span, value) {
-        _super.call(this, span);
-        this.value = value;
+        var _this = _super.call(this, span) || this;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -429,19 +453,21 @@ export var LiteralPrimitive = (function (_super) {
     };
     return LiteralPrimitive;
 }(AST));
+export { LiteralPrimitive };
 function LiteralPrimitive_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralPrimitive.prototype.value;
 }
-export var LiteralArray = (function (_super) {
+var LiteralArray = (function (_super) {
     __extends(LiteralArray, _super);
     /**
      * @param {?} span
      * @param {?} expressions
      */
     function LiteralArray(span, expressions) {
-        _super.call(this, span);
-        this.expressions = expressions;
+        var _this = _super.call(this, span) || this;
+        _this.expressions = expressions;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -454,11 +480,12 @@ export var LiteralArray = (function (_super) {
     };
     return LiteralArray;
 }(AST));
+export { LiteralArray };
 function LiteralArray_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralArray.prototype.expressions;
 }
-export var LiteralMap = (function (_super) {
+var LiteralMap = (function (_super) {
     __extends(LiteralMap, _super);
     /**
      * @param {?} span
@@ -466,9 +493,10 @@ export var LiteralMap = (function (_super) {
      * @param {?} values
      */
     function LiteralMap(span, keys, values) {
-        _super.call(this, span);
-        this.keys = keys;
-        this.values = values;
+        var _this = _super.call(this, span) || this;
+        _this.keys = keys;
+        _this.values = values;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -481,13 +509,14 @@ export var LiteralMap = (function (_super) {
     };
     return LiteralMap;
 }(AST));
+export { LiteralMap };
 function LiteralMap_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralMap.prototype.keys;
     /** @type {?} */
     LiteralMap.prototype.values;
 }
-export var Interpolation = (function (_super) {
+var Interpolation = (function (_super) {
     __extends(Interpolation, _super);
     /**
      * @param {?} span
@@ -495,9 +524,10 @@ export var Interpolation = (function (_super) {
      * @param {?} expressions
      */
     function Interpolation(span, strings, expressions) {
-        _super.call(this, span);
-        this.strings = strings;
-        this.expressions = expressions;
+        var _this = _super.call(this, span) || this;
+        _this.strings = strings;
+        _this.expressions = expressions;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -510,13 +540,14 @@ export var Interpolation = (function (_super) {
     };
     return Interpolation;
 }(AST));
+export { Interpolation };
 function Interpolation_tsickle_Closure_declarations() {
     /** @type {?} */
     Interpolation.prototype.strings;
     /** @type {?} */
     Interpolation.prototype.expressions;
 }
-export var Binary = (function (_super) {
+var Binary = (function (_super) {
     __extends(Binary, _super);
     /**
      * @param {?} span
@@ -525,10 +556,11 @@ export var Binary = (function (_super) {
      * @param {?} right
      */
     function Binary(span, operation, left, right) {
-        _super.call(this, span);
-        this.operation = operation;
-        this.left = left;
-        this.right = right;
+        var _this = _super.call(this, span) || this;
+        _this.operation = operation;
+        _this.left = left;
+        _this.right = right;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -541,6 +573,7 @@ export var Binary = (function (_super) {
     };
     return Binary;
 }(AST));
+export { Binary };
 function Binary_tsickle_Closure_declarations() {
     /** @type {?} */
     Binary.prototype.operation;
@@ -549,15 +582,16 @@ function Binary_tsickle_Closure_declarations() {
     /** @type {?} */
     Binary.prototype.right;
 }
-export var PrefixNot = (function (_super) {
+var PrefixNot = (function (_super) {
     __extends(PrefixNot, _super);
     /**
      * @param {?} span
      * @param {?} expression
      */
     function PrefixNot(span, expression) {
-        _super.call(this, span);
-        this.expression = expression;
+        var _this = _super.call(this, span) || this;
+        _this.expression = expression;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -570,11 +604,12 @@ export var PrefixNot = (function (_super) {
     };
     return PrefixNot;
 }(AST));
+export { PrefixNot };
 function PrefixNot_tsickle_Closure_declarations() {
     /** @type {?} */
     PrefixNot.prototype.expression;
 }
-export var MethodCall = (function (_super) {
+var MethodCall = (function (_super) {
     __extends(MethodCall, _super);
     /**
      * @param {?} span
@@ -583,10 +618,11 @@ export var MethodCall = (function (_super) {
      * @param {?} args
      */
     function MethodCall(span, receiver, name, args) {
-        _super.call(this, span);
-        this.receiver = receiver;
-        this.name = name;
-        this.args = args;
+        var _this = _super.call(this, span) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        _this.args = args;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -599,6 +635,7 @@ export var MethodCall = (function (_super) {
     };
     return MethodCall;
 }(AST));
+export { MethodCall };
 function MethodCall_tsickle_Closure_declarations() {
     /** @type {?} */
     MethodCall.prototype.receiver;
@@ -607,7 +644,7 @@ function MethodCall_tsickle_Closure_declarations() {
     /** @type {?} */
     MethodCall.prototype.args;
 }
-export var SafeMethodCall = (function (_super) {
+var SafeMethodCall = (function (_super) {
     __extends(SafeMethodCall, _super);
     /**
      * @param {?} span
@@ -616,10 +653,11 @@ export var SafeMethodCall = (function (_super) {
      * @param {?} args
      */
     function SafeMethodCall(span, receiver, name, args) {
-        _super.call(this, span);
-        this.receiver = receiver;
-        this.name = name;
-        this.args = args;
+        var _this = _super.call(this, span) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        _this.args = args;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -632,6 +670,7 @@ export var SafeMethodCall = (function (_super) {
     };
     return SafeMethodCall;
 }(AST));
+export { SafeMethodCall };
 function SafeMethodCall_tsickle_Closure_declarations() {
     /** @type {?} */
     SafeMethodCall.prototype.receiver;
@@ -640,7 +679,7 @@ function SafeMethodCall_tsickle_Closure_declarations() {
     /** @type {?} */
     SafeMethodCall.prototype.args;
 }
-export var FunctionCall = (function (_super) {
+var FunctionCall = (function (_super) {
     __extends(FunctionCall, _super);
     /**
      * @param {?} span
@@ -648,9 +687,10 @@ export var FunctionCall = (function (_super) {
      * @param {?} args
      */
     function FunctionCall(span, target, args) {
-        _super.call(this, span);
-        this.target = target;
-        this.args = args;
+        var _this = _super.call(this, span) || this;
+        _this.target = target;
+        _this.args = args;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -663,13 +703,14 @@ export var FunctionCall = (function (_super) {
     };
     return FunctionCall;
 }(AST));
+export { FunctionCall };
 function FunctionCall_tsickle_Closure_declarations() {
     /** @type {?} */
     FunctionCall.prototype.target;
     /** @type {?} */
     FunctionCall.prototype.args;
 }
-export var ASTWithSource = (function (_super) {
+var ASTWithSource = (function (_super) {
     __extends(ASTWithSource, _super);
     /**
      * @param {?} ast
@@ -678,11 +719,12 @@ export var ASTWithSource = (function (_super) {
      * @param {?} errors
      */
     function ASTWithSource(ast, source, location, errors) {
-        _super.call(this, new ParseSpan(0, isBlank(source) ? 0 : source.length));
-        this.ast = ast;
-        this.source = source;
-        this.location = location;
-        this.errors = errors;
+        var _this = _super.call(this, new ParseSpan(0, isBlank(source) ? 0 : source.length)) || this;
+        _this.ast = ast;
+        _this.source = source;
+        _this.location = location;
+        _this.errors = errors;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -699,6 +741,7 @@ export var ASTWithSource = (function (_super) {
     ASTWithSource.prototype.toString = function () { return this.source + " in " + this.location; };
     return ASTWithSource;
 }(AST));
+export { ASTWithSource };
 function ASTWithSource_tsickle_Closure_declarations() {
     /** @type {?} */
     ASTWithSource.prototype.ast;
@@ -709,7 +752,7 @@ function ASTWithSource_tsickle_Closure_declarations() {
     /** @type {?} */
     ASTWithSource.prototype.errors;
 }
-export var TemplateBinding = (function () {
+var TemplateBinding = (function () {
     /**
      * @param {?} span
      * @param {?} key
@@ -726,6 +769,7 @@ export var TemplateBinding = (function () {
     }
     return TemplateBinding;
 }());
+export { TemplateBinding };
 function TemplateBinding_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateBinding.prototype.span;
@@ -738,7 +782,7 @@ function TemplateBinding_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateBinding.prototype.expression;
 }
-export var RecursiveAstVisitor = (function () {
+var RecursiveAstVisitor = (function () {
     function RecursiveAstVisitor() {
     }
     /**
@@ -916,7 +960,8 @@ export var RecursiveAstVisitor = (function () {
     RecursiveAstVisitor.prototype.visitQuote = function (ast, context) { return null; };
     return RecursiveAstVisitor;
 }());
-export var AstTransformer = (function () {
+export { RecursiveAstVisitor };
+var AstTransformer = (function () {
     function AstTransformer() {
     }
     /**
@@ -1082,4 +1127,5 @@ export var AstTransformer = (function () {
     };
     return AstTransformer;
 }());
+export { AstTransformer };
 //# sourceMappingURL=ast.js.map

@@ -8,7 +8,7 @@
 /**
  * A segment of text within the template.
  */
-export var TextAst = (function () {
+var TextAst = (function () {
     /**
      * @param {?} value
      * @param {?} ngContentIndex
@@ -27,6 +27,7 @@ export var TextAst = (function () {
     TextAst.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
     return TextAst;
 }());
+export { TextAst };
 function TextAst_tsickle_Closure_declarations() {
     /** @type {?} */
     TextAst.prototype.value;
@@ -38,7 +39,7 @@ function TextAst_tsickle_Closure_declarations() {
 /**
  * A bound expression within the text of a template.
  */
-export var BoundTextAst = (function () {
+var BoundTextAst = (function () {
     /**
      * @param {?} value
      * @param {?} ngContentIndex
@@ -59,6 +60,7 @@ export var BoundTextAst = (function () {
     };
     return BoundTextAst;
 }());
+export { BoundTextAst };
 function BoundTextAst_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundTextAst.prototype.value;
@@ -70,7 +72,7 @@ function BoundTextAst_tsickle_Closure_declarations() {
 /**
  * A plain attribute on an element.
  */
-export var AttrAst = (function () {
+var AttrAst = (function () {
     /**
      * @param {?} name
      * @param {?} value
@@ -89,6 +91,7 @@ export var AttrAst = (function () {
     AttrAst.prototype.visit = function (visitor, context) { return visitor.visitAttr(this, context); };
     return AttrAst;
 }());
+export { AttrAst };
 function AttrAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AttrAst.prototype.name;
@@ -101,7 +104,7 @@ function AttrAst_tsickle_Closure_declarations() {
  * A binding for an element property (e.g. `[property]="expression"`) or an animation trigger (e.g.
  * `[\@trigger]="stateExp"`)
  */
-export var BoundElementPropertyAst = (function () {
+var BoundElementPropertyAst = (function () {
     /**
      * @param {?} name
      * @param {?} type
@@ -138,6 +141,7 @@ export var BoundElementPropertyAst = (function () {
     });
     return BoundElementPropertyAst;
 }());
+export { BoundElementPropertyAst };
 function BoundElementPropertyAst_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundElementPropertyAst.prototype.name;
@@ -158,7 +162,7 @@ function BoundElementPropertyAst_tsickle_Closure_declarations() {
  * A binding for an element event (e.g. `(event)="handler()"`) or an animation trigger event (e.g.
  * `(\@trigger.phase)="callback($event)"`).
  */
-export var BoundEventAst = (function () {
+var BoundEventAst = (function () {
     /**
      * @param {?} name
      * @param {?} target
@@ -216,6 +220,7 @@ export var BoundEventAst = (function () {
     });
     return BoundEventAst;
 }());
+export { BoundEventAst };
 function BoundEventAst_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundEventAst.prototype.name;
@@ -231,7 +236,7 @@ function BoundEventAst_tsickle_Closure_declarations() {
 /**
  * A reference declaration on an element (e.g. `let someName="expression"`).
  */
-export var ReferenceAst = (function () {
+var ReferenceAst = (function () {
     /**
      * @param {?} name
      * @param {?} value
@@ -252,6 +257,7 @@ export var ReferenceAst = (function () {
     };
     return ReferenceAst;
 }());
+export { ReferenceAst };
 function ReferenceAst_tsickle_Closure_declarations() {
     /** @type {?} */
     ReferenceAst.prototype.name;
@@ -263,7 +269,7 @@ function ReferenceAst_tsickle_Closure_declarations() {
 /**
  * A variable declaration on a <template> (e.g. `var-someName="someLocalName"`).
  */
-export var VariableAst = (function () {
+var VariableAst = (function () {
     /**
      * @param {?} name
      * @param {?} value
@@ -284,6 +290,7 @@ export var VariableAst = (function () {
     };
     return VariableAst;
 }());
+export { VariableAst };
 function VariableAst_tsickle_Closure_declarations() {
     /** @type {?} */
     VariableAst.prototype.name;
@@ -295,7 +302,7 @@ function VariableAst_tsickle_Closure_declarations() {
 /**
  * An element declaration in a template.
  */
-export var ElementAst = (function () {
+var ElementAst = (function () {
     /**
      * @param {?} name
      * @param {?} attrs
@@ -334,6 +341,7 @@ export var ElementAst = (function () {
     };
     return ElementAst;
 }());
+export { ElementAst };
 function ElementAst_tsickle_Closure_declarations() {
     /** @type {?} */
     ElementAst.prototype.name;
@@ -363,7 +371,7 @@ function ElementAst_tsickle_Closure_declarations() {
 /**
  * A `<template>` element included in an Angular template.
  */
-export var EmbeddedTemplateAst = (function () {
+var EmbeddedTemplateAst = (function () {
     /**
      * @param {?} attrs
      * @param {?} outputs
@@ -398,6 +406,7 @@ export var EmbeddedTemplateAst = (function () {
     };
     return EmbeddedTemplateAst;
 }());
+export { EmbeddedTemplateAst };
 function EmbeddedTemplateAst_tsickle_Closure_declarations() {
     /** @type {?} */
     EmbeddedTemplateAst.prototype.attrs;
@@ -423,7 +432,7 @@ function EmbeddedTemplateAst_tsickle_Closure_declarations() {
 /**
  * A directive property with a bound value (e.g. `*ngIf="condition").
  */
-export var BoundDirectivePropertyAst = (function () {
+var BoundDirectivePropertyAst = (function () {
     /**
      * @param {?} directiveName
      * @param {?} templateName
@@ -446,6 +455,7 @@ export var BoundDirectivePropertyAst = (function () {
     };
     return BoundDirectivePropertyAst;
 }());
+export { BoundDirectivePropertyAst };
 function BoundDirectivePropertyAst_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundDirectivePropertyAst.prototype.directiveName;
@@ -459,7 +469,7 @@ function BoundDirectivePropertyAst_tsickle_Closure_declarations() {
 /**
  * A directive declared on an element.
  */
-export var DirectiveAst = (function () {
+var DirectiveAst = (function () {
     /**
      * @param {?} directive
      * @param {?} inputs
@@ -484,6 +494,7 @@ export var DirectiveAst = (function () {
     };
     return DirectiveAst;
 }());
+export { DirectiveAst };
 function DirectiveAst_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveAst.prototype.directive;
@@ -499,7 +510,7 @@ function DirectiveAst_tsickle_Closure_declarations() {
 /**
  * A provider declared on an element
  */
-export var ProviderAst = (function () {
+var ProviderAst = (function () {
     /**
      * @param {?} token
      * @param {?} multiProvider
@@ -529,6 +540,7 @@ export var ProviderAst = (function () {
     };
     return ProviderAst;
 }());
+export { ProviderAst };
 function ProviderAst_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderAst.prototype.token;
@@ -559,7 +571,7 @@ ProviderAstType[ProviderAstType.Builtin] = "Builtin";
 /**
  * Position where content is to be projected (instance of `<ng-content>` in a template).
  */
-export var NgContentAst = (function () {
+var NgContentAst = (function () {
     /**
      * @param {?} index
      * @param {?} ngContentIndex
@@ -580,6 +592,7 @@ export var NgContentAst = (function () {
     };
     return NgContentAst;
 }());
+export { NgContentAst };
 function NgContentAst_tsickle_Closure_declarations() {
     /** @type {?} */
     NgContentAst.prototype.index;

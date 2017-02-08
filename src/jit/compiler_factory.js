@@ -101,7 +101,7 @@ export var /** @type {?} */ COMPILER_PROVIDERS = [
     NgModuleResolver,
     AnimationParser,
 ];
-export var JitCompilerFactory = (function () {
+var JitCompilerFactory = (function () {
     /**
      * @param {?} defaultOptions
      */
@@ -144,16 +144,17 @@ export var JitCompilerFactory = (function () {
         ]);
         return injector.get(Compiler);
     };
-    /** @nocollapse */
-    JitCompilerFactory.ctorParameters = function () { return [
-        { type: Array, decorators: [{ type: Inject, args: [COMPILER_OPTIONS,] },] },
-    ]; };
-    JitCompilerFactory = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [Array])
-    ], JitCompilerFactory);
     return JitCompilerFactory;
 }());
+/** @nocollapse */
+JitCompilerFactory.ctorParameters = function () { return [
+    { type: Array, decorators: [{ type: Inject, args: [COMPILER_OPTIONS,] },] },
+]; };
+JitCompilerFactory = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [Array])
+], JitCompilerFactory);
+export { JitCompilerFactory };
 function JitCompilerFactory_tsickle_Closure_declarations() {
     /**
      * @nocollapse

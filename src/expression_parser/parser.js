@@ -20,7 +20,7 @@ import { CompilerInjectable } from '../injectable';
 import { DEFAULT_INTERPOLATION_CONFIG } from '../ml_parser/interpolation_config';
 import { ASTWithSource, Binary, BindingPipe, Chain, Conditional, EmptyExpr, FunctionCall, ImplicitReceiver, Interpolation, KeyedRead, KeyedWrite, LiteralArray, LiteralMap, LiteralPrimitive, MethodCall, ParseSpan, ParserError, PrefixNot, PropertyRead, PropertyWrite, Quote, SafeMethodCall, SafePropertyRead, TemplateBinding } from './ast';
 import { EOF, Lexer, TokenType, isIdentifier, isQuote } from './lexer';
-export var SplitInterpolation = (function () {
+var SplitInterpolation = (function () {
     /**
      * @param {?} strings
      * @param {?} expressions
@@ -33,6 +33,7 @@ export var SplitInterpolation = (function () {
     }
     return SplitInterpolation;
 }());
+export { SplitInterpolation };
 function SplitInterpolation_tsickle_Closure_declarations() {
     /** @type {?} */
     SplitInterpolation.prototype.strings;
@@ -41,7 +42,7 @@ function SplitInterpolation_tsickle_Closure_declarations() {
     /** @type {?} */
     SplitInterpolation.prototype.offsets;
 }
-export var TemplateBindingParseResult = (function () {
+var TemplateBindingParseResult = (function () {
     /**
      * @param {?} templateBindings
      * @param {?} warnings
@@ -54,6 +55,7 @@ export var TemplateBindingParseResult = (function () {
     }
     return TemplateBindingParseResult;
 }());
+export { TemplateBindingParseResult };
 function TemplateBindingParseResult_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateBindingParseResult.prototype.templateBindings;
@@ -70,7 +72,7 @@ function _createInterpolateRegExp(config) {
     var /** @type {?} */ pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
     return new RegExp(pattern, 'g');
 }
-export var Parser = (function () {
+var Parser = (function () {
     /**
      * @param {?} _lexer
      */
@@ -308,19 +310,20 @@ export var Parser = (function () {
         }
         return errLocation.length;
     };
-    Parser = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [Lexer])
-    ], Parser);
     return Parser;
 }());
+Parser = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [Lexer])
+], Parser);
+export { Parser };
 function Parser_tsickle_Closure_declarations() {
     /** @type {?} */
     Parser.prototype.errors;
     /** @type {?} */
     Parser.prototype._lexer;
 }
-export var _ParseAST = (function () {
+var _ParseAST = (function () {
     /**
      * @param {?} input
      * @param {?} location
@@ -949,6 +952,7 @@ export var _ParseAST = (function () {
     };
     return _ParseAST;
 }());
+export { _ParseAST };
 function _ParseAST_tsickle_Closure_declarations() {
     /** @type {?} */
     _ParseAST.prototype.rparensExpected;

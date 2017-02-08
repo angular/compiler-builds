@@ -13,7 +13,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 import { ValueTransformer, visitValue } from '../util';
 import { StaticSymbol } from './static_symbol';
 import { isNgFactoryFile } from './util';
-export var ResolvedStaticSymbol = (function () {
+var ResolvedStaticSymbol = (function () {
     /**
      * @param {?} symbol
      * @param {?} metadata
@@ -24,6 +24,7 @@ export var ResolvedStaticSymbol = (function () {
     }
     return ResolvedStaticSymbol;
 }());
+export { ResolvedStaticSymbol };
 function ResolvedStaticSymbol_tsickle_Closure_declarations() {
     /** @type {?} */
     ResolvedStaticSymbol.prototype.symbol;
@@ -39,7 +40,7 @@ var /** @type {?} */ SUPPORTED_SCHEMA_VERSION = 3;
  * and deduces the values for symbols with members based
  * on these symbols.
  */
-export var StaticSymbolResolver = (function () {
+var StaticSymbolResolver = (function () {
     /**
      * @param {?} host
      * @param {?} staticSymbolCache
@@ -210,7 +211,7 @@ export var StaticSymbolResolver = (function () {
         }
         // handle the symbols in one of the re-export location
         if (metadata['exports']) {
-            var _loop_1 = function(moduleExport) {
+            var _loop_1 = function (moduleExport) {
                 // handle the symbols in the list of explicitly re-exported symbols.
                 if (moduleExport.export) {
                     moduleExport.export.forEach(function (exportSymbol) {
@@ -249,7 +250,7 @@ export var StaticSymbolResolver = (function () {
             var this_1 = this;
             for (var _i = 0, _a = metadata['exports']; _i < _a.length; _i++) {
                 var moduleExport = _a[_i];
-                _loop_1(moduleExport);
+                _loop_1(/** @type {?} */ moduleExport);
             }
         }
         resolvedSymbols.forEach(function (resolvedSymbol) { return _this.resolvedSymbols.set(resolvedSymbol.symbol, resolvedSymbol); });
@@ -265,7 +266,7 @@ export var StaticSymbolResolver = (function () {
         var ReferenceTransformer = (function (_super) {
             __extends(ReferenceTransformer, _super);
             function ReferenceTransformer() {
-                _super.apply(this, arguments);
+                return _super !== null && _super.apply(this, arguments) || this;
             }
             /**
              * @param {?} map
@@ -414,6 +415,7 @@ export var StaticSymbolResolver = (function () {
     };
     return StaticSymbolResolver;
 }());
+export { StaticSymbolResolver };
 function StaticSymbolResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticSymbolResolver.prototype.metadataCache;

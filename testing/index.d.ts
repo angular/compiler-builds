@@ -43,7 +43,7 @@ export declare class TestingCompilerImpl implements TestingCompiler {
     private _moduleResolver;
     private _overrider;
     constructor(_compiler: JitCompiler, _directiveResolver: MockDirectiveResolver, _pipeResolver: MockPipeResolver, _moduleResolver: MockNgModuleResolver);
-    injector: Injector;
+    readonly injector: Injector;
     compileModuleSync<T>(moduleType: Type<T>): NgModuleFactory<T>;
     compileModuleAsync<T>(moduleType: Type<T>): Promise<NgModuleFactory<T>>;
     compileModuleAndAllComponentsSync<T>(moduleType: Type<T>): ModuleWithComponentFactories<T>;

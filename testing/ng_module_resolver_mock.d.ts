@@ -22,6 +22,6 @@ export declare class MockNgModuleResolver extends NgModuleResolver {
      * `NgModuleResolver`, see `setNgModule`.
      */
     resolve(type: Type<any>, throwIfNotFound?: boolean): NgModule;
-    private _compiler;
+    private readonly _compiler;
     private _clearCacheFor(component);
 }

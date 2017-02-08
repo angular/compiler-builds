@@ -23,7 +23,7 @@ import { CompileQuery, addQueryToTokenMap, createQueryList } from './compile_que
 import { InjectMethodVars } from './constants';
 import { ComponentFactoryDependency, DirectiveWrapperDependency } from './deps';
 import { getPropertyInView, injectFromViewParentInjector } from './util';
-export var CompileNode = (function () {
+var CompileNode = (function () {
     /**
      * @param {?} parent
      * @param {?} view
@@ -48,6 +48,7 @@ export var CompileNode = (function () {
     CompileNode.prototype.isRootElement = function () { return this.view != this.parent.view; };
     return CompileNode;
 }());
+export { CompileNode };
 function CompileNode_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileNode.prototype.parent;
@@ -60,7 +61,7 @@ function CompileNode_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileNode.prototype.sourceAst;
 }
-export var CompileElement = (function (_super) {
+var CompileElement = (function (_super) {
     __extends(CompileElement, _super);
     /**
      * @param {?} parent
@@ -76,32 +77,32 @@ export var CompileElement = (function (_super) {
      * @param {?} references
      */
     function CompileElement(parent, view, nodeIndex, renderNode, sourceAst, component, _directives, _resolvedProvidersArray, hasViewContainer, hasEmbeddedView, references) {
-        var _this = this;
-        _super.call(this, parent, view, nodeIndex, renderNode, sourceAst);
-        this.component = component;
-        this._directives = _directives;
-        this._resolvedProvidersArray = _resolvedProvidersArray;
-        this.hasViewContainer = hasViewContainer;
-        this.hasEmbeddedView = hasEmbeddedView;
-        this.compViewExpr = null;
-        this.instances = new Map();
-        this.directiveWrapperInstance = new Map();
-        this._queryCount = 0;
-        this._queries = new Map();
-        this.contentNodesByNgContentIndex = null;
-        this.referenceTokens = {};
+        var _this = _super.call(this, parent, view, nodeIndex, renderNode, sourceAst) || this;
+        _this.component = component;
+        _this._directives = _directives;
+        _this._resolvedProvidersArray = _resolvedProvidersArray;
+        _this.hasViewContainer = hasViewContainer;
+        _this.hasEmbeddedView = hasEmbeddedView;
+        _this.compViewExpr = null;
+        _this.instances = new Map();
+        _this.directiveWrapperInstance = new Map();
+        _this._queryCount = 0;
+        _this._queries = new Map();
+        _this.contentNodesByNgContentIndex = null;
+        _this.referenceTokens = {};
         references.forEach(function (ref) { return _this.referenceTokens[ref.name] = ref.value; });
-        this.elementRef =
-            o.importExpr(createIdentifier(Identifiers.ElementRef)).instantiate([this.renderNode]);
-        this.instances.set(resolveIdentifier(Identifiers.ElementRef), this.elementRef);
-        this.instances.set(resolveIdentifier(Identifiers.Injector), o.THIS_EXPR.callMethod('injector', [o.literal(this.nodeIndex)]));
-        this.instances.set(resolveIdentifier(Identifiers.Renderer), o.THIS_EXPR.prop('renderer'));
-        if (this.hasViewContainer || this.hasEmbeddedView) {
-            this._createViewContainer();
+        _this.elementRef =
+            o.importExpr(createIdentifier(Identifiers.ElementRef)).instantiate([_this.renderNode]);
+        _this.instances.set(resolveIdentifier(Identifiers.ElementRef), _this.elementRef);
+        _this.instances.set(resolveIdentifier(Identifiers.Injector), o.THIS_EXPR.callMethod('injector', [o.literal(_this.nodeIndex)]));
+        _this.instances.set(resolveIdentifier(Identifiers.Renderer), o.THIS_EXPR.prop('renderer'));
+        if (_this.hasViewContainer || _this.hasEmbeddedView) {
+            _this._createViewContainer();
         }
-        if (this.component) {
-            this._createComponentFactoryResolver();
+        if (_this.component) {
+            _this._createComponentFactoryResolver();
         }
+        return _this;
     }
     /**
      * @return {?}
@@ -233,14 +234,14 @@ export var CompileElement = (function (_super) {
                 _this.instances.set(tokenReference(resolvedProvider.token), instance);
             }
         });
-        var _loop_1 = function(i) {
+        var _loop_1 = function (i) {
             var /** @type {?} */ directive = this_1._directives[i];
             var /** @type {?} */ directiveInstance = this_1.instances.get(tokenReference(identifierToken(directive.type)));
             directive.queries.forEach(function (queryMeta) { _this._addQuery(queryMeta, directiveInstance); });
         };
         var this_1 = this;
         for (var /** @type {?} */ i = 0; i < this._directives.length; i++) {
-            _loop_1(i);
+            _loop_1(/** @type {?} */ i);
         }
         Object.keys(this.referenceTokens).forEach(function (varName) {
             var /** @type {?} */ token = _this.referenceTokens[varName];
@@ -403,6 +404,7 @@ export var CompileElement = (function (_super) {
     };
     return CompileElement;
 }(CompileNode));
+export { CompileElement };
 function CompileElement_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileElement.prototype.compViewExpr;

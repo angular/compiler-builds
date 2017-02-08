@@ -17,7 +17,7 @@ export function camelCaseToDashCase(input) {
     return input.replace(CAMEL_CASE_REGEXP, function () {
         var m = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            m[_i - 0] = arguments[_i];
+            m[_i] = arguments[_i];
         }
         return '-' + m[1].toLowerCase();
     });
@@ -30,7 +30,7 @@ export function dashCaseToCamelCase(input) {
     return input.replace(DASH_CASE_REGEXP, function () {
         var m = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            m[_i - 0] = arguments[_i];
+            m[_i] = arguments[_i];
         }
         return m[1].toUpperCase();
     });
@@ -81,7 +81,7 @@ export function visitValue(value, visitor, context) {
     }
     return visitor.visitOther(value, context);
 }
-export var ValueTransformer = (function () {
+var ValueTransformer = (function () {
     function ValueTransformer() {
     }
     /**
@@ -118,7 +118,8 @@ export var ValueTransformer = (function () {
     ValueTransformer.prototype.visitOther = function (value, context) { return value; };
     return ValueTransformer;
 }());
-export var SyncAsyncResult = (function () {
+export { ValueTransformer };
+var SyncAsyncResult = (function () {
     /**
      * @param {?} syncResult
      * @param {?=} asyncResult
@@ -133,6 +134,7 @@ export var SyncAsyncResult = (function () {
     }
     return SyncAsyncResult;
 }());
+export { SyncAsyncResult };
 function SyncAsyncResult_tsickle_Closure_declarations() {
     /** @type {?} */
     SyncAsyncResult.prototype.syncResult;

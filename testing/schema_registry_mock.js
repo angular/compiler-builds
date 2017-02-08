@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { SecurityContext } from '@angular/core';
-export var MockSchemaRegistry = (function () {
+var MockSchemaRegistry = (function () {
     function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements, invalidProperties, invalidAttributes) {
         this.existingProperties = existingProperties;
         this.attrPropMapping = attrPropMapping;
@@ -53,4 +53,5 @@ export var MockSchemaRegistry = (function () {
     };
     return MockSchemaRegistry;
 }());
+export { MockSchemaRegistry };
 //# sourceMappingURL=schema_registry_mock.js.map

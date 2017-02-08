@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export var Text = (function () {
+var Text = (function () {
     /**
      * @param {?} value
      * @param {?} sourceSpan
@@ -22,13 +22,14 @@ export var Text = (function () {
     Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
     return Text;
 }());
+export { Text };
 function Text_tsickle_Closure_declarations() {
     /** @type {?} */
     Text.prototype.value;
     /** @type {?} */
     Text.prototype.sourceSpan;
 }
-export var Expansion = (function () {
+var Expansion = (function () {
     /**
      * @param {?} switchValue
      * @param {?} type
@@ -51,6 +52,7 @@ export var Expansion = (function () {
     Expansion.prototype.visit = function (visitor, context) { return visitor.visitExpansion(this, context); };
     return Expansion;
 }());
+export { Expansion };
 function Expansion_tsickle_Closure_declarations() {
     /** @type {?} */
     Expansion.prototype.switchValue;
@@ -63,7 +65,7 @@ function Expansion_tsickle_Closure_declarations() {
     /** @type {?} */
     Expansion.prototype.switchValueSourceSpan;
 }
-export var ExpansionCase = (function () {
+var ExpansionCase = (function () {
     /**
      * @param {?} value
      * @param {?} expression
@@ -86,6 +88,7 @@ export var ExpansionCase = (function () {
     ExpansionCase.prototype.visit = function (visitor, context) { return visitor.visitExpansionCase(this, context); };
     return ExpansionCase;
 }());
+export { ExpansionCase };
 function ExpansionCase_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpansionCase.prototype.value;
@@ -98,7 +101,7 @@ function ExpansionCase_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpansionCase.prototype.expSourceSpan;
 }
-export var Attribute = (function () {
+var Attribute = (function () {
     /**
      * @param {?} name
      * @param {?} value
@@ -119,6 +122,7 @@ export var Attribute = (function () {
     Attribute.prototype.visit = function (visitor, context) { return visitor.visitAttribute(this, context); };
     return Attribute;
 }());
+export { Attribute };
 function Attribute_tsickle_Closure_declarations() {
     /** @type {?} */
     Attribute.prototype.name;
@@ -129,7 +133,7 @@ function Attribute_tsickle_Closure_declarations() {
     /** @type {?} */
     Attribute.prototype.valueSpan;
 }
-export var Element = (function () {
+var Element = (function () {
     /**
      * @param {?} name
      * @param {?} attrs
@@ -154,6 +158,7 @@ export var Element = (function () {
     Element.prototype.visit = function (visitor, context) { return visitor.visitElement(this, context); };
     return Element;
 }());
+export { Element };
 function Element_tsickle_Closure_declarations() {
     /** @type {?} */
     Element.prototype.name;
@@ -168,7 +173,7 @@ function Element_tsickle_Closure_declarations() {
     /** @type {?} */
     Element.prototype.endSourceSpan;
 }
-export var Comment = (function () {
+var Comment = (function () {
     /**
      * @param {?} value
      * @param {?} sourceSpan
@@ -185,6 +190,7 @@ export var Comment = (function () {
     Comment.prototype.visit = function (visitor, context) { return visitor.visitComment(this, context); };
     return Comment;
 }());
+export { Comment };
 function Comment_tsickle_Closure_declarations() {
     /** @type {?} */
     Comment.prototype.value;

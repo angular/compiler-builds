@@ -27,7 +27,7 @@ var /** @type {?} */ HIDDEN_KEY = /^\$.*\$$/;
  * A static reflector implements enough of the Reflector API that is necessary to compile
  * templates statically.
  */
-export var StaticReflector = (function () {
+var StaticReflector = (function () {
     /**
      * @param {?} symbolResolver
      * @param {?=} knownMetadataClasses
@@ -35,9 +35,9 @@ export var StaticReflector = (function () {
      * @param {?=} errorRecorder
      */
     function StaticReflector(symbolResolver, knownMetadataClasses, knownMetadataFunctions, errorRecorder) {
-        var _this = this;
         if (knownMetadataClasses === void 0) { knownMetadataClasses = []; }
         if (knownMetadataFunctions === void 0) { knownMetadataFunctions = []; }
+        var _this = this;
         this.symbolResolver = symbolResolver;
         this.errorRecorder = errorRecorder;
         this.annotationCache = new Map();
@@ -658,6 +658,7 @@ export var StaticReflector = (function () {
     };
     return StaticReflector;
 }());
+export { StaticReflector };
 function StaticReflector_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticReflector.prototype.annotationCache;
@@ -773,10 +774,10 @@ var BindingScope = (function () {
             }
         };
     };
-    BindingScope.missing = {};
-    BindingScope.empty = { resolve: function (name) { return BindingScope.missing; } };
     return BindingScope;
 }());
+BindingScope.missing = {};
+BindingScope.empty = { resolve: function (name) { return BindingScope.missing; } };
 function BindingScope_tsickle_Closure_declarations() {
     /** @type {?} */
     BindingScope.missing;
@@ -789,8 +790,9 @@ var PopulatedScope = (function (_super) {
      * @param {?} bindings
      */
     function PopulatedScope(bindings) {
-        _super.call(this);
-        this.bindings = bindings;
+        var _this = _super.call(this) || this;
+        _this.bindings = bindings;
+        return _this;
     }
     /**
      * @param {?} name

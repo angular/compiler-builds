@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ReflectionCapabilities, reflector } from '../private_import_core';
-export var StaticAndDynamicReflectionCapabilities = (function () {
+var StaticAndDynamicReflectionCapabilities = (function () {
     /**
      * @param {?} staticDelegate
      */
@@ -107,6 +107,7 @@ export var StaticAndDynamicReflectionCapabilities = (function () {
     };
     return StaticAndDynamicReflectionCapabilities;
 }());
+export { StaticAndDynamicReflectionCapabilities };
 function StaticAndDynamicReflectionCapabilities_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticAndDynamicReflectionCapabilities.prototype.dynamicDelegate;

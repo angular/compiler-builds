@@ -13,7 +13,7 @@ import { Xliff } from './serializers/xliff';
 import { Xmb } from './serializers/xmb';
 import { Xtb } from './serializers/xtb';
 import { TranslationBundle } from './translation_bundle';
-export var I18NHtmlParser = (function () {
+var I18NHtmlParser = (function () {
     /**
      * @param {?} _htmlParser
      * @param {?=} _translations
@@ -70,6 +70,7 @@ export var I18NHtmlParser = (function () {
     };
     return I18NHtmlParser;
 }());
+export { I18NHtmlParser };
 function I18NHtmlParser_tsickle_Closure_declarations() {
     /** @type {?} */
     I18NHtmlParser.prototype.getTagDefinition;

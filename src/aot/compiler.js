@@ -13,7 +13,7 @@ import * as o from '../output/output_ast';
 import { GeneratedFile } from './generated_file';
 import { serializeSummaries } from './summary_serializer';
 import { ngfactoryFilePath, splitTypescriptSuffix, summaryFileName } from './util';
-export var AotCompiler = (function () {
+var AotCompiler = (function () {
     /**
      * @param {?} _host
      * @param {?} _metadataResolver
@@ -235,6 +235,7 @@ export var AotCompiler = (function () {
     };
     return AotCompiler;
 }());
+export { AotCompiler };
 function AotCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     AotCompiler.prototype._animationCompiler;
@@ -314,7 +315,7 @@ export function analyzeNgModules(programStaticSymbols, host, metadataResolver) {
 export function analyzeAndValidateNgModules(programStaticSymbols, host, metadataResolver) {
     var /** @type {?} */ result = analyzeNgModules(programStaticSymbols, host, metadataResolver);
     if (result.symbolsMissingModule && result.symbolsMissingModule.length) {
-        var /** @type {?} */ messages = result.symbolsMissingModule.map(function (s) { return ("Cannot determine the module for class " + s.name + " in " + s.filePath + "!"); });
+        var /** @type {?} */ messages = result.symbolsMissingModule.map(function (s) { return "Cannot determine the module for class " + s.name + " in " + s.filePath + "!"; });
         throw new Error(messages.join('\n'));
     }
     return result;

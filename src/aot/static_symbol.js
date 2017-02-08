@@ -3,7 +3,7 @@
  *
  * This token is unique for a filePath and name and can be used as a hash table key.
  */
-export var StaticSymbol = (function () {
+var StaticSymbol = (function () {
     /**
      * @param {?} filePath
      * @param {?} name
@@ -24,6 +24,7 @@ export var StaticSymbol = (function () {
     };
     return StaticSymbol;
 }());
+export { StaticSymbol };
 function StaticSymbol_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticSymbol.prototype.filePath;
@@ -36,7 +37,7 @@ function StaticSymbol_tsickle_Closure_declarations() {
  * A cache of static symbol used by the StaticReflector to return the same symbol for the
  * same symbol values.
  */
-export var StaticSymbolCache = (function () {
+var StaticSymbolCache = (function () {
     function StaticSymbolCache() {
         this.cache = new Map();
     }
@@ -59,6 +60,7 @@ export var StaticSymbolCache = (function () {
     };
     return StaticSymbolCache;
 }());
+export { StaticSymbolCache };
 function StaticSymbolCache_tsickle_Closure_declarations() {
     /** @type {?} */
     StaticSymbolCache.prototype.cache;

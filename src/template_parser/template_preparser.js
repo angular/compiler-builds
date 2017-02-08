@@ -74,7 +74,7 @@ PreparsedElementType[PreparsedElementType.STYLE] = "STYLE";
 PreparsedElementType[PreparsedElementType.STYLESHEET] = "STYLESHEET";
 PreparsedElementType[PreparsedElementType.SCRIPT] = "SCRIPT";
 PreparsedElementType[PreparsedElementType.OTHER] = "OTHER";
-export var PreparsedElement = (function () {
+var PreparsedElement = (function () {
     /**
      * @param {?} type
      * @param {?} selectAttr
@@ -91,6 +91,7 @@ export var PreparsedElement = (function () {
     }
     return PreparsedElement;
 }());
+export { PreparsedElement };
 function PreparsedElement_tsickle_Closure_declarations() {
     /** @type {?} */
     PreparsedElement.prototype.type;

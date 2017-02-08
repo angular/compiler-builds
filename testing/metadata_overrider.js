@@ -7,7 +7,7 @@
  */
 import { stringify } from './facade/lang';
 var _nextReferenceId = 0;
-export var MetadataOverrider = (function () {
+var MetadataOverrider = (function () {
     function MetadataOverrider() {
         this._references = new Map();
     }
@@ -36,9 +36,10 @@ export var MetadataOverrider = (function () {
     };
     return MetadataOverrider;
 }());
+export { MetadataOverrider };
 function removeMetadata(metadata, remove, references) {
     var removeObjects = new Set();
-    var _loop_1 = function(prop) {
+    var _loop_1 = function (prop) {
         var removeValue = remove[prop];
         if (removeValue instanceof Array) {
             removeValue.forEach(function (value) { removeObjects.add(_propHashKey(prop, value, references)); });
@@ -50,7 +51,7 @@ function removeMetadata(metadata, remove, references) {
     for (var prop in remove) {
         _loop_1(prop);
     }
-    var _loop_2 = function(prop) {
+    var _loop_2 = function (prop) {
         var propValue = metadata[prop];
         if (propValue instanceof Array) {
             metadata[prop] = propValue.filter(function (value) { return !removeObjects.has(_propHashKey(prop, value, references)); });

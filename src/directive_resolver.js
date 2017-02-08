@@ -20,7 +20,7 @@ import { stringify } from './facade/lang';
 import { CompilerInjectable } from './injectable';
 import { ReflectorReader, reflector } from './private_import_core';
 import { splitAtColon } from './util';
-export var DirectiveResolver = (function () {
+var DirectiveResolver = (function () {
     /**
      * @param {?=} _reflector
      */
@@ -97,16 +97,16 @@ export var DirectiveResolver = (function () {
                     else if (startWith === '[') {
                         throw new Error("@HostBinding parameter should be a property name, 'class.<name>', or 'attr.<name>'.");
                     }
-                    host[("[" + hostBinding.hostPropertyName + "]")] = propName;
+                    host["[" + hostBinding.hostPropertyName + "]"] = propName;
                 }
                 else {
-                    host[("[" + propName + "]")] = propName;
+                    host["[" + propName + "]"] = propName;
                 }
             });
             var /** @type {?} */ hostListeners = propertyMetadata[propName].filter(function (a) { return a && a instanceof HostListener; });
             hostListeners.forEach(function (hostListener) {
                 var /** @type {?} */ args = hostListener.args || [];
-                host[("(" + hostListener.eventName + ")")] = propName + "(" + args.join(',') + ")";
+                host["(" + hostListener.eventName + ")"] = propName + "(" + args.join(',') + ")";
             });
             var /** @type {?} */ query = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof Query; });
             if (query) {
@@ -186,12 +186,13 @@ export var DirectiveResolver = (function () {
             });
         }
     };
-    DirectiveResolver = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [ReflectorReader])
-    ], DirectiveResolver);
     return DirectiveResolver;
 }());
+DirectiveResolver = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [ReflectorReader])
+], DirectiveResolver);
+export { DirectiveResolver };
 function DirectiveResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveResolver.prototype._reflector;

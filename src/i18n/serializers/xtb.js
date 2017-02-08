@@ -19,10 +19,10 @@ import { digest, toPublicName } from './xmb';
 var /** @type {?} */ _TRANSLATIONS_TAG = 'translationbundle';
 var /** @type {?} */ _TRANSLATION_TAG = 'translation';
 var /** @type {?} */ _PLACEHOLDER_TAG = 'ph';
-export var Xtb = (function (_super) {
+var Xtb = (function (_super) {
     __extends(Xtb, _super);
     function Xtb() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @param {?} messages
@@ -73,6 +73,7 @@ export var Xtb = (function (_super) {
     };
     return Xtb;
 }(Serializer));
+export { Xtb };
 /**
  * @param {?} messages
  * @param {?} id

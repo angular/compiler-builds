@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export var StyleWithImports = (function () {
+var StyleWithImports = (function () {
     /**
      * @param {?} style
      * @param {?} styleUrls
@@ -16,6 +16,7 @@ export var StyleWithImports = (function () {
     }
     return StyleWithImports;
 }());
+export { StyleWithImports };
 function StyleWithImports_tsickle_Closure_declarations() {
     /** @type {?} */
     StyleWithImports.prototype.style;
@@ -45,7 +46,7 @@ export function extractStyleUrls(resolver, baseUrl, cssText) {
     var /** @type {?} */ modifiedCssText = cssText.replace(CSS_COMMENT_REGEXP, '').replace(CSS_IMPORT_REGEXP, function () {
         var m = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            m[_i - 0] = arguments[_i];
+            m[_i] = arguments[_i];
         }
         var /** @type {?} */ url = m[1] || m[2];
         if (!isStyleUrlResolvable(url)) {

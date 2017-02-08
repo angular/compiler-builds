@@ -29,7 +29,7 @@ import { ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan } from
 import { Console, LifecycleHooks } from './private_import_core';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { BindingParser } from './template_parser/binding_parser';
-export var DirectiveWrapperCompileResult = (function () {
+var DirectiveWrapperCompileResult = (function () {
     /**
      * @param {?} statements
      * @param {?} dirWrapperClassVar
@@ -40,6 +40,7 @@ export var DirectiveWrapperCompileResult = (function () {
     }
     return DirectiveWrapperCompileResult;
 }());
+export { DirectiveWrapperCompileResult };
 function DirectiveWrapperCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveWrapperCompileResult.prototype.statements;
@@ -66,7 +67,7 @@ var /** @type {?} */ RESET_CHANGES_STMT = o.THIS_EXPR.prop(CHANGES_FIELD_NAME).s
  *
  * So far, only `\@Input` and the lifecycle hooks have been implemented.
  */
-export var DirectiveWrapperCompiler = (function () {
+var DirectiveWrapperCompiler = (function () {
     /**
      * @param {?} compilerConfig
      * @param {?} _exprParser
@@ -97,12 +98,16 @@ export var DirectiveWrapperCompiler = (function () {
         var /** @type {?} */ classStmt = builder.build();
         return new DirectiveWrapperCompileResult([classStmt], classStmt.name);
     };
-    DirectiveWrapperCompiler = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [CompilerConfig, Parser, ElementSchemaRegistry, Console])
-    ], DirectiveWrapperCompiler);
     return DirectiveWrapperCompiler;
 }());
+DirectiveWrapperCompiler = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [CompilerConfig,
+        Parser,
+        ElementSchemaRegistry,
+        Console])
+], DirectiveWrapperCompiler);
+export { DirectiveWrapperCompiler };
 function DirectiveWrapperCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveWrapperCompiler.prototype.compilerConfig;
@@ -430,7 +435,7 @@ function reportParseErrors(parseErrors, console) {
         throw new Error("Directive parse errors:\n" + errors.join('\n'));
     }
 }
-export var DirectiveWrapperExpressions = (function () {
+var DirectiveWrapperExpressions = (function () {
     function DirectiveWrapperExpressions() {
     }
     /**
@@ -556,4 +561,5 @@ export var DirectiveWrapperExpressions = (function () {
     };
     return DirectiveWrapperExpressions;
 }());
+export { DirectiveWrapperExpressions };
 //# sourceMappingURL=directive_wrapper_compiler.js.map

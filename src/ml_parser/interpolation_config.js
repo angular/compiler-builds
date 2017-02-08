@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { assertInterpolationSymbols } from '../assertions';
-export var InterpolationConfig = (function () {
+var InterpolationConfig = (function () {
     /**
      * @param {?} start
      * @param {?} end
@@ -29,6 +29,7 @@ export var InterpolationConfig = (function () {
     ;
     return InterpolationConfig;
 }());
+export { InterpolationConfig };
 function InterpolationConfig_tsickle_Closure_declarations() {
     /** @type {?} */
     InterpolationConfig.prototype.start;

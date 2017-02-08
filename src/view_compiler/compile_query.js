@@ -27,7 +27,7 @@ function ViewQueryValues_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewQueryValues.prototype.values;
 }
-export var CompileQuery = (function () {
+var CompileQuery = (function () {
     /**
      * @param {?} meta
      * @param {?} queryList
@@ -106,6 +106,7 @@ export var CompileQuery = (function () {
     };
     return CompileQuery;
 }());
+export { CompileQuery };
 function CompileQuery_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileQuery.prototype._values;

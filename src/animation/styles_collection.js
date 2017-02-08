@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { isPresent } from '../facade/lang';
-export var StylesCollectionEntry = (function () {
+var StylesCollectionEntry = (function () {
     /**
      * @param {?} time
      * @param {?} value
@@ -25,13 +25,14 @@ export var StylesCollectionEntry = (function () {
     };
     return StylesCollectionEntry;
 }());
+export { StylesCollectionEntry };
 function StylesCollectionEntry_tsickle_Closure_declarations() {
     /** @type {?} */
     StylesCollectionEntry.prototype.time;
     /** @type {?} */
     StylesCollectionEntry.prototype.value;
 }
-export var StylesCollection = (function () {
+var StylesCollection = (function () {
     function StylesCollection() {
         this.styles = {};
     }
@@ -87,6 +88,7 @@ export var StylesCollection = (function () {
     };
     return StylesCollection;
 }());
+export { StylesCollection };
 function StylesCollection_tsickle_Closure_declarations() {
     /** @type {?} */
     StylesCollection.prototype.styles;

@@ -43,7 +43,7 @@ export function expandNodes(nodes) {
     var /** @type {?} */ expander = new _Expander();
     return new ExpansionResult(html.visitAll(expander, nodes), expander.isExpanded, expander.errors);
 }
-export var ExpansionResult = (function () {
+var ExpansionResult = (function () {
     /**
      * @param {?} nodes
      * @param {?} expanded
@@ -56,6 +56,7 @@ export var ExpansionResult = (function () {
     }
     return ExpansionResult;
 }());
+export { ExpansionResult };
 function ExpansionResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpansionResult.prototype.nodes;
@@ -64,17 +65,18 @@ function ExpansionResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpansionResult.prototype.errors;
 }
-export var ExpansionError = (function (_super) {
+var ExpansionError = (function (_super) {
     __extends(ExpansionError, _super);
     /**
      * @param {?} span
      * @param {?} errorMsg
      */
     function ExpansionError(span, errorMsg) {
-        _super.call(this, span, errorMsg);
+        return _super.call(this, span, errorMsg) || this;
     }
     return ExpansionError;
 }(ParseError));
+export { ExpansionError };
 /**
  * Expand expansion forms (plural, select) to directives
  *

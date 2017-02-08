@@ -6,7 +6,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 /**
  * @abstract
  */
-export var AnimationAst = (function () {
+var AnimationAst = (function () {
     function AnimationAst() {
         this.startTime = 0;
         this.playTime = 0;
@@ -20,6 +20,7 @@ export var AnimationAst = (function () {
     AnimationAst.prototype.visit = function (visitor, context) { };
     return AnimationAst;
 }());
+export { AnimationAst };
 function AnimationAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationAst.prototype.startTime;
@@ -29,10 +30,10 @@ function AnimationAst_tsickle_Closure_declarations() {
 /**
  * @abstract
  */
-export var AnimationStateAst = (function (_super) {
+var AnimationStateAst = (function (_super) {
     __extends(AnimationStateAst, _super);
     function AnimationStateAst() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @abstract
@@ -43,7 +44,8 @@ export var AnimationStateAst = (function (_super) {
     AnimationStateAst.prototype.visit = function (visitor, context) { };
     return AnimationStateAst;
 }(AnimationAst));
-export var AnimationEntryAst = (function (_super) {
+export { AnimationStateAst };
+var AnimationEntryAst = (function (_super) {
     __extends(AnimationEntryAst, _super);
     /**
      * @param {?} name
@@ -51,10 +53,11 @@ export var AnimationEntryAst = (function (_super) {
      * @param {?} stateTransitions
      */
     function AnimationEntryAst(name, stateDeclarations, stateTransitions) {
-        _super.call(this);
-        this.name = name;
-        this.stateDeclarations = stateDeclarations;
-        this.stateTransitions = stateTransitions;
+        var _this = _super.call(this) || this;
+        _this.name = name;
+        _this.stateDeclarations = stateDeclarations;
+        _this.stateTransitions = stateTransitions;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -66,6 +69,7 @@ export var AnimationEntryAst = (function (_super) {
     };
     return AnimationEntryAst;
 }(AnimationAst));
+export { AnimationEntryAst };
 function AnimationEntryAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationEntryAst.prototype.name;
@@ -74,16 +78,17 @@ function AnimationEntryAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationEntryAst.prototype.stateTransitions;
 }
-export var AnimationStateDeclarationAst = (function (_super) {
+var AnimationStateDeclarationAst = (function (_super) {
     __extends(AnimationStateDeclarationAst, _super);
     /**
      * @param {?} stateName
      * @param {?} styles
      */
     function AnimationStateDeclarationAst(stateName, styles) {
-        _super.call(this);
-        this.stateName = stateName;
-        this.styles = styles;
+        var _this = _super.call(this) || this;
+        _this.stateName = stateName;
+        _this.styles = styles;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -95,13 +100,14 @@ export var AnimationStateDeclarationAst = (function (_super) {
     };
     return AnimationStateDeclarationAst;
 }(AnimationStateAst));
+export { AnimationStateDeclarationAst };
 function AnimationStateDeclarationAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationStateDeclarationAst.prototype.stateName;
     /** @type {?} */
     AnimationStateDeclarationAst.prototype.styles;
 }
-export var AnimationStateTransitionExpression = (function () {
+var AnimationStateTransitionExpression = (function () {
     /**
      * @param {?} fromState
      * @param {?} toState
@@ -112,37 +118,41 @@ export var AnimationStateTransitionExpression = (function () {
     }
     return AnimationStateTransitionExpression;
 }());
+export { AnimationStateTransitionExpression };
 function AnimationStateTransitionExpression_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationStateTransitionExpression.prototype.fromState;
     /** @type {?} */
     AnimationStateTransitionExpression.prototype.toState;
 }
-export var AnimationStateTransitionFnExpression = (function (_super) {
+var AnimationStateTransitionFnExpression = (function (_super) {
     __extends(AnimationStateTransitionFnExpression, _super);
     /**
      * @param {?} fn
      */
     function AnimationStateTransitionFnExpression(fn) {
-        _super.call(this, null, null);
-        this.fn = fn;
+        var _this = _super.call(this, null, null) || this;
+        _this.fn = fn;
+        return _this;
     }
     return AnimationStateTransitionFnExpression;
 }(AnimationStateTransitionExpression));
+export { AnimationStateTransitionFnExpression };
 function AnimationStateTransitionFnExpression_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationStateTransitionFnExpression.prototype.fn;
 }
-export var AnimationStateTransitionAst = (function (_super) {
+var AnimationStateTransitionAst = (function (_super) {
     __extends(AnimationStateTransitionAst, _super);
     /**
      * @param {?} stateChanges
      * @param {?} animation
      */
     function AnimationStateTransitionAst(stateChanges, animation) {
-        _super.call(this);
-        this.stateChanges = stateChanges;
-        this.animation = animation;
+        var _this = _super.call(this) || this;
+        _this.stateChanges = stateChanges;
+        _this.animation = animation;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -154,13 +164,14 @@ export var AnimationStateTransitionAst = (function (_super) {
     };
     return AnimationStateTransitionAst;
 }(AnimationStateAst));
+export { AnimationStateTransitionAst };
 function AnimationStateTransitionAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationStateTransitionAst.prototype.stateChanges;
     /** @type {?} */
     AnimationStateTransitionAst.prototype.animation;
 }
-export var AnimationStepAst = (function (_super) {
+var AnimationStepAst = (function (_super) {
     __extends(AnimationStepAst, _super);
     /**
      * @param {?} startingStyles
@@ -170,12 +181,13 @@ export var AnimationStepAst = (function (_super) {
      * @param {?} easing
      */
     function AnimationStepAst(startingStyles, keyframes, duration, delay, easing) {
-        _super.call(this);
-        this.startingStyles = startingStyles;
-        this.keyframes = keyframes;
-        this.duration = duration;
-        this.delay = delay;
-        this.easing = easing;
+        var _this = _super.call(this) || this;
+        _this.startingStyles = startingStyles;
+        _this.keyframes = keyframes;
+        _this.duration = duration;
+        _this.delay = delay;
+        _this.easing = easing;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -187,6 +199,7 @@ export var AnimationStepAst = (function (_super) {
     };
     return AnimationStepAst;
 }(AnimationAst));
+export { AnimationStepAst };
 function AnimationStepAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationStepAst.prototype.startingStyles;
@@ -199,14 +212,15 @@ function AnimationStepAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationStepAst.prototype.easing;
 }
-export var AnimationStylesAst = (function (_super) {
+var AnimationStylesAst = (function (_super) {
     __extends(AnimationStylesAst, _super);
     /**
      * @param {?} styles
      */
     function AnimationStylesAst(styles) {
-        _super.call(this);
-        this.styles = styles;
+        var _this = _super.call(this) || this;
+        _this.styles = styles;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -218,20 +232,22 @@ export var AnimationStylesAst = (function (_super) {
     };
     return AnimationStylesAst;
 }(AnimationAst));
+export { AnimationStylesAst };
 function AnimationStylesAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationStylesAst.prototype.styles;
 }
-export var AnimationKeyframeAst = (function (_super) {
+var AnimationKeyframeAst = (function (_super) {
     __extends(AnimationKeyframeAst, _super);
     /**
      * @param {?} offset
      * @param {?} styles
      */
     function AnimationKeyframeAst(offset, styles) {
-        _super.call(this);
-        this.offset = offset;
-        this.styles = styles;
+        var _this = _super.call(this) || this;
+        _this.offset = offset;
+        _this.styles = styles;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -243,6 +259,7 @@ export var AnimationKeyframeAst = (function (_super) {
     };
     return AnimationKeyframeAst;
 }(AnimationAst));
+export { AnimationKeyframeAst };
 function AnimationKeyframeAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationKeyframeAst.prototype.offset;
@@ -252,28 +269,30 @@ function AnimationKeyframeAst_tsickle_Closure_declarations() {
 /**
  * @abstract
  */
-export var AnimationWithStepsAst = (function (_super) {
+var AnimationWithStepsAst = (function (_super) {
     __extends(AnimationWithStepsAst, _super);
     /**
      * @param {?} steps
      */
     function AnimationWithStepsAst(steps) {
-        _super.call(this);
-        this.steps = steps;
+        var _this = _super.call(this) || this;
+        _this.steps = steps;
+        return _this;
     }
     return AnimationWithStepsAst;
 }(AnimationAst));
+export { AnimationWithStepsAst };
 function AnimationWithStepsAst_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationWithStepsAst.prototype.steps;
 }
-export var AnimationGroupAst = (function (_super) {
+var AnimationGroupAst = (function (_super) {
     __extends(AnimationGroupAst, _super);
     /**
      * @param {?} steps
      */
     function AnimationGroupAst(steps) {
-        _super.call(this, steps);
+        return _super.call(this, steps) || this;
     }
     /**
      * @param {?} visitor
@@ -285,13 +304,14 @@ export var AnimationGroupAst = (function (_super) {
     };
     return AnimationGroupAst;
 }(AnimationWithStepsAst));
-export var AnimationSequenceAst = (function (_super) {
+export { AnimationGroupAst };
+var AnimationSequenceAst = (function (_super) {
     __extends(AnimationSequenceAst, _super);
     /**
      * @param {?} steps
      */
     function AnimationSequenceAst(steps) {
-        _super.call(this, steps);
+        return _super.call(this, steps) || this;
     }
     /**
      * @param {?} visitor
@@ -303,4 +323,5 @@ export var AnimationSequenceAst = (function (_super) {
     };
     return AnimationSequenceAst;
 }(AnimationWithStepsAst));
+export { AnimationSequenceAst };
 //# sourceMappingURL=animation_ast.js.map

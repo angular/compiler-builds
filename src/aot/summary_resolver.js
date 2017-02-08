@@ -7,7 +7,7 @@
  */
 import { deserializeSummaries } from './summary_serializer';
 import { ngfactoryFilePath, stripNgFactory, summaryFileName } from './util';
-export var AotSummaryResolver = (function () {
+var AotSummaryResolver = (function () {
     /**
      * @param {?} host
      * @param {?} staticSymbolCache
@@ -94,6 +94,7 @@ export var AotSummaryResolver = (function () {
     };
     return AotSummaryResolver;
 }());
+export { AotSummaryResolver };
 function AotSummaryResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     AotSummaryResolver.prototype.summaryCache;

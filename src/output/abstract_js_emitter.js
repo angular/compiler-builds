@@ -16,10 +16,10 @@ import * as o from './output_ast';
 /**
  * @abstract
  */
-export var AbstractJsEmitterVisitor = (function (_super) {
+var AbstractJsEmitterVisitor = (function (_super) {
     __extends(AbstractJsEmitterVisitor, _super);
     function AbstractJsEmitterVisitor() {
-        _super.call(this, false);
+        return _super.call(this, false) || this;
     }
     /**
      * @param {?} stmt
@@ -195,7 +195,7 @@ export var AbstractJsEmitterVisitor = (function (_super) {
         ctx.decIndent();
         ctx.println("} catch (" + CATCH_ERROR_VAR.name + ") {");
         ctx.incIndent();
-        var /** @type {?} */ catchStmts = [(CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
+        var /** @type {?} */ catchStmts = [/** @type {?} */ (CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
                 o.StmtModifier.Final
             ]))].concat(stmt.catchStmts);
         this.visitAllStatements(catchStmts, ctx);
@@ -234,4 +234,5 @@ export var AbstractJsEmitterVisitor = (function (_super) {
     };
     return AbstractJsEmitterVisitor;
 }(AbstractEmitterVisitor));
+export { AbstractJsEmitterVisitor };
 //# sourceMappingURL=abstract_js_emitter.js.map

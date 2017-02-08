@@ -18,10 +18,10 @@ var /** @type {?} */ _MESSAGE_TAG = 'msg';
 var /** @type {?} */ _PLACEHOLDER_TAG = 'ph';
 var /** @type {?} */ _EXEMPLE_TAG = 'ex';
 var /** @type {?} */ _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
-export var Xmb = (function (_super) {
+var Xmb = (function (_super) {
     __extends(Xmb, _super);
     function Xmb() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @param {?} messages
@@ -73,6 +73,7 @@ export var Xmb = (function (_super) {
     };
     return Xmb;
 }(Serializer));
+export { Xmb };
 var _Visitor = (function () {
     function _Visitor() {
     }
@@ -145,8 +146,7 @@ var _Visitor = (function () {
      */
     _Visitor.prototype.serialize = function (nodes) {
         var _this = this;
-        return (_a = []).concat.apply(_a, nodes.map(function (node) { return node.visit(_this); }));
-        var _a;
+        return [].concat.apply([], nodes.map(function (node) { return node.visit(_this); }));
     };
     return _Visitor;
 }());

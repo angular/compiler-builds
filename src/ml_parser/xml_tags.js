@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { TagContentType } from './tags';
-export var XmlTagDefinition = (function () {
+var XmlTagDefinition = (function () {
     function XmlTagDefinition() {
         this.closedByParent = false;
         this.contentType = TagContentType.PARSABLE_DATA;
@@ -26,6 +26,7 @@ export var XmlTagDefinition = (function () {
     XmlTagDefinition.prototype.isClosedByChild = function (name) { return false; };
     return XmlTagDefinition;
 }());
+export { XmlTagDefinition };
 function XmlTagDefinition_tsickle_Closure_declarations() {
     /** @type {?} */
     XmlTagDefinition.prototype.closedByParent;

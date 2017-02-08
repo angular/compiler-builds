@@ -22,7 +22,7 @@ import { splitAtColon } from './util';
 // group 2: "event" from "(event)"
 // group 3: "@trigger" from "@trigger"
 var /** @type {?} */ HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
-export var CompileAnimationEntryMetadata = (function () {
+var CompileAnimationEntryMetadata = (function () {
     /**
      * @param {?=} name
      * @param {?=} definitions
@@ -35,6 +35,7 @@ export var CompileAnimationEntryMetadata = (function () {
     }
     return CompileAnimationEntryMetadata;
 }());
+export { CompileAnimationEntryMetadata };
 function CompileAnimationEntryMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileAnimationEntryMetadata.prototype.name;
@@ -44,43 +45,48 @@ function CompileAnimationEntryMetadata_tsickle_Closure_declarations() {
 /**
  * @abstract
  */
-export var CompileAnimationStateMetadata = (function () {
+var CompileAnimationStateMetadata = (function () {
     function CompileAnimationStateMetadata() {
     }
     return CompileAnimationStateMetadata;
 }());
-export var CompileAnimationStateDeclarationMetadata = (function (_super) {
+export { CompileAnimationStateMetadata };
+var CompileAnimationStateDeclarationMetadata = (function (_super) {
     __extends(CompileAnimationStateDeclarationMetadata, _super);
     /**
      * @param {?} stateNameExpr
      * @param {?} styles
      */
     function CompileAnimationStateDeclarationMetadata(stateNameExpr, styles) {
-        _super.call(this);
-        this.stateNameExpr = stateNameExpr;
-        this.styles = styles;
+        var _this = _super.call(this) || this;
+        _this.stateNameExpr = stateNameExpr;
+        _this.styles = styles;
+        return _this;
     }
     return CompileAnimationStateDeclarationMetadata;
 }(CompileAnimationStateMetadata));
+export { CompileAnimationStateDeclarationMetadata };
 function CompileAnimationStateDeclarationMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileAnimationStateDeclarationMetadata.prototype.stateNameExpr;
     /** @type {?} */
     CompileAnimationStateDeclarationMetadata.prototype.styles;
 }
-export var CompileAnimationStateTransitionMetadata = (function (_super) {
+var CompileAnimationStateTransitionMetadata = (function (_super) {
     __extends(CompileAnimationStateTransitionMetadata, _super);
     /**
      * @param {?} stateChangeExpr
      * @param {?} steps
      */
     function CompileAnimationStateTransitionMetadata(stateChangeExpr, steps) {
-        _super.call(this);
-        this.stateChangeExpr = stateChangeExpr;
-        this.steps = steps;
+        var _this = _super.call(this) || this;
+        _this.stateChangeExpr = stateChangeExpr;
+        _this.steps = steps;
+        return _this;
     }
     return CompileAnimationStateTransitionMetadata;
 }(CompileAnimationStateMetadata));
+export { CompileAnimationStateTransitionMetadata };
 function CompileAnimationStateTransitionMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileAnimationStateTransitionMetadata.prototype.stateChangeExpr;
@@ -90,28 +96,31 @@ function CompileAnimationStateTransitionMetadata_tsickle_Closure_declarations() 
 /**
  * @abstract
  */
-export var CompileAnimationMetadata = (function () {
+var CompileAnimationMetadata = (function () {
     function CompileAnimationMetadata() {
     }
     return CompileAnimationMetadata;
 }());
-export var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
+export { CompileAnimationMetadata };
+var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
     __extends(CompileAnimationKeyframesSequenceMetadata, _super);
     /**
      * @param {?=} steps
      */
     function CompileAnimationKeyframesSequenceMetadata(steps) {
         if (steps === void 0) { steps = []; }
-        _super.call(this);
-        this.steps = steps;
+        var _this = _super.call(this) || this;
+        _this.steps = steps;
+        return _this;
     }
     return CompileAnimationKeyframesSequenceMetadata;
 }(CompileAnimationMetadata));
+export { CompileAnimationKeyframesSequenceMetadata };
 function CompileAnimationKeyframesSequenceMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileAnimationKeyframesSequenceMetadata.prototype.steps;
 }
-export var CompileAnimationStyleMetadata = (function (_super) {
+var CompileAnimationStyleMetadata = (function (_super) {
     __extends(CompileAnimationStyleMetadata, _super);
     /**
      * @param {?} offset
@@ -119,19 +128,21 @@ export var CompileAnimationStyleMetadata = (function (_super) {
      */
     function CompileAnimationStyleMetadata(offset, styles) {
         if (styles === void 0) { styles = null; }
-        _super.call(this);
-        this.offset = offset;
-        this.styles = styles;
+        var _this = _super.call(this) || this;
+        _this.offset = offset;
+        _this.styles = styles;
+        return _this;
     }
     return CompileAnimationStyleMetadata;
 }(CompileAnimationMetadata));
+export { CompileAnimationStyleMetadata };
 function CompileAnimationStyleMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileAnimationStyleMetadata.prototype.offset;
     /** @type {?} */
     CompileAnimationStyleMetadata.prototype.styles;
 }
-export var CompileAnimationAnimateMetadata = (function (_super) {
+var CompileAnimationAnimateMetadata = (function (_super) {
     __extends(CompileAnimationAnimateMetadata, _super);
     /**
      * @param {?=} timings
@@ -140,12 +151,14 @@ export var CompileAnimationAnimateMetadata = (function (_super) {
     function CompileAnimationAnimateMetadata(timings, styles) {
         if (timings === void 0) { timings = 0; }
         if (styles === void 0) { styles = null; }
-        _super.call(this);
-        this.timings = timings;
-        this.styles = styles;
+        var _this = _super.call(this) || this;
+        _this.timings = timings;
+        _this.styles = styles;
+        return _this;
     }
     return CompileAnimationAnimateMetadata;
 }(CompileAnimationMetadata));
+export { CompileAnimationAnimateMetadata };
 function CompileAnimationAnimateMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileAnimationAnimateMetadata.prototype.timings;
@@ -155,44 +168,48 @@ function CompileAnimationAnimateMetadata_tsickle_Closure_declarations() {
 /**
  * @abstract
  */
-export var CompileAnimationWithStepsMetadata = (function (_super) {
+var CompileAnimationWithStepsMetadata = (function (_super) {
     __extends(CompileAnimationWithStepsMetadata, _super);
     /**
      * @param {?=} steps
      */
     function CompileAnimationWithStepsMetadata(steps) {
         if (steps === void 0) { steps = null; }
-        _super.call(this);
-        this.steps = steps;
+        var _this = _super.call(this) || this;
+        _this.steps = steps;
+        return _this;
     }
     return CompileAnimationWithStepsMetadata;
 }(CompileAnimationMetadata));
+export { CompileAnimationWithStepsMetadata };
 function CompileAnimationWithStepsMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileAnimationWithStepsMetadata.prototype.steps;
 }
-export var CompileAnimationSequenceMetadata = (function (_super) {
+var CompileAnimationSequenceMetadata = (function (_super) {
     __extends(CompileAnimationSequenceMetadata, _super);
     /**
      * @param {?=} steps
      */
     function CompileAnimationSequenceMetadata(steps) {
         if (steps === void 0) { steps = null; }
-        _super.call(this, steps);
+        return _super.call(this, steps) || this;
     }
     return CompileAnimationSequenceMetadata;
 }(CompileAnimationWithStepsMetadata));
-export var CompileAnimationGroupMetadata = (function (_super) {
+export { CompileAnimationSequenceMetadata };
+var CompileAnimationGroupMetadata = (function (_super) {
     __extends(CompileAnimationGroupMetadata, _super);
     /**
      * @param {?=} steps
      */
     function CompileAnimationGroupMetadata(steps) {
         if (steps === void 0) { steps = null; }
-        _super.call(this, steps);
+        return _super.call(this, steps) || this;
     }
     return CompileAnimationGroupMetadata;
 }(CompileAnimationWithStepsMetadata));
+export { CompileAnimationGroupMetadata };
 /**
  * @param {?} name
  * @return {?}
@@ -299,7 +316,7 @@ export function tokenReference(token) {
 /**
  * Metadata about a stylesheet
  */
-export var CompileStylesheetMetadata = (function () {
+var CompileStylesheetMetadata = (function () {
     /**
      * @param {?=} __0
      */
@@ -311,6 +328,7 @@ export var CompileStylesheetMetadata = (function () {
     }
     return CompileStylesheetMetadata;
 }());
+export { CompileStylesheetMetadata };
 function CompileStylesheetMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileStylesheetMetadata.prototype.moduleUrl;
@@ -322,7 +340,7 @@ function CompileStylesheetMetadata_tsickle_Closure_declarations() {
 /**
  * Metadata regarding compilation of a template.
  */
-export var CompileTemplateMetadata = (function () {
+var CompileTemplateMetadata = (function () {
     /**
      * @param {?=} __0
      */
@@ -353,6 +371,7 @@ export var CompileTemplateMetadata = (function () {
     };
     return CompileTemplateMetadata;
 }());
+export { CompileTemplateMetadata };
 function CompileTemplateMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileTemplateMetadata.prototype.encapsulation;
@@ -376,7 +395,7 @@ function CompileTemplateMetadata_tsickle_Closure_declarations() {
 /**
  * Metadata regarding compilation of a directive.
  */
-export var CompileDirectiveMetadata = (function () {
+var CompileDirectiveMetadata = (function () {
     /**
      * @param {?=} __0
      */
@@ -493,6 +512,7 @@ export var CompileDirectiveMetadata = (function () {
     };
     return CompileDirectiveMetadata;
 }());
+export { CompileDirectiveMetadata };
 function CompileDirectiveMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileDirectiveMetadata.prototype.isHost;
@@ -569,7 +589,7 @@ export function createHostComponentMeta(hostTypeReference, compMeta, hostViewTyp
         componentViewType: hostViewType
     });
 }
-export var CompilePipeMetadata = (function () {
+var CompilePipeMetadata = (function () {
     /**
      * @param {?=} __0
      */
@@ -592,6 +612,7 @@ export var CompilePipeMetadata = (function () {
     };
     return CompilePipeMetadata;
 }());
+export { CompilePipeMetadata };
 function CompilePipeMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompilePipeMetadata.prototype.type;
@@ -603,7 +624,7 @@ function CompilePipeMetadata_tsickle_Closure_declarations() {
 /**
  * Metadata regarding compilation of a module.
  */
-export var CompileNgModuleMetadata = (function () {
+var CompileNgModuleMetadata = (function () {
     /**
      * @param {?=} __0
      */
@@ -639,6 +660,7 @@ export var CompileNgModuleMetadata = (function () {
     };
     return CompileNgModuleMetadata;
 }());
+export { CompileNgModuleMetadata };
 function CompileNgModuleMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileNgModuleMetadata.prototype.type;
@@ -667,7 +689,7 @@ function CompileNgModuleMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileNgModuleMetadata.prototype.transitiveModule;
 }
-export var TransitiveCompileNgModuleMetadata = (function () {
+var TransitiveCompileNgModuleMetadata = (function () {
     function TransitiveCompileNgModuleMetadata() {
         this.directivesSet = new Set();
         this.directives = [];
@@ -753,6 +775,7 @@ export var TransitiveCompileNgModuleMetadata = (function () {
     };
     return TransitiveCompileNgModuleMetadata;
 }());
+export { TransitiveCompileNgModuleMetadata };
 function TransitiveCompileNgModuleMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     TransitiveCompileNgModuleMetadata.prototype.directivesSet;
@@ -788,7 +811,7 @@ function TransitiveCompileNgModuleMetadata_tsickle_Closure_declarations() {
 function _normalizeArray(obj) {
     return obj || [];
 }
-export var ProviderMeta = (function () {
+var ProviderMeta = (function () {
     /**
      * @param {?} token
      * @param {?} __1
@@ -805,6 +828,7 @@ export var ProviderMeta = (function () {
     }
     return ProviderMeta;
 }());
+export { ProviderMeta };
 function ProviderMeta_tsickle_Closure_declarations() {
     /** @type {?} */
     ProviderMeta.prototype.token;

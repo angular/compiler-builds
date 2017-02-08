@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as o from '../output/output_ast';
-export var CheckBindingField = (function () {
+var CheckBindingField = (function () {
     /**
      * @param {?} expression
      * @param {?} bindingId
@@ -17,6 +17,7 @@ export var CheckBindingField = (function () {
     }
     return CheckBindingField;
 }());
+export { CheckBindingField };
 function CheckBindingField_tsickle_Closure_declarations() {
     /** @type {?} */
     CheckBindingField.prototype.expression;

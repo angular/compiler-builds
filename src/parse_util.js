@@ -1,6 +1,13 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import * as chars from './chars';
 import { isPresent } from './facade/lang';
-export var ParseLocation = (function () {
+var ParseLocation = (function () {
     /**
      * @param {?} file
      * @param {?} offset
@@ -100,6 +107,7 @@ export var ParseLocation = (function () {
     };
     return ParseLocation;
 }());
+export { ParseLocation };
 function ParseLocation_tsickle_Closure_declarations() {
     /** @type {?} */
     ParseLocation.prototype.file;
@@ -110,7 +118,7 @@ function ParseLocation_tsickle_Closure_declarations() {
     /** @type {?} */
     ParseLocation.prototype.col;
 }
-export var ParseSourceFile = (function () {
+var ParseSourceFile = (function () {
     /**
      * @param {?} content
      * @param {?} url
@@ -121,13 +129,14 @@ export var ParseSourceFile = (function () {
     }
     return ParseSourceFile;
 }());
+export { ParseSourceFile };
 function ParseSourceFile_tsickle_Closure_declarations() {
     /** @type {?} */
     ParseSourceFile.prototype.content;
     /** @type {?} */
     ParseSourceFile.prototype.url;
 }
-export var ParseSourceSpan = (function () {
+var ParseSourceSpan = (function () {
     /**
      * @param {?} start
      * @param {?} end
@@ -147,6 +156,7 @@ export var ParseSourceSpan = (function () {
     };
     return ParseSourceSpan;
 }());
+export { ParseSourceSpan };
 function ParseSourceSpan_tsickle_Closure_declarations() {
     /** @type {?} */
     ParseSourceSpan.prototype.start;
@@ -160,7 +170,7 @@ ParseErrorLevel.WARNING = 0;
 ParseErrorLevel.FATAL = 1;
 ParseErrorLevel[ParseErrorLevel.WARNING] = "WARNING";
 ParseErrorLevel[ParseErrorLevel.FATAL] = "FATAL";
-export var ParseError = (function () {
+var ParseError = (function () {
     /**
      * @param {?} span
      * @param {?} msg
@@ -183,6 +193,7 @@ export var ParseError = (function () {
     };
     return ParseError;
 }());
+export { ParseError };
 function ParseError_tsickle_Closure_declarations() {
     /** @type {?} */
     ParseError.prototype.span;

@@ -13,10 +13,10 @@ var __extends = (this && this.__extends) || function (d, b) {
 import { Parser } from './parser';
 import { getXmlTagDefinition } from './xml_tags';
 export { ParseTreeResult, TreeError } from './parser';
-export var XmlParser = (function (_super) {
+var XmlParser = (function (_super) {
     __extends(XmlParser, _super);
     function XmlParser() {
-        _super.call(this, getXmlTagDefinition);
+        return _super.call(this, getXmlTagDefinition) || this;
     }
     /**
      * @param {?} source
@@ -30,4 +30,5 @@ export var XmlParser = (function (_super) {
     };
     return XmlParser;
 }(Parser));
+export { XmlParser };
 //# sourceMappingURL=xml_parser.js.map

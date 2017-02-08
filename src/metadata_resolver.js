@@ -38,7 +38,7 @@ import { SummaryResolver } from './summary_resolver';
 import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, ValueTransformer, syntaxError, visitValue } from './util';
 export var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
-export var CompileMetadataResolver = (function () {
+var CompileMetadataResolver = (function () {
     /**
      * @param {?} _ngModuleResolver
      * @param {?} _directiveResolver
@@ -670,7 +670,7 @@ export var CompileMetadataResolver = (function () {
     CompileMetadataResolver.prototype._addTypeToModule = function (type, moduleType) {
         var /** @type {?} */ oldModule = this._ngModuleOfTypes.get(type);
         if (oldModule && oldModule !== moduleType) {
-            this._reportError(syntaxError(("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! ") +
+            this._reportError(syntaxError("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! " +
                 ("Please consider moving " + stringifyType(type) + " to a higher module that imports " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ". ") +
                 ("You can also create a new NgModule that exports and includes " + stringifyType(type) + " then import that NgModule in " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ".")), moduleType);
         }
@@ -1109,24 +1109,32 @@ export var CompileMetadataResolver = (function () {
             throw error;
         }
     };
-    /** @nocollapse */
-    CompileMetadataResolver.ctorParameters = function () { return [
-        { type: NgModuleResolver, },
-        { type: DirectiveResolver, },
-        { type: PipeResolver, },
-        { type: SummaryResolver, },
-        { type: ElementSchemaRegistry, },
-        { type: DirectiveNormalizer, },
-        { type: StaticSymbolCache, decorators: [{ type: Optional },] },
-        { type: ReflectorReader, },
-        { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
-    ]; };
-    CompileMetadataResolver = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [NgModuleResolver, DirectiveResolver, PipeResolver, SummaryResolver, ElementSchemaRegistry, DirectiveNormalizer, StaticSymbolCache, ReflectorReader, Function])
-    ], CompileMetadataResolver);
     return CompileMetadataResolver;
 }());
+/** @nocollapse */
+CompileMetadataResolver.ctorParameters = function () { return [
+    { type: NgModuleResolver, },
+    { type: DirectiveResolver, },
+    { type: PipeResolver, },
+    { type: SummaryResolver, },
+    { type: ElementSchemaRegistry, },
+    { type: DirectiveNormalizer, },
+    { type: StaticSymbolCache, decorators: [{ type: Optional },] },
+    { type: ReflectorReader, },
+    { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
+]; };
+CompileMetadataResolver = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [NgModuleResolver,
+        DirectiveResolver,
+        PipeResolver,
+        SummaryResolver,
+        ElementSchemaRegistry,
+        DirectiveNormalizer,
+        StaticSymbolCache,
+        ReflectorReader, Function])
+], CompileMetadataResolver);
+export { CompileMetadataResolver };
 function CompileMetadataResolver_tsickle_Closure_declarations() {
     /**
      * @nocollapse
@@ -1224,7 +1232,7 @@ export function componentModuleUrl(reflector, type, cmpMetadata) {
         return scheme ? moduleId : "package:" + moduleId + MODULE_SUFFIX;
     }
     else if (moduleId !== null && moduleId !== void 0) {
-        throw syntaxError(("moduleId should be a string in \"" + stringifyType(type) + "\". See https://goo.gl/wIDDiL for more information.\n") +
+        throw syntaxError("moduleId should be a string in \"" + stringifyType(type) + "\". See https://goo.gl/wIDDiL for more information.\n" +
             "If you're using Webpack you should inline the template and the styles, see https://goo.gl/X2J8zc.");
     }
     return reflector.importUri(type);
@@ -1240,7 +1248,7 @@ function extractIdentifiers(value, targetIdentifiers) {
 var _CompileValueConverter = (function (_super) {
     __extends(_CompileValueConverter, _super);
     function _CompileValueConverter() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @param {?} value

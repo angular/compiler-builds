@@ -14,7 +14,7 @@ export var /** @type {?} */ CATCH_STACK_VAR = o.variable('stack');
 /**
  * @abstract
  */
-export var OutputEmitter = (function () {
+var OutputEmitter = (function () {
     function OutputEmitter() {
     }
     /**
@@ -27,6 +27,7 @@ export var OutputEmitter = (function () {
     OutputEmitter.prototype.emitStatements = function (moduleUrl, stmts, exportedVars) { };
     return OutputEmitter;
 }());
+export { OutputEmitter };
 var _EmittedLine = (function () {
     /**
      * @param {?} indent
@@ -43,7 +44,7 @@ function _EmittedLine_tsickle_Closure_declarations() {
     /** @type {?} */
     _EmittedLine.prototype.indent;
 }
-export var EmitterVisitorContext = (function () {
+var EmitterVisitorContext = (function () {
     /**
      * @param {?} _exportedVars
      * @param {?} _indent
@@ -162,6 +163,7 @@ export var EmitterVisitorContext = (function () {
     };
     return EmitterVisitorContext;
 }());
+export { EmitterVisitorContext };
 function EmitterVisitorContext_tsickle_Closure_declarations() {
     /** @type {?} */
     EmitterVisitorContext.prototype._lines;
@@ -175,7 +177,7 @@ function EmitterVisitorContext_tsickle_Closure_declarations() {
 /**
  * @abstract
  */
-export var AbstractEmitterVisitor = (function () {
+var AbstractEmitterVisitor = (function () {
     /**
      * @param {?} _escapeDollarInStrings
      */
@@ -639,6 +641,7 @@ export var AbstractEmitterVisitor = (function () {
     };
     return AbstractEmitterVisitor;
 }());
+export { AbstractEmitterVisitor };
 function AbstractEmitterVisitor_tsickle_Closure_declarations() {
     /** @type {?} */
     AbstractEmitterVisitor.prototype._escapeDollarInStrings;
@@ -657,7 +660,7 @@ export function escapeIdentifier(input, escapeDollar, alwaysQuote) {
     var /** @type {?} */ body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, function () {
         var match = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            match[_i - 0] = arguments[_i];
+            match[_i] = arguments[_i];
         }
         if (match[0] == '$') {
             return escapeDollar ? '\\$' : '$';

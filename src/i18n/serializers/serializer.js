@@ -14,7 +14,7 @@ import * as i18n from '../i18n_ast';
 /**
  * @abstract
  */
-export var Serializer = (function () {
+var Serializer = (function () {
     function Serializer() {
     }
     /**
@@ -43,23 +43,24 @@ export var Serializer = (function () {
     Serializer.prototype.createNameMapper = function (message) { return null; };
     return Serializer;
 }());
+export { Serializer };
 /**
  * A simple mapper that take a function to transform an internal name to a public name
  */
-export var SimplePlaceholderMapper = (function (_super) {
+var SimplePlaceholderMapper = (function (_super) {
     __extends(SimplePlaceholderMapper, _super);
     /**
      * @param {?} message
      * @param {?} mapName
      */
     function SimplePlaceholderMapper(message, mapName) {
-        var _this = this;
-        _super.call(this);
-        this.mapName = mapName;
-        this.internalToPublic = {};
-        this.publicToNextId = {};
-        this.publicToInternal = {};
+        var _this = _super.call(this) || this;
+        _this.mapName = mapName;
+        _this.internalToPublic = {};
+        _this.publicToNextId = {};
+        _this.publicToInternal = {};
         message.nodes.forEach(function (node) { return node.visit(_this); });
+        return _this;
     }
     /**
      * @param {?} internalName
@@ -131,6 +132,7 @@ export var SimplePlaceholderMapper = (function (_super) {
     };
     return SimplePlaceholderMapper;
 }(i18n.RecurseVisitor));
+export { SimplePlaceholderMapper };
 function SimplePlaceholderMapper_tsickle_Closure_declarations() {
     /** @type {?} */
     SimplePlaceholderMapper.prototype.internalToPublic;

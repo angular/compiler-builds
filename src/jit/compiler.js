@@ -41,7 +41,7 @@ import { ViewCompiler } from '../view_compiler/view_compiler';
  * from a trusted source. Attacker-controlled data introduced by a template could expose your
  * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
  */
-export var JitCompiler = (function () {
+var JitCompiler = (function () {
     /**
      * @param {?} _injector
      * @param {?} _metadataResolver
@@ -337,8 +337,7 @@ export var JitCompiler = (function () {
         var /** @type {?} */ parsedTemplate = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, identifierName(compMeta.type));
         var /** @type {?} */ compiledAnimations = this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
         var /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), pipes, compiledAnimations);
-        var /** @type {?} */ statements = (_a = stylesCompileResult.componentStylesheet.statements).concat.apply(_a, compiledAnimations.map(function (ca) { return ca.statements; }))
-            .concat(compileResult.statements);
+        var /** @type {?} */ statements = (_a = stylesCompileResult.componentStylesheet.statements).concat.apply(_a, compiledAnimations.map(function (ca) { return ca.statements; })).concat(compileResult.statements);
         var /** @type {?} */ viewClass;
         if (!this._compilerConfig.useJit) {
             viewClass = interpretStatements(statements, compileResult.viewClassVar);
@@ -376,12 +375,21 @@ export var JitCompiler = (function () {
             return jitStatements("/" + result.meta.moduleUrl + ".ngstyle.js", result.statements, result.stylesVar);
         }
     };
-    JitCompiler = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [Injector, CompileMetadataResolver, TemplateParser, StyleCompiler, ViewCompiler, NgModuleCompiler, DirectiveWrapperCompiler, CompilerConfig, AnimationParser])
-    ], JitCompiler);
     return JitCompiler;
 }());
+JitCompiler = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [Injector,
+        CompileMetadataResolver,
+        TemplateParser,
+        StyleCompiler,
+        ViewCompiler,
+        NgModuleCompiler,
+        DirectiveWrapperCompiler,
+        CompilerConfig,
+        AnimationParser])
+], JitCompiler);
+export { JitCompiler };
 function JitCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     JitCompiler.prototype._compiledTemplateCache;

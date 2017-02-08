@@ -15,7 +15,7 @@ import * as i18n from './i18n_ast';
 /**
  * A container for message extracted from the templates.
  */
-export var MessageBundle = (function () {
+var MessageBundle = (function () {
     /**
      * @param {?} _htmlParser
      * @param {?} _implicitTags
@@ -74,6 +74,7 @@ export var MessageBundle = (function () {
     };
     return MessageBundle;
 }());
+export { MessageBundle };
 function MessageBundle_tsickle_Closure_declarations() {
     /** @type {?} */
     MessageBundle.prototype._messages;
@@ -87,7 +88,7 @@ function MessageBundle_tsickle_Closure_declarations() {
 var MapPlaceholderNames = (function (_super) {
     __extends(MapPlaceholderNames, _super);
     function MapPlaceholderNames() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @param {?} nodes

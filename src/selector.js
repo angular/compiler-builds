@@ -19,7 +19,7 @@ var /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
  * css classes and attribute/value pairs with the purpose
  * of selecting subsets out of them.
  */
-export var CssSelector = (function () {
+var CssSelector = (function () {
     function CssSelector() {
         this.element = null;
         this.classNames = [];
@@ -146,6 +146,7 @@ export var CssSelector = (function () {
     };
     return CssSelector;
 }());
+export { CssSelector };
 function CssSelector_tsickle_Closure_declarations() {
     /** @type {?} */
     CssSelector.prototype.element;
@@ -160,7 +161,7 @@ function CssSelector_tsickle_Closure_declarations() {
  * Reads a list of CssSelectors and allows to calculate which ones
  * are contained in a given CssSelector.
  */
-export var SelectorMatcher = (function () {
+var SelectorMatcher = (function () {
     function SelectorMatcher() {
         this._elementMap = new Map();
         this._elementPartialMap = new Map();
@@ -381,6 +382,7 @@ export var SelectorMatcher = (function () {
     };
     return SelectorMatcher;
 }());
+export { SelectorMatcher };
 function SelectorMatcher_tsickle_Closure_declarations() {
     /** @type {?} */
     SelectorMatcher.prototype._elementMap;
@@ -397,7 +399,7 @@ function SelectorMatcher_tsickle_Closure_declarations() {
     /** @type {?} */
     SelectorMatcher.prototype._listContexts;
 }
-export var SelectorListContext = (function () {
+var SelectorListContext = (function () {
     /**
      * @param {?} selectors
      */
@@ -407,13 +409,14 @@ export var SelectorListContext = (function () {
     }
     return SelectorListContext;
 }());
+export { SelectorListContext };
 function SelectorListContext_tsickle_Closure_declarations() {
     /** @type {?} */
     SelectorListContext.prototype.alreadyMatched;
     /** @type {?} */
     SelectorListContext.prototype.selectors;
 }
-export var SelectorContext = (function () {
+var SelectorContext = (function () {
     /**
      * @param {?} selector
      * @param {?} cbContext
@@ -446,6 +449,7 @@ export var SelectorContext = (function () {
     };
     return SelectorContext;
 }());
+export { SelectorContext };
 function SelectorContext_tsickle_Closure_declarations() {
     /** @type {?} */
     SelectorContext.prototype.notSelectors;

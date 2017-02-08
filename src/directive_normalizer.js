@@ -27,7 +27,7 @@ import { extractStyleUrls, isStyleUrlResolvable } from './style_url_resolver';
 import { PreparsedElementType, preparseElement } from './template_parser/template_preparser';
 import { UrlResolver } from './url_resolver';
 import { SyncAsyncResult, syntaxError } from './util';
-export var DirectiveNormalizer = (function () {
+var DirectiveNormalizer = (function () {
     /**
      * @param {?} _resourceLoader
      * @param {?} _urlResolver
@@ -209,12 +209,16 @@ export var DirectiveNormalizer = (function () {
         });
         return new CompileStylesheetMetadata({ styles: allStyles, styleUrls: allStyleUrls, moduleUrl: stylesheet.moduleUrl });
     };
-    DirectiveNormalizer = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [ResourceLoader, UrlResolver, HtmlParser, CompilerConfig])
-    ], DirectiveNormalizer);
     return DirectiveNormalizer;
 }());
+DirectiveNormalizer = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [ResourceLoader,
+        UrlResolver,
+        HtmlParser,
+        CompilerConfig])
+], DirectiveNormalizer);
+export { DirectiveNormalizer };
 function DirectiveNormalizer_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveNormalizer.prototype._resourceLoaderCache;

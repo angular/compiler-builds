@@ -4,11 +4,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
 import { CompilerInjectable } from './injectable';
-export var SummaryResolver = (function () {
+var SummaryResolver = (function () {
     function SummaryResolver() {
     }
     /**
@@ -38,10 +35,10 @@ export var SummaryResolver = (function () {
      * @return {?}
      */
     SummaryResolver.prototype.getImportAs = function (reference) { return reference; };
-    SummaryResolver = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [])
-    ], SummaryResolver);
     return SummaryResolver;
 }());
+SummaryResolver = __decorate([
+    CompilerInjectable()
+], SummaryResolver);
+export { SummaryResolver };
 //# sourceMappingURL=summary_resolver.js.map

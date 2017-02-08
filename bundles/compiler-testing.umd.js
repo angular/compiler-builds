@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.6-c33fda2
+ * @license Angular v4.0.0-beta.6-7a4c255
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -90,14 +90,15 @@
     var MockDirectiveResolver = (function (_super) {
         __extends(MockDirectiveResolver, _super);
         function MockDirectiveResolver(_injector) {
-            _super.call(this);
-            this._injector = _injector;
-            this._directives = new Map();
-            this._providerOverrides = new Map();
-            this._viewProviderOverrides = new Map();
-            this._views = new Map();
-            this._inlineTemplates = new Map();
-            this._animations = new Map();
+            var _this = _super.call(this) || this;
+            _this._injector = _injector;
+            _this._directives = new Map();
+            _this._providerOverrides = new Map();
+            _this._viewProviderOverrides = new Map();
+            _this._views = new Map();
+            _this._inlineTemplates = new Map();
+            _this._animations = new Map();
+            return _this;
         }
         Object.defineProperty(MockDirectiveResolver.prototype, "_compiler", {
             get: function () { return this._injector.get(_angular_core.Compiler); },
@@ -208,15 +209,15 @@
             this._animations.set(component, animations);
             this._clearCacheFor(component);
         };
-        MockDirectiveResolver.decorators = [
-            { type: _angular_core.Injectable },
-        ];
-        /** @nocollapse */
-        MockDirectiveResolver.ctorParameters = function () { return [
-            { type: _angular_core.Injector, },
-        ]; };
         return MockDirectiveResolver;
     }(_angular_compiler.DirectiveResolver));
+    MockDirectiveResolver.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    /** @nocollapse */
+    MockDirectiveResolver.ctorParameters = function () { return [
+        { type: _angular_core.Injector, },
+    ]; };
 
     /**
      * @license
@@ -233,9 +234,10 @@
     var MockNgModuleResolver = (function (_super) {
         __extends$1(MockNgModuleResolver, _super);
         function MockNgModuleResolver(_injector) {
-            _super.call(this);
-            this._injector = _injector;
-            this._ngModules = new Map();
+            var _this = _super.call(this) || this;
+            _this._injector = _injector;
+            _this._ngModules = new Map();
+            return _this;
         }
         /**
          * Overrides the {@link NgModule} for a module.
@@ -260,15 +262,15 @@
             configurable: true
         });
         MockNgModuleResolver.prototype._clearCacheFor = function (component) { this._compiler.clearCacheFor(component); };
-        MockNgModuleResolver.decorators = [
-            { type: _angular_core.Injectable },
-        ];
-        /** @nocollapse */
-        MockNgModuleResolver.ctorParameters = function () { return [
-            { type: _angular_core.Injector, },
-        ]; };
         return MockNgModuleResolver;
     }(_angular_compiler.NgModuleResolver));
+    MockNgModuleResolver.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    /** @nocollapse */
+    MockNgModuleResolver.ctorParameters = function () { return [
+        { type: _angular_core.Injector, },
+    ]; };
 
     /**
      * @license
@@ -285,9 +287,10 @@
     var MockPipeResolver = (function (_super) {
         __extends$2(MockPipeResolver, _super);
         function MockPipeResolver(_injector) {
-            _super.call(this);
-            this._injector = _injector;
-            this._pipes = new Map();
+            var _this = _super.call(this) || this;
+            _this._injector = _injector;
+            _this._pipes = new Map();
+            return _this;
         }
         Object.defineProperty(MockPipeResolver.prototype, "_compiler", {
             get: function () { return this._injector.get(_angular_core.Compiler); },
@@ -316,15 +319,15 @@
             }
             return metadata;
         };
-        MockPipeResolver.decorators = [
-            { type: _angular_core.Injectable },
-        ];
-        /** @nocollapse */
-        MockPipeResolver.ctorParameters = function () { return [
-            { type: _angular_core.Injector, },
-        ]; };
         return MockPipeResolver;
     }(_angular_compiler.PipeResolver));
+    MockPipeResolver.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    /** @nocollapse */
+    MockPipeResolver.ctorParameters = function () { return [
+        { type: _angular_core.Injector, },
+    ]; };
 
     var TestingCompilerFactory = _angular_core_testing.__core_private_testing__.TestingCompilerFactory;
 
@@ -360,7 +363,7 @@
     }());
     function removeMetadata(metadata, remove, references) {
         var removeObjects = new Set();
-        var _loop_1 = function(prop) {
+        var _loop_1 = function (prop) {
             var removeValue = remove[prop];
             if (removeValue instanceof Array) {
                 removeValue.forEach(function (value) { removeObjects.add(_propHashKey(prop, value, references)); });
@@ -372,7 +375,7 @@
         for (var prop in remove) {
             _loop_1(prop);
         }
-        var _loop_2 = function(prop) {
+        var _loop_2 = function (prop) {
             var propValue = metadata[prop];
             if (propValue instanceof Array) {
                 metadata[prop] = propValue.filter(function (value) { return !removeObjects.has(_propHashKey(prop, value, references)); });
@@ -450,15 +453,15 @@
             var compiler = this._compilerFactory.createCompiler(options);
             return new TestingCompilerImpl(compiler, compiler.injector.get(MockDirectiveResolver), compiler.injector.get(MockPipeResolver), compiler.injector.get(MockNgModuleResolver));
         };
-        TestingCompilerFactoryImpl.decorators = [
-            { type: _angular_core.Injectable },
-        ];
-        /** @nocollapse */
-        TestingCompilerFactoryImpl.ctorParameters = function () { return [
-            { type: _angular_core.CompilerFactory, },
-        ]; };
         return TestingCompilerFactoryImpl;
     }());
+    TestingCompilerFactoryImpl.decorators = [
+        { type: _angular_core.Injectable },
+    ];
+    /** @nocollapse */
+    TestingCompilerFactoryImpl.ctorParameters = function () { return [
+        { type: _angular_core.CompilerFactory, },
+    ]; };
     var TestingCompilerImpl = (function () {
         function TestingCompilerImpl(_compiler, _directiveResolver, _pipeResolver, _moduleResolver) {
             this._compiler = _compiler;

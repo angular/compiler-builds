@@ -11,17 +11,18 @@ import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { createPureProxy } from './identifier_util';
 var /** @type {?} */ VAL_UNWRAPPER_VAR = o.variable("valUnwrapper");
-export var EventHandlerVars = (function () {
+var EventHandlerVars = (function () {
     function EventHandlerVars() {
     }
-    EventHandlerVars.event = o.variable('$event');
     return EventHandlerVars;
 }());
+export { EventHandlerVars };
+EventHandlerVars.event = o.variable('$event');
 function EventHandlerVars_tsickle_Closure_declarations() {
     /** @type {?} */
     EventHandlerVars.event;
 }
-export var ConvertPropertyBindingResult = (function () {
+var ConvertPropertyBindingResult = (function () {
     /**
      * @param {?} stmts
      * @param {?} currValExpr
@@ -34,6 +35,7 @@ export var ConvertPropertyBindingResult = (function () {
     }
     return ConvertPropertyBindingResult;
 }());
+export { ConvertPropertyBindingResult };
 function ConvertPropertyBindingResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ConvertPropertyBindingResult.prototype.stmts;
@@ -81,7 +83,7 @@ export function convertPropertyBinding(builder, nameResolver, implicitReceiver, 
         return new ConvertPropertyBindingResult(stmts, currValExpr, null);
     }
 }
-export var ConvertActionBindingResult = (function () {
+var ConvertActionBindingResult = (function () {
     /**
      * @param {?} stmts
      * @param {?} preventDefault
@@ -92,6 +94,7 @@ export var ConvertActionBindingResult = (function () {
     }
     return ConvertActionBindingResult;
 }());
+export { ConvertActionBindingResult };
 function ConvertActionBindingResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ConvertActionBindingResult.prototype.stmts;

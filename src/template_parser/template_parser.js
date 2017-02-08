@@ -75,7 +75,7 @@ var /** @type {?} */ TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
  * This is currently an internal-only feature and not meant for general use.
  */
 export var /** @type {?} */ TEMPLATE_TRANSFORMS = new InjectionToken('TemplateTransforms');
-export var TemplateParseError = (function (_super) {
+var TemplateParseError = (function (_super) {
     __extends(TemplateParseError, _super);
     /**
      * @param {?} message
@@ -83,11 +83,12 @@ export var TemplateParseError = (function (_super) {
      * @param {?} level
      */
     function TemplateParseError(message, span, level) {
-        _super.call(this, span, message, level);
+        return _super.call(this, span, message, level) || this;
     }
     return TemplateParseError;
 }(ParseError));
-export var TemplateParseResult = (function () {
+export { TemplateParseError };
+var TemplateParseResult = (function () {
     /**
      * @param {?=} templateAst
      * @param {?=} errors
@@ -98,13 +99,14 @@ export var TemplateParseResult = (function () {
     }
     return TemplateParseResult;
 }());
+export { TemplateParseResult };
 function TemplateParseResult_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateParseResult.prototype.templateAst;
     /** @type {?} */
     TemplateParseResult.prototype.errors;
 }
-export var TemplateParser = (function () {
+var TemplateParser = (function () {
     /**
      * @param {?} _exprParser
      * @param {?} _schemaRegistry
@@ -239,20 +241,24 @@ export var TemplateParser = (function () {
             }
         }); });
     };
-    /** @nocollapse */
-    TemplateParser.ctorParameters = function () { return [
-        { type: Parser, },
-        { type: ElementSchemaRegistry, },
-        { type: I18NHtmlParser, },
-        { type: Console, },
-        { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [TEMPLATE_TRANSFORMS,] },] },
-    ]; };
-    TemplateParser = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [Parser, ElementSchemaRegistry, I18NHtmlParser, Console, Array])
-    ], TemplateParser);
     return TemplateParser;
 }());
+/** @nocollapse */
+TemplateParser.ctorParameters = function () { return [
+    { type: Parser, },
+    { type: ElementSchemaRegistry, },
+    { type: I18NHtmlParser, },
+    { type: Console, },
+    { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [TEMPLATE_TRANSFORMS,] },] },
+]; };
+TemplateParser = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [Parser,
+        ElementSchemaRegistry,
+        I18NHtmlParser,
+        Console, Array])
+], TemplateParser);
+export { TemplateParser };
 function TemplateParser_tsickle_Closure_declarations() {
     /**
      * @nocollapse
@@ -740,7 +746,7 @@ var TemplateParseVisitor = (function () {
     TemplateParseVisitor.prototype._assertElementExists = function (matchElement, element) {
         var /** @type {?} */ elName = element.name.replace(/^:xhtml:/, '');
         if (!matchElement && !this._schemaRegistry.hasElement(elName, this._schemas)) {
-            var /** @type {?} */ errorMsg = ("'" + elName + "' is not a known element:\n") +
+            var /** @type {?} */ errorMsg = "'" + elName + "' is not a known element:\n" +
                 ("1. If '" + elName + "' is an Angular component, then verify that it is part of this module.\n") +
                 ("2. If '" + elName + "' is a Web Component then add \"CUSTOM_ELEMENTS_SCHEMA\" to the '@NgModule.schemas' of this component to suppress this message.");
             this._reportError(errorMsg, element.sourceSpan);
@@ -795,7 +801,7 @@ var TemplateParseVisitor = (function () {
                 var /** @type {?} */ errorMsg = "Can't bind to '" + boundProp.name + "' since it isn't a known property of '" + elementName + "'.";
                 if (elementName.indexOf('-') > -1) {
                     errorMsg +=
-                        ("\n1. If '" + elementName + "' is an Angular component and it has '" + boundProp.name + "' input, then verify that it is part of this module.") +
+                        "\n1. If '" + elementName + "' is an Angular component and it has '" + boundProp.name + "' input, then verify that it is part of this module." +
                             ("\n2. If '" + elementName + "' is a Web Component then add \"CUSTOM_ELEMENTS_SCHEMA\" to the '@NgModule.schemas' of this component to suppress this message.\n");
                 }
                 _this._reportError(errorMsg, boundProp.sourceSpan);

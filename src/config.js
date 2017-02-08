@@ -7,7 +7,7 @@
  */
 import { ViewEncapsulation, isDevMode } from '@angular/core';
 import { Identifiers, createIdentifier } from './identifiers';
-export var CompilerConfig = (function () {
+var CompilerConfig = (function () {
     /**
      * @param {?=} __0
      */
@@ -42,6 +42,7 @@ export var CompilerConfig = (function () {
     });
     return CompilerConfig;
 }());
+export { CompilerConfig };
 function CompilerConfig_tsickle_Closure_declarations() {
     /** @type {?} */
     CompilerConfig.prototype.renderTypes;
@@ -62,7 +63,7 @@ function CompilerConfig_tsickle_Closure_declarations() {
  * to help tree shaking.
  * @abstract
  */
-export var RenderTypes = (function () {
+var RenderTypes = (function () {
     function RenderTypes() {
     }
     /**
@@ -97,7 +98,8 @@ export var RenderTypes = (function () {
     RenderTypes.prototype.renderEvent = function () { };
     return RenderTypes;
 }());
-export var DefaultRenderTypes = (function () {
+export { RenderTypes };
+var DefaultRenderTypes = (function () {
     function DefaultRenderTypes() {
         this.renderText = null;
         this.renderElement = null;
@@ -116,6 +118,7 @@ export var DefaultRenderTypes = (function () {
     ;
     return DefaultRenderTypes;
 }());
+export { DefaultRenderTypes };
 function DefaultRenderTypes_tsickle_Closure_declarations() {
     /** @type {?} */
     DefaultRenderTypes.prototype.renderText;

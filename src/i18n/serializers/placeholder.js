@@ -44,7 +44,7 @@ var /** @type {?} */ TAG_TO_PLACEHOLDER_NAMES = {
  *
  * \@internal
  */
-export var PlaceholderRegistry = (function () {
+var PlaceholderRegistry = (function () {
     function PlaceholderRegistry() {
         this._placeHolderNameCounts = {};
         this._signatureToName = {};
@@ -111,7 +111,7 @@ export var PlaceholderRegistry = (function () {
      */
     PlaceholderRegistry.prototype._hashTag = function (tag, attrs, isVoid) {
         var /** @type {?} */ start = "<" + tag;
-        var /** @type {?} */ strAttrs = Object.keys(attrs).sort().map(function (name) { return (" " + name + "=" + attrs[name]); }).join('');
+        var /** @type {?} */ strAttrs = Object.keys(attrs).sort().map(function (name) { return " " + name + "=" + attrs[name]; }).join('');
         var /** @type {?} */ end = isVoid ? '/>' : "></" + tag + ">";
         return start + strAttrs + end;
     };
@@ -136,6 +136,7 @@ export var PlaceholderRegistry = (function () {
     };
     return PlaceholderRegistry;
 }());
+export { PlaceholderRegistry };
 function PlaceholderRegistry_tsickle_Closure_declarations() {
     /** @type {?} */
     PlaceholderRegistry.prototype._placeHolderNameCounts;

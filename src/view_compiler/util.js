@@ -43,9 +43,10 @@ var _ReplaceViewTransformer = (function (_super) {
      * @param {?} _view
      */
     function _ReplaceViewTransformer(_viewExpr, _view) {
-        _super.call(this);
-        this._viewExpr = _viewExpr;
-        this._view = _view;
+        var _this = _super.call(this) || this;
+        _this._viewExpr = _viewExpr;
+        _this._view = _view;
+        return _this;
     }
     /**
      * @param {?} expr

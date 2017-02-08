@@ -39,7 +39,7 @@ export function mergeTranslations(nodes, translations, interpolationConfig, impl
     var /** @type {?} */ visitor = new _Visitor(implicitTags, implicitAttrs);
     return visitor.merge(nodes, translations, interpolationConfig);
 }
-export var ExtractionResult = (function () {
+var ExtractionResult = (function () {
     /**
      * @param {?} messages
      * @param {?} errors
@@ -50,6 +50,7 @@ export var ExtractionResult = (function () {
     }
     return ExtractionResult;
 }());
+export { ExtractionResult };
 function ExtractionResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ExtractionResult.prototype.messages;

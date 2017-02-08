@@ -3,6 +3,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { CompileSummaryKind } from '../compile_metadata';
 import { ValueTransformer, visitValue } from '../util';
 import { StaticSymbol } from './static_symbol';
@@ -77,14 +84,15 @@ var Serializer = (function (_super) {
      * @param {?} summaryResolver
      */
     function Serializer(symbolResolver, summaryResolver) {
-        _super.call(this);
-        this.symbolResolver = symbolResolver;
-        this.summaryResolver = summaryResolver;
+        var _this = _super.call(this) || this;
+        _this.symbolResolver = symbolResolver;
+        _this.summaryResolver = summaryResolver;
         // Note: This only contains symbols without members.
-        this.symbols = [];
-        this.indexBySymbol = new Map();
-        this.processedSummaryBySymbol = new Map();
-        this.processedSummaries = [];
+        _this.symbols = [];
+        _this.indexBySymbol = new Map();
+        _this.processedSummaryBySymbol = new Map();
+        _this.processedSummaries = [];
+        return _this;
     }
     /**
      * @param {?} summary
@@ -186,8 +194,9 @@ var Deserializer = (function (_super) {
      * @param {?} symbolCache
      */
     function Deserializer(symbolCache) {
-        _super.call(this);
-        this.symbolCache = symbolCache;
+        var _this = _super.call(this) || this;
+        _this.symbolCache = symbolCache;
+        return _this;
     }
     /**
      * @param {?} json

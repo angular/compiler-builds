@@ -242,12 +242,11 @@ var /** @type {?} */ _ATTR_TO_PROP = {
     'readonly': 'readOnly',
     'tabindex': 'tabIndex',
 };
-export var DomElementSchemaRegistry = (function (_super) {
+var DomElementSchemaRegistry = (function (_super) {
     __extends(DomElementSchemaRegistry, _super);
     function DomElementSchemaRegistry() {
-        var _this = this;
-        _super.call(this);
-        this._schema = {};
+        var _this = _super.call(this) || this;
+        _this._schema = {};
         SCHEMA.forEach(function (encodedType) {
             var type = {};
             var _a = encodedType.split('|'), strType = _a[0], strProperties = _a[1];
@@ -283,6 +282,7 @@ export var DomElementSchemaRegistry = (function (_super) {
                 }
             });
         });
+        return _this;
     }
     /**
      * @param {?} tagName
@@ -372,7 +372,7 @@ export var DomElementSchemaRegistry = (function (_super) {
      */
     DomElementSchemaRegistry.prototype.validateProperty = function (name) {
         if (name.toLowerCase().startsWith('on')) {
-            var /** @type {?} */ msg = ("Binding to event property '" + name + "' is disallowed for security reasons, ") +
+            var /** @type {?} */ msg = "Binding to event property '" + name + "' is disallowed for security reasons, " +
                 ("please use (" + name.slice(2) + ")=...") +
                 ("\nIf '" + name + "' is a directive input, make sure the directive is imported by the") +
                 " current module.";
@@ -388,7 +388,7 @@ export var DomElementSchemaRegistry = (function (_super) {
      */
     DomElementSchemaRegistry.prototype.validateAttribute = function (name) {
         if (name.toLowerCase().startsWith('on')) {
-            var /** @type {?} */ msg = ("Binding to event attribute '" + name + "' is disallowed for security reasons, ") +
+            var /** @type {?} */ msg = "Binding to event attribute '" + name + "' is disallowed for security reasons, " +
                 ("please use (" + name.slice(2) + ")=...");
             return { error: true, msg: msg };
         }
@@ -430,12 +430,13 @@ export var DomElementSchemaRegistry = (function (_super) {
         }
         return { error: errorMsg, value: strVal + unit };
     };
-    DomElementSchemaRegistry = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [])
-    ], DomElementSchemaRegistry);
     return DomElementSchemaRegistry;
 }(ElementSchemaRegistry));
+DomElementSchemaRegistry = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [])
+], DomElementSchemaRegistry);
+export { DomElementSchemaRegistry };
 function DomElementSchemaRegistry_tsickle_Closure_declarations() {
     /** @type {?} */
     DomElementSchemaRegistry.prototype._schema;

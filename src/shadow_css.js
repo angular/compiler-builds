@@ -1,4 +1,4 @@
-export var ShadowCss = (function () {
+var ShadowCss = (function () {
     function ShadowCss() {
         this.strictStyling = true;
     }
@@ -32,7 +32,7 @@ export var ShadowCss = (function () {
         return cssText.replace(_cssContentNextSelectorRe, function () {
             var m = [];
             for (var _i = 0; _i < arguments.length; _i++) {
-                m[_i - 0] = arguments[_i];
+                m[_i] = arguments[_i];
             }
             return m[2] + '{';
         });
@@ -46,7 +46,7 @@ export var ShadowCss = (function () {
         return cssText.replace(_cssContentRuleRe, function () {
             var m = [];
             for (var _i = 0; _i < arguments.length; _i++) {
-                m[_i - 0] = arguments[_i];
+                m[_i] = arguments[_i];
             }
             var /** @type {?} */ rule = m[0].replace(m[1], '').replace(m[2], '');
             return m[4] + rule;
@@ -111,7 +111,7 @@ export var ShadowCss = (function () {
         return cssText.replace(regExp, function () {
             var m = [];
             for (var _i = 0; _i < arguments.length; _i++) {
-                m[_i - 0] = arguments[_i];
+                m[_i] = arguments[_i];
             }
             if (m[2]) {
                 var /** @type {?} */ parts = m[2].split(',');
@@ -325,6 +325,7 @@ export var ShadowCss = (function () {
     };
     return ShadowCss;
 }());
+export { ShadowCss };
 function ShadowCss_tsickle_Closure_declarations() {
     /** @type {?} */
     ShadowCss.prototype.strictStyling;
@@ -425,7 +426,7 @@ var /** @type {?} */ _curlyRe = /([{}])/g;
 var /** @type {?} */ OPEN_CURLY = '{';
 var /** @type {?} */ CLOSE_CURLY = '}';
 var /** @type {?} */ BLOCK_PLACEHOLDER = '%BLOCK%';
-export var CssRule = (function () {
+var CssRule = (function () {
     /**
      * @param {?} selector
      * @param {?} content
@@ -436,6 +437,7 @@ export var CssRule = (function () {
     }
     return CssRule;
 }());
+export { CssRule };
 function CssRule_tsickle_Closure_declarations() {
     /** @type {?} */
     CssRule.prototype.selector;
@@ -453,7 +455,7 @@ export function processRules(input, ruleCallback) {
     return inputWithEscapedBlocks.escapedString.replace(_ruleRe, function () {
         var m = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            m[_i - 0] = arguments[_i];
+            m[_i] = arguments[_i];
         }
         var /** @type {?} */ selector = m[2];
         var /** @type {?} */ content = '';

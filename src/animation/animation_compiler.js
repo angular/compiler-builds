@@ -10,7 +10,7 @@ import { Identifiers, createIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { ANY_STATE, DEFAULT_STATE, EMPTY_STATE } from '../private_import_core';
 import { AnimationStateTransitionFnExpression, AnimationStepAst } from './animation_ast';
-export var AnimationEntryCompileResult = (function () {
+var AnimationEntryCompileResult = (function () {
     /**
      * @param {?} name
      * @param {?} statements
@@ -23,6 +23,7 @@ export var AnimationEntryCompileResult = (function () {
     }
     return AnimationEntryCompileResult;
 }());
+export { AnimationEntryCompileResult };
 function AnimationEntryCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationEntryCompileResult.prototype.name;
@@ -31,7 +32,7 @@ function AnimationEntryCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationEntryCompileResult.prototype.fnExp;
 }
-export var AnimationCompiler = (function () {
+var AnimationCompiler = (function () {
     function AnimationCompiler() {
     }
     /**
@@ -48,6 +49,7 @@ export var AnimationCompiler = (function () {
     };
     return AnimationCompiler;
 }());
+export { AnimationCompiler };
 var /** @type {?} */ _ANIMATION_FACTORY_ELEMENT_VAR = o.variable('element');
 var /** @type {?} */ _ANIMATION_DEFAULT_STATE_VAR = o.variable('defaultStateStyles');
 var /** @type {?} */ _ANIMATION_FACTORY_VIEW_VAR = o.variable('view');

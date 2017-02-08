@@ -21,7 +21,7 @@ export declare class MockDirectiveResolver extends DirectiveResolver {
     private _inlineTemplates;
     private _animations;
     constructor(_injector: Injector);
-    private _compiler;
+    private readonly _compiler;
     private _clearCacheFor(component);
     resolve(type: Type<any>, throwIfNotFound?: boolean): Directive;
     /**

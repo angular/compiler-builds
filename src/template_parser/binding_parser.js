@@ -32,7 +32,7 @@ BoundPropertyType[BoundPropertyType.ANIMATION] = "ANIMATION";
 /**
  * Represents a parsed property.
  */
-export var BoundProperty = (function () {
+var BoundProperty = (function () {
     /**
      * @param {?} name
      * @param {?} expression
@@ -63,6 +63,7 @@ export var BoundProperty = (function () {
     });
     return BoundProperty;
 }());
+export { BoundProperty };
 function BoundProperty_tsickle_Closure_declarations() {
     /** @type {?} */
     BoundProperty.prototype.name;
@@ -76,7 +77,7 @@ function BoundProperty_tsickle_Closure_declarations() {
 /**
  * Parses bindings in templates and in the directive host area.
  */
-export var BindingParser = (function () {
+var BindingParser = (function () {
     /**
      * @param {?} _exprParser
      * @param {?} _interpolationConfig
@@ -504,6 +505,7 @@ export var BindingParser = (function () {
     };
     return BindingParser;
 }());
+export { BindingParser };
 function BindingParser_tsickle_Closure_declarations() {
     /** @type {?} */
     BindingParser.prototype.pipesByName;
@@ -516,11 +518,12 @@ function BindingParser_tsickle_Closure_declarations() {
     /** @type {?} */
     BindingParser.prototype._targetErrors;
 }
-export var PipeCollector = (function (_super) {
+var PipeCollector = (function (_super) {
     __extends(PipeCollector, _super);
     function PipeCollector() {
-        _super.apply(this, arguments);
-        this.pipes = new Map();
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.pipes = new Map();
+        return _this;
     }
     /**
      * @param {?} ast
@@ -535,6 +538,7 @@ export var PipeCollector = (function (_super) {
     };
     return PipeCollector;
 }(RecursiveAstVisitor));
+export { PipeCollector };
 function PipeCollector_tsickle_Closure_declarations() {
     /** @type {?} */
     PipeCollector.prototype.pipes;

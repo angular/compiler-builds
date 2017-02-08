@@ -17,7 +17,7 @@ TypeModifier[TypeModifier.Const] = "Const";
 /**
  * @abstract
  */
-export var Type = (function () {
+var Type = (function () {
     /**
      * @param {?=} modifiers
      */
@@ -42,6 +42,7 @@ export var Type = (function () {
     Type.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
     return Type;
 }());
+export { Type };
 function Type_tsickle_Closure_declarations() {
     /** @type {?} */
     Type.prototype.modifiers;
@@ -61,7 +62,7 @@ BuiltinTypeName[BuiltinTypeName.Int] = "Int";
 BuiltinTypeName[BuiltinTypeName.Number] = "Number";
 BuiltinTypeName[BuiltinTypeName.Function] = "Function";
 BuiltinTypeName[BuiltinTypeName.Null] = "Null";
-export var BuiltinType = (function (_super) {
+var BuiltinType = (function (_super) {
     __extends(BuiltinType, _super);
     /**
      * @param {?} name
@@ -69,8 +70,9 @@ export var BuiltinType = (function (_super) {
      */
     function BuiltinType(name, modifiers) {
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, modifiers);
-        this.name = name;
+        var _this = _super.call(this, modifiers) || this;
+        _this.name = name;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -82,11 +84,12 @@ export var BuiltinType = (function (_super) {
     };
     return BuiltinType;
 }(Type));
+export { BuiltinType };
 function BuiltinType_tsickle_Closure_declarations() {
     /** @type {?} */
     BuiltinType.prototype.name;
 }
-export var ExpressionType = (function (_super) {
+var ExpressionType = (function (_super) {
     __extends(ExpressionType, _super);
     /**
      * @param {?} value
@@ -94,8 +97,9 @@ export var ExpressionType = (function (_super) {
      */
     function ExpressionType(value, modifiers) {
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, modifiers);
-        this.value = value;
+        var _this = _super.call(this, modifiers) || this;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -107,11 +111,12 @@ export var ExpressionType = (function (_super) {
     };
     return ExpressionType;
 }(Type));
+export { ExpressionType };
 function ExpressionType_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpressionType.prototype.value;
 }
-export var ArrayType = (function (_super) {
+var ArrayType = (function (_super) {
     __extends(ArrayType, _super);
     /**
      * @param {?} of
@@ -119,8 +124,9 @@ export var ArrayType = (function (_super) {
      */
     function ArrayType(of, modifiers) {
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, modifiers);
-        this.of = of;
+        var _this = _super.call(this, modifiers) || this;
+        _this.of = of;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -132,11 +138,12 @@ export var ArrayType = (function (_super) {
     };
     return ArrayType;
 }(Type));
+export { ArrayType };
 function ArrayType_tsickle_Closure_declarations() {
     /** @type {?} */
     ArrayType.prototype.of;
 }
-export var MapType = (function (_super) {
+var MapType = (function (_super) {
     __extends(MapType, _super);
     /**
      * @param {?} valueType
@@ -144,8 +151,9 @@ export var MapType = (function (_super) {
      */
     function MapType(valueType, modifiers) {
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, modifiers);
-        this.valueType = valueType;
+        var _this = _super.call(this, modifiers) || this;
+        _this.valueType = valueType;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -155,6 +163,7 @@ export var MapType = (function (_super) {
     MapType.prototype.visitType = function (visitor, context) { return visitor.visitMapType(this, context); };
     return MapType;
 }(Type));
+export { MapType };
 function MapType_tsickle_Closure_declarations() {
     /** @type {?} */
     MapType.prototype.valueType;
@@ -200,7 +209,7 @@ BinaryOperator[BinaryOperator.BiggerEquals] = "BiggerEquals";
 /**
  * @abstract
  */
-export var Expression = (function () {
+var Expression = (function () {
     /**
      * @param {?} type
      */
@@ -383,6 +392,7 @@ export var Expression = (function () {
     Expression.prototype.toStmt = function () { return new ExpressionStatement(this); };
     return Expression;
 }());
+export { Expression };
 function Expression_tsickle_Closure_declarations() {
     /** @type {?} */
     Expression.prototype.type;
@@ -396,7 +406,7 @@ BuiltinVar[BuiltinVar.This] = "This";
 BuiltinVar[BuiltinVar.Super] = "Super";
 BuiltinVar[BuiltinVar.CatchError] = "CatchError";
 BuiltinVar[BuiltinVar.CatchStack] = "CatchStack";
-export var ReadVarExpr = (function (_super) {
+var ReadVarExpr = (function (_super) {
     __extends(ReadVarExpr, _super);
     /**
      * @param {?} name
@@ -404,15 +414,16 @@ export var ReadVarExpr = (function (_super) {
      */
     function ReadVarExpr(name, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
+        var _this = _super.call(this, type) || this;
         if (typeof name === 'string') {
-            this.name = name;
-            this.builtin = null;
+            _this.name = name;
+            _this.builtin = null;
         }
         else {
-            this.name = null;
-            this.builtin = name;
+            _this.name = null;
+            _this.builtin = name;
         }
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -429,13 +440,14 @@ export var ReadVarExpr = (function (_super) {
     ReadVarExpr.prototype.set = function (value) { return new WriteVarExpr(this.name, value); };
     return ReadVarExpr;
 }(Expression));
+export { ReadVarExpr };
 function ReadVarExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ReadVarExpr.prototype.name;
     /** @type {?} */
     ReadVarExpr.prototype.builtin;
 }
-export var WriteVarExpr = (function (_super) {
+var WriteVarExpr = (function (_super) {
     __extends(WriteVarExpr, _super);
     /**
      * @param {?} name
@@ -444,9 +456,10 @@ export var WriteVarExpr = (function (_super) {
      */
     function WriteVarExpr(name, value, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type || value.type);
-        this.name = name;
-        this.value = value;
+        var _this = _super.call(this, type || value.type) || this;
+        _this.name = name;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -468,13 +481,14 @@ export var WriteVarExpr = (function (_super) {
     };
     return WriteVarExpr;
 }(Expression));
+export { WriteVarExpr };
 function WriteVarExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WriteVarExpr.prototype.value;
     /** @type {?} */
     WriteVarExpr.prototype.name;
 }
-export var WriteKeyExpr = (function (_super) {
+var WriteKeyExpr = (function (_super) {
     __extends(WriteKeyExpr, _super);
     /**
      * @param {?} receiver
@@ -484,10 +498,11 @@ export var WriteKeyExpr = (function (_super) {
      */
     function WriteKeyExpr(receiver, index, value, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type || value.type);
-        this.receiver = receiver;
-        this.index = index;
-        this.value = value;
+        var _this = _super.call(this, type || value.type) || this;
+        _this.receiver = receiver;
+        _this.index = index;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -499,6 +514,7 @@ export var WriteKeyExpr = (function (_super) {
     };
     return WriteKeyExpr;
 }(Expression));
+export { WriteKeyExpr };
 function WriteKeyExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WriteKeyExpr.prototype.value;
@@ -507,7 +523,7 @@ function WriteKeyExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WriteKeyExpr.prototype.index;
 }
-export var WritePropExpr = (function (_super) {
+var WritePropExpr = (function (_super) {
     __extends(WritePropExpr, _super);
     /**
      * @param {?} receiver
@@ -517,10 +533,11 @@ export var WritePropExpr = (function (_super) {
      */
     function WritePropExpr(receiver, name, value, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type || value.type);
-        this.receiver = receiver;
-        this.name = name;
-        this.value = value;
+        var _this = _super.call(this, type || value.type) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -532,6 +549,7 @@ export var WritePropExpr = (function (_super) {
     };
     return WritePropExpr;
 }(Expression));
+export { WritePropExpr };
 function WritePropExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     WritePropExpr.prototype.value;
@@ -547,7 +565,7 @@ BuiltinMethod.Bind = 2;
 BuiltinMethod[BuiltinMethod.ConcatArray] = "ConcatArray";
 BuiltinMethod[BuiltinMethod.SubscribeObservable] = "SubscribeObservable";
 BuiltinMethod[BuiltinMethod.Bind] = "Bind";
-export var InvokeMethodExpr = (function (_super) {
+var InvokeMethodExpr = (function (_super) {
     __extends(InvokeMethodExpr, _super);
     /**
      * @param {?} receiver
@@ -557,17 +575,18 @@ export var InvokeMethodExpr = (function (_super) {
      */
     function InvokeMethodExpr(receiver, method, args, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
-        this.receiver = receiver;
-        this.args = args;
+        var _this = _super.call(this, type) || this;
+        _this.receiver = receiver;
+        _this.args = args;
         if (typeof method === 'string') {
-            this.name = method;
-            this.builtin = null;
+            _this.name = method;
+            _this.builtin = null;
         }
         else {
-            this.name = null;
-            this.builtin = method;
+            _this.name = null;
+            _this.builtin = method;
         }
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -579,6 +598,7 @@ export var InvokeMethodExpr = (function (_super) {
     };
     return InvokeMethodExpr;
 }(Expression));
+export { InvokeMethodExpr };
 function InvokeMethodExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     InvokeMethodExpr.prototype.name;
@@ -589,7 +609,7 @@ function InvokeMethodExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     InvokeMethodExpr.prototype.args;
 }
-export var InvokeFunctionExpr = (function (_super) {
+var InvokeFunctionExpr = (function (_super) {
     __extends(InvokeFunctionExpr, _super);
     /**
      * @param {?} fn
@@ -598,9 +618,10 @@ export var InvokeFunctionExpr = (function (_super) {
      */
     function InvokeFunctionExpr(fn, args, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
-        this.fn = fn;
-        this.args = args;
+        var _this = _super.call(this, type) || this;
+        _this.fn = fn;
+        _this.args = args;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -612,13 +633,14 @@ export var InvokeFunctionExpr = (function (_super) {
     };
     return InvokeFunctionExpr;
 }(Expression));
+export { InvokeFunctionExpr };
 function InvokeFunctionExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     InvokeFunctionExpr.prototype.fn;
     /** @type {?} */
     InvokeFunctionExpr.prototype.args;
 }
-export var InstantiateExpr = (function (_super) {
+var InstantiateExpr = (function (_super) {
     __extends(InstantiateExpr, _super);
     /**
      * @param {?} classExpr
@@ -626,9 +648,10 @@ export var InstantiateExpr = (function (_super) {
      * @param {?=} type
      */
     function InstantiateExpr(classExpr, args, type) {
-        _super.call(this, type);
-        this.classExpr = classExpr;
-        this.args = args;
+        var _this = _super.call(this, type) || this;
+        _this.classExpr = classExpr;
+        _this.args = args;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -640,13 +663,14 @@ export var InstantiateExpr = (function (_super) {
     };
     return InstantiateExpr;
 }(Expression));
+export { InstantiateExpr };
 function InstantiateExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     InstantiateExpr.prototype.classExpr;
     /** @type {?} */
     InstantiateExpr.prototype.args;
 }
-export var LiteralExpr = (function (_super) {
+var LiteralExpr = (function (_super) {
     __extends(LiteralExpr, _super);
     /**
      * @param {?} value
@@ -654,8 +678,9 @@ export var LiteralExpr = (function (_super) {
      */
     function LiteralExpr(value, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
-        this.value = value;
+        var _this = _super.call(this, type) || this;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -667,11 +692,12 @@ export var LiteralExpr = (function (_super) {
     };
     return LiteralExpr;
 }(Expression));
+export { LiteralExpr };
 function LiteralExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralExpr.prototype.value;
 }
-export var ExternalExpr = (function (_super) {
+var ExternalExpr = (function (_super) {
     __extends(ExternalExpr, _super);
     /**
      * @param {?} value
@@ -681,9 +707,10 @@ export var ExternalExpr = (function (_super) {
     function ExternalExpr(value, type, typeParams) {
         if (type === void 0) { type = null; }
         if (typeParams === void 0) { typeParams = null; }
-        _super.call(this, type);
-        this.value = value;
-        this.typeParams = typeParams;
+        var _this = _super.call(this, type) || this;
+        _this.value = value;
+        _this.typeParams = typeParams;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -695,13 +722,14 @@ export var ExternalExpr = (function (_super) {
     };
     return ExternalExpr;
 }(Expression));
+export { ExternalExpr };
 function ExternalExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ExternalExpr.prototype.value;
     /** @type {?} */
     ExternalExpr.prototype.typeParams;
 }
-export var ConditionalExpr = (function (_super) {
+var ConditionalExpr = (function (_super) {
     __extends(ConditionalExpr, _super);
     /**
      * @param {?} condition
@@ -712,10 +740,11 @@ export var ConditionalExpr = (function (_super) {
     function ConditionalExpr(condition, trueCase, falseCase, type) {
         if (falseCase === void 0) { falseCase = null; }
         if (type === void 0) { type = null; }
-        _super.call(this, type || trueCase.type);
-        this.condition = condition;
-        this.falseCase = falseCase;
-        this.trueCase = trueCase;
+        var _this = _super.call(this, type || trueCase.type) || this;
+        _this.condition = condition;
+        _this.falseCase = falseCase;
+        _this.trueCase = trueCase;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -727,6 +756,7 @@ export var ConditionalExpr = (function (_super) {
     };
     return ConditionalExpr;
 }(Expression));
+export { ConditionalExpr };
 function ConditionalExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ConditionalExpr.prototype.trueCase;
@@ -735,14 +765,15 @@ function ConditionalExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ConditionalExpr.prototype.falseCase;
 }
-export var NotExpr = (function (_super) {
+var NotExpr = (function (_super) {
     __extends(NotExpr, _super);
     /**
      * @param {?} condition
      */
     function NotExpr(condition) {
-        _super.call(this, BOOL_TYPE);
-        this.condition = condition;
+        var _this = _super.call(this, BOOL_TYPE) || this;
+        _this.condition = condition;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -754,19 +785,21 @@ export var NotExpr = (function (_super) {
     };
     return NotExpr;
 }(Expression));
+export { NotExpr };
 function NotExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     NotExpr.prototype.condition;
 }
-export var CastExpr = (function (_super) {
+var CastExpr = (function (_super) {
     __extends(CastExpr, _super);
     /**
      * @param {?} value
      * @param {?} type
      */
     function CastExpr(value, type) {
-        _super.call(this, type);
-        this.value = value;
+        var _this = _super.call(this, type) || this;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -778,11 +811,12 @@ export var CastExpr = (function (_super) {
     };
     return CastExpr;
 }(Expression));
+export { CastExpr };
 function CastExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     CastExpr.prototype.value;
 }
-export var FnParam = (function () {
+var FnParam = (function () {
     /**
      * @param {?} name
      * @param {?=} type
@@ -794,13 +828,14 @@ export var FnParam = (function () {
     }
     return FnParam;
 }());
+export { FnParam };
 function FnParam_tsickle_Closure_declarations() {
     /** @type {?} */
     FnParam.prototype.name;
     /** @type {?} */
     FnParam.prototype.type;
 }
-export var FunctionExpr = (function (_super) {
+var FunctionExpr = (function (_super) {
     __extends(FunctionExpr, _super);
     /**
      * @param {?} params
@@ -809,9 +844,10 @@ export var FunctionExpr = (function (_super) {
      */
     function FunctionExpr(params, statements, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
-        this.params = params;
-        this.statements = statements;
+        var _this = _super.call(this, type) || this;
+        _this.params = params;
+        _this.statements = statements;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -832,13 +868,14 @@ export var FunctionExpr = (function (_super) {
     };
     return FunctionExpr;
 }(Expression));
+export { FunctionExpr };
 function FunctionExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     FunctionExpr.prototype.params;
     /** @type {?} */
     FunctionExpr.prototype.statements;
 }
-export var BinaryOperatorExpr = (function (_super) {
+var BinaryOperatorExpr = (function (_super) {
     __extends(BinaryOperatorExpr, _super);
     /**
      * @param {?} operator
@@ -848,10 +885,11 @@ export var BinaryOperatorExpr = (function (_super) {
      */
     function BinaryOperatorExpr(operator, lhs, rhs, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type || lhs.type);
-        this.operator = operator;
-        this.rhs = rhs;
-        this.lhs = lhs;
+        var _this = _super.call(this, type || lhs.type) || this;
+        _this.operator = operator;
+        _this.rhs = rhs;
+        _this.lhs = lhs;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -863,6 +901,7 @@ export var BinaryOperatorExpr = (function (_super) {
     };
     return BinaryOperatorExpr;
 }(Expression));
+export { BinaryOperatorExpr };
 function BinaryOperatorExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     BinaryOperatorExpr.prototype.lhs;
@@ -871,7 +910,7 @@ function BinaryOperatorExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     BinaryOperatorExpr.prototype.rhs;
 }
-export var ReadPropExpr = (function (_super) {
+var ReadPropExpr = (function (_super) {
     __extends(ReadPropExpr, _super);
     /**
      * @param {?} receiver
@@ -880,9 +919,10 @@ export var ReadPropExpr = (function (_super) {
      */
     function ReadPropExpr(receiver, name, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
-        this.receiver = receiver;
-        this.name = name;
+        var _this = _super.call(this, type) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -901,13 +941,14 @@ export var ReadPropExpr = (function (_super) {
     };
     return ReadPropExpr;
 }(Expression));
+export { ReadPropExpr };
 function ReadPropExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ReadPropExpr.prototype.receiver;
     /** @type {?} */
     ReadPropExpr.prototype.name;
 }
-export var ReadKeyExpr = (function (_super) {
+var ReadKeyExpr = (function (_super) {
     __extends(ReadKeyExpr, _super);
     /**
      * @param {?} receiver
@@ -916,9 +957,10 @@ export var ReadKeyExpr = (function (_super) {
      */
     function ReadKeyExpr(receiver, index, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
-        this.receiver = receiver;
-        this.index = index;
+        var _this = _super.call(this, type) || this;
+        _this.receiver = receiver;
+        _this.index = index;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -937,13 +979,14 @@ export var ReadKeyExpr = (function (_super) {
     };
     return ReadKeyExpr;
 }(Expression));
+export { ReadKeyExpr };
 function ReadKeyExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     ReadKeyExpr.prototype.receiver;
     /** @type {?} */
     ReadKeyExpr.prototype.index;
 }
-export var LiteralArrayExpr = (function (_super) {
+var LiteralArrayExpr = (function (_super) {
     __extends(LiteralArrayExpr, _super);
     /**
      * @param {?} entries
@@ -951,8 +994,9 @@ export var LiteralArrayExpr = (function (_super) {
      */
     function LiteralArrayExpr(entries, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
-        this.entries = entries;
+        var _this = _super.call(this, type) || this;
+        _this.entries = entries;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -964,11 +1008,12 @@ export var LiteralArrayExpr = (function (_super) {
     };
     return LiteralArrayExpr;
 }(Expression));
+export { LiteralArrayExpr };
 function LiteralArrayExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralArrayExpr.prototype.entries;
 }
-export var LiteralMapEntry = (function () {
+var LiteralMapEntry = (function () {
     /**
      * @param {?} key
      * @param {?} value
@@ -982,6 +1027,7 @@ export var LiteralMapEntry = (function () {
     }
     return LiteralMapEntry;
 }());
+export { LiteralMapEntry };
 function LiteralMapEntry_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralMapEntry.prototype.key;
@@ -990,7 +1036,7 @@ function LiteralMapEntry_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralMapEntry.prototype.quoted;
 }
-export var LiteralMapExpr = (function (_super) {
+var LiteralMapExpr = (function (_super) {
     __extends(LiteralMapExpr, _super);
     /**
      * @param {?} entries
@@ -998,12 +1044,13 @@ export var LiteralMapExpr = (function (_super) {
      */
     function LiteralMapExpr(entries, type) {
         if (type === void 0) { type = null; }
-        _super.call(this, type);
-        this.entries = entries;
-        this.valueType = null;
+        var _this = _super.call(this, type) || this;
+        _this.entries = entries;
+        _this.valueType = null;
         if (isPresent(type)) {
-            this.valueType = type.valueType;
+            _this.valueType = type.valueType;
         }
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1015,6 +1062,7 @@ export var LiteralMapExpr = (function (_super) {
     };
     return LiteralMapExpr;
 }(Expression));
+export { LiteralMapExpr };
 function LiteralMapExpr_tsickle_Closure_declarations() {
     /** @type {?} */
     LiteralMapExpr.prototype.valueType;
@@ -1035,7 +1083,7 @@ StmtModifier[StmtModifier.Private] = "Private";
 /**
  * @abstract
  */
-export var Statement = (function () {
+var Statement = (function () {
     /**
      * @param {?=} modifiers
      */
@@ -1060,11 +1108,12 @@ export var Statement = (function () {
     Statement.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
     return Statement;
 }());
+export { Statement };
 function Statement_tsickle_Closure_declarations() {
     /** @type {?} */
     Statement.prototype.modifiers;
 }
-export var DeclareVarStmt = (function (_super) {
+var DeclareVarStmt = (function (_super) {
     __extends(DeclareVarStmt, _super);
     /**
      * @param {?} name
@@ -1075,10 +1124,11 @@ export var DeclareVarStmt = (function (_super) {
     function DeclareVarStmt(name, value, type, modifiers) {
         if (type === void 0) { type = null; }
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, modifiers);
-        this.name = name;
-        this.value = value;
-        this.type = type || value.type;
+        var _this = _super.call(this, modifiers) || this;
+        _this.name = name;
+        _this.value = value;
+        _this.type = type || value.type;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1090,6 +1140,7 @@ export var DeclareVarStmt = (function (_super) {
     };
     return DeclareVarStmt;
 }(Statement));
+export { DeclareVarStmt };
 function DeclareVarStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     DeclareVarStmt.prototype.type;
@@ -1098,7 +1149,7 @@ function DeclareVarStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     DeclareVarStmt.prototype.value;
 }
-export var DeclareFunctionStmt = (function (_super) {
+var DeclareFunctionStmt = (function (_super) {
     __extends(DeclareFunctionStmt, _super);
     /**
      * @param {?} name
@@ -1110,11 +1161,12 @@ export var DeclareFunctionStmt = (function (_super) {
     function DeclareFunctionStmt(name, params, statements, type, modifiers) {
         if (type === void 0) { type = null; }
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, modifiers);
-        this.name = name;
-        this.params = params;
-        this.statements = statements;
-        this.type = type;
+        var _this = _super.call(this, modifiers) || this;
+        _this.name = name;
+        _this.params = params;
+        _this.statements = statements;
+        _this.type = type;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1126,6 +1178,7 @@ export var DeclareFunctionStmt = (function (_super) {
     };
     return DeclareFunctionStmt;
 }(Statement));
+export { DeclareFunctionStmt };
 function DeclareFunctionStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     DeclareFunctionStmt.prototype.name;
@@ -1136,14 +1189,15 @@ function DeclareFunctionStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     DeclareFunctionStmt.prototype.type;
 }
-export var ExpressionStatement = (function (_super) {
+var ExpressionStatement = (function (_super) {
     __extends(ExpressionStatement, _super);
     /**
      * @param {?} expr
      */
     function ExpressionStatement(expr) {
-        _super.call(this);
-        this.expr = expr;
+        var _this = _super.call(this) || this;
+        _this.expr = expr;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1155,18 +1209,20 @@ export var ExpressionStatement = (function (_super) {
     };
     return ExpressionStatement;
 }(Statement));
+export { ExpressionStatement };
 function ExpressionStatement_tsickle_Closure_declarations() {
     /** @type {?} */
     ExpressionStatement.prototype.expr;
 }
-export var ReturnStatement = (function (_super) {
+var ReturnStatement = (function (_super) {
     __extends(ReturnStatement, _super);
     /**
      * @param {?} value
      */
     function ReturnStatement(value) {
-        _super.call(this);
-        this.value = value;
+        var _this = _super.call(this) || this;
+        _this.value = value;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1178,11 +1234,12 @@ export var ReturnStatement = (function (_super) {
     };
     return ReturnStatement;
 }(Statement));
+export { ReturnStatement };
 function ReturnStatement_tsickle_Closure_declarations() {
     /** @type {?} */
     ReturnStatement.prototype.value;
 }
-export var AbstractClassPart = (function () {
+var AbstractClassPart = (function () {
     /**
      * @param {?=} type
      * @param {?} modifiers
@@ -1202,13 +1259,14 @@ export var AbstractClassPart = (function () {
     AbstractClassPart.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
     return AbstractClassPart;
 }());
+export { AbstractClassPart };
 function AbstractClassPart_tsickle_Closure_declarations() {
     /** @type {?} */
     AbstractClassPart.prototype.type;
     /** @type {?} */
     AbstractClassPart.prototype.modifiers;
 }
-export var ClassField = (function (_super) {
+var ClassField = (function (_super) {
     __extends(ClassField, _super);
     /**
      * @param {?} name
@@ -1218,16 +1276,18 @@ export var ClassField = (function (_super) {
     function ClassField(name, type, modifiers) {
         if (type === void 0) { type = null; }
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, type, modifiers);
-        this.name = name;
+        var _this = _super.call(this, type, modifiers) || this;
+        _this.name = name;
+        return _this;
     }
     return ClassField;
 }(AbstractClassPart));
+export { ClassField };
 function ClassField_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassField.prototype.name;
 }
-export var ClassMethod = (function (_super) {
+var ClassMethod = (function (_super) {
     __extends(ClassMethod, _super);
     /**
      * @param {?} name
@@ -1239,13 +1299,15 @@ export var ClassMethod = (function (_super) {
     function ClassMethod(name, params, body, type, modifiers) {
         if (type === void 0) { type = null; }
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, type, modifiers);
-        this.name = name;
-        this.params = params;
-        this.body = body;
+        var _this = _super.call(this, type, modifiers) || this;
+        _this.name = name;
+        _this.params = params;
+        _this.body = body;
+        return _this;
     }
     return ClassMethod;
 }(AbstractClassPart));
+export { ClassMethod };
 function ClassMethod_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassMethod.prototype.name;
@@ -1254,7 +1316,7 @@ function ClassMethod_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassMethod.prototype.body;
 }
-export var ClassGetter = (function (_super) {
+var ClassGetter = (function (_super) {
     __extends(ClassGetter, _super);
     /**
      * @param {?} name
@@ -1265,19 +1327,21 @@ export var ClassGetter = (function (_super) {
     function ClassGetter(name, body, type, modifiers) {
         if (type === void 0) { type = null; }
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, type, modifiers);
-        this.name = name;
-        this.body = body;
+        var _this = _super.call(this, type, modifiers) || this;
+        _this.name = name;
+        _this.body = body;
+        return _this;
     }
     return ClassGetter;
 }(AbstractClassPart));
+export { ClassGetter };
 function ClassGetter_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassGetter.prototype.name;
     /** @type {?} */
     ClassGetter.prototype.body;
 }
-export var ClassStmt = (function (_super) {
+var ClassStmt = (function (_super) {
     __extends(ClassStmt, _super);
     /**
      * @param {?} name
@@ -1290,13 +1354,14 @@ export var ClassStmt = (function (_super) {
      */
     function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers) {
         if (modifiers === void 0) { modifiers = null; }
-        _super.call(this, modifiers);
-        this.name = name;
-        this.parent = parent;
-        this.fields = fields;
-        this.getters = getters;
-        this.constructorMethod = constructorMethod;
-        this.methods = methods;
+        var _this = _super.call(this, modifiers) || this;
+        _this.name = name;
+        _this.parent = parent;
+        _this.fields = fields;
+        _this.getters = getters;
+        _this.constructorMethod = constructorMethod;
+        _this.methods = methods;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1308,6 +1373,7 @@ export var ClassStmt = (function (_super) {
     };
     return ClassStmt;
 }(Statement));
+export { ClassStmt };
 function ClassStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassStmt.prototype.name;
@@ -1322,7 +1388,7 @@ function ClassStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     ClassStmt.prototype.methods;
 }
-export var IfStmt = (function (_super) {
+var IfStmt = (function (_super) {
     __extends(IfStmt, _super);
     /**
      * @param {?} condition
@@ -1331,10 +1397,11 @@ export var IfStmt = (function (_super) {
      */
     function IfStmt(condition, trueCase, falseCase) {
         if (falseCase === void 0) { falseCase = []; }
-        _super.call(this);
-        this.condition = condition;
-        this.trueCase = trueCase;
-        this.falseCase = falseCase;
+        var _this = _super.call(this) || this;
+        _this.condition = condition;
+        _this.trueCase = trueCase;
+        _this.falseCase = falseCase;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1346,6 +1413,7 @@ export var IfStmt = (function (_super) {
     };
     return IfStmt;
 }(Statement));
+export { IfStmt };
 function IfStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     IfStmt.prototype.condition;
@@ -1354,14 +1422,15 @@ function IfStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     IfStmt.prototype.falseCase;
 }
-export var CommentStmt = (function (_super) {
+var CommentStmt = (function (_super) {
     __extends(CommentStmt, _super);
     /**
      * @param {?} comment
      */
     function CommentStmt(comment) {
-        _super.call(this);
-        this.comment = comment;
+        var _this = _super.call(this) || this;
+        _this.comment = comment;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1373,20 +1442,22 @@ export var CommentStmt = (function (_super) {
     };
     return CommentStmt;
 }(Statement));
+export { CommentStmt };
 function CommentStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     CommentStmt.prototype.comment;
 }
-export var TryCatchStmt = (function (_super) {
+var TryCatchStmt = (function (_super) {
     __extends(TryCatchStmt, _super);
     /**
      * @param {?} bodyStmts
      * @param {?} catchStmts
      */
     function TryCatchStmt(bodyStmts, catchStmts) {
-        _super.call(this);
-        this.bodyStmts = bodyStmts;
-        this.catchStmts = catchStmts;
+        var _this = _super.call(this) || this;
+        _this.bodyStmts = bodyStmts;
+        _this.catchStmts = catchStmts;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1398,20 +1469,22 @@ export var TryCatchStmt = (function (_super) {
     };
     return TryCatchStmt;
 }(Statement));
+export { TryCatchStmt };
 function TryCatchStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     TryCatchStmt.prototype.bodyStmts;
     /** @type {?} */
     TryCatchStmt.prototype.catchStmts;
 }
-export var ThrowStmt = (function (_super) {
+var ThrowStmt = (function (_super) {
     __extends(ThrowStmt, _super);
     /**
      * @param {?} error
      */
     function ThrowStmt(error) {
-        _super.call(this);
-        this.error = error;
+        var _this = _super.call(this) || this;
+        _this.error = error;
+        return _this;
     }
     /**
      * @param {?} visitor
@@ -1423,11 +1496,12 @@ export var ThrowStmt = (function (_super) {
     };
     return ThrowStmt;
 }(Statement));
+export { ThrowStmt };
 function ThrowStmt_tsickle_Closure_declarations() {
     /** @type {?} */
     ThrowStmt.prototype.error;
 }
-export var ExpressionTransformer = (function () {
+var ExpressionTransformer = (function () {
     function ExpressionTransformer() {
     }
     /**
@@ -1664,7 +1738,8 @@ export var ExpressionTransformer = (function () {
     };
     return ExpressionTransformer;
 }());
-export var RecursiveExpressionVisitor = (function () {
+export { ExpressionTransformer };
+var RecursiveExpressionVisitor = (function () {
     function RecursiveExpressionVisitor() {
     }
     /**
@@ -1929,6 +2004,7 @@ export var RecursiveExpressionVisitor = (function () {
     };
     return RecursiveExpressionVisitor;
 }());
+export { RecursiveExpressionVisitor };
 /**
  * @param {?} varName
  * @param {?} newValue
@@ -1946,9 +2022,10 @@ var _ReplaceVariableTransformer = (function (_super) {
      * @param {?} _newValue
      */
     function _ReplaceVariableTransformer(_varName, _newValue) {
-        _super.call(this);
-        this._varName = _varName;
-        this._newValue = _newValue;
+        var _this = _super.call(this) || this;
+        _this._varName = _varName;
+        _this._newValue = _newValue;
+        return _this;
     }
     /**
      * @param {?} ast
@@ -1978,8 +2055,9 @@ export function findReadVarNames(stmts) {
 var _VariableFinder = (function (_super) {
     __extends(_VariableFinder, _super);
     function _VariableFinder() {
-        _super.apply(this, arguments);
-        this.varNames = new Set();
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.varNames = new Set();
+        return _this;
     }
     /**
      * @param {?} ast

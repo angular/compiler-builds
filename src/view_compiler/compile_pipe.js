@@ -10,7 +10,7 @@ import { createPureProxy } from '../compiler_util/identifier_util';
 import { Identifiers, createIdentifier, resolveIdentifier } from '../identifiers';
 import * as o from '../output/output_ast';
 import { getPropertyInView, injectFromViewParentInjector } from './util';
-export var CompilePipe = (function () {
+var CompilePipe = (function () {
     /**
      * @param {?} view
      * @param {?} meta
@@ -89,6 +89,7 @@ export var CompilePipe = (function () {
     };
     return CompilePipe;
 }());
+export { CompilePipe };
 function CompilePipe_tsickle_Closure_declarations() {
     /** @type {?} */
     CompilePipe.prototype.instance;

@@ -14,15 +14,16 @@ import { ParseError } from '../parse_util';
 /**
  * An i18n error.
  */
-export var I18nError = (function (_super) {
+var I18nError = (function (_super) {
     __extends(I18nError, _super);
     /**
      * @param {?} span
      * @param {?} msg
      */
     function I18nError(span, msg) {
-        _super.call(this, span, msg);
+        return _super.call(this, span, msg) || this;
     }
     return I18nError;
 }(ParseError));
+export { I18nError };
 //# sourceMappingURL=parse_util.js.map

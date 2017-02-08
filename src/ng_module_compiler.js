@@ -11,9 +11,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
 import { identifierModuleUrl, identifierName, tokenName, tokenReference } from './compile_metadata';
 import { createDiTokenExpression } from './compiler_util/identifier_util';
 import { isPresent } from './facade/lang';
@@ -29,7 +26,7 @@ import { NgModuleProviderAnalyzer } from './provider_analyzer';
  * This is currently not read, but will probably be used in the future.
  * We keep it as we already pass it through all the rigth places...
  */
-export var ComponentFactoryDependency = (function () {
+var ComponentFactoryDependency = (function () {
     /**
      * @param {?} compType
      */
@@ -38,11 +35,12 @@ export var ComponentFactoryDependency = (function () {
     }
     return ComponentFactoryDependency;
 }());
+export { ComponentFactoryDependency };
 function ComponentFactoryDependency_tsickle_Closure_declarations() {
     /** @type {?} */
     ComponentFactoryDependency.prototype.compType;
 }
-export var NgModuleCompileResult = (function () {
+var NgModuleCompileResult = (function () {
     /**
      * @param {?} statements
      * @param {?} ngModuleFactoryVar
@@ -55,6 +53,7 @@ export var NgModuleCompileResult = (function () {
     }
     return NgModuleCompileResult;
 }());
+export { NgModuleCompileResult };
 function NgModuleCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     NgModuleCompileResult.prototype.statements;
@@ -63,7 +62,7 @@ function NgModuleCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     NgModuleCompileResult.prototype.dependencies;
 }
-export var NgModuleCompiler = (function () {
+var NgModuleCompiler = (function () {
     function NgModuleCompiler() {
     }
     /**
@@ -105,12 +104,12 @@ export var NgModuleCompiler = (function () {
         }
         return new NgModuleCompileResult(stmts, ngModuleFactoryVar, deps);
     };
-    NgModuleCompiler = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [])
-    ], NgModuleCompiler);
     return NgModuleCompiler;
 }());
+NgModuleCompiler = __decorate([
+    CompilerInjectable()
+], NgModuleCompiler);
+export { NgModuleCompiler };
 var _InjectorBuilder = (function () {
     /**
      * @param {?} _ngModuleMeta
@@ -301,9 +300,9 @@ function _InjectorBuilder_tsickle_Closure_declarations() {
 var InjectorProps = (function () {
     function InjectorProps() {
     }
-    InjectorProps.parent = o.THIS_EXPR.prop('parent');
     return InjectorProps;
 }());
+InjectorProps.parent = o.THIS_EXPR.prop('parent');
 function InjectorProps_tsickle_Closure_declarations() {
     /** @type {?} */
     InjectorProps.parent;
@@ -311,10 +310,10 @@ function InjectorProps_tsickle_Closure_declarations() {
 var InjectMethodVars = (function () {
     function InjectMethodVars() {
     }
-    InjectMethodVars.token = o.variable('token');
-    InjectMethodVars.notFoundResult = o.variable('notFoundResult');
     return InjectMethodVars;
 }());
+InjectMethodVars.token = o.variable('token');
+InjectMethodVars.notFoundResult = o.variable('notFoundResult');
 function InjectMethodVars_tsickle_Closure_declarations() {
     /** @type {?} */
     InjectMethodVars.token;

@@ -23,7 +23,7 @@ import { UrlResolver } from './url_resolver';
 var /** @type {?} */ COMPONENT_VARIABLE = '%COMP%';
 var /** @type {?} */ HOST_ATTR = "_nghost-" + COMPONENT_VARIABLE;
 var /** @type {?} */ CONTENT_ATTR = "_ngcontent-" + COMPONENT_VARIABLE;
-export var StylesCompileDependency = (function () {
+var StylesCompileDependency = (function () {
     /**
      * @param {?} name
      * @param {?} moduleUrl
@@ -38,6 +38,7 @@ export var StylesCompileDependency = (function () {
     }
     return StylesCompileDependency;
 }());
+export { StylesCompileDependency };
 function StylesCompileDependency_tsickle_Closure_declarations() {
     /** @type {?} */
     StylesCompileDependency.prototype.name;
@@ -48,7 +49,7 @@ function StylesCompileDependency_tsickle_Closure_declarations() {
     /** @type {?} */
     StylesCompileDependency.prototype.valuePlaceholder;
 }
-export var StylesCompileResult = (function () {
+var StylesCompileResult = (function () {
     /**
      * @param {?} componentStylesheet
      * @param {?} externalStylesheets
@@ -59,13 +60,14 @@ export var StylesCompileResult = (function () {
     }
     return StylesCompileResult;
 }());
+export { StylesCompileResult };
 function StylesCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     StylesCompileResult.prototype.componentStylesheet;
     /** @type {?} */
     StylesCompileResult.prototype.externalStylesheets;
 }
-export var CompiledStylesheet = (function () {
+var CompiledStylesheet = (function () {
     /**
      * @param {?} statements
      * @param {?} stylesVar
@@ -82,6 +84,7 @@ export var CompiledStylesheet = (function () {
     }
     return CompiledStylesheet;
 }());
+export { CompiledStylesheet };
 function CompiledStylesheet_tsickle_Closure_declarations() {
     /** @type {?} */
     CompiledStylesheet.prototype.statements;
@@ -94,7 +97,7 @@ function CompiledStylesheet_tsickle_Closure_declarations() {
     /** @type {?} */
     CompiledStylesheet.prototype.meta;
 }
-export var StyleCompiler = (function () {
+var StyleCompiler = (function () {
     /**
      * @param {?} _urlResolver
      */
@@ -152,12 +155,13 @@ export var StyleCompiler = (function () {
     StyleCompiler.prototype._shimIfNeeded = function (style, shim) {
         return shim ? this._shadowCss.shimCssText(style, CONTENT_ATTR, HOST_ATTR) : style;
     };
-    StyleCompiler = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [UrlResolver])
-    ], StyleCompiler);
     return StyleCompiler;
 }());
+StyleCompiler = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [UrlResolver])
+], StyleCompiler);
+export { StyleCompiler };
 function StyleCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     StyleCompiler.prototype._shadowCss;

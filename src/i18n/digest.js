@@ -61,7 +61,7 @@ var _SerializerVisitor = (function () {
      */
     _SerializerVisitor.prototype.visitIcu = function (icu, context) {
         var _this = this;
-        var /** @type {?} */ strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
+        var /** @type {?} */ strCases = Object.keys(icu.cases).map(function (k) { return k + " {" + icu.cases[k].visit(_this) + "}"; });
         return "{" + icu.expression + ", " + icu.type + ", " + strCases.join(', ') + "}";
     };
     /**
@@ -111,7 +111,7 @@ export function serializeNodes(nodes) {
 var _SerializerIgnoreIcuExpVisitor = (function (_super) {
     __extends(_SerializerIgnoreIcuExpVisitor, _super);
     function _SerializerIgnoreIcuExpVisitor() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @param {?} icu
@@ -120,7 +120,7 @@ var _SerializerIgnoreIcuExpVisitor = (function (_super) {
      */
     _SerializerIgnoreIcuExpVisitor.prototype.visitIcu = function (icu, context) {
         var _this = this;
-        var /** @type {?} */ strCases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
+        var /** @type {?} */ strCases = Object.keys(icu.cases).map(function (k) { return k + " {" + icu.cases[k].visit(_this) + "}"; });
         // Do not take the expression into account
         return "{" + icu.type + ", " + strCases.join(', ') + "}";
     };

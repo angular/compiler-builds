@@ -11,7 +11,7 @@ import { I18nError } from './parse_util';
 /**
  * A container for translated messages
  */
-export var TranslationBundle = (function () {
+var TranslationBundle = (function () {
     /**
      * @param {?=} _i18nNodesByMsgId
      * @param {?} digest
@@ -59,6 +59,7 @@ export var TranslationBundle = (function () {
     TranslationBundle.prototype.has = function (srcMsg) { return this.digest(srcMsg) in this._i18nNodesByMsgId; };
     return TranslationBundle;
 }());
+export { TranslationBundle };
 function TranslationBundle_tsickle_Closure_declarations() {
     /** @type {?} */
     TranslationBundle.prototype._i18nToHtml;
@@ -126,7 +127,7 @@ var I18nToHtmlVisitor = (function () {
      */
     I18nToHtmlVisitor.prototype.visitIcu = function (icu, context) {
         var _this = this;
-        var /** @type {?} */ cases = Object.keys(icu.cases).map(function (k) { return (k + " {" + icu.cases[k].visit(_this) + "}"); });
+        var /** @type {?} */ cases = Object.keys(icu.cases).map(function (k) { return k + " {" + icu.cases[k].visit(_this) + "}"; });
         // TODO(vicb): Once all format switch to using expression placeholders
         // we should throw when the placeholder is not in the source message
         var /** @type {?} */ exp = this._srcMsg.placeholders.hasOwnProperty(icu.expression) ?
@@ -158,7 +159,7 @@ var I18nToHtmlVisitor = (function () {
     I18nToHtmlVisitor.prototype.visitTagPlaceholder = function (ph, context) {
         var _this = this;
         var /** @type {?} */ tag = "" + ph.tag;
-        var /** @type {?} */ attrs = Object.keys(ph.attrs).map(function (name) { return (name + "=\"" + ph.attrs[name] + "\""); }).join(' ');
+        var /** @type {?} */ attrs = Object.keys(ph.attrs).map(function (name) { return name + "=\"" + ph.attrs[name] + "\""; }).join(' ');
         if (ph.isVoid) {
             return "<" + tag + " " + attrs + "/>";
         }

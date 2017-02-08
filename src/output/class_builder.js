@@ -24,11 +24,10 @@ export function createClassStmt(config) {
  */
 function concatClassBuilderParts(builders) {
     return {
-        fields: (_a = []).concat.apply(_a, builders.map(function (builder) { return builder.fields || []; })),
-        methods: (_b = []).concat.apply(_b, builders.map(function (builder) { return builder.methods || []; })),
-        getters: (_c = []).concat.apply(_c, builders.map(function (builder) { return builder.getters || []; })),
-        ctorStmts: (_d = []).concat.apply(_d, builders.map(function (builder) { return builder.ctorStmts || []; })),
+        fields: [].concat.apply([], builders.map(function (builder) { return builder.fields || []; })),
+        methods: [].concat.apply([], builders.map(function (builder) { return builder.methods || []; })),
+        getters: [].concat.apply([], builders.map(function (builder) { return builder.getters || []; })),
+        ctorStmts: [].concat.apply([], builders.map(function (builder) { return builder.ctorStmts || []; })),
     };
-    var _a, _b, _c, _d;
 }
 //# sourceMappingURL=class_builder.js.map

@@ -29,7 +29,7 @@ function _isNgModuleMetadata(obj) {
 /**
  * Resolves types to {\@link NgModule}.
  */
-export var NgModuleResolver = (function () {
+var NgModuleResolver = (function () {
     /**
      * @param {?=} _reflector
      */
@@ -60,12 +60,13 @@ export var NgModuleResolver = (function () {
             return null;
         }
     };
-    NgModuleResolver = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [ReflectorReader])
-    ], NgModuleResolver);
     return NgModuleResolver;
 }());
+NgModuleResolver = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [ReflectorReader])
+], NgModuleResolver);
+export { NgModuleResolver };
 function NgModuleResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     NgModuleResolver.prototype._reflector;

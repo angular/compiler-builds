@@ -31,9 +31,9 @@ export declare class ProviderElementContext {
     private _hasViewContainer;
     constructor(viewContext: ProviderViewContext, _parent: ProviderElementContext, _isViewRoot: boolean, _directiveAsts: DirectiveAst[], attrs: AttrAst[], refs: ReferenceAst[], _sourceSpan: ParseSourceSpan);
     afterElement(): void;
-    transformProviders: ProviderAst[];
-    transformedDirectiveAsts: DirectiveAst[];
-    transformedHasViewContainer: boolean;
+    readonly transformProviders: ProviderAst[];
+    readonly transformedDirectiveAsts: DirectiveAst[];
+    readonly transformedHasViewContainer: boolean;
     private _addQueryReadsTo(token, queryReadTokens);
     private _getQueriesFor(token);
     private _getOrCreateLocalProvider(requestingProviderType, token, eager);

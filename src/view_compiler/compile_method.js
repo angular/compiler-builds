@@ -24,7 +24,7 @@ function _DebugState_tsickle_Closure_declarations() {
     _DebugState.prototype.sourceAst;
 }
 var /** @type {?} */ NULL_DEBUG_STATE = new _DebugState(null, null);
-export var CompileMethod = (function () {
+var CompileMethod = (function () {
     /**
      * @param {?} _view
      */
@@ -89,7 +89,7 @@ export var CompileMethod = (function () {
     CompileMethod.prototype.push = function () {
         var stmts = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            stmts[_i - 0] = arguments[_i];
+            stmts[_i] = arguments[_i];
         }
         this.addStmts(stmts);
     };
@@ -120,6 +120,7 @@ export var CompileMethod = (function () {
     CompileMethod.prototype.isEmpty = function () { return this._bodyStatements.length === 0; };
     return CompileMethod;
 }());
+export { CompileMethod };
 function CompileMethod_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileMethod.prototype._newState;

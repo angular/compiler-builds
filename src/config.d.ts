@@ -22,8 +22,8 @@ export declare class CompilerConfig {
         useJit?: boolean;
         missingTranslation?: MissingTranslationStrategy;
     });
-    genDebugInfo: boolean;
-    logBindingUpdate: boolean;
+    readonly genDebugInfo: boolean;
+    readonly logBindingUpdate: boolean;
 }
 /**
  * Types used for the renderer.
@@ -31,15 +31,15 @@ export declare class CompilerConfig {
  * to help tree shaking.
  */
 export declare abstract class RenderTypes {
-    renderer: CompileIdentifierMetadata;
-    renderText: CompileIdentifierMetadata;
-    renderElement: CompileIdentifierMetadata;
-    renderComment: CompileIdentifierMetadata;
-    renderNode: CompileIdentifierMetadata;
-    renderEvent: CompileIdentifierMetadata;
+    readonly abstract renderer: CompileIdentifierMetadata;
+    readonly abstract renderText: CompileIdentifierMetadata;
+    readonly abstract renderElement: CompileIdentifierMetadata;
+    readonly abstract renderComment: CompileIdentifierMetadata;
+    readonly abstract renderNode: CompileIdentifierMetadata;
+    readonly abstract renderEvent: CompileIdentifierMetadata;
 }
 export declare class DefaultRenderTypes implements RenderTypes {
-    renderer: CompileIdentifierMetadata;
+    readonly renderer: CompileIdentifierMetadata;
     renderText: any;
     renderElement: any;
     renderComment: any;

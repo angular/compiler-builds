@@ -6,13 +6,13 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { TagContentType } from './tags';
-export var HtmlTagDefinition = (function () {
+var HtmlTagDefinition = (function () {
     /**
      * @param {?=} __0
      */
     function HtmlTagDefinition(_a) {
-        var _this = this;
         var _b = _a === void 0 ? {} : _a, closedByChildren = _b.closedByChildren, requiredParents = _b.requiredParents, implicitNamespacePrefix = _b.implicitNamespacePrefix, _c = _b.contentType, contentType = _c === void 0 ? TagContentType.PARSABLE_DATA : _c, _d = _b.closedByParent, closedByParent = _d === void 0 ? false : _d, _e = _b.isVoid, isVoid = _e === void 0 ? false : _e, _f = _b.ignoreFirstLf, ignoreFirstLf = _f === void 0 ? false : _f;
+        var _this = this;
         this.closedByChildren = {};
         this.closedByParent = false;
         this.canSelfClose = false;
@@ -54,6 +54,7 @@ export var HtmlTagDefinition = (function () {
     };
     return HtmlTagDefinition;
 }());
+export { HtmlTagDefinition };
 function HtmlTagDefinition_tsickle_Closure_declarations() {
     /** @type {?} */
     HtmlTagDefinition.prototype.closedByChildren;

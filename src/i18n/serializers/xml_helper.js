@@ -43,7 +43,7 @@ var _Visitor = (function () {
      * @return {?}
      */
     _Visitor.prototype._serializeAttributes = function (attrs) {
-        var /** @type {?} */ strAttrs = Object.keys(attrs).map(function (name) { return (name + "=\"" + attrs[name] + "\""); }).join(' ');
+        var /** @type {?} */ strAttrs = Object.keys(attrs).map(function (name) { return name + "=\"" + attrs[name] + "\""; }).join(' ');
         return strAttrs.length > 0 ? ' ' + strAttrs : '';
     };
     /**
@@ -63,7 +63,7 @@ var /** @type {?} */ _visitor = new _Visitor();
 export function serialize(nodes) {
     return nodes.map(function (node) { return node.visit(_visitor); }).join('');
 }
-export var Declaration = (function () {
+var Declaration = (function () {
     /**
      * @param {?} unescapedAttrs
      */
@@ -81,11 +81,12 @@ export var Declaration = (function () {
     Declaration.prototype.visit = function (visitor) { return visitor.visitDeclaration(this); };
     return Declaration;
 }());
+export { Declaration };
 function Declaration_tsickle_Closure_declarations() {
     /** @type {?} */
     Declaration.prototype.attrs;
 }
-export var Doctype = (function () {
+var Doctype = (function () {
     /**
      * @param {?} rootTag
      * @param {?} dtd
@@ -102,22 +103,23 @@ export var Doctype = (function () {
     Doctype.prototype.visit = function (visitor) { return visitor.visitDoctype(this); };
     return Doctype;
 }());
+export { Doctype };
 function Doctype_tsickle_Closure_declarations() {
     /** @type {?} */
     Doctype.prototype.rootTag;
     /** @type {?} */
     Doctype.prototype.dtd;
 }
-export var Tag = (function () {
+var Tag = (function () {
     /**
      * @param {?} name
      * @param {?=} unescapedAttrs
      * @param {?=} children
      */
     function Tag(name, unescapedAttrs, children) {
-        var _this = this;
         if (unescapedAttrs === void 0) { unescapedAttrs = {}; }
         if (children === void 0) { children = []; }
+        var _this = this;
         this.name = name;
         this.children = children;
         this.attrs = {};
@@ -132,6 +134,7 @@ export var Tag = (function () {
     Tag.prototype.visit = function (visitor) { return visitor.visitTag(this); };
     return Tag;
 }());
+export { Tag };
 function Tag_tsickle_Closure_declarations() {
     /** @type {?} */
     Tag.prototype.attrs;
@@ -140,7 +143,7 @@ function Tag_tsickle_Closure_declarations() {
     /** @type {?} */
     Tag.prototype.children;
 }
-export var Text = (function () {
+var Text = (function () {
     /**
      * @param {?} unescapedValue
      */
@@ -155,21 +158,23 @@ export var Text = (function () {
     Text.prototype.visit = function (visitor) { return visitor.visitText(this); };
     return Text;
 }());
+export { Text };
 function Text_tsickle_Closure_declarations() {
     /** @type {?} */
     Text.prototype.value;
 }
-export var CR = (function (_super) {
+var CR = (function (_super) {
     __extends(CR, _super);
     /**
      * @param {?=} ws
      */
     function CR(ws) {
         if (ws === void 0) { ws = 0; }
-        _super.call(this, "\n" + new Array(ws + 1).join(' '));
+        return _super.call(this, "\n" + new Array(ws + 1).join(' ')) || this;
     }
     return CR;
 }(Text));
+export { CR };
 var /** @type {?} */ _ESCAPED_CHARS = [
     [/&/g, '&amp;'],
     [/"/g, '&quot;'],

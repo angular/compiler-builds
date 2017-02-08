@@ -24,10 +24,10 @@ import { getHtmlTagDefinition } from './html_tags';
 import { DEFAULT_INTERPOLATION_CONFIG } from './interpolation_config';
 import { Parser } from './parser';
 export { ParseTreeResult, TreeError } from './parser';
-export var HtmlParser = (function (_super) {
+var HtmlParser = (function (_super) {
     __extends(HtmlParser, _super);
     function HtmlParser() {
-        _super.call(this, getHtmlTagDefinition);
+        return _super.call(this, getHtmlTagDefinition) || this;
     }
     /**
      * @param {?} source
@@ -41,10 +41,11 @@ export var HtmlParser = (function (_super) {
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
         return _super.prototype.parse.call(this, source, url, parseExpansionForms, interpolationConfig);
     };
-    HtmlParser = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [])
-    ], HtmlParser);
     return HtmlParser;
 }(Parser));
+HtmlParser = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [])
+], HtmlParser);
+export { HtmlParser };
 //# sourceMappingURL=html_parser.js.map

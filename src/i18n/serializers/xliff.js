@@ -25,10 +25,10 @@ var /** @type {?} */ _PLACEHOLDER_TAG = 'x';
 var /** @type {?} */ _SOURCE_TAG = 'source';
 var /** @type {?} */ _TARGET_TAG = 'target';
 var /** @type {?} */ _UNIT_TAG = 'trans-unit';
-export var Xliff = (function (_super) {
+var Xliff = (function (_super) {
     __extends(Xliff, _super);
     function Xliff() {
-        _super.apply(this, arguments);
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     /**
      * @param {?} messages
@@ -85,6 +85,7 @@ export var Xliff = (function (_super) {
     Xliff.prototype.digest = function (message) { return digest(message); };
     return Xliff;
 }(Serializer));
+export { Xliff };
 var _WriteVisitor = (function () {
     function _WriteVisitor() {
     }
@@ -161,8 +162,7 @@ var _WriteVisitor = (function () {
     _WriteVisitor.prototype.serialize = function (nodes) {
         var _this = this;
         this._isInIcu = false;
-        return (_a = []).concat.apply(_a, nodes.map(function (node) { return node.visit(_this); }));
-        var _a;
+        return [].concat.apply([], nodes.map(function (node) { return node.visit(_this); }));
     };
     return _WriteVisitor;
 }());

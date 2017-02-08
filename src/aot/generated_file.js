@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-export var GeneratedFile = (function () {
+var GeneratedFile = (function () {
     /**
      * @param {?} srcFileUrl
      * @param {?} genFileUrl
@@ -18,6 +18,7 @@ export var GeneratedFile = (function () {
     }
     return GeneratedFile;
 }());
+export { GeneratedFile };
 function GeneratedFile_tsickle_Closure_declarations() {
     /** @type {?} */
     GeneratedFile.prototype.srcFileUrl;

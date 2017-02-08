@@ -16,7 +16,7 @@ import * as html from './ast';
 import { DEFAULT_INTERPOLATION_CONFIG } from './interpolation_config';
 import * as lex from './lexer';
 import { getNsPrefix, mergeNsAndName } from './tags';
-export var TreeError = (function (_super) {
+var TreeError = (function (_super) {
     __extends(TreeError, _super);
     /**
      * @param {?} elementName
@@ -24,8 +24,9 @@ export var TreeError = (function (_super) {
      * @param {?} msg
      */
     function TreeError(elementName, span, msg) {
-        _super.call(this, span, msg);
-        this.elementName = elementName;
+        var _this = _super.call(this, span, msg) || this;
+        _this.elementName = elementName;
+        return _this;
     }
     /**
      * @param {?} elementName
@@ -38,11 +39,12 @@ export var TreeError = (function (_super) {
     };
     return TreeError;
 }(ParseError));
+export { TreeError };
 function TreeError_tsickle_Closure_declarations() {
     /** @type {?} */
     TreeError.prototype.elementName;
 }
-export var ParseTreeResult = (function () {
+var ParseTreeResult = (function () {
     /**
      * @param {?} rootNodes
      * @param {?} errors
@@ -53,13 +55,14 @@ export var ParseTreeResult = (function () {
     }
     return ParseTreeResult;
 }());
+export { ParseTreeResult };
 function ParseTreeResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ParseTreeResult.prototype.rootNodes;
     /** @type {?} */
     ParseTreeResult.prototype.errors;
 }
-export var Parser = (function () {
+var Parser = (function () {
     /**
      * @param {?} getTagDefinition
      */
@@ -82,6 +85,7 @@ export var Parser = (function () {
     };
     return Parser;
 }());
+export { Parser };
 function Parser_tsickle_Closure_declarations() {
     /** @type {?} */
     Parser.prototype.getTagDefinition;

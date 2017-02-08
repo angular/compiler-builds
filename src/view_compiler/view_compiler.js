@@ -22,7 +22,7 @@ import { CompileView } from './compile_view';
 import { bindView } from './view_binder';
 import { buildView, finishView } from './view_builder';
 export { ComponentFactoryDependency, ComponentViewDependency, DirectiveWrapperDependency } from './deps';
-export var ViewCompileResult = (function () {
+var ViewCompileResult = (function () {
     /**
      * @param {?} statements
      * @param {?} viewClassVar
@@ -35,6 +35,7 @@ export var ViewCompileResult = (function () {
     }
     return ViewCompileResult;
 }());
+export { ViewCompileResult };
 function ViewCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewCompileResult.prototype.statements;
@@ -43,7 +44,7 @@ function ViewCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewCompileResult.prototype.dependencies;
 }
-export var ViewCompiler = (function () {
+var ViewCompiler = (function () {
     /**
      * @param {?} _genConfig
      * @param {?} _schemaRegistry
@@ -71,12 +72,14 @@ export var ViewCompiler = (function () {
         finishView(view, statements);
         return new ViewCompileResult(statements, view.classExpr.name, dependencies);
     };
-    ViewCompiler = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [CompilerConfig, ElementSchemaRegistry])
-    ], ViewCompiler);
     return ViewCompiler;
 }());
+ViewCompiler = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [CompilerConfig,
+        ElementSchemaRegistry])
+], ViewCompiler);
+export { ViewCompiler };
 function ViewCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewCompiler.prototype._genConfig;

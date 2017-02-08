@@ -9,7 +9,7 @@
  * Interface that defines how import statements should be generated.
  * @abstract
  */
-export var ImportResolver = (function () {
+var ImportResolver = (function () {
     function ImportResolver() {
     }
     /**
@@ -38,4 +38,5 @@ export var ImportResolver = (function () {
     ImportResolver.prototype.getTypeArity = function (symbol) { };
     return ImportResolver;
 }());
+export { ImportResolver };
 //# sourceMappingURL=path_util.js.map

@@ -11,9 +11,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
 import * as chars from '../chars';
 import { NumberWrapper } from '../facade/lang';
 import { CompilerInjectable } from '../injectable';
@@ -33,7 +30,7 @@ TokenType[TokenType.Operator] = "Operator";
 TokenType[TokenType.Number] = "Number";
 TokenType[TokenType.Error] = "Error";
 var /** @type {?} */ KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
-export var Lexer = (function () {
+var Lexer = (function () {
     function Lexer() {
     }
     /**
@@ -50,13 +47,13 @@ export var Lexer = (function () {
         }
         return tokens;
     };
-    Lexer = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [])
-    ], Lexer);
     return Lexer;
 }());
-export var Token = (function () {
+Lexer = __decorate([
+    CompilerInjectable()
+], Lexer);
+export { Lexer };
+var Token = (function () {
     /**
      * @param {?} index
      * @param {?} type
@@ -153,6 +150,7 @@ export var Token = (function () {
     };
     return Token;
 }());
+export { Token };
 function Token_tsickle_Closure_declarations() {
     /** @type {?} */
     Token.prototype.index;
@@ -409,6 +407,8 @@ var _Scanner = (function () {
                 buffer += input.substring(marker, this.index);
                 this.advance();
                 var /** @type {?} */ unescapedCode = void 0;
+                // Workaround for TS2.1-introduced type strictness
+                this.peek = this.peek;
                 if (this.peek == chars.$u) {
                     // 4 character hex code for unicode character.
                     var /** @type {?} */ hex = input.substring(this.index + 1, this.index + 5);

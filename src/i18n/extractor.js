@@ -5,6 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * Extract i18n messages from source code
+ */
 import { ViewEncapsulation } from '@angular/core';
 import { analyzeAndValidateNgModules, extractProgramSymbols } from '../aot/compiler';
 import { StaticAndDynamicReflectionCapabilities } from '../aot/static_reflection_capabilities';
@@ -24,7 +27,7 @@ import { DomElementSchemaRegistry } from '../schema/dom_element_schema_registry'
 import { createOfflineCompileUrlResolver } from '../url_resolver';
 import { I18NHtmlParser } from './i18n_html_parser';
 import { MessageBundle } from './message_bundle';
-export var Extractor = (function () {
+var Extractor = (function () {
     /**
      * @param {?} host
      * @param {?} staticSymbolResolver
@@ -97,6 +100,7 @@ export var Extractor = (function () {
     };
     return Extractor;
 }());
+export { Extractor };
 function Extractor_tsickle_Closure_declarations() {
     /** @type {?} */
     Extractor.prototype.host;

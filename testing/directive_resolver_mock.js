@@ -3,6 +3,13 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { DirectiveResolver } from '@angular/compiler';
 import { Compiler, Component, Directive, Injectable, Injector, resolveForwardRef } from '@angular/core';
 import { isPresent } from './facade/lang';
@@ -10,17 +17,18 @@ import { isPresent } from './facade/lang';
  * An implementation of {@link DirectiveResolver} that allows overriding
  * various properties of directives.
  */
-export var MockDirectiveResolver = (function (_super) {
+var MockDirectiveResolver = (function (_super) {
     __extends(MockDirectiveResolver, _super);
     function MockDirectiveResolver(_injector) {
-        _super.call(this);
-        this._injector = _injector;
-        this._directives = new Map();
-        this._providerOverrides = new Map();
-        this._viewProviderOverrides = new Map();
-        this._views = new Map();
-        this._inlineTemplates = new Map();
-        this._animations = new Map();
+        var _this = _super.call(this) || this;
+        _this._injector = _injector;
+        _this._directives = new Map();
+        _this._providerOverrides = new Map();
+        _this._viewProviderOverrides = new Map();
+        _this._views = new Map();
+        _this._inlineTemplates = new Map();
+        _this._animations = new Map();
+        return _this;
     }
     Object.defineProperty(MockDirectiveResolver.prototype, "_compiler", {
         get: function () { return this._injector.get(Compiler); },
@@ -131,15 +139,16 @@ export var MockDirectiveResolver = (function (_super) {
         this._animations.set(component, animations);
         this._clearCacheFor(component);
     };
-    MockDirectiveResolver.decorators = [
-        { type: Injectable },
-    ];
-    /** @nocollapse */
-    MockDirectiveResolver.ctorParameters = function () { return [
-        { type: Injector, },
-    ]; };
     return MockDirectiveResolver;
 }(DirectiveResolver));
+export { MockDirectiveResolver };
+MockDirectiveResolver.decorators = [
+    { type: Injectable },
+];
+/** @nocollapse */
+MockDirectiveResolver.ctorParameters = function () { return [
+    { type: Injector, },
+]; };
 function flattenArray(tree, out) {
     if (!isPresent(tree))
         return;

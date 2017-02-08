@@ -33,7 +33,7 @@ function _isPipeMetadata(type) {
  *
  * See {\@link Compiler}
  */
-export var PipeResolver = (function () {
+var PipeResolver = (function () {
     /**
      * @param {?=} _reflector
      */
@@ -69,12 +69,13 @@ export var PipeResolver = (function () {
         }
         return null;
     };
-    PipeResolver = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [ReflectorReader])
-    ], PipeResolver);
     return PipeResolver;
 }());
+PipeResolver = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [ReflectorReader])
+], PipeResolver);
+export { PipeResolver };
 function PipeResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     PipeResolver.prototype._reflector;

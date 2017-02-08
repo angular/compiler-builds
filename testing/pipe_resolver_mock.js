@@ -12,12 +12,13 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { PipeResolver } from '@angular/compiler';
 import { Compiler, Injectable, Injector } from '@angular/core';
-export var MockPipeResolver = (function (_super) {
+var MockPipeResolver = (function (_super) {
     __extends(MockPipeResolver, _super);
     function MockPipeResolver(_injector) {
-        _super.call(this);
-        this._injector = _injector;
-        this._pipes = new Map();
+        var _this = _super.call(this) || this;
+        _this._injector = _injector;
+        _this._pipes = new Map();
+        return _this;
     }
     Object.defineProperty(MockPipeResolver.prototype, "_compiler", {
         get: function () { return this._injector.get(Compiler); },
@@ -46,13 +47,14 @@ export var MockPipeResolver = (function (_super) {
         }
         return metadata;
     };
-    MockPipeResolver.decorators = [
-        { type: Injectable },
-    ];
-    /** @nocollapse */
-    MockPipeResolver.ctorParameters = function () { return [
-        { type: Injector, },
-    ]; };
     return MockPipeResolver;
 }(PipeResolver));
+export { MockPipeResolver };
+MockPipeResolver.decorators = [
+    { type: Injectable },
+];
+/** @nocollapse */
+MockPipeResolver.ctorParameters = function () { return [
+    { type: Injector, },
+]; };
 //# sourceMappingURL=pipe_resolver_mock.js.map

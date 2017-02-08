@@ -31,13 +31,13 @@ import { StylesCollection } from './styles_collection';
 var /** @type {?} */ _INITIAL_KEYFRAME = 0;
 var /** @type {?} */ _TERMINAL_KEYFRAME = 1;
 var /** @type {?} */ _ONE_SECOND = 1000;
-export var AnimationParseError = (function (_super) {
+var AnimationParseError = (function (_super) {
     __extends(AnimationParseError, _super);
     /**
      * @param {?} message
      */
     function AnimationParseError(message) {
-        _super.call(this, null, message);
+        return _super.call(this, null, message) || this;
     }
     /**
      * @return {?}
@@ -45,7 +45,8 @@ export var AnimationParseError = (function (_super) {
     AnimationParseError.prototype.toString = function () { return "" + this.msg; };
     return AnimationParseError;
 }(ParseError));
-export var AnimationEntryParseResult = (function () {
+export { AnimationParseError };
+var AnimationEntryParseResult = (function () {
     /**
      * @param {?} ast
      * @param {?} errors
@@ -56,13 +57,14 @@ export var AnimationEntryParseResult = (function () {
     }
     return AnimationEntryParseResult;
 }());
+export { AnimationEntryParseResult };
 function AnimationEntryParseResult_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationEntryParseResult.prototype.ast;
     /** @type {?} */
     AnimationEntryParseResult.prototype.errors;
 }
-export var AnimationParser = (function () {
+var AnimationParser = (function () {
     /**
      * @param {?} _schema
      */
@@ -126,12 +128,13 @@ export var AnimationParser = (function () {
         var /** @type {?} */ ast = new AnimationEntryAst(entry.name, stateDeclarationAsts, stateTransitionAsts);
         return new AnimationEntryParseResult(ast, errors);
     };
-    AnimationParser = __decorate([
-        CompilerInjectable(), 
-        __metadata('design:paramtypes', [ElementSchemaRegistry])
-    ], AnimationParser);
     return AnimationParser;
 }());
+AnimationParser = __decorate([
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [ElementSchemaRegistry])
+], AnimationParser);
+export { AnimationParser };
 function AnimationParser_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationParser.prototype._schema;
@@ -161,7 +164,7 @@ function _parseAnimationStateTransition(transitionStateMetadata, stateStyles, sc
     var /** @type {?} */ stateChangeExpr = transitionStateMetadata.stateChangeExpr;
     var /** @type {?} */ transitionStates = typeof stateChangeExpr == 'string' ?
         ((stateChangeExpr)).split(/\s*,\s*/) :
-        [(stateChangeExpr)];
+        [/** @type {?} */ (stateChangeExpr)];
     transitionStates.forEach(function (expr) { return transitionExprs.push.apply(transitionExprs, _parseAnimationTransitionExpr(expr, errors)); });
     var /** @type {?} */ entry = _normalizeAnimationEntry(transitionStateMetadata.steps);
     var /** @type {?} */ animation = _normalizeStyleSteps(entry, stateStyles, schema, errors);
@@ -478,7 +481,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
             }
         });
     }
-    var _loop_1 = function(i) {
+    var _loop_1 = function (i) {
         var /** @type {?} */ entry = rawKeyframes[i];
         var /** @type {?} */ styles = entry[1];
         Object.keys(styles).forEach(function (prop) {
@@ -488,7 +491,7 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
         });
     };
     for (var /** @type {?} */ i = limit - 1; i >= 0; i--) {
-        _loop_1(i);
+        _loop_1(/** @type {?} */ i);
     }
     return rawKeyframes.map(function (entry) { return new AnimationKeyframeAst(entry[0], new AnimationStylesAst([entry[1]])); });
 }
@@ -501,14 +504,14 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
  * @return {?}
  */
 function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateStyles, errors) {
-    var /** @type {?} */ ast;
+    var /** @type {?} */ ast /** TODO #9100 */;
     var /** @type {?} */ playTime = 0;
     var /** @type {?} */ startingTime = currentTime;
     if (entry instanceof CompileAnimationWithStepsMetadata) {
         var /** @type {?} */ maxDuration_1 = 0;
         var /** @type {?} */ steps_1 = [];
         var /** @type {?} */ isGroup_1 = entry instanceof CompileAnimationGroupMetadata;
-        var /** @type {?} */ previousStyles_1;
+        var /** @type {?} */ previousStyles_1 /** TODO #9100 */;
         entry.steps.forEach(function (entry) {
             // these will get picked up by the next step...
             var /** @type {?} */ time = isGroup_1 ? startingTime : currentTime;
@@ -556,7 +559,7 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
     else if (entry instanceof CompileAnimationAnimateMetadata) {
         var /** @type {?} */ timings = _parseTimeExpression(entry.timings, errors);
         var /** @type {?} */ styles = entry.styles;
-        var /** @type {?} */ keyframes = void 0;
+        var /** @type {?} */ keyframes = void 0 /** TODO #9100 */;
         if (styles instanceof CompileAnimationKeyframesSequenceMetadata) {
             keyframes =
                 _parseAnimationKeyframes(styles, currentTime, collectedStyles, stateStyles, errors);
@@ -661,7 +664,7 @@ function _createStartKeyframeFromEndKeyframe(endKeyframe, startTime, duration, c
             if (prop == 'offset')
                 return;
             var /** @type {?} */ resultIndex = collectedStyles.indexOfAtOrBeforeTime(prop, startTime);
-            var /** @type {?} */ resultEntry /** TODO #9100 */, /** @type {?} */ nextEntry /** TODO #9100 */, /** @type {?} */ value;
+            var /** @type {?} */ resultEntry /** TODO #9100 */, /** @type {?} */ nextEntry /** TODO #9100 */, /** @type {?} */ value /** TODO #9100 */;
             if (isPresent(resultIndex)) {
                 resultEntry = collectedStyles.getByIndex(prop, resultIndex);
                 value = resultEntry.value;
