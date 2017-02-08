@@ -12,9 +12,7 @@ import * as o from './output_ast';
  * @abstract
  */
 export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
-    constructor() {
-        super(false);
-    }
+    constructor() { super(false); }
     /**
      * @param {?} stmt
      * @param {?} ctx
@@ -188,7 +186,7 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
         ctx.decIndent();
         ctx.println(`} catch (${CATCH_ERROR_VAR.name}) {`);
         ctx.incIndent();
-        const /** @type {?} */ catchStmts = [(CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
+        const /** @type {?} */ catchStmts = [/** @type {?} */ (CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
                 o.StmtModifier.Final
             ]))].concat(stmt.catchStmts);
         this.visitAllStatements(catchStmts, ctx);

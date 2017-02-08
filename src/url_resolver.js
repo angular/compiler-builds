@@ -53,7 +53,7 @@ export const /** @type {?} */ DEFAULT_PACKAGE_URL_PROVIDER = {
  * Attacker-controlled data introduced by a template could expose your
  * application to XSS risks. For more detail, see the [Security Guide](http://g.co/ng/security).
  */
-export let UrlResolver = class UrlResolver {
+let UrlResolver = class UrlResolver {
     /**
      * @param {?=} _packagePrefix
      */
@@ -93,9 +93,10 @@ UrlResolver.ctorParameters = () => [
     { type: undefined, decorators: [{ type: Inject, args: [PACKAGE_ROOT_URL,] },] },
 ];
 UrlResolver = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [String])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [String])
 ], UrlResolver);
+export { UrlResolver };
 function UrlResolver_tsickle_Closure_declarations() {
     /**
      * @nocollapse

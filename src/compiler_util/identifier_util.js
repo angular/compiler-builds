@@ -33,7 +33,7 @@ export function createInlineArray(values) {
     const /** @type {?} */ identifierSpec = index < Identifiers.inlineArrays.length ? Identifiers.inlineArrays[index] :
         Identifiers.InlineArrayDynamic;
     const /** @type {?} */ identifier = createIdentifier(identifierSpec);
-    return o.importExpr(identifier).instantiate([(o.literal(values.length))
+    return o.importExpr(identifier).instantiate([/** @type {?} */ (o.literal(values.length))
     ].concat(values));
 }
 /**

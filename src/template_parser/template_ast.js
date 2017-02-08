@@ -584,8 +584,8 @@ PropertyBindingType[PropertyBindingType.Animation] = "Animation";
 export function templateVisitAll(visitor, asts, context = null) {
     const /** @type {?} */ result = [];
     const /** @type {?} */ visit = visitor.visit ?
-            (ast) => visitor.visit(ast, context) || ast.visit(visitor, context) :
-            (ast) => ast.visit(visitor, context);
+        (ast) => visitor.visit(ast, context) || ast.visit(visitor, context) :
+        (ast) => ast.visit(visitor, context);
     asts.forEach(ast => {
         const /** @type {?} */ astResult = visit(ast);
         if (astResult) {

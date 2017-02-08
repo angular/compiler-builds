@@ -9,9 +9,7 @@ import { Parser } from './parser';
 import { getXmlTagDefinition } from './xml_tags';
 export { ParseTreeResult, TreeError } from './parser';
 export class XmlParser extends Parser {
-    constructor() {
-        super(getXmlTagDefinition);
-    }
+    constructor() { super(getXmlTagDefinition); }
     /**
      * @param {?} source
      * @param {?} url

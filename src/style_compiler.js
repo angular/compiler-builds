@@ -91,7 +91,7 @@ function CompiledStylesheet_tsickle_Closure_declarations() {
     /** @type {?} */
     CompiledStylesheet.prototype.meta;
 }
-export let StyleCompiler = class StyleCompiler {
+let StyleCompiler = class StyleCompiler {
     /**
      * @param {?} _urlResolver
      */
@@ -149,9 +149,10 @@ export let StyleCompiler = class StyleCompiler {
     }
 };
 StyleCompiler = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [UrlResolver])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [UrlResolver])
 ], StyleCompiler);
+export { StyleCompiler };
 function StyleCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     StyleCompiler.prototype._shadowCss;

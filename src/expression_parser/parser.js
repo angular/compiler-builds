@@ -68,7 +68,7 @@ function _createInterpolateRegExp(config) {
     const /** @type {?} */ pattern = escapeRegExp(config.start) + '([\\s\\S]*?)' + escapeRegExp(config.end);
     return new RegExp(pattern, 'g');
 }
-export let Parser = class Parser {
+let Parser = class Parser {
     /**
      * @param {?} _lexer
      */
@@ -303,9 +303,10 @@ export let Parser = class Parser {
     }
 };
 Parser = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [Lexer])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [Lexer])
 ], Parser);
+export { Parser };
 function Parser_tsickle_Closure_declarations() {
     /** @type {?} */
     Parser.prototype.errors;

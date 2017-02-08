@@ -422,12 +422,12 @@ export class StaticReflector {
                 }
                 if (expression instanceof Array) {
                     const /** @type {?} */ result = [];
-                    for (const item of ((expression))) {
+                    for (const /** @type {?} */ item of ((expression))) {
                         // Check for a spread expression
                         if (item && item.__symbolic === 'spread') {
                             const /** @type {?} */ spreadArray = simplify(item.expression);
                             if (Array.isArray(spreadArray)) {
-                                for (const spreadItem of spreadArray) {
+                                for (const /** @type {?} */ spreadItem of spreadArray) {
                                     result.push(spreadItem);
                                 }
                                 continue;

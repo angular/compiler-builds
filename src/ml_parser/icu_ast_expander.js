@@ -63,9 +63,7 @@ export class ExpansionError extends ParseError {
      * @param {?} span
      * @param {?} errorMsg
      */
-    constructor(span, errorMsg) {
-        super(span, errorMsg);
-    }
+    constructor(span, errorMsg) { super(span, errorMsg); }
 }
 /**
  * Expand expansion forms (plural, select) to directives

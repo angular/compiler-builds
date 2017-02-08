@@ -30,9 +30,7 @@ export class AnimationParseError extends ParseError {
     /**
      * @param {?} message
      */
-    constructor(message) {
-        super(null, message);
-    }
+    constructor(message) { super(null, message); }
     /**
      * @return {?}
      */
@@ -54,7 +52,7 @@ function AnimationEntryParseResult_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationEntryParseResult.prototype.errors;
 }
-export let AnimationParser = class AnimationParser {
+let AnimationParser = class AnimationParser {
     /**
      * @param {?} _schema
      */
@@ -118,9 +116,10 @@ export let AnimationParser = class AnimationParser {
     }
 };
 AnimationParser = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [ElementSchemaRegistry])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [ElementSchemaRegistry])
 ], AnimationParser);
+export { AnimationParser };
 function AnimationParser_tsickle_Closure_declarations() {
     /** @type {?} */
     AnimationParser.prototype._schema;
@@ -150,7 +149,7 @@ function _parseAnimationStateTransition(transitionStateMetadata, stateStyles, sc
     const /** @type {?} */ stateChangeExpr = transitionStateMetadata.stateChangeExpr;
     const /** @type {?} */ transitionStates = typeof stateChangeExpr == 'string' ?
         ((stateChangeExpr)).split(/\s*,\s*/) :
-        [(stateChangeExpr)];
+        [/** @type {?} */ (stateChangeExpr)];
     transitionStates.forEach(expr => transitionExprs.push(..._parseAnimationTransitionExpr(expr, errors)));
     const /** @type {?} */ entry = _normalizeAnimationEntry(transitionStateMetadata.steps);
     const /** @type {?} */ animation = _normalizeStyleSteps(entry, stateStyles, schema, errors);
@@ -486,14 +485,14 @@ function _parseAnimationKeyframes(keyframeSequence, currentTime, collectedStyles
  * @return {?}
  */
 function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateStyles, errors) {
-    let /** @type {?} */ ast;
+    let /** @type {?} */ ast /** TODO #9100 */;
     let /** @type {?} */ playTime = 0;
     const /** @type {?} */ startingTime = currentTime;
     if (entry instanceof CompileAnimationWithStepsMetadata) {
         let /** @type {?} */ maxDuration = 0;
         const /** @type {?} */ steps = [];
         const /** @type {?} */ isGroup = entry instanceof CompileAnimationGroupMetadata;
-        let /** @type {?} */ previousStyles;
+        let /** @type {?} */ previousStyles /** TODO #9100 */;
         entry.steps.forEach(entry => {
             // these will get picked up by the next step...
             const /** @type {?} */ time = isGroup ? startingTime : currentTime;
@@ -540,7 +539,7 @@ function _parseTransitionAnimation(entry, currentTime, collectedStyles, stateSty
     else if (entry instanceof CompileAnimationAnimateMetadata) {
         const /** @type {?} */ timings = _parseTimeExpression(entry.timings, errors);
         const /** @type {?} */ styles = entry.styles;
-        let /** @type {?} */ keyframes;
+        let /** @type {?} */ keyframes /** TODO #9100 */;
         if (styles instanceof CompileAnimationKeyframesSequenceMetadata) {
             keyframes =
                 _parseAnimationKeyframes(styles, currentTime, collectedStyles, stateStyles, errors);
@@ -645,7 +644,7 @@ function _createStartKeyframeFromEndKeyframe(endKeyframe, startTime, duration, c
             if (prop == 'offset')
                 return;
             const /** @type {?} */ resultIndex = collectedStyles.indexOfAtOrBeforeTime(prop, startTime);
-            let /** @type {?} */ resultEntry /** TODO #9100 */, /** @type {?} */ nextEntry /** TODO #9100 */, /** @type {?} */ value;
+            let /** @type {?} */ resultEntry /** TODO #9100 */, /** @type {?} */ nextEntry /** TODO #9100 */, /** @type {?} */ value /** TODO #9100 */;
             if (isPresent(resultIndex)) {
                 resultEntry = collectedStyles.getByIndex(prop, resultIndex);
                 value = resultEntry.value;

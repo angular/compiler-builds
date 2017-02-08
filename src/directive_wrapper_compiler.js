@@ -65,7 +65,7 @@ const /** @type {?} */ RESET_CHANGES_STMT = o.THIS_EXPR.prop(CHANGES_FIELD_NAME)
  *
  * So far, only `\@Input` and the lifecycle hooks have been implemented.
  */
-export let DirectiveWrapperCompiler = class DirectiveWrapperCompiler {
+let DirectiveWrapperCompiler = class DirectiveWrapperCompiler {
     /**
      * @param {?} compilerConfig
      * @param {?} _exprParser
@@ -98,9 +98,12 @@ export let DirectiveWrapperCompiler = class DirectiveWrapperCompiler {
     }
 };
 DirectiveWrapperCompiler = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [CompilerConfig, Parser, ElementSchemaRegistry, (typeof (_a = typeof Console !== 'undefined' && Console) === 'function' && _a) || Object])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [CompilerConfig,
+        Parser,
+        ElementSchemaRegistry, typeof (_a = typeof Console !== "undefined" && Console) === "function" && _a || Object])
 ], DirectiveWrapperCompiler);
+export { DirectiveWrapperCompiler };
 function DirectiveWrapperCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveWrapperCompiler.prototype.compilerConfig;

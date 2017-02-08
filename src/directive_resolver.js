@@ -20,7 +20,7 @@ import { stringify } from './facade/lang';
 import { CompilerInjectable } from './injectable';
 import { ReflectorReader, reflector } from './private_import_core';
 import { splitAtColon } from './util';
-export let DirectiveResolver = class DirectiveResolver {
+let DirectiveResolver = class DirectiveResolver {
     /**
      * @param {?=} _reflector
      */
@@ -186,9 +186,10 @@ export let DirectiveResolver = class DirectiveResolver {
     }
 };
 DirectiveResolver = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [(typeof (_a = typeof ReflectorReader !== 'undefined' && ReflectorReader) === 'function' && _a) || Object])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [typeof (_a = typeof ReflectorReader !== "undefined" && ReflectorReader) === "function" && _a || Object])
 ], DirectiveResolver);
+export { DirectiveResolver };
 function DirectiveResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveResolver.prototype._reflector;

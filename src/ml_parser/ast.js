@@ -194,8 +194,8 @@ function Comment_tsickle_Closure_declarations() {
 export function visitAll(visitor, nodes, context = null) {
     const /** @type {?} */ result = [];
     const /** @type {?} */ visit = visitor.visit ?
-            (ast) => visitor.visit(ast, context) || ast.visit(visitor, context) :
-            (ast) => ast.visit(visitor, context);
+        (ast) => visitor.visit(ast, context) || ast.visit(visitor, context) :
+        (ast) => ast.visit(visitor, context);
     nodes.forEach(ast => {
         const /** @type {?} */ astResult = visit(ast);
         if (astResult) {

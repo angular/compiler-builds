@@ -29,7 +29,7 @@ function _isNgModuleMetadata(obj) {
 /**
  * Resolves types to {\@link NgModule}.
  */
-export let NgModuleResolver = class NgModuleResolver {
+let NgModuleResolver = class NgModuleResolver {
     /**
      * @param {?=} _reflector
      */
@@ -60,9 +60,10 @@ export let NgModuleResolver = class NgModuleResolver {
     }
 };
 NgModuleResolver = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [(typeof (_a = typeof ReflectorReader !== 'undefined' && ReflectorReader) === 'function' && _a) || Object])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [typeof (_a = typeof ReflectorReader !== "undefined" && ReflectorReader) === "function" && _a || Object])
 ], NgModuleResolver);
+export { NgModuleResolver };
 function NgModuleResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     NgModuleResolver.prototype._reflector;

@@ -33,7 +33,7 @@ function _isPipeMetadata(type) {
  *
  * See {\@link Compiler}
  */
-export let PipeResolver = class PipeResolver {
+let PipeResolver = class PipeResolver {
     /**
      * @param {?=} _reflector
      */
@@ -69,9 +69,10 @@ export let PipeResolver = class PipeResolver {
     }
 };
 PipeResolver = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [(typeof (_a = typeof ReflectorReader !== 'undefined' && ReflectorReader) === 'function' && _a) || Object])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [typeof (_a = typeof ReflectorReader !== "undefined" && ReflectorReader) === "function" && _a || Object])
 ], PipeResolver);
+export { PipeResolver };
 function PipeResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     PipeResolver.prototype._reflector;

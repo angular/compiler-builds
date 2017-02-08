@@ -24,7 +24,7 @@ export const /** @type {?} */ SECURITY_SCHEMA = {};
  * @return {?}
  */
 function registerContext(ctx, specs) {
-    for (const spec of specs)
+    for (const /** @type {?} */ spec of specs)
         SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
 }
 // Case is insignificant below, all element and attribute names are lower-cased for lookup.

@@ -11,9 +11,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
 import * as chars from '../chars';
 import { NumberWrapper } from '../facade/lang';
 import { CompilerInjectable } from '../injectable';
@@ -33,7 +30,7 @@ TokenType[TokenType.Operator] = "Operator";
 TokenType[TokenType.Number] = "Number";
 TokenType[TokenType.Error] = "Error";
 const /** @type {?} */ KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
-export let Lexer = class Lexer {
+let Lexer = class Lexer {
     /**
      * @param {?} text
      * @return {?}
@@ -50,9 +47,9 @@ export let Lexer = class Lexer {
     }
 };
 Lexer = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [])
+    CompilerInjectable()
 ], Lexer);
+export { Lexer };
 export class Token {
     /**
      * @param {?} index
@@ -405,6 +402,8 @@ class _Scanner {
                 buffer += input.substring(marker, this.index);
                 this.advance();
                 let /** @type {?} */ unescapedCode;
+                // Workaround for TS2.1-introduced type strictness
+                this.peek = this.peek;
                 if (this.peek == chars.$u) {
                     // 4 character hex code for unicode character.
                     const /** @type {?} */ hex = input.substring(this.index + 1, this.index + 5);

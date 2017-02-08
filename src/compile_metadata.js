@@ -144,17 +144,13 @@ export class CompileAnimationSequenceMetadata extends CompileAnimationWithStepsM
     /**
      * @param {?=} steps
      */
-    constructor(steps = null) {
-        super(steps);
-    }
+    constructor(steps = null) { super(steps); }
 }
 export class CompileAnimationGroupMetadata extends CompileAnimationWithStepsMetadata {
     /**
      * @param {?=} steps
      */
-    constructor(steps = null) {
-        super(steps);
-    }
+    constructor(steps = null) { super(steps); }
 }
 /**
  * @param {?} name
@@ -338,31 +334,6 @@ function CompileTemplateMetadata_tsickle_Closure_declarations() {
 export class CompileDirectiveMetadata {
     /**
      * @param {?=} __0
-     */
-    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, componentFactory } = {}) {
-        this.isHost = !!isHost;
-        this.type = type;
-        this.isComponent = isComponent;
-        this.selector = selector;
-        this.exportAs = exportAs;
-        this.changeDetection = changeDetection;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.hostListeners = hostListeners;
-        this.hostProperties = hostProperties;
-        this.hostAttributes = hostAttributes;
-        this.providers = _normalizeArray(providers);
-        this.viewProviders = _normalizeArray(viewProviders);
-        this.queries = _normalizeArray(queries);
-        this.viewQueries = _normalizeArray(viewQueries);
-        this.entryComponents = _normalizeArray(entryComponents);
-        this.template = template;
-        this.wrapperType = wrapperType;
-        this.componentViewType = componentViewType;
-        this.componentFactory = componentFactory;
-    }
-    /**
-     * @param {?=} __0
      * @return {?}
      */
     static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, componentFactory } = {}) {
@@ -421,6 +392,31 @@ export class CompileDirectiveMetadata {
             componentViewType,
             componentFactory,
         });
+    }
+    /**
+     * @param {?=} __0
+     */
+    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, componentFactory } = {}) {
+        this.isHost = !!isHost;
+        this.type = type;
+        this.isComponent = isComponent;
+        this.selector = selector;
+        this.exportAs = exportAs;
+        this.changeDetection = changeDetection;
+        this.inputs = inputs;
+        this.outputs = outputs;
+        this.hostListeners = hostListeners;
+        this.hostProperties = hostProperties;
+        this.hostAttributes = hostAttributes;
+        this.providers = _normalizeArray(providers);
+        this.viewProviders = _normalizeArray(viewProviders);
+        this.queries = _normalizeArray(queries);
+        this.viewQueries = _normalizeArray(viewQueries);
+        this.entryComponents = _normalizeArray(entryComponents);
+        this.template = template;
+        this.wrapperType = wrapperType;
+        this.componentViewType = componentViewType;
+        this.componentFactory = componentFactory;
     }
     /**
      * @return {?}

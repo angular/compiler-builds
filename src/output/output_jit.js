@@ -19,7 +19,7 @@ function evalExpression(sourceUrl, expr, declarations, vars) {
     const /** @type {?} */ fnBody = `${declarations}\nreturn ${expr}\n//# sourceURL=${sourceUrl}`;
     const /** @type {?} */ fnArgNames = [];
     const /** @type {?} */ fnArgValues = [];
-    for (const argName in vars) {
+    for (const /** @type {?} */ argName in vars) {
         fnArgNames.push(argName);
         fnArgValues.push(vars[argName]);
     }

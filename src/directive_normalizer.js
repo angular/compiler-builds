@@ -27,7 +27,7 @@ import { extractStyleUrls, isStyleUrlResolvable } from './style_url_resolver';
 import { PreparsedElementType, preparseElement } from './template_parser/template_preparser';
 import { UrlResolver } from './url_resolver';
 import { SyncAsyncResult, syntaxError } from './util';
-export let DirectiveNormalizer = class DirectiveNormalizer {
+let DirectiveNormalizer = class DirectiveNormalizer {
     /**
      * @param {?} _resourceLoader
      * @param {?} _urlResolver
@@ -205,9 +205,13 @@ export let DirectiveNormalizer = class DirectiveNormalizer {
     }
 };
 DirectiveNormalizer = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [ResourceLoader, UrlResolver, HtmlParser, CompilerConfig])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [ResourceLoader,
+        UrlResolver,
+        HtmlParser,
+        CompilerConfig])
 ], DirectiveNormalizer);
+export { DirectiveNormalizer };
 function DirectiveNormalizer_tsickle_Closure_declarations() {
     /** @type {?} */
     DirectiveNormalizer.prototype._resourceLoaderCache;

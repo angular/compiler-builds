@@ -14,8 +14,6 @@ export class I18nError extends ParseError {
      * @param {?} span
      * @param {?} msg
      */
-    constructor(span, msg) {
-        super(span, msg);
-    }
+    constructor(span, msg) { super(span, msg); }
 }
 //# sourceMappingURL=parse_util.js.map

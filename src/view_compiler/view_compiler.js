@@ -42,7 +42,7 @@ function ViewCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewCompileResult.prototype.dependencies;
 }
-export let ViewCompiler = class ViewCompiler {
+let ViewCompiler = class ViewCompiler {
     /**
      * @param {?} _genConfig
      * @param {?} _schemaRegistry
@@ -72,9 +72,11 @@ export let ViewCompiler = class ViewCompiler {
     }
 };
 ViewCompiler = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [CompilerConfig, ElementSchemaRegistry])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [CompilerConfig,
+        ElementSchemaRegistry])
 ], ViewCompiler);
+export { ViewCompiler };
 function ViewCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewCompiler.prototype._genConfig;

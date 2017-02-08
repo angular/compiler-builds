@@ -128,9 +128,7 @@ export class Text {
     /**
      * @param {?} unescapedValue
      */
-    constructor(unescapedValue) {
-        this.value = _escapeXml(unescapedValue);
-    }
+    constructor(unescapedValue) { this.value = _escapeXml(unescapedValue); }
     ;
     /**
      * @param {?} visitor
@@ -146,9 +144,7 @@ export class CR extends Text {
     /**
      * @param {?=} ws
      */
-    constructor(ws = 0) {
-        super(`\n${new Array(ws + 1).join(' ')}`);
-    }
+    constructor(ws = 0) { super(`\n${new Array(ws + 1).join(' ')}`); }
 }
 const /** @type {?} */ _ESCAPED_CHARS = [
     [/&/g, '&amp;'],

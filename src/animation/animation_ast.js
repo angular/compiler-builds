@@ -243,9 +243,7 @@ export class AnimationGroupAst extends AnimationWithStepsAst {
     /**
      * @param {?} steps
      */
-    constructor(steps) {
-        super(steps);
-    }
+    constructor(steps) { super(steps); }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -259,9 +257,7 @@ export class AnimationSequenceAst extends AnimationWithStepsAst {
     /**
      * @param {?} steps
      */
-    constructor(steps) {
-        super(steps);
-    }
+    constructor(steps) { super(steps); }
     /**
      * @param {?} visitor
      * @param {?} context

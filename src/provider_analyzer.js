@@ -15,9 +15,7 @@ export class ProviderError extends ParseError {
      * @param {?} message
      * @param {?} span
      */
-    constructor(message, span) {
-        super(span, message);
-    }
+    constructor(message, span) { super(span, message); }
 }
 export class ProviderViewContext {
     /**

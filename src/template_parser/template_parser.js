@@ -96,7 +96,7 @@ function TemplateParseResult_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateParseResult.prototype.errors;
 }
-export let TemplateParser = class TemplateParser {
+let TemplateParser = class TemplateParser {
     /**
      * @param {?} _exprParser
      * @param {?} _schemaRegistry
@@ -240,9 +240,12 @@ TemplateParser.ctorParameters = () => [
     { type: Array, decorators: [{ type: Optional }, { type: Inject, args: [TEMPLATE_TRANSFORMS,] },] },
 ];
 TemplateParser = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [Parser, ElementSchemaRegistry, I18NHtmlParser, (typeof (_a = typeof Console !== 'undefined' && Console) === 'function' && _a) || Object, Array])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [Parser,
+        ElementSchemaRegistry,
+        I18NHtmlParser, typeof (_a = typeof Console !== "undefined" && Console) === "function" && _a || Object, Array])
 ], TemplateParser);
+export { TemplateParser };
 function TemplateParser_tsickle_Closure_declarations() {
     /**
      * @nocollapse

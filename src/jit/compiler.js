@@ -41,7 +41,7 @@ import { ViewCompiler } from '../view_compiler/view_compiler';
  * from a trusted source. Attacker-controlled data introduced by a template could expose your
  * application to XSS risks.  For more detail, see the [Security Guide](http://g.co/ng/security).
  */
-export let JitCompiler = class JitCompiler {
+let JitCompiler = class JitCompiler {
     /**
      * @param {?} _injector
      * @param {?} _metadataResolver
@@ -367,9 +367,17 @@ export let JitCompiler = class JitCompiler {
     }
 };
 JitCompiler = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [(typeof (_a = typeof Injector !== 'undefined' && Injector) === 'function' && _a) || Object, CompileMetadataResolver, TemplateParser, StyleCompiler, ViewCompiler, NgModuleCompiler, DirectiveWrapperCompiler, CompilerConfig, AnimationParser])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [typeof (_a = typeof Injector !== "undefined" && Injector) === "function" && _a || Object, CompileMetadataResolver,
+        TemplateParser,
+        StyleCompiler,
+        ViewCompiler,
+        NgModuleCompiler,
+        DirectiveWrapperCompiler,
+        CompilerConfig,
+        AnimationParser])
 ], JitCompiler);
+export { JitCompiler };
 function JitCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     JitCompiler.prototype._compiledTemplateCache;

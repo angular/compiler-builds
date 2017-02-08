@@ -19,10 +19,8 @@ import { getHtmlTagDefinition } from './html_tags';
 import { DEFAULT_INTERPOLATION_CONFIG } from './interpolation_config';
 import { Parser } from './parser';
 export { ParseTreeResult, TreeError } from './parser';
-export let HtmlParser = class HtmlParser extends Parser {
-    constructor() {
-        super(getHtmlTagDefinition);
-    }
+let HtmlParser = class HtmlParser extends Parser {
+    constructor() { super(getHtmlTagDefinition); }
     /**
      * @param {?} source
      * @param {?} url
@@ -35,7 +33,8 @@ export let HtmlParser = class HtmlParser extends Parser {
     }
 };
 HtmlParser = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [])
 ], HtmlParser);
+export { HtmlParser };
 //# sourceMappingURL=html_parser.js.map

@@ -237,7 +237,7 @@ const /** @type {?} */ _ATTR_TO_PROP = {
     'readonly': 'readOnly',
     'tabindex': 'tabIndex',
 };
-export let DomElementSchemaRegistry = class DomElementSchemaRegistry extends ElementSchemaRegistry {
+let DomElementSchemaRegistry = class DomElementSchemaRegistry extends ElementSchemaRegistry {
     constructor() {
         super();
         this._schema = {};
@@ -425,9 +425,10 @@ export let DomElementSchemaRegistry = class DomElementSchemaRegistry extends Ele
     }
 };
 DomElementSchemaRegistry = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [])
 ], DomElementSchemaRegistry);
+export { DomElementSchemaRegistry };
 function DomElementSchemaRegistry_tsickle_Closure_declarations() {
     /** @type {?} */
     DomElementSchemaRegistry.prototype._schema;

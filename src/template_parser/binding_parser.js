@@ -448,7 +448,7 @@ export class BindingParser {
      * @return {?}
      */
     _reportExpressionParserErrors(errors, sourceSpan) {
-        for (const error of errors) {
+        for (const /** @type {?} */ error of errors) {
             this._reportError(error.message, sourceSpan);
         }
     }

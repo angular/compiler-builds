@@ -33,7 +33,7 @@ import { SummaryResolver } from './summary_resolver';
 import { getUrlScheme } from './url_resolver';
 import { MODULE_SUFFIX, ValueTransformer, syntaxError, visitValue } from './util';
 export const /** @type {?} */ ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
-export let CompileMetadataResolver = class CompileMetadataResolver {
+let CompileMetadataResolver = class CompileMetadataResolver {
     /**
      * @param {?} _ngModuleResolver
      * @param {?} _directiveResolver
@@ -1103,9 +1103,16 @@ CompileMetadataResolver.ctorParameters = () => [
     { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
 ];
 CompileMetadataResolver = __decorate([
-    CompilerInjectable(), 
-    __metadata('design:paramtypes', [NgModuleResolver, DirectiveResolver, PipeResolver, SummaryResolver, ElementSchemaRegistry, DirectiveNormalizer, StaticSymbolCache, (typeof (_a = typeof ReflectorReader !== 'undefined' && ReflectorReader) === 'function' && _a) || Object, Function])
+    CompilerInjectable(),
+    __metadata("design:paramtypes", [NgModuleResolver,
+        DirectiveResolver,
+        PipeResolver,
+        SummaryResolver,
+        ElementSchemaRegistry,
+        DirectiveNormalizer,
+        StaticSymbolCache, typeof (_a = typeof ReflectorReader !== "undefined" && ReflectorReader) === "function" && _a || Object, Function])
 ], CompileMetadataResolver);
+export { CompileMetadataResolver };
 function CompileMetadataResolver_tsickle_Closure_declarations() {
     /**
      * @nocollapse

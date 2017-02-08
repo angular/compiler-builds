@@ -203,7 +203,7 @@ export class StaticSymbolResolver {
         }
         // handle the symbols in one of the re-export location
         if (metadata['exports']) {
-            for (const moduleExport of metadata['exports']) {
+            for (const /** @type {?} */ moduleExport of metadata['exports']) {
                 // handle the symbols in the list of explicitly re-exported symbols.
                 if (moduleExport.export) {
                     moduleExport.export.forEach((exportSymbol) => {
