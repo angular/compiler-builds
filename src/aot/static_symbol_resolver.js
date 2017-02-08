@@ -282,18 +282,18 @@ export var StaticSymbolResolver = (function () {
                     return result;
                 }
                 else if (symbolic === 'reference') {
-                    var /** @type {?} */ module_1 = map['module'];
+                    var /** @type {?} */ module = map['module'];
                     var /** @type {?} */ name_1 = map['name'] ? unescapeIdentifier(map['name']) : map['name'];
                     if (!name_1) {
                         return null;
                     }
                     var /** @type {?} */ filePath = void 0;
-                    if (module_1) {
-                        filePath = self.resolveModule(module_1, sourceSymbol.filePath);
+                    if (module) {
+                        filePath = self.resolveModule(module, sourceSymbol.filePath);
                         if (!filePath) {
                             return {
                                 __symbolic: 'error',
-                                message: "Could not resolve " + module_1 + " relative to " + sourceSymbol.filePath + "."
+                                message: "Could not resolve " + module + " relative to " + sourceSymbol.filePath + "."
                             };
                         }
                         return self.getStaticSymbol(filePath, name_1);
