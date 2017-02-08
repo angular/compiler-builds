@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { BaseError } from './facade/errors';
 import { isPrimitive, isStrictStringMap } from './facade/lang';
 export const /** @type {?} */ MODULE_SUFFIX = '';
 const /** @type {?} */ CAMEL_CASE_REGEXP = /([A-Z])/g;
@@ -121,6 +120,21 @@ function SyncAsyncResult_tsickle_Closure_declarations() {
     /** @type {?} */
     SyncAsyncResult.prototype.asyncResult;
 }
-export class SyntaxError extends BaseError {
+/**
+ * @param {?} msg
+ * @return {?}
+ */
+export function syntaxError(msg) {
+    const /** @type {?} */ error = Error(msg);
+    ((error))[ERROR_SYNTAX_ERROR] = true;
+    return error;
+}
+const /** @type {?} */ ERROR_SYNTAX_ERROR = 'ngSyntaxError';
+/**
+ * @param {?} error
+ * @return {?}
+ */
+export function isSyntaxError(error) {
+    return ((error))[ERROR_SYNTAX_ERROR];
 }
 //# sourceMappingURL=util.js.map

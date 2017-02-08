@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { Attribute, Component, ContentChild, ContentChildren, Directive, Host, HostBinding, HostListener, Inject, Injectable, Input, NgModule, Optional, Output, Pipe, Self, SkipSelf, ViewChild, ViewChildren, animate, group, keyframes, sequence, state, style, transition, trigger } from '@angular/core/index';
-import { SyntaxError } from '../util';
+import { syntaxError } from '../util';
 import { StaticSymbol } from './static_symbol';
 const /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
     coreDecorators: '@angular/core/src/metadata',
@@ -617,7 +617,7 @@ export class StaticReflector {
                 if (e.fileName) {
                     throw positionalError(message, e.fileName, e.line, e.column);
                 }
-                throw new SyntaxError(message);
+                throw syntaxError(message);
             }
         }
         const /** @type {?} */ recordedSimplifyInContext = (context, value, depth) => {
