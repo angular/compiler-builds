@@ -166,7 +166,7 @@ export var JitCompiler = (function () {
         // Note: the loadingPromise for a module only includes the loading of the exported directives
         // of imported modules.
         // However, for runtime compilation, we want to transitively compile all modules,
-        // so we also need to call loadNgModuleMetadata for all nested modules.
+        // so we also need to call loadNgModuleDirectiveAndPipeMetadata for all nested modules.
         ngModule.transitiveModule.modules.forEach(function (localModuleMeta) {
             loadingPromises.push(_this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(localModuleMeta.reference, isSync));
         });

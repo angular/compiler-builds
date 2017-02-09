@@ -45,7 +45,7 @@ export declare class CompileMetadataResolver {
     };
     /**
      * Gets the metadata for the given directive.
-     * This assumes `loadNgModuleMetadata` has been called first.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
      */
     getDirectiveMetadata(directiveType: any): cpl.CompileDirectiveMetadata;
     getDirectiveSummary(dirType: any): cpl.CompileDirectiveSummary;
@@ -68,7 +68,7 @@ export declare class CompileMetadataResolver {
     private _getFactoryMetadata(factory, dependencies?);
     /**
      * Gets the metadata for the given pipe.
-     * This assumes `loadNgModuleMetadata` has been called first.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
      */
     getPipeMetadata(pipeType: any): cpl.CompilePipeMetadata;
     getPipeSummary(pipeType: any): cpl.CompilePipeSummary;

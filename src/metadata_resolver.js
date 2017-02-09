@@ -312,14 +312,14 @@ export var CompileMetadataResolver = (function () {
     };
     /**
      * Gets the metadata for the given directive.
-     * This assumes `loadNgModuleMetadata` has been called first.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
      * @param {?} directiveType
      * @return {?}
      */
     CompileMetadataResolver.prototype.getDirectiveMetadata = function (directiveType) {
         var /** @type {?} */ dirMeta = this._directiveCache.get(directiveType);
         if (!dirMeta) {
-            this._reportError(new SyntaxError("Illegal state: getDirectiveMetadata can only be called after loadNgModuleMetadata for a module that declares it. Directive " + stringifyType(directiveType) + "."), directiveType);
+            this._reportError(new SyntaxError("Illegal state: getDirectiveMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Directive " + stringifyType(directiveType) + "."), directiveType);
         }
         return dirMeta;
     };
@@ -672,14 +672,14 @@ export var CompileMetadataResolver = (function () {
     };
     /**
      * Gets the metadata for the given pipe.
-     * This assumes `loadNgModuleMetadata` has been called first.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
      * @param {?} pipeType
      * @return {?}
      */
     CompileMetadataResolver.prototype.getPipeMetadata = function (pipeType) {
         var /** @type {?} */ pipeMeta = this._pipeCache.get(pipeType);
         if (!pipeMeta) {
-            this._reportError(new SyntaxError("Illegal state: getPipeMetadata can only be called after loadNgModuleMetadata for a module that declares it. Pipe " + stringifyType(pipeType) + "."), pipeType);
+            this._reportError(new SyntaxError("Illegal state: getPipeMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Pipe " + stringifyType(pipeType) + "."), pipeType);
         }
         return pipeMeta;
     };
