@@ -22,6 +22,7 @@ var /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
 var /** @type {?} */ _SOURCE_LANG = 'en';
 var /** @type {?} */ _PLACEHOLDER_TAG = 'x';
+var /** @type {?} */ _FILE_TAG = 'file';
 var /** @type {?} */ _SOURCE_TAG = 'source';
 var /** @type {?} */ _TARGET_TAG = 'target';
 var /** @type {?} */ _UNIT_TAG = 'trans-unit';
@@ -64,7 +65,7 @@ var Xliff = (function (_super) {
     Xliff.prototype.load = function (content, url) {
         // xliff to xml nodes
         var /** @type {?} */ xliffParser = new XliffParser();
-        var _a = xliffParser.parse(content, url), mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
+        var _a = xliffParser.parse(content, url), locale = _a.locale, mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
         // xml nodes to i18n nodes
         var /** @type {?} */ i18nNodesByMsgId = {};
         var /** @type {?} */ converter = new XmlToI18n();
@@ -76,7 +77,7 @@ var Xliff = (function (_super) {
         if (errors.length) {
             throw new Error("xliff parse errors:\n" + errors.join('\n'));
         }
-        return i18nNodesByMsgId;
+        return { locale: locale, i18nNodesByMsgId: i18nNodesByMsgId };
     };
     /**
      * @param {?} message
@@ -172,6 +173,7 @@ function _WriteVisitor_tsickle_Closure_declarations() {
 }
 var XliffParser = (function () {
     function XliffParser() {
+        this._locale = null;
     }
     /**
      * @param {?} xliff
@@ -187,6 +189,7 @@ var XliffParser = (function () {
         return {
             mlNodesByMsgId: this._mlNodesByMsgId,
             errors: this._errors,
+            locale: this._locale,
         };
     };
     /**
@@ -223,6 +226,13 @@ var XliffParser = (function () {
                 break;
             case _TARGET_TAG:
                 this._unitMlNodes = element.children;
+                break;
+            case _FILE_TAG:
+                var /** @type {?} */ localeAttr = element.attrs.find(function (attr) { return attr.name === 'target-language'; });
+                if (localeAttr) {
+                    this._locale = localeAttr.value;
+                }
+                ml.visitAll(this, element.children, null);
                 break;
             default:
                 // TODO(vicb): assert file structure, xliff version
@@ -277,6 +287,8 @@ function XliffParser_tsickle_Closure_declarations() {
     XliffParser.prototype._errors;
     /** @type {?} */
     XliffParser.prototype._mlNodesByMsgId;
+    /** @type {?} */
+    XliffParser.prototype._locale;
 }
 var XmlToI18n = (function () {
     function XmlToI18n() {

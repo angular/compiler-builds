@@ -89,7 +89,7 @@ export declare class CompileMetadataResolver {
     private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?, type?);
     private _validateProvider(provider);
     private _getEntryComponentsFromProvider(provider, type?);
-    private _getEntryComponentMetadata(dirType);
+    private _getEntryComponentMetadata(dirType, throwIfNotFound?);
     getProviderMetadata(provider: cpl.ProviderMeta): cpl.CompileProviderMetadata;
     private _getQueriesMetadata(queries, isViewQuery, directiveType);
     private _queryVarBindings(selector);

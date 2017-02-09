@@ -990,7 +990,7 @@ var CompileMetadataResolver = (function () {
         }
         extractIdentifiers(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach(function (identifier) {
-            var /** @type {?} */ entry = _this._getEntryComponentMetadata(identifier.reference);
+            var /** @type {?} */ entry = _this._getEntryComponentMetadata(identifier.reference, false);
             if (entry) {
                 components.push(entry);
             }
@@ -999,18 +999,23 @@ var CompileMetadataResolver = (function () {
     };
     /**
      * @param {?} dirType
+     * @param {?=} throwIfNotFound
      * @return {?}
      */
-    CompileMetadataResolver.prototype._getEntryComponentMetadata = function (dirType) {
+    CompileMetadataResolver.prototype._getEntryComponentMetadata = function (dirType, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         var /** @type {?} */ dirMeta = this.getNonNormalizedDirectiveMetadata(dirType);
-        if (dirMeta) {
+        if (dirMeta && dirMeta.metadata.isComponent) {
             return { componentType: dirType, componentFactory: dirMeta.metadata.componentFactory };
         }
         else {
             var /** @type {?} */ dirSummary = (this._loadSummary(dirType, cpl.CompileSummaryKind.Directive));
-            if (dirSummary) {
+            if (dirSummary && dirSummary.isComponent) {
                 return { componentType: dirType, componentFactory: dirSummary.componentFactory };
             }
+        }
+        if (throwIfNotFound) {
+            throw syntaxError(dirType.name + " cannot be used as an entry component.");
         }
     };
     /**

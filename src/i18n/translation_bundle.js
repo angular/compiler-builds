@@ -14,18 +14,19 @@ import { I18nError } from './parse_util';
 var TranslationBundle = (function () {
     /**
      * @param {?=} _i18nNodesByMsgId
+     * @param {?} locale
      * @param {?} digest
      * @param {?=} mapperFactory
      * @param {?=} missingTranslationStrategy
      * @param {?=} console
      */
-    function TranslationBundle(_i18nNodesByMsgId, digest, mapperFactory, missingTranslationStrategy, console) {
+    function TranslationBundle(_i18nNodesByMsgId, locale, digest, mapperFactory, missingTranslationStrategy, console) {
         if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
         if (missingTranslationStrategy === void 0) { missingTranslationStrategy = MissingTranslationStrategy.Warning; }
         this._i18nNodesByMsgId = _i18nNodesByMsgId;
         this.digest = digest;
         this.mapperFactory = mapperFactory;
-        this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest, mapperFactory, missingTranslationStrategy, console);
+        this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, locale, digest, mapperFactory, missingTranslationStrategy, console);
     }
     /**
      * @param {?} content
@@ -36,10 +37,10 @@ var TranslationBundle = (function () {
      * @return {?}
      */
     TranslationBundle.load = function (content, url, serializer, missingTranslationStrategy, console) {
-        var /** @type {?} */ i18nNodesByMsgId = serializer.load(content, url);
+        var _a = serializer.load(content, url), locale = _a.locale, i18nNodesByMsgId = _a.i18nNodesByMsgId;
         var /** @type {?} */ digestFn = function (m) { return serializer.digest(m); };
         var /** @type {?} */ mapperFactory = function (m) { return serializer.createNameMapper(m); };
-        return new TranslationBundle(i18nNodesByMsgId, digestFn, mapperFactory, missingTranslationStrategy, console);
+        return new TranslationBundle(i18nNodesByMsgId, locale, digestFn, mapperFactory, missingTranslationStrategy, console);
     };
     /**
      * @param {?} srcMsg
@@ -73,14 +74,16 @@ function TranslationBundle_tsickle_Closure_declarations() {
 var I18nToHtmlVisitor = (function () {
     /**
      * @param {?=} _i18nNodesByMsgId
+     * @param {?} _locale
      * @param {?} _digest
      * @param {?} _mapperFactory
      * @param {?} _missingTranslationStrategy
      * @param {?=} _console
      */
-    function I18nToHtmlVisitor(_i18nNodesByMsgId, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
+    function I18nToHtmlVisitor(_i18nNodesByMsgId, _locale, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
         if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
         this._i18nNodesByMsgId = _i18nNodesByMsgId;
+        this._locale = _locale;
         this._digest = _digest;
         this._mapperFactory = _mapperFactory;
         this._missingTranslationStrategy = _missingTranslationStrategy;
@@ -202,11 +205,13 @@ var I18nToHtmlVisitor = (function () {
             // - use the nodes from the original message
             // - placeholders are already internal and need no mapper
             if (this._missingTranslationStrategy === MissingTranslationStrategy.Error) {
-                this._addError(srcMsg.nodes[0], "Missing translation for message \"" + id + "\"");
+                var /** @type {?} */ ctx = this._locale ? " for locale \"" + this._locale + "\"" : '';
+                this._addError(srcMsg.nodes[0], "Missing translation for message \"" + id + "\"" + ctx);
             }
             else if (this._console &&
                 this._missingTranslationStrategy === MissingTranslationStrategy.Warning) {
-                this._console.warn("Missing translation for message \"" + id + "\"");
+                var /** @type {?} */ ctx = this._locale ? " for locale \"" + this._locale + "\"" : '';
+                this._console.warn("Missing translation for message \"" + id + "\"" + ctx);
             }
             nodes = srcMsg.nodes;
             this._mapper = function (name) { return name; };
@@ -238,6 +243,8 @@ function I18nToHtmlVisitor_tsickle_Closure_declarations() {
     I18nToHtmlVisitor.prototype._mapper;
     /** @type {?} */
     I18nToHtmlVisitor.prototype._i18nNodesByMsgId;
+    /** @type {?} */
+    I18nToHtmlVisitor.prototype._locale;
     /** @type {?} */
     I18nToHtmlVisitor.prototype._digest;
     /** @type {?} */

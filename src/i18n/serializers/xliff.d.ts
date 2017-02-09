@@ -3,7 +3,10 @@ import { Serializer } from './serializer';
 export declare class Xliff extends Serializer {
     write(messages: i18n.Message[]): string;
     load(content: string, url: string): {
-        [msgId: string]: i18n.Node[];
+        locale: string;
+        i18nNodesByMsgId: {
+            [msgId: string]: i18n.Node[];
+        };
     };
     digest(message: i18n.Message): string;
 }

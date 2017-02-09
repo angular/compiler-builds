@@ -37,7 +37,7 @@ var Xtb = (function (_super) {
     Xtb.prototype.load = function (content, url) {
         // xtb to xml nodes
         var /** @type {?} */ xtbParser = new XtbParser();
-        var _a = xtbParser.parse(content, url), msgIdToHtml = _a.msgIdToHtml, errors = _a.errors;
+        var _a = xtbParser.parse(content, url), locale = _a.locale, msgIdToHtml = _a.msgIdToHtml, errors = _a.errors;
         // xml nodes to i18n nodes
         var /** @type {?} */ i18nNodesByMsgId = {};
         var /** @type {?} */ converter = new XmlToI18n();
@@ -57,7 +57,7 @@ var Xtb = (function (_super) {
         if (errors.length) {
             throw new Error("xtb parse errors:\n" + errors.join('\n'));
         }
-        return i18nNodesByMsgId;
+        return { locale: locale, i18nNodesByMsgId: i18nNodesByMsgId };
     };
     /**
      * @param {?} message
@@ -94,6 +94,7 @@ function createLazyProperty(messages, id, valueFn) {
 }
 var XtbParser = (function () {
     function XtbParser() {
+        this._locale = null;
     }
     /**
      * @param {?} xtb
@@ -111,6 +112,7 @@ var XtbParser = (function () {
         return {
             msgIdToHtml: this._msgIdToHtml,
             errors: this._errors,
+            locale: this._locale,
         };
     };
     /**
@@ -124,6 +126,10 @@ var XtbParser = (function () {
                 this._bundleDepth++;
                 if (this._bundleDepth > 1) {
                     this._addError(element, "<" + _TRANSLATIONS_TAG + "> elements can not be nested");
+                }
+                var /** @type {?} */ langAttr = element.attrs.find(function (attr) { return attr.name === 'lang'; });
+                if (langAttr) {
+                    this._locale = langAttr.value;
                 }
                 ml.visitAll(this, element.children, null);
                 this._bundleDepth--;
@@ -198,6 +204,8 @@ function XtbParser_tsickle_Closure_declarations() {
     XtbParser.prototype._errors;
     /** @type {?} */
     XtbParser.prototype._msgIdToHtml;
+    /** @type {?} */
+    XtbParser.prototype._locale;
 }
 var XmlToI18n = (function () {
     function XmlToI18n() {
