@@ -12,12 +12,8 @@ import { ParseTreeResult } from '../ml_parser/parser';
 import { Console } from '../private_import_core';
 export declare class I18NHtmlParser implements HtmlParser {
     private _htmlParser;
-    private _translations;
-    private _translationsFormat;
-    private _missingTranslation;
-    private _console;
     getTagDefinition: any;
-    constructor(_htmlParser: HtmlParser, _translations?: string, _translationsFormat?: string, _missingTranslation?: MissingTranslationStrategy, _console?: Console);
+    private _translationBundle;
+    constructor(_htmlParser: HtmlParser, translations?: string, translationsFormat?: string, missingTranslation?: MissingTranslationStrategy, console?: Console);
     parse(source: string, url: string, parseExpansionForms?: boolean, interpolationConfig?: InterpolationConfig): ParseTreeResult;
-    private _createSerializer();
 }

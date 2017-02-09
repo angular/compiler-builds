@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.7-09b4bd0
+ * @license Angular v4.0.0-beta.7-5e7a2fa
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.7-09b4bd0');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.7-5e7a2fa');
 
     /**
      * @license
@@ -9765,18 +9765,19 @@
     var I18NHtmlParser = (function () {
         /**
          * @param {?} _htmlParser
-         * @param {?=} _translations
-         * @param {?=} _translationsFormat
-         * @param {?=} _missingTranslation
-         * @param {?=} _console
+         * @param {?=} translations
+         * @param {?=} translationsFormat
+         * @param {?=} missingTranslation
+         * @param {?=} console
          */
-        function I18NHtmlParser(_htmlParser, _translations, _translationsFormat, _missingTranslation, _console) {
-            if (_missingTranslation === void 0) { _missingTranslation = _angular_core.MissingTranslationStrategy.Warning; }
+        function I18NHtmlParser(_htmlParser, translations, translationsFormat, missingTranslation, console) {
+            if (missingTranslation === void 0) { missingTranslation = _angular_core.MissingTranslationStrategy.Warning; }
             this._htmlParser = _htmlParser;
-            this._translations = _translations;
-            this._translationsFormat = _translationsFormat;
-            this._missingTranslation = _missingTranslation;
-            this._console = _console;
+            if (translations) {
+                var serializer = createSerializer(translationsFormat);
+                this._translationBundle =
+                    TranslationBundle.load(translations, 'i18n', serializer, missingTranslation, console);
+            }
         }
         /**
          * @param {?} source
@@ -9789,36 +9790,34 @@
             if (parseExpansionForms === void 0) { parseExpansionForms = false; }
             if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
             var /** @type {?} */ parseResult = this._htmlParser.parse(source, url, parseExpansionForms, interpolationConfig);
-            if (!this._translations || this._translations === '') {
+            if (!this._translationBundle) {
                 // Do not enable i18n when no translation bundle is provided
                 return parseResult;
             }
-            // TODO(vicb): add support for implicit tags / attributes
             if (parseResult.errors.length) {
                 return new ParseTreeResult(parseResult.rootNodes, parseResult.errors);
             }
-            var /** @type {?} */ serializer = this._createSerializer();
-            var /** @type {?} */ translationBundle = TranslationBundle.load(this._translations, url, serializer, this._missingTranslation, this._console);
-            return mergeTranslations(parseResult.rootNodes, translationBundle, interpolationConfig, [], {});
-        };
-        /**
-         * @return {?}
-         */
-        I18NHtmlParser.prototype._createSerializer = function () {
-            var /** @type {?} */ format = (this._translationsFormat || 'xlf').toLowerCase();
-            switch (format) {
-                case 'xmb':
-                    return new Xmb();
-                case 'xtb':
-                    return new Xtb();
-                case 'xliff':
-                case 'xlf':
-                default:
-                    return new Xliff();
-            }
+            return mergeTranslations(parseResult.rootNodes, this._translationBundle, interpolationConfig, [], {});
         };
         return I18NHtmlParser;
     }());
+    /**
+     * @param {?=} format
+     * @return {?}
+     */
+    function createSerializer(format) {
+        format = (format || 'xlf').toLowerCase();
+        switch (format) {
+            case 'xmb':
+                return new Xmb();
+            case 'xtb':
+                return new Xtb();
+            case 'xliff':
+            case 'xlf':
+            default:
+                return new Xliff();
+        }
+    }
 
     var /** @type {?} */ APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
     var /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
