@@ -17,6 +17,7 @@ const /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
 const /** @type {?} */ _SOURCE_LANG = 'en';
 const /** @type {?} */ _PLACEHOLDER_TAG = 'x';
+const /** @type {?} */ _FILE_TAG = 'file';
 const /** @type {?} */ _SOURCE_TAG = 'source';
 const /** @type {?} */ _TARGET_TAG = 'target';
 const /** @type {?} */ _UNIT_TAG = 'trans-unit';
@@ -55,7 +56,7 @@ export class Xliff extends Serializer {
     load(content, url) {
         // xliff to xml nodes
         const /** @type {?} */ xliffParser = new XliffParser();
-        const { mlNodesByMsgId, errors } = xliffParser.parse(content, url);
+        const { locale, mlNodesByMsgId, errors } = xliffParser.parse(content, url);
         // xml nodes to i18n nodes
         const /** @type {?} */ i18nNodesByMsgId = {};
         const /** @type {?} */ converter = new XmlToI18n();
@@ -67,7 +68,7 @@ export class Xliff extends Serializer {
         if (errors.length) {
             throw new Error(`xliff parse errors:\n${errors.join('\n')}`);
         }
-        return i18nNodesByMsgId;
+        return { locale, i18nNodesByMsgId };
     }
     /**
      * @param {?} message
@@ -155,6 +156,9 @@ function _WriteVisitor_tsickle_Closure_declarations() {
     _WriteVisitor.prototype._isInIcu;
 }
 class XliffParser {
+    constructor() {
+        this._locale = null;
+    }
     /**
      * @param {?} xliff
      * @param {?} url
@@ -169,6 +173,7 @@ class XliffParser {
         return {
             mlNodesByMsgId: this._mlNodesByMsgId,
             errors: this._errors,
+            locale: this._locale,
         };
     }
     /**
@@ -205,6 +210,13 @@ class XliffParser {
                 break;
             case _TARGET_TAG:
                 this._unitMlNodes = element.children;
+                break;
+            case _FILE_TAG:
+                const /** @type {?} */ localeAttr = element.attrs.find((attr) => attr.name === 'target-language');
+                if (localeAttr) {
+                    this._locale = localeAttr.value;
+                }
+                ml.visitAll(this, element.children, null);
                 break;
             default:
                 // TODO(vicb): assert file structure, xliff version
@@ -258,6 +270,8 @@ function XliffParser_tsickle_Closure_declarations() {
     XliffParser.prototype._errors;
     /** @type {?} */
     XliffParser.prototype._mlNodesByMsgId;
+    /** @type {?} */
+    XliffParser.prototype._locale;
 }
 class XmlToI18n {
     /**

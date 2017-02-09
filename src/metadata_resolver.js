@@ -972,7 +972,7 @@ let CompileMetadataResolver = class CompileMetadataResolver {
         }
         extractIdentifiers(provider.useValue, collectedIdentifiers);
         collectedIdentifiers.forEach((identifier) => {
-            const /** @type {?} */ entry = this._getEntryComponentMetadata(identifier.reference);
+            const /** @type {?} */ entry = this._getEntryComponentMetadata(identifier.reference, false);
             if (entry) {
                 components.push(entry);
             }
@@ -981,18 +981,22 @@ let CompileMetadataResolver = class CompileMetadataResolver {
     }
     /**
      * @param {?} dirType
+     * @param {?=} throwIfNotFound
      * @return {?}
      */
-    _getEntryComponentMetadata(dirType) {
+    _getEntryComponentMetadata(dirType, throwIfNotFound = true) {
         const /** @type {?} */ dirMeta = this.getNonNormalizedDirectiveMetadata(dirType);
-        if (dirMeta) {
+        if (dirMeta && dirMeta.metadata.isComponent) {
             return { componentType: dirType, componentFactory: dirMeta.metadata.componentFactory };
         }
         else {
             const /** @type {?} */ dirSummary = (this._loadSummary(dirType, cpl.CompileSummaryKind.Directive));
-            if (dirSummary) {
+            if (dirSummary && dirSummary.isComponent) {
                 return { componentType: dirType, componentFactory: dirSummary.componentFactory };
             }
+        }
+        if (throwIfNotFound) {
+            throw syntaxError(`${dirType.name} cannot be used as an entry component.`);
         }
     }
     /**

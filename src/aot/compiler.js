@@ -10,6 +10,7 @@ import { componentFactoryName, createHostComponentMeta, identifierName } from '.
 import { ListWrapper } from '../facade/collection';
 import { Identifiers, createIdentifier, createIdentifierToken } from '../identifiers';
 import * as o from '../output/output_ast';
+import { syntaxError } from '../util';
 import { GeneratedFile } from './generated_file';
 import { serializeSummaries } from './summary_serializer';
 import { ngfactoryFilePath, splitTypescriptSuffix, summaryFileName } from './util';
@@ -314,8 +315,8 @@ export function analyzeNgModules(programStaticSymbols, host, metadataResolver) {
 export function analyzeAndValidateNgModules(programStaticSymbols, host, metadataResolver) {
     const /** @type {?} */ result = analyzeNgModules(programStaticSymbols, host, metadataResolver);
     if (result.symbolsMissingModule && result.symbolsMissingModule.length) {
-        const /** @type {?} */ messages = result.symbolsMissingModule.map(s => `Cannot determine the module for class ${s.name} in ${s.filePath}!`);
-        throw new Error(messages.join('\n'));
+        const /** @type {?} */ messages = result.symbolsMissingModule.map(s => `Cannot determine the module for class ${s.name} in ${s.filePath}! Add ${s.name} to the NgModule to fix it.`);
+        throw syntaxError(messages.join('\n'));
     }
     return result;
 }

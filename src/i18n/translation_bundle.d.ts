@@ -20,7 +20,7 @@ export declare class TranslationBundle {
     private _i18nToHtml;
     constructor(_i18nNodesByMsgId: {
         [msgId: string]: i18n.Node[];
-    }, digest: (m: i18n.Message) => string, mapperFactory?: (m: i18n.Message) => PlaceholderMapper, missingTranslationStrategy?: MissingTranslationStrategy, console?: Console);
+    }, locale: string | null, digest: (m: i18n.Message) => string, mapperFactory?: (m: i18n.Message) => PlaceholderMapper, missingTranslationStrategy?: MissingTranslationStrategy, console?: Console);
     static load(content: string, url: string, serializer: Serializer, missingTranslationStrategy: MissingTranslationStrategy, console?: Console): TranslationBundle;
     get(srcMsg: i18n.Message): html.Node[];
     has(srcMsg: i18n.Message): boolean;

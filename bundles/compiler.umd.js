@@ -8698,6 +8698,7 @@
     // TODO(vicb): make this a param (s/_/-/)
     var /** @type {?} */ _SOURCE_LANG = 'en';
     var /** @type {?} */ _PLACEHOLDER_TAG = 'x';
+    var /** @type {?} */ _FILE_TAG = 'file';
     var /** @type {?} */ _SOURCE_TAG = 'source';
     var /** @type {?} */ _TARGET_TAG = 'target';
     var /** @type {?} */ _UNIT_TAG = 'trans-unit';
@@ -8740,7 +8741,7 @@
         Xliff.prototype.load = function (content, url) {
             // xliff to xml nodes
             var /** @type {?} */ xliffParser = new XliffParser();
-            var _a = xliffParser.parse(content, url), mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
+            var _a = xliffParser.parse(content, url), locale = _a.locale, mlNodesByMsgId = _a.mlNodesByMsgId, errors = _a.errors;
             // xml nodes to i18n nodes
             var /** @type {?} */ i18nNodesByMsgId = {};
             var /** @type {?} */ converter = new XmlToI18n();
@@ -8752,7 +8753,7 @@
             if (errors.length) {
                 throw new Error("xliff parse errors:\n" + errors.join('\n'));
             }
-            return i18nNodesByMsgId;
+            return { locale: locale, i18nNodesByMsgId: i18nNodesByMsgId };
         };
         /**
          * @param {?} message
@@ -8843,6 +8844,7 @@
     }());
     var XliffParser = (function () {
         function XliffParser() {
+            this._locale = null;
         }
         /**
          * @param {?} xliff
@@ -8858,6 +8860,7 @@
             return {
                 mlNodesByMsgId: this._mlNodesByMsgId,
                 errors: this._errors,
+                locale: this._locale,
             };
         };
         /**
@@ -8894,6 +8897,13 @@
                     break;
                 case _TARGET_TAG:
                     this._unitMlNodes = element.children;
+                    break;
+                case _FILE_TAG:
+                    var /** @type {?} */ localeAttr = element.attrs.find(function (attr) { return attr.name === 'target-language'; });
+                    if (localeAttr) {
+                        this._locale = localeAttr.value;
+                    }
+                    visitAll(this, element.children, null);
                     break;
                 default:
                     // TODO(vicb): assert file structure, xliff version
@@ -9267,7 +9277,7 @@
         Xtb.prototype.load = function (content, url) {
             // xtb to xml nodes
             var /** @type {?} */ xtbParser = new XtbParser();
-            var _a = xtbParser.parse(content, url), msgIdToHtml = _a.msgIdToHtml, errors = _a.errors;
+            var _a = xtbParser.parse(content, url), locale = _a.locale, msgIdToHtml = _a.msgIdToHtml, errors = _a.errors;
             // xml nodes to i18n nodes
             var /** @type {?} */ i18nNodesByMsgId = {};
             var /** @type {?} */ converter = new XmlToI18n$1();
@@ -9287,7 +9297,7 @@
             if (errors.length) {
                 throw new Error("xtb parse errors:\n" + errors.join('\n'));
             }
-            return i18nNodesByMsgId;
+            return { locale: locale, i18nNodesByMsgId: i18nNodesByMsgId };
         };
         /**
          * @param {?} message
@@ -9323,6 +9333,7 @@
     }
     var XtbParser = (function () {
         function XtbParser() {
+            this._locale = null;
         }
         /**
          * @param {?} xtb
@@ -9340,6 +9351,7 @@
             return {
                 msgIdToHtml: this._msgIdToHtml,
                 errors: this._errors,
+                locale: this._locale,
             };
         };
         /**
@@ -9353,6 +9365,10 @@
                     this._bundleDepth++;
                     if (this._bundleDepth > 1) {
                         this._addError(element, "<" + _TRANSLATIONS_TAG + "> elements can not be nested");
+                    }
+                    var /** @type {?} */ langAttr = element.attrs.find(function (attr) { return attr.name === 'lang'; });
+                    if (langAttr) {
+                        this._locale = langAttr.value;
                     }
                     visitAll(this, element.children, null);
                     this._bundleDepth--;
@@ -9559,18 +9575,19 @@
     var TranslationBundle = (function () {
         /**
          * @param {?=} _i18nNodesByMsgId
+         * @param {?} locale
          * @param {?} digest
          * @param {?=} mapperFactory
          * @param {?=} missingTranslationStrategy
          * @param {?=} console
          */
-        function TranslationBundle(_i18nNodesByMsgId, digest, mapperFactory, missingTranslationStrategy, console) {
+        function TranslationBundle(_i18nNodesByMsgId, locale, digest, mapperFactory, missingTranslationStrategy, console) {
             if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
             if (missingTranslationStrategy === void 0) { missingTranslationStrategy = _angular_core.MissingTranslationStrategy.Warning; }
             this._i18nNodesByMsgId = _i18nNodesByMsgId;
             this.digest = digest;
             this.mapperFactory = mapperFactory;
-            this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, digest, mapperFactory, missingTranslationStrategy, console);
+            this._i18nToHtml = new I18nToHtmlVisitor(_i18nNodesByMsgId, locale, digest, mapperFactory, missingTranslationStrategy, console);
         }
         /**
          * @param {?} content
@@ -9581,10 +9598,10 @@
          * @return {?}
          */
         TranslationBundle.load = function (content, url, serializer, missingTranslationStrategy, console) {
-            var /** @type {?} */ i18nNodesByMsgId = serializer.load(content, url);
+            var _a = serializer.load(content, url), locale = _a.locale, i18nNodesByMsgId = _a.i18nNodesByMsgId;
             var /** @type {?} */ digestFn = function (m) { return serializer.digest(m); };
             var /** @type {?} */ mapperFactory = function (m) { return serializer.createNameMapper(m); };
-            return new TranslationBundle(i18nNodesByMsgId, digestFn, mapperFactory, missingTranslationStrategy, console);
+            return new TranslationBundle(i18nNodesByMsgId, locale, digestFn, mapperFactory, missingTranslationStrategy, console);
         };
         /**
          * @param {?} srcMsg
@@ -9607,14 +9624,16 @@
     var I18nToHtmlVisitor = (function () {
         /**
          * @param {?=} _i18nNodesByMsgId
+         * @param {?} _locale
          * @param {?} _digest
          * @param {?} _mapperFactory
          * @param {?} _missingTranslationStrategy
          * @param {?=} _console
          */
-        function I18nToHtmlVisitor(_i18nNodesByMsgId, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
+        function I18nToHtmlVisitor(_i18nNodesByMsgId, _locale, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
             if (_i18nNodesByMsgId === void 0) { _i18nNodesByMsgId = {}; }
             this._i18nNodesByMsgId = _i18nNodesByMsgId;
+            this._locale = _locale;
             this._digest = _digest;
             this._mapperFactory = _mapperFactory;
             this._missingTranslationStrategy = _missingTranslationStrategy;
@@ -9736,11 +9755,13 @@
                 // - use the nodes from the original message
                 // - placeholders are already internal and need no mapper
                 if (this._missingTranslationStrategy === _angular_core.MissingTranslationStrategy.Error) {
-                    this._addError(srcMsg.nodes[0], "Missing translation for message \"" + id + "\"");
+                    var /** @type {?} */ ctx = this._locale ? " for locale \"" + this._locale + "\"" : '';
+                    this._addError(srcMsg.nodes[0], "Missing translation for message \"" + id + "\"" + ctx);
                 }
                 else if (this._console &&
                     this._missingTranslationStrategy === _angular_core.MissingTranslationStrategy.Warning) {
-                    this._console.warn("Missing translation for message \"" + id + "\"");
+                    var /** @type {?} */ ctx = this._locale ? " for locale \"" + this._locale + "\"" : '';
+                    this._console.warn("Missing translation for message \"" + id + "\"" + ctx);
                 }
                 nodes = srcMsg.nodes;
                 this._mapper = function (name) { return name; };
@@ -11025,7 +11046,7 @@
      * @return {?}
      */
     function isStyleUrlResolvable(url) {
-        if (url == null || url.length === 0 || url[0] == '/')
+        if (!url)
             return false;
         var /** @type {?} */ schemeMatch = url.match(URL_WITH_SCHEMA_REGEXP);
         return schemeMatch === null || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';
@@ -19312,7 +19333,7 @@
             }
             extractIdentifiers(provider.useValue, collectedIdentifiers);
             collectedIdentifiers.forEach(function (identifier) {
-                var /** @type {?} */ entry = _this._getEntryComponentMetadata(identifier.reference);
+                var /** @type {?} */ entry = _this._getEntryComponentMetadata(identifier.reference, false);
                 if (entry) {
                     components.push(entry);
                 }
@@ -19321,18 +19342,23 @@
         };
         /**
          * @param {?} dirType
+         * @param {?=} throwIfNotFound
          * @return {?}
          */
-        CompileMetadataResolver.prototype._getEntryComponentMetadata = function (dirType) {
+        CompileMetadataResolver.prototype._getEntryComponentMetadata = function (dirType, throwIfNotFound) {
+            if (throwIfNotFound === void 0) { throwIfNotFound = true; }
             var /** @type {?} */ dirMeta = this.getNonNormalizedDirectiveMetadata(dirType);
-            if (dirMeta) {
+            if (dirMeta && dirMeta.metadata.isComponent) {
                 return { componentType: dirType, componentFactory: dirMeta.metadata.componentFactory };
             }
             else {
                 var /** @type {?} */ dirSummary = (this._loadSummary(dirType, CompileSummaryKind.Directive));
-                if (dirSummary) {
+                if (dirSummary && dirSummary.isComponent) {
                     return { componentType: dirType, componentFactory: dirSummary.componentFactory };
                 }
+            }
+            if (throwIfNotFound) {
+                throw syntaxError(dirType.name + " cannot be used as an entry component.");
             }
         };
         /**
@@ -25573,8 +25599,10 @@
     function analyzeAndValidateNgModules(programStaticSymbols, host, metadataResolver) {
         var /** @type {?} */ result = analyzeNgModules(programStaticSymbols, host, metadataResolver);
         if (result.symbolsMissingModule && result.symbolsMissingModule.length) {
-            var /** @type {?} */ messages = result.symbolsMissingModule.map(function (s) { return "Cannot determine the module for class " + s.name + " in " + s.filePath + "!"; });
-            throw new Error(messages.join('\n'));
+            var /** @type {?} */ messages = result.symbolsMissingModule.map(function (s) {
+                return "Cannot determine the module for class " + s.name + " in " + s.filePath + "! Add " + s.name + " to the NgModule to fix it.";
+            });
+            throw syntaxError(messages.join('\n'));
         }
         return result;
     }

@@ -28,7 +28,7 @@ export class Xtb extends Serializer {
     load(content, url) {
         // xtb to xml nodes
         const /** @type {?} */ xtbParser = new XtbParser();
-        const { msgIdToHtml, errors } = xtbParser.parse(content, url);
+        const { locale, msgIdToHtml, errors } = xtbParser.parse(content, url);
         // xml nodes to i18n nodes
         const /** @type {?} */ i18nNodesByMsgId = {};
         const /** @type {?} */ converter = new XmlToI18n();
@@ -48,7 +48,7 @@ export class Xtb extends Serializer {
         if (errors.length) {
             throw new Error(`xtb parse errors:\n${errors.join('\n')}`);
         }
-        return i18nNodesByMsgId;
+        return { locale, i18nNodesByMsgId };
     }
     /**
      * @param {?} message
@@ -82,6 +82,9 @@ function createLazyProperty(messages, id, valueFn) {
     });
 }
 class XtbParser {
+    constructor() {
+        this._locale = null;
+    }
     /**
      * @param {?} xtb
      * @param {?} url
@@ -98,6 +101,7 @@ class XtbParser {
         return {
             msgIdToHtml: this._msgIdToHtml,
             errors: this._errors,
+            locale: this._locale,
         };
     }
     /**
@@ -111,6 +115,10 @@ class XtbParser {
                 this._bundleDepth++;
                 if (this._bundleDepth > 1) {
                     this._addError(element, `<${_TRANSLATIONS_TAG}> elements can not be nested`);
+                }
+                const /** @type {?} */ langAttr = element.attrs.find((attr) => attr.name === 'lang');
+                if (langAttr) {
+                    this._locale = langAttr.value;
                 }
                 ml.visitAll(this, element.children, null);
                 this._bundleDepth--;
@@ -184,6 +192,8 @@ function XtbParser_tsickle_Closure_declarations() {
     XtbParser.prototype._errors;
     /** @type {?} */
     XtbParser.prototype._msgIdToHtml;
+    /** @type {?} */
+    XtbParser.prototype._locale;
 }
 class XmlToI18n {
     /**

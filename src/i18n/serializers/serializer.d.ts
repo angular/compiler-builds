@@ -9,7 +9,10 @@ import * as i18n from '../i18n_ast';
 export declare abstract class Serializer {
     abstract write(messages: i18n.Message[]): string;
     abstract load(content: string, url: string): {
-        [msgId: string]: i18n.Node[];
+        locale: string | null;
+        i18nNodesByMsgId: {
+            [msgId: string]: i18n.Node[];
+        };
     };
     abstract digest(message: i18n.Message): string;
     createNameMapper(message: i18n.Message): PlaceholderMapper;
