@@ -27,13 +27,14 @@ export declare class CompileMetadataResolver {
     private _staticSymbolCache;
     private _reflector;
     private _errorCollector;
+    private _useViewEngine;
     private _nonNormalizedDirectiveCache;
     private _directiveCache;
     private _summaryCache;
     private _pipeCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _staticSymbolCache: StaticSymbolCache, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector);
+    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _staticSymbolCache: StaticSymbolCache, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector, _useViewEngine?: boolean);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
     private _createProxyClass(baseType, name);

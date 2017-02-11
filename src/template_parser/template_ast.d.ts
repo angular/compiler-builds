@@ -117,11 +117,12 @@ export declare class ElementAst implements TemplateAst {
     directives: DirectiveAst[];
     providers: ProviderAst[];
     hasViewContainer: boolean;
+    queryMatches: QueryMatch[];
     children: TemplateAst[];
     ngContentIndex: number;
     sourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan;
-    constructor(name: string, attrs: AttrAst[], inputs: BoundElementPropertyAst[], outputs: BoundEventAst[], references: ReferenceAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, children: TemplateAst[], ngContentIndex: number, sourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan);
+    constructor(name: string, attrs: AttrAst[], inputs: BoundElementPropertyAst[], outputs: BoundEventAst[], references: ReferenceAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, queryMatches: QueryMatch[], children: TemplateAst[], ngContentIndex: number, sourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
@@ -135,10 +136,11 @@ export declare class EmbeddedTemplateAst implements TemplateAst {
     directives: DirectiveAst[];
     providers: ProviderAst[];
     hasViewContainer: boolean;
+    queryMatches: QueryMatch[];
     children: TemplateAst[];
     ngContentIndex: number;
     sourceSpan: ParseSourceSpan;
-    constructor(attrs: AttrAst[], outputs: BoundEventAst[], references: ReferenceAst[], variables: VariableAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, children: TemplateAst[], ngContentIndex: number, sourceSpan: ParseSourceSpan);
+    constructor(attrs: AttrAst[], outputs: BoundEventAst[], references: ReferenceAst[], variables: VariableAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, queryMatches: QueryMatch[], children: TemplateAst[], ngContentIndex: number, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
@@ -219,6 +221,18 @@ export declare enum PropertyBindingType {
      * A binding to an animation reference (e.g. `[animate.key]="expression"`).
      */
     Animation = 4,
+}
+/**
+ * This id differentiates a query on an element from any query on any child.
+ */
+export interface QueryId {
+    elementDepth: number;
+    directiveIndex: number;
+    queryIndex: number;
+}
+export interface QueryMatch {
+    query: QueryId;
+    value: CompileTokenMetadata;
 }
 /**
  * A visitor for {@link TemplateAst} trees that will process each node.

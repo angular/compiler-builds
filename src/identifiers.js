@@ -6,9 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ANALYZE_FOR_ENTRY_COMPONENTS, ChangeDetectionStrategy, ChangeDetectorRef, ComponentFactory, ComponentFactoryResolver, ComponentRef, ElementRef, Injector, LOCALE_ID, NgModuleFactory, QueryList, RenderComponentType, Renderer, SecurityContext, SimpleChange, TRANSLATIONS_FORMAT, TemplateRef, ViewContainerRef, ViewEncapsulation } from '@angular/core';
-import { AnimationGroupPlayer, AnimationKeyframe, AnimationSequencePlayer, AnimationStyles, AnimationTransition, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, ComponentRef_, DebugAppView, DebugContext, NgModuleInjector, NoOpAnimationPlayer, StaticNodeDebugInfo, TemplateRef_, ValueUnwrapper, ViewContainer, ViewType, balanceAnimationKeyframes, clearStyles, collectAndResolveStyles, devModeEqual, prepareFinalAnimationStyles, reflector, registerModuleFactory, renderStyles, view_utils } from './private_import_core';
+import { AnimationGroupPlayer, AnimationKeyframe, AnimationSequencePlayer, AnimationStyles, AnimationTransition, AppView, ChangeDetectorStatus, CodegenComponentFactoryResolver, ComponentRef_, DebugAppView, DebugContext, NgModuleInjector, NoOpAnimationPlayer, StaticNodeDebugInfo, TemplateRef_, ValueUnwrapper, ViewContainer, ViewType, balanceAnimationKeyframes, clearStyles, collectAndResolveStyles, devModeEqual, prepareFinalAnimationStyles, reflector, registerModuleFactory, renderStyles, viewEngine, view_utils } from './private_import_core';
 var /** @type {?} */ APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
 var /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
+var /** @type {?} */ VIEW_ENGINE_MODULE_URL = assetUrl('core', 'view/index');
 var /** @type {?} */ CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
 var /** @type {?} */ ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
 var Identifiers = (function () {
@@ -349,6 +350,46 @@ Identifiers.createRenderComponentType = {
     runtime: view_utils.createRenderComponentType
 };
 Identifiers.noop = { name: 'noop', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.noop };
+Identifiers.viewDef = {
+    name: 'viewDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.viewDef
+};
+Identifiers.elementDef = {
+    name: 'elementDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.elementDef
+};
+Identifiers.anchorDef = {
+    name: 'anchorDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.anchorDef
+};
+Identifiers.textDef = {
+    name: 'textDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.textDef
+};
+Identifiers.directiveDef = {
+    name: 'directiveDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.directiveDef
+};
+Identifiers.providerDef = {
+    name: 'providerDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.providerDef
+};
+Identifiers.queryDef = {
+    name: 'queryDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.queryDef
+};
+Identifiers.nodeValue = {
+    name: 'nodeValue',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.nodeValue
+};
 function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS;
@@ -488,6 +529,22 @@ function Identifiers_tsickle_Closure_declarations() {
     Identifiers.createRenderComponentType;
     /** @type {?} */
     Identifiers.noop;
+    /** @type {?} */
+    Identifiers.viewDef;
+    /** @type {?} */
+    Identifiers.elementDef;
+    /** @type {?} */
+    Identifiers.anchorDef;
+    /** @type {?} */
+    Identifiers.textDef;
+    /** @type {?} */
+    Identifiers.directiveDef;
+    /** @type {?} */
+    Identifiers.providerDef;
+    /** @type {?} */
+    Identifiers.queryDef;
+    /** @type {?} */
+    Identifiers.nodeValue;
 }
 /**
  * @param {?} pkg

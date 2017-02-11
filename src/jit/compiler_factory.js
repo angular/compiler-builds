@@ -16,7 +16,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { COMPILER_OPTIONS, Compiler, CompilerFactory, Inject, InjectionToken, MissingTranslationStrategy, Optional, PLATFORM_INITIALIZER, ReflectiveInjector, TRANSLATIONS, TRANSLATIONS_FORMAT, ViewEncapsulation, createPlatformFactory, isDevMode, platformCore } from '@angular/core';
 import { AnimationParser } from '../animation/animation_parser';
-import { CompilerConfig } from '../config';
+import { CompilerConfig, USE_VIEW_ENGINE } from '../config';
 import { DirectiveNormalizer } from '../directive_normalizer';
 import { DirectiveResolver } from '../directive_resolver';
 import { DirectiveWrapperCompiler } from '../directive_wrapper_compiler';
@@ -38,6 +38,7 @@ import { SummaryResolver } from '../summary_resolver';
 import { TemplateParser } from '../template_parser/template_parser';
 import { DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver } from '../url_resolver';
 import { ViewCompiler } from '../view_compiler/view_compiler';
+import { ViewCompilerNext } from '../view_compiler_next/view_compiler';
 import { JitCompiler } from './compiler';
 var /** @type {?} */ _NO_RESOURCE_LOADER = {
     /**
@@ -49,6 +50,15 @@ var /** @type {?} */ _NO_RESOURCE_LOADER = {
     }
 };
 var /** @type {?} */ baseHtmlParser = new InjectionToken('HtmlParser');
+/**
+ * @param {?} useViewEngine
+ * @param {?} cc
+ * @param {?} sr
+ * @return {?}
+ */
+function viewCompilerFactory(useViewEngine, cc, sr) {
+    return useViewEngine ? new ViewCompilerNext(cc, sr) : new ViewCompiler(cc, sr);
+}
 /**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
@@ -87,7 +97,12 @@ export var /** @type {?} */ COMPILER_PROVIDERS = [
     CompileMetadataResolver,
     DEFAULT_PACKAGE_URL_PROVIDER,
     StyleCompiler,
-    ViewCompiler,
+    { provide: USE_VIEW_ENGINE, useValue: false },
+    {
+        provide: ViewCompiler,
+        useFactory: viewCompilerFactory,
+        deps: [USE_VIEW_ENGINE, CompilerConfig, ElementSchemaRegistry]
+    },
     NgModuleCompiler,
     DirectiveWrapperCompiler,
     { provide: CompilerConfig, useValue: new CompilerConfig() },

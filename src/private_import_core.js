@@ -20,6 +20,7 @@ export var /** @type {?} */ NgModuleInjector = r.NgModuleInjector;
 export var /** @type {?} */ registerModuleFactory = r.registerModuleFactory;
 export var /** @type {?} */ ViewType = r.ViewType;
 export var /** @type {?} */ view_utils = r.view_utils;
+export var /** @type {?} */ viewEngine = r.viewEngine;
 export var /** @type {?} */ DebugContext = r.DebugContext;
 export var /** @type {?} */ StaticNodeDebugInfo = r.StaticNodeDebugInfo;
 export var /** @type {?} */ devModeEqual = r.devModeEqual;

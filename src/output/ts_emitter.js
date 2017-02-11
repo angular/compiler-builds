@@ -81,6 +81,11 @@ var TypeScriptEmitter = (function () {
                 ("ort * as " + prefix + " from '" + _this._importResolver.fileNameToModuleName(importedFilePath, genFilePath) + "';"));
         });
         srcParts.push(ctx.toSource());
+        var /** @type {?} */ prefixLines = converter.reexports.size + converter.importsWithPrefixes.size;
+        var /** @type {?} */ sm = ctx.toSourceMapGenerator(null, prefixLines).toJsComment();
+        if (sm) {
+            srcParts.push(sm);
+        }
         return srcParts.join('\n');
     };
     return TypeScriptEmitter;
@@ -119,7 +124,7 @@ var _TsEmitterVisitor = (function (_super) {
             this.typeExpression--;
         }
         else {
-            ctx.print(defaultType);
+            ctx.print(null, defaultType);
         }
     };
     /**
@@ -130,7 +135,7 @@ var _TsEmitterVisitor = (function (_super) {
     _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
         var /** @type {?} */ value = ast.value;
         if (isBlank(value) && ast.type != o.NULL_TYPE) {
-            ctx.print("(" + value + " as any)");
+            ctx.print(ast, "(" + value + " as any)");
             return null;
         }
         return _super.prototype.visitLiteralExpr.call(this, ast, ctx);
@@ -142,11 +147,11 @@ var _TsEmitterVisitor = (function (_super) {
      */
     _TsEmitterVisitor.prototype.visitLiteralArrayExpr = function (ast, ctx) {
         if (ast.entries.length === 0) {
-            ctx.print('(');
+            ctx.print(ast, '(');
         }
         var /** @type {?} */ result = _super.prototype.visitLiteralArrayExpr.call(this, ast, ctx);
         if (ast.entries.length === 0) {
-            ctx.print(' as any[])');
+            ctx.print(ast, ' as any[])');
         }
         return result;
     };
@@ -179,19 +184,19 @@ var _TsEmitterVisitor = (function (_super) {
             }
         }
         if (ctx.isExportedVar(stmt.name)) {
-            ctx.print("export ");
+            ctx.print(stmt, "export ");
         }
         if (stmt.hasModifier(o.StmtModifier.Final)) {
-            ctx.print("const");
+            ctx.print(stmt, "const");
         }
         else {
-            ctx.print("var");
+            ctx.print(stmt, "var");
         }
-        ctx.print(" " + stmt.name + ":");
+        ctx.print(stmt, " " + stmt.name + ":");
         this.visitType(stmt.type, ctx);
-        ctx.print(" = ");
+        ctx.print(stmt, " = ");
         stmt.value.visitExpression(this, ctx);
-        ctx.println(";");
+        ctx.println(stmt, ";");
         return null;
     };
     /**
@@ -200,11 +205,11 @@ var _TsEmitterVisitor = (function (_super) {
      * @return {?}
      */
     _TsEmitterVisitor.prototype.visitCastExpr = function (ast, ctx) {
-        ctx.print("(<");
+        ctx.print(ast, "(<");
         ast.type.visitType(this, ctx);
-        ctx.print(">");
+        ctx.print(ast, ">");
         ast.value.visitExpression(this, ctx);
-        ctx.print(")");
+        ctx.print(ast, ")");
         return null;
     };
     /**
@@ -213,13 +218,13 @@ var _TsEmitterVisitor = (function (_super) {
      * @return {?}
      */
     _TsEmitterVisitor.prototype.visitInstantiateExpr = function (ast, ctx) {
-        ctx.print("new ");
+        ctx.print(ast, "new ");
         this.typeExpression++;
         ast.classExpr.visitExpression(this, ctx);
         this.typeExpression--;
-        ctx.print("(");
+        ctx.print(ast, "(");
         this.visitAllExpressions(ast.args, ctx, ',');
-        ctx.print(")");
+        ctx.print(ast, ")");
         return null;
     };
     /**
@@ -231,16 +236,16 @@ var _TsEmitterVisitor = (function (_super) {
         var _this = this;
         ctx.pushClass(stmt);
         if (ctx.isExportedVar(stmt.name)) {
-            ctx.print("export ");
+            ctx.print(stmt, "export ");
         }
-        ctx.print("class " + stmt.name);
+        ctx.print(stmt, "class " + stmt.name);
         if (isPresent(stmt.parent)) {
-            ctx.print(" extends ");
+            ctx.print(stmt, " extends ");
             this.typeExpression++;
             stmt.parent.visitExpression(this, ctx);
             this.typeExpression--;
         }
-        ctx.println(" {");
+        ctx.println(stmt, " {");
         ctx.incIndent();
         stmt.fields.forEach(function (field) { return _this._visitClassField(field, ctx); });
         if (isPresent(stmt.constructorMethod)) {
@@ -249,7 +254,7 @@ var _TsEmitterVisitor = (function (_super) {
         stmt.getters.forEach(function (getter) { return _this._visitClassGetter(getter, ctx); });
         stmt.methods.forEach(function (method) { return _this._visitClassMethod(method, ctx); });
         ctx.decIndent();
-        ctx.println("}");
+        ctx.println(stmt, "}");
         ctx.popClass();
         return null;
     };
@@ -261,12 +266,12 @@ var _TsEmitterVisitor = (function (_super) {
     _TsEmitterVisitor.prototype._visitClassField = function (field, ctx) {
         if (field.hasModifier(o.StmtModifier.Private)) {
             // comment out as a workaround for #10967
-            ctx.print("/*private*/ ");
+            ctx.print(null, "/*private*/ ");
         }
-        ctx.print(field.name);
-        ctx.print(':');
+        ctx.print(null, field.name);
+        ctx.print(null, ':');
         this.visitType(field.type, ctx);
-        ctx.println(";");
+        ctx.println(null, ";");
     };
     /**
      * @param {?} getter
@@ -275,16 +280,16 @@ var _TsEmitterVisitor = (function (_super) {
      */
     _TsEmitterVisitor.prototype._visitClassGetter = function (getter, ctx) {
         if (getter.hasModifier(o.StmtModifier.Private)) {
-            ctx.print("private ");
+            ctx.print(null, "private ");
         }
-        ctx.print("get " + getter.name + "()");
-        ctx.print(':');
+        ctx.print(null, "get " + getter.name + "()");
+        ctx.print(null, ':');
         this.visitType(getter.type, ctx);
-        ctx.println(" {");
+        ctx.println(null, " {");
         ctx.incIndent();
         this.visitAllStatements(getter.body, ctx);
         ctx.decIndent();
-        ctx.println("}");
+        ctx.println(null, "}");
     };
     /**
      * @param {?} stmt
@@ -292,13 +297,13 @@ var _TsEmitterVisitor = (function (_super) {
      * @return {?}
      */
     _TsEmitterVisitor.prototype._visitClassConstructor = function (stmt, ctx) {
-        ctx.print("constructor(");
+        ctx.print(stmt, "constructor(");
         this._visitParams(stmt.constructorMethod.params, ctx);
-        ctx.println(") {");
+        ctx.println(stmt, ") {");
         ctx.incIndent();
         this.visitAllStatements(stmt.constructorMethod.body, ctx);
         ctx.decIndent();
-        ctx.println("}");
+        ctx.println(stmt, "}");
     };
     /**
      * @param {?} method
@@ -307,17 +312,17 @@ var _TsEmitterVisitor = (function (_super) {
      */
     _TsEmitterVisitor.prototype._visitClassMethod = function (method, ctx) {
         if (method.hasModifier(o.StmtModifier.Private)) {
-            ctx.print("private ");
+            ctx.print(null, "private ");
         }
-        ctx.print(method.name + "(");
+        ctx.print(null, method.name + "(");
         this._visitParams(method.params, ctx);
-        ctx.print("):");
+        ctx.print(null, "):");
         this.visitType(method.type, ctx, 'void');
-        ctx.println(" {");
+        ctx.println(null, " {");
         ctx.incIndent();
         this.visitAllStatements(method.body, ctx);
         ctx.decIndent();
-        ctx.println("}");
+        ctx.println(null, "}");
     };
     /**
      * @param {?} ast
@@ -325,15 +330,15 @@ var _TsEmitterVisitor = (function (_super) {
      * @return {?}
      */
     _TsEmitterVisitor.prototype.visitFunctionExpr = function (ast, ctx) {
-        ctx.print("(");
+        ctx.print(ast, "(");
         this._visitParams(ast.params, ctx);
-        ctx.print("):");
+        ctx.print(ast, "):");
         this.visitType(ast.type, ctx, 'void');
-        ctx.println(" => {");
+        ctx.println(ast, " => {");
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
         ctx.decIndent();
-        ctx.print("}");
+        ctx.print(ast, "}");
         return null;
     };
     /**
@@ -343,17 +348,17 @@ var _TsEmitterVisitor = (function (_super) {
      */
     _TsEmitterVisitor.prototype.visitDeclareFunctionStmt = function (stmt, ctx) {
         if (ctx.isExportedVar(stmt.name)) {
-            ctx.print("export ");
+            ctx.print(stmt, "export ");
         }
-        ctx.print("function " + stmt.name + "(");
+        ctx.print(stmt, "function " + stmt.name + "(");
         this._visitParams(stmt.params, ctx);
-        ctx.print("):");
+        ctx.print(stmt, "):");
         this.visitType(stmt.type, ctx, 'void');
-        ctx.println(" {");
+        ctx.println(stmt, " {");
         ctx.incIndent();
         this.visitAllStatements(stmt.statements, ctx);
         ctx.decIndent();
-        ctx.println("}");
+        ctx.println(stmt, "}");
         return null;
     };
     /**
@@ -362,18 +367,18 @@ var _TsEmitterVisitor = (function (_super) {
      * @return {?}
      */
     _TsEmitterVisitor.prototype.visitTryCatchStmt = function (stmt, ctx) {
-        ctx.println("try {");
+        ctx.println(stmt, "try {");
         ctx.incIndent();
         this.visitAllStatements(stmt.bodyStmts, ctx);
         ctx.decIndent();
-        ctx.println("} catch (" + CATCH_ERROR_VAR.name + ") {");
+        ctx.println(stmt, "} catch (" + CATCH_ERROR_VAR.name + ") {");
         ctx.incIndent();
         var /** @type {?} */ catchStmts = [/** @type {?} */ (CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
                 o.StmtModifier.Final
             ]))].concat(stmt.catchStmts);
         this.visitAllStatements(catchStmts, ctx);
         ctx.decIndent();
-        ctx.println("}");
+        ctx.println(stmt, "}");
         return null;
     };
     /**
@@ -405,7 +410,7 @@ var _TsEmitterVisitor = (function (_super) {
             default:
                 throw new Error("Unsupported builtin type " + type.name);
         }
-        ctx.print(typeStr);
+        ctx.print(null, typeStr);
         return null;
     };
     /**
@@ -424,7 +429,7 @@ var _TsEmitterVisitor = (function (_super) {
      */
     _TsEmitterVisitor.prototype.visitArrayType = function (type, ctx) {
         this.visitType(type.of, ctx);
-        ctx.print("[]");
+        ctx.print(null, "[]");
         return null;
     };
     /**
@@ -433,9 +438,9 @@ var _TsEmitterVisitor = (function (_super) {
      * @return {?}
      */
     _TsEmitterVisitor.prototype.visitMapType = function (type, ctx) {
-        ctx.print("{[key: string]:");
+        ctx.print(null, "{[key: string]:");
         this.visitType(type.valueType, ctx);
-        ctx.print("}");
+        ctx.print(null, "}");
         return null;
     };
     /**
@@ -467,8 +472,8 @@ var _TsEmitterVisitor = (function (_super) {
     _TsEmitterVisitor.prototype._visitParams = function (params, ctx) {
         var _this = this;
         this.visitAllObjects(function (param) {
-            ctx.print(param.name);
-            ctx.print(':');
+            ctx.print(null, param.name);
+            ctx.print(null, ':');
             _this.visitType(param.type, ctx);
         }, params, ctx, ',');
     };
@@ -504,18 +509,18 @@ var _TsEmitterVisitor = (function (_super) {
                 prefix = "import" + this.importsWithPrefixes.size;
                 this.importsWithPrefixes.set(filePath, prefix);
             }
-            ctx.print(prefix + ".");
+            ctx.print(null, prefix + ".");
         }
         if (members.length) {
-            ctx.print(name);
-            ctx.print('.');
-            ctx.print(members.join('.'));
+            ctx.print(null, name);
+            ctx.print(null, '.');
+            ctx.print(null, members.join('.'));
         }
         else {
-            ctx.print(name);
+            ctx.print(null, name);
         }
         if (this.typeExpression > 0) {
-            // If we are in a type expreession that refers to a generic type then supply
+            // If we are in a type expression that refers to a generic type then supply
             // the required type parameters. If there were not enough type parameters
             // supplied, supply any as the type. Outside a type expression the reference
             // should not supply type parameters and be treated as a simple value reference
@@ -523,18 +528,18 @@ var _TsEmitterVisitor = (function (_super) {
             var /** @type {?} */ suppliedParameters = (typeParams && typeParams.length) || 0;
             var /** @type {?} */ additionalParameters = (arity || 0) - suppliedParameters;
             if (suppliedParameters > 0 || additionalParameters > 0) {
-                ctx.print("<");
+                ctx.print(null, "<");
                 if (suppliedParameters > 0) {
                     this.visitAllObjects(function (type) { return type.visitType(_this, ctx); }, typeParams, ctx, ',');
                 }
                 if (additionalParameters > 0) {
                     for (var /** @type {?} */ i = 0; i < additionalParameters; i++) {
                         if (i > 0 || suppliedParameters > 0)
-                            ctx.print(',');
-                        ctx.print('any');
+                            ctx.print(null, ',');
+                        ctx.print(null, 'any');
                     }
                 }
-                ctx.print(">");
+                ctx.print(null, ">");
             }
         }
     };

@@ -28,7 +28,7 @@ function StyleWithImports_tsickle_Closure_declarations() {
  * @return {?}
  */
 export function isStyleUrlResolvable(url) {
-    if (!url)
+    if (url == null || url.length === 0 || url[0] == '/')
         return false;
     var /** @type {?} */ schemeMatch = url.match(URL_WITH_SCHEMA_REGEXP);
     return schemeMatch === null || schemeMatch[1] == 'package' || schemeMatch[1] == 'asset';

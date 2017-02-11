@@ -335,8 +335,8 @@ function addHandleEventMethod(hostListeners, builder) {
     hostListeners.forEach(function (hostListener, eventIdx) {
         var /** @type {?} */ evalResult = convertActionBinding(builder, null, o.THIS_EXPR.prop(CONTEXT_FIELD_NAME), hostListener.handler, "sub_" + eventIdx);
         var /** @type {?} */ trueStmts = evalResult.stmts;
-        if (evalResult.preventDefault) {
-            trueStmts.push(resultVar.set(evalResult.preventDefault.and(resultVar)).toStmt());
+        if (evalResult.allowDefault) {
+            trueStmts.push(resultVar.set(evalResult.allowDefault.and(resultVar)).toStmt());
         }
         // TODO(tbosch): convert this into a `switch` once our OutputAst supports it.
         actionStmts.push(new o.IfStmt(EVENT_NAME_VAR.equals(o.literal(hostListener.fullName)), trueStmts));

@@ -1,4 +1,6 @@
+import { ParseSourceSpan } from '../parse_util';
 import * as o from './output_ast';
+import { SourceMapGenerator } from './source_map';
 export declare const CATCH_ERROR_VAR: o.ReadVarExpr;
 export declare const CATCH_STACK_VAR: o.ReadVarExpr;
 export declare abstract class OutputEmitter {
@@ -13,16 +15,22 @@ export declare class EmitterVisitorContext {
     constructor(_exportedVars: string[], _indent: number);
     private readonly _currentLine;
     isExportedVar(varName: string): boolean;
-    println(lastPart?: string): void;
+    println(from?: {
+        sourceSpan?: ParseSourceSpan;
+    } | null, lastPart?: string): void;
     lineIsEmpty(): boolean;
-    print(part: string, newLine?: boolean): void;
+    print(from: {
+        sourceSpan?: ParseSourceSpan;
+    } | null, part: string, newLine?: boolean): void;
     removeEmptyLastLine(): void;
     incIndent(): void;
     decIndent(): void;
     pushClass(clazz: o.ClassStmt): void;
     popClass(): o.ClassStmt;
     readonly currentClass: o.ClassStmt;
-    toSource(): any;
+    toSource(): string;
+    toSourceMapGenerator(file?: string | null, startsAtLine?: number): SourceMapGenerator;
+    private readonly sourceLines;
 }
 export declare abstract class AbstractEmitterVisitor implements o.StatementVisitor, o.ExpressionVisitor {
     private _escapeDollarInStrings;

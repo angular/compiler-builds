@@ -212,9 +212,11 @@ BinaryOperator[BinaryOperator.BiggerEquals] = "BiggerEquals";
 var Expression = (function () {
     /**
      * @param {?} type
+     * @param {?=} sourceSpan
      */
-    function Expression(type) {
+    function Expression(type, sourceSpan) {
         this.type = type;
+        this.sourceSpan = sourceSpan;
     }
     /**
      * @abstract
@@ -225,167 +227,196 @@ var Expression = (function () {
     Expression.prototype.visitExpression = function (visitor, context) { };
     /**
      * @param {?} name
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.prop = function (name) { return new ReadPropExpr(this, name); };
+    Expression.prototype.prop = function (name, sourceSpan) {
+        return new ReadPropExpr(this, name, null, sourceSpan);
+    };
     /**
      * @param {?} index
      * @param {?=} type
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.key = function (index, type) {
+    Expression.prototype.key = function (index, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        return new ReadKeyExpr(this, index, type);
+        return new ReadKeyExpr(this, index, type, sourceSpan);
     };
     /**
      * @param {?} name
      * @param {?} params
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.callMethod = function (name, params) {
-        return new InvokeMethodExpr(this, name, params);
+    Expression.prototype.callMethod = function (name, params, sourceSpan) {
+        return new InvokeMethodExpr(this, name, params, null, sourceSpan);
     };
     /**
      * @param {?} params
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.callFn = function (params) { return new InvokeFunctionExpr(this, params); };
+    Expression.prototype.callFn = function (params, sourceSpan) {
+        return new InvokeFunctionExpr(this, params, null, sourceSpan);
+    };
     /**
      * @param {?} params
      * @param {?=} type
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.instantiate = function (params, type) {
+    Expression.prototype.instantiate = function (params, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        return new InstantiateExpr(this, params, type);
+        return new InstantiateExpr(this, params, type, sourceSpan);
     };
     /**
      * @param {?} trueCase
      * @param {?=} falseCase
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.conditional = function (trueCase, falseCase) {
+    Expression.prototype.conditional = function (trueCase, falseCase, sourceSpan) {
         if (falseCase === void 0) { falseCase = null; }
-        return new ConditionalExpr(this, trueCase, falseCase);
+        return new ConditionalExpr(this, trueCase, falseCase, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.equals = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Equals, this, rhs);
+    Expression.prototype.equals = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Equals, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.notEquals = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.NotEquals, this, rhs);
+    Expression.prototype.notEquals = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.NotEquals, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.identical = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Identical, this, rhs);
+    Expression.prototype.identical = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Identical, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.notIdentical = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, this, rhs);
+    Expression.prototype.notIdentical = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.minus = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Minus, this, rhs);
+    Expression.prototype.minus = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Minus, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.plus = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Plus, this, rhs);
+    Expression.prototype.plus = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Plus, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.divide = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Divide, this, rhs);
+    Expression.prototype.divide = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Divide, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.multiply = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Multiply, this, rhs);
+    Expression.prototype.multiply = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Multiply, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.modulo = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Modulo, this, rhs);
+    Expression.prototype.modulo = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Modulo, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.and = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.And, this, rhs);
+    Expression.prototype.and = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.or = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Or, this, rhs);
+    Expression.prototype.or = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Or, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.lower = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Lower, this, rhs);
+    Expression.prototype.lower = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Lower, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.lowerEquals = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.LowerEquals, this, rhs);
+    Expression.prototype.lowerEquals = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.LowerEquals, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.bigger = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Bigger, this, rhs);
+    Expression.prototype.bigger = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Bigger, this, rhs, null, sourceSpan);
     };
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.biggerEquals = function (rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.BiggerEquals, this, rhs);
+    Expression.prototype.biggerEquals = function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.BiggerEquals, this, rhs, null, sourceSpan);
     };
     /**
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.isBlank = function () {
+    Expression.prototype.isBlank = function (sourceSpan) {
         // Note: We use equals by purpose here to compare to null and undefined in JS.
         // We use the typed null to allow strictNullChecks to narrow types.
-        return this.equals(TYPED_NULL_EXPR);
+        return this.equals(TYPED_NULL_EXPR, sourceSpan);
     };
     /**
      * @param {?} type
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    Expression.prototype.cast = function (type) { return new CastExpr(this, type); };
+    Expression.prototype.cast = function (type, sourceSpan) {
+        return new CastExpr(this, type, sourceSpan);
+    };
     /**
      * @return {?}
      */
@@ -396,6 +427,8 @@ export { Expression };
 function Expression_tsickle_Closure_declarations() {
     /** @type {?} */
     Expression.prototype.type;
+    /** @type {?} */
+    Expression.prototype.sourceSpan;
 }
 export var BuiltinVar = {};
 BuiltinVar.This = 0;
@@ -411,10 +444,11 @@ var ReadVarExpr = (function (_super) {
     /**
      * @param {?} name
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function ReadVarExpr(name, type) {
+    function ReadVarExpr(name, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         if (typeof name === 'string') {
             _this.name = name;
             _this.builtin = null;
@@ -437,7 +471,9 @@ var ReadVarExpr = (function (_super) {
      * @param {?} value
      * @return {?}
      */
-    ReadVarExpr.prototype.set = function (value) { return new WriteVarExpr(this.name, value); };
+    ReadVarExpr.prototype.set = function (value) {
+        return new WriteVarExpr(this.name, value, null, this.sourceSpan);
+    };
     return ReadVarExpr;
 }(Expression));
 export { ReadVarExpr };
@@ -453,10 +489,11 @@ var WriteVarExpr = (function (_super) {
      * @param {?} name
      * @param {?} value
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function WriteVarExpr(name, value, type) {
+    function WriteVarExpr(name, value, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type || value.type) || this;
+        var _this = _super.call(this, type || value.type, sourceSpan) || this;
         _this.name = name;
         _this.value = value;
         return _this;
@@ -477,7 +514,7 @@ var WriteVarExpr = (function (_super) {
     WriteVarExpr.prototype.toDeclStmt = function (type, modifiers) {
         if (type === void 0) { type = null; }
         if (modifiers === void 0) { modifiers = null; }
-        return new DeclareVarStmt(this.name, this.value, type, modifiers);
+        return new DeclareVarStmt(this.name, this.value, type, modifiers, this.sourceSpan);
     };
     return WriteVarExpr;
 }(Expression));
@@ -495,10 +532,11 @@ var WriteKeyExpr = (function (_super) {
      * @param {?} index
      * @param {?} value
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function WriteKeyExpr(receiver, index, value, type) {
+    function WriteKeyExpr(receiver, index, value, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type || value.type) || this;
+        var _this = _super.call(this, type || value.type, sourceSpan) || this;
         _this.receiver = receiver;
         _this.index = index;
         _this.value = value;
@@ -530,10 +568,11 @@ var WritePropExpr = (function (_super) {
      * @param {?} name
      * @param {?} value
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function WritePropExpr(receiver, name, value, type) {
+    function WritePropExpr(receiver, name, value, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type || value.type) || this;
+        var _this = _super.call(this, type || value.type, sourceSpan) || this;
         _this.receiver = receiver;
         _this.name = name;
         _this.value = value;
@@ -572,10 +611,11 @@ var InvokeMethodExpr = (function (_super) {
      * @param {?} method
      * @param {?} args
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function InvokeMethodExpr(receiver, method, args, type) {
+    function InvokeMethodExpr(receiver, method, args, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.receiver = receiver;
         _this.args = args;
         if (typeof method === 'string') {
@@ -615,10 +655,11 @@ var InvokeFunctionExpr = (function (_super) {
      * @param {?} fn
      * @param {?} args
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function InvokeFunctionExpr(fn, args, type) {
+    function InvokeFunctionExpr(fn, args, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.fn = fn;
         _this.args = args;
         return _this;
@@ -646,9 +687,10 @@ var InstantiateExpr = (function (_super) {
      * @param {?} classExpr
      * @param {?} args
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function InstantiateExpr(classExpr, args, type) {
-        var _this = _super.call(this, type) || this;
+    function InstantiateExpr(classExpr, args, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.classExpr = classExpr;
         _this.args = args;
         return _this;
@@ -675,10 +717,11 @@ var LiteralExpr = (function (_super) {
     /**
      * @param {?} value
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function LiteralExpr(value, type) {
+    function LiteralExpr(value, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.value = value;
         return _this;
     }
@@ -703,11 +746,12 @@ var ExternalExpr = (function (_super) {
      * @param {?} value
      * @param {?=} type
      * @param {?=} typeParams
+     * @param {?=} sourceSpan
      */
-    function ExternalExpr(value, type, typeParams) {
+    function ExternalExpr(value, type, typeParams, sourceSpan) {
         if (type === void 0) { type = null; }
         if (typeParams === void 0) { typeParams = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.value = value;
         _this.typeParams = typeParams;
         return _this;
@@ -736,11 +780,12 @@ var ConditionalExpr = (function (_super) {
      * @param {?} trueCase
      * @param {?=} falseCase
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function ConditionalExpr(condition, trueCase, falseCase, type) {
+    function ConditionalExpr(condition, trueCase, falseCase, type, sourceSpan) {
         if (falseCase === void 0) { falseCase = null; }
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type || trueCase.type) || this;
+        var _this = _super.call(this, type || trueCase.type, sourceSpan) || this;
         _this.condition = condition;
         _this.falseCase = falseCase;
         _this.trueCase = trueCase;
@@ -769,9 +814,10 @@ var NotExpr = (function (_super) {
     __extends(NotExpr, _super);
     /**
      * @param {?} condition
+     * @param {?=} sourceSpan
      */
-    function NotExpr(condition) {
-        var _this = _super.call(this, BOOL_TYPE) || this;
+    function NotExpr(condition, sourceSpan) {
+        var _this = _super.call(this, BOOL_TYPE, sourceSpan) || this;
         _this.condition = condition;
         return _this;
     }
@@ -795,9 +841,10 @@ var CastExpr = (function (_super) {
     /**
      * @param {?} value
      * @param {?} type
+     * @param {?=} sourceSpan
      */
-    function CastExpr(value, type) {
-        var _this = _super.call(this, type) || this;
+    function CastExpr(value, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.value = value;
         return _this;
     }
@@ -841,10 +888,11 @@ var FunctionExpr = (function (_super) {
      * @param {?} params
      * @param {?} statements
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function FunctionExpr(params, statements, type) {
+    function FunctionExpr(params, statements, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.params = params;
         _this.statements = statements;
         return _this;
@@ -864,7 +912,7 @@ var FunctionExpr = (function (_super) {
      */
     FunctionExpr.prototype.toDeclStmt = function (name, modifiers) {
         if (modifiers === void 0) { modifiers = null; }
-        return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers);
+        return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers, this.sourceSpan);
     };
     return FunctionExpr;
 }(Expression));
@@ -882,10 +930,11 @@ var BinaryOperatorExpr = (function (_super) {
      * @param {?} lhs
      * @param {?} rhs
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function BinaryOperatorExpr(operator, lhs, rhs, type) {
+    function BinaryOperatorExpr(operator, lhs, rhs, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type || lhs.type) || this;
+        var _this = _super.call(this, type || lhs.type, sourceSpan) || this;
         _this.operator = operator;
         _this.rhs = rhs;
         _this.lhs = lhs;
@@ -916,10 +965,11 @@ var ReadPropExpr = (function (_super) {
      * @param {?} receiver
      * @param {?} name
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function ReadPropExpr(receiver, name, type) {
+    function ReadPropExpr(receiver, name, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.receiver = receiver;
         _this.name = name;
         return _this;
@@ -937,7 +987,7 @@ var ReadPropExpr = (function (_super) {
      * @return {?}
      */
     ReadPropExpr.prototype.set = function (value) {
-        return new WritePropExpr(this.receiver, this.name, value);
+        return new WritePropExpr(this.receiver, this.name, value, null, this.sourceSpan);
     };
     return ReadPropExpr;
 }(Expression));
@@ -954,10 +1004,11 @@ var ReadKeyExpr = (function (_super) {
      * @param {?} receiver
      * @param {?} index
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function ReadKeyExpr(receiver, index, type) {
+    function ReadKeyExpr(receiver, index, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.receiver = receiver;
         _this.index = index;
         return _this;
@@ -975,7 +1026,7 @@ var ReadKeyExpr = (function (_super) {
      * @return {?}
      */
     ReadKeyExpr.prototype.set = function (value) {
-        return new WriteKeyExpr(this.receiver, this.index, value);
+        return new WriteKeyExpr(this.receiver, this.index, value, null, this.sourceSpan);
     };
     return ReadKeyExpr;
 }(Expression));
@@ -991,10 +1042,11 @@ var LiteralArrayExpr = (function (_super) {
     /**
      * @param {?} entries
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function LiteralArrayExpr(entries, type) {
+    function LiteralArrayExpr(entries, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.entries = entries;
         return _this;
     }
@@ -1041,13 +1093,14 @@ var LiteralMapExpr = (function (_super) {
     /**
      * @param {?} entries
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    function LiteralMapExpr(entries, type) {
+    function LiteralMapExpr(entries, type, sourceSpan) {
         if (type === void 0) { type = null; }
-        var _this = _super.call(this, type) || this;
+        var _this = _super.call(this, type, sourceSpan) || this;
         _this.entries = entries;
         _this.valueType = null;
-        if (isPresent(type)) {
+        if (type) {
             _this.valueType = type.valueType;
         }
         return _this;
@@ -1086,10 +1139,12 @@ StmtModifier[StmtModifier.Private] = "Private";
 var Statement = (function () {
     /**
      * @param {?=} modifiers
+     * @param {?=} sourceSpan
      */
-    function Statement(modifiers) {
+    function Statement(modifiers, sourceSpan) {
         if (modifiers === void 0) { modifiers = null; }
         this.modifiers = modifiers;
+        this.sourceSpan = sourceSpan;
         if (!modifiers) {
             this.modifiers = [];
         }
@@ -1112,6 +1167,8 @@ export { Statement };
 function Statement_tsickle_Closure_declarations() {
     /** @type {?} */
     Statement.prototype.modifiers;
+    /** @type {?} */
+    Statement.prototype.sourceSpan;
 }
 var DeclareVarStmt = (function (_super) {
     __extends(DeclareVarStmt, _super);
@@ -1120,11 +1177,12 @@ var DeclareVarStmt = (function (_super) {
      * @param {?} value
      * @param {?=} type
      * @param {?=} modifiers
+     * @param {?=} sourceSpan
      */
-    function DeclareVarStmt(name, value, type, modifiers) {
+    function DeclareVarStmt(name, value, type, modifiers, sourceSpan) {
         if (type === void 0) { type = null; }
         if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers) || this;
+        var _this = _super.call(this, modifiers, sourceSpan) || this;
         _this.name = name;
         _this.value = value;
         _this.type = type || value.type;
@@ -1157,11 +1215,12 @@ var DeclareFunctionStmt = (function (_super) {
      * @param {?} statements
      * @param {?=} type
      * @param {?=} modifiers
+     * @param {?=} sourceSpan
      */
-    function DeclareFunctionStmt(name, params, statements, type, modifiers) {
+    function DeclareFunctionStmt(name, params, statements, type, modifiers, sourceSpan) {
         if (type === void 0) { type = null; }
         if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers) || this;
+        var _this = _super.call(this, modifiers, sourceSpan) || this;
         _this.name = name;
         _this.params = params;
         _this.statements = statements;
@@ -1193,9 +1252,10 @@ var ExpressionStatement = (function (_super) {
     __extends(ExpressionStatement, _super);
     /**
      * @param {?} expr
+     * @param {?=} sourceSpan
      */
-    function ExpressionStatement(expr) {
-        var _this = _super.call(this) || this;
+    function ExpressionStatement(expr, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
         _this.expr = expr;
         return _this;
     }
@@ -1218,9 +1278,10 @@ var ReturnStatement = (function (_super) {
     __extends(ReturnStatement, _super);
     /**
      * @param {?} value
+     * @param {?=} sourceSpan
      */
-    function ReturnStatement(value) {
-        var _this = _super.call(this) || this;
+    function ReturnStatement(value, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
         _this.value = value;
         return _this;
     }
@@ -1351,10 +1412,11 @@ var ClassStmt = (function (_super) {
      * @param {?} constructorMethod
      * @param {?} methods
      * @param {?=} modifiers
+     * @param {?=} sourceSpan
      */
-    function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers) {
+    function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers, sourceSpan) {
         if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers) || this;
+        var _this = _super.call(this, modifiers, sourceSpan) || this;
         _this.name = name;
         _this.parent = parent;
         _this.fields = fields;
@@ -1394,10 +1456,11 @@ var IfStmt = (function (_super) {
      * @param {?} condition
      * @param {?} trueCase
      * @param {?=} falseCase
+     * @param {?=} sourceSpan
      */
-    function IfStmt(condition, trueCase, falseCase) {
+    function IfStmt(condition, trueCase, falseCase, sourceSpan) {
         if (falseCase === void 0) { falseCase = []; }
-        var _this = _super.call(this) || this;
+        var _this = _super.call(this, null, sourceSpan) || this;
         _this.condition = condition;
         _this.trueCase = trueCase;
         _this.falseCase = falseCase;
@@ -1426,9 +1489,10 @@ var CommentStmt = (function (_super) {
     __extends(CommentStmt, _super);
     /**
      * @param {?} comment
+     * @param {?=} sourceSpan
      */
-    function CommentStmt(comment) {
-        var _this = _super.call(this) || this;
+    function CommentStmt(comment, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
         _this.comment = comment;
         return _this;
     }
@@ -1452,9 +1516,10 @@ var TryCatchStmt = (function (_super) {
     /**
      * @param {?} bodyStmts
      * @param {?} catchStmts
+     * @param {?=} sourceSpan
      */
-    function TryCatchStmt(bodyStmts, catchStmts) {
-        var _this = _super.call(this) || this;
+    function TryCatchStmt(bodyStmts, catchStmts, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
         _this.bodyStmts = bodyStmts;
         _this.catchStmts = catchStmts;
         return _this;
@@ -1480,9 +1545,10 @@ var ThrowStmt = (function (_super) {
     __extends(ThrowStmt, _super);
     /**
      * @param {?} error
+     * @param {?=} sourceSpan
      */
-    function ThrowStmt(error) {
-        var _this = _super.call(this) || this;
+    function ThrowStmt(error, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
         _this.error = error;
         return _this;
     }
@@ -1516,7 +1582,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitWriteVarExpr = function (expr, context) {
-        return new WriteVarExpr(expr.name, expr.value.visitExpression(this, context));
+        return new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan);
     };
     /**
      * @param {?} expr
@@ -1524,7 +1590,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitWriteKeyExpr = function (expr, context) {
-        return new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context));
+        return new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context), expr.type, expr.sourceSpan);
     };
     /**
      * @param {?} expr
@@ -1532,7 +1598,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitWritePropExpr = function (expr, context) {
-        return new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context));
+        return new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1541,7 +1607,7 @@ var ExpressionTransformer = (function () {
      */
     ExpressionTransformer.prototype.visitInvokeMethodExpr = function (ast, context) {
         var /** @type {?} */ method = ast.builtin || ast.name;
-        return new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type);
+        return new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1549,7 +1615,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitInvokeFunctionExpr = function (ast, context) {
-        return new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type);
+        return new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1557,7 +1623,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitInstantiateExpr = function (ast, context) {
-        return new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type);
+        return new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1577,7 +1643,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitConditionalExpr = function (ast, context) {
-        return new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), ast.falseCase.visitExpression(this, context));
+        return new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), ast.falseCase.visitExpression(this, context), ast.type, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1585,7 +1651,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitNotExpr = function (ast, context) {
-        return new NotExpr(ast.condition.visitExpression(this, context));
+        return new NotExpr(ast.condition.visitExpression(this, context), ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1593,7 +1659,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitCastExpr = function (ast, context) {
-        return new CastExpr(ast.value.visitExpression(this, context), context);
+        return new CastExpr(ast.value.visitExpression(this, context), context, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1610,7 +1676,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitBinaryOperatorExpr = function (ast, context) {
-        return new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type);
+        return new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1618,7 +1684,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitReadPropExpr = function (ast, context) {
-        return new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type);
+        return new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1626,7 +1692,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitReadKeyExpr = function (ast, context) {
-        return new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type);
+        return new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1634,7 +1700,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitLiteralArrayExpr = function (ast, context) {
-        return new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context));
+        return new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context), ast.type, ast.sourceSpan);
     };
     /**
      * @param {?} ast
@@ -1644,7 +1710,8 @@ var ExpressionTransformer = (function () {
     ExpressionTransformer.prototype.visitLiteralMapExpr = function (ast, context) {
         var _this = this;
         var /** @type {?} */ entries = ast.entries.map(function (entry) { return new LiteralMapEntry(entry.key, entry.value.visitExpression(_this, context), entry.quoted); });
-        return new LiteralMapExpr(entries);
+        var /** @type {?} */ mapType = new MapType(ast.valueType);
+        return new LiteralMapExpr(entries, mapType, ast.sourceSpan);
     };
     /**
      * @param {?} exprs
@@ -1661,7 +1728,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitDeclareVarStmt = function (stmt, context) {
-        return new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers);
+        return new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers, stmt.sourceSpan);
     };
     /**
      * @param {?} stmt
@@ -1678,7 +1745,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitExpressionStmt = function (stmt, context) {
-        return new ExpressionStatement(stmt.expr.visitExpression(this, context));
+        return new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan);
     };
     /**
      * @param {?} stmt
@@ -1686,7 +1753,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitReturnStmt = function (stmt, context) {
-        return new ReturnStatement(stmt.value.visitExpression(this, context));
+        return new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan);
     };
     /**
      * @param {?} stmt
@@ -1703,7 +1770,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitIfStmt = function (stmt, context) {
-        return new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context));
+        return new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan);
     };
     /**
      * @param {?} stmt
@@ -1711,7 +1778,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitTryCatchStmt = function (stmt, context) {
-        return new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context));
+        return new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan);
     };
     /**
      * @param {?} stmt
@@ -1719,7 +1786,7 @@ var ExpressionTransformer = (function () {
      * @return {?}
      */
     ExpressionTransformer.prototype.visitThrowStmt = function (stmt, context) {
-        return new ThrowStmt(stmt.error.visitExpression(this, context));
+        return new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan);
     };
     /**
      * @param {?} stmt
@@ -2077,20 +2144,22 @@ function _VariableFinder_tsickle_Closure_declarations() {
 /**
  * @param {?} name
  * @param {?=} type
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function variable(name, type) {
+export function variable(name, type, sourceSpan) {
     if (type === void 0) { type = null; }
-    return new ReadVarExpr(name, type);
+    return new ReadVarExpr(name, type, sourceSpan);
 }
 /**
  * @param {?} id
  * @param {?=} typeParams
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function importExpr(id, typeParams) {
+export function importExpr(id, typeParams, sourceSpan) {
     if (typeParams === void 0) { typeParams = null; }
-    return new ExternalExpr(id, null, typeParams);
+    return new ExternalExpr(id, null, typeParams, sourceSpan);
 }
 /**
  * @param {?} id
@@ -2115,11 +2184,12 @@ export function expressionType(expr, typeModifiers) {
 /**
  * @param {?} values
  * @param {?=} type
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function literalArr(values, type) {
+export function literalArr(values, type, sourceSpan) {
     if (type === void 0) { type = null; }
-    return new LiteralArrayExpr(values, type);
+    return new LiteralArrayExpr(values, type, sourceSpan);
 }
 /**
  * @param {?} values
@@ -2134,28 +2204,31 @@ export function literalMap(values, type, quoted) {
 }
 /**
  * @param {?} expr
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function not(expr) {
-    return new NotExpr(expr);
+export function not(expr, sourceSpan) {
+    return new NotExpr(expr, sourceSpan);
 }
 /**
  * @param {?} params
  * @param {?} body
  * @param {?=} type
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function fn(params, body, type) {
+export function fn(params, body, type, sourceSpan) {
     if (type === void 0) { type = null; }
-    return new FunctionExpr(params, body, type);
+    return new FunctionExpr(params, body, type, sourceSpan);
 }
 /**
  * @param {?} value
  * @param {?=} type
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function literal(value, type) {
+export function literal(value, type, sourceSpan) {
     if (type === void 0) { type = null; }
-    return new LiteralExpr(value, type);
+    return new LiteralExpr(value, type, sourceSpan);
 }
 //# sourceMappingURL=output_ast.js.map

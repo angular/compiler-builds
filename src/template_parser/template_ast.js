@@ -312,12 +312,13 @@ var ElementAst = (function () {
      * @param {?} directives
      * @param {?} providers
      * @param {?} hasViewContainer
+     * @param {?} queryMatches
      * @param {?} children
      * @param {?} ngContentIndex
      * @param {?} sourceSpan
      * @param {?} endSourceSpan
      */
-    function ElementAst(name, attrs, inputs, outputs, references, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan, endSourceSpan) {
+    function ElementAst(name, attrs, inputs, outputs, references, directives, providers, hasViewContainer, queryMatches, children, ngContentIndex, sourceSpan, endSourceSpan) {
         this.name = name;
         this.attrs = attrs;
         this.inputs = inputs;
@@ -326,6 +327,7 @@ var ElementAst = (function () {
         this.directives = directives;
         this.providers = providers;
         this.hasViewContainer = hasViewContainer;
+        this.queryMatches = queryMatches;
         this.children = children;
         this.ngContentIndex = ngContentIndex;
         this.sourceSpan = sourceSpan;
@@ -360,6 +362,8 @@ function ElementAst_tsickle_Closure_declarations() {
     /** @type {?} */
     ElementAst.prototype.hasViewContainer;
     /** @type {?} */
+    ElementAst.prototype.queryMatches;
+    /** @type {?} */
     ElementAst.prototype.children;
     /** @type {?} */
     ElementAst.prototype.ngContentIndex;
@@ -380,11 +384,12 @@ var EmbeddedTemplateAst = (function () {
      * @param {?} directives
      * @param {?} providers
      * @param {?} hasViewContainer
+     * @param {?} queryMatches
      * @param {?} children
      * @param {?} ngContentIndex
      * @param {?} sourceSpan
      */
-    function EmbeddedTemplateAst(attrs, outputs, references, variables, directives, providers, hasViewContainer, children, ngContentIndex, sourceSpan) {
+    function EmbeddedTemplateAst(attrs, outputs, references, variables, directives, providers, hasViewContainer, queryMatches, children, ngContentIndex, sourceSpan) {
         this.attrs = attrs;
         this.outputs = outputs;
         this.references = references;
@@ -392,6 +397,7 @@ var EmbeddedTemplateAst = (function () {
         this.directives = directives;
         this.providers = providers;
         this.hasViewContainer = hasViewContainer;
+        this.queryMatches = queryMatches;
         this.children = children;
         this.ngContentIndex = ngContentIndex;
         this.sourceSpan = sourceSpan;
@@ -422,6 +428,8 @@ function EmbeddedTemplateAst_tsickle_Closure_declarations() {
     EmbeddedTemplateAst.prototype.providers;
     /** @type {?} */
     EmbeddedTemplateAst.prototype.hasViewContainer;
+    /** @type {?} */
+    EmbeddedTemplateAst.prototype.queryMatches;
     /** @type {?} */
     EmbeddedTemplateAst.prototype.children;
     /** @type {?} */

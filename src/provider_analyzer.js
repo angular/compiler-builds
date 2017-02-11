@@ -12,7 +12,7 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 import { tokenName, tokenReference } from './compile_metadata';
 import { isBlank, isPresent } from './facade/lang';
-import { Identifiers, resolveIdentifier } from './identifiers';
+import { Identifiers, createIdentifierToken, resolveIdentifier } from './identifiers';
 import { ParseError } from './parse_util';
 import { ProviderAst, ProviderAstType } from './template_parser/template_ast';
 var ProviderError = (function (_super) {
@@ -86,23 +86,26 @@ var ProviderElementContext = (function () {
         this._transformedProviders = new Map();
         this._seenProviders = new Map();
         this._hasViewContainer = false;
+        this._queriedTokens = new Map();
         this._attrs = {};
         attrs.forEach(function (attrAst) { return _this._attrs[attrAst.name] = attrAst.value; });
         var directivesMeta = _directiveAsts.map(function (directiveAst) { return directiveAst.directive; });
         this._allProviders =
             _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, viewContext.errors);
-        this._contentQueries = _getContentQueries(directivesMeta);
-        var queriedTokens = new Map();
+        this._contentQueries = _getContentQueries(this.depth, directivesMeta);
         Array.from(this._allProviders.values()).forEach(function (provider) {
-            _this._addQueryReadsTo(provider.token, queriedTokens);
+            _this._addQueryReadsTo(provider.token, provider.token, _this._queriedTokens);
         });
-        refs.forEach(function (refAst) { _this._addQueryReadsTo({ value: refAst.name }, queriedTokens); });
-        if (isPresent(queriedTokens.get(resolveIdentifier(Identifiers.ViewContainerRef)))) {
+        refs.forEach(function (refAst) {
+            var defaultQueryValue = refAst.value || createIdentifierToken(Identifiers.ElementRef);
+            _this._addQueryReadsTo({ value: refAst.name }, defaultQueryValue, _this._queriedTokens);
+        });
+        if (this._queriedTokens.get(resolveIdentifier(Identifiers.ViewContainerRef))) {
             this._hasViewContainer = true;
         }
         // create the providers that we know are eager first
         Array.from(this._allProviders.values()).forEach(function (provider) {
-            var eager = provider.eager || isPresent(queriedTokens.get(tokenReference(provider.token)));
+            var eager = provider.eager || _this._queriedTokens.get(tokenReference(provider.token));
             if (eager) {
                 _this._getOrCreateLocalProvider(provider.providerType, provider.token, true);
             }
@@ -118,6 +121,22 @@ var ProviderElementContext = (function () {
             _this._getOrCreateLocalProvider(provider.providerType, provider.token, false);
         });
     };
+    Object.defineProperty(ProviderElementContext.prototype, "depth", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            var /** @type {?} */ d = 0;
+            var /** @type {?} */ current = this;
+            while (current._parent) {
+                d++;
+                current = current._parent;
+            }
+            return d;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(ProviderElementContext.prototype, "transformProviders", {
         /**
          * @return {?}
@@ -150,17 +169,34 @@ var ProviderElementContext = (function () {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(ProviderElementContext.prototype, "queryMatches", {
+        /**
+         * @return {?}
+         */
+        get: function () {
+            var /** @type {?} */ allMatches = [];
+            this._queriedTokens.forEach(function (matches) { allMatches.push.apply(allMatches, matches); });
+            return allMatches;
+        },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * @param {?} token
+     * @param {?} defaultValue
      * @param {?} queryReadTokens
      * @return {?}
      */
-    ProviderElementContext.prototype._addQueryReadsTo = function (token, queryReadTokens) {
+    ProviderElementContext.prototype._addQueryReadsTo = function (token, defaultValue, queryReadTokens) {
         this._getQueriesFor(token).forEach(function (query) {
-            var /** @type {?} */ queryReadToken = query.read || token;
-            if (isBlank(queryReadTokens.get(tokenReference(queryReadToken)))) {
-                queryReadTokens.set(tokenReference(queryReadToken), true);
+            var /** @type {?} */ queryValue = query.meta.read || defaultValue;
+            var /** @type {?} */ tokenRef = tokenReference(queryValue);
+            var /** @type {?} */ queryMatches = queryReadTokens.get(tokenRef);
+            if (!queryMatches) {
+                queryMatches = [];
+                queryReadTokens.set(tokenRef, queryMatches);
             }
+            queryMatches.push({ query: query.id, value: queryValue });
         });
     };
     /**
@@ -175,7 +211,7 @@ var ProviderElementContext = (function () {
         while (currentEl !== null) {
             queries = currentEl._contentQueries.get(tokenReference(token));
             if (queries) {
-                result.push.apply(result, queries.filter(function (query) { return query.descendants || distance <= 1; }));
+                result.push.apply(result, queries.filter(function (query) { return query.meta.descendants || distance <= 1; }));
             }
             if (currentEl._directiveAsts.length > 0) {
                 distance++;
@@ -348,6 +384,8 @@ function ProviderElementContext_tsickle_Closure_declarations() {
     ProviderElementContext.prototype._attrs;
     /** @type {?} */
     ProviderElementContext.prototype._hasViewContainer;
+    /** @type {?} */
+    ProviderElementContext.prototype._queriedTokens;
     /** @type {?} */
     ProviderElementContext.prototype.viewContext;
     /** @type {?} */
@@ -573,19 +611,20 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
 function _getViewQueries(component) {
     var /** @type {?} */ viewQueries = new Map();
     if (component.viewQueries) {
-        component.viewQueries.forEach(function (query) { return _addQueryToTokenMap(viewQueries, query); });
+        component.viewQueries.forEach(function (query, queryIndex) { return _addQueryToTokenMap(viewQueries, { meta: query, id: { elementDepth: null, directiveIndex: null, queryIndex: queryIndex } }); });
     }
     return viewQueries;
 }
 /**
+ * @param {?} elementDepth
  * @param {?} directives
  * @return {?}
  */
-function _getContentQueries(directives) {
+function _getContentQueries(elementDepth, directives) {
     var /** @type {?} */ contentQueries = new Map();
-    directives.forEach(function (directive) {
+    directives.forEach(function (directive, directiveIndex) {
         if (directive.queries) {
-            directive.queries.forEach(function (query) { return _addQueryToTokenMap(contentQueries, query); });
+            directive.queries.forEach(function (query, queryIndex) { return _addQueryToTokenMap(contentQueries, { meta: query, id: { elementDepth: elementDepth, directiveIndex: directiveIndex, queryIndex: queryIndex } }); });
         }
     });
     return contentQueries;
@@ -596,7 +635,7 @@ function _getContentQueries(directives) {
  * @return {?}
  */
 function _addQueryToTokenMap(map, query) {
-    query.selectors.forEach(function (token) {
+    query.meta.selectors.forEach(function (token) {
         var /** @type {?} */ entry = map.get(tokenReference(token));
         if (!entry) {
             entry = [];
