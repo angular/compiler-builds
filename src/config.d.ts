@@ -5,8 +5,15 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { MissingTranslationStrategy, ViewEncapsulation } from '@angular/core';
+import { InjectionToken, MissingTranslationStrategy, ViewEncapsulation } from '@angular/core';
 import { CompileIdentifierMetadata } from './compile_metadata';
+/**
+ * Temporal switch for the compiler to use the new view engine,
+ * until it is fully integrated.
+ *
+ * Only works in Jit for now.
+ */
+export declare const USE_VIEW_ENGINE: InjectionToken<boolean>;
 export declare class CompilerConfig {
     renderTypes: RenderTypes;
     defaultEncapsulation: ViewEncapsulation;

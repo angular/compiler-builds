@@ -14,11 +14,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { Compiler, Injector, ModuleWithComponentFactories } from '@angular/core/index';
+import { Compiler, Inject, Injector, ModuleWithComponentFactories } from '@angular/core/index';
 import { AnimationCompiler } from '../animation/animation_compiler';
 import { AnimationParser } from '../animation/animation_parser';
 import { ProviderMeta, createHostComponentMeta, identifierName } from '../compile_metadata';
-import { CompilerConfig } from '../config';
+import { CompilerConfig, USE_VIEW_ENGINE } from '../config';
 import { DirectiveWrapperCompiler } from '../directive_wrapper_compiler';
 import { stringify } from '../facade/lang';
 import { CompilerInjectable } from '../injectable';
@@ -52,8 +52,9 @@ let JitCompiler = class JitCompiler {
      * @param {?} _directiveWrapperCompiler
      * @param {?} _compilerConfig
      * @param {?} _animationParser
+     * @param {?} _useViewEngine
      */
-    constructor(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _directiveWrapperCompiler, _compilerConfig, _animationParser) {
+    constructor(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _directiveWrapperCompiler, _compilerConfig, _animationParser, _useViewEngine) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
@@ -63,6 +64,7 @@ let JitCompiler = class JitCompiler {
         this._directiveWrapperCompiler = _directiveWrapperCompiler;
         this._compilerConfig = _compilerConfig;
         this._animationParser = _animationParser;
+        this._useViewEngine = _useViewEngine;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledDirectiveWrapperCache = new Map();
@@ -296,6 +298,9 @@ let JitCompiler = class JitCompiler {
      * @return {?}
      */
     _compileDirectiveWrapper(dirMeta, moduleMeta) {
+        if (this._useViewEngine) {
+            return;
+        }
         const /** @type {?} */ compileResult = this._directiveWrapperCompiler.compile(dirMeta);
         const /** @type {?} */ statements = compileResult.statements;
         let /** @type {?} */ directiveWrapperClass;
@@ -366,6 +371,19 @@ let JitCompiler = class JitCompiler {
         }
     }
 };
+/** @nocollapse */
+JitCompiler.ctorParameters = () => [
+    { type: Injector, },
+    { type: CompileMetadataResolver, },
+    { type: TemplateParser, },
+    { type: StyleCompiler, },
+    { type: ViewCompiler, },
+    { type: NgModuleCompiler, },
+    { type: DirectiveWrapperCompiler, },
+    { type: CompilerConfig, },
+    { type: AnimationParser, },
+    { type: undefined, decorators: [{ type: Inject, args: [USE_VIEW_ENGINE,] },] },
+];
 JitCompiler = __decorate([
     CompilerInjectable(),
     __metadata("design:paramtypes", [typeof (_a = typeof Injector !== "undefined" && Injector) === "function" && _a || Object, CompileMetadataResolver,
@@ -375,10 +393,15 @@ JitCompiler = __decorate([
         NgModuleCompiler,
         DirectiveWrapperCompiler,
         CompilerConfig,
-        AnimationParser])
+        AnimationParser, Boolean])
 ], JitCompiler);
 export { JitCompiler };
 function JitCompiler_tsickle_Closure_declarations() {
+    /**
+     * @nocollapse
+     * @type {?}
+     */
+    JitCompiler.ctorParameters;
     /** @type {?} */
     JitCompiler.prototype._compiledTemplateCache;
     /** @type {?} */
@@ -407,6 +430,8 @@ function JitCompiler_tsickle_Closure_declarations() {
     JitCompiler.prototype._compilerConfig;
     /** @type {?} */
     JitCompiler.prototype._animationParser;
+    /** @type {?} */
+    JitCompiler.prototype._useViewEngine;
 }
 class CompiledTemplate {
     /**

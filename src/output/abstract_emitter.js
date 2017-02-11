@@ -7,8 +7,10 @@
  */
 import { isBlank, isPresent } from '../facade/lang';
 import * as o from './output_ast';
+import { SourceMapGenerator } from './source_map';
 const /** @type {?} */ _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
 const /** @type {?} */ _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
+const /** @type {?} */ _INDENT_WITH = '  ';
 export const /** @type {?} */ CATCH_ERROR_VAR = o.variable('error');
 export const /** @type {?} */ CATCH_STACK_VAR = o.variable('stack');
 /**
@@ -31,11 +33,14 @@ class _EmittedLine {
     constructor(indent) {
         this.indent = indent;
         this.parts = [];
+        this.srcSpans = [];
     }
 }
 function _EmittedLine_tsickle_Closure_declarations() {
     /** @type {?} */
     _EmittedLine.prototype.parts;
+    /** @type {?} */
+    _EmittedLine.prototype.srcSpans;
     /** @type {?} */
     _EmittedLine.prototype.indent;
 }
@@ -67,22 +72,27 @@ export class EmitterVisitorContext {
      */
     isExportedVar(varName) { return this._exportedVars.indexOf(varName) !== -1; }
     /**
+     * @param {?=} from
      * @param {?=} lastPart
      * @return {?}
      */
-    println(lastPart = '') { this.print(lastPart, true); }
+    println(from, lastPart = '') {
+        this.print(from, lastPart, true);
+    }
     /**
      * @return {?}
      */
     lineIsEmpty() { return this._currentLine.parts.length === 0; }
     /**
+     * @param {?} from
      * @param {?} part
      * @param {?=} newLine
      * @return {?}
      */
-    print(part, newLine = false) {
+    print(from, part, newLine = false) {
         if (part.length > 0) {
             this._currentLine.parts.push(part);
+            this._currentLine.srcSpans.push(from && from.sourceSpan || null);
         }
         if (newLine) {
             this._lines.push(new _EmittedLine(this._indent));
@@ -129,20 +139,57 @@ export class EmitterVisitorContext {
      * @return {?}
      */
     toSource() {
-        let /** @type {?} */ lines = this._lines;
-        if (lines[lines.length - 1].parts.length === 0) {
-            lines = lines.slice(0, lines.length - 1);
-        }
-        return lines
-            .map((line) => {
-            if (line.parts.length > 0) {
-                return _createIndent(line.indent) + line.parts.join('');
-            }
-            else {
-                return '';
-            }
-        })
+        return this.sourceLines
+            .map(l => l.parts.length > 0 ? _createIndent(l.indent) + l.parts.join('') : '')
             .join('\n');
+    }
+    /**
+     * @param {?=} file
+     * @param {?=} startsAtLine
+     * @return {?}
+     */
+    toSourceMapGenerator(file = null, startsAtLine = 0) {
+        const /** @type {?} */ map = new SourceMapGenerator(file);
+        for (let /** @type {?} */ i = 0; i < startsAtLine; i++) {
+            map.addLine();
+        }
+        this.sourceLines.forEach(line => {
+            map.addLine();
+            const /** @type {?} */ spans = line.srcSpans;
+            const /** @type {?} */ parts = line.parts;
+            let /** @type {?} */ col0 = line.indent * _INDENT_WITH.length;
+            let /** @type {?} */ spanIdx = 0;
+            // skip leading parts without source spans
+            while (spanIdx < spans.length && !spans[spanIdx]) {
+                col0 += parts[spanIdx].length;
+                spanIdx++;
+            }
+            while (spanIdx < spans.length) {
+                const /** @type {?} */ span = spans[spanIdx];
+                const /** @type {?} */ source = span.start.file;
+                const /** @type {?} */ sourceLine = span.start.line;
+                const /** @type {?} */ sourceCol = span.start.col;
+                map.addSource(source.url, source.content)
+                    .addMapping(col0, source.url, sourceLine, sourceCol);
+                col0 += parts[spanIdx].length;
+                spanIdx++;
+                // assign parts without span or the same span to the previous segment
+                while (spanIdx < spans.length && (span === spans[spanIdx] || !spans[spanIdx])) {
+                    col0 += parts[spanIdx].length;
+                    spanIdx++;
+                }
+            }
+        });
+        return map;
+    }
+    /**
+     * @return {?}
+     */
+    get sourceLines() {
+        if (this._lines.length && this._lines[this._lines.length - 1].parts.length === 0) {
+            return this._lines.slice(0, -1);
+        }
+        return this._lines;
     }
 }
 function EmitterVisitorContext_tsickle_Closure_declarations() {
@@ -172,7 +219,7 @@ export class AbstractEmitterVisitor {
      */
     visitExpressionStmt(stmt, ctx) {
         stmt.expr.visitExpression(this, ctx);
-        ctx.println(';');
+        ctx.println(stmt, ';');
         return null;
     }
     /**
@@ -181,9 +228,9 @@ export class AbstractEmitterVisitor {
      * @return {?}
      */
     visitReturnStmt(stmt, ctx) {
-        ctx.print(`return `);
+        ctx.print(stmt, `return `);
         stmt.value.visitExpression(this, ctx);
-        ctx.println(';');
+        ctx.println(stmt, ';');
         return null;
     }
     /**
@@ -206,15 +253,15 @@ export class AbstractEmitterVisitor {
      * @return {?}
      */
     visitIfStmt(stmt, ctx) {
-        ctx.print(`if (`);
+        ctx.print(stmt, `if (`);
         stmt.condition.visitExpression(this, ctx);
-        ctx.print(`) {`);
+        ctx.print(stmt, `) {`);
         const /** @type {?} */ hasElseCase = isPresent(stmt.falseCase) && stmt.falseCase.length > 0;
         if (stmt.trueCase.length <= 1 && !hasElseCase) {
-            ctx.print(` `);
+            ctx.print(stmt, ` `);
             this.visitAllStatements(stmt.trueCase, ctx);
             ctx.removeEmptyLastLine();
-            ctx.print(` `);
+            ctx.print(stmt, ` `);
         }
         else {
             ctx.println();
@@ -222,13 +269,13 @@ export class AbstractEmitterVisitor {
             this.visitAllStatements(stmt.trueCase, ctx);
             ctx.decIndent();
             if (hasElseCase) {
-                ctx.println(`} else {`);
+                ctx.println(stmt, `} else {`);
                 ctx.incIndent();
                 this.visitAllStatements(stmt.falseCase, ctx);
                 ctx.decIndent();
             }
         }
-        ctx.println(`}`);
+        ctx.println(stmt, `}`);
         return null;
     }
     /**
@@ -244,9 +291,9 @@ export class AbstractEmitterVisitor {
      * @return {?}
      */
     visitThrowStmt(stmt, ctx) {
-        ctx.print(`throw `);
+        ctx.print(stmt, `throw `);
         stmt.error.visitExpression(this, ctx);
-        ctx.println(`;`);
+        ctx.println(stmt, `;`);
         return null;
     }
     /**
@@ -256,7 +303,7 @@ export class AbstractEmitterVisitor {
      */
     visitCommentStmt(stmt, ctx) {
         const /** @type {?} */ lines = stmt.comment.split('\n');
-        lines.forEach((line) => { ctx.println(`// ${line}`); });
+        lines.forEach((line) => { ctx.println(stmt, `// ${line}`); });
         return null;
     }
     /**
@@ -274,12 +321,12 @@ export class AbstractEmitterVisitor {
     visitWriteVarExpr(expr, ctx) {
         const /** @type {?} */ lineWasEmpty = ctx.lineIsEmpty();
         if (!lineWasEmpty) {
-            ctx.print('(');
+            ctx.print(expr, '(');
         }
-        ctx.print(`${expr.name} = `);
+        ctx.print(expr, `${expr.name} = `);
         expr.value.visitExpression(this, ctx);
         if (!lineWasEmpty) {
-            ctx.print(')');
+            ctx.print(expr, ')');
         }
         return null;
     }
@@ -291,15 +338,15 @@ export class AbstractEmitterVisitor {
     visitWriteKeyExpr(expr, ctx) {
         const /** @type {?} */ lineWasEmpty = ctx.lineIsEmpty();
         if (!lineWasEmpty) {
-            ctx.print('(');
+            ctx.print(expr, '(');
         }
         expr.receiver.visitExpression(this, ctx);
-        ctx.print(`[`);
+        ctx.print(expr, `[`);
         expr.index.visitExpression(this, ctx);
-        ctx.print(`] = `);
+        ctx.print(expr, `] = `);
         expr.value.visitExpression(this, ctx);
         if (!lineWasEmpty) {
-            ctx.print(')');
+            ctx.print(expr, ')');
         }
         return null;
     }
@@ -311,13 +358,13 @@ export class AbstractEmitterVisitor {
     visitWritePropExpr(expr, ctx) {
         const /** @type {?} */ lineWasEmpty = ctx.lineIsEmpty();
         if (!lineWasEmpty) {
-            ctx.print('(');
+            ctx.print(expr, '(');
         }
         expr.receiver.visitExpression(this, ctx);
-        ctx.print(`.${expr.name} = `);
+        ctx.print(expr, `.${expr.name} = `);
         expr.value.visitExpression(this, ctx);
         if (!lineWasEmpty) {
-            ctx.print(')');
+            ctx.print(expr, ')');
         }
         return null;
     }
@@ -336,9 +383,9 @@ export class AbstractEmitterVisitor {
                 return null;
             }
         }
-        ctx.print(`.${name}(`);
+        ctx.print(expr, `.${name}(`);
         this.visitAllExpressions(expr.args, ctx, `,`);
-        ctx.print(`)`);
+        ctx.print(expr, `)`);
         return null;
     }
     /**
@@ -354,9 +401,9 @@ export class AbstractEmitterVisitor {
      */
     visitInvokeFunctionExpr(expr, ctx) {
         expr.fn.visitExpression(this, ctx);
-        ctx.print(`(`);
+        ctx.print(expr, `(`);
         this.visitAllExpressions(expr.args, ctx, ',');
-        ctx.print(`)`);
+        ctx.print(expr, `)`);
         return null;
     }
     /**
@@ -384,7 +431,7 @@ export class AbstractEmitterVisitor {
                     throw new Error(`Unknown builtin variable ${ast.builtin}`);
             }
         }
-        ctx.print(varName);
+        ctx.print(ast, varName);
         return null;
     }
     /**
@@ -393,11 +440,11 @@ export class AbstractEmitterVisitor {
      * @return {?}
      */
     visitInstantiateExpr(ast, ctx) {
-        ctx.print(`new `);
+        ctx.print(ast, `new `);
         ast.classExpr.visitExpression(this, ctx);
-        ctx.print(`(`);
+        ctx.print(ast, `(`);
         this.visitAllExpressions(ast.args, ctx, ',');
-        ctx.print(`)`);
+        ctx.print(ast, `)`);
         return null;
     }
     /**
@@ -408,10 +455,10 @@ export class AbstractEmitterVisitor {
     visitLiteralExpr(ast, ctx) {
         const /** @type {?} */ value = ast.value;
         if (typeof value === 'string') {
-            ctx.print(escapeIdentifier(value, this._escapeDollarInStrings));
+            ctx.print(ast, escapeIdentifier(value, this._escapeDollarInStrings));
         }
         else {
-            ctx.print(`${value}`);
+            ctx.print(ast, `${value}`);
         }
         return null;
     }
@@ -428,13 +475,13 @@ export class AbstractEmitterVisitor {
      * @return {?}
      */
     visitConditionalExpr(ast, ctx) {
-        ctx.print(`(`);
+        ctx.print(ast, `(`);
         ast.condition.visitExpression(this, ctx);
-        ctx.print('? ');
+        ctx.print(ast, '? ');
         ast.trueCase.visitExpression(this, ctx);
-        ctx.print(': ');
+        ctx.print(ast, ': ');
         ast.falseCase.visitExpression(this, ctx);
-        ctx.print(`)`);
+        ctx.print(ast, `)`);
         return null;
     }
     /**
@@ -443,7 +490,7 @@ export class AbstractEmitterVisitor {
      * @return {?}
      */
     visitNotExpr(ast, ctx) {
-        ctx.print('!');
+        ctx.print(ast, '!');
         ast.condition.visitExpression(this, ctx);
         return null;
     }
@@ -517,11 +564,11 @@ export class AbstractEmitterVisitor {
             default:
                 throw new Error(`Unknown operator ${ast.operator}`);
         }
-        ctx.print(`(`);
+        ctx.print(ast, `(`);
         ast.lhs.visitExpression(this, ctx);
-        ctx.print(` ${opStr} `);
+        ctx.print(ast, ` ${opStr} `);
         ast.rhs.visitExpression(this, ctx);
-        ctx.print(`)`);
+        ctx.print(ast, `)`);
         return null;
     }
     /**
@@ -531,8 +578,8 @@ export class AbstractEmitterVisitor {
      */
     visitReadPropExpr(ast, ctx) {
         ast.receiver.visitExpression(this, ctx);
-        ctx.print(`.`);
-        ctx.print(ast.name);
+        ctx.print(ast, `.`);
+        ctx.print(ast, ast.name);
         return null;
     }
     /**
@@ -542,9 +589,9 @@ export class AbstractEmitterVisitor {
      */
     visitReadKeyExpr(ast, ctx) {
         ast.receiver.visitExpression(this, ctx);
-        ctx.print(`[`);
+        ctx.print(ast, `[`);
         ast.index.visitExpression(this, ctx);
-        ctx.print(`]`);
+        ctx.print(ast, `]`);
         return null;
     }
     /**
@@ -554,11 +601,11 @@ export class AbstractEmitterVisitor {
      */
     visitLiteralArrayExpr(ast, ctx) {
         const /** @type {?} */ useNewLine = ast.entries.length > 1;
-        ctx.print(`[`, useNewLine);
+        ctx.print(ast, `[`, useNewLine);
         ctx.incIndent();
         this.visitAllExpressions(ast.entries, ctx, ',', useNewLine);
         ctx.decIndent();
-        ctx.print(`]`, useNewLine);
+        ctx.print(ast, `]`, useNewLine);
         return null;
     }
     /**
@@ -568,14 +615,14 @@ export class AbstractEmitterVisitor {
      */
     visitLiteralMapExpr(ast, ctx) {
         const /** @type {?} */ useNewLine = ast.entries.length > 1;
-        ctx.print(`{`, useNewLine);
+        ctx.print(ast, `{`, useNewLine);
         ctx.incIndent();
         this.visitAllObjects(entry => {
-            ctx.print(`${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}: `);
+            ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}: `);
             entry.value.visitExpression(this, ctx);
         }, ast.entries, ctx, ',', useNewLine);
         ctx.decIndent();
-        ctx.print(`}`, useNewLine);
+        ctx.print(ast, `}`, useNewLine);
         return null;
     }
     /**
@@ -599,7 +646,7 @@ export class AbstractEmitterVisitor {
     visitAllObjects(handler, expressions, ctx, separator, newLine = false) {
         for (let /** @type {?} */ i = 0; i < expressions.length; i++) {
             if (i > 0) {
-                ctx.print(separator, newLine);
+                ctx.print(null, separator, newLine);
             }
             handler(expressions[i]);
         }
@@ -654,7 +701,7 @@ export function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
 function _createIndent(count) {
     let /** @type {?} */ res = '';
     for (let /** @type {?} */ i = 0; i < count; i++) {
-        res += '  ';
+        res += _INDENT_WITH;
     }
     return res;
 }

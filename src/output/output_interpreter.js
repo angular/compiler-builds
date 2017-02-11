@@ -34,7 +34,7 @@ function _executeFunctionStatements(varNames, varValues, statements, ctx, visito
         childCtx.vars.set(varNames[i], varValues[i]);
     }
     const /** @type {?} */ result = visitor.visitAllStatements(statements, childCtx);
-    return isPresent(result) ? result.value : null;
+    return result ? result.value : null;
 }
 class _ExecutionContext {
     /**

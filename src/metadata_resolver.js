@@ -19,6 +19,7 @@ import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
 import { ngfactoryFilePath } from './aot/util';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
+import { USE_VIEW_ENGINE } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveResolver } from './directive_resolver';
 import { stringify } from './facade/lang';
@@ -27,7 +28,7 @@ import { CompilerInjectable } from './injectable';
 import { hasLifecycleHook } from './lifecycle_reflector';
 import { NgModuleResolver } from './ng_module_resolver';
 import { PipeResolver } from './pipe_resolver';
-import { ERROR_COMPONENT_TYPE, LIFECYCLE_HOOKS_VALUES, ReflectorReader, reflector } from './private_import_core';
+import { ERROR_COMPONENT_TYPE, LIFECYCLE_HOOKS_VALUES, ReflectorReader, reflector, viewEngine } from './private_import_core';
 import { ElementSchemaRegistry } from './schema/element_schema_registry';
 import { SummaryResolver } from './summary_resolver';
 import { getUrlScheme } from './url_resolver';
@@ -44,8 +45,9 @@ let CompileMetadataResolver = class CompileMetadataResolver {
      * @param {?} _staticSymbolCache
      * @param {?=} _reflector
      * @param {?=} _errorCollector
+     * @param {?=} _useViewEngine
      */
-    constructor(_ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector = reflector, _errorCollector) {
+    constructor(_ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector = reflector, _errorCollector, _useViewEngine) {
         this._ngModuleResolver = _ngModuleResolver;
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
@@ -55,6 +57,7 @@ let CompileMetadataResolver = class CompileMetadataResolver {
         this._staticSymbolCache = _staticSymbolCache;
         this._reflector = _reflector;
         this._errorCollector = _errorCollector;
+        this._useViewEngine = _useViewEngine;
         this._nonNormalizedDirectiveCache = new Map();
         this._directiveCache = new Map();
         this._summaryCache = new Map();
@@ -172,7 +175,12 @@ let CompileMetadataResolver = class CompileMetadataResolver {
         }
         else {
             const /** @type {?} */ hostView = this.getHostComponentViewClass(dirType);
-            return new ComponentFactory(selector, /** @type {?} */ (hostView), dirType);
+            if (this._useViewEngine) {
+                return viewEngine.createComponentFactory(selector, dirType, /** @type {?} */ (hostView));
+            }
+            else {
+                return new ComponentFactory(selector, /** @type {?} */ (hostView), dirType);
+            }
         }
     }
     /**
@@ -1105,6 +1113,7 @@ CompileMetadataResolver.ctorParameters = () => [
     { type: StaticSymbolCache, decorators: [{ type: Optional },] },
     { type: ReflectorReader, },
     { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
+    { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [USE_VIEW_ENGINE,] },] },
 ];
 CompileMetadataResolver = __decorate([
     CompilerInjectable(),
@@ -1114,7 +1123,7 @@ CompileMetadataResolver = __decorate([
         SummaryResolver,
         ElementSchemaRegistry,
         DirectiveNormalizer,
-        StaticSymbolCache, typeof (_a = typeof ReflectorReader !== "undefined" && ReflectorReader) === "function" && _a || Object, Function])
+        StaticSymbolCache, typeof (_a = typeof ReflectorReader !== "undefined" && ReflectorReader) === "function" && _a || Object, Function, Boolean])
 ], CompileMetadataResolver);
 export { CompileMetadataResolver };
 function CompileMetadataResolver_tsickle_Closure_declarations() {
@@ -1153,6 +1162,8 @@ function CompileMetadataResolver_tsickle_Closure_declarations() {
     CompileMetadataResolver.prototype._reflector;
     /** @type {?} */
     CompileMetadataResolver.prototype._errorCollector;
+    /** @type {?} */
+    CompileMetadataResolver.prototype._useViewEngine;
 }
 /**
  * @param {?} tree

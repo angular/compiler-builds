@@ -184,9 +184,11 @@ BinaryOperator[BinaryOperator.BiggerEquals] = "BiggerEquals";
 export class Expression {
     /**
      * @param {?} type
+     * @param {?=} sourceSpan
      */
-    constructor(type) {
+    constructor(type, sourceSpan) {
         this.type = type;
+        this.sourceSpan = sourceSpan;
     }
     /**
      * @abstract
@@ -197,164 +199,193 @@ export class Expression {
     visitExpression(visitor, context) { }
     /**
      * @param {?} name
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    prop(name) { return new ReadPropExpr(this, name); }
+    prop(name, sourceSpan) {
+        return new ReadPropExpr(this, name, null, sourceSpan);
+    }
     /**
      * @param {?} index
      * @param {?=} type
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    key(index, type = null) {
-        return new ReadKeyExpr(this, index, type);
+    key(index, type = null, sourceSpan) {
+        return new ReadKeyExpr(this, index, type, sourceSpan);
     }
     /**
      * @param {?} name
      * @param {?} params
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    callMethod(name, params) {
-        return new InvokeMethodExpr(this, name, params);
+    callMethod(name, params, sourceSpan) {
+        return new InvokeMethodExpr(this, name, params, null, sourceSpan);
     }
     /**
      * @param {?} params
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    callFn(params) { return new InvokeFunctionExpr(this, params); }
+    callFn(params, sourceSpan) {
+        return new InvokeFunctionExpr(this, params, null, sourceSpan);
+    }
     /**
      * @param {?} params
      * @param {?=} type
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    instantiate(params, type = null) {
-        return new InstantiateExpr(this, params, type);
+    instantiate(params, type = null, sourceSpan) {
+        return new InstantiateExpr(this, params, type, sourceSpan);
     }
     /**
      * @param {?} trueCase
      * @param {?=} falseCase
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    conditional(trueCase, falseCase = null) {
-        return new ConditionalExpr(this, trueCase, falseCase);
+    conditional(trueCase, falseCase = null, sourceSpan) {
+        return new ConditionalExpr(this, trueCase, falseCase, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    equals(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Equals, this, rhs);
+    equals(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Equals, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    notEquals(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.NotEquals, this, rhs);
+    notEquals(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.NotEquals, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    identical(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Identical, this, rhs);
+    identical(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Identical, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    notIdentical(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, this, rhs);
+    notIdentical(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    minus(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Minus, this, rhs);
+    minus(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Minus, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    plus(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Plus, this, rhs);
+    plus(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Plus, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    divide(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Divide, this, rhs);
+    divide(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Divide, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    multiply(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Multiply, this, rhs);
+    multiply(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Multiply, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    modulo(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Modulo, this, rhs);
+    modulo(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Modulo, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    and(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.And, this, rhs);
+    and(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    or(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Or, this, rhs);
+    or(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Or, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    lower(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Lower, this, rhs);
+    lower(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Lower, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    lowerEquals(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.LowerEquals, this, rhs);
+    lowerEquals(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.LowerEquals, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    bigger(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.Bigger, this, rhs);
+    bigger(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Bigger, this, rhs, null, sourceSpan);
     }
     /**
      * @param {?} rhs
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    biggerEquals(rhs) {
-        return new BinaryOperatorExpr(BinaryOperator.BiggerEquals, this, rhs);
+    biggerEquals(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.BiggerEquals, this, rhs, null, sourceSpan);
     }
     /**
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    isBlank() {
+    isBlank(sourceSpan) {
         // Note: We use equals by purpose here to compare to null and undefined in JS.
         // We use the typed null to allow strictNullChecks to narrow types.
-        return this.equals(TYPED_NULL_EXPR);
+        return this.equals(TYPED_NULL_EXPR, sourceSpan);
     }
     /**
      * @param {?} type
+     * @param {?=} sourceSpan
      * @return {?}
      */
-    cast(type) { return new CastExpr(this, type); }
+    cast(type, sourceSpan) {
+        return new CastExpr(this, type, sourceSpan);
+    }
     /**
      * @return {?}
      */
@@ -363,6 +394,8 @@ export class Expression {
 function Expression_tsickle_Closure_declarations() {
     /** @type {?} */
     Expression.prototype.type;
+    /** @type {?} */
+    Expression.prototype.sourceSpan;
 }
 export let BuiltinVar = {};
 BuiltinVar.This = 0;
@@ -377,9 +410,10 @@ export class ReadVarExpr extends Expression {
     /**
      * @param {?} name
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(name, type = null) {
-        super(type);
+    constructor(name, type = null, sourceSpan) {
+        super(type, sourceSpan);
         if (typeof name === 'string') {
             this.name = name;
             this.builtin = null;
@@ -401,7 +435,9 @@ export class ReadVarExpr extends Expression {
      * @param {?} value
      * @return {?}
      */
-    set(value) { return new WriteVarExpr(this.name, value); }
+    set(value) {
+        return new WriteVarExpr(this.name, value, null, this.sourceSpan);
+    }
 }
 function ReadVarExpr_tsickle_Closure_declarations() {
     /** @type {?} */
@@ -414,9 +450,10 @@ export class WriteVarExpr extends Expression {
      * @param {?} name
      * @param {?} value
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(name, value, type = null) {
-        super(type || value.type);
+    constructor(name, value, type = null, sourceSpan) {
+        super(type || value.type, sourceSpan);
         this.name = name;
         this.value = value;
     }
@@ -434,7 +471,7 @@ export class WriteVarExpr extends Expression {
      * @return {?}
      */
     toDeclStmt(type = null, modifiers = null) {
-        return new DeclareVarStmt(this.name, this.value, type, modifiers);
+        return new DeclareVarStmt(this.name, this.value, type, modifiers, this.sourceSpan);
     }
 }
 function WriteVarExpr_tsickle_Closure_declarations() {
@@ -449,9 +486,10 @@ export class WriteKeyExpr extends Expression {
      * @param {?} index
      * @param {?} value
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(receiver, index, value, type = null) {
-        super(type || value.type);
+    constructor(receiver, index, value, type = null, sourceSpan) {
+        super(type || value.type, sourceSpan);
         this.receiver = receiver;
         this.index = index;
         this.value = value;
@@ -479,9 +517,10 @@ export class WritePropExpr extends Expression {
      * @param {?} name
      * @param {?} value
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(receiver, name, value, type = null) {
-        super(type || value.type);
+    constructor(receiver, name, value, type = null, sourceSpan) {
+        super(type || value.type, sourceSpan);
         this.receiver = receiver;
         this.name = name;
         this.value = value;
@@ -516,9 +555,10 @@ export class InvokeMethodExpr extends Expression {
      * @param {?} method
      * @param {?} args
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(receiver, method, args, type = null) {
-        super(type);
+    constructor(receiver, method, args, type = null, sourceSpan) {
+        super(type, sourceSpan);
         this.receiver = receiver;
         this.args = args;
         if (typeof method === 'string') {
@@ -554,9 +594,10 @@ export class InvokeFunctionExpr extends Expression {
      * @param {?} fn
      * @param {?} args
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(fn, args, type = null) {
-        super(type);
+    constructor(fn, args, type = null, sourceSpan) {
+        super(type, sourceSpan);
         this.fn = fn;
         this.args = args;
     }
@@ -580,9 +621,10 @@ export class InstantiateExpr extends Expression {
      * @param {?} classExpr
      * @param {?} args
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(classExpr, args, type) {
-        super(type);
+    constructor(classExpr, args, type, sourceSpan) {
+        super(type, sourceSpan);
         this.classExpr = classExpr;
         this.args = args;
     }
@@ -605,9 +647,10 @@ export class LiteralExpr extends Expression {
     /**
      * @param {?} value
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(value, type = null) {
-        super(type);
+    constructor(value, type = null, sourceSpan) {
+        super(type, sourceSpan);
         this.value = value;
     }
     /**
@@ -628,9 +671,10 @@ export class ExternalExpr extends Expression {
      * @param {?} value
      * @param {?=} type
      * @param {?=} typeParams
+     * @param {?=} sourceSpan
      */
-    constructor(value, type = null, typeParams = null) {
-        super(type);
+    constructor(value, type = null, typeParams = null, sourceSpan) {
+        super(type, sourceSpan);
         this.value = value;
         this.typeParams = typeParams;
     }
@@ -655,9 +699,10 @@ export class ConditionalExpr extends Expression {
      * @param {?} trueCase
      * @param {?=} falseCase
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(condition, trueCase, falseCase = null, type = null) {
-        super(type || trueCase.type);
+    constructor(condition, trueCase, falseCase = null, type = null, sourceSpan) {
+        super(type || trueCase.type, sourceSpan);
         this.condition = condition;
         this.falseCase = falseCase;
         this.trueCase = trueCase;
@@ -682,9 +727,10 @@ function ConditionalExpr_tsickle_Closure_declarations() {
 export class NotExpr extends Expression {
     /**
      * @param {?} condition
+     * @param {?=} sourceSpan
      */
-    constructor(condition) {
-        super(BOOL_TYPE);
+    constructor(condition, sourceSpan) {
+        super(BOOL_TYPE, sourceSpan);
         this.condition = condition;
     }
     /**
@@ -704,9 +750,10 @@ export class CastExpr extends Expression {
     /**
      * @param {?} value
      * @param {?} type
+     * @param {?=} sourceSpan
      */
-    constructor(value, type) {
-        super(type);
+    constructor(value, type, sourceSpan) {
+        super(type, sourceSpan);
         this.value = value;
     }
     /**
@@ -743,9 +790,10 @@ export class FunctionExpr extends Expression {
      * @param {?} params
      * @param {?} statements
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(params, statements, type = null) {
-        super(type);
+    constructor(params, statements, type = null, sourceSpan) {
+        super(type, sourceSpan);
         this.params = params;
         this.statements = statements;
     }
@@ -763,7 +811,7 @@ export class FunctionExpr extends Expression {
      * @return {?}
      */
     toDeclStmt(name, modifiers = null) {
-        return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers);
+        return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers, this.sourceSpan);
     }
 }
 function FunctionExpr_tsickle_Closure_declarations() {
@@ -778,9 +826,10 @@ export class BinaryOperatorExpr extends Expression {
      * @param {?} lhs
      * @param {?} rhs
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(operator, lhs, rhs, type = null) {
-        super(type || lhs.type);
+    constructor(operator, lhs, rhs, type = null, sourceSpan) {
+        super(type || lhs.type, sourceSpan);
         this.operator = operator;
         this.rhs = rhs;
         this.lhs = lhs;
@@ -807,9 +856,10 @@ export class ReadPropExpr extends Expression {
      * @param {?} receiver
      * @param {?} name
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(receiver, name, type = null) {
-        super(type);
+    constructor(receiver, name, type = null, sourceSpan) {
+        super(type, sourceSpan);
         this.receiver = receiver;
         this.name = name;
     }
@@ -826,7 +876,7 @@ export class ReadPropExpr extends Expression {
      * @return {?}
      */
     set(value) {
-        return new WritePropExpr(this.receiver, this.name, value);
+        return new WritePropExpr(this.receiver, this.name, value, null, this.sourceSpan);
     }
 }
 function ReadPropExpr_tsickle_Closure_declarations() {
@@ -840,9 +890,10 @@ export class ReadKeyExpr extends Expression {
      * @param {?} receiver
      * @param {?} index
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(receiver, index, type = null) {
-        super(type);
+    constructor(receiver, index, type = null, sourceSpan) {
+        super(type, sourceSpan);
         this.receiver = receiver;
         this.index = index;
     }
@@ -859,7 +910,7 @@ export class ReadKeyExpr extends Expression {
      * @return {?}
      */
     set(value) {
-        return new WriteKeyExpr(this.receiver, this.index, value);
+        return new WriteKeyExpr(this.receiver, this.index, value, null, this.sourceSpan);
     }
 }
 function ReadKeyExpr_tsickle_Closure_declarations() {
@@ -872,9 +923,10 @@ export class LiteralArrayExpr extends Expression {
     /**
      * @param {?} entries
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(entries, type = null) {
-        super(type);
+    constructor(entries, type = null, sourceSpan) {
+        super(type, sourceSpan);
         this.entries = entries;
     }
     /**
@@ -914,12 +966,13 @@ export class LiteralMapExpr extends Expression {
     /**
      * @param {?} entries
      * @param {?=} type
+     * @param {?=} sourceSpan
      */
-    constructor(entries, type = null) {
-        super(type);
+    constructor(entries, type = null, sourceSpan) {
+        super(type, sourceSpan);
         this.entries = entries;
         this.valueType = null;
-        if (isPresent(type)) {
+        if (type) {
             this.valueType = type.valueType;
         }
     }
@@ -955,9 +1008,11 @@ StmtModifier[StmtModifier.Private] = "Private";
 export class Statement {
     /**
      * @param {?=} modifiers
+     * @param {?=} sourceSpan
      */
-    constructor(modifiers = null) {
+    constructor(modifiers = null, sourceSpan) {
         this.modifiers = modifiers;
+        this.sourceSpan = sourceSpan;
         if (!modifiers) {
             this.modifiers = [];
         }
@@ -978,6 +1033,8 @@ export class Statement {
 function Statement_tsickle_Closure_declarations() {
     /** @type {?} */
     Statement.prototype.modifiers;
+    /** @type {?} */
+    Statement.prototype.sourceSpan;
 }
 export class DeclareVarStmt extends Statement {
     /**
@@ -985,9 +1042,10 @@ export class DeclareVarStmt extends Statement {
      * @param {?} value
      * @param {?=} type
      * @param {?=} modifiers
+     * @param {?=} sourceSpan
      */
-    constructor(name, value, type = null, modifiers = null) {
-        super(modifiers);
+    constructor(name, value, type = null, modifiers = null, sourceSpan) {
+        super(modifiers, sourceSpan);
         this.name = name;
         this.value = value;
         this.type = type || value.type;
@@ -1016,9 +1074,10 @@ export class DeclareFunctionStmt extends Statement {
      * @param {?} statements
      * @param {?=} type
      * @param {?=} modifiers
+     * @param {?=} sourceSpan
      */
-    constructor(name, params, statements, type = null, modifiers = null) {
-        super(modifiers);
+    constructor(name, params, statements, type = null, modifiers = null, sourceSpan) {
+        super(modifiers, sourceSpan);
         this.name = name;
         this.params = params;
         this.statements = statements;
@@ -1046,9 +1105,10 @@ function DeclareFunctionStmt_tsickle_Closure_declarations() {
 export class ExpressionStatement extends Statement {
     /**
      * @param {?} expr
+     * @param {?=} sourceSpan
      */
-    constructor(expr) {
-        super();
+    constructor(expr, sourceSpan) {
+        super(null, sourceSpan);
         this.expr = expr;
     }
     /**
@@ -1067,9 +1127,10 @@ function ExpressionStatement_tsickle_Closure_declarations() {
 export class ReturnStatement extends Statement {
     /**
      * @param {?} value
+     * @param {?=} sourceSpan
      */
-    constructor(value) {
-        super();
+    constructor(value, sourceSpan) {
+        super(null, sourceSpan);
         this.value = value;
     }
     /**
@@ -1175,9 +1236,10 @@ export class ClassStmt extends Statement {
      * @param {?} constructorMethod
      * @param {?} methods
      * @param {?=} modifiers
+     * @param {?=} sourceSpan
      */
-    constructor(name, parent, fields, getters, constructorMethod, methods, modifiers = null) {
-        super(modifiers);
+    constructor(name, parent, fields, getters, constructorMethod, methods, modifiers = null, sourceSpan) {
+        super(modifiers, sourceSpan);
         this.name = name;
         this.parent = parent;
         this.fields = fields;
@@ -1213,9 +1275,10 @@ export class IfStmt extends Statement {
      * @param {?} condition
      * @param {?} trueCase
      * @param {?=} falseCase
+     * @param {?=} sourceSpan
      */
-    constructor(condition, trueCase, falseCase = []) {
-        super();
+    constructor(condition, trueCase, falseCase = [], sourceSpan) {
+        super(null, sourceSpan);
         this.condition = condition;
         this.trueCase = trueCase;
         this.falseCase = falseCase;
@@ -1240,9 +1303,10 @@ function IfStmt_tsickle_Closure_declarations() {
 export class CommentStmt extends Statement {
     /**
      * @param {?} comment
+     * @param {?=} sourceSpan
      */
-    constructor(comment) {
-        super();
+    constructor(comment, sourceSpan) {
+        super(null, sourceSpan);
         this.comment = comment;
     }
     /**
@@ -1262,9 +1326,10 @@ export class TryCatchStmt extends Statement {
     /**
      * @param {?} bodyStmts
      * @param {?} catchStmts
+     * @param {?=} sourceSpan
      */
-    constructor(bodyStmts, catchStmts) {
-        super();
+    constructor(bodyStmts, catchStmts, sourceSpan) {
+        super(null, sourceSpan);
         this.bodyStmts = bodyStmts;
         this.catchStmts = catchStmts;
     }
@@ -1286,9 +1351,10 @@ function TryCatchStmt_tsickle_Closure_declarations() {
 export class ThrowStmt extends Statement {
     /**
      * @param {?} error
+     * @param {?=} sourceSpan
      */
-    constructor(error) {
-        super();
+    constructor(error, sourceSpan) {
+        super(null, sourceSpan);
         this.error = error;
     }
     /**
@@ -1317,7 +1383,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitWriteVarExpr(expr, context) {
-        return new WriteVarExpr(expr.name, expr.value.visitExpression(this, context));
+        return new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan);
     }
     /**
      * @param {?} expr
@@ -1325,7 +1391,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitWriteKeyExpr(expr, context) {
-        return new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context));
+        return new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context), expr.type, expr.sourceSpan);
     }
     /**
      * @param {?} expr
@@ -1333,7 +1399,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitWritePropExpr(expr, context) {
-        return new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context));
+        return new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1342,7 +1408,7 @@ export class ExpressionTransformer {
      */
     visitInvokeMethodExpr(ast, context) {
         const /** @type {?} */ method = ast.builtin || ast.name;
-        return new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type);
+        return new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1350,7 +1416,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitInvokeFunctionExpr(ast, context) {
-        return new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type);
+        return new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1358,7 +1424,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitInstantiateExpr(ast, context) {
-        return new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type);
+        return new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1378,7 +1444,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitConditionalExpr(ast, context) {
-        return new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), ast.falseCase.visitExpression(this, context));
+        return new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), ast.falseCase.visitExpression(this, context), ast.type, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1386,7 +1452,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitNotExpr(ast, context) {
-        return new NotExpr(ast.condition.visitExpression(this, context));
+        return new NotExpr(ast.condition.visitExpression(this, context), ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1394,7 +1460,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitCastExpr(ast, context) {
-        return new CastExpr(ast.value.visitExpression(this, context), context);
+        return new CastExpr(ast.value.visitExpression(this, context), context, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1411,7 +1477,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitBinaryOperatorExpr(ast, context) {
-        return new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type);
+        return new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1419,7 +1485,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitReadPropExpr(ast, context) {
-        return new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type);
+        return new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1427,7 +1493,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitReadKeyExpr(ast, context) {
-        return new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type);
+        return new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1435,7 +1501,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitLiteralArrayExpr(ast, context) {
-        return new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context));
+        return new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context), ast.type, ast.sourceSpan);
     }
     /**
      * @param {?} ast
@@ -1444,7 +1510,8 @@ export class ExpressionTransformer {
      */
     visitLiteralMapExpr(ast, context) {
         const /** @type {?} */ entries = ast.entries.map((entry) => new LiteralMapEntry(entry.key, entry.value.visitExpression(this, context), entry.quoted));
-        return new LiteralMapExpr(entries);
+        const /** @type {?} */ mapType = new MapType(ast.valueType);
+        return new LiteralMapExpr(entries, mapType, ast.sourceSpan);
     }
     /**
      * @param {?} exprs
@@ -1460,7 +1527,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitDeclareVarStmt(stmt, context) {
-        return new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers);
+        return new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers, stmt.sourceSpan);
     }
     /**
      * @param {?} stmt
@@ -1477,7 +1544,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitExpressionStmt(stmt, context) {
-        return new ExpressionStatement(stmt.expr.visitExpression(this, context));
+        return new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan);
     }
     /**
      * @param {?} stmt
@@ -1485,7 +1552,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitReturnStmt(stmt, context) {
-        return new ReturnStatement(stmt.value.visitExpression(this, context));
+        return new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan);
     }
     /**
      * @param {?} stmt
@@ -1502,7 +1569,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitIfStmt(stmt, context) {
-        return new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context));
+        return new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan);
     }
     /**
      * @param {?} stmt
@@ -1510,7 +1577,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitTryCatchStmt(stmt, context) {
-        return new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context));
+        return new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan);
     }
     /**
      * @param {?} stmt
@@ -1518,7 +1585,7 @@ export class ExpressionTransformer {
      * @return {?}
      */
     visitThrowStmt(stmt, context) {
-        return new ThrowStmt(stmt.error.visitExpression(this, context));
+        return new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan);
     }
     /**
      * @param {?} stmt
@@ -1860,18 +1927,20 @@ function _VariableFinder_tsickle_Closure_declarations() {
 /**
  * @param {?} name
  * @param {?=} type
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function variable(name, type = null) {
-    return new ReadVarExpr(name, type);
+export function variable(name, type = null, sourceSpan) {
+    return new ReadVarExpr(name, type, sourceSpan);
 }
 /**
  * @param {?} id
  * @param {?=} typeParams
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function importExpr(id, typeParams = null) {
-    return new ExternalExpr(id, null, typeParams);
+export function importExpr(id, typeParams = null, sourceSpan) {
+    return new ExternalExpr(id, null, typeParams, sourceSpan);
 }
 /**
  * @param {?} id
@@ -1893,10 +1962,11 @@ export function expressionType(expr, typeModifiers = null) {
 /**
  * @param {?} values
  * @param {?=} type
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function literalArr(values, type = null) {
-    return new LiteralArrayExpr(values, type);
+export function literalArr(values, type = null, sourceSpan) {
+    return new LiteralArrayExpr(values, type, sourceSpan);
 }
 /**
  * @param {?} values
@@ -1909,26 +1979,29 @@ export function literalMap(values, type = null, quoted = false) {
 }
 /**
  * @param {?} expr
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function not(expr) {
-    return new NotExpr(expr);
+export function not(expr, sourceSpan) {
+    return new NotExpr(expr, sourceSpan);
 }
 /**
  * @param {?} params
  * @param {?} body
  * @param {?=} type
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function fn(params, body, type = null) {
-    return new FunctionExpr(params, body, type);
+export function fn(params, body, type = null, sourceSpan) {
+    return new FunctionExpr(params, body, type, sourceSpan);
 }
 /**
  * @param {?} value
  * @param {?=} type
+ * @param {?=} sourceSpan
  * @return {?}
  */
-export function literal(value, type = null) {
-    return new LiteralExpr(value, type);
+export function literal(value, type = null, sourceSpan) {
+    return new LiteralExpr(value, type, sourceSpan);
 }
 //# sourceMappingURL=output_ast.js.map

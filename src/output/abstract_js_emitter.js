@@ -22,9 +22,9 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
         ctx.pushClass(stmt);
         this._visitClassConstructor(stmt, ctx);
         if (isPresent(stmt.parent)) {
-            ctx.print(`${stmt.name}.prototype = Object.create(`);
+            ctx.print(stmt, `${stmt.name}.prototype = Object.create(`);
             stmt.parent.visitExpression(this, ctx);
-            ctx.println(`.prototype);`);
+            ctx.println(stmt, `.prototype);`);
         }
         stmt.getters.forEach((getter) => this._visitClassGetter(stmt, getter, ctx));
         stmt.methods.forEach((method) => this._visitClassMethod(stmt, method, ctx));
@@ -37,20 +37,20 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     _visitClassConstructor(stmt, ctx) {
-        ctx.print(`function ${stmt.name}(`);
+        ctx.print(stmt, `function ${stmt.name}(`);
         if (isPresent(stmt.constructorMethod)) {
             this._visitParams(stmt.constructorMethod.params, ctx);
         }
-        ctx.println(`) {`);
+        ctx.println(stmt, `) {`);
         ctx.incIndent();
         if (isPresent(stmt.constructorMethod)) {
             if (stmt.constructorMethod.body.length > 0) {
-                ctx.println(`var self = this;`);
+                ctx.println(stmt, `var self = this;`);
                 this.visitAllStatements(stmt.constructorMethod.body, ctx);
             }
         }
         ctx.decIndent();
-        ctx.println(`}`);
+        ctx.println(stmt, `}`);
     }
     /**
      * @param {?} stmt
@@ -59,14 +59,14 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     _visitClassGetter(stmt, getter, ctx) {
-        ctx.println(`Object.defineProperty(${stmt.name}.prototype, '${getter.name}', { get: function() {`);
+        ctx.println(stmt, `Object.defineProperty(${stmt.name}.prototype, '${getter.name}', { get: function() {`);
         ctx.incIndent();
         if (getter.body.length > 0) {
-            ctx.println(`var self = this;`);
+            ctx.println(stmt, `var self = this;`);
             this.visitAllStatements(getter.body, ctx);
         }
         ctx.decIndent();
-        ctx.println(`}});`);
+        ctx.println(stmt, `}});`);
     }
     /**
      * @param {?} stmt
@@ -75,16 +75,16 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     _visitClassMethod(stmt, method, ctx) {
-        ctx.print(`${stmt.name}.prototype.${method.name} = function(`);
+        ctx.print(stmt, `${stmt.name}.prototype.${method.name} = function(`);
         this._visitParams(method.params, ctx);
-        ctx.println(`) {`);
+        ctx.println(stmt, `) {`);
         ctx.incIndent();
         if (method.body.length > 0) {
-            ctx.println(`var self = this;`);
+            ctx.println(stmt, `var self = this;`);
             this.visitAllStatements(method.body, ctx);
         }
         ctx.decIndent();
-        ctx.println(`};`);
+        ctx.println(stmt, `};`);
     }
     /**
      * @param {?} ast
@@ -93,7 +93,7 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      */
     visitReadVarExpr(ast, ctx) {
         if (ast.builtin === o.BuiltinVar.This) {
-            ctx.print('self');
+            ctx.print(ast, 'self');
         }
         else if (ast.builtin === o.BuiltinVar.Super) {
             throw new Error(`'super' needs to be handled at a parent ast node, not at the variable level!`);
@@ -109,9 +109,9 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     visitDeclareVarStmt(stmt, ctx) {
-        ctx.print(`var ${stmt.name} = `);
+        ctx.print(stmt, `var ${stmt.name} = `);
         stmt.value.visitExpression(this, ctx);
-        ctx.println(`;`);
+        ctx.println(stmt, `;`);
         return null;
     }
     /**
@@ -132,12 +132,12 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
         const /** @type {?} */ fnExpr = expr.fn;
         if (fnExpr instanceof o.ReadVarExpr && fnExpr.builtin === o.BuiltinVar.Super) {
             ctx.currentClass.parent.visitExpression(this, ctx);
-            ctx.print(`.call(this`);
+            ctx.print(expr, `.call(this`);
             if (expr.args.length > 0) {
-                ctx.print(`, `);
+                ctx.print(expr, `, `);
                 this.visitAllExpressions(expr.args, ctx, ',');
             }
-            ctx.print(`)`);
+            ctx.print(expr, `)`);
         }
         else {
             super.visitInvokeFunctionExpr(expr, ctx);
@@ -150,13 +150,13 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     visitFunctionExpr(ast, ctx) {
-        ctx.print(`function(`);
+        ctx.print(ast, `function(`);
         this._visitParams(ast.params, ctx);
-        ctx.println(`) {`);
+        ctx.println(ast, `) {`);
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
         ctx.decIndent();
-        ctx.print(`}`);
+        ctx.print(ast, `}`);
         return null;
     }
     /**
@@ -165,13 +165,13 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     visitDeclareFunctionStmt(stmt, ctx) {
-        ctx.print(`function ${stmt.name}(`);
+        ctx.print(stmt, `function ${stmt.name}(`);
         this._visitParams(stmt.params, ctx);
-        ctx.println(`) {`);
+        ctx.println(stmt, `) {`);
         ctx.incIndent();
         this.visitAllStatements(stmt.statements, ctx);
         ctx.decIndent();
-        ctx.println(`}`);
+        ctx.println(stmt, `}`);
         return null;
     }
     /**
@@ -180,18 +180,18 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     visitTryCatchStmt(stmt, ctx) {
-        ctx.println(`try {`);
+        ctx.println(stmt, `try {`);
         ctx.incIndent();
         this.visitAllStatements(stmt.bodyStmts, ctx);
         ctx.decIndent();
-        ctx.println(`} catch (${CATCH_ERROR_VAR.name}) {`);
+        ctx.println(stmt, `} catch (${CATCH_ERROR_VAR.name}) {`);
         ctx.incIndent();
         const /** @type {?} */ catchStmts = [/** @type {?} */ (CATCH_STACK_VAR.set(CATCH_ERROR_VAR.prop('stack')).toDeclStmt(null, [
                 o.StmtModifier.Final
             ]))].concat(stmt.catchStmts);
         this.visitAllStatements(catchStmts, ctx);
         ctx.decIndent();
-        ctx.println(`}`);
+        ctx.println(stmt, `}`);
         return null;
     }
     /**
@@ -200,7 +200,7 @@ export class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     _visitParams(params, ctx) {
-        this.visitAllObjects(param => ctx.print(param.name), params, ctx, ',');
+        this.visitAllObjects(param => ctx.print(null, param.name), params, ctx, ',');
     }
     /**
      * @param {?} method

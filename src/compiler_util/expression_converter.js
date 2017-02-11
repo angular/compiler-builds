@@ -80,18 +80,18 @@ export function convertPropertyBinding(builder, nameResolver, implicitReceiver, 
 export class ConvertActionBindingResult {
     /**
      * @param {?} stmts
-     * @param {?} preventDefault
+     * @param {?} allowDefault
      */
-    constructor(stmts, preventDefault) {
+    constructor(stmts, allowDefault) {
         this.stmts = stmts;
-        this.preventDefault = preventDefault;
+        this.allowDefault = allowDefault;
     }
 }
 function ConvertActionBindingResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ConvertActionBindingResult.prototype.stmts;
     /** @type {?} */
-    ConvertActionBindingResult.prototype.preventDefault;
+    ConvertActionBindingResult.prototype.allowDefault;
 }
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is

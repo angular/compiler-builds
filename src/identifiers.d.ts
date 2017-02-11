@@ -74,6 +74,14 @@ export declare class Identifiers {
     static subscribeToRenderElement: IdentifierSpec;
     static createRenderComponentType: IdentifierSpec;
     static noop: IdentifierSpec;
+    static viewDef: IdentifierSpec;
+    static elementDef: IdentifierSpec;
+    static anchorDef: IdentifierSpec;
+    static textDef: IdentifierSpec;
+    static directiveDef: IdentifierSpec;
+    static providerDef: IdentifierSpec;
+    static queryDef: IdentifierSpec;
+    static nodeValue: IdentifierSpec;
 }
 export declare function assetUrl(pkg: string, path?: string, type?: string): string;
 export declare function resolveIdentifier(identifier: IdentifierSpec): any;

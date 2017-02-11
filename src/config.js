@@ -5,8 +5,15 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ViewEncapsulation, isDevMode } from '@angular/core/index';
+import { InjectionToken, ViewEncapsulation, isDevMode } from '@angular/core/index';
 import { Identifiers, createIdentifier } from './identifiers';
+/**
+ * Temporal switch for the compiler to use the new view engine,
+ * until it is fully integrated.
+ *
+ * Only works in Jit for now.
+ */
+export const /** @type {?} */ USE_VIEW_ENGINE = new InjectionToken('UseViewEngine');
 export class CompilerConfig {
     /**
      * @param {?=} __0

@@ -20,6 +20,7 @@ export const /** @type {?} */ NgModuleInjector = r.NgModuleInjector;
 export const /** @type {?} */ registerModuleFactory = r.registerModuleFactory;
 export const /** @type {?} */ ViewType = r.ViewType;
 export const /** @type {?} */ view_utils = r.view_utils;
+export const /** @type {?} */ viewEngine = r.viewEngine;
 export const /** @type {?} */ DebugContext = r.DebugContext;
 export const /** @type {?} */ StaticNodeDebugInfo = r.StaticNodeDebugInfo;
 export const /** @type {?} */ devModeEqual = r.devModeEqual;
