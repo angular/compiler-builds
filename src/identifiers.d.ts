@@ -2,6 +2,7 @@ import { CompileIdentifierMetadata, CompileTokenMetadata } from './compile_metad
 export interface IdentifierSpec {
     name: string;
     moduleUrl: string;
+    member?: string;
     runtime: any;
 }
 export declare class Identifiers {

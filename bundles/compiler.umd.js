@@ -737,41 +737,18 @@
     var /** @type {?} */ LifecycleHooks = _angular_core.__core_private__.LifecycleHooks;
     var /** @type {?} */ LIFECYCLE_HOOKS_VALUES = _angular_core.__core_private__.LIFECYCLE_HOOKS_VALUES;
     var /** @type {?} */ ReflectorReader = _angular_core.__core_private__.ReflectorReader;
-    var /** @type {?} */ ViewContainer = _angular_core.__core_private__.ViewContainer;
-    var /** @type {?} */ CodegenComponentFactoryResolver = _angular_core.__core_private__.CodegenComponentFactoryResolver;
-    var /** @type {?} */ ComponentRef_ = _angular_core.__core_private__.ComponentRef_;
-    var /** @type {?} */ AppView = _angular_core.__core_private__.AppView;
-    var /** @type {?} */ DebugAppView = _angular_core.__core_private__.DebugAppView;
-    var /** @type {?} */ NgModuleInjector = _angular_core.__core_private__.NgModuleInjector;
-    var /** @type {?} */ registerModuleFactory = _angular_core.__core_private__.registerModuleFactory;
     var /** @type {?} */ ViewType = _angular_core.__core_private__.ViewType;
     var /** @type {?} */ view_utils = _angular_core.__core_private__.view_utils;
     var /** @type {?} */ viewEngine = _angular_core.__core_private__.viewEngine;
-    var /** @type {?} */ DebugContext = _angular_core.__core_private__.DebugContext;
-    var /** @type {?} */ StaticNodeDebugInfo = _angular_core.__core_private__.StaticNodeDebugInfo;
-    var /** @type {?} */ devModeEqual = _angular_core.__core_private__.devModeEqual;
-    var /** @type {?} */ ValueUnwrapper = _angular_core.__core_private__.ValueUnwrapper;
-    var /** @type {?} */ TemplateRef_ = _angular_core.__core_private__.TemplateRef_;
     var /** @type {?} */ Console = _angular_core.__core_private__.Console;
     var /** @type {?} */ reflector = _angular_core.__core_private__.reflector;
     var /** @type {?} */ Reflector = _angular_core.__core_private__.Reflector;
     var /** @type {?} */ ReflectionCapabilities = _angular_core.__core_private__.ReflectionCapabilities;
-    var /** @type {?} */ NoOpAnimationPlayer = _angular_core.__core_private__.NoOpAnimationPlayer;
-    var /** @type {?} */ AnimationSequencePlayer = _angular_core.__core_private__.AnimationSequencePlayer;
-    var /** @type {?} */ AnimationGroupPlayer = _angular_core.__core_private__.AnimationGroupPlayer;
-    var /** @type {?} */ AnimationKeyframe = _angular_core.__core_private__.AnimationKeyframe;
-    var /** @type {?} */ AnimationStyles = _angular_core.__core_private__.AnimationStyles;
     var /** @type {?} */ ANY_STATE = _angular_core.__core_private__.ANY_STATE;
     var /** @type {?} */ DEFAULT_STATE = _angular_core.__core_private__.DEFAULT_STATE;
     var /** @type {?} */ EMPTY_STATE = _angular_core.__core_private__.EMPTY_STATE;
     var /** @type {?} */ ERROR_COMPONENT_TYPE = _angular_core.__core_private__.ERROR_COMPONENT_TYPE;
     var /** @type {?} */ FILL_STYLE_FLAG = _angular_core.__core_private__.FILL_STYLE_FLAG;
-    var /** @type {?} */ prepareFinalAnimationStyles = _angular_core.__core_private__.prepareFinalAnimationStyles;
-    var /** @type {?} */ balanceAnimationKeyframes = _angular_core.__core_private__.balanceAnimationKeyframes;
-    var /** @type {?} */ clearStyles = _angular_core.__core_private__.clearStyles;
-    var /** @type {?} */ collectAndResolveStyles = _angular_core.__core_private__.collectAndResolveStyles;
-    var /** @type {?} */ renderStyles = _angular_core.__core_private__.renderStyles;
-    var /** @type {?} */ AnimationTransition = _angular_core.__core_private__.AnimationTransition;
 
     var TagContentType = {};
     TagContentType.RAW_TEXT = 0;
@@ -9845,11 +9822,8 @@
         }
     }
 
-    var /** @type {?} */ APP_VIEW_MODULE_URL = assetUrl('core', 'linker/view');
+    var /** @type {?} */ CORE = assetUrl('core');
     var /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
-    var /** @type {?} */ VIEW_ENGINE_MODULE_URL = assetUrl('core', 'view/index');
-    var /** @type {?} */ CD_MODULE_URL = assetUrl('core', 'change_detection/change_detection');
-    var /** @type {?} */ ANIMATION_STYLE_UTIL_ASSET_URL = assetUrl('core', 'animation/animation_style_util');
     var Identifiers = (function () {
         function Identifiers() {
         }
@@ -9857,400 +9831,322 @@
     }());
     Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
         name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
-        moduleUrl: assetUrl('core', 'metadata/di'),
+        moduleUrl: CORE,
         runtime: _angular_core.ANALYZE_FOR_ENTRY_COMPONENTS
     };
-    Identifiers.ViewUtils = {
-        name: 'ViewUtils',
-        moduleUrl: assetUrl('core', 'linker/view_utils'),
-        runtime: view_utils.ViewUtils
-    };
-    Identifiers.AppView = { name: 'AppView', moduleUrl: APP_VIEW_MODULE_URL, runtime: AppView };
-    Identifiers.DebugAppView = {
-        name: 'DebugAppView',
-        moduleUrl: APP_VIEW_MODULE_URL,
-        runtime: DebugAppView
-    };
-    Identifiers.ViewContainer = {
-        name: 'ViewContainer',
-        moduleUrl: assetUrl('core', 'linker/view_container'),
-        runtime: ViewContainer
-    };
-    Identifiers.ElementRef = {
-        name: 'ElementRef',
-        moduleUrl: assetUrl('core', 'linker/element_ref'),
-        runtime: _angular_core.ElementRef
-    };
-    Identifiers.ViewContainerRef = {
-        name: 'ViewContainerRef',
-        moduleUrl: assetUrl('core', 'linker/view_container_ref'),
-        runtime: _angular_core.ViewContainerRef
-    };
-    Identifiers.ChangeDetectorRef = {
-        name: 'ChangeDetectorRef',
-        moduleUrl: assetUrl('core', 'change_detection/change_detector_ref'),
-        runtime: _angular_core.ChangeDetectorRef
-    };
-    Identifiers.RenderComponentType = {
-        name: 'RenderComponentType',
-        moduleUrl: assetUrl('core', 'render/api'),
-        runtime: _angular_core.RenderComponentType
-    };
-    Identifiers.QueryList = {
-        name: 'QueryList',
-        moduleUrl: assetUrl('core', 'linker/query_list'),
-        runtime: _angular_core.QueryList
-    };
-    Identifiers.TemplateRef = {
-        name: 'TemplateRef',
-        moduleUrl: assetUrl('core', 'linker/template_ref'),
-        runtime: _angular_core.TemplateRef
-    };
-    Identifiers.TemplateRef_ = {
-        name: 'TemplateRef_',
-        moduleUrl: assetUrl('core', 'linker/template_ref'),
-        runtime: TemplateRef_
-    };
+    Identifiers.ViewUtils = { name: 'ɵview_utils', moduleUrl: CORE, member: 'ViewUtils', runtime: _angular_core.ɵview_utils.ViewUtils };
+    Identifiers.AppView = { name: 'ɵAppView', moduleUrl: CORE, runtime: _angular_core.ɵAppView };
+    Identifiers.DebugAppView = { name: 'ɵDebugAppView', moduleUrl: CORE, runtime: _angular_core.ɵDebugAppView };
+    Identifiers.ViewContainer = { name: 'ɵViewContainer', moduleUrl: CORE, runtime: _angular_core.ɵViewContainer };
+    Identifiers.ElementRef = { name: 'ElementRef', moduleUrl: CORE, runtime: _angular_core.ElementRef };
+    Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleUrl: CORE, runtime: _angular_core.ViewContainerRef };
+    Identifiers.ChangeDetectorRef = { name: 'ChangeDetectorRef', moduleUrl: CORE, runtime: _angular_core.ChangeDetectorRef };
+    Identifiers.RenderComponentType = { name: 'RenderComponentType', moduleUrl: CORE, runtime: _angular_core.RenderComponentType };
+    Identifiers.QueryList = { name: 'QueryList', moduleUrl: CORE, runtime: _angular_core.QueryList };
+    Identifiers.TemplateRef = { name: 'TemplateRef', moduleUrl: CORE, runtime: _angular_core.TemplateRef };
+    Identifiers.TemplateRef_ = { name: 'ɵTemplateRef_', moduleUrl: CORE, runtime: _angular_core.ɵTemplateRef_ };
     Identifiers.CodegenComponentFactoryResolver = {
-        name: 'CodegenComponentFactoryResolver',
-        moduleUrl: assetUrl('core', 'linker/component_factory_resolver'),
-        runtime: CodegenComponentFactoryResolver
+        name: 'ɵCodegenComponentFactoryResolver',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵCodegenComponentFactoryResolver
     };
     Identifiers.ComponentFactoryResolver = {
         name: 'ComponentFactoryResolver',
-        moduleUrl: assetUrl('core', 'linker/component_factory_resolver'),
+        moduleUrl: CORE,
         runtime: _angular_core.ComponentFactoryResolver
     };
-    Identifiers.ComponentFactory = {
-        name: 'ComponentFactory',
-        runtime: _angular_core.ComponentFactory,
-        moduleUrl: assetUrl('core', 'linker/component_factory')
-    };
+    Identifiers.ComponentFactory = { name: 'ComponentFactory', moduleUrl: CORE, runtime: _angular_core.ComponentFactory };
     Identifiers.ComponentRef_ = {
-        name: 'ComponentRef_',
-        runtime: ComponentRef_,
-        moduleUrl: assetUrl('core', 'linker/component_factory')
+        name: 'ɵComponentRef_',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵComponentRef_,
     };
-    Identifiers.ComponentRef = {
-        name: 'ComponentRef',
-        runtime: _angular_core.ComponentRef,
-        moduleUrl: assetUrl('core', 'linker/component_factory')
-    };
-    Identifiers.NgModuleFactory = {
-        name: 'NgModuleFactory',
-        runtime: _angular_core.NgModuleFactory,
-        moduleUrl: assetUrl('core', 'linker/ng_module_factory')
-    };
+    Identifiers.ComponentRef = { name: 'ComponentRef', moduleUrl: CORE, runtime: _angular_core.ComponentRef };
+    Identifiers.NgModuleFactory = { name: 'NgModuleFactory', moduleUrl: CORE, runtime: _angular_core.NgModuleFactory };
     Identifiers.NgModuleInjector = {
-        name: 'NgModuleInjector',
-        runtime: NgModuleInjector,
-        moduleUrl: assetUrl('core', 'linker/ng_module_factory')
+        name: 'ɵNgModuleInjector',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵNgModuleInjector,
     };
     Identifiers.RegisterModuleFactoryFn = {
-        name: 'registerModuleFactory',
-        runtime: registerModuleFactory,
-        moduleUrl: assetUrl('core', 'linker/ng_module_factory_loader')
+        name: 'ɵregisterModuleFactory',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵregisterModuleFactory,
     };
-    Identifiers.ValueUnwrapper = { name: 'ValueUnwrapper', moduleUrl: CD_MODULE_URL, runtime: ValueUnwrapper };
-    Identifiers.Injector = {
-        name: 'Injector',
-        moduleUrl: assetUrl('core', 'di/injector'),
-        runtime: _angular_core.Injector
-    };
-    Identifiers.ViewEncapsulation = {
-        name: 'ViewEncapsulation',
-        moduleUrl: assetUrl('core', 'metadata/view'),
-        runtime: _angular_core.ViewEncapsulation
-    };
-    Identifiers.ViewType = {
-        name: 'ViewType',
-        moduleUrl: assetUrl('core', 'linker/view_type'),
-        runtime: ViewType
-    };
+    Identifiers.ValueUnwrapper = { name: 'ɵValueUnwrapper', moduleUrl: CORE, runtime: _angular_core.ɵValueUnwrapper };
+    Identifiers.Injector = { name: 'Injector', moduleUrl: CORE, runtime: _angular_core.Injector };
+    Identifiers.ViewEncapsulation = { name: 'ViewEncapsulation', moduleUrl: CORE, runtime: _angular_core.ViewEncapsulation };
+    Identifiers.ViewType = { name: 'ɵViewType', moduleUrl: CORE, runtime: _angular_core.ɵViewType };
     Identifiers.ChangeDetectionStrategy = {
         name: 'ChangeDetectionStrategy',
-        moduleUrl: CD_MODULE_URL,
+        moduleUrl: CORE,
         runtime: _angular_core.ChangeDetectionStrategy
     };
     Identifiers.StaticNodeDebugInfo = {
-        name: 'StaticNodeDebugInfo',
-        moduleUrl: assetUrl('core', 'linker/debug_context'),
-        runtime: StaticNodeDebugInfo
+        name: 'ɵStaticNodeDebugInfo',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵStaticNodeDebugInfo
     };
-    Identifiers.DebugContext = {
-        name: 'DebugContext',
-        moduleUrl: assetUrl('core', 'linker/debug_context'),
-        runtime: DebugContext
-    };
-    Identifiers.Renderer = {
-        name: 'Renderer',
-        moduleUrl: assetUrl('core', 'render/api'),
-        runtime: _angular_core.Renderer
-    };
-    Identifiers.SimpleChange = { name: 'SimpleChange', moduleUrl: CD_MODULE_URL, runtime: _angular_core.SimpleChange };
+    Identifiers.DebugContext = { name: 'ɵDebugContext', moduleUrl: CORE, runtime: _angular_core.ɵDebugContext };
+    Identifiers.Renderer = { name: 'Renderer', moduleUrl: CORE, runtime: _angular_core.Renderer };
+    Identifiers.SimpleChange = { name: 'SimpleChange', moduleUrl: CORE, runtime: _angular_core.SimpleChange };
     Identifiers.ChangeDetectorStatus = {
-        name: 'ChangeDetectorStatus',
-        moduleUrl: CD_MODULE_URL,
-        runtime: ChangeDetectorStatus
+        name: 'ɵChangeDetectorStatus',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵChangeDetectorStatus
     };
     Identifiers.checkBinding = {
-        name: 'checkBinding',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkBinding
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkBinding',
+        runtime: _angular_core.ɵview_utils.checkBinding
     };
     Identifiers.checkBindingChange = {
-        name: 'checkBindingChange',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkBindingChange
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkBindingChange',
+        runtime: _angular_core.ɵview_utils.checkBindingChange
     };
     Identifiers.checkRenderText = {
-        name: 'checkRenderText',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderText
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderText',
+        runtime: _angular_core.ɵview_utils.checkRenderText
     };
     Identifiers.checkRenderProperty = {
-        name: 'checkRenderProperty',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderProperty
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderProperty',
+        runtime: _angular_core.ɵview_utils.checkRenderProperty
     };
     Identifiers.checkRenderAttribute = {
-        name: 'checkRenderAttribute',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderAttribute
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderAttribute',
+        runtime: _angular_core.ɵview_utils.checkRenderAttribute
     };
     Identifiers.checkRenderClass = {
-        name: 'checkRenderClass',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderClass
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderClass',
+        runtime: _angular_core.ɵview_utils.checkRenderClass
     };
     Identifiers.checkRenderStyle = {
-        name: 'checkRenderStyle',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.checkRenderStyle
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderStyle',
+        runtime: _angular_core.ɵview_utils.checkRenderStyle
     };
-    Identifiers.devModeEqual = { name: 'devModeEqual', moduleUrl: CD_MODULE_URL, runtime: devModeEqual };
+    Identifiers.devModeEqual = { name: 'ɵdevModeEqual', moduleUrl: CORE, runtime: _angular_core.ɵdevModeEqual };
     Identifiers.inlineInterpolate = {
-        name: 'inlineInterpolate',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.inlineInterpolate
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'inlineInterpolate',
+        runtime: _angular_core.ɵview_utils.inlineInterpolate
     };
     Identifiers.interpolate = {
-        name: 'interpolate',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.interpolate
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'interpolate',
+        runtime: _angular_core.ɵview_utils.interpolate
     };
     Identifiers.castByValue = {
-        name: 'castByValue',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.castByValue
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'castByValue',
+        runtime: _angular_core.ɵview_utils.castByValue
     };
     Identifiers.EMPTY_ARRAY = {
-        name: 'EMPTY_ARRAY',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.EMPTY_ARRAY
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'EMPTY_ARRAY',
+        runtime: _angular_core.ɵview_utils.EMPTY_ARRAY
     };
-    Identifiers.EMPTY_MAP = {
-        name: 'EMPTY_MAP',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.EMPTY_MAP
-    };
+    Identifiers.EMPTY_MAP = { name: 'ɵview_utils', moduleUrl: CORE, member: 'EMPTY_MAP', runtime: _angular_core.ɵview_utils.EMPTY_MAP };
     Identifiers.createRenderElement = {
-        name: 'createRenderElement',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.createRenderElement
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'createRenderElement',
+        runtime: _angular_core.ɵview_utils.createRenderElement
     };
     Identifiers.selectOrCreateRenderHostElement = {
-        name: 'selectOrCreateRenderHostElement',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.selectOrCreateRenderHostElement
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'selectOrCreateRenderHostElement',
+        runtime: _angular_core.ɵview_utils.selectOrCreateRenderHostElement
     };
     Identifiers.pureProxies = [
         null,
-        { name: 'pureProxy1', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy1 },
-        { name: 'pureProxy2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy2 },
-        { name: 'pureProxy3', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy3 },
-        { name: 'pureProxy4', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy4 },
-        { name: 'pureProxy5', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy5 },
-        { name: 'pureProxy6', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy6 },
-        { name: 'pureProxy7', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy7 },
-        { name: 'pureProxy8', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy8 },
-        { name: 'pureProxy9', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy9 },
-        { name: 'pureProxy10', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.pureProxy10 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy1', runtime: _angular_core.ɵview_utils.pureProxy1 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy2', runtime: _angular_core.ɵview_utils.pureProxy2 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy3', runtime: _angular_core.ɵview_utils.pureProxy3 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy4', runtime: _angular_core.ɵview_utils.pureProxy4 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy5', runtime: _angular_core.ɵview_utils.pureProxy5 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy6', runtime: _angular_core.ɵview_utils.pureProxy6 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy7', runtime: _angular_core.ɵview_utils.pureProxy7 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy8', runtime: _angular_core.ɵview_utils.pureProxy8 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy9', runtime: _angular_core.ɵview_utils.pureProxy9 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy10', runtime: _angular_core.ɵview_utils.pureProxy10 },
     ];
     Identifiers.SecurityContext = {
         name: 'SecurityContext',
-        moduleUrl: assetUrl('core', 'security'),
+        moduleUrl: CORE,
         runtime: _angular_core.SecurityContext,
     };
-    Identifiers.AnimationKeyframe = {
-        name: 'AnimationKeyframe',
-        moduleUrl: assetUrl('core', 'animation/animation_keyframe'),
-        runtime: AnimationKeyframe
-    };
-    Identifiers.AnimationStyles = {
-        name: 'AnimationStyles',
-        moduleUrl: assetUrl('core', 'animation/animation_styles'),
-        runtime: AnimationStyles
-    };
+    Identifiers.AnimationKeyframe = { name: 'ɵAnimationKeyframe', moduleUrl: CORE, runtime: _angular_core.ɵAnimationKeyframe };
+    Identifiers.AnimationStyles = { name: 'ɵAnimationStyles', moduleUrl: CORE, runtime: _angular_core.ɵAnimationStyles };
     Identifiers.NoOpAnimationPlayer = {
-        name: 'NoOpAnimationPlayer',
-        moduleUrl: assetUrl('core', 'animation/animation_player'),
-        runtime: NoOpAnimationPlayer
+        name: 'ɵNoOpAnimationPlayer',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵNoOpAnimationPlayer
     };
     Identifiers.AnimationGroupPlayer = {
-        name: 'AnimationGroupPlayer',
-        moduleUrl: assetUrl('core', 'animation/animation_group_player'),
-        runtime: AnimationGroupPlayer
+        name: 'ɵAnimationGroupPlayer',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵAnimationGroupPlayer
     };
     Identifiers.AnimationSequencePlayer = {
-        name: 'AnimationSequencePlayer',
-        moduleUrl: assetUrl('core', 'animation/animation_sequence_player'),
-        runtime: AnimationSequencePlayer
+        name: 'ɵAnimationSequencePlayer',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵAnimationSequencePlayer
     };
     Identifiers.prepareFinalAnimationStyles = {
-        name: 'prepareFinalAnimationStyles',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: prepareFinalAnimationStyles
+        name: 'ɵprepareFinalAnimationStyles',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵprepareFinalAnimationStyles
     };
     Identifiers.balanceAnimationKeyframes = {
-        name: 'balanceAnimationKeyframes',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: balanceAnimationKeyframes
+        name: 'ɵbalanceAnimationKeyframes',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵbalanceAnimationKeyframes
     };
-    Identifiers.clearStyles = {
-        name: 'clearStyles',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: clearStyles
-    };
-    Identifiers.renderStyles = {
-        name: 'renderStyles',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: renderStyles
-    };
+    Identifiers.clearStyles = { name: 'ɵclearStyles', moduleUrl: CORE, runtime: _angular_core.ɵclearStyles };
+    Identifiers.renderStyles = { name: 'ɵrenderStyles', moduleUrl: CORE, runtime: _angular_core.ɵrenderStyles };
     Identifiers.collectAndResolveStyles = {
-        name: 'collectAndResolveStyles',
-        moduleUrl: ANIMATION_STYLE_UTIL_ASSET_URL,
-        runtime: collectAndResolveStyles
+        name: 'ɵcollectAndResolveStyles',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵcollectAndResolveStyles
     };
-    Identifiers.LOCALE_ID = {
-        name: 'LOCALE_ID',
-        moduleUrl: assetUrl('core', 'i18n/tokens'),
-        runtime: _angular_core.LOCALE_ID
-    };
-    Identifiers.TRANSLATIONS_FORMAT = {
-        name: 'TRANSLATIONS_FORMAT',
-        moduleUrl: assetUrl('core', 'i18n/tokens'),
-        runtime: _angular_core.TRANSLATIONS_FORMAT
-    };
+    Identifiers.LOCALE_ID = { name: 'LOCALE_ID', moduleUrl: CORE, runtime: _angular_core.LOCALE_ID };
+    Identifiers.TRANSLATIONS_FORMAT = { name: 'TRANSLATIONS_FORMAT', moduleUrl: CORE, runtime: _angular_core.TRANSLATIONS_FORMAT };
     Identifiers.setBindingDebugInfo = {
-        name: 'setBindingDebugInfo',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.setBindingDebugInfo
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'setBindingDebugInfo',
+        runtime: _angular_core.ɵview_utils.setBindingDebugInfo
     };
     Identifiers.setBindingDebugInfoForChanges = {
-        name: 'setBindingDebugInfoForChanges',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.setBindingDebugInfoForChanges
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'setBindingDebugInfoForChanges',
+        runtime: _angular_core.ɵview_utils.setBindingDebugInfoForChanges
     };
     Identifiers.AnimationTransition = {
-        name: 'AnimationTransition',
-        moduleUrl: assetUrl('core', 'animation/animation_transition'),
-        runtime: AnimationTransition
+        name: 'ɵAnimationTransition',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵAnimationTransition
     };
     // This is just the interface!
     Identifiers.InlineArray = { name: 'InlineArray', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: null };
     Identifiers.inlineArrays = [
-        { name: 'InlineArray2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.InlineArray2 },
-        { name: 'InlineArray2', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.InlineArray2 },
-        { name: 'InlineArray4', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.InlineArray4 },
-        { name: 'InlineArray8', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.InlineArray8 },
-        { name: 'InlineArray16', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.InlineArray16 },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray2',
+            runtime: _angular_core.ɵview_utils.InlineArray2
+        },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray2',
+            runtime: _angular_core.ɵview_utils.InlineArray2
+        },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray4',
+            runtime: _angular_core.ɵview_utils.InlineArray4
+        },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray8',
+            runtime: _angular_core.ɵview_utils.InlineArray8
+        },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray16',
+            runtime: _angular_core.ɵview_utils.InlineArray16
+        },
     ];
     Identifiers.EMPTY_INLINE_ARRAY = {
-        name: 'EMPTY_INLINE_ARRAY',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.EMPTY_INLINE_ARRAY
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'EMPTY_INLINE_ARRAY',
+        runtime: _angular_core.ɵview_utils.EMPTY_INLINE_ARRAY
     };
     Identifiers.InlineArrayDynamic = {
-        name: 'InlineArrayDynamic',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.InlineArrayDynamic
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'InlineArrayDynamic',
+        runtime: _angular_core.ɵview_utils.InlineArrayDynamic
     };
     Identifiers.subscribeToRenderElement = {
-        name: 'subscribeToRenderElement',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.subscribeToRenderElement
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'subscribeToRenderElement',
+        runtime: _angular_core.ɵview_utils.subscribeToRenderElement
     };
     Identifiers.createRenderComponentType = {
-        name: 'createRenderComponentType',
-        moduleUrl: VIEW_UTILS_MODULE_URL,
-        runtime: view_utils.createRenderComponentType
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'createRenderComponentType',
+        runtime: _angular_core.ɵview_utils.createRenderComponentType
     };
-    Identifiers.noop = { name: 'noop', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: view_utils.noop };
-    Identifiers.viewDef = {
-        name: 'viewDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.viewDef
-    };
-    Identifiers.elementDef = {
-        name: 'elementDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.elementDef
-    };
-    Identifiers.anchorDef = {
-        name: 'anchorDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.anchorDef
-    };
-    Identifiers.textDef = {
-        name: 'textDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.textDef
-    };
+    Identifiers.noop = { name: 'ɵview_utils', moduleUrl: CORE, member: 'noop', runtime: _angular_core.ɵview_utils.noop };
+    Identifiers.viewDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'viewDef', runtime: _angular_core.ɵviewEngine.viewDef };
+    Identifiers.elementDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'elementDef', runtime: _angular_core.ɵviewEngine.elementDef };
+    Identifiers.anchorDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'anchorDef', runtime: _angular_core.ɵviewEngine.anchorDef };
+    Identifiers.textDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'textDef', runtime: _angular_core.ɵviewEngine.textDef };
     Identifiers.directiveDef = {
-        name: 'directiveDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.directiveDef
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'directiveDef',
+        runtime: _angular_core.ɵviewEngine.directiveDef
     };
     Identifiers.providerDef = {
-        name: 'providerDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.providerDef
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'providerDef',
+        runtime: _angular_core.ɵviewEngine.providerDef
     };
-    Identifiers.queryDef = {
-        name: 'queryDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.queryDef
-    };
+    Identifiers.queryDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'queryDef', runtime: _angular_core.ɵviewEngine.queryDef };
     Identifiers.pureArrayDef = {
-        name: 'pureArrayDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.pureArrayDef
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'pureArrayDef',
+        runtime: _angular_core.ɵviewEngine.pureArrayDef
     };
     Identifiers.pureObjectDef = {
-        name: 'pureObjectDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.pureObjectDef
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'pureObjectDef',
+        runtime: _angular_core.ɵviewEngine.pureObjectDef
     };
     Identifiers.purePipeDef = {
-        name: 'purePipeDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.purePipeDef
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'purePipeDef',
+        runtime: _angular_core.ɵviewEngine.purePipeDef
     };
-    Identifiers.pipeDef = {
-        name: 'pipeDef',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.pipeDef
-    };
-    Identifiers.nodeValue = {
-        name: 'nodeValue',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.nodeValue
-    };
+    Identifiers.pipeDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'pipeDef', runtime: _angular_core.ɵviewEngine.pipeDef };
+    Identifiers.nodeValue = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'nodeValue', runtime: _angular_core.ɵviewEngine.nodeValue };
     Identifiers.unwrapValue = {
-        name: 'unwrapValue',
-        moduleUrl: VIEW_ENGINE_MODULE_URL,
-        runtime: viewEngine.unwrapValue
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'unwrapValue',
+        runtime: _angular_core.ɵviewEngine.unwrapValue
     };
     /**
      * @param {?} pkg
@@ -10262,7 +10158,7 @@
         if (path === void 0) { path = null; }
         if (type === void 0) { type = 'src'; }
         if (path == null) {
-            return "@angular/" + pkg + "/index";
+            return "@angular/" + pkg;
         }
         else {
             return "@angular/" + pkg + "/" + type + "/" + path;
@@ -10273,15 +10169,16 @@
      * @return {?}
      */
     function resolveIdentifier(identifier) {
-        return reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime);
+        var /** @type {?} */ name = identifier.name;
+        var /** @type {?} */ members = identifier.member && [identifier.member];
+        return _angular_core.ɵreflector.resolveIdentifier(name, identifier.moduleUrl, members, identifier.runtime);
     }
     /**
      * @param {?} identifier
      * @return {?}
      */
     function createIdentifier(identifier) {
-        var /** @type {?} */ reference = reflector.resolveIdentifier(identifier.name, identifier.moduleUrl, identifier.runtime);
-        return { reference: reference };
+        return { reference: resolveIdentifier(identifier) };
     }
     /**
      * @param {?} identifier
@@ -10303,7 +10200,7 @@
      * @return {?}
      */
     function createEnumIdentifier(enumType, name) {
-        var /** @type {?} */ resolvedEnum = reflector.resolveEnum(resolveIdentifier(enumType), name);
+        var /** @type {?} */ resolvedEnum = _angular_core.ɵreflector.resolveEnum(resolveIdentifier(enumType), name);
         return { reference: resolvedEnum };
     }
 
@@ -26414,11 +26311,12 @@
         /**
          * @param {?} name
          * @param {?} moduleUrl
+         * @param {?} members
          * @param {?} runtime
          * @return {?}
          */
-        StaticAndDynamicReflectionCapabilities.prototype.resolveIdentifier = function (name, moduleUrl, runtime) {
-            return this.staticDelegate.resolveIdentifier(name, moduleUrl);
+        StaticAndDynamicReflectionCapabilities.prototype.resolveIdentifier = function (name, moduleUrl, members, runtime) {
+            return this.staticDelegate.resolveIdentifier(name, moduleUrl, members);
         };
         /**
          * @param {?} enumIdentifier
@@ -26502,10 +26400,19 @@
         /**
          * @param {?} name
          * @param {?} moduleUrl
+         * @param {?} members
          * @return {?}
          */
-        StaticReflector.prototype.resolveIdentifier = function (name, moduleUrl) {
-            return this.findDeclaration(moduleUrl, name);
+        StaticReflector.prototype.resolveIdentifier = function (name, moduleUrl, members) {
+            var /** @type {?} */ importSymbol = this.getStaticSymbol(moduleUrl, name);
+            var /** @type {?} */ rootSymbol = this.findDeclaration(moduleUrl, name);
+            if (importSymbol != rootSymbol) {
+                this.symbolResolver.recordImportAs(rootSymbol, importSymbol);
+            }
+            if (members && members.length) {
+                return this.getStaticSymbol(rootSymbol.filePath, rootSymbol.name, members);
+            }
+            return rootSymbol;
         };
         /**
          * @param {?} moduleUrl
@@ -26536,7 +26443,8 @@
          */
         StaticReflector.prototype.resolveEnum = function (enumIdentifier, name) {
             var /** @type {?} */ staticSymbol = enumIdentifier;
-            return this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name, [name]);
+            var /** @type {?} */ members = (staticSymbol.members || []).concat(name);
+            return this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name, members);
         };
         /**
          * @param {?} type
@@ -27355,6 +27263,16 @@
                 resolvedSymbol = this.resolveSymbol(resolvedSymbol.metadata);
             }
             return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
+        };
+        /**
+         * @param {?} sourceSymbol
+         * @param {?} targetSymbol
+         * @return {?}
+         */
+        StaticSymbolResolver.prototype.recordImportAs = function (sourceSymbol, targetSymbol) {
+            sourceSymbol.assertNoMembers();
+            targetSymbol.assertNoMembers();
+            this.importAs.set(sourceSymbol, targetSymbol);
         };
         /**
          * @param {?} staticSymbol

@@ -52,10 +52,19 @@ export class StaticReflector {
     /**
      * @param {?} name
      * @param {?} moduleUrl
+     * @param {?} members
      * @return {?}
      */
-    resolveIdentifier(name, moduleUrl) {
-        return this.findDeclaration(moduleUrl, name);
+    resolveIdentifier(name, moduleUrl, members) {
+        const /** @type {?} */ importSymbol = this.getStaticSymbol(moduleUrl, name);
+        const /** @type {?} */ rootSymbol = this.findDeclaration(moduleUrl, name);
+        if (importSymbol != rootSymbol) {
+            this.symbolResolver.recordImportAs(rootSymbol, importSymbol);
+        }
+        if (members && members.length) {
+            return this.getStaticSymbol(rootSymbol.filePath, rootSymbol.name, members);
+        }
+        return rootSymbol;
     }
     /**
      * @param {?} moduleUrl
@@ -86,7 +95,8 @@ export class StaticReflector {
      */
     resolveEnum(enumIdentifier, name) {
         const /** @type {?} */ staticSymbol = enumIdentifier;
-        return this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name, [name]);
+        const /** @type {?} */ members = (staticSymbol.members || []).concat(name);
+        return this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name, members);
     }
     /**
      * @param {?} type

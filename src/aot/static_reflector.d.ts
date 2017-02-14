@@ -25,7 +25,7 @@ export declare class StaticReflector implements ReflectorReader {
         fn: any;
     }[], errorRecorder?: (error: any, fileName: string) => void);
     importUri(typeOrFunc: StaticSymbol): string;
-    resolveIdentifier(name: string, moduleUrl: string): StaticSymbol;
+    resolveIdentifier(name: string, moduleUrl: string, members: string[]): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
     findSymbolDeclaration(symbol: StaticSymbol): StaticSymbol;
     resolveEnum(enumIdentifier: any, name: string): any;

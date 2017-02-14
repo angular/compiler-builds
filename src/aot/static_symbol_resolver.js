@@ -118,6 +118,16 @@ export class StaticSymbolResolver {
         return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
     }
     /**
+     * @param {?} sourceSymbol
+     * @param {?} targetSymbol
+     * @return {?}
+     */
+    recordImportAs(sourceSymbol, targetSymbol) {
+        sourceSymbol.assertNoMembers();
+        targetSymbol.assertNoMembers();
+        this.importAs.set(sourceSymbol, targetSymbol);
+    }
+    /**
      * @param {?} staticSymbol
      * @return {?}
      */

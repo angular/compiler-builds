@@ -86,11 +86,12 @@ export class StaticAndDynamicReflectionCapabilities {
     /**
      * @param {?} name
      * @param {?} moduleUrl
+     * @param {?} members
      * @param {?} runtime
      * @return {?}
      */
-    resolveIdentifier(name, moduleUrl, runtime) {
-        return this.staticDelegate.resolveIdentifier(name, moduleUrl);
+    resolveIdentifier(name, moduleUrl, members, runtime) {
+        return this.staticDelegate.resolveIdentifier(name, moduleUrl, members);
     }
     /**
      * @param {?} enumIdentifier
