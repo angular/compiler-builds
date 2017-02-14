@@ -81,7 +81,12 @@ export declare class Identifiers {
     static directiveDef: IdentifierSpec;
     static providerDef: IdentifierSpec;
     static queryDef: IdentifierSpec;
+    static pureArrayDef: IdentifierSpec;
+    static pureObjectDef: IdentifierSpec;
+    static purePipeDef: IdentifierSpec;
+    static pipeDef: IdentifierSpec;
     static nodeValue: IdentifierSpec;
+    static unwrapValue: IdentifierSpec;
 }
 export declare function assetUrl(pkg: string, path?: string, type?: string): string;
 export declare function resolveIdentifier(identifier: IdentifierSpec): any;

@@ -39,7 +39,9 @@ export declare class BindingParser {
     private _schemaRegistry;
     private _targetErrors;
     pipesByName: Map<string, CompilePipeSummary>;
+    private _usedPipes;
     constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, pipes: CompilePipeSummary[], _targetErrors: ParseError[]);
+    getUsedPipes(): CompilePipeSummary[];
     createDirectiveHostPropertyAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): BoundElementPropertyAst[];
     createDirectiveHostEventAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): BoundEventAst[];
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;

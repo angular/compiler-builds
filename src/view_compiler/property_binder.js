@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { createCheckBindingField } from '../compiler_util/binding_util';
-import { convertPropertyBinding } from '../compiler_util/expression_converter';
+import { legacyConvertPropertyBinding } from '../compiler_util/expression_converter';
 import { createEnumExpression } from '../compiler_util/identifier_util';
 import { createCheckAnimationBindingStmts, createCheckRenderBindingStmt } from '../compiler_util/render_util';
 import { DirectiveWrapperExpressions } from '../directive_wrapper_compiler';
@@ -23,7 +23,7 @@ import { getHandleEventMethodName } from './util';
  */
 export function bindRenderText(boundText, compileNode, view) {
     var /** @type {?} */ valueField = createCheckBindingField(view);
-    var /** @type {?} */ evalResult = convertPropertyBinding(view, view, view.componentContext, boundText.value, valueField.bindingId);
+    var /** @type {?} */ evalResult = legacyConvertPropertyBinding(view, view, view.componentContext, boundText.value, valueField.bindingId);
     if (!evalResult) {
         return null;
     }
@@ -50,7 +50,7 @@ export function bindRenderInputs(boundProps, boundOutputs, hasEvents, compileEle
     boundProps.forEach(function (boundProp) {
         var /** @type {?} */ bindingField = createCheckBindingField(view);
         view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileElement.nodeIndex, boundProp);
-        var /** @type {?} */ evalResult = convertPropertyBinding(view, view, compileElement.view.componentContext, boundProp.value, bindingField.bindingId);
+        var /** @type {?} */ evalResult = legacyConvertPropertyBinding(view, view, compileElement.view.componentContext, boundProp.value, bindingField.bindingId);
         if (!evalResult) {
             return;
         }
@@ -115,7 +115,7 @@ export function bindDirectiveInputs(directiveAst, directiveWrapperInstance, dirI
         // Note: We can't use `fields.length` here, as we are not adding a field!
         var /** @type {?} */ bindingId = compileElement.nodeIndex + "_" + dirIndex + "_" + inputIdx;
         detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex, input);
-        var /** @type {?} */ evalResult = convertPropertyBinding(view, view, view.componentContext, input.value, bindingId);
+        var /** @type {?} */ evalResult = legacyConvertPropertyBinding(view, view, view.componentContext, input.value, bindingId);
         if (!evalResult) {
             return;
         }

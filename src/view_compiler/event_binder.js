@@ -106,7 +106,7 @@ function generateHandleEventMethod(boundEvents, directives, compileElement) {
         }
     });
     boundEvents.forEach(function (renderEvent, renderEventIdx) {
-        var /** @type {?} */ evalResult = convertActionBinding(compileElement.view, compileElement.view, compileElement.view.componentContext, renderEvent.handler, "sub_" + renderEventIdx);
+        var /** @type {?} */ evalResult = convertActionBinding(compileElement.view, compileElement.view.componentContext, renderEvent.handler, "sub_" + renderEventIdx);
         var /** @type {?} */ trueStmts = evalResult.stmts;
         if (evalResult.allowDefault) {
             trueStmts.push(resultVar.set(evalResult.allowDefault.and(resultVar)).toStmt());

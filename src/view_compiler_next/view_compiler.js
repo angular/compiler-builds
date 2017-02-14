@@ -21,8 +21,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { ChangeDetectionStrategy } from '@angular/core';
 import { identifierName, tokenReference } from '../compile_metadata';
-import { EventHandlerVars, convertActionBinding, convertPropertyBinding } from '../compiler_util/expression_converter';
+import { EventHandlerVars, convertActionBinding, convertPropertyBinding, convertPropertyBindingBuiltins } from '../compiler_util/expression_converter';
 import { CompilerConfig } from '../config';
+import { ASTWithSource } from '../expression_parser/ast';
 import { Identifiers, createIdentifier, resolveIdentifier } from '../identifiers';
 import { CompilerInjectable } from '../injectable';
 import * as o from '../output/output_ast';
@@ -33,6 +34,7 @@ import { ElementAst, EmbeddedTemplateAst, PropertyBindingType, ProviderAstType, 
 import { ViewCompileResult, ViewCompiler } from '../view_compiler/view_compiler';
 var /** @type {?} */ CLASS_ATTR = 'class';
 var /** @type {?} */ STYLE_ATTR = 'style';
+var /** @type {?} */ IMPLICIT_TEMPLATE_VAR = '\$implicit';
 var ViewCompilerNext = (function (_super) {
     __extends(ViewCompilerNext, _super);
     /**
@@ -49,17 +51,17 @@ var ViewCompilerNext = (function (_super) {
      * @param {?} component
      * @param {?} template
      * @param {?} styles
-     * @param {?} pipes
+     * @param {?} usedPipes
      * @param {?} compiledAnimations
      * @return {?}
      */
-    ViewCompilerNext.prototype.compileComponent = function (component, template, styles, pipes, compiledAnimations) {
+    ViewCompilerNext.prototype.compileComponent = function (component, template, styles, usedPipes, compiledAnimations) {
         var /** @type {?} */ compName = identifierName(component.type) + (component.isHost ? "_Host" : '');
         var /** @type {?} */ embeddedViewCount = 0;
         var /** @type {?} */ viewBuilderFactory = function (parent) {
             var /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
             var /** @type {?} */ viewName = "view_" + compName + "_" + embeddedViewIndex;
-            return new ViewBuilder(parent, viewName, viewBuilderFactory);
+            return new ViewBuilder(parent, viewName, usedPipes, viewBuilderFactory);
         };
         var /** @type {?} */ visitor = viewBuilderFactory(null);
         visitor.visitAll([], template, 0);
@@ -91,17 +93,21 @@ var ViewBuilder = (function () {
     /**
      * @param {?} parent
      * @param {?} viewName
+     * @param {?} usedPipes
      * @param {?} viewBuilderFactory
      */
-    function ViewBuilder(parent, viewName, viewBuilderFactory) {
+    function ViewBuilder(parent, viewName, usedPipes, viewBuilderFactory) {
         this.parent = parent;
         this.viewName = viewName;
+        this.usedPipes = usedPipes;
         this.viewBuilderFactory = viewBuilderFactory;
         this.nodeDefs = [];
+        this.purePipeNodeIndices = {};
         this.refNodeIndices = {};
         this.variables = [];
         this.children = [];
-        this.updateExpressions = [];
+        this.updateDirectivesExpressions = [];
+        this.updateRendererExpressions = [];
         this.handleEventExpressions = [];
     }
     /**
@@ -111,7 +117,16 @@ var ViewBuilder = (function () {
      * @return {?}
      */
     ViewBuilder.prototype.visitAll = function (variables, astNodes, elementDepth) {
+        var _this = this;
         this.variables = variables;
+        // create the pipes for the pure pipes immediately, so that we know their indices.
+        if (!this.parent) {
+            this.usedPipes.forEach(function (pipe) {
+                if (pipe.pure) {
+                    _this.purePipeNodeIndices[pipe.name] = _this._createPipe(pipe);
+                }
+            });
+        }
         templateVisitAll(this, astNodes, { elementDepth: elementDepth });
         if (astNodes.length === 0 || (this.parent && hasViewContainer(astNodes[astNodes.length - 1]))) {
             // if the view is empty, or an embedded view has a view container as last root nde,
@@ -131,43 +146,15 @@ var ViewBuilder = (function () {
         if (targetStatements === void 0) { targetStatements = []; }
         var /** @type {?} */ compType = o.importType(component.type);
         this.children.forEach(function (child) { child.build(component, targetStatements); });
-        var /** @type {?} */ updateStmts = [];
-        var /** @type {?} */ updateBindingCount = 0;
-        this.updateExpressions
-            .forEach(function (_a) {
-            var expressions = _a.expressions, nodeIndex = _a.nodeIndex;
-            var /** @type {?} */ exprs = expressions.map(function (_a) {
-                var context = _a.context, value = _a.value;
-                var /** @type {?} */ bindingId = "" + updateBindingCount++;
-                var _b = convertPropertyBinding(null, _this, context, value, bindingId), stmts = _b.stmts, currValExpr = _b.currValExpr;
-                updateStmts.push.apply(updateStmts, stmts);
-                return currValExpr;
-            });
-            if (exprs.length > 10) {
-                updateStmts.push(CHECK_VAR
-                    .callFn([
-                    VIEW_VAR, o.literal(nodeIndex),
-                    o.literal(viewEngine.ArgumentType.Dynamic), o.literalArr(exprs)
-                ])
-                    .toStmt());
-            }
-            else {
-                updateStmts.push(CHECK_VAR.callFn((([VIEW_VAR, o.literal(nodeIndex), o.literal(viewEngine.ArgumentType.Inline)])).concat(exprs)).toStmt());
-            }
-        });
-        var /** @type {?} */ updateFn;
-        if (updateStmts.length > 0) {
-            updateFn = o.fn([new o.FnParam(CHECK_VAR.name), new o.FnParam(VIEW_VAR.name)], [COMP_VAR.set(VIEW_VAR.prop('component')).toDeclStmt(compType)].concat(updateStmts));
-        }
-        else {
-            updateFn = o.NULL_EXPR;
-        }
+        var /** @type {?} */ updateDirectivesFn = this._createUpdateFn(this.updateDirectivesExpressions, compType);
+        var /** @type {?} */ updateRendererFn = this._createUpdateFn(this.updateRendererExpressions, compType);
         var /** @type {?} */ handleEventStmts = [];
         var /** @type {?} */ handleEventBindingCount = 0;
         this.handleEventExpressions.forEach(function (_a) {
             var expression = _a.expression, context = _a.context, nodeIndex = _a.nodeIndex, eventName = _a.eventName;
             var /** @type {?} */ bindingId = "" + handleEventBindingCount++;
-            var _b = convertActionBinding(null, _this, context, expression, bindingId), stmts = _b.stmts, allowDefault = _b.allowDefault;
+            var /** @type {?} */ nameResolver = context === COMP_VAR ? _this : null;
+            var _b = convertActionBinding(nameResolver, context, expression, bindingId), stmts = _b.stmts, allowDefault = _b.allowDefault;
             var /** @type {?} */ trueStmts = stmts;
             if (allowDefault) {
                 trueStmts.push(ALLOW_DEFAULT_VAR.set(allowDefault.and(ALLOW_DEFAULT_VAR)).toStmt());
@@ -196,10 +183,41 @@ var ViewBuilder = (function () {
             viewFlags |= viewEngine.ViewFlags.OnPush;
         }
         var /** @type {?} */ viewFactory = new o.DeclareFunctionStmt(this.viewName, [], [new o.ReturnStatement(o.importExpr(createIdentifier(Identifiers.viewDef)).callFn([
-                o.literal(viewFlags), o.literalArr(this.nodeDefs), updateFn, handleEventFn
+                o.literal(viewFlags), o.literalArr(this.nodeDefs), updateDirectivesFn, updateRendererFn,
+                handleEventFn
             ]))]);
         targetStatements.push(viewFactory);
         return targetStatements;
+    };
+    /**
+     * @param {?} expressions
+     * @param {?} compType
+     * @return {?}
+     */
+    ViewBuilder.prototype._createUpdateFn = function (expressions, compType) {
+        var _this = this;
+        var /** @type {?} */ updateStmts = [];
+        var /** @type {?} */ updateBindingCount = 0;
+        expressions.forEach(function (_a) {
+            var expressions = _a.expressions, nodeIndex = _a.nodeIndex;
+            var /** @type {?} */ exprs = expressions.map(function (_a) {
+                var context = _a.context, value = _a.value;
+                var /** @type {?} */ bindingId = "" + updateBindingCount++;
+                var /** @type {?} */ nameResolver = context === COMP_VAR ? _this : null;
+                var _b = convertPropertyBinding(nameResolver, context, value, bindingId), stmts = _b.stmts, currValExpr = _b.currValExpr;
+                updateStmts.push.apply(updateStmts, stmts);
+                return currValExpr;
+            });
+            updateStmts.push(callCheckStmt(nodeIndex, exprs).toStmt());
+        });
+        var /** @type {?} */ updateFn;
+        if (updateStmts.length > 0) {
+            updateFn = o.fn([new o.FnParam(CHECK_VAR.name), new o.FnParam(VIEW_VAR.name)], [COMP_VAR.set(VIEW_VAR.prop('component')).toDeclStmt(compType)].concat(updateStmts));
+        }
+        else {
+            updateFn = o.NULL_EXPR;
+        }
+        return updateFn;
     };
     /**
      * @param {?} ast
@@ -225,16 +243,15 @@ var ViewBuilder = (function () {
      */
     ViewBuilder.prototype.visitBoundText = function (ast, context) {
         var /** @type {?} */ nodeIndex = this.nodeDefs.length;
+        // reserve the space in the nodeDefs array
+        this.nodeDefs.push(null);
         var /** @type {?} */ astWithSource = (ast.value);
         var /** @type {?} */ inter = (astWithSource.ast);
-        this.updateExpressions.push({
-            nodeIndex: nodeIndex,
-            expressions: inter.expressions.map(function (expr) { return { context: COMP_VAR, value: expr }; })
-        });
+        this._addUpdateExpressions(nodeIndex, inter.expressions.map(function (expr) { return { context: COMP_VAR, value: expr }; }), this.updateRendererExpressions);
         // textDef(ngContentIndex: number, constants: string[]): NodeDef;
-        this.nodeDefs.push(o.importExpr(createIdentifier(Identifiers.textDef)).callFn([
+        this.nodeDefs[nodeIndex] = o.importExpr(createIdentifier(Identifiers.textDef)).callFn([
             o.NULL_EXPR, o.literalArr(inter.strings.map(function (s) { return o.literal(s); }))
-        ]));
+        ]);
     };
     /**
      * @param {?} ast
@@ -246,10 +263,10 @@ var ViewBuilder = (function () {
         // reserve the space in the nodeDefs array
         this.nodeDefs.push(null);
         var _a = this._visitElementOrTemplate(nodeIndex, ast, context), flags = _a.flags, queryMatchesExpr = _a.queryMatchesExpr;
-        var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
         var /** @type {?} */ childVisitor = this.viewBuilderFactory(this);
         this.children.push(childVisitor);
         childVisitor.visitAll(ast.variables, ast.children, context.elementDepth + 1);
+        var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
         // anchorDef(
         //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], ngContentIndex: number,
         //   childCount: number, templateFactory?: ViewDefinitionFactory): NodeDef;
@@ -269,11 +286,8 @@ var ViewBuilder = (function () {
         this.nodeDefs.push(null);
         var _a = this._visitElementOrTemplate(nodeIndex, ast, context), flags = _a.flags, usedEvents = _a.usedEvents, queryMatchesExpr = _a.queryMatchesExpr, hostBindings = _a.hostBindings;
         templateVisitAll(this, ast.children, { elementDepth: context.elementDepth + 1 });
-        var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
-        ast.inputs.forEach(function (inputAst) {
-            hostBindings.push({ context: COMP_VAR, value: ((inputAst.value)).ast });
-        });
-        this.updateExpressions.push({ nodeIndex: nodeIndex, expressions: hostBindings });
+        ast.inputs.forEach(function (inputAst) { hostBindings.push({ context: COMP_VAR, value: inputAst.value }); });
+        this._addUpdateExpressions(nodeIndex, hostBindings, this.updateRendererExpressions);
         var /** @type {?} */ inputDefs = elementBindingDefs(ast.inputs);
         ast.directives.forEach(function (dirAst, dirIndex) { inputDefs.push.apply(inputDefs, elementBindingDefs(dirAst.hostProperties)); });
         var /** @type {?} */ outputDefs = usedEvents.map(function (_a) {
@@ -281,6 +295,7 @@ var ViewBuilder = (function () {
             return target ? o.literalArr([o.literal(target), o.literal(eventName)]) :
                 o.literal(eventName);
         });
+        var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
         // elementDef(
         //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], ngContentIndex: number,
         //   childCount: number, name: string, fixedAttrs: {[name: string]: string} = {},
@@ -367,12 +382,7 @@ var ViewBuilder = (function () {
         });
         ast.outputs.forEach(function (outputAst) { hostEvents.push({ context: COMP_VAR, eventAst: outputAst }); });
         hostEvents.forEach(function (hostEvent) {
-            _this.handleEventExpressions.push({
-                nodeIndex: nodeIndex,
-                context: hostEvent.context,
-                eventName: viewEngine.elementEventFullName(hostEvent.eventAst.target, hostEvent.eventAst.name),
-                expression: ((hostEvent.eventAst.handler)).ast
-            });
+            _this._addHandleEventExpression(nodeIndex, hostEvent.context, viewEngine.elementEventFullName(hostEvent.eventAst.target, hostEvent.eventAst.name), hostEvent.eventAst.handler);
         });
         return {
             flags: flags,
@@ -397,6 +407,19 @@ var ViewBuilder = (function () {
         var /** @type {?} */ nodeIndex = this.nodeDefs.length;
         // reserve the space in the nodeDefs array so we can add children
         this.nodeDefs.push(null);
+        directiveAst.directive.queries.forEach(function (query, queryIndex) {
+            var /** @type {?} */ queryId = { elementDepth: elementDepth, directiveIndex: directiveIndex, queryIndex: queryIndex };
+            var /** @type {?} */ bindingType = query.first ? viewEngine.QueryBindingType.First : viewEngine.QueryBindingType.All;
+            _this.nodeDefs.push(o.importExpr(createIdentifier(Identifiers.queryDef)).callFn([
+                o.literal(viewEngine.NodeFlags.HasContentQuery), o.literal(calcQueryId(queryId)),
+                new o.LiteralMapExpr([new o.LiteralMapEntry(query.propertyName, o.literal(bindingType))])
+            ]));
+        });
+        // Note: the operation below might also create new nodeDefs,
+        // but we don't want them to be a child of a directive,
+        // as they might be a provider/pipe on their own.
+        // I.e. we only allow queries as children of directives nodes.
+        var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
         var _a = this._visitProviderOrDirective(providerAst, queryMatches), flags = _a.flags, queryMatchExprs = _a.queryMatchExprs, providerExpr = _a.providerExpr, providerType = _a.providerType, depsExpr = _a.depsExpr;
         refs.forEach(function (ref) {
             if (ref.value && tokenReference(ref.value) === tokenReference(providerAst.token)) {
@@ -423,10 +446,7 @@ var ViewBuilder = (function () {
             }
         });
         if (directiveAst.inputs.length) {
-            this.updateExpressions.push({
-                nodeIndex: nodeIndex,
-                expressions: directiveAst.inputs.map(function (input) { return { context: COMP_VAR, value: ((input.value)).ast }; })
-            });
+            this._addUpdateExpressions(nodeIndex, directiveAst.inputs.map(function (input) { return { context: COMP_VAR, value: input.value }; }), this.updateDirectivesExpressions);
         }
         var /** @type {?} */ dirContextExpr = o.importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
             VIEW_VAR, o.literal(nodeIndex)
@@ -438,18 +458,6 @@ var ViewBuilder = (function () {
             };
         });
         var /** @type {?} */ hostEvents = directiveAst.hostEvents.map(function (hostEventAst) { return { context: dirContextExpr, eventAst: hostEventAst }; });
-        var /** @type {?} */ childCount = directiveAst.directive.queries.length;
-        directiveAst.directive.queries.forEach(function (query, queryIndex) {
-            var /** @type {?} */ queryId = { elementDepth: elementDepth, directiveIndex: directiveIndex, queryIndex: queryIndex };
-            var /** @type {?} */ bindingType = query.first ? viewEngine.QueryBindingType.First : viewEngine.QueryBindingType.All;
-            // queryDef(
-            //   flags: NodeFlags, id: string, bindings: {[propName: string]: QueryBindingType}): NodeDef
-            //   {
-            _this.nodeDefs.push(o.importExpr(createIdentifier(Identifiers.queryDef)).callFn([
-                o.literal(viewEngine.NodeFlags.HasContentQuery), o.literal(calcQueryId(queryId)),
-                new o.LiteralMapExpr([new o.LiteralMapEntry(query.propertyName, o.literal(bindingType))])
-            ]));
-        });
         // directiveDef(
         //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], childCount: number, ctor:
         //   any,
@@ -513,15 +521,6 @@ var ViewBuilder = (function () {
     };
     /**
      * @param {?} name
-     * @param {?} input
-     * @param {?} args
-     * @return {?}
-     */
-    ViewBuilder.prototype.callPipe = function (name, input, args) {
-        throw new Error('Pipes are not yet supported!');
-    };
-    /**
-     * @param {?} name
      * @return {?}
      */
     ViewBuilder.prototype.getLocal = function (name) {
@@ -540,10 +539,138 @@ var ViewBuilder = (function () {
             // check variables
             var /** @type {?} */ varAst = currBuilder.variables.find(function (varAst) { return varAst.name === name; });
             if (varAst) {
-                return currViewExpr.prop('context').prop(varAst.value);
+                var /** @type {?} */ varValue = varAst.value || IMPLICIT_TEMPLATE_VAR;
+                return currViewExpr.prop('context').prop(varValue);
             }
         }
         return null;
+    };
+    /**
+     * @param {?} argCount
+     * @return {?}
+     */
+    ViewBuilder.prototype.createLiteralArrayConverter = function (argCount) {
+        if (argCount === 0) {
+            var /** @type {?} */ valueExpr_1 = o.importExpr(createIdentifier(Identifiers.EMPTY_ARRAY));
+            return function () { return valueExpr_1; };
+        }
+        var /** @type {?} */ nodeIndex = this.nodeDefs.length;
+        // pureArrayDef(argCount: number): NodeDef;
+        var /** @type {?} */ nodeDef = o.importExpr(createIdentifier(Identifiers.pureArrayDef)).callFn([o.literal(argCount)]);
+        this.nodeDefs.push(nodeDef);
+        return function (args) { return callCheckStmt(nodeIndex, args); };
+    };
+    /**
+     * @param {?} keys
+     * @return {?}
+     */
+    ViewBuilder.prototype.createLiteralMapConverter = function (keys) {
+        if (keys.length === 0) {
+            var /** @type {?} */ valueExpr_2 = o.importExpr(createIdentifier(Identifiers.EMPTY_MAP));
+            return function () { return valueExpr_2; };
+        }
+        var /** @type {?} */ nodeIndex = this.nodeDefs.length;
+        // function pureObjectDef(propertyNames: string[]): NodeDef
+        var /** @type {?} */ nodeDef = o.importExpr(createIdentifier(Identifiers.pureObjectDef)).callFn([o.literalArr(keys.map(function (key) { return o.literal(key); }))]);
+        this.nodeDefs.push(nodeDef);
+        return function (args) { return callCheckStmt(nodeIndex, args); };
+    };
+    /**
+     * @param {?} name
+     * @param {?} argCount
+     * @return {?}
+     */
+    ViewBuilder.prototype.createPipeConverter = function (name, argCount) {
+        var /** @type {?} */ pipe = this._findPipe(name);
+        if (pipe.pure) {
+            var /** @type {?} */ nodeIndex_1 = this.nodeDefs.length;
+            // function purePipeDef(argCount: number): NodeDef;
+            var /** @type {?} */ nodeDef = o.importExpr(createIdentifier(Identifiers.purePipeDef)).callFn([o.literal(argCount)]);
+            this.nodeDefs.push(nodeDef);
+            // find underlying pipe in the component view
+            var /** @type {?} */ compViewExpr = VIEW_VAR;
+            var /** @type {?} */ compBuilder = this;
+            while (compBuilder.parent) {
+                compBuilder = compBuilder.parent;
+                compViewExpr = compViewExpr.prop('parent');
+            }
+            var /** @type {?} */ pipeNodeIndex = compBuilder.purePipeNodeIndices[name];
+            var /** @type {?} */ pipeValueExpr_1 = o.importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
+                compViewExpr, o.literal(pipeNodeIndex)
+            ]);
+            return function (args) {
+                return callUnwrapValue(callCheckStmt(nodeIndex_1, [pipeValueExpr_1].concat(args)));
+            };
+        }
+        else {
+            var /** @type {?} */ nodeIndex = this._createPipe(pipe);
+            var /** @type {?} */ nodeValueExpr_1 = o.importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
+                VIEW_VAR, o.literal(nodeIndex)
+            ]);
+            return function (args) { return callUnwrapValue(nodeValueExpr_1.callMethod('transform', args)); };
+        }
+    };
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    ViewBuilder.prototype._findPipe = function (name) {
+        return this.usedPipes.find(function (pipeSummary) { return pipeSummary.name === name; });
+    };
+    /**
+     * @param {?} pipe
+     * @return {?}
+     */
+    ViewBuilder.prototype._createPipe = function (pipe) {
+        var /** @type {?} */ nodeIndex = this.nodeDefs.length;
+        var /** @type {?} */ flags = viewEngine.NodeFlags.None;
+        pipe.type.lifecycleHooks.forEach(function (lifecycleHook) {
+            // for pipes, we only support ngOnDestroy
+            if (lifecycleHook === LifecycleHooks.OnDestroy) {
+                flags |= lifecycleHookToNodeFlag(lifecycleHook);
+            }
+        });
+        var /** @type {?} */ depExprs = pipe.type.diDeps.map(depDef);
+        // function pipeDef(
+        //   flags: NodeFlags, ctor: any, deps: ([DepFlags, any] | any)[]): NodeDef
+        var /** @type {?} */ nodeDef = o.importExpr(createIdentifier(Identifiers.pipeDef)).callFn([
+            o.literal(flags), o.importExpr(pipe.type), o.literalArr(depExprs)
+        ]);
+        this.nodeDefs.push(nodeDef);
+        return nodeIndex;
+    };
+    /**
+     * @param {?} nodeIndex
+     * @param {?} expressions
+     * @param {?} target
+     * @return {?}
+     */
+    ViewBuilder.prototype._addUpdateExpressions = function (nodeIndex, expressions, target) {
+        var _this = this;
+        if (expressions.length === 0) {
+            return;
+        }
+        var /** @type {?} */ transformedExpressions = expressions.map(function (_a) {
+            var context = _a.context, value = _a.value;
+            if (value instanceof ASTWithSource) {
+                value = value.ast;
+            }
+            return { context: context, value: convertPropertyBindingBuiltins(_this, value) };
+        });
+        target.push({ nodeIndex: nodeIndex, expressions: transformedExpressions });
+    };
+    /**
+     * @param {?} nodeIndex
+     * @param {?} context
+     * @param {?} eventName
+     * @param {?} expression
+     * @return {?}
+     */
+    ViewBuilder.prototype._addHandleEventExpression = function (nodeIndex, context, eventName, expression) {
+        if (expression instanceof ASTWithSource) {
+            expression = expression.ast;
+        }
+        this.handleEventExpressions.push({ nodeIndex: nodeIndex, context: context, eventName: eventName, expression: expression });
     };
     /**
      * @param {?} ast
@@ -593,19 +720,25 @@ function ViewBuilder_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewBuilder.prototype.nodeDefs;
     /** @type {?} */
+    ViewBuilder.prototype.purePipeNodeIndices;
+    /** @type {?} */
     ViewBuilder.prototype.refNodeIndices;
     /** @type {?} */
     ViewBuilder.prototype.variables;
     /** @type {?} */
     ViewBuilder.prototype.children;
     /** @type {?} */
-    ViewBuilder.prototype.updateExpressions;
+    ViewBuilder.prototype.updateDirectivesExpressions;
+    /** @type {?} */
+    ViewBuilder.prototype.updateRendererExpressions;
     /** @type {?} */
     ViewBuilder.prototype.handleEventExpressions;
     /** @type {?} */
     ViewBuilder.prototype.parent;
     /** @type {?} */
     ViewBuilder.prototype.viewName;
+    /** @type {?} */
+    ViewBuilder.prototype.usedPipes;
     /** @type {?} */
     ViewBuilder.prototype.viewBuilderFactory;
 }
@@ -833,5 +966,28 @@ function mergeAttributeValue(attrName, attrValue1, attrValue2) {
     else {
         return attrValue2;
     }
+}
+/**
+ * @param {?} nodeIndex
+ * @param {?} exprs
+ * @return {?}
+ */
+function callCheckStmt(nodeIndex, exprs) {
+    if (exprs.length > 10) {
+        return CHECK_VAR.callFn([
+            VIEW_VAR, o.literal(nodeIndex), o.literal(viewEngine.ArgumentType.Dynamic),
+            o.literalArr(exprs)
+        ]);
+    }
+    else {
+        return CHECK_VAR.callFn([VIEW_VAR, o.literal(nodeIndex), o.literal(viewEngine.ArgumentType.Inline)].concat(exprs));
+    }
+}
+/**
+ * @param {?} expr
+ * @return {?}
+ */
+function callUnwrapValue(expr) {
+    return o.importExpr(createIdentifier(Identifiers.unwrapValue)).callFn([expr]);
 }
 //# sourceMappingURL=view_compiler.js.map

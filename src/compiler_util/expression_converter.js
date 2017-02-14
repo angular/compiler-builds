@@ -5,6 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 import * as cdAst from '../expression_parser/ast';
 import { isBlank } from '../facade/lang';
 import { Identifiers, createIdentifier } from '../identifiers';
@@ -21,67 +26,6 @@ EventHandlerVars.event = o.variable('$event');
 function EventHandlerVars_tsickle_Closure_declarations() {
     /** @type {?} */
     EventHandlerVars.event;
-}
-var ConvertPropertyBindingResult = (function () {
-    /**
-     * @param {?} stmts
-     * @param {?} currValExpr
-     * @param {?} forceUpdate
-     */
-    function ConvertPropertyBindingResult(stmts, currValExpr, forceUpdate) {
-        this.stmts = stmts;
-        this.currValExpr = currValExpr;
-        this.forceUpdate = forceUpdate;
-    }
-    return ConvertPropertyBindingResult;
-}());
-export { ConvertPropertyBindingResult };
-function ConvertPropertyBindingResult_tsickle_Closure_declarations() {
-    /** @type {?} */
-    ConvertPropertyBindingResult.prototype.stmts;
-    /** @type {?} */
-    ConvertPropertyBindingResult.prototype.currValExpr;
-    /** @type {?} */
-    ConvertPropertyBindingResult.prototype.forceUpdate;
-}
-/**
- * Converts the given expression AST into an executable output AST, assuming the expression is
- * used in a property binding.
- * @param {?} builder
- * @param {?} nameResolver
- * @param {?} implicitReceiver
- * @param {?} expression
- * @param {?} bindingId
- * @return {?}
- */
-export function convertPropertyBinding(builder, nameResolver, implicitReceiver, expression, bindingId) {
-    var /** @type {?} */ currValExpr = createCurrValueExpr(bindingId);
-    var /** @type {?} */ stmts = [];
-    if (!nameResolver) {
-        nameResolver = new DefaultNameResolver();
-    }
-    var /** @type {?} */ visitor = new _AstToIrVisitor(builder, nameResolver, implicitReceiver, VAL_UNWRAPPER_VAR, bindingId, false);
-    var /** @type {?} */ outputExpr = expression.visit(visitor, _Mode.Expression);
-    if (!outputExpr) {
-        // e.g. an empty expression was given
-        return null;
-    }
-    if (visitor.temporaryCount) {
-        for (var /** @type {?} */ i = 0; i < visitor.temporaryCount; i++) {
-            stmts.push(temporaryDeclaration(bindingId, i));
-        }
-    }
-    if (visitor.needsValueUnwrapper) {
-        var /** @type {?} */ initValueUnwrapperStmt = VAL_UNWRAPPER_VAR.callMethod('reset', []).toStmt();
-        stmts.push(initValueUnwrapperStmt);
-    }
-    stmts.push(currValExpr.set(outputExpr).toDeclStmt(null, [o.StmtModifier.Final]));
-    if (visitor.needsValueUnwrapper) {
-        return new ConvertPropertyBindingResult(stmts, currValExpr, VAL_UNWRAPPER_VAR.prop('hasWrappedValue'));
-    }
-    else {
-        return new ConvertPropertyBindingResult(stmts, currValExpr, null);
-    }
 }
 var ConvertActionBindingResult = (function () {
     /**
@@ -104,20 +48,34 @@ function ConvertActionBindingResult_tsickle_Closure_declarations() {
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
- * @param {?} builder
- * @param {?} nameResolver
+ * @param {?} localResolver
  * @param {?} implicitReceiver
  * @param {?} action
  * @param {?} bindingId
  * @return {?}
  */
-export function convertActionBinding(builder, nameResolver, implicitReceiver, action, bindingId) {
-    if (!nameResolver) {
-        nameResolver = new DefaultNameResolver();
+export function convertActionBinding(localResolver, implicitReceiver, action, bindingId) {
+    if (!localResolver) {
+        localResolver = new DefaultLocalResolver();
     }
-    var /** @type {?} */ visitor = new _AstToIrVisitor(builder, nameResolver, implicitReceiver, null, bindingId, true);
+    var /** @type {?} */ actionWithoutBuiltins = convertPropertyBindingBuiltins({
+        createLiteralArrayConverter: function (argCount) {
+            // Note: no caching for literal arrays in actions.
+            return function (args) { return o.literalArr(args); };
+        },
+        createLiteralMapConverter: function (keys) {
+            // Note: no caching for literal maps in actions.
+            return function (args) {
+                return o.literalMap(/** @type {?} */ (keys.map(function (key, i) { return [key, args[i]]; })));
+            };
+        },
+        createPipeConverter: function (name) {
+            throw new Error("Illegal State: Actions are not allowed to contain pipes. Pipe: " + name);
+        }
+    }, action);
+    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId);
     var /** @type {?} */ actionStmts = [];
-    flattenStatements(action.visit(visitor, _Mode.Statement), actionStmts);
+    flattenStatements(actionWithoutBuiltins.visit(visitor, _Mode.Statement), actionStmts);
     prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
     var /** @type {?} */ lastIndex = actionStmts.length - 1;
     var /** @type {?} */ preventDefaultVar = null;
@@ -136,12 +94,122 @@ export function convertActionBinding(builder, nameResolver, implicitReceiver, ac
     return new ConvertActionBindingResult(actionStmts, preventDefaultVar);
 }
 /**
+ * @param {?} converterFactory
+ * @param {?} ast
+ * @return {?}
+ */
+export function convertPropertyBindingBuiltins(converterFactory, ast) {
+    return convertBuiltins(converterFactory, ast);
+}
+var ConvertPropertyBindingResult = (function () {
+    /**
+     * @param {?} stmts
+     * @param {?} currValExpr
+     */
+    function ConvertPropertyBindingResult(stmts, currValExpr) {
+        this.stmts = stmts;
+        this.currValExpr = currValExpr;
+    }
+    return ConvertPropertyBindingResult;
+}());
+export { ConvertPropertyBindingResult };
+function ConvertPropertyBindingResult_tsickle_Closure_declarations() {
+    /** @type {?} */
+    ConvertPropertyBindingResult.prototype.stmts;
+    /** @type {?} */
+    ConvertPropertyBindingResult.prototype.currValExpr;
+}
+/**
+ * Converts the given expression AST into an executable output AST, assuming the expression
+ * is used in property binding. The expression has to be preprocessed via
+ * `convertPropertyBindingBuiltins`.
+ * @param {?} localResolver
+ * @param {?} implicitReceiver
+ * @param {?} expressionWithoutBuiltins
+ * @param {?} bindingId
+ * @return {?}
+ */
+export function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId) {
+    if (!localResolver) {
+        localResolver = new DefaultLocalResolver();
+    }
+    var /** @type {?} */ currValExpr = createCurrValueExpr(bindingId);
+    var /** @type {?} */ stmts = [];
+    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId);
+    var /** @type {?} */ outputExpr = expressionWithoutBuiltins.visit(visitor, _Mode.Expression);
+    if (visitor.temporaryCount) {
+        for (var /** @type {?} */ i = 0; i < visitor.temporaryCount; i++) {
+            stmts.push(temporaryDeclaration(bindingId, i));
+        }
+    }
+    stmts.push(currValExpr.set(outputExpr).toDeclStmt(null, [o.StmtModifier.Final]));
+    return new ConvertPropertyBindingResult(stmts, currValExpr);
+}
+var LegacyConvertPropertyBindingResult = (function () {
+    /**
+     * @param {?} stmts
+     * @param {?} currValExpr
+     * @param {?} forceUpdate
+     */
+    function LegacyConvertPropertyBindingResult(stmts, currValExpr, forceUpdate) {
+        this.stmts = stmts;
+        this.currValExpr = currValExpr;
+        this.forceUpdate = forceUpdate;
+    }
+    return LegacyConvertPropertyBindingResult;
+}());
+export { LegacyConvertPropertyBindingResult };
+function LegacyConvertPropertyBindingResult_tsickle_Closure_declarations() {
+    /** @type {?} */
+    LegacyConvertPropertyBindingResult.prototype.stmts;
+    /** @type {?} */
+    LegacyConvertPropertyBindingResult.prototype.currValExpr;
+    /** @type {?} */
+    LegacyConvertPropertyBindingResult.prototype.forceUpdate;
+}
+/**
+ * Converts the given expression AST into an executable output AST, assuming the expression is
+ * used in a property binding.
+ * @param {?} builder
+ * @param {?} nameResolver
+ * @param {?} implicitReceiver
+ * @param {?} expression
+ * @param {?} bindingId
+ * @return {?}
+ */
+export function legacyConvertPropertyBinding(builder, nameResolver, implicitReceiver, expression, bindingId) {
+    if (!nameResolver) {
+        nameResolver = new LegacyDefaultNameResolver();
+    }
+    var /** @type {?} */ needsValueUnwrapper = false;
+    var /** @type {?} */ expressionWithoutBuiltins = convertBuiltins({
+        createLiteralArrayConverter: function (argCount) {
+            return function (args) { return legacyCreateCachedLiteralArray(builder, args); };
+        },
+        createLiteralMapConverter: function (keys) {
+            return function (args) { return legacyCreateCachedLiteralMap(builder, /** @type {?} */ (keys.map(function (key, i) { return [key, args[i]]; }))); };
+        },
+        createPipeConverter: function (name) {
+            needsValueUnwrapper = true;
+            return function (args) { return VAL_UNWRAPPER_VAR.callMethod('unwrap', [nameResolver.callPipe(name, args[0], args.slice(1))]); };
+        }
+    }, expression);
+    var _a = convertPropertyBinding(nameResolver, implicitReceiver, expressionWithoutBuiltins, bindingId), stmts = _a.stmts, currValExpr = _a.currValExpr;
+    var /** @type {?} */ forceUpdate = null;
+    if (needsValueUnwrapper) {
+        var /** @type {?} */ initValueUnwrapperStmt = VAL_UNWRAPPER_VAR.callMethod('reset', []).toStmt();
+        stmts.unshift(initValueUnwrapperStmt);
+        forceUpdate = VAL_UNWRAPPER_VAR.prop('hasWrappedValue');
+    }
+    return new LegacyConvertPropertyBindingResult(stmts, currValExpr, forceUpdate);
+}
+/**
  * Creates variables that are shared by multiple calls to `convertActionBinding` /
  * `convertPropertyBinding`
  * @param {?} stmts
  * @return {?}
  */
-export function createSharedBindingVariablesIfNeeded(stmts) {
+export function legacyCreateSharedBindingVariablesIfNeeded(stmts) {
     var /** @type {?} */ unwrapperStmts = [];
     var /** @type {?} */ readVars = o.findReadVarNames(stmts);
     if (readVars.has(VAL_UNWRAPPER_VAR.name)) {
@@ -150,6 +218,15 @@ export function createSharedBindingVariablesIfNeeded(stmts) {
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
     return unwrapperStmts;
+}
+/**
+ * @param {?} converterFactory
+ * @param {?} ast
+ * @return {?}
+ */
+function convertBuiltins(converterFactory, ast) {
+    var /** @type {?} */ visitor = new _BuiltinAstConverter(converterFactory);
+    return ast.visit(visitor);
 }
 /**
  * @param {?} bindingId
@@ -216,26 +293,65 @@ function convertToStatementIfNeeded(mode, expr) {
         return expr;
     }
 }
+var _BuiltinAstConverter = (function (_super) {
+    __extends(_BuiltinAstConverter, _super);
+    /**
+     * @param {?} _converterFactory
+     */
+    function _BuiltinAstConverter(_converterFactory) {
+        var _this = _super.call(this) || this;
+        _this._converterFactory = _converterFactory;
+        return _this;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    _BuiltinAstConverter.prototype.visitPipe = function (ast, context) {
+        var _this = this;
+        var /** @type {?} */ args = [ast.exp].concat(ast.args).map(function (ast) { return ast.visit(_this, context); });
+        return new BuiltinFunctionCall(ast.span, args, this._converterFactory.createPipeConverter(ast.name, args.length));
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    _BuiltinAstConverter.prototype.visitLiteralArray = function (ast, context) {
+        var _this = this;
+        var /** @type {?} */ args = ast.expressions.map(function (ast) { return ast.visit(_this, context); });
+        return new BuiltinFunctionCall(ast.span, args, this._converterFactory.createLiteralArrayConverter(ast.expressions.length));
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    _BuiltinAstConverter.prototype.visitLiteralMap = function (ast, context) {
+        var _this = this;
+        var /** @type {?} */ args = ast.values.map(function (ast) { return ast.visit(_this, context); });
+        return new BuiltinFunctionCall(ast.span, args, this._converterFactory.createLiteralMapConverter(ast.keys));
+    };
+    return _BuiltinAstConverter;
+}(cdAst.AstTransformer));
+function _BuiltinAstConverter_tsickle_Closure_declarations() {
+    /** @type {?} */
+    _BuiltinAstConverter.prototype._converterFactory;
+}
 var _AstToIrVisitor = (function () {
     /**
-     * @param {?} _builder
-     * @param {?} _nameResolver
+     * @param {?} _localResolver
      * @param {?} _implicitReceiver
-     * @param {?} _valueUnwrapper
      * @param {?} bindingId
-     * @param {?} isAction
      */
-    function _AstToIrVisitor(_builder, _nameResolver, _implicitReceiver, _valueUnwrapper, bindingId, isAction) {
-        this._builder = _builder;
-        this._nameResolver = _nameResolver;
+    function _AstToIrVisitor(_localResolver, _implicitReceiver, bindingId) {
+        this._localResolver = _localResolver;
         this._implicitReceiver = _implicitReceiver;
-        this._valueUnwrapper = _valueUnwrapper;
         this.bindingId = bindingId;
-        this.isAction = isAction;
         this._nodeMap = new Map();
         this._resultMap = new Map();
         this._currentTemporary = 0;
-        this.needsValueUnwrapper = false;
         this.temporaryCount = 0;
     }
     /**
@@ -320,14 +436,7 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitPipe = function (ast, mode) {
-        var /** @type {?} */ input = this.visit(ast.exp, _Mode.Expression);
-        var /** @type {?} */ args = this.visitAll(ast.args, _Mode.Expression);
-        var /** @type {?} */ value = this._nameResolver.callPipe(ast.name, input, args);
-        if (!value) {
-            throw new Error("Illegal state: Pipe " + ast.name + " is not allowed here!");
-        }
-        this.needsValueUnwrapper = true;
-        return convertToStatementIfNeeded(mode, this._valueUnwrapper.callMethod('unwrap', [value]));
+        throw new Error("Illegal state: Pipes should have been converted into functions. Pipe: " + ast.name);
     };
     /**
      * @param {?} ast
@@ -335,7 +444,15 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitFunctionCall = function (ast, mode) {
-        return convertToStatementIfNeeded(mode, this.visit(ast.target, _Mode.Expression).callFn(this.visitAll(ast.args, _Mode.Expression)));
+        var /** @type {?} */ convertedArgs = this.visitAll(ast.args, _Mode.Expression);
+        var /** @type {?} */ fnResult;
+        if (ast instanceof BuiltinFunctionCall) {
+            fnResult = ast.converter(convertedArgs);
+        }
+        else {
+            fnResult = this.visit(ast.target, _Mode.Expression).callFn(convertedArgs);
+        }
+        return convertToStatementIfNeeded(mode, fnResult);
     };
     /**
      * @param {?} ast
@@ -396,9 +513,7 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitLiteralArray = function (ast, mode) {
-        var /** @type {?} */ parts = this.visitAll(ast.expressions, mode);
-        var /** @type {?} */ literalArr = this.isAction ? o.literalArr(parts) : createCachedLiteralArray(this._builder, parts);
-        return convertToStatementIfNeeded(mode, literalArr);
+        throw new Error("Illegal State: literal arrays should have been converted into functions");
     };
     /**
      * @param {?} ast
@@ -406,12 +521,7 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitLiteralMap = function (ast, mode) {
-        var /** @type {?} */ parts = [];
-        for (var /** @type {?} */ i = 0; i < ast.keys.length; i++) {
-            parts.push([ast.keys[i], this.visit(ast.values[i], _Mode.Expression)]);
-        }
-        var /** @type {?} */ literalMap = this.isAction ? o.literalMap(parts) : createCachedLiteralMap(this._builder, parts);
-        return convertToStatementIfNeeded(mode, literalMap);
+        throw new Error("Illegal State: literal maps should have been converted into functions");
     };
     /**
      * @param {?} ast
@@ -425,12 +535,7 @@ var _AstToIrVisitor = (function () {
      * @param {?} name
      * @return {?}
      */
-    _AstToIrVisitor.prototype._getLocal = function (name) {
-        if (this.isAction && name == EventHandlerVars.event.name) {
-            return EventHandlerVars.event;
-        }
-        return this._nameResolver.getLocal(name);
-    };
+    _AstToIrVisitor.prototype._getLocal = function (name) { return this._localResolver.getLocal(name); };
     /**
      * @param {?} ast
      * @param {?} mode
@@ -870,21 +975,13 @@ function _AstToIrVisitor_tsickle_Closure_declarations() {
     /** @type {?} */
     _AstToIrVisitor.prototype._currentTemporary;
     /** @type {?} */
-    _AstToIrVisitor.prototype.needsValueUnwrapper;
-    /** @type {?} */
     _AstToIrVisitor.prototype.temporaryCount;
     /** @type {?} */
-    _AstToIrVisitor.prototype._builder;
-    /** @type {?} */
-    _AstToIrVisitor.prototype._nameResolver;
+    _AstToIrVisitor.prototype._localResolver;
     /** @type {?} */
     _AstToIrVisitor.prototype._implicitReceiver;
     /** @type {?} */
-    _AstToIrVisitor.prototype._valueUnwrapper;
-    /** @type {?} */
     _AstToIrVisitor.prototype.bindingId;
-    /** @type {?} */
-    _AstToIrVisitor.prototype.isAction;
 }
 /**
  * @param {?} arg
@@ -904,7 +1001,7 @@ function flattenStatements(arg, output) {
  * @param {?} values
  * @return {?}
  */
-function createCachedLiteralArray(builder, values) {
+function legacyCreateCachedLiteralArray(builder, values) {
     if (values.length === 0) {
         return o.importExpr(createIdentifier(Identifiers.EMPTY_ARRAY));
     }
@@ -924,7 +1021,7 @@ function createCachedLiteralArray(builder, values) {
  * @param {?} entries
  * @return {?}
  */
-function createCachedLiteralMap(builder, entries) {
+function legacyCreateCachedLiteralMap(builder, entries) {
     if (entries.length === 0) {
         return o.importExpr(createIdentifier(Identifiers.EMPTY_MAP));
     }
@@ -941,8 +1038,23 @@ function createCachedLiteralMap(builder, entries) {
     createPureProxy(o.fn(proxyParams, [new o.ReturnStatement(o.literalMap(proxyReturnEntries))], new o.MapType(o.DYNAMIC_TYPE)), entries.length, proxyExpr, builder);
     return proxyExpr.callFn(values);
 }
-var DefaultNameResolver = (function () {
-    function DefaultNameResolver() {
+var DefaultLocalResolver = (function () {
+    function DefaultLocalResolver() {
+    }
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    DefaultLocalResolver.prototype.getLocal = function (name) {
+        if (name === EventHandlerVars.event.name) {
+            return EventHandlerVars.event;
+        }
+        return null;
+    };
+    return DefaultLocalResolver;
+}());
+var LegacyDefaultNameResolver = (function () {
+    function LegacyDefaultNameResolver() {
     }
     /**
      * @param {?} name
@@ -950,13 +1062,18 @@ var DefaultNameResolver = (function () {
      * @param {?} args
      * @return {?}
      */
-    DefaultNameResolver.prototype.callPipe = function (name, input, args) { return null; };
+    LegacyDefaultNameResolver.prototype.callPipe = function (name, input, args) { return null; };
     /**
      * @param {?} name
      * @return {?}
      */
-    DefaultNameResolver.prototype.getLocal = function (name) { return null; };
-    return DefaultNameResolver;
+    LegacyDefaultNameResolver.prototype.getLocal = function (name) {
+        if (name === EventHandlerVars.event.name) {
+            return EventHandlerVars.event;
+        }
+        return null;
+    };
+    return LegacyDefaultNameResolver;
 }());
 /**
  * @param {?} bindingId
@@ -984,5 +1101,26 @@ function convertStmtIntoExpression(stmt) {
         return stmt.value;
     }
     return null;
+}
+var BuiltinFunctionCall = (function (_super) {
+    __extends(BuiltinFunctionCall, _super);
+    /**
+     * @param {?} span
+     * @param {?} args
+     * @param {?} converter
+     */
+    function BuiltinFunctionCall(span, args, converter) {
+        var _this = _super.call(this, span, null, args) || this;
+        _this.args = args;
+        _this.converter = converter;
+        return _this;
+    }
+    return BuiltinFunctionCall;
+}(cdAst.FunctionCall));
+function BuiltinFunctionCall_tsickle_Closure_declarations() {
+    /** @type {?} */
+    BuiltinFunctionCall.prototype.args;
+    /** @type {?} */
+    BuiltinFunctionCall.prototype.converter;
 }
 //# sourceMappingURL=expression_converter.js.map

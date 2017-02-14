@@ -29,8 +29,9 @@ export declare class TemplateParseError extends ParseError {
 }
 export declare class TemplateParseResult {
     templateAst: TemplateAst[];
+    usedPipes: CompilePipeSummary[];
     errors: ParseError[];
-    constructor(templateAst?: TemplateAst[], errors?: ParseError[]);
+    constructor(templateAst?: TemplateAst[], usedPipes?: CompilePipeSummary[], errors?: ParseError[]);
 }
 export declare class TemplateParser {
     private _exprParser;
@@ -39,7 +40,10 @@ export declare class TemplateParser {
     private _console;
     transforms: TemplateAstVisitor[];
     constructor(_exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, _htmlParser: I18NHtmlParser, _console: Console, transforms: TemplateAstVisitor[]);
-    parse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string): TemplateAst[];
+    parse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string): {
+        template: TemplateAst[];
+        pipes: CompilePipeSummary[];
+    };
     tryParse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string): TemplateParseResult;
     tryParseHtml(htmlAstWithErrors: ParseTreeResult, component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string): TemplateParseResult;
     expandHtml(htmlAstWithErrors: ParseTreeResult, forced?: boolean): ParseTreeResult;
