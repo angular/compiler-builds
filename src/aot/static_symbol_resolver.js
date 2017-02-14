@@ -125,6 +125,16 @@ var StaticSymbolResolver = (function () {
         return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
     };
     /**
+     * @param {?} sourceSymbol
+     * @param {?} targetSymbol
+     * @return {?}
+     */
+    StaticSymbolResolver.prototype.recordImportAs = function (sourceSymbol, targetSymbol) {
+        sourceSymbol.assertNoMembers();
+        targetSymbol.assertNoMembers();
+        this.importAs.set(sourceSymbol, targetSymbol);
+    };
+    /**
      * @param {?} staticSymbol
      * @return {?}
      */

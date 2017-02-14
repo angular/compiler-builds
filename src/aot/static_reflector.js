@@ -60,10 +60,19 @@ var StaticReflector = (function () {
     /**
      * @param {?} name
      * @param {?} moduleUrl
+     * @param {?} members
      * @return {?}
      */
-    StaticReflector.prototype.resolveIdentifier = function (name, moduleUrl) {
-        return this.findDeclaration(moduleUrl, name);
+    StaticReflector.prototype.resolveIdentifier = function (name, moduleUrl, members) {
+        var /** @type {?} */ importSymbol = this.getStaticSymbol(moduleUrl, name);
+        var /** @type {?} */ rootSymbol = this.findDeclaration(moduleUrl, name);
+        if (importSymbol != rootSymbol) {
+            this.symbolResolver.recordImportAs(rootSymbol, importSymbol);
+        }
+        if (members && members.length) {
+            return this.getStaticSymbol(rootSymbol.filePath, rootSymbol.name, members);
+        }
+        return rootSymbol;
     };
     /**
      * @param {?} moduleUrl
@@ -94,7 +103,8 @@ var StaticReflector = (function () {
      */
     StaticReflector.prototype.resolveEnum = function (enumIdentifier, name) {
         var /** @type {?} */ staticSymbol = enumIdentifier;
-        return this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name, [name]);
+        var /** @type {?} */ members = (staticSymbol.members || []).concat(name);
+        return this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name, members);
     };
     /**
      * @param {?} type

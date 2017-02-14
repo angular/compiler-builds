@@ -71,6 +71,7 @@ export declare class StaticSymbolResolver {
      * has. If the symbol is not a type the result is null.
      */
     getTypeArity(staticSymbol: StaticSymbol): number;
+    recordImportAs(sourceSymbol: StaticSymbol, targetSymbol: StaticSymbol): void;
     private _resolveSymbolMembers(staticSymbol);
     private _resolveSymbolFromSummary(staticSymbol);
     /**

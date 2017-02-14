@@ -86,11 +86,12 @@ var StaticAndDynamicReflectionCapabilities = (function () {
     /**
      * @param {?} name
      * @param {?} moduleUrl
+     * @param {?} members
      * @param {?} runtime
      * @return {?}
      */
-    StaticAndDynamicReflectionCapabilities.prototype.resolveIdentifier = function (name, moduleUrl, runtime) {
-        return this.staticDelegate.resolveIdentifier(name, moduleUrl);
+    StaticAndDynamicReflectionCapabilities.prototype.resolveIdentifier = function (name, moduleUrl, members, runtime) {
+        return this.staticDelegate.resolveIdentifier(name, moduleUrl, members);
     };
     /**
      * @param {?} enumIdentifier
