@@ -16,7 +16,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { dirWrapperClassName, identifierModuleUrl, identifierName } from './compile_metadata';
 import { createCheckBindingField, isFirstViewCheck } from './compiler_util/binding_util';
-import { EventHandlerVars, convertActionBinding, convertPropertyBinding } from './compiler_util/expression_converter';
+import { EventHandlerVars, convertActionBinding, legacyConvertPropertyBinding } from './compiler_util/expression_converter';
 import { createCheckAnimationBindingStmts, createCheckRenderBindingStmt } from './compiler_util/render_util';
 import { CompilerConfig } from './config';
 import { Parser } from './expression_parser/parser';
@@ -297,7 +297,7 @@ function addCheckHostMethod(hostProps, hostEvents, builder) {
     ];
     hostProps.forEach((hostProp, hostPropIdx) => {
         const /** @type {?} */ field = createCheckBindingField(builder);
-        const /** @type {?} */ evalResult = convertPropertyBinding(builder, null, o.THIS_EXPR.prop(CONTEXT_FIELD_NAME), hostProp.value, field.bindingId);
+        const /** @type {?} */ evalResult = legacyConvertPropertyBinding(builder, null, o.THIS_EXPR.prop(CONTEXT_FIELD_NAME), hostProp.value, field.bindingId);
         if (!evalResult) {
             return;
         }
@@ -327,7 +327,7 @@ function addHandleEventMethod(hostListeners, builder) {
     const /** @type {?} */ resultVar = o.variable(`result`);
     const /** @type {?} */ actionStmts = [resultVar.set(o.literal(true)).toDeclStmt(o.BOOL_TYPE)];
     hostListeners.forEach((hostListener, eventIdx) => {
-        const /** @type {?} */ evalResult = convertActionBinding(builder, null, o.THIS_EXPR.prop(CONTEXT_FIELD_NAME), hostListener.handler, `sub_${eventIdx}`);
+        const /** @type {?} */ evalResult = convertActionBinding(null, o.THIS_EXPR.prop(CONTEXT_FIELD_NAME), hostListener.handler, `sub_${eventIdx}`);
         const /** @type {?} */ trueStmts = evalResult.stmts;
         if (evalResult.allowDefault) {
             trueStmts.push(resultVar.set(evalResult.allowDefault.and(resultVar)).toStmt());

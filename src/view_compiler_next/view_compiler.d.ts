@@ -9,5 +9,5 @@ export declare class ViewCompilerNext extends ViewCompiler {
     private _genConfigNext;
     private _schemaRegistryNext;
     constructor(_genConfigNext: CompilerConfig, _schemaRegistryNext: ElementSchemaRegistry);
-    compileComponent(component: CompileDirectiveMetadata, template: TemplateAst[], styles: o.Expression, pipes: CompilePipeSummary[], compiledAnimations: AnimationEntryCompileResult[]): ViewCompileResult;
+    compileComponent(component: CompileDirectiveMetadata, template: TemplateAst[], styles: o.Expression, usedPipes: CompilePipeSummary[], compiledAnimations: AnimationEntryCompileResult[]): ViewCompileResult;
 }

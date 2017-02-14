@@ -7,7 +7,7 @@
  */
 import { AnimationEntryCompileResult } from '../animation/animation_compiler';
 import { CompileDirectiveMetadata, CompilePipeSummary } from '../compile_metadata';
-import { NameResolver } from '../compiler_util/expression_converter';
+import { LegacyNameResolver } from '../compiler_util/expression_converter';
 import { CompilerConfig } from '../config';
 import * as o from '../output/output_ast';
 import { ViewType } from '../private_import_core';
@@ -27,7 +27,7 @@ export declare class CompileViewRootNode {
     ngContentIndex: number;
     constructor(type: CompileViewRootNodeType, expr: o.Expression, ngContentIndex?: number);
 }
-export declare class CompileView implements NameResolver {
+export declare class CompileView implements LegacyNameResolver {
     component: CompileDirectiveMetadata;
     genConfig: CompilerConfig;
     pipeMetas: CompilePipeSummary[];

@@ -381,10 +381,35 @@ Identifiers.queryDef = {
     moduleUrl: VIEW_ENGINE_MODULE_URL,
     runtime: viewEngine.queryDef
 };
+Identifiers.pureArrayDef = {
+    name: 'pureArrayDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.pureArrayDef
+};
+Identifiers.pureObjectDef = {
+    name: 'pureObjectDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.pureObjectDef
+};
+Identifiers.purePipeDef = {
+    name: 'purePipeDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.purePipeDef
+};
+Identifiers.pipeDef = {
+    name: 'pipeDef',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.pipeDef
+};
 Identifiers.nodeValue = {
     name: 'nodeValue',
     moduleUrl: VIEW_ENGINE_MODULE_URL,
     runtime: viewEngine.nodeValue
+};
+Identifiers.unwrapValue = {
+    name: 'unwrapValue',
+    moduleUrl: VIEW_ENGINE_MODULE_URL,
+    runtime: viewEngine.unwrapValue
 };
 function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
@@ -540,7 +565,17 @@ function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.queryDef;
     /** @type {?} */
+    Identifiers.pureArrayDef;
+    /** @type {?} */
+    Identifiers.pureObjectDef;
+    /** @type {?} */
+    Identifiers.purePipeDef;
+    /** @type {?} */
+    Identifiers.pipeDef;
+    /** @type {?} */
     Identifiers.nodeValue;
+    /** @type {?} */
+    Identifiers.unwrapValue;
 }
 /**
  * @param {?} pkg

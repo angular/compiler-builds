@@ -16,6 +16,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { Inject, InjectionToken, Optional } from '@angular/core/index';
 import { identifierName } from '../compile_metadata';
+import { ASTWithSource, EmptyExpr } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { isPresent } from '../facade/lang';
 import { I18NHtmlParser } from '../i18n/i18n_html_parser';
@@ -83,16 +84,20 @@ export class TemplateParseError extends ParseError {
 export class TemplateParseResult {
     /**
      * @param {?=} templateAst
+     * @param {?=} usedPipes
      * @param {?=} errors
      */
-    constructor(templateAst, errors) {
+    constructor(templateAst, usedPipes, errors) {
         this.templateAst = templateAst;
+        this.usedPipes = usedPipes;
         this.errors = errors;
     }
 }
 function TemplateParseResult_tsickle_Closure_declarations() {
     /** @type {?} */
     TemplateParseResult.prototype.templateAst;
+    /** @type {?} */
+    TemplateParseResult.prototype.usedPipes;
     /** @type {?} */
     TemplateParseResult.prototype.errors;
 }
@@ -131,7 +136,7 @@ let TemplateParser = class TemplateParser {
             const /** @type {?} */ errorString = errors.join('\n');
             throw syntaxError(`Template parse errors:\n${errorString}`);
         }
-        return result.templateAst;
+        return { template: result.templateAst, pipes: result.usedPipes };
     }
     /**
      * @param {?} component
@@ -158,6 +163,7 @@ let TemplateParser = class TemplateParser {
     tryParseHtml(htmlAstWithErrors, component, template, directives, pipes, schemas, templateUrl) {
         let /** @type {?} */ result;
         const /** @type {?} */ errors = htmlAstWithErrors.errors;
+        const /** @type {?} */ usedPipes = [];
         if (htmlAstWithErrors.rootNodes.length > 0) {
             const /** @type {?} */ uniqDirectives = removeSummaryDuplicates(directives);
             const /** @type {?} */ uniqPipes = removeSummaryDuplicates(pipes);
@@ -173,18 +179,19 @@ let TemplateParser = class TemplateParser {
             const /** @type {?} */ parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, bindingParser, this._schemaRegistry, schemas, errors);
             result = html.visitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
             errors.push(...providerViewContext.errors);
+            usedPipes.push(...bindingParser.getUsedPipes());
         }
         else {
             result = [];
         }
         this._assertNoReferenceDuplicationOnTemplate(result, errors);
         if (errors.length > 0) {
-            return new TemplateParseResult(result, errors);
+            return new TemplateParseResult(result, usedPipes, errors);
         }
         if (this.transforms) {
             this.transforms.forEach((transform) => { result = templateVisitAll(transform, result); });
         }
-        return new TemplateParseResult(result, errors);
+        return new TemplateParseResult(result, usedPipes, errors);
     }
     /**
      * @param {?} htmlAstWithErrors
@@ -390,8 +397,9 @@ class TemplateParseVisitor {
         const /** @type {?} */ elementCssSelector = createElementCssSelector(nodeName, matchableAttrs);
         const { directives: directiveMetas, matchElement } = this._parseDirectives(this.selectorMatcher, elementCssSelector);
         const /** @type {?} */ references = [];
-        const /** @type {?} */ directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references);
-        const /** @type {?} */ elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, directiveAsts);
+        const /** @type {?} */ boundDirectivePropNames = new Set();
+        const /** @type {?} */ directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references, boundDirectivePropNames);
+        const /** @type {?} */ elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, boundDirectivePropNames);
         const /** @type {?} */ isViewRoot = parent.isTemplateElement || hasInlineTemplates;
         const /** @type {?} */ providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
         const /** @type {?} */ children = html.visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
@@ -426,8 +434,9 @@ class TemplateParseVisitor {
         if (hasInlineTemplates) {
             const /** @type {?} */ templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
             const { directives: templateDirectiveMetas } = this._parseDirectives(this.selectorMatcher, templateCssSelector);
-            const /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, []);
-            const /** @type {?} */ templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateDirectiveAsts);
+            const /** @type {?} */ templateBoundDirectivePropNames = new Set();
+            const /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, [], templateBoundDirectivePropNames);
+            const /** @type {?} */ templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
             this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, element.sourceSpan);
             const /** @type {?} */ templateProviderContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], element.sourceSpan);
             templateProviderContext.afterElement();
@@ -596,9 +605,10 @@ class TemplateParseVisitor {
      * @param {?} elementOrDirectiveRefs
      * @param {?} elementSourceSpan
      * @param {?} targetReferences
+     * @param {?} targetBoundDirectivePropNames
      * @return {?}
      */
-    _createDirectiveAsts(isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, elementSourceSpan, targetReferences) {
+    _createDirectiveAsts(isTemplateElement, elementName, directives, props, elementOrDirectiveRefs, elementSourceSpan, targetReferences, targetBoundDirectivePropNames) {
         const /** @type {?} */ matchedReferences = new Set();
         let /** @type {?} */ component = null;
         const /** @type {?} */ directiveAsts = directives.map((directive) => {
@@ -607,12 +617,12 @@ class TemplateParseVisitor {
                 component = directive;
             }
             const /** @type {?} */ directiveProperties = [];
-            const /** @type {?} */ hostProperties = this._bindingParser.createDirectiveHostPropertyAsts(directive, sourceSpan);
+            let /** @type {?} */ hostProperties = this._bindingParser.createDirectiveHostPropertyAsts(directive, sourceSpan);
             // Note: We need to check the host properties here as well,
             // as we don't know the element name in the DirectiveWrapperCompiler yet.
-            this._checkPropertiesInSchema(elementName, hostProperties);
+            hostProperties = this._checkPropertiesInSchema(elementName, hostProperties);
             const /** @type {?} */ hostEvents = this._bindingParser.createDirectiveHostEventAsts(directive, sourceSpan);
-            this._createDirectivePropertyAsts(directive.inputs, props, directiveProperties);
+            this._createDirectivePropertyAsts(directive.inputs, props, directiveProperties, targetBoundDirectivePropNames);
             elementOrDirectiveRefs.forEach((elOrDirRef) => {
                 if ((elOrDirRef.value.length === 0 && directive.isComponent) ||
                     (directive.exportAs == elOrDirRef.value)) {
@@ -642,9 +652,10 @@ class TemplateParseVisitor {
      * @param {?} directiveProperties
      * @param {?} boundProps
      * @param {?} targetBoundDirectiveProps
+     * @param {?} targetBoundDirectivePropNames
      * @return {?}
      */
-    _createDirectivePropertyAsts(directiveProperties, boundProps, targetBoundDirectiveProps) {
+    _createDirectivePropertyAsts(directiveProperties, boundProps, targetBoundDirectiveProps, targetBoundDirectivePropNames) {
         if (directiveProperties) {
             const /** @type {?} */ boundPropsByName = new Map();
             boundProps.forEach(boundProp => {
@@ -659,7 +670,10 @@ class TemplateParseVisitor {
                 const /** @type {?} */ boundProp = boundPropsByName.get(elProp);
                 // Bindings are optional, so this binding only needs to be set up if an expression is given.
                 if (boundProp) {
-                    targetBoundDirectiveProps.push(new BoundDirectivePropertyAst(dirProp, boundProp.name, boundProp.expression, boundProp.sourceSpan));
+                    targetBoundDirectivePropNames.add(boundProp.name);
+                    if (!isEmptyExpression(boundProp.expression)) {
+                        targetBoundDirectiveProps.push(new BoundDirectivePropertyAst(dirProp, boundProp.name, boundProp.expression, boundProp.sourceSpan));
+                    }
                 }
             });
         }
@@ -667,24 +681,17 @@ class TemplateParseVisitor {
     /**
      * @param {?} elementName
      * @param {?} props
-     * @param {?} directives
+     * @param {?} boundDirectivePropNames
      * @return {?}
      */
-    _createElementPropertyAsts(elementName, props, directives) {
+    _createElementPropertyAsts(elementName, props, boundDirectivePropNames) {
         const /** @type {?} */ boundElementProps = [];
-        const /** @type {?} */ boundDirectivePropsIndex = new Map();
-        directives.forEach((directive) => {
-            directive.inputs.forEach((prop) => {
-                boundDirectivePropsIndex.set(prop.templateName, prop);
-            });
-        });
         props.forEach((prop) => {
-            if (!prop.isLiteral && !boundDirectivePropsIndex.get(prop.name)) {
+            if (!prop.isLiteral && !boundDirectivePropNames.has(prop.name)) {
                 boundElementProps.push(this._bindingParser.createElementPropertyAst(elementName, prop));
             }
         });
-        this._checkPropertiesInSchema(elementName, boundElementProps);
-        return boundElementProps;
+        return this._checkPropertiesInSchema(elementName, boundElementProps);
     }
     /**
      * @param {?} directives
@@ -781,7 +788,9 @@ class TemplateParseVisitor {
      * @return {?}
      */
     _checkPropertiesInSchema(elementName, boundProps) {
-        boundProps.forEach((boundProp) => {
+        // Note: We can't filter out empty expressions before this method,
+        // as we still want to validate them!
+        return boundProps.filter((boundProp) => {
             if (boundProp.type === PropertyBindingType.Property &&
                 !this._schemaRegistry.hasProperty(elementName, boundProp.name, this._schemas)) {
                 let /** @type {?} */ errorMsg = `Can't bind to '${boundProp.name}' since it isn't a known property of '${elementName}'.`;
@@ -798,6 +807,7 @@ class TemplateParseVisitor {
                 }
                 this._reportError(errorMsg, boundProp.sourceSpan);
             }
+            return !isEmptyExpression(boundProp.value);
         });
     }
     /**
@@ -1016,6 +1026,16 @@ export function removeSummaryDuplicates(items) {
         }
     });
     return Array.from(map.values());
+}
+/**
+ * @param {?} ast
+ * @return {?}
+ */
+function isEmptyExpression(ast) {
+    if (ast instanceof ASTWithSource) {
+        ast = ast.ast;
+    }
+    return ast instanceof EmptyExpr;
 }
 var _a;
 //# sourceMappingURL=template_parser.js.map

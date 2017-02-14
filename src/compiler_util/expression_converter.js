@@ -18,65 +18,6 @@ function EventHandlerVars_tsickle_Closure_declarations() {
     /** @type {?} */
     EventHandlerVars.event;
 }
-export class ConvertPropertyBindingResult {
-    /**
-     * @param {?} stmts
-     * @param {?} currValExpr
-     * @param {?} forceUpdate
-     */
-    constructor(stmts, currValExpr, forceUpdate) {
-        this.stmts = stmts;
-        this.currValExpr = currValExpr;
-        this.forceUpdate = forceUpdate;
-    }
-}
-function ConvertPropertyBindingResult_tsickle_Closure_declarations() {
-    /** @type {?} */
-    ConvertPropertyBindingResult.prototype.stmts;
-    /** @type {?} */
-    ConvertPropertyBindingResult.prototype.currValExpr;
-    /** @type {?} */
-    ConvertPropertyBindingResult.prototype.forceUpdate;
-}
-/**
- * Converts the given expression AST into an executable output AST, assuming the expression is
- * used in a property binding.
- * @param {?} builder
- * @param {?} nameResolver
- * @param {?} implicitReceiver
- * @param {?} expression
- * @param {?} bindingId
- * @return {?}
- */
-export function convertPropertyBinding(builder, nameResolver, implicitReceiver, expression, bindingId) {
-    const /** @type {?} */ currValExpr = createCurrValueExpr(bindingId);
-    const /** @type {?} */ stmts = [];
-    if (!nameResolver) {
-        nameResolver = new DefaultNameResolver();
-    }
-    const /** @type {?} */ visitor = new _AstToIrVisitor(builder, nameResolver, implicitReceiver, VAL_UNWRAPPER_VAR, bindingId, false);
-    const /** @type {?} */ outputExpr = expression.visit(visitor, _Mode.Expression);
-    if (!outputExpr) {
-        // e.g. an empty expression was given
-        return null;
-    }
-    if (visitor.temporaryCount) {
-        for (let /** @type {?} */ i = 0; i < visitor.temporaryCount; i++) {
-            stmts.push(temporaryDeclaration(bindingId, i));
-        }
-    }
-    if (visitor.needsValueUnwrapper) {
-        const /** @type {?} */ initValueUnwrapperStmt = VAL_UNWRAPPER_VAR.callMethod('reset', []).toStmt();
-        stmts.push(initValueUnwrapperStmt);
-    }
-    stmts.push(currValExpr.set(outputExpr).toDeclStmt(null, [o.StmtModifier.Final]));
-    if (visitor.needsValueUnwrapper) {
-        return new ConvertPropertyBindingResult(stmts, currValExpr, VAL_UNWRAPPER_VAR.prop('hasWrappedValue'));
-    }
-    else {
-        return new ConvertPropertyBindingResult(stmts, currValExpr, null);
-    }
-}
 export class ConvertActionBindingResult {
     /**
      * @param {?} stmts
@@ -96,20 +37,32 @@ function ConvertActionBindingResult_tsickle_Closure_declarations() {
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression is
  * used in an action binding (e.g. an event handler).
- * @param {?} builder
- * @param {?} nameResolver
+ * @param {?} localResolver
  * @param {?} implicitReceiver
  * @param {?} action
  * @param {?} bindingId
  * @return {?}
  */
-export function convertActionBinding(builder, nameResolver, implicitReceiver, action, bindingId) {
-    if (!nameResolver) {
-        nameResolver = new DefaultNameResolver();
+export function convertActionBinding(localResolver, implicitReceiver, action, bindingId) {
+    if (!localResolver) {
+        localResolver = new DefaultLocalResolver();
     }
-    const /** @type {?} */ visitor = new _AstToIrVisitor(builder, nameResolver, implicitReceiver, null, bindingId, true);
+    const /** @type {?} */ actionWithoutBuiltins = convertPropertyBindingBuiltins({
+        createLiteralArrayConverter: (argCount) => {
+            // Note: no caching for literal arrays in actions.
+            return (args) => o.literalArr(args);
+        },
+        createLiteralMapConverter: (keys) => {
+            // Note: no caching for literal maps in actions.
+            return (args) => o.literalMap(/** @type {?} */ (keys.map((key, i) => [key, args[i]])));
+        },
+        createPipeConverter: (name) => {
+            throw new Error(`Illegal State: Actions are not allowed to contain pipes. Pipe: ${name}`);
+        }
+    }, action);
+    const /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId);
     const /** @type {?} */ actionStmts = [];
-    flattenStatements(action.visit(visitor, _Mode.Statement), actionStmts);
+    flattenStatements(actionWithoutBuiltins.visit(visitor, _Mode.Statement), actionStmts);
     prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
     const /** @type {?} */ lastIndex = actionStmts.length - 1;
     let /** @type {?} */ preventDefaultVar = null;
@@ -128,12 +81,118 @@ export function convertActionBinding(builder, nameResolver, implicitReceiver, ac
     return new ConvertActionBindingResult(actionStmts, preventDefaultVar);
 }
 /**
+ * @param {?} converterFactory
+ * @param {?} ast
+ * @return {?}
+ */
+export function convertPropertyBindingBuiltins(converterFactory, ast) {
+    return convertBuiltins(converterFactory, ast);
+}
+export class ConvertPropertyBindingResult {
+    /**
+     * @param {?} stmts
+     * @param {?} currValExpr
+     */
+    constructor(stmts, currValExpr) {
+        this.stmts = stmts;
+        this.currValExpr = currValExpr;
+    }
+}
+function ConvertPropertyBindingResult_tsickle_Closure_declarations() {
+    /** @type {?} */
+    ConvertPropertyBindingResult.prototype.stmts;
+    /** @type {?} */
+    ConvertPropertyBindingResult.prototype.currValExpr;
+}
+/**
+ * Converts the given expression AST into an executable output AST, assuming the expression
+ * is used in property binding. The expression has to be preprocessed via
+ * `convertPropertyBindingBuiltins`.
+ * @param {?} localResolver
+ * @param {?} implicitReceiver
+ * @param {?} expressionWithoutBuiltins
+ * @param {?} bindingId
+ * @return {?}
+ */
+export function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId) {
+    if (!localResolver) {
+        localResolver = new DefaultLocalResolver();
+    }
+    const /** @type {?} */ currValExpr = createCurrValueExpr(bindingId);
+    const /** @type {?} */ stmts = [];
+    const /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId);
+    const /** @type {?} */ outputExpr = expressionWithoutBuiltins.visit(visitor, _Mode.Expression);
+    if (visitor.temporaryCount) {
+        for (let /** @type {?} */ i = 0; i < visitor.temporaryCount; i++) {
+            stmts.push(temporaryDeclaration(bindingId, i));
+        }
+    }
+    stmts.push(currValExpr.set(outputExpr).toDeclStmt(null, [o.StmtModifier.Final]));
+    return new ConvertPropertyBindingResult(stmts, currValExpr);
+}
+export class LegacyConvertPropertyBindingResult {
+    /**
+     * @param {?} stmts
+     * @param {?} currValExpr
+     * @param {?} forceUpdate
+     */
+    constructor(stmts, currValExpr, forceUpdate) {
+        this.stmts = stmts;
+        this.currValExpr = currValExpr;
+        this.forceUpdate = forceUpdate;
+    }
+}
+function LegacyConvertPropertyBindingResult_tsickle_Closure_declarations() {
+    /** @type {?} */
+    LegacyConvertPropertyBindingResult.prototype.stmts;
+    /** @type {?} */
+    LegacyConvertPropertyBindingResult.prototype.currValExpr;
+    /** @type {?} */
+    LegacyConvertPropertyBindingResult.prototype.forceUpdate;
+}
+/**
+ * Converts the given expression AST into an executable output AST, assuming the expression is
+ * used in a property binding.
+ * @param {?} builder
+ * @param {?} nameResolver
+ * @param {?} implicitReceiver
+ * @param {?} expression
+ * @param {?} bindingId
+ * @return {?}
+ */
+export function legacyConvertPropertyBinding(builder, nameResolver, implicitReceiver, expression, bindingId) {
+    if (!nameResolver) {
+        nameResolver = new LegacyDefaultNameResolver();
+    }
+    let /** @type {?} */ needsValueUnwrapper = false;
+    const /** @type {?} */ expressionWithoutBuiltins = convertBuiltins({
+        createLiteralArrayConverter: (argCount) => {
+            return (args) => legacyCreateCachedLiteralArray(builder, args);
+        },
+        createLiteralMapConverter: (keys) => {
+            return (args) => legacyCreateCachedLiteralMap(builder, /** @type {?} */ (keys.map((key, i) => [key, args[i]])));
+        },
+        createPipeConverter: (name) => {
+            needsValueUnwrapper = true;
+            return (args) => VAL_UNWRAPPER_VAR.callMethod('unwrap', [nameResolver.callPipe(name, args[0], args.slice(1))]);
+        }
+    }, expression);
+    const { stmts, currValExpr } = convertPropertyBinding(nameResolver, implicitReceiver, expressionWithoutBuiltins, bindingId);
+    let /** @type {?} */ forceUpdate = null;
+    if (needsValueUnwrapper) {
+        const /** @type {?} */ initValueUnwrapperStmt = VAL_UNWRAPPER_VAR.callMethod('reset', []).toStmt();
+        stmts.unshift(initValueUnwrapperStmt);
+        forceUpdate = VAL_UNWRAPPER_VAR.prop('hasWrappedValue');
+    }
+    return new LegacyConvertPropertyBindingResult(stmts, currValExpr, forceUpdate);
+}
+/**
  * Creates variables that are shared by multiple calls to `convertActionBinding` /
  * `convertPropertyBinding`
  * @param {?} stmts
  * @return {?}
  */
-export function createSharedBindingVariablesIfNeeded(stmts) {
+export function legacyCreateSharedBindingVariablesIfNeeded(stmts) {
     const /** @type {?} */ unwrapperStmts = [];
     const /** @type {?} */ readVars = o.findReadVarNames(stmts);
     if (readVars.has(VAL_UNWRAPPER_VAR.name)) {
@@ -142,6 +201,15 @@ export function createSharedBindingVariablesIfNeeded(stmts) {
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
     return unwrapperStmts;
+}
+/**
+ * @param {?} converterFactory
+ * @param {?} ast
+ * @return {?}
+ */
+function convertBuiltins(converterFactory, ast) {
+    const /** @type {?} */ visitor = new _BuiltinAstConverter(converterFactory);
+    return ast.visit(visitor);
 }
 /**
  * @param {?} bindingId
@@ -208,26 +276,59 @@ function convertToStatementIfNeeded(mode, expr) {
         return expr;
     }
 }
+class _BuiltinAstConverter extends cdAst.AstTransformer {
+    /**
+     * @param {?} _converterFactory
+     */
+    constructor(_converterFactory) {
+        super();
+        this._converterFactory = _converterFactory;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitPipe(ast, context) {
+        const /** @type {?} */ args = [ast.exp, ...ast.args].map(ast => ast.visit(this, context));
+        return new BuiltinFunctionCall(ast.span, args, this._converterFactory.createPipeConverter(ast.name, args.length));
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralArray(ast, context) {
+        const /** @type {?} */ args = ast.expressions.map(ast => ast.visit(this, context));
+        return new BuiltinFunctionCall(ast.span, args, this._converterFactory.createLiteralArrayConverter(ast.expressions.length));
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralMap(ast, context) {
+        const /** @type {?} */ args = ast.values.map(ast => ast.visit(this, context));
+        return new BuiltinFunctionCall(ast.span, args, this._converterFactory.createLiteralMapConverter(ast.keys));
+    }
+}
+function _BuiltinAstConverter_tsickle_Closure_declarations() {
+    /** @type {?} */
+    _BuiltinAstConverter.prototype._converterFactory;
+}
 class _AstToIrVisitor {
     /**
-     * @param {?} _builder
-     * @param {?} _nameResolver
+     * @param {?} _localResolver
      * @param {?} _implicitReceiver
-     * @param {?} _valueUnwrapper
      * @param {?} bindingId
-     * @param {?} isAction
      */
-    constructor(_builder, _nameResolver, _implicitReceiver, _valueUnwrapper, bindingId, isAction) {
-        this._builder = _builder;
-        this._nameResolver = _nameResolver;
+    constructor(_localResolver, _implicitReceiver, bindingId) {
+        this._localResolver = _localResolver;
         this._implicitReceiver = _implicitReceiver;
-        this._valueUnwrapper = _valueUnwrapper;
         this.bindingId = bindingId;
-        this.isAction = isAction;
         this._nodeMap = new Map();
         this._resultMap = new Map();
         this._currentTemporary = 0;
-        this.needsValueUnwrapper = false;
         this.temporaryCount = 0;
     }
     /**
@@ -312,14 +413,7 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitPipe(ast, mode) {
-        const /** @type {?} */ input = this.visit(ast.exp, _Mode.Expression);
-        const /** @type {?} */ args = this.visitAll(ast.args, _Mode.Expression);
-        const /** @type {?} */ value = this._nameResolver.callPipe(ast.name, input, args);
-        if (!value) {
-            throw new Error(`Illegal state: Pipe ${ast.name} is not allowed here!`);
-        }
-        this.needsValueUnwrapper = true;
-        return convertToStatementIfNeeded(mode, this._valueUnwrapper.callMethod('unwrap', [value]));
+        throw new Error(`Illegal state: Pipes should have been converted into functions. Pipe: ${ast.name}`);
     }
     /**
      * @param {?} ast
@@ -327,7 +421,15 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitFunctionCall(ast, mode) {
-        return convertToStatementIfNeeded(mode, this.visit(ast.target, _Mode.Expression).callFn(this.visitAll(ast.args, _Mode.Expression)));
+        const /** @type {?} */ convertedArgs = this.visitAll(ast.args, _Mode.Expression);
+        let /** @type {?} */ fnResult;
+        if (ast instanceof BuiltinFunctionCall) {
+            fnResult = ast.converter(convertedArgs);
+        }
+        else {
+            fnResult = this.visit(ast.target, _Mode.Expression).callFn(convertedArgs);
+        }
+        return convertToStatementIfNeeded(mode, fnResult);
     }
     /**
      * @param {?} ast
@@ -388,9 +490,7 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitLiteralArray(ast, mode) {
-        const /** @type {?} */ parts = this.visitAll(ast.expressions, mode);
-        const /** @type {?} */ literalArr = this.isAction ? o.literalArr(parts) : createCachedLiteralArray(this._builder, parts);
-        return convertToStatementIfNeeded(mode, literalArr);
+        throw new Error(`Illegal State: literal arrays should have been converted into functions`);
     }
     /**
      * @param {?} ast
@@ -398,12 +498,7 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitLiteralMap(ast, mode) {
-        const /** @type {?} */ parts = [];
-        for (let /** @type {?} */ i = 0; i < ast.keys.length; i++) {
-            parts.push([ast.keys[i], this.visit(ast.values[i], _Mode.Expression)]);
-        }
-        const /** @type {?} */ literalMap = this.isAction ? o.literalMap(parts) : createCachedLiteralMap(this._builder, parts);
-        return convertToStatementIfNeeded(mode, literalMap);
+        throw new Error(`Illegal State: literal maps should have been converted into functions`);
     }
     /**
      * @param {?} ast
@@ -417,12 +512,7 @@ class _AstToIrVisitor {
      * @param {?} name
      * @return {?}
      */
-    _getLocal(name) {
-        if (this.isAction && name == EventHandlerVars.event.name) {
-            return EventHandlerVars.event;
-        }
-        return this._nameResolver.getLocal(name);
-    }
+    _getLocal(name) { return this._localResolver.getLocal(name); }
     /**
      * @param {?} ast
      * @param {?} mode
@@ -856,21 +946,13 @@ function _AstToIrVisitor_tsickle_Closure_declarations() {
     /** @type {?} */
     _AstToIrVisitor.prototype._currentTemporary;
     /** @type {?} */
-    _AstToIrVisitor.prototype.needsValueUnwrapper;
-    /** @type {?} */
     _AstToIrVisitor.prototype.temporaryCount;
     /** @type {?} */
-    _AstToIrVisitor.prototype._builder;
-    /** @type {?} */
-    _AstToIrVisitor.prototype._nameResolver;
+    _AstToIrVisitor.prototype._localResolver;
     /** @type {?} */
     _AstToIrVisitor.prototype._implicitReceiver;
     /** @type {?} */
-    _AstToIrVisitor.prototype._valueUnwrapper;
-    /** @type {?} */
     _AstToIrVisitor.prototype.bindingId;
-    /** @type {?} */
-    _AstToIrVisitor.prototype.isAction;
 }
 /**
  * @param {?} arg
@@ -890,7 +972,7 @@ function flattenStatements(arg, output) {
  * @param {?} values
  * @return {?}
  */
-function createCachedLiteralArray(builder, values) {
+function legacyCreateCachedLiteralArray(builder, values) {
     if (values.length === 0) {
         return o.importExpr(createIdentifier(Identifiers.EMPTY_ARRAY));
     }
@@ -910,7 +992,7 @@ function createCachedLiteralArray(builder, values) {
  * @param {?} entries
  * @return {?}
  */
-function createCachedLiteralMap(builder, entries) {
+function legacyCreateCachedLiteralMap(builder, entries) {
     if (entries.length === 0) {
         return o.importExpr(createIdentifier(Identifiers.EMPTY_MAP));
     }
@@ -927,7 +1009,19 @@ function createCachedLiteralMap(builder, entries) {
     createPureProxy(o.fn(proxyParams, [new o.ReturnStatement(o.literalMap(proxyReturnEntries))], new o.MapType(o.DYNAMIC_TYPE)), entries.length, proxyExpr, builder);
     return proxyExpr.callFn(values);
 }
-class DefaultNameResolver {
+class DefaultLocalResolver {
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    getLocal(name) {
+        if (name === EventHandlerVars.event.name) {
+            return EventHandlerVars.event;
+        }
+        return null;
+    }
+}
+class LegacyDefaultNameResolver {
     /**
      * @param {?} name
      * @param {?} input
@@ -939,7 +1033,12 @@ class DefaultNameResolver {
      * @param {?} name
      * @return {?}
      */
-    getLocal(name) { return null; }
+    getLocal(name) {
+        if (name === EventHandlerVars.event.name) {
+            return EventHandlerVars.event;
+        }
+        return null;
+    }
 }
 /**
  * @param {?} bindingId
@@ -967,5 +1066,23 @@ function convertStmtIntoExpression(stmt) {
         return stmt.value;
     }
     return null;
+}
+class BuiltinFunctionCall extends cdAst.FunctionCall {
+    /**
+     * @param {?} span
+     * @param {?} args
+     * @param {?} converter
+     */
+    constructor(span, args, converter) {
+        super(span, null, args);
+        this.args = args;
+        this.converter = converter;
+    }
+}
+function BuiltinFunctionCall_tsickle_Closure_declarations() {
+    /** @type {?} */
+    BuiltinFunctionCall.prototype.args;
+    /** @type {?} */
+    BuiltinFunctionCall.prototype.converter;
 }
 //# sourceMappingURL=expression_converter.js.map

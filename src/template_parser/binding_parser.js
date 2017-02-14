@@ -76,8 +76,13 @@ export class BindingParser {
         this._schemaRegistry = _schemaRegistry;
         this._targetErrors = _targetErrors;
         this.pipesByName = new Map();
+        this._usedPipes = new Map();
         pipes.forEach(pipe => this.pipesByName.set(pipe.name, pipe));
     }
+    /**
+     * @return {?}
+     */
+    getUsedPipes() { return Array.from(this._usedPipes.values()); }
     /**
      * @param {?} dirMeta
      * @param {?} sourceSpan
@@ -462,8 +467,12 @@ export class BindingParser {
             const /** @type {?} */ collector = new PipeCollector();
             ast.visit(collector);
             collector.pipes.forEach((ast, pipeName) => {
-                if (!this.pipesByName.has(pipeName)) {
+                const /** @type {?} */ pipeMeta = this.pipesByName.get(pipeName);
+                if (!pipeMeta) {
                     this._reportError(`The pipe '${pipeName}' could not be found`, new ParseSourceSpan(sourceSpan.start.moveBy(ast.span.start), sourceSpan.start.moveBy(ast.span.end)));
+                }
+                else {
+                    this._usedPipes.set(pipeName, pipeMeta);
                 }
             });
         }
@@ -485,6 +494,8 @@ export class BindingParser {
 function BindingParser_tsickle_Closure_declarations() {
     /** @type {?} */
     BindingParser.prototype.pipesByName;
+    /** @type {?} */
+    BindingParser.prototype._usedPipes;
     /** @type {?} */
     BindingParser.prototype._exprParser;
     /** @type {?} */
