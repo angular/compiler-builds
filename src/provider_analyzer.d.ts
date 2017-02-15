@@ -7,13 +7,13 @@
  */
 import { CompileDirectiveMetadata, CompileNgModuleMetadata, CompileProviderMetadata, CompileQueryMetadata } from './compile_metadata';
 import { ParseError, ParseSourceSpan } from './parse_util';
-import { AttrAst, DirectiveAst, ProviderAst, QueryId, QueryMatch, ReferenceAst } from './template_parser/template_ast';
+import { AttrAst, DirectiveAst, ProviderAst, QueryMatch, ReferenceAst } from './template_parser/template_ast';
 export declare class ProviderError extends ParseError {
     constructor(message: string, span: ParseSourceSpan);
 }
 export interface QueryWithId {
     meta: CompileQueryMetadata;
-    id: QueryId;
+    queryId: number;
 }
 export declare class ProviderViewContext {
     component: CompileDirectiveMetadata;
@@ -34,9 +34,8 @@ export declare class ProviderElementContext {
     private _attrs;
     private _hasViewContainer;
     private _queriedTokens;
-    constructor(viewContext: ProviderViewContext, _parent: ProviderElementContext, _isViewRoot: boolean, _directiveAsts: DirectiveAst[], attrs: AttrAst[], refs: ReferenceAst[], _sourceSpan: ParseSourceSpan);
+    constructor(viewContext: ProviderViewContext, _parent: ProviderElementContext, _isViewRoot: boolean, _directiveAsts: DirectiveAst[], attrs: AttrAst[], refs: ReferenceAst[], isTemplate: boolean, contentQueryStartId: number, _sourceSpan: ParseSourceSpan);
     afterElement(): void;
-    readonly depth: number;
     readonly transformProviders: ProviderAst[];
     readonly transformedDirectiveAsts: DirectiveAst[];
     readonly transformedHasViewContainer: boolean;

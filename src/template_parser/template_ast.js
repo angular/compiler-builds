@@ -483,13 +483,15 @@ var DirectiveAst = (function () {
      * @param {?} inputs
      * @param {?} hostProperties
      * @param {?} hostEvents
+     * @param {?} contentQueryStartId
      * @param {?} sourceSpan
      */
-    function DirectiveAst(directive, inputs, hostProperties, hostEvents, sourceSpan) {
+    function DirectiveAst(directive, inputs, hostProperties, hostEvents, contentQueryStartId, sourceSpan) {
         this.directive = directive;
         this.inputs = inputs;
         this.hostProperties = hostProperties;
         this.hostEvents = hostEvents;
+        this.contentQueryStartId = contentQueryStartId;
         this.sourceSpan = sourceSpan;
     }
     /**
@@ -512,6 +514,8 @@ function DirectiveAst_tsickle_Closure_declarations() {
     DirectiveAst.prototype.hostProperties;
     /** @type {?} */
     DirectiveAst.prototype.hostEvents;
+    /** @type {?} */
+    DirectiveAst.prototype.contentQueryStartId;
     /** @type {?} */
     DirectiveAst.prototype.sourceSpan;
 }

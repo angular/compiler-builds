@@ -74,9 +74,11 @@ var ProviderElementContext = (function () {
      * @param {?} _directiveAsts
      * @param {?} attrs
      * @param {?} refs
+     * @param {?} isTemplate
+     * @param {?} contentQueryStartId
      * @param {?} _sourceSpan
      */
-    function ProviderElementContext(viewContext, _parent, _isViewRoot, _directiveAsts, attrs, refs, _sourceSpan) {
+    function ProviderElementContext(viewContext, _parent, _isViewRoot, _directiveAsts, attrs, refs, isTemplate, contentQueryStartId, _sourceSpan) {
         var _this = this;
         this.viewContext = viewContext;
         this._parent = _parent;
@@ -92,10 +94,14 @@ var ProviderElementContext = (function () {
         var directivesMeta = _directiveAsts.map(function (directiveAst) { return directiveAst.directive; });
         this._allProviders =
             _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, viewContext.errors);
-        this._contentQueries = _getContentQueries(this.depth, directivesMeta);
+        this._contentQueries = _getContentQueries(contentQueryStartId, directivesMeta);
         Array.from(this._allProviders.values()).forEach(function (provider) {
             _this._addQueryReadsTo(provider.token, provider.token, _this._queriedTokens);
         });
+        if (isTemplate) {
+            var templateRefId = createIdentifierToken(Identifiers.TemplateRef);
+            this._addQueryReadsTo(templateRefId, templateRefId, this._queriedTokens);
+        }
         refs.forEach(function (refAst) {
             var defaultQueryValue = refAst.value || createIdentifierToken(Identifiers.ElementRef);
             _this._addQueryReadsTo({ value: refAst.name }, defaultQueryValue, _this._queriedTokens);
@@ -121,22 +127,6 @@ var ProviderElementContext = (function () {
             _this._getOrCreateLocalProvider(provider.providerType, provider.token, false);
         });
     };
-    Object.defineProperty(ProviderElementContext.prototype, "depth", {
-        /**
-         * @return {?}
-         */
-        get: function () {
-            var /** @type {?} */ d = 0;
-            var /** @type {?} */ current = this;
-            while (current._parent) {
-                d++;
-                current = current._parent;
-            }
-            return d;
-        },
-        enumerable: true,
-        configurable: true
-    });
     Object.defineProperty(ProviderElementContext.prototype, "transformProviders", {
         /**
          * @return {?}
@@ -196,7 +186,7 @@ var ProviderElementContext = (function () {
                 queryMatches = [];
                 queryReadTokens.set(tokenRef, queryMatches);
             }
-            queryMatches.push({ query: query.id, value: queryValue });
+            queryMatches.push({ queryId: query.queryId, value: queryValue });
         });
     };
     /**
@@ -609,22 +599,25 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
  * @return {?}
  */
 function _getViewQueries(component) {
+    // Note: queries start with id 1 so we can use the number in a Bloom filter!
+    var /** @type {?} */ viewQueryId = 1;
     var /** @type {?} */ viewQueries = new Map();
     if (component.viewQueries) {
-        component.viewQueries.forEach(function (query, queryIndex) { return _addQueryToTokenMap(viewQueries, { meta: query, id: { elementDepth: null, directiveIndex: null, queryIndex: queryIndex } }); });
+        component.viewQueries.forEach(function (query) { return _addQueryToTokenMap(viewQueries, { meta: query, queryId: viewQueryId++ }); });
     }
     return viewQueries;
 }
 /**
- * @param {?} elementDepth
+ * @param {?} contentQueryStartId
  * @param {?} directives
  * @return {?}
  */
-function _getContentQueries(elementDepth, directives) {
+function _getContentQueries(contentQueryStartId, directives) {
+    var /** @type {?} */ contentQueryId = contentQueryStartId;
     var /** @type {?} */ contentQueries = new Map();
     directives.forEach(function (directive, directiveIndex) {
         if (directive.queries) {
-            directive.queries.forEach(function (query, queryIndex) { return _addQueryToTokenMap(contentQueries, { meta: query, id: { elementDepth: elementDepth, directiveIndex: directiveIndex, queryIndex: queryIndex } }); });
+            directive.queries.forEach(function (query) { return _addQueryToTokenMap(contentQueries, { meta: query, queryId: contentQueryId++ }); });
         }
     });
     return contentQueries;

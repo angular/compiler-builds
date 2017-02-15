@@ -327,6 +327,12 @@ Identifiers.purePipeDef = {
 };
 Identifiers.pipeDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'pipeDef', runtime: ɵviewEngine.pipeDef };
 Identifiers.nodeValue = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'nodeValue', runtime: ɵviewEngine.nodeValue };
+Identifiers.ngContentDef = {
+    name: 'ɵviewEngine',
+    moduleUrl: CORE,
+    member: 'ngContentDef',
+    runtime: ɵviewEngine.ngContentDef
+};
 Identifiers.unwrapValue = {
     name: 'ɵviewEngine',
     moduleUrl: CORE,
@@ -496,6 +502,8 @@ function Identifiers_tsickle_Closure_declarations() {
     Identifiers.pipeDef;
     /** @type {?} */
     Identifiers.nodeValue;
+    /** @type {?} */
+    Identifiers.ngContentDef;
     /** @type {?} */
     Identifiers.unwrapValue;
 }
