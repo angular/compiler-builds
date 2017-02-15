@@ -25,7 +25,7 @@ import * as o from '../output/output_ast';
 import { convertValueToOutputAst } from '../output/value_util';
 import { LifecycleHooks, viewEngine } from '../private_import_core';
 import { ElementSchemaRegistry } from '../schema/element_schema_registry';
-import { ElementAst, EmbeddedTemplateAst, PropertyBindingType, ProviderAstType, templateVisitAll } from '../template_parser/template_ast';
+import { ElementAst, EmbeddedTemplateAst, NgContentAst, PropertyBindingType, ProviderAstType, templateVisitAll } from '../template_parser/template_ast';
 import { ViewCompileResult, ViewCompiler } from '../view_compiler/view_compiler';
 const /** @type {?} */ CLASS_ATTR = 'class';
 const /** @type {?} */ STYLE_ATTR = 'style';
@@ -119,7 +119,8 @@ class ViewBuilder {
             });
         }
         templateVisitAll(this, astNodes, { elementDepth });
-        if (astNodes.length === 0 || (this.parent && hasViewContainer(astNodes[astNodes.length - 1]))) {
+        if (astNodes.length === 0 ||
+            (this.parent && needsAdditionalRootNode(astNodes[astNodes.length - 1]))) {
             // if the view is empty, or an embedded view has a view container as last root nde,
             // create an additional root node.
             this.nodeDefs.push(o.importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
@@ -824,14 +825,14 @@ function depDef(dep) {
  * @param {?} ast
  * @return {?}
  */
-function hasViewContainer(ast) {
+function needsAdditionalRootNode(ast) {
     if (ast instanceof EmbeddedTemplateAst) {
         return ast.hasViewContainer;
     }
-    else if (ast instanceof ElementAst) {
+    if (ast instanceof ElementAst) {
         return ast.hasViewContainer;
     }
-    return false;
+    return ast instanceof NgContentAst;
 }
 /**
  * @param {?} queryId
