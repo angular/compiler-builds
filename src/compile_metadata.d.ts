@@ -200,6 +200,7 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
     providers: CompileProviderMetadata[];
     viewProviders: CompileProviderMetadata[];
     queries: CompileQueryMetadata[];
+    viewQueries: CompileQueryMetadata[];
     entryComponents: CompileEntryComponentMetadata[];
     changeDetection: ChangeDetectionStrategy;
     template: CompileTemplateSummary;

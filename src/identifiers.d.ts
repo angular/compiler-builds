@@ -87,6 +87,7 @@ export declare class Identifiers {
     static purePipeDef: IdentifierSpec;
     static pipeDef: IdentifierSpec;
     static nodeValue: IdentifierSpec;
+    static ngContentDef: IdentifierSpec;
     static unwrapValue: IdentifierSpec;
 }
 export declare function assetUrl(pkg: string, path?: string, type?: string): string;

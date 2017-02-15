@@ -288,6 +288,8 @@ class TemplateParseVisitor {
         this.selectorMatcher = new SelectorMatcher();
         this.directivesIndex = new Map();
         this.ngContentCount = 0;
+        // Note: queries start with id 1 so we can use the number in a Bloom filter!
+        this.contentQueryStartId = providerViewContext.component.viewQueries.length + 1;
         directives.forEach((directive, index) => {
             const selector = CssSelector.parse(directive.selector);
             this.selectorMatcher.addSelectables(selector, directive);
@@ -341,6 +343,7 @@ class TemplateParseVisitor {
      * @return {?}
      */
     visitElement(element, parent) {
+        const /** @type {?} */ queryStartIndex = this.contentQueryStartId;
         const /** @type {?} */ nodeName = element.name;
         const /** @type {?} */ preparsedElement = preparseElement(element);
         if (preparsedElement.type === PreparsedElementType.SCRIPT ||
@@ -401,7 +404,7 @@ class TemplateParseVisitor {
         const /** @type {?} */ directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references, boundDirectivePropNames);
         const /** @type {?} */ elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, boundDirectivePropNames);
         const /** @type {?} */ isViewRoot = parent.isTemplateElement || hasInlineTemplates;
-        const /** @type {?} */ providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
+        const /** @type {?} */ providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, isTemplateElement, queryStartIndex, element.sourceSpan);
         const /** @type {?} */ children = html.visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
         providerContext.afterElement();
         // Override the actual selector when the `ngProjectAs` attribute is provided
@@ -432,13 +435,14 @@ class TemplateParseVisitor {
             this._validateElementAnimationInputOutputs(elementProps, events, componentTemplate.toSummary());
         }
         if (hasInlineTemplates) {
+            const /** @type {?} */ templateQueryStartIndex = this.contentQueryStartId;
             const /** @type {?} */ templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
             const { directives: templateDirectiveMetas } = this._parseDirectives(this.selectorMatcher, templateCssSelector);
             const /** @type {?} */ templateBoundDirectivePropNames = new Set();
             const /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, [], templateBoundDirectivePropNames);
             const /** @type {?} */ templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
             this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, element.sourceSpan);
-            const /** @type {?} */ templateProviderContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], element.sourceSpan);
+            const /** @type {?} */ templateProviderContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], true, templateQueryStartIndex, element.sourceSpan);
             templateProviderContext.afterElement();
             parsedElement = new EmbeddedTemplateAst([], [], [], templateElementVars, templateProviderContext.transformedDirectiveAsts, templateProviderContext.transformProviders, templateProviderContext.transformedHasViewContainer, templateProviderContext.queryMatches, [parsedElement], ngContentIndex, element.sourceSpan);
         }
@@ -630,7 +634,9 @@ class TemplateParseVisitor {
                     matchedReferences.add(elOrDirRef.name);
                 }
             });
-            return new DirectiveAst(directive, directiveProperties, hostProperties, hostEvents, sourceSpan);
+            const /** @type {?} */ contentQueryStartId = this.contentQueryStartId;
+            this.contentQueryStartId += directive.queries.length;
+            return new DirectiveAst(directive, directiveProperties, hostProperties, hostEvents, contentQueryStartId, sourceSpan);
         });
         elementOrDirectiveRefs.forEach((elOrDirRef) => {
             if (elOrDirRef.value.length > 0) {
@@ -827,6 +833,8 @@ function TemplateParseVisitor_tsickle_Closure_declarations() {
     TemplateParseVisitor.prototype.directivesIndex;
     /** @type {?} */
     TemplateParseVisitor.prototype.ngContentCount;
+    /** @type {?} */
+    TemplateParseVisitor.prototype.contentQueryStartId;
     /** @type {?} */
     TemplateParseVisitor.prototype.providerViewContext;
     /** @type {?} */

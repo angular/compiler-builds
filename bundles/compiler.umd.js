@@ -359,13 +359,15 @@
          * @param {?} inputs
          * @param {?} hostProperties
          * @param {?} hostEvents
+         * @param {?} contentQueryStartId
          * @param {?} sourceSpan
          */
-        function DirectiveAst(directive, inputs, hostProperties, hostEvents, sourceSpan) {
+        function DirectiveAst(directive, inputs, hostProperties, hostEvents, contentQueryStartId, sourceSpan) {
             this.directive = directive;
             this.inputs = inputs;
             this.hostProperties = hostProperties;
             this.hostEvents = hostEvents;
+            this.contentQueryStartId = contentQueryStartId;
             this.sourceSpan = sourceSpan;
         }
         /**
@@ -2113,6 +2115,7 @@
                 providers: this.providers,
                 viewProviders: this.viewProviders,
                 queries: this.queries,
+                viewQueries: this.viewQueries,
                 entryComponents: this.entryComponents,
                 changeDetection: this.changeDetection,
                 template: this.template && this.template.toSummary(),
@@ -10142,6 +10145,12 @@
     };
     Identifiers.pipeDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'pipeDef', runtime: _angular_core.ɵviewEngine.pipeDef };
     Identifiers.nodeValue = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'nodeValue', runtime: _angular_core.ɵviewEngine.nodeValue };
+    Identifiers.ngContentDef = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'ngContentDef',
+        runtime: _angular_core.ɵviewEngine.ngContentDef
+    };
     Identifiers.unwrapValue = {
         name: 'ɵviewEngine',
         moduleUrl: CORE,
@@ -10414,9 +10423,11 @@
          * @param {?} _directiveAsts
          * @param {?} attrs
          * @param {?} refs
+         * @param {?} isTemplate
+         * @param {?} contentQueryStartId
          * @param {?} _sourceSpan
          */
-        function ProviderElementContext(viewContext, _parent, _isViewRoot, _directiveAsts, attrs, refs, _sourceSpan) {
+        function ProviderElementContext(viewContext, _parent, _isViewRoot, _directiveAsts, attrs, refs, isTemplate, contentQueryStartId, _sourceSpan) {
             var _this = this;
             this.viewContext = viewContext;
             this._parent = _parent;
@@ -10432,10 +10443,14 @@
             var directivesMeta = _directiveAsts.map(function (directiveAst) { return directiveAst.directive; });
             this._allProviders =
                 _resolveProvidersFromDirectives(directivesMeta, _sourceSpan, viewContext.errors);
-            this._contentQueries = _getContentQueries(this.depth, directivesMeta);
+            this._contentQueries = _getContentQueries(contentQueryStartId, directivesMeta);
             Array.from(this._allProviders.values()).forEach(function (provider) {
                 _this._addQueryReadsTo(provider.token, provider.token, _this._queriedTokens);
             });
+            if (isTemplate) {
+                var templateRefId = createIdentifierToken(Identifiers.TemplateRef);
+                this._addQueryReadsTo(templateRefId, templateRefId, this._queriedTokens);
+            }
             refs.forEach(function (refAst) {
                 var defaultQueryValue = refAst.value || createIdentifierToken(Identifiers.ElementRef);
                 _this._addQueryReadsTo({ value: refAst.name }, defaultQueryValue, _this._queriedTokens);
@@ -10461,22 +10476,6 @@
                 _this._getOrCreateLocalProvider(provider.providerType, provider.token, false);
             });
         };
-        Object.defineProperty(ProviderElementContext.prototype, "depth", {
-            /**
-             * @return {?}
-             */
-            get: function () {
-                var /** @type {?} */ d = 0;
-                var /** @type {?} */ current = this;
-                while (current._parent) {
-                    d++;
-                    current = current._parent;
-                }
-                return d;
-            },
-            enumerable: true,
-            configurable: true
-        });
         Object.defineProperty(ProviderElementContext.prototype, "transformProviders", {
             /**
              * @return {?}
@@ -10536,7 +10535,7 @@
                     queryMatches = [];
                     queryReadTokens.set(tokenRef, queryMatches);
                 }
-                queryMatches.push({ query: query.id, value: queryValue });
+                queryMatches.push({ queryId: query.queryId, value: queryValue });
             });
         };
         /**
@@ -10911,22 +10910,25 @@
      * @return {?}
      */
     function _getViewQueries(component) {
+        // Note: queries start with id 1 so we can use the number in a Bloom filter!
+        var /** @type {?} */ viewQueryId = 1;
         var /** @type {?} */ viewQueries = new Map();
         if (component.viewQueries) {
-            component.viewQueries.forEach(function (query, queryIndex) { return _addQueryToTokenMap(viewQueries, { meta: query, id: { elementDepth: null, directiveIndex: null, queryIndex: queryIndex } }); });
+            component.viewQueries.forEach(function (query) { return _addQueryToTokenMap(viewQueries, { meta: query, queryId: viewQueryId++ }); });
         }
         return viewQueries;
     }
     /**
-     * @param {?} elementDepth
+     * @param {?} contentQueryStartId
      * @param {?} directives
      * @return {?}
      */
-    function _getContentQueries(elementDepth, directives) {
+    function _getContentQueries(contentQueryStartId, directives) {
+        var /** @type {?} */ contentQueryId = contentQueryStartId;
         var /** @type {?} */ contentQueries = new Map();
         directives.forEach(function (directive, directiveIndex) {
             if (directive.queries) {
-                directive.queries.forEach(function (query, queryIndex) { return _addQueryToTokenMap(contentQueries, { meta: query, id: { elementDepth: elementDepth, directiveIndex: directiveIndex, queryIndex: queryIndex } }); });
+                directive.queries.forEach(function (query) { return _addQueryToTokenMap(contentQueries, { meta: query, queryId: contentQueryId++ }); });
             }
         });
         return contentQueries;
@@ -11978,6 +11980,8 @@
             this.selectorMatcher = new SelectorMatcher();
             this.directivesIndex = new Map();
             this.ngContentCount = 0;
+            // Note: queries start with id 1 so we can use the number in a Bloom filter!
+            this.contentQueryStartId = providerViewContext.component.viewQueries.length + 1;
             directives.forEach(function (directive, index) {
                 var selector = CssSelector.parse(directive.selector);
                 _this.selectorMatcher.addSelectables(selector, directive);
@@ -12032,6 +12036,7 @@
          */
         TemplateParseVisitor.prototype.visitElement = function (element, parent) {
             var _this = this;
+            var /** @type {?} */ queryStartIndex = this.contentQueryStartId;
             var /** @type {?} */ nodeName = element.name;
             var /** @type {?} */ preparsedElement = preparseElement(element);
             if (preparsedElement.type === PreparsedElementType.SCRIPT ||
@@ -12092,7 +12097,7 @@
             var /** @type {?} */ directiveAsts = this._createDirectiveAsts(isTemplateElement, element.name, directiveMetas, elementOrDirectiveProps, elementOrDirectiveRefs, element.sourceSpan, references, boundDirectivePropNames);
             var /** @type {?} */ elementProps = this._createElementPropertyAsts(element.name, elementOrDirectiveProps, boundDirectivePropNames);
             var /** @type {?} */ isViewRoot = parent.isTemplateElement || hasInlineTemplates;
-            var /** @type {?} */ providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, element.sourceSpan);
+            var /** @type {?} */ providerContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, isViewRoot, directiveAsts, attrs, references, isTemplateElement, queryStartIndex, element.sourceSpan);
             var /** @type {?} */ children = visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
             providerContext.afterElement();
             // Override the actual selector when the `ngProjectAs` attribute is provided
@@ -12123,13 +12128,14 @@
                 this._validateElementAnimationInputOutputs(elementProps, events, componentTemplate.toSummary());
             }
             if (hasInlineTemplates) {
+                var /** @type {?} */ templateQueryStartIndex = this.contentQueryStartId;
                 var /** @type {?} */ templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
                 var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateCssSelector).directives;
                 var /** @type {?} */ templateBoundDirectivePropNames = new Set();
                 var /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, [], templateBoundDirectivePropNames);
                 var /** @type {?} */ templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
                 this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts, templateElementProps, element.sourceSpan);
-                var /** @type {?} */ templateProviderContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], element.sourceSpan);
+                var /** @type {?} */ templateProviderContext = new ProviderElementContext(this.providerViewContext, parent.providerContext, parent.isTemplateElement, templateDirectiveAsts, [], [], true, templateQueryStartIndex, element.sourceSpan);
                 templateProviderContext.afterElement();
                 parsedElement = new EmbeddedTemplateAst([], [], [], templateElementVars, templateProviderContext.transformedDirectiveAsts, templateProviderContext.transformProviders, templateProviderContext.transformedHasViewContainer, templateProviderContext.queryMatches, [parsedElement], ngContentIndex, element.sourceSpan);
             }
@@ -12324,7 +12330,9 @@
                         matchedReferences.add(elOrDirRef.name);
                     }
                 });
-                return new DirectiveAst(directive, directiveProperties, hostProperties, hostEvents, sourceSpan);
+                var /** @type {?} */ contentQueryStartId = _this.contentQueryStartId;
+                _this.contentQueryStartId += directive.queries.length;
+                return new DirectiveAst(directive, directiveProperties, hostProperties, hostEvents, contentQueryStartId, sourceSpan);
             });
             elementOrDirectiveRefs.forEach(function (elOrDirRef) {
                 if (elOrDirRef.value.length > 0) {
@@ -29234,6 +29242,7 @@
     var /** @type {?} */ CLASS_ATTR$2 = 'class';
     var /** @type {?} */ STYLE_ATTR$1 = 'style';
     var /** @type {?} */ IMPLICIT_TEMPLATE_VAR$1 = '\$implicit';
+    var /** @type {?} */ NG_CONTAINER_TAG$1 = 'ng-container';
     var ViewCompilerNext = (function (_super) {
         __extends$32(ViewCompilerNext, _super);
         /**
@@ -29257,13 +29266,14 @@
         ViewCompilerNext.prototype.compileComponent = function (component, template, styles, usedPipes, compiledAnimations) {
             var /** @type {?} */ compName = identifierName(component.type) + (component.isHost ? "_Host" : '');
             var /** @type {?} */ embeddedViewCount = 0;
+            var /** @type {?} */ staticQueryIds = findStaticQueryIds(template);
             var /** @type {?} */ viewBuilderFactory = function (parent) {
                 var /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
                 var /** @type {?} */ viewName = "view_" + compName + "_" + embeddedViewIndex;
-                return new ViewBuilder(parent, viewName, usedPipes, viewBuilderFactory);
+                return new ViewBuilder(parent, viewName, usedPipes, staticQueryIds, viewBuilderFactory);
             };
             var /** @type {?} */ visitor = viewBuilderFactory(null);
-            visitor.visitAll([], template, 0);
+            visitor.visitAll([], template);
             var /** @type {?} */ statements = [];
             statements.push.apply(statements, visitor.build(component));
             return new ViewCompileResult(statements, visitor.viewName, []);
@@ -29286,12 +29296,14 @@
          * @param {?} parent
          * @param {?} viewName
          * @param {?} usedPipes
+         * @param {?} staticQueryIds
          * @param {?} viewBuilderFactory
          */
-        function ViewBuilder(parent, viewName, usedPipes, viewBuilderFactory) {
+        function ViewBuilder(parent, viewName, usedPipes, staticQueryIds, viewBuilderFactory) {
             this.parent = parent;
             this.viewName = viewName;
             this.usedPipes = usedPipes;
+            this.staticQueryIds = staticQueryIds;
             this.viewBuilderFactory = viewBuilderFactory;
             this.nodeDefs = [];
             this.purePipeNodeIndices = {};
@@ -29305,10 +29317,9 @@
         /**
          * @param {?} variables
          * @param {?} astNodes
-         * @param {?} elementDepth
          * @return {?}
          */
-        ViewBuilder.prototype.visitAll = function (variables, astNodes, elementDepth) {
+        ViewBuilder.prototype.visitAll = function (variables, astNodes) {
             var _this = this;
             this.variables = variables;
             // create the pipes for the pure pipes immediately, so that we know their indices.
@@ -29319,7 +29330,7 @@
                     }
                 });
             }
-            templateVisitAll(this, astNodes, { elementDepth: elementDepth });
+            templateVisitAll(this, astNodes);
             if (astNodes.length === 0 ||
                 (this.parent && needsAdditionalRootNode(astNodes[astNodes.length - 1]))) {
                 // if the view is empty, or an embedded view has a view container as last root nde,
@@ -29417,7 +29428,12 @@
          * @param {?} context
          * @return {?}
          */
-        ViewBuilder.prototype.visitNgContent = function (ast, context) { };
+        ViewBuilder.prototype.visitNgContent = function (ast, context) {
+            // ngContentDef(ngContentIndex: number, index: number): NodeDef;
+            this.nodeDefs.push(importExpr(createIdentifier(Identifiers.ngContentDef)).callFn([
+                literal(ast.ngContentIndex), literal(ast.index)
+            ]));
+        };
         /**
          * @param {?} ast
          * @param {?} context
@@ -29426,7 +29442,7 @@
         ViewBuilder.prototype.visitText = function (ast, context) {
             // textDef(ngContentIndex: number, constants: string[]): NodeDef;
             this.nodeDefs.push(importExpr(createIdentifier(Identifiers.textDef)).callFn([
-                NULL_EXPR, literalArr([literal(ast.value)])
+                literal(ast.ngContentIndex), literalArr([literal(ast.value)])
             ]));
         };
         /**
@@ -29443,7 +29459,7 @@
             this._addUpdateExpressions(nodeIndex, inter.expressions.map(function (expr) { return { context: COMP_VAR, value: expr }; }), this.updateRendererExpressions);
             // textDef(ngContentIndex: number, constants: string[]): NodeDef;
             this.nodeDefs[nodeIndex] = importExpr(createIdentifier(Identifiers.textDef)).callFn([
-                NULL_EXPR, literalArr(inter.strings.map(function (s) { return literal(s); }))
+                literal(ast.ngContentIndex), literalArr(inter.strings.map(function (s) { return literal(s); }))
             ]);
         };
         /**
@@ -29455,16 +29471,16 @@
             var /** @type {?} */ nodeIndex = this.nodeDefs.length;
             // reserve the space in the nodeDefs array
             this.nodeDefs.push(null);
-            var _a = this._visitElementOrTemplate(nodeIndex, ast, context), flags = _a.flags, queryMatchesExpr = _a.queryMatchesExpr;
+            var _a = this._visitElementOrTemplate(nodeIndex, ast), flags = _a.flags, queryMatchesExpr = _a.queryMatchesExpr;
             var /** @type {?} */ childVisitor = this.viewBuilderFactory(this);
             this.children.push(childVisitor);
-            childVisitor.visitAll(ast.variables, ast.children, context.elementDepth + 1);
+            childVisitor.visitAll(ast.variables, ast.children);
             var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
             // anchorDef(
             //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], ngContentIndex: number,
             //   childCount: number, templateFactory?: ViewDefinitionFactory): NodeDef;
             this.nodeDefs[nodeIndex] = importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
-                literal(flags), queryMatchesExpr, NULL_EXPR, literal(childCount),
+                literal(flags), queryMatchesExpr, literal(ast.ngContentIndex), literal(childCount),
                 variable(childVisitor.viewName)
             ]);
         };
@@ -29477,8 +29493,8 @@
             var /** @type {?} */ nodeIndex = this.nodeDefs.length;
             // reserve the space in the nodeDefs array so we can add children
             this.nodeDefs.push(null);
-            var _a = this._visitElementOrTemplate(nodeIndex, ast, context), flags = _a.flags, usedEvents = _a.usedEvents, queryMatchesExpr = _a.queryMatchesExpr, hostBindings = _a.hostBindings;
-            templateVisitAll(this, ast.children, { elementDepth: context.elementDepth + 1 });
+            var _a = this._visitElementOrTemplate(nodeIndex, ast), flags = _a.flags, usedEvents = _a.usedEvents, queryMatchesExpr = _a.queryMatchesExpr, hostBindings = _a.hostBindings;
+            templateVisitAll(this, ast.children);
             ast.inputs.forEach(function (inputAst) { hostBindings.push({ context: COMP_VAR, value: inputAst.value }); });
             this._addUpdateExpressions(nodeIndex, hostBindings, this.updateRendererExpressions);
             var /** @type {?} */ inputDefs = elementBindingDefs(ast.inputs);
@@ -29489,6 +29505,11 @@
                     literal(eventName);
             });
             var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
+            var /** @type {?} */ elName = ast.name;
+            if (ast.name === NG_CONTAINER_TAG$1) {
+                // Using a null element name creates an anchor.
+                elName = null;
+            }
             // elementDef(
             //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], ngContentIndex: number,
             //   childCount: number, name: string, fixedAttrs: {[name: string]: string} = {},
@@ -29498,18 +29519,18 @@
             //         SecurityContext])[],
             //   outputs?: (string | [string, string])[]): NodeDef;
             this.nodeDefs[nodeIndex] = importExpr(createIdentifier(Identifiers.elementDef)).callFn([
-                literal(flags), queryMatchesExpr, NULL_EXPR, literal(childCount), literal(ast.name),
-                fixedAttrsDef(ast), inputDefs.length ? literalArr(inputDefs) : NULL_EXPR,
+                literal(flags), queryMatchesExpr, literal(ast.ngContentIndex), literal(childCount),
+                literal(elName), fixedAttrsDef(ast),
+                inputDefs.length ? literalArr(inputDefs) : NULL_EXPR,
                 outputDefs.length ? literalArr(outputDefs) : NULL_EXPR
             ]);
         };
         /**
          * @param {?} nodeIndex
          * @param {?} ast
-         * @param {?} context
          * @return {?}
          */
-        ViewBuilder.prototype._visitElementOrTemplate = function (nodeIndex, ast, context) {
+        ViewBuilder.prototype._visitElementOrTemplate = function (nodeIndex, ast) {
             var _this = this;
             var /** @type {?} */ flags = viewEngine.NodeFlags.None;
             if (ast.hasViewContainer) {
@@ -29526,17 +29547,21 @@
             });
             var /** @type {?} */ hostBindings = [];
             var /** @type {?} */ hostEvents = [];
+            var /** @type {?} */ componentFactoryResolverProvider = createComponentFactoryResolver(ast.directives);
+            if (componentFactoryResolverProvider) {
+                this._visitProvider(componentFactoryResolverProvider, ast.queryMatches);
+            }
             ast.providers.forEach(function (providerAst, providerIndex) {
                 var /** @type {?} */ dirAst;
                 var /** @type {?} */ dirIndex;
                 ast.directives.forEach(function (localDirAst, i) {
-                    if (localDirAst.directive.type.reference === providerAst.token.identifier.reference) {
+                    if (localDirAst.directive.type.reference === tokenReference(providerAst.token)) {
                         dirAst = localDirAst;
                         dirIndex = i;
                     }
                 });
                 if (dirAst) {
-                    var _a = _this._visitDirective(providerAst, dirAst, dirIndex, nodeIndex, context.elementDepth, ast.references, ast.queryMatches, usedEvents), dirHostBindings = _a.hostBindings, dirHostEvents = _a.hostEvents;
+                    var _a = _this._visitDirective(providerAst, dirAst, dirIndex, nodeIndex, ast.references, ast.queryMatches, usedEvents, _this.staticQueryIds.get(/** @type {?} */ (ast))), dirHostBindings = _a.hostBindings, dirHostEvents = _a.hostEvents;
                     hostBindings.push.apply(hostBindings, dirHostBindings);
                     hostEvents.push.apply(hostEvents, dirHostEvents);
                 }
@@ -29557,7 +29582,7 @@
                     valueType = viewEngine.QueryValueType.TemplateRef;
                 }
                 if (valueType != null) {
-                    queryMatchExprs.push(literalArr([literal(calcQueryId(match.query)), literal(valueType)]));
+                    queryMatchExprs.push(literalArr([literal(match.queryId), literal(valueType)]));
                 }
             });
             ast.references.forEach(function (ref) {
@@ -29570,7 +29595,7 @@
                 }
                 if (valueType != null) {
                     _this.refNodeIndices[ref.name] = nodeIndex;
-                    queryMatchExprs.push(literalArr([literal("#" + ref.name), literal(valueType)]));
+                    queryMatchExprs.push(literalArr([literal(ref.name), literal(valueType)]));
                 }
             });
             ast.outputs.forEach(function (outputAst) { hostEvents.push({ context: COMP_VAR, eventAst: outputAst }); });
@@ -29589,22 +29614,45 @@
          * @param {?} directiveAst
          * @param {?} directiveIndex
          * @param {?} elementNodeIndex
-         * @param {?} elementDepth
          * @param {?} refs
          * @param {?} queryMatches
          * @param {?} usedEvents
+         * @param {?} queryIds
          * @return {?}
          */
-        ViewBuilder.prototype._visitDirective = function (providerAst, directiveAst, directiveIndex, elementNodeIndex, elementDepth, refs, queryMatches, usedEvents) {
+        ViewBuilder.prototype._visitDirective = function (providerAst, directiveAst, directiveIndex, elementNodeIndex, refs, queryMatches, usedEvents, queryIds) {
             var _this = this;
             var /** @type {?} */ nodeIndex = this.nodeDefs.length;
             // reserve the space in the nodeDefs array so we can add children
             this.nodeDefs.push(null);
+            directiveAst.directive.viewQueries.forEach(function (query, queryIndex) {
+                // Note: queries start with id 1 so we can use the number in a Bloom filter!
+                var /** @type {?} */ queryId = queryIndex + 1;
+                var /** @type {?} */ bindingType = query.first ? viewEngine.QueryBindingType.First : viewEngine.QueryBindingType.All;
+                var /** @type {?} */ flags = viewEngine.NodeFlags.HasViewQuery;
+                if (queryIds.staticQueryIds.has(queryId)) {
+                    flags |= viewEngine.NodeFlags.HasStaticQuery;
+                }
+                else {
+                    flags |= viewEngine.NodeFlags.HasDynamicQuery;
+                }
+                _this.nodeDefs.push(importExpr(createIdentifier(Identifiers.queryDef)).callFn([
+                    literal(flags), literal(queryId),
+                    new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
+                ]));
+            });
             directiveAst.directive.queries.forEach(function (query, queryIndex) {
-                var /** @type {?} */ queryId = { elementDepth: elementDepth, directiveIndex: directiveIndex, queryIndex: queryIndex };
+                var /** @type {?} */ flags = viewEngine.NodeFlags.HasContentQuery;
+                var /** @type {?} */ queryId = directiveAst.contentQueryStartId + queryIndex;
+                if (queryIds.staticQueryIds.has(queryId)) {
+                    flags |= viewEngine.NodeFlags.HasStaticQuery;
+                }
+                else {
+                    flags |= viewEngine.NodeFlags.HasDynamicQuery;
+                }
                 var /** @type {?} */ bindingType = query.first ? viewEngine.QueryBindingType.First : viewEngine.QueryBindingType.All;
                 _this.nodeDefs.push(importExpr(createIdentifier(Identifiers.queryDef)).callFn([
-                    literal(viewEngine.NodeFlags.HasContentQuery), literal(calcQueryId(queryId)),
+                    literal(flags), literal(queryId),
                     new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
                 ]));
             });
@@ -29617,7 +29665,7 @@
             refs.forEach(function (ref) {
                 if (ref.value && tokenReference(ref.value) === tokenReference(providerAst.token)) {
                     _this.refNodeIndices[ref.name] = nodeIndex;
-                    queryMatchExprs.push(literalArr([literal("#" + ref.name), literal(viewEngine.QueryValueType.Provider)]));
+                    queryMatchExprs.push(literalArr([literal(ref.name), literal(viewEngine.QueryValueType.Provider)]));
                 }
             });
             var /** @type {?} */ compView = NULL_EXPR;
@@ -29695,6 +29743,9 @@
             if (!providerAst.eager) {
                 flags |= viewEngine.NodeFlags.LazyProvider;
             }
+            if (providerAst.providerType === ProviderAstType.PrivateService) {
+                flags |= viewEngine.NodeFlags.PrivateProvider;
+            }
             providerAst.lifecycleHooks.forEach(function (lifecycleHook) {
                 // for regular providers, we only support ngOnDestroy
                 if (lifecycleHook === LifecycleHooks.OnDestroy ||
@@ -29706,7 +29757,7 @@
             var /** @type {?} */ queryMatchExprs = [];
             queryMatches.forEach(function (match) {
                 if (tokenReference(match.value) === tokenReference(providerAst.token)) {
-                    queryMatchExprs.push(literalArr([literal(calcQueryId(match.query)), literal(viewEngine.QueryValueType.Provider)]));
+                    queryMatchExprs.push(literalArr([literal(match.queryId), literal(viewEngine.QueryValueType.Provider)]));
                 }
             });
             var _a = providerDef(providerAst), providerExpr = _a.providerExpr, providerType = _a.providerType, depsExpr = _a.depsExpr;
@@ -29925,20 +29976,17 @@
         var /** @type {?} */ allDepDefs = [];
         var /** @type {?} */ allParams = [];
         var /** @type {?} */ exprs = providers.map(function (provider, providerIndex) {
-            var /** @type {?} */ depExprs = provider.deps.map(function (dep, depIndex) {
-                var /** @type {?} */ paramName = "p" + providerIndex + "_" + depIndex;
-                allParams.push(new FnParam(paramName, DYNAMIC_TYPE));
-                allDepDefs.push(depDef(dep));
-                return variable(paramName);
-            });
             var /** @type {?} */ expr;
             if (provider.useClass) {
+                var /** @type {?} */ depExprs = convertDeps(providerIndex, provider.deps || provider.useClass.diDeps);
                 expr = importExpr(provider.useClass).instantiate(depExprs);
             }
             else if (provider.useFactory) {
+                var /** @type {?} */ depExprs = convertDeps(providerIndex, provider.deps || provider.useFactory.diDeps);
                 expr = importExpr(provider.useFactory).callFn(depExprs);
             }
             else if (provider.useExisting) {
+                var /** @type {?} */ depExprs = convertDeps(providerIndex, [{ token: provider.useExisting }]);
                 expr = depExprs[0];
             }
             else {
@@ -29952,6 +30000,19 @@
             providerType: viewEngine.ProviderType.Factory,
             depsExpr: literalArr(allDepDefs)
         };
+        /**
+         * @param {?} providerIndex
+         * @param {?} deps
+         * @return {?}
+         */
+        function convertDeps(providerIndex, deps) {
+            return deps.map(function (dep, depIndex) {
+                var /** @type {?} */ paramName = "p" + providerIndex + "_" + depIndex;
+                allParams.push(new FnParam(paramName, DYNAMIC_TYPE));
+                allDepDefs.push(depDef(dep));
+                return variable(paramName);
+            });
+        }
     }
     /**
      * @param {?} providerMeta
@@ -30023,19 +30084,6 @@
             return ast.hasViewContainer;
         }
         return ast instanceof NgContentAst;
-    }
-    /**
-     * @param {?} queryId
-     * @return {?}
-     */
-    function calcQueryId(queryId) {
-        if (queryId.directiveIndex == null) {
-            // view query
-            return "v" + queryId.queryIndex;
-        }
-        else {
-            return "c" + queryId.elementDepth + "_" + queryId.directiveIndex + "_" + queryId.queryIndex;
-        }
     }
     /**
      * @param {?} lifecycleHook
@@ -30156,6 +30204,66 @@
      */
     function callUnwrapValue(expr) {
         return importExpr(createIdentifier(Identifiers.unwrapValue)).callFn([expr]);
+    }
+    /**
+     * @param {?} nodes
+     * @param {?=} result
+     * @return {?}
+     */
+    function findStaticQueryIds(nodes, result) {
+        if (result === void 0) { result = new Map(); }
+        nodes.forEach(function (node) {
+            var /** @type {?} */ staticQueryIds = new Set();
+            var /** @type {?} */ dynamicQueryIds = new Set();
+            var /** @type {?} */ queryMatches;
+            if (node instanceof ElementAst) {
+                findStaticQueryIds(node.children, result);
+                node.children.forEach(function (child) {
+                    var /** @type {?} */ childData = result.get(child);
+                    childData.staticQueryIds.forEach(function (queryId) { return staticQueryIds.add(queryId); });
+                    childData.dynamicQueryIds.forEach(function (queryId) { return dynamicQueryIds.add(queryId); });
+                });
+                queryMatches = node.queryMatches;
+            }
+            else if (node instanceof EmbeddedTemplateAst) {
+                findStaticQueryIds(node.children, result);
+                node.children.forEach(function (child) {
+                    var /** @type {?} */ childData = result.get(child);
+                    childData.staticQueryIds.forEach(function (queryId) { return dynamicQueryIds.add(queryId); });
+                    childData.dynamicQueryIds.forEach(function (queryId) { return dynamicQueryIds.add(queryId); });
+                });
+                queryMatches = node.queryMatches;
+            }
+            if (queryMatches) {
+                queryMatches.forEach(function (match) { return staticQueryIds.add(match.queryId); });
+            }
+            dynamicQueryIds.forEach(function (queryId) { return staticQueryIds.delete(queryId); });
+            result.set(node, { staticQueryIds: staticQueryIds, dynamicQueryIds: dynamicQueryIds });
+        });
+        return result;
+    }
+    /**
+     * @param {?} directives
+     * @return {?}
+     */
+    function createComponentFactoryResolver(directives) {
+        var /** @type {?} */ componentDirMeta = directives.find(function (dirAst) { return dirAst.directive.isComponent; });
+        if (componentDirMeta) {
+            var /** @type {?} */ entryComponentFactories = componentDirMeta.directive.entryComponents.map(function (entryComponent) { return importExpr({ reference: entryComponent.componentFactory }); });
+            var /** @type {?} */ cfrExpr = importExpr(createIdentifier(Identifiers.CodegenComponentFactoryResolver))
+                .instantiate([literalArr(entryComponentFactories)]);
+            var /** @type {?} */ token = createIdentifierToken(Identifiers.ComponentFactoryResolver);
+            var /** @type {?} */ classMeta = {
+                diDeps: [
+                    { isValue: true, value: literalArr(entryComponentFactories) },
+                    { token: token, isSkipSelf: true, isOptional: true }
+                ],
+                lifecycleHooks: [],
+                reference: resolveIdentifier(Identifiers.CodegenComponentFactoryResolver)
+            };
+            return new ProviderAst(token, false, true, [{ token: token, multi: false, useClass: classMeta }], ProviderAstType.PrivateService, [], componentDirMeta.sourceSpan);
+        }
+        return null;
     }
 
     /**

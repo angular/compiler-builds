@@ -436,6 +436,7 @@ export class CompileDirectiveMetadata {
             providers: this.providers,
             viewProviders: this.viewProviders,
             queries: this.queries,
+            viewQueries: this.viewQueries,
             entryComponents: this.entryComponents,
             changeDetection: this.changeDetection,
             template: this.template && this.template.toSummary(),

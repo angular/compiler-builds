@@ -162,8 +162,9 @@ export declare class DirectiveAst implements TemplateAst {
     inputs: BoundDirectivePropertyAst[];
     hostProperties: BoundElementPropertyAst[];
     hostEvents: BoundEventAst[];
+    contentQueryStartId: number;
     sourceSpan: ParseSourceSpan;
-    constructor(directive: CompileDirectiveSummary, inputs: BoundDirectivePropertyAst[], hostProperties: BoundElementPropertyAst[], hostEvents: BoundEventAst[], sourceSpan: ParseSourceSpan);
+    constructor(directive: CompileDirectiveSummary, inputs: BoundDirectivePropertyAst[], hostProperties: BoundElementPropertyAst[], hostEvents: BoundEventAst[], contentQueryStartId: number, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
@@ -222,16 +223,8 @@ export declare enum PropertyBindingType {
      */
     Animation = 4,
 }
-/**
- * This id differentiates a query on an element from any query on any child.
- */
-export interface QueryId {
-    elementDepth: number;
-    directiveIndex: number;
-    queryIndex: number;
-}
 export interface QueryMatch {
-    query: QueryId;
+    queryId: number;
     value: CompileTokenMetadata;
 }
 /**
