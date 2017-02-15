@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.7-b4d444a
+ * @license Angular v4.0.0-beta.7-bb9c7ae
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.7-b4d444a');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-beta.7-bb9c7ae');
 
     /**
      * @license
@@ -29320,7 +29320,8 @@
                 });
             }
             templateVisitAll(this, astNodes, { elementDepth: elementDepth });
-            if (astNodes.length === 0 || (this.parent && hasViewContainer(astNodes[astNodes.length - 1]))) {
+            if (astNodes.length === 0 ||
+                (this.parent && needsAdditionalRootNode(astNodes[astNodes.length - 1]))) {
                 // if the view is empty, or an embedded view has a view container as last root nde,
                 // create an additional root node.
                 this.nodeDefs.push(importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
@@ -30014,14 +30015,14 @@
      * @param {?} ast
      * @return {?}
      */
-    function hasViewContainer(ast) {
+    function needsAdditionalRootNode(ast) {
         if (ast instanceof EmbeddedTemplateAst) {
             return ast.hasViewContainer;
         }
-        else if (ast instanceof ElementAst) {
+        if (ast instanceof ElementAst) {
             return ast.hasViewContainer;
         }
-        return false;
+        return ast instanceof NgContentAst;
     }
     /**
      * @param {?} queryId
