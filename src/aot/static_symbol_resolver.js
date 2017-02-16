@@ -216,7 +216,15 @@ var StaticSymbolResolver = (function () {
             var /** @type {?} */ topLevelSymbolNames_1 = new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));
             Object.keys(metadata['metadata']).forEach(function (metadataKey) {
                 var /** @type {?} */ symbolMeta = metadata['metadata'][metadataKey];
-                resolvedSymbols.push(_this.createResolvedSymbol(_this.getStaticSymbol(filePath, unescapeIdentifier(metadataKey)), topLevelSymbolNames_1, symbolMeta));
+                var /** @type {?} */ name = unescapeIdentifier(metadataKey);
+                var /** @type {?} */ canonicalSymbol = _this.getStaticSymbol(filePath, name);
+                if (metadata['importAs']) {
+                    // Index bundle indexes should use the importAs module name instead of a reference
+                    // to the .d.ts file directly.
+                    var /** @type {?} */ importSymbol = _this.getStaticSymbol(metadata['importAs'], name);
+                    _this.recordImportAs(canonicalSymbol, importSymbol);
+                }
+                resolvedSymbols.push(_this.createResolvedSymbol(canonicalSymbol, topLevelSymbolNames_1, symbolMeta));
             });
         }
         // handle the symbols in one of the re-export location
@@ -420,7 +428,7 @@ var StaticSymbolResolver = (function () {
         }
         catch (e) {
             console.error("Could not resolve module '" + module + "' relative to file " + containingFile);
-            this.reportError(new e, null, containingFile);
+            this.reportError(e, null, containingFile);
         }
     };
     return StaticSymbolResolver;
