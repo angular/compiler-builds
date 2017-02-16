@@ -20,7 +20,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { ChangeDetectionStrategy } from '@angular/core';
-import { identifierName, tokenReference } from '../compile_metadata';
+import { componentRenderTypeName, identifierName, tokenReference, viewClassName } from '../compile_metadata';
 import { EventHandlerVars, convertActionBinding, convertPropertyBinding, convertPropertyBindingBuiltins } from '../compiler_util/expression_converter';
 import { CompilerConfig } from '../config';
 import { ASTWithSource } from '../expression_parser/ast';
@@ -60,16 +60,27 @@ var ViewCompilerNext = (function (_super) {
         var /** @type {?} */ compName = identifierName(component.type) + (component.isHost ? "_Host" : '');
         var /** @type {?} */ embeddedViewCount = 0;
         var /** @type {?} */ staticQueryIds = findStaticQueryIds(template);
+        var /** @type {?} */ statements = [];
+        var /** @type {?} */ renderComponentVar = o.variable(componentRenderTypeName(component.type.reference));
+        statements.push(renderComponentVar
+            .set(o.importExpr(createIdentifier(Identifiers.createComponentRenderTypeV2)).callFn([
+            new o.LiteralMapExpr([
+                new o.LiteralMapEntry('encapsulation', o.literal(component.template.encapsulation)),
+                new o.LiteralMapEntry('styles', styles),
+                // TODO: copy this from the @Component directive...
+                new o.LiteralMapEntry('data', o.literalMap([])),
+            ])
+        ]))
+            .toDeclStmt());
         var /** @type {?} */ viewBuilderFactory = function (parent) {
             var /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
-            var /** @type {?} */ viewName = "view_" + compName + "_" + embeddedViewIndex;
+            var /** @type {?} */ viewName = viewClassName(component.type.reference, embeddedViewIndex);
             return new ViewBuilder(parent, viewName, usedPipes, staticQueryIds, viewBuilderFactory);
         };
         var /** @type {?} */ visitor = viewBuilderFactory(null);
         visitor.visitAll([], template);
-        var /** @type {?} */ statements = [];
         statements.push.apply(statements, visitor.build(component));
-        return new ViewCompileResult(statements, visitor.viewName, []);
+        return new ViewCompileResult(statements, visitor.viewName, renderComponentVar.name, []);
     };
     return ViewCompilerNext;
 }(ViewCompiler));
@@ -468,9 +479,11 @@ var ViewBuilder = (function () {
                 queryMatchExprs.push(o.literalArr([o.literal(ref.name), o.literal(viewEngine.QueryValueType.Provider)]));
             }
         });
+        var /** @type {?} */ compRenderType = o.NULL_EXPR;
         var /** @type {?} */ compView = o.NULL_EXPR;
         if (directiveAst.directive.isComponent) {
             compView = o.importExpr({ reference: directiveAst.directive.componentViewType });
+            compRenderType = o.importExpr({ reference: directiveAst.directive.componentRenderType });
         }
         var /** @type {?} */ inputDefs = directiveAst.inputs.map(function (inputAst, inputIndex) {
             var /** @type {?} */ mapValue = o.literalArr([o.literal(inputIndex), o.literal(inputAst.directiveName)]);
@@ -508,7 +521,7 @@ var ViewBuilder = (function () {
             o.literal(flags), queryMatchExprs.length ? o.literalArr(queryMatchExprs) : o.NULL_EXPR,
             o.literal(childCount), providerExpr, depsExpr,
             inputDefs.length ? new o.LiteralMapExpr(inputDefs) : o.NULL_EXPR,
-            outputDefs.length ? new o.LiteralMapExpr(outputDefs) : o.NULL_EXPR, compView
+            outputDefs.length ? new o.LiteralMapExpr(outputDefs) : o.NULL_EXPR, compView, compRenderType
         ]);
         this.nodeDefs[nodeIndex] = nodeDef;
         return { hostBindings: hostBindings, hostEvents: hostEvents };

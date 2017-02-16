@@ -189,10 +189,10 @@ var JitCompiler = (function () {
             var /** @type {?} */ compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
             if (!this._compilerConfig.useJit) {
                 ngModuleFactory =
-                    interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
+                    interpretStatements(compileResult.statements, [compileResult.ngModuleFactoryVar])[0];
             }
             else {
-                ngModuleFactory = jitStatements("/" + identifierName(moduleMeta_1.type) + "/module.ngfactory.js", compileResult.statements, compileResult.ngModuleFactoryVar);
+                ngModuleFactory = jitStatements("/" + identifierName(moduleMeta_1.type) + "/module.ngfactory.js", compileResult.statements, [compileResult.ngModuleFactoryVar])[0];
             }
             this._compiledNgModuleCache.set(moduleMeta_1.type.reference, ngModuleFactory);
         }
@@ -314,10 +314,11 @@ var JitCompiler = (function () {
         var /** @type {?} */ statements = compileResult.statements;
         var /** @type {?} */ directiveWrapperClass;
         if (!this._compilerConfig.useJit) {
-            directiveWrapperClass = interpretStatements(statements, compileResult.dirWrapperClassVar);
+            directiveWrapperClass =
+                interpretStatements(statements, [compileResult.dirWrapperClassVar])[0];
         }
         else {
-            directiveWrapperClass = jitStatements("/" + identifierName(moduleMeta.type) + "/" + identifierName(dirMeta.type) + "/wrapper.ngfactory.js", statements, compileResult.dirWrapperClassVar);
+            directiveWrapperClass = jitStatements("/" + identifierName(moduleMeta.type) + "/" + identifierName(dirMeta.type) + "/wrapper.ngfactory.js", statements, [compileResult.dirWrapperClassVar])[0];
         }
         ((dirMeta.wrapperType)).setDelegate(directiveWrapperClass);
         this._compiledDirectiveWrapperCache.set(dirMeta.type.reference, directiveWrapperClass);
@@ -344,14 +345,16 @@ var JitCompiler = (function () {
         var /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), usedPipes, compiledAnimations);
         var /** @type {?} */ statements = (_b = stylesCompileResult.componentStylesheet.statements).concat.apply(_b, compiledAnimations.map(function (ca) { return ca.statements; })).concat(compileResult.statements);
         var /** @type {?} */ viewClass;
+        var /** @type {?} */ componentRenderType;
         if (!this._compilerConfig.useJit) {
-            viewClass = interpretStatements(statements, compileResult.viewClassVar);
+            _c = interpretStatements(statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]), viewClass = _c[0], componentRenderType = _c[1];
         }
         else {
-            viewClass = jitStatements("/" + identifierName(template.ngModule.type) + "/" + identifierName(template.compType) + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js", statements, compileResult.viewClassVar);
+            var /** @type {?} */ sourceUrl = "/" + identifierName(template.ngModule.type) + "/" + identifierName(template.compType) + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js";
+            _d = jitStatements(sourceUrl, statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]), viewClass = _d[0], componentRenderType = _d[1];
         }
-        template.compiled(viewClass);
-        var _b;
+        template.compiled(viewClass, componentRenderType);
+        var _b, _c, _d;
     };
     /**
      * @param {?} result
@@ -374,10 +377,10 @@ var JitCompiler = (function () {
     JitCompiler.prototype._resolveAndEvalStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
         this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
         if (!this._compilerConfig.useJit) {
-            return interpretStatements(result.statements, result.stylesVar);
+            return interpretStatements(result.statements, [result.stylesVar])[0];
         }
         else {
-            return jitStatements("/" + result.meta.moduleUrl + ".ngstyle.js", result.statements, result.stylesVar);
+            return jitStatements("/" + result.meta.moduleUrl + ".ngstyle.js", result.statements, [result.stylesVar])[0];
         }
     };
     return JitCompiler;
@@ -464,11 +467,15 @@ var CompiledTemplate = (function () {
     }
     /**
      * @param {?} viewClass
+     * @param {?} componentRenderType
      * @return {?}
      */
-    CompiledTemplate.prototype.compiled = function (viewClass) {
+    CompiledTemplate.prototype.compiled = function (viewClass, componentRenderType) {
         this._viewClass = viewClass;
         ((this.compMeta.componentViewType)).setDelegate(viewClass);
+        for (var /** @type {?} */ prop in componentRenderType) {
+            ((this.compMeta.componentRenderType))[prop] = componentRenderType[prop];
+        }
         this.isCompiled = true;
     };
     return CompiledTemplate;

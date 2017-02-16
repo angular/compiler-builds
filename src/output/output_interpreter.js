@@ -10,11 +10,11 @@ import * as o from './output_ast';
 import { debugOutputAstAsTypeScript } from './ts_emitter';
 /**
  * @param {?} statements
- * @param {?} resultVar
+ * @param {?} resultVars
  * @return {?}
  */
-export function interpretStatements(statements, resultVar) {
-    var /** @type {?} */ stmtsWithReturn = statements.concat([new o.ReturnStatement(o.variable(resultVar))]);
+export function interpretStatements(statements, resultVars) {
+    var /** @type {?} */ stmtsWithReturn = statements.concat([new o.ReturnStatement(o.literalArr(resultVars.map(function (resultVar) { return o.variable(resultVar); })))]);
     var /** @type {?} */ ctx = new _ExecutionContext(null, null, null, new Map());
     var /** @type {?} */ visitor = new StatementInterpreter();
     var /** @type {?} */ result = visitor.visitAllStatements(stmtsWithReturn, ctx);

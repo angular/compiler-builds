@@ -267,6 +267,13 @@ export function viewClassName(compType, embeddedTemplateIndex) {
  * @param {?} compType
  * @return {?}
  */
+export function componentRenderTypeName(compType) {
+    return "RenderType_" + identifierName({ reference: compType });
+}
+/**
+ * @param {?} compType
+ * @return {?}
+ */
 export function hostViewClassName(compType) {
     return "HostView_" + identifierName({ reference: compType });
 }
@@ -400,7 +407,7 @@ var CompileDirectiveMetadata = (function () {
      * @param {?=} __0
      */
     function CompileDirectiveMetadata(_a) {
-        var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentFactory = _b.componentFactory;
+        var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentRenderType = _b.componentRenderType, componentFactory = _b.componentFactory;
         this.isHost = !!isHost;
         this.type = type;
         this.isComponent = isComponent;
@@ -420,6 +427,7 @@ var CompileDirectiveMetadata = (function () {
         this.template = template;
         this.wrapperType = wrapperType;
         this.componentViewType = componentViewType;
+        this.componentRenderType = componentRenderType;
         this.componentFactory = componentFactory;
     }
     /**
@@ -427,7 +435,7 @@ var CompileDirectiveMetadata = (function () {
      * @return {?}
      */
     CompileDirectiveMetadata.create = function (_a) {
-        var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentFactory = _b.componentFactory;
+        var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentRenderType = _b.componentRenderType, componentFactory = _b.componentFactory;
         var /** @type {?} */ hostListeners = {};
         var /** @type {?} */ hostProperties = {};
         var /** @type {?} */ hostAttributes = {};
@@ -481,6 +489,7 @@ var CompileDirectiveMetadata = (function () {
             template: template,
             wrapperType: wrapperType,
             componentViewType: componentViewType,
+            componentRenderType: componentRenderType,
             componentFactory: componentFactory,
         });
     };
@@ -508,6 +517,7 @@ var CompileDirectiveMetadata = (function () {
             template: this.template && this.template.toSummary(),
             wrapperType: this.wrapperType,
             componentViewType: this.componentViewType,
+            componentRenderType: this.componentRenderType,
             componentFactory: this.componentFactory
         };
     };
@@ -554,6 +564,8 @@ function CompileDirectiveMetadata_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileDirectiveMetadata.prototype.componentViewType;
     /** @type {?} */
+    CompileDirectiveMetadata.prototype.componentRenderType;
+    /** @type {?} */
     CompileDirectiveMetadata.prototype.componentFactory;
 }
 /**
@@ -587,7 +599,8 @@ export function createHostComponentMeta(hostTypeReference, compMeta, hostViewTyp
         viewProviders: [],
         queries: [],
         viewQueries: [],
-        componentViewType: hostViewType
+        componentViewType: hostViewType,
+        componentRenderType: { id: '__Host__', encapsulation: ViewEncapsulation.None, styles: [], data: {} }
     });
 }
 var CompilePipeMetadata = (function () {

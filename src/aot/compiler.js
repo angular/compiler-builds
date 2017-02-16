@@ -102,7 +102,8 @@ var AotCompiler = (function () {
                 generatedFiles.push(_this._codgenStyles(srcFileUrl, compiledStyleSheet, fileSuffix));
             });
             // compile components
-            exportedVars.push(_this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), _this._compileComponent(compMeta, ngModule, ngModule.transitiveModule.directives, stylesCompileResults.componentStylesheet, fileSuffix, statements));
+            var /** @type {?} */ compViewVars = _this._compileComponent(compMeta, ngModule, ngModule.transitiveModule.directives, stylesCompileResults.componentStylesheet, fileSuffix, statements);
+            exportedVars.push(_this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), compViewVars.viewClassVar, compViewVars.compRenderTypeVar);
         });
         if (statements.length > 0) {
             var /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, ngfactoryFilePath(srcFileUrl), statements, exportedVars);
@@ -177,7 +178,8 @@ var AotCompiler = (function () {
     AotCompiler.prototype._compileComponentFactory = function (compMeta, ngModule, fileSuffix, targetStatements) {
         var /** @type {?} */ hostType = this._metadataResolver.getHostComponentType(compMeta.type.reference);
         var /** @type {?} */ hostMeta = createHostComponentMeta(hostType, compMeta, this._metadataResolver.getHostComponentViewClass(hostType));
-        var /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements);
+        var /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements)
+            .viewClassVar;
         var /** @type {?} */ compFactoryVar = componentFactoryName(compMeta.type.reference);
         targetStatements.push(o.variable(compFactoryVar)
             .set(o.importExpr(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)])
@@ -212,7 +214,10 @@ var AotCompiler = (function () {
         }
         compiledAnimations.forEach(function (entry) { return targetStatements.push.apply(targetStatements, entry.statements); });
         targetStatements.push.apply(targetStatements, viewResult.statements);
-        return viewResult.viewClassVar;
+        return {
+            viewClassVar: viewResult.viewClassVar,
+            compRenderTypeVar: viewResult.componentRenderTypeVar
+        };
     };
     /**
      * @param {?} fileUrl
