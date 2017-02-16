@@ -26361,15 +26361,7 @@
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
-    var /** @type {?} */ ANGULAR_IMPORT_LOCATIONS = {
-        coreDecorators: '@angular/core/src/metadata',
-        diDecorators: '@angular/core/src/di/metadata',
-        diMetadata: '@angular/core/src/di/metadata',
-        diInjectionToken: '@angular/core/src/di/injection_token',
-        diOpaqueToken: '@angular/core/src/di/injection_token',
-        animationMetadata: '@angular/core/src/animation/metadata',
-        provider: '@angular/core/src/di/provider'
-    };
+    var /** @type {?} */ ANGULAR_CORE = '@angular/core';
     var /** @type {?} */ HIDDEN_KEY = /^\$.*\$$/;
     /**
      * A static reflector implements enough of the Reflector API that is necessary to compile
@@ -26630,41 +26622,40 @@
          * @return {?}
          */
         StaticReflector.prototype.initializeConversionMap = function () {
-            var coreDecorators = ANGULAR_IMPORT_LOCATIONS.coreDecorators, diDecorators = ANGULAR_IMPORT_LOCATIONS.diDecorators, diMetadata = ANGULAR_IMPORT_LOCATIONS.diMetadata, diInjectionToken = ANGULAR_IMPORT_LOCATIONS.diInjectionToken, diOpaqueToken = ANGULAR_IMPORT_LOCATIONS.diOpaqueToken, animationMetadata = ANGULAR_IMPORT_LOCATIONS.animationMetadata, provider = ANGULAR_IMPORT_LOCATIONS.provider;
-            this.injectionToken = this.findDeclaration(diInjectionToken, 'InjectionToken');
-            this.opaqueToken = this.findDeclaration(diInjectionToken, 'OpaqueToken');
-            this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Host'), _angular_core.Host);
-            this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Injectable'), _angular_core.Injectable);
-            this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Self'), _angular_core.Self);
-            this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'SkipSelf'), _angular_core.SkipSelf);
-            this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Inject'), _angular_core.Inject);
-            this._registerDecoratorOrConstructor(this.findDeclaration(diDecorators, 'Optional'), _angular_core.Optional);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Attribute'), _angular_core.Attribute);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChild'), _angular_core.ContentChild);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ContentChildren'), _angular_core.ContentChildren);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChild'), _angular_core.ViewChild);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'ViewChildren'), _angular_core.ViewChildren);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Input'), _angular_core.Input);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Output'), _angular_core.Output);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Pipe'), _angular_core.Pipe);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostBinding'), _angular_core.HostBinding);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'HostListener'), _angular_core.HostListener);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Directive'), _angular_core.Directive);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'Component'), _angular_core.Component);
-            this._registerDecoratorOrConstructor(this.findDeclaration(coreDecorators, 'NgModule'), _angular_core.NgModule);
+            this.injectionToken = this.findDeclaration(ANGULAR_CORE, 'InjectionToken');
+            this.opaqueToken = this.findDeclaration(ANGULAR_CORE, 'OpaqueToken');
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Host'), _angular_core.Host);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Injectable'), _angular_core.Injectable);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Self'), _angular_core.Self);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'SkipSelf'), _angular_core.SkipSelf);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Inject'), _angular_core.Inject);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Optional'), _angular_core.Optional);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Attribute'), _angular_core.Attribute);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'ContentChild'), _angular_core.ContentChild);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'ContentChildren'), _angular_core.ContentChildren);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'ViewChild'), _angular_core.ViewChild);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'ViewChildren'), _angular_core.ViewChildren);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Input'), _angular_core.Input);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Output'), _angular_core.Output);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Pipe'), _angular_core.Pipe);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'HostBinding'), _angular_core.HostBinding);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'HostListener'), _angular_core.HostListener);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Directive'), _angular_core.Directive);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Component'), _angular_core.Component);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'NgModule'), _angular_core.NgModule);
             // Note: Some metadata classes can be used directly with Provider.deps.
-            this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Host'), _angular_core.Host);
-            this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Self'), _angular_core.Self);
-            this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'SkipSelf'), _angular_core.SkipSelf);
-            this._registerDecoratorOrConstructor(this.findDeclaration(diMetadata, 'Optional'), _angular_core.Optional);
-            this._registerFunction(this.findDeclaration(animationMetadata, 'trigger'), _angular_core.trigger);
-            this._registerFunction(this.findDeclaration(animationMetadata, 'state'), _angular_core.state);
-            this._registerFunction(this.findDeclaration(animationMetadata, 'transition'), _angular_core.transition);
-            this._registerFunction(this.findDeclaration(animationMetadata, 'style'), _angular_core.style);
-            this._registerFunction(this.findDeclaration(animationMetadata, 'animate'), _angular_core.animate);
-            this._registerFunction(this.findDeclaration(animationMetadata, 'keyframes'), _angular_core.keyframes);
-            this._registerFunction(this.findDeclaration(animationMetadata, 'sequence'), _angular_core.sequence);
-            this._registerFunction(this.findDeclaration(animationMetadata, 'group'), _angular_core.group);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Host'), _angular_core.Host);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Self'), _angular_core.Self);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'SkipSelf'), _angular_core.SkipSelf);
+            this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Optional'), _angular_core.Optional);
+            this._registerFunction(this.findDeclaration(ANGULAR_CORE, 'trigger'), _angular_core.trigger);
+            this._registerFunction(this.findDeclaration(ANGULAR_CORE, 'state'), _angular_core.state);
+            this._registerFunction(this.findDeclaration(ANGULAR_CORE, 'transition'), _angular_core.transition);
+            this._registerFunction(this.findDeclaration(ANGULAR_CORE, 'style'), _angular_core.style);
+            this._registerFunction(this.findDeclaration(ANGULAR_CORE, 'animate'), _angular_core.animate);
+            this._registerFunction(this.findDeclaration(ANGULAR_CORE, 'keyframes'), _angular_core.keyframes);
+            this._registerFunction(this.findDeclaration(ANGULAR_CORE, 'sequence'), _angular_core.sequence);
+            this._registerFunction(this.findDeclaration(ANGULAR_CORE, 'group'), _angular_core.group);
         };
         /**
          * getStaticSymbol produces a Type whose metadata is known but whose implementation is not loaded.
@@ -27364,7 +27355,15 @@
                 var /** @type {?} */ topLevelSymbolNames_1 = new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));
                 Object.keys(metadata['metadata']).forEach(function (metadataKey) {
                     var /** @type {?} */ symbolMeta = metadata['metadata'][metadataKey];
-                    resolvedSymbols.push(_this.createResolvedSymbol(_this.getStaticSymbol(filePath, unescapeIdentifier(metadataKey)), topLevelSymbolNames_1, symbolMeta));
+                    var /** @type {?} */ name = unescapeIdentifier(metadataKey);
+                    var /** @type {?} */ canonicalSymbol = _this.getStaticSymbol(filePath, name);
+                    if (metadata['importAs']) {
+                        // Index bundle indexes should use the importAs module name instead of a reference
+                        // to the .d.ts file directly.
+                        var /** @type {?} */ importSymbol = _this.getStaticSymbol(metadata['importAs'], name);
+                        _this.recordImportAs(canonicalSymbol, importSymbol);
+                    }
+                    resolvedSymbols.push(_this.createResolvedSymbol(canonicalSymbol, topLevelSymbolNames_1, symbolMeta));
                 });
             }
             // handle the symbols in one of the re-export location
@@ -27568,7 +27567,7 @@
             }
             catch (e) {
                 console.error("Could not resolve module '" + module + "' relative to file " + containingFile);
-                this.reportError(new e, null, containingFile);
+                this.reportError(e, null, containingFile);
             }
         };
         return StaticSymbolResolver;
