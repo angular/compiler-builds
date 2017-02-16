@@ -66,6 +66,7 @@ export declare class CompileView implements LegacyNameResolver {
     pipes: CompilePipe[];
     locals: Map<string, o.Expression>;
     className: string;
+    renderComponentTypeName: string;
     classType: o.Type;
     classExpr: o.ReadVarExpr;
     literalArrayCount: number;

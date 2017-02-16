@@ -1910,6 +1910,13 @@
      * @param {?} compType
      * @return {?}
      */
+    function componentRenderTypeName(compType) {
+        return "RenderType_" + identifierName({ reference: compType });
+    }
+    /**
+     * @param {?} compType
+     * @return {?}
+     */
     function hostViewClassName(compType) {
         return "HostView_" + identifierName({ reference: compType });
     }
@@ -2013,7 +2020,7 @@
          * @param {?=} __0
          */
         function CompileDirectiveMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentFactory = _b.componentFactory;
+            var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentRenderType = _b.componentRenderType, componentFactory = _b.componentFactory;
             this.isHost = !!isHost;
             this.type = type;
             this.isComponent = isComponent;
@@ -2033,6 +2040,7 @@
             this.template = template;
             this.wrapperType = wrapperType;
             this.componentViewType = componentViewType;
+            this.componentRenderType = componentRenderType;
             this.componentFactory = componentFactory;
         }
         /**
@@ -2040,7 +2048,7 @@
          * @return {?}
          */
         CompileDirectiveMetadata.create = function (_a) {
-            var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentFactory = _b.componentFactory;
+            var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentRenderType = _b.componentRenderType, componentFactory = _b.componentFactory;
             var /** @type {?} */ hostListeners = {};
             var /** @type {?} */ hostProperties = {};
             var /** @type {?} */ hostAttributes = {};
@@ -2094,6 +2102,7 @@
                 template: template,
                 wrapperType: wrapperType,
                 componentViewType: componentViewType,
+                componentRenderType: componentRenderType,
                 componentFactory: componentFactory,
             });
         };
@@ -2121,6 +2130,7 @@
                 template: this.template && this.template.toSummary(),
                 wrapperType: this.wrapperType,
                 componentViewType: this.componentViewType,
+                componentRenderType: this.componentRenderType,
                 componentFactory: this.componentFactory
             };
         };
@@ -2157,7 +2167,8 @@
             viewProviders: [],
             queries: [],
             viewQueries: [],
-            componentViewType: hostViewType
+            componentViewType: hostViewType,
+            componentRenderType: { id: '__Host__', encapsulation: _angular_core.ViewEncapsulation.None, styles: [], data: {} }
         });
     }
     var CompilePipeMetadata = (function () {
@@ -10156,6 +10167,12 @@
         moduleUrl: CORE,
         member: 'unwrapValue',
         runtime: _angular_core.ɵviewEngine.unwrapValue
+    };
+    Identifiers.createComponentRenderTypeV2 = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'createComponentRenderTypeV2',
+        runtime: _angular_core.ɵviewEngine.createComponentRenderTypeV2
     };
     /**
      * @param {?} pkg
@@ -18778,6 +18795,20 @@
             }
         };
         /**
+         * @param {?} dirType
+         * @return {?}
+         */
+        CompileMetadataResolver.prototype.getComponentRenderType = function (dirType) {
+            if (dirType instanceof StaticSymbol) {
+                return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), componentRenderTypeName(dirType));
+            }
+            else {
+                // returning an object as proxy,
+                // that we fill later during runtime compilation.
+                return ({});
+            }
+        };
+        /**
          * @param {?} selector
          * @param {?} dirType
          * @return {?}
@@ -18897,6 +18928,7 @@
                     entryComponents: metadata.entryComponents,
                     wrapperType: metadata.wrapperType,
                     componentViewType: metadata.componentViewType,
+                    componentRenderType: metadata.componentRenderType,
                     componentFactory: metadata.componentFactory,
                     template: templateMetadata
                 });
@@ -19025,6 +19057,7 @@
                 wrapperType: this.getDirectiveWrapperClass(directiveType),
                 componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
                     undefined,
+                componentRenderType: nonNormalizedTemplateMetadata ? this.getComponentRenderType(directiveType) : undefined,
                 componentFactory: nonNormalizedTemplateMetadata ?
                     this.getComponentFactory(selector, directiveType) :
                     undefined
@@ -23844,6 +23877,7 @@
             this.detachMethod = new CompileMethod(this);
             this.viewType = getViewType(component, viewIndex);
             this.className = viewClassName(component.type.reference, viewIndex);
+            this.renderComponentTypeName = componentRenderTypeName(component.type.reference);
             this.classType = expressionType(variable(this.className));
             this.classExpr = variable(this.className);
             if (this.viewType === ViewType.COMPONENT || this.viewType === ViewType.HOST) {
@@ -24838,7 +24872,7 @@
                 .set(literalArr(view.nodes.map(createStaticNodeDebugInfo), new ArrayType(importType(createIdentifier(Identifiers.StaticNodeDebugInfo)), [TypeModifier.Const])))
                 .toDeclStmt(null, [StmtModifier.Final]));
         }
-        var /** @type {?} */ renderCompTypeVar = variable("renderType_" + identifierName(view.component.type)); // fix highlighting: `
+        var /** @type {?} */ renderCompTypeVar = variable(view.renderComponentTypeName); // fix highlighting: `
         if (view.viewIndex === 0) {
             var /** @type {?} */ templateUrlInfo = void 0;
             if (view.component.template.templateUrl == identifierModuleUrl(view.component.type)) {
@@ -25167,11 +25201,13 @@
         /**
          * @param {?} statements
          * @param {?} viewClassVar
+         * @param {?} componentRenderTypeVar
          * @param {?} dependencies
          */
-        function ViewCompileResult(statements, viewClassVar, dependencies) {
+        function ViewCompileResult(statements, viewClassVar, componentRenderTypeVar, dependencies) {
             this.statements = statements;
             this.viewClassVar = viewClassVar;
+            this.componentRenderTypeVar = componentRenderTypeVar;
             this.dependencies = dependencies;
         }
         return ViewCompileResult;
@@ -25202,7 +25238,7 @@
             // variables that have been declared after usage.
             bindView(view, template, this._schemaRegistry);
             finishView(view, statements);
-            return new ViewCompileResult(statements, view.classExpr.name, dependencies);
+            return new ViewCompileResult(statements, view.classExpr.name, view.renderComponentTypeName, dependencies);
         };
         return ViewCompiler;
     }());
@@ -25930,7 +25966,8 @@
                     generatedFiles.push(_this._codgenStyles(srcFileUrl, compiledStyleSheet, fileSuffix));
                 });
                 // compile components
-                exportedVars.push(_this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), _this._compileComponent(compMeta, ngModule, ngModule.transitiveModule.directives, stylesCompileResults.componentStylesheet, fileSuffix, statements));
+                var /** @type {?} */ compViewVars = _this._compileComponent(compMeta, ngModule, ngModule.transitiveModule.directives, stylesCompileResults.componentStylesheet, fileSuffix, statements);
+                exportedVars.push(_this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), compViewVars.viewClassVar, compViewVars.compRenderTypeVar);
             });
             if (statements.length > 0) {
                 var /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, ngfactoryFilePath(srcFileUrl), statements, exportedVars);
@@ -26005,7 +26042,8 @@
         AotCompiler.prototype._compileComponentFactory = function (compMeta, ngModule, fileSuffix, targetStatements) {
             var /** @type {?} */ hostType = this._metadataResolver.getHostComponentType(compMeta.type.reference);
             var /** @type {?} */ hostMeta = createHostComponentMeta(hostType, compMeta, this._metadataResolver.getHostComponentViewClass(hostType));
-            var /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements);
+            var /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements)
+                .viewClassVar;
             var /** @type {?} */ compFactoryVar = componentFactoryName(compMeta.type.reference);
             targetStatements.push(variable(compFactoryVar)
                 .set(importExpr(createIdentifier(Identifiers.ComponentFactory), [importType(compMeta.type)])
@@ -26040,7 +26078,10 @@
             }
             compiledAnimations.forEach(function (entry) { return targetStatements.push.apply(targetStatements, entry.statements); });
             targetStatements.push.apply(targetStatements, viewResult.statements);
-            return viewResult.viewClassVar;
+            return {
+                viewClassVar: viewResult.viewClassVar,
+                compRenderTypeVar: viewResult.componentRenderTypeVar
+            };
         };
         /**
          * @param {?} fileUrl
@@ -27709,11 +27750,11 @@
 
     /**
      * @param {?} statements
-     * @param {?} resultVar
+     * @param {?} resultVars
      * @return {?}
      */
-    function interpretStatements(statements, resultVar) {
-        var /** @type {?} */ stmtsWithReturn = statements.concat([new ReturnStatement(variable(resultVar))]);
+    function interpretStatements(statements, resultVars) {
+        var /** @type {?} */ stmtsWithReturn = statements.concat([new ReturnStatement(literalArr(resultVars.map(function (resultVar) { return variable(resultVar); })))]);
         var /** @type {?} */ ctx = new _ExecutionContext(null, null, null, new Map());
         var /** @type {?} */ visitor = new StatementInterpreter();
         var /** @type {?} */ result = visitor.visitAllStatements(stmtsWithReturn, ctx);
@@ -28471,13 +28512,12 @@
     };
     /**
      * @param {?} sourceUrl
-     * @param {?} expr
      * @param {?} ctx
      * @param {?} vars
      * @return {?}
      */
-    function evalExpression(sourceUrl, expr, ctx, vars) {
-        var /** @type {?} */ fnBody = ctx.toSource() + "\nreturn " + expr + "\n//# sourceURL=" + sourceUrl + "\n" + ctx.toSourceMapGenerator().toJsComment();
+    function evalExpression(sourceUrl, ctx, vars) {
+        var /** @type {?} */ fnBody = ctx.toSource() + "\n//# sourceURL=" + sourceUrl + "\n" + ctx.toSourceMapGenerator().toJsComment();
         var /** @type {?} */ fnArgNames = [];
         var /** @type {?} */ fnArgValues = [];
         for (var /** @type {?} */ argName in vars) {
@@ -28489,14 +28529,15 @@
     /**
      * @param {?} sourceUrl
      * @param {?} statements
-     * @param {?} resultVar
+     * @param {?} resultVars
      * @return {?}
      */
-    function jitStatements(sourceUrl, statements, resultVar) {
+    function jitStatements(sourceUrl, statements, resultVars) {
         var /** @type {?} */ converter = new JitEmitterVisitor();
-        var /** @type {?} */ ctx = EmitterVisitorContext.createRoot([resultVar]);
-        converter.visitAllStatements(statements, ctx);
-        return evalExpression(sourceUrl, resultVar, ctx, converter.getArgs());
+        var /** @type {?} */ ctx = EmitterVisitorContext.createRoot(resultVars);
+        var /** @type {?} */ returnStmt = new ReturnStatement(literalArr(resultVars.map(function (resultVar) { return variable(resultVar); })));
+        converter.visitAllStatements(statements.concat([returnStmt]), ctx);
+        return evalExpression(sourceUrl, ctx, converter.getArgs());
     }
     var JitEmitterVisitor = (function (_super) {
         __extends$29(JitEmitterVisitor, _super);
@@ -28700,10 +28741,10 @@
                 var /** @type {?} */ compileResult = this._ngModuleCompiler.compile(moduleMeta_1, extraProviders);
                 if (!this._compilerConfig.useJit) {
                     ngModuleFactory =
-                        interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
+                        interpretStatements(compileResult.statements, [compileResult.ngModuleFactoryVar])[0];
                 }
                 else {
-                    ngModuleFactory = jitStatements("/" + identifierName(moduleMeta_1.type) + "/module.ngfactory.js", compileResult.statements, compileResult.ngModuleFactoryVar);
+                    ngModuleFactory = jitStatements("/" + identifierName(moduleMeta_1.type) + "/module.ngfactory.js", compileResult.statements, [compileResult.ngModuleFactoryVar])[0];
                 }
                 this._compiledNgModuleCache.set(moduleMeta_1.type.reference, ngModuleFactory);
             }
@@ -28825,10 +28866,11 @@
             var /** @type {?} */ statements = compileResult.statements;
             var /** @type {?} */ directiveWrapperClass;
             if (!this._compilerConfig.useJit) {
-                directiveWrapperClass = interpretStatements(statements, compileResult.dirWrapperClassVar);
+                directiveWrapperClass =
+                    interpretStatements(statements, [compileResult.dirWrapperClassVar])[0];
             }
             else {
-                directiveWrapperClass = jitStatements("/" + identifierName(moduleMeta.type) + "/" + identifierName(dirMeta.type) + "/wrapper.ngfactory.js", statements, compileResult.dirWrapperClassVar);
+                directiveWrapperClass = jitStatements("/" + identifierName(moduleMeta.type) + "/" + identifierName(dirMeta.type) + "/wrapper.ngfactory.js", statements, [compileResult.dirWrapperClassVar])[0];
             }
             ((dirMeta.wrapperType)).setDelegate(directiveWrapperClass);
             this._compiledDirectiveWrapperCache.set(dirMeta.type.reference, directiveWrapperClass);
@@ -28855,14 +28897,16 @@
             var /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), usedPipes, compiledAnimations);
             var /** @type {?} */ statements = (_b = stylesCompileResult.componentStylesheet.statements).concat.apply(_b, compiledAnimations.map(function (ca) { return ca.statements; })).concat(compileResult.statements);
             var /** @type {?} */ viewClass;
+            var /** @type {?} */ componentRenderType;
             if (!this._compilerConfig.useJit) {
-                viewClass = interpretStatements(statements, compileResult.viewClassVar);
+                _c = interpretStatements(statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]), viewClass = _c[0], componentRenderType = _c[1];
             }
             else {
-                viewClass = jitStatements("/" + identifierName(template.ngModule.type) + "/" + identifierName(template.compType) + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js", statements, compileResult.viewClassVar);
+                var /** @type {?} */ sourceUrl = "/" + identifierName(template.ngModule.type) + "/" + identifierName(template.compType) + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js";
+                _d = jitStatements(sourceUrl, statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]), viewClass = _d[0], componentRenderType = _d[1];
             }
-            template.compiled(viewClass);
-            var _b;
+            template.compiled(viewClass, componentRenderType);
+            var _b, _c, _d;
         };
         /**
          * @param {?} result
@@ -28885,10 +28929,10 @@
         JitCompiler.prototype._resolveAndEvalStylesCompileResult = function (result, externalStylesheetsByModuleUrl) {
             this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
             if (!this._compilerConfig.useJit) {
-                return interpretStatements(result.statements, result.stylesVar);
+                return interpretStatements(result.statements, [result.stylesVar])[0];
             }
             else {
-                return jitStatements("/" + result.meta.moduleUrl + ".ngstyle.js", result.statements, result.stylesVar);
+                return jitStatements("/" + result.meta.moduleUrl + ".ngstyle.js", result.statements, [result.stylesVar])[0];
             }
         };
         return JitCompiler;
@@ -28937,11 +28981,15 @@
         }
         /**
          * @param {?} viewClass
+         * @param {?} componentRenderType
          * @return {?}
          */
-        CompiledTemplate.prototype.compiled = function (viewClass) {
+        CompiledTemplate.prototype.compiled = function (viewClass, componentRenderType) {
             this._viewClass = viewClass;
             ((this.compMeta.componentViewType)).setDelegate(viewClass);
+            for (var /** @type {?} */ prop in componentRenderType) {
+                ((this.compMeta.componentRenderType))[prop] = componentRenderType[prop];
+            }
             this.isCompiled = true;
         };
         return CompiledTemplate;
@@ -29266,16 +29314,27 @@
             var /** @type {?} */ compName = identifierName(component.type) + (component.isHost ? "_Host" : '');
             var /** @type {?} */ embeddedViewCount = 0;
             var /** @type {?} */ staticQueryIds = findStaticQueryIds(template);
+            var /** @type {?} */ statements = [];
+            var /** @type {?} */ renderComponentVar = variable(componentRenderTypeName(component.type.reference));
+            statements.push(renderComponentVar
+                .set(importExpr(createIdentifier(Identifiers.createComponentRenderTypeV2)).callFn([
+                new LiteralMapExpr([
+                    new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
+                    new LiteralMapEntry('styles', styles),
+                    // TODO: copy this from the @Component directive...
+                    new LiteralMapEntry('data', literalMap([])),
+                ])
+            ]))
+                .toDeclStmt());
             var /** @type {?} */ viewBuilderFactory = function (parent) {
                 var /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
-                var /** @type {?} */ viewName = "view_" + compName + "_" + embeddedViewIndex;
+                var /** @type {?} */ viewName = viewClassName(component.type.reference, embeddedViewIndex);
                 return new ViewBuilder(parent, viewName, usedPipes, staticQueryIds, viewBuilderFactory);
             };
             var /** @type {?} */ visitor = viewBuilderFactory(null);
             visitor.visitAll([], template);
-            var /** @type {?} */ statements = [];
             statements.push.apply(statements, visitor.build(component));
-            return new ViewCompileResult(statements, visitor.viewName, []);
+            return new ViewCompileResult(statements, visitor.viewName, renderComponentVar.name, []);
         };
         return ViewCompilerNext;
     }(exports.ViewCompiler));
@@ -29667,9 +29726,11 @@
                     queryMatchExprs.push(literalArr([literal(ref.name), literal(viewEngine.QueryValueType.Provider)]));
                 }
             });
+            var /** @type {?} */ compRenderType = NULL_EXPR;
             var /** @type {?} */ compView = NULL_EXPR;
             if (directiveAst.directive.isComponent) {
                 compView = importExpr({ reference: directiveAst.directive.componentViewType });
+                compRenderType = importExpr({ reference: directiveAst.directive.componentRenderType });
             }
             var /** @type {?} */ inputDefs = directiveAst.inputs.map(function (inputAst, inputIndex) {
                 var /** @type {?} */ mapValue = literalArr([literal(inputIndex), literal(inputAst.directiveName)]);
@@ -29707,7 +29768,7 @@
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 literal(childCount), providerExpr, depsExpr,
                 inputDefs.length ? new LiteralMapExpr(inputDefs) : NULL_EXPR,
-                outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR, compView
+                outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR, compView, compRenderType
             ]);
             this.nodeDefs[nodeIndex] = nodeDef;
             return { hostBindings: hostBindings, hostEvents: hostEvents };
@@ -30536,6 +30597,7 @@
     exports.identifierName = identifierName;
     exports.identifierModuleUrl = identifierModuleUrl;
     exports.viewClassName = viewClassName;
+    exports.componentRenderTypeName = componentRenderTypeName;
     exports.hostViewClassName = hostViewClassName;
     exports.dirWrapperClassName = dirWrapperClassName;
     exports.componentFactoryName = componentFactoryName;

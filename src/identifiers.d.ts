@@ -89,6 +89,7 @@ export declare class Identifiers {
     static nodeValue: IdentifierSpec;
     static ngContentDef: IdentifierSpec;
     static unwrapValue: IdentifierSpec;
+    static createComponentRenderTypeV2: IdentifierSpec;
 }
 export declare function assetUrl(pkg: string, path?: string, type?: string): string;
 export declare function resolveIdentifier(identifier: IdentifierSpec): any;

@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { tokenName, viewClassName } from '../compile_metadata';
+import { componentRenderTypeName, tokenName, viewClassName } from '../compile_metadata';
 import { EventHandlerVars } from '../compiler_util/expression_converter';
 import { isPresent } from '../facade/lang';
 import * as o from '../output/output_ast';
@@ -93,6 +93,7 @@ export class CompileView {
         this.detachMethod = new CompileMethod(this);
         this.viewType = getViewType(component, viewIndex);
         this.className = viewClassName(component.type.reference, viewIndex);
+        this.renderComponentTypeName = componentRenderTypeName(component.type.reference);
         this.classType = o.expressionType(o.variable(this.className));
         this.classExpr = o.variable(this.className);
         if (this.viewType === ViewType.COMPONENT || this.viewType === ViewType.HOST) {
@@ -216,6 +217,8 @@ function CompileView_tsickle_Closure_declarations() {
     CompileView.prototype.locals;
     /** @type {?} */
     CompileView.prototype.className;
+    /** @type {?} */
+    CompileView.prototype.renderComponentTypeName;
     /** @type {?} */
     CompileView.prototype.classType;
     /** @type {?} */

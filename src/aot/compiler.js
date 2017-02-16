@@ -100,7 +100,8 @@ export class AotCompiler {
                 generatedFiles.push(this._codgenStyles(srcFileUrl, compiledStyleSheet, fileSuffix));
             });
             // compile components
-            exportedVars.push(this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), this._compileComponent(compMeta, ngModule, ngModule.transitiveModule.directives, stylesCompileResults.componentStylesheet, fileSuffix, statements));
+            const /** @type {?} */ compViewVars = this._compileComponent(compMeta, ngModule, ngModule.transitiveModule.directives, stylesCompileResults.componentStylesheet, fileSuffix, statements);
+            exportedVars.push(this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), compViewVars.viewClassVar, compViewVars.compRenderTypeVar);
         });
         if (statements.length > 0) {
             const /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, ngfactoryFilePath(srcFileUrl), statements, exportedVars);
@@ -179,7 +180,8 @@ export class AotCompiler {
     _compileComponentFactory(compMeta, ngModule, fileSuffix, targetStatements) {
         const /** @type {?} */ hostType = this._metadataResolver.getHostComponentType(compMeta.type.reference);
         const /** @type {?} */ hostMeta = createHostComponentMeta(hostType, compMeta, this._metadataResolver.getHostComponentViewClass(hostType));
-        const /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements);
+        const /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements)
+            .viewClassVar;
         const /** @type {?} */ compFactoryVar = componentFactoryName(compMeta.type.reference);
         targetStatements.push(o.variable(compFactoryVar)
             .set(o.importExpr(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)])
@@ -213,7 +215,10 @@ export class AotCompiler {
         }
         compiledAnimations.forEach(entry => targetStatements.push(...entry.statements));
         targetStatements.push(...viewResult.statements);
-        return viewResult.viewClassVar;
+        return {
+            viewClassVar: viewResult.viewClassVar,
+            compRenderTypeVar: viewResult.componentRenderTypeVar
+        };
     }
     /**
      * @param {?} fileUrl

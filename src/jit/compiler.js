@@ -181,10 +181,10 @@ let JitCompiler = class JitCompiler {
             const /** @type {?} */ compileResult = this._ngModuleCompiler.compile(moduleMeta, extraProviders);
             if (!this._compilerConfig.useJit) {
                 ngModuleFactory =
-                    interpretStatements(compileResult.statements, compileResult.ngModuleFactoryVar);
+                    interpretStatements(compileResult.statements, [compileResult.ngModuleFactoryVar])[0];
             }
             else {
-                ngModuleFactory = jitStatements(`/${identifierName(moduleMeta.type)}/module.ngfactory.js`, compileResult.statements, compileResult.ngModuleFactoryVar);
+                ngModuleFactory = jitStatements(`/${identifierName(moduleMeta.type)}/module.ngfactory.js`, compileResult.statements, [compileResult.ngModuleFactoryVar])[0];
             }
             this._compiledNgModuleCache.set(moduleMeta.type.reference, ngModuleFactory);
         }
@@ -305,10 +305,11 @@ let JitCompiler = class JitCompiler {
         const /** @type {?} */ statements = compileResult.statements;
         let /** @type {?} */ directiveWrapperClass;
         if (!this._compilerConfig.useJit) {
-            directiveWrapperClass = interpretStatements(statements, compileResult.dirWrapperClassVar);
+            directiveWrapperClass =
+                interpretStatements(statements, [compileResult.dirWrapperClassVar])[0];
         }
         else {
-            directiveWrapperClass = jitStatements(`/${identifierName(moduleMeta.type)}/${identifierName(dirMeta.type)}/wrapper.ngfactory.js`, statements, compileResult.dirWrapperClassVar);
+            directiveWrapperClass = jitStatements(`/${identifierName(moduleMeta.type)}/${identifierName(dirMeta.type)}/wrapper.ngfactory.js`, statements, [compileResult.dirWrapperClassVar])[0];
         }
         ((dirMeta.wrapperType)).setDelegate(directiveWrapperClass);
         this._compiledDirectiveWrapperCache.set(dirMeta.type.reference, directiveWrapperClass);
@@ -336,13 +337,15 @@ let JitCompiler = class JitCompiler {
             .concat(...compiledAnimations.map(ca => ca.statements))
             .concat(compileResult.statements);
         let /** @type {?} */ viewClass;
+        let /** @type {?} */ componentRenderType;
         if (!this._compilerConfig.useJit) {
-            viewClass = interpretStatements(statements, compileResult.viewClassVar);
+            [viewClass, componentRenderType] = interpretStatements(statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]);
         }
         else {
-            viewClass = jitStatements(`/${identifierName(template.ngModule.type)}/${identifierName(template.compType)}/${template.isHost ? 'host' : 'component'}.ngfactory.js`, statements, compileResult.viewClassVar);
+            const /** @type {?} */ sourceUrl = `/${identifierName(template.ngModule.type)}/${identifierName(template.compType)}/${template.isHost ? 'host' : 'component'}.ngfactory.js`;
+            [viewClass, componentRenderType] = jitStatements(sourceUrl, statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]);
         }
-        template.compiled(viewClass);
+        template.compiled(viewClass, componentRenderType);
     }
     /**
      * @param {?} result
@@ -364,10 +367,10 @@ let JitCompiler = class JitCompiler {
     _resolveAndEvalStylesCompileResult(result, externalStylesheetsByModuleUrl) {
         this._resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
         if (!this._compilerConfig.useJit) {
-            return interpretStatements(result.statements, result.stylesVar);
+            return interpretStatements(result.statements, [result.stylesVar])[0];
         }
         else {
-            return jitStatements(`/${result.meta.moduleUrl}.ngstyle.js`, result.statements, result.stylesVar);
+            return jitStatements(`/${result.meta.moduleUrl}.ngstyle.js`, result.statements, [result.stylesVar])[0];
         }
     }
 };
@@ -452,11 +455,15 @@ class CompiledTemplate {
     }
     /**
      * @param {?} viewClass
+     * @param {?} componentRenderType
      * @return {?}
      */
-    compiled(viewClass) {
+    compiled(viewClass, componentRenderType) {
         this._viewClass = viewClass;
         ((this.compMeta.componentViewType)).setDelegate(viewClass);
+        for (let /** @type {?} */ prop in componentRenderType) {
+            ((this.compMeta.componentRenderType))[prop] = componentRenderType[prop];
+        }
         this.isCompiled = true;
     }
 }

@@ -335,6 +335,12 @@ Identifiers.unwrapValue = {
     member: 'unwrapValue',
     runtime: ɵviewEngine.unwrapValue
 };
+Identifiers.createComponentRenderTypeV2 = {
+    name: 'ɵviewEngine',
+    moduleUrl: CORE,
+    member: 'createComponentRenderTypeV2',
+    runtime: ɵviewEngine.createComponentRenderTypeV2
+};
 function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS;
@@ -502,6 +508,8 @@ function Identifiers_tsickle_Closure_declarations() {
     Identifiers.ngContentDef;
     /** @type {?} */
     Identifiers.unwrapValue;
+    /** @type {?} */
+    Identifiers.createComponentRenderTypeV2;
 }
 /**
  * @param {?} pkg

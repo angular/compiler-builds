@@ -8,15 +8,15 @@
 import { identifierName } from '../compile_metadata';
 import { EmitterVisitorContext } from './abstract_emitter';
 import { AbstractJsEmitterVisitor } from './abstract_js_emitter';
+import * as o from './output_ast';
 /**
  * @param {?} sourceUrl
- * @param {?} expr
  * @param {?} ctx
  * @param {?} vars
  * @return {?}
  */
-function evalExpression(sourceUrl, expr, ctx, vars) {
-    const /** @type {?} */ fnBody = `${ctx.toSource()}\nreturn ${expr}\n//# sourceURL=${sourceUrl}\n${ctx.toSourceMapGenerator().toJsComment()}`;
+function evalExpression(sourceUrl, ctx, vars) {
+    const /** @type {?} */ fnBody = `${ctx.toSource()}\n//# sourceURL=${sourceUrl}\n${ctx.toSourceMapGenerator().toJsComment()}`;
     const /** @type {?} */ fnArgNames = [];
     const /** @type {?} */ fnArgValues = [];
     for (const /** @type {?} */ argName in vars) {
@@ -28,14 +28,15 @@ function evalExpression(sourceUrl, expr, ctx, vars) {
 /**
  * @param {?} sourceUrl
  * @param {?} statements
- * @param {?} resultVar
+ * @param {?} resultVars
  * @return {?}
  */
-export function jitStatements(sourceUrl, statements, resultVar) {
+export function jitStatements(sourceUrl, statements, resultVars) {
     const /** @type {?} */ converter = new JitEmitterVisitor();
-    const /** @type {?} */ ctx = EmitterVisitorContext.createRoot([resultVar]);
-    converter.visitAllStatements(statements, ctx);
-    return evalExpression(sourceUrl, resultVar, ctx, converter.getArgs());
+    const /** @type {?} */ ctx = EmitterVisitorContext.createRoot(resultVars);
+    const /** @type {?} */ returnStmt = new o.ReturnStatement(o.literalArr(resultVars.map(resultVar => o.variable(resultVar))));
+    converter.visitAllStatements(statements.concat([returnStmt]), ctx);
+    return evalExpression(sourceUrl, ctx, converter.getArgs());
 }
 class JitEmitterVisitor extends AbstractJsEmitterVisitor {
     constructor() {

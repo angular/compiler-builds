@@ -43,6 +43,7 @@ export declare class CompileMetadataResolver {
     private getComponentViewClass(dirType);
     getHostComponentViewClass(dirType: any): StaticSymbol | cpl.ProxyClass;
     getHostComponentType(dirType: any): StaticSymbol | Type<any>;
+    private getComponentRenderType(dirType);
     private getComponentFactory(selector, dirType);
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
     private _getAnimationStateMetadata(value);

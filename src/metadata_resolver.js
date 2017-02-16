@@ -165,6 +165,20 @@ let CompileMetadataResolver = class CompileMetadataResolver {
         }
     }
     /**
+     * @param {?} dirType
+     * @return {?}
+     */
+    getComponentRenderType(dirType) {
+        if (dirType instanceof StaticSymbol) {
+            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), cpl.componentRenderTypeName(dirType));
+        }
+        else {
+            // returning an object as proxy,
+            // that we fill later during runtime compilation.
+            return ({});
+        }
+    }
+    /**
      * @param {?} selector
      * @param {?} dirType
      * @return {?}
@@ -281,6 +295,7 @@ let CompileMetadataResolver = class CompileMetadataResolver {
                 entryComponents: metadata.entryComponents,
                 wrapperType: metadata.wrapperType,
                 componentViewType: metadata.componentViewType,
+                componentRenderType: metadata.componentRenderType,
                 componentFactory: metadata.componentFactory,
                 template: templateMetadata
             });
@@ -408,6 +423,7 @@ let CompileMetadataResolver = class CompileMetadataResolver {
             wrapperType: this.getDirectiveWrapperClass(directiveType),
             componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
                 undefined,
+            componentRenderType: nonNormalizedTemplateMetadata ? this.getComponentRenderType(directiveType) : undefined,
             componentFactory: nonNormalizedTemplateMetadata ?
                 this.getComponentFactory(selector, directiveType) :
                 undefined
