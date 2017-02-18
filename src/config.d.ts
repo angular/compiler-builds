@@ -20,14 +20,16 @@ export declare class CompilerConfig {
     private _genDebugInfo;
     private _logBindingUpdate;
     useJit: boolean;
+    useViewEngine: boolean;
     missingTranslation: MissingTranslationStrategy;
-    constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, missingTranslation}?: {
+    constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, missingTranslation, useViewEngine}?: {
         renderTypes?: RenderTypes;
         defaultEncapsulation?: ViewEncapsulation;
         genDebugInfo?: boolean;
         logBindingUpdate?: boolean;
         useJit?: boolean;
         missingTranslation?: MissingTranslationStrategy;
+        useViewEngine?: boolean;
     });
     readonly genDebugInfo: boolean;
     readonly logBindingUpdate: boolean;

@@ -416,7 +416,7 @@ function parseHostBindings(dirMeta, exprParser, schemaRegistry) {
         "in Directive " + identifierName(dirMeta.type);
     var /** @type {?} */ sourceFile = new ParseSourceFile('', sourceFileName);
     var /** @type {?} */ sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
-    var /** @type {?} */ parsedHostProps = parser.createDirectiveHostPropertyAsts(dirMeta.toSummary(), sourceSpan);
+    var /** @type {?} */ parsedHostProps = parser.createDirectiveHostPropertyAsts(dirMeta.toSummary(), dirMeta.selector, sourceSpan);
     var /** @type {?} */ parsedHostListeners = parser.createDirectiveHostEventAsts(dirMeta.toSummary(), sourceSpan);
     return new ParseResult(parsedHostProps, parsedHostListeners, errors);
 }

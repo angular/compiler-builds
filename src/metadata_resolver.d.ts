@@ -8,6 +8,7 @@
 import { AnimationEntryMetadata, Component, Directive, InjectionToken, Type } from '@angular/core';
 import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
 import * as cpl from './compile_metadata';
+import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveResolver } from './directive_resolver';
 import { NgModuleResolver } from './ng_module_resolver';
@@ -18,6 +19,7 @@ import { SummaryResolver } from './summary_resolver';
 export declare type ErrorCollector = (error: any, type?: any) => void;
 export declare const ERROR_COLLECTOR_TOKEN: InjectionToken<{}>;
 export declare class CompileMetadataResolver {
+    private _config;
     private _ngModuleResolver;
     private _directiveResolver;
     private _pipeResolver;
@@ -27,14 +29,13 @@ export declare class CompileMetadataResolver {
     private _staticSymbolCache;
     private _reflector;
     private _errorCollector;
-    private _useViewEngine;
     private _nonNormalizedDirectiveCache;
     private _directiveCache;
     private _summaryCache;
     private _pipeCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    constructor(_ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _staticSymbolCache: StaticSymbolCache, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector, _useViewEngine?: boolean);
+    constructor(_config: CompilerConfig, _ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _staticSymbolCache: StaticSymbolCache, _reflector?: ReflectorReader, _errorCollector?: ErrorCollector);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
     private _createProxyClass(baseType, name);
@@ -43,7 +44,7 @@ export declare class CompileMetadataResolver {
     private getComponentViewClass(dirType);
     getHostComponentViewClass(dirType: any): StaticSymbol | cpl.ProxyClass;
     getHostComponentType(dirType: any): StaticSymbol | Type<any>;
-    private getComponentRenderType(dirType);
+    private getRendererType(dirType);
     private getComponentFactory(selector, dirType);
     getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
     private _getAnimationStateMetadata(value);

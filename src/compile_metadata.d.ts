@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ChangeDetectionStrategy, ComponentFactory, ComponentRenderTypeV2, SchemaMetadata, Type, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, ComponentFactory, RendererTypeV2, SchemaMetadata, Type, ViewEncapsulation } from '@angular/core';
 import { StaticSymbol } from './aot/static_symbol';
 import { LifecycleHooks } from './private_import_core';
 export declare class CompileAnimationEntryMetadata {
@@ -58,7 +58,7 @@ export declare class CompileAnimationGroupMetadata extends CompileAnimationWithS
 export declare function identifierName(compileIdentifier: CompileIdentifierMetadata): string;
 export declare function identifierModuleUrl(compileIdentifier: CompileIdentifierMetadata): string;
 export declare function viewClassName(compType: any, embeddedTemplateIndex: number): string;
-export declare function componentRenderTypeName(compType: any): string;
+export declare function rendererTypeName(compType: any): string;
 export declare function hostViewClassName(compType: any): string;
 export declare function dirWrapperClassName(dirType: any): string;
 export declare function componentFactoryName(compType: any): string;
@@ -207,14 +207,14 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
     template: CompileTemplateSummary;
     wrapperType: StaticSymbol | ProxyClass;
     componentViewType: StaticSymbol | ProxyClass;
-    componentRenderType: StaticSymbol | ComponentRenderTypeV2;
+    rendererType: StaticSymbol | RendererTypeV2;
     componentFactory: StaticSymbol | ComponentFactory<any>;
 }
 /**
  * Metadata regarding compilation of a directive.
  */
 export declare class CompileDirectiveMetadata {
-    static create({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, componentRenderType, componentFactory}?: {
+    static create({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, rendererType, componentFactory}?: {
         isHost?: boolean;
         type?: CompileTypeMetadata;
         isComponent?: boolean;
@@ -234,7 +234,7 @@ export declare class CompileDirectiveMetadata {
         template?: CompileTemplateMetadata;
         wrapperType?: StaticSymbol | ProxyClass;
         componentViewType?: StaticSymbol | ProxyClass;
-        componentRenderType?: StaticSymbol | ComponentRenderTypeV2;
+        rendererType?: StaticSymbol | RendererTypeV2;
         componentFactory?: StaticSymbol | ComponentFactory<any>;
     }): CompileDirectiveMetadata;
     isHost: boolean;
@@ -266,9 +266,9 @@ export declare class CompileDirectiveMetadata {
     template: CompileTemplateMetadata;
     wrapperType: StaticSymbol | ProxyClass;
     componentViewType: StaticSymbol | ProxyClass;
-    componentRenderType: StaticSymbol | ComponentRenderTypeV2;
+    rendererType: StaticSymbol | RendererTypeV2;
     componentFactory: StaticSymbol | ComponentFactory<any>;
-    constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, componentRenderType, componentFactory}?: {
+    constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, rendererType, componentFactory}?: {
         isHost?: boolean;
         type?: CompileTypeMetadata;
         isComponent?: boolean;
@@ -298,7 +298,7 @@ export declare class CompileDirectiveMetadata {
         template?: CompileTemplateMetadata;
         wrapperType?: StaticSymbol | ProxyClass;
         componentViewType?: StaticSymbol | ProxyClass;
-        componentRenderType?: StaticSymbol | ComponentRenderTypeV2;
+        rendererType?: StaticSymbol | RendererTypeV2;
         componentFactory?: StaticSymbol | ComponentFactory<any>;
     });
     toSummary(): CompileDirectiveSummary;

@@ -14,11 +14,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { Compiler, Inject, Injector, ModuleWithComponentFactories } from '@angular/core';
+import { Compiler, Injector, ModuleWithComponentFactories } from '@angular/core';
 import { AnimationCompiler } from '../animation/animation_compiler';
 import { AnimationParser } from '../animation/animation_parser';
 import { ProviderMeta, createHostComponentMeta, identifierName } from '../compile_metadata';
-import { CompilerConfig, USE_VIEW_ENGINE } from '../config';
+import { CompilerConfig } from '../config';
 import { DirectiveWrapperCompiler } from '../directive_wrapper_compiler';
 import { stringify } from '../facade/lang';
 import { CompilerInjectable } from '../injectable';
@@ -52,9 +52,8 @@ var JitCompiler = (function () {
      * @param {?} _directiveWrapperCompiler
      * @param {?} _compilerConfig
      * @param {?} _animationParser
-     * @param {?} _useViewEngine
      */
-    function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _directiveWrapperCompiler, _compilerConfig, _animationParser, _useViewEngine) {
+    function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _directiveWrapperCompiler, _compilerConfig, _animationParser) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
@@ -64,7 +63,6 @@ var JitCompiler = (function () {
         this._directiveWrapperCompiler = _directiveWrapperCompiler;
         this._compilerConfig = _compilerConfig;
         this._animationParser = _animationParser;
-        this._useViewEngine = _useViewEngine;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledDirectiveWrapperCache = new Map();
@@ -307,7 +305,7 @@ var JitCompiler = (function () {
      * @return {?}
      */
     JitCompiler.prototype._compileDirectiveWrapper = function (dirMeta, moduleMeta) {
-        if (this._useViewEngine) {
+        if (this._compilerConfig.useViewEngine) {
             return;
         }
         var /** @type {?} */ compileResult = this._directiveWrapperCompiler.compile(dirMeta);
@@ -345,15 +343,15 @@ var JitCompiler = (function () {
         var /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, ir.variable(stylesCompileResult.componentStylesheet.stylesVar), usedPipes, compiledAnimations);
         var /** @type {?} */ statements = (_b = stylesCompileResult.componentStylesheet.statements).concat.apply(_b, compiledAnimations.map(function (ca) { return ca.statements; })).concat(compileResult.statements);
         var /** @type {?} */ viewClass;
-        var /** @type {?} */ componentRenderType;
+        var /** @type {?} */ rendererType;
         if (!this._compilerConfig.useJit) {
-            _c = interpretStatements(statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]), viewClass = _c[0], componentRenderType = _c[1];
+            _c = interpretStatements(statements, [compileResult.viewClassVar, compileResult.rendererTypeVar]), viewClass = _c[0], rendererType = _c[1];
         }
         else {
             var /** @type {?} */ sourceUrl = "/" + identifierName(template.ngModule.type) + "/" + identifierName(template.compType) + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js";
-            _d = jitStatements(sourceUrl, statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]), viewClass = _d[0], componentRenderType = _d[1];
+            _d = jitStatements(sourceUrl, statements, [compileResult.viewClassVar, compileResult.rendererTypeVar]), viewClass = _d[0], rendererType = _d[1];
         }
-        template.compiled(viewClass, componentRenderType);
+        template.compiled(viewClass, rendererType);
         var _b, _c, _d;
     };
     /**
@@ -385,19 +383,6 @@ var JitCompiler = (function () {
     };
     return JitCompiler;
 }());
-/** @nocollapse */
-JitCompiler.ctorParameters = function () { return [
-    { type: Injector, },
-    { type: CompileMetadataResolver, },
-    { type: TemplateParser, },
-    { type: StyleCompiler, },
-    { type: ViewCompiler, },
-    { type: NgModuleCompiler, },
-    { type: DirectiveWrapperCompiler, },
-    { type: CompilerConfig, },
-    { type: AnimationParser, },
-    { type: undefined, decorators: [{ type: Inject, args: [USE_VIEW_ENGINE,] },] },
-]; };
 JitCompiler = __decorate([
     CompilerInjectable(),
     __metadata("design:paramtypes", [Injector,
@@ -408,15 +393,10 @@ JitCompiler = __decorate([
         NgModuleCompiler,
         DirectiveWrapperCompiler,
         CompilerConfig,
-        AnimationParser, Boolean])
+        AnimationParser])
 ], JitCompiler);
 export { JitCompiler };
 function JitCompiler_tsickle_Closure_declarations() {
-    /**
-     * @nocollapse
-     * @type {?}
-     */
-    JitCompiler.ctorParameters;
     /** @type {?} */
     JitCompiler.prototype._compiledTemplateCache;
     /** @type {?} */
@@ -445,8 +425,6 @@ function JitCompiler_tsickle_Closure_declarations() {
     JitCompiler.prototype._compilerConfig;
     /** @type {?} */
     JitCompiler.prototype._animationParser;
-    /** @type {?} */
-    JitCompiler.prototype._useViewEngine;
 }
 var CompiledTemplate = (function () {
     /**
@@ -467,14 +445,14 @@ var CompiledTemplate = (function () {
     }
     /**
      * @param {?} viewClass
-     * @param {?} componentRenderType
+     * @param {?} rendererType
      * @return {?}
      */
-    CompiledTemplate.prototype.compiled = function (viewClass, componentRenderType) {
+    CompiledTemplate.prototype.compiled = function (viewClass, rendererType) {
         this._viewClass = viewClass;
         ((this.compMeta.componentViewType)).setDelegate(viewClass);
-        for (var /** @type {?} */ prop in componentRenderType) {
-            ((this.compMeta.componentRenderType))[prop] = componentRenderType[prop];
+        for (var /** @type {?} */ prop in rendererType) {
+            ((this.compMeta.rendererType))[prop] = rendererType[prop];
         }
         this.isCompiled = true;
     };

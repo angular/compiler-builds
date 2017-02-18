@@ -19,13 +19,14 @@ var CompilerConfig = (function () {
      * @param {?=} __0
      */
     function CompilerConfig(_a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, missingTranslation = _b.missingTranslation;
+        var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, missingTranslation = _b.missingTranslation, useViewEngine = _b.useViewEngine;
         this.renderTypes = renderTypes;
         this.defaultEncapsulation = defaultEncapsulation;
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
         this.missingTranslation = missingTranslation;
+        this.useViewEngine = useViewEngine;
     }
     Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
         /**
@@ -61,6 +62,8 @@ function CompilerConfig_tsickle_Closure_declarations() {
     CompilerConfig.prototype._logBindingUpdate;
     /** @type {?} */
     CompilerConfig.prototype.useJit;
+    /** @type {?} */
+    CompilerConfig.prototype.useViewEngine;
     /** @type {?} */
     CompilerConfig.prototype.missingTranslation;
 }

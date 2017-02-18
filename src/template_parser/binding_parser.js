@@ -101,10 +101,11 @@ var BindingParser = (function () {
     BindingParser.prototype.getUsedPipes = function () { return Array.from(this._usedPipes.values()); };
     /**
      * @param {?} dirMeta
+     * @param {?} elementSelector
      * @param {?} sourceSpan
      * @return {?}
      */
-    BindingParser.prototype.createDirectiveHostPropertyAsts = function (dirMeta, sourceSpan) {
+    BindingParser.prototype.createDirectiveHostPropertyAsts = function (dirMeta, elementSelector, sourceSpan) {
         var _this = this;
         if (dirMeta.hostProperties) {
             var /** @type {?} */ boundProps_1 = [];
@@ -117,7 +118,7 @@ var BindingParser = (function () {
                     _this._reportError("Value of the host property binding \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
                 }
             });
-            return boundProps_1.map(function (prop) { return _this.createElementPropertyAst(dirMeta.selector, prop); });
+            return boundProps_1.map(function (prop) { return _this.createElementPropertyAst(elementSelector, prop); });
         }
     };
     /**

@@ -26,13 +26,13 @@ var ViewCompileResult = (function () {
     /**
      * @param {?} statements
      * @param {?} viewClassVar
-     * @param {?} componentRenderTypeVar
+     * @param {?} rendererTypeVar
      * @param {?} dependencies
      */
-    function ViewCompileResult(statements, viewClassVar, componentRenderTypeVar, dependencies) {
+    function ViewCompileResult(statements, viewClassVar, rendererTypeVar, dependencies) {
         this.statements = statements;
         this.viewClassVar = viewClassVar;
-        this.componentRenderTypeVar = componentRenderTypeVar;
+        this.rendererTypeVar = rendererTypeVar;
         this.dependencies = dependencies;
     }
     return ViewCompileResult;
@@ -44,7 +44,7 @@ function ViewCompileResult_tsickle_Closure_declarations() {
     /** @type {?} */
     ViewCompileResult.prototype.viewClassVar;
     /** @type {?} */
-    ViewCompileResult.prototype.componentRenderTypeVar;
+    ViewCompileResult.prototype.rendererTypeVar;
     /** @type {?} */
     ViewCompileResult.prototype.dependencies;
 }
@@ -74,7 +74,7 @@ var ViewCompiler = (function () {
         // variables that have been declared after usage.
         bindView(view, template, this._schemaRegistry);
         finishView(view, statements);
-        return new ViewCompileResult(statements, view.classExpr.name, view.renderComponentTypeName, dependencies);
+        return new ViewCompileResult(statements, view.classExpr.name, view.rendererTypeName, dependencies);
     };
     return ViewCompiler;
 }());

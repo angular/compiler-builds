@@ -214,10 +214,7 @@ var AotCompiler = (function () {
         }
         compiledAnimations.forEach(function (entry) { return targetStatements.push.apply(targetStatements, entry.statements); });
         targetStatements.push.apply(targetStatements, viewResult.statements);
-        return {
-            viewClassVar: viewResult.viewClassVar,
-            compRenderTypeVar: viewResult.componentRenderTypeVar
-        };
+        return { viewClassVar: viewResult.viewClassVar, compRenderTypeVar: viewResult.rendererTypeVar };
     };
     /**
      * @param {?} fileUrl
