@@ -16,9 +16,9 @@ export { ComponentFactoryDependency, ComponentViewDependency, DirectiveWrapperDe
 export declare class ViewCompileResult {
     statements: o.Statement[];
     viewClassVar: string;
-    componentRenderTypeVar: string;
+    rendererTypeVar: string;
     dependencies: Array<ComponentViewDependency | ComponentFactoryDependency | DirectiveWrapperDependency>;
-    constructor(statements: o.Statement[], viewClassVar: string, componentRenderTypeVar: string, dependencies: Array<ComponentViewDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
+    constructor(statements: o.Statement[], viewClassVar: string, rendererTypeVar: string, dependencies: Array<ComponentViewDependency | ComponentFactoryDependency | DirectiveWrapperDependency>);
 }
 export declare class ViewCompiler {
     private _genConfig;

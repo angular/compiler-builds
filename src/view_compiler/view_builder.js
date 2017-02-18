@@ -434,7 +434,7 @@ function createViewTopLevelStmts(view, targetStatements) {
             .set(o.literalArr(view.nodes.map(createStaticNodeDebugInfo), new o.ArrayType(o.importType(createIdentifier(Identifiers.StaticNodeDebugInfo)), [o.TypeModifier.Const])))
             .toDeclStmt(null, [o.StmtModifier.Final]));
     }
-    const /** @type {?} */ renderCompTypeVar = o.variable(view.renderComponentTypeName); // fix highlighting: `
+    const /** @type {?} */ renderCompTypeVar = o.variable(view.rendererTypeName); // fix highlighting: `
     if (view.viewIndex === 0) {
         let /** @type {?} */ templateUrlInfo;
         if (view.component.template.templateUrl == identifierModuleUrl(view.component.type)) {

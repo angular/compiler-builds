@@ -51,13 +51,12 @@ const /** @type {?} */ _NO_RESOURCE_LOADER = {
 };
 const /** @type {?} */ baseHtmlParser = new InjectionToken('HtmlParser');
 /**
- * @param {?} useViewEngine
  * @param {?} cc
  * @param {?} sr
  * @return {?}
  */
-function viewCompilerFactory(useViewEngine, cc, sr) {
-    return useViewEngine ? new ViewCompilerNext(cc, sr) : new ViewCompiler(cc, sr);
+function viewCompilerFactory(cc, sr) {
+    return cc.useViewEngine ? new ViewCompilerNext(cc, sr) : new ViewCompiler(cc, sr);
 }
 /**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
@@ -99,7 +98,7 @@ export const /** @type {?} */ COMPILER_PROVIDERS = [
     {
         provide: ViewCompiler,
         useFactory: viewCompilerFactory,
-        deps: [USE_VIEW_ENGINE, CompilerConfig, ElementSchemaRegistry]
+        deps: [CompilerConfig, ElementSchemaRegistry]
     },
     NgModuleCompiler,
     DirectiveWrapperCompiler,
@@ -135,7 +134,7 @@ let JitCompilerFactory = class JitCompilerFactory {
         const /** @type {?} */ injector = ReflectiveInjector.resolveAndCreate([
             COMPILER_PROVIDERS, {
                 provide: CompilerConfig,
-                useFactory: () => {
+                useFactory: (useViewEngine) => {
                     return new CompilerConfig({
                         // let explicit values from the compiler options overwrite options
                         // from the app providers. E.g. important for the testing platform.
@@ -147,10 +146,10 @@ let JitCompilerFactory = class JitCompilerFactory {
                         // from the app providers
                         defaultEncapsulation: opts.defaultEncapsulation,
                         logBindingUpdate: opts.useDebug,
-                        missingTranslation: opts.missingTranslation,
+                        missingTranslation: opts.missingTranslation, useViewEngine
                     });
                 },
-                deps: []
+                deps: [USE_VIEW_ENGINE]
             },
             opts.providers
         ]);

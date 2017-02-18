@@ -57,8 +57,8 @@ export function createAotCompiler(compilerHost, options) {
     const /** @type {?} */ normalizer = new DirectiveNormalizer({ get: (url) => compilerHost.loadResource(url) }, urlResolver, htmlParser, config);
     const /** @type {?} */ expressionParser = new Parser(new Lexer());
     const /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-    const /** @type {?} */ tmplParser = new TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
-    const /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+    const /** @type {?} */ tmplParser = new TemplateParser(config, expressionParser, elementSchemaRegistry, htmlParser, console, []);
+    const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
     const /** @type {?} */ importResolver = {
         getImportAs: (symbol) => symbolResolver.getImportAs(symbol),

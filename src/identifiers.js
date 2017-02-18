@@ -335,11 +335,11 @@ Identifiers.unwrapValue = {
     member: 'unwrapValue',
     runtime: ɵviewEngine.unwrapValue
 };
-Identifiers.createComponentRenderTypeV2 = {
+Identifiers.createRendererTypeV2 = {
     name: 'ɵviewEngine',
     moduleUrl: CORE,
-    member: 'createComponentRenderTypeV2',
-    runtime: ɵviewEngine.createComponentRenderTypeV2
+    member: 'createRendererTypeV2',
+    runtime: ɵviewEngine.createRendererTypeV2
 };
 function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
@@ -509,7 +509,7 @@ function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.unwrapValue;
     /** @type {?} */
-    Identifiers.createComponentRenderTypeV2;
+    Identifiers.createRendererTypeV2;
 }
 /**
  * @param {?} pkg

@@ -18,13 +18,14 @@ export class CompilerConfig {
     /**
      * @param {?=} __0
      */
-    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true, missingTranslation } = {}) {
+    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true, missingTranslation, useViewEngine } = {}) {
         this.renderTypes = renderTypes;
         this.defaultEncapsulation = defaultEncapsulation;
         this._genDebugInfo = genDebugInfo;
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
         this.missingTranslation = missingTranslation;
+        this.useViewEngine = useViewEngine;
     }
     /**
      * @return {?}
@@ -50,6 +51,8 @@ function CompilerConfig_tsickle_Closure_declarations() {
     CompilerConfig.prototype._logBindingUpdate;
     /** @type {?} */
     CompilerConfig.prototype.useJit;
+    /** @type {?} */
+    CompilerConfig.prototype.useViewEngine;
     /** @type {?} */
     CompilerConfig.prototype.missingTranslation;
 }

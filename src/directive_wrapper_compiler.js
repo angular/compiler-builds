@@ -409,7 +409,7 @@ function parseHostBindings(dirMeta, exprParser, schemaRegistry) {
         `in Directive ${identifierName(dirMeta.type)}`;
     const /** @type {?} */ sourceFile = new ParseSourceFile('', sourceFileName);
     const /** @type {?} */ sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
-    const /** @type {?} */ parsedHostProps = parser.createDirectiveHostPropertyAsts(dirMeta.toSummary(), sourceSpan);
+    const /** @type {?} */ parsedHostProps = parser.createDirectiveHostPropertyAsts(dirMeta.toSummary(), dirMeta.selector, sourceSpan);
     const /** @type {?} */ parsedHostListeners = parser.createDirectiveHostEventAsts(dirMeta.toSummary(), sourceSpan);
     return new ParseResult(parsedHostProps, parsedHostListeners, errors);
 }

@@ -16,6 +16,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { Inject, InjectionToken, Optional } from '@angular/core/index';
 import { identifierName } from '../compile_metadata';
+import { CompilerConfig } from '../config';
 import { ASTWithSource, EmptyExpr } from '../expression_parser/ast';
 import { Parser } from '../expression_parser/parser';
 import { isPresent } from '../facade/lang';
@@ -103,13 +104,15 @@ function TemplateParseResult_tsickle_Closure_declarations() {
 }
 let TemplateParser = class TemplateParser {
     /**
+     * @param {?} _config
      * @param {?} _exprParser
      * @param {?} _schemaRegistry
      * @param {?} _htmlParser
      * @param {?} _console
      * @param {?} transforms
      */
-    constructor(_exprParser, _schemaRegistry, _htmlParser, _console, transforms) {
+    constructor(_config, _exprParser, _schemaRegistry, _htmlParser, _console, transforms) {
+        this._config = _config;
         this._exprParser = _exprParser;
         this._schemaRegistry = _schemaRegistry;
         this._htmlParser = _htmlParser;
@@ -176,7 +179,7 @@ let TemplateParser = class TemplateParser {
                 };
             }
             const /** @type {?} */ bindingParser = new BindingParser(this._exprParser, interpolationConfig, this._schemaRegistry, uniqPipes, errors);
-            const /** @type {?} */ parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, bindingParser, this._schemaRegistry, schemas, errors);
+            const /** @type {?} */ parseVisitor = new TemplateParseVisitor(this._config, providerViewContext, uniqDirectives, bindingParser, this._schemaRegistry, schemas, errors);
             result = html.visitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
             errors.push(...providerViewContext.errors);
             usedPipes.push(...bindingParser.getUsedPipes());
@@ -240,6 +243,7 @@ let TemplateParser = class TemplateParser {
 };
 /** @nocollapse */
 TemplateParser.ctorParameters = () => [
+    { type: CompilerConfig, },
     { type: Parser, },
     { type: ElementSchemaRegistry, },
     { type: I18NHtmlParser, },
@@ -248,7 +252,8 @@ TemplateParser.ctorParameters = () => [
 ];
 TemplateParser = __decorate([
     CompilerInjectable(),
-    __metadata("design:paramtypes", [Parser,
+    __metadata("design:paramtypes", [CompilerConfig,
+        Parser,
         ElementSchemaRegistry,
         I18NHtmlParser, typeof (_a = typeof Console !== "undefined" && Console) === "function" && _a || Object, Array])
 ], TemplateParser);
@@ -259,6 +264,8 @@ function TemplateParser_tsickle_Closure_declarations() {
      * @type {?}
      */
     TemplateParser.ctorParameters;
+    /** @type {?} */
+    TemplateParser.prototype._config;
     /** @type {?} */
     TemplateParser.prototype._exprParser;
     /** @type {?} */
@@ -272,6 +279,7 @@ function TemplateParser_tsickle_Closure_declarations() {
 }
 class TemplateParseVisitor {
     /**
+     * @param {?} config
      * @param {?} providerViewContext
      * @param {?} directives
      * @param {?} _bindingParser
@@ -279,7 +287,8 @@ class TemplateParseVisitor {
      * @param {?} _schemas
      * @param {?} _targetErrors
      */
-    constructor(providerViewContext, directives, _bindingParser, _schemaRegistry, _schemas, _targetErrors) {
+    constructor(config, providerViewContext, directives, _bindingParser, _schemaRegistry, _schemas, _targetErrors) {
+        this.config = config;
         this.providerViewContext = providerViewContext;
         this._bindingParser = _bindingParser;
         this._schemaRegistry = _schemaRegistry;
@@ -621,7 +630,7 @@ class TemplateParseVisitor {
                 component = directive;
             }
             const /** @type {?} */ directiveProperties = [];
-            let /** @type {?} */ hostProperties = this._bindingParser.createDirectiveHostPropertyAsts(directive, sourceSpan);
+            let /** @type {?} */ hostProperties = this._bindingParser.createDirectiveHostPropertyAsts(directive, this.config.useViewEngine ? elementName : directive.selector, sourceSpan);
             // Note: We need to check the host properties here as well,
             // as we don't know the element name in the DirectiveWrapperCompiler yet.
             hostProperties = this._checkPropertiesInSchema(elementName, hostProperties);
@@ -835,6 +844,8 @@ function TemplateParseVisitor_tsickle_Closure_declarations() {
     TemplateParseVisitor.prototype.ngContentCount;
     /** @type {?} */
     TemplateParseVisitor.prototype.contentQueryStartId;
+    /** @type {?} */
+    TemplateParseVisitor.prototype.config;
     /** @type {?} */
     TemplateParseVisitor.prototype.providerViewContext;
     /** @type {?} */

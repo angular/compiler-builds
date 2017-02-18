@@ -91,7 +91,7 @@ export class Extractor {
         });
         const /** @type {?} */ normalizer = new DirectiveNormalizer({ get: (url) => host.loadResource(url) }, urlResolver, htmlParser, config);
         const /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-        const /** @type {?} */ resolver = new CompileMetadataResolver(new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+        const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
         // TODO(vicb): implicit tags & attributes
         const /** @type {?} */ messageBundle = new MessageBundle(htmlParser, [], {});
         const /** @type {?} */ extractor = new Extractor(host, staticSymbolResolver, messageBundle, resolver);

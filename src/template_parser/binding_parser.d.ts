@@ -42,7 +42,7 @@ export declare class BindingParser {
     private _usedPipes;
     constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, pipes: CompilePipeSummary[], _targetErrors: ParseError[]);
     getUsedPipes(): CompilePipeSummary[];
-    createDirectiveHostPropertyAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): BoundElementPropertyAst[];
+    createDirectiveHostPropertyAsts(dirMeta: CompileDirectiveSummary, elementSelector: string, sourceSpan: ParseSourceSpan): BoundElementPropertyAst[];
     createDirectiveHostEventAsts(dirMeta: CompileDirectiveSummary, sourceSpan: ParseSourceSpan): BoundEventAst[];
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan): ASTWithSource;
     parseInlineTemplateBinding(prefixToken: string, value: string, sourceSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetProps: BoundProperty[], targetVars: VariableAst[]): void;

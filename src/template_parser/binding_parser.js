@@ -85,10 +85,11 @@ export class BindingParser {
     getUsedPipes() { return Array.from(this._usedPipes.values()); }
     /**
      * @param {?} dirMeta
+     * @param {?} elementSelector
      * @param {?} sourceSpan
      * @return {?}
      */
-    createDirectiveHostPropertyAsts(dirMeta, sourceSpan) {
+    createDirectiveHostPropertyAsts(dirMeta, elementSelector, sourceSpan) {
         if (dirMeta.hostProperties) {
             const /** @type {?} */ boundProps = [];
             Object.keys(dirMeta.hostProperties).forEach(propName => {
@@ -100,7 +101,7 @@ export class BindingParser {
                     this._reportError(`Value of the host property binding "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
                 }
             });
-            return boundProps.map((prop) => this.createElementPropertyAst(dirMeta.selector, prop));
+            return boundProps.map((prop) => this.createElementPropertyAst(elementSelector, prop));
         }
     }
     /**

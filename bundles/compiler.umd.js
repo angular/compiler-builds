@@ -1910,7 +1910,7 @@
      * @param {?} compType
      * @return {?}
      */
-    function componentRenderTypeName(compType) {
+    function rendererTypeName(compType) {
         return "RenderType_" + identifierName({ reference: compType });
     }
     /**
@@ -2020,7 +2020,7 @@
          * @param {?=} __0
          */
         function CompileDirectiveMetadata(_a) {
-            var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentRenderType = _b.componentRenderType, componentFactory = _b.componentFactory;
+            var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, hostListeners = _b.hostListeners, hostProperties = _b.hostProperties, hostAttributes = _b.hostAttributes, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, rendererType = _b.rendererType, componentFactory = _b.componentFactory;
             this.isHost = !!isHost;
             this.type = type;
             this.isComponent = isComponent;
@@ -2040,7 +2040,7 @@
             this.template = template;
             this.wrapperType = wrapperType;
             this.componentViewType = componentViewType;
-            this.componentRenderType = componentRenderType;
+            this.rendererType = rendererType;
             this.componentFactory = componentFactory;
         }
         /**
@@ -2048,7 +2048,7 @@
          * @return {?}
          */
         CompileDirectiveMetadata.create = function (_a) {
-            var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, componentRenderType = _b.componentRenderType, componentFactory = _b.componentFactory;
+            var _b = _a === void 0 ? {} : _a, isHost = _b.isHost, type = _b.type, isComponent = _b.isComponent, selector = _b.selector, exportAs = _b.exportAs, changeDetection = _b.changeDetection, inputs = _b.inputs, outputs = _b.outputs, host = _b.host, providers = _b.providers, viewProviders = _b.viewProviders, queries = _b.queries, viewQueries = _b.viewQueries, entryComponents = _b.entryComponents, template = _b.template, wrapperType = _b.wrapperType, componentViewType = _b.componentViewType, rendererType = _b.rendererType, componentFactory = _b.componentFactory;
             var /** @type {?} */ hostListeners = {};
             var /** @type {?} */ hostProperties = {};
             var /** @type {?} */ hostAttributes = {};
@@ -2102,7 +2102,7 @@
                 template: template,
                 wrapperType: wrapperType,
                 componentViewType: componentViewType,
-                componentRenderType: componentRenderType,
+                rendererType: rendererType,
                 componentFactory: componentFactory,
             });
         };
@@ -2130,7 +2130,7 @@
                 template: this.template && this.template.toSummary(),
                 wrapperType: this.wrapperType,
                 componentViewType: this.componentViewType,
-                componentRenderType: this.componentRenderType,
+                rendererType: this.rendererType,
                 componentFactory: this.componentFactory
             };
         };
@@ -2168,7 +2168,7 @@
             queries: [],
             viewQueries: [],
             componentViewType: hostViewType,
-            componentRenderType: { id: '__Host__', encapsulation: _angular_core.ViewEncapsulation.None, styles: [], data: {} }
+            rendererType: { id: '__Host__', encapsulation: _angular_core.ViewEncapsulation.None, styles: [], data: {} }
         });
     }
     var CompilePipeMetadata = (function () {
@@ -2342,6 +2342,504 @@
             this.multi = !!multi;
         }
         return ProviderMeta;
+    }());
+
+    var /** @type {?} */ CORE = assetUrl('core');
+    var /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
+    var Identifiers = (function () {
+        function Identifiers() {
+        }
+        return Identifiers;
+    }());
+    Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
+        name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
+        moduleUrl: CORE,
+        runtime: _angular_core.ANALYZE_FOR_ENTRY_COMPONENTS
+    };
+    Identifiers.ViewUtils = { name: 'ɵview_utils', moduleUrl: CORE, member: 'ViewUtils', runtime: _angular_core.ɵview_utils.ViewUtils };
+    Identifiers.AppView = { name: 'ɵAppView', moduleUrl: CORE, runtime: _angular_core.ɵAppView };
+    Identifiers.DebugAppView = { name: 'ɵDebugAppView', moduleUrl: CORE, runtime: _angular_core.ɵDebugAppView };
+    Identifiers.ViewContainer = { name: 'ɵViewContainer', moduleUrl: CORE, runtime: _angular_core.ɵViewContainer };
+    Identifiers.ElementRef = { name: 'ElementRef', moduleUrl: CORE, runtime: _angular_core.ElementRef };
+    Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleUrl: CORE, runtime: _angular_core.ViewContainerRef };
+    Identifiers.ChangeDetectorRef = { name: 'ChangeDetectorRef', moduleUrl: CORE, runtime: _angular_core.ChangeDetectorRef };
+    Identifiers.RenderComponentType = { name: 'RenderComponentType', moduleUrl: CORE, runtime: _angular_core.RenderComponentType };
+    Identifiers.QueryList = { name: 'QueryList', moduleUrl: CORE, runtime: _angular_core.QueryList };
+    Identifiers.TemplateRef = { name: 'TemplateRef', moduleUrl: CORE, runtime: _angular_core.TemplateRef };
+    Identifiers.TemplateRef_ = { name: 'ɵTemplateRef_', moduleUrl: CORE, runtime: _angular_core.ɵTemplateRef_ };
+    Identifiers.CodegenComponentFactoryResolver = {
+        name: 'ɵCodegenComponentFactoryResolver',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵCodegenComponentFactoryResolver
+    };
+    Identifiers.ComponentFactoryResolver = {
+        name: 'ComponentFactoryResolver',
+        moduleUrl: CORE,
+        runtime: _angular_core.ComponentFactoryResolver
+    };
+    Identifiers.ComponentFactory = { name: 'ComponentFactory', moduleUrl: CORE, runtime: _angular_core.ComponentFactory };
+    Identifiers.ComponentRef_ = {
+        name: 'ɵComponentRef_',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵComponentRef_,
+    };
+    Identifiers.ComponentRef = { name: 'ComponentRef', moduleUrl: CORE, runtime: _angular_core.ComponentRef };
+    Identifiers.NgModuleFactory = { name: 'NgModuleFactory', moduleUrl: CORE, runtime: _angular_core.NgModuleFactory };
+    Identifiers.NgModuleInjector = {
+        name: 'ɵNgModuleInjector',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵNgModuleInjector,
+    };
+    Identifiers.RegisterModuleFactoryFn = {
+        name: 'ɵregisterModuleFactory',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵregisterModuleFactory,
+    };
+    Identifiers.ValueUnwrapper = { name: 'ɵValueUnwrapper', moduleUrl: CORE, runtime: _angular_core.ɵValueUnwrapper };
+    Identifiers.Injector = { name: 'Injector', moduleUrl: CORE, runtime: _angular_core.Injector };
+    Identifiers.ViewEncapsulation = { name: 'ViewEncapsulation', moduleUrl: CORE, runtime: _angular_core.ViewEncapsulation };
+    Identifiers.ViewType = { name: 'ɵViewType', moduleUrl: CORE, runtime: _angular_core.ɵViewType };
+    Identifiers.ChangeDetectionStrategy = {
+        name: 'ChangeDetectionStrategy',
+        moduleUrl: CORE,
+        runtime: _angular_core.ChangeDetectionStrategy
+    };
+    Identifiers.StaticNodeDebugInfo = {
+        name: 'ɵStaticNodeDebugInfo',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵStaticNodeDebugInfo
+    };
+    Identifiers.DebugContext = { name: 'ɵDebugContext', moduleUrl: CORE, runtime: _angular_core.ɵDebugContext };
+    Identifiers.Renderer = { name: 'Renderer', moduleUrl: CORE, runtime: _angular_core.Renderer };
+    Identifiers.SimpleChange = { name: 'SimpleChange', moduleUrl: CORE, runtime: _angular_core.SimpleChange };
+    Identifiers.ChangeDetectorStatus = {
+        name: 'ɵChangeDetectorStatus',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵChangeDetectorStatus
+    };
+    Identifiers.checkBinding = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkBinding',
+        runtime: _angular_core.ɵview_utils.checkBinding
+    };
+    Identifiers.checkBindingChange = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkBindingChange',
+        runtime: _angular_core.ɵview_utils.checkBindingChange
+    };
+    Identifiers.checkRenderText = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderText',
+        runtime: _angular_core.ɵview_utils.checkRenderText
+    };
+    Identifiers.checkRenderProperty = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderProperty',
+        runtime: _angular_core.ɵview_utils.checkRenderProperty
+    };
+    Identifiers.checkRenderAttribute = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderAttribute',
+        runtime: _angular_core.ɵview_utils.checkRenderAttribute
+    };
+    Identifiers.checkRenderClass = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderClass',
+        runtime: _angular_core.ɵview_utils.checkRenderClass
+    };
+    Identifiers.checkRenderStyle = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'checkRenderStyle',
+        runtime: _angular_core.ɵview_utils.checkRenderStyle
+    };
+    Identifiers.devModeEqual = { name: 'ɵdevModeEqual', moduleUrl: CORE, runtime: _angular_core.ɵdevModeEqual };
+    Identifiers.inlineInterpolate = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'inlineInterpolate',
+        runtime: _angular_core.ɵview_utils.inlineInterpolate
+    };
+    Identifiers.interpolate = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'interpolate',
+        runtime: _angular_core.ɵview_utils.interpolate
+    };
+    Identifiers.castByValue = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'castByValue',
+        runtime: _angular_core.ɵview_utils.castByValue
+    };
+    Identifiers.EMPTY_ARRAY = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'EMPTY_ARRAY',
+        runtime: _angular_core.ɵview_utils.EMPTY_ARRAY
+    };
+    Identifiers.EMPTY_MAP = { name: 'ɵview_utils', moduleUrl: CORE, member: 'EMPTY_MAP', runtime: _angular_core.ɵview_utils.EMPTY_MAP };
+    Identifiers.createRenderElement = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'createRenderElement',
+        runtime: _angular_core.ɵview_utils.createRenderElement
+    };
+    Identifiers.selectOrCreateRenderHostElement = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'selectOrCreateRenderHostElement',
+        runtime: _angular_core.ɵview_utils.selectOrCreateRenderHostElement
+    };
+    Identifiers.pureProxies = [
+        null,
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy1', runtime: _angular_core.ɵview_utils.pureProxy1 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy2', runtime: _angular_core.ɵview_utils.pureProxy2 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy3', runtime: _angular_core.ɵview_utils.pureProxy3 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy4', runtime: _angular_core.ɵview_utils.pureProxy4 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy5', runtime: _angular_core.ɵview_utils.pureProxy5 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy6', runtime: _angular_core.ɵview_utils.pureProxy6 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy7', runtime: _angular_core.ɵview_utils.pureProxy7 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy8', runtime: _angular_core.ɵview_utils.pureProxy8 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy9', runtime: _angular_core.ɵview_utils.pureProxy9 },
+        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy10', runtime: _angular_core.ɵview_utils.pureProxy10 },
+    ];
+    Identifiers.SecurityContext = {
+        name: 'SecurityContext',
+        moduleUrl: CORE,
+        runtime: _angular_core.SecurityContext,
+    };
+    Identifiers.AnimationKeyframe = { name: 'ɵAnimationKeyframe', moduleUrl: CORE, runtime: _angular_core.ɵAnimationKeyframe };
+    Identifiers.AnimationStyles = { name: 'ɵAnimationStyles', moduleUrl: CORE, runtime: _angular_core.ɵAnimationStyles };
+    Identifiers.NoOpAnimationPlayer = {
+        name: 'ɵNoOpAnimationPlayer',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵNoOpAnimationPlayer
+    };
+    Identifiers.AnimationGroupPlayer = {
+        name: 'ɵAnimationGroupPlayer',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵAnimationGroupPlayer
+    };
+    Identifiers.AnimationSequencePlayer = {
+        name: 'ɵAnimationSequencePlayer',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵAnimationSequencePlayer
+    };
+    Identifiers.prepareFinalAnimationStyles = {
+        name: 'ɵprepareFinalAnimationStyles',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵprepareFinalAnimationStyles
+    };
+    Identifiers.balanceAnimationKeyframes = {
+        name: 'ɵbalanceAnimationKeyframes',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵbalanceAnimationKeyframes
+    };
+    Identifiers.clearStyles = { name: 'ɵclearStyles', moduleUrl: CORE, runtime: _angular_core.ɵclearStyles };
+    Identifiers.renderStyles = { name: 'ɵrenderStyles', moduleUrl: CORE, runtime: _angular_core.ɵrenderStyles };
+    Identifiers.collectAndResolveStyles = {
+        name: 'ɵcollectAndResolveStyles',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵcollectAndResolveStyles
+    };
+    Identifiers.LOCALE_ID = { name: 'LOCALE_ID', moduleUrl: CORE, runtime: _angular_core.LOCALE_ID };
+    Identifiers.TRANSLATIONS_FORMAT = { name: 'TRANSLATIONS_FORMAT', moduleUrl: CORE, runtime: _angular_core.TRANSLATIONS_FORMAT };
+    Identifiers.setBindingDebugInfo = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'setBindingDebugInfo',
+        runtime: _angular_core.ɵview_utils.setBindingDebugInfo
+    };
+    Identifiers.setBindingDebugInfoForChanges = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'setBindingDebugInfoForChanges',
+        runtime: _angular_core.ɵview_utils.setBindingDebugInfoForChanges
+    };
+    Identifiers.AnimationTransition = {
+        name: 'ɵAnimationTransition',
+        moduleUrl: CORE,
+        runtime: _angular_core.ɵAnimationTransition
+    };
+    // This is just the interface!
+    Identifiers.InlineArray = { name: 'InlineArray', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: null };
+    Identifiers.inlineArrays = [
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray2',
+            runtime: _angular_core.ɵview_utils.InlineArray2
+        },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray2',
+            runtime: _angular_core.ɵview_utils.InlineArray2
+        },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray4',
+            runtime: _angular_core.ɵview_utils.InlineArray4
+        },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray8',
+            runtime: _angular_core.ɵview_utils.InlineArray8
+        },
+        {
+            name: 'ɵview_utils',
+            moduleUrl: CORE,
+            member: 'InlineArray16',
+            runtime: _angular_core.ɵview_utils.InlineArray16
+        },
+    ];
+    Identifiers.EMPTY_INLINE_ARRAY = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'EMPTY_INLINE_ARRAY',
+        runtime: _angular_core.ɵview_utils.EMPTY_INLINE_ARRAY
+    };
+    Identifiers.InlineArrayDynamic = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'InlineArrayDynamic',
+        runtime: _angular_core.ɵview_utils.InlineArrayDynamic
+    };
+    Identifiers.subscribeToRenderElement = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'subscribeToRenderElement',
+        runtime: _angular_core.ɵview_utils.subscribeToRenderElement
+    };
+    Identifiers.createRenderComponentType = {
+        name: 'ɵview_utils',
+        moduleUrl: CORE,
+        member: 'createRenderComponentType',
+        runtime: _angular_core.ɵview_utils.createRenderComponentType
+    };
+    Identifiers.noop = { name: 'ɵview_utils', moduleUrl: CORE, member: 'noop', runtime: _angular_core.ɵview_utils.noop };
+    Identifiers.viewDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'viewDef', runtime: _angular_core.ɵviewEngine.viewDef };
+    Identifiers.elementDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'elementDef', runtime: _angular_core.ɵviewEngine.elementDef };
+    Identifiers.anchorDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'anchorDef', runtime: _angular_core.ɵviewEngine.anchorDef };
+    Identifiers.textDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'textDef', runtime: _angular_core.ɵviewEngine.textDef };
+    Identifiers.directiveDef = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'directiveDef',
+        runtime: _angular_core.ɵviewEngine.directiveDef
+    };
+    Identifiers.providerDef = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'providerDef',
+        runtime: _angular_core.ɵviewEngine.providerDef
+    };
+    Identifiers.queryDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'queryDef', runtime: _angular_core.ɵviewEngine.queryDef };
+    Identifiers.pureArrayDef = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'pureArrayDef',
+        runtime: _angular_core.ɵviewEngine.pureArrayDef
+    };
+    Identifiers.pureObjectDef = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'pureObjectDef',
+        runtime: _angular_core.ɵviewEngine.pureObjectDef
+    };
+    Identifiers.purePipeDef = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'purePipeDef',
+        runtime: _angular_core.ɵviewEngine.purePipeDef
+    };
+    Identifiers.pipeDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'pipeDef', runtime: _angular_core.ɵviewEngine.pipeDef };
+    Identifiers.nodeValue = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'nodeValue', runtime: _angular_core.ɵviewEngine.nodeValue };
+    Identifiers.ngContentDef = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'ngContentDef',
+        runtime: _angular_core.ɵviewEngine.ngContentDef
+    };
+    Identifiers.unwrapValue = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'unwrapValue',
+        runtime: _angular_core.ɵviewEngine.unwrapValue
+    };
+    Identifiers.createRendererTypeV2 = {
+        name: 'ɵviewEngine',
+        moduleUrl: CORE,
+        member: 'createRendererTypeV2',
+        runtime: _angular_core.ɵviewEngine.createRendererTypeV2
+    };
+    /**
+     * @param {?} pkg
+     * @param {?=} path
+     * @param {?=} type
+     * @return {?}
+     */
+    function assetUrl(pkg, path, type) {
+        if (path === void 0) { path = null; }
+        if (type === void 0) { type = 'src'; }
+        if (path == null) {
+            return "@angular/" + pkg;
+        }
+        else {
+            return "@angular/" + pkg + "/" + type + "/" + path;
+        }
+    }
+    /**
+     * @param {?} identifier
+     * @return {?}
+     */
+    function resolveIdentifier(identifier) {
+        var /** @type {?} */ name = identifier.name;
+        var /** @type {?} */ members = identifier.member && [identifier.member];
+        return _angular_core.ɵreflector.resolveIdentifier(name, identifier.moduleUrl, members, identifier.runtime);
+    }
+    /**
+     * @param {?} identifier
+     * @return {?}
+     */
+    function createIdentifier(identifier) {
+        return { reference: resolveIdentifier(identifier) };
+    }
+    /**
+     * @param {?} identifier
+     * @return {?}
+     */
+    function identifierToken(identifier) {
+        return { identifier: identifier };
+    }
+    /**
+     * @param {?} identifier
+     * @return {?}
+     */
+    function createIdentifierToken(identifier) {
+        return identifierToken(createIdentifier(identifier));
+    }
+    /**
+     * @param {?} enumType
+     * @param {?} name
+     * @return {?}
+     */
+    function createEnumIdentifier(enumType, name) {
+        var /** @type {?} */ resolvedEnum = _angular_core.ɵreflector.resolveEnum(resolveIdentifier(enumType), name);
+        return { reference: resolvedEnum };
+    }
+
+    /**
+     * Temporal switch for the compiler to use the new view engine,
+     * until it is fully integrated.
+     *
+     * Only works in Jit for now.
+     */
+    var /** @type {?} */ USE_VIEW_ENGINE = new _angular_core.InjectionToken('UseViewEngine');
+    var CompilerConfig = (function () {
+        /**
+         * @param {?=} __0
+         */
+        function CompilerConfig(_a) {
+            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, missingTranslation = _b.missingTranslation, useViewEngine = _b.useViewEngine;
+            this.renderTypes = renderTypes;
+            this.defaultEncapsulation = defaultEncapsulation;
+            this._genDebugInfo = genDebugInfo;
+            this._logBindingUpdate = logBindingUpdate;
+            this.useJit = useJit;
+            this.missingTranslation = missingTranslation;
+            this.useViewEngine = useViewEngine;
+        }
+        Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
+            /**
+             * @return {?}
+             */
+            get: function () {
+                return this._genDebugInfo === void 0 ? _angular_core.isDevMode() : this._genDebugInfo;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(CompilerConfig.prototype, "logBindingUpdate", {
+            /**
+             * @return {?}
+             */
+            get: function () {
+                return this._logBindingUpdate === void 0 ? _angular_core.isDevMode() : this._logBindingUpdate;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return CompilerConfig;
+    }());
+    /**
+     * Types used for the renderer.
+     * Can be replaced to specialize the generated output to a specific renderer
+     * to help tree shaking.
+     * @abstract
+     */
+    var RenderTypes = (function () {
+        function RenderTypes() {
+        }
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderer = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderText = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderElement = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderComment = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderNode = function () { };
+        /**
+         * @abstract
+         * @return {?}
+         */
+        RenderTypes.prototype.renderEvent = function () { };
+        return RenderTypes;
+    }());
+    var DefaultRenderTypes = (function () {
+        function DefaultRenderTypes() {
+            this.renderText = null;
+            this.renderElement = null;
+            this.renderComment = null;
+            this.renderNode = null;
+            this.renderEvent = null;
+        }
+        Object.defineProperty(DefaultRenderTypes.prototype, "renderer", {
+            /**
+             * @return {?}
+             */
+            get: function () { return createIdentifier(Identifiers.Renderer); },
+            enumerable: true,
+            configurable: true
+        });
+        ;
+        return DefaultRenderTypes;
     }());
 
     /**
@@ -9836,400 +10334,6 @@
         }
     }
 
-    var /** @type {?} */ CORE = assetUrl('core');
-    var /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
-    var Identifiers = (function () {
-        function Identifiers() {
-        }
-        return Identifiers;
-    }());
-    Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
-        name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
-        moduleUrl: CORE,
-        runtime: _angular_core.ANALYZE_FOR_ENTRY_COMPONENTS
-    };
-    Identifiers.ViewUtils = { name: 'ɵview_utils', moduleUrl: CORE, member: 'ViewUtils', runtime: _angular_core.ɵview_utils.ViewUtils };
-    Identifiers.AppView = { name: 'ɵAppView', moduleUrl: CORE, runtime: _angular_core.ɵAppView };
-    Identifiers.DebugAppView = { name: 'ɵDebugAppView', moduleUrl: CORE, runtime: _angular_core.ɵDebugAppView };
-    Identifiers.ViewContainer = { name: 'ɵViewContainer', moduleUrl: CORE, runtime: _angular_core.ɵViewContainer };
-    Identifiers.ElementRef = { name: 'ElementRef', moduleUrl: CORE, runtime: _angular_core.ElementRef };
-    Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleUrl: CORE, runtime: _angular_core.ViewContainerRef };
-    Identifiers.ChangeDetectorRef = { name: 'ChangeDetectorRef', moduleUrl: CORE, runtime: _angular_core.ChangeDetectorRef };
-    Identifiers.RenderComponentType = { name: 'RenderComponentType', moduleUrl: CORE, runtime: _angular_core.RenderComponentType };
-    Identifiers.QueryList = { name: 'QueryList', moduleUrl: CORE, runtime: _angular_core.QueryList };
-    Identifiers.TemplateRef = { name: 'TemplateRef', moduleUrl: CORE, runtime: _angular_core.TemplateRef };
-    Identifiers.TemplateRef_ = { name: 'ɵTemplateRef_', moduleUrl: CORE, runtime: _angular_core.ɵTemplateRef_ };
-    Identifiers.CodegenComponentFactoryResolver = {
-        name: 'ɵCodegenComponentFactoryResolver',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵCodegenComponentFactoryResolver
-    };
-    Identifiers.ComponentFactoryResolver = {
-        name: 'ComponentFactoryResolver',
-        moduleUrl: CORE,
-        runtime: _angular_core.ComponentFactoryResolver
-    };
-    Identifiers.ComponentFactory = { name: 'ComponentFactory', moduleUrl: CORE, runtime: _angular_core.ComponentFactory };
-    Identifiers.ComponentRef_ = {
-        name: 'ɵComponentRef_',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵComponentRef_,
-    };
-    Identifiers.ComponentRef = { name: 'ComponentRef', moduleUrl: CORE, runtime: _angular_core.ComponentRef };
-    Identifiers.NgModuleFactory = { name: 'NgModuleFactory', moduleUrl: CORE, runtime: _angular_core.NgModuleFactory };
-    Identifiers.NgModuleInjector = {
-        name: 'ɵNgModuleInjector',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵNgModuleInjector,
-    };
-    Identifiers.RegisterModuleFactoryFn = {
-        name: 'ɵregisterModuleFactory',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵregisterModuleFactory,
-    };
-    Identifiers.ValueUnwrapper = { name: 'ɵValueUnwrapper', moduleUrl: CORE, runtime: _angular_core.ɵValueUnwrapper };
-    Identifiers.Injector = { name: 'Injector', moduleUrl: CORE, runtime: _angular_core.Injector };
-    Identifiers.ViewEncapsulation = { name: 'ViewEncapsulation', moduleUrl: CORE, runtime: _angular_core.ViewEncapsulation };
-    Identifiers.ViewType = { name: 'ɵViewType', moduleUrl: CORE, runtime: _angular_core.ɵViewType };
-    Identifiers.ChangeDetectionStrategy = {
-        name: 'ChangeDetectionStrategy',
-        moduleUrl: CORE,
-        runtime: _angular_core.ChangeDetectionStrategy
-    };
-    Identifiers.StaticNodeDebugInfo = {
-        name: 'ɵStaticNodeDebugInfo',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵStaticNodeDebugInfo
-    };
-    Identifiers.DebugContext = { name: 'ɵDebugContext', moduleUrl: CORE, runtime: _angular_core.ɵDebugContext };
-    Identifiers.Renderer = { name: 'Renderer', moduleUrl: CORE, runtime: _angular_core.Renderer };
-    Identifiers.SimpleChange = { name: 'SimpleChange', moduleUrl: CORE, runtime: _angular_core.SimpleChange };
-    Identifiers.ChangeDetectorStatus = {
-        name: 'ɵChangeDetectorStatus',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵChangeDetectorStatus
-    };
-    Identifiers.checkBinding = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'checkBinding',
-        runtime: _angular_core.ɵview_utils.checkBinding
-    };
-    Identifiers.checkBindingChange = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'checkBindingChange',
-        runtime: _angular_core.ɵview_utils.checkBindingChange
-    };
-    Identifiers.checkRenderText = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'checkRenderText',
-        runtime: _angular_core.ɵview_utils.checkRenderText
-    };
-    Identifiers.checkRenderProperty = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'checkRenderProperty',
-        runtime: _angular_core.ɵview_utils.checkRenderProperty
-    };
-    Identifiers.checkRenderAttribute = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'checkRenderAttribute',
-        runtime: _angular_core.ɵview_utils.checkRenderAttribute
-    };
-    Identifiers.checkRenderClass = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'checkRenderClass',
-        runtime: _angular_core.ɵview_utils.checkRenderClass
-    };
-    Identifiers.checkRenderStyle = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'checkRenderStyle',
-        runtime: _angular_core.ɵview_utils.checkRenderStyle
-    };
-    Identifiers.devModeEqual = { name: 'ɵdevModeEqual', moduleUrl: CORE, runtime: _angular_core.ɵdevModeEqual };
-    Identifiers.inlineInterpolate = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'inlineInterpolate',
-        runtime: _angular_core.ɵview_utils.inlineInterpolate
-    };
-    Identifiers.interpolate = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'interpolate',
-        runtime: _angular_core.ɵview_utils.interpolate
-    };
-    Identifiers.castByValue = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'castByValue',
-        runtime: _angular_core.ɵview_utils.castByValue
-    };
-    Identifiers.EMPTY_ARRAY = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'EMPTY_ARRAY',
-        runtime: _angular_core.ɵview_utils.EMPTY_ARRAY
-    };
-    Identifiers.EMPTY_MAP = { name: 'ɵview_utils', moduleUrl: CORE, member: 'EMPTY_MAP', runtime: _angular_core.ɵview_utils.EMPTY_MAP };
-    Identifiers.createRenderElement = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'createRenderElement',
-        runtime: _angular_core.ɵview_utils.createRenderElement
-    };
-    Identifiers.selectOrCreateRenderHostElement = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'selectOrCreateRenderHostElement',
-        runtime: _angular_core.ɵview_utils.selectOrCreateRenderHostElement
-    };
-    Identifiers.pureProxies = [
-        null,
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy1', runtime: _angular_core.ɵview_utils.pureProxy1 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy2', runtime: _angular_core.ɵview_utils.pureProxy2 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy3', runtime: _angular_core.ɵview_utils.pureProxy3 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy4', runtime: _angular_core.ɵview_utils.pureProxy4 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy5', runtime: _angular_core.ɵview_utils.pureProxy5 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy6', runtime: _angular_core.ɵview_utils.pureProxy6 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy7', runtime: _angular_core.ɵview_utils.pureProxy7 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy8', runtime: _angular_core.ɵview_utils.pureProxy8 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy9', runtime: _angular_core.ɵview_utils.pureProxy9 },
-        { name: 'ɵview_utils', moduleUrl: CORE, member: 'pureProxy10', runtime: _angular_core.ɵview_utils.pureProxy10 },
-    ];
-    Identifiers.SecurityContext = {
-        name: 'SecurityContext',
-        moduleUrl: CORE,
-        runtime: _angular_core.SecurityContext,
-    };
-    Identifiers.AnimationKeyframe = { name: 'ɵAnimationKeyframe', moduleUrl: CORE, runtime: _angular_core.ɵAnimationKeyframe };
-    Identifiers.AnimationStyles = { name: 'ɵAnimationStyles', moduleUrl: CORE, runtime: _angular_core.ɵAnimationStyles };
-    Identifiers.NoOpAnimationPlayer = {
-        name: 'ɵNoOpAnimationPlayer',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵNoOpAnimationPlayer
-    };
-    Identifiers.AnimationGroupPlayer = {
-        name: 'ɵAnimationGroupPlayer',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵAnimationGroupPlayer
-    };
-    Identifiers.AnimationSequencePlayer = {
-        name: 'ɵAnimationSequencePlayer',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵAnimationSequencePlayer
-    };
-    Identifiers.prepareFinalAnimationStyles = {
-        name: 'ɵprepareFinalAnimationStyles',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵprepareFinalAnimationStyles
-    };
-    Identifiers.balanceAnimationKeyframes = {
-        name: 'ɵbalanceAnimationKeyframes',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵbalanceAnimationKeyframes
-    };
-    Identifiers.clearStyles = { name: 'ɵclearStyles', moduleUrl: CORE, runtime: _angular_core.ɵclearStyles };
-    Identifiers.renderStyles = { name: 'ɵrenderStyles', moduleUrl: CORE, runtime: _angular_core.ɵrenderStyles };
-    Identifiers.collectAndResolveStyles = {
-        name: 'ɵcollectAndResolveStyles',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵcollectAndResolveStyles
-    };
-    Identifiers.LOCALE_ID = { name: 'LOCALE_ID', moduleUrl: CORE, runtime: _angular_core.LOCALE_ID };
-    Identifiers.TRANSLATIONS_FORMAT = { name: 'TRANSLATIONS_FORMAT', moduleUrl: CORE, runtime: _angular_core.TRANSLATIONS_FORMAT };
-    Identifiers.setBindingDebugInfo = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'setBindingDebugInfo',
-        runtime: _angular_core.ɵview_utils.setBindingDebugInfo
-    };
-    Identifiers.setBindingDebugInfoForChanges = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'setBindingDebugInfoForChanges',
-        runtime: _angular_core.ɵview_utils.setBindingDebugInfoForChanges
-    };
-    Identifiers.AnimationTransition = {
-        name: 'ɵAnimationTransition',
-        moduleUrl: CORE,
-        runtime: _angular_core.ɵAnimationTransition
-    };
-    // This is just the interface!
-    Identifiers.InlineArray = { name: 'InlineArray', moduleUrl: VIEW_UTILS_MODULE_URL, runtime: null };
-    Identifiers.inlineArrays = [
-        {
-            name: 'ɵview_utils',
-            moduleUrl: CORE,
-            member: 'InlineArray2',
-            runtime: _angular_core.ɵview_utils.InlineArray2
-        },
-        {
-            name: 'ɵview_utils',
-            moduleUrl: CORE,
-            member: 'InlineArray2',
-            runtime: _angular_core.ɵview_utils.InlineArray2
-        },
-        {
-            name: 'ɵview_utils',
-            moduleUrl: CORE,
-            member: 'InlineArray4',
-            runtime: _angular_core.ɵview_utils.InlineArray4
-        },
-        {
-            name: 'ɵview_utils',
-            moduleUrl: CORE,
-            member: 'InlineArray8',
-            runtime: _angular_core.ɵview_utils.InlineArray8
-        },
-        {
-            name: 'ɵview_utils',
-            moduleUrl: CORE,
-            member: 'InlineArray16',
-            runtime: _angular_core.ɵview_utils.InlineArray16
-        },
-    ];
-    Identifiers.EMPTY_INLINE_ARRAY = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'EMPTY_INLINE_ARRAY',
-        runtime: _angular_core.ɵview_utils.EMPTY_INLINE_ARRAY
-    };
-    Identifiers.InlineArrayDynamic = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'InlineArrayDynamic',
-        runtime: _angular_core.ɵview_utils.InlineArrayDynamic
-    };
-    Identifiers.subscribeToRenderElement = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'subscribeToRenderElement',
-        runtime: _angular_core.ɵview_utils.subscribeToRenderElement
-    };
-    Identifiers.createRenderComponentType = {
-        name: 'ɵview_utils',
-        moduleUrl: CORE,
-        member: 'createRenderComponentType',
-        runtime: _angular_core.ɵview_utils.createRenderComponentType
-    };
-    Identifiers.noop = { name: 'ɵview_utils', moduleUrl: CORE, member: 'noop', runtime: _angular_core.ɵview_utils.noop };
-    Identifiers.viewDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'viewDef', runtime: _angular_core.ɵviewEngine.viewDef };
-    Identifiers.elementDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'elementDef', runtime: _angular_core.ɵviewEngine.elementDef };
-    Identifiers.anchorDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'anchorDef', runtime: _angular_core.ɵviewEngine.anchorDef };
-    Identifiers.textDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'textDef', runtime: _angular_core.ɵviewEngine.textDef };
-    Identifiers.directiveDef = {
-        name: 'ɵviewEngine',
-        moduleUrl: CORE,
-        member: 'directiveDef',
-        runtime: _angular_core.ɵviewEngine.directiveDef
-    };
-    Identifiers.providerDef = {
-        name: 'ɵviewEngine',
-        moduleUrl: CORE,
-        member: 'providerDef',
-        runtime: _angular_core.ɵviewEngine.providerDef
-    };
-    Identifiers.queryDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'queryDef', runtime: _angular_core.ɵviewEngine.queryDef };
-    Identifiers.pureArrayDef = {
-        name: 'ɵviewEngine',
-        moduleUrl: CORE,
-        member: 'pureArrayDef',
-        runtime: _angular_core.ɵviewEngine.pureArrayDef
-    };
-    Identifiers.pureObjectDef = {
-        name: 'ɵviewEngine',
-        moduleUrl: CORE,
-        member: 'pureObjectDef',
-        runtime: _angular_core.ɵviewEngine.pureObjectDef
-    };
-    Identifiers.purePipeDef = {
-        name: 'ɵviewEngine',
-        moduleUrl: CORE,
-        member: 'purePipeDef',
-        runtime: _angular_core.ɵviewEngine.purePipeDef
-    };
-    Identifiers.pipeDef = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'pipeDef', runtime: _angular_core.ɵviewEngine.pipeDef };
-    Identifiers.nodeValue = { name: 'ɵviewEngine', moduleUrl: CORE, member: 'nodeValue', runtime: _angular_core.ɵviewEngine.nodeValue };
-    Identifiers.ngContentDef = {
-        name: 'ɵviewEngine',
-        moduleUrl: CORE,
-        member: 'ngContentDef',
-        runtime: _angular_core.ɵviewEngine.ngContentDef
-    };
-    Identifiers.unwrapValue = {
-        name: 'ɵviewEngine',
-        moduleUrl: CORE,
-        member: 'unwrapValue',
-        runtime: _angular_core.ɵviewEngine.unwrapValue
-    };
-    Identifiers.createComponentRenderTypeV2 = {
-        name: 'ɵviewEngine',
-        moduleUrl: CORE,
-        member: 'createComponentRenderTypeV2',
-        runtime: _angular_core.ɵviewEngine.createComponentRenderTypeV2
-    };
-    /**
-     * @param {?} pkg
-     * @param {?=} path
-     * @param {?=} type
-     * @return {?}
-     */
-    function assetUrl(pkg, path, type) {
-        if (path === void 0) { path = null; }
-        if (type === void 0) { type = 'src'; }
-        if (path == null) {
-            return "@angular/" + pkg;
-        }
-        else {
-            return "@angular/" + pkg + "/" + type + "/" + path;
-        }
-    }
-    /**
-     * @param {?} identifier
-     * @return {?}
-     */
-    function resolveIdentifier(identifier) {
-        var /** @type {?} */ name = identifier.name;
-        var /** @type {?} */ members = identifier.member && [identifier.member];
-        return _angular_core.ɵreflector.resolveIdentifier(name, identifier.moduleUrl, members, identifier.runtime);
-    }
-    /**
-     * @param {?} identifier
-     * @return {?}
-     */
-    function createIdentifier(identifier) {
-        return { reference: resolveIdentifier(identifier) };
-    }
-    /**
-     * @param {?} identifier
-     * @return {?}
-     */
-    function identifierToken(identifier) {
-        return { identifier: identifier };
-    }
-    /**
-     * @param {?} identifier
-     * @return {?}
-     */
-    function createIdentifierToken(identifier) {
-        return identifierToken(createIdentifier(identifier));
-    }
-    /**
-     * @param {?} enumType
-     * @param {?} name
-     * @return {?}
-     */
-    function createEnumIdentifier(enumType, name) {
-        var /** @type {?} */ resolvedEnum = _angular_core.ɵreflector.resolveEnum(resolveIdentifier(enumType), name);
-        return { reference: resolvedEnum };
-    }
-
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -11189,10 +11293,11 @@
         BindingParser.prototype.getUsedPipes = function () { return Array.from(this._usedPipes.values()); };
         /**
          * @param {?} dirMeta
+         * @param {?} elementSelector
          * @param {?} sourceSpan
          * @return {?}
          */
-        BindingParser.prototype.createDirectiveHostPropertyAsts = function (dirMeta, sourceSpan) {
+        BindingParser.prototype.createDirectiveHostPropertyAsts = function (dirMeta, elementSelector, sourceSpan) {
             var _this = this;
             if (dirMeta.hostProperties) {
                 var /** @type {?} */ boundProps_1 = [];
@@ -11205,7 +11310,7 @@
                         _this._reportError("Value of the host property binding \"" + propName + "\" needs to be a string representing an expression but got \"" + expression + "\" (" + typeof expression + ")", sourceSpan);
                     }
                 });
-                return boundProps_1.map(function (prop) { return _this.createElementPropertyAst(dirMeta.selector, prop); });
+                return boundProps_1.map(function (prop) { return _this.createElementPropertyAst(elementSelector, prop); });
             }
         };
         /**
@@ -11826,13 +11931,15 @@
     }());
     exports.TemplateParser = (function () {
         /**
+         * @param {?} _config
          * @param {?} _exprParser
          * @param {?} _schemaRegistry
          * @param {?} _htmlParser
          * @param {?} _console
          * @param {?} transforms
          */
-        function TemplateParser(_exprParser, _schemaRegistry, _htmlParser, _console, transforms) {
+        function TemplateParser(_config, _exprParser, _schemaRegistry, _htmlParser, _console, transforms) {
+            this._config = _config;
             this._exprParser = _exprParser;
             this._schemaRegistry = _schemaRegistry;
             this._htmlParser = _htmlParser;
@@ -11899,7 +12006,7 @@
                     };
                 }
                 var /** @type {?} */ bindingParser = new BindingParser(this._exprParser, interpolationConfig, this._schemaRegistry, uniqPipes, errors);
-                var /** @type {?} */ parseVisitor = new TemplateParseVisitor(providerViewContext, uniqDirectives, bindingParser, this._schemaRegistry, schemas, errors);
+                var /** @type {?} */ parseVisitor = new TemplateParseVisitor(this._config, providerViewContext, uniqDirectives, bindingParser, this._schemaRegistry, schemas, errors);
                 result = visitAll(parseVisitor, htmlAstWithErrors.rootNodes, EMPTY_ELEMENT_CONTEXT);
                 errors.push.apply(errors, providerViewContext.errors);
                 usedPipes.push.apply(usedPipes, bindingParser.getUsedPipes());
@@ -11965,6 +12072,7 @@
     }());
     /** @nocollapse */
     exports.TemplateParser.ctorParameters = function () { return [
+        { type: CompilerConfig, },
         { type: exports.Parser, },
         { type: ElementSchemaRegistry, },
         { type: I18NHtmlParser, },
@@ -11973,13 +12081,15 @@
     ]; };
     exports.TemplateParser = __decorate([
         CompilerInjectable(),
-        __metadata("design:paramtypes", [exports.Parser,
+        __metadata("design:paramtypes", [CompilerConfig,
+            exports.Parser,
             ElementSchemaRegistry,
             I18NHtmlParser,
             Console, Array])
     ], exports.TemplateParser);
     var TemplateParseVisitor = (function () {
         /**
+         * @param {?} config
          * @param {?} providerViewContext
          * @param {?} directives
          * @param {?} _bindingParser
@@ -11987,8 +12097,9 @@
          * @param {?} _schemas
          * @param {?} _targetErrors
          */
-        function TemplateParseVisitor(providerViewContext, directives, _bindingParser, _schemaRegistry, _schemas, _targetErrors) {
+        function TemplateParseVisitor(config, providerViewContext, directives, _bindingParser, _schemaRegistry, _schemas, _targetErrors) {
             var _this = this;
+            this.config = config;
             this.providerViewContext = providerViewContext;
             this._bindingParser = _bindingParser;
             this._schemaRegistry = _schemaRegistry;
@@ -12334,7 +12445,7 @@
                     component = directive;
                 }
                 var /** @type {?} */ directiveProperties = [];
-                var /** @type {?} */ hostProperties = _this._bindingParser.createDirectiveHostPropertyAsts(directive, sourceSpan);
+                var /** @type {?} */ hostProperties = _this._bindingParser.createDirectiveHostPropertyAsts(directive, _this.config.useViewEngine ? elementName : directive.selector, sourceSpan);
                 // Note: We need to check the host properties here as well,
                 // as we don't know the element name in the DirectiveWrapperCompiler yet.
                 hostProperties = _this._checkPropertiesInSchema(elementName, hostProperties);
@@ -12731,109 +12842,6 @@
         }
         return ast instanceof EmptyExpr;
     }
-
-    /**
-     * Temporal switch for the compiler to use the new view engine,
-     * until it is fully integrated.
-     *
-     * Only works in Jit for now.
-     */
-    var /** @type {?} */ USE_VIEW_ENGINE = new _angular_core.InjectionToken('UseViewEngine');
-    var CompilerConfig = (function () {
-        /**
-         * @param {?=} __0
-         */
-        function CompilerConfig(_a) {
-            var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, missingTranslation = _b.missingTranslation;
-            this.renderTypes = renderTypes;
-            this.defaultEncapsulation = defaultEncapsulation;
-            this._genDebugInfo = genDebugInfo;
-            this._logBindingUpdate = logBindingUpdate;
-            this.useJit = useJit;
-            this.missingTranslation = missingTranslation;
-        }
-        Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
-            /**
-             * @return {?}
-             */
-            get: function () {
-                return this._genDebugInfo === void 0 ? _angular_core.isDevMode() : this._genDebugInfo;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(CompilerConfig.prototype, "logBindingUpdate", {
-            /**
-             * @return {?}
-             */
-            get: function () {
-                return this._logBindingUpdate === void 0 ? _angular_core.isDevMode() : this._logBindingUpdate;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return CompilerConfig;
-    }());
-    /**
-     * Types used for the renderer.
-     * Can be replaced to specialize the generated output to a specific renderer
-     * to help tree shaking.
-     * @abstract
-     */
-    var RenderTypes = (function () {
-        function RenderTypes() {
-        }
-        /**
-         * @abstract
-         * @return {?}
-         */
-        RenderTypes.prototype.renderer = function () { };
-        /**
-         * @abstract
-         * @return {?}
-         */
-        RenderTypes.prototype.renderText = function () { };
-        /**
-         * @abstract
-         * @return {?}
-         */
-        RenderTypes.prototype.renderElement = function () { };
-        /**
-         * @abstract
-         * @return {?}
-         */
-        RenderTypes.prototype.renderComment = function () { };
-        /**
-         * @abstract
-         * @return {?}
-         */
-        RenderTypes.prototype.renderNode = function () { };
-        /**
-         * @abstract
-         * @return {?}
-         */
-        RenderTypes.prototype.renderEvent = function () { };
-        return RenderTypes;
-    }());
-    var DefaultRenderTypes = (function () {
-        function DefaultRenderTypes() {
-            this.renderText = null;
-            this.renderElement = null;
-            this.renderComment = null;
-            this.renderNode = null;
-            this.renderEvent = null;
-        }
-        Object.defineProperty(DefaultRenderTypes.prototype, "renderer", {
-            /**
-             * @return {?}
-             */
-            get: function () { return createIdentifier(Identifiers.Renderer); },
-            enumerable: true,
-            configurable: true
-        });
-        ;
-        return DefaultRenderTypes;
-    }());
 
     var __extends$18 = (this && this.__extends) || function (d, b) {
         for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -18239,7 +18247,7 @@
             "in Directive " + identifierName(dirMeta.type);
         var /** @type {?} */ sourceFile = new ParseSourceFile('', sourceFileName);
         var /** @type {?} */ sourceSpan = new ParseSourceSpan(new ParseLocation(sourceFile, null, null, null), new ParseLocation(sourceFile, null, null, null));
-        var /** @type {?} */ parsedHostProps = parser.createDirectiveHostPropertyAsts(dirMeta.toSummary(), sourceSpan);
+        var /** @type {?} */ parsedHostProps = parser.createDirectiveHostPropertyAsts(dirMeta.toSummary(), dirMeta.selector, sourceSpan);
         var /** @type {?} */ parsedHostListeners = parser.createDirectiveHostEventAsts(dirMeta.toSummary(), sourceSpan);
         return new ParseResult(parsedHostProps, parsedHostListeners, errors);
     }
@@ -18665,6 +18673,7 @@
     var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new _angular_core.InjectionToken('ErrorCollector');
     exports.CompileMetadataResolver = (function () {
         /**
+         * @param {?} _config
          * @param {?} _ngModuleResolver
          * @param {?} _directiveResolver
          * @param {?} _pipeResolver
@@ -18674,10 +18683,10 @@
          * @param {?} _staticSymbolCache
          * @param {?=} _reflector
          * @param {?=} _errorCollector
-         * @param {?=} _useViewEngine
          */
-        function CompileMetadataResolver(_ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector, _errorCollector, _useViewEngine) {
+        function CompileMetadataResolver(_config, _ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector, _errorCollector) {
             if (_reflector === void 0) { _reflector = reflector; }
+            this._config = _config;
             this._ngModuleResolver = _ngModuleResolver;
             this._directiveResolver = _directiveResolver;
             this._pipeResolver = _pipeResolver;
@@ -18687,7 +18696,6 @@
             this._staticSymbolCache = _staticSymbolCache;
             this._reflector = _reflector;
             this._errorCollector = _errorCollector;
-            this._useViewEngine = _useViewEngine;
             this._nonNormalizedDirectiveCache = new Map();
             this._directiveCache = new Map();
             this._summaryCache = new Map();
@@ -18798,9 +18806,9 @@
          * @param {?} dirType
          * @return {?}
          */
-        CompileMetadataResolver.prototype.getComponentRenderType = function (dirType) {
+        CompileMetadataResolver.prototype.getRendererType = function (dirType) {
             if (dirType instanceof StaticSymbol) {
-                return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), componentRenderTypeName(dirType));
+                return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), rendererTypeName(dirType));
             }
             else {
                 // returning an object as proxy,
@@ -18819,7 +18827,7 @@
             }
             else {
                 var /** @type {?} */ hostView = this.getHostComponentViewClass(dirType);
-                if (this._useViewEngine) {
+                if (this._config.useViewEngine) {
                     return viewEngine.createComponentFactory(selector, dirType, /** @type {?} */ (hostView));
                 }
                 else {
@@ -18928,7 +18936,7 @@
                     entryComponents: metadata.entryComponents,
                     wrapperType: metadata.wrapperType,
                     componentViewType: metadata.componentViewType,
-                    componentRenderType: metadata.componentRenderType,
+                    rendererType: metadata.rendererType,
                     componentFactory: metadata.componentFactory,
                     template: templateMetadata
                 });
@@ -19057,7 +19065,7 @@
                 wrapperType: this.getDirectiveWrapperClass(directiveType),
                 componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
                     undefined,
-                componentRenderType: nonNormalizedTemplateMetadata ? this.getComponentRenderType(directiveType) : undefined,
+                rendererType: nonNormalizedTemplateMetadata ? this.getRendererType(directiveType) : undefined,
                 componentFactory: nonNormalizedTemplateMetadata ?
                     this.getComponentFactory(selector, directiveType) :
                     undefined
@@ -19766,6 +19774,7 @@
     }());
     /** @nocollapse */
     exports.CompileMetadataResolver.ctorParameters = function () { return [
+        { type: CompilerConfig, },
         { type: exports.NgModuleResolver, },
         { type: exports.DirectiveResolver, },
         { type: exports.PipeResolver, },
@@ -19775,18 +19784,18 @@
         { type: StaticSymbolCache, decorators: [{ type: _angular_core.Optional },] },
         { type: ReflectorReader, },
         { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
-        { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [USE_VIEW_ENGINE,] },] },
     ]; };
     exports.CompileMetadataResolver = __decorate$9([
         CompilerInjectable(),
-        __metadata$8("design:paramtypes", [exports.NgModuleResolver,
+        __metadata$8("design:paramtypes", [CompilerConfig,
+            exports.NgModuleResolver,
             exports.DirectiveResolver,
             exports.PipeResolver,
             exports.SummaryResolver,
             ElementSchemaRegistry,
             exports.DirectiveNormalizer,
             StaticSymbolCache,
-            ReflectorReader, Function, Boolean])
+            ReflectorReader, Function])
     ], exports.CompileMetadataResolver);
     /**
      * @param {?} tree
@@ -23877,7 +23886,7 @@
             this.detachMethod = new CompileMethod(this);
             this.viewType = getViewType(component, viewIndex);
             this.className = viewClassName(component.type.reference, viewIndex);
-            this.renderComponentTypeName = componentRenderTypeName(component.type.reference);
+            this.rendererTypeName = rendererTypeName(component.type.reference);
             this.classType = expressionType(variable(this.className));
             this.classExpr = variable(this.className);
             if (this.viewType === ViewType.COMPONENT || this.viewType === ViewType.HOST) {
@@ -24872,7 +24881,7 @@
                 .set(literalArr(view.nodes.map(createStaticNodeDebugInfo), new ArrayType(importType(createIdentifier(Identifiers.StaticNodeDebugInfo)), [TypeModifier.Const])))
                 .toDeclStmt(null, [StmtModifier.Final]));
         }
-        var /** @type {?} */ renderCompTypeVar = variable(view.renderComponentTypeName); // fix highlighting: `
+        var /** @type {?} */ renderCompTypeVar = variable(view.rendererTypeName); // fix highlighting: `
         if (view.viewIndex === 0) {
             var /** @type {?} */ templateUrlInfo = void 0;
             if (view.component.template.templateUrl == identifierModuleUrl(view.component.type)) {
@@ -25201,13 +25210,13 @@
         /**
          * @param {?} statements
          * @param {?} viewClassVar
-         * @param {?} componentRenderTypeVar
+         * @param {?} rendererTypeVar
          * @param {?} dependencies
          */
-        function ViewCompileResult(statements, viewClassVar, componentRenderTypeVar, dependencies) {
+        function ViewCompileResult(statements, viewClassVar, rendererTypeVar, dependencies) {
             this.statements = statements;
             this.viewClassVar = viewClassVar;
-            this.componentRenderTypeVar = componentRenderTypeVar;
+            this.rendererTypeVar = rendererTypeVar;
             this.dependencies = dependencies;
         }
         return ViewCompileResult;
@@ -25238,7 +25247,7 @@
             // variables that have been declared after usage.
             bindView(view, template, this._schemaRegistry);
             finishView(view, statements);
-            return new ViewCompileResult(statements, view.classExpr.name, view.renderComponentTypeName, dependencies);
+            return new ViewCompileResult(statements, view.classExpr.name, view.rendererTypeName, dependencies);
         };
         return ViewCompiler;
     }());
@@ -26078,10 +26087,7 @@
             }
             compiledAnimations.forEach(function (entry) { return targetStatements.push.apply(targetStatements, entry.statements); });
             targetStatements.push.apply(targetStatements, viewResult.statements);
-            return {
-                viewClassVar: viewResult.viewClassVar,
-                compRenderTypeVar: viewResult.componentRenderTypeVar
-            };
+            return { viewClassVar: viewResult.viewClassVar, compRenderTypeVar: viewResult.rendererTypeVar };
         };
         /**
          * @param {?} fileUrl
@@ -27734,8 +27740,8 @@
         var /** @type {?} */ normalizer = new exports.DirectiveNormalizer({ get: function (url) { return compilerHost.loadResource(url); } }, urlResolver, htmlParser, config);
         var /** @type {?} */ expressionParser = new exports.Parser(new exports.Lexer());
         var /** @type {?} */ elementSchemaRegistry = new exports.DomElementSchemaRegistry();
-        var /** @type {?} */ tmplParser = new exports.TemplateParser(expressionParser, elementSchemaRegistry, htmlParser, console, []);
-        var /** @type {?} */ resolver = new exports.CompileMetadataResolver(new exports.NgModuleResolver(staticReflector), new exports.DirectiveResolver(staticReflector), new exports.PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+        var /** @type {?} */ tmplParser = new exports.TemplateParser(config, expressionParser, elementSchemaRegistry, htmlParser, console, []);
+        var /** @type {?} */ resolver = new exports.CompileMetadataResolver(config, new exports.NgModuleResolver(staticReflector), new exports.DirectiveResolver(staticReflector), new exports.PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
         // TODO(vicb): do not pass options.i18nFormat here
         var /** @type {?} */ importResolver = {
             getImportAs: function (symbol) { return symbolResolver.getImportAs(symbol); },
@@ -28604,9 +28610,8 @@
          * @param {?} _directiveWrapperCompiler
          * @param {?} _compilerConfig
          * @param {?} _animationParser
-         * @param {?} _useViewEngine
          */
-        function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _directiveWrapperCompiler, _compilerConfig, _animationParser, _useViewEngine) {
+        function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _directiveWrapperCompiler, _compilerConfig, _animationParser) {
             this._injector = _injector;
             this._metadataResolver = _metadataResolver;
             this._templateParser = _templateParser;
@@ -28616,7 +28621,6 @@
             this._directiveWrapperCompiler = _directiveWrapperCompiler;
             this._compilerConfig = _compilerConfig;
             this._animationParser = _animationParser;
-            this._useViewEngine = _useViewEngine;
             this._compiledTemplateCache = new Map();
             this._compiledHostTemplateCache = new Map();
             this._compiledDirectiveWrapperCache = new Map();
@@ -28859,7 +28863,7 @@
          * @return {?}
          */
         JitCompiler.prototype._compileDirectiveWrapper = function (dirMeta, moduleMeta) {
-            if (this._useViewEngine) {
+            if (this._compilerConfig.useViewEngine) {
                 return;
             }
             var /** @type {?} */ compileResult = this._directiveWrapperCompiler.compile(dirMeta);
@@ -28897,15 +28901,15 @@
             var /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), usedPipes, compiledAnimations);
             var /** @type {?} */ statements = (_b = stylesCompileResult.componentStylesheet.statements).concat.apply(_b, compiledAnimations.map(function (ca) { return ca.statements; })).concat(compileResult.statements);
             var /** @type {?} */ viewClass;
-            var /** @type {?} */ componentRenderType;
+            var /** @type {?} */ rendererType;
             if (!this._compilerConfig.useJit) {
-                _c = interpretStatements(statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]), viewClass = _c[0], componentRenderType = _c[1];
+                _c = interpretStatements(statements, [compileResult.viewClassVar, compileResult.rendererTypeVar]), viewClass = _c[0], rendererType = _c[1];
             }
             else {
                 var /** @type {?} */ sourceUrl = "/" + identifierName(template.ngModule.type) + "/" + identifierName(template.compType) + "/" + (template.isHost ? 'host' : 'component') + ".ngfactory.js";
-                _d = jitStatements(sourceUrl, statements, [compileResult.viewClassVar, compileResult.componentRenderTypeVar]), viewClass = _d[0], componentRenderType = _d[1];
+                _d = jitStatements(sourceUrl, statements, [compileResult.viewClassVar, compileResult.rendererTypeVar]), viewClass = _d[0], rendererType = _d[1];
             }
-            template.compiled(viewClass, componentRenderType);
+            template.compiled(viewClass, rendererType);
             var _b, _c, _d;
         };
         /**
@@ -28937,19 +28941,6 @@
         };
         return JitCompiler;
     }());
-    /** @nocollapse */
-    exports.JitCompiler.ctorParameters = function () { return [
-        { type: _angular_core.Injector, },
-        { type: exports.CompileMetadataResolver, },
-        { type: exports.TemplateParser, },
-        { type: exports.StyleCompiler, },
-        { type: exports.ViewCompiler, },
-        { type: exports.NgModuleCompiler, },
-        { type: exports.DirectiveWrapperCompiler, },
-        { type: CompilerConfig, },
-        { type: exports.AnimationParser, },
-        { type: undefined, decorators: [{ type: _angular_core.Inject, args: [USE_VIEW_ENGINE,] },] },
-    ]; };
     exports.JitCompiler = __decorate$17([
         CompilerInjectable(),
         __metadata$14("design:paramtypes", [_angular_core.Injector,
@@ -28960,7 +28951,7 @@
             exports.NgModuleCompiler,
             exports.DirectiveWrapperCompiler,
             CompilerConfig,
-            exports.AnimationParser, Boolean])
+            exports.AnimationParser])
     ], exports.JitCompiler);
     var CompiledTemplate = (function () {
         /**
@@ -28981,14 +28972,14 @@
         }
         /**
          * @param {?} viewClass
-         * @param {?} componentRenderType
+         * @param {?} rendererType
          * @return {?}
          */
-        CompiledTemplate.prototype.compiled = function (viewClass, componentRenderType) {
+        CompiledTemplate.prototype.compiled = function (viewClass, rendererType) {
             this._viewClass = viewClass;
             ((this.compMeta.componentViewType)).setDelegate(viewClass);
-            for (var /** @type {?} */ prop in componentRenderType) {
-                ((this.compMeta.componentRenderType))[prop] = componentRenderType[prop];
+            for (var /** @type {?} */ prop in rendererType) {
+                ((this.compMeta.rendererType))[prop] = rendererType[prop];
             }
             this.isCompiled = true;
         };
@@ -29256,7 +29247,7 @@
             });
             var /** @type {?} */ normalizer = new exports.DirectiveNormalizer({ get: function (url) { return host.loadResource(url); } }, urlResolver, htmlParser, config);
             var /** @type {?} */ elementSchemaRegistry = new exports.DomElementSchemaRegistry();
-            var /** @type {?} */ resolver = new exports.CompileMetadataResolver(new exports.NgModuleResolver(staticReflector), new exports.DirectiveResolver(staticReflector), new exports.PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+            var /** @type {?} */ resolver = new exports.CompileMetadataResolver(config, new exports.NgModuleResolver(staticReflector), new exports.DirectiveResolver(staticReflector), new exports.PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
             // TODO(vicb): implicit tags & attributes
             var /** @type {?} */ messageBundle = new MessageBundle(htmlParser, [], {});
             var /** @type {?} */ extractor = new Extractor(host, staticSymbolResolver, messageBundle, resolver);
@@ -29315,9 +29306,9 @@
             var /** @type {?} */ embeddedViewCount = 0;
             var /** @type {?} */ staticQueryIds = findStaticQueryIds(template);
             var /** @type {?} */ statements = [];
-            var /** @type {?} */ renderComponentVar = variable(componentRenderTypeName(component.type.reference));
+            var /** @type {?} */ renderComponentVar = variable(rendererTypeName(component.type.reference));
             statements.push(renderComponentVar
-                .set(importExpr(createIdentifier(Identifiers.createComponentRenderTypeV2)).callFn([
+                .set(importExpr(createIdentifier(Identifiers.createRendererTypeV2)).callFn([
                 new LiteralMapExpr([
                     new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
                     new LiteralMapEntry('styles', styles),
@@ -29329,11 +29320,11 @@
             var /** @type {?} */ viewBuilderFactory = function (parent) {
                 var /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
                 var /** @type {?} */ viewName = viewClassName(component.type.reference, embeddedViewIndex);
-                return new ViewBuilder(parent, viewName, usedPipes, staticQueryIds, viewBuilderFactory);
+                return new ViewBuilder(parent, component, viewName, usedPipes, staticQueryIds, viewBuilderFactory);
             };
             var /** @type {?} */ visitor = viewBuilderFactory(null);
             visitor.visitAll([], template);
-            statements.push.apply(statements, visitor.build(component));
+            statements.push.apply(statements, visitor.build());
             return new ViewCompileResult(statements, visitor.viewName, renderComponentVar.name, []);
         };
         return ViewCompilerNext;
@@ -29352,13 +29343,15 @@
     var ViewBuilder = (function () {
         /**
          * @param {?} parent
+         * @param {?} component
          * @param {?} viewName
          * @param {?} usedPipes
          * @param {?} staticQueryIds
          * @param {?} viewBuilderFactory
          */
-        function ViewBuilder(parent, viewName, usedPipes, staticQueryIds, viewBuilderFactory) {
+        function ViewBuilder(parent, component, viewName, usedPipes, staticQueryIds, viewBuilderFactory) {
             this.parent = parent;
+            this.component = component;
             this.viewName = viewName;
             this.usedPipes = usedPipes;
             this.staticQueryIds = staticQueryIds;
@@ -29388,6 +29381,25 @@
                     }
                 });
             }
+            if (!this.parent) {
+                var /** @type {?} */ queryIds_1 = staticViewQueryIds(this.staticQueryIds);
+                this.component.viewQueries.forEach(function (query, queryIndex) {
+                    // Note: queries start with id 1 so we can use the number in a Bloom filter!
+                    var /** @type {?} */ queryId = queryIndex + 1;
+                    var /** @type {?} */ bindingType = query.first ? viewEngine.QueryBindingType.First : viewEngine.QueryBindingType.All;
+                    var /** @type {?} */ flags = viewEngine.NodeFlags.HasViewQuery;
+                    if (queryIds_1.staticQueryIds.has(queryId)) {
+                        flags |= viewEngine.NodeFlags.HasStaticQuery;
+                    }
+                    else {
+                        flags |= viewEngine.NodeFlags.HasDynamicQuery;
+                    }
+                    _this.nodeDefs.push(importExpr(createIdentifier(Identifiers.queryDef)).callFn([
+                        literal(flags), literal(queryId),
+                        new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
+                    ]));
+                });
+            }
             templateVisitAll(this, astNodes);
             if (astNodes.length === 0 ||
                 (this.parent && needsAdditionalRootNode(astNodes[astNodes.length - 1]))) {
@@ -29399,15 +29411,14 @@
             }
         };
         /**
-         * @param {?} component
          * @param {?=} targetStatements
          * @return {?}
          */
-        ViewBuilder.prototype.build = function (component, targetStatements) {
+        ViewBuilder.prototype.build = function (targetStatements) {
             var _this = this;
             if (targetStatements === void 0) { targetStatements = []; }
-            var /** @type {?} */ compType = importType(component.type);
-            this.children.forEach(function (child) { child.build(component, targetStatements); });
+            var /** @type {?} */ compType = importType(this.component.type);
+            this.children.forEach(function (child) { return child.build(targetStatements); });
             var /** @type {?} */ updateDirectivesFn = this._createUpdateFn(this.updateDirectivesExpressions, compType);
             var /** @type {?} */ updateRendererFn = this._createUpdateFn(this.updateRendererExpressions, compType);
             var /** @type {?} */ handleEventStmts = [];
@@ -29441,7 +29452,7 @@
                 handleEventFn = NULL_EXPR;
             }
             var /** @type {?} */ viewFlags = viewEngine.ViewFlags.None;
-            if (!this.parent && component.changeDetection === _angular_core.ChangeDetectionStrategy.OnPush) {
+            if (!this.parent && this.component.changeDetection === _angular_core.ChangeDetectionStrategy.OnPush) {
                 viewFlags |= viewEngine.ViewFlags.OnPush;
             }
             var /** @type {?} */ viewFactory = new DeclareFunctionStmt(this.viewName, [], [new ReturnStatement(importExpr(createIdentifier(Identifiers.viewDef)).callFn([
@@ -29551,23 +29562,29 @@
             var /** @type {?} */ nodeIndex = this.nodeDefs.length;
             // reserve the space in the nodeDefs array so we can add children
             this.nodeDefs.push(null);
-            var _a = this._visitElementOrTemplate(nodeIndex, ast), flags = _a.flags, usedEvents = _a.usedEvents, queryMatchesExpr = _a.queryMatchesExpr, hostBindings = _a.hostBindings;
-            templateVisitAll(this, ast.children);
-            ast.inputs.forEach(function (inputAst) { hostBindings.push({ context: COMP_VAR, value: inputAst.value }); });
-            this._addUpdateExpressions(nodeIndex, hostBindings, this.updateRendererExpressions);
-            var /** @type {?} */ inputDefs = elementBindingDefs(ast.inputs);
-            ast.directives.forEach(function (dirAst, dirIndex) { inputDefs.push.apply(inputDefs, elementBindingDefs(dirAst.hostProperties)); });
-            var /** @type {?} */ outputDefs = usedEvents.map(function (_a) {
-                var target = _a[0], eventName = _a[1];
-                return target ? literalArr([literal(target), literal(eventName)]) :
-                    literal(eventName);
-            });
-            var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
             var /** @type {?} */ elName = ast.name;
             if (ast.name === NG_CONTAINER_TAG$1) {
                 // Using a null element name creates an anchor.
                 elName = null;
             }
+            var _a = this._visitElementOrTemplate(nodeIndex, ast), flags = _a.flags, usedEvents = _a.usedEvents, queryMatchesExpr = _a.queryMatchesExpr, hostBindings = _a.hostBindings;
+            var /** @type {?} */ inputDefs = [];
+            var /** @type {?} */ outputDefs = [];
+            if (elName) {
+                ast.inputs.forEach(function (inputAst) { hostBindings.push({ context: COMP_VAR, value: inputAst.value }); });
+                if (hostBindings.length) {
+                    this._addUpdateExpressions(nodeIndex, hostBindings, this.updateRendererExpressions);
+                }
+                inputDefs = elementBindingDefs(ast.inputs);
+                ast.directives.forEach(function (dirAst, dirIndex) { return inputDefs.push.apply(inputDefs, elementBindingDefs(dirAst.hostProperties)); });
+                outputDefs = usedEvents.map(function (_a) {
+                    var target = _a[0], eventName = _a[1];
+                    return target ? literalArr([literal(target), literal(eventName)]) :
+                        literal(eventName);
+                });
+            }
+            templateVisitAll(this, ast.children);
+            var /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
             // elementDef(
             //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], ngContentIndex: number,
             //   childCount: number, name: string, fixedAttrs: {[name: string]: string} = {},
@@ -29578,7 +29595,7 @@
             //   outputs?: (string | [string, string])[]): NodeDef;
             this.nodeDefs[nodeIndex] = importExpr(createIdentifier(Identifiers.elementDef)).callFn([
                 literal(flags), queryMatchesExpr, literal(ast.ngContentIndex), literal(childCount),
-                literal(elName), fixedAttrsDef(ast),
+                literal(elName), elName ? fixedAttrsDef(ast) : NULL_EXPR,
                 inputDefs.length ? literalArr(inputDefs) : NULL_EXPR,
                 outputDefs.length ? literalArr(outputDefs) : NULL_EXPR
             ]);
@@ -29683,22 +29700,6 @@
             var /** @type {?} */ nodeIndex = this.nodeDefs.length;
             // reserve the space in the nodeDefs array so we can add children
             this.nodeDefs.push(null);
-            directiveAst.directive.viewQueries.forEach(function (query, queryIndex) {
-                // Note: queries start with id 1 so we can use the number in a Bloom filter!
-                var /** @type {?} */ queryId = queryIndex + 1;
-                var /** @type {?} */ bindingType = query.first ? viewEngine.QueryBindingType.First : viewEngine.QueryBindingType.All;
-                var /** @type {?} */ flags = viewEngine.NodeFlags.HasViewQuery;
-                if (queryIds.staticQueryIds.has(queryId)) {
-                    flags |= viewEngine.NodeFlags.HasStaticQuery;
-                }
-                else {
-                    flags |= viewEngine.NodeFlags.HasDynamicQuery;
-                }
-                _this.nodeDefs.push(importExpr(createIdentifier(Identifiers.queryDef)).callFn([
-                    literal(flags), literal(queryId),
-                    new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
-                ]));
-            });
             directiveAst.directive.queries.forEach(function (query, queryIndex) {
                 var /** @type {?} */ flags = viewEngine.NodeFlags.HasContentQuery;
                 var /** @type {?} */ queryId = directiveAst.contentQueryStartId + queryIndex;
@@ -29726,11 +29727,11 @@
                     queryMatchExprs.push(literalArr([literal(ref.name), literal(viewEngine.QueryValueType.Provider)]));
                 }
             });
-            var /** @type {?} */ compRenderType = NULL_EXPR;
+            var /** @type {?} */ rendererType = NULL_EXPR;
             var /** @type {?} */ compView = NULL_EXPR;
             if (directiveAst.directive.isComponent) {
                 compView = importExpr({ reference: directiveAst.directive.componentViewType });
-                compRenderType = importExpr({ reference: directiveAst.directive.componentRenderType });
+                rendererType = importExpr({ reference: directiveAst.directive.rendererType });
             }
             var /** @type {?} */ inputDefs = directiveAst.inputs.map(function (inputAst, inputIndex) {
                 var /** @type {?} */ mapValue = literalArr([literal(inputIndex), literal(inputAst.directiveName)]);
@@ -29746,7 +29747,8 @@
                     outputDefs.push(new LiteralMapEntry(propName, literal(eventName), false));
                 }
             });
-            if (directiveAst.inputs.length) {
+            if (directiveAst.inputs.length ||
+                (flags & (viewEngine.NodeFlags.DoCheck | viewEngine.NodeFlags.OnInit)) > 0) {
                 this._addUpdateExpressions(nodeIndex, directiveAst.inputs.map(function (input) { return { context: COMP_VAR, value: input.value }; }), this.updateDirectivesExpressions);
             }
             var /** @type {?} */ dirContextExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
@@ -29768,7 +29770,7 @@
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 literal(childCount), providerExpr, depsExpr,
                 inputDefs.length ? new LiteralMapExpr(inputDefs) : NULL_EXPR,
-                outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR, compView, compRenderType
+                outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR, compView, rendererType
             ]);
             this.nodeDefs[nodeIndex] = nodeDef;
             return { hostBindings: hostBindings, hostEvents: hostEvents };
@@ -29951,9 +29953,6 @@
          */
         ViewBuilder.prototype._addUpdateExpressions = function (nodeIndex, expressions, target) {
             var _this = this;
-            if (expressions.length === 0) {
-                return;
-            }
             var /** @type {?} */ transformedExpressions = expressions.map(function (_a) {
                 var context = _a.context, value = _a.value;
                 if (value instanceof ASTWithSource) {
@@ -30223,10 +30222,7 @@
         var /** @type {?} */ mapEntries = [];
         // Note: We need to sort to get a defined output order
         // for tests and for caching generated artifacts...
-        Object.keys(mapResult).sort().forEach(function (attrName) {
-            mapEntries.push(new LiteralMapEntry(attrName, literal(mapResult[attrName]), true));
-        });
-        return new LiteralMapExpr(mapEntries);
+        return literalArr(Object.keys(mapResult).sort().map(function (attrName) { return literalArr([literal(attrName), literal(mapResult[attrName])]); }));
     }
     /**
      * @param {?} attrName
@@ -30303,12 +30299,26 @@
         return result;
     }
     /**
+     * @param {?} nodeStaticQueryIds
+     * @return {?}
+     */
+    function staticViewQueryIds(nodeStaticQueryIds) {
+        var /** @type {?} */ staticQueryIds = new Set();
+        var /** @type {?} */ dynamicQueryIds = new Set();
+        Array.from(nodeStaticQueryIds.values()).forEach(function (entry) {
+            entry.staticQueryIds.forEach(function (queryId) { return staticQueryIds.add(queryId); });
+            entry.dynamicQueryIds.forEach(function (queryId) { return dynamicQueryIds.add(queryId); });
+        });
+        dynamicQueryIds.forEach(function (queryId) { return staticQueryIds.delete(queryId); });
+        return { staticQueryIds: staticQueryIds, dynamicQueryIds: dynamicQueryIds };
+    }
+    /**
      * @param {?} directives
      * @return {?}
      */
     function createComponentFactoryResolver(directives) {
         var /** @type {?} */ componentDirMeta = directives.find(function (dirAst) { return dirAst.directive.isComponent; });
-        if (componentDirMeta) {
+        if (componentDirMeta && componentDirMeta.directive.entryComponents.length) {
             var /** @type {?} */ entryComponentFactories = componentDirMeta.directive.entryComponents.map(function (entryComponent) { return importExpr({ reference: entryComponent.componentFactory }); });
             var /** @type {?} */ cfrExpr = importExpr(createIdentifier(Identifiers.CodegenComponentFactoryResolver))
                 .instantiate([literalArr(entryComponentFactories)]);
@@ -30353,13 +30363,12 @@
     };
     var /** @type {?} */ baseHtmlParser = new _angular_core.InjectionToken('HtmlParser');
     /**
-     * @param {?} useViewEngine
      * @param {?} cc
      * @param {?} sr
      * @return {?}
      */
-    function viewCompilerFactory(useViewEngine, cc, sr) {
-        return useViewEngine ? new ViewCompilerNext(cc, sr) : new exports.ViewCompiler(cc, sr);
+    function viewCompilerFactory(cc, sr) {
+        return cc.useViewEngine ? new ViewCompilerNext(cc, sr) : new exports.ViewCompiler(cc, sr);
     }
     /**
      * A set of providers that provide `JitCompiler` and its dependencies to use for
@@ -30403,7 +30412,7 @@
         {
             provide: exports.ViewCompiler,
             useFactory: viewCompilerFactory,
-            deps: [USE_VIEW_ENGINE, CompilerConfig, ElementSchemaRegistry]
+            deps: [CompilerConfig, ElementSchemaRegistry]
         },
         exports.NgModuleCompiler,
         exports.DirectiveWrapperCompiler,
@@ -30440,7 +30449,7 @@
             var /** @type {?} */ injector = _angular_core.ReflectiveInjector.resolveAndCreate([
                 COMPILER_PROVIDERS, {
                     provide: CompilerConfig,
-                    useFactory: function () {
+                    useFactory: function (useViewEngine) {
                         return new CompilerConfig({
                             // let explicit values from the compiler options overwrite options
                             // from the app providers. E.g. important for the testing platform.
@@ -30452,10 +30461,10 @@
                             // from the app providers
                             defaultEncapsulation: opts.defaultEncapsulation,
                             logBindingUpdate: opts.useDebug,
-                            missingTranslation: opts.missingTranslation,
+                            missingTranslation: opts.missingTranslation, useViewEngine: useViewEngine
                         });
                     },
-                    deps: []
+                    deps: [USE_VIEW_ENGINE]
                 },
                 opts.providers
             ]);
@@ -30597,7 +30606,7 @@
     exports.identifierName = identifierName;
     exports.identifierModuleUrl = identifierModuleUrl;
     exports.viewClassName = viewClassName;
-    exports.componentRenderTypeName = componentRenderTypeName;
+    exports.rendererTypeName = rendererTypeName;
     exports.hostViewClassName = hostViewClassName;
     exports.dirWrapperClassName = dirWrapperClassName;
     exports.componentFactoryName = componentFactoryName;

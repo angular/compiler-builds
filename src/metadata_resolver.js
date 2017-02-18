@@ -19,7 +19,7 @@ import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
 import { ngfactoryFilePath } from './aot/util';
 import { assertArrayOfStrings, assertInterpolationSymbols } from './assertions';
 import * as cpl from './compile_metadata';
-import { USE_VIEW_ENGINE } from './config';
+import { CompilerConfig } from './config';
 import { DirectiveNormalizer } from './directive_normalizer';
 import { DirectiveResolver } from './directive_resolver';
 import { stringify } from './facade/lang';
@@ -36,6 +36,7 @@ import { MODULE_SUFFIX, ValueTransformer, syntaxError, visitValue } from './util
 export const /** @type {?} */ ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
 let CompileMetadataResolver = class CompileMetadataResolver {
     /**
+     * @param {?} _config
      * @param {?} _ngModuleResolver
      * @param {?} _directiveResolver
      * @param {?} _pipeResolver
@@ -45,9 +46,9 @@ let CompileMetadataResolver = class CompileMetadataResolver {
      * @param {?} _staticSymbolCache
      * @param {?=} _reflector
      * @param {?=} _errorCollector
-     * @param {?=} _useViewEngine
      */
-    constructor(_ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector = reflector, _errorCollector, _useViewEngine) {
+    constructor(_config, _ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector = reflector, _errorCollector) {
+        this._config = _config;
         this._ngModuleResolver = _ngModuleResolver;
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
@@ -57,7 +58,6 @@ let CompileMetadataResolver = class CompileMetadataResolver {
         this._staticSymbolCache = _staticSymbolCache;
         this._reflector = _reflector;
         this._errorCollector = _errorCollector;
-        this._useViewEngine = _useViewEngine;
         this._nonNormalizedDirectiveCache = new Map();
         this._directiveCache = new Map();
         this._summaryCache = new Map();
@@ -168,9 +168,9 @@ let CompileMetadataResolver = class CompileMetadataResolver {
      * @param {?} dirType
      * @return {?}
      */
-    getComponentRenderType(dirType) {
+    getRendererType(dirType) {
         if (dirType instanceof StaticSymbol) {
-            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), cpl.componentRenderTypeName(dirType));
+            return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), cpl.rendererTypeName(dirType));
         }
         else {
             // returning an object as proxy,
@@ -189,7 +189,7 @@ let CompileMetadataResolver = class CompileMetadataResolver {
         }
         else {
             const /** @type {?} */ hostView = this.getHostComponentViewClass(dirType);
-            if (this._useViewEngine) {
+            if (this._config.useViewEngine) {
                 return viewEngine.createComponentFactory(selector, dirType, /** @type {?} */ (hostView));
             }
             else {
@@ -295,7 +295,7 @@ let CompileMetadataResolver = class CompileMetadataResolver {
                 entryComponents: metadata.entryComponents,
                 wrapperType: metadata.wrapperType,
                 componentViewType: metadata.componentViewType,
-                componentRenderType: metadata.componentRenderType,
+                rendererType: metadata.rendererType,
                 componentFactory: metadata.componentFactory,
                 template: templateMetadata
             });
@@ -423,7 +423,7 @@ let CompileMetadataResolver = class CompileMetadataResolver {
             wrapperType: this.getDirectiveWrapperClass(directiveType),
             componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
                 undefined,
-            componentRenderType: nonNormalizedTemplateMetadata ? this.getComponentRenderType(directiveType) : undefined,
+            rendererType: nonNormalizedTemplateMetadata ? this.getRendererType(directiveType) : undefined,
             componentFactory: nonNormalizedTemplateMetadata ?
                 this.getComponentFactory(selector, directiveType) :
                 undefined
@@ -1120,6 +1120,7 @@ let CompileMetadataResolver = class CompileMetadataResolver {
 };
 /** @nocollapse */
 CompileMetadataResolver.ctorParameters = () => [
+    { type: CompilerConfig, },
     { type: NgModuleResolver, },
     { type: DirectiveResolver, },
     { type: PipeResolver, },
@@ -1129,17 +1130,17 @@ CompileMetadataResolver.ctorParameters = () => [
     { type: StaticSymbolCache, decorators: [{ type: Optional },] },
     { type: ReflectorReader, },
     { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
-    { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [USE_VIEW_ENGINE,] },] },
 ];
 CompileMetadataResolver = __decorate([
     CompilerInjectable(),
-    __metadata("design:paramtypes", [NgModuleResolver,
+    __metadata("design:paramtypes", [CompilerConfig,
+        NgModuleResolver,
         DirectiveResolver,
         PipeResolver,
         SummaryResolver,
         ElementSchemaRegistry,
         DirectiveNormalizer,
-        StaticSymbolCache, typeof (_a = typeof ReflectorReader !== "undefined" && ReflectorReader) === "function" && _a || Object, Function, Boolean])
+        StaticSymbolCache, typeof (_a = typeof ReflectorReader !== "undefined" && ReflectorReader) === "function" && _a || Object, Function])
 ], CompileMetadataResolver);
 export { CompileMetadataResolver };
 function CompileMetadataResolver_tsickle_Closure_declarations() {
@@ -1161,6 +1162,8 @@ function CompileMetadataResolver_tsickle_Closure_declarations() {
     /** @type {?} */
     CompileMetadataResolver.prototype._ngModuleOfTypes;
     /** @type {?} */
+    CompileMetadataResolver.prototype._config;
+    /** @type {?} */
     CompileMetadataResolver.prototype._ngModuleResolver;
     /** @type {?} */
     CompileMetadataResolver.prototype._directiveResolver;
@@ -1178,8 +1181,6 @@ function CompileMetadataResolver_tsickle_Closure_declarations() {
     CompileMetadataResolver.prototype._reflector;
     /** @type {?} */
     CompileMetadataResolver.prototype._errorCollector;
-    /** @type {?} */
-    CompileMetadataResolver.prototype._useViewEngine;
 }
 /**
  * @param {?} tree
