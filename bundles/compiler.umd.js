@@ -19522,6 +19522,9 @@
                         else if (paramEntry instanceof _angular_core.Inject) {
                             token = paramEntry.token;
                         }
+                        else if (paramEntry instanceof _angular_core.InjectionToken) {
+                            token = paramEntry;
+                        }
                         else if (isValidType(paramEntry) && token == null) {
                             token = paramEntry;
                         }
