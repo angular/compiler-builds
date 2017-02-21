@@ -26,6 +26,7 @@ import { StyleCompiler } from '../style_compiler';
 import { TemplateParser } from '../template_parser/template_parser';
 import { createOfflineCompileUrlResolver } from '../url_resolver';
 import { ViewCompiler } from '../view_compiler/view_compiler';
+import { ViewCompilerNext } from '../view_compiler_next/view_compiler';
 import { AotCompiler } from './compiler';
 import { StaticAndDynamicReflectionCapabilities } from './static_reflection_capabilities';
 import { StaticReflector } from './static_reflector';
@@ -52,7 +53,8 @@ export function createAotCompiler(compilerHost, options) {
         genDebugInfo: options.debug === true,
         defaultEncapsulation: ViewEncapsulation.Emulated,
         logBindingUpdate: false,
-        useJit: false
+        useJit: false,
+        useViewEngine: options.useViewEngine
     });
     const /** @type {?} */ normalizer = new DirectiveNormalizer({ get: (url) => compilerHost.loadResource(url) }, urlResolver, htmlParser, config);
     const /** @type {?} */ expressionParser = new Parser(new Lexer());
@@ -65,7 +67,9 @@ export function createAotCompiler(compilerHost, options) {
         fileNameToModuleName: (fileName, containingFilePath) => compilerHost.fileNameToModuleName(fileName, containingFilePath),
         getTypeArity: (symbol) => symbolResolver.getTypeArity(symbol)
     };
-    const /** @type {?} */ compiler = new AotCompiler(compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), new ViewCompiler(config, elementSchemaRegistry), new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), symbolResolver);
+    const /** @type {?} */ viewCompiler = config.useViewEngine ? new ViewCompilerNext(config, elementSchemaRegistry) :
+        new ViewCompiler(config, elementSchemaRegistry);
+    const /** @type {?} */ compiler = new AotCompiler(config, compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new DirectiveWrapperCompiler(config, expressionParser, elementSchemaRegistry, console), new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, new AnimationParser(elementSchemaRegistry), symbolResolver);
     return { compiler, reflector: staticReflector };
 }
 //# sourceMappingURL=compiler_factory.js.map

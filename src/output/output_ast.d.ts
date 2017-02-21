@@ -23,7 +23,7 @@ export declare enum BuiltinTypeName {
     Int = 3,
     Number = 4,
     Function = 5,
-    Null = 6,
+    Inferred = 6,
 }
 export declare class BuiltinType extends Type {
     name: BuiltinTypeName;
@@ -46,12 +46,12 @@ export declare class MapType extends Type {
     visitType(visitor: TypeVisitor, context: any): any;
 }
 export declare const DYNAMIC_TYPE: BuiltinType;
+export declare const INFERRED_TYPE: BuiltinType;
 export declare const BOOL_TYPE: BuiltinType;
 export declare const INT_TYPE: BuiltinType;
 export declare const NUMBER_TYPE: BuiltinType;
 export declare const STRING_TYPE: BuiltinType;
 export declare const FUNCTION_TYPE: BuiltinType;
-export declare const NULL_TYPE: BuiltinType;
 export interface TypeVisitor {
     visitBuiltintType(type: BuiltinType, context: any): any;
     visitExpressionType(type: ExpressionType, context: any): any;

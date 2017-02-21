@@ -133,7 +133,10 @@ let CompileMetadataResolver = class CompileMetadataResolver {
      * @return {?}
      */
     getDirectiveWrapperClass(dirType) {
-        return this.getGeneratedClass(dirType, cpl.dirWrapperClassName(dirType));
+        if (!this._config.useViewEngine) {
+            return this.getGeneratedClass(dirType, cpl.dirWrapperClassName(dirType));
+        }
+        return null;
     }
     /**
      * @param {?} dirType

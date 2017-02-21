@@ -1,5 +1,6 @@
 import { AnimationParser } from '../animation/animation_parser';
 import { CompileNgModuleMetadata } from '../compile_metadata';
+import { CompilerConfig } from '../config';
 import { DirectiveWrapperCompiler } from '../directive_wrapper_compiler';
 import { CompileMetadataResolver } from '../metadata_resolver';
 import { NgModuleCompiler } from '../ng_module_compiler';
@@ -13,6 +14,7 @@ import { GeneratedFile } from './generated_file';
 import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
 export declare class AotCompiler {
+    private _config;
     private _host;
     private _metadataResolver;
     private _templateParser;
@@ -27,7 +29,7 @@ export declare class AotCompiler {
     private _animationParser;
     private _symbolResolver;
     private _animationCompiler;
-    constructor(_host: AotCompilerHost, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string, _translationFormat: string, _animationParser: AnimationParser, _symbolResolver: StaticSymbolResolver);
+    constructor(_config: CompilerConfig, _host: AotCompilerHost, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string, _translationFormat: string, _animationParser: AnimationParser, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     compileAll(rootFiles: string[]): Promise<GeneratedFile[]>;
     private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);

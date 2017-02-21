@@ -16,6 +16,7 @@ import { serializeSummaries } from './summary_serializer';
 import { ngfactoryFilePath, splitTypescriptSuffix, summaryFileName } from './util';
 export class AotCompiler {
     /**
+     * @param {?} _config
      * @param {?} _host
      * @param {?} _metadataResolver
      * @param {?} _templateParser
@@ -30,7 +31,8 @@ export class AotCompiler {
      * @param {?} _animationParser
      * @param {?} _symbolResolver
      */
-    constructor(_host, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _animationParser, _symbolResolver) {
+    constructor(_config, _host, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _animationParser, _symbolResolver) {
+        this._config = _config;
         this._host = _host;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
@@ -82,7 +84,9 @@ export class AotCompiler {
         // compile all ng modules
         exportedVars.push(...ngModules.map((ngModuleType) => this._compileModule(ngModuleType, statements)));
         // compile directive wrappers
-        exportedVars.push(...directives.map((directiveType) => this._compileDirectiveWrapper(directiveType, statements)));
+        if (!this._config.useViewEngine) {
+            exportedVars.push(...directives.map((directiveType) => this._compileDirectiveWrapper(directiveType, statements)));
+        }
         // compile components
         directives.forEach((dirType) => {
             const /** @type {?} */ compMeta = this._metadataResolver.getDirectiveMetadata(/** @type {?} */ (dirType));
@@ -183,14 +187,25 @@ export class AotCompiler {
         const /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements)
             .viewClassVar;
         const /** @type {?} */ compFactoryVar = componentFactoryName(compMeta.type.reference);
-        targetStatements.push(o.variable(compFactoryVar)
-            .set(o.importExpr(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)])
-            .instantiate([
-            o.literal(compMeta.selector),
-            o.variable(hostViewFactoryVar),
-            o.importExpr(compMeta.type),
-        ], o.importType(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const])))
-            .toDeclStmt(null, [o.StmtModifier.Final]));
+        if (this._config.useViewEngine) {
+            targetStatements.push(o.variable(compFactoryVar)
+                .set(o.importExpr(createIdentifier(Identifiers.createComponentFactory)).callFn([
+                o.literal(compMeta.selector),
+                o.importExpr(compMeta.type),
+                o.variable(hostViewFactoryVar),
+            ]))
+                .toDeclStmt(o.importType(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const]), [o.StmtModifier.Final]));
+        }
+        else {
+            targetStatements.push(o.variable(compFactoryVar)
+                .set(o.importExpr(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)])
+                .instantiate([
+                o.literal(compMeta.selector),
+                o.variable(hostViewFactoryVar),
+                o.importExpr(compMeta.type),
+            ], o.importType(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const])))
+                .toDeclStmt(null, [o.StmtModifier.Final]));
+        }
         return compFactoryVar;
     }
     /**
@@ -241,6 +256,8 @@ export class AotCompiler {
 function AotCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     AotCompiler.prototype._animationCompiler;
+    /** @type {?} */
+    AotCompiler.prototype._config;
     /** @type {?} */
     AotCompiler.prototype._host;
     /** @type {?} */

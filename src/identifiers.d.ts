@@ -90,6 +90,9 @@ export declare class Identifiers {
     static ngContentDef: IdentifierSpec;
     static unwrapValue: IdentifierSpec;
     static createRendererTypeV2: IdentifierSpec;
+    static RendererTypeV2: IdentifierSpec;
+    static ViewDefinition: IdentifierSpec;
+    static createComponentFactory: IdentifierSpec;
 }
 export declare function assetUrl(pkg: string, path?: string, type?: string): string;
 export declare function resolveIdentifier(identifier: IdentifierSpec): any;

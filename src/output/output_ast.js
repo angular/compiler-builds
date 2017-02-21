@@ -46,14 +46,14 @@ BuiltinTypeName.String = 2;
 BuiltinTypeName.Int = 3;
 BuiltinTypeName.Number = 4;
 BuiltinTypeName.Function = 5;
-BuiltinTypeName.Null = 6;
+BuiltinTypeName.Inferred = 6;
 BuiltinTypeName[BuiltinTypeName.Dynamic] = "Dynamic";
 BuiltinTypeName[BuiltinTypeName.Bool] = "Bool";
 BuiltinTypeName[BuiltinTypeName.String] = "String";
 BuiltinTypeName[BuiltinTypeName.Int] = "Int";
 BuiltinTypeName[BuiltinTypeName.Number] = "Number";
 BuiltinTypeName[BuiltinTypeName.Function] = "Function";
-BuiltinTypeName[BuiltinTypeName.Null] = "Null";
+BuiltinTypeName[BuiltinTypeName.Inferred] = "Inferred";
 export class BuiltinType extends Type {
     /**
      * @param {?} name
@@ -141,12 +141,12 @@ function MapType_tsickle_Closure_declarations() {
     MapType.prototype.valueType;
 }
 export const /** @type {?} */ DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
+export const /** @type {?} */ INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
 export const /** @type {?} */ BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
 export const /** @type {?} */ INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
 export const /** @type {?} */ NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
 export const /** @type {?} */ STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
 export const /** @type {?} */ FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
-export const /** @type {?} */ NULL_TYPE = new BuiltinType(BuiltinTypeName.Null);
 export let BinaryOperator = {};
 BinaryOperator.Equals = 0;
 BinaryOperator.NotEquals = 1;
@@ -996,7 +996,7 @@ export const /** @type {?} */ SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super);
 export const /** @type {?} */ CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
 export const /** @type {?} */ CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
 export const /** @type {?} */ NULL_EXPR = new LiteralExpr(null, null);
-export const /** @type {?} */ TYPED_NULL_EXPR = new LiteralExpr(null, NULL_TYPE);
+export const /** @type {?} */ TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE);
 export let StmtModifier = {};
 StmtModifier.Final = 0;
 StmtModifier.Private = 1;
