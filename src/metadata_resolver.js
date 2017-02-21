@@ -890,6 +890,9 @@ var CompileMetadataResolver = (function () {
                     else if (paramEntry instanceof Inject) {
                         token = paramEntry.token;
                     }
+                    else if (paramEntry instanceof InjectionToken) {
+                        token = paramEntry;
+                    }
                     else if (isValidType(paramEntry) && token == null) {
                         token = paramEntry;
                     }
