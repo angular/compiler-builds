@@ -134,7 +134,7 @@ var _TsEmitterVisitor = (function (_super) {
      */
     _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
         var /** @type {?} */ value = ast.value;
-        if (isBlank(value) && ast.type != o.NULL_TYPE) {
+        if (isBlank(value) && ast.type != o.INFERRED_TYPE) {
             ctx.print(ast, "(" + value + " as any)");
             return null;
         }
@@ -192,8 +192,8 @@ var _TsEmitterVisitor = (function (_super) {
         else {
             ctx.print(stmt, "var");
         }
-        ctx.print(stmt, " " + stmt.name + ":");
-        this.visitType(stmt.type, ctx);
+        ctx.print(stmt, " " + stmt.name);
+        this._printColonType(stmt.type, ctx);
         ctx.print(stmt, " = ");
         stmt.value.visitExpression(this, ctx);
         ctx.println(stmt, ";");
@@ -269,8 +269,7 @@ var _TsEmitterVisitor = (function (_super) {
             ctx.print(null, "/*private*/ ");
         }
         ctx.print(null, field.name);
-        ctx.print(null, ':');
-        this.visitType(field.type, ctx);
+        this._printColonType(field.type, ctx);
         ctx.println(null, ";");
     };
     /**
@@ -283,8 +282,7 @@ var _TsEmitterVisitor = (function (_super) {
             ctx.print(null, "private ");
         }
         ctx.print(null, "get " + getter.name + "()");
-        ctx.print(null, ':');
-        this.visitType(getter.type, ctx);
+        this._printColonType(getter.type, ctx);
         ctx.println(null, " {");
         ctx.incIndent();
         this.visitAllStatements(getter.body, ctx);
@@ -316,8 +314,8 @@ var _TsEmitterVisitor = (function (_super) {
         }
         ctx.print(null, method.name + "(");
         this._visitParams(method.params, ctx);
-        ctx.print(null, "):");
-        this.visitType(method.type, ctx, 'void');
+        ctx.print(null, ")");
+        this._printColonType(method.type, ctx, 'void');
         ctx.println(null, " {");
         ctx.incIndent();
         this.visitAllStatements(method.body, ctx);
@@ -332,8 +330,8 @@ var _TsEmitterVisitor = (function (_super) {
     _TsEmitterVisitor.prototype.visitFunctionExpr = function (ast, ctx) {
         ctx.print(ast, "(");
         this._visitParams(ast.params, ctx);
-        ctx.print(ast, "):");
-        this.visitType(ast.type, ctx, 'void');
+        ctx.print(ast, ")");
+        this._printColonType(ast.type, ctx, 'void');
         ctx.println(ast, " => {");
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
@@ -352,8 +350,8 @@ var _TsEmitterVisitor = (function (_super) {
         }
         ctx.print(stmt, "function " + stmt.name + "(");
         this._visitParams(stmt.params, ctx);
-        ctx.print(stmt, "):");
-        this.visitType(stmt.type, ctx, 'void');
+        ctx.print(stmt, ")");
+        this._printColonType(stmt.type, ctx, 'void');
         ctx.println(stmt, " {");
         ctx.incIndent();
         this.visitAllStatements(stmt.statements, ctx);
@@ -473,8 +471,7 @@ var _TsEmitterVisitor = (function (_super) {
         var _this = this;
         this.visitAllObjects(function (param) {
             ctx.print(null, param.name);
-            ctx.print(null, ':');
-            _this.visitType(param.type, ctx);
+            _this._printColonType(param.type, ctx);
         }, params, ctx, ',');
     };
     /**
@@ -541,6 +538,18 @@ var _TsEmitterVisitor = (function (_super) {
                 }
                 ctx.print(null, ">");
             }
+        }
+    };
+    /**
+     * @param {?} type
+     * @param {?} ctx
+     * @param {?=} defaultType
+     * @return {?}
+     */
+    _TsEmitterVisitor.prototype._printColonType = function (type, ctx, defaultType) {
+        if (type !== o.INFERRED_TYPE) {
+            ctx.print(null, ':');
+            this.visitType(type, ctx, defaultType);
         }
     };
     return _TsEmitterVisitor;

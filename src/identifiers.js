@@ -345,6 +345,25 @@ Identifiers.createRendererTypeV2 = {
     member: 'createRendererTypeV2',
     runtime: ɵviewEngine.createRendererTypeV2
 };
+Identifiers.RendererTypeV2 = {
+    name: 'RendererTypeV2',
+    moduleUrl: CORE,
+    // type only
+    runtime: null
+};
+Identifiers.ViewDefinition = {
+    name: 'ɵviewEngine',
+    moduleUrl: CORE,
+    member: 'ViewDefinition',
+    // type only
+    runtime: null
+};
+Identifiers.createComponentFactory = {
+    name: 'ɵviewEngine',
+    moduleUrl: CORE,
+    member: 'createComponentFactory',
+    runtime: ɵviewEngine.createComponentFactory
+};
 function Identifiers_tsickle_Closure_declarations() {
     /** @type {?} */
     Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS;
@@ -514,6 +533,12 @@ function Identifiers_tsickle_Closure_declarations() {
     Identifiers.unwrapValue;
     /** @type {?} */
     Identifiers.createRendererTypeV2;
+    /** @type {?} */
+    Identifiers.RendererTypeV2;
+    /** @type {?} */
+    Identifiers.ViewDefinition;
+    /** @type {?} */
+    Identifiers.createComponentFactory;
 }
 /**
  * @param {?} pkg

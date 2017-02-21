@@ -54,14 +54,14 @@ BuiltinTypeName.String = 2;
 BuiltinTypeName.Int = 3;
 BuiltinTypeName.Number = 4;
 BuiltinTypeName.Function = 5;
-BuiltinTypeName.Null = 6;
+BuiltinTypeName.Inferred = 6;
 BuiltinTypeName[BuiltinTypeName.Dynamic] = "Dynamic";
 BuiltinTypeName[BuiltinTypeName.Bool] = "Bool";
 BuiltinTypeName[BuiltinTypeName.String] = "String";
 BuiltinTypeName[BuiltinTypeName.Int] = "Int";
 BuiltinTypeName[BuiltinTypeName.Number] = "Number";
 BuiltinTypeName[BuiltinTypeName.Function] = "Function";
-BuiltinTypeName[BuiltinTypeName.Null] = "Null";
+BuiltinTypeName[BuiltinTypeName.Inferred] = "Inferred";
 var BuiltinType = (function (_super) {
     __extends(BuiltinType, _super);
     /**
@@ -169,12 +169,12 @@ function MapType_tsickle_Closure_declarations() {
     MapType.prototype.valueType;
 }
 export var /** @type {?} */ DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
+export var /** @type {?} */ INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
 export var /** @type {?} */ BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
 export var /** @type {?} */ INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
 export var /** @type {?} */ NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
 export var /** @type {?} */ STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
 export var /** @type {?} */ FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
-export var /** @type {?} */ NULL_TYPE = new BuiltinType(BuiltinTypeName.Null);
 export var BinaryOperator = {};
 BinaryOperator.Equals = 0;
 BinaryOperator.NotEquals = 1;
@@ -1127,7 +1127,7 @@ export var /** @type {?} */ SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super);
 export var /** @type {?} */ CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
 export var /** @type {?} */ CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
 export var /** @type {?} */ NULL_EXPR = new LiteralExpr(null, null);
-export var /** @type {?} */ TYPED_NULL_EXPR = new LiteralExpr(null, NULL_TYPE);
+export var /** @type {?} */ TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE);
 export var StmtModifier = {};
 StmtModifier.Final = 0;
 StmtModifier.Private = 1;

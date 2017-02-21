@@ -16,6 +16,7 @@ import { serializeSummaries } from './summary_serializer';
 import { ngfactoryFilePath, splitTypescriptSuffix, summaryFileName } from './util';
 var AotCompiler = (function () {
     /**
+     * @param {?} _config
      * @param {?} _host
      * @param {?} _metadataResolver
      * @param {?} _templateParser
@@ -30,7 +31,8 @@ var AotCompiler = (function () {
      * @param {?} _animationParser
      * @param {?} _symbolResolver
      */
-    function AotCompiler(_host, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _animationParser, _symbolResolver) {
+    function AotCompiler(_config, _host, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _dirWrapperCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _animationParser, _symbolResolver) {
+        this._config = _config;
         this._host = _host;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
@@ -84,7 +86,9 @@ var AotCompiler = (function () {
         // compile all ng modules
         exportedVars.push.apply(exportedVars, ngModules.map(function (ngModuleType) { return _this._compileModule(ngModuleType, statements); }));
         // compile directive wrappers
-        exportedVars.push.apply(exportedVars, directives.map(function (directiveType) { return _this._compileDirectiveWrapper(directiveType, statements); }));
+        if (!this._config.useViewEngine) {
+            exportedVars.push.apply(exportedVars, directives.map(function (directiveType) { return _this._compileDirectiveWrapper(directiveType, statements); }));
+        }
         // compile components
         directives.forEach(function (dirType) {
             var /** @type {?} */ compMeta = _this._metadataResolver.getDirectiveMetadata(/** @type {?} */ (dirType));
@@ -181,14 +185,25 @@ var AotCompiler = (function () {
         var /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements)
             .viewClassVar;
         var /** @type {?} */ compFactoryVar = componentFactoryName(compMeta.type.reference);
-        targetStatements.push(o.variable(compFactoryVar)
-            .set(o.importExpr(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)])
-            .instantiate([
-            o.literal(compMeta.selector),
-            o.variable(hostViewFactoryVar),
-            o.importExpr(compMeta.type),
-        ], o.importType(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const])))
-            .toDeclStmt(null, [o.StmtModifier.Final]));
+        if (this._config.useViewEngine) {
+            targetStatements.push(o.variable(compFactoryVar)
+                .set(o.importExpr(createIdentifier(Identifiers.createComponentFactory)).callFn([
+                o.literal(compMeta.selector),
+                o.importExpr(compMeta.type),
+                o.variable(hostViewFactoryVar),
+            ]))
+                .toDeclStmt(o.importType(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const]), [o.StmtModifier.Final]));
+        }
+        else {
+            targetStatements.push(o.variable(compFactoryVar)
+                .set(o.importExpr(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)])
+                .instantiate([
+                o.literal(compMeta.selector),
+                o.variable(hostViewFactoryVar),
+                o.importExpr(compMeta.type),
+            ], o.importType(createIdentifier(Identifiers.ComponentFactory), [o.importType(compMeta.type)], [o.TypeModifier.Const])))
+                .toDeclStmt(null, [o.StmtModifier.Final]));
+        }
         return compFactoryVar;
     };
     /**
@@ -242,6 +257,8 @@ export { AotCompiler };
 function AotCompiler_tsickle_Closure_declarations() {
     /** @type {?} */
     AotCompiler.prototype._animationCompiler;
+    /** @type {?} */
+    AotCompiler.prototype._config;
     /** @type {?} */
     AotCompiler.prototype._host;
     /** @type {?} */
