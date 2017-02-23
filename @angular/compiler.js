@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.8-e8d2743
+ * @license Angular v4.0.0-beta.8-4301dce
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-e8d2743');
+const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-4301dce');
 
 /**
  * @license
@@ -23722,8 +23722,8 @@ class ViewBuilder {
         this.staticQueryIds = staticQueryIds;
         this.viewBuilderFactory = viewBuilderFactory;
         this.nodeDefs = [];
-        this.purePipeNodeIndices = {};
-        this.refNodeIndices = {};
+        this.purePipeNodeIndices = Object.create(null);
+        this.refNodeIndices = Object.create(null);
         this.variables = [];
         this.children = [];
         this.updateDirectivesExpressions = [];
@@ -24596,7 +24596,7 @@ function elementBindingDefs(inputAsts, dirAst) {
  * @return {?}
  */
 function fixedAttrsDef(elementAst) {
-    const /** @type {?} */ mapResult = {};
+    const /** @type {?} */ mapResult = Object.create(null);
     elementAst.attrs.forEach(attrAst => { mapResult[attrAst.name] = attrAst.value; });
     elementAst.directives.forEach(dirAst => {
         Object.keys(dirAst.directive.hostAttributes).forEach(name => {

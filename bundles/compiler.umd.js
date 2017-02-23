@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-beta.8-e8d2743');
+  var VERSION = new _angular_core.Version('4.0.0-beta.8-4301dce');
 
   /**
    * @license
@@ -17942,8 +17942,9 @@
           this.staticQueryIds = staticQueryIds;
           this.viewBuilderFactory = viewBuilderFactory;
           this.nodeDefs = [];
-          this.purePipeNodeIndices = {};
-          this.refNodeIndices = {};
+          this.purePipeNodeIndices = Object.create(null);
+          // Need Object.create so that we don't have builtin values...
+          this.refNodeIndices = Object.create(null);
           this.variables = [];
           this.children = [];
           this.updateDirectivesExpressions = [];
@@ -18668,7 +18669,7 @@
       });
   }
   function fixedAttrsDef(elementAst) {
-      var mapResult = {};
+      var mapResult = Object.create(null);
       elementAst.attrs.forEach(function (attrAst) { mapResult[attrAst.name] = attrAst.value; });
       elementAst.directives.forEach(function (dirAst) {
           Object.keys(dirAst.directive.hostAttributes).forEach(function (name) {
