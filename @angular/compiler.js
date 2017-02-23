@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.8-6b7937f
+ * @license Angular v4.0.0-beta.8-e8d2743
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-6b7937f');
+const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-e8d2743');
 
 /**
  * @license
@@ -2391,7 +2391,7 @@ Identifiers.directiveDef = { name: 'ɵdirectiveDef', moduleUrl: CORE, runtime: �
 Identifiers.providerDef = { name: 'ɵproviderDef', moduleUrl: CORE, runtime: ɵproviderDef };
 Identifiers.queryDef = { name: 'ɵqueryDef', moduleUrl: CORE, runtime: ɵqueryDef };
 Identifiers.pureArrayDef = { name: 'ɵpureArrayDef', moduleUrl: CORE, runtime: ɵpureArrayDef };
-Identifiers.pureObjectDef = { name: 'ɵpureObjectRef', moduleUrl: CORE, runtime: ɵpureObjectDef };
+Identifiers.pureObjectDef = { name: 'ɵpureObjectDef', moduleUrl: CORE, runtime: ɵpureObjectDef };
 Identifiers.purePipeDef = { name: 'ɵpurePipeDef', moduleUrl: CORE, runtime: ɵpurePipeDef };
 Identifiers.pipeDef = { name: 'ɵpipeDef', moduleUrl: CORE, runtime: ɵpipeDef };
 Identifiers.nodeValue = { name: 'ɵnodeValue', moduleUrl: CORE, runtime: ɵnodeValue };
@@ -23918,7 +23918,7 @@ class ViewBuilder {
             // Using a null element name creates an anchor.
             elName = null;
         }
-        let { flags, usedEvents, queryMatchesExpr, hostBindings, hostEvents } = this._visitElementOrTemplate(nodeIndex, ast);
+        const { flags, usedEvents, queryMatchesExpr, hostBindings, hostEvents } = this._visitElementOrTemplate(nodeIndex, ast);
         let /** @type {?} */ inputDefs = [];
         let /** @type {?} */ outputDefs = [];
         if (elName) {
@@ -23928,29 +23928,36 @@ class ViewBuilder {
             }
             // Note: inputDefs have to be in the same order as hostBindings:
             // - first the entries from the directives, then the ones from the element.
-            ast.directives.forEach((dirAst, dirIndex) => inputDefs.push(...elementBindingDefs(dirAst.hostProperties)));
-            inputDefs.push(...elementBindingDefs(ast.inputs));
-            outputDefs = usedEvents.map(([target, eventName]) => {
-                return target ? literalArr([literal(target), literal(eventName)]) :
-                    literal(eventName);
-            });
+            ast.directives.forEach((dirAst, dirIndex) => inputDefs.push(...elementBindingDefs(dirAst.hostProperties, dirAst)));
+            inputDefs.push(...elementBindingDefs(ast.inputs, null));
+            outputDefs = usedEvents.map(([target, eventName]) => literalArr([literal(target), literal(eventName)]));
         }
         templateVisitAll(this, ast.children);
         const /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
+        const /** @type {?} */ compAst = ast.directives.find(dirAst => dirAst.directive.isComponent);
+        let /** @type {?} */ compRendererType = NULL_EXPR;
+        let /** @type {?} */ compView = NULL_EXPR;
+        if (compAst) {
+            compView = importExpr({ reference: compAst.directive.componentViewType });
+            compRendererType = importExpr({ reference: compAst.directive.rendererType });
+        }
         // elementDef(
-        //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], ngContentIndex: number,
-        //   childCount: number, name: string, fixedAttrs: {[name: string]: string} = {},
+        //   flags: NodeFlags, matchedQueriesDsl: [string | number, QueryValueType][],
+        //   ngContentIndex: number, childCount: number, namespaceAndName: string,
+        //   fixedAttrs: [string, string][] = [],
         //   bindings?:
         //       ([BindingType.ElementClass, string] | [BindingType.ElementStyle, string, string] |
-        //         [BindingType.ElementAttribute | BindingType.ElementProperty, string,
-        //         SecurityContext])[],
-        //   outputs?: (string | [string, string])[], eventHandlerFn: ElementHandleEventFn): NodeDef;
+        //        [BindingType.ElementAttribute | BindingType.ElementProperty |
+        //        BindingType.DirectiveHostProperty, string, SecurityContext])[],
+        //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
+        //   handleEvent?: ElementHandleEventFn,
+        //   componentView?: () => ViewDefinition, componentRendererType?: RendererTypeV2): NodeDef;
         const /** @type {?} */ nodeDef = () => importExpr(createIdentifier(Identifiers.elementDef)).callFn([
             literal(flags), queryMatchesExpr, literal(ast.ngContentIndex), literal(childCount),
             literal(elName), elName ? fixedAttrsDef(ast) : NULL_EXPR,
             inputDefs.length ? literalArr(inputDefs) : NULL_EXPR,
             outputDefs.length ? literalArr(outputDefs) : NULL_EXPR,
-            this._createElementHandleEventFn(nodeIndex, hostEvents)
+            this._createElementHandleEventFn(nodeIndex, hostEvents), compView, compRendererType
         ]);
         this.nodeDefs[nodeIndex] = nodeDef;
     }
@@ -23966,13 +23973,13 @@ class ViewBuilder {
         }
         const /** @type {?} */ usedEvents = new Map();
         ast.outputs.forEach((event) => {
-            const /** @type {?} */ en = eventName(event);
-            usedEvents.set(ɵelementEventFullName(event.target, en), [event.target, en]);
+            const { name, target } = elementEventNameAndTarget(event, null);
+            usedEvents.set(ɵelementEventFullName(target, name), [target, name]);
         });
         ast.directives.forEach((dirAst) => {
             dirAst.hostEvents.forEach((event) => {
-                const /** @type {?} */ en = eventName(event);
-                usedEvents.set(ɵelementEventFullName(event.target, en), [event.target, en]);
+                const { name, target } = elementEventNameAndTarget(event, dirAst);
+                usedEvents.set(ɵelementEventFullName(target, name), [target, name]);
             });
         });
         const /** @type {?} */ hostBindings = [];
@@ -24028,7 +24035,9 @@ class ViewBuilder {
                 queryMatchExprs.push(literalArr([literal(ref.name), literal(valueType)]));
             }
         });
-        ast.outputs.forEach((outputAst) => { hostEvents.push({ context: COMP_VAR, eventAst: outputAst }); });
+        ast.outputs.forEach((outputAst) => {
+            hostEvents.push({ context: COMP_VAR, eventAst: outputAst, dirAst: null });
+        });
         return {
             flags,
             usedEvents: Array.from(usedEvents.values()),
@@ -24039,7 +24048,7 @@ class ViewBuilder {
     }
     /**
      * @param {?} providerAst
-     * @param {?} directiveAst
+     * @param {?} dirAst
      * @param {?} directiveIndex
      * @param {?} elementNodeIndex
      * @param {?} refs
@@ -24048,14 +24057,16 @@ class ViewBuilder {
      * @param {?} queryIds
      * @return {?}
      */
-    _visitDirective(providerAst, directiveAst, directiveIndex, elementNodeIndex, refs, queryMatches, usedEvents, queryIds) {
+    _visitDirective(providerAst, dirAst, directiveIndex, elementNodeIndex, refs, queryMatches, usedEvents, queryIds) {
         const /** @type {?} */ nodeIndex = this.nodeDefs.length;
         // reserve the space in the nodeDefs array so we can add children
         this.nodeDefs.push(null);
-        directiveAst.directive.queries.forEach((query, queryIndex) => {
+        dirAst.directive.queries.forEach((query, queryIndex) => {
             let /** @type {?} */ flags = ɵNodeFlags.HasContentQuery;
-            const /** @type {?} */ queryId = directiveAst.contentQueryStartId + queryIndex;
-            if (queryIds.staticQueryIds.has(queryId)) {
+            const /** @type {?} */ queryId = dirAst.contentQueryStartId + queryIndex;
+            // Note: We only make queries static that query for a single item.
+            // This is because of backwards compatibility with the old view compiler...
+            if (queryIds.staticQueryIds.has(queryId) && query.first) {
                 flags |= ɵNodeFlags.HasStaticQuery;
             }
             else {
@@ -24072,26 +24083,23 @@ class ViewBuilder {
         // as they might be a provider/pipe on their own.
         // I.e. we only allow queries as children of directives nodes.
         const /** @type {?} */ childCount = this.nodeDefs.length - nodeIndex - 1;
-        const { flags, queryMatchExprs, providerExpr, providerType, depsExpr } = this._visitProviderOrDirective(providerAst, queryMatches);
+        let { flags, queryMatchExprs, providerExpr, providerType, depsExpr } = this._visitProviderOrDirective(providerAst, queryMatches);
         refs.forEach((ref) => {
             if (ref.value && tokenReference(ref.value) === tokenReference(providerAst.token)) {
                 this.refNodeIndices[ref.name] = nodeIndex;
                 queryMatchExprs.push(literalArr([literal(ref.name), literal(ɵQueryValueType.Provider)]));
             }
         });
-        let /** @type {?} */ rendererType = NULL_EXPR;
-        let /** @type {?} */ compView = NULL_EXPR;
-        if (directiveAst.directive.isComponent) {
-            compView = importExpr({ reference: directiveAst.directive.componentViewType });
-            rendererType = importExpr({ reference: directiveAst.directive.rendererType });
+        if (dirAst.directive.isComponent) {
+            flags |= ɵNodeFlags.IsComponent;
         }
-        const /** @type {?} */ inputDefs = directiveAst.inputs.map((inputAst, inputIndex) => {
+        const /** @type {?} */ inputDefs = dirAst.inputs.map((inputAst, inputIndex) => {
             const /** @type {?} */ mapValue = literalArr([literal(inputIndex), literal(inputAst.directiveName)]);
             // Note: it's important to not quote the key so that we can capture renames by minifiers!
             return new LiteralMapEntry(inputAst.directiveName, mapValue, false);
         });
         const /** @type {?} */ outputDefs = [];
-        const /** @type {?} */ dirMeta = directiveAst.directive;
+        const /** @type {?} */ dirMeta = dirAst.directive;
         Object.keys(dirMeta.outputs).forEach((propName) => {
             const /** @type {?} */ eventName = dirMeta.outputs[propName];
             if (usedEvents.has(eventName)) {
@@ -24099,19 +24107,19 @@ class ViewBuilder {
                 outputDefs.push(new LiteralMapEntry(propName, literal(eventName), false));
             }
         });
-        if (directiveAst.inputs.length || (flags & (ɵNodeFlags.DoCheck | ɵNodeFlags.OnInit)) > 0) {
-            this._addUpdateExpressions(nodeIndex, directiveAst.inputs.map((input) => { return { context: COMP_VAR, value: input.value }; }), this.updateDirectivesExpressions);
+        if (dirAst.inputs.length || (flags & (ɵNodeFlags.DoCheck | ɵNodeFlags.OnInit)) > 0) {
+            this._addUpdateExpressions(nodeIndex, dirAst.inputs.map((input) => { return { context: COMP_VAR, value: input.value }; }), this.updateDirectivesExpressions);
         }
         const /** @type {?} */ dirContextExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
             VIEW_VAR$1, literal(nodeIndex)
         ]);
-        const /** @type {?} */ hostBindings = directiveAst.hostProperties.map((hostBindingAst) => {
+        const /** @type {?} */ hostBindings = dirAst.hostProperties.map((hostBindingAst) => {
             return {
                 value: ((hostBindingAst.value)).ast,
                 context: dirContextExpr,
             };
         });
-        const /** @type {?} */ hostEvents = directiveAst.hostEvents.map((hostEventAst) => { return { context: dirContextExpr, eventAst: hostEventAst }; });
+        const /** @type {?} */ hostEvents = dirAst.hostEvents.map((hostEventAst) => { return { context: dirContextExpr, eventAst: hostEventAst, dirAst }; });
         // directiveDef(
         //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], childCount: number, ctor:
         //   any,
@@ -24121,7 +24129,7 @@ class ViewBuilder {
             literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
             literal(childCount), providerExpr, depsExpr,
             inputDefs.length ? new LiteralMapExpr(inputDefs) : NULL_EXPR,
-            outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR, compView, rendererType
+            outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR
         ]);
         this.nodeDefs[nodeIndex] = nodeDef;
         return { hostBindings, hostEvents };
@@ -24317,7 +24325,7 @@ class ViewBuilder {
     _createElementHandleEventFn(nodeIndex, handlers) {
         const /** @type {?} */ handleEventStmts = [];
         let /** @type {?} */ handleEventBindingCount = 0;
-        handlers.forEach(({ context, eventAst }) => {
+        handlers.forEach(({ context, eventAst, dirAst }) => {
             const /** @type {?} */ bindingId = `${handleEventBindingCount++}`;
             const /** @type {?} */ nameResolver = context === COMP_VAR ? this : null;
             const /** @type {?} */ expression = eventAst.handler instanceof ASTWithSource ? eventAst.handler.ast : eventAst.handler;
@@ -24326,7 +24334,8 @@ class ViewBuilder {
             if (allowDefault) {
                 trueStmts.push(ALLOW_DEFAULT_VAR.set(allowDefault.and(ALLOW_DEFAULT_VAR)).toStmt());
             }
-            const /** @type {?} */ fullEventName = ɵelementEventFullName(eventAst.target, eventName(eventAst));
+            const { target: eventTarget, name: eventName } = elementEventNameAndTarget(eventAst, dirAst);
+            const /** @type {?} */ fullEventName = ɵelementEventFullName(eventTarget, eventName);
             handleEventStmts.push(new IfStmt(literal(fullEventName).identical(EVENT_NAME_VAR$1), trueStmts));
         });
         let /** @type {?} */ handleEventFn;
@@ -24549,9 +24558,10 @@ function lifecycleHookToNodeFlag(lifecycleHook) {
 }
 /**
  * @param {?} inputAsts
+ * @param {?} dirAst
  * @return {?}
  */
-function elementBindingDefs(inputAsts) {
+function elementBindingDefs(inputAsts, dirAst) {
     return inputAsts.map((inputAst) => {
         switch (inputAst.type) {
             case PropertyBindingType.Attribute:
@@ -24565,8 +24575,11 @@ function elementBindingDefs(inputAsts) {
                     literal(inputAst.securityContext)
                 ]);
             case PropertyBindingType.Animation:
+                const /** @type {?} */ bindingType = dirAst && dirAst.directive.isComponent ?
+                    ɵBindingType.ComponentHostProperty :
+                    ɵBindingType.ElementProperty;
                 return literalArr([
-                    literal(ɵBindingType.ElementProperty), literal('@' + inputAst.name),
+                    literal(bindingType), literal('@' + inputAst.name),
                     literal(inputAst.securityContext)
                 ]);
             case PropertyBindingType.Class:
@@ -24706,10 +24719,19 @@ function createComponentFactoryResolver(directives) {
 }
 /**
  * @param {?} eventAst
+ * @param {?} dirAst
  * @return {?}
  */
-function eventName(eventAst) {
-    return eventAst.isAnimation ? `@${eventAst.name}.${eventAst.phase}` : eventAst.name;
+function elementEventNameAndTarget(eventAst, dirAst) {
+    if (eventAst.isAnimation) {
+        return {
+            name: `@${eventAst.name}.${eventAst.phase}`,
+            target: dirAst && dirAst.directive.isComponent ? 'component' : null
+        };
+    }
+    else {
+        return eventAst;
+    }
 }
 
 class AnimationEntryCompileResult {

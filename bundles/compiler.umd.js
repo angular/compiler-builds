@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-beta.8-6b7937f');
+  var VERSION = new _angular_core.Version('4.0.0-beta.8-e8d2743');
 
   /**
    * @license
@@ -1971,7 +1971,7 @@
   Identifiers.providerDef = { name: 'ɵproviderDef', moduleUrl: CORE, runtime: _angular_core.ɵproviderDef };
   Identifiers.queryDef = { name: 'ɵqueryDef', moduleUrl: CORE, runtime: _angular_core.ɵqueryDef };
   Identifiers.pureArrayDef = { name: 'ɵpureArrayDef', moduleUrl: CORE, runtime: _angular_core.ɵpureArrayDef };
-  Identifiers.pureObjectDef = { name: 'ɵpureObjectRef', moduleUrl: CORE, runtime: _angular_core.ɵpureObjectDef };
+  Identifiers.pureObjectDef = { name: 'ɵpureObjectDef', moduleUrl: CORE, runtime: _angular_core.ɵpureObjectDef };
   Identifiers.purePipeDef = { name: 'ɵpurePipeDef', moduleUrl: CORE, runtime: _angular_core.ɵpurePipeDef };
   Identifiers.pipeDef = { name: 'ɵpipeDef', moduleUrl: CORE, runtime: _angular_core.ɵpipeDef };
   Identifiers.nodeValue = { name: 'ɵnodeValue', moduleUrl: CORE, runtime: _angular_core.ɵnodeValue };
@@ -18118,30 +18118,41 @@
               }
               // Note: inputDefs have to be in the same order as hostBindings:
               // - first the entries from the directives, then the ones from the element.
-              ast.directives.forEach(function (dirAst, dirIndex) { return inputDefs.push.apply(inputDefs, elementBindingDefs(dirAst.hostProperties)); });
-              inputDefs.push.apply(inputDefs, elementBindingDefs(ast.inputs));
+              ast.directives.forEach(function (dirAst, dirIndex) {
+                  return inputDefs.push.apply(inputDefs, elementBindingDefs(dirAst.hostProperties, dirAst));
+              });
+              inputDefs.push.apply(inputDefs, elementBindingDefs(ast.inputs, null));
               outputDefs = usedEvents.map(function (_a) {
                   var target = _a[0], eventName = _a[1];
-                  return target ? literalArr([literal(target), literal(eventName)]) :
-                      literal(eventName);
+                  return literalArr([literal(target), literal(eventName)]);
               });
           }
           templateVisitAll(this, ast.children);
           var childCount = this.nodeDefs.length - nodeIndex - 1;
+          var compAst = ast.directives.find(function (dirAst) { return dirAst.directive.isComponent; });
+          var compRendererType = NULL_EXPR;
+          var compView = NULL_EXPR;
+          if (compAst) {
+              compView = importExpr({ reference: compAst.directive.componentViewType });
+              compRendererType = importExpr({ reference: compAst.directive.rendererType });
+          }
           // elementDef(
-          //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], ngContentIndex: number,
-          //   childCount: number, name: string, fixedAttrs: {[name: string]: string} = {},
+          //   flags: NodeFlags, matchedQueriesDsl: [string | number, QueryValueType][],
+          //   ngContentIndex: number, childCount: number, namespaceAndName: string,
+          //   fixedAttrs: [string, string][] = [],
           //   bindings?:
           //       ([BindingType.ElementClass, string] | [BindingType.ElementStyle, string, string] |
-          //         [BindingType.ElementAttribute | BindingType.ElementProperty, string,
-          //         SecurityContext])[],
-          //   outputs?: (string | [string, string])[], eventHandlerFn: ElementHandleEventFn): NodeDef;
+          //        [BindingType.ElementAttribute | BindingType.ElementProperty |
+          //        BindingType.DirectiveHostProperty, string, SecurityContext])[],
+          //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
+          //   handleEvent?: ElementHandleEventFn,
+          //   componentView?: () => ViewDefinition, componentRendererType?: RendererTypeV2): NodeDef;
           var nodeDef = function () { return importExpr(createIdentifier(Identifiers.elementDef)).callFn([
               literal(flags), queryMatchesExpr, literal(ast.ngContentIndex), literal(childCount),
               literal(elName), elName ? fixedAttrsDef(ast) : NULL_EXPR,
               inputDefs.length ? literalArr(inputDefs) : NULL_EXPR,
               outputDefs.length ? literalArr(outputDefs) : NULL_EXPR,
-              _this._createElementHandleEventFn(nodeIndex, hostEvents)
+              _this._createElementHandleEventFn(nodeIndex, hostEvents), compView, compRendererType
           ]); };
           this.nodeDefs[nodeIndex] = nodeDef;
       };
@@ -18153,13 +18164,13 @@
           }
           var usedEvents = new Map();
           ast.outputs.forEach(function (event) {
-              var en = eventName(event);
-              usedEvents.set(_angular_core.ɵelementEventFullName(event.target, en), [event.target, en]);
+              var _a = elementEventNameAndTarget(event, null), name = _a.name, target = _a.target;
+              usedEvents.set(_angular_core.ɵelementEventFullName(target, name), [target, name]);
           });
           ast.directives.forEach(function (dirAst) {
               dirAst.hostEvents.forEach(function (event) {
-                  var en = eventName(event);
-                  usedEvents.set(_angular_core.ɵelementEventFullName(event.target, en), [event.target, en]);
+                  var _a = elementEventNameAndTarget(event, dirAst), name = _a.name, target = _a.target;
+                  usedEvents.set(_angular_core.ɵelementEventFullName(target, name), [target, name]);
               });
           });
           var hostBindings = [];
@@ -18215,7 +18226,9 @@
                   queryMatchExprs.push(literalArr([literal(ref.name), literal(valueType)]));
               }
           });
-          ast.outputs.forEach(function (outputAst) { hostEvents.push({ context: COMP_VAR, eventAst: outputAst }); });
+          ast.outputs.forEach(function (outputAst) {
+              hostEvents.push({ context: COMP_VAR, eventAst: outputAst, dirAst: null });
+          });
           return {
               flags: flags,
               usedEvents: Array.from(usedEvents.values()),
@@ -18224,15 +18237,17 @@
               hostEvents: hostEvents
           };
       };
-      ViewBuilder.prototype._visitDirective = function (providerAst, directiveAst, directiveIndex, elementNodeIndex, refs, queryMatches, usedEvents, queryIds) {
+      ViewBuilder.prototype._visitDirective = function (providerAst, dirAst, directiveIndex, elementNodeIndex, refs, queryMatches, usedEvents, queryIds) {
           var _this = this;
           var nodeIndex = this.nodeDefs.length;
           // reserve the space in the nodeDefs array so we can add children
           this.nodeDefs.push(null);
-          directiveAst.directive.queries.forEach(function (query, queryIndex) {
+          dirAst.directive.queries.forEach(function (query, queryIndex) {
               var flags = _angular_core.ɵNodeFlags.HasContentQuery;
-              var queryId = directiveAst.contentQueryStartId + queryIndex;
-              if (queryIds.staticQueryIds.has(queryId)) {
+              var queryId = dirAst.contentQueryStartId + queryIndex;
+              // Note: We only make queries static that query for a single item.
+              // This is because of backwards compatibility with the old view compiler...
+              if (queryIds.staticQueryIds.has(queryId) && query.first) {
                   flags |= _angular_core.ɵNodeFlags.HasStaticQuery;
               }
               else {
@@ -18256,19 +18271,16 @@
                   queryMatchExprs.push(literalArr([literal(ref.name), literal(_angular_core.ɵQueryValueType.Provider)]));
               }
           });
-          var rendererType = NULL_EXPR;
-          var compView = NULL_EXPR;
-          if (directiveAst.directive.isComponent) {
-              compView = importExpr({ reference: directiveAst.directive.componentViewType });
-              rendererType = importExpr({ reference: directiveAst.directive.rendererType });
+          if (dirAst.directive.isComponent) {
+              flags |= _angular_core.ɵNodeFlags.IsComponent;
           }
-          var inputDefs = directiveAst.inputs.map(function (inputAst, inputIndex) {
+          var inputDefs = dirAst.inputs.map(function (inputAst, inputIndex) {
               var mapValue = literalArr([literal(inputIndex), literal(inputAst.directiveName)]);
               // Note: it's important to not quote the key so that we can capture renames by minifiers!
               return new LiteralMapEntry(inputAst.directiveName, mapValue, false);
           });
           var outputDefs = [];
-          var dirMeta = directiveAst.directive;
+          var dirMeta = dirAst.directive;
           Object.keys(dirMeta.outputs).forEach(function (propName) {
               var eventName = dirMeta.outputs[propName];
               if (usedEvents.has(eventName)) {
@@ -18276,19 +18288,19 @@
                   outputDefs.push(new LiteralMapEntry(propName, literal(eventName), false));
               }
           });
-          if (directiveAst.inputs.length || (flags & (_angular_core.ɵNodeFlags.DoCheck | _angular_core.ɵNodeFlags.OnInit)) > 0) {
-              this._addUpdateExpressions(nodeIndex, directiveAst.inputs.map(function (input) { return { context: COMP_VAR, value: input.value }; }), this.updateDirectivesExpressions);
+          if (dirAst.inputs.length || (flags & (_angular_core.ɵNodeFlags.DoCheck | _angular_core.ɵNodeFlags.OnInit)) > 0) {
+              this._addUpdateExpressions(nodeIndex, dirAst.inputs.map(function (input) { return { context: COMP_VAR, value: input.value }; }), this.updateDirectivesExpressions);
           }
           var dirContextExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
               VIEW_VAR$1, literal(nodeIndex)
           ]);
-          var hostBindings = directiveAst.hostProperties.map(function (hostBindingAst) {
+          var hostBindings = dirAst.hostProperties.map(function (hostBindingAst) {
               return {
                   value: hostBindingAst.value.ast,
                   context: dirContextExpr,
               };
           });
-          var hostEvents = directiveAst.hostEvents.map(function (hostEventAst) { return { context: dirContextExpr, eventAst: hostEventAst }; });
+          var hostEvents = dirAst.hostEvents.map(function (hostEventAst) { return { context: dirContextExpr, eventAst: hostEventAst, dirAst: dirAst }; });
           // directiveDef(
           //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], childCount: number, ctor:
           //   any,
@@ -18298,7 +18310,7 @@
               literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
               literal(childCount), providerExpr, depsExpr,
               inputDefs.length ? new LiteralMapExpr(inputDefs) : NULL_EXPR,
-              outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR, compView, rendererType
+              outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR
           ]); };
           this.nodeDefs[nodeIndex] = nodeDef;
           return { hostBindings: hostBindings, hostEvents: hostEvents };
@@ -18461,7 +18473,7 @@
           var handleEventStmts = [];
           var handleEventBindingCount = 0;
           handlers.forEach(function (_a) {
-              var context = _a.context, eventAst = _a.eventAst;
+              var context = _a.context, eventAst = _a.eventAst, dirAst = _a.dirAst;
               var bindingId = "" + handleEventBindingCount++;
               var nameResolver = context === COMP_VAR ? _this : null;
               var expression = eventAst.handler instanceof ASTWithSource ? eventAst.handler.ast : eventAst.handler;
@@ -18470,7 +18482,8 @@
               if (allowDefault) {
                   trueStmts.push(ALLOW_DEFAULT_VAR.set(allowDefault.and(ALLOW_DEFAULT_VAR)).toStmt());
               }
-              var fullEventName = _angular_core.ɵelementEventFullName(eventAst.target, eventName(eventAst));
+              var _c = elementEventNameAndTarget(eventAst, dirAst), eventTarget = _c.target, eventName = _c.name;
+              var fullEventName = _angular_core.ɵelementEventFullName(eventTarget, eventName);
               handleEventStmts.push(new IfStmt(literal(fullEventName).identical(EVENT_NAME_VAR$1), trueStmts));
           });
           var handleEventFn;
@@ -18624,7 +18637,7 @@
       }
       return nodeFlag;
   }
-  function elementBindingDefs(inputAsts) {
+  function elementBindingDefs(inputAsts, dirAst) {
       return inputAsts.map(function (inputAst) {
           switch (inputAst.type) {
               case exports.PropertyBindingType.Attribute:
@@ -18638,8 +18651,11 @@
                       literal(inputAst.securityContext)
                   ]);
               case exports.PropertyBindingType.Animation:
+                  var bindingType = dirAst && dirAst.directive.isComponent ?
+                      _angular_core.ɵBindingType.ComponentHostProperty :
+                      _angular_core.ɵBindingType.ElementProperty;
                   return literalArr([
-                      literal(_angular_core.ɵBindingType.ElementProperty), literal('@' + inputAst.name),
+                      literal(bindingType), literal('@' + inputAst.name),
                       literal(inputAst.securityContext)
                   ]);
               case exports.PropertyBindingType.Class:
@@ -18746,8 +18762,16 @@
       }
       return null;
   }
-  function eventName(eventAst) {
-      return eventAst.isAnimation ? "@" + eventAst.name + "." + eventAst.phase : eventAst.name;
+  function elementEventNameAndTarget(eventAst, dirAst) {
+      if (eventAst.isAnimation) {
+          return {
+              name: "@" + eventAst.name + "." + eventAst.phase,
+              target: dirAst && dirAst.directive.isComponent ? 'component' : null
+          };
+      }
+      else {
+          return eventAst;
+      }
   }
 
   var AnimationEntryCompileResult = (function () {
