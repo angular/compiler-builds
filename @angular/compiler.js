@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.8-88755b0
+ * @license Angular v4.0.0-beta.8-88bc143
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-88755b0');
+const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-88bc143');
 
 /**
  * @license
@@ -11387,6 +11387,8 @@ class TemplateParseVisitor {
      * @return {?}
      */
     _validateElementAnimationInputOutputs(inputs, outputs, template) {
+        if (this.config.useViewEngine)
+            return;
         const /** @type {?} */ triggerLookup = new Set();
         template.animations.forEach(entry => { triggerLookup.add(entry); });
         const /** @type {?} */ animationInputs = inputs.filter(input => input.isAnimation);
@@ -17659,9 +17661,15 @@ class CompileMetadataResolver {
             assertArrayOfStrings('styles', dirMeta.styles);
             assertArrayOfStrings('styleUrls', dirMeta.styleUrls);
             assertInterpolationSymbols('interpolation', dirMeta.interpolation);
-            const /** @type {?} */ animations = dirMeta.animations ?
-                dirMeta.animations.map(e => this.getAnimationEntryMetadata(e)) :
-                null;
+            let /** @type {?} */ animations;
+            if (this._config.useViewEngine) {
+                animations = dirMeta.animations;
+            }
+            else {
+                animations = dirMeta.animations ?
+                    dirMeta.animations.map(e => this.getAnimationEntryMetadata(e)) :
+                    null;
+            }
             nonNormalizedTemplateMetadata = new CompileTemplateMetadata({
                 encapsulation: dirMeta.encapsulation,
                 template: dirMeta.template,
@@ -23667,8 +23675,9 @@ class ViewCompilerNext extends ViewCompiler {
             new LiteralMapExpr([
                 new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
                 new LiteralMapEntry('styles', styles),
-                // TODO: copy this from the @Component directive...
-                new LiteralMapEntry('data', literalMap([])),
+                new LiteralMapEntry('data', literalMap([
+                    ['animation', convertValueToOutputAst(component.template.animations)]
+                ])),
             ])
         ]))
             .toDeclStmt(importType(createIdentifier(Identifiers.RendererTypeV2)), [StmtModifier.Final]));
@@ -23957,11 +23966,13 @@ class ViewBuilder {
         }
         const /** @type {?} */ usedEvents = new Map();
         ast.outputs.forEach((event) => {
-            usedEvents.set(ɵelementEventFullName(event.target, event.name), [event.target, event.name]);
+            const /** @type {?} */ en = eventName(event);
+            usedEvents.set(ɵelementEventFullName(event.target, en), [event.target, en]);
         });
         ast.directives.forEach((dirAst) => {
             dirAst.hostEvents.forEach((event) => {
-                usedEvents.set(ɵelementEventFullName(event.target, event.name), [event.target, event.name]);
+                const /** @type {?} */ en = eventName(event);
+                usedEvents.set(ɵelementEventFullName(event.target, en), [event.target, en]);
             });
         });
         const /** @type {?} */ hostBindings = [];
@@ -24315,7 +24326,7 @@ class ViewBuilder {
             if (allowDefault) {
                 trueStmts.push(ALLOW_DEFAULT_VAR.set(allowDefault.and(ALLOW_DEFAULT_VAR)).toStmt());
             }
-            const /** @type {?} */ fullEventName = ɵelementEventFullName(eventAst.target, eventAst.name);
+            const /** @type {?} */ fullEventName = ɵelementEventFullName(eventAst.target, eventName(eventAst));
             handleEventStmts.push(new IfStmt(literal(fullEventName).identical(EVENT_NAME_VAR$1), trueStmts));
         });
         let /** @type {?} */ handleEventFn;
@@ -24555,7 +24566,7 @@ function elementBindingDefs(inputAsts) {
                 ]);
             case PropertyBindingType.Animation:
                 return literalArr([
-                    literal(ɵBindingType.ElementProperty), literal(inputAst.name),
+                    literal(ɵBindingType.ElementProperty), literal('@' + inputAst.name),
                     literal(inputAst.securityContext)
                 ]);
             case PropertyBindingType.Class:
@@ -24692,6 +24703,13 @@ function createComponentFactoryResolver(directives) {
         return new ProviderAst(token, false, true, [{ token, multi: false, useClass: classMeta }], ProviderAstType.PrivateService, [], componentDirMeta.sourceSpan);
     }
     return null;
+}
+/**
+ * @param {?} eventAst
+ * @return {?}
+ */
+function eventName(eventAst) {
+    return eventAst.isAnimation ? `@${eventAst.name}.${eventAst.phase}` : eventAst.name;
 }
 
 class AnimationEntryCompileResult {
@@ -28189,11 +28207,13 @@ class JitCompiler {
         const /** @type {?} */ stylesCompileResult = this._styleCompiler.compileComponent(compMeta);
         stylesCompileResult.externalStylesheets.forEach((r) => { externalStylesheetsByModuleUrl.set(r.meta.moduleUrl, r); });
         this._resolveStylesCompileResult(stylesCompileResult.componentStylesheet, externalStylesheetsByModuleUrl);
-        const /** @type {?} */ parsedAnimations = this._animationParser.parseComponent(compMeta);
+        const /** @type {?} */ parsedAnimations = this._compilerConfig.useViewEngine ? [] : this._animationParser.parseComponent(compMeta);
         const /** @type {?} */ directives = template.directives.map(dir => this._metadataResolver.getDirectiveSummary(dir.reference));
         const /** @type {?} */ pipes = template.ngModule.transitiveModule.pipes.map(pipe => this._metadataResolver.getPipeSummary(pipe.reference));
         const { template: parsedTemplate, pipes: usedPipes } = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, identifierName(compMeta.type));
-        const /** @type {?} */ compiledAnimations = this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
+        const /** @type {?} */ compiledAnimations = this._compilerConfig.useViewEngine ?
+            [] :
+            this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
         const /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), usedPipes, compiledAnimations);
         const /** @type {?} */ statements = stylesCompileResult.componentStylesheet.statements
             .concat(...compiledAnimations.map(ca => ca.statements))

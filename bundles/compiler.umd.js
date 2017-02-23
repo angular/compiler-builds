@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-beta.8-88755b0');
+  var VERSION = new _angular_core.Version('4.0.0-beta.8-88bc143');
 
   /**
    * @license
@@ -8558,6 +8558,8 @@
       };
       TemplateParseVisitor.prototype._validateElementAnimationInputOutputs = function (inputs, outputs, template) {
           var _this = this;
+          if (this.config.useViewEngine)
+              return;
           var triggerLookup = new Set();
           template.animations.forEach(function (entry) { triggerLookup.add(entry); });
           var animationInputs = inputs.filter(function (input) { return input.isAnimation; });
@@ -12981,9 +12983,15 @@
               assertArrayOfStrings('styles', dirMeta.styles);
               assertArrayOfStrings('styleUrls', dirMeta.styleUrls);
               assertInterpolationSymbols('interpolation', dirMeta.interpolation);
-              var animations = dirMeta.animations ?
-                  dirMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
-                  null;
+              var animations = void 0;
+              if (this._config.useViewEngine) {
+                  animations = dirMeta.animations;
+              }
+              else {
+                  animations = dirMeta.animations ?
+                      dirMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
+                      null;
+              }
               nonNormalizedTemplateMetadata = new CompileTemplateMetadata({
                   encapsulation: dirMeta.encapsulation,
                   template: dirMeta.template,
@@ -17894,8 +17902,9 @@
               new LiteralMapExpr([
                   new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
                   new LiteralMapEntry('styles', styles),
-                  // TODO: copy this from the @Component directive...
-                  new LiteralMapEntry('data', literalMap([])),
+                  new LiteralMapEntry('data', literalMap([
+                      ['animation', convertValueToOutputAst(component.template.animations)]
+                  ])),
               ])
           ]))
               .toDeclStmt(importType(createIdentifier(Identifiers.RendererTypeV2)), [StmtModifier.Final]));
@@ -18144,11 +18153,13 @@
           }
           var usedEvents = new Map();
           ast.outputs.forEach(function (event) {
-              usedEvents.set(_angular_core.ɵelementEventFullName(event.target, event.name), [event.target, event.name]);
+              var en = eventName(event);
+              usedEvents.set(_angular_core.ɵelementEventFullName(event.target, en), [event.target, en]);
           });
           ast.directives.forEach(function (dirAst) {
               dirAst.hostEvents.forEach(function (event) {
-                  usedEvents.set(_angular_core.ɵelementEventFullName(event.target, event.name), [event.target, event.name]);
+                  var en = eventName(event);
+                  usedEvents.set(_angular_core.ɵelementEventFullName(event.target, en), [event.target, en]);
               });
           });
           var hostBindings = [];
@@ -18459,7 +18470,7 @@
               if (allowDefault) {
                   trueStmts.push(ALLOW_DEFAULT_VAR.set(allowDefault.and(ALLOW_DEFAULT_VAR)).toStmt());
               }
-              var fullEventName = _angular_core.ɵelementEventFullName(eventAst.target, eventAst.name);
+              var fullEventName = _angular_core.ɵelementEventFullName(eventAst.target, eventName(eventAst));
               handleEventStmts.push(new IfStmt(literal(fullEventName).identical(EVENT_NAME_VAR$1), trueStmts));
           });
           var handleEventFn;
@@ -18628,7 +18639,7 @@
                   ]);
               case exports.PropertyBindingType.Animation:
                   return literalArr([
-                      literal(_angular_core.ɵBindingType.ElementProperty), literal(inputAst.name),
+                      literal(_angular_core.ɵBindingType.ElementProperty), literal('@' + inputAst.name),
                       literal(inputAst.securityContext)
                   ]);
               case exports.PropertyBindingType.Class:
@@ -18734,6 +18745,9 @@
           return new ProviderAst(token, false, true, [{ token: token, multi: false, useClass: classMeta }], exports.ProviderAstType.PrivateService, [], componentDirMeta.sourceSpan);
       }
       return null;
+  }
+  function eventName(eventAst) {
+      return eventAst.isAnimation ? "@" + eventAst.name + "." + eventAst.phase : eventAst.name;
   }
 
   var AnimationEntryCompileResult = (function () {
@@ -21446,11 +21460,13 @@
           var stylesCompileResult = this._styleCompiler.compileComponent(compMeta);
           stylesCompileResult.externalStylesheets.forEach(function (r) { externalStylesheetsByModuleUrl.set(r.meta.moduleUrl, r); });
           this._resolveStylesCompileResult(stylesCompileResult.componentStylesheet, externalStylesheetsByModuleUrl);
-          var parsedAnimations = this._animationParser.parseComponent(compMeta);
+          var parsedAnimations = this._compilerConfig.useViewEngine ? [] : this._animationParser.parseComponent(compMeta);
           var directives = template.directives.map(function (dir) { return _this._metadataResolver.getDirectiveSummary(dir.reference); });
           var pipes = template.ngModule.transitiveModule.pipes.map(function (pipe) { return _this._metadataResolver.getPipeSummary(pipe.reference); });
           var _a = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, identifierName(compMeta.type)), parsedTemplate = _a.template, usedPipes = _a.pipes;
-          var compiledAnimations = this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
+          var compiledAnimations = this._compilerConfig.useViewEngine ?
+              [] :
+              this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
           var compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), usedPipes, compiledAnimations);
           var statements = (_b = stylesCompileResult.componentStylesheet.statements).concat.apply(_b, compiledAnimations.map(function (ca) { return ca.statements; })).concat(compileResult.statements);
           var viewClass;

@@ -157,7 +157,7 @@ export declare class CompileTemplateMetadata {
     styles: string[];
     styleUrls: string[];
     externalStylesheets: CompileStylesheetMetadata[];
-    animations: CompileAnimationEntryMetadata[];
+    animations: any[];
     ngContentSelectors: string[];
     interpolation: [string, string];
     constructor({encapsulation, template, templateUrl, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation}?: {
@@ -168,7 +168,7 @@ export declare class CompileTemplateMetadata {
         styleUrls?: string[];
         externalStylesheets?: CompileStylesheetMetadata[];
         ngContentSelectors?: string[];
-        animations?: CompileAnimationEntryMetadata[];
+        animations?: any[];
         interpolation?: [string, string];
     });
     toSummary(): CompileTemplateSummary;
