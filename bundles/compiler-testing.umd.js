@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.8-187f7b6
+ * @license Angular v4.0.0-beta.8-4b54c0e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -217,7 +217,6 @@
             _this._viewProviderOverrides = new Map();
             _this._views = new Map();
             _this._inlineTemplates = new Map();
-            _this._animations = new Map();
             return _this;
         }
 
@@ -257,10 +256,6 @@
                     }
                     var animations = view.animations;
                     var templateUrl = view.templateUrl;
-                    var inlineAnimations = this._animations.get(type);
-                    if (isPresent(inlineAnimations)) {
-                        animations = inlineAnimations;
-                    }
                     var inlineTemplate = this._inlineTemplates.get(type);
                     if (isPresent(inlineTemplate)) {
                         templateUrl = null;
@@ -326,12 +321,6 @@
             key: 'setInlineTemplate',
             value: function setInlineTemplate(component, template) {
                 this._inlineTemplates.set(component, template);
-                this._clearCacheFor(component);
-            }
-        }, {
-            key: 'setAnimations',
-            value: function setAnimations(component, animations) {
-                this._animations.set(component, animations);
                 this._clearCacheFor(component);
             }
         }, {

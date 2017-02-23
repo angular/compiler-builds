@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-beta.8-187f7b6');
+  var VERSION = new _angular_core.Version('4.0.0-beta.8-4b54c0e');
 
   /**
    * @license
@@ -2043,7 +2043,7 @@
           this._logBindingUpdate = logBindingUpdate;
           this.useJit = useJit;
           this.missingTranslation = missingTranslation;
-          this.useViewEngine = useViewEngine;
+          this.useViewEngine = true;
       }
       Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
           get: function () {
@@ -12850,46 +12850,6 @@
               }
           }
       };
-      CompileMetadataResolver.prototype.getAnimationEntryMetadata = function (entry) {
-          var _this = this;
-          var defs = entry.definitions.map(function (def) { return _this._getAnimationStateMetadata(def); });
-          return new CompileAnimationEntryMetadata(entry.name, defs);
-      };
-      CompileMetadataResolver.prototype._getAnimationStateMetadata = function (value) {
-          if (value instanceof _angular_core.AnimationStateDeclarationMetadata) {
-              var styles = this._getAnimationStyleMetadata(value.styles);
-              return new CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
-          }
-          if (value instanceof _angular_core.AnimationStateTransitionMetadata) {
-              return new CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this._getAnimationMetadata(value.steps));
-          }
-          return null;
-      };
-      CompileMetadataResolver.prototype._getAnimationStyleMetadata = function (value) {
-          return new CompileAnimationStyleMetadata(value.offset, value.styles);
-      };
-      CompileMetadataResolver.prototype._getAnimationMetadata = function (value) {
-          var _this = this;
-          if (value instanceof _angular_core.AnimationStyleMetadata) {
-              return this._getAnimationStyleMetadata(value);
-          }
-          if (value instanceof _angular_core.AnimationKeyframesSequenceMetadata) {
-              return new CompileAnimationKeyframesSequenceMetadata(value.steps.map(function (entry) { return _this._getAnimationStyleMetadata(entry); }));
-          }
-          if (value instanceof _angular_core.AnimationAnimateMetadata) {
-              var animateData = this
-                  ._getAnimationMetadata(value.styles);
-              return new CompileAnimationAnimateMetadata(value.timings, animateData);
-          }
-          if (value instanceof _angular_core.AnimationWithStepsMetadata) {
-              var steps = value.steps.map(function (step) { return _this._getAnimationMetadata(step); });
-              if (value instanceof _angular_core.AnimationGroupMetadata) {
-                  return new CompileAnimationGroupMetadata(steps);
-              }
-              return new CompileAnimationSequenceMetadata(steps);
-          }
-          return null;
-      };
       CompileMetadataResolver.prototype._loadSummary = function (type, kind) {
           var typeSummary = this._summaryCache.get(type);
           if (!typeSummary) {
@@ -12983,15 +12943,7 @@
               assertArrayOfStrings('styles', dirMeta.styles);
               assertArrayOfStrings('styleUrls', dirMeta.styleUrls);
               assertInterpolationSymbols('interpolation', dirMeta.interpolation);
-              var animations = void 0;
-              if (this._config.useViewEngine) {
-                  animations = dirMeta.animations;
-              }
-              else {
-                  animations = dirMeta.animations ?
-                      dirMeta.animations.map(function (e) { return _this.getAnimationEntryMetadata(e); }) :
-                      null;
-              }
+              var animations = dirMeta.animations;
               nonNormalizedTemplateMetadata = new CompileTemplateMetadata({
                   encapsulation: dirMeta.encapsulation,
                   template: dirMeta.template,
@@ -19402,17 +19354,14 @@
       };
       AotCompiler.prototype._compileComponent = function (compMeta, ngModule, directiveIdentifiers, componentStyles, fileSuffix, targetStatements) {
           var _this = this;
-          var parsedAnimations = this._animationParser.parseComponent(compMeta);
           var directives = directiveIdentifiers.map(function (dir) { return _this._metadataResolver.getDirectiveSummary(dir.reference); });
           var pipes = ngModule.transitiveModule.pipes.map(function (pipe) { return _this._metadataResolver.getPipeSummary(pipe.reference); });
           var _a = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, ngModule.schemas, identifierName(compMeta.type)), parsedTemplate = _a.template, usedPipes = _a.pipes;
           var stylesExpr = componentStyles ? variable(componentStyles.stylesVar) : literalArr([]);
-          var compiledAnimations = this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
-          var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, usedPipes, compiledAnimations);
+          var viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, usedPipes, null);
           if (componentStyles) {
               targetStatements.push.apply(targetStatements, _resolveStyleStatements(this._symbolResolver, componentStyles, fileSuffix));
           }
-          compiledAnimations.forEach(function (entry) { return targetStatements.push.apply(targetStatements, entry.statements); });
           targetStatements.push.apply(targetStatements, viewResult.statements);
           return { viewClassVar: viewResult.viewClassVar, compRenderTypeVar: viewResult.rendererTypeVar };
       };

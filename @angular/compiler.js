@@ -1,14 +1,14 @@
 /**
- * @license Angular v4.0.0-beta.8-187f7b6
+ * @license Angular v4.0.0-beta.8-4b54c0e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
-import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, ViewEncapsulation, ChangeDetectionStrategy, isDevMode, ANALYZE_FOR_ENTRY_COMPONENTS, ɵViewUtils, ɵAppView, ɵDebugAppView, ɵViewContainer, ElementRef, ViewContainerRef, ChangeDetectorRef, RenderComponentType, QueryList, TemplateRef, ɵTemplateRef_, ɵCodegenComponentFactoryResolver, ComponentFactoryResolver, ComponentFactory, ɵComponentRef_, ComponentRef, NgModuleFactory, ɵNgModuleInjector, ɵregisterModuleFactory, ɵValueUnwrapper, Injector, ɵViewType, ɵStaticNodeDebugInfo, ɵDebugContext, Renderer, SimpleChange, ɵChangeDetectorStatus, ɵcheckBinding, ɵcheckBindingChange, ɵcheckRenderText, ɵcheckRenderProperty, ɵcheckRenderAttribute, ɵcheckRenderClass, ɵcheckRenderStyle, ɵdevModeEqual, ɵinlineInterpolate, ɵinterpolate, ɵcastByValue, ɵEMPTY_ARRAY, ɵEMPTY_MAP, ɵcreateRenderElement, ɵselectOrCreateRenderHostElement, ɵpureProxy10, ɵpureProxy9, ɵpureProxy8, ɵpureProxy7, ɵpureProxy6, ɵpureProxy5, ɵpureProxy4, ɵpureProxy3, ɵpureProxy2, ɵpureProxy1, SecurityContext, ɵAnimationKeyframe, ɵAnimationStyles, ɵNoOpAnimationPlayer, ɵAnimationGroupPlayer, ɵAnimationSequencePlayer, ɵprepareFinalAnimationStyles, ɵbalanceAnimationKeyframes, ɵclearStyles, ɵrenderStyles, ɵcollectAndResolveStyles, LOCALE_ID, TRANSLATIONS_FORMAT, ɵsetBindingDebugInfo, ɵsetBindingDebugInfoForChanges, ɵAnimationTransition, ɵInlineArray16, ɵInlineArray8, ɵInlineArray4, ɵInlineArray2, ɵEMPTY_INLINE_ARRAY, ɵInlineArrayDynamic, ɵsubscribeToRenderElement, ɵcreateRenderComponentType, ɵnoop, ɵviewDef, ɵelementDef, ɵanchorDef, ɵtextDef, ɵdirectiveDef, ɵproviderDef, ɵqueryDef, ɵpureArrayDef, ɵpureObjectDef, ɵpurePipeDef, ɵpipeDef, ɵnodeValue, ɵngContentDef, ɵunwrapValue, ɵcreateRendererTypeV2, ɵcreateComponentFactory, MissingTranslationStrategy, ɵANY_STATE, ɵFILL_STYLE_FLAG, PACKAGE_ROOT_URL, Directive, Component, Query, HostListener, HostBinding, Output, Input, resolveForwardRef, ɵReflectorReader, ɵLifecycleHooks, ɵEMPTY_STATE, Attribute, SkipSelf, Self, Host, ɵLIFECYCLE_HOOKS_VALUES, Injectable, AnimationGroupMetadata, AnimationWithStepsMetadata, AnimationAnimateMetadata, AnimationKeyframesSequenceMetadata, AnimationStyleMetadata, AnimationStateTransitionMetadata, AnimationStateDeclarationMetadata, Type, ɵERROR_COMPONENT_TYPE, NgModule, Pipe, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, ɵisDefaultChangeDetectionStrategy, ɵelementEventFullName, ɵNodeFlags, ɵQueryValueType, ɵQueryBindingType, ɵViewFlags, ɵProviderType, ɵDepFlags, ɵBindingType, ɵArgumentType, ɵDEFAULT_STATE, ɵReflectionCapabilities, group, sequence, keyframes, animate, style, transition, state, trigger, ViewChildren, ViewChild, ContentChildren, ContentChild, ɵgetComponentFactoryViewClass, Compiler, ModuleWithComponentFactories, TRANSLATIONS, ɵReflector, ReflectiveInjector, COMPILER_OPTIONS, PLATFORM_INITIALIZER, CompilerFactory, platformCore, createPlatformFactory } from '@angular/core';
+import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, ViewEncapsulation, ChangeDetectionStrategy, isDevMode, ANALYZE_FOR_ENTRY_COMPONENTS, ɵViewUtils, ɵAppView, ɵDebugAppView, ɵViewContainer, ElementRef, ViewContainerRef, ChangeDetectorRef, RenderComponentType, QueryList, TemplateRef, ɵTemplateRef_, ɵCodegenComponentFactoryResolver, ComponentFactoryResolver, ComponentFactory, ɵComponentRef_, ComponentRef, NgModuleFactory, ɵNgModuleInjector, ɵregisterModuleFactory, ɵValueUnwrapper, Injector, ɵViewType, ɵStaticNodeDebugInfo, ɵDebugContext, Renderer, SimpleChange, ɵChangeDetectorStatus, ɵcheckBinding, ɵcheckBindingChange, ɵcheckRenderText, ɵcheckRenderProperty, ɵcheckRenderAttribute, ɵcheckRenderClass, ɵcheckRenderStyle, ɵdevModeEqual, ɵinlineInterpolate, ɵinterpolate, ɵcastByValue, ɵEMPTY_ARRAY, ɵEMPTY_MAP, ɵcreateRenderElement, ɵselectOrCreateRenderHostElement, ɵpureProxy10, ɵpureProxy9, ɵpureProxy8, ɵpureProxy7, ɵpureProxy6, ɵpureProxy5, ɵpureProxy4, ɵpureProxy3, ɵpureProxy2, ɵpureProxy1, SecurityContext, ɵAnimationKeyframe, ɵAnimationStyles, ɵNoOpAnimationPlayer, ɵAnimationGroupPlayer, ɵAnimationSequencePlayer, ɵprepareFinalAnimationStyles, ɵbalanceAnimationKeyframes, ɵclearStyles, ɵrenderStyles, ɵcollectAndResolveStyles, LOCALE_ID, TRANSLATIONS_FORMAT, ɵsetBindingDebugInfo, ɵsetBindingDebugInfoForChanges, ɵAnimationTransition, ɵInlineArray16, ɵInlineArray8, ɵInlineArray4, ɵInlineArray2, ɵEMPTY_INLINE_ARRAY, ɵInlineArrayDynamic, ɵsubscribeToRenderElement, ɵcreateRenderComponentType, ɵnoop, ɵviewDef, ɵelementDef, ɵanchorDef, ɵtextDef, ɵdirectiveDef, ɵproviderDef, ɵqueryDef, ɵpureArrayDef, ɵpureObjectDef, ɵpurePipeDef, ɵpipeDef, ɵnodeValue, ɵngContentDef, ɵunwrapValue, ɵcreateRendererTypeV2, ɵcreateComponentFactory, MissingTranslationStrategy, ɵANY_STATE, ɵFILL_STYLE_FLAG, PACKAGE_ROOT_URL, Directive, Component, Query, HostListener, HostBinding, Output, Input, resolveForwardRef, ɵReflectorReader, ɵLifecycleHooks, ɵEMPTY_STATE, Attribute, SkipSelf, Self, Host, ɵLIFECYCLE_HOOKS_VALUES, Injectable, Type, ɵERROR_COMPONENT_TYPE, NgModule, Pipe, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, ɵisDefaultChangeDetectionStrategy, ɵelementEventFullName, ɵNodeFlags, ɵQueryValueType, ɵQueryBindingType, ɵViewFlags, ɵProviderType, ɵDepFlags, ɵBindingType, ɵArgumentType, ɵDEFAULT_STATE, ɵReflectionCapabilities, group, sequence, keyframes, animate, style, transition, state, trigger, ViewChildren, ViewChild, ContentChildren, ContentChild, ɵgetComponentFactoryViewClass, Compiler, ModuleWithComponentFactories, TRANSLATIONS, ɵReflector, ReflectiveInjector, COMPILER_OPTIONS, PLATFORM_INITIALIZER, CompilerFactory, platformCore, createPlatformFactory } from '@angular/core';
 
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-187f7b6');
+const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-4b54c0e');
 
 /**
  * @license
@@ -2490,7 +2490,7 @@ class CompilerConfig {
         this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
         this.missingTranslation = missingTranslation;
-        this.useViewEngine = useViewEngine;
+        this.useViewEngine = true;
     }
     /**
      * @return {?}
@@ -17503,60 +17503,6 @@ class CompileMetadataResolver {
         }
     }
     /**
-     * @param {?} entry
-     * @return {?}
-     */
-    getAnimationEntryMetadata(entry) {
-        const /** @type {?} */ defs = entry.definitions.map(def => this._getAnimationStateMetadata(def));
-        return new CompileAnimationEntryMetadata(entry.name, defs);
-    }
-    /**
-     * @param {?} value
-     * @return {?}
-     */
-    _getAnimationStateMetadata(value) {
-        if (value instanceof AnimationStateDeclarationMetadata) {
-            const /** @type {?} */ styles = this._getAnimationStyleMetadata(value.styles);
-            return new CompileAnimationStateDeclarationMetadata(value.stateNameExpr, styles);
-        }
-        if (value instanceof AnimationStateTransitionMetadata) {
-            return new CompileAnimationStateTransitionMetadata(value.stateChangeExpr, this._getAnimationMetadata(value.steps));
-        }
-        return null;
-    }
-    /**
-     * @param {?} value
-     * @return {?}
-     */
-    _getAnimationStyleMetadata(value) {
-        return new CompileAnimationStyleMetadata(value.offset, value.styles);
-    }
-    /**
-     * @param {?} value
-     * @return {?}
-     */
-    _getAnimationMetadata(value) {
-        if (value instanceof AnimationStyleMetadata) {
-            return this._getAnimationStyleMetadata(value);
-        }
-        if (value instanceof AnimationKeyframesSequenceMetadata) {
-            return new CompileAnimationKeyframesSequenceMetadata(value.steps.map(entry => this._getAnimationStyleMetadata(entry)));
-        }
-        if (value instanceof AnimationAnimateMetadata) {
-            const /** @type {?} */ animateData = (this
-                ._getAnimationMetadata(value.styles));
-            return new CompileAnimationAnimateMetadata(value.timings, animateData);
-        }
-        if (value instanceof AnimationWithStepsMetadata) {
-            const /** @type {?} */ steps = value.steps.map(step => this._getAnimationMetadata(step));
-            if (value instanceof AnimationGroupMetadata) {
-                return new CompileAnimationGroupMetadata(steps);
-            }
-            return new CompileAnimationSequenceMetadata(steps);
-        }
-        return null;
-    }
-    /**
      * @param {?} type
      * @param {?} kind
      * @return {?}
@@ -17661,15 +17607,7 @@ class CompileMetadataResolver {
             assertArrayOfStrings('styles', dirMeta.styles);
             assertArrayOfStrings('styleUrls', dirMeta.styleUrls);
             assertInterpolationSymbols('interpolation', dirMeta.interpolation);
-            let /** @type {?} */ animations;
-            if (this._config.useViewEngine) {
-                animations = dirMeta.animations;
-            }
-            else {
-                animations = dirMeta.animations ?
-                    dirMeta.animations.map(e => this.getAnimationEntryMetadata(e)) :
-                    null;
-            }
+            const /** @type {?} */ animations = dirMeta.animations;
             nonNormalizedTemplateMetadata = new CompileTemplateMetadata({
                 encapsulation: dirMeta.encapsulation,
                 template: dirMeta.template,
@@ -25537,17 +25475,14 @@ class AotCompiler {
      * @return {?}
      */
     _compileComponent(compMeta, ngModule, directiveIdentifiers, componentStyles, fileSuffix, targetStatements) {
-        const /** @type {?} */ parsedAnimations = this._animationParser.parseComponent(compMeta);
         const /** @type {?} */ directives = directiveIdentifiers.map(dir => this._metadataResolver.getDirectiveSummary(dir.reference));
         const /** @type {?} */ pipes = ngModule.transitiveModule.pipes.map(pipe => this._metadataResolver.getPipeSummary(pipe.reference));
         const { template: parsedTemplate, pipes: usedPipes } = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, ngModule.schemas, identifierName(compMeta.type));
         const /** @type {?} */ stylesExpr = componentStyles ? variable(componentStyles.stylesVar) : literalArr([]);
-        const /** @type {?} */ compiledAnimations = this._animationCompiler.compile(identifierName(compMeta.type), parsedAnimations);
-        const /** @type {?} */ viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, usedPipes, compiledAnimations);
+        const /** @type {?} */ viewResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, stylesExpr, usedPipes, null);
         if (componentStyles) {
             targetStatements.push(..._resolveStyleStatements(this._symbolResolver, componentStyles, fileSuffix));
         }
-        compiledAnimations.forEach(entry => targetStatements.push(...entry.statements));
         targetStatements.push(...viewResult.statements);
         return { viewClassVar: viewResult.viewClassVar, compRenderTypeVar: viewResult.rendererTypeVar };
     }

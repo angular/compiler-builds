@@ -83,7 +83,6 @@ class MockDirectiveResolver extends DirectiveResolver {
         this._viewProviderOverrides = new Map();
         this._views = new Map();
         this._inlineTemplates = new Map();
-        this._animations = new Map();
     }
     get _compiler() { return this._injector.get(Compiler); }
     _clearCacheFor(component) { this._compiler.clearCacheFor(component); }
@@ -114,10 +113,6 @@ class MockDirectiveResolver extends DirectiveResolver {
             }
             let animations = view.animations;
             let templateUrl = view.templateUrl;
-            const inlineAnimations = this._animations.get(type);
-            if (isPresent(inlineAnimations)) {
-                animations = inlineAnimations;
-            }
             let inlineTemplate = this._inlineTemplates.get(type);
             if (isPresent(inlineTemplate)) {
                 templateUrl = null;
@@ -183,10 +178,6 @@ class MockDirectiveResolver extends DirectiveResolver {
      */
     setInlineTemplate(component, template) {
         this._inlineTemplates.set(component, template);
-        this._clearCacheFor(component);
-    }
-    setAnimations(component, animations) {
-        this._animations.set(component, animations);
         this._clearCacheFor(component);
     }
 }

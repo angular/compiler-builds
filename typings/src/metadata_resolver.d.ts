@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { AnimationEntryMetadata, Component, Directive, InjectionToken, Type, ɵReflectorReader } from '@angular/core';
+import { Component, Directive, InjectionToken, Type, ɵReflectorReader } from '@angular/core';
 import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
 import * as cpl from './compile_metadata';
 import { CompilerConfig } from './config';
@@ -45,10 +45,6 @@ export declare class CompileMetadataResolver {
     getHostComponentType(dirType: any): StaticSymbol | Type<any>;
     private getRendererType(dirType);
     private getComponentFactory(selector, dirType);
-    getAnimationEntryMetadata(entry: AnimationEntryMetadata): cpl.CompileAnimationEntryMetadata;
-    private _getAnimationStateMetadata(value);
-    private _getAnimationStyleMetadata(value);
-    private _getAnimationMetadata(value);
     private _loadSummary(type, kind);
     private _loadDirectiveMetadata(directiveType, isSync);
     getNonNormalizedDirectiveMetadata(directiveType: any): {

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { DirectiveResolver } from '@angular/compiler';
-import { AnimationEntryMetadata, Directive, Injector, Provider, Type, ɵViewMetadata as ViewMetadata } from '@angular/core';
+import { Directive, Injector, Provider, Type, ɵViewMetadata as ViewMetadata } from '@angular/core';
 /**
  * An implementation of {@link DirectiveResolver} that allows overriding
  * various properties of directives.
@@ -18,7 +18,6 @@ export declare class MockDirectiveResolver extends DirectiveResolver {
     private _viewProviderOverrides;
     private _views;
     private _inlineTemplates;
-    private _animations;
     constructor(_injector: Injector);
     private readonly _compiler;
     private _clearCacheFor(component);
@@ -37,5 +36,4 @@ export declare class MockDirectiveResolver extends DirectiveResolver {
      * Overrides the inline template for a component - other configuration remains unchanged.
      */
     setInlineTemplate(component: Type<any>, template: string): void;
-    setAnimations(component: Type<any>, animations: AnimationEntryMetadata[]): void;
 }
