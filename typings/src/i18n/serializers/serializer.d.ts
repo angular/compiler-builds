@@ -7,7 +7,7 @@
  */
 import * as i18n from '../i18n_ast';
 export declare abstract class Serializer {
-    abstract write(messages: i18n.Message[]): string;
+    abstract write(messages: i18n.Message[], locale: string | null): string;
     abstract load(content: string, url: string): {
         locale: string | null;
         i18nNodesByMsgId: {

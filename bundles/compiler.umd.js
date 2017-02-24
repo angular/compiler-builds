@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-beta.8-e99d721');
+  var VERSION = new _angular_core.Version('4.0.0-beta.8-39f56fa');
 
   /**
    * @license
@@ -6428,7 +6428,7 @@
   var _VERSION = '1.2';
   var _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
   // TODO(vicb): make this a param (s/_/-/)
-  var _SOURCE_LANG = 'en';
+  var _DEFAULT_SOURCE_LANG = 'en';
   var _PLACEHOLDER_TAG = 'x';
   var _FILE_TAG = 'file';
   var _SOURCE_TAG = 'source';
@@ -6441,7 +6441,7 @@
       function Xliff() {
           return _super !== null && _super.apply(this, arguments) || this;
       }
-      Xliff.prototype.write = function (messages) {
+      Xliff.prototype.write = function (messages, locale) {
           var visitor = new _WriteVisitor();
           var transUnits = [];
           messages.forEach(function (message) {
@@ -6457,7 +6457,11 @@
               transUnits.push(new CR(6), transUnit);
           });
           var body = new Tag('body', {}, transUnits.concat([new CR(4)]));
-          var file = new Tag('file', { 'source-language': _SOURCE_LANG, datatype: 'plaintext', original: 'ng2.template' }, [new CR(4), body, new CR(2)]);
+          var file = new Tag('file', {
+              'source-language': locale || _DEFAULT_SOURCE_LANG,
+              datatype: 'plaintext',
+              original: 'ng2.template',
+          }, [new CR(4), body, new CR(2)]);
           var xliff = new Tag('xliff', { version: _VERSION, xmlns: _XMLNS }, [new CR(2), file, new CR()]);
           return serialize([
               new Declaration({ version: '1.0', encoding: 'UTF-8' }), new CR(), xliff, new CR()
@@ -6666,7 +6670,7 @@
       function Xmb() {
           return _super !== null && _super.apply(this, arguments) || this;
       }
-      Xmb.prototype.write = function (messages) {
+      Xmb.prototype.write = function (messages, locale) {
           var exampleVisitor = new ExampleVisitor();
           var visitor = new _Visitor$2();
           var rootNode = new Tag(_MESSAGES_TAG);
@@ -6794,7 +6798,7 @@
       function Xtb() {
           return _super !== null && _super.apply(this, arguments) || this;
       }
-      Xtb.prototype.write = function (messages) { throw new Error('Unsupported'); };
+      Xtb.prototype.write = function (messages, locale) { throw new Error('Unsupported'); };
       Xtb.prototype.load = function (content, url) {
           // xtb to xml nodes
           var xtbParser = new XtbParser();
@@ -21588,10 +21592,12 @@
    * A container for message extracted from the templates.
    */
   var MessageBundle = (function () {
-      function MessageBundle(_htmlParser, _implicitTags, _implicitAttrs) {
+      function MessageBundle(_htmlParser, _implicitTags, _implicitAttrs, _locale) {
+          if (_locale === void 0) { _locale = null; }
           this._htmlParser = _htmlParser;
           this._implicitTags = _implicitTags;
           this._implicitAttrs = _implicitAttrs;
+          this._locale = _locale;
           this._messages = [];
       }
       MessageBundle.prototype.updateFromTemplate = function (html, url, interpolationConfig) {
@@ -21626,7 +21632,7 @@
               var nodes = mapper ? mapperVisitor.convert(src.nodes, mapper) : src.nodes;
               return new Message(nodes, {}, {}, src.meaning, src.description, id);
           });
-          return serializer.write(msgList);
+          return serializer.write(msgList, this._locale);
       };
       return MessageBundle;
   }());
@@ -21691,7 +21697,7 @@
               return _this.messageBundle;
           });
       };
-      Extractor.create = function (host) {
+      Extractor.create = function (host, locale) {
           var htmlParser = new I18NHtmlParser(new HtmlParser());
           var urlResolver = createOfflineCompileUrlResolver();
           var symbolCache = new StaticSymbolCache();
@@ -21709,7 +21715,7 @@
           var elementSchemaRegistry = new DomElementSchemaRegistry();
           var resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
           // TODO(vicb): implicit tags & attributes
-          var messageBundle = new MessageBundle(htmlParser, [], {});
+          var messageBundle = new MessageBundle(htmlParser, [], {}, locale);
           var extractor = new Extractor(host, staticSymbolResolver, messageBundle, resolver);
           return { extractor: extractor, staticReflector: staticReflector };
       };

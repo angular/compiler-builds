@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.8-e99d721
+ * @license Angular v4.0.0-beta.8-39f56fa
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-e99d721');
+const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-39f56fa');
 
 /**
  * @license
@@ -8273,9 +8273,10 @@ class Serializer {
     /**
      * @abstract
      * @param {?} messages
+     * @param {?} locale
      * @return {?}
      */
-    write(messages) { }
+    write(messages, locale) { }
     /**
      * @abstract
      * @param {?} content
@@ -8525,7 +8526,7 @@ function _escapeXml(text) {
 const /** @type {?} */ _VERSION = '1.2';
 const /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
-const /** @type {?} */ _SOURCE_LANG = 'en';
+const /** @type {?} */ _DEFAULT_SOURCE_LANG = 'en';
 const /** @type {?} */ _PLACEHOLDER_TAG = 'x';
 const /** @type {?} */ _FILE_TAG = 'file';
 const /** @type {?} */ _SOURCE_TAG = 'source';
@@ -8534,9 +8535,10 @@ const /** @type {?} */ _UNIT_TAG = 'trans-unit';
 class Xliff extends Serializer {
     /**
      * @param {?} messages
+     * @param {?} locale
      * @return {?}
      */
-    write(messages) {
+    write(messages, locale) {
         const /** @type {?} */ visitor = new _WriteVisitor();
         const /** @type {?} */ transUnits = [];
         messages.forEach(message => {
@@ -8552,7 +8554,11 @@ class Xliff extends Serializer {
             transUnits.push(new CR(6), transUnit);
         });
         const /** @type {?} */ body = new Tag('body', {}, [...transUnits, new CR(4)]);
-        const /** @type {?} */ file = new Tag('file', { 'source-language': _SOURCE_LANG, datatype: 'plaintext', original: 'ng2.template' }, [new CR(4), body, new CR(2)]);
+        const /** @type {?} */ file = new Tag('file', {
+            'source-language': locale || _DEFAULT_SOURCE_LANG,
+            datatype: 'plaintext',
+            original: 'ng2.template',
+        }, [new CR(4), body, new CR(2)]);
         const /** @type {?} */ xliff = new Tag('xliff', { version: _VERSION, xmlns: _XMLNS }, [new CR(2), file, new CR()]);
         return serialize([
             new Declaration({ version: '1.0', encoding: 'UTF-8' }), new CR(), xliff, new CR()
@@ -8878,9 +8884,10 @@ const /** @type {?} */ _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
 class Xmb extends Serializer {
     /**
      * @param {?} messages
+     * @param {?} locale
      * @return {?}
      */
-    write(messages) {
+    write(messages, locale) {
         const /** @type {?} */ exampleVisitor = new ExampleVisitor();
         const /** @type {?} */ visitor = new _Visitor$2();
         let /** @type {?} */ rootNode = new Tag(_MESSAGES_TAG);
@@ -9056,9 +9063,10 @@ const /** @type {?} */ _PLACEHOLDER_TAG$2 = 'ph';
 class Xtb extends Serializer {
     /**
      * @param {?} messages
+     * @param {?} locale
      * @return {?}
      */
-    write(messages) { throw new Error('Unsupported'); }
+    write(messages, locale) { throw new Error('Unsupported'); }
     /**
      * @param {?} content
      * @param {?} url
@@ -28362,11 +28370,13 @@ class MessageBundle {
      * @param {?} _htmlParser
      * @param {?} _implicitTags
      * @param {?} _implicitAttrs
+     * @param {?=} _locale
      */
-    constructor(_htmlParser, _implicitTags, _implicitAttrs) {
+    constructor(_htmlParser, _implicitTags, _implicitAttrs, _locale = null) {
         this._htmlParser = _htmlParser;
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
+        this._locale = _locale;
         this._messages = [];
     }
     /**
@@ -28411,7 +28421,7 @@ class MessageBundle {
             const /** @type {?} */ nodes = mapper ? mapperVisitor.convert(src.nodes, mapper) : src.nodes;
             return new Message(nodes, {}, {}, src.meaning, src.description, id);
         });
-        return serializer.write(msgList);
+        return serializer.write(msgList, this._locale);
     }
 }
 class MapPlaceholderNames extends CloneVisitor {
@@ -28498,9 +28508,10 @@ class Extractor {
     }
     /**
      * @param {?} host
+     * @param {?} locale
      * @return {?}
      */
-    static create(host) {
+    static create(host, locale) {
         const /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser());
         const /** @type {?} */ urlResolver = createOfflineCompileUrlResolver();
         const /** @type {?} */ symbolCache = new StaticSymbolCache();
@@ -28518,7 +28529,7 @@ class Extractor {
         const /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
         const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
         // TODO(vicb): implicit tags & attributes
-        const /** @type {?} */ messageBundle = new MessageBundle(htmlParser, [], {});
+        const /** @type {?} */ messageBundle = new MessageBundle(htmlParser, [], {}, locale);
         const /** @type {?} */ extractor = new Extractor(host, staticSymbolResolver, messageBundle, resolver);
         return { extractor, staticReflector };
     }
