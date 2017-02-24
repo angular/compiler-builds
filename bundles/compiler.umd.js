@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-beta.8-ee747f7');
+  var VERSION = new _angular_core.Version('4.0.0-beta.8-e99d721');
 
   /**
    * @license
@@ -131,7 +131,7 @@
       return ReferenceAst;
   }());
   /**
-   * A variable declaration on a <template> (e.g. `var-someName="someLocalName"`).
+   * A variable declaration on a <ng-template> (e.g. `var-someName="someLocalName"`).
    */
   var VariableAst = (function () {
       function VariableAst(name, value, sourceSpan) {
@@ -169,7 +169,7 @@
       return ElementAst;
   }());
   /**
-   * A `<template>` element included in an Angular template.
+   * A `<ng-template>` element included in an Angular template.
    */
   var EmbeddedTemplateAst = (function () {
       function EmbeddedTemplateAst(attrs, outputs, references, variables, directives, providers, hasViewContainer, queryMatches, children, ngContentIndex, sourceSpan) {
@@ -807,7 +807,8 @@
               return true;
           }
           var lcParent = currentParent.toLowerCase();
-          return this.requiredParents[lcParent] != true && lcParent != 'template';
+          var isParentTemplate = lcParent === 'template' || currentParent === 'ng-template';
+          return !isParentTemplate && this.requiredParents[lcParent] != true;
       };
       HtmlTagDefinition.prototype.isClosedByChild = function (name) {
           return this.isVoid || name.toLowerCase() in this.closedByChildren;
@@ -2036,7 +2037,7 @@
   var USE_VIEW_ENGINE = new _angular_core.InjectionToken('UseViewEngine');
   var CompilerConfig = (function () {
       function CompilerConfig(_a) {
-          var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, missingTranslation = _b.missingTranslation, useViewEngine = _b.useViewEngine;
+          var _b = _a === void 0 ? {} : _a, _c = _b.renderTypes, renderTypes = _c === void 0 ? new DefaultRenderTypes() : _c, _d = _b.defaultEncapsulation, defaultEncapsulation = _d === void 0 ? _angular_core.ViewEncapsulation.Emulated : _d, genDebugInfo = _b.genDebugInfo, logBindingUpdate = _b.logBindingUpdate, _e = _b.useJit, useJit = _e === void 0 ? true : _e, missingTranslation = _b.missingTranslation, useViewEngine = _b.useViewEngine, enableLegacyTemplate = _b.enableLegacyTemplate;
           this.renderTypes = renderTypes;
           this.defaultEncapsulation = defaultEncapsulation;
           this._genDebugInfo = genDebugInfo;
@@ -2044,6 +2045,7 @@
           this.useJit = useJit;
           this.missingTranslation = missingTranslation;
           this.useViewEngine = true;
+          this.enableLegacyTemplate = enableLegacyTemplate !== false;
       }
       Object.defineProperty(CompilerConfig.prototype, "genDebugInfo", {
           get: function () {
@@ -7200,9 +7202,9 @@
    *
    * ```
    * <ng-container [ngPlural]="messages.length">
-   *   <template ngPluralCase="=0">zero</template>
-   *   <template ngPluralCase="=1">one</template>
-   *   <template ngPluralCase="other">more than one</template>
+   *   <ng-template ngPluralCase="=0">zero</ng-template>
+   *   <ng-template ngPluralCase="=1">one</ng-template>
+   *   <ng-template ngPluralCase="other">more than one</ng-template>
    * </ng-container>
    * ```
    */
@@ -7251,6 +7253,7 @@
       };
       return _Expander;
   }());
+  // Plural forms are expanded to `NgPlural` and `NgPluralCase`s
   function _expandPluralForm(ast, errors) {
       var children = ast.cases.map(function (c) {
           if (PLURAL_CASES.indexOf(c.value) == -1 && !c.value.match(/^=\d+$/)) {
@@ -7258,20 +7261,21 @@
           }
           var expansionResult = expandNodes(c.expression);
           errors.push.apply(errors, expansionResult.errors);
-          return new Element("template", [new Attribute$1('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+          return new Element("ng-template", [new Attribute$1('ngPluralCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
       });
       var switchAttr = new Attribute$1('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
       return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
   }
+  // ICU messages (excluding plural form) are expanded to `NgSwitch`  and `NgSwitychCase`s
   function _expandDefaultForm(ast, errors) {
       var children = ast.cases.map(function (c) {
           var expansionResult = expandNodes(c.expression);
           errors.push.apply(errors, expansionResult.errors);
           if (c.value === 'other') {
               // other is the default case when no values match
-              return new Element("template", [new Attribute$1('ngSwitchDefault', '', c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+              return new Element("ng-template", [new Attribute$1('ngSwitchDefault', '', c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
           }
-          return new Element("template", [new Attribute$1('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+          return new Element("ng-template", [new Attribute$1('ngSwitchCase', "" + c.value, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
       });
       var switchAttr = new Attribute$1('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
       return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
@@ -8261,28 +8265,31 @@
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
-  // Group 1 = "bind-"
-  // Group 2 = "let-"
-  // Group 3 = "ref-/#"
-  // Group 4 = "on-"
-  // Group 5 = "bindon-"
-  // Group 6 = "@"
-  // Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
-  // Group 8 = identifier inside [()]
-  // Group 9 = identifier inside []
-  // Group 10 = identifier inside ()
   var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+  // Group 1 = "bind-"
   var KW_BIND_IDX = 1;
+  // Group 2 = "let-"
   var KW_LET_IDX = 2;
+  // Group 3 = "ref-/#"
   var KW_REF_IDX = 3;
+  // Group 4 = "on-"
   var KW_ON_IDX = 4;
+  // Group 5 = "bindon-"
   var KW_BINDON_IDX = 5;
+  // Group 6 = "@"
   var KW_AT_IDX = 6;
+  // Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
   var IDENT_KW_IDX = 7;
+  // Group 8 = identifier inside [()]
   var IDENT_BANANA_BOX_IDX = 8;
+  // Group 9 = identifier inside []
   var IDENT_PROPERTY_IDX = 9;
+  // Group 10 = identifier inside ()
   var IDENT_EVENT_IDX = 10;
+  var NG_TEMPLATE_ELEMENT = 'ng-template';
+  // deprecated in 4.x
   var TEMPLATE_ELEMENT = 'template';
+  // deprecated in 4.x
   var TEMPLATE_ATTR = 'template';
   var TEMPLATE_ATTR_PREFIX = '*';
   var CLASS_ATTR = 'class';
@@ -8438,12 +8445,8 @@
       TemplateParseVisitor.prototype.visitText = function (text, parent) {
           var ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
           var expr = this._bindingParser.parseInterpolation(text.value, text.sourceSpan);
-          if (expr) {
-              return new BoundTextAst(expr, ngContentIndex, text.sourceSpan);
-          }
-          else {
-              return new TextAst(text.value, ngContentIndex, text.sourceSpan);
-          }
+          return expr ? new BoundTextAst(expr, ngContentIndex, text.sourceSpan) :
+              new TextAst(text.value, ngContentIndex, text.sourceSpan);
       };
       TemplateParseVisitor.prototype.visitAttribute = function (attribute, context) {
           return new AttrAst(attribute.name, attribute.value, attribute.sourceSpan);
@@ -8477,14 +8480,14 @@
           var templateElementVars = [];
           var hasInlineTemplates = false;
           var attrs = [];
-          var lcElName = splitNsName(nodeName.toLowerCase())[1];
-          var isTemplateElement = lcElName == TEMPLATE_ELEMENT;
+          var isTemplateElement = isTemplate(element, this.config.enableLegacyTemplate, function (m, span) { return _this._reportError(m, span, exports.ParseErrorLevel.WARNING); });
           element.attrs.forEach(function (attr) {
               var hasBinding = _this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
               var templateBindingsSource;
               var prefixToken;
               var normalizedName = _this._normalizeAttributeName(attr.name);
-              if (normalizedName == TEMPLATE_ATTR) {
+              if (_this.config.enableLegacyTemplate && normalizedName == TEMPLATE_ATTR) {
+                  _this._reportError("The template attribute is deprecated. Use an ng-template element instead.", attr.sourceSpan, exports.ParseErrorLevel.WARNING);
                   templateBindingsSource = attr.value;
               }
               else if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
@@ -8544,8 +8547,8 @@
           }
           if (hasInlineTemplates) {
               var templateQueryStartIndex = this.contentQueryStartId;
-              var templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
-              var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateCssSelector).directives;
+              var templateSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
+              var templateDirectiveMetas = this._parseDirectives(this.selectorMatcher, templateSelector).directives;
               var templateBoundDirectivePropNames = new Set();
               var templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, [], templateBoundDirectivePropNames);
               var templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
@@ -8951,6 +8954,21 @@
           ast = ast.ast;
       }
       return ast instanceof EmptyExpr;
+  }
+  // `template` is deprecated in 4.x
+  function isTemplate(el, enableLegacyTemplate, reportDeprecation) {
+      var tagNoNs = splitNsName(el.name)[1];
+      // `<ng-template>` is an angular construct and is lower case
+      if (tagNoNs === NG_TEMPLATE_ELEMENT)
+          return true;
+      // `<template>` is HTML and case insensitive
+      if (tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
+          if (enableLegacyTemplate && tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
+              reportDeprecation("The <template> element is deprecated. Use <ng-template> instead", el.sourceSpan);
+              return true;
+          }
+          return false;
+      }
   }
 
   var __extends$18 = (this && this.__extends) || function (d, b) {
@@ -17126,7 +17144,7 @@
   }
 
   // Note: We can't do this when we create the CompileElements already,
-  // as we create embedded views before the <template> elements themselves.
+  // as we create embedded views before the <ng-template> elements themselves.
   function bindQueryValues(ce) {
       var queriesWithReads = [];
       ce.getProviderTokens().forEach(function (token) {
@@ -20639,7 +20657,8 @@
           defaultEncapsulation: _angular_core.ViewEncapsulation.Emulated,
           logBindingUpdate: false,
           useJit: false,
-          useViewEngine: options.useViewEngine
+          useViewEngine: options.useViewEngine,
+          enableLegacyTemplate: options.enableLegacyTemplate !== false,
       });
       var normalizer = new DirectiveNormalizer({ get: function (url) { return compilerHost.loadResource(url); } }, urlResolver, htmlParser, config);
       var expressionParser = new Parser(new Lexer());
@@ -21765,12 +21784,14 @@
   ];
   var JitCompilerFactory = (function () {
       function JitCompilerFactory(defaultOptions) {
-          this._defaultOptions = [{
-                  useDebug: _angular_core.isDevMode(),
-                  useJit: true,
-                  defaultEncapsulation: _angular_core.ViewEncapsulation.Emulated,
-                  missingTranslation: _angular_core.MissingTranslationStrategy.Warning,
-              }].concat(defaultOptions);
+          var compilerOptions = {
+              useDebug: _angular_core.isDevMode(),
+              useJit: true,
+              defaultEncapsulation: _angular_core.ViewEncapsulation.Emulated,
+              missingTranslation: _angular_core.MissingTranslationStrategy.Warning,
+              enableLegacyTemplate: true,
+          };
+          this._defaultOptions = [compilerOptions].concat(defaultOptions);
       }
       JitCompilerFactory.prototype.createCompiler = function (options) {
           if (options === void 0) { options = []; }
@@ -21790,7 +21811,8 @@
                           // from the app providers
                           defaultEncapsulation: opts.defaultEncapsulation,
                           logBindingUpdate: opts.useDebug,
-                          missingTranslation: opts.missingTranslation, useViewEngine: useViewEngine
+                          missingTranslation: opts.missingTranslation, useViewEngine: useViewEngine,
+                          enableLegacyTemplate: opts.enableLegacyTemplate,
                       });
                   },
                   deps: [USE_VIEW_ENGINE]

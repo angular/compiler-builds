@@ -95,7 +95,7 @@ export declare class ReferenceAst implements TemplateAst {
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
- * A variable declaration on a <template> (e.g. `var-someName="someLocalName"`).
+ * A variable declaration on a <ng-template> (e.g. `var-someName="someLocalName"`).
  */
 export declare class VariableAst implements TemplateAst {
     name: string;
@@ -125,7 +125,7 @@ export declare class ElementAst implements TemplateAst {
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
- * A `<template>` element included in an Angular template.
+ * A `<ng-template>` element included in an Angular template.
  */
 export declare class EmbeddedTemplateAst implements TemplateAst {
     attrs: AttrAst[];

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-beta.8-ee747f7
+ * @license Angular v4.0.0-beta.8-e99d721
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-ee747f7');
+const /** @type {?} */ VERSION = new Version('4.0.0-beta.8-e99d721');
 
 /**
  * @license
@@ -195,7 +195,7 @@ class ReferenceAst {
     }
 }
 /**
- * A variable declaration on a <template> (e.g. `var-someName="someLocalName"`).
+ * A variable declaration on a <ng-template> (e.g. `var-someName="someLocalName"`).
  */
 class VariableAst {
     /**
@@ -261,7 +261,7 @@ class ElementAst {
     }
 }
 /**
- * A `<template>` element included in an Angular template.
+ * A `<ng-template>` element included in an Angular template.
  */
 class EmbeddedTemplateAst {
     /**
@@ -1021,7 +1021,8 @@ class HtmlTagDefinition {
             return true;
         }
         const /** @type {?} */ lcParent = currentParent.toLowerCase();
-        return this.requiredParents[lcParent] != true && lcParent != 'template';
+        const /** @type {?} */ isParentTemplate = lcParent === 'template' || currentParent === 'ng-template';
+        return !isParentTemplate && this.requiredParents[lcParent] != true;
     }
     /**
      * @param {?} name
@@ -2483,7 +2484,7 @@ class CompilerConfig {
     /**
      * @param {?=} __0
      */
-    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true, missingTranslation, useViewEngine } = {}) {
+    constructor({ renderTypes = new DefaultRenderTypes(), defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true, missingTranslation, useViewEngine, enableLegacyTemplate } = {}) {
         this.renderTypes = renderTypes;
         this.defaultEncapsulation = defaultEncapsulation;
         this._genDebugInfo = genDebugInfo;
@@ -2491,6 +2492,7 @@ class CompilerConfig {
         this.useJit = useJit;
         this.missingTranslation = missingTranslation;
         this.useViewEngine = true;
+        this.enableLegacyTemplate = enableLegacyTemplate !== false;
     }
     /**
      * @return {?}
@@ -9603,9 +9605,9 @@ const /** @type {?} */ PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'oth
  *
  * ```
  * <ng-container [ngPlural]="messages.length">
- *   <template ngPluralCase="=0">zero</template>
- *   <template ngPluralCase="=1">one</template>
- *   <template ngPluralCase="other">more than one</template>
+ *   <ng-template ngPluralCase="=0">zero</ng-template>
+ *   <ng-template ngPluralCase="=1">one</ng-template>
+ *   <ng-template ngPluralCase="other">more than one</ng-template>
  * </ng-container>
  * ```
  * @param {?} nodes
@@ -9701,7 +9703,7 @@ function _expandPluralForm(ast, errors) {
         }
         const /** @type {?} */ expansionResult = expandNodes(c.expression);
         errors.push(...expansionResult.errors);
-        return new Element(`template`, [new Attribute$1('ngPluralCase', `${c.value}`, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        return new Element(`ng-template`, [new Attribute$1('ngPluralCase', `${c.value}`, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
     });
     const /** @type {?} */ switchAttr = new Attribute$1('[ngPlural]', ast.switchValue, ast.switchValueSourceSpan);
     return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
@@ -9717,9 +9719,9 @@ function _expandDefaultForm(ast, errors) {
         errors.push(...expansionResult.errors);
         if (c.value === 'other') {
             // other is the default case when no values match
-            return new Element(`template`, [new Attribute$1('ngSwitchDefault', '', c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+            return new Element(`ng-template`, [new Attribute$1('ngSwitchDefault', '', c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
         }
-        return new Element(`template`, [new Attribute$1('ngSwitchCase', `${c.value}`, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
+        return new Element(`ng-template`, [new Attribute$1('ngSwitchCase', `${c.value}`, c.valueSourceSpan)], expansionResult.nodes, c.sourceSpan, c.sourceSpan, c.sourceSpan);
     });
     const /** @type {?} */ switchAttr = new Attribute$1('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
     return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
@@ -10993,28 +10995,31 @@ function normalizeNgContentSelect(selectAttr) {
     return selectAttr;
 }
 
-// Group 1 = "bind-"
-// Group 2 = "let-"
-// Group 3 = "ref-/#"
-// Group 4 = "on-"
-// Group 5 = "bindon-"
-// Group 6 = "@"
-// Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
-// Group 8 = identifier inside [()]
-// Group 9 = identifier inside []
-// Group 10 = identifier inside ()
 const /** @type {?} */ BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+// Group 1 = "bind-"
 const /** @type {?} */ KW_BIND_IDX = 1;
+// Group 2 = "let-"
 const /** @type {?} */ KW_LET_IDX = 2;
+// Group 3 = "ref-/#"
 const /** @type {?} */ KW_REF_IDX = 3;
+// Group 4 = "on-"
 const /** @type {?} */ KW_ON_IDX = 4;
+// Group 5 = "bindon-"
 const /** @type {?} */ KW_BINDON_IDX = 5;
+// Group 6 = "@"
 const /** @type {?} */ KW_AT_IDX = 6;
+// Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
 const /** @type {?} */ IDENT_KW_IDX = 7;
+// Group 8 = identifier inside [()]
 const /** @type {?} */ IDENT_BANANA_BOX_IDX = 8;
+// Group 9 = identifier inside []
 const /** @type {?} */ IDENT_PROPERTY_IDX = 9;
+// Group 10 = identifier inside ()
 const /** @type {?} */ IDENT_EVENT_IDX = 10;
+const /** @type {?} */ NG_TEMPLATE_ELEMENT = 'ng-template';
+// deprecated in 4.x
 const /** @type {?} */ TEMPLATE_ELEMENT = 'template';
+// deprecated in 4.x
 const /** @type {?} */ TEMPLATE_ATTR = 'template';
 const /** @type {?} */ TEMPLATE_ATTR_PREFIX = '*';
 const /** @type {?} */ CLASS_ATTR = 'class';
@@ -11248,12 +11253,8 @@ class TemplateParseVisitor {
     visitText(text, parent) {
         const /** @type {?} */ ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
         const /** @type {?} */ expr = this._bindingParser.parseInterpolation(text.value, text.sourceSpan);
-        if (expr) {
-            return new BoundTextAst(expr, ngContentIndex, text.sourceSpan);
-        }
-        else {
-            return new TextAst(text.value, ngContentIndex, text.sourceSpan);
-        }
+        return expr ? new BoundTextAst(expr, ngContentIndex, text.sourceSpan) :
+            new TextAst(text.value, ngContentIndex, text.sourceSpan);
     }
     /**
      * @param {?} attribute
@@ -11301,14 +11302,14 @@ class TemplateParseVisitor {
         const /** @type {?} */ templateElementVars = [];
         let /** @type {?} */ hasInlineTemplates = false;
         const /** @type {?} */ attrs = [];
-        const /** @type {?} */ lcElName = splitNsName(nodeName.toLowerCase())[1];
-        const /** @type {?} */ isTemplateElement = lcElName == TEMPLATE_ELEMENT;
+        const /** @type {?} */ isTemplateElement = isTemplate(element, this.config.enableLegacyTemplate, (m, span) => this._reportError(m, span, ParseErrorLevel.WARNING));
         element.attrs.forEach(attr => {
             const /** @type {?} */ hasBinding = this._parseAttr(isTemplateElement, attr, matchableAttrs, elementOrDirectiveProps, events, elementOrDirectiveRefs, elementVars);
             let /** @type {?} */ templateBindingsSource;
             let /** @type {?} */ prefixToken;
             let /** @type {?} */ normalizedName = this._normalizeAttributeName(attr.name);
-            if (normalizedName == TEMPLATE_ATTR) {
+            if (this.config.enableLegacyTemplate && normalizedName == TEMPLATE_ATTR) {
+                this._reportError(`The template attribute is deprecated. Use an ng-template element instead.`, attr.sourceSpan, ParseErrorLevel.WARNING);
                 templateBindingsSource = attr.value;
             }
             else if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
@@ -11368,8 +11369,8 @@ class TemplateParseVisitor {
         }
         if (hasInlineTemplates) {
             const /** @type {?} */ templateQueryStartIndex = this.contentQueryStartId;
-            const /** @type {?} */ templateCssSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
-            const { directives: templateDirectiveMetas } = this._parseDirectives(this.selectorMatcher, templateCssSelector);
+            const /** @type {?} */ templateSelector = createElementCssSelector(TEMPLATE_ELEMENT, templateMatchableAttrs);
+            const { directives: templateDirectiveMetas } = this._parseDirectives(this.selectorMatcher, templateSelector);
             const /** @type {?} */ templateBoundDirectivePropNames = new Set();
             const /** @type {?} */ templateDirectiveAsts = this._createDirectiveAsts(true, element.name, templateDirectiveMetas, templateElementOrDirectiveProps, [], element.sourceSpan, [], templateBoundDirectivePropNames);
             const /** @type {?} */ templateElementProps = this._createElementPropertyAsts(element.name, templateElementOrDirectiveProps, templateBoundDirectivePropNames);
@@ -11940,6 +11941,26 @@ function isEmptyExpression(ast) {
         ast = ast.ast;
     }
     return ast instanceof EmptyExpr;
+}
+/**
+ * @param {?} el
+ * @param {?} enableLegacyTemplate
+ * @param {?} reportDeprecation
+ * @return {?}
+ */
+function isTemplate(el, enableLegacyTemplate, reportDeprecation) {
+    const /** @type {?} */ tagNoNs = splitNsName(el.name)[1];
+    // `<ng-template>` is an angular construct and is lower case
+    if (tagNoNs === NG_TEMPLATE_ELEMENT)
+        return true;
+    // `<template>` is HTML and case insensitive
+    if (tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
+        if (enableLegacyTemplate && tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
+            reportDeprecation(`The <template> element is deprecated. Use <ng-template> instead`, el.sourceSpan);
+            return true;
+        }
+        return false;
+    }
 }
 
 /**
@@ -27078,7 +27099,8 @@ function createAotCompiler(compilerHost, options) {
         defaultEncapsulation: ViewEncapsulation.Emulated,
         logBindingUpdate: false,
         useJit: false,
-        useViewEngine: options.useViewEngine
+        useViewEngine: options.useViewEngine,
+        enableLegacyTemplate: options.enableLegacyTemplate !== false,
     });
     const /** @type {?} */ normalizer = new DirectiveNormalizer({ get: (url) => compilerHost.loadResource(url) }, urlResolver, htmlParser, config);
     const /** @type {?} */ expressionParser = new Parser(new Lexer());
@@ -28580,12 +28602,14 @@ class JitCompilerFactory {
      * @param {?} defaultOptions
      */
     constructor(defaultOptions) {
-        this._defaultOptions = [{
-                useDebug: isDevMode(),
-                useJit: true,
-                defaultEncapsulation: ViewEncapsulation.Emulated,
-                missingTranslation: MissingTranslationStrategy.Warning,
-            }].concat(defaultOptions);
+        const compilerOptions = {
+            useDebug: isDevMode(),
+            useJit: true,
+            defaultEncapsulation: ViewEncapsulation.Emulated,
+            missingTranslation: MissingTranslationStrategy.Warning,
+            enableLegacyTemplate: true,
+        };
+        this._defaultOptions = [compilerOptions, ...defaultOptions];
     }
     /**
      * @param {?=} options
@@ -28608,7 +28632,8 @@ class JitCompilerFactory {
                         // from the app providers
                         defaultEncapsulation: opts.defaultEncapsulation,
                         logBindingUpdate: opts.useDebug,
-                        missingTranslation: opts.missingTranslation, useViewEngine
+                        missingTranslation: opts.missingTranslation, useViewEngine,
+                        enableLegacyTemplate: opts.enableLegacyTemplate,
                     });
                 },
                 deps: [USE_VIEW_ENGINE]

@@ -17,12 +17,13 @@ export declare const USE_VIEW_ENGINE: InjectionToken<boolean>;
 export declare class CompilerConfig {
     renderTypes: RenderTypes;
     defaultEncapsulation: ViewEncapsulation;
-    private _genDebugInfo;
-    private _logBindingUpdate;
+    enableLegacyTemplate: boolean;
     useJit: boolean;
     useViewEngine: boolean;
     missingTranslation: MissingTranslationStrategy;
-    constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, missingTranslation, useViewEngine}?: {
+    private _genDebugInfo;
+    private _logBindingUpdate;
+    constructor({renderTypes, defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, missingTranslation, useViewEngine, enableLegacyTemplate}?: {
         renderTypes?: RenderTypes;
         defaultEncapsulation?: ViewEncapsulation;
         genDebugInfo?: boolean;
@@ -30,6 +31,7 @@ export declare class CompilerConfig {
         useJit?: boolean;
         missingTranslation?: MissingTranslationStrategy;
         useViewEngine?: boolean;
+        enableLegacyTemplate?: boolean;
     });
     readonly genDebugInfo: boolean;
     readonly logBindingUpdate: boolean;
