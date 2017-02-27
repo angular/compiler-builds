@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.1-213e210
+ * @license Angular v4.0.0-rc.1-77682a3
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-213e210');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-77682a3');
 
 /**
  * @license
@@ -23636,15 +23636,17 @@ class ViewCompilerNext extends ViewCompiler {
         let /** @type {?} */ embeddedViewCount = 0;
         const /** @type {?} */ staticQueryIds = findStaticQueryIds(template);
         const /** @type {?} */ statements = [];
+        const /** @type {?} */ customRenderData = [];
+        if (component.template.animations && component.template.animations.length) {
+            customRenderData.push(new LiteralMapEntry('animation', convertValueToOutputAst(component.template.animations), true));
+        }
         const /** @type {?} */ renderComponentVar = variable(rendererTypeName(component.type.reference));
         statements.push(renderComponentVar
             .set(importExpr(createIdentifier(Identifiers.createRendererTypeV2)).callFn([
             new LiteralMapExpr([
                 new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
                 new LiteralMapEntry('styles', styles),
-                new LiteralMapEntry('data', literalMap([
-                    ['animation', convertValueToOutputAst(component.template.animations)]
-                ])),
+                new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
             ])
         ]))
             .toDeclStmt(importType(createIdentifier(Identifiers.RendererTypeV2)), [StmtModifier.Final]));

@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-rc.1-213e210');
+  var VERSION = new _angular_core.Version('4.0.0-rc.1-77682a3');
 
   /**
    * @license
@@ -17870,15 +17870,17 @@
           var embeddedViewCount = 0;
           var staticQueryIds = findStaticQueryIds(template);
           var statements = [];
+          var customRenderData = [];
+          if (component.template.animations && component.template.animations.length) {
+              customRenderData.push(new LiteralMapEntry('animation', convertValueToOutputAst(component.template.animations), true));
+          }
           var renderComponentVar = variable(rendererTypeName(component.type.reference));
           statements.push(renderComponentVar
               .set(importExpr(createIdentifier(Identifiers.createRendererTypeV2)).callFn([
               new LiteralMapExpr([
                   new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
                   new LiteralMapEntry('styles', styles),
-                  new LiteralMapEntry('data', literalMap([
-                      ['animation', convertValueToOutputAst(component.template.animations)]
-                  ])),
+                  new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
               ])
           ]))
               .toDeclStmt(importType(createIdentifier(Identifiers.RendererTypeV2)), [StmtModifier.Final]));
