@@ -204,7 +204,6 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
     entryComponents: CompileEntryComponentMetadata[];
     changeDetection: ChangeDetectionStrategy;
     template: CompileTemplateSummary;
-    wrapperType: StaticSymbol | ProxyClass;
     componentViewType: StaticSymbol | ProxyClass;
     rendererType: StaticSymbol | RendererTypeV2;
     componentFactory: StaticSymbol | ComponentFactory<any>;
@@ -213,7 +212,7 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
  * Metadata regarding compilation of a directive.
  */
 export declare class CompileDirectiveMetadata {
-    static create({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, rendererType, componentFactory}?: {
+    static create({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}?: {
         isHost?: boolean;
         type?: CompileTypeMetadata;
         isComponent?: boolean;
@@ -231,7 +230,6 @@ export declare class CompileDirectiveMetadata {
         viewQueries?: CompileQueryMetadata[];
         entryComponents?: CompileEntryComponentMetadata[];
         template?: CompileTemplateMetadata;
-        wrapperType?: StaticSymbol | ProxyClass;
         componentViewType?: StaticSymbol | ProxyClass;
         rendererType?: StaticSymbol | RendererTypeV2;
         componentFactory?: StaticSymbol | ComponentFactory<any>;
@@ -263,11 +261,10 @@ export declare class CompileDirectiveMetadata {
     viewQueries: CompileQueryMetadata[];
     entryComponents: CompileEntryComponentMetadata[];
     template: CompileTemplateMetadata;
-    wrapperType: StaticSymbol | ProxyClass;
     componentViewType: StaticSymbol | ProxyClass;
     rendererType: StaticSymbol | RendererTypeV2;
     componentFactory: StaticSymbol | ComponentFactory<any>;
-    constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, wrapperType, componentViewType, rendererType, componentFactory}?: {
+    constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}?: {
         isHost?: boolean;
         type?: CompileTypeMetadata;
         isComponent?: boolean;
@@ -295,7 +292,6 @@ export declare class CompileDirectiveMetadata {
         viewQueries?: CompileQueryMetadata[];
         entryComponents?: CompileEntryComponentMetadata[];
         template?: CompileTemplateMetadata;
-        wrapperType?: StaticSymbol | ProxyClass;
         componentViewType?: StaticSymbol | ProxyClass;
         rendererType?: StaticSymbol | RendererTypeV2;
         componentFactory?: StaticSymbol | ComponentFactory<any>;

@@ -60,11 +60,10 @@ export declare class BoundElementPropertyAst implements TemplateAst {
     name: string;
     type: PropertyBindingType;
     securityContext: SecurityContext;
-    needsRuntimeSecurityContext: boolean;
     value: AST;
     unit: string;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, type: PropertyBindingType, securityContext: SecurityContext, needsRuntimeSecurityContext: boolean, value: AST, unit: string, sourceSpan: ParseSourceSpan);
+    constructor(name: string, type: PropertyBindingType, securityContext: SecurityContext, value: AST, unit: string, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
     readonly isAnimation: boolean;
 }

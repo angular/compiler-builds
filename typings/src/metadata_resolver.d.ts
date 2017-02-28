@@ -39,7 +39,6 @@ export declare class CompileMetadataResolver {
     clearCache(): void;
     private _createProxyClass(baseType, name);
     private getGeneratedClass(dirType, name);
-    private getDirectiveWrapperClass(dirType);
     private getComponentViewClass(dirType);
     getHostComponentViewClass(dirType: any): StaticSymbol | cpl.ProxyClass;
     getHostComponentType(dirType: any): StaticSymbol | Type<any>;

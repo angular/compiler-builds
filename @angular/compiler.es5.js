@@ -1,10 +1,10 @@
 var _get=function get(object,property,receiver){if(object===null)object=Function.prototype;var desc=Object.getOwnPropertyDescriptor(object,property);if(desc===undefined){var parent=Object.getPrototypeOf(object);if(parent===null){return undefined;}else{return get(parent,property,receiver);}}else if("value"in desc){return desc.value;}else{var getter=desc.get;if(getter===undefined){return undefined;}return getter.call(receiver);}};var _slicedToArray=function(){function sliceIterator(arr,i){var _arr=[];var _n=true;var _d=false;var _e=undefined;try{for(var _i=arr[Symbol.iterator](),_s;!(_n=(_s=_i.next()).done);_n=true){_arr.push(_s.value);if(i&&_arr.length===i)break;}}catch(err){_d=true;_e=err;}finally{try{if(!_n&&_i["return"])_i["return"]();}finally{if(_d)throw _e;}}return _arr;}return function(arr,i){if(Array.isArray(arr)){return arr;}else if(Symbol.iterator in Object(arr)){return sliceIterator(arr,i);}else{throw new TypeError("Invalid attempt to destructure non-iterable instance");}};}();var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol&&obj!==Symbol.prototype?"symbol":typeof obj;};var _createClass=function(){function defineProperties(target,props){for(var i=0;i<props.length;i++){var descriptor=props[i];descriptor.enumerable=descriptor.enumerable||false;descriptor.configurable=true;if("value"in descriptor)descriptor.writable=true;Object.defineProperty(target,descriptor.key,descriptor);}}return function(Constructor,protoProps,staticProps){if(protoProps)defineProperties(Constructor.prototype,protoProps);if(staticProps)defineProperties(Constructor,staticProps);return Constructor;};}();function _toArray(arr){return Array.isArray(arr)?arr:Array.from(arr);}function _toConsumableArray(arr){if(Array.isArray(arr)){for(var i=0,arr2=Array(arr.length);i<arr.length;i++){arr2[i]=arr[i];}return arr2;}else{return Array.from(arr);}}function _possibleConstructorReturn(self,call){if(!self){throw new ReferenceError("this hasn't been initialised - super() hasn't been called");}return call&&(typeof call==="object"||typeof call==="function")?call:self;}function _inherits(subClass,superClass){if(typeof superClass!=="function"&&superClass!==null){throw new TypeError("Super expression must either be null or a function, not "+typeof superClass);}subClass.prototype=Object.create(superClass&&superClass.prototype,{constructor:{value:subClass,enumerable:false,writable:true,configurable:true}});if(superClass)Object.setPrototypeOf?Object.setPrototypeOf(subClass,superClass):subClass.__proto__=superClass;}function _classCallCheck(instance,Constructor){if(!(instance instanceof Constructor)){throw new TypeError("Cannot call a class as a function");}}/**
- * @license Angular v4.0.0-rc.1-e58cb7b
+ * @license Angular v4.0.0-rc.1-126fda2
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
- */import{InjectionToken,Version,Inject,Optional,ɵConsole,ɵreflector,ViewEncapsulation,ChangeDetectionStrategy,isDevMode,ANALYZE_FOR_ENTRY_COMPONENTS,ɵViewUtils,ɵAppView,ɵDebugAppView,ɵViewContainer,ElementRef,ViewContainerRef,ChangeDetectorRef,RenderComponentType,QueryList,TemplateRef,ɵTemplateRef_,ɵCodegenComponentFactoryResolver,ComponentFactoryResolver,ComponentFactory,ɵComponentRef_,ComponentRef,NgModuleFactory,ɵNgModuleInjector,ɵregisterModuleFactory,ɵValueUnwrapper,Injector,ɵViewType,ɵStaticNodeDebugInfo,ɵDebugContext,Renderer,SimpleChange,ɵChangeDetectorStatus,ɵcheckBinding,ɵcheckBindingChange,ɵcheckRenderText,ɵcheckRenderProperty,ɵcheckRenderAttribute,ɵcheckRenderClass,ɵcheckRenderStyle,ɵdevModeEqual,ɵinlineInterpolate,ɵinterpolate,ɵcastByValue,ɵEMPTY_ARRAY,ɵEMPTY_MAP,ɵcreateRenderElement,ɵselectOrCreateRenderHostElement,ɵpureProxy10,ɵpureProxy9,ɵpureProxy8,ɵpureProxy7,ɵpureProxy6,ɵpureProxy5,ɵpureProxy4,ɵpureProxy3,ɵpureProxy2,ɵpureProxy1,SecurityContext,ɵAnimationKeyframe,ɵAnimationStyles,ɵNoOpAnimationPlayer,ɵAnimationGroupPlayer,ɵAnimationSequencePlayer,ɵprepareFinalAnimationStyles,ɵbalanceAnimationKeyframes,ɵclearStyles,ɵrenderStyles,ɵcollectAndResolveStyles,LOCALE_ID,TRANSLATIONS_FORMAT,ɵsetBindingDebugInfo,ɵsetBindingDebugInfoForChanges,ɵAnimationTransition,ɵInlineArray16,ɵInlineArray8,ɵInlineArray4,ɵInlineArray2,ɵEMPTY_INLINE_ARRAY,ɵInlineArrayDynamic,ɵsubscribeToRenderElement,ɵcreateRenderComponentType,ɵnoop,ɵvid,ɵeld,ɵand,ɵted,ɵdid,ɵprd,ɵqud,ɵpad,ɵpod,ɵppd,ɵpid,ɵnov,ɵncd,ɵunv,ɵcrt,ɵccf,MissingTranslationStrategy,ɵANY_STATE,ɵFILL_STYLE_FLAG,PACKAGE_ROOT_URL,Directive,Component,Query,HostListener,HostBinding,Output,Input,resolveForwardRef,ɵReflectorReader,ɵLifecycleHooks,ɵEMPTY_STATE,Attribute,SkipSelf,Self,Host,ɵLIFECYCLE_HOOKS_VALUES,Injectable,Type,ɵERROR_COMPONENT_TYPE,NgModule,Pipe,CUSTOM_ELEMENTS_SCHEMA,NO_ERRORS_SCHEMA,ɵisDefaultChangeDetectionStrategy,ɵelementEventFullName,ɵDEFAULT_STATE,ɵReflectionCapabilities,group,sequence,keyframes,animate,style,transition,state,trigger,ViewChildren,ViewChild,ContentChildren,ContentChild,ɵgetComponentFactoryViewClass,Compiler,ModuleWithComponentFactories,TRANSLATIONS,ɵReflector,ReflectiveInjector,COMPILER_OPTIONS,PLATFORM_INITIALIZER,CompilerFactory,platformCore,createPlatformFactory}from'@angular/core';/**
+ */import{InjectionToken,Version,Inject,Optional,ɵConsole,ɵreflector,ViewEncapsulation,ChangeDetectionStrategy,isDevMode,MissingTranslationStrategy,ANALYZE_FOR_ENTRY_COMPONENTS,ElementRef,ViewContainerRef,ChangeDetectorRef,QueryList,TemplateRef,ɵCodegenComponentFactoryResolver,ComponentFactoryResolver,ComponentFactory,ComponentRef,NgModuleFactory,ɵNgModuleInjector,ɵregisterModuleFactory,Injector,SecurityContext,LOCALE_ID,TRANSLATIONS_FORMAT,ɵinlineInterpolate,ɵinterpolate,ɵEMPTY_ARRAY,ɵEMPTY_MAP,Renderer,ɵvid,ɵeld,ɵand,ɵted,ɵdid,ɵprd,ɵqud,ɵpad,ɵpod,ɵppd,ɵpid,ɵnov,ɵncd,ɵunv,ɵcrt,ɵccf,PACKAGE_ROOT_URL,Directive,Component,Query,HostListener,HostBinding,Output,Input,resolveForwardRef,ɵReflectorReader,Attribute,SkipSelf,Self,Host,ɵLIFECYCLE_HOOKS_VALUES,Injectable,Type,ɵERROR_COMPONENT_TYPE,ɵLifecycleHooks,NgModule,Pipe,CUSTOM_ELEMENTS_SCHEMA,NO_ERRORS_SCHEMA,ɵelementEventFullName,ɵReflectionCapabilities,group,sequence,keyframes,animate,style,transition,state,trigger,ViewChildren,ViewChild,ContentChildren,ContentChild,ɵgetComponentViewDefinitionFactory,Compiler,ModuleWithComponentFactories,TRANSLATIONS,ɵReflector,ReflectiveInjector,COMPILER_OPTIONS,PLATFORM_INITIALIZER,CompilerFactory,platformCore,createPlatformFactory}from'@angular/core';/**
  * @stable
- */var/** @type {?} */VERSION=new Version('4.0.0-rc.1-e58cb7b');/**
+ */var/** @type {?} */VERSION=new Version('4.0.0-rc.1-126fda2');/**
  * @license
  * Copyright Google Inc. All Rights Reserved.
  *
@@ -47,11 +47,10 @@ var _get=function get(object,property,receiver){if(object===null)object=Function
      * @param {?} name
      * @param {?} type
      * @param {?} securityContext
-     * @param {?} needsRuntimeSecurityContext
      * @param {?} value
      * @param {?} unit
      * @param {?} sourceSpan
-     */function BoundElementPropertyAst(name,type,securityContext,needsRuntimeSecurityContext,value,unit,sourceSpan){_classCallCheck(this,BoundElementPropertyAst);this.name=name;this.type=type;this.securityContext=securityContext;this.needsRuntimeSecurityContext=needsRuntimeSecurityContext;this.value=value;this.unit=unit;this.sourceSpan=sourceSpan;}/**
+     */function BoundElementPropertyAst(name,type,securityContext,value,unit,sourceSpan){_classCallCheck(this,BoundElementPropertyAst);this.name=name;this.type=type;this.securityContext=securityContext;this.value=value;this.unit=unit;this.sourceSpan=sourceSpan;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -506,15 +505,15 @@ identifier='anonymous_'+_anonymousTypeIndex++;ref['__anonymousType']=identifier;
  */var CompileDirectiveMetadata=function(){_createClass(CompileDirectiveMetadata,null,[{key:'create',/**
      * @param {?=} __0
      * @return {?}
-     */value:function create(){var _ref4=arguments.length>0&&arguments[0]!==undefined?arguments[0]:{},isHost=_ref4.isHost,type=_ref4.type,isComponent=_ref4.isComponent,selector=_ref4.selector,exportAs=_ref4.exportAs,changeDetection=_ref4.changeDetection,inputs=_ref4.inputs,outputs=_ref4.outputs,host=_ref4.host,providers=_ref4.providers,viewProviders=_ref4.viewProviders,queries=_ref4.queries,viewQueries=_ref4.viewQueries,entryComponents=_ref4.entryComponents,template=_ref4.template,wrapperType=_ref4.wrapperType,componentViewType=_ref4.componentViewType,rendererType=_ref4.rendererType,componentFactory=_ref4.componentFactory;var/** @type {?} */hostListeners={};var/** @type {?} */hostProperties={};var/** @type {?} */hostAttributes={};if(isPresent(host)){Object.keys(host).forEach(function(key){var/** @type {?} */value=host[key];var/** @type {?} */matches=key.match(HOST_REG_EXP);if(matches===null){hostAttributes[key]=value;}else if(isPresent(matches[1])){hostProperties[matches[1]]=value;}else if(isPresent(matches[2])){hostListeners[matches[2]]=value;}});}var/** @type {?} */inputsMap={};if(isPresent(inputs)){inputs.forEach(function(bindConfig){// canonical syntax: `dirProp: elProp`
+     */value:function create(){var _ref4=arguments.length>0&&arguments[0]!==undefined?arguments[0]:{},isHost=_ref4.isHost,type=_ref4.type,isComponent=_ref4.isComponent,selector=_ref4.selector,exportAs=_ref4.exportAs,changeDetection=_ref4.changeDetection,inputs=_ref4.inputs,outputs=_ref4.outputs,host=_ref4.host,providers=_ref4.providers,viewProviders=_ref4.viewProviders,queries=_ref4.queries,viewQueries=_ref4.viewQueries,entryComponents=_ref4.entryComponents,template=_ref4.template,componentViewType=_ref4.componentViewType,rendererType=_ref4.rendererType,componentFactory=_ref4.componentFactory;var/** @type {?} */hostListeners={};var/** @type {?} */hostProperties={};var/** @type {?} */hostAttributes={};if(isPresent(host)){Object.keys(host).forEach(function(key){var/** @type {?} */value=host[key];var/** @type {?} */matches=key.match(HOST_REG_EXP);if(matches===null){hostAttributes[key]=value;}else if(isPresent(matches[1])){hostProperties[matches[1]]=value;}else if(isPresent(matches[2])){hostListeners[matches[2]]=value;}});}var/** @type {?} */inputsMap={};if(isPresent(inputs)){inputs.forEach(function(bindConfig){// canonical syntax: `dirProp: elProp`
 // if there is no `:`, use dirProp = elProp
 var/** @type {?} */parts=splitAtColon(bindConfig,[bindConfig,bindConfig]);inputsMap[parts[0]]=parts[1];});}var/** @type {?} */outputsMap={};if(isPresent(outputs)){outputs.forEach(function(bindConfig){// canonical syntax: `dirProp: elProp`
 // if there is no `:`, use dirProp = elProp
-var/** @type {?} */parts=splitAtColon(bindConfig,[bindConfig,bindConfig]);outputsMap[parts[0]]=parts[1];});}return new CompileDirectiveMetadata({isHost:isHost,type:type,isComponent:!!isComponent,selector:selector,exportAs:exportAs,changeDetection:changeDetection,inputs:inputsMap,outputs:outputsMap,hostListeners:hostListeners,hostProperties:hostProperties,hostAttributes:hostAttributes,providers:providers,viewProviders:viewProviders,queries:queries,viewQueries:viewQueries,entryComponents:entryComponents,template:template,wrapperType:wrapperType,componentViewType:componentViewType,rendererType:rendererType,componentFactory:componentFactory});}/**
+var/** @type {?} */parts=splitAtColon(bindConfig,[bindConfig,bindConfig]);outputsMap[parts[0]]=parts[1];});}return new CompileDirectiveMetadata({isHost:isHost,type:type,isComponent:!!isComponent,selector:selector,exportAs:exportAs,changeDetection:changeDetection,inputs:inputsMap,outputs:outputsMap,hostListeners:hostListeners,hostProperties:hostProperties,hostAttributes:hostAttributes,providers:providers,viewProviders:viewProviders,queries:queries,viewQueries:viewQueries,entryComponents:entryComponents,template:template,componentViewType:componentViewType,rendererType:rendererType,componentFactory:componentFactory});}/**
      * @param {?=} __0
-     */}]);function CompileDirectiveMetadata(){var _ref5=arguments.length>0&&arguments[0]!==undefined?arguments[0]:{},isHost=_ref5.isHost,type=_ref5.type,isComponent=_ref5.isComponent,selector=_ref5.selector,exportAs=_ref5.exportAs,changeDetection=_ref5.changeDetection,inputs=_ref5.inputs,outputs=_ref5.outputs,hostListeners=_ref5.hostListeners,hostProperties=_ref5.hostProperties,hostAttributes=_ref5.hostAttributes,providers=_ref5.providers,viewProviders=_ref5.viewProviders,queries=_ref5.queries,viewQueries=_ref5.viewQueries,entryComponents=_ref5.entryComponents,template=_ref5.template,wrapperType=_ref5.wrapperType,componentViewType=_ref5.componentViewType,rendererType=_ref5.rendererType,componentFactory=_ref5.componentFactory;_classCallCheck(this,CompileDirectiveMetadata);this.isHost=!!isHost;this.type=type;this.isComponent=isComponent;this.selector=selector;this.exportAs=exportAs;this.changeDetection=changeDetection;this.inputs=inputs;this.outputs=outputs;this.hostListeners=hostListeners;this.hostProperties=hostProperties;this.hostAttributes=hostAttributes;this.providers=_normalizeArray(providers);this.viewProviders=_normalizeArray(viewProviders);this.queries=_normalizeArray(queries);this.viewQueries=_normalizeArray(viewQueries);this.entryComponents=_normalizeArray(entryComponents);this.template=template;this.wrapperType=wrapperType;this.componentViewType=componentViewType;this.rendererType=rendererType;this.componentFactory=componentFactory;}/**
+     */}]);function CompileDirectiveMetadata(){var _ref5=arguments.length>0&&arguments[0]!==undefined?arguments[0]:{},isHost=_ref5.isHost,type=_ref5.type,isComponent=_ref5.isComponent,selector=_ref5.selector,exportAs=_ref5.exportAs,changeDetection=_ref5.changeDetection,inputs=_ref5.inputs,outputs=_ref5.outputs,hostListeners=_ref5.hostListeners,hostProperties=_ref5.hostProperties,hostAttributes=_ref5.hostAttributes,providers=_ref5.providers,viewProviders=_ref5.viewProviders,queries=_ref5.queries,viewQueries=_ref5.viewQueries,entryComponents=_ref5.entryComponents,template=_ref5.template,componentViewType=_ref5.componentViewType,rendererType=_ref5.rendererType,componentFactory=_ref5.componentFactory;_classCallCheck(this,CompileDirectiveMetadata);this.isHost=!!isHost;this.type=type;this.isComponent=isComponent;this.selector=selector;this.exportAs=exportAs;this.changeDetection=changeDetection;this.inputs=inputs;this.outputs=outputs;this.hostListeners=hostListeners;this.hostProperties=hostProperties;this.hostAttributes=hostAttributes;this.providers=_normalizeArray(providers);this.viewProviders=_normalizeArray(viewProviders);this.queries=_normalizeArray(queries);this.viewQueries=_normalizeArray(viewQueries);this.entryComponents=_normalizeArray(entryComponents);this.template=template;this.componentViewType=componentViewType;this.rendererType=rendererType;this.componentFactory=componentFactory;}/**
      * @return {?}
-     */_createClass(CompileDirectiveMetadata,[{key:'toSummary',value:function toSummary(){return{summaryKind:CompileSummaryKind.Directive,type:this.type,isComponent:this.isComponent,selector:this.selector,exportAs:this.exportAs,inputs:this.inputs,outputs:this.outputs,hostListeners:this.hostListeners,hostProperties:this.hostProperties,hostAttributes:this.hostAttributes,providers:this.providers,viewProviders:this.viewProviders,queries:this.queries,viewQueries:this.viewQueries,entryComponents:this.entryComponents,changeDetection:this.changeDetection,template:this.template&&this.template.toSummary(),wrapperType:this.wrapperType,componentViewType:this.componentViewType,rendererType:this.rendererType,componentFactory:this.componentFactory};}}]);return CompileDirectiveMetadata;}();/**
+     */_createClass(CompileDirectiveMetadata,[{key:'toSummary',value:function toSummary(){return{summaryKind:CompileSummaryKind.Directive,type:this.type,isComponent:this.isComponent,selector:this.selector,exportAs:this.exportAs,inputs:this.inputs,outputs:this.outputs,hostListeners:this.hostListeners,hostProperties:this.hostProperties,hostAttributes:this.hostAttributes,providers:this.providers,viewProviders:this.viewProviders,queries:this.queries,viewQueries:this.viewQueries,entryComponents:this.entryComponents,changeDetection:this.changeDetection,template:this.template&&this.template.toSummary(),componentViewType:this.componentViewType,rendererType:this.rendererType,componentFactory:this.componentFactory};}}]);return CompileDirectiveMetadata;}();/**
  * Construct {\@link CompileDirectiveMetadata} from {\@link ComponentTypeMetadata} and a selector.
  * @param {?} hostTypeReference
  * @param {?} compMeta
@@ -558,67 +557,13 @@ var/** @type {?} */parts=splitAtColon(bindConfig,[bindConfig,bindConfig]);output
  */function _normalizeArray(obj){return obj||[];}var ProviderMeta=/**
      * @param {?} token
      * @param {?} __1
-     */function ProviderMeta(token,_ref8){var useClass=_ref8.useClass,useValue=_ref8.useValue,useExisting=_ref8.useExisting,useFactory=_ref8.useFactory,deps=_ref8.deps,multi=_ref8.multi;_classCallCheck(this,ProviderMeta);this.token=token;this.useClass=useClass;this.useValue=useValue;this.useExisting=useExisting;this.useFactory=useFactory;this.dependencies=deps;this.multi=!!multi;};var/** @type {?} */CORE=assetUrl('core');var/** @type {?} */VIEW_UTILS_MODULE_URL=assetUrl('core','linker/view_utils');var Identifiers=function Identifiers(){_classCallCheck(this,Identifiers);};Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS={name:'ANALYZE_FOR_ENTRY_COMPONENTS',moduleUrl:CORE,runtime:ANALYZE_FOR_ENTRY_COMPONENTS};Identifiers.ViewUtils={name:'ɵViewUtils',moduleUrl:CORE,runtime:ɵViewUtils};Identifiers.AppView={name:'ɵAppView',moduleUrl:CORE,runtime:ɵAppView};Identifiers.DebugAppView={name:'ɵDebugAppView',moduleUrl:CORE,runtime:ɵDebugAppView};Identifiers.ViewContainer={name:'ɵViewContainer',moduleUrl:CORE,runtime:ɵViewContainer};Identifiers.ElementRef={name:'ElementRef',moduleUrl:CORE,runtime:ElementRef};Identifiers.ViewContainerRef={name:'ViewContainerRef',moduleUrl:CORE,runtime:ViewContainerRef};Identifiers.ChangeDetectorRef={name:'ChangeDetectorRef',moduleUrl:CORE,runtime:ChangeDetectorRef};Identifiers.RenderComponentType={name:'RenderComponentType',moduleUrl:CORE,runtime:RenderComponentType};Identifiers.QueryList={name:'QueryList',moduleUrl:CORE,runtime:QueryList};Identifiers.TemplateRef={name:'TemplateRef',moduleUrl:CORE,runtime:TemplateRef};Identifiers.TemplateRef_={name:'ɵTemplateRef_',moduleUrl:CORE,runtime:ɵTemplateRef_};Identifiers.CodegenComponentFactoryResolver={name:'ɵCodegenComponentFactoryResolver',moduleUrl:CORE,runtime:ɵCodegenComponentFactoryResolver};Identifiers.ComponentFactoryResolver={name:'ComponentFactoryResolver',moduleUrl:CORE,runtime:ComponentFactoryResolver};Identifiers.ComponentFactory={name:'ComponentFactory',moduleUrl:CORE,runtime:ComponentFactory};Identifiers.ComponentRef_={name:'ɵComponentRef_',moduleUrl:CORE,runtime:ɵComponentRef_};Identifiers.ComponentRef={name:'ComponentRef',moduleUrl:CORE,runtime:ComponentRef};Identifiers.NgModuleFactory={name:'NgModuleFactory',moduleUrl:CORE,runtime:NgModuleFactory};Identifiers.NgModuleInjector={name:'ɵNgModuleInjector',moduleUrl:CORE,runtime:ɵNgModuleInjector};Identifiers.RegisterModuleFactoryFn={name:'ɵregisterModuleFactory',moduleUrl:CORE,runtime:ɵregisterModuleFactory};Identifiers.ValueUnwrapper={name:'ɵValueUnwrapper',moduleUrl:CORE,runtime:ɵValueUnwrapper};Identifiers.Injector={name:'Injector',moduleUrl:CORE,runtime:Injector};Identifiers.ViewEncapsulation={name:'ViewEncapsulation',moduleUrl:CORE,runtime:ViewEncapsulation};Identifiers.ViewType={name:'ɵViewType',moduleUrl:CORE,runtime:ɵViewType};Identifiers.ChangeDetectionStrategy={name:'ChangeDetectionStrategy',moduleUrl:CORE,runtime:ChangeDetectionStrategy};Identifiers.StaticNodeDebugInfo={name:'ɵStaticNodeDebugInfo',moduleUrl:CORE,runtime:ɵStaticNodeDebugInfo};Identifiers.DebugContext={name:'ɵDebugContext',moduleUrl:CORE,runtime:ɵDebugContext};Identifiers.Renderer={name:'Renderer',moduleUrl:CORE,runtime:Renderer};Identifiers.SimpleChange={name:'SimpleChange',moduleUrl:CORE,runtime:SimpleChange};Identifiers.ChangeDetectorStatus={name:'ɵChangeDetectorStatus',moduleUrl:CORE,runtime:ɵChangeDetectorStatus};Identifiers.checkBinding={name:'ɵcheckBinding',moduleUrl:CORE,runtime:ɵcheckBinding};Identifiers.checkBindingChange={name:'ɵcheckBindingChange',moduleUrl:CORE,runtime:ɵcheckBindingChange};Identifiers.checkRenderText={name:'ɵcheckRenderText',moduleUrl:CORE,runtime:ɵcheckRenderText};Identifiers.checkRenderProperty={name:'ɵcheckRenderProperty',moduleUrl:CORE,runtime:ɵcheckRenderProperty};Identifiers.checkRenderAttribute={name:'ɵcheckRenderAttribute',moduleUrl:CORE,runtime:ɵcheckRenderAttribute};Identifiers.checkRenderClass={name:'ɵcheckRenderClass',moduleUrl:CORE,runtime:ɵcheckRenderClass};Identifiers.checkRenderStyle={name:'ɵcheckRenderStyle',moduleUrl:CORE,runtime:ɵcheckRenderStyle};Identifiers.devModeEqual={name:'ɵdevModeEqual',moduleUrl:CORE,runtime:ɵdevModeEqual};Identifiers.inlineInterpolate={name:'ɵinlineInterpolate',moduleUrl:CORE,runtime:ɵinlineInterpolate};Identifiers.interpolate={name:'ɵinterpolate',moduleUrl:CORE,runtime:ɵinterpolate};Identifiers.castByValue={name:'ɵcastByValue',moduleUrl:CORE,runtime:ɵcastByValue};Identifiers.EMPTY_ARRAY={name:'ɵEMPTY_ARRAY',moduleUrl:CORE,runtime:ɵEMPTY_ARRAY};Identifiers.EMPTY_MAP={name:'ɵEMPTY_MAP',moduleUrl:CORE,runtime:ɵEMPTY_MAP};Identifiers.createRenderElement={name:'ɵcreateRenderElement',moduleUrl:CORE,runtime:ɵcreateRenderElement};Identifiers.selectOrCreateRenderHostElement={name:'ɵselectOrCreateRenderHostElement',moduleUrl:CORE,runtime:ɵselectOrCreateRenderHostElement};Identifiers.pureProxies=[null,{name:'ɵpureProxy1',moduleUrl:CORE,runtime:ɵpureProxy1},{name:'ɵpureProxy2',moduleUrl:CORE,runtime:ɵpureProxy2},{name:'ɵpureProxy3',moduleUrl:CORE,runtime:ɵpureProxy3},{name:'ɵpureProxy4',moduleUrl:CORE,runtime:ɵpureProxy4},{name:'ɵpureProxy5',moduleUrl:CORE,runtime:ɵpureProxy5},{name:'ɵpureProxy6',moduleUrl:CORE,runtime:ɵpureProxy6},{name:'ɵpureProxy7',moduleUrl:CORE,runtime:ɵpureProxy7},{name:'ɵpureProxy8',moduleUrl:CORE,runtime:ɵpureProxy8},{name:'ɵpureProxy9',moduleUrl:CORE,runtime:ɵpureProxy9},{name:'ɵpureProxy10',moduleUrl:CORE,runtime:ɵpureProxy10}];Identifiers.SecurityContext={name:'SecurityContext',moduleUrl:CORE,runtime:SecurityContext};Identifiers.AnimationKeyframe={name:'ɵAnimationKeyframe',moduleUrl:CORE,runtime:ɵAnimationKeyframe};Identifiers.AnimationStyles={name:'ɵAnimationStyles',moduleUrl:CORE,runtime:ɵAnimationStyles};Identifiers.NoOpAnimationPlayer={name:'ɵNoOpAnimationPlayer',moduleUrl:CORE,runtime:ɵNoOpAnimationPlayer};Identifiers.AnimationGroupPlayer={name:'ɵAnimationGroupPlayer',moduleUrl:CORE,runtime:ɵAnimationGroupPlayer};Identifiers.AnimationSequencePlayer={name:'ɵAnimationSequencePlayer',moduleUrl:CORE,runtime:ɵAnimationSequencePlayer};Identifiers.prepareFinalAnimationStyles={name:'ɵprepareFinalAnimationStyles',moduleUrl:CORE,runtime:ɵprepareFinalAnimationStyles};Identifiers.balanceAnimationKeyframes={name:'ɵbalanceAnimationKeyframes',moduleUrl:CORE,runtime:ɵbalanceAnimationKeyframes};Identifiers.clearStyles={name:'ɵclearStyles',moduleUrl:CORE,runtime:ɵclearStyles};Identifiers.renderStyles={name:'ɵrenderStyles',moduleUrl:CORE,runtime:ɵrenderStyles};Identifiers.collectAndResolveStyles={name:'ɵcollectAndResolveStyles',moduleUrl:CORE,runtime:ɵcollectAndResolveStyles};Identifiers.LOCALE_ID={name:'LOCALE_ID',moduleUrl:CORE,runtime:LOCALE_ID};Identifiers.TRANSLATIONS_FORMAT={name:'TRANSLATIONS_FORMAT',moduleUrl:CORE,runtime:TRANSLATIONS_FORMAT};Identifiers.setBindingDebugInfo={name:'ɵsetBindingDebugInfo',moduleUrl:CORE,runtime:ɵsetBindingDebugInfo};Identifiers.setBindingDebugInfoForChanges={name:'ɵsetBindingDebugInfoForChanges',moduleUrl:CORE,runtime:ɵsetBindingDebugInfoForChanges};Identifiers.AnimationTransition={name:'ɵAnimationTransition',moduleUrl:CORE,runtime:ɵAnimationTransition};// This is just the interface!
-Identifiers.InlineArray={name:'InlineArray',moduleUrl:VIEW_UTILS_MODULE_URL,runtime:null};Identifiers.inlineArrays=[{name:'ɵInlineArray2',moduleUrl:CORE,runtime:ɵInlineArray2},{name:'ɵInlineArray2',moduleUrl:CORE,runtime:ɵInlineArray2},{name:'ɵInlineArray4',moduleUrl:CORE,runtime:ɵInlineArray4},{name:'ɵInlineArray8',moduleUrl:CORE,runtime:ɵInlineArray8},{name:'ɵInlineArray16',moduleUrl:CORE,runtime:ɵInlineArray16}];Identifiers.EMPTY_INLINE_ARRAY={name:'ɵEMPTY_INLINE_ARRAY',moduleUrl:CORE,runtime:ɵEMPTY_INLINE_ARRAY};Identifiers.InlineArrayDynamic={name:'ɵInlineArrayDynamic',moduleUrl:CORE,runtime:ɵInlineArrayDynamic};Identifiers.subscribeToRenderElement={name:'ɵsubscribeToRenderElement',moduleUrl:CORE,runtime:ɵsubscribeToRenderElement};Identifiers.createRenderComponentType={name:'ɵcreateRenderComponentType',moduleUrl:CORE,runtime:ɵcreateRenderComponentType};Identifiers.noop={name:'ɵnoop',moduleUrl:CORE,runtime:ɵnoop};Identifiers.viewDef={name:'ɵvid',moduleUrl:CORE,runtime:ɵvid};Identifiers.elementDef={name:'ɵeld',moduleUrl:CORE,runtime:ɵeld};Identifiers.anchorDef={name:'ɵand',moduleUrl:CORE,runtime:ɵand};Identifiers.textDef={name:'ɵted',moduleUrl:CORE,runtime:ɵted};Identifiers.directiveDef={name:'ɵdid',moduleUrl:CORE,runtime:ɵdid};Identifiers.providerDef={name:'ɵprd',moduleUrl:CORE,runtime:ɵprd};Identifiers.queryDef={name:'ɵqud',moduleUrl:CORE,runtime:ɵqud};Identifiers.pureArrayDef={name:'ɵpad',moduleUrl:CORE,runtime:ɵpad};Identifiers.pureObjectDef={name:'ɵpod',moduleUrl:CORE,runtime:ɵpod};Identifiers.purePipeDef={name:'ɵppd',moduleUrl:CORE,runtime:ɵppd};Identifiers.pipeDef={name:'ɵpid',moduleUrl:CORE,runtime:ɵpid};Identifiers.nodeValue={name:'ɵnov',moduleUrl:CORE,runtime:ɵnov};Identifiers.ngContentDef={name:'ɵncd',moduleUrl:CORE,runtime:ɵncd};Identifiers.unwrapValue={name:'ɵunv',moduleUrl:CORE,runtime:ɵunv};Identifiers.createRendererTypeV2={name:'ɵcrt',moduleUrl:CORE,runtime:ɵcrt};Identifiers.RendererTypeV2={name:'RendererTypeV2',moduleUrl:CORE,// type only
-runtime:null};Identifiers.ViewDefinition={name:'ɵViewDefinition',moduleUrl:CORE,// type only
-runtime:null};Identifiers.createComponentFactory={name:'ɵccf',moduleUrl:CORE,runtime:ɵccf};/**
- * @param {?} pkg
- * @param {?=} path
- * @param {?=} type
- * @return {?}
- */function assetUrl(pkg){var path=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:'src';if(path==null){return'@angular/'+pkg;}else{return'@angular/'+pkg+'/'+type+'/'+path;}}/**
- * @param {?} identifier
- * @return {?}
- */function resolveIdentifier(identifier){var/** @type {?} */name=identifier.name;return ɵreflector.resolveIdentifier(name,identifier.moduleUrl,null,identifier.runtime);}/**
- * @param {?} identifier
- * @return {?}
- */function createIdentifier(identifier){return{reference:resolveIdentifier(identifier)};}/**
- * @param {?} identifier
- * @return {?}
- */function identifierToken(identifier){return{identifier:identifier};}/**
- * @param {?} identifier
- * @return {?}
- */function createIdentifierToken(identifier){return identifierToken(createIdentifier(identifier));}/**
- * @param {?} enumType
- * @param {?} name
- * @return {?}
- */function createEnumIdentifier(enumType,name){var/** @type {?} */resolvedEnum=ɵreflector.resolveEnum(resolveIdentifier(enumType),name);return{reference:resolvedEnum};}/**
- * Temporal switch for the compiler to use the new view engine,
- * until it is fully integrated.
- *
- * Only works in Jit for now.
- */var/** @type {?} */USE_VIEW_ENGINE=new InjectionToken('UseViewEngine');var CompilerConfig=function(){/**
+     */function ProviderMeta(token,_ref8){var useClass=_ref8.useClass,useValue=_ref8.useValue,useExisting=_ref8.useExisting,useFactory=_ref8.useFactory,deps=_ref8.deps,multi=_ref8.multi;_classCallCheck(this,ProviderMeta);this.token=token;this.useClass=useClass;this.useValue=useValue;this.useExisting=useExisting;this.useFactory=useFactory;this.dependencies=deps;this.multi=!!multi;};var CompilerConfig=function(){/**
      * @param {?=} __0
-     */function CompilerConfig(){var _ref9=arguments.length>0&&arguments[0]!==undefined?arguments[0]:{},_ref9$renderTypes=_ref9.renderTypes,renderTypes=_ref9$renderTypes===undefined?new DefaultRenderTypes():_ref9$renderTypes,_ref9$defaultEncapsul=_ref9.defaultEncapsulation,defaultEncapsulation=_ref9$defaultEncapsul===undefined?ViewEncapsulation.Emulated:_ref9$defaultEncapsul,genDebugInfo=_ref9.genDebugInfo,logBindingUpdate=_ref9.logBindingUpdate,_ref9$useJit=_ref9.useJit,useJit=_ref9$useJit===undefined?true:_ref9$useJit,missingTranslation=_ref9.missingTranslation,useViewEngine=_ref9.useViewEngine,enableLegacyTemplate=_ref9.enableLegacyTemplate;_classCallCheck(this,CompilerConfig);this.renderTypes=renderTypes;this.defaultEncapsulation=defaultEncapsulation;this._genDebugInfo=genDebugInfo;this._logBindingUpdate=logBindingUpdate;this.useJit=useJit;this.missingTranslation=missingTranslation;this.useViewEngine=true;this.enableLegacyTemplate=enableLegacyTemplate!==false;}/**
+     */function CompilerConfig(){var _ref9=arguments.length>0&&arguments[0]!==undefined?arguments[0]:{},_ref9$defaultEncapsul=_ref9.defaultEncapsulation,defaultEncapsulation=_ref9$defaultEncapsul===undefined?ViewEncapsulation.Emulated:_ref9$defaultEncapsul,genDebugInfo=_ref9.genDebugInfo,logBindingUpdate=_ref9.logBindingUpdate,_ref9$useJit=_ref9.useJit,useJit=_ref9$useJit===undefined?true:_ref9$useJit,missingTranslation=_ref9.missingTranslation,enableLegacyTemplate=_ref9.enableLegacyTemplate;_classCallCheck(this,CompilerConfig);this.defaultEncapsulation=defaultEncapsulation;this._genDebugInfo=genDebugInfo;this._logBindingUpdate=logBindingUpdate;this.useJit=useJit;this.missingTranslation=missingTranslation;this.enableLegacyTemplate=enableLegacyTemplate!==false;}/**
      * @return {?}
      */_createClass(CompilerConfig,[{key:'genDebugInfo',get:function get(){return this._genDebugInfo===void 0?isDevMode():this._genDebugInfo;}/**
      * @return {?}
-     */},{key:'logBindingUpdate',get:function get(){return this._logBindingUpdate===void 0?isDevMode():this._logBindingUpdate;}}]);return CompilerConfig;}();/**
- * Types used for the renderer.
- * Can be replaced to specialize the generated output to a specific renderer
- * to help tree shaking.
- * @abstract
- */var RenderTypes=function(){function RenderTypes(){_classCallCheck(this,RenderTypes);}_createClass(RenderTypes,[{key:'renderer',/**
-     * @abstract
-     * @return {?}
-     */value:function renderer(){}/**
-     * @abstract
-     * @return {?}
-     */},{key:'renderText',value:function renderText(){}/**
-     * @abstract
-     * @return {?}
-     */},{key:'renderElement',value:function renderElement(){}/**
-     * @abstract
-     * @return {?}
-     */},{key:'renderComment',value:function renderComment(){}/**
-     * @abstract
-     * @return {?}
-     */},{key:'renderNode',value:function renderNode(){}/**
-     * @abstract
-     * @return {?}
-     */},{key:'renderEvent',value:function renderEvent(){}}]);return RenderTypes;}();var DefaultRenderTypes=function(){function DefaultRenderTypes(){_classCallCheck(this,DefaultRenderTypes);this.renderText=null;this.renderElement=null;this.renderComment=null;this.renderNode=null;this.renderEvent=null;}/**
-     * @return {?}
-     */_createClass(DefaultRenderTypes,[{key:'renderer',get:function get(){return createIdentifier(Identifiers.Renderer);}}]);return DefaultRenderTypes;}();var ParserError=/**
+     */},{key:'logBindingUpdate',get:function get(){return this._logBindingUpdate===void 0?isDevMode():this._logBindingUpdate;}}]);return CompilerConfig;}();var ParserError=/**
      * @param {?} message
      * @param {?} input
      * @param {?} errLocation
@@ -2806,7 +2751,26 @@ if(this._missingTranslationStrategy===MissingTranslationStrategy.Error){var/** @
 return parseResult;}if(parseResult.errors.length){return new ParseTreeResult(parseResult.rootNodes,parseResult.errors);}return mergeTranslations(parseResult.rootNodes,this._translationBundle,interpolationConfig,[],{});}}]);return I18NHtmlParser;}();/**
  * @param {?=} format
  * @return {?}
- */function createSerializer(format){format=(format||'xlf').toLowerCase();switch(format){case'xmb':return new Xmb();case'xtb':return new Xtb();case'xliff':case'xlf':default:return new Xliff();}}// http://cldr.unicode.org/index/cldr-spec/plural-rules
+ */function createSerializer(format){format=(format||'xlf').toLowerCase();switch(format){case'xmb':return new Xmb();case'xtb':return new Xtb();case'xliff':case'xlf':default:return new Xliff();}}var/** @type {?} */CORE=assetUrl('core');var/** @type {?} */VIEW_UTILS_MODULE_URL=assetUrl('core','linker/view_utils');var Identifiers=function Identifiers(){_classCallCheck(this,Identifiers);};Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS={name:'ANALYZE_FOR_ENTRY_COMPONENTS',moduleUrl:CORE,runtime:ANALYZE_FOR_ENTRY_COMPONENTS};Identifiers.ElementRef={name:'ElementRef',moduleUrl:CORE,runtime:ElementRef};Identifiers.ViewContainerRef={name:'ViewContainerRef',moduleUrl:CORE,runtime:ViewContainerRef};Identifiers.ChangeDetectorRef={name:'ChangeDetectorRef',moduleUrl:CORE,runtime:ChangeDetectorRef};Identifiers.QueryList={name:'QueryList',moduleUrl:CORE,runtime:QueryList};Identifiers.TemplateRef={name:'TemplateRef',moduleUrl:CORE,runtime:TemplateRef};Identifiers.CodegenComponentFactoryResolver={name:'ɵCodegenComponentFactoryResolver',moduleUrl:CORE,runtime:ɵCodegenComponentFactoryResolver};Identifiers.ComponentFactoryResolver={name:'ComponentFactoryResolver',moduleUrl:CORE,runtime:ComponentFactoryResolver};Identifiers.ComponentFactory={name:'ComponentFactory',moduleUrl:CORE,runtime:ComponentFactory};Identifiers.ComponentRef={name:'ComponentRef',moduleUrl:CORE,runtime:ComponentRef};Identifiers.NgModuleFactory={name:'NgModuleFactory',moduleUrl:CORE,runtime:NgModuleFactory};Identifiers.NgModuleInjector={name:'ɵNgModuleInjector',moduleUrl:CORE,runtime:ɵNgModuleInjector};Identifiers.RegisterModuleFactoryFn={name:'ɵregisterModuleFactory',moduleUrl:CORE,runtime:ɵregisterModuleFactory};Identifiers.Injector={name:'Injector',moduleUrl:CORE,runtime:Injector};Identifiers.ViewEncapsulation={name:'ViewEncapsulation',moduleUrl:CORE,runtime:ViewEncapsulation};Identifiers.ChangeDetectionStrategy={name:'ChangeDetectionStrategy',moduleUrl:CORE,runtime:ChangeDetectionStrategy};Identifiers.SecurityContext={name:'SecurityContext',moduleUrl:CORE,runtime:SecurityContext};Identifiers.LOCALE_ID={name:'LOCALE_ID',moduleUrl:CORE,runtime:LOCALE_ID};Identifiers.TRANSLATIONS_FORMAT={name:'TRANSLATIONS_FORMAT',moduleUrl:CORE,runtime:TRANSLATIONS_FORMAT};Identifiers.inlineInterpolate={name:'ɵinlineInterpolate',moduleUrl:CORE,runtime:ɵinlineInterpolate};Identifiers.interpolate={name:'ɵinterpolate',moduleUrl:CORE,runtime:ɵinterpolate};Identifiers.EMPTY_ARRAY={name:'ÉµEMPTY_ARRAY',moduleUrl:CORE,runtime:ɵEMPTY_ARRAY};Identifiers.EMPTY_MAP={name:'ÉµEMPTY_MAP',moduleUrl:CORE,runtime:ɵEMPTY_MAP};Identifiers.Renderer={name:'Renderer',moduleUrl:CORE,runtime:Renderer};Identifiers.viewDef={name:'ɵvid',moduleUrl:CORE,runtime:ɵvid};Identifiers.elementDef={name:'ɵeld',moduleUrl:CORE,runtime:ɵeld};Identifiers.anchorDef={name:'ɵand',moduleUrl:CORE,runtime:ɵand};Identifiers.textDef={name:'ɵted',moduleUrl:CORE,runtime:ɵted};Identifiers.directiveDef={name:'ɵdid',moduleUrl:CORE,runtime:ɵdid};Identifiers.providerDef={name:'ɵprd',moduleUrl:CORE,runtime:ɵprd};Identifiers.queryDef={name:'ɵqud',moduleUrl:CORE,runtime:ɵqud};Identifiers.pureArrayDef={name:'ɵpad',moduleUrl:CORE,runtime:ɵpad};Identifiers.pureObjectDef={name:'ɵpod',moduleUrl:CORE,runtime:ɵpod};Identifiers.purePipeDef={name:'ɵppd',moduleUrl:CORE,runtime:ɵppd};Identifiers.pipeDef={name:'ɵpid',moduleUrl:CORE,runtime:ɵpid};Identifiers.nodeValue={name:'ɵnov',moduleUrl:CORE,runtime:ɵnov};Identifiers.ngContentDef={name:'ɵncd',moduleUrl:CORE,runtime:ɵncd};Identifiers.unwrapValue={name:'ɵunv',moduleUrl:CORE,runtime:ɵunv};Identifiers.createRendererTypeV2={name:'ɵcrt',moduleUrl:CORE,runtime:ɵcrt};Identifiers.RendererTypeV2={name:'RendererTypeV2',moduleUrl:CORE,// type only
+runtime:null};Identifiers.ViewDefinition={name:'ɵViewDefinition',moduleUrl:CORE,// type only
+runtime:null};Identifiers.createComponentFactory={name:'ɵccf',moduleUrl:CORE,runtime:ɵccf};/**
+ * @param {?} pkg
+ * @param {?=} path
+ * @param {?=} type
+ * @return {?}
+ */function assetUrl(pkg){var path=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:'src';if(path==null){return'@angular/'+pkg;}else{return'@angular/'+pkg+'/'+type+'/'+path;}}/**
+ * @param {?} identifier
+ * @return {?}
+ */function resolveIdentifier(identifier){var/** @type {?} */name=identifier.name;return ɵreflector.resolveIdentifier(name,identifier.moduleUrl,null,identifier.runtime);}/**
+ * @param {?} identifier
+ * @return {?}
+ */function createIdentifier(identifier){return{reference:resolveIdentifier(identifier)};}/**
+ * @param {?} identifier
+ * @return {?}
+ */function identifierToken(identifier){return{identifier:identifier};}/**
+ * @param {?} identifier
+ * @return {?}
+ */function createIdentifierToken(identifier){return identifierToken(createIdentifier(identifier));}// http://cldr.unicode.org/index/cldr-spec/plural-rules
 var/** @type {?} */PLURAL_CASES=['zero','one','two','few','many','other'];/**
  * Expands special forms into elements.
  *
@@ -3149,9 +3113,9 @@ var/** @type {?} */ast=this._parseBinding(expression||'null',false,sourceSpan);t
      * @param {?} elementSelector
      * @param {?} boundProp
      * @return {?}
-     */},{key:'createElementPropertyAst',value:function createElementPropertyAst(elementSelector,boundProp){if(boundProp.isAnimation){return new BoundElementPropertyAst(boundProp.name,PropertyBindingType.Animation,SecurityContext.NONE,false,boundProp.expression,null,boundProp.sourceSpan);}var/** @type {?} */unit=null;var/** @type {?} */bindingType=void 0;var/** @type {?} */boundPropertyName=null;var/** @type {?} */parts=boundProp.name.split(PROPERTY_PARTS_SEPARATOR);var/** @type {?} */securityContexts=void 0;// Check check for special cases (prefix style, attr, class)
+     */},{key:'createElementPropertyAst',value:function createElementPropertyAst(elementSelector,boundProp){if(boundProp.isAnimation){return new BoundElementPropertyAst(boundProp.name,PropertyBindingType.Animation,SecurityContext.NONE,boundProp.expression,null,boundProp.sourceSpan);}var/** @type {?} */unit=null;var/** @type {?} */bindingType=void 0;var/** @type {?} */boundPropertyName=null;var/** @type {?} */parts=boundProp.name.split(PROPERTY_PARTS_SEPARATOR);var/** @type {?} */securityContexts=void 0;// Check check for special cases (prefix style, attr, class)
 if(parts.length>1){if(parts[0]==ATTRIBUTE_PREFIX){boundPropertyName=parts[1];this._validatePropertyOrAttributeName(boundPropertyName,boundProp.sourceSpan,true);securityContexts=calcPossibleSecurityContexts(this._schemaRegistry,elementSelector,boundPropertyName,true);var/** @type {?} */nsSeparatorIdx=boundPropertyName.indexOf(':');if(nsSeparatorIdx>-1){var/** @type {?} */ns=boundPropertyName.substring(0,nsSeparatorIdx);var/** @type {?} */name=boundPropertyName.substring(nsSeparatorIdx+1);boundPropertyName=mergeNsAndName(ns,name);}bindingType=PropertyBindingType.Attribute;}else if(parts[0]==CLASS_PREFIX){boundPropertyName=parts[1];bindingType=PropertyBindingType.Class;securityContexts=[SecurityContext.NONE];}else if(parts[0]==STYLE_PREFIX){unit=parts.length>2?parts[2]:null;boundPropertyName=parts[1];bindingType=PropertyBindingType.Style;securityContexts=[SecurityContext.STYLE];}}// If not a special case, use the full property name
-if(boundPropertyName===null){boundPropertyName=this._schemaRegistry.getMappedPropName(boundProp.name);securityContexts=calcPossibleSecurityContexts(this._schemaRegistry,elementSelector,boundPropertyName,false);bindingType=PropertyBindingType.Property;this._validatePropertyOrAttributeName(boundPropertyName,boundProp.sourceSpan,false);}return new BoundElementPropertyAst(boundPropertyName,bindingType,securityContexts.length===1?securityContexts[0]:null,securityContexts.length>1,boundProp.expression,unit,boundProp.sourceSpan);}/**
+if(boundPropertyName===null){boundPropertyName=this._schemaRegistry.getMappedPropName(boundProp.name);securityContexts=calcPossibleSecurityContexts(this._schemaRegistry,elementSelector,boundPropertyName,false);bindingType=PropertyBindingType.Property;this._validatePropertyOrAttributeName(boundPropertyName,boundProp.sourceSpan,false);}return new BoundElementPropertyAst(boundPropertyName,bindingType,securityContexts[0],boundProp.expression,unit,boundProp.sourceSpan);}/**
      * @param {?} name
      * @param {?} expression
      * @param {?} sourceSpan
@@ -3332,12 +3296,7 @@ return null;}if(preparsedElement.type===PreparsedElementType.STYLESHEET&&isStyle
 // them in the StyleCompiler
 return null;}var/** @type {?} */matchableAttrs=[];var/** @type {?} */elementOrDirectiveProps=[];var/** @type {?} */elementOrDirectiveRefs=[];var/** @type {?} */elementVars=[];var/** @type {?} */events=[];var/** @type {?} */templateElementOrDirectiveProps=[];var/** @type {?} */templateMatchableAttrs=[];var/** @type {?} */templateElementVars=[];var/** @type {?} */hasInlineTemplates=false;var/** @type {?} */attrs=[];var/** @type {?} */isTemplateElement=isTemplate(element,this.config.enableLegacyTemplate,function(m,span){return _this94._reportError(m,span,ParseErrorLevel.WARNING);});element.attrs.forEach(function(attr){var/** @type {?} */hasBinding=_this94._parseAttr(isTemplateElement,attr,matchableAttrs,elementOrDirectiveProps,events,elementOrDirectiveRefs,elementVars);var/** @type {?} */templateBindingsSource=void 0;var/** @type {?} */prefixToken=void 0;var/** @type {?} */normalizedName=_this94._normalizeAttributeName(attr.name);if(_this94.config.enableLegacyTemplate&&normalizedName==TEMPLATE_ATTR){_this94._reportError('The template attribute is deprecated. Use an ng-template element instead.',attr.sourceSpan,ParseErrorLevel.WARNING);templateBindingsSource=attr.value;}else if(normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)){templateBindingsSource=attr.value;prefixToken=normalizedName.substring(TEMPLATE_ATTR_PREFIX.length)+':';}var/** @type {?} */hasTemplateBinding=isPresent(templateBindingsSource);if(hasTemplateBinding){if(hasInlineTemplates){_this94._reportError('Can\'t have multiple template bindings on one element. Use only one attribute named \'template\' or prefixed with *',attr.sourceSpan);}hasInlineTemplates=true;_this94._bindingParser.parseInlineTemplateBinding(prefixToken,templateBindingsSource,attr.sourceSpan,templateMatchableAttrs,templateElementOrDirectiveProps,templateElementVars);}if(!hasBinding&&!hasTemplateBinding){// don't include the bindings as attributes as well in the AST
 attrs.push(_this94.visitAttribute(attr,null));matchableAttrs.push([attr.name,attr.value]);}});var/** @type {?} */elementCssSelector=createElementCssSelector(nodeName,matchableAttrs);var _parseDirectives2=this._parseDirectives(this.selectorMatcher,elementCssSelector),directiveMetas=_parseDirectives2.directives,matchElement=_parseDirectives2.matchElement;var/** @type {?} */references=[];var/** @type {?} */boundDirectivePropNames=new Set();var/** @type {?} */directiveAsts=this._createDirectiveAsts(isTemplateElement,element.name,directiveMetas,elementOrDirectiveProps,elementOrDirectiveRefs,element.sourceSpan,references,boundDirectivePropNames);var/** @type {?} */elementProps=this._createElementPropertyAsts(element.name,elementOrDirectiveProps,boundDirectivePropNames);var/** @type {?} */isViewRoot=parent.isTemplateElement||hasInlineTemplates;var/** @type {?} */providerContext=new ProviderElementContext(this.providerViewContext,parent.providerContext,isViewRoot,directiveAsts,attrs,references,isTemplateElement,queryStartIndex,element.sourceSpan);var/** @type {?} */children=visitAll(preparsedElement.nonBindable?NON_BINDABLE_VISITOR:this,element.children,ElementContext.create(isTemplateElement,directiveAsts,isTemplateElement?parent.providerContext:providerContext));providerContext.afterElement();// Override the actual selector when the `ngProjectAs` attribute is provided
-var/** @type {?} */projectionSelector=isPresent(preparsedElement.projectAs)?CssSelector.parse(preparsedElement.projectAs)[0]:elementCssSelector;var/** @type {?} */ngContentIndex=parent.findNgContentIndex(projectionSelector);var/** @type {?} */parsedElement=void 0;if(preparsedElement.type===PreparsedElementType.NG_CONTENT){if(element.children&&!element.children.every(_isEmptyTextNode)){this._reportError('<ng-content> element cannot have content.',element.sourceSpan);}parsedElement=new NgContentAst(this.ngContentCount++,hasInlineTemplates?null:ngContentIndex,element.sourceSpan);}else if(isTemplateElement){this._assertAllEventsPublishedByDirectives(directiveAsts,events);this._assertNoComponentsNorElementBindingsOnTemplate(directiveAsts,elementProps,element.sourceSpan);parsedElement=new EmbeddedTemplateAst(attrs,events,references,elementVars,providerContext.transformedDirectiveAsts,providerContext.transformProviders,providerContext.transformedHasViewContainer,providerContext.queryMatches,children,hasInlineTemplates?null:ngContentIndex,element.sourceSpan);}else{this._assertElementExists(matchElement,element);this._assertOnlyOneComponent(directiveAsts,element.sourceSpan);var/** @type {?} */_ngContentIndex=hasInlineTemplates?null:parent.findNgContentIndex(projectionSelector);parsedElement=new ElementAst(nodeName,attrs,elementProps,events,references,providerContext.transformedDirectiveAsts,providerContext.transformProviders,providerContext.transformedHasViewContainer,providerContext.queryMatches,children,hasInlineTemplates?null:_ngContentIndex,element.sourceSpan,element.endSourceSpan);this._findComponentDirectives(directiveAsts).forEach(function(componentDirectiveAst){return _this94._validateElementAnimationInputOutputs(componentDirectiveAst.hostProperties,componentDirectiveAst.hostEvents,componentDirectiveAst.directive.template);});var/** @type {?} */componentTemplate=providerContext.viewContext.component.template;this._validateElementAnimationInputOutputs(elementProps,events,componentTemplate.toSummary());}if(hasInlineTemplates){var/** @type {?} */templateQueryStartIndex=this.contentQueryStartId;var/** @type {?} */templateSelector=createElementCssSelector(TEMPLATE_ELEMENT,templateMatchableAttrs);var _parseDirectives3=this._parseDirectives(this.selectorMatcher,templateSelector),templateDirectiveMetas=_parseDirectives3.directives;var/** @type {?} */templateBoundDirectivePropNames=new Set();var/** @type {?} */templateDirectiveAsts=this._createDirectiveAsts(true,element.name,templateDirectiveMetas,templateElementOrDirectiveProps,[],element.sourceSpan,[],templateBoundDirectivePropNames);var/** @type {?} */templateElementProps=this._createElementPropertyAsts(element.name,templateElementOrDirectiveProps,templateBoundDirectivePropNames);this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts,templateElementProps,element.sourceSpan);var/** @type {?} */templateProviderContext=new ProviderElementContext(this.providerViewContext,parent.providerContext,parent.isTemplateElement,templateDirectiveAsts,[],[],true,templateQueryStartIndex,element.sourceSpan);templateProviderContext.afterElement();parsedElement=new EmbeddedTemplateAst([],[],[],templateElementVars,templateProviderContext.transformedDirectiveAsts,templateProviderContext.transformProviders,templateProviderContext.transformedHasViewContainer,templateProviderContext.queryMatches,[parsedElement],ngContentIndex,element.sourceSpan);}return parsedElement;}/**
-     * @param {?} inputs
-     * @param {?} outputs
-     * @param {?} template
-     * @return {?}
-     */},{key:'_validateElementAnimationInputOutputs',value:function _validateElementAnimationInputOutputs(inputs,outputs,template){var _this95=this;if(this.config.useViewEngine)return;var/** @type {?} */triggerLookup=new Set();template.animations.forEach(function(entry){triggerLookup.add(entry);});var/** @type {?} */animationInputs=inputs.filter(function(input){return input.isAnimation;});animationInputs.forEach(function(input){var/** @type {?} */name=input.name;if(!triggerLookup.has(name)){_this95._reportError('Couldn\'t find an animation entry for "'+name+'"',input.sourceSpan);}});outputs.forEach(function(output){if(output.isAnimation){var/** @type {?} */found=animationInputs.find(function(input){return input.name==output.name;});if(!found){_this95._reportError('Unable to listen on (@'+output.name+'.'+output.phase+') because the animation trigger [@'+output.name+'] isn\'t being used on the same element',output.sourceSpan);}}});}/**
+var/** @type {?} */projectionSelector=isPresent(preparsedElement.projectAs)?CssSelector.parse(preparsedElement.projectAs)[0]:elementCssSelector;var/** @type {?} */ngContentIndex=parent.findNgContentIndex(projectionSelector);var/** @type {?} */parsedElement=void 0;if(preparsedElement.type===PreparsedElementType.NG_CONTENT){if(element.children&&!element.children.every(_isEmptyTextNode)){this._reportError('<ng-content> element cannot have content.',element.sourceSpan);}parsedElement=new NgContentAst(this.ngContentCount++,hasInlineTemplates?null:ngContentIndex,element.sourceSpan);}else if(isTemplateElement){this._assertAllEventsPublishedByDirectives(directiveAsts,events);this._assertNoComponentsNorElementBindingsOnTemplate(directiveAsts,elementProps,element.sourceSpan);parsedElement=new EmbeddedTemplateAst(attrs,events,references,elementVars,providerContext.transformedDirectiveAsts,providerContext.transformProviders,providerContext.transformedHasViewContainer,providerContext.queryMatches,children,hasInlineTemplates?null:ngContentIndex,element.sourceSpan);}else{this._assertElementExists(matchElement,element);this._assertOnlyOneComponent(directiveAsts,element.sourceSpan);var/** @type {?} */_ngContentIndex=hasInlineTemplates?null:parent.findNgContentIndex(projectionSelector);parsedElement=new ElementAst(nodeName,attrs,elementProps,events,references,providerContext.transformedDirectiveAsts,providerContext.transformProviders,providerContext.transformedHasViewContainer,providerContext.queryMatches,children,hasInlineTemplates?null:_ngContentIndex,element.sourceSpan,element.endSourceSpan);}if(hasInlineTemplates){var/** @type {?} */templateQueryStartIndex=this.contentQueryStartId;var/** @type {?} */templateSelector=createElementCssSelector(TEMPLATE_ELEMENT,templateMatchableAttrs);var _parseDirectives3=this._parseDirectives(this.selectorMatcher,templateSelector),templateDirectiveMetas=_parseDirectives3.directives;var/** @type {?} */templateBoundDirectivePropNames=new Set();var/** @type {?} */templateDirectiveAsts=this._createDirectiveAsts(true,element.name,templateDirectiveMetas,templateElementOrDirectiveProps,[],element.sourceSpan,[],templateBoundDirectivePropNames);var/** @type {?} */templateElementProps=this._createElementPropertyAsts(element.name,templateElementOrDirectiveProps,templateBoundDirectivePropNames);this._assertNoComponentsNorElementBindingsOnTemplate(templateDirectiveAsts,templateElementProps,element.sourceSpan);var/** @type {?} */templateProviderContext=new ProviderElementContext(this.providerViewContext,parent.providerContext,parent.isTemplateElement,templateDirectiveAsts,[],[],true,templateQueryStartIndex,element.sourceSpan);templateProviderContext.afterElement();parsedElement=new EmbeddedTemplateAst([],[],[],templateElementVars,templateProviderContext.transformedDirectiveAsts,templateProviderContext.transformProviders,templateProviderContext.transformedHasViewContainer,templateProviderContext.queryMatches,[parsedElement],ngContentIndex,element.sourceSpan);}return parsedElement;}/**
      * @param {?} isTemplateElement
      * @param {?} attr
      * @param {?} targetMatchableAttrs
@@ -3372,11 +3331,11 @@ var/** @type {?} */projectionSelector=isPresent(preparsedElement.projectAs)?CssS
      * @param {?} selectorMatcher
      * @param {?} elementCssSelector
      * @return {?}
-     */},{key:'_parseDirectives',value:function _parseDirectives(selectorMatcher,elementCssSelector){var _this96=this;// Need to sort the directives so that we get consistent results throughout,
+     */},{key:'_parseDirectives',value:function _parseDirectives(selectorMatcher,elementCssSelector){var _this95=this;// Need to sort the directives so that we get consistent results throughout,
 // as selectorMatcher uses Maps inside.
 // Also deduplicate directives as they might match more than one time!
 var/** @type {?} */directives=new Array(this.directivesIndex.size);// Whether any directive selector matches on the element name
-var/** @type {?} */matchElement=false;selectorMatcher.match(elementCssSelector,function(selector,directive){directives[_this96.directivesIndex.get(directive)]=directive;matchElement=matchElement||selector.hasElementSelector();});return{directives:directives.filter(function(dir){return!!dir;}),matchElement:matchElement};}/**
+var/** @type {?} */matchElement=false;selectorMatcher.match(elementCssSelector,function(selector,directive){directives[_this95.directivesIndex.get(directive)]=directive;matchElement=matchElement||selector.hasElementSelector();});return{directives:directives.filter(function(dir){return!!dir;}),matchElement:matchElement};}/**
      * @param {?} isTemplateElement
      * @param {?} elementName
      * @param {?} directives
@@ -3386,9 +3345,9 @@ var/** @type {?} */matchElement=false;selectorMatcher.match(elementCssSelector,f
      * @param {?} targetReferences
      * @param {?} targetBoundDirectivePropNames
      * @return {?}
-     */},{key:'_createDirectiveAsts',value:function _createDirectiveAsts(isTemplateElement,elementName,directives,props,elementOrDirectiveRefs,elementSourceSpan,targetReferences,targetBoundDirectivePropNames){var _this97=this;var/** @type {?} */matchedReferences=new Set();var/** @type {?} */component=null;var/** @type {?} */directiveAsts=directives.map(function(directive){var/** @type {?} */sourceSpan=new ParseSourceSpan(elementSourceSpan.start,elementSourceSpan.end,'Directive '+identifierName(directive.type));if(directive.isComponent){component=directive;}var/** @type {?} */directiveProperties=[];var/** @type {?} */hostProperties=_this97._bindingParser.createDirectiveHostPropertyAsts(directive,_this97.config.useViewEngine?elementName:directive.selector,sourceSpan);// Note: We need to check the host properties here as well,
+     */},{key:'_createDirectiveAsts',value:function _createDirectiveAsts(isTemplateElement,elementName,directives,props,elementOrDirectiveRefs,elementSourceSpan,targetReferences,targetBoundDirectivePropNames){var _this96=this;var/** @type {?} */matchedReferences=new Set();var/** @type {?} */component=null;var/** @type {?} */directiveAsts=directives.map(function(directive){var/** @type {?} */sourceSpan=new ParseSourceSpan(elementSourceSpan.start,elementSourceSpan.end,'Directive '+identifierName(directive.type));if(directive.isComponent){component=directive;}var/** @type {?} */directiveProperties=[];var/** @type {?} */hostProperties=_this96._bindingParser.createDirectiveHostPropertyAsts(directive,elementName,sourceSpan);// Note: We need to check the host properties here as well,
 // as we don't know the element name in the DirectiveWrapperCompiler yet.
-hostProperties=_this97._checkPropertiesInSchema(elementName,hostProperties);var/** @type {?} */hostEvents=_this97._bindingParser.createDirectiveHostEventAsts(directive,sourceSpan);_this97._createDirectivePropertyAsts(directive.inputs,props,directiveProperties,targetBoundDirectivePropNames);elementOrDirectiveRefs.forEach(function(elOrDirRef){if(elOrDirRef.value.length===0&&directive.isComponent||directive.exportAs==elOrDirRef.value){targetReferences.push(new ReferenceAst(elOrDirRef.name,identifierToken(directive.type),elOrDirRef.sourceSpan));matchedReferences.add(elOrDirRef.name);}});var/** @type {?} */contentQueryStartId=_this97.contentQueryStartId;_this97.contentQueryStartId+=directive.queries.length;return new DirectiveAst(directive,directiveProperties,hostProperties,hostEvents,contentQueryStartId,sourceSpan);});elementOrDirectiveRefs.forEach(function(elOrDirRef){if(elOrDirRef.value.length>0){if(!matchedReferences.has(elOrDirRef.name)){_this97._reportError('There is no directive with "exportAs" set to "'+elOrDirRef.value+'"',elOrDirRef.sourceSpan);}}else if(!component){var/** @type {?} */refToken=null;if(isTemplateElement){refToken=createIdentifierToken(Identifiers.TemplateRef);}targetReferences.push(new ReferenceAst(elOrDirRef.name,refToken,elOrDirRef.sourceSpan));}});return directiveAsts;}/**
+hostProperties=_this96._checkPropertiesInSchema(elementName,hostProperties);var/** @type {?} */hostEvents=_this96._bindingParser.createDirectiveHostEventAsts(directive,sourceSpan);_this96._createDirectivePropertyAsts(directive.inputs,props,directiveProperties,targetBoundDirectivePropNames);elementOrDirectiveRefs.forEach(function(elOrDirRef){if(elOrDirRef.value.length===0&&directive.isComponent||directive.exportAs==elOrDirRef.value){targetReferences.push(new ReferenceAst(elOrDirRef.name,identifierToken(directive.type),elOrDirRef.sourceSpan));matchedReferences.add(elOrDirRef.name);}});var/** @type {?} */contentQueryStartId=_this96.contentQueryStartId;_this96.contentQueryStartId+=directive.queries.length;return new DirectiveAst(directive,directiveProperties,hostProperties,hostEvents,contentQueryStartId,sourceSpan);});elementOrDirectiveRefs.forEach(function(elOrDirRef){if(elOrDirRef.value.length>0){if(!matchedReferences.has(elOrDirRef.name)){_this96._reportError('There is no directive with "exportAs" set to "'+elOrDirRef.value+'"',elOrDirRef.sourceSpan);}}else if(!component){var/** @type {?} */refToken=null;if(isTemplateElement){refToken=createIdentifierToken(Identifiers.TemplateRef);}targetReferences.push(new ReferenceAst(elOrDirRef.name,refToken,elOrDirRef.sourceSpan));}});return directiveAsts;}/**
      * @param {?} directiveProperties
      * @param {?} boundProps
      * @param {?} targetBoundDirectiveProps
@@ -3401,7 +3360,7 @@ if(boundProp){targetBoundDirectivePropNames.add(boundProp.name);if(!isEmptyExpre
      * @param {?} props
      * @param {?} boundDirectivePropNames
      * @return {?}
-     */},{key:'_createElementPropertyAsts',value:function _createElementPropertyAsts(elementName,props,boundDirectivePropNames){var _this98=this;var/** @type {?} */boundElementProps=[];props.forEach(function(prop){if(!prop.isLiteral&&!boundDirectivePropNames.has(prop.name)){boundElementProps.push(_this98._bindingParser.createElementPropertyAst(elementName,prop));}});return this._checkPropertiesInSchema(elementName,boundElementProps);}/**
+     */},{key:'_createElementPropertyAsts',value:function _createElementPropertyAsts(elementName,props,boundDirectivePropNames){var _this97=this;var/** @type {?} */boundElementProps=[];props.forEach(function(prop){if(!prop.isLiteral&&!boundDirectivePropNames.has(prop.name)){boundElementProps.push(_this97._bindingParser.createElementPropertyAst(elementName,prop));}});return this._checkPropertiesInSchema(elementName,boundElementProps);}/**
      * @param {?} directives
      * @return {?}
      */},{key:'_findComponentDirectives',value:function _findComponentDirectives(directives){return directives.filter(function(directive){return directive.directive.isComponent;});}/**
@@ -3425,17 +3384,17 @@ if(boundProp){targetBoundDirectivePropNames.add(boundProp.name);if(!isEmptyExpre
      * @param {?} elementProps
      * @param {?} sourceSpan
      * @return {?}
-     */},{key:'_assertNoComponentsNorElementBindingsOnTemplate',value:function _assertNoComponentsNorElementBindingsOnTemplate(directives,elementProps,sourceSpan){var _this99=this;var/** @type {?} */componentTypeNames=this._findComponentDirectiveNames(directives);if(componentTypeNames.length>0){this._reportError('Components on an embedded template: '+componentTypeNames.join(','),sourceSpan);}elementProps.forEach(function(prop){_this99._reportError('Property binding '+prop.name+' not used by any directive on an embedded template. Make sure that the property name is spelled correctly and all directives are listed in the "@NgModule.declarations".',sourceSpan);});}/**
+     */},{key:'_assertNoComponentsNorElementBindingsOnTemplate',value:function _assertNoComponentsNorElementBindingsOnTemplate(directives,elementProps,sourceSpan){var _this98=this;var/** @type {?} */componentTypeNames=this._findComponentDirectiveNames(directives);if(componentTypeNames.length>0){this._reportError('Components on an embedded template: '+componentTypeNames.join(','),sourceSpan);}elementProps.forEach(function(prop){_this98._reportError('Property binding '+prop.name+' not used by any directive on an embedded template. Make sure that the property name is spelled correctly and all directives are listed in the "@NgModule.declarations".',sourceSpan);});}/**
      * @param {?} directives
      * @param {?} events
      * @return {?}
-     */},{key:'_assertAllEventsPublishedByDirectives',value:function _assertAllEventsPublishedByDirectives(directives,events){var _this100=this;var/** @type {?} */allDirectiveEvents=new Set();directives.forEach(function(directive){Object.keys(directive.directive.outputs).forEach(function(k){var/** @type {?} */eventName=directive.directive.outputs[k];allDirectiveEvents.add(eventName);});});events.forEach(function(event){if(isPresent(event.target)||!allDirectiveEvents.has(event.name)){_this100._reportError('Event binding '+event.fullName+' not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the "@NgModule.declarations".',event.sourceSpan);}});}/**
+     */},{key:'_assertAllEventsPublishedByDirectives',value:function _assertAllEventsPublishedByDirectives(directives,events){var _this99=this;var/** @type {?} */allDirectiveEvents=new Set();directives.forEach(function(directive){Object.keys(directive.directive.outputs).forEach(function(k){var/** @type {?} */eventName=directive.directive.outputs[k];allDirectiveEvents.add(eventName);});});events.forEach(function(event){if(isPresent(event.target)||!allDirectiveEvents.has(event.name)){_this99._reportError('Event binding '+event.fullName+' not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the "@NgModule.declarations".',event.sourceSpan);}});}/**
      * @param {?} elementName
      * @param {?} boundProps
      * @return {?}
-     */},{key:'_checkPropertiesInSchema',value:function _checkPropertiesInSchema(elementName,boundProps){var _this101=this;// Note: We can't filter out empty expressions before this method,
+     */},{key:'_checkPropertiesInSchema',value:function _checkPropertiesInSchema(elementName,boundProps){var _this100=this;// Note: We can't filter out empty expressions before this method,
 // as we still want to validate them!
-return boundProps.filter(function(boundProp){if(boundProp.type===PropertyBindingType.Property&&!_this101._schemaRegistry.hasProperty(elementName,boundProp.name,_this101._schemas)){var/** @type {?} */errorMsg='Can\'t bind to \''+boundProp.name+'\' since it isn\'t a known property of \''+elementName+'\'.';if(elementName.startsWith('ng-')){errorMsg+='\n1. If \''+boundProp.name+'\' is an Angular directive, then add \'CommonModule\' to the \'@NgModule.imports\' of this component.'+'\n2. To allow any property add \'NO_ERRORS_SCHEMA\' to the \'@NgModule.schemas\' of this component.';}else if(elementName.indexOf('-')>-1){errorMsg+='\n1. If \''+elementName+'\' is an Angular component and it has \''+boundProp.name+'\' input, then verify that it is part of this module.'+('\n2. If \''+elementName+'\' is a Web Component then add \'CUSTOM_ELEMENTS_SCHEMA\' to the \'@NgModule.schemas\' of this component to suppress this message.')+'\n3. To allow any property add \'NO_ERRORS_SCHEMA\' to the \'@NgModule.schemas\' of this component.';}_this101._reportError(errorMsg,boundProp.sourceSpan);}return!isEmptyExpression(boundProp.value);});}/**
+return boundProps.filter(function(boundProp){if(boundProp.type===PropertyBindingType.Property&&!_this100._schemaRegistry.hasProperty(elementName,boundProp.name,_this100._schemas)){var/** @type {?} */errorMsg='Can\'t bind to \''+boundProp.name+'\' since it isn\'t a known property of \''+elementName+'\'.';if(elementName.startsWith('ng-')){errorMsg+='\n1. If \''+boundProp.name+'\' is an Angular directive, then add \'CommonModule\' to the \'@NgModule.imports\' of this component.'+'\n2. To allow any property add \'NO_ERRORS_SCHEMA\' to the \'@NgModule.schemas\' of this component.';}else if(elementName.indexOf('-')>-1){errorMsg+='\n1. If \''+elementName+'\' is an Angular component and it has \''+boundProp.name+'\' input, then verify that it is part of this module.'+('\n2. If \''+elementName+'\' is a Web Component then add \'CUSTOM_ELEMENTS_SCHEMA\' to the \'@NgModule.schemas\' of this component to suppress this message.')+'\n3. To allow any property add \'NO_ERRORS_SCHEMA\' to the \'@NgModule.schemas\' of this component.';}_this100._reportError(errorMsg,boundProp.sourceSpan);}return!isEmptyExpression(boundProp.value);});}/**
      * @param {?} message
      * @param {?} sourceSpan
      * @param {?=} level
@@ -3508,227 +3467,6 @@ return null;}var/** @type {?} */attrNameAndValues=ast.attrs.map(function(attr){r
  */function isTemplate(el,enableLegacyTemplate,reportDeprecation){var/** @type {?} */tagNoNs=splitNsName(el.name)[1];// `<ng-template>` is an angular construct and is lower case
 if(tagNoNs===NG_TEMPLATE_ELEMENT)return true;// `<template>` is HTML and case insensitive
 if(tagNoNs.toLowerCase()===TEMPLATE_ELEMENT){if(enableLegacyTemplate&&tagNoNs.toLowerCase()===TEMPLATE_ELEMENT){reportDeprecation('The <template> element is deprecated. Use <ng-template> instead',el.sourceSpan);return true;}return false;}}/**
- * @abstract
- */var AnimationAst=function(){function AnimationAst(){_classCallCheck(this,AnimationAst);this.startTime=0;this.playTime=0;}/**
-     * @abstract
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationAst,[{key:'visit',value:function visit(visitor,context){}}]);return AnimationAst;}();/**
- * @abstract
- */var AnimationStateAst=function(_AnimationAst){_inherits(AnimationStateAst,_AnimationAst);function AnimationStateAst(){_classCallCheck(this,AnimationStateAst);return _possibleConstructorReturn(this,(AnimationStateAst.__proto__||Object.getPrototypeOf(AnimationStateAst)).apply(this,arguments));}_createClass(AnimationStateAst,[{key:'visit',/**
-     * @abstract
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */value:function visit(visitor,context){}}]);return AnimationStateAst;}(AnimationAst);var AnimationEntryAst=function(_AnimationAst2){_inherits(AnimationEntryAst,_AnimationAst2);/**
-     * @param {?} name
-     * @param {?} stateDeclarations
-     * @param {?} stateTransitions
-     */function AnimationEntryAst(name,stateDeclarations,stateTransitions){_classCallCheck(this,AnimationEntryAst);var _this103=_possibleConstructorReturn(this,(AnimationEntryAst.__proto__||Object.getPrototypeOf(AnimationEntryAst)).call(this));_this103.name=name;_this103.stateDeclarations=stateDeclarations;_this103.stateTransitions=stateTransitions;return _this103;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationEntryAst,[{key:'visit',value:function visit(visitor,context){return visitor.visitAnimationEntry(this,context);}}]);return AnimationEntryAst;}(AnimationAst);var AnimationStateDeclarationAst=function(_AnimationStateAst){_inherits(AnimationStateDeclarationAst,_AnimationStateAst);/**
-     * @param {?} stateName
-     * @param {?} styles
-     */function AnimationStateDeclarationAst(stateName,styles){_classCallCheck(this,AnimationStateDeclarationAst);var _this104=_possibleConstructorReturn(this,(AnimationStateDeclarationAst.__proto__||Object.getPrototypeOf(AnimationStateDeclarationAst)).call(this));_this104.stateName=stateName;_this104.styles=styles;return _this104;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationStateDeclarationAst,[{key:'visit',value:function visit(visitor,context){return visitor.visitAnimationStateDeclaration(this,context);}}]);return AnimationStateDeclarationAst;}(AnimationStateAst);var AnimationStateTransitionExpression=/**
-     * @param {?} fromState
-     * @param {?} toState
-     */function AnimationStateTransitionExpression(fromState,toState){_classCallCheck(this,AnimationStateTransitionExpression);this.fromState=fromState;this.toState=toState;};var AnimationStateTransitionFnExpression=function(_AnimationStateTransi){_inherits(AnimationStateTransitionFnExpression,_AnimationStateTransi);/**
-     * @param {?} fn
-     */function AnimationStateTransitionFnExpression(fn){_classCallCheck(this,AnimationStateTransitionFnExpression);var _this105=_possibleConstructorReturn(this,(AnimationStateTransitionFnExpression.__proto__||Object.getPrototypeOf(AnimationStateTransitionFnExpression)).call(this,null,null));_this105.fn=fn;return _this105;}return AnimationStateTransitionFnExpression;}(AnimationStateTransitionExpression);var AnimationStateTransitionAst=function(_AnimationStateAst2){_inherits(AnimationStateTransitionAst,_AnimationStateAst2);/**
-     * @param {?} stateChanges
-     * @param {?} animation
-     */function AnimationStateTransitionAst(stateChanges,animation){_classCallCheck(this,AnimationStateTransitionAst);var _this106=_possibleConstructorReturn(this,(AnimationStateTransitionAst.__proto__||Object.getPrototypeOf(AnimationStateTransitionAst)).call(this));_this106.stateChanges=stateChanges;_this106.animation=animation;return _this106;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationStateTransitionAst,[{key:'visit',value:function visit(visitor,context){return visitor.visitAnimationStateTransition(this,context);}}]);return AnimationStateTransitionAst;}(AnimationStateAst);var AnimationStepAst=function(_AnimationAst3){_inherits(AnimationStepAst,_AnimationAst3);/**
-     * @param {?} startingStyles
-     * @param {?} keyframes
-     * @param {?} duration
-     * @param {?} delay
-     * @param {?} easing
-     */function AnimationStepAst(startingStyles,keyframes,duration,delay,easing){_classCallCheck(this,AnimationStepAst);var _this107=_possibleConstructorReturn(this,(AnimationStepAst.__proto__||Object.getPrototypeOf(AnimationStepAst)).call(this));_this107.startingStyles=startingStyles;_this107.keyframes=keyframes;_this107.duration=duration;_this107.delay=delay;_this107.easing=easing;return _this107;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationStepAst,[{key:'visit',value:function visit(visitor,context){return visitor.visitAnimationStep(this,context);}}]);return AnimationStepAst;}(AnimationAst);var AnimationStylesAst=function(_AnimationAst4){_inherits(AnimationStylesAst,_AnimationAst4);/**
-     * @param {?} styles
-     */function AnimationStylesAst(styles){_classCallCheck(this,AnimationStylesAst);var _this108=_possibleConstructorReturn(this,(AnimationStylesAst.__proto__||Object.getPrototypeOf(AnimationStylesAst)).call(this));_this108.styles=styles;return _this108;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationStylesAst,[{key:'visit',value:function visit(visitor,context){return visitor.visitAnimationStyles(this,context);}}]);return AnimationStylesAst;}(AnimationAst);var AnimationKeyframeAst=function(_AnimationAst5){_inherits(AnimationKeyframeAst,_AnimationAst5);/**
-     * @param {?} offset
-     * @param {?} styles
-     */function AnimationKeyframeAst(offset,styles){_classCallCheck(this,AnimationKeyframeAst);var _this109=_possibleConstructorReturn(this,(AnimationKeyframeAst.__proto__||Object.getPrototypeOf(AnimationKeyframeAst)).call(this));_this109.offset=offset;_this109.styles=styles;return _this109;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationKeyframeAst,[{key:'visit',value:function visit(visitor,context){return visitor.visitAnimationKeyframe(this,context);}}]);return AnimationKeyframeAst;}(AnimationAst);/**
- * @abstract
- */var AnimationWithStepsAst=function(_AnimationAst6){_inherits(AnimationWithStepsAst,_AnimationAst6);/**
-     * @param {?} steps
-     */function AnimationWithStepsAst(steps){_classCallCheck(this,AnimationWithStepsAst);var _this110=_possibleConstructorReturn(this,(AnimationWithStepsAst.__proto__||Object.getPrototypeOf(AnimationWithStepsAst)).call(this));_this110.steps=steps;return _this110;}return AnimationWithStepsAst;}(AnimationAst);var AnimationGroupAst=function(_AnimationWithStepsAs){_inherits(AnimationGroupAst,_AnimationWithStepsAs);/**
-     * @param {?} steps
-     */function AnimationGroupAst(steps){_classCallCheck(this,AnimationGroupAst);return _possibleConstructorReturn(this,(AnimationGroupAst.__proto__||Object.getPrototypeOf(AnimationGroupAst)).call(this,steps));}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationGroupAst,[{key:'visit',value:function visit(visitor,context){return visitor.visitAnimationGroup(this,context);}}]);return AnimationGroupAst;}(AnimationWithStepsAst);var AnimationSequenceAst=function(_AnimationWithStepsAs2){_inherits(AnimationSequenceAst,_AnimationWithStepsAs2);/**
-     * @param {?} steps
-     */function AnimationSequenceAst(steps){_classCallCheck(this,AnimationSequenceAst);return _possibleConstructorReturn(this,(AnimationSequenceAst.__proto__||Object.getPrototypeOf(AnimationSequenceAst)).call(this,steps));}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(AnimationSequenceAst,[{key:'visit',value:function visit(visitor,context){return visitor.visitAnimationSequence(this,context);}}]);return AnimationSequenceAst;}(AnimationWithStepsAst);var StylesCollectionEntry=function(){/**
-     * @param {?} time
-     * @param {?} value
-     */function StylesCollectionEntry(time,value){_classCallCheck(this,StylesCollectionEntry);this.time=time;this.value=value;}/**
-     * @param {?} time
-     * @param {?} value
-     * @return {?}
-     */_createClass(StylesCollectionEntry,[{key:'matches',value:function matches(time,value){return time==this.time&&value==this.value;}}]);return StylesCollectionEntry;}();var StylesCollection=function(){function StylesCollection(){_classCallCheck(this,StylesCollection);this.styles={};}/**
-     * @param {?} property
-     * @param {?} time
-     * @param {?} value
-     * @return {?}
-     */_createClass(StylesCollection,[{key:'insertAtTime',value:function insertAtTime(property,time,value){var/** @type {?} */tuple=new StylesCollectionEntry(time,value);var/** @type {?} */entries=this.styles[property];if(!isPresent(entries)){entries=this.styles[property]=[];}// insert this at the right stop in the array
-// this way we can keep it sorted
-var/** @type {?} */insertionIndex=0;for(var/** @type {?} */i=entries.length-1;i>=0;i--){if(entries[i].time<=time){insertionIndex=i+1;break;}}entries.splice(insertionIndex,0,tuple);}/**
-     * @param {?} property
-     * @param {?} index
-     * @return {?}
-     */},{key:'getByIndex',value:function getByIndex(property,index){var/** @type {?} */items=this.styles[property];if(isPresent(items)){return index>=items.length?null:items[index];}return null;}/**
-     * @param {?} property
-     * @param {?} time
-     * @return {?}
-     */},{key:'indexOfAtOrBeforeTime',value:function indexOfAtOrBeforeTime(property,time){var/** @type {?} */entries=this.styles[property];if(isPresent(entries)){for(var/** @type {?} */i=entries.length-1;i>=0;i--){if(entries[i].time<=time)return i;}}return null;}}]);return StylesCollection;}();var/** @type {?} */_INITIAL_KEYFRAME=0;var/** @type {?} */_TERMINAL_KEYFRAME=1;var/** @type {?} */_ONE_SECOND=1000;var AnimationParseError=function(_ParseError7){_inherits(AnimationParseError,_ParseError7);/**
-     * @param {?} message
-     */function AnimationParseError(message){_classCallCheck(this,AnimationParseError);return _possibleConstructorReturn(this,(AnimationParseError.__proto__||Object.getPrototypeOf(AnimationParseError)).call(this,null,message));}/**
-     * @return {?}
-     */_createClass(AnimationParseError,[{key:'toString',value:function toString(){return''+this.msg;}}]);return AnimationParseError;}(ParseError);var AnimationEntryParseResult=/**
-     * @param {?} ast
-     * @param {?} errors
-     */function AnimationEntryParseResult(ast,errors){_classCallCheck(this,AnimationEntryParseResult);this.ast=ast;this.errors=errors;};var AnimationParser=function(){/**
-     * @param {?} _schema
-     */function AnimationParser(_schema){_classCallCheck(this,AnimationParser);this._schema=_schema;}/**
-     * @param {?} component
-     * @return {?}
-     */_createClass(AnimationParser,[{key:'parseComponent',value:function parseComponent(component){var _this114=this;var/** @type {?} */errors=[];var/** @type {?} */componentName=identifierName(component.type);var/** @type {?} */animationTriggerNames=new Set();var/** @type {?} */asts=component.template.animations.map(function(entry){var/** @type {?} */result=_this114.parseEntry(entry);var/** @type {?} */ast=result.ast;var/** @type {?} */triggerName=ast.name;if(animationTriggerNames.has(triggerName)){result.errors.push(new AnimationParseError('The animation trigger "'+triggerName+'" has already been registered for the '+componentName+' component'));}else{animationTriggerNames.add(triggerName);}if(result.errors.length>0){var/** @type {?} */errorMessage='- Unable to parse the animation sequence for "'+triggerName+'" on the '+componentName+' component due to the following errors:';result.errors.forEach(function(error){errorMessage+='\n-- '+error.msg;});errors.push(errorMessage);}return ast;});if(errors.length>0){var/** @type {?} */errorString=errors.join('\n');throw new Error('Animation parse errors:\n'+errorString);}return asts;}/**
-     * @param {?} entry
-     * @return {?}
-     */},{key:'parseEntry',value:function parseEntry(entry){var _this115=this;var/** @type {?} */errors=[];var/** @type {?} */stateStyles={};var/** @type {?} */transitions=[];var/** @type {?} */stateDeclarationAsts=[];entry.definitions.forEach(function(def){if(def instanceof CompileAnimationStateDeclarationMetadata){_parseAnimationDeclarationStates(def,_this115._schema,errors).forEach(function(ast){stateDeclarationAsts.push(ast);stateStyles[ast.stateName]=ast.styles;});}else{transitions.push(/** @type {?} */def);}});var/** @type {?} */stateTransitionAsts=transitions.map(function(transDef){return _parseAnimationStateTransition(transDef,stateStyles,_this115._schema,errors);});var/** @type {?} */ast=new AnimationEntryAst(entry.name,stateDeclarationAsts,stateTransitionAsts);return new AnimationEntryParseResult(ast,errors);}}]);return AnimationParser;}();AnimationParser.decorators=[{type:CompilerInjectable}];/** @nocollapse */AnimationParser.ctorParameters=function(){return[{type:ElementSchemaRegistry}];};/**
- * @param {?} stateMetadata
- * @param {?} schema
- * @param {?} errors
- * @return {?}
- */function _parseAnimationDeclarationStates(stateMetadata,schema,errors){var/** @type {?} */normalizedStyles=_normalizeStyleMetadata(stateMetadata.styles,{},schema,errors,false);var/** @type {?} */defStyles=new AnimationStylesAst(normalizedStyles);var/** @type {?} */states=stateMetadata.stateNameExpr.split(/\s*,\s*/);return states.map(function(state){return new AnimationStateDeclarationAst(state,defStyles);});}/**
- * @param {?} transitionStateMetadata
- * @param {?} stateStyles
- * @param {?} schema
- * @param {?} errors
- * @return {?}
- */function _parseAnimationStateTransition(transitionStateMetadata,stateStyles,schema,errors){var/** @type {?} */styles=new StylesCollection();var/** @type {?} */transitionExprs=[];var/** @type {?} */stateChangeExpr=transitionStateMetadata.stateChangeExpr;var/** @type {?} */transitionStates=typeof stateChangeExpr=='string'?stateChangeExpr.split(/\s*,\s*/):[/** @type {?} */stateChangeExpr];transitionStates.forEach(function(expr){return transitionExprs.push.apply(transitionExprs,_toConsumableArray(_parseAnimationTransitionExpr(expr,errors)));});var/** @type {?} */entry=_normalizeAnimationEntry(transitionStateMetadata.steps);var/** @type {?} */animation=_normalizeStyleSteps(entry,stateStyles,schema,errors);var/** @type {?} */animationAst=_parseTransitionAnimation(animation,0,styles,stateStyles,errors);if(errors.length==0){_fillAnimationAstStartingKeyframes(animationAst,styles,errors);}var/** @type {?} */stepsAst=animationAst instanceof AnimationWithStepsAst?animationAst:new AnimationSequenceAst([animationAst]);return new AnimationStateTransitionAst(transitionExprs,stepsAst);}/**
- * @param {?} alias
- * @param {?} errors
- * @return {?}
- */function _parseAnimationAlias(alias,errors){switch(alias){case':enter':return'void => *';case':leave':return'* => void';default:errors.push(new AnimationParseError('the transition alias value "'+alias+'" is not supported'));return'* => *';}}/**
- * @param {?} transitionValue
- * @param {?} errors
- * @return {?}
- */function _parseAnimationTransitionExpr(transitionValue,errors){var/** @type {?} */expressions=[];if(typeof transitionValue=='string'){var/** @type {?} */eventStr=transitionValue;if(eventStr[0]==':'){eventStr=_parseAnimationAlias(eventStr,errors);}var/** @type {?} */match=eventStr.match(/^(\*|[-\w]+)\s*(<?[=-]>)\s*(\*|[-\w]+)$/);if(!isPresent(match)||match.length<4){errors.push(new AnimationParseError('the provided '+eventStr+' is not of a supported format'));return expressions;}var/** @type {?} */fromState=match[1];var/** @type {?} */separator=match[2];var/** @type {?} */toState=match[3];expressions.push(new AnimationStateTransitionExpression(fromState,toState));var/** @type {?} */isFullAnyStateExpr=fromState==ɵANY_STATE&&toState==ɵANY_STATE;if(separator[0]=='<'&&!isFullAnyStateExpr){expressions.push(new AnimationStateTransitionExpression(toState,fromState));}}else{expressions.push(new AnimationStateTransitionFnExpression(/** @type {?} */transitionValue));}return expressions;}/**
- * @param {?} entry
- * @return {?}
- */function _normalizeAnimationEntry(entry){return Array.isArray(entry)?new CompileAnimationSequenceMetadata(entry):entry;}/**
- * @param {?} entry
- * @param {?} stateStyles
- * @param {?} schema
- * @param {?} errors
- * @param {?} permitStateReferences
- * @return {?}
- */function _normalizeStyleMetadata(entry,stateStyles,schema,errors,permitStateReferences){var/** @type {?} */offset=entry.offset;if(offset>1||offset<0){errors.push(new AnimationParseError('Offset values for animations must be between 0 and 1'));}var/** @type {?} */normalizedStyles=[];entry.styles.forEach(function(styleEntry){if(typeof styleEntry==='string'){if(permitStateReferences){normalizedStyles.push.apply(normalizedStyles,_toConsumableArray(_resolveStylesFromState(/** @type {?} */styleEntry,stateStyles,errors)));}else{errors.push(new AnimationParseError('State based animations cannot contain references to other states'));}}else{var/** @type {?} */stylesObj=styleEntry;var/** @type {?} */normalizedStylesObj={};Object.keys(stylesObj).forEach(function(propName){var/** @type {?} */normalizedProp=schema.normalizeAnimationStyleProperty(propName);var/** @type {?} */normalizedOutput=schema.normalizeAnimationStyleValue(normalizedProp,propName,stylesObj[propName]);var/** @type {?} */normalizationError=normalizedOutput['error'];if(normalizationError){errors.push(new AnimationParseError(normalizationError));}normalizedStylesObj[normalizedProp]=normalizedOutput['value'];});normalizedStyles.push(normalizedStylesObj);}});return normalizedStyles;}/**
- * @param {?} entry
- * @param {?} stateStyles
- * @param {?} schema
- * @param {?} errors
- * @return {?}
- */function _normalizeStyleSteps(entry,stateStyles,schema,errors){var/** @type {?} */steps=_normalizeStyleStepEntry(entry,stateStyles,schema,errors);return entry instanceof CompileAnimationGroupMetadata?new CompileAnimationGroupMetadata(steps):new CompileAnimationSequenceMetadata(steps);}/**
- * @param {?} stylesList
- * @param {?} newItem
- * @return {?}
- */function _mergeAnimationStyles(stylesList,newItem){if((typeof newItem==='undefined'?'undefined':_typeof(newItem))==='object'&&newItem!==null&&stylesList.length>0){var/** @type {?} */lastIndex=stylesList.length-1;var/** @type {?} */lastItem=stylesList[lastIndex];if((typeof lastItem==='undefined'?'undefined':_typeof(lastItem))==='object'&&lastItem!==null){stylesList[lastIndex]=StringMapWrapper.merge(/** @type {?} */lastItem,/** @type {?} */newItem);return;}}stylesList.push(newItem);}/**
- * @param {?} entry
- * @param {?} stateStyles
- * @param {?} schema
- * @param {?} errors
- * @return {?}
- */function _normalizeStyleStepEntry(entry,stateStyles,schema,errors){var/** @type {?} */steps=void 0;if(entry instanceof CompileAnimationWithStepsMetadata){steps=entry.steps;}else{return[entry];}var/** @type {?} */newSteps=[];var/** @type {?} */combinedStyles=void 0;steps.forEach(function(step){if(step instanceof CompileAnimationStyleMetadata){// this occurs when a style step is followed by a previous style step
-// or when the first style step is run. We want to concatenate all subsequent
-// style steps together into a single style step such that we have the correct
-// starting keyframe data to pass into the animation player.
-if(!isPresent(combinedStyles)){combinedStyles=[];}_normalizeStyleMetadata(/** @type {?} */step,stateStyles,schema,errors,true).forEach(function(entry){_mergeAnimationStyles(combinedStyles,entry);});}else{// it is important that we create a metadata entry of the combined styles
-// before we go on an process the animate, sequence or group metadata steps.
-// This will ensure that the AST will have the previous styles painted on
-// screen before any further animations that use the styles take place.
-if(isPresent(combinedStyles)){newSteps.push(new CompileAnimationStyleMetadata(0,combinedStyles));combinedStyles=null;}if(step instanceof CompileAnimationAnimateMetadata){// we do not recurse into CompileAnimationAnimateMetadata since
-// those style steps are not going to be squashed
-var/** @type {?} */animateStyleValue=step.styles;if(animateStyleValue instanceof CompileAnimationStyleMetadata){animateStyleValue.styles=_normalizeStyleMetadata(animateStyleValue,stateStyles,schema,errors,true);}else if(animateStyleValue instanceof CompileAnimationKeyframesSequenceMetadata){animateStyleValue.steps.forEach(function(step){step.styles=_normalizeStyleMetadata(step,stateStyles,schema,errors,true);});}}else if(step instanceof CompileAnimationWithStepsMetadata){var/** @type {?} */innerSteps=_normalizeStyleStepEntry(step,stateStyles,schema,errors);step=step instanceof CompileAnimationGroupMetadata?new CompileAnimationGroupMetadata(innerSteps):new CompileAnimationSequenceMetadata(innerSteps);}newSteps.push(step);}});// this happens when only styles were animated within the sequence
-if(isPresent(combinedStyles)){newSteps.push(new CompileAnimationStyleMetadata(0,combinedStyles));}return newSteps;}/**
- * @param {?} stateName
- * @param {?} stateStyles
- * @param {?} errors
- * @return {?}
- */function _resolveStylesFromState(stateName,stateStyles,errors){var/** @type {?} */styles=[];if(stateName[0]!=':'){errors.push(new AnimationParseError('Animation states via styles must be prefixed with a ":"'));}else{var/** @type {?} */normalizedStateName=stateName.substring(1);var/** @type {?} */value=stateStyles[normalizedStateName];if(!isPresent(value)){errors.push(new AnimationParseError('Unable to apply styles due to missing a state: "'+normalizedStateName+'"'));}else{value.styles.forEach(function(stylesEntry){if((typeof stylesEntry==='undefined'?'undefined':_typeof(stylesEntry))==='object'&&stylesEntry!==null){styles.push(/** @type {?} */stylesEntry);}});}}return styles;}var _AnimationTimings=/**
-     * @param {?} duration
-     * @param {?} delay
-     * @param {?} easing
-     */function _AnimationTimings(duration,delay,easing){_classCallCheck(this,_AnimationTimings);this.duration=duration;this.delay=delay;this.easing=easing;};/**
- * @param {?} keyframeSequence
- * @param {?} currentTime
- * @param {?} collectedStyles
- * @param {?} stateStyles
- * @param {?} errors
- * @return {?}
- */function _parseAnimationKeyframes(keyframeSequence,currentTime,collectedStyles,stateStyles,errors){var/** @type {?} */totalEntries=keyframeSequence.steps.length;var/** @type {?} */totalOffsets=0;keyframeSequence.steps.forEach(function(step){return totalOffsets+=isPresent(step.offset)?1:0;});if(totalOffsets>0&&totalOffsets<totalEntries){errors.push(new AnimationParseError('Not all style() entries contain an offset for the provided keyframe()'));totalOffsets=totalEntries;}var/** @type {?} */limit=totalEntries-1;var/** @type {?} */margin=totalOffsets==0?1/limit:0;var/** @type {?} */rawKeyframes=[];var/** @type {?} */index=0;var/** @type {?} */doSortKeyframes=false;var/** @type {?} */lastOffset=0;keyframeSequence.steps.forEach(function(styleMetadata){var/** @type {?} */offset=styleMetadata.offset;var/** @type {?} */keyframeStyles={};styleMetadata.styles.forEach(function(entry){Object.keys(entry).forEach(function(prop){if(prop!='offset'){keyframeStyles[prop]=entry[prop];}});});if(isPresent(offset)){doSortKeyframes=doSortKeyframes||offset<lastOffset;}else{offset=index==limit?_TERMINAL_KEYFRAME:margin*index;}rawKeyframes.push([offset,keyframeStyles]);lastOffset=offset;index++;});if(doSortKeyframes){rawKeyframes.sort(function(a,b){return a[0]<=b[0]?-1:1;});}var/** @type {?} */firstKeyframe=rawKeyframes[0];if(firstKeyframe[0]!=_INITIAL_KEYFRAME){rawKeyframes.splice(0,0,firstKeyframe=[_INITIAL_KEYFRAME,{}]);}var/** @type {?} */firstKeyframeStyles=firstKeyframe[1];limit=rawKeyframes.length-1;var/** @type {?} */lastKeyframe=rawKeyframes[limit];if(lastKeyframe[0]!=_TERMINAL_KEYFRAME){rawKeyframes.push(lastKeyframe=[_TERMINAL_KEYFRAME,{}]);limit++;}var/** @type {?} */lastKeyframeStyles=lastKeyframe[1];for(var/** @type {?} */i=1;i<=limit;i++){var/** @type {?} */entry=rawKeyframes[i];var/** @type {?} */styles=entry[1];Object.keys(styles).forEach(function(prop){if(!isPresent(firstKeyframeStyles[prop])){firstKeyframeStyles[prop]=ɵFILL_STYLE_FLAG;}});}var _loop=function _loop(_i5){var/** @type {?} */entry=rawKeyframes[_i5];var/** @type {?} */styles=entry[1];Object.keys(styles).forEach(function(prop){if(!isPresent(lastKeyframeStyles[prop])){lastKeyframeStyles[prop]=styles[prop];}});};for(var/** @type {?} */_i5=limit-1;_i5>=0;_i5--){_loop(_i5);}return rawKeyframes.map(function(entry){return new AnimationKeyframeAst(entry[0],new AnimationStylesAst([entry[1]]));});}/**
- * @param {?} entry
- * @param {?} currentTime
- * @param {?} collectedStyles
- * @param {?} stateStyles
- * @param {?} errors
- * @return {?}
- */function _parseTransitionAnimation(entry,currentTime,collectedStyles,stateStyles,errors){var/** @type {?} */ast=void 0/** TODO #9100 */;var/** @type {?} */playTime=0;var/** @type {?} */startingTime=currentTime;if(entry instanceof CompileAnimationWithStepsMetadata){var/** @type {?} */maxDuration=0;var/** @type {?} */steps=[];var/** @type {?} */isGroup=entry instanceof CompileAnimationGroupMetadata;var/** @type {?} */previousStyles=void 0/** TODO #9100 */;entry.steps.forEach(function(entry){// these will get picked up by the next step...
-var/** @type {?} */time=isGroup?startingTime:currentTime;if(entry instanceof CompileAnimationStyleMetadata){entry.styles.forEach(function(stylesEntry){// by this point we know that we only have stringmap values
-var/** @type {?} */map=stylesEntry;Object.keys(map).forEach(function(prop){collectedStyles.insertAtTime(prop,time,map[prop]);});});previousStyles=entry.styles;return;}var/** @type {?} */innerAst=_parseTransitionAnimation(entry,time,collectedStyles,stateStyles,errors);if(isPresent(previousStyles)){if(entry instanceof CompileAnimationWithStepsMetadata){var/** @type {?} */startingStyles=new AnimationStylesAst(previousStyles);steps.push(new AnimationStepAst(startingStyles,[],0,0,''));}else{var _innerStep$startingSt;var/** @type {?} */innerStep=innerAst;(_innerStep$startingSt=innerStep.startingStyles.styles).push.apply(_innerStep$startingSt,_toConsumableArray(previousStyles));}previousStyles=null;}var/** @type {?} */astDuration=innerAst.playTime;currentTime+=astDuration;playTime+=astDuration;maxDuration=Math.max(astDuration,maxDuration);steps.push(innerAst);});if(isPresent(previousStyles)){var/** @type {?} */startingStyles=new AnimationStylesAst(previousStyles);steps.push(new AnimationStepAst(startingStyles,[],0,0,''));}if(isGroup){ast=new AnimationGroupAst(steps);playTime=maxDuration;currentTime=startingTime+playTime;}else{ast=new AnimationSequenceAst(steps);}}else if(entry instanceof CompileAnimationAnimateMetadata){var/** @type {?} */timings=_parseTimeExpression(entry.timings,errors);var/** @type {?} */styles=entry.styles;var/** @type {?} */_keyframes=void 0/** TODO #9100 */;if(styles instanceof CompileAnimationKeyframesSequenceMetadata){_keyframes=_parseAnimationKeyframes(styles,currentTime,collectedStyles,stateStyles,errors);}else{var/** @type {?} */styleData=styles;var/** @type {?} */offset=_TERMINAL_KEYFRAME;var/** @type {?} */styleAst=new AnimationStylesAst(/** @type {?} */styleData.styles);var/** @type {?} */keyframe=new AnimationKeyframeAst(offset,styleAst);_keyframes=[keyframe];}ast=new AnimationStepAst(new AnimationStylesAst([]),_keyframes,timings.duration,timings.delay,timings.easing);playTime=timings.duration+timings.delay;currentTime+=playTime;_keyframes.forEach(function(keyframe/** TODO #9100 */){return keyframe.styles.styles.forEach(function(entry/** TODO #9100 */){return Object.keys(entry).forEach(function(prop){collectedStyles.insertAtTime(prop,currentTime,entry[prop]);});});});}else{// if the code reaches this stage then an error
-// has already been populated within the _normalizeStyleSteps()
-// operation...
-ast=new AnimationStepAst(null,[],0,0,'');}ast.playTime=playTime;ast.startTime=startingTime;return ast;}/**
- * @param {?} ast
- * @param {?} collectedStyles
- * @param {?} errors
- * @return {?}
- */function _fillAnimationAstStartingKeyframes(ast,collectedStyles,errors){// steps that only contain style will not be filled
-if(ast instanceof AnimationStepAst&&ast.keyframes.length>0){var/** @type {?} */_keyframes2=ast.keyframes;if(_keyframes2.length==1){var/** @type {?} */endKeyframe=_keyframes2[0];var/** @type {?} */startKeyframe=_createStartKeyframeFromEndKeyframe(endKeyframe,ast.startTime,ast.playTime,collectedStyles,errors);ast.keyframes=[startKeyframe,endKeyframe];}}else if(ast instanceof AnimationWithStepsAst){ast.steps.forEach(function(entry){return _fillAnimationAstStartingKeyframes(entry,collectedStyles,errors);});}}/**
- * @param {?} exp
- * @param {?} errors
- * @return {?}
- */function _parseTimeExpression(exp,errors){var/** @type {?} */regex=/^([\.\d]+)(m?s)(?:\s+([\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?/i;var/** @type {?} */duration=void 0;var/** @type {?} */delay=0;var/** @type {?} */easing=null;if(typeof exp==='string'){var/** @type {?} */matches=exp.match(regex);if(matches===null){errors.push(new AnimationParseError('The provided timing value "'+exp+'" is invalid.'));return new _AnimationTimings(0,0,null);}var/** @type {?} */durationMatch=parseFloat(matches[1]);var/** @type {?} */durationUnit=matches[2];if(durationUnit=='s'){durationMatch*=_ONE_SECOND;}duration=Math.floor(durationMatch);var/** @type {?} */delayMatch=matches[3];var/** @type {?} */delayUnit=matches[4];if(isPresent(delayMatch)){var/** @type {?} */delayVal=parseFloat(delayMatch);if(isPresent(delayUnit)&&delayUnit=='s'){delayVal*=_ONE_SECOND;}delay=Math.floor(delayVal);}var/** @type {?} */easingVal=matches[5];if(!isBlank(easingVal)){easing=easingVal;}}else{duration=exp;}return new _AnimationTimings(duration,delay,easing);}/**
- * @param {?} endKeyframe
- * @param {?} startTime
- * @param {?} duration
- * @param {?} collectedStyles
- * @param {?} errors
- * @return {?}
- */function _createStartKeyframeFromEndKeyframe(endKeyframe,startTime,duration,collectedStyles,errors){var/** @type {?} */values={};var/** @type {?} */endTime=startTime+duration;endKeyframe.styles.styles.forEach(function(styleData){Object.keys(styleData).forEach(function(prop){var/** @type {?} */val=styleData[prop];if(prop=='offset')return;var/** @type {?} */resultIndex=collectedStyles.indexOfAtOrBeforeTime(prop,startTime);var/** @type {?} */resultEntry=void 0/** TODO #9100 */,/** @type {?} */nextEntry=void 0/** TODO #9100 */,/** @type {?} */value=void 0/** TODO #9100 */;if(isPresent(resultIndex)){resultEntry=collectedStyles.getByIndex(prop,resultIndex);value=resultEntry.value;nextEntry=collectedStyles.getByIndex(prop,resultIndex+1);}else{// this is a flag that the runtime code uses to pass
-// in a value either from the state declaration styles
-// or using the AUTO_STYLE value (e.g. getComputedStyle)
-value=ɵFILL_STYLE_FLAG;}if(isPresent(nextEntry)&&!nextEntry.matches(endTime,val)){errors.push(new AnimationParseError('The animated CSS property "'+prop+'" unexpectedly changes between steps "'+resultEntry.time+'ms" and "'+endTime+'ms" at "'+nextEntry.time+'ms"'));}values[prop]=value;});});return new AnimationKeyframeAst(_INITIAL_KEYFRAME,new AnimationStylesAst([values]));}/**
  * An interface for retrieving documents by URL that the compiler uses
  * to load templates.
  */var ResourceLoader=function(){function ResourceLoader(){_classCallCheck(this,ResourceLoader);}_createClass(ResourceLoader,[{key:'get',/**
@@ -3893,21 +3631,21 @@ value=ɵFILL_STYLE_FLAG;}if(isPresent(nextEntry)&&!nextEntry.matches(endTime,val
      */_createClass(DirectiveNormalizer,[{key:'clearCache',value:function clearCache(){this._resourceLoaderCache.clear();}/**
      * @param {?} normalizedDirective
      * @return {?}
-     */},{key:'clearCacheFor',value:function clearCacheFor(normalizedDirective){var _this116=this;if(!normalizedDirective.isComponent){return;}this._resourceLoaderCache.delete(normalizedDirective.template.templateUrl);normalizedDirective.template.externalStylesheets.forEach(function(stylesheet){_this116._resourceLoaderCache.delete(stylesheet.moduleUrl);});}/**
+     */},{key:'clearCacheFor',value:function clearCacheFor(normalizedDirective){var _this101=this;if(!normalizedDirective.isComponent){return;}this._resourceLoaderCache.delete(normalizedDirective.template.templateUrl);normalizedDirective.template.externalStylesheets.forEach(function(stylesheet){_this101._resourceLoaderCache.delete(stylesheet.moduleUrl);});}/**
      * @param {?} url
      * @return {?}
      */},{key:'_fetch',value:function _fetch(url){var/** @type {?} */result=this._resourceLoaderCache.get(url);if(!result){result=this._resourceLoader.get(url);this._resourceLoaderCache.set(url,result);}return result;}/**
      * @param {?} prenormData
      * @return {?}
-     */},{key:'normalizeTemplate',value:function normalizeTemplate(prenormData){var _this117=this;var/** @type {?} */normalizedTemplateSync=null;var/** @type {?} */normalizedTemplateAsync=void 0;if(prenormData.template!=null){if(typeof prenormData.template!=='string'){throw syntaxError('The template specified for component '+stringify(prenormData.componentType)+' is not a string');}normalizedTemplateSync=this.normalizeTemplateSync(prenormData);normalizedTemplateAsync=Promise.resolve(normalizedTemplateSync);}else if(prenormData.templateUrl){if(typeof prenormData.templateUrl!=='string'){throw syntaxError('The templateUrl specified for component '+stringify(prenormData.componentType)+' is not a string');}normalizedTemplateAsync=this.normalizeTemplateAsync(prenormData);}else{throw syntaxError('No template specified for component '+stringify(prenormData.componentType));}if(normalizedTemplateSync&&normalizedTemplateSync.styleUrls.length===0){// sync case
+     */},{key:'normalizeTemplate',value:function normalizeTemplate(prenormData){var _this102=this;var/** @type {?} */normalizedTemplateSync=null;var/** @type {?} */normalizedTemplateAsync=void 0;if(prenormData.template!=null){if(typeof prenormData.template!=='string'){throw syntaxError('The template specified for component '+stringify(prenormData.componentType)+' is not a string');}normalizedTemplateSync=this.normalizeTemplateSync(prenormData);normalizedTemplateAsync=Promise.resolve(normalizedTemplateSync);}else if(prenormData.templateUrl){if(typeof prenormData.templateUrl!=='string'){throw syntaxError('The templateUrl specified for component '+stringify(prenormData.componentType)+' is not a string');}normalizedTemplateAsync=this.normalizeTemplateAsync(prenormData);}else{throw syntaxError('No template specified for component '+stringify(prenormData.componentType));}if(normalizedTemplateSync&&normalizedTemplateSync.styleUrls.length===0){// sync case
 return new SyncAsyncResult(normalizedTemplateSync);}else{// async case
-return new SyncAsyncResult(null,normalizedTemplateAsync.then(function(normalizedTemplate){return _this117.normalizeExternalStylesheets(normalizedTemplate);}));}}/**
+return new SyncAsyncResult(null,normalizedTemplateAsync.then(function(normalizedTemplate){return _this102.normalizeExternalStylesheets(normalizedTemplate);}));}}/**
      * @param {?} prenomData
      * @return {?}
      */},{key:'normalizeTemplateSync',value:function normalizeTemplateSync(prenomData){return this.normalizeLoadedTemplate(prenomData,prenomData.template,prenomData.moduleUrl);}/**
      * @param {?} prenomData
      * @return {?}
-     */},{key:'normalizeTemplateAsync',value:function normalizeTemplateAsync(prenomData){var _this118=this;var/** @type {?} */templateUrl=this._urlResolver.resolve(prenomData.moduleUrl,prenomData.templateUrl);return this._fetch(templateUrl).then(function(value){return _this118.normalizeLoadedTemplate(prenomData,value,templateUrl);});}/**
+     */},{key:'normalizeTemplateAsync',value:function normalizeTemplateAsync(prenomData){var _this103=this;var/** @type {?} */templateUrl=this._urlResolver.resolve(prenomData.moduleUrl,prenomData.templateUrl);return this._fetch(templateUrl).then(function(value){return _this103.normalizeLoadedTemplate(prenomData,value,templateUrl);});}/**
      * @param {?} prenomData
      * @param {?} template
      * @param {?} templateAbsUrl
@@ -3919,10 +3657,10 @@ return new SyncAsyncResult(null,normalizedTemplateAsync.then(function(normalized
      * @param {?} styleUrls
      * @param {?=} loadedStylesheets
      * @return {?}
-     */},{key:'_loadMissingExternalStylesheets',value:function _loadMissingExternalStylesheets(styleUrls){var _this119=this;var loadedStylesheets=arguments.length>1&&arguments[1]!==undefined?arguments[1]:new Map();return Promise.all(styleUrls.filter(function(styleUrl){return!loadedStylesheets.has(styleUrl);}).map(function(styleUrl){return _this119._fetch(styleUrl).then(function(loadedStyle){var/** @type {?} */stylesheet=_this119.normalizeStylesheet(new CompileStylesheetMetadata({styles:[loadedStyle],moduleUrl:styleUrl}));loadedStylesheets.set(styleUrl,stylesheet);return _this119._loadMissingExternalStylesheets(stylesheet.styleUrls,loadedStylesheets);});})).then(function(_){return Array.from(loadedStylesheets.values());});}/**
+     */},{key:'_loadMissingExternalStylesheets',value:function _loadMissingExternalStylesheets(styleUrls){var _this104=this;var loadedStylesheets=arguments.length>1&&arguments[1]!==undefined?arguments[1]:new Map();return Promise.all(styleUrls.filter(function(styleUrl){return!loadedStylesheets.has(styleUrl);}).map(function(styleUrl){return _this104._fetch(styleUrl).then(function(loadedStyle){var/** @type {?} */stylesheet=_this104.normalizeStylesheet(new CompileStylesheetMetadata({styles:[loadedStyle],moduleUrl:styleUrl}));loadedStylesheets.set(styleUrl,stylesheet);return _this104._loadMissingExternalStylesheets(stylesheet.styleUrls,loadedStylesheets);});})).then(function(_){return Array.from(loadedStylesheets.values());});}/**
      * @param {?} stylesheet
      * @return {?}
-     */},{key:'normalizeStylesheet',value:function normalizeStylesheet(stylesheet){var _this120=this;var/** @type {?} */allStyleUrls=stylesheet.styleUrls.filter(isStyleUrlResolvable).map(function(url){return _this120._urlResolver.resolve(stylesheet.moduleUrl,url);});var/** @type {?} */allStyles=stylesheet.styles.map(function(style){var/** @type {?} */styleWithImports=extractStyleUrls(_this120._urlResolver,stylesheet.moduleUrl,style);allStyleUrls.push.apply(allStyleUrls,_toConsumableArray(styleWithImports.styleUrls));return styleWithImports.style;});return new CompileStylesheetMetadata({styles:allStyles,styleUrls:allStyleUrls,moduleUrl:stylesheet.moduleUrl});}}]);return DirectiveNormalizer;}();DirectiveNormalizer.decorators=[{type:CompilerInjectable}];/** @nocollapse */DirectiveNormalizer.ctorParameters=function(){return[{type:ResourceLoader},{type:UrlResolver},{type:HtmlParser},{type:CompilerConfig}];};var TemplatePreparseVisitor=function(){function TemplatePreparseVisitor(){_classCallCheck(this,TemplatePreparseVisitor);this.ngContentSelectors=[];this.styles=[];this.styleUrls=[];this.ngNonBindableStackCount=0;}/**
+     */},{key:'normalizeStylesheet',value:function normalizeStylesheet(stylesheet){var _this105=this;var/** @type {?} */allStyleUrls=stylesheet.styleUrls.filter(isStyleUrlResolvable).map(function(url){return _this105._urlResolver.resolve(stylesheet.moduleUrl,url);});var/** @type {?} */allStyles=stylesheet.styles.map(function(style){var/** @type {?} */styleWithImports=extractStyleUrls(_this105._urlResolver,stylesheet.moduleUrl,style);allStyleUrls.push.apply(allStyleUrls,_toConsumableArray(styleWithImports.styleUrls));return styleWithImports.style;});return new CompileStylesheetMetadata({styles:allStyles,styleUrls:allStyleUrls,moduleUrl:stylesheet.moduleUrl});}}]);return DirectiveNormalizer;}();DirectiveNormalizer.decorators=[{type:CompilerInjectable}];/** @nocollapse */DirectiveNormalizer.ctorParameters=function(){return[{type:ResourceLoader},{type:UrlResolver},{type:HtmlParser},{type:CompilerConfig}];};var TemplatePreparseVisitor=function(){function TemplatePreparseVisitor(){_classCallCheck(this,TemplatePreparseVisitor);this.ngContentSelectors=[];this.styles=[];this.styleUrls=[];this.ngNonBindableStackCount=0;}/**
      * @param {?} ast
      * @param {?} context
      * @return {?}
@@ -3979,7 +3717,304 @@ for(var/** @type {?} */i=bindings.length-1;i>=0;i--){var/** @type {?} */binding=
      */},{key:'_merge',value:function _merge(directive,inputs,outputs,host,queries,directiveType){var/** @type {?} */mergedInputs=this._dedupeBindings(directive.inputs?directive.inputs.concat(inputs):inputs);var/** @type {?} */mergedOutputs=this._dedupeBindings(directive.outputs?directive.outputs.concat(outputs):outputs);var/** @type {?} */mergedHost=directive.host?StringMapWrapper.merge(directive.host,host):host;var/** @type {?} */mergedQueries=directive.queries?StringMapWrapper.merge(directive.queries,queries):queries;if(directive instanceof Component){return new Component({selector:directive.selector,inputs:mergedInputs,outputs:mergedOutputs,host:mergedHost,exportAs:directive.exportAs,moduleId:directive.moduleId,queries:mergedQueries,changeDetection:directive.changeDetection,providers:directive.providers,viewProviders:directive.viewProviders,entryComponents:directive.entryComponents,template:directive.template,templateUrl:directive.templateUrl,styles:directive.styles,styleUrls:directive.styleUrls,encapsulation:directive.encapsulation,animations:directive.animations,interpolation:directive.interpolation});}else{return new Directive({selector:directive.selector,inputs:mergedInputs,outputs:mergedOutputs,host:mergedHost,exportAs:directive.exportAs,queries:mergedQueries,providers:directive.providers});}}}]);return DirectiveResolver;}();DirectiveResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */DirectiveResolver.ctorParameters=function(){return[{type:ɵReflectorReader}];};/**
  * @param {?} type
  * @return {?}
- */function isDirectiveMetadata(type){return type instanceof Directive;}var TypeModifier={};TypeModifier.Const=0;TypeModifier[TypeModifier.Const]="Const";/**
+ */function isDirectiveMetadata(type){return type instanceof Directive;}/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */var/** @type {?} */STRIP_SRC_FILE_SUFFIXES=/(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;var/** @type {?} */NG_FACTORY=/\.ngfactory\./;/**
+ * @param {?} filePath
+ * @return {?}
+ */function ngfactoryFilePath(filePath){var/** @type {?} */urlWithSuffix=splitTypescriptSuffix(filePath);return urlWithSuffix[0]+'.ngfactory'+urlWithSuffix[1];}/**
+ * @param {?} filePath
+ * @return {?}
+ */function stripNgFactory(filePath){return filePath.replace(NG_FACTORY,'.');}/**
+ * @param {?} filePath
+ * @return {?}
+ */function isNgFactoryFile(filePath){return NG_FACTORY.test(filePath);}/**
+ * @param {?} path
+ * @return {?}
+ */function splitTypescriptSuffix(path){if(path.endsWith('.d.ts')){return[path.slice(0,-5),'.ts'];}var/** @type {?} */lastDot=path.lastIndexOf('.');if(lastDot!==-1){return[path.substring(0,lastDot),path.substring(lastDot)];}return[path,''];}/**
+ * @param {?} fileName
+ * @return {?}
+ */function summaryFileName(fileName){var/** @type {?} */fileNameWithoutSuffix=fileName.replace(STRIP_SRC_FILE_SUFFIXES,'');return fileNameWithoutSuffix+'.ngsummary.json';}/**
+ * @param {?} hook
+ * @param {?} token
+ * @return {?}
+ */function hasLifecycleHook(hook,token){return ɵreflector.hasLifecycleHook(token,getHookName(hook));}/**
+ * @param {?} hook
+ * @return {?}
+ */function getHookName(hook){switch(hook){case ɵLifecycleHooks.OnInit:return'ngOnInit';case ɵLifecycleHooks.OnDestroy:return'ngOnDestroy';case ɵLifecycleHooks.DoCheck:return'ngDoCheck';case ɵLifecycleHooks.OnChanges:return'ngOnChanges';case ɵLifecycleHooks.AfterContentInit:return'ngAfterContentInit';case ɵLifecycleHooks.AfterContentChecked:return'ngAfterContentChecked';case ɵLifecycleHooks.AfterViewInit:return'ngAfterViewInit';case ɵLifecycleHooks.AfterViewChecked:return'ngAfterViewChecked';}}/**
+ * @param {?} obj
+ * @return {?}
+ */function _isNgModuleMetadata(obj){return obj instanceof NgModule;}/**
+ * Resolves types to {\@link NgModule}.
+ */var NgModuleResolver=function(){/**
+     * @param {?=} _reflector
+     */function NgModuleResolver(){var _reflector=arguments.length>0&&arguments[0]!==undefined?arguments[0]:ɵreflector;_classCallCheck(this,NgModuleResolver);this._reflector=_reflector;}/**
+     * @param {?} type
+     * @return {?}
+     */_createClass(NgModuleResolver,[{key:'isNgModule',value:function isNgModule(type){return this._reflector.annotations(type).some(_isNgModuleMetadata);}/**
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */},{key:'resolve',value:function resolve(type){var throwIfNotFound=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;var/** @type {?} */ngModuleMeta=ListWrapper.findLast(this._reflector.annotations(type),_isNgModuleMetadata);if(ngModuleMeta){return ngModuleMeta;}else{if(throwIfNotFound){throw new Error('No NgModule metadata found for \''+stringify(type)+'\'.');}return null;}}}]);return NgModuleResolver;}();NgModuleResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */NgModuleResolver.ctorParameters=function(){return[{type:ɵReflectorReader}];};/**
+ * @param {?} type
+ * @return {?}
+ */function _isPipeMetadata(type){return type instanceof Pipe;}/**
+ * Resolve a `Type` for {\@link Pipe}.
+ *
+ * This interface can be overridden by the application developer to create custom behavior.
+ *
+ * See {\@link Compiler}
+ */var PipeResolver=function(){/**
+     * @param {?=} _reflector
+     */function PipeResolver(){var _reflector=arguments.length>0&&arguments[0]!==undefined?arguments[0]:ɵreflector;_classCallCheck(this,PipeResolver);this._reflector=_reflector;}/**
+     * @param {?} type
+     * @return {?}
+     */_createClass(PipeResolver,[{key:'isPipe',value:function isPipe(type){var/** @type {?} */typeMetadata=this._reflector.annotations(resolveForwardRef(type));return typeMetadata&&typeMetadata.some(_isPipeMetadata);}/**
+     * Return {\@link Pipe} for a given `Type`.
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */},{key:'resolve',value:function resolve(type){var throwIfNotFound=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;var/** @type {?} */metas=this._reflector.annotations(resolveForwardRef(type));if(metas){var/** @type {?} */annotation=ListWrapper.findLast(metas,_isPipeMetadata);if(annotation){return annotation;}}if(throwIfNotFound){throw new Error('No Pipe decorator found on '+stringify(type));}return null;}}]);return PipeResolver;}();PipeResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */PipeResolver.ctorParameters=function(){return[{type:ɵReflectorReader}];};var SummaryResolver=function(){function SummaryResolver(){_classCallCheck(this,SummaryResolver);}_createClass(SummaryResolver,[{key:'isLibraryFile',/**
+     * @param {?} fileName
+     * @return {?}
+     */value:function isLibraryFile(fileName){return false;}},{key:'getLibraryFileName',/**
+     * @param {?} fileName
+     * @return {?}
+     */value:function getLibraryFileName(fileName){return null;}/**
+     * @param {?} reference
+     * @return {?}
+     */},{key:'resolveSummary',value:function resolveSummary(reference){return null;}},{key:'getSymbolsOf',/**
+     * @param {?} filePath
+     * @return {?}
+     */value:function getSymbolsOf(filePath){return[];}/**
+     * @param {?} reference
+     * @return {?}
+     */},{key:'getImportAs',value:function getImportAs(reference){return reference;}}]);return SummaryResolver;}();SummaryResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */SummaryResolver.ctorParameters=function(){return[];};var/** @type {?} */ERROR_COLLECTOR_TOKEN=new InjectionToken('ErrorCollector');var CompileMetadataResolver=function(){/**
+     * @param {?} _config
+     * @param {?} _ngModuleResolver
+     * @param {?} _directiveResolver
+     * @param {?} _pipeResolver
+     * @param {?} _summaryResolver
+     * @param {?} _schemaRegistry
+     * @param {?} _directiveNormalizer
+     * @param {?} _staticSymbolCache
+     * @param {?=} _reflector
+     * @param {?=} _errorCollector
+     */function CompileMetadataResolver(_config,_ngModuleResolver,_directiveResolver,_pipeResolver,_summaryResolver,_schemaRegistry,_directiveNormalizer,_staticSymbolCache){var _reflector=arguments.length>8&&arguments[8]!==undefined?arguments[8]:ɵreflector;var _errorCollector=arguments[9];_classCallCheck(this,CompileMetadataResolver);this._config=_config;this._ngModuleResolver=_ngModuleResolver;this._directiveResolver=_directiveResolver;this._pipeResolver=_pipeResolver;this._summaryResolver=_summaryResolver;this._schemaRegistry=_schemaRegistry;this._directiveNormalizer=_directiveNormalizer;this._staticSymbolCache=_staticSymbolCache;this._reflector=_reflector;this._errorCollector=_errorCollector;this._nonNormalizedDirectiveCache=new Map();this._directiveCache=new Map();this._summaryCache=new Map();this._pipeCache=new Map();this._ngModuleCache=new Map();this._ngModuleOfTypes=new Map();}/**
+     * @param {?} type
+     * @return {?}
+     */_createClass(CompileMetadataResolver,[{key:'clearCacheFor',value:function clearCacheFor(type){var/** @type {?} */dirMeta=this._directiveCache.get(type);this._directiveCache.delete(type);this._nonNormalizedDirectiveCache.delete(type);this._summaryCache.delete(type);this._pipeCache.delete(type);this._ngModuleOfTypes.delete(type);// Clear all of the NgModule as they contain transitive information!
+this._ngModuleCache.clear();if(dirMeta){this._directiveNormalizer.clearCacheFor(dirMeta);}}/**
+     * @return {?}
+     */},{key:'clearCache',value:function clearCache(){this._directiveCache.clear();this._nonNormalizedDirectiveCache.clear();this._summaryCache.clear();this._pipeCache.clear();this._ngModuleCache.clear();this._ngModuleOfTypes.clear();this._directiveNormalizer.clearCache();}/**
+     * @param {?} baseType
+     * @param {?} name
+     * @return {?}
+     */},{key:'_createProxyClass',value:function _createProxyClass(baseType,name){var/** @type {?} */delegate=null;var/** @type {?} */proxyClass=function proxyClass(){if(!delegate){throw new Error('Illegal state: Class '+name+' for type '+stringify(baseType)+' is not compiled yet!');}return delegate.apply(this,arguments);};proxyClass.setDelegate=function(d){delegate=d;proxyClass.prototype=d.prototype;};// Make stringify work correctly
+proxyClass.overriddenName=name;return proxyClass;}/**
+     * @param {?} dirType
+     * @param {?} name
+     * @return {?}
+     */},{key:'getGeneratedClass',value:function getGeneratedClass(dirType,name){if(dirType instanceof StaticSymbol){return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath),name);}else{return this._createProxyClass(dirType,name);}}/**
+     * @param {?} dirType
+     * @return {?}
+     */},{key:'getComponentViewClass',value:function getComponentViewClass(dirType){return this.getGeneratedClass(dirType,viewClassName(dirType,0));}/**
+     * @param {?} dirType
+     * @return {?}
+     */},{key:'getHostComponentViewClass',value:function getHostComponentViewClass(dirType){return this.getGeneratedClass(dirType,hostViewClassName(dirType));}/**
+     * @param {?} dirType
+     * @return {?}
+     */},{key:'getHostComponentType',value:function getHostComponentType(dirType){var/** @type {?} */name=identifierName({reference:dirType})+'_Host';if(dirType instanceof StaticSymbol){return this._staticSymbolCache.get(dirType.filePath,name);}else{var/** @type {?} */HostClass=function HostClass(){};HostClass.overriddenName=name;return HostClass;}}/**
+     * @param {?} dirType
+     * @return {?}
+     */},{key:'getRendererType',value:function getRendererType(dirType){if(dirType instanceof StaticSymbol){return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath),rendererTypeName(dirType));}else{// returning an object as proxy,
+// that we fill later during runtime compilation.
+return{};}}/**
+     * @param {?} selector
+     * @param {?} dirType
+     * @return {?}
+     */},{key:'getComponentFactory',value:function getComponentFactory(selector,dirType){if(dirType instanceof StaticSymbol){return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath),componentFactoryName(dirType));}else{var/** @type {?} */hostView=this.getHostComponentViewClass(dirType);return ɵccf(selector,dirType,/** @type {?} */hostView);}}/**
+     * @param {?} type
+     * @param {?} kind
+     * @return {?}
+     */},{key:'_loadSummary',value:function _loadSummary(type,kind){var/** @type {?} */typeSummary=this._summaryCache.get(type);if(!typeSummary){var/** @type {?} */summary=this._summaryResolver.resolveSummary(type);typeSummary=summary?summary.type:null;this._summaryCache.set(type,typeSummary);}return typeSummary&&typeSummary.summaryKind===kind?typeSummary:null;}/**
+     * @param {?} directiveType
+     * @param {?} isSync
+     * @return {?}
+     */},{key:'_loadDirectiveMetadata',value:function _loadDirectiveMetadata(directiveType,isSync){var _this106=this;if(this._directiveCache.has(directiveType)){return;}directiveType=resolveForwardRef(directiveType);var _getNonNormalizedDire=this.getNonNormalizedDirectiveMetadata(directiveType),annotation=_getNonNormalizedDire.annotation,metadata=_getNonNormalizedDire.metadata;var/** @type {?} */createDirectiveMetadata=function createDirectiveMetadata(templateMetadata){var/** @type {?} */normalizedDirMeta=new CompileDirectiveMetadata({type:metadata.type,isComponent:metadata.isComponent,selector:metadata.selector,exportAs:metadata.exportAs,changeDetection:metadata.changeDetection,inputs:metadata.inputs,outputs:metadata.outputs,hostListeners:metadata.hostListeners,hostProperties:metadata.hostProperties,hostAttributes:metadata.hostAttributes,providers:metadata.providers,viewProviders:metadata.viewProviders,queries:metadata.queries,viewQueries:metadata.viewQueries,entryComponents:metadata.entryComponents,componentViewType:metadata.componentViewType,rendererType:metadata.rendererType,componentFactory:metadata.componentFactory,template:templateMetadata});_this106._directiveCache.set(directiveType,normalizedDirMeta);_this106._summaryCache.set(directiveType,normalizedDirMeta.toSummary());return normalizedDirMeta;};if(metadata.isComponent){var/** @type {?} */templateMeta=this._directiveNormalizer.normalizeTemplate({componentType:directiveType,moduleUrl:componentModuleUrl(this._reflector,directiveType,annotation),encapsulation:metadata.template.encapsulation,template:metadata.template.template,templateUrl:metadata.template.templateUrl,styles:metadata.template.styles,styleUrls:metadata.template.styleUrls,animations:metadata.template.animations,interpolation:metadata.template.interpolation});if(templateMeta.syncResult){createDirectiveMetadata(templateMeta.syncResult);return null;}else{if(isSync){this._reportError(componentStillLoadingError(directiveType),directiveType);return null;}return templateMeta.asyncResult.then(createDirectiveMetadata);}}else{// directive
+createDirectiveMetadata(null);return null;}}/**
+     * @param {?} directiveType
+     * @return {?}
+     */},{key:'getNonNormalizedDirectiveMetadata',value:function getNonNormalizedDirectiveMetadata(directiveType){var _this107=this;directiveType=resolveForwardRef(directiveType);if(!directiveType){return null;}var/** @type {?} */cacheEntry=this._nonNormalizedDirectiveCache.get(directiveType);if(cacheEntry){return cacheEntry;}var/** @type {?} */dirMeta=this._directiveResolver.resolve(directiveType,false);if(!dirMeta){return null;}var/** @type {?} */nonNormalizedTemplateMetadata=void 0;if(dirMeta instanceof Component){// component
+assertArrayOfStrings('styles',dirMeta.styles);assertArrayOfStrings('styleUrls',dirMeta.styleUrls);assertInterpolationSymbols('interpolation',dirMeta.interpolation);var/** @type {?} */animations=dirMeta.animations;nonNormalizedTemplateMetadata=new CompileTemplateMetadata({encapsulation:dirMeta.encapsulation,template:dirMeta.template,templateUrl:dirMeta.templateUrl,styles:dirMeta.styles,styleUrls:dirMeta.styleUrls,animations:animations,interpolation:dirMeta.interpolation});}var/** @type {?} */changeDetectionStrategy=null;var/** @type {?} */viewProviders=[];var/** @type {?} */entryComponentMetadata=[];var/** @type {?} */selector=dirMeta.selector;if(dirMeta instanceof Component){// Component
+changeDetectionStrategy=dirMeta.changeDetection;if(dirMeta.viewProviders){viewProviders=this._getProvidersMetadata(dirMeta.viewProviders,entryComponentMetadata,'viewProviders for "'+stringifyType(directiveType)+'"',[],directiveType);}if(dirMeta.entryComponents){entryComponentMetadata=flattenAndDedupeArray(dirMeta.entryComponents).map(function(type){return _this107._getEntryComponentMetadata(type);}).concat(entryComponentMetadata);}if(!selector){selector=this._schemaRegistry.getDefaultComponentElementName();}}else{// Directive
+if(!selector){this._reportError(syntaxError('Directive '+stringifyType(directiveType)+' has no selector, please add it!'),directiveType);selector='error';}}var/** @type {?} */providers=[];if(dirMeta.providers!=null){providers=this._getProvidersMetadata(dirMeta.providers,entryComponentMetadata,'providers for "'+stringifyType(directiveType)+'"',[],directiveType);}var/** @type {?} */queries=[];var/** @type {?} */viewQueries=[];if(dirMeta.queries!=null){queries=this._getQueriesMetadata(dirMeta.queries,false,directiveType);viewQueries=this._getQueriesMetadata(dirMeta.queries,true,directiveType);}var/** @type {?} */metadata=CompileDirectiveMetadata.create({selector:selector,exportAs:dirMeta.exportAs,isComponent:!!nonNormalizedTemplateMetadata,type:this._getTypeMetadata(directiveType),template:nonNormalizedTemplateMetadata,changeDetection:changeDetectionStrategy,inputs:dirMeta.inputs,outputs:dirMeta.outputs,host:dirMeta.host,providers:providers,viewProviders:viewProviders,queries:queries,viewQueries:viewQueries,entryComponents:entryComponentMetadata,componentViewType:nonNormalizedTemplateMetadata?this.getComponentViewClass(directiveType):undefined,rendererType:nonNormalizedTemplateMetadata?this.getRendererType(directiveType):undefined,componentFactory:nonNormalizedTemplateMetadata?this.getComponentFactory(selector,directiveType):undefined});cacheEntry={metadata:metadata,annotation:dirMeta};this._nonNormalizedDirectiveCache.set(directiveType,cacheEntry);return cacheEntry;}/**
+     * Gets the metadata for the given directive.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
+     * @param {?} directiveType
+     * @return {?}
+     */},{key:'getDirectiveMetadata',value:function getDirectiveMetadata(directiveType){var/** @type {?} */dirMeta=this._directiveCache.get(directiveType);if(!dirMeta){this._reportError(syntaxError('Illegal state: getDirectiveMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Directive '+stringifyType(directiveType)+'.'),directiveType);}return dirMeta;}/**
+     * @param {?} dirType
+     * @return {?}
+     */},{key:'getDirectiveSummary',value:function getDirectiveSummary(dirType){var/** @type {?} */dirSummary=this._loadSummary(dirType,CompileSummaryKind.Directive);if(!dirSummary){this._reportError(syntaxError('Illegal state: Could not load the summary for directive '+stringifyType(dirType)+'.'),dirType);}return dirSummary;}/**
+     * @param {?} type
+     * @return {?}
+     */},{key:'isDirective',value:function isDirective(type){return this._directiveResolver.isDirective(type);}/**
+     * @param {?} type
+     * @return {?}
+     */},{key:'isPipe',value:function isPipe(type){return this._pipeResolver.isPipe(type);}/**
+     * @param {?} moduleType
+     * @return {?}
+     */},{key:'getNgModuleSummary',value:function getNgModuleSummary(moduleType){var/** @type {?} */moduleSummary=this._loadSummary(moduleType,CompileSummaryKind.NgModule);if(!moduleSummary){var/** @type {?} */moduleMeta=this.getNgModuleMetadata(moduleType,false);moduleSummary=moduleMeta?moduleMeta.toSummary():null;if(moduleSummary){this._summaryCache.set(moduleType,moduleSummary);}}return moduleSummary;}/**
+     * Loads the declared directives and pipes of an NgModule.
+     * @param {?} moduleType
+     * @param {?} isSync
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */},{key:'loadNgModuleDirectiveAndPipeMetadata',value:function loadNgModuleDirectiveAndPipeMetadata(moduleType,isSync){var _this108=this;var throwIfNotFound=arguments.length>2&&arguments[2]!==undefined?arguments[2]:true;var/** @type {?} */ngModule=this.getNgModuleMetadata(moduleType,throwIfNotFound);var/** @type {?} */loading=[];if(ngModule){ngModule.declaredDirectives.forEach(function(id){var/** @type {?} */promise=_this108._loadDirectiveMetadata(id.reference,isSync);if(promise){loading.push(promise);}});ngModule.declaredPipes.forEach(function(id){return _this108._loadPipeMetadata(id.reference);});}return Promise.all(loading);}/**
+     * @param {?} moduleType
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */},{key:'getNgModuleMetadata',value:function getNgModuleMetadata(moduleType){var _this109=this;var throwIfNotFound=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;moduleType=resolveForwardRef(moduleType);var/** @type {?} */compileMeta=this._ngModuleCache.get(moduleType);if(compileMeta){return compileMeta;}var/** @type {?} */meta=this._ngModuleResolver.resolve(moduleType,throwIfNotFound);if(!meta){return null;}var/** @type {?} */declaredDirectives=[];var/** @type {?} */exportedNonModuleIdentifiers=[];var/** @type {?} */declaredPipes=[];var/** @type {?} */importedModules=[];var/** @type {?} */exportedModules=[];var/** @type {?} */providers=[];var/** @type {?} */entryComponents=[];var/** @type {?} */bootstrapComponents=[];var/** @type {?} */schemas=[];if(meta.imports){flattenAndDedupeArray(meta.imports).forEach(function(importedType){var/** @type {?} */importedModuleType=void 0;if(isValidType(importedType)){importedModuleType=importedType;}else if(importedType&&importedType.ngModule){var/** @type {?} */moduleWithProviders=importedType;importedModuleType=moduleWithProviders.ngModule;if(moduleWithProviders.providers){providers.push.apply(providers,_toConsumableArray(_this109._getProvidersMetadata(moduleWithProviders.providers,entryComponents,'provider for the NgModule \''+stringifyType(importedModuleType)+'\'',[],importedType)));}}if(importedModuleType){var/** @type {?} */importedModuleSummary=_this109.getNgModuleSummary(importedModuleType);if(!importedModuleSummary){_this109._reportError(syntaxError('Unexpected '+_this109._getTypeDescriptor(importedType)+' \''+stringifyType(importedType)+'\' imported by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}importedModules.push(importedModuleSummary);}else{_this109._reportError(syntaxError('Unexpected value \''+stringifyType(importedType)+'\' imported by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}});}if(meta.exports){flattenAndDedupeArray(meta.exports).forEach(function(exportedType){if(!isValidType(exportedType)){_this109._reportError(syntaxError('Unexpected value \''+stringifyType(exportedType)+'\' exported by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}var/** @type {?} */exportedModuleSummary=_this109.getNgModuleSummary(exportedType);if(exportedModuleSummary){exportedModules.push(exportedModuleSummary);}else{exportedNonModuleIdentifiers.push(_this109._getIdentifierMetadata(exportedType));}});}// Note: This will be modified later, so we rely on
+// getting a new instance every time!
+var/** @type {?} */transitiveModule=this._getTransitiveNgModuleMetadata(importedModules,exportedModules);if(meta.declarations){flattenAndDedupeArray(meta.declarations).forEach(function(declaredType){if(!isValidType(declaredType)){_this109._reportError(syntaxError('Unexpected value \''+stringifyType(declaredType)+'\' declared by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}var/** @type {?} */declaredIdentifier=_this109._getIdentifierMetadata(declaredType);if(_this109._directiveResolver.isDirective(declaredType)){transitiveModule.addDirective(declaredIdentifier);declaredDirectives.push(declaredIdentifier);_this109._addTypeToModule(declaredType,moduleType);}else if(_this109._pipeResolver.isPipe(declaredType)){transitiveModule.addPipe(declaredIdentifier);transitiveModule.pipes.push(declaredIdentifier);declaredPipes.push(declaredIdentifier);_this109._addTypeToModule(declaredType,moduleType);}else{_this109._reportError(syntaxError('Unexpected '+_this109._getTypeDescriptor(declaredType)+' \''+stringifyType(declaredType)+'\' declared by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}});}var/** @type {?} */exportedDirectives=[];var/** @type {?} */exportedPipes=[];exportedNonModuleIdentifiers.forEach(function(exportedId){if(transitiveModule.directivesSet.has(exportedId.reference)){exportedDirectives.push(exportedId);transitiveModule.addExportedDirective(exportedId);}else if(transitiveModule.pipesSet.has(exportedId.reference)){exportedPipes.push(exportedId);transitiveModule.addExportedPipe(exportedId);}else{_this109._reportError(syntaxError('Can\'t export '+_this109._getTypeDescriptor(exportedId.reference)+' '+stringifyType(exportedId.reference)+' from '+stringifyType(moduleType)+' as it was neither declared nor imported!'),moduleType);}});// The providers of the module have to go last
+// so that they overwrite any other provider we already added.
+if(meta.providers){providers.push.apply(providers,_toConsumableArray(this._getProvidersMetadata(meta.providers,entryComponents,'provider for the NgModule \''+stringifyType(moduleType)+'\'',[],moduleType)));}if(meta.entryComponents){entryComponents.push.apply(entryComponents,_toConsumableArray(flattenAndDedupeArray(meta.entryComponents).map(function(type){return _this109._getEntryComponentMetadata(type);})));}if(meta.bootstrap){flattenAndDedupeArray(meta.bootstrap).forEach(function(type){if(!isValidType(type)){_this109._reportError(syntaxError('Unexpected value \''+stringifyType(type)+'\' used in the bootstrap property of module \''+stringifyType(moduleType)+'\''),moduleType);return;}bootstrapComponents.push(_this109._getIdentifierMetadata(type));});}entryComponents.push.apply(entryComponents,_toConsumableArray(bootstrapComponents.map(function(type){return _this109._getEntryComponentMetadata(type.reference);})));if(meta.schemas){schemas.push.apply(schemas,_toConsumableArray(flattenAndDedupeArray(meta.schemas)));}compileMeta=new CompileNgModuleMetadata({type:this._getTypeMetadata(moduleType),providers:providers,entryComponents:entryComponents,bootstrapComponents:bootstrapComponents,schemas:schemas,declaredDirectives:declaredDirectives,exportedDirectives:exportedDirectives,declaredPipes:declaredPipes,exportedPipes:exportedPipes,importedModules:importedModules,exportedModules:exportedModules,transitiveModule:transitiveModule,id:meta.id});entryComponents.forEach(function(id){return transitiveModule.addEntryComponent(id);});providers.forEach(function(provider){return transitiveModule.addProvider(provider,compileMeta.type);});transitiveModule.addModule(compileMeta.type);this._ngModuleCache.set(moduleType,compileMeta);return compileMeta;}/**
+     * @param {?} type
+     * @return {?}
+     */},{key:'_getTypeDescriptor',value:function _getTypeDescriptor(type){if(this._directiveResolver.isDirective(type)){return'directive';}if(this._pipeResolver.isPipe(type)){return'pipe';}if(this._ngModuleResolver.isNgModule(type)){return'module';}if(type.provide){return'provider';}return'value';}/**
+     * @param {?} type
+     * @param {?} moduleType
+     * @return {?}
+     */},{key:'_addTypeToModule',value:function _addTypeToModule(type,moduleType){var/** @type {?} */oldModule=this._ngModuleOfTypes.get(type);if(oldModule&&oldModule!==moduleType){this._reportError(syntaxError('Type '+stringifyType(type)+' is part of the declarations of 2 modules: '+stringifyType(oldModule)+' and '+stringifyType(moduleType)+'! '+('Please consider moving '+stringifyType(type)+' to a higher module that imports '+stringifyType(oldModule)+' and '+stringifyType(moduleType)+'. ')+('You can also create a new NgModule that exports and includes '+stringifyType(type)+' then import that NgModule in '+stringifyType(oldModule)+' and '+stringifyType(moduleType)+'.')),moduleType);}this._ngModuleOfTypes.set(type,moduleType);}/**
+     * @param {?} importedModules
+     * @param {?} exportedModules
+     * @return {?}
+     */},{key:'_getTransitiveNgModuleMetadata',value:function _getTransitiveNgModuleMetadata(importedModules,exportedModules){// collect `providers` / `entryComponents` from all imported and all exported modules
+var/** @type {?} */result=new TransitiveCompileNgModuleMetadata();var/** @type {?} */modulesByToken=new Map();importedModules.concat(exportedModules).forEach(function(modSummary){modSummary.modules.forEach(function(mod){return result.addModule(mod);});modSummary.entryComponents.forEach(function(comp){return result.addEntryComponent(comp);});var/** @type {?} */addedTokens=new Set();modSummary.providers.forEach(function(entry){var/** @type {?} */tokenRef=tokenReference(entry.provider.token);var/** @type {?} */prevModules=modulesByToken.get(tokenRef);if(!prevModules){prevModules=new Set();modulesByToken.set(tokenRef,prevModules);}var/** @type {?} */moduleRef=entry.module.reference;// Note: the providers of one module may still contain multiple providers
+// per token (e.g. for multi providers), and we need to preserve these.
+if(addedTokens.has(tokenRef)||!prevModules.has(moduleRef)){prevModules.add(moduleRef);addedTokens.add(tokenRef);result.addProvider(entry.provider,entry.module);}});});exportedModules.forEach(function(modSummary){modSummary.exportedDirectives.forEach(function(id){return result.addExportedDirective(id);});modSummary.exportedPipes.forEach(function(id){return result.addExportedPipe(id);});});importedModules.forEach(function(modSummary){modSummary.exportedDirectives.forEach(function(id){return result.addDirective(id);});modSummary.exportedPipes.forEach(function(id){return result.addPipe(id);});});return result;}/**
+     * @param {?} type
+     * @return {?}
+     */},{key:'_getIdentifierMetadata',value:function _getIdentifierMetadata(type){type=resolveForwardRef(type);return{reference:type};}/**
+     * @param {?} type
+     * @return {?}
+     */},{key:'isInjectable',value:function isInjectable(type){var/** @type {?} */annotations=this._reflector.annotations(type);// Note: We need an exact check here as @Component / @Directive / ... inherit
+// from @CompilerInjectable!
+return annotations.some(function(ann){return ann.constructor===Injectable;});}/**
+     * @param {?} type
+     * @return {?}
+     */},{key:'getInjectableSummary',value:function getInjectableSummary(type){return{summaryKind:CompileSummaryKind.Injectable,type:this._getTypeMetadata(type)};}/**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @return {?}
+     */},{key:'_getInjectableMetadata',value:function _getInjectableMetadata(type){var dependencies=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var/** @type {?} */typeSummary=this._loadSummary(type,CompileSummaryKind.Injectable);if(typeSummary){return typeSummary.type;}return this._getTypeMetadata(type,dependencies);}/**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @return {?}
+     */},{key:'_getTypeMetadata',value:function _getTypeMetadata(type){var dependencies=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var/** @type {?} */identifier=this._getIdentifierMetadata(type);return{reference:identifier.reference,diDeps:this._getDependenciesMetadata(identifier.reference,dependencies),lifecycleHooks:ɵLIFECYCLE_HOOKS_VALUES.filter(function(hook){return hasLifecycleHook(hook,identifier.reference);})};}/**
+     * @param {?} factory
+     * @param {?=} dependencies
+     * @return {?}
+     */},{key:'_getFactoryMetadata',value:function _getFactoryMetadata(factory){var dependencies=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;factory=resolveForwardRef(factory);return{reference:factory,diDeps:this._getDependenciesMetadata(factory,dependencies)};}/**
+     * Gets the metadata for the given pipe.
+     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
+     * @param {?} pipeType
+     * @return {?}
+     */},{key:'getPipeMetadata',value:function getPipeMetadata(pipeType){var/** @type {?} */pipeMeta=this._pipeCache.get(pipeType);if(!pipeMeta){this._reportError(syntaxError('Illegal state: getPipeMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Pipe '+stringifyType(pipeType)+'.'),pipeType);}return pipeMeta;}/**
+     * @param {?} pipeType
+     * @return {?}
+     */},{key:'getPipeSummary',value:function getPipeSummary(pipeType){var/** @type {?} */pipeSummary=this._loadSummary(pipeType,CompileSummaryKind.Pipe);if(!pipeSummary){this._reportError(syntaxError('Illegal state: Could not load the summary for pipe '+stringifyType(pipeType)+'.'),pipeType);}return pipeSummary;}/**
+     * @param {?} pipeType
+     * @return {?}
+     */},{key:'getOrLoadPipeMetadata',value:function getOrLoadPipeMetadata(pipeType){var/** @type {?} */pipeMeta=this._pipeCache.get(pipeType);if(!pipeMeta){pipeMeta=this._loadPipeMetadata(pipeType);}return pipeMeta;}/**
+     * @param {?} pipeType
+     * @return {?}
+     */},{key:'_loadPipeMetadata',value:function _loadPipeMetadata(pipeType){pipeType=resolveForwardRef(pipeType);var/** @type {?} */pipeAnnotation=this._pipeResolver.resolve(pipeType);var/** @type {?} */pipeMeta=new CompilePipeMetadata({type:this._getTypeMetadata(pipeType),name:pipeAnnotation.name,pure:pipeAnnotation.pure});this._pipeCache.set(pipeType,pipeMeta);this._summaryCache.set(pipeType,pipeMeta.toSummary());return pipeMeta;}/**
+     * @param {?} typeOrFunc
+     * @param {?} dependencies
+     * @return {?}
+     */},{key:'_getDependenciesMetadata',value:function _getDependenciesMetadata(typeOrFunc,dependencies){var _this110=this;var/** @type {?} */hasUnknownDeps=false;var/** @type {?} */params=dependencies||this._reflector.parameters(typeOrFunc)||[];var/** @type {?} */dependenciesMetadata=params.map(function(param){var/** @type {?} */isAttribute=false;var/** @type {?} */isHost=false;var/** @type {?} */isSelf=false;var/** @type {?} */isSkipSelf=false;var/** @type {?} */isOptional=false;var/** @type {?} */token=null;if(Array.isArray(param)){param.forEach(function(paramEntry){if(paramEntry instanceof Host){isHost=true;}else if(paramEntry instanceof Self){isSelf=true;}else if(paramEntry instanceof SkipSelf){isSkipSelf=true;}else if(paramEntry instanceof Optional){isOptional=true;}else if(paramEntry instanceof Attribute){isAttribute=true;token=paramEntry.attributeName;}else if(paramEntry instanceof Inject){token=paramEntry.token;}else if(paramEntry instanceof InjectionToken){token=paramEntry;}else if(isValidType(paramEntry)&&token==null){token=paramEntry;}});}else{token=param;}if(token==null){hasUnknownDeps=true;return null;}return{isAttribute:isAttribute,isHost:isHost,isSelf:isSelf,isSkipSelf:isSkipSelf,isOptional:isOptional,token:_this110._getTokenMetadata(token)};});if(hasUnknownDeps){var/** @type {?} */depsTokens=dependenciesMetadata.map(function(dep){return dep?stringifyType(dep.token):'?';}).join(', ');this._reportError(syntaxError('Can\'t resolve all parameters for '+stringifyType(typeOrFunc)+': ('+depsTokens+').'),typeOrFunc);}return dependenciesMetadata;}/**
+     * @param {?} token
+     * @return {?}
+     */},{key:'_getTokenMetadata',value:function _getTokenMetadata(token){token=resolveForwardRef(token);var/** @type {?} */compileToken=void 0;if(typeof token==='string'){compileToken={value:token};}else{compileToken={identifier:{reference:token}};}return compileToken;}/**
+     * @param {?} providers
+     * @param {?} targetEntryComponents
+     * @param {?=} debugInfo
+     * @param {?=} compileProviders
+     * @param {?=} type
+     * @return {?}
+     */},{key:'_getProvidersMetadata',value:function _getProvidersMetadata(providers,targetEntryComponents,debugInfo){var _this111=this;var compileProviders=arguments.length>3&&arguments[3]!==undefined?arguments[3]:[];var type=arguments[4];providers.forEach(function(provider,providerIdx){if(Array.isArray(provider)){_this111._getProvidersMetadata(provider,targetEntryComponents,debugInfo,compileProviders);}else{provider=resolveForwardRef(provider);var/** @type {?} */providerMeta=void 0;if(provider&&(typeof provider==='undefined'?'undefined':_typeof(provider))==='object'&&provider.hasOwnProperty('provide')){_this111._validateProvider(provider);providerMeta=new ProviderMeta(provider.provide,provider);}else if(isValidType(provider)){providerMeta=new ProviderMeta(provider,{useClass:provider});}else if(provider===void 0){_this111._reportError(syntaxError('Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using \'barrel\' index.ts files.'));}else{var/** @type {?} */providersInfo=providers.reduce(function(soFar,seenProvider,seenProviderIdx){if(seenProviderIdx<providerIdx){soFar.push(''+stringifyType(seenProvider));}else if(seenProviderIdx==providerIdx){soFar.push('?'+stringifyType(seenProvider)+'?');}else if(seenProviderIdx==providerIdx+1){soFar.push('...');}return soFar;},[]).join(', ');_this111._reportError(syntaxError('Invalid '+(debugInfo?debugInfo:'provider')+' - only instances of Provider and Type are allowed, got: ['+providersInfo+']'),type);}if(providerMeta.token===resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)){targetEntryComponents.push.apply(targetEntryComponents,_toConsumableArray(_this111._getEntryComponentsFromProvider(providerMeta,type)));}else{compileProviders.push(_this111.getProviderMetadata(providerMeta));}}});return compileProviders;}/**
+     * @param {?} provider
+     * @return {?}
+     */},{key:'_validateProvider',value:function _validateProvider(provider){if(provider.hasOwnProperty('useClass')&&provider.useClass==null){this._reportError(syntaxError('Invalid provider for '+stringifyType(provider.provide)+'. useClass cannot be '+provider.useClass+'.\n           Usually it happens when:\n           1. There\'s a circular dependency (might be caused by using index.ts (barrel) files).\n           2. Class was used before it was declared. Use forwardRef in this case.'));}}/**
+     * @param {?} provider
+     * @param {?=} type
+     * @return {?}
+     */},{key:'_getEntryComponentsFromProvider',value:function _getEntryComponentsFromProvider(provider,type){var _this112=this;var/** @type {?} */components=[];var/** @type {?} */collectedIdentifiers=[];if(provider.useFactory||provider.useExisting||provider.useClass){this._reportError(syntaxError('The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!'),type);return[];}if(!provider.multi){this._reportError(syntaxError('The ANALYZE_FOR_ENTRY_COMPONENTS token only supports \'multi = true\'!'),type);return[];}extractIdentifiers(provider.useValue,collectedIdentifiers);collectedIdentifiers.forEach(function(identifier){var/** @type {?} */entry=_this112._getEntryComponentMetadata(identifier.reference,false);if(entry){components.push(entry);}});return components;}/**
+     * @param {?} dirType
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */},{key:'_getEntryComponentMetadata',value:function _getEntryComponentMetadata(dirType){var throwIfNotFound=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;var/** @type {?} */dirMeta=this.getNonNormalizedDirectiveMetadata(dirType);if(dirMeta&&dirMeta.metadata.isComponent){return{componentType:dirType,componentFactory:dirMeta.metadata.componentFactory};}else{var/** @type {?} */dirSummary=this._loadSummary(dirType,CompileSummaryKind.Directive);if(dirSummary&&dirSummary.isComponent){return{componentType:dirType,componentFactory:dirSummary.componentFactory};}}if(throwIfNotFound){throw syntaxError(dirType.name+' cannot be used as an entry component.');}}/**
+     * @param {?} provider
+     * @return {?}
+     */},{key:'getProviderMetadata',value:function getProviderMetadata(provider){var/** @type {?} */compileDeps=void 0;var/** @type {?} */compileTypeMetadata=null;var/** @type {?} */compileFactoryMetadata=null;var/** @type {?} */token=this._getTokenMetadata(provider.token);if(provider.useClass){compileTypeMetadata=this._getInjectableMetadata(provider.useClass,provider.dependencies);compileDeps=compileTypeMetadata.diDeps;if(provider.token===provider.useClass){// use the compileTypeMetadata as it contains information about lifecycleHooks...
+token={identifier:compileTypeMetadata};}}else if(provider.useFactory){compileFactoryMetadata=this._getFactoryMetadata(provider.useFactory,provider.dependencies);compileDeps=compileFactoryMetadata.diDeps;}return{token:token,useClass:compileTypeMetadata,useValue:provider.useValue,useFactory:compileFactoryMetadata,useExisting:provider.useExisting?this._getTokenMetadata(provider.useExisting):null,deps:compileDeps,multi:provider.multi};}/**
+     * @param {?} queries
+     * @param {?} isViewQuery
+     * @param {?} directiveType
+     * @return {?}
+     */},{key:'_getQueriesMetadata',value:function _getQueriesMetadata(queries,isViewQuery,directiveType){var _this113=this;var/** @type {?} */res=[];Object.keys(queries).forEach(function(propertyName){var/** @type {?} */query=queries[propertyName];if(query.isViewQuery===isViewQuery){res.push(_this113._getQueryMetadata(query,propertyName,directiveType));}});return res;}/**
+     * @param {?} selector
+     * @return {?}
+     */},{key:'_queryVarBindings',value:function _queryVarBindings(selector){return selector.split(/\s*,\s*/);}/**
+     * @param {?} q
+     * @param {?} propertyName
+     * @param {?} typeOrFunc
+     * @return {?}
+     */},{key:'_getQueryMetadata',value:function _getQueryMetadata(q,propertyName,typeOrFunc){var _this114=this;var/** @type {?} */selectors=void 0;if(typeof q.selector==='string'){selectors=this._queryVarBindings(q.selector).map(function(varName){return _this114._getTokenMetadata(varName);});}else{if(!q.selector){this._reportError(syntaxError('Can\'t construct a query for the property "'+propertyName+'" of "'+stringifyType(typeOrFunc)+'" since the query selector wasn\'t defined.'),typeOrFunc);}selectors=[this._getTokenMetadata(q.selector)];}return{selectors:selectors,first:q.first,descendants:q.descendants,propertyName:propertyName,read:q.read?this._getTokenMetadata(q.read):null};}/**
+     * @param {?} error
+     * @param {?=} type
+     * @param {?=} otherType
+     * @return {?}
+     */},{key:'_reportError',value:function _reportError(error,type,otherType){if(this._errorCollector){this._errorCollector(error,type);if(otherType){this._errorCollector(error,otherType);}}else{throw error;}}}]);return CompileMetadataResolver;}();CompileMetadataResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */CompileMetadataResolver.ctorParameters=function(){return[{type:CompilerConfig},{type:NgModuleResolver},{type:DirectiveResolver},{type:PipeResolver},{type:SummaryResolver},{type:ElementSchemaRegistry},{type:DirectiveNormalizer},{type:StaticSymbolCache,decorators:[{type:Optional}]},{type:ɵReflectorReader},{type:undefined,decorators:[{type:Optional},{type:Inject,args:[ERROR_COLLECTOR_TOKEN]}]}];};/**
+ * @param {?} tree
+ * @param {?=} out
+ * @return {?}
+ */function flattenArray(tree){var out=arguments.length>1&&arguments[1]!==undefined?arguments[1]:[];if(tree){for(var/** @type {?} */i=0;i<tree.length;i++){var/** @type {?} */item=resolveForwardRef(tree[i]);if(Array.isArray(item)){flattenArray(item,out);}else{out.push(item);}}}return out;}/**
+ * @param {?} array
+ * @return {?}
+ */function dedupeArray(array){if(array){return Array.from(new Set(array));}return[];}/**
+ * @param {?} tree
+ * @return {?}
+ */function flattenAndDedupeArray(tree){return dedupeArray(flattenArray(tree));}/**
+ * @param {?} value
+ * @return {?}
+ */function isValidType(value){return value instanceof StaticSymbol||value instanceof Type;}/**
+ * @param {?} reflector
+ * @param {?} type
+ * @param {?} cmpMetadata
+ * @return {?}
+ */function componentModuleUrl(reflector,type,cmpMetadata){if(type instanceof StaticSymbol){return type.filePath;}var/** @type {?} */moduleId=cmpMetadata.moduleId;if(typeof moduleId==='string'){var/** @type {?} */scheme=getUrlScheme(moduleId);return scheme?moduleId:'package:'+moduleId+MODULE_SUFFIX;}else if(moduleId!==null&&moduleId!==void 0){throw syntaxError('moduleId should be a string in "'+stringifyType(type)+'". See https://goo.gl/wIDDiL for more information.\n'+'If you\'re using Webpack you should inline the template and the styles, see https://goo.gl/X2J8zc.');}return reflector.importUri(type);}/**
+ * @param {?} value
+ * @param {?} targetIdentifiers
+ * @return {?}
+ */function extractIdentifiers(value,targetIdentifiers){visitValue(value,new _CompileValueConverter(),targetIdentifiers);}var _CompileValueConverter=function(_ValueTransformer){_inherits(_CompileValueConverter,_ValueTransformer);function _CompileValueConverter(){_classCallCheck(this,_CompileValueConverter);return _possibleConstructorReturn(this,(_CompileValueConverter.__proto__||Object.getPrototypeOf(_CompileValueConverter)).apply(this,arguments));}_createClass(_CompileValueConverter,[{key:'visitOther',/**
+     * @param {?} value
+     * @param {?} targetIdentifiers
+     * @return {?}
+     */value:function visitOther(value,targetIdentifiers){targetIdentifiers.push({reference:value});}}]);return _CompileValueConverter;}(ValueTransformer);/**
+ * @param {?} type
+ * @return {?}
+ */function stringifyType(type){if(type instanceof StaticSymbol){return type.name+' in '+type.filePath;}else{return stringify(type);}}/**
+ * Indicates that a component is still being loaded in a synchronous compile.
+ * @param {?} compType
+ * @return {?}
+ */function componentStillLoadingError(compType){debugger;var/** @type {?} */error=Error('Can\'t compile synchronously as '+stringify(compType)+' is still being loaded!');error[ɵERROR_COMPONENT_TYPE]=compType;return error;}var TypeModifier={};TypeModifier.Const=0;TypeModifier[TypeModifier.Const]="Const";/**
  * @abstract
  */var Type$1=function(){/**
      * @param {?=} modifiers
@@ -3994,32 +4029,25 @@ for(var/** @type {?} */i=bindings.length-1;i>=0;i--){var/** @type {?} */binding=
      */},{key:'hasModifier',value:function hasModifier(modifier){return this.modifiers.indexOf(modifier)!==-1;}}]);return Type$1;}();var BuiltinTypeName={};BuiltinTypeName.Dynamic=0;BuiltinTypeName.Bool=1;BuiltinTypeName.String=2;BuiltinTypeName.Int=3;BuiltinTypeName.Number=4;BuiltinTypeName.Function=5;BuiltinTypeName.Inferred=6;BuiltinTypeName[BuiltinTypeName.Dynamic]="Dynamic";BuiltinTypeName[BuiltinTypeName.Bool]="Bool";BuiltinTypeName[BuiltinTypeName.String]="String";BuiltinTypeName[BuiltinTypeName.Int]="Int";BuiltinTypeName[BuiltinTypeName.Number]="Number";BuiltinTypeName[BuiltinTypeName.Function]="Function";BuiltinTypeName[BuiltinTypeName.Inferred]="Inferred";var BuiltinType=function(_Type$){_inherits(BuiltinType,_Type$);/**
      * @param {?} name
      * @param {?=} modifiers
-     */function BuiltinType(name){var modifiers=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;_classCallCheck(this,BuiltinType);var _this121=_possibleConstructorReturn(this,(BuiltinType.__proto__||Object.getPrototypeOf(BuiltinType)).call(this,modifiers));_this121.name=name;return _this121;}/**
+     */function BuiltinType(name){var modifiers=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;_classCallCheck(this,BuiltinType);var _this116=_possibleConstructorReturn(this,(BuiltinType.__proto__||Object.getPrototypeOf(BuiltinType)).call(this,modifiers));_this116.name=name;return _this116;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
      */_createClass(BuiltinType,[{key:'visitType',value:function visitType(visitor,context){return visitor.visitBuiltintType(this,context);}}]);return BuiltinType;}(Type$1);var ExpressionType=function(_Type$2){_inherits(ExpressionType,_Type$2);/**
      * @param {?} value
      * @param {?=} modifiers
-     */function ExpressionType(value){var modifiers=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;_classCallCheck(this,ExpressionType);var _this122=_possibleConstructorReturn(this,(ExpressionType.__proto__||Object.getPrototypeOf(ExpressionType)).call(this,modifiers));_this122.value=value;return _this122;}/**
+     */function ExpressionType(value){var modifiers=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;_classCallCheck(this,ExpressionType);var _this117=_possibleConstructorReturn(this,(ExpressionType.__proto__||Object.getPrototypeOf(ExpressionType)).call(this,modifiers));_this117.value=value;return _this117;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
      */_createClass(ExpressionType,[{key:'visitType',value:function visitType(visitor,context){return visitor.visitExpressionType(this,context);}}]);return ExpressionType;}(Type$1);var ArrayType=function(_Type$3){_inherits(ArrayType,_Type$3);/**
      * @param {?} of
      * @param {?=} modifiers
-     */function ArrayType(of){var modifiers=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;_classCallCheck(this,ArrayType);var _this123=_possibleConstructorReturn(this,(ArrayType.__proto__||Object.getPrototypeOf(ArrayType)).call(this,modifiers));_this123.of=of;return _this123;}/**
+     */function ArrayType(of){var modifiers=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;_classCallCheck(this,ArrayType);var _this118=_possibleConstructorReturn(this,(ArrayType.__proto__||Object.getPrototypeOf(ArrayType)).call(this,modifiers));_this118.of=of;return _this118;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
-     */_createClass(ArrayType,[{key:'visitType',value:function visitType(visitor,context){return visitor.visitArrayType(this,context);}}]);return ArrayType;}(Type$1);var MapType=function(_Type$4){_inherits(MapType,_Type$4);/**
-     * @param {?} valueType
-     * @param {?=} modifiers
-     */function MapType(valueType){var modifiers=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;_classCallCheck(this,MapType);var _this124=_possibleConstructorReturn(this,(MapType.__proto__||Object.getPrototypeOf(MapType)).call(this,modifiers));_this124.valueType=valueType;return _this124;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(MapType,[{key:'visitType',value:function visitType(visitor,context){return visitor.visitMapType(this,context);}}]);return MapType;}(Type$1);var/** @type {?} */DYNAMIC_TYPE=new BuiltinType(BuiltinTypeName.Dynamic);var/** @type {?} */INFERRED_TYPE=new BuiltinType(BuiltinTypeName.Inferred);var/** @type {?} */BOOL_TYPE=new BuiltinType(BuiltinTypeName.Bool);var/** @type {?} */INT_TYPE=new BuiltinType(BuiltinTypeName.Int);var/** @type {?} */NUMBER_TYPE=new BuiltinType(BuiltinTypeName.Number);var/** @type {?} */STRING_TYPE=new BuiltinType(BuiltinTypeName.String);var/** @type {?} */FUNCTION_TYPE=new BuiltinType(BuiltinTypeName.Function);var BinaryOperator={};BinaryOperator.Equals=0;BinaryOperator.NotEquals=1;BinaryOperator.Identical=2;BinaryOperator.NotIdentical=3;BinaryOperator.Minus=4;BinaryOperator.Plus=5;BinaryOperator.Divide=6;BinaryOperator.Multiply=7;BinaryOperator.Modulo=8;BinaryOperator.And=9;BinaryOperator.Or=10;BinaryOperator.Lower=11;BinaryOperator.LowerEquals=12;BinaryOperator.Bigger=13;BinaryOperator.BiggerEquals=14;BinaryOperator[BinaryOperator.Equals]="Equals";BinaryOperator[BinaryOperator.NotEquals]="NotEquals";BinaryOperator[BinaryOperator.Identical]="Identical";BinaryOperator[BinaryOperator.NotIdentical]="NotIdentical";BinaryOperator[BinaryOperator.Minus]="Minus";BinaryOperator[BinaryOperator.Plus]="Plus";BinaryOperator[BinaryOperator.Divide]="Divide";BinaryOperator[BinaryOperator.Multiply]="Multiply";BinaryOperator[BinaryOperator.Modulo]="Modulo";BinaryOperator[BinaryOperator.And]="And";BinaryOperator[BinaryOperator.Or]="Or";BinaryOperator[BinaryOperator.Lower]="Lower";BinaryOperator[BinaryOperator.LowerEquals]="LowerEquals";BinaryOperator[BinaryOperator.Bigger]="Bigger";BinaryOperator[BinaryOperator.BiggerEquals]="BiggerEquals";/**
+     */_createClass(ArrayType,[{key:'visitType',value:function visitType(visitor,context){return visitor.visitArrayType(this,context);}}]);return ArrayType;}(Type$1);var/** @type {?} */DYNAMIC_TYPE=new BuiltinType(BuiltinTypeName.Dynamic);var/** @type {?} */INFERRED_TYPE=new BuiltinType(BuiltinTypeName.Inferred);var/** @type {?} */BOOL_TYPE=new BuiltinType(BuiltinTypeName.Bool);var/** @type {?} */INT_TYPE=new BuiltinType(BuiltinTypeName.Int);var/** @type {?} */NUMBER_TYPE=new BuiltinType(BuiltinTypeName.Number);var/** @type {?} */STRING_TYPE=new BuiltinType(BuiltinTypeName.String);var/** @type {?} */FUNCTION_TYPE=new BuiltinType(BuiltinTypeName.Function);var BinaryOperator={};BinaryOperator.Equals=0;BinaryOperator.NotEquals=1;BinaryOperator.Identical=2;BinaryOperator.NotIdentical=3;BinaryOperator.Minus=4;BinaryOperator.Plus=5;BinaryOperator.Divide=6;BinaryOperator.Multiply=7;BinaryOperator.Modulo=8;BinaryOperator.And=9;BinaryOperator.Or=10;BinaryOperator.Lower=11;BinaryOperator.LowerEquals=12;BinaryOperator.Bigger=13;BinaryOperator.BiggerEquals=14;BinaryOperator[BinaryOperator.Equals]="Equals";BinaryOperator[BinaryOperator.NotEquals]="NotEquals";BinaryOperator[BinaryOperator.Identical]="Identical";BinaryOperator[BinaryOperator.NotIdentical]="NotIdentical";BinaryOperator[BinaryOperator.Minus]="Minus";BinaryOperator[BinaryOperator.Plus]="Plus";BinaryOperator[BinaryOperator.Divide]="Divide";BinaryOperator[BinaryOperator.Multiply]="Multiply";BinaryOperator[BinaryOperator.Modulo]="Modulo";BinaryOperator[BinaryOperator.And]="And";BinaryOperator[BinaryOperator.Or]="Or";BinaryOperator[BinaryOperator.Lower]="Lower";BinaryOperator[BinaryOperator.LowerEquals]="LowerEquals";BinaryOperator[BinaryOperator.Bigger]="Bigger";BinaryOperator[BinaryOperator.BiggerEquals]="BiggerEquals";/**
  * @abstract
  */var Expression=function(){/**
      * @param {?} type
@@ -4132,7 +4160,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} name
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function ReadVarExpr(name){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];_classCallCheck(this,ReadVarExpr);var _this125=_possibleConstructorReturn(this,(ReadVarExpr.__proto__||Object.getPrototypeOf(ReadVarExpr)).call(this,type,sourceSpan));if(typeof name==='string'){_this125.name=name;_this125.builtin=null;}else{_this125.name=null;_this125.builtin=name;}return _this125;}/**
+     */function ReadVarExpr(name){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];_classCallCheck(this,ReadVarExpr);var _this119=_possibleConstructorReturn(this,(ReadVarExpr.__proto__||Object.getPrototypeOf(ReadVarExpr)).call(this,type,sourceSpan));if(typeof name==='string'){_this119.name=name;_this119.builtin=null;}else{_this119.name=null;_this119.builtin=name;}return _this119;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4144,7 +4172,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} value
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function WriteVarExpr(name,value){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,WriteVarExpr);var _this126=_possibleConstructorReturn(this,(WriteVarExpr.__proto__||Object.getPrototypeOf(WriteVarExpr)).call(this,type||value.type,sourceSpan));_this126.name=name;_this126.value=value;return _this126;}/**
+     */function WriteVarExpr(name,value){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,WriteVarExpr);var _this120=_possibleConstructorReturn(this,(WriteVarExpr.__proto__||Object.getPrototypeOf(WriteVarExpr)).call(this,type||value.type,sourceSpan));_this120.name=name;_this120.value=value;return _this120;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4158,7 +4186,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} value
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function WriteKeyExpr(receiver,index,value){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,WriteKeyExpr);var _this127=_possibleConstructorReturn(this,(WriteKeyExpr.__proto__||Object.getPrototypeOf(WriteKeyExpr)).call(this,type||value.type,sourceSpan));_this127.receiver=receiver;_this127.index=index;_this127.value=value;return _this127;}/**
+     */function WriteKeyExpr(receiver,index,value){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,WriteKeyExpr);var _this121=_possibleConstructorReturn(this,(WriteKeyExpr.__proto__||Object.getPrototypeOf(WriteKeyExpr)).call(this,type||value.type,sourceSpan));_this121.receiver=receiver;_this121.index=index;_this121.value=value;return _this121;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4168,7 +4196,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} value
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function WritePropExpr(receiver,name,value){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,WritePropExpr);var _this128=_possibleConstructorReturn(this,(WritePropExpr.__proto__||Object.getPrototypeOf(WritePropExpr)).call(this,type||value.type,sourceSpan));_this128.receiver=receiver;_this128.name=name;_this128.value=value;return _this128;}/**
+     */function WritePropExpr(receiver,name,value){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,WritePropExpr);var _this122=_possibleConstructorReturn(this,(WritePropExpr.__proto__||Object.getPrototypeOf(WritePropExpr)).call(this,type||value.type,sourceSpan));_this122.receiver=receiver;_this122.name=name;_this122.value=value;return _this122;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4178,7 +4206,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} args
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function InvokeMethodExpr(receiver,method,args){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,InvokeMethodExpr);var _this129=_possibleConstructorReturn(this,(InvokeMethodExpr.__proto__||Object.getPrototypeOf(InvokeMethodExpr)).call(this,type,sourceSpan));_this129.receiver=receiver;_this129.args=args;if(typeof method==='string'){_this129.name=method;_this129.builtin=null;}else{_this129.name=null;_this129.builtin=method;}return _this129;}/**
+     */function InvokeMethodExpr(receiver,method,args){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,InvokeMethodExpr);var _this123=_possibleConstructorReturn(this,(InvokeMethodExpr.__proto__||Object.getPrototypeOf(InvokeMethodExpr)).call(this,type,sourceSpan));_this123.receiver=receiver;_this123.args=args;if(typeof method==='string'){_this123.name=method;_this123.builtin=null;}else{_this123.name=null;_this123.builtin=method;}return _this123;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4187,7 +4215,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} args
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function InvokeFunctionExpr(fn,args){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,InvokeFunctionExpr);var _this130=_possibleConstructorReturn(this,(InvokeFunctionExpr.__proto__||Object.getPrototypeOf(InvokeFunctionExpr)).call(this,type,sourceSpan));_this130.fn=fn;_this130.args=args;return _this130;}/**
+     */function InvokeFunctionExpr(fn,args){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,InvokeFunctionExpr);var _this124=_possibleConstructorReturn(this,(InvokeFunctionExpr.__proto__||Object.getPrototypeOf(InvokeFunctionExpr)).call(this,type,sourceSpan));_this124.fn=fn;_this124.args=args;return _this124;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4196,7 +4224,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} args
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function InstantiateExpr(classExpr,args,type,sourceSpan){_classCallCheck(this,InstantiateExpr);var _this131=_possibleConstructorReturn(this,(InstantiateExpr.__proto__||Object.getPrototypeOf(InstantiateExpr)).call(this,type,sourceSpan));_this131.classExpr=classExpr;_this131.args=args;return _this131;}/**
+     */function InstantiateExpr(classExpr,args,type,sourceSpan){_classCallCheck(this,InstantiateExpr);var _this125=_possibleConstructorReturn(this,(InstantiateExpr.__proto__||Object.getPrototypeOf(InstantiateExpr)).call(this,type,sourceSpan));_this125.classExpr=classExpr;_this125.args=args;return _this125;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4204,7 +4232,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} value
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function LiteralExpr(value){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];_classCallCheck(this,LiteralExpr);var _this132=_possibleConstructorReturn(this,(LiteralExpr.__proto__||Object.getPrototypeOf(LiteralExpr)).call(this,type,sourceSpan));_this132.value=value;return _this132;}/**
+     */function LiteralExpr(value){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];_classCallCheck(this,LiteralExpr);var _this126=_possibleConstructorReturn(this,(LiteralExpr.__proto__||Object.getPrototypeOf(LiteralExpr)).call(this,type,sourceSpan));_this126.value=value;return _this126;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4213,7 +4241,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?=} type
      * @param {?=} typeParams
      * @param {?=} sourceSpan
-     */function ExternalExpr(value){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var typeParams=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,ExternalExpr);var _this133=_possibleConstructorReturn(this,(ExternalExpr.__proto__||Object.getPrototypeOf(ExternalExpr)).call(this,type,sourceSpan));_this133.value=value;_this133.typeParams=typeParams;return _this133;}/**
+     */function ExternalExpr(value){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var typeParams=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,ExternalExpr);var _this127=_possibleConstructorReturn(this,(ExternalExpr.__proto__||Object.getPrototypeOf(ExternalExpr)).call(this,type,sourceSpan));_this127.value=value;_this127.typeParams=typeParams;return _this127;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4223,14 +4251,14 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?=} falseCase
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function ConditionalExpr(condition,trueCase){var falseCase=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,ConditionalExpr);var _this134=_possibleConstructorReturn(this,(ConditionalExpr.__proto__||Object.getPrototypeOf(ConditionalExpr)).call(this,type||trueCase.type,sourceSpan));_this134.condition=condition;_this134.falseCase=falseCase;_this134.trueCase=trueCase;return _this134;}/**
+     */function ConditionalExpr(condition,trueCase){var falseCase=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,ConditionalExpr);var _this128=_possibleConstructorReturn(this,(ConditionalExpr.__proto__||Object.getPrototypeOf(ConditionalExpr)).call(this,type||trueCase.type,sourceSpan));_this128.condition=condition;_this128.falseCase=falseCase;_this128.trueCase=trueCase;return _this128;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
      */_createClass(ConditionalExpr,[{key:'visitExpression',value:function visitExpression(visitor,context){return visitor.visitConditionalExpr(this,context);}}]);return ConditionalExpr;}(Expression);var NotExpr=function(_Expression11){_inherits(NotExpr,_Expression11);/**
      * @param {?} condition
      * @param {?=} sourceSpan
-     */function NotExpr(condition,sourceSpan){_classCallCheck(this,NotExpr);var _this135=_possibleConstructorReturn(this,(NotExpr.__proto__||Object.getPrototypeOf(NotExpr)).call(this,BOOL_TYPE,sourceSpan));_this135.condition=condition;return _this135;}/**
+     */function NotExpr(condition,sourceSpan){_classCallCheck(this,NotExpr);var _this129=_possibleConstructorReturn(this,(NotExpr.__proto__||Object.getPrototypeOf(NotExpr)).call(this,BOOL_TYPE,sourceSpan));_this129.condition=condition;return _this129;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4238,7 +4266,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} value
      * @param {?} type
      * @param {?=} sourceSpan
-     */function CastExpr(value,type,sourceSpan){_classCallCheck(this,CastExpr);var _this136=_possibleConstructorReturn(this,(CastExpr.__proto__||Object.getPrototypeOf(CastExpr)).call(this,type,sourceSpan));_this136.value=value;return _this136;}/**
+     */function CastExpr(value,type,sourceSpan){_classCallCheck(this,CastExpr);var _this130=_possibleConstructorReturn(this,(CastExpr.__proto__||Object.getPrototypeOf(CastExpr)).call(this,type,sourceSpan));_this130.value=value;return _this130;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4250,7 +4278,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} statements
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function FunctionExpr(params,statements){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,FunctionExpr);var _this137=_possibleConstructorReturn(this,(FunctionExpr.__proto__||Object.getPrototypeOf(FunctionExpr)).call(this,type,sourceSpan));_this137.params=params;_this137.statements=statements;return _this137;}/**
+     */function FunctionExpr(params,statements){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,FunctionExpr);var _this131=_possibleConstructorReturn(this,(FunctionExpr.__proto__||Object.getPrototypeOf(FunctionExpr)).call(this,type,sourceSpan));_this131.params=params;_this131.statements=statements;return _this131;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4264,7 +4292,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} rhs
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function BinaryOperatorExpr(operator,lhs,rhs){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,BinaryOperatorExpr);var _this138=_possibleConstructorReturn(this,(BinaryOperatorExpr.__proto__||Object.getPrototypeOf(BinaryOperatorExpr)).call(this,type||lhs.type,sourceSpan));_this138.operator=operator;_this138.rhs=rhs;_this138.lhs=lhs;return _this138;}/**
+     */function BinaryOperatorExpr(operator,lhs,rhs){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,BinaryOperatorExpr);var _this132=_possibleConstructorReturn(this,(BinaryOperatorExpr.__proto__||Object.getPrototypeOf(BinaryOperatorExpr)).call(this,type||lhs.type,sourceSpan));_this132.operator=operator;_this132.rhs=rhs;_this132.lhs=lhs;return _this132;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4273,7 +4301,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} name
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function ReadPropExpr(receiver,name){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,ReadPropExpr);var _this139=_possibleConstructorReturn(this,(ReadPropExpr.__proto__||Object.getPrototypeOf(ReadPropExpr)).call(this,type,sourceSpan));_this139.receiver=receiver;_this139.name=name;return _this139;}/**
+     */function ReadPropExpr(receiver,name){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,ReadPropExpr);var _this133=_possibleConstructorReturn(this,(ReadPropExpr.__proto__||Object.getPrototypeOf(ReadPropExpr)).call(this,type,sourceSpan));_this133.receiver=receiver;_this133.name=name;return _this133;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4285,7 +4313,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} index
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function ReadKeyExpr(receiver,index){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,ReadKeyExpr);var _this140=_possibleConstructorReturn(this,(ReadKeyExpr.__proto__||Object.getPrototypeOf(ReadKeyExpr)).call(this,type,sourceSpan));_this140.receiver=receiver;_this140.index=index;return _this140;}/**
+     */function ReadKeyExpr(receiver,index){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var sourceSpan=arguments[3];_classCallCheck(this,ReadKeyExpr);var _this134=_possibleConstructorReturn(this,(ReadKeyExpr.__proto__||Object.getPrototypeOf(ReadKeyExpr)).call(this,type,sourceSpan));_this134.receiver=receiver;_this134.index=index;return _this134;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4296,7 +4324,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} entries
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function LiteralArrayExpr(entries){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];_classCallCheck(this,LiteralArrayExpr);var _this141=_possibleConstructorReturn(this,(LiteralArrayExpr.__proto__||Object.getPrototypeOf(LiteralArrayExpr)).call(this,type,sourceSpan));_this141.entries=entries;return _this141;}/**
+     */function LiteralArrayExpr(entries){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];_classCallCheck(this,LiteralArrayExpr);var _this135=_possibleConstructorReturn(this,(LiteralArrayExpr.__proto__||Object.getPrototypeOf(LiteralArrayExpr)).call(this,type,sourceSpan));_this135.entries=entries;return _this135;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4308,7 +4336,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} entries
      * @param {?=} type
      * @param {?=} sourceSpan
-     */function LiteralMapExpr(entries){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];_classCallCheck(this,LiteralMapExpr);var _this142=_possibleConstructorReturn(this,(LiteralMapExpr.__proto__||Object.getPrototypeOf(LiteralMapExpr)).call(this,type,sourceSpan));_this142.entries=entries;_this142.valueType=null;if(type){_this142.valueType=type.valueType;}return _this142;}/**
+     */function LiteralMapExpr(entries){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];_classCallCheck(this,LiteralMapExpr);var _this136=_possibleConstructorReturn(this,(LiteralMapExpr.__proto__||Object.getPrototypeOf(LiteralMapExpr)).call(this,type,sourceSpan));_this136.entries=entries;_this136.valueType=null;if(type){_this136.valueType=type.valueType;}return _this136;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4331,7 +4359,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?=} type
      * @param {?=} modifiers
      * @param {?=} sourceSpan
-     */function DeclareVarStmt(name,value){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var modifiers=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,DeclareVarStmt);var _this143=_possibleConstructorReturn(this,(DeclareVarStmt.__proto__||Object.getPrototypeOf(DeclareVarStmt)).call(this,modifiers,sourceSpan));_this143.name=name;_this143.value=value;_this143.type=type||value.type;return _this143;}/**
+     */function DeclareVarStmt(name,value){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var modifiers=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var sourceSpan=arguments[4];_classCallCheck(this,DeclareVarStmt);var _this137=_possibleConstructorReturn(this,(DeclareVarStmt.__proto__||Object.getPrototypeOf(DeclareVarStmt)).call(this,modifiers,sourceSpan));_this137.name=name;_this137.value=value;_this137.type=type||value.type;return _this137;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4342,21 +4370,21 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?=} type
      * @param {?=} modifiers
      * @param {?=} sourceSpan
-     */function DeclareFunctionStmt(name,params,statements){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var modifiers=arguments.length>4&&arguments[4]!==undefined?arguments[4]:null;var sourceSpan=arguments[5];_classCallCheck(this,DeclareFunctionStmt);var _this144=_possibleConstructorReturn(this,(DeclareFunctionStmt.__proto__||Object.getPrototypeOf(DeclareFunctionStmt)).call(this,modifiers,sourceSpan));_this144.name=name;_this144.params=params;_this144.statements=statements;_this144.type=type;return _this144;}/**
+     */function DeclareFunctionStmt(name,params,statements){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var modifiers=arguments.length>4&&arguments[4]!==undefined?arguments[4]:null;var sourceSpan=arguments[5];_classCallCheck(this,DeclareFunctionStmt);var _this138=_possibleConstructorReturn(this,(DeclareFunctionStmt.__proto__||Object.getPrototypeOf(DeclareFunctionStmt)).call(this,modifiers,sourceSpan));_this138.name=name;_this138.params=params;_this138.statements=statements;_this138.type=type;return _this138;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
      */_createClass(DeclareFunctionStmt,[{key:'visitStatement',value:function visitStatement(visitor,context){return visitor.visitDeclareFunctionStmt(this,context);}}]);return DeclareFunctionStmt;}(Statement);var ExpressionStatement=function(_Statement3){_inherits(ExpressionStatement,_Statement3);/**
      * @param {?} expr
      * @param {?=} sourceSpan
-     */function ExpressionStatement(expr,sourceSpan){_classCallCheck(this,ExpressionStatement);var _this145=_possibleConstructorReturn(this,(ExpressionStatement.__proto__||Object.getPrototypeOf(ExpressionStatement)).call(this,null,sourceSpan));_this145.expr=expr;return _this145;}/**
+     */function ExpressionStatement(expr,sourceSpan){_classCallCheck(this,ExpressionStatement);var _this139=_possibleConstructorReturn(this,(ExpressionStatement.__proto__||Object.getPrototypeOf(ExpressionStatement)).call(this,null,sourceSpan));_this139.expr=expr;return _this139;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
      */_createClass(ExpressionStatement,[{key:'visitStatement',value:function visitStatement(visitor,context){return visitor.visitExpressionStmt(this,context);}}]);return ExpressionStatement;}(Statement);var ReturnStatement=function(_Statement4){_inherits(ReturnStatement,_Statement4);/**
      * @param {?} value
      * @param {?=} sourceSpan
-     */function ReturnStatement(value,sourceSpan){_classCallCheck(this,ReturnStatement);var _this146=_possibleConstructorReturn(this,(ReturnStatement.__proto__||Object.getPrototypeOf(ReturnStatement)).call(this,null,sourceSpan));_this146.value=value;return _this146;}/**
+     */function ReturnStatement(value,sourceSpan){_classCallCheck(this,ReturnStatement);var _this140=_possibleConstructorReturn(this,(ReturnStatement.__proto__||Object.getPrototypeOf(ReturnStatement)).call(this,null,sourceSpan));_this140.value=value;return _this140;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4370,18 +4398,18 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} name
      * @param {?=} type
      * @param {?=} modifiers
-     */function ClassField(name){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var modifiers=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;_classCallCheck(this,ClassField);var _this147=_possibleConstructorReturn(this,(ClassField.__proto__||Object.getPrototypeOf(ClassField)).call(this,type,modifiers));_this147.name=name;return _this147;}return ClassField;}(AbstractClassPart);var ClassMethod=function(_AbstractClassPart2){_inherits(ClassMethod,_AbstractClassPart2);/**
+     */function ClassField(name){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var modifiers=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;_classCallCheck(this,ClassField);var _this141=_possibleConstructorReturn(this,(ClassField.__proto__||Object.getPrototypeOf(ClassField)).call(this,type,modifiers));_this141.name=name;return _this141;}return ClassField;}(AbstractClassPart);var ClassMethod=function(_AbstractClassPart2){_inherits(ClassMethod,_AbstractClassPart2);/**
      * @param {?} name
      * @param {?} params
      * @param {?} body
      * @param {?=} type
      * @param {?=} modifiers
-     */function ClassMethod(name,params,body){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var modifiers=arguments.length>4&&arguments[4]!==undefined?arguments[4]:null;_classCallCheck(this,ClassMethod);var _this148=_possibleConstructorReturn(this,(ClassMethod.__proto__||Object.getPrototypeOf(ClassMethod)).call(this,type,modifiers));_this148.name=name;_this148.params=params;_this148.body=body;return _this148;}return ClassMethod;}(AbstractClassPart);var ClassGetter=function(_AbstractClassPart3){_inherits(ClassGetter,_AbstractClassPart3);/**
+     */function ClassMethod(name,params,body){var type=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;var modifiers=arguments.length>4&&arguments[4]!==undefined?arguments[4]:null;_classCallCheck(this,ClassMethod);var _this142=_possibleConstructorReturn(this,(ClassMethod.__proto__||Object.getPrototypeOf(ClassMethod)).call(this,type,modifiers));_this142.name=name;_this142.params=params;_this142.body=body;return _this142;}return ClassMethod;}(AbstractClassPart);var ClassGetter=function(_AbstractClassPart3){_inherits(ClassGetter,_AbstractClassPart3);/**
      * @param {?} name
      * @param {?} body
      * @param {?=} type
      * @param {?=} modifiers
-     */function ClassGetter(name,body){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var modifiers=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;_classCallCheck(this,ClassGetter);var _this149=_possibleConstructorReturn(this,(ClassGetter.__proto__||Object.getPrototypeOf(ClassGetter)).call(this,type,modifiers));_this149.name=name;_this149.body=body;return _this149;}return ClassGetter;}(AbstractClassPart);var ClassStmt=function(_Statement5){_inherits(ClassStmt,_Statement5);/**
+     */function ClassGetter(name,body){var type=arguments.length>2&&arguments[2]!==undefined?arguments[2]:null;var modifiers=arguments.length>3&&arguments[3]!==undefined?arguments[3]:null;_classCallCheck(this,ClassGetter);var _this143=_possibleConstructorReturn(this,(ClassGetter.__proto__||Object.getPrototypeOf(ClassGetter)).call(this,type,modifiers));_this143.name=name;_this143.body=body;return _this143;}return ClassGetter;}(AbstractClassPart);var ClassStmt=function(_Statement5){_inherits(ClassStmt,_Statement5);/**
      * @param {?} name
      * @param {?} parent
      * @param {?} fields
@@ -4390,7 +4418,7 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} methods
      * @param {?=} modifiers
      * @param {?=} sourceSpan
-     */function ClassStmt(name,parent,fields,getters,constructorMethod,methods){var modifiers=arguments.length>6&&arguments[6]!==undefined?arguments[6]:null;var sourceSpan=arguments[7];_classCallCheck(this,ClassStmt);var _this150=_possibleConstructorReturn(this,(ClassStmt.__proto__||Object.getPrototypeOf(ClassStmt)).call(this,modifiers,sourceSpan));_this150.name=name;_this150.parent=parent;_this150.fields=fields;_this150.getters=getters;_this150.constructorMethod=constructorMethod;_this150.methods=methods;return _this150;}/**
+     */function ClassStmt(name,parent,fields,getters,constructorMethod,methods){var modifiers=arguments.length>6&&arguments[6]!==undefined?arguments[6]:null;var sourceSpan=arguments[7];_classCallCheck(this,ClassStmt);var _this144=_possibleConstructorReturn(this,(ClassStmt.__proto__||Object.getPrototypeOf(ClassStmt)).call(this,modifiers,sourceSpan));_this144.name=name;_this144.parent=parent;_this144.fields=fields;_this144.getters=getters;_this144.constructorMethod=constructorMethod;_this144.methods=methods;return _this144;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -4399,282 +4427,11 @@ return this.equals(TYPED_NULL_EXPR,sourceSpan);}/**
      * @param {?} trueCase
      * @param {?=} falseCase
      * @param {?=} sourceSpan
-     */function IfStmt(condition,trueCase){var falseCase=arguments.length>2&&arguments[2]!==undefined?arguments[2]:[];var sourceSpan=arguments[3];_classCallCheck(this,IfStmt);var _this151=_possibleConstructorReturn(this,(IfStmt.__proto__||Object.getPrototypeOf(IfStmt)).call(this,null,sourceSpan));_this151.condition=condition;_this151.trueCase=trueCase;_this151.falseCase=falseCase;return _this151;}/**
+     */function IfStmt(condition,trueCase){var falseCase=arguments.length>2&&arguments[2]!==undefined?arguments[2]:[];var sourceSpan=arguments[3];_classCallCheck(this,IfStmt);var _this145=_possibleConstructorReturn(this,(IfStmt.__proto__||Object.getPrototypeOf(IfStmt)).call(this,null,sourceSpan));_this145.condition=condition;_this145.trueCase=trueCase;_this145.falseCase=falseCase;return _this145;}/**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
-     */_createClass(IfStmt,[{key:'visitStatement',value:function visitStatement(visitor,context){return visitor.visitIfStmt(this,context);}}]);return IfStmt;}(Statement);var TryCatchStmt=function(_Statement7){_inherits(TryCatchStmt,_Statement7);/**
-     * @param {?} bodyStmts
-     * @param {?} catchStmts
-     * @param {?=} sourceSpan
-     */function TryCatchStmt(bodyStmts,catchStmts,sourceSpan){_classCallCheck(this,TryCatchStmt);var _this152=_possibleConstructorReturn(this,(TryCatchStmt.__proto__||Object.getPrototypeOf(TryCatchStmt)).call(this,null,sourceSpan));_this152.bodyStmts=bodyStmts;_this152.catchStmts=catchStmts;return _this152;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(TryCatchStmt,[{key:'visitStatement',value:function visitStatement(visitor,context){return visitor.visitTryCatchStmt(this,context);}}]);return TryCatchStmt;}(Statement);var ThrowStmt=function(_Statement8){_inherits(ThrowStmt,_Statement8);/**
-     * @param {?} error
-     * @param {?=} sourceSpan
-     */function ThrowStmt(error,sourceSpan){_classCallCheck(this,ThrowStmt);var _this153=_possibleConstructorReturn(this,(ThrowStmt.__proto__||Object.getPrototypeOf(ThrowStmt)).call(this,null,sourceSpan));_this153.error=error;return _this153;}/**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */_createClass(ThrowStmt,[{key:'visitStatement',value:function visitStatement(visitor,context){return visitor.visitThrowStmt(this,context);}}]);return ThrowStmt;}(Statement);var ExpressionTransformer=function(){function ExpressionTransformer(){_classCallCheck(this,ExpressionTransformer);}_createClass(ExpressionTransformer,[{key:'visitReadVarExpr',/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */value:function visitReadVarExpr(ast,context){return ast;}/**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitWriteVarExpr',value:function visitWriteVarExpr(expr,context){return new WriteVarExpr(expr.name,expr.value.visitExpression(this,context),expr.type,expr.sourceSpan);}/**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitWriteKeyExpr',value:function visitWriteKeyExpr(expr,context){return new WriteKeyExpr(expr.receiver.visitExpression(this,context),expr.index.visitExpression(this,context),expr.value.visitExpression(this,context),expr.type,expr.sourceSpan);}/**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitWritePropExpr',value:function visitWritePropExpr(expr,context){return new WritePropExpr(expr.receiver.visitExpression(this,context),expr.name,expr.value.visitExpression(this,context),expr.type,expr.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitInvokeMethodExpr',value:function visitInvokeMethodExpr(ast,context){var/** @type {?} */method=ast.builtin||ast.name;return new InvokeMethodExpr(ast.receiver.visitExpression(this,context),method,this.visitAllExpressions(ast.args,context),ast.type,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitInvokeFunctionExpr',value:function visitInvokeFunctionExpr(ast,context){return new InvokeFunctionExpr(ast.fn.visitExpression(this,context),this.visitAllExpressions(ast.args,context),ast.type,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitInstantiateExpr',value:function visitInstantiateExpr(ast,context){return new InstantiateExpr(ast.classExpr.visitExpression(this,context),this.visitAllExpressions(ast.args,context),ast.type,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitLiteralExpr',value:function visitLiteralExpr(ast,context){return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitExternalExpr',value:function visitExternalExpr(ast,context){return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitConditionalExpr',value:function visitConditionalExpr(ast,context){return new ConditionalExpr(ast.condition.visitExpression(this,context),ast.trueCase.visitExpression(this,context),ast.falseCase.visitExpression(this,context),ast.type,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitNotExpr',value:function visitNotExpr(ast,context){return new NotExpr(ast.condition.visitExpression(this,context),ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitCastExpr',value:function visitCastExpr(ast,context){return new CastExpr(ast.value.visitExpression(this,context),context,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitFunctionExpr',value:function visitFunctionExpr(ast,context){// Don't descend into nested functions
-return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitBinaryOperatorExpr',value:function visitBinaryOperatorExpr(ast,context){return new BinaryOperatorExpr(ast.operator,ast.lhs.visitExpression(this,context),ast.rhs.visitExpression(this,context),ast.type,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitReadPropExpr',value:function visitReadPropExpr(ast,context){return new ReadPropExpr(ast.receiver.visitExpression(this,context),ast.name,ast.type,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitReadKeyExpr',value:function visitReadKeyExpr(ast,context){return new ReadKeyExpr(ast.receiver.visitExpression(this,context),ast.index.visitExpression(this,context),ast.type,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitLiteralArrayExpr',value:function visitLiteralArrayExpr(ast,context){return new LiteralArrayExpr(this.visitAllExpressions(ast.entries,context),ast.type,ast.sourceSpan);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitLiteralMapExpr',value:function visitLiteralMapExpr(ast,context){var _this154=this;var/** @type {?} */entries=ast.entries.map(function(entry){return new LiteralMapEntry(entry.key,entry.value.visitExpression(_this154,context),entry.quoted);});var/** @type {?} */mapType=new MapType(ast.valueType);return new LiteralMapExpr(entries,mapType,ast.sourceSpan);}/**
-     * @param {?} exprs
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAllExpressions',value:function visitAllExpressions(exprs,context){var _this155=this;return exprs.map(function(expr){return expr.visitExpression(_this155,context);});}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitDeclareVarStmt',value:function visitDeclareVarStmt(stmt,context){return new DeclareVarStmt(stmt.name,stmt.value.visitExpression(this,context),stmt.type,stmt.modifiers,stmt.sourceSpan);}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitDeclareFunctionStmt',value:function visitDeclareFunctionStmt(stmt,context){// Don't descend into nested functions
-return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitExpressionStmt',value:function visitExpressionStmt(stmt,context){return new ExpressionStatement(stmt.expr.visitExpression(this,context),stmt.sourceSpan);}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitReturnStmt',value:function visitReturnStmt(stmt,context){return new ReturnStatement(stmt.value.visitExpression(this,context),stmt.sourceSpan);}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitDeclareClassStmt',value:function visitDeclareClassStmt(stmt,context){// Don't descend into nested functions
-return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitIfStmt',value:function visitIfStmt(stmt,context){return new IfStmt(stmt.condition.visitExpression(this,context),this.visitAllStatements(stmt.trueCase,context),this.visitAllStatements(stmt.falseCase,context),stmt.sourceSpan);}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitTryCatchStmt',value:function visitTryCatchStmt(stmt,context){return new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts,context),this.visitAllStatements(stmt.catchStmts,context),stmt.sourceSpan);}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitThrowStmt',value:function visitThrowStmt(stmt,context){return new ThrowStmt(stmt.error.visitExpression(this,context),stmt.sourceSpan);}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitCommentStmt',value:function visitCommentStmt(stmt,context){return stmt;}/**
-     * @param {?} stmts
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAllStatements',value:function visitAllStatements(stmts,context){var _this156=this;return stmts.map(function(stmt){return stmt.visitStatement(_this156,context);});}}]);return ExpressionTransformer;}();var RecursiveExpressionVisitor=function(){function RecursiveExpressionVisitor(){_classCallCheck(this,RecursiveExpressionVisitor);}_createClass(RecursiveExpressionVisitor,[{key:'visitReadVarExpr',/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */value:function visitReadVarExpr(ast,context){return ast;}/**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitWriteVarExpr',value:function visitWriteVarExpr(expr,context){expr.value.visitExpression(this,context);return expr;}/**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitWriteKeyExpr',value:function visitWriteKeyExpr(expr,context){expr.receiver.visitExpression(this,context);expr.index.visitExpression(this,context);expr.value.visitExpression(this,context);return expr;}/**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitWritePropExpr',value:function visitWritePropExpr(expr,context){expr.receiver.visitExpression(this,context);expr.value.visitExpression(this,context);return expr;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitInvokeMethodExpr',value:function visitInvokeMethodExpr(ast,context){ast.receiver.visitExpression(this,context);this.visitAllExpressions(ast.args,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitInvokeFunctionExpr',value:function visitInvokeFunctionExpr(ast,context){ast.fn.visitExpression(this,context);this.visitAllExpressions(ast.args,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitInstantiateExpr',value:function visitInstantiateExpr(ast,context){ast.classExpr.visitExpression(this,context);this.visitAllExpressions(ast.args,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitLiteralExpr',value:function visitLiteralExpr(ast,context){return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitExternalExpr',value:function visitExternalExpr(ast,context){return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitConditionalExpr',value:function visitConditionalExpr(ast,context){ast.condition.visitExpression(this,context);ast.trueCase.visitExpression(this,context);ast.falseCase.visitExpression(this,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitNotExpr',value:function visitNotExpr(ast,context){ast.condition.visitExpression(this,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitCastExpr',value:function visitCastExpr(ast,context){ast.value.visitExpression(this,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitFunctionExpr',value:function visitFunctionExpr(ast,context){return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitBinaryOperatorExpr',value:function visitBinaryOperatorExpr(ast,context){ast.lhs.visitExpression(this,context);ast.rhs.visitExpression(this,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitReadPropExpr',value:function visitReadPropExpr(ast,context){ast.receiver.visitExpression(this,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitReadKeyExpr',value:function visitReadKeyExpr(ast,context){ast.receiver.visitExpression(this,context);ast.index.visitExpression(this,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitLiteralArrayExpr',value:function visitLiteralArrayExpr(ast,context){this.visitAllExpressions(ast.entries,context);return ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitLiteralMapExpr',value:function visitLiteralMapExpr(ast,context){var _this157=this;ast.entries.forEach(function(entry){return entry.value.visitExpression(_this157,context);});return ast;}/**
-     * @param {?} exprs
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAllExpressions',value:function visitAllExpressions(exprs,context){var _this158=this;exprs.forEach(function(expr){return expr.visitExpression(_this158,context);});}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitDeclareVarStmt',value:function visitDeclareVarStmt(stmt,context){stmt.value.visitExpression(this,context);return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitDeclareFunctionStmt',value:function visitDeclareFunctionStmt(stmt,context){// Don't descend into nested functions
-return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitExpressionStmt',value:function visitExpressionStmt(stmt,context){stmt.expr.visitExpression(this,context);return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitReturnStmt',value:function visitReturnStmt(stmt,context){stmt.value.visitExpression(this,context);return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitDeclareClassStmt',value:function visitDeclareClassStmt(stmt,context){// Don't descend into nested functions
-return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitIfStmt',value:function visitIfStmt(stmt,context){stmt.condition.visitExpression(this,context);this.visitAllStatements(stmt.trueCase,context);this.visitAllStatements(stmt.falseCase,context);return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitTryCatchStmt',value:function visitTryCatchStmt(stmt,context){this.visitAllStatements(stmt.bodyStmts,context);this.visitAllStatements(stmt.catchStmts,context);return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitThrowStmt',value:function visitThrowStmt(stmt,context){stmt.error.visitExpression(this,context);return stmt;}/**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitCommentStmt',value:function visitCommentStmt(stmt,context){return stmt;}/**
-     * @param {?} stmts
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAllStatements',value:function visitAllStatements(stmts,context){var _this159=this;stmts.forEach(function(stmt){return stmt.visitStatement(_this159,context);});}}]);return RecursiveExpressionVisitor;}();/**
- * @param {?} varName
- * @param {?} newValue
- * @param {?} expression
- * @return {?}
- */function replaceVarInExpression(varName,newValue,expression){var/** @type {?} */transformer=new _ReplaceVariableTransformer(varName,newValue);return expression.visitExpression(transformer,null);}var _ReplaceVariableTransformer=function(_ExpressionTransforme){_inherits(_ReplaceVariableTransformer,_ExpressionTransforme);/**
-     * @param {?} _varName
-     * @param {?} _newValue
-     */function _ReplaceVariableTransformer(_varName,_newValue){_classCallCheck(this,_ReplaceVariableTransformer);var _this160=_possibleConstructorReturn(this,(_ReplaceVariableTransformer.__proto__||Object.getPrototypeOf(_ReplaceVariableTransformer)).call(this));_this160._varName=_varName;_this160._newValue=_newValue;return _this160;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */_createClass(_ReplaceVariableTransformer,[{key:'visitReadVarExpr',value:function visitReadVarExpr(ast,context){return ast.name==this._varName?this._newValue:ast;}}]);return _ReplaceVariableTransformer;}(ExpressionTransformer);/**
- * @param {?} stmts
- * @return {?}
- */function findReadVarNames(stmts){var/** @type {?} */finder=new _VariableFinder();finder.visitAllStatements(stmts,null);return finder.varNames;}var _VariableFinder=function(_RecursiveExpressionV){_inherits(_VariableFinder,_RecursiveExpressionV);function _VariableFinder(){_classCallCheck(this,_VariableFinder);var _this161=_possibleConstructorReturn(this,(_VariableFinder.__proto__||Object.getPrototypeOf(_VariableFinder)).apply(this,arguments));_this161.varNames=new Set();return _this161;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */_createClass(_VariableFinder,[{key:'visitReadVarExpr',value:function visitReadVarExpr(ast,context){this.varNames.add(ast.name);return null;}}]);return _VariableFinder;}(RecursiveExpressionVisitor);/**
+     */_createClass(IfStmt,[{key:'visitStatement',value:function visitStatement(visitor,context){return visitor.visitIfStmt(this,context);}}]);return IfStmt;}(Statement);/**
  * @param {?} name
  * @param {?=} type
  * @param {?=} sourceSpan
@@ -4718,866 +4475,14 @@ return stmt;}/**
  * @param {?=} type
  * @param {?=} sourceSpan
  * @return {?}
- */function literal(value){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];return new LiteralExpr(value,type,sourceSpan);}var CheckBindingField=/**
-     * @param {?} expression
-     * @param {?} bindingId
-     */function CheckBindingField(expression,bindingId){_classCallCheck(this,CheckBindingField);this.expression=expression;this.bindingId=bindingId;};/**
- * @param {?} builder
- * @return {?}
- */function createCheckBindingField(builder){var/** @type {?} */bindingId=''+builder.fields.length;var/** @type {?} */fieldExpr=createBindFieldExpr(bindingId);// private is fine here as no child view will reference the cached value...
-builder.fields.push(new ClassField(fieldExpr.name,null,[StmtModifier.Private]));builder.ctorStmts.push(THIS_EXPR.prop(fieldExpr.name).set(literal(undefined)).toStmt());return new CheckBindingField(fieldExpr,bindingId);}/**
- * @param {?} bindingId
- * @return {?}
- */function createBindFieldExpr(bindingId){return THIS_EXPR.prop('_expr_'+bindingId);}/**
- * @param {?} view
- * @return {?}
- */function isFirstViewCheck(view){return not(view.prop('numberOfChecks'));}/**
- * @param {?} token
- * @return {?}
- */function createDiTokenExpression(token){if(isPresent(token.value)){return literal(token.value);}else{return importExpr(token.identifier);}}/**
- * @param {?} values
- * @return {?}
- */function createInlineArray(values){if(values.length===0){return importExpr(createIdentifier(Identifiers.EMPTY_INLINE_ARRAY));}var/** @type {?} */log2=Math.log(values.length)/Math.log(2);var/** @type {?} */index=Math.ceil(log2);var/** @type {?} */identifierSpec=index<Identifiers.inlineArrays.length?Identifiers.inlineArrays[index]:Identifiers.InlineArrayDynamic;var/** @type {?} */identifier=createIdentifier(identifierSpec);return importExpr(identifier).instantiate([/** @type {?} */literal(values.length)].concat(values));}/**
- * @param {?} fn
- * @param {?} argCount
- * @param {?} pureProxyProp
- * @param {?} builder
- * @return {?}
- */function createPureProxy(fn,argCount,pureProxyProp,builder){builder.fields.push(new ClassField(pureProxyProp.name,null));var/** @type {?} */pureProxyId=argCount<Identifiers.pureProxies.length?Identifiers.pureProxies[argCount]:null;if(!pureProxyId){throw new Error('Unsupported number of argument for pure functions: '+argCount);}builder.ctorStmts.push(THIS_EXPR.prop(pureProxyProp.name).set(importExpr(createIdentifier(pureProxyId)).callFn([fn])).toStmt());}/**
- * @param {?} enumType
- * @param {?} enumValue
- * @return {?}
- */function createEnumExpression(enumType,enumValue){var/** @type {?} */enumName=Object.keys(enumType.runtime).find(function(propName){return enumType.runtime[propName]===enumValue;});if(!enumName){throw new Error('Unknown enum value '+enumValue+' in '+enumType.name);}return importExpr(createEnumIdentifier(enumType,enumName));}var/** @type {?} */VAL_UNWRAPPER_VAR=variable('valUnwrapper');var EventHandlerVars=function EventHandlerVars(){_classCallCheck(this,EventHandlerVars);};EventHandlerVars.event=variable('$event');var ConvertActionBindingResult=/**
-     * @param {?} stmts
-     * @param {?} allowDefault
-     */function ConvertActionBindingResult(stmts,allowDefault){_classCallCheck(this,ConvertActionBindingResult);this.stmts=stmts;this.allowDefault=allowDefault;};/**
- * Converts the given expression AST into an executable output AST, assuming the expression is
- * used in an action binding (e.g. an event handler).
- * @param {?} localResolver
- * @param {?} implicitReceiver
- * @param {?} action
- * @param {?} bindingId
- * @return {?}
- */function convertActionBinding(localResolver,implicitReceiver,action,bindingId){if(!localResolver){localResolver=new DefaultLocalResolver();}var/** @type {?} */actionWithoutBuiltins=convertPropertyBindingBuiltins({createLiteralArrayConverter:function createLiteralArrayConverter(argCount){// Note: no caching for literal arrays in actions.
-return function(args){return literalArr(args);};},createLiteralMapConverter:function createLiteralMapConverter(keys){// Note: no caching for literal maps in actions.
-return function(args){return literalMap(/** @type {?} */keys.map(function(key,i){return[key,args[i]];}));};},createPipeConverter:function createPipeConverter(name){throw new Error('Illegal State: Actions are not allowed to contain pipes. Pipe: '+name);}},action);var/** @type {?} */visitor=new _AstToIrVisitor(localResolver,implicitReceiver,bindingId);var/** @type {?} */actionStmts=[];flattenStatements(actionWithoutBuiltins.visit(visitor,_Mode.Statement),actionStmts);prependTemporaryDecls(visitor.temporaryCount,bindingId,actionStmts);var/** @type {?} */lastIndex=actionStmts.length-1;var/** @type {?} */preventDefaultVar=null;if(lastIndex>=0){var/** @type {?} */lastStatement=actionStmts[lastIndex];var/** @type {?} */returnExpr=convertStmtIntoExpression(lastStatement);if(returnExpr){// Note: We need to cast the result of the method call to dynamic,
-// as it might be a void method!
-preventDefaultVar=createPreventDefaultVar(bindingId);actionStmts[lastIndex]=preventDefaultVar.set(returnExpr.cast(DYNAMIC_TYPE).notIdentical(literal(false))).toDeclStmt(null,[StmtModifier.Final]);}}return new ConvertActionBindingResult(actionStmts,preventDefaultVar);}/**
- * @param {?} converterFactory
- * @param {?} ast
- * @return {?}
- */function convertPropertyBindingBuiltins(converterFactory,ast){return convertBuiltins(converterFactory,ast);}var ConvertPropertyBindingResult=/**
-     * @param {?} stmts
-     * @param {?} currValExpr
-     */function ConvertPropertyBindingResult(stmts,currValExpr){_classCallCheck(this,ConvertPropertyBindingResult);this.stmts=stmts;this.currValExpr=currValExpr;};/**
- * Converts the given expression AST into an executable output AST, assuming the expression
- * is used in property binding. The expression has to be preprocessed via
- * `convertPropertyBindingBuiltins`.
- * @param {?} localResolver
- * @param {?} implicitReceiver
- * @param {?} expressionWithoutBuiltins
- * @param {?} bindingId
- * @return {?}
- */function convertPropertyBinding(localResolver,implicitReceiver,expressionWithoutBuiltins,bindingId){if(!localResolver){localResolver=new DefaultLocalResolver();}var/** @type {?} */currValExpr=createCurrValueExpr(bindingId);var/** @type {?} */stmts=[];var/** @type {?} */visitor=new _AstToIrVisitor(localResolver,implicitReceiver,bindingId);var/** @type {?} */outputExpr=expressionWithoutBuiltins.visit(visitor,_Mode.Expression);if(visitor.temporaryCount){for(var/** @type {?} */i=0;i<visitor.temporaryCount;i++){stmts.push(temporaryDeclaration(bindingId,i));}}stmts.push(currValExpr.set(outputExpr).toDeclStmt(null,[StmtModifier.Final]));return new ConvertPropertyBindingResult(stmts,currValExpr);}var LegacyConvertPropertyBindingResult=/**
-     * @param {?} stmts
-     * @param {?} currValExpr
-     * @param {?} forceUpdate
-     */function LegacyConvertPropertyBindingResult(stmts,currValExpr,forceUpdate){_classCallCheck(this,LegacyConvertPropertyBindingResult);this.stmts=stmts;this.currValExpr=currValExpr;this.forceUpdate=forceUpdate;};/**
- * Converts the given expression AST into an executable output AST, assuming the expression is
- * used in a property binding.
- * @param {?} builder
- * @param {?} nameResolver
- * @param {?} implicitReceiver
- * @param {?} expression
- * @param {?} bindingId
- * @return {?}
- */function legacyConvertPropertyBinding(builder,nameResolver,implicitReceiver,expression,bindingId){if(!nameResolver){nameResolver=new LegacyDefaultNameResolver();}var/** @type {?} */needsValueUnwrapper=false;var/** @type {?} */expressionWithoutBuiltins=convertBuiltins({createLiteralArrayConverter:function createLiteralArrayConverter(argCount){return function(args){return legacyCreateCachedLiteralArray(builder,args);};},createLiteralMapConverter:function createLiteralMapConverter(keys){return function(args){return legacyCreateCachedLiteralMap(builder,/** @type {?} */keys.map(function(key,i){return[key,args[i]];}));};},createPipeConverter:function createPipeConverter(name){needsValueUnwrapper=true;return function(args){return VAL_UNWRAPPER_VAR.callMethod('unwrap',[nameResolver.callPipe(name,args[0],args.slice(1))]);};}},expression);var _convertPropertyBindi=convertPropertyBinding(nameResolver,implicitReceiver,expressionWithoutBuiltins,bindingId),stmts=_convertPropertyBindi.stmts,currValExpr=_convertPropertyBindi.currValExpr;var/** @type {?} */forceUpdate=null;if(needsValueUnwrapper){var/** @type {?} */initValueUnwrapperStmt=VAL_UNWRAPPER_VAR.callMethod('reset',[]).toStmt();stmts.unshift(initValueUnwrapperStmt);forceUpdate=VAL_UNWRAPPER_VAR.prop('hasWrappedValue');}return new LegacyConvertPropertyBindingResult(stmts,currValExpr,forceUpdate);}/**
- * Creates variables that are shared by multiple calls to `convertActionBinding` /
- * `convertPropertyBinding`
- * @param {?} stmts
- * @return {?}
- */function legacyCreateSharedBindingVariablesIfNeeded(stmts){var/** @type {?} */unwrapperStmts=[];var/** @type {?} */readVars=findReadVarNames(stmts);if(readVars.has(VAL_UNWRAPPER_VAR.name)){unwrapperStmts.push(VAL_UNWRAPPER_VAR.set(importExpr(createIdentifier(Identifiers.ValueUnwrapper)).instantiate([])).toDeclStmt(null,[StmtModifier.Final]));}return unwrapperStmts;}/**
- * @param {?} converterFactory
- * @param {?} ast
- * @return {?}
- */function convertBuiltins(converterFactory,ast){var/** @type {?} */visitor=new _BuiltinAstConverter(converterFactory);return ast.visit(visitor);}/**
- * @param {?} bindingId
- * @param {?} temporaryNumber
- * @return {?}
- */function temporaryName(bindingId,temporaryNumber){return'tmp_'+bindingId+'_'+temporaryNumber;}/**
- * @param {?} bindingId
- * @param {?} temporaryNumber
- * @return {?}
- */function temporaryDeclaration(bindingId,temporaryNumber){return new DeclareVarStmt(temporaryName(bindingId,temporaryNumber),NULL_EXPR);}/**
- * @param {?} temporaryCount
- * @param {?} bindingId
- * @param {?} statements
- * @return {?}
- */function prependTemporaryDecls(temporaryCount,bindingId,statements){for(var/** @type {?} */i=temporaryCount-1;i>=0;i--){statements.unshift(temporaryDeclaration(bindingId,i));}}var _Mode={};_Mode.Statement=0;_Mode.Expression=1;_Mode[_Mode.Statement]="Statement";_Mode[_Mode.Expression]="Expression";/**
- * @param {?} mode
- * @param {?} ast
- * @return {?}
- */function ensureStatementMode(mode,ast){if(mode!==_Mode.Statement){throw new Error('Expected a statement, but saw '+ast);}}/**
- * @param {?} mode
- * @param {?} ast
- * @return {?}
- */function ensureExpressionMode(mode,ast){if(mode!==_Mode.Expression){throw new Error('Expected an expression, but saw '+ast);}}/**
- * @param {?} mode
- * @param {?} expr
- * @return {?}
- */function convertToStatementIfNeeded(mode,expr){if(mode===_Mode.Statement){return expr.toStmt();}else{return expr;}}var _BuiltinAstConverter=function(_AstTransformer){_inherits(_BuiltinAstConverter,_AstTransformer);/**
-     * @param {?} _converterFactory
-     */function _BuiltinAstConverter(_converterFactory){_classCallCheck(this,_BuiltinAstConverter);var _this162=_possibleConstructorReturn(this,(_BuiltinAstConverter.__proto__||Object.getPrototypeOf(_BuiltinAstConverter)).call(this));_this162._converterFactory=_converterFactory;return _this162;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */_createClass(_BuiltinAstConverter,[{key:'visitPipe',value:function visitPipe(ast,context){var _this163=this;var/** @type {?} */args=[ast.exp].concat(_toConsumableArray(ast.args)).map(function(ast){return ast.visit(_this163,context);});return new BuiltinFunctionCall(ast.span,args,this._converterFactory.createPipeConverter(ast.name,args.length));}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitLiteralArray',value:function visitLiteralArray(ast,context){var _this164=this;var/** @type {?} */args=ast.expressions.map(function(ast){return ast.visit(_this164,context);});return new BuiltinFunctionCall(ast.span,args,this._converterFactory.createLiteralArrayConverter(ast.expressions.length));}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitLiteralMap',value:function visitLiteralMap(ast,context){var _this165=this;var/** @type {?} */args=ast.values.map(function(ast){return ast.visit(_this165,context);});return new BuiltinFunctionCall(ast.span,args,this._converterFactory.createLiteralMapConverter(ast.keys));}}]);return _BuiltinAstConverter;}(AstTransformer);var _AstToIrVisitor=function(){/**
-     * @param {?} _localResolver
-     * @param {?} _implicitReceiver
-     * @param {?} bindingId
-     */function _AstToIrVisitor(_localResolver,_implicitReceiver,bindingId){_classCallCheck(this,_AstToIrVisitor);this._localResolver=_localResolver;this._implicitReceiver=_implicitReceiver;this.bindingId=bindingId;this._nodeMap=new Map();this._resultMap=new Map();this._currentTemporary=0;this.temporaryCount=0;}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */_createClass(_AstToIrVisitor,[{key:'visitBinary',value:function visitBinary(ast,mode){var/** @type {?} */op=void 0;switch(ast.operation){case'+':op=BinaryOperator.Plus;break;case'-':op=BinaryOperator.Minus;break;case'*':op=BinaryOperator.Multiply;break;case'/':op=BinaryOperator.Divide;break;case'%':op=BinaryOperator.Modulo;break;case'&&':op=BinaryOperator.And;break;case'||':op=BinaryOperator.Or;break;case'==':op=BinaryOperator.Equals;break;case'!=':op=BinaryOperator.NotEquals;break;case'===':op=BinaryOperator.Identical;break;case'!==':op=BinaryOperator.NotIdentical;break;case'<':op=BinaryOperator.Lower;break;case'>':op=BinaryOperator.Bigger;break;case'<=':op=BinaryOperator.LowerEquals;break;case'>=':op=BinaryOperator.BiggerEquals;break;default:throw new Error('Unsupported operation '+ast.operation);}return convertToStatementIfNeeded(mode,new BinaryOperatorExpr(op,this.visit(ast.left,_Mode.Expression),this.visit(ast.right,_Mode.Expression)));}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitChain',value:function visitChain(ast,mode){ensureStatementMode(mode,ast);return this.visitAll(ast.expressions,mode);}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitConditional',value:function visitConditional(ast,mode){var/** @type {?} */value=this.visit(ast.condition,_Mode.Expression);return convertToStatementIfNeeded(mode,value.conditional(this.visit(ast.trueExp,_Mode.Expression),this.visit(ast.falseExp,_Mode.Expression)));}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitPipe',value:function visitPipe(ast,mode){throw new Error('Illegal state: Pipes should have been converted into functions. Pipe: '+ast.name);}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitFunctionCall',value:function visitFunctionCall(ast,mode){var/** @type {?} */convertedArgs=this.visitAll(ast.args,_Mode.Expression);var/** @type {?} */fnResult=void 0;if(ast instanceof BuiltinFunctionCall){fnResult=ast.converter(convertedArgs);}else{fnResult=this.visit(ast.target,_Mode.Expression).callFn(convertedArgs);}return convertToStatementIfNeeded(mode,fnResult);}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitImplicitReceiver',value:function visitImplicitReceiver(ast,mode){ensureExpressionMode(mode,ast);return this._implicitReceiver;}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitInterpolation',value:function visitInterpolation(ast,mode){ensureExpressionMode(mode,ast);var/** @type {?} */args=[literal(ast.expressions.length)];for(var/** @type {?} */i=0;i<ast.strings.length-1;i++){args.push(literal(ast.strings[i]));args.push(this.visit(ast.expressions[i],_Mode.Expression));}args.push(literal(ast.strings[ast.strings.length-1]));return ast.expressions.length<=9?importExpr(createIdentifier(Identifiers.inlineInterpolate)).callFn(args):importExpr(createIdentifier(Identifiers.interpolate)).callFn([args[0],literalArr(args.slice(1))]);}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitKeyedRead',value:function visitKeyedRead(ast,mode){var/** @type {?} */leftMostSafe=this.leftMostSafeNode(ast);if(leftMostSafe){return this.convertSafeAccess(ast,leftMostSafe,mode);}else{return convertToStatementIfNeeded(mode,this.visit(ast.obj,_Mode.Expression).key(this.visit(ast.key,_Mode.Expression)));}}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitKeyedWrite',value:function visitKeyedWrite(ast,mode){var/** @type {?} */obj=this.visit(ast.obj,_Mode.Expression);var/** @type {?} */key=this.visit(ast.key,_Mode.Expression);var/** @type {?} */value=this.visit(ast.value,_Mode.Expression);return convertToStatementIfNeeded(mode,obj.key(key).set(value));}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitLiteralArray',value:function visitLiteralArray(ast,mode){throw new Error('Illegal State: literal arrays should have been converted into functions');}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitLiteralMap',value:function visitLiteralMap(ast,mode){throw new Error('Illegal State: literal maps should have been converted into functions');}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitLiteralPrimitive',value:function visitLiteralPrimitive(ast,mode){return convertToStatementIfNeeded(mode,literal(ast.value));}/**
-     * @param {?} name
-     * @return {?}
-     */},{key:'_getLocal',value:function _getLocal(name){return this._localResolver.getLocal(name);}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitMethodCall',value:function visitMethodCall(ast,mode){var/** @type {?} */leftMostSafe=this.leftMostSafeNode(ast);if(leftMostSafe){return this.convertSafeAccess(ast,leftMostSafe,mode);}else{var/** @type {?} */args=this.visitAll(ast.args,_Mode.Expression);var/** @type {?} */result=null;var/** @type {?} */receiver=this.visit(ast.receiver,_Mode.Expression);if(receiver===this._implicitReceiver){var/** @type {?} */varExpr=this._getLocal(ast.name);if(varExpr){result=varExpr.callFn(args);}}if(isBlank(result)){result=receiver.callMethod(ast.name,args);}return convertToStatementIfNeeded(mode,result);}}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitPrefixNot',value:function visitPrefixNot(ast,mode){return convertToStatementIfNeeded(mode,not(this.visit(ast.expression,_Mode.Expression)));}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitPropertyRead',value:function visitPropertyRead(ast,mode){var/** @type {?} */leftMostSafe=this.leftMostSafeNode(ast);if(leftMostSafe){return this.convertSafeAccess(ast,leftMostSafe,mode);}else{var/** @type {?} */result=null;var/** @type {?} */receiver=this.visit(ast.receiver,_Mode.Expression);if(receiver===this._implicitReceiver){result=this._getLocal(ast.name);}if(isBlank(result)){result=receiver.prop(ast.name);}return convertToStatementIfNeeded(mode,result);}}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitPropertyWrite',value:function visitPropertyWrite(ast,mode){var/** @type {?} */receiver=this.visit(ast.receiver,_Mode.Expression);if(receiver===this._implicitReceiver){var/** @type {?} */varExpr=this._getLocal(ast.name);if(varExpr){throw new Error('Cannot assign to a reference or variable!');}}return convertToStatementIfNeeded(mode,receiver.prop(ast.name).set(this.visit(ast.value,_Mode.Expression)));}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitSafePropertyRead',value:function visitSafePropertyRead(ast,mode){return this.convertSafeAccess(ast,this.leftMostSafeNode(ast),mode);}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitSafeMethodCall',value:function visitSafeMethodCall(ast,mode){return this.convertSafeAccess(ast,this.leftMostSafeNode(ast),mode);}/**
-     * @param {?} asts
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitAll',value:function visitAll(asts,mode){var _this166=this;return asts.map(function(ast){return _this166.visit(ast,mode);});}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visitQuote',value:function visitQuote(ast,mode){throw new Error('Quotes are not supported for evaluation!');}/**
-     * @param {?} ast
-     * @param {?} mode
-     * @return {?}
-     */},{key:'visit',value:function visit(ast,mode){var/** @type {?} */result=this._resultMap.get(ast);if(result)return result;return(this._nodeMap.get(ast)||ast).visit(this,mode);}/**
-     * @param {?} ast
-     * @param {?} leftMostSafe
-     * @param {?} mode
-     * @return {?}
-     */},{key:'convertSafeAccess',value:function convertSafeAccess(ast,leftMostSafe,mode){// If the expression contains a safe access node on the left it needs to be converted to
-// an expression that guards the access to the member by checking the receiver for blank. As
-// execution proceeds from left to right, the left most part of the expression must be guarded
-// first but, because member access is left associative, the right side of the expression is at
-// the top of the AST. The desired result requires lifting a copy of the the left part of the
-// expression up to test it for blank before generating the unguarded version.
-// Consider, for example the following expression: a?.b.c?.d.e
-// This results in the ast:
-//         .
-//        / \
-//       ?.   e
-//      /  \
-//     .    d
-//    / \
-//   ?.  c
-//  /  \
-// a    b
-// The following tree should be generated:
-//
-//        /---- ? ----\
-//       /      |      \
-//     a   /--- ? ---\  null
-//        /     |     \
-//       .      .     null
-//      / \    / \
-//     .  c   .   e
-//    / \    / \
-//   a   b  ,   d
-//         / \
-//        .   c
-//       / \
-//      a   b
-//
-// Notice that the first guard condition is the left hand of the left most safe access node
-// which comes in as leftMostSafe to this routine.
-var/** @type {?} */guardedExpression=this.visit(leftMostSafe.receiver,_Mode.Expression);var/** @type {?} */temporary=void 0;if(this.needsTemporary(leftMostSafe.receiver)){// If the expression has method calls or pipes then we need to save the result into a
-// temporary variable to avoid calling stateful or impure code more than once.
-temporary=this.allocateTemporary();// Preserve the result in the temporary variable
-guardedExpression=temporary.set(guardedExpression);// Ensure all further references to the guarded expression refer to the temporary instead.
-this._resultMap.set(leftMostSafe.receiver,temporary);}var/** @type {?} */condition=guardedExpression.isBlank();// Convert the ast to an unguarded access to the receiver's member. The map will substitute
-// leftMostNode with its unguarded version in the call to `this.visit()`.
-if(leftMostSafe instanceof SafeMethodCall){this._nodeMap.set(leftMostSafe,new MethodCall(leftMostSafe.span,leftMostSafe.receiver,leftMostSafe.name,leftMostSafe.args));}else{this._nodeMap.set(leftMostSafe,new PropertyRead(leftMostSafe.span,leftMostSafe.receiver,leftMostSafe.name));}// Recursively convert the node now without the guarded member access.
-var/** @type {?} */access=this.visit(ast,_Mode.Expression);// Remove the mapping. This is not strictly required as the converter only traverses each node
-// once but is safer if the conversion is changed to traverse the nodes more than once.
-this._nodeMap.delete(leftMostSafe);// If we allcoated a temporary, release it.
-if(temporary){this.releaseTemporary(temporary);}// Produce the conditional
-return convertToStatementIfNeeded(mode,condition.conditional(literal(null),access));}/**
-     * @param {?} ast
-     * @return {?}
-     */},{key:'leftMostSafeNode',value:function leftMostSafeNode(ast){var _this167=this;var/** @type {?} */visit=function visit(visitor,ast){return(_this167._nodeMap.get(ast)||ast).visit(visitor);};return ast.visit({/**
-             * @param {?} ast
-             * @return {?}
-             */visitBinary:function visitBinary(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitChain:function visitChain(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitConditional:function visitConditional(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitFunctionCall:function visitFunctionCall(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitImplicitReceiver:function visitImplicitReceiver(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitInterpolation:function visitInterpolation(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitKeyedRead:function visitKeyedRead(ast){return visit(this,ast.obj);},/**
-             * @param {?} ast
-             * @return {?}
-             */visitKeyedWrite:function visitKeyedWrite(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitLiteralArray:function visitLiteralArray(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitLiteralMap:function visitLiteralMap(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitLiteralPrimitive:function visitLiteralPrimitive(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitMethodCall:function visitMethodCall(ast){return visit(this,ast.receiver);},/**
-             * @param {?} ast
-             * @return {?}
-             */visitPipe:function visitPipe(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitPrefixNot:function visitPrefixNot(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitPropertyRead:function visitPropertyRead(ast){return visit(this,ast.receiver);},/**
-             * @param {?} ast
-             * @return {?}
-             */visitPropertyWrite:function visitPropertyWrite(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitQuote:function visitQuote(ast){return null;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitSafeMethodCall:function visitSafeMethodCall(ast){return visit(this,ast.receiver)||ast;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitSafePropertyRead:function visitSafePropertyRead(ast){return visit(this,ast.receiver)||ast;}});}/**
-     * @param {?} ast
-     * @return {?}
-     */},{key:'needsTemporary',value:function needsTemporary(ast){var _this168=this;var/** @type {?} */visit=function visit(visitor,ast){return ast&&(_this168._nodeMap.get(ast)||ast).visit(visitor);};var/** @type {?} */visitSome=function visitSome(visitor,ast){return ast.some(function(ast){return visit(visitor,ast);});};return ast.visit({/**
-             * @param {?} ast
-             * @return {?}
-             */visitBinary:function visitBinary(ast){return visit(this,ast.left)||visit(this,ast.right);},/**
-             * @param {?} ast
-             * @return {?}
-             */visitChain:function visitChain(ast){return false;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitConditional:function visitConditional(ast){return visit(this,ast.condition)||visit(this,ast.trueExp)||visit(this,ast.falseExp);},/**
-             * @param {?} ast
-             * @return {?}
-             */visitFunctionCall:function visitFunctionCall(ast){return true;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitImplicitReceiver:function visitImplicitReceiver(ast){return false;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitInterpolation:function visitInterpolation(ast){return visitSome(this,ast.expressions);},/**
-             * @param {?} ast
-             * @return {?}
-             */visitKeyedRead:function visitKeyedRead(ast){return false;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitKeyedWrite:function visitKeyedWrite(ast){return false;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitLiteralArray:function visitLiteralArray(ast){return true;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitLiteralMap:function visitLiteralMap(ast){return true;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitLiteralPrimitive:function visitLiteralPrimitive(ast){return false;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitMethodCall:function visitMethodCall(ast){return true;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitPipe:function visitPipe(ast){return true;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitPrefixNot:function visitPrefixNot(ast){return visit(this,ast.expression);},/**
-             * @param {?} ast
-             * @return {?}
-             */visitPropertyRead:function visitPropertyRead(ast){return false;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitPropertyWrite:function visitPropertyWrite(ast){return false;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitQuote:function visitQuote(ast){return false;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitSafeMethodCall:function visitSafeMethodCall(ast){return true;},/**
-             * @param {?} ast
-             * @return {?}
-             */visitSafePropertyRead:function visitSafePropertyRead(ast){return false;}});}/**
-     * @return {?}
-     */},{key:'allocateTemporary',value:function allocateTemporary(){var/** @type {?} */tempNumber=this._currentTemporary++;this.temporaryCount=Math.max(this._currentTemporary,this.temporaryCount);return new ReadVarExpr(temporaryName(this.bindingId,tempNumber));}/**
-     * @param {?} temporary
-     * @return {?}
-     */},{key:'releaseTemporary',value:function releaseTemporary(temporary){this._currentTemporary--;if(temporary.name!=temporaryName(this.bindingId,this._currentTemporary)){throw new Error('Temporary '+temporary.name+' released out of order');}}}]);return _AstToIrVisitor;}();/**
- * @param {?} arg
- * @param {?} output
- * @return {?}
- */function flattenStatements(arg,output){if(Array.isArray(arg)){arg.forEach(function(entry){return flattenStatements(entry,output);});}else{output.push(arg);}}/**
- * @param {?} builder
- * @param {?} values
- * @return {?}
- */function legacyCreateCachedLiteralArray(builder,values){if(values.length===0){return importExpr(createIdentifier(Identifiers.EMPTY_ARRAY));}var/** @type {?} */proxyExpr=THIS_EXPR.prop('_arr_'+builder.fields.length);var/** @type {?} */proxyParams=[];var/** @type {?} */proxyReturnEntries=[];for(var/** @type {?} */i=0;i<values.length;i++){var/** @type {?} */paramName='p'+i;proxyParams.push(new FnParam(paramName));proxyReturnEntries.push(variable(paramName));}createPureProxy(fn(proxyParams,[new ReturnStatement(literalArr(proxyReturnEntries))],new ArrayType(DYNAMIC_TYPE)),values.length,proxyExpr,builder);return proxyExpr.callFn(values);}/**
- * @param {?} builder
- * @param {?} entries
- * @return {?}
- */function legacyCreateCachedLiteralMap(builder,entries){if(entries.length===0){return importExpr(createIdentifier(Identifiers.EMPTY_MAP));}var/** @type {?} */proxyExpr=THIS_EXPR.prop('_map_'+builder.fields.length);var/** @type {?} */proxyParams=[];var/** @type {?} */proxyReturnEntries=[];var/** @type {?} */values=[];for(var/** @type {?} */i=0;i<entries.length;i++){var/** @type {?} */paramName='p'+i;proxyParams.push(new FnParam(paramName));proxyReturnEntries.push([entries[i][0],variable(paramName)]);values.push(/** @type {?} */entries[i][1]);}createPureProxy(fn(proxyParams,[new ReturnStatement(literalMap(proxyReturnEntries))],new MapType(DYNAMIC_TYPE)),entries.length,proxyExpr,builder);return proxyExpr.callFn(values);}var DefaultLocalResolver=function(){function DefaultLocalResolver(){_classCallCheck(this,DefaultLocalResolver);}_createClass(DefaultLocalResolver,[{key:'getLocal',/**
-     * @param {?} name
-     * @return {?}
-     */value:function getLocal(name){if(name===EventHandlerVars.event.name){return EventHandlerVars.event;}return null;}}]);return DefaultLocalResolver;}();var LegacyDefaultNameResolver=function(){function LegacyDefaultNameResolver(){_classCallCheck(this,LegacyDefaultNameResolver);}_createClass(LegacyDefaultNameResolver,[{key:'callPipe',/**
-     * @param {?} name
-     * @param {?} input
-     * @param {?} args
-     * @return {?}
-     */value:function callPipe(name,input,args){return null;}/**
-     * @param {?} name
-     * @return {?}
-     */},{key:'getLocal',value:function getLocal(name){if(name===EventHandlerVars.event.name){return EventHandlerVars.event;}return null;}}]);return LegacyDefaultNameResolver;}();/**
- * @param {?} bindingId
- * @return {?}
- */function createCurrValueExpr(bindingId){return variable('currVal_'+bindingId);// fix syntax highlighting: `
-}/**
- * @param {?} bindingId
- * @return {?}
- */function createPreventDefaultVar(bindingId){return variable('pd_'+bindingId);}/**
- * @param {?} stmt
- * @return {?}
- */function convertStmtIntoExpression(stmt){if(stmt instanceof ExpressionStatement){return stmt.expr;}else if(stmt instanceof ReturnStatement){return stmt.value;}return null;}var BuiltinFunctionCall=function(_FunctionCall){_inherits(BuiltinFunctionCall,_FunctionCall);/**
-     * @param {?} span
-     * @param {?} args
-     * @param {?} converter
-     */function BuiltinFunctionCall(span,args,converter){_classCallCheck(this,BuiltinFunctionCall);var _this169=_possibleConstructorReturn(this,(BuiltinFunctionCall.__proto__||Object.getPrototypeOf(BuiltinFunctionCall)).call(this,span,null,args));_this169.args=args;_this169.converter=converter;return _this169;}return BuiltinFunctionCall;}(FunctionCall);/**
- * @param {?} view
- * @param {?} renderElement
- * @param {?} boundProp
- * @param {?} oldValue
- * @param {?} evalResult
- * @param {?=} securityContextExpression
- * @return {?}
- */function createCheckRenderBindingStmt(view,renderElement,boundProp,oldValue,evalResult,securityContextExpression){var/** @type {?} */checkStmts=[].concat(_toConsumableArray(evalResult.stmts));var/** @type {?} */securityContext=calcSecurityContext(boundProp,securityContextExpression);switch(boundProp.type){case PropertyBindingType.Property:checkStmts.push(importExpr(createIdentifier(Identifiers.checkRenderProperty)).callFn([view,renderElement,literal(boundProp.name),oldValue,oldValue.set(evalResult.currValExpr),evalResult.forceUpdate||literal(false),securityContext]).toStmt());break;case PropertyBindingType.Attribute:checkStmts.push(importExpr(createIdentifier(Identifiers.checkRenderAttribute)).callFn([view,renderElement,literal(boundProp.name),oldValue,oldValue.set(evalResult.currValExpr),evalResult.forceUpdate||literal(false),securityContext]).toStmt());break;case PropertyBindingType.Class:checkStmts.push(importExpr(createIdentifier(Identifiers.checkRenderClass)).callFn([view,renderElement,literal(boundProp.name),oldValue,oldValue.set(evalResult.currValExpr),evalResult.forceUpdate||literal(false)]).toStmt());break;case PropertyBindingType.Style:checkStmts.push(importExpr(createIdentifier(Identifiers.checkRenderStyle)).callFn([view,renderElement,literal(boundProp.name),literal(boundProp.unit),oldValue,oldValue.set(evalResult.currValExpr),evalResult.forceUpdate||literal(false),securityContext]).toStmt());break;case PropertyBindingType.Animation:throw new Error('Illegal state: Should not come here!');}return checkStmts;}/**
- * @param {?} boundProp
- * @param {?=} securityContextExpression
- * @return {?}
- */function calcSecurityContext(boundProp,securityContextExpression){if(boundProp.securityContext===SecurityContext.NONE){return NULL_EXPR;// No sanitization needed.
-}if(!boundProp.needsRuntimeSecurityContext){securityContextExpression=createEnumExpression(Identifiers.SecurityContext,boundProp.securityContext);}if(!securityContextExpression){throw new Error('internal error, no SecurityContext given '+boundProp.name);}return securityContextExpression;}/**
- * @param {?} view
- * @param {?} componentView
- * @param {?} boundProp
- * @param {?} boundOutputs
- * @param {?} eventListener
- * @param {?} renderElement
- * @param {?} oldValue
- * @param {?} evalResult
- * @return {?}
- */function createCheckAnimationBindingStmts(view,componentView,boundProp,boundOutputs,eventListener,renderElement,oldValue,evalResult){var/** @type {?} */detachStmts=[];var/** @type {?} */updateStmts=[];var/** @type {?} */animationName=boundProp.name;var/** @type {?} */animationFnExpr=componentView.prop('componentType').prop('animations').key(literal(animationName));// it's important to normalize the void value as `void` explicitly
-// so that the styles data can be obtained from the stringmap
-var/** @type {?} */emptyStateValue=literal(ɵEMPTY_STATE);var/** @type {?} */animationTransitionVar=variable('animationTransition_'+animationName);updateStmts.push(animationTransitionVar.set(animationFnExpr.callFn([view,renderElement,isFirstViewCheck(view).conditional(emptyStateValue,oldValue),evalResult.currValExpr])).toDeclStmt());updateStmts.push(oldValue.set(evalResult.currValExpr).toStmt());detachStmts.push(animationTransitionVar.set(animationFnExpr.callFn([view,renderElement,evalResult.currValExpr,emptyStateValue])).toDeclStmt());var/** @type {?} */registerStmts=[];var/** @type {?} */animationStartMethodExists=boundOutputs.find(function(event){return event.isAnimation&&event.name==animationName&&event.phase=='start';});if(animationStartMethodExists){registerStmts.push(animationTransitionVar.callMethod('onStart',[eventListener.callMethod(BuiltinMethod.Bind,[view,literal(BoundEventAst.calcFullName(animationName,null,'start'))])]).toStmt());}var/** @type {?} */animationDoneMethodExists=boundOutputs.find(function(event){return event.isAnimation&&event.name==animationName&&event.phase=='done';});if(animationDoneMethodExists){registerStmts.push(animationTransitionVar.callMethod('onDone',[eventListener.callMethod(BuiltinMethod.Bind,[view,literal(BoundEventAst.calcFullName(animationName,null,'done'))])]).toStmt());}updateStmts.push.apply(updateStmts,registerStmts);detachStmts.push.apply(detachStmts,registerStmts);var/** @type {?} */checkUpdateStmts=[].concat(_toConsumableArray(evalResult.stmts),[new IfStmt(importExpr(createIdentifier(Identifiers.checkBinding)).callFn([view,oldValue,evalResult.currValExpr,evalResult.forceUpdate||literal(false)]),updateStmts)]);var/** @type {?} */checkDetachStmts=[].concat(_toConsumableArray(evalResult.stmts),detachStmts);return{checkUpdateStmts:checkUpdateStmts,checkDetachStmts:checkDetachStmts};}/**
+ */function literal(value){var type=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var sourceSpan=arguments[2];return new LiteralExpr(value,type,sourceSpan);}/**
  * Create a new class stmts based on the given data.
  * @param {?} config
  * @return {?}
  */function createClassStmt(config){var/** @type {?} */parentArgs=config.parentArgs||[];var/** @type {?} */superCtorStmts=config.parent?[SUPER_EXPR.callFn(parentArgs).toStmt()]:[];var/** @type {?} */builder=concatClassBuilderParts(Array.isArray(config.builders)?config.builders:[config.builders]);var/** @type {?} */ctor=new ClassMethod(null,config.ctorParams||[],superCtorStmts.concat(builder.ctorStmts));return new ClassStmt(config.name,config.parent,builder.fields,builder.getters,ctor,builder.methods,config.modifiers||[],config.sourceSpan);}/**
  * @param {?} builders
  * @return {?}
- */function concatClassBuilderParts(builders){var _ref29,_ref30,_ref31,_ref32;return{fields:(_ref29=[]).concat.apply(_ref29,_toConsumableArray(builders.map(function(builder){return builder.fields||[];}))),methods:(_ref30=[]).concat.apply(_ref30,_toConsumableArray(builders.map(function(builder){return builder.methods||[];}))),getters:(_ref31=[]).concat.apply(_ref31,_toConsumableArray(builders.map(function(builder){return builder.getters||[];}))),ctorStmts:(_ref32=[]).concat.apply(_ref32,_toConsumableArray(builders.map(function(builder){return builder.ctorStmts||[];})))};}var DirectiveWrapperCompileResult=/**
-     * @param {?} statements
-     * @param {?} dirWrapperClassVar
-     */function DirectiveWrapperCompileResult(statements,dirWrapperClassVar){_classCallCheck(this,DirectiveWrapperCompileResult);this.statements=statements;this.dirWrapperClassVar=dirWrapperClassVar;};var/** @type {?} */CONTEXT_FIELD_NAME='context';var/** @type {?} */CHANGES_FIELD_NAME='_changes';var/** @type {?} */CHANGED_FIELD_NAME='_changed';var/** @type {?} */EVENT_HANDLER_FIELD_NAME='_eventHandler';var/** @type {?} */CHANGE_VAR=variable('change');var/** @type {?} */CURR_VALUE_VAR=variable('currValue');var/** @type {?} */FORCE_UPDATE_VAR=variable('forceUpdate');var/** @type {?} */VIEW_VAR=variable('view');var/** @type {?} */COMPONENT_VIEW_VAR=variable('componentView');var/** @type {?} */RENDER_EL_VAR=variable('el');var/** @type {?} */EVENT_NAME_VAR=variable('eventName');var/** @type {?} */RESET_CHANGES_STMT=THIS_EXPR.prop(CHANGES_FIELD_NAME).set(literalMap([])).toStmt();/**
- * We generate directive wrappers to prevent code bloat when a directive is used.
- * A directive wrapper encapsulates
- * the dirty checking for `\@Input`, the handling of `\@HostListener` / `\@HostBinding`
- * and calling the lifecyclehooks `ngOnInit`, `ngOnChanges`, `ngDoCheck`.
- *
- * So far, only `\@Input` and the lifecycle hooks have been implemented.
- */var DirectiveWrapperCompiler=function(){/**
-     * @param {?} compilerConfig
-     * @param {?} _exprParser
-     * @param {?} _schemaRegistry
-     * @param {?} _console
-     */function DirectiveWrapperCompiler(compilerConfig,_exprParser,_schemaRegistry,_console){_classCallCheck(this,DirectiveWrapperCompiler);this.compilerConfig=compilerConfig;this._exprParser=_exprParser;this._schemaRegistry=_schemaRegistry;this._console=_console;}/**
-     * @param {?} dirMeta
-     * @return {?}
-     */_createClass(DirectiveWrapperCompiler,[{key:'compile',value:function compile(dirMeta){var/** @type {?} */hostParseResult=parseHostBindings(dirMeta,this._exprParser,this._schemaRegistry);reportParseErrors(hostParseResult.errors,this._console);var/** @type {?} */builder=new DirectiveWrapperBuilder(this.compilerConfig,dirMeta);Object.keys(dirMeta.inputs).forEach(function(inputFieldName){addCheckInputMethod(inputFieldName,builder);});addNgDoCheckMethod(builder);addCheckHostMethod(hostParseResult.hostProps,hostParseResult.hostListeners,builder);addHandleEventMethod(hostParseResult.hostListeners,builder);addSubscribeMethod(dirMeta,builder);var/** @type {?} */classStmt=builder.build();return new DirectiveWrapperCompileResult([classStmt],classStmt.name);}}]);return DirectiveWrapperCompiler;}();DirectiveWrapperCompiler.decorators=[{type:CompilerInjectable}];/** @nocollapse */DirectiveWrapperCompiler.ctorParameters=function(){return[{type:CompilerConfig},{type:Parser},{type:ElementSchemaRegistry},{type:ɵConsole}];};var DirectiveWrapperBuilder=function(){/**
-     * @param {?} compilerConfig
-     * @param {?} dirMeta
-     */function DirectiveWrapperBuilder(compilerConfig,dirMeta){_classCallCheck(this,DirectiveWrapperBuilder);this.compilerConfig=compilerConfig;this.dirMeta=dirMeta;this.fields=[];this.getters=[];this.methods=[];this.ctorStmts=[];this.detachStmts=[];this.destroyStmts=[];var dirLifecycleHooks=dirMeta.type.lifecycleHooks;this.genChanges=dirLifecycleHooks.indexOf(ɵLifecycleHooks.OnChanges)!==-1||this.compilerConfig.logBindingUpdate;this.ngOnChanges=dirLifecycleHooks.indexOf(ɵLifecycleHooks.OnChanges)!==-1;this.ngOnInit=dirLifecycleHooks.indexOf(ɵLifecycleHooks.OnInit)!==-1;this.ngDoCheck=dirLifecycleHooks.indexOf(ɵLifecycleHooks.DoCheck)!==-1;this.ngOnDestroy=dirLifecycleHooks.indexOf(ɵLifecycleHooks.OnDestroy)!==-1;if(this.ngOnDestroy){this.destroyStmts.push(THIS_EXPR.prop(CONTEXT_FIELD_NAME).callMethod('ngOnDestroy',[]).toStmt());}}/**
-     * @return {?}
-     */_createClass(DirectiveWrapperBuilder,[{key:'build',value:function build(){var/** @type {?} */dirDepParamNames=[];for(var/** @type {?} */i=0;i<this.dirMeta.type.diDeps.length;i++){dirDepParamNames.push('p'+i);}var/** @type {?} */methods=[new ClassMethod('ngOnDetach',[new FnParam(VIEW_VAR.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(COMPONENT_VIEW_VAR.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(RENDER_EL_VAR.name,DYNAMIC_TYPE)],this.detachStmts),new ClassMethod('ngOnDestroy',[],this.destroyStmts)];var/** @type {?} */fields=[new ClassField(EVENT_HANDLER_FIELD_NAME,FUNCTION_TYPE,[StmtModifier.Private]),new ClassField(CONTEXT_FIELD_NAME,importType(this.dirMeta.type)),new ClassField(CHANGED_FIELD_NAME,BOOL_TYPE,[StmtModifier.Private])];var/** @type {?} */ctorStmts=[THIS_EXPR.prop(CHANGED_FIELD_NAME).set(literal(false)).toStmt()];if(this.genChanges){fields.push(new ClassField(CHANGES_FIELD_NAME,new MapType(DYNAMIC_TYPE),[StmtModifier.Private]));ctorStmts.push(RESET_CHANGES_STMT);}ctorStmts.push(THIS_EXPR.prop(CONTEXT_FIELD_NAME).set(importExpr(this.dirMeta.type).instantiate(dirDepParamNames.map(function(paramName){return variable(paramName);}))).toStmt());return createClassStmt({name:dirWrapperClassName(this.dirMeta.type.reference),ctorParams:dirDepParamNames.map(function(paramName){return new FnParam(paramName,DYNAMIC_TYPE);}),builders:[{fields:fields,ctorStmts:ctorStmts,methods:methods},this]});}}]);return DirectiveWrapperBuilder;}();/**
- * @param {?} builder
- * @return {?}
- */function addNgDoCheckMethod(builder){var/** @type {?} */changedVar=variable('changed');var/** @type {?} */stmts=[changedVar.set(THIS_EXPR.prop(CHANGED_FIELD_NAME)).toDeclStmt(),THIS_EXPR.prop(CHANGED_FIELD_NAME).set(literal(false)).toStmt()];var/** @type {?} */lifecycleStmts=[];if(builder.genChanges){var/** @type {?} */onChangesStmts=[];if(builder.ngOnChanges){onChangesStmts.push(THIS_EXPR.prop(CONTEXT_FIELD_NAME).callMethod('ngOnChanges',[THIS_EXPR.prop(CHANGES_FIELD_NAME)]).toStmt());}if(builder.compilerConfig.logBindingUpdate){onChangesStmts.push(importExpr(createIdentifier(Identifiers.setBindingDebugInfoForChanges)).callFn([VIEW_VAR.prop('renderer'),RENDER_EL_VAR,THIS_EXPR.prop(CHANGES_FIELD_NAME)]).toStmt());}onChangesStmts.push(RESET_CHANGES_STMT);lifecycleStmts.push(new IfStmt(changedVar,onChangesStmts));}if(builder.ngOnInit){lifecycleStmts.push(new IfStmt(isFirstViewCheck(VIEW_VAR),[THIS_EXPR.prop(CONTEXT_FIELD_NAME).callMethod('ngOnInit',[]).toStmt()]));}if(builder.ngDoCheck){lifecycleStmts.push(THIS_EXPR.prop(CONTEXT_FIELD_NAME).callMethod('ngDoCheck',[]).toStmt());}if(lifecycleStmts.length>0){stmts.push(new IfStmt(not(VIEW_VAR.prop('throwOnChange')),lifecycleStmts));}stmts.push(new ReturnStatement(changedVar));builder.methods.push(new ClassMethod('ngDoCheck',[new FnParam(VIEW_VAR.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(RENDER_EL_VAR.name,DYNAMIC_TYPE)],stmts,BOOL_TYPE));}/**
- * @param {?} input
- * @param {?} builder
- * @return {?}
- */function addCheckInputMethod(input,builder){var/** @type {?} */field=createCheckBindingField(builder);var/** @type {?} */onChangeStatements=[THIS_EXPR.prop(CHANGED_FIELD_NAME).set(literal(true)).toStmt(),THIS_EXPR.prop(CONTEXT_FIELD_NAME).prop(input).set(CURR_VALUE_VAR).toStmt(),field.expression.set(CURR_VALUE_VAR).toStmt()];var/** @type {?} */methodBody=void 0;if(builder.genChanges){onChangeStatements.push(THIS_EXPR.prop(CHANGES_FIELD_NAME).key(literal(input)).set(CHANGE_VAR).toStmt());methodBody=[CHANGE_VAR.set(importExpr(createIdentifier(Identifiers.checkBindingChange)).callFn([VIEW_VAR,field.expression,CURR_VALUE_VAR,FORCE_UPDATE_VAR])).toDeclStmt(),new IfStmt(CHANGE_VAR,onChangeStatements)];}else{methodBody=[new IfStmt(importExpr(createIdentifier(Identifiers.checkBinding)).callFn([VIEW_VAR,field.expression,CURR_VALUE_VAR,FORCE_UPDATE_VAR]),onChangeStatements)];}builder.methods.push(new ClassMethod('check_'+input,[new FnParam(VIEW_VAR.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(CURR_VALUE_VAR.name,DYNAMIC_TYPE),new FnParam(FORCE_UPDATE_VAR.name,BOOL_TYPE)],methodBody));}/**
- * @param {?} hostProps
- * @param {?} hostEvents
- * @param {?} builder
- * @return {?}
- */function addCheckHostMethod(hostProps,hostEvents,builder){var/** @type {?} */stmts=[];var/** @type {?} */methodParams=[new FnParam(VIEW_VAR.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(COMPONENT_VIEW_VAR.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(RENDER_EL_VAR.name,DYNAMIC_TYPE)];hostProps.forEach(function(hostProp,hostPropIdx){var/** @type {?} */field=createCheckBindingField(builder);var/** @type {?} */evalResult=legacyConvertPropertyBinding(builder,null,THIS_EXPR.prop(CONTEXT_FIELD_NAME),hostProp.value,field.bindingId);if(!evalResult){return;}var/** @type {?} */securityContextExpr=void 0;if(hostProp.needsRuntimeSecurityContext){securityContextExpr=variable('secCtx_'+methodParams.length);methodParams.push(new FnParam(securityContextExpr.name,importType(createIdentifier(Identifiers.SecurityContext))));}if(hostProp.isAnimation){var _builder$detachStmts;var _createCheckAnimation=createCheckAnimationBindingStmts(VIEW_VAR,COMPONENT_VIEW_VAR,hostProp,hostEvents,THIS_EXPR.prop(EVENT_HANDLER_FIELD_NAME).or(importExpr(createIdentifier(Identifiers.noop))),RENDER_EL_VAR,field.expression,evalResult),checkUpdateStmts=_createCheckAnimation.checkUpdateStmts,checkDetachStmts=_createCheckAnimation.checkDetachStmts;(_builder$detachStmts=builder.detachStmts).push.apply(_builder$detachStmts,_toConsumableArray(checkDetachStmts));stmts.push.apply(stmts,_toConsumableArray(checkUpdateStmts));}else{stmts.push.apply(stmts,_toConsumableArray(createCheckRenderBindingStmt(VIEW_VAR,RENDER_EL_VAR,hostProp,field.expression,evalResult,securityContextExpr)));}});builder.methods.push(new ClassMethod('checkHost',methodParams,stmts));}/**
- * @param {?} hostListeners
- * @param {?} builder
- * @return {?}
- */function addHandleEventMethod(hostListeners,builder){var/** @type {?} */resultVar=variable('result');var/** @type {?} */actionStmts=[resultVar.set(literal(true)).toDeclStmt(BOOL_TYPE)];hostListeners.forEach(function(hostListener,eventIdx){var/** @type {?} */evalResult=convertActionBinding(null,THIS_EXPR.prop(CONTEXT_FIELD_NAME),hostListener.handler,'sub_'+eventIdx);var/** @type {?} */trueStmts=evalResult.stmts;if(evalResult.allowDefault){trueStmts.push(resultVar.set(evalResult.allowDefault.and(resultVar)).toStmt());}// TODO(tbosch): convert this into a `switch` once our OutputAst supports it.
-actionStmts.push(new IfStmt(EVENT_NAME_VAR.equals(literal(hostListener.fullName)),trueStmts));});actionStmts.push(new ReturnStatement(resultVar));builder.methods.push(new ClassMethod('handleEvent',[new FnParam(EVENT_NAME_VAR.name,STRING_TYPE),new FnParam(EventHandlerVars.event.name,DYNAMIC_TYPE)],actionStmts,BOOL_TYPE));}/**
- * @param {?} dirMeta
- * @param {?} builder
- * @return {?}
- */function addSubscribeMethod(dirMeta,builder){var/** @type {?} */methodParams=[new FnParam(VIEW_VAR.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(EVENT_HANDLER_FIELD_NAME,DYNAMIC_TYPE)];var/** @type {?} */stmts=[THIS_EXPR.prop(EVENT_HANDLER_FIELD_NAME).set(variable(EVENT_HANDLER_FIELD_NAME)).toStmt()];Object.keys(dirMeta.outputs).forEach(function(emitterPropName,emitterIdx){var/** @type {?} */eventName=dirMeta.outputs[emitterPropName];var/** @type {?} */paramName='emit'+emitterIdx;methodParams.push(new FnParam(paramName,BOOL_TYPE));var/** @type {?} */subscriptionFieldName='subscription'+emitterIdx;builder.fields.push(new ClassField(subscriptionFieldName,DYNAMIC_TYPE));stmts.push(new IfStmt(variable(paramName),[THIS_EXPR.prop(subscriptionFieldName).set(THIS_EXPR.prop(CONTEXT_FIELD_NAME).prop(emitterPropName).callMethod(BuiltinMethod.SubscribeObservable,[variable(EVENT_HANDLER_FIELD_NAME).callMethod(BuiltinMethod.Bind,[VIEW_VAR,literal(eventName)])])).toStmt()]));builder.destroyStmts.push(THIS_EXPR.prop(subscriptionFieldName).and(THIS_EXPR.prop(subscriptionFieldName).callMethod('unsubscribe',[])).toStmt());});builder.methods.push(new ClassMethod('subscribe',methodParams,stmts));}var ParseResult=/**
-     * @param {?} hostProps
-     * @param {?} hostListeners
-     * @param {?} errors
-     */function ParseResult(hostProps,hostListeners,errors){_classCallCheck(this,ParseResult);this.hostProps=hostProps;this.hostListeners=hostListeners;this.errors=errors;};/**
- * @param {?} dirMeta
- * @param {?} exprParser
- * @param {?} schemaRegistry
- * @return {?}
- */function parseHostBindings(dirMeta,exprParser,schemaRegistry){var/** @type {?} */errors=[];var/** @type {?} */parser=new BindingParser(exprParser,DEFAULT_INTERPOLATION_CONFIG,schemaRegistry,[],errors);var/** @type {?} */moduleUrl=identifierModuleUrl(dirMeta.type);var/** @type {?} */sourceFileName=moduleUrl?'in Directive '+identifierName(dirMeta.type)+' in '+moduleUrl:'in Directive '+identifierName(dirMeta.type);var/** @type {?} */sourceFile=new ParseSourceFile('',sourceFileName);var/** @type {?} */sourceSpan=new ParseSourceSpan(new ParseLocation(sourceFile,null,null,null),new ParseLocation(sourceFile,null,null,null));var/** @type {?} */parsedHostProps=parser.createDirectiveHostPropertyAsts(dirMeta.toSummary(),dirMeta.selector,sourceSpan);var/** @type {?} */parsedHostListeners=parser.createDirectiveHostEventAsts(dirMeta.toSummary(),sourceSpan);return new ParseResult(parsedHostProps,parsedHostListeners,errors);}/**
- * @param {?} parseErrors
- * @param {?} console
- * @return {?}
- */function reportParseErrors(parseErrors,console){var/** @type {?} */warnings=parseErrors.filter(function(error){return error.level===ParseErrorLevel.WARNING;});var/** @type {?} */errors=parseErrors.filter(function(error){return error.level===ParseErrorLevel.FATAL;});if(warnings.length>0){this._console.warn('Directive parse warnings:\n'+warnings.join('\n'));}if(errors.length>0){throw new Error('Directive parse errors:\n'+errors.join('\n'));}}var DirectiveWrapperExpressions=function(){function DirectiveWrapperExpressions(){_classCallCheck(this,DirectiveWrapperExpressions);}_createClass(DirectiveWrapperExpressions,null,[{key:'create',/**
-     * @param {?} dir
-     * @param {?} depsExpr
-     * @return {?}
-     */value:function create(dir,depsExpr){return importExpr(dir).instantiate(depsExpr,importType(dir));}/**
-     * @param {?} dirWrapper
-     * @return {?}
-     */},{key:'context',value:function context(dirWrapper){return dirWrapper.prop(CONTEXT_FIELD_NAME);}/**
-     * @param {?} dirWrapper
-     * @param {?} view
-     * @param {?} renderElement
-     * @return {?}
-     */},{key:'ngDoCheck',value:function ngDoCheck(dirWrapper,view,renderElement){return dirWrapper.callMethod('ngDoCheck',[view,renderElement]);}/**
-     * @param {?} hostProps
-     * @param {?} dirWrapper
-     * @param {?} view
-     * @param {?} componentView
-     * @param {?} renderElement
-     * @param {?} runtimeSecurityContexts
-     * @return {?}
-     */},{key:'checkHost',value:function checkHost(hostProps,dirWrapper,view,componentView,renderElement,runtimeSecurityContexts){if(hostProps.length){return[dirWrapper.callMethod('checkHost',[view,componentView,renderElement].concat(runtimeSecurityContexts)).toStmt()];}else{return[];}}/**
-     * @param {?} hostProps
-     * @param {?} dirWrapper
-     * @param {?} view
-     * @param {?} componentView
-     * @param {?} renderEl
-     * @return {?}
-     */},{key:'ngOnDetach',value:function ngOnDetach(hostProps,dirWrapper,view,componentView,renderEl){if(hostProps.some(function(prop){return prop.isAnimation;})){return[dirWrapper.callMethod('ngOnDetach',[view,componentView,renderEl]).toStmt()];}else{return[];}}/**
-     * @param {?} dir
-     * @param {?} dirWrapper
-     * @return {?}
-     */},{key:'ngOnDestroy',value:function ngOnDestroy(dir,dirWrapper){if(dir.type.lifecycleHooks.indexOf(ɵLifecycleHooks.OnDestroy)!==-1||Object.keys(dir.outputs).length>0){return[dirWrapper.callMethod('ngOnDestroy',[]).toStmt()];}else{return[];}}/**
-     * @param {?} dirMeta
-     * @param {?} hostProps
-     * @param {?} usedEvents
-     * @param {?} dirWrapper
-     * @param {?} view
-     * @param {?} eventListener
-     * @return {?}
-     */},{key:'subscribe',value:function subscribe(dirMeta,hostProps,usedEvents,dirWrapper,view,eventListener){var/** @type {?} */needsSubscribe=false;var/** @type {?} */eventFlags=[];Object.keys(dirMeta.outputs).forEach(function(propName){var/** @type {?} */eventName=dirMeta.outputs[propName];var/** @type {?} */eventUsed=usedEvents.indexOf(eventName)>-1;needsSubscribe=needsSubscribe||eventUsed;eventFlags.push(literal(eventUsed));});hostProps.forEach(function(hostProp){if(hostProp.isAnimation&&usedEvents.length>0){needsSubscribe=true;}});if(needsSubscribe){return[dirWrapper.callMethod('subscribe',[view,eventListener].concat(eventFlags)).toStmt()];}else{return[];}}/**
-     * @param {?} hostEvents
-     * @param {?} dirWrapper
-     * @param {?} eventName
-     * @param {?} event
-     * @return {?}
-     */},{key:'handleEvent',value:function handleEvent(hostEvents,dirWrapper,eventName,event){return dirWrapper.callMethod('handleEvent',[eventName,event]);}}]);return DirectiveWrapperExpressions;}();/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */var/** @type {?} */STRIP_SRC_FILE_SUFFIXES=/(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;var/** @type {?} */NG_FACTORY=/\.ngfactory\./;/**
- * @param {?} filePath
- * @return {?}
- */function ngfactoryFilePath(filePath){var/** @type {?} */urlWithSuffix=splitTypescriptSuffix(filePath);return urlWithSuffix[0]+'.ngfactory'+urlWithSuffix[1];}/**
- * @param {?} filePath
- * @return {?}
- */function stripNgFactory(filePath){return filePath.replace(NG_FACTORY,'.');}/**
- * @param {?} filePath
- * @return {?}
- */function isNgFactoryFile(filePath){return NG_FACTORY.test(filePath);}/**
- * @param {?} path
- * @return {?}
- */function splitTypescriptSuffix(path){if(path.endsWith('.d.ts')){return[path.slice(0,-5),'.ts'];}var/** @type {?} */lastDot=path.lastIndexOf('.');if(lastDot!==-1){return[path.substring(0,lastDot),path.substring(lastDot)];}return[path,''];}/**
- * @param {?} fileName
- * @return {?}
- */function summaryFileName(fileName){var/** @type {?} */fileNameWithoutSuffix=fileName.replace(STRIP_SRC_FILE_SUFFIXES,'');return fileNameWithoutSuffix+'.ngsummary.json';}/**
- * @param {?} hook
- * @param {?} token
- * @return {?}
- */function hasLifecycleHook(hook,token){return ɵreflector.hasLifecycleHook(token,getHookName(hook));}/**
- * @param {?} hook
- * @return {?}
- */function getHookName(hook){switch(hook){case ɵLifecycleHooks.OnInit:return'ngOnInit';case ɵLifecycleHooks.OnDestroy:return'ngOnDestroy';case ɵLifecycleHooks.DoCheck:return'ngDoCheck';case ɵLifecycleHooks.OnChanges:return'ngOnChanges';case ɵLifecycleHooks.AfterContentInit:return'ngAfterContentInit';case ɵLifecycleHooks.AfterContentChecked:return'ngAfterContentChecked';case ɵLifecycleHooks.AfterViewInit:return'ngAfterViewInit';case ɵLifecycleHooks.AfterViewChecked:return'ngAfterViewChecked';}}/**
- * @param {?} obj
- * @return {?}
- */function _isNgModuleMetadata(obj){return obj instanceof NgModule;}/**
- * Resolves types to {\@link NgModule}.
- */var NgModuleResolver=function(){/**
-     * @param {?=} _reflector
-     */function NgModuleResolver(){var _reflector=arguments.length>0&&arguments[0]!==undefined?arguments[0]:ɵreflector;_classCallCheck(this,NgModuleResolver);this._reflector=_reflector;}/**
-     * @param {?} type
-     * @return {?}
-     */_createClass(NgModuleResolver,[{key:'isNgModule',value:function isNgModule(type){return this._reflector.annotations(type).some(_isNgModuleMetadata);}/**
-     * @param {?} type
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */},{key:'resolve',value:function resolve(type){var throwIfNotFound=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;var/** @type {?} */ngModuleMeta=ListWrapper.findLast(this._reflector.annotations(type),_isNgModuleMetadata);if(ngModuleMeta){return ngModuleMeta;}else{if(throwIfNotFound){throw new Error('No NgModule metadata found for \''+stringify(type)+'\'.');}return null;}}}]);return NgModuleResolver;}();NgModuleResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */NgModuleResolver.ctorParameters=function(){return[{type:ɵReflectorReader}];};/**
- * @param {?} type
- * @return {?}
- */function _isPipeMetadata(type){return type instanceof Pipe;}/**
- * Resolve a `Type` for {\@link Pipe}.
- *
- * This interface can be overridden by the application developer to create custom behavior.
- *
- * See {\@link Compiler}
- */var PipeResolver=function(){/**
-     * @param {?=} _reflector
-     */function PipeResolver(){var _reflector=arguments.length>0&&arguments[0]!==undefined?arguments[0]:ɵreflector;_classCallCheck(this,PipeResolver);this._reflector=_reflector;}/**
-     * @param {?} type
-     * @return {?}
-     */_createClass(PipeResolver,[{key:'isPipe',value:function isPipe(type){var/** @type {?} */typeMetadata=this._reflector.annotations(resolveForwardRef(type));return typeMetadata&&typeMetadata.some(_isPipeMetadata);}/**
-     * Return {\@link Pipe} for a given `Type`.
-     * @param {?} type
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */},{key:'resolve',value:function resolve(type){var throwIfNotFound=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;var/** @type {?} */metas=this._reflector.annotations(resolveForwardRef(type));if(metas){var/** @type {?} */annotation=ListWrapper.findLast(metas,_isPipeMetadata);if(annotation){return annotation;}}if(throwIfNotFound){throw new Error('No Pipe decorator found on '+stringify(type));}return null;}}]);return PipeResolver;}();PipeResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */PipeResolver.ctorParameters=function(){return[{type:ɵReflectorReader}];};var SummaryResolver=function(){function SummaryResolver(){_classCallCheck(this,SummaryResolver);}_createClass(SummaryResolver,[{key:'isLibraryFile',/**
-     * @param {?} fileName
-     * @return {?}
-     */value:function isLibraryFile(fileName){return false;}},{key:'getLibraryFileName',/**
-     * @param {?} fileName
-     * @return {?}
-     */value:function getLibraryFileName(fileName){return null;}/**
-     * @param {?} reference
-     * @return {?}
-     */},{key:'resolveSummary',value:function resolveSummary(reference){return null;}},{key:'getSymbolsOf',/**
-     * @param {?} filePath
-     * @return {?}
-     */value:function getSymbolsOf(filePath){return[];}/**
-     * @param {?} reference
-     * @return {?}
-     */},{key:'getImportAs',value:function getImportAs(reference){return reference;}}]);return SummaryResolver;}();SummaryResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */SummaryResolver.ctorParameters=function(){return[];};var/** @type {?} */ERROR_COLLECTOR_TOKEN=new InjectionToken('ErrorCollector');var CompileMetadataResolver=function(){/**
-     * @param {?} _config
-     * @param {?} _ngModuleResolver
-     * @param {?} _directiveResolver
-     * @param {?} _pipeResolver
-     * @param {?} _summaryResolver
-     * @param {?} _schemaRegistry
-     * @param {?} _directiveNormalizer
-     * @param {?} _staticSymbolCache
-     * @param {?=} _reflector
-     * @param {?=} _errorCollector
-     */function CompileMetadataResolver(_config,_ngModuleResolver,_directiveResolver,_pipeResolver,_summaryResolver,_schemaRegistry,_directiveNormalizer,_staticSymbolCache){var _reflector=arguments.length>8&&arguments[8]!==undefined?arguments[8]:ɵreflector;var _errorCollector=arguments[9];_classCallCheck(this,CompileMetadataResolver);this._config=_config;this._ngModuleResolver=_ngModuleResolver;this._directiveResolver=_directiveResolver;this._pipeResolver=_pipeResolver;this._summaryResolver=_summaryResolver;this._schemaRegistry=_schemaRegistry;this._directiveNormalizer=_directiveNormalizer;this._staticSymbolCache=_staticSymbolCache;this._reflector=_reflector;this._errorCollector=_errorCollector;this._nonNormalizedDirectiveCache=new Map();this._directiveCache=new Map();this._summaryCache=new Map();this._pipeCache=new Map();this._ngModuleCache=new Map();this._ngModuleOfTypes=new Map();}/**
-     * @param {?} type
-     * @return {?}
-     */_createClass(CompileMetadataResolver,[{key:'clearCacheFor',value:function clearCacheFor(type){var/** @type {?} */dirMeta=this._directiveCache.get(type);this._directiveCache.delete(type);this._nonNormalizedDirectiveCache.delete(type);this._summaryCache.delete(type);this._pipeCache.delete(type);this._ngModuleOfTypes.delete(type);// Clear all of the NgModule as they contain transitive information!
-this._ngModuleCache.clear();if(dirMeta){this._directiveNormalizer.clearCacheFor(dirMeta);}}/**
-     * @return {?}
-     */},{key:'clearCache',value:function clearCache(){this._directiveCache.clear();this._nonNormalizedDirectiveCache.clear();this._summaryCache.clear();this._pipeCache.clear();this._ngModuleCache.clear();this._ngModuleOfTypes.clear();this._directiveNormalizer.clearCache();}/**
-     * @param {?} baseType
-     * @param {?} name
-     * @return {?}
-     */},{key:'_createProxyClass',value:function _createProxyClass(baseType,name){var/** @type {?} */delegate=null;var/** @type {?} */proxyClass=function proxyClass(){if(!delegate){throw new Error('Illegal state: Class '+name+' for type '+stringify(baseType)+' is not compiled yet!');}return delegate.apply(this,arguments);};proxyClass.setDelegate=function(d){delegate=d;proxyClass.prototype=d.prototype;};// Make stringify work correctly
-proxyClass.overriddenName=name;return proxyClass;}/**
-     * @param {?} dirType
-     * @param {?} name
-     * @return {?}
-     */},{key:'getGeneratedClass',value:function getGeneratedClass(dirType,name){if(dirType instanceof StaticSymbol){return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath),name);}else{return this._createProxyClass(dirType,name);}}/**
-     * @param {?} dirType
-     * @return {?}
-     */},{key:'getDirectiveWrapperClass',value:function getDirectiveWrapperClass(dirType){if(!this._config.useViewEngine){return this.getGeneratedClass(dirType,dirWrapperClassName(dirType));}return null;}/**
-     * @param {?} dirType
-     * @return {?}
-     */},{key:'getComponentViewClass',value:function getComponentViewClass(dirType){return this.getGeneratedClass(dirType,viewClassName(dirType,0));}/**
-     * @param {?} dirType
-     * @return {?}
-     */},{key:'getHostComponentViewClass',value:function getHostComponentViewClass(dirType){return this.getGeneratedClass(dirType,hostViewClassName(dirType));}/**
-     * @param {?} dirType
-     * @return {?}
-     */},{key:'getHostComponentType',value:function getHostComponentType(dirType){var/** @type {?} */name=identifierName({reference:dirType})+'_Host';if(dirType instanceof StaticSymbol){return this._staticSymbolCache.get(dirType.filePath,name);}else{var/** @type {?} */HostClass=function HostClass(){};HostClass.overriddenName=name;return HostClass;}}/**
-     * @param {?} dirType
-     * @return {?}
-     */},{key:'getRendererType',value:function getRendererType(dirType){if(dirType instanceof StaticSymbol){return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath),rendererTypeName(dirType));}else{// returning an object as proxy,
-// that we fill later during runtime compilation.
-return{};}}/**
-     * @param {?} selector
-     * @param {?} dirType
-     * @return {?}
-     */},{key:'getComponentFactory',value:function getComponentFactory(selector,dirType){if(dirType instanceof StaticSymbol){return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath),componentFactoryName(dirType));}else{var/** @type {?} */hostView=this.getHostComponentViewClass(dirType);if(this._config.useViewEngine){return ɵccf(selector,dirType,/** @type {?} */hostView);}else{return new ComponentFactory(selector,/** @type {?} */hostView,dirType);}}}/**
-     * @param {?} type
-     * @param {?} kind
-     * @return {?}
-     */},{key:'_loadSummary',value:function _loadSummary(type,kind){var/** @type {?} */typeSummary=this._summaryCache.get(type);if(!typeSummary){var/** @type {?} */summary=this._summaryResolver.resolveSummary(type);typeSummary=summary?summary.type:null;this._summaryCache.set(type,typeSummary);}return typeSummary&&typeSummary.summaryKind===kind?typeSummary:null;}/**
-     * @param {?} directiveType
-     * @param {?} isSync
-     * @return {?}
-     */},{key:'_loadDirectiveMetadata',value:function _loadDirectiveMetadata(directiveType,isSync){var _this170=this;if(this._directiveCache.has(directiveType)){return;}directiveType=resolveForwardRef(directiveType);var _getNonNormalizedDire=this.getNonNormalizedDirectiveMetadata(directiveType),annotation=_getNonNormalizedDire.annotation,metadata=_getNonNormalizedDire.metadata;var/** @type {?} */createDirectiveMetadata=function createDirectiveMetadata(templateMetadata){var/** @type {?} */normalizedDirMeta=new CompileDirectiveMetadata({type:metadata.type,isComponent:metadata.isComponent,selector:metadata.selector,exportAs:metadata.exportAs,changeDetection:metadata.changeDetection,inputs:metadata.inputs,outputs:metadata.outputs,hostListeners:metadata.hostListeners,hostProperties:metadata.hostProperties,hostAttributes:metadata.hostAttributes,providers:metadata.providers,viewProviders:metadata.viewProviders,queries:metadata.queries,viewQueries:metadata.viewQueries,entryComponents:metadata.entryComponents,wrapperType:metadata.wrapperType,componentViewType:metadata.componentViewType,rendererType:metadata.rendererType,componentFactory:metadata.componentFactory,template:templateMetadata});_this170._directiveCache.set(directiveType,normalizedDirMeta);_this170._summaryCache.set(directiveType,normalizedDirMeta.toSummary());return normalizedDirMeta;};if(metadata.isComponent){var/** @type {?} */templateMeta=this._directiveNormalizer.normalizeTemplate({componentType:directiveType,moduleUrl:componentModuleUrl(this._reflector,directiveType,annotation),encapsulation:metadata.template.encapsulation,template:metadata.template.template,templateUrl:metadata.template.templateUrl,styles:metadata.template.styles,styleUrls:metadata.template.styleUrls,animations:metadata.template.animations,interpolation:metadata.template.interpolation});if(templateMeta.syncResult){createDirectiveMetadata(templateMeta.syncResult);return null;}else{if(isSync){this._reportError(componentStillLoadingError(directiveType),directiveType);return null;}return templateMeta.asyncResult.then(createDirectiveMetadata);}}else{// directive
-createDirectiveMetadata(null);return null;}}/**
-     * @param {?} directiveType
-     * @return {?}
-     */},{key:'getNonNormalizedDirectiveMetadata',value:function getNonNormalizedDirectiveMetadata(directiveType){var _this171=this;directiveType=resolveForwardRef(directiveType);if(!directiveType){return null;}var/** @type {?} */cacheEntry=this._nonNormalizedDirectiveCache.get(directiveType);if(cacheEntry){return cacheEntry;}var/** @type {?} */dirMeta=this._directiveResolver.resolve(directiveType,false);if(!dirMeta){return null;}var/** @type {?} */nonNormalizedTemplateMetadata=void 0;if(dirMeta instanceof Component){// component
-assertArrayOfStrings('styles',dirMeta.styles);assertArrayOfStrings('styleUrls',dirMeta.styleUrls);assertInterpolationSymbols('interpolation',dirMeta.interpolation);var/** @type {?} */animations=dirMeta.animations;nonNormalizedTemplateMetadata=new CompileTemplateMetadata({encapsulation:dirMeta.encapsulation,template:dirMeta.template,templateUrl:dirMeta.templateUrl,styles:dirMeta.styles,styleUrls:dirMeta.styleUrls,animations:animations,interpolation:dirMeta.interpolation});}var/** @type {?} */changeDetectionStrategy=null;var/** @type {?} */viewProviders=[];var/** @type {?} */entryComponentMetadata=[];var/** @type {?} */selector=dirMeta.selector;if(dirMeta instanceof Component){// Component
-changeDetectionStrategy=dirMeta.changeDetection;if(dirMeta.viewProviders){viewProviders=this._getProvidersMetadata(dirMeta.viewProviders,entryComponentMetadata,'viewProviders for "'+stringifyType(directiveType)+'"',[],directiveType);}if(dirMeta.entryComponents){entryComponentMetadata=flattenAndDedupeArray(dirMeta.entryComponents).map(function(type){return _this171._getEntryComponentMetadata(type);}).concat(entryComponentMetadata);}if(!selector){selector=this._schemaRegistry.getDefaultComponentElementName();}}else{// Directive
-if(!selector){this._reportError(syntaxError('Directive '+stringifyType(directiveType)+' has no selector, please add it!'),directiveType);selector='error';}}var/** @type {?} */providers=[];if(dirMeta.providers!=null){providers=this._getProvidersMetadata(dirMeta.providers,entryComponentMetadata,'providers for "'+stringifyType(directiveType)+'"',[],directiveType);}var/** @type {?} */queries=[];var/** @type {?} */viewQueries=[];if(dirMeta.queries!=null){queries=this._getQueriesMetadata(dirMeta.queries,false,directiveType);viewQueries=this._getQueriesMetadata(dirMeta.queries,true,directiveType);}var/** @type {?} */metadata=CompileDirectiveMetadata.create({selector:selector,exportAs:dirMeta.exportAs,isComponent:!!nonNormalizedTemplateMetadata,type:this._getTypeMetadata(directiveType),template:nonNormalizedTemplateMetadata,changeDetection:changeDetectionStrategy,inputs:dirMeta.inputs,outputs:dirMeta.outputs,host:dirMeta.host,providers:providers,viewProviders:viewProviders,queries:queries,viewQueries:viewQueries,entryComponents:entryComponentMetadata,wrapperType:this.getDirectiveWrapperClass(directiveType),componentViewType:nonNormalizedTemplateMetadata?this.getComponentViewClass(directiveType):undefined,rendererType:nonNormalizedTemplateMetadata?this.getRendererType(directiveType):undefined,componentFactory:nonNormalizedTemplateMetadata?this.getComponentFactory(selector,directiveType):undefined});cacheEntry={metadata:metadata,annotation:dirMeta};this._nonNormalizedDirectiveCache.set(directiveType,cacheEntry);return cacheEntry;}/**
-     * Gets the metadata for the given directive.
-     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
-     * @param {?} directiveType
-     * @return {?}
-     */},{key:'getDirectiveMetadata',value:function getDirectiveMetadata(directiveType){var/** @type {?} */dirMeta=this._directiveCache.get(directiveType);if(!dirMeta){this._reportError(syntaxError('Illegal state: getDirectiveMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Directive '+stringifyType(directiveType)+'.'),directiveType);}return dirMeta;}/**
-     * @param {?} dirType
-     * @return {?}
-     */},{key:'getDirectiveSummary',value:function getDirectiveSummary(dirType){var/** @type {?} */dirSummary=this._loadSummary(dirType,CompileSummaryKind.Directive);if(!dirSummary){this._reportError(syntaxError('Illegal state: Could not load the summary for directive '+stringifyType(dirType)+'.'),dirType);}return dirSummary;}/**
-     * @param {?} type
-     * @return {?}
-     */},{key:'isDirective',value:function isDirective(type){return this._directiveResolver.isDirective(type);}/**
-     * @param {?} type
-     * @return {?}
-     */},{key:'isPipe',value:function isPipe(type){return this._pipeResolver.isPipe(type);}/**
-     * @param {?} moduleType
-     * @return {?}
-     */},{key:'getNgModuleSummary',value:function getNgModuleSummary(moduleType){var/** @type {?} */moduleSummary=this._loadSummary(moduleType,CompileSummaryKind.NgModule);if(!moduleSummary){var/** @type {?} */moduleMeta=this.getNgModuleMetadata(moduleType,false);moduleSummary=moduleMeta?moduleMeta.toSummary():null;if(moduleSummary){this._summaryCache.set(moduleType,moduleSummary);}}return moduleSummary;}/**
-     * Loads the declared directives and pipes of an NgModule.
-     * @param {?} moduleType
-     * @param {?} isSync
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */},{key:'loadNgModuleDirectiveAndPipeMetadata',value:function loadNgModuleDirectiveAndPipeMetadata(moduleType,isSync){var _this172=this;var throwIfNotFound=arguments.length>2&&arguments[2]!==undefined?arguments[2]:true;var/** @type {?} */ngModule=this.getNgModuleMetadata(moduleType,throwIfNotFound);var/** @type {?} */loading=[];if(ngModule){ngModule.declaredDirectives.forEach(function(id){var/** @type {?} */promise=_this172._loadDirectiveMetadata(id.reference,isSync);if(promise){loading.push(promise);}});ngModule.declaredPipes.forEach(function(id){return _this172._loadPipeMetadata(id.reference);});}return Promise.all(loading);}/**
-     * @param {?} moduleType
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */},{key:'getNgModuleMetadata',value:function getNgModuleMetadata(moduleType){var _this173=this;var throwIfNotFound=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;moduleType=resolveForwardRef(moduleType);var/** @type {?} */compileMeta=this._ngModuleCache.get(moduleType);if(compileMeta){return compileMeta;}var/** @type {?} */meta=this._ngModuleResolver.resolve(moduleType,throwIfNotFound);if(!meta){return null;}var/** @type {?} */declaredDirectives=[];var/** @type {?} */exportedNonModuleIdentifiers=[];var/** @type {?} */declaredPipes=[];var/** @type {?} */importedModules=[];var/** @type {?} */exportedModules=[];var/** @type {?} */providers=[];var/** @type {?} */entryComponents=[];var/** @type {?} */bootstrapComponents=[];var/** @type {?} */schemas=[];if(meta.imports){flattenAndDedupeArray(meta.imports).forEach(function(importedType){var/** @type {?} */importedModuleType=void 0;if(isValidType(importedType)){importedModuleType=importedType;}else if(importedType&&importedType.ngModule){var/** @type {?} */moduleWithProviders=importedType;importedModuleType=moduleWithProviders.ngModule;if(moduleWithProviders.providers){providers.push.apply(providers,_toConsumableArray(_this173._getProvidersMetadata(moduleWithProviders.providers,entryComponents,'provider for the NgModule \''+stringifyType(importedModuleType)+'\'',[],importedType)));}}if(importedModuleType){var/** @type {?} */importedModuleSummary=_this173.getNgModuleSummary(importedModuleType);if(!importedModuleSummary){_this173._reportError(syntaxError('Unexpected '+_this173._getTypeDescriptor(importedType)+' \''+stringifyType(importedType)+'\' imported by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}importedModules.push(importedModuleSummary);}else{_this173._reportError(syntaxError('Unexpected value \''+stringifyType(importedType)+'\' imported by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}});}if(meta.exports){flattenAndDedupeArray(meta.exports).forEach(function(exportedType){if(!isValidType(exportedType)){_this173._reportError(syntaxError('Unexpected value \''+stringifyType(exportedType)+'\' exported by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}var/** @type {?} */exportedModuleSummary=_this173.getNgModuleSummary(exportedType);if(exportedModuleSummary){exportedModules.push(exportedModuleSummary);}else{exportedNonModuleIdentifiers.push(_this173._getIdentifierMetadata(exportedType));}});}// Note: This will be modified later, so we rely on
-// getting a new instance every time!
-var/** @type {?} */transitiveModule=this._getTransitiveNgModuleMetadata(importedModules,exportedModules);if(meta.declarations){flattenAndDedupeArray(meta.declarations).forEach(function(declaredType){if(!isValidType(declaredType)){_this173._reportError(syntaxError('Unexpected value \''+stringifyType(declaredType)+'\' declared by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}var/** @type {?} */declaredIdentifier=_this173._getIdentifierMetadata(declaredType);if(_this173._directiveResolver.isDirective(declaredType)){transitiveModule.addDirective(declaredIdentifier);declaredDirectives.push(declaredIdentifier);_this173._addTypeToModule(declaredType,moduleType);}else if(_this173._pipeResolver.isPipe(declaredType)){transitiveModule.addPipe(declaredIdentifier);transitiveModule.pipes.push(declaredIdentifier);declaredPipes.push(declaredIdentifier);_this173._addTypeToModule(declaredType,moduleType);}else{_this173._reportError(syntaxError('Unexpected '+_this173._getTypeDescriptor(declaredType)+' \''+stringifyType(declaredType)+'\' declared by the module \''+stringifyType(moduleType)+'\''),moduleType);return;}});}var/** @type {?} */exportedDirectives=[];var/** @type {?} */exportedPipes=[];exportedNonModuleIdentifiers.forEach(function(exportedId){if(transitiveModule.directivesSet.has(exportedId.reference)){exportedDirectives.push(exportedId);transitiveModule.addExportedDirective(exportedId);}else if(transitiveModule.pipesSet.has(exportedId.reference)){exportedPipes.push(exportedId);transitiveModule.addExportedPipe(exportedId);}else{_this173._reportError(syntaxError('Can\'t export '+_this173._getTypeDescriptor(exportedId.reference)+' '+stringifyType(exportedId.reference)+' from '+stringifyType(moduleType)+' as it was neither declared nor imported!'),moduleType);}});// The providers of the module have to go last
-// so that they overwrite any other provider we already added.
-if(meta.providers){providers.push.apply(providers,_toConsumableArray(this._getProvidersMetadata(meta.providers,entryComponents,'provider for the NgModule \''+stringifyType(moduleType)+'\'',[],moduleType)));}if(meta.entryComponents){entryComponents.push.apply(entryComponents,_toConsumableArray(flattenAndDedupeArray(meta.entryComponents).map(function(type){return _this173._getEntryComponentMetadata(type);})));}if(meta.bootstrap){flattenAndDedupeArray(meta.bootstrap).forEach(function(type){if(!isValidType(type)){_this173._reportError(syntaxError('Unexpected value \''+stringifyType(type)+'\' used in the bootstrap property of module \''+stringifyType(moduleType)+'\''),moduleType);return;}bootstrapComponents.push(_this173._getIdentifierMetadata(type));});}entryComponents.push.apply(entryComponents,_toConsumableArray(bootstrapComponents.map(function(type){return _this173._getEntryComponentMetadata(type.reference);})));if(meta.schemas){schemas.push.apply(schemas,_toConsumableArray(flattenAndDedupeArray(meta.schemas)));}compileMeta=new CompileNgModuleMetadata({type:this._getTypeMetadata(moduleType),providers:providers,entryComponents:entryComponents,bootstrapComponents:bootstrapComponents,schemas:schemas,declaredDirectives:declaredDirectives,exportedDirectives:exportedDirectives,declaredPipes:declaredPipes,exportedPipes:exportedPipes,importedModules:importedModules,exportedModules:exportedModules,transitiveModule:transitiveModule,id:meta.id});entryComponents.forEach(function(id){return transitiveModule.addEntryComponent(id);});providers.forEach(function(provider){return transitiveModule.addProvider(provider,compileMeta.type);});transitiveModule.addModule(compileMeta.type);this._ngModuleCache.set(moduleType,compileMeta);return compileMeta;}/**
-     * @param {?} type
-     * @return {?}
-     */},{key:'_getTypeDescriptor',value:function _getTypeDescriptor(type){if(this._directiveResolver.isDirective(type)){return'directive';}if(this._pipeResolver.isPipe(type)){return'pipe';}if(this._ngModuleResolver.isNgModule(type)){return'module';}if(type.provide){return'provider';}return'value';}/**
-     * @param {?} type
-     * @param {?} moduleType
-     * @return {?}
-     */},{key:'_addTypeToModule',value:function _addTypeToModule(type,moduleType){var/** @type {?} */oldModule=this._ngModuleOfTypes.get(type);if(oldModule&&oldModule!==moduleType){this._reportError(syntaxError('Type '+stringifyType(type)+' is part of the declarations of 2 modules: '+stringifyType(oldModule)+' and '+stringifyType(moduleType)+'! '+('Please consider moving '+stringifyType(type)+' to a higher module that imports '+stringifyType(oldModule)+' and '+stringifyType(moduleType)+'. ')+('You can also create a new NgModule that exports and includes '+stringifyType(type)+' then import that NgModule in '+stringifyType(oldModule)+' and '+stringifyType(moduleType)+'.')),moduleType);}this._ngModuleOfTypes.set(type,moduleType);}/**
-     * @param {?} importedModules
-     * @param {?} exportedModules
-     * @return {?}
-     */},{key:'_getTransitiveNgModuleMetadata',value:function _getTransitiveNgModuleMetadata(importedModules,exportedModules){// collect `providers` / `entryComponents` from all imported and all exported modules
-var/** @type {?} */result=new TransitiveCompileNgModuleMetadata();var/** @type {?} */modulesByToken=new Map();importedModules.concat(exportedModules).forEach(function(modSummary){modSummary.modules.forEach(function(mod){return result.addModule(mod);});modSummary.entryComponents.forEach(function(comp){return result.addEntryComponent(comp);});var/** @type {?} */addedTokens=new Set();modSummary.providers.forEach(function(entry){var/** @type {?} */tokenRef=tokenReference(entry.provider.token);var/** @type {?} */prevModules=modulesByToken.get(tokenRef);if(!prevModules){prevModules=new Set();modulesByToken.set(tokenRef,prevModules);}var/** @type {?} */moduleRef=entry.module.reference;// Note: the providers of one module may still contain multiple providers
-// per token (e.g. for multi providers), and we need to preserve these.
-if(addedTokens.has(tokenRef)||!prevModules.has(moduleRef)){prevModules.add(moduleRef);addedTokens.add(tokenRef);result.addProvider(entry.provider,entry.module);}});});exportedModules.forEach(function(modSummary){modSummary.exportedDirectives.forEach(function(id){return result.addExportedDirective(id);});modSummary.exportedPipes.forEach(function(id){return result.addExportedPipe(id);});});importedModules.forEach(function(modSummary){modSummary.exportedDirectives.forEach(function(id){return result.addDirective(id);});modSummary.exportedPipes.forEach(function(id){return result.addPipe(id);});});return result;}/**
-     * @param {?} type
-     * @return {?}
-     */},{key:'_getIdentifierMetadata',value:function _getIdentifierMetadata(type){type=resolveForwardRef(type);return{reference:type};}/**
-     * @param {?} type
-     * @return {?}
-     */},{key:'isInjectable',value:function isInjectable(type){var/** @type {?} */annotations=this._reflector.annotations(type);// Note: We need an exact check here as @Component / @Directive / ... inherit
-// from @CompilerInjectable!
-return annotations.some(function(ann){return ann.constructor===Injectable;});}/**
-     * @param {?} type
-     * @return {?}
-     */},{key:'getInjectableSummary',value:function getInjectableSummary(type){return{summaryKind:CompileSummaryKind.Injectable,type:this._getTypeMetadata(type)};}/**
-     * @param {?} type
-     * @param {?=} dependencies
-     * @return {?}
-     */},{key:'_getInjectableMetadata',value:function _getInjectableMetadata(type){var dependencies=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var/** @type {?} */typeSummary=this._loadSummary(type,CompileSummaryKind.Injectable);if(typeSummary){return typeSummary.type;}return this._getTypeMetadata(type,dependencies);}/**
-     * @param {?} type
-     * @param {?=} dependencies
-     * @return {?}
-     */},{key:'_getTypeMetadata',value:function _getTypeMetadata(type){var dependencies=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var/** @type {?} */identifier=this._getIdentifierMetadata(type);return{reference:identifier.reference,diDeps:this._getDependenciesMetadata(identifier.reference,dependencies),lifecycleHooks:ɵLIFECYCLE_HOOKS_VALUES.filter(function(hook){return hasLifecycleHook(hook,identifier.reference);})};}/**
-     * @param {?} factory
-     * @param {?=} dependencies
-     * @return {?}
-     */},{key:'_getFactoryMetadata',value:function _getFactoryMetadata(factory){var dependencies=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;factory=resolveForwardRef(factory);return{reference:factory,diDeps:this._getDependenciesMetadata(factory,dependencies)};}/**
-     * Gets the metadata for the given pipe.
-     * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
-     * @param {?} pipeType
-     * @return {?}
-     */},{key:'getPipeMetadata',value:function getPipeMetadata(pipeType){var/** @type {?} */pipeMeta=this._pipeCache.get(pipeType);if(!pipeMeta){this._reportError(syntaxError('Illegal state: getPipeMetadata can only be called after loadNgModuleDirectiveAndPipeMetadata for a module that declares it. Pipe '+stringifyType(pipeType)+'.'),pipeType);}return pipeMeta;}/**
-     * @param {?} pipeType
-     * @return {?}
-     */},{key:'getPipeSummary',value:function getPipeSummary(pipeType){var/** @type {?} */pipeSummary=this._loadSummary(pipeType,CompileSummaryKind.Pipe);if(!pipeSummary){this._reportError(syntaxError('Illegal state: Could not load the summary for pipe '+stringifyType(pipeType)+'.'),pipeType);}return pipeSummary;}/**
-     * @param {?} pipeType
-     * @return {?}
-     */},{key:'getOrLoadPipeMetadata',value:function getOrLoadPipeMetadata(pipeType){var/** @type {?} */pipeMeta=this._pipeCache.get(pipeType);if(!pipeMeta){pipeMeta=this._loadPipeMetadata(pipeType);}return pipeMeta;}/**
-     * @param {?} pipeType
-     * @return {?}
-     */},{key:'_loadPipeMetadata',value:function _loadPipeMetadata(pipeType){pipeType=resolveForwardRef(pipeType);var/** @type {?} */pipeAnnotation=this._pipeResolver.resolve(pipeType);var/** @type {?} */pipeMeta=new CompilePipeMetadata({type:this._getTypeMetadata(pipeType),name:pipeAnnotation.name,pure:pipeAnnotation.pure});this._pipeCache.set(pipeType,pipeMeta);this._summaryCache.set(pipeType,pipeMeta.toSummary());return pipeMeta;}/**
-     * @param {?} typeOrFunc
-     * @param {?} dependencies
-     * @return {?}
-     */},{key:'_getDependenciesMetadata',value:function _getDependenciesMetadata(typeOrFunc,dependencies){var _this174=this;var/** @type {?} */hasUnknownDeps=false;var/** @type {?} */params=dependencies||this._reflector.parameters(typeOrFunc)||[];var/** @type {?} */dependenciesMetadata=params.map(function(param){var/** @type {?} */isAttribute=false;var/** @type {?} */isHost=false;var/** @type {?} */isSelf=false;var/** @type {?} */isSkipSelf=false;var/** @type {?} */isOptional=false;var/** @type {?} */token=null;if(Array.isArray(param)){param.forEach(function(paramEntry){if(paramEntry instanceof Host){isHost=true;}else if(paramEntry instanceof Self){isSelf=true;}else if(paramEntry instanceof SkipSelf){isSkipSelf=true;}else if(paramEntry instanceof Optional){isOptional=true;}else if(paramEntry instanceof Attribute){isAttribute=true;token=paramEntry.attributeName;}else if(paramEntry instanceof Inject){token=paramEntry.token;}else if(paramEntry instanceof InjectionToken){token=paramEntry;}else if(isValidType(paramEntry)&&token==null){token=paramEntry;}});}else{token=param;}if(token==null){hasUnknownDeps=true;return null;}return{isAttribute:isAttribute,isHost:isHost,isSelf:isSelf,isSkipSelf:isSkipSelf,isOptional:isOptional,token:_this174._getTokenMetadata(token)};});if(hasUnknownDeps){var/** @type {?} */depsTokens=dependenciesMetadata.map(function(dep){return dep?stringifyType(dep.token):'?';}).join(', ');this._reportError(syntaxError('Can\'t resolve all parameters for '+stringifyType(typeOrFunc)+': ('+depsTokens+').'),typeOrFunc);}return dependenciesMetadata;}/**
-     * @param {?} token
-     * @return {?}
-     */},{key:'_getTokenMetadata',value:function _getTokenMetadata(token){token=resolveForwardRef(token);var/** @type {?} */compileToken=void 0;if(typeof token==='string'){compileToken={value:token};}else{compileToken={identifier:{reference:token}};}return compileToken;}/**
-     * @param {?} providers
-     * @param {?} targetEntryComponents
-     * @param {?=} debugInfo
-     * @param {?=} compileProviders
-     * @param {?=} type
-     * @return {?}
-     */},{key:'_getProvidersMetadata',value:function _getProvidersMetadata(providers,targetEntryComponents,debugInfo){var _this175=this;var compileProviders=arguments.length>3&&arguments[3]!==undefined?arguments[3]:[];var type=arguments[4];providers.forEach(function(provider,providerIdx){if(Array.isArray(provider)){_this175._getProvidersMetadata(provider,targetEntryComponents,debugInfo,compileProviders);}else{provider=resolveForwardRef(provider);var/** @type {?} */providerMeta=void 0;if(provider&&(typeof provider==='undefined'?'undefined':_typeof(provider))==='object'&&provider.hasOwnProperty('provide')){_this175._validateProvider(provider);providerMeta=new ProviderMeta(provider.provide,provider);}else if(isValidType(provider)){providerMeta=new ProviderMeta(provider,{useClass:provider});}else if(provider===void 0){_this175._reportError(syntaxError('Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using \'barrel\' index.ts files.'));}else{var/** @type {?} */providersInfo=providers.reduce(function(soFar,seenProvider,seenProviderIdx){if(seenProviderIdx<providerIdx){soFar.push(''+stringifyType(seenProvider));}else if(seenProviderIdx==providerIdx){soFar.push('?'+stringifyType(seenProvider)+'?');}else if(seenProviderIdx==providerIdx+1){soFar.push('...');}return soFar;},[]).join(', ');_this175._reportError(syntaxError('Invalid '+(debugInfo?debugInfo:'provider')+' - only instances of Provider and Type are allowed, got: ['+providersInfo+']'),type);}if(providerMeta.token===resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)){targetEntryComponents.push.apply(targetEntryComponents,_toConsumableArray(_this175._getEntryComponentsFromProvider(providerMeta,type)));}else{compileProviders.push(_this175.getProviderMetadata(providerMeta));}}});return compileProviders;}/**
-     * @param {?} provider
-     * @return {?}
-     */},{key:'_validateProvider',value:function _validateProvider(provider){if(provider.hasOwnProperty('useClass')&&provider.useClass==null){this._reportError(syntaxError('Invalid provider for '+stringifyType(provider.provide)+'. useClass cannot be '+provider.useClass+'.\n           Usually it happens when:\n           1. There\'s a circular dependency (might be caused by using index.ts (barrel) files).\n           2. Class was used before it was declared. Use forwardRef in this case.'));}}/**
-     * @param {?} provider
-     * @param {?=} type
-     * @return {?}
-     */},{key:'_getEntryComponentsFromProvider',value:function _getEntryComponentsFromProvider(provider,type){var _this176=this;var/** @type {?} */components=[];var/** @type {?} */collectedIdentifiers=[];if(provider.useFactory||provider.useExisting||provider.useClass){this._reportError(syntaxError('The ANALYZE_FOR_ENTRY_COMPONENTS token only supports useValue!'),type);return[];}if(!provider.multi){this._reportError(syntaxError('The ANALYZE_FOR_ENTRY_COMPONENTS token only supports \'multi = true\'!'),type);return[];}extractIdentifiers(provider.useValue,collectedIdentifiers);collectedIdentifiers.forEach(function(identifier){var/** @type {?} */entry=_this176._getEntryComponentMetadata(identifier.reference,false);if(entry){components.push(entry);}});return components;}/**
-     * @param {?} dirType
-     * @param {?=} throwIfNotFound
-     * @return {?}
-     */},{key:'_getEntryComponentMetadata',value:function _getEntryComponentMetadata(dirType){var throwIfNotFound=arguments.length>1&&arguments[1]!==undefined?arguments[1]:true;var/** @type {?} */dirMeta=this.getNonNormalizedDirectiveMetadata(dirType);if(dirMeta&&dirMeta.metadata.isComponent){return{componentType:dirType,componentFactory:dirMeta.metadata.componentFactory};}else{var/** @type {?} */dirSummary=this._loadSummary(dirType,CompileSummaryKind.Directive);if(dirSummary&&dirSummary.isComponent){return{componentType:dirType,componentFactory:dirSummary.componentFactory};}}if(throwIfNotFound){throw syntaxError(dirType.name+' cannot be used as an entry component.');}}/**
-     * @param {?} provider
-     * @return {?}
-     */},{key:'getProviderMetadata',value:function getProviderMetadata(provider){var/** @type {?} */compileDeps=void 0;var/** @type {?} */compileTypeMetadata=null;var/** @type {?} */compileFactoryMetadata=null;var/** @type {?} */token=this._getTokenMetadata(provider.token);if(provider.useClass){compileTypeMetadata=this._getInjectableMetadata(provider.useClass,provider.dependencies);compileDeps=compileTypeMetadata.diDeps;if(provider.token===provider.useClass){// use the compileTypeMetadata as it contains information about lifecycleHooks...
-token={identifier:compileTypeMetadata};}}else if(provider.useFactory){compileFactoryMetadata=this._getFactoryMetadata(provider.useFactory,provider.dependencies);compileDeps=compileFactoryMetadata.diDeps;}return{token:token,useClass:compileTypeMetadata,useValue:provider.useValue,useFactory:compileFactoryMetadata,useExisting:provider.useExisting?this._getTokenMetadata(provider.useExisting):null,deps:compileDeps,multi:provider.multi};}/**
-     * @param {?} queries
-     * @param {?} isViewQuery
-     * @param {?} directiveType
-     * @return {?}
-     */},{key:'_getQueriesMetadata',value:function _getQueriesMetadata(queries,isViewQuery,directiveType){var _this177=this;var/** @type {?} */res=[];Object.keys(queries).forEach(function(propertyName){var/** @type {?} */query=queries[propertyName];if(query.isViewQuery===isViewQuery){res.push(_this177._getQueryMetadata(query,propertyName,directiveType));}});return res;}/**
-     * @param {?} selector
-     * @return {?}
-     */},{key:'_queryVarBindings',value:function _queryVarBindings(selector){return selector.split(/\s*,\s*/);}/**
-     * @param {?} q
-     * @param {?} propertyName
-     * @param {?} typeOrFunc
-     * @return {?}
-     */},{key:'_getQueryMetadata',value:function _getQueryMetadata(q,propertyName,typeOrFunc){var _this178=this;var/** @type {?} */selectors=void 0;if(typeof q.selector==='string'){selectors=this._queryVarBindings(q.selector).map(function(varName){return _this178._getTokenMetadata(varName);});}else{if(!q.selector){this._reportError(syntaxError('Can\'t construct a query for the property "'+propertyName+'" of "'+stringifyType(typeOrFunc)+'" since the query selector wasn\'t defined.'),typeOrFunc);}selectors=[this._getTokenMetadata(q.selector)];}return{selectors:selectors,first:q.first,descendants:q.descendants,propertyName:propertyName,read:q.read?this._getTokenMetadata(q.read):null};}/**
-     * @param {?} error
-     * @param {?=} type
-     * @param {?=} otherType
-     * @return {?}
-     */},{key:'_reportError',value:function _reportError(error,type,otherType){if(this._errorCollector){this._errorCollector(error,type);if(otherType){this._errorCollector(error,otherType);}}else{throw error;}}}]);return CompileMetadataResolver;}();CompileMetadataResolver.decorators=[{type:CompilerInjectable}];/** @nocollapse */CompileMetadataResolver.ctorParameters=function(){return[{type:CompilerConfig},{type:NgModuleResolver},{type:DirectiveResolver},{type:PipeResolver},{type:SummaryResolver},{type:ElementSchemaRegistry},{type:DirectiveNormalizer},{type:StaticSymbolCache,decorators:[{type:Optional}]},{type:ɵReflectorReader},{type:undefined,decorators:[{type:Optional},{type:Inject,args:[ERROR_COLLECTOR_TOKEN]}]}];};/**
- * @param {?} tree
- * @param {?=} out
- * @return {?}
- */function flattenArray(tree){var out=arguments.length>1&&arguments[1]!==undefined?arguments[1]:[];if(tree){for(var/** @type {?} */i=0;i<tree.length;i++){var/** @type {?} */item=resolveForwardRef(tree[i]);if(Array.isArray(item)){flattenArray(item,out);}else{out.push(item);}}}return out;}/**
- * @param {?} array
- * @return {?}
- */function dedupeArray(array){if(array){return Array.from(new Set(array));}return[];}/**
- * @param {?} tree
- * @return {?}
- */function flattenAndDedupeArray(tree){return dedupeArray(flattenArray(tree));}/**
- * @param {?} value
- * @return {?}
- */function isValidType(value){return value instanceof StaticSymbol||value instanceof Type;}/**
- * @param {?} reflector
- * @param {?} type
- * @param {?} cmpMetadata
- * @return {?}
- */function componentModuleUrl(reflector,type,cmpMetadata){if(type instanceof StaticSymbol){return type.filePath;}var/** @type {?} */moduleId=cmpMetadata.moduleId;if(typeof moduleId==='string'){var/** @type {?} */scheme=getUrlScheme(moduleId);return scheme?moduleId:'package:'+moduleId+MODULE_SUFFIX;}else if(moduleId!==null&&moduleId!==void 0){throw syntaxError('moduleId should be a string in "'+stringifyType(type)+'". See https://goo.gl/wIDDiL for more information.\n'+'If you\'re using Webpack you should inline the template and the styles, see https://goo.gl/X2J8zc.');}return reflector.importUri(type);}/**
- * @param {?} value
- * @param {?} targetIdentifiers
- * @return {?}
- */function extractIdentifiers(value,targetIdentifiers){visitValue(value,new _CompileValueConverter(),targetIdentifiers);}var _CompileValueConverter=function(_ValueTransformer){_inherits(_CompileValueConverter,_ValueTransformer);function _CompileValueConverter(){_classCallCheck(this,_CompileValueConverter);return _possibleConstructorReturn(this,(_CompileValueConverter.__proto__||Object.getPrototypeOf(_CompileValueConverter)).apply(this,arguments));}_createClass(_CompileValueConverter,[{key:'visitOther',/**
-     * @param {?} value
-     * @param {?} targetIdentifiers
-     * @return {?}
-     */value:function visitOther(value,targetIdentifiers){targetIdentifiers.push({reference:value});}}]);return _CompileValueConverter;}(ValueTransformer);/**
- * @param {?} type
- * @return {?}
- */function stringifyType(type){if(type instanceof StaticSymbol){return type.name+' in '+type.filePath;}else{return stringify(type);}}/**
- * Indicates that a component is still being loaded in a synchronous compile.
- * @param {?} compType
- * @return {?}
- */function componentStillLoadingError(compType){debugger;var/** @type {?} */error=Error('Can\'t compile synchronously as '+stringify(compType)+' is still being loaded!');error[ɵERROR_COMPONENT_TYPE]=compType;return error;}var/** @type {?} */QUOTED_KEYS='$quoted$';/**
+ */function concatClassBuilderParts(builders){var _ref29,_ref30,_ref31,_ref32;return{fields:(_ref29=[]).concat.apply(_ref29,_toConsumableArray(builders.map(function(builder){return builder.fields||[];}))),methods:(_ref30=[]).concat.apply(_ref30,_toConsumableArray(builders.map(function(builder){return builder.methods||[];}))),getters:(_ref31=[]).concat.apply(_ref31,_toConsumableArray(builders.map(function(builder){return builder.getters||[];}))),ctorStmts:(_ref32=[]).concat.apply(_ref32,_toConsumableArray(builders.map(function(builder){return builder.ctorStmts||[];})))};}var/** @type {?} */QUOTED_KEYS='$quoted$';/**
  * @param {?} value
  * @param {?=} type
  * @return {?}
@@ -5585,11 +4490,11 @@ token={identifier:compileTypeMetadata};}}else if(provider.useFactory){compileFac
      * @param {?} arr
      * @param {?} type
      * @return {?}
-     */value:function visitArray(arr,type){var _this180=this;return literalArr(arr.map(function(value){return visitValue(value,_this180,null);}),type);}/**
+     */value:function visitArray(arr,type){var _this146=this;return literalArr(arr.map(function(value){return visitValue(value,_this146,null);}),type);}/**
      * @param {?} map
      * @param {?} type
      * @return {?}
-     */},{key:'visitStringMap',value:function visitStringMap(map,type){var _this181=this;var/** @type {?} */entries=[];var/** @type {?} */quotedSet=new Set(map&&map[QUOTED_KEYS]);Object.keys(map).forEach(function(key){entries.push(new LiteralMapEntry(key,visitValue(map[key],_this181,null),quotedSet.has(key)));});return new LiteralMapExpr(entries,type);}/**
+     */},{key:'visitStringMap',value:function visitStringMap(map,type){var _this147=this;var/** @type {?} */entries=[];var/** @type {?} */quotedSet=new Set(map&&map[QUOTED_KEYS]);Object.keys(map).forEach(function(key){entries.push(new LiteralMapEntry(key,visitValue(map[key],_this147,null),quotedSet.has(key)));});return new LiteralMapExpr(entries,type);}/**
      * @param {?} value
      * @param {?} type
      * @return {?}
@@ -5618,12 +4523,12 @@ token={identifier:compileTypeMetadata};}}else if(provider.useFactory){compileFac
      */function _InjectorBuilder(_ngModuleMeta,_entryComponentFactories,_bootstrapComponentFactories,_sourceSpan){_classCallCheck(this,_InjectorBuilder);this._ngModuleMeta=_ngModuleMeta;this._entryComponentFactories=_entryComponentFactories;this._bootstrapComponentFactories=_bootstrapComponentFactories;this._sourceSpan=_sourceSpan;this.fields=[];this.getters=[];this.methods=[];this.ctorStmts=[];this._tokens=[];this._instances=new Map();this._createStmts=[];this._destroyStmts=[];}/**
      * @param {?} resolvedProvider
      * @return {?}
-     */_createClass(_InjectorBuilder,[{key:'addProvider',value:function addProvider(resolvedProvider){var _this182=this;var/** @type {?} */providerValueExpressions=resolvedProvider.providers.map(function(provider){return _this182._getProviderValue(provider);});var/** @type {?} */propName='_'+tokenName(resolvedProvider.token)+'_'+this._instances.size;var/** @type {?} */instance=this._createProviderProperty(propName,resolvedProvider,providerValueExpressions,resolvedProvider.multiProvider,resolvedProvider.eager);if(resolvedProvider.lifecycleHooks.indexOf(ɵLifecycleHooks.OnDestroy)!==-1){this._destroyStmts.push(instance.callMethod('ngOnDestroy',[]).toStmt());}this._tokens.push(resolvedProvider.token);this._instances.set(tokenReference(resolvedProvider.token),instance);}/**
+     */_createClass(_InjectorBuilder,[{key:'addProvider',value:function addProvider(resolvedProvider){var _this148=this;var/** @type {?} */providerValueExpressions=resolvedProvider.providers.map(function(provider){return _this148._getProviderValue(provider);});var/** @type {?} */propName='_'+tokenName(resolvedProvider.token)+'_'+this._instances.size;var/** @type {?} */instance=this._createProviderProperty(propName,resolvedProvider,providerValueExpressions,resolvedProvider.multiProvider,resolvedProvider.eager);if(resolvedProvider.lifecycleHooks.indexOf(ɵLifecycleHooks.OnDestroy)!==-1){this._destroyStmts.push(instance.callMethod('ngOnDestroy',[]).toStmt());}this._tokens.push(resolvedProvider.token);this._instances.set(tokenReference(resolvedProvider.token),instance);}/**
      * @return {?}
-     */},{key:'build',value:function build(){var _this183=this;var/** @type {?} */getMethodStmts=this._tokens.map(function(token){var/** @type {?} */providerExpr=_this183._instances.get(tokenReference(token));return new IfStmt(InjectMethodVars.token.identical(createDiTokenExpression(token)),[new ReturnStatement(providerExpr)]);});var/** @type {?} */methods=[new ClassMethod('createInternal',[],this._createStmts.concat(new ReturnStatement(this._instances.get(this._ngModuleMeta.type.reference))),importType(this._ngModuleMeta.type)),new ClassMethod('getInternal',[new FnParam(InjectMethodVars.token.name,DYNAMIC_TYPE),new FnParam(InjectMethodVars.notFoundResult.name,DYNAMIC_TYPE)],getMethodStmts.concat([new ReturnStatement(InjectMethodVars.notFoundResult)]),DYNAMIC_TYPE),new ClassMethod('destroyInternal',[],this._destroyStmts)];var/** @type {?} */parentArgs=[variable(InjectorProps.parent.name),literalArr(this._entryComponentFactories.map(function(componentFactory){return importExpr(componentFactory);})),literalArr(this._bootstrapComponentFactories.map(function(componentFactory){return importExpr(componentFactory);}))];var/** @type {?} */injClassName=identifierName(this._ngModuleMeta.type)+'Injector';return createClassStmt({name:injClassName,ctorParams:[new FnParam(InjectorProps.parent.name,importType(createIdentifier(Identifiers.Injector)))],parent:importExpr(createIdentifier(Identifiers.NgModuleInjector),[importType(this._ngModuleMeta.type)]),parentArgs:parentArgs,builders:[{methods:methods},this]});}/**
+     */},{key:'build',value:function build(){var _this149=this;var/** @type {?} */getMethodStmts=this._tokens.map(function(token){var/** @type {?} */providerExpr=_this149._instances.get(tokenReference(token));return new IfStmt(InjectMethodVars.token.identical(createDiTokenExpression(token)),[new ReturnStatement(providerExpr)]);});var/** @type {?} */methods=[new ClassMethod('createInternal',[],this._createStmts.concat(new ReturnStatement(this._instances.get(this._ngModuleMeta.type.reference))),importType(this._ngModuleMeta.type)),new ClassMethod('getInternal',[new FnParam(InjectMethodVars.token.name,DYNAMIC_TYPE),new FnParam(InjectMethodVars.notFoundResult.name,DYNAMIC_TYPE)],getMethodStmts.concat([new ReturnStatement(InjectMethodVars.notFoundResult)]),DYNAMIC_TYPE),new ClassMethod('destroyInternal',[],this._destroyStmts)];var/** @type {?} */parentArgs=[variable(InjectorProps.parent.name),literalArr(this._entryComponentFactories.map(function(componentFactory){return importExpr(componentFactory);})),literalArr(this._bootstrapComponentFactories.map(function(componentFactory){return importExpr(componentFactory);}))];var/** @type {?} */injClassName=identifierName(this._ngModuleMeta.type)+'Injector';return createClassStmt({name:injClassName,ctorParams:[new FnParam(InjectorProps.parent.name,importType(createIdentifier(Identifiers.Injector)))],parent:importExpr(createIdentifier(Identifiers.NgModuleInjector),[importType(this._ngModuleMeta.type)]),parentArgs:parentArgs,builders:[{methods:methods},this]});}/**
      * @param {?} provider
      * @return {?}
-     */},{key:'_getProviderValue',value:function _getProviderValue(provider){var _this184=this;var/** @type {?} */result=void 0;if(isPresent(provider.useExisting)){result=this._getDependency({token:provider.useExisting});}else if(isPresent(provider.useFactory)){var/** @type {?} */deps=provider.deps||provider.useFactory.diDeps;var/** @type {?} */depsExpr=deps.map(function(dep){return _this184._getDependency(dep);});result=importExpr(provider.useFactory).callFn(depsExpr);}else if(isPresent(provider.useClass)){var/** @type {?} */_deps3=provider.deps||provider.useClass.diDeps;var/** @type {?} */_depsExpr=_deps3.map(function(dep){return _this184._getDependency(dep);});result=importExpr(provider.useClass).instantiate(_depsExpr,importType(provider.useClass));}else{result=convertValueToOutputAst(provider.useValue);}return result;}/**
+     */},{key:'_getProviderValue',value:function _getProviderValue(provider){var _this150=this;var/** @type {?} */result=void 0;if(isPresent(provider.useExisting)){result=this._getDependency({token:provider.useExisting});}else if(isPresent(provider.useFactory)){var/** @type {?} */deps=provider.deps||provider.useFactory.diDeps;var/** @type {?} */depsExpr=deps.map(function(dep){return _this150._getDependency(dep);});result=importExpr(provider.useFactory).callFn(depsExpr);}else if(isPresent(provider.useClass)){var/** @type {?} */_deps3=provider.deps||provider.useClass.diDeps;var/** @type {?} */_depsExpr=_deps3.map(function(dep){return _this150._getDependency(dep);});result=importExpr(provider.useClass).instantiate(_depsExpr,importType(provider.useClass));}else{result=convertValueToOutputAst(provider.useValue);}return result;}/**
      * @param {?} propName
      * @param {?} provider
      * @param {?} providerValueExpressions
@@ -5634,7 +4539,10 @@ token={identifier:compileTypeMetadata};}}else if(provider.useFactory){compileFac
 var/** @type {?} */getterStmts=[new IfStmt(THIS_EXPR.prop(internalField).isBlank(),[THIS_EXPR.prop(internalField).set(resolvedProviderValueExpr).toStmt()]),new ReturnStatement(THIS_EXPR.prop(internalField))];this.getters.push(new ClassGetter(propName,getterStmts,type));}return THIS_EXPR.prop(propName);}/**
      * @param {?} dep
      * @return {?}
-     */},{key:'_getDependency',value:function _getDependency(dep){var/** @type {?} */result=null;if(dep.isValue){result=literal(dep.value);}if(!dep.isSkipSelf){if(dep.token&&(tokenReference(dep.token)===resolveIdentifier(Identifiers.Injector)||tokenReference(dep.token)===resolveIdentifier(Identifiers.ComponentFactoryResolver))){result=THIS_EXPR;}if(!result){result=this._instances.get(tokenReference(dep.token));}}if(!result){var/** @type {?} */args=[createDiTokenExpression(dep.token)];if(dep.isOptional){args.push(NULL_EXPR);}result=InjectorProps.parent.callMethod('get',args);}return result;}}]);return _InjectorBuilder;}();var InjectorProps=function InjectorProps(){_classCallCheck(this,InjectorProps);};InjectorProps.parent=THIS_EXPR.prop('parent');var InjectMethodVars=function InjectMethodVars(){_classCallCheck(this,InjectMethodVars);};InjectMethodVars.token=variable('token');InjectMethodVars.notFoundResult=variable('notFoundResult');/**
+     */},{key:'_getDependency',value:function _getDependency(dep){var/** @type {?} */result=null;if(dep.isValue){result=literal(dep.value);}if(!dep.isSkipSelf){if(dep.token&&(tokenReference(dep.token)===resolveIdentifier(Identifiers.Injector)||tokenReference(dep.token)===resolveIdentifier(Identifiers.ComponentFactoryResolver))){result=THIS_EXPR;}if(!result){result=this._instances.get(tokenReference(dep.token));}}if(!result){var/** @type {?} */args=[createDiTokenExpression(dep.token)];if(dep.isOptional){args.push(NULL_EXPR);}result=InjectorProps.parent.callMethod('get',args);}return result;}}]);return _InjectorBuilder;}();/**
+ * @param {?} token
+ * @return {?}
+ */function createDiTokenExpression(token){if(isPresent(token.value)){return literal(token.value);}else{return importExpr(token.identifier);}}var InjectorProps=function InjectorProps(){_classCallCheck(this,InjectorProps);};InjectorProps.parent=THIS_EXPR.prop('parent');var InjectMethodVars=function InjectMethodVars(){_classCallCheck(this,InjectMethodVars);};InjectMethodVars.token=variable('token');InjectMethodVars.notFoundResult=variable('notFoundResult');/**
  * @license
  * Copyright Google Inc. All Rights Reserved.
  *
@@ -5659,7 +4567,7 @@ var/** @type {?} */VERSION$1=3;var/** @type {?} */JS_B64_PREFIX='# sourceMapping
      * @return {?}
      */},{key:'toJSON',/**
      * @return {?}
-     */value:function toJSON(){var _this185=this;if(!this.hasMappings){return null;}var/** @type {?} */sourcesIndex=new Map();var/** @type {?} */sources=[];var/** @type {?} */sourcesContent=[];Array.from(this.sourcesContent.keys()).forEach(function(url,i){sourcesIndex.set(url,i);sources.push(url);sourcesContent.push(_this185.sourcesContent.get(url)||null);});var/** @type {?} */mappings='';var/** @type {?} */lastCol0=0;var/** @type {?} */lastSourceIndex=0;var/** @type {?} */lastSourceLine0=0;var/** @type {?} */lastSourceCol0=0;this.lines.forEach(function(segments){lastCol0=0;mappings+=segments.map(function(segment){// zero-based starting column of the line in the generated code
+     */value:function toJSON(){var _this151=this;if(!this.hasMappings){return null;}var/** @type {?} */sourcesIndex=new Map();var/** @type {?} */sources=[];var/** @type {?} */sourcesContent=[];Array.from(this.sourcesContent.keys()).forEach(function(url,i){sourcesIndex.set(url,i);sources.push(url);sourcesContent.push(_this151.sourcesContent.get(url)||null);});var/** @type {?} */mappings='';var/** @type {?} */lastCol0=0;var/** @type {?} */lastSourceIndex=0;var/** @type {?} */lastSourceLine0=0;var/** @type {?} */lastSourceCol0=0;this.lines.forEach(function(segments){lastCol0=0;mappings+=segments.map(function(segment){// zero-based starting column of the line in the generated code
 var/** @type {?} */segAsStr=toBase64VLQ(segment.col0-lastCol0);lastCol0=segment.col0;if(segment.sourceUrl!=null){// zero-based index into the “sources” list
 segAsStr+=toBase64VLQ(sourcesIndex.get(segment.sourceUrl)-lastSourceIndex);lastSourceIndex=sourcesIndex.get(segment.sourceUrl);// the zero-based starting line in the original source
 segAsStr+=toBase64VLQ(segment.sourceLine0-lastSourceLine0);lastSourceLine0=segment.sourceLine0;// the zero-based starting column in the original source
@@ -5845,13 +4753,13 @@ return null;}}ctx.print(expr,'.'+name+'(');this.visitAllExpressions(expr.args,ct
      * @param {?} ast
      * @param {?} ctx
      * @return {?}
-     */},{key:'visitLiteralMapExpr',value:function visitLiteralMapExpr(ast,ctx){var _this186=this;var/** @type {?} */useNewLine=ast.entries.length>1;ctx.print(ast,'{',useNewLine);ctx.incIndent();this.visitAllObjects(function(entry){ctx.print(ast,escapeIdentifier(entry.key,_this186._escapeDollarInStrings,entry.quoted)+': ');entry.value.visitExpression(_this186,ctx);},ast.entries,ctx,',',useNewLine);ctx.decIndent();ctx.print(ast,'}',useNewLine);return null;}/**
+     */},{key:'visitLiteralMapExpr',value:function visitLiteralMapExpr(ast,ctx){var _this152=this;var/** @type {?} */useNewLine=ast.entries.length>1;ctx.print(ast,'{',useNewLine);ctx.incIndent();this.visitAllObjects(function(entry){ctx.print(ast,escapeIdentifier(entry.key,_this152._escapeDollarInStrings,entry.quoted)+': ');entry.value.visitExpression(_this152,ctx);},ast.entries,ctx,',',useNewLine);ctx.decIndent();ctx.print(ast,'}',useNewLine);return null;}/**
      * @param {?} expressions
      * @param {?} ctx
      * @param {?} separator
      * @param {?=} newLine
      * @return {?}
-     */},{key:'visitAllExpressions',value:function visitAllExpressions(expressions,ctx,separator){var _this187=this;var newLine=arguments.length>3&&arguments[3]!==undefined?arguments[3]:false;this.visitAllObjects(function(expr){return expr.visitExpression(_this187,ctx);},expressions,ctx,separator,newLine);}/**
+     */},{key:'visitAllExpressions',value:function visitAllExpressions(expressions,ctx,separator){var _this153=this;var newLine=arguments.length>3&&arguments[3]!==undefined?arguments[3]:false;this.visitAllObjects(function(expr){return expr.visitExpression(_this153,ctx);},expressions,ctx,separator,newLine);}/**
      * @param {?} handler
      * @param {?} expressions
      * @param {?} ctx
@@ -5862,7 +4770,7 @@ return null;}}ctx.print(expr,'.'+name+'(');this.visitAllExpressions(expr.args,ct
      * @param {?} statements
      * @param {?} ctx
      * @return {?}
-     */},{key:'visitAllStatements',value:function visitAllStatements(statements,ctx){var _this188=this;statements.forEach(function(stmt){return stmt.visitStatement(_this188,ctx);});}}]);return AbstractEmitterVisitor;}();/**
+     */},{key:'visitAllStatements',value:function visitAllStatements(statements,ctx){var _this154=this;statements.forEach(function(stmt){return stmt.visitStatement(_this154,ctx);});}}]);return AbstractEmitterVisitor;}();/**
  * @param {?} input
  * @param {?} escapeDollar
  * @param {?=} alwaysQuote
@@ -5887,11 +4795,11 @@ return null;}}ctx.print(expr,'.'+name+'(');this.visitAllExpressions(expr.args,ct
      * @param {?} stmts
      * @param {?} exportedVars
      * @return {?}
-     */_createClass(TypeScriptEmitter,[{key:'emitStatements',value:function emitStatements(genFilePath,stmts,exportedVars){var _this189=this;var/** @type {?} */converter=new _TsEmitterVisitor(genFilePath,this._importResolver);var/** @type {?} */ctx=EmitterVisitorContext.createRoot(exportedVars);converter.visitAllStatements(stmts,ctx);var/** @type {?} */srcParts=[];converter.reexports.forEach(function(reexports,exportedFilePath){var/** @type {?} */reexportsCode=reexports.map(function(reexport){return reexport.name+' as '+reexport.as;}).join(',');srcParts.push('export {'+reexportsCode+'} from \''+_this189._importResolver.fileNameToModuleName(exportedFilePath,genFilePath)+'\';');});converter.importsWithPrefixes.forEach(function(prefix,importedFilePath){// Note: can't write the real word for import as it screws up system.js auto detection...
-srcParts.push('imp'+('ort * as '+prefix+' from \''+_this189._importResolver.fileNameToModuleName(importedFilePath,genFilePath)+'\';'));});srcParts.push(ctx.toSource());var/** @type {?} */prefixLines=converter.reexports.size+converter.importsWithPrefixes.size;var/** @type {?} */sm=ctx.toSourceMapGenerator(null,prefixLines).toJsComment();if(sm){srcParts.push(sm);}return srcParts.join('\n');}}]);return TypeScriptEmitter;}();var _TsEmitterVisitor=function(_AbstractEmitterVisit){_inherits(_TsEmitterVisitor,_AbstractEmitterVisit);/**
+     */_createClass(TypeScriptEmitter,[{key:'emitStatements',value:function emitStatements(genFilePath,stmts,exportedVars){var _this155=this;var/** @type {?} */converter=new _TsEmitterVisitor(genFilePath,this._importResolver);var/** @type {?} */ctx=EmitterVisitorContext.createRoot(exportedVars);converter.visitAllStatements(stmts,ctx);var/** @type {?} */srcParts=[];converter.reexports.forEach(function(reexports,exportedFilePath){var/** @type {?} */reexportsCode=reexports.map(function(reexport){return reexport.name+' as '+reexport.as;}).join(',');srcParts.push('export {'+reexportsCode+'} from \''+_this155._importResolver.fileNameToModuleName(exportedFilePath,genFilePath)+'\';');});converter.importsWithPrefixes.forEach(function(prefix,importedFilePath){// Note: can't write the real word for import as it screws up system.js auto detection...
+srcParts.push('imp'+('ort * as '+prefix+' from \''+_this155._importResolver.fileNameToModuleName(importedFilePath,genFilePath)+'\';'));});srcParts.push(ctx.toSource());var/** @type {?} */prefixLines=converter.reexports.size+converter.importsWithPrefixes.size;var/** @type {?} */sm=ctx.toSourceMapGenerator(null,prefixLines).toJsComment();if(sm){srcParts.push(sm);}return srcParts.join('\n');}}]);return TypeScriptEmitter;}();var _TsEmitterVisitor=function(_AbstractEmitterVisit){_inherits(_TsEmitterVisitor,_AbstractEmitterVisit);/**
      * @param {?} _genFilePath
      * @param {?} _importResolver
-     */function _TsEmitterVisitor(_genFilePath,_importResolver){_classCallCheck(this,_TsEmitterVisitor);var _this190=_possibleConstructorReturn(this,(_TsEmitterVisitor.__proto__||Object.getPrototypeOf(_TsEmitterVisitor)).call(this,false));_this190._genFilePath=_genFilePath;_this190._importResolver=_importResolver;_this190.typeExpression=0;_this190.importsWithPrefixes=new Map();_this190.reexports=new Map();return _this190;}/**
+     */function _TsEmitterVisitor(_genFilePath,_importResolver){_classCallCheck(this,_TsEmitterVisitor);var _this156=_possibleConstructorReturn(this,(_TsEmitterVisitor.__proto__||Object.getPrototypeOf(_TsEmitterVisitor)).call(this,false));_this156._genFilePath=_genFilePath;_this156._importResolver=_importResolver;_this156.typeExpression=0;_this156.importsWithPrefixes=new Map();_this156.reexports=new Map();return _this156;}/**
      * @param {?} t
      * @param {?} ctx
      * @param {?=} defaultType
@@ -5925,7 +4833,7 @@ var _resolveStaticSymbol2=this._resolveStaticSymbol(stmt.value.value),name=_reso
      * @param {?} stmt
      * @param {?} ctx
      * @return {?}
-     */},{key:'visitDeclareClassStmt',value:function visitDeclareClassStmt(stmt,ctx){var _this191=this;ctx.pushClass(stmt);if(ctx.isExportedVar(stmt.name)){ctx.print(stmt,'export ');}ctx.print(stmt,'class '+stmt.name);if(isPresent(stmt.parent)){ctx.print(stmt,' extends ');this.typeExpression++;stmt.parent.visitExpression(this,ctx);this.typeExpression--;}ctx.println(stmt,' {');ctx.incIndent();stmt.fields.forEach(function(field){return _this191._visitClassField(field,ctx);});if(isPresent(stmt.constructorMethod)){this._visitClassConstructor(stmt,ctx);}stmt.getters.forEach(function(getter){return _this191._visitClassGetter(getter,ctx);});stmt.methods.forEach(function(method){return _this191._visitClassMethod(method,ctx);});ctx.decIndent();ctx.println(stmt,'}');ctx.popClass();return null;}/**
+     */},{key:'visitDeclareClassStmt',value:function visitDeclareClassStmt(stmt,ctx){var _this157=this;ctx.pushClass(stmt);if(ctx.isExportedVar(stmt.name)){ctx.print(stmt,'export ');}ctx.print(stmt,'class '+stmt.name);if(isPresent(stmt.parent)){ctx.print(stmt,' extends ');this.typeExpression++;stmt.parent.visitExpression(this,ctx);this.typeExpression--;}ctx.println(stmt,' {');ctx.incIndent();stmt.fields.forEach(function(field){return _this157._visitClassField(field,ctx);});if(isPresent(stmt.constructorMethod)){this._visitClassConstructor(stmt,ctx);}stmt.getters.forEach(function(getter){return _this157._visitClassGetter(getter,ctx);});stmt.methods.forEach(function(method){return _this157._visitClassMethod(method,ctx);});ctx.decIndent();ctx.println(stmt,'}');ctx.popClass();return null;}/**
      * @param {?} field
      * @param {?} ctx
      * @return {?}
@@ -5977,7 +4885,7 @@ ctx.print(null,'/*private*/ ');}ctx.print(null,field.name);this._printColonType(
      * @param {?} params
      * @param {?} ctx
      * @return {?}
-     */},{key:'_visitParams',value:function _visitParams(params,ctx){var _this192=this;this.visitAllObjects(function(param){ctx.print(null,param.name);_this192._printColonType(param.type,ctx);},params,ctx,',');}/**
+     */},{key:'_visitParams',value:function _visitParams(params,ctx){var _this158=this;this.visitAllObjects(function(param){ctx.print(null,param.name);_this158._printColonType(param.type,ctx);},params,ctx,',');}/**
      * @param {?} value
      * @return {?}
      */},{key:'_resolveStaticSymbol',value:function _resolveStaticSymbol(value){var/** @type {?} */reference=value.reference;if(!(reference instanceof StaticSymbol)){throw new Error('Internal error: unknown identifier '+JSON.stringify(value));}var/** @type {?} */arity=this._importResolver.getTypeArity(reference)||undefined;var/** @type {?} */importReference=this._importResolver.getImportAs(reference)||reference;return{name:importReference.name,filePath:importReference.filePath,members:importReference.members,arity:arity};}/**
@@ -5985,12 +4893,12 @@ ctx.print(null,'/*private*/ ');}ctx.print(null,field.name);this._printColonType(
      * @param {?} typeParams
      * @param {?} ctx
      * @return {?}
-     */},{key:'_visitIdentifier',value:function _visitIdentifier(value,typeParams,ctx){var _this193=this;var _resolveStaticSymbol3=this._resolveStaticSymbol(value),name=_resolveStaticSymbol3.name,filePath=_resolveStaticSymbol3.filePath,members=_resolveStaticSymbol3.members,arity=_resolveStaticSymbol3.arity;if(filePath!=this._genFilePath){var/** @type {?} */prefix=this.importsWithPrefixes.get(filePath);if(isBlank(prefix)){prefix='import'+this.importsWithPrefixes.size;this.importsWithPrefixes.set(filePath,prefix);}ctx.print(null,prefix+'.');}if(members.length){ctx.print(null,name);ctx.print(null,'.');ctx.print(null,members.join('.'));}else{ctx.print(null,name);}if(this.typeExpression>0){// If we are in a type expression that refers to a generic type then supply
+     */},{key:'_visitIdentifier',value:function _visitIdentifier(value,typeParams,ctx){var _this159=this;var _resolveStaticSymbol3=this._resolveStaticSymbol(value),name=_resolveStaticSymbol3.name,filePath=_resolveStaticSymbol3.filePath,members=_resolveStaticSymbol3.members,arity=_resolveStaticSymbol3.arity;if(filePath!=this._genFilePath){var/** @type {?} */prefix=this.importsWithPrefixes.get(filePath);if(isBlank(prefix)){prefix='import'+this.importsWithPrefixes.size;this.importsWithPrefixes.set(filePath,prefix);}ctx.print(null,prefix+'.');}if(members.length){ctx.print(null,name);ctx.print(null,'.');ctx.print(null,members.join('.'));}else{ctx.print(null,name);}if(this.typeExpression>0){// If we are in a type expression that refers to a generic type then supply
 // the required type parameters. If there were not enough type parameters
 // supplied, supply any as the type. Outside a type expression the reference
 // should not supply type parameters and be treated as a simple value reference
 // to the constructor function itself.
-var/** @type {?} */suppliedParameters=typeParams&&typeParams.length||0;var/** @type {?} */additionalParameters=(arity||0)-suppliedParameters;if(suppliedParameters>0||additionalParameters>0){ctx.print(null,'<');if(suppliedParameters>0){this.visitAllObjects(function(type){return type.visitType(_this193,ctx);},typeParams,ctx,',');}if(additionalParameters>0){for(var/** @type {?} */i=0;i<additionalParameters;i++){if(i>0||suppliedParameters>0)ctx.print(null,',');ctx.print(null,'any');}}ctx.print(null,'>');}}}/**
+var/** @type {?} */suppliedParameters=typeParams&&typeParams.length||0;var/** @type {?} */additionalParameters=(arity||0)-suppliedParameters;if(suppliedParameters>0||additionalParameters>0){ctx.print(null,'<');if(suppliedParameters>0){this.visitAllObjects(function(type){return type.visitType(_this159,ctx);},typeParams,ctx,',');}if(additionalParameters>0){for(var/** @type {?} */i=0;i<additionalParameters;i++){if(i>0||suppliedParameters>0)ctx.print(null,',');ctx.print(null,'any');}}ctx.print(null,'>');}}}/**
      * @param {?} type
      * @param {?} ctx
      * @param {?=} defaultType
@@ -6064,12 +4972,12 @@ registerContext(SecurityContext.URL,['*|formAction','area|href','area|ping','aud
 // dom_security_schema.ts. Reach out to mprobst & rjamet for details.
 //
 // =================================================================================================
-var/** @type {?} */SCHEMA=['[Element]|textContent,%classList,className,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*copy,*cut,*paste,*search,*selectstart,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerHTML,#scrollLeft,#scrollTop','[HTMLElement]^[Element]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate','abbr,address,article,aside,b,bdi,bdo,cite,code,dd,dfn,dt,em,figcaption,figure,footer,header,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate','media^[HTMLElement]|!autoplay,!controls,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,#playbackRate,preload,src,%srcObject,#volume',':svg:^[HTMLElement]|*abort,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*cuechange,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*seeked,*seeking,*select,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,%style,#tabIndex',':svg:graphics^:svg:|',':svg:animation^:svg:|*begin,*end,*repeat',':svg:geometry^:svg:|',':svg:componentTransferFunction^:svg:|',':svg:gradient^:svg:|',':svg:textContent^:svg:graphics|',':svg:textPositioning^:svg:textContent|','a^[HTMLElement]|charset,coords,download,hash,host,hostname,href,hreflang,name,password,pathname,ping,port,protocol,referrerPolicy,rel,rev,search,shape,target,text,type,username','area^[HTMLElement]|alt,coords,hash,host,hostname,href,!noHref,password,pathname,ping,port,protocol,referrerPolicy,search,shape,target,username','audio^media|','br^[HTMLElement]|clear','base^[HTMLElement]|href,target','body^[HTMLElement]|aLink,background,bgColor,link,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,text,vLink','button^[HTMLElement]|!autofocus,!disabled,formAction,formEnctype,formMethod,!formNoValidate,formTarget,name,type,value','canvas^[HTMLElement]|#height,#width','content^[HTMLElement]|select','dl^[HTMLElement]|!compact','datalist^[HTMLElement]|','details^[HTMLElement]|!open','dialog^[HTMLElement]|!open,returnValue','dir^[HTMLElement]|!compact','div^[HTMLElement]|align','embed^[HTMLElement]|align,height,name,src,type,width','fieldset^[HTMLElement]|!disabled,name','font^[HTMLElement]|color,face,size','form^[HTMLElement]|acceptCharset,action,autocomplete,encoding,enctype,method,name,!noValidate,target','frame^[HTMLElement]|frameBorder,longDesc,marginHeight,marginWidth,name,!noResize,scrolling,src','frameset^[HTMLElement]|cols,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,rows','hr^[HTMLElement]|align,color,!noShade,size,width','head^[HTMLElement]|','h1,h2,h3,h4,h5,h6^[HTMLElement]|align','html^[HTMLElement]|version','iframe^[HTMLElement]|align,!allowFullscreen,frameBorder,height,longDesc,marginHeight,marginWidth,name,referrerPolicy,%sandbox,scrolling,src,srcdoc,width','img^[HTMLElement]|align,alt,border,%crossOrigin,#height,#hspace,!isMap,longDesc,lowsrc,name,referrerPolicy,sizes,src,srcset,useMap,#vspace,#width','input^[HTMLElement]|accept,align,alt,autocapitalize,autocomplete,!autofocus,!checked,!defaultChecked,defaultValue,dirName,!disabled,%files,formAction,formEnctype,formMethod,!formNoValidate,formTarget,#height,!incremental,!indeterminate,max,#maxLength,min,#minLength,!multiple,name,pattern,placeholder,!readOnly,!required,selectionDirection,#selectionEnd,#selectionStart,#size,src,step,type,useMap,value,%valueAsDate,#valueAsNumber,#width','keygen^[HTMLElement]|!autofocus,challenge,!disabled,keytype,name','li^[HTMLElement]|type,#value','label^[HTMLElement]|htmlFor','legend^[HTMLElement]|align','link^[HTMLElement]|as,charset,%crossOrigin,!disabled,href,hreflang,integrity,media,rel,%relList,rev,%sizes,target,type','map^[HTMLElement]|name','marquee^[HTMLElement]|behavior,bgColor,direction,height,#hspace,#loop,#scrollAmount,#scrollDelay,!trueSpeed,#vspace,width','menu^[HTMLElement]|!compact','meta^[HTMLElement]|content,httpEquiv,name,scheme','meter^[HTMLElement]|#high,#low,#max,#min,#optimum,#value','ins,del^[HTMLElement]|cite,dateTime','ol^[HTMLElement]|!compact,!reversed,#start,type','object^[HTMLElement]|align,archive,border,code,codeBase,codeType,data,!declare,height,#hspace,name,standby,type,useMap,#vspace,width','optgroup^[HTMLElement]|!disabled,label','option^[HTMLElement]|!defaultSelected,!disabled,label,!selected,text,value','output^[HTMLElement]|defaultValue,%htmlFor,name,value','p^[HTMLElement]|align','param^[HTMLElement]|name,type,value,valueType','picture^[HTMLElement]|','pre^[HTMLElement]|#width','progress^[HTMLElement]|#max,#value','q,blockquote,cite^[HTMLElement]|','script^[HTMLElement]|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,src,text,type','select^[HTMLElement]|!autofocus,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value','shadow^[HTMLElement]|','source^[HTMLElement]|media,sizes,src,srcset,type','span^[HTMLElement]|','style^[HTMLElement]|!disabled,media,type','caption^[HTMLElement]|align','th,td^[HTMLElement]|abbr,align,axis,bgColor,ch,chOff,#colSpan,headers,height,!noWrap,#rowSpan,scope,vAlign,width','col,colgroup^[HTMLElement]|align,ch,chOff,#span,vAlign,width','table^[HTMLElement]|align,bgColor,border,%caption,cellPadding,cellSpacing,frame,rules,summary,%tFoot,%tHead,width','tr^[HTMLElement]|align,bgColor,ch,chOff,vAlign','tfoot,thead,tbody^[HTMLElement]|align,ch,chOff,vAlign','template^[HTMLElement]|','textarea^[HTMLElement]|autocapitalize,!autofocus,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap','title^[HTMLElement]|text','track^[HTMLElement]|!default,kind,label,src,srclang','ul^[HTMLElement]|!compact,type','unknown^[HTMLElement]|','video^media|#height,poster,#width',':svg:a^:svg:graphics|',':svg:animate^:svg:animation|',':svg:animateMotion^:svg:animation|',':svg:animateTransform^:svg:animation|',':svg:circle^:svg:geometry|',':svg:clipPath^:svg:graphics|',':svg:cursor^:svg:|',':svg:defs^:svg:graphics|',':svg:desc^:svg:|',':svg:discard^:svg:|',':svg:ellipse^:svg:geometry|',':svg:feBlend^:svg:|',':svg:feColorMatrix^:svg:|',':svg:feComponentTransfer^:svg:|',':svg:feComposite^:svg:|',':svg:feConvolveMatrix^:svg:|',':svg:feDiffuseLighting^:svg:|',':svg:feDisplacementMap^:svg:|',':svg:feDistantLight^:svg:|',':svg:feDropShadow^:svg:|',':svg:feFlood^:svg:|',':svg:feFuncA^:svg:componentTransferFunction|',':svg:feFuncB^:svg:componentTransferFunction|',':svg:feFuncG^:svg:componentTransferFunction|',':svg:feFuncR^:svg:componentTransferFunction|',':svg:feGaussianBlur^:svg:|',':svg:feImage^:svg:|',':svg:feMerge^:svg:|',':svg:feMergeNode^:svg:|',':svg:feMorphology^:svg:|',':svg:feOffset^:svg:|',':svg:fePointLight^:svg:|',':svg:feSpecularLighting^:svg:|',':svg:feSpotLight^:svg:|',':svg:feTile^:svg:|',':svg:feTurbulence^:svg:|',':svg:filter^:svg:|',':svg:foreignObject^:svg:graphics|',':svg:g^:svg:graphics|',':svg:image^:svg:graphics|',':svg:line^:svg:geometry|',':svg:linearGradient^:svg:gradient|',':svg:mpath^:svg:|',':svg:marker^:svg:|',':svg:mask^:svg:|',':svg:metadata^:svg:|',':svg:path^:svg:geometry|',':svg:pattern^:svg:|',':svg:polygon^:svg:geometry|',':svg:polyline^:svg:geometry|',':svg:radialGradient^:svg:gradient|',':svg:rect^:svg:geometry|',':svg:svg^:svg:graphics|#currentScale,#zoomAndPan',':svg:script^:svg:|type',':svg:set^:svg:animation|',':svg:stop^:svg:|',':svg:style^:svg:|!disabled,media,title,type',':svg:switch^:svg:graphics|',':svg:symbol^:svg:|',':svg:tspan^:svg:textPositioning|',':svg:text^:svg:textPositioning|',':svg:textPath^:svg:textContent|',':svg:title^:svg:|',':svg:use^:svg:graphics|',':svg:view^:svg:|#zoomAndPan','data^[HTMLElement]|value','menuitem^[HTMLElement]|type,label,icon,!disabled,!checked,radiogroup,!default','summary^[HTMLElement]|','time^[HTMLElement]|dateTime'];var/** @type {?} */_ATTR_TO_PROP={'class':'className','for':'htmlFor','formaction':'formAction','innerHtml':'innerHTML','readonly':'readOnly','tabindex':'tabIndex'};var DomElementSchemaRegistry=function(_ElementSchemaRegistr){_inherits(DomElementSchemaRegistry,_ElementSchemaRegistr);function DomElementSchemaRegistry(){_classCallCheck(this,DomElementSchemaRegistry);var _this194=_possibleConstructorReturn(this,(DomElementSchemaRegistry.__proto__||Object.getPrototypeOf(DomElementSchemaRegistry)).call(this));_this194._schema={};SCHEMA.forEach(function(encodedType){var type={};var _encodedType$split=encodedType.split('|'),_encodedType$split2=_slicedToArray(_encodedType$split,2),strType=_encodedType$split2[0],strProperties=_encodedType$split2[1];var properties=strProperties.split(',');var _strType$split=strType.split('^'),_strType$split2=_slicedToArray(_strType$split,2),typeNames=_strType$split2[0],superName=_strType$split2[1];typeNames.split(',').forEach(function(tag){return _this194._schema[tag.toLowerCase()]=type;});var superType=superName&&_this194._schema[superName.toLowerCase()];if(superType){Object.keys(superType).forEach(function(prop){type[prop]=superType[prop];});}properties.forEach(function(property){if(property.length>0){switch(property[0]){case'*':// We don't yet support events.
+var/** @type {?} */SCHEMA=['[Element]|textContent,%classList,className,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*copy,*cut,*paste,*search,*selectstart,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerHTML,#scrollLeft,#scrollTop','[HTMLElement]^[Element]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate','abbr,address,article,aside,b,bdi,bdo,cite,code,dd,dfn,dt,em,figcaption,figure,footer,header,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate','media^[HTMLElement]|!autoplay,!controls,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,#playbackRate,preload,src,%srcObject,#volume',':svg:^[HTMLElement]|*abort,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*cuechange,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*seeked,*seeking,*select,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,%style,#tabIndex',':svg:graphics^:svg:|',':svg:animation^:svg:|*begin,*end,*repeat',':svg:geometry^:svg:|',':svg:componentTransferFunction^:svg:|',':svg:gradient^:svg:|',':svg:textContent^:svg:graphics|',':svg:textPositioning^:svg:textContent|','a^[HTMLElement]|charset,coords,download,hash,host,hostname,href,hreflang,name,password,pathname,ping,port,protocol,referrerPolicy,rel,rev,search,shape,target,text,type,username','area^[HTMLElement]|alt,coords,hash,host,hostname,href,!noHref,password,pathname,ping,port,protocol,referrerPolicy,search,shape,target,username','audio^media|','br^[HTMLElement]|clear','base^[HTMLElement]|href,target','body^[HTMLElement]|aLink,background,bgColor,link,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,text,vLink','button^[HTMLElement]|!autofocus,!disabled,formAction,formEnctype,formMethod,!formNoValidate,formTarget,name,type,value','canvas^[HTMLElement]|#height,#width','content^[HTMLElement]|select','dl^[HTMLElement]|!compact','datalist^[HTMLElement]|','details^[HTMLElement]|!open','dialog^[HTMLElement]|!open,returnValue','dir^[HTMLElement]|!compact','div^[HTMLElement]|align','embed^[HTMLElement]|align,height,name,src,type,width','fieldset^[HTMLElement]|!disabled,name','font^[HTMLElement]|color,face,size','form^[HTMLElement]|acceptCharset,action,autocomplete,encoding,enctype,method,name,!noValidate,target','frame^[HTMLElement]|frameBorder,longDesc,marginHeight,marginWidth,name,!noResize,scrolling,src','frameset^[HTMLElement]|cols,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,rows','hr^[HTMLElement]|align,color,!noShade,size,width','head^[HTMLElement]|','h1,h2,h3,h4,h5,h6^[HTMLElement]|align','html^[HTMLElement]|version','iframe^[HTMLElement]|align,!allowFullscreen,frameBorder,height,longDesc,marginHeight,marginWidth,name,referrerPolicy,%sandbox,scrolling,src,srcdoc,width','img^[HTMLElement]|align,alt,border,%crossOrigin,#height,#hspace,!isMap,longDesc,lowsrc,name,referrerPolicy,sizes,src,srcset,useMap,#vspace,#width','input^[HTMLElement]|accept,align,alt,autocapitalize,autocomplete,!autofocus,!checked,!defaultChecked,defaultValue,dirName,!disabled,%files,formAction,formEnctype,formMethod,!formNoValidate,formTarget,#height,!incremental,!indeterminate,max,#maxLength,min,#minLength,!multiple,name,pattern,placeholder,!readOnly,!required,selectionDirection,#selectionEnd,#selectionStart,#size,src,step,type,useMap,value,%valueAsDate,#valueAsNumber,#width','keygen^[HTMLElement]|!autofocus,challenge,!disabled,keytype,name','li^[HTMLElement]|type,#value','label^[HTMLElement]|htmlFor','legend^[HTMLElement]|align','link^[HTMLElement]|as,charset,%crossOrigin,!disabled,href,hreflang,integrity,media,rel,%relList,rev,%sizes,target,type','map^[HTMLElement]|name','marquee^[HTMLElement]|behavior,bgColor,direction,height,#hspace,#loop,#scrollAmount,#scrollDelay,!trueSpeed,#vspace,width','menu^[HTMLElement]|!compact','meta^[HTMLElement]|content,httpEquiv,name,scheme','meter^[HTMLElement]|#high,#low,#max,#min,#optimum,#value','ins,del^[HTMLElement]|cite,dateTime','ol^[HTMLElement]|!compact,!reversed,#start,type','object^[HTMLElement]|align,archive,border,code,codeBase,codeType,data,!declare,height,#hspace,name,standby,type,useMap,#vspace,width','optgroup^[HTMLElement]|!disabled,label','option^[HTMLElement]|!defaultSelected,!disabled,label,!selected,text,value','output^[HTMLElement]|defaultValue,%htmlFor,name,value','p^[HTMLElement]|align','param^[HTMLElement]|name,type,value,valueType','picture^[HTMLElement]|','pre^[HTMLElement]|#width','progress^[HTMLElement]|#max,#value','q,blockquote,cite^[HTMLElement]|','script^[HTMLElement]|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,src,text,type','select^[HTMLElement]|!autofocus,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value','shadow^[HTMLElement]|','source^[HTMLElement]|media,sizes,src,srcset,type','span^[HTMLElement]|','style^[HTMLElement]|!disabled,media,type','caption^[HTMLElement]|align','th,td^[HTMLElement]|abbr,align,axis,bgColor,ch,chOff,#colSpan,headers,height,!noWrap,#rowSpan,scope,vAlign,width','col,colgroup^[HTMLElement]|align,ch,chOff,#span,vAlign,width','table^[HTMLElement]|align,bgColor,border,%caption,cellPadding,cellSpacing,frame,rules,summary,%tFoot,%tHead,width','tr^[HTMLElement]|align,bgColor,ch,chOff,vAlign','tfoot,thead,tbody^[HTMLElement]|align,ch,chOff,vAlign','template^[HTMLElement]|','textarea^[HTMLElement]|autocapitalize,!autofocus,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap','title^[HTMLElement]|text','track^[HTMLElement]|!default,kind,label,src,srclang','ul^[HTMLElement]|!compact,type','unknown^[HTMLElement]|','video^media|#height,poster,#width',':svg:a^:svg:graphics|',':svg:animate^:svg:animation|',':svg:animateMotion^:svg:animation|',':svg:animateTransform^:svg:animation|',':svg:circle^:svg:geometry|',':svg:clipPath^:svg:graphics|',':svg:cursor^:svg:|',':svg:defs^:svg:graphics|',':svg:desc^:svg:|',':svg:discard^:svg:|',':svg:ellipse^:svg:geometry|',':svg:feBlend^:svg:|',':svg:feColorMatrix^:svg:|',':svg:feComponentTransfer^:svg:|',':svg:feComposite^:svg:|',':svg:feConvolveMatrix^:svg:|',':svg:feDiffuseLighting^:svg:|',':svg:feDisplacementMap^:svg:|',':svg:feDistantLight^:svg:|',':svg:feDropShadow^:svg:|',':svg:feFlood^:svg:|',':svg:feFuncA^:svg:componentTransferFunction|',':svg:feFuncB^:svg:componentTransferFunction|',':svg:feFuncG^:svg:componentTransferFunction|',':svg:feFuncR^:svg:componentTransferFunction|',':svg:feGaussianBlur^:svg:|',':svg:feImage^:svg:|',':svg:feMerge^:svg:|',':svg:feMergeNode^:svg:|',':svg:feMorphology^:svg:|',':svg:feOffset^:svg:|',':svg:fePointLight^:svg:|',':svg:feSpecularLighting^:svg:|',':svg:feSpotLight^:svg:|',':svg:feTile^:svg:|',':svg:feTurbulence^:svg:|',':svg:filter^:svg:|',':svg:foreignObject^:svg:graphics|',':svg:g^:svg:graphics|',':svg:image^:svg:graphics|',':svg:line^:svg:geometry|',':svg:linearGradient^:svg:gradient|',':svg:mpath^:svg:|',':svg:marker^:svg:|',':svg:mask^:svg:|',':svg:metadata^:svg:|',':svg:path^:svg:geometry|',':svg:pattern^:svg:|',':svg:polygon^:svg:geometry|',':svg:polyline^:svg:geometry|',':svg:radialGradient^:svg:gradient|',':svg:rect^:svg:geometry|',':svg:svg^:svg:graphics|#currentScale,#zoomAndPan',':svg:script^:svg:|type',':svg:set^:svg:animation|',':svg:stop^:svg:|',':svg:style^:svg:|!disabled,media,title,type',':svg:switch^:svg:graphics|',':svg:symbol^:svg:|',':svg:tspan^:svg:textPositioning|',':svg:text^:svg:textPositioning|',':svg:textPath^:svg:textContent|',':svg:title^:svg:|',':svg:use^:svg:graphics|',':svg:view^:svg:|#zoomAndPan','data^[HTMLElement]|value','menuitem^[HTMLElement]|type,label,icon,!disabled,!checked,radiogroup,!default','summary^[HTMLElement]|','time^[HTMLElement]|dateTime'];var/** @type {?} */_ATTR_TO_PROP={'class':'className','for':'htmlFor','formaction':'formAction','innerHtml':'innerHTML','readonly':'readOnly','tabindex':'tabIndex'};var DomElementSchemaRegistry=function(_ElementSchemaRegistr){_inherits(DomElementSchemaRegistry,_ElementSchemaRegistr);function DomElementSchemaRegistry(){_classCallCheck(this,DomElementSchemaRegistry);var _this160=_possibleConstructorReturn(this,(DomElementSchemaRegistry.__proto__||Object.getPrototypeOf(DomElementSchemaRegistry)).call(this));_this160._schema={};SCHEMA.forEach(function(encodedType){var type={};var _encodedType$split=encodedType.split('|'),_encodedType$split2=_slicedToArray(_encodedType$split,2),strType=_encodedType$split2[0],strProperties=_encodedType$split2[1];var properties=strProperties.split(',');var _strType$split=strType.split('^'),_strType$split2=_slicedToArray(_strType$split,2),typeNames=_strType$split2[0],superName=_strType$split2[1];typeNames.split(',').forEach(function(tag){return _this160._schema[tag.toLowerCase()]=type;});var superType=superName&&_this160._schema[superName.toLowerCase()];if(superType){Object.keys(superType).forEach(function(prop){type[prop]=superType[prop];});}properties.forEach(function(property){if(property.length>0){switch(property[0]){case'*':// We don't yet support events.
 // If ever allowing to bind to events, GO THROUGH A SECURITY REVIEW, allowing events
 // will
 // almost certainly introduce bad XSS vulnerabilities.
 // type[property.substring(1)] = EVENT;
-break;case'!':type[property.substring(1)]=BOOLEAN;break;case'#':type[property.substring(1)]=NUMBER;break;case'%':type[property.substring(1)]=OBJECT;break;default:type[property]=STRING;}}});});return _this194;}/**
+break;case'!':type[property.substring(1)]=BOOLEAN;break;case'#':type[property.substring(1)]=NUMBER;break;case'%':type[property.substring(1)]=OBJECT;break;default:type[property]=STRING;}}});});return _this160;}/**
      * @param {?} tagName
      * @param {?} propName
      * @param {?} schemaMetas
@@ -6177,13 +5085,13 @@ return cssText.replace(regExp,function(){for(var _len3=arguments.length,m=Array(
      * @param {?} scopeSelector
      * @param {?} hostSelector
      * @return {?}
-     */},{key:'_scopeSelectors',value:function _scopeSelectors(cssText,scopeSelector,hostSelector){var _this195=this;return processRules(cssText,function(rule){var/** @type {?} */selector=rule.selector;var/** @type {?} */content=rule.content;if(rule.selector[0]!='@'){selector=_this195._scopeSelector(rule.selector,scopeSelector,hostSelector,_this195.strictStyling);}else if(rule.selector.startsWith('@media')||rule.selector.startsWith('@supports')||rule.selector.startsWith('@page')||rule.selector.startsWith('@document')){content=_this195._scopeSelectors(rule.content,scopeSelector,hostSelector);}return new CssRule(selector,content);});}/**
+     */},{key:'_scopeSelectors',value:function _scopeSelectors(cssText,scopeSelector,hostSelector){var _this161=this;return processRules(cssText,function(rule){var/** @type {?} */selector=rule.selector;var/** @type {?} */content=rule.content;if(rule.selector[0]!='@'){selector=_this161._scopeSelector(rule.selector,scopeSelector,hostSelector,_this161.strictStyling);}else if(rule.selector.startsWith('@media')||rule.selector.startsWith('@supports')||rule.selector.startsWith('@page')||rule.selector.startsWith('@document')){content=_this161._scopeSelectors(rule.content,scopeSelector,hostSelector);}return new CssRule(selector,content);});}/**
      * @param {?} selector
      * @param {?} scopeSelector
      * @param {?} hostSelector
      * @param {?} strict
      * @return {?}
-     */},{key:'_scopeSelector',value:function _scopeSelector(selector,scopeSelector,hostSelector,strict){var _this196=this;return selector.split(',').map(function(part){return part.trim().split(_shadowDeepSelectors);}).map(function(deepParts){var _deepParts=_toArray(deepParts),shallowPart=_deepParts[0],otherParts=_deepParts.slice(1);var/** @type {?} */applyScope=function applyScope(shallowPart){if(_this196._selectorNeedsScoping(shallowPart,scopeSelector)){return strict?_this196._applyStrictSelectorScope(shallowPart,scopeSelector,hostSelector):_this196._applySelectorScope(shallowPart,scopeSelector,hostSelector);}else{return shallowPart;}};return[applyScope(shallowPart)].concat(_toConsumableArray(otherParts)).join(' ');}).join(', ');}/**
+     */},{key:'_scopeSelector',value:function _scopeSelector(selector,scopeSelector,hostSelector,strict){var _this162=this;return selector.split(',').map(function(part){return part.trim().split(_shadowDeepSelectors);}).map(function(deepParts){var _deepParts=_toArray(deepParts),shallowPart=_deepParts[0],otherParts=_deepParts.slice(1);var/** @type {?} */applyScope=function applyScope(shallowPart){if(_this162._selectorNeedsScoping(shallowPart,scopeSelector)){return strict?_this162._applyStrictSelectorScope(shallowPart,scopeSelector,hostSelector):_this162._applySelectorScope(shallowPart,scopeSelector,hostSelector);}else{return shallowPart;}};return[applyScope(shallowPart)].concat(_toConsumableArray(otherParts)).join(' ');}).join(', ');}/**
      * @param {?} selector
      * @param {?} scopeSelector
      * @return {?}
@@ -6207,7 +5115,7 @@ _polyfillHostRe.lastIndex=0;if(_polyfillHostRe.test(selector)){var/** @type {?} 
      * @param {?} scopeSelector
      * @param {?} hostSelector
      * @return {?}
-     */},{key:'_applyStrictSelectorScope',value:function _applyStrictSelectorScope(selector,scopeSelector,hostSelector){var _this197=this;var/** @type {?} */isRe=/\[is=([^\]]*)\]/g;scopeSelector=scopeSelector.replace(isRe,function(_){return arguments.length<=1?undefined:arguments[1];});var/** @type {?} */attrName='['+scopeSelector+']';var/** @type {?} */_scopeSelectorPart=function _scopeSelectorPart(p){var/** @type {?} */scopedP=p.trim();if(!scopedP){return'';}if(p.indexOf(_polyfillHostNoCombinator)>-1){scopedP=_this197._applySimpleSelectorScope(p,scopeSelector,hostSelector);}else{// remove :host since it should be unnecessary
+     */},{key:'_applyStrictSelectorScope',value:function _applyStrictSelectorScope(selector,scopeSelector,hostSelector){var _this163=this;var/** @type {?} */isRe=/\[is=([^\]]*)\]/g;scopeSelector=scopeSelector.replace(isRe,function(_){return arguments.length<=1?undefined:arguments[1];});var/** @type {?} */attrName='['+scopeSelector+']';var/** @type {?} */_scopeSelectorPart=function _scopeSelectorPart(p){var/** @type {?} */scopedP=p.trim();if(!scopedP){return'';}if(p.indexOf(_polyfillHostNoCombinator)>-1){scopedP=_this163._applySimpleSelectorScope(p,scopeSelector,hostSelector);}else{// remove :host since it should be unnecessary
 var/** @type {?} */t=p.replace(_polyfillHostRe,'');if(t.length>0){var/** @type {?} */matches=t.match(/([^:]*)(:*)(.*)/);if(matches){scopedP=matches[1]+attrName+matches[2]+matches[3];}}}return scopedP;};var/** @type {?} */safeContent=new SafeSelector(selector);selector=safeContent.content();var/** @type {?} */scopedSelector='';var/** @type {?} */startIndex=0;var/** @type {?} */res=void 0;var/** @type {?} */sep=/( |>|\+|~(?!=))\s*/g;var/** @type {?} */scopeAfter=selector.indexOf(_polyfillHostNoCombinator);while((res=sep.exec(selector))!==null){var/** @type {?} */separator=res[1];var/** @type {?} */part=selector.slice(startIndex,res.index).trim();// if a selector appears before :host-context it should not be shimmed as it
 // matches on ancestor elements and not on elements in the host's shadow
 var/** @type {?} */scopedPart=startIndex>=scopeAfter?_scopeSelectorPart(part):part;scopedSelector+=scopedPart+' '+separator+' ';startIndex=sep.lastIndex;}scopedSelector+=_scopeSelectorPart(selector.substring(startIndex));// replace the placeholders with their original values
@@ -6216,14 +5124,14 @@ return safeContent.restore(scopedSelector);}/**
      * @return {?}
      */},{key:'_insertPolyfillHostInCssText',value:function _insertPolyfillHostInCssText(selector){return selector.replace(_colonHostContextRe,_polyfillHostContext).replace(_colonHostRe,_polyfillHost);}}]);return ShadowCss;}();var SafeSelector=function(){/**
      * @param {?} selector
-     */function SafeSelector(selector){var _this198=this;_classCallCheck(this,SafeSelector);this.placeholders=[];this.index=0;// Replaces attribute selectors with placeholders.
+     */function SafeSelector(selector){var _this164=this;_classCallCheck(this,SafeSelector);this.placeholders=[];this.index=0;// Replaces attribute selectors with placeholders.
 // The WS in [attr="va lue"] would otherwise be interpreted as a selector separator.
-selector=selector.replace(/(\[[^\]]*\])/g,function(_,keep){var replaceBy='__ph-'+_this198.index+'__';_this198.placeholders.push(keep);_this198.index++;return replaceBy;});// Replaces the expression in `:nth-child(2n + 1)` with a placeholder.
+selector=selector.replace(/(\[[^\]]*\])/g,function(_,keep){var replaceBy='__ph-'+_this164.index+'__';_this164.placeholders.push(keep);_this164.index++;return replaceBy;});// Replaces the expression in `:nth-child(2n + 1)` with a placeholder.
 // WS and "+" would otherwise be interpreted as selector separators.
-this._content=selector.replace(/(:nth-[-\w]+)(\([^)]+\))/g,function(_,pseudo,exp){var replaceBy='__ph-'+_this198.index+'__';_this198.placeholders.push(exp);_this198.index++;return pseudo+replaceBy;});}_createClass(SafeSelector,[{key:'restore',/**
+this._content=selector.replace(/(:nth-[-\w]+)(\([^)]+\))/g,function(_,pseudo,exp){var replaceBy='__ph-'+_this164.index+'__';_this164.placeholders.push(exp);_this164.index++;return pseudo+replaceBy;});}_createClass(SafeSelector,[{key:'restore',/**
      * @param {?} content
      * @return {?}
-     */value:function restore(content){var _this199=this;return content.replace(/__ph-(\d+)__/g,function(ph,index){return _this199.placeholders[+index];});}/**
+     */value:function restore(content){var _this165=this;return content.replace(/__ph-(\d+)__/g,function(ph,index){return _this165.placeholders[+index];});}/**
      * @return {?}
      */},{key:'content',value:function content(){return this._content;}}]);return SafeSelector;}();var/** @type {?} */_cssContentNextSelectorRe=/polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;var/** @type {?} */_cssContentRuleRe=/(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;var/** @type {?} */_cssContentUnscopedRuleRe=/(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;var/** @type {?} */_polyfillHost='-shadowcsshost';// note: :host-context pre-processed to -shadowcsshostcontext.
 var/** @type {?} */_polyfillHostContext='-shadowcsscontext';var/** @type {?} */_parenSuffix=')(?:\\(('+'(?:\\([^)(]*\\)|[^)(]*)+?'+')\\))?([^,{]*)';var/** @type {?} */_cssColonHostRe=new RegExp('('+_polyfillHost+_parenSuffix,'gim');var/** @type {?} */_cssColonHostContextRe=new RegExp('('+_polyfillHostContext+_parenSuffix,'gim');var/** @type {?} */_polyfillHostNoCombinator=_polyfillHost+'-no-combinator';var/** @type {?} */_polyfillHostNoCombinatorRe=/-shadowcsshost-no-combinator([^\s]*)/;var/** @type {?} */_shadowDOMSelectorsRe=[/::shadow/g,/::content/g,// Deprecated selectors
@@ -6266,12 +5174,12 @@ var/** @type {?} */_sourceMappingUrlRe=/\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\/
      */function StyleCompiler(_urlResolver){_classCallCheck(this,StyleCompiler);this._urlResolver=_urlResolver;this._shadowCss=new ShadowCss();}/**
      * @param {?} comp
      * @return {?}
-     */_createClass(StyleCompiler,[{key:'compileComponent',value:function compileComponent(comp){var _this200=this;var/** @type {?} */externalStylesheets=[];var/** @type {?} */componentStylesheet=this._compileStyles(comp,new CompileStylesheetMetadata({styles:comp.template.styles,styleUrls:comp.template.styleUrls,moduleUrl:identifierModuleUrl(comp.type)}),true);comp.template.externalStylesheets.forEach(function(stylesheetMeta){var/** @type {?} */compiledStylesheet=_this200._compileStyles(comp,stylesheetMeta,false);externalStylesheets.push(compiledStylesheet);});return new StylesCompileResult(componentStylesheet,externalStylesheets);}/**
+     */_createClass(StyleCompiler,[{key:'compileComponent',value:function compileComponent(comp){var _this166=this;var/** @type {?} */externalStylesheets=[];var/** @type {?} */componentStylesheet=this._compileStyles(comp,new CompileStylesheetMetadata({styles:comp.template.styles,styleUrls:comp.template.styleUrls,moduleUrl:identifierModuleUrl(comp.type)}),true);comp.template.externalStylesheets.forEach(function(stylesheetMeta){var/** @type {?} */compiledStylesheet=_this166._compileStyles(comp,stylesheetMeta,false);externalStylesheets.push(compiledStylesheet);});return new StylesCompileResult(componentStylesheet,externalStylesheets);}/**
      * @param {?} comp
      * @param {?} stylesheet
      * @param {?} isComponentStylesheet
      * @return {?}
-     */},{key:'_compileStyles',value:function _compileStyles(comp,stylesheet,isComponentStylesheet){var _this201=this;var/** @type {?} */shim=comp.template.encapsulation===ViewEncapsulation.Emulated;var/** @type {?} */styleExpressions=stylesheet.styles.map(function(plainStyle){return literal(_this201._shimIfNeeded(plainStyle,shim));});var/** @type {?} */dependencies=[];for(var/** @type {?} */i=0;i<stylesheet.styleUrls.length;i++){var/** @type {?} */identifier={reference:null};dependencies.push(new StylesCompileDependency(getStylesVarName(null),stylesheet.styleUrls[i],shim,identifier));styleExpressions.push(new ExternalExpr(identifier));}// styles variable contains plain strings and arrays of other styles arrays (recursive),
+     */},{key:'_compileStyles',value:function _compileStyles(comp,stylesheet,isComponentStylesheet){var _this167=this;var/** @type {?} */shim=comp.template.encapsulation===ViewEncapsulation.Emulated;var/** @type {?} */styleExpressions=stylesheet.styles.map(function(plainStyle){return literal(_this167._shimIfNeeded(plainStyle,shim));});var/** @type {?} */dependencies=[];for(var/** @type {?} */i=0;i<stylesheet.styleUrls.length;i++){var/** @type {?} */identifier={reference:null};dependencies.push(new StylesCompileDependency(getStylesVarName(null),stylesheet.styleUrls[i],shim,identifier));styleExpressions.push(new ExternalExpr(identifier));}// styles variable contains plain strings and arrays of other styles arrays (recursive),
 // so we set its type to dynamic.
 var/** @type {?} */stylesVar=getStylesVarName(isComponentStylesheet?comp:null);var/** @type {?} */stmt=variable(stylesVar).set(literalArr(styleExpressions,new ArrayType(DYNAMIC_TYPE,[TypeModifier.Const]))).toDeclStmt(null,[StmtModifier.Final]);return new CompiledStylesheet([stmt],stylesVar,dependencies,shim,stylesheet);}/**
      * @param {?} style
@@ -6280,611 +5188,382 @@ var/** @type {?} */stylesVar=getStylesVarName(isComponentStylesheet?comp:null);v
      */},{key:'_shimIfNeeded',value:function _shimIfNeeded(style,shim){return shim?this._shadowCss.shimCssText(style,CONTENT_ATTR,HOST_ATTR):style;}}]);return StyleCompiler;}();StyleCompiler.decorators=[{type:CompilerInjectable}];/** @nocollapse */StyleCompiler.ctorParameters=function(){return[{type:UrlResolver}];};/**
  * @param {?} component
  * @return {?}
- */function getStylesVarName(component){var/** @type {?} */result='styles';if(component){result+='_'+identifierName(component.type);}return result;}var _DebugState=/**
-     * @param {?} nodeIndex
-     * @param {?} sourceAst
-     */function _DebugState(nodeIndex,sourceAst){_classCallCheck(this,_DebugState);this.nodeIndex=nodeIndex;this.sourceAst=sourceAst;};var/** @type {?} */NULL_DEBUG_STATE=new _DebugState(null,null);var CompileMethod=function(){/**
-     * @param {?} _view
-     */function CompileMethod(_view){_classCallCheck(this,CompileMethod);this._view=_view;this._newState=NULL_DEBUG_STATE;this._currState=NULL_DEBUG_STATE;this._bodyStatements=[];this._debugEnabled=this._view.genConfig.genDebugInfo;}/**
-     * @return {?}
-     */_createClass(CompileMethod,[{key:'_updateDebugContextIfNeeded',value:function _updateDebugContextIfNeeded(){if(this._newState.nodeIndex!==this._currState.nodeIndex||this._newState.sourceAst!==this._currState.sourceAst){var/** @type {?} */expr=this._updateDebugContext(this._newState);if(expr){this._bodyStatements.push(expr.toStmt());}}}/**
-     * @param {?} newState
-     * @return {?}
-     */},{key:'_updateDebugContext',value:function _updateDebugContext(newState){this._currState=this._newState=newState;if(this._debugEnabled){var/** @type {?} */sourceLocation=newState.sourceAst?newState.sourceAst.sourceSpan.start:null;return THIS_EXPR.callMethod('debug',[literal(newState.nodeIndex),sourceLocation?literal(sourceLocation.line):NULL_EXPR,sourceLocation?literal(sourceLocation.col):NULL_EXPR]);}else{return null;}}/**
-     * @param {?} nodeIndex
-     * @param {?} templateAst
-     * @return {?}
-     */},{key:'resetDebugInfoExpr',value:function resetDebugInfoExpr(nodeIndex,templateAst){var/** @type {?} */res=this._updateDebugContext(new _DebugState(nodeIndex,templateAst));return res||NULL_EXPR;}/**
-     * @param {?} nodeIndex
-     * @param {?} templateAst
-     * @return {?}
-     */},{key:'resetDebugInfo',value:function resetDebugInfo(nodeIndex,templateAst){this._newState=new _DebugState(nodeIndex,templateAst);}/**
-     * @param {...?} stmts
-     * @return {?}
-     */},{key:'push',value:function push(){for(var _len4=arguments.length,stmts=Array(_len4),_key4=0;_key4<_len4;_key4++){stmts[_key4]=arguments[_key4];}this.addStmts(stmts);}/**
-     * @param {?} stmt
-     * @return {?}
-     */},{key:'addStmt',value:function addStmt(stmt){this._updateDebugContextIfNeeded();this._bodyStatements.push(stmt);}/**
+ */function getStylesVarName(component){var/** @type {?} */result='styles';if(component){result+='_'+identifierName(component.type);}return result;}var EventHandlerVars=function EventHandlerVars(){_classCallCheck(this,EventHandlerVars);};EventHandlerVars.event=variable('$event');var ConvertActionBindingResult=/**
      * @param {?} stmts
-     * @return {?}
-     */},{key:'addStmts',value:function addStmts(stmts){var _bodyStatements;this._updateDebugContextIfNeeded();(_bodyStatements=this._bodyStatements).push.apply(_bodyStatements,_toConsumableArray(stmts));}/**
-     * @return {?}
-     */},{key:'finish',value:function finish(){return this._bodyStatements;}/**
-     * @return {?}
-     */},{key:'isEmpty',value:function isEmpty(){return this._bodyStatements.length===0;}}]);return CompileMethod;}();/**
- * @param {?} property
- * @param {?} callingView
- * @param {?} definedView
+     * @param {?} allowDefault
+     */function ConvertActionBindingResult(stmts,allowDefault){_classCallCheck(this,ConvertActionBindingResult);this.stmts=stmts;this.allowDefault=allowDefault;};/**
+ * Converts the given expression AST into an executable output AST, assuming the expression is
+ * used in an action binding (e.g. an event handler).
+ * @param {?} localResolver
+ * @param {?} implicitReceiver
+ * @param {?} action
+ * @param {?} bindingId
  * @return {?}
- */function getPropertyInView(property,callingView,definedView){if(callingView===definedView){return property;}else{var/** @type {?} */viewProp=THIS_EXPR;var/** @type {?} */currView=callingView;while(currView!==definedView&&currView.declarationElement.view){currView=currView.declarationElement.view;viewProp=viewProp.prop('parentView');}if(currView!==definedView){throw new Error('Internal error: Could not calculate a property in a parent view: '+property);}return property.visitExpression(new _ReplaceViewTransformer(viewProp,definedView),null);}}var _ReplaceViewTransformer=function(_ExpressionTransforme2){_inherits(_ReplaceViewTransformer,_ExpressionTransforme2);/**
-     * @param {?} _viewExpr
-     * @param {?} _view
-     */function _ReplaceViewTransformer(_viewExpr,_view){_classCallCheck(this,_ReplaceViewTransformer);var _this202=_possibleConstructorReturn(this,(_ReplaceViewTransformer.__proto__||Object.getPrototypeOf(_ReplaceViewTransformer)).call(this));_this202._viewExpr=_viewExpr;_this202._view=_view;return _this202;}/**
-     * @param {?} expr
-     * @return {?}
-     */_createClass(_ReplaceViewTransformer,[{key:'_isThis',value:function _isThis(expr){return expr instanceof ReadVarExpr&&expr.builtin===BuiltinVar.This;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitReadVarExpr',value:function visitReadVarExpr(ast,context){return this._isThis(ast)?this._viewExpr:ast;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitReadPropExpr',value:function visitReadPropExpr(ast,context){if(this._isThis(ast.receiver)){// Note: Don't cast for members of the AppView base class...
-if(this._view.fields.some(function(field){return field.name==ast.name;})||this._view.getters.some(function(field){return field.name==ast.name;})){return this._viewExpr.cast(this._view.classType).prop(ast.name);}}return _get(_ReplaceViewTransformer.prototype.__proto__||Object.getPrototypeOf(_ReplaceViewTransformer.prototype),'visitReadPropExpr',this).call(this,ast,context);}}]);return _ReplaceViewTransformer;}(ExpressionTransformer);/**
- * @param {?} view
- * @param {?} token
- * @param {?} optional
+ */function convertActionBinding(localResolver,implicitReceiver,action,bindingId){if(!localResolver){localResolver=new DefaultLocalResolver();}var/** @type {?} */actionWithoutBuiltins=convertPropertyBindingBuiltins({createLiteralArrayConverter:function createLiteralArrayConverter(argCount){// Note: no caching for literal arrays in actions.
+return function(args){return literalArr(args);};},createLiteralMapConverter:function createLiteralMapConverter(keys){// Note: no caching for literal maps in actions.
+return function(args){return literalMap(/** @type {?} */keys.map(function(key,i){return[key,args[i]];}));};},createPipeConverter:function createPipeConverter(name){throw new Error('Illegal State: Actions are not allowed to contain pipes. Pipe: '+name);}},action);var/** @type {?} */visitor=new _AstToIrVisitor(localResolver,implicitReceiver,bindingId);var/** @type {?} */actionStmts=[];flattenStatements(actionWithoutBuiltins.visit(visitor,_Mode.Statement),actionStmts);prependTemporaryDecls(visitor.temporaryCount,bindingId,actionStmts);var/** @type {?} */lastIndex=actionStmts.length-1;var/** @type {?} */preventDefaultVar=null;if(lastIndex>=0){var/** @type {?} */lastStatement=actionStmts[lastIndex];var/** @type {?} */returnExpr=convertStmtIntoExpression(lastStatement);if(returnExpr){// Note: We need to cast the result of the method call to dynamic,
+// as it might be a void method!
+preventDefaultVar=createPreventDefaultVar(bindingId);actionStmts[lastIndex]=preventDefaultVar.set(returnExpr.cast(DYNAMIC_TYPE).notIdentical(literal(false))).toDeclStmt(null,[StmtModifier.Final]);}}return new ConvertActionBindingResult(actionStmts,preventDefaultVar);}/**
+ * @param {?} converterFactory
+ * @param {?} ast
  * @return {?}
- */function injectFromViewParentInjector(view,token,optional){var/** @type {?} */viewExpr=void 0;if(view.viewType===ɵViewType.HOST){viewExpr=THIS_EXPR;}else{viewExpr=THIS_EXPR.prop('parentView');}var/** @type {?} */args=[createDiTokenExpression(token),THIS_EXPR.prop('parentIndex')];if(optional){args.push(NULL_EXPR);}return viewExpr.callMethod('injectorGet',args);}/**
- * @param {?} elementIndex
+ */function convertPropertyBindingBuiltins(converterFactory,ast){return convertBuiltins(converterFactory,ast);}var ConvertPropertyBindingResult=/**
+     * @param {?} stmts
+     * @param {?} currValExpr
+     */function ConvertPropertyBindingResult(stmts,currValExpr){_classCallCheck(this,ConvertPropertyBindingResult);this.stmts=stmts;this.currValExpr=currValExpr;};/**
+ * Converts the given expression AST into an executable output AST, assuming the expression
+ * is used in property binding. The expression has to be preprocessed via
+ * `convertPropertyBindingBuiltins`.
+ * @param {?} localResolver
+ * @param {?} implicitReceiver
+ * @param {?} expressionWithoutBuiltins
+ * @param {?} bindingId
  * @return {?}
- */function getHandleEventMethodName(elementIndex){return'handleEvent_'+elementIndex;}var ViewQueryValues=/**
-     * @param {?} view
-     * @param {?} values
-     */function ViewQueryValues(view,values){_classCallCheck(this,ViewQueryValues);this.view=view;this.values=values;};var CompileQuery=function(){/**
-     * @param {?} meta
-     * @param {?} queryList
-     * @param {?} ownerDirectiveExpression
-     * @param {?} view
-     */function CompileQuery(meta,queryList,ownerDirectiveExpression,view){_classCallCheck(this,CompileQuery);this.meta=meta;this.queryList=queryList;this.ownerDirectiveExpression=ownerDirectiveExpression;this.view=view;this._values=new ViewQueryValues(view,[]);}/**
-     * @param {?} value
-     * @param {?} view
-     * @return {?}
-     */_createClass(CompileQuery,[{key:'addValue',value:function addValue(value,view){var/** @type {?} */currentView=view;var/** @type {?} */elPath=[];while(currentView&&currentView!==this.view){var/** @type {?} */parentEl=currentView.declarationElement;elPath.unshift(parentEl);currentView=parentEl.view;}var/** @type {?} */queryListForDirtyExpr=getPropertyInView(this.queryList,view,this.view);var/** @type {?} */viewValues=this._values;elPath.forEach(function(el){var/** @type {?} */last=viewValues.values.length>0?viewValues.values[viewValues.values.length-1]:null;if(last instanceof ViewQueryValues&&last.view===el.embeddedView){viewValues=last;}else{var/** @type {?} */newViewValues=new ViewQueryValues(el.embeddedView,[]);viewValues.values.push(newViewValues);viewValues=newViewValues;}});viewValues.values.push(value);if(elPath.length>0){view.dirtyParentQueriesMethod.addStmt(queryListForDirtyExpr.callMethod('setDirty',[]).toStmt());}}/**
-     * @return {?}
-     */},{key:'_isStatic',value:function _isStatic(){return!this._values.values.some(function(value){return value instanceof ViewQueryValues;});}/**
-     * @param {?} targetStaticMethod
-     * @param {?} targetDynamicMethod
-     * @return {?}
-     */},{key:'generateStatements',value:function generateStatements(targetStaticMethod,targetDynamicMethod){var/** @type {?} */values=createQueryValues(this._values);var/** @type {?} */updateStmts=[this.queryList.callMethod('reset',[literalArr(values)]).toStmt()];if(this.ownerDirectiveExpression){var/** @type {?} */valueExpr=this.meta.first?this.queryList.prop('first'):this.queryList;updateStmts.push(this.ownerDirectiveExpression.prop(this.meta.propertyName).set(valueExpr).toStmt());}if(!this.meta.first){updateStmts.push(this.queryList.callMethod('notifyOnChanges',[]).toStmt());}if(this.meta.first&&this._isStatic()){// for queries that don't change and the user asked for a single element,
-// set it immediately. That is e.g. needed for querying for ViewContainerRefs, ...
-// we don't do this for QueryLists for now as this would break the timing when
-// we call QueryList listeners...
-targetStaticMethod.addStmts(updateStmts);}else{targetDynamicMethod.addStmt(new IfStmt(this.queryList.prop('dirty'),updateStmts));}}}]);return CompileQuery;}();/**
- * @param {?} viewValues
+ */function convertPropertyBinding(localResolver,implicitReceiver,expressionWithoutBuiltins,bindingId){if(!localResolver){localResolver=new DefaultLocalResolver();}var/** @type {?} */currValExpr=createCurrValueExpr(bindingId);var/** @type {?} */stmts=[];var/** @type {?} */visitor=new _AstToIrVisitor(localResolver,implicitReceiver,bindingId);var/** @type {?} */outputExpr=expressionWithoutBuiltins.visit(visitor,_Mode.Expression);if(visitor.temporaryCount){for(var/** @type {?} */i=0;i<visitor.temporaryCount;i++){stmts.push(temporaryDeclaration(bindingId,i));}}stmts.push(currValExpr.set(outputExpr).toDeclStmt(null,[StmtModifier.Final]));return new ConvertPropertyBindingResult(stmts,currValExpr);}/**
+ * @param {?} converterFactory
+ * @param {?} ast
  * @return {?}
- */function createQueryValues(viewValues){return ListWrapper.flatten(viewValues.values.map(function(entry){if(entry instanceof ViewQueryValues){return mapNestedViews(entry.view.declarationElement.viewContainer,entry.view,createQueryValues(entry));}else{return entry;}}));}/**
- * @param {?} viewContainer
- * @param {?} view
- * @param {?} expressions
+ */function convertBuiltins(converterFactory,ast){var/** @type {?} */visitor=new _BuiltinAstConverter(converterFactory);return ast.visit(visitor);}/**
+ * @param {?} bindingId
+ * @param {?} temporaryNumber
  * @return {?}
- */function mapNestedViews(viewContainer,view,expressions){var/** @type {?} */adjustedExpressions=expressions.map(function(expr){return replaceVarInExpression(THIS_EXPR.name,variable('nestedView'),expr);});return viewContainer.callMethod('mapNestedViews',[variable(view.className),fn([new FnParam('nestedView',view.classType)],[new ReturnStatement(literalArr(adjustedExpressions))],DYNAMIC_TYPE)]);}/**
- * @param {?} propertyName
- * @param {?} compileView
+ */function temporaryName(bindingId,temporaryNumber){return'tmp_'+bindingId+'_'+temporaryNumber;}/**
+ * @param {?} bindingId
+ * @param {?} temporaryNumber
  * @return {?}
- */function createQueryList(propertyName,compileView){compileView.fields.push(new ClassField(propertyName,importType(createIdentifier(Identifiers.QueryList),[DYNAMIC_TYPE])));var/** @type {?} */expr=THIS_EXPR.prop(propertyName);compileView.createMethod.addStmt(THIS_EXPR.prop(propertyName).set(importExpr(createIdentifier(Identifiers.QueryList),[DYNAMIC_TYPE]).instantiate([])).toStmt());return expr;}/**
- * @param {?} map
- * @param {?} query
- * @return {?}
- */function addQueryToTokenMap(map,query){query.meta.selectors.forEach(function(selector){var/** @type {?} */entry=map.get(tokenReference(selector));if(!entry){entry=[];map.set(tokenReference(selector),entry);}entry.push(query);});}var ViewTypeEnum=function(){function ViewTypeEnum(){_classCallCheck(this,ViewTypeEnum);}_createClass(ViewTypeEnum,null,[{key:'fromValue',/**
-     * @param {?} value
-     * @return {?}
-     */value:function fromValue(value){return createEnumExpression(Identifiers.ViewType,value);}}]);return ViewTypeEnum;}();var ViewEncapsulationEnum=function(){function ViewEncapsulationEnum(){_classCallCheck(this,ViewEncapsulationEnum);}_createClass(ViewEncapsulationEnum,null,[{key:'fromValue',/**
-     * @param {?} value
-     * @return {?}
-     */value:function fromValue(value){return createEnumExpression(Identifiers.ViewEncapsulation,value);}}]);return ViewEncapsulationEnum;}();var ChangeDetectorStatusEnum=function(){function ChangeDetectorStatusEnum(){_classCallCheck(this,ChangeDetectorStatusEnum);}_createClass(ChangeDetectorStatusEnum,null,[{key:'fromValue',/**
-     * @param {?} value
-     * @return {?}
-     */value:function fromValue(value){return createEnumExpression(Identifiers.ChangeDetectorStatus,value);}}]);return ChangeDetectorStatusEnum;}();var ViewConstructorVars=function ViewConstructorVars(){_classCallCheck(this,ViewConstructorVars);};ViewConstructorVars.viewUtils=variable('viewUtils');ViewConstructorVars.parentView=variable('parentView');ViewConstructorVars.parentIndex=variable('parentIndex');ViewConstructorVars.parentElement=variable('parentElement');var ViewProperties=function ViewProperties(){_classCallCheck(this,ViewProperties);};ViewProperties.renderer=THIS_EXPR.prop('renderer');ViewProperties.viewUtils=THIS_EXPR.prop('viewUtils');ViewProperties.throwOnChange=THIS_EXPR.prop('throwOnChange');var InjectMethodVars$1=function InjectMethodVars$1(){_classCallCheck(this,InjectMethodVars$1);};InjectMethodVars$1.token=variable('token');InjectMethodVars$1.requestNodeIndex=variable('requestNodeIndex');InjectMethodVars$1.notFoundResult=variable('notFoundResult');/**
- * This is currently not read, but will probably be used in the future.
- * We keep it as we already pass it through all the right places...
- */var ComponentViewDependency=/**
-     * @param {?} compType
-     */function ComponentViewDependency(compType){_classCallCheck(this,ComponentViewDependency);this.compType=compType;};/**
- * This is currently not read, but will probably be used in the future.
- * We keep it as we already pass it through all the right places...
- */var ComponentFactoryDependency$1=/**
-     * @param {?} compType
-     */function ComponentFactoryDependency$1(compType){_classCallCheck(this,ComponentFactoryDependency$1);this.compType=compType;};/**
- * This is currently not read, but will probably be used in the future.
- * We keep it as we already pass it through all the right places...
- */var DirectiveWrapperDependency=/**
-     * @param {?} dirType
-     */function DirectiveWrapperDependency(dirType){_classCallCheck(this,DirectiveWrapperDependency);this.dirType=dirType;};var CompileNode=function(){/**
-     * @param {?} parent
-     * @param {?} view
-     * @param {?} nodeIndex
-     * @param {?} renderNode
-     * @param {?} sourceAst
-     */function CompileNode(parent,view,nodeIndex,renderNode,sourceAst){_classCallCheck(this,CompileNode);this.parent=parent;this.view=view;this.nodeIndex=nodeIndex;this.renderNode=renderNode;this.sourceAst=sourceAst;}/**
-     * @return {?}
-     */_createClass(CompileNode,[{key:'isNull',value:function isNull(){return!this.renderNode;}/**
-     * @return {?}
-     */},{key:'isRootElement',value:function isRootElement(){return this.view!=this.parent.view;}}]);return CompileNode;}();var CompileElement=function(_CompileNode){_inherits(CompileElement,_CompileNode);/**
-     * @param {?} parent
-     * @param {?} view
-     * @param {?} nodeIndex
-     * @param {?} renderNode
-     * @param {?} sourceAst
-     * @param {?} component
-     * @param {?} _directives
-     * @param {?} _resolvedProvidersArray
-     * @param {?} hasViewContainer
-     * @param {?} hasEmbeddedView
-     * @param {?} references
-     */function CompileElement(parent,view,nodeIndex,renderNode,sourceAst,component,_directives,_resolvedProvidersArray,hasViewContainer,hasEmbeddedView,references){_classCallCheck(this,CompileElement);var _this203=_possibleConstructorReturn(this,(CompileElement.__proto__||Object.getPrototypeOf(CompileElement)).call(this,parent,view,nodeIndex,renderNode,sourceAst));_this203.component=component;_this203._directives=_directives;_this203._resolvedProvidersArray=_resolvedProvidersArray;_this203.hasViewContainer=hasViewContainer;_this203.hasEmbeddedView=hasEmbeddedView;_this203.compViewExpr=null;_this203.instances=new Map();_this203.directiveWrapperInstance=new Map();_this203._queryCount=0;_this203._queries=new Map();_this203.contentNodesByNgContentIndex=null;_this203.referenceTokens={};references.forEach(function(ref){return _this203.referenceTokens[ref.name]=ref.value;});_this203.elementRef=importExpr(createIdentifier(Identifiers.ElementRef)).instantiate([_this203.renderNode]);_this203.instances.set(resolveIdentifier(Identifiers.ElementRef),_this203.elementRef);_this203.instances.set(resolveIdentifier(Identifiers.Injector),THIS_EXPR.callMethod('injector',[literal(_this203.nodeIndex)]));_this203.instances.set(resolveIdentifier(Identifiers.Renderer),THIS_EXPR.prop('renderer'));if(_this203.hasViewContainer||_this203.hasEmbeddedView){_this203._createViewContainer();}if(_this203.component){_this203._createComponentFactoryResolver();}return _this203;}/**
-     * @return {?}
-     */_createClass(CompileElement,[{key:'_createViewContainer',/**
-     * @return {?}
-     */value:function _createViewContainer(){var/** @type {?} */fieldName='_vc_'+this.nodeIndex;var/** @type {?} */parentNodeIndex=this.isRootElement()?null:this.parent.nodeIndex;// private is fine here as no child view will reference a ViewContainer
-this.view.fields.push(new ClassField(fieldName,importType(createIdentifier(Identifiers.ViewContainer)),[StmtModifier.Private]));var/** @type {?} */statement=THIS_EXPR.prop(fieldName).set(importExpr(createIdentifier(Identifiers.ViewContainer)).instantiate([literal(this.nodeIndex),literal(parentNodeIndex),THIS_EXPR,this.renderNode])).toStmt();this.view.createMethod.addStmt(statement);this.viewContainer=THIS_EXPR.prop(fieldName);this.instances.set(resolveIdentifier(Identifiers.ViewContainer),this.viewContainer);this.view.viewContainers.push(this.viewContainer);}/**
-     * @return {?}
-     */},{key:'_createComponentFactoryResolver',value:function _createComponentFactoryResolver(){var _this204=this;var/** @type {?} */entryComponents=this.component.entryComponents.map(function(entryComponent){_this204.view.targetDependencies.push(new ComponentFactoryDependency$1(entryComponent.componentType));return{reference:entryComponent.componentFactory};});if(!entryComponents||entryComponents.length===0){return;}var/** @type {?} */createComponentFactoryResolverExpr=importExpr(createIdentifier(Identifiers.CodegenComponentFactoryResolver)).instantiate([literalArr(entryComponents.map(function(entryComponent){return importExpr(entryComponent);})),injectFromViewParentInjector(this.view,createIdentifierToken(Identifiers.ComponentFactoryResolver),false)]);var/** @type {?} */provider={token:createIdentifierToken(Identifiers.ComponentFactoryResolver),useValue:createComponentFactoryResolverExpr};// Add ComponentFactoryResolver as first provider as it does not have deps on other providers
-// ProviderAstType.PrivateService as only the component and its view can see it,
-// but nobody else
-this._resolvedProvidersArray.unshift(new ProviderAst(provider.token,false,true,[provider],ProviderAstType.PrivateService,[],this.sourceAst.sourceSpan));}/**
-     * @param {?} compViewExpr
-     * @return {?}
-     */},{key:'setComponentView',value:function setComponentView(compViewExpr){this.compViewExpr=compViewExpr;this.contentNodesByNgContentIndex=new Array(this.component.template.ngContentSelectors.length);for(var/** @type {?} */i=0;i<this.contentNodesByNgContentIndex.length;i++){this.contentNodesByNgContentIndex[i]=[];}}/**
-     * @param {?} embeddedView
-     * @return {?}
-     */},{key:'setEmbeddedView',value:function setEmbeddedView(embeddedView){this.embeddedView=embeddedView;if(isPresent(embeddedView)){var/** @type {?} */createTemplateRefExpr=importExpr(createIdentifier(Identifiers.TemplateRef_)).instantiate([THIS_EXPR,literal(this.nodeIndex),this.renderNode]);var/** @type {?} */provider={token:createIdentifierToken(Identifiers.TemplateRef),useValue:createTemplateRefExpr};// Add TemplateRef as first provider as it does not have deps on other providers
-this._resolvedProvidersArray.unshift(new ProviderAst(provider.token,false,true,[provider],ProviderAstType.Builtin,[],this.sourceAst.sourceSpan));}}/**
-     * @return {?}
-     */},{key:'beforeChildren',value:function beforeChildren(){var _this205=this;if(this.hasViewContainer){this.instances.set(resolveIdentifier(Identifiers.ViewContainerRef),this.viewContainer.prop('vcRef'));}this._resolvedProviders=new Map();this._resolvedProvidersArray.forEach(function(provider){return _this205._resolvedProviders.set(tokenReference(provider.token),provider);});// create all the provider instances, some in the view constructor,
-// some as getters. We rely on the fact that they are already sorted topologically.
-Array.from(this._resolvedProviders.values()).forEach(function(resolvedProvider){var/** @type {?} */isDirectiveWrapper=resolvedProvider.providerType===ProviderAstType.Component||resolvedProvider.providerType===ProviderAstType.Directive;var/** @type {?} */providerValueExpressions=resolvedProvider.providers.map(function(provider){if(provider.useExisting){return _this205._getDependency(resolvedProvider.providerType,{token:provider.useExisting});}else if(provider.useFactory){var/** @type {?} */deps=provider.deps||provider.useFactory.diDeps;var/** @type {?} */depsExpr=deps.map(function(dep){return _this205._getDependency(resolvedProvider.providerType,dep);});return importExpr(provider.useFactory).callFn(depsExpr);}else if(provider.useClass){var/** @type {?} */_deps4=provider.deps||provider.useClass.diDeps;var/** @type {?} */_depsExpr2=_deps4.map(function(dep){return _this205._getDependency(resolvedProvider.providerType,dep);});if(isDirectiveWrapper){var/** @type {?} */dirMeta=_this205._directives.find(function(dir){return dir.type.reference===provider.useClass.reference;});_this205.view.targetDependencies.push(new DirectiveWrapperDependency(dirMeta.type.reference));return DirectiveWrapperExpressions.create({reference:dirMeta.wrapperType},_depsExpr2);}else{return importExpr(provider.useClass).instantiate(_depsExpr2,importType(provider.useClass));}}else{return convertValueToOutputAst(provider.useValue);}});var/** @type {?} */propName='_'+tokenName(resolvedProvider.token)+'_'+_this205.nodeIndex+'_'+_this205.instances.size;var/** @type {?} */instance=createProviderProperty(propName,providerValueExpressions,resolvedProvider.multiProvider,resolvedProvider.eager,_this205);if(isDirectiveWrapper){_this205.directiveWrapperInstance.set(tokenReference(resolvedProvider.token),instance);_this205.instances.set(tokenReference(resolvedProvider.token),DirectiveWrapperExpressions.context(instance));}else{_this205.instances.set(tokenReference(resolvedProvider.token),instance);}});var _loop2=function _loop2(i){var/** @type {?} */directive=_this205._directives[i];var/** @type {?} */directiveInstance=_this205.instances.get(tokenReference(identifierToken(directive.type)));directive.queries.forEach(function(queryMeta){_this205._addQuery(queryMeta,directiveInstance);});};for(var/** @type {?} */i=0;i<this._directives.length;i++){_loop2(i);}Object.keys(this.referenceTokens).forEach(function(varName){var/** @type {?} */token=_this205.referenceTokens[varName];var/** @type {?} */varValue=void 0;if(token){varValue=_this205.instances.get(tokenReference(token));}else{varValue=_this205.renderNode;}_this205.view.locals.set(varName,varValue);});}/**
-     * @param {?} childNodeCount
-     * @return {?}
-     */},{key:'afterChildren',value:function afterChildren(childNodeCount){var _this206=this;Array.from(this._resolvedProviders.values()).forEach(function(resolvedProvider){// Note: afterChildren is called after recursing into children.
-// This is good so that an injector match in an element that is closer to a requesting element
-// matches first.
-var/** @type {?} */providerExpr=_this206.instances.get(tokenReference(resolvedProvider.token));// Note: view providers are only visible on the injector of that element.
-// This is not fully correct as the rules during codegen don't allow a directive
-// to get hold of a view provdier on the same element. We still do this semantic
-// as it simplifies our model to having only one runtime injector per element.
-var/** @type {?} */providerChildNodeCount=resolvedProvider.providerType===ProviderAstType.PrivateService?0:childNodeCount;_this206.view.injectorGetMethod.addStmt(createInjectInternalCondition(_this206.nodeIndex,providerChildNodeCount,resolvedProvider,providerExpr));});}/**
-     * @return {?}
-     */},{key:'finish',value:function finish(){var _this207=this;Array.from(this._queries.values()).forEach(function(queries){return queries.forEach(function(q){return q.generateStatements(_this207.view.createMethod,_this207.view.updateContentQueriesMethod);});});}/**
-     * @param {?} ngContentIndex
-     * @param {?} nodeExpr
-     * @return {?}
-     */},{key:'addContentNode',value:function addContentNode(ngContentIndex,nodeExpr){this.contentNodesByNgContentIndex[ngContentIndex].push(nodeExpr);}/**
-     * @return {?}
-     */},{key:'getComponent',value:function getComponent(){return isPresent(this.component)?this.instances.get(tokenReference(identifierToken(this.component.type))):null;}/**
-     * @return {?}
-     */},{key:'getProviderTokens',value:function getProviderTokens(){return Array.from(this._resolvedProviders.values()).map(function(provider){return provider.token;});}/**
-     * @param {?} token
-     * @return {?}
-     */},{key:'getQueriesFor',value:function getQueriesFor(token){var/** @type {?} */result=[];var/** @type {?} */currentEl=this;var/** @type {?} */distance=0;var/** @type {?} */queries=void 0;while(!currentEl.isNull()){queries=currentEl._queries.get(tokenReference(token));if(isPresent(queries)){result.push.apply(result,_toConsumableArray(queries.filter(function(query){return query.meta.descendants||distance<=1;})));}if(currentEl._directives.length>0){distance++;}currentEl=currentEl.parent;}queries=this.view.componentView.viewQueries.get(tokenReference(token));if(isPresent(queries)){result.push.apply(result,_toConsumableArray(queries));}return result;}/**
-     * @param {?} queryMeta
-     * @param {?} directiveInstance
-     * @return {?}
-     */},{key:'_addQuery',value:function _addQuery(queryMeta,directiveInstance){var/** @type {?} */propName='_query_'+tokenName(queryMeta.selectors[0])+'_'+this.nodeIndex+'_'+this._queryCount++;var/** @type {?} */queryList=createQueryList(propName,this.view);var/** @type {?} */query=new CompileQuery(queryMeta,queryList,directiveInstance,this.view);addQueryToTokenMap(this._queries,query);return query;}/**
-     * @param {?} requestingProviderType
-     * @param {?} dep
-     * @return {?}
-     */},{key:'_getLocalDependency',value:function _getLocalDependency(requestingProviderType,dep){var/** @type {?} */result=null;if(isPresent(dep.token)){// access builtins with special visibility
-if(!result){if(tokenReference(dep.token)===resolveIdentifier(Identifiers.ChangeDetectorRef)){if(requestingProviderType===ProviderAstType.Component){return this.compViewExpr.prop('ref');}else{return getPropertyInView(THIS_EXPR.prop('ref'),this.view,this.view.componentView);}}}// access regular providers on the element
-if(!result){var/** @type {?} */resolvedProvider=this._resolvedProviders.get(tokenReference(dep.token));// don't allow directives / public services to access private services.
-// only components and private services can access private services.
-if(resolvedProvider&&(requestingProviderType===ProviderAstType.Directive||requestingProviderType===ProviderAstType.PublicService)&&resolvedProvider.providerType===ProviderAstType.PrivateService){return null;}result=this.instances.get(tokenReference(dep.token));}}return result;}/**
-     * @param {?} requestingProviderType
-     * @param {?} dep
-     * @return {?}
-     */},{key:'_getDependency',value:function _getDependency(requestingProviderType,dep){var/** @type {?} */currElement=this;var/** @type {?} */result=null;if(dep.isValue){result=literal(dep.value);}if(!result&&!dep.isSkipSelf){result=this._getLocalDependency(requestingProviderType,dep);}// check parent elements
-while(!result&&!currElement.parent.isNull()){currElement=currElement.parent;result=currElement._getLocalDependency(ProviderAstType.PublicService,{token:dep.token});}if(!result){result=injectFromViewParentInjector(this.view,dep.token,dep.isOptional);}if(!result){result=NULL_EXPR;}return getPropertyInView(result,this.view,currElement.view);}}],[{key:'createNull',value:function createNull(){return new CompileElement(null,null,null,null,null,null,[],[],false,false,[]);}}]);return CompileElement;}(CompileNode);/**
- * @param {?} nodeIndex
- * @param {?} childNodeCount
- * @param {?} provider
- * @param {?} providerExpr
- * @return {?}
- */function createInjectInternalCondition(nodeIndex,childNodeCount,provider,providerExpr){var/** @type {?} */indexCondition=void 0;if(childNodeCount>0){indexCondition=literal(nodeIndex).lowerEquals(InjectMethodVars$1.requestNodeIndex).and(InjectMethodVars$1.requestNodeIndex.lowerEquals(literal(nodeIndex+childNodeCount)));}else{indexCondition=literal(nodeIndex).identical(InjectMethodVars$1.requestNodeIndex);}return new IfStmt(InjectMethodVars$1.token.identical(createDiTokenExpression(provider.token)).and(indexCondition),[new ReturnStatement(providerExpr)]);}/**
- * @param {?} propName
- * @param {?} providerValueExpressions
- * @param {?} isMulti
- * @param {?} isEager
- * @param {?} compileElement
- * @return {?}
- */function createProviderProperty(propName,providerValueExpressions,isMulti,isEager,compileElement){var/** @type {?} */view=compileElement.view;var/** @type {?} */resolvedProviderValueExpr=void 0;var/** @type {?} */type=void 0;if(isMulti){resolvedProviderValueExpr=literalArr(providerValueExpressions);type=new ArrayType(DYNAMIC_TYPE);}else{resolvedProviderValueExpr=providerValueExpressions[0];type=providerValueExpressions[0].type;}if(!type){type=DYNAMIC_TYPE;}if(isEager){view.fields.push(new ClassField(propName,type));view.createMethod.addStmt(THIS_EXPR.prop(propName).set(resolvedProviderValueExpr).toStmt());}else{var/** @type {?} */internalField='_'+propName;view.fields.push(new ClassField(internalField,type));var/** @type {?} */getter=new CompileMethod(view);getter.resetDebugInfo(compileElement.nodeIndex,compileElement.sourceAst);// Note: Equals is important for JS so that it also checks the undefined case!
-getter.addStmt(new IfStmt(THIS_EXPR.prop(internalField).isBlank(),[THIS_EXPR.prop(internalField).set(resolvedProviderValueExpr).toStmt()]));getter.addStmt(new ReturnStatement(THIS_EXPR.prop(internalField)));view.getters.push(new ClassGetter(propName,getter.finish(),type));}return THIS_EXPR.prop(propName);}var CompilePipe=function(){/**
-     * @param {?} view
-     * @param {?} meta
-     */function CompilePipe(view,meta){var _this208=this;_classCallCheck(this,CompilePipe);this.view=view;this.meta=meta;this._purePipeProxyCount=0;this.instance=THIS_EXPR.prop('_pipe_'+meta.name+'_'+view.pipeCount++);var deps=this.meta.type.diDeps.map(function(diDep){if(tokenReference(diDep.token)===resolveIdentifier(Identifiers.ChangeDetectorRef)){return getPropertyInView(THIS_EXPR.prop('ref'),_this208.view,_this208.view.componentView);}return injectFromViewParentInjector(view,diDep.token,false);});this.view.fields.push(new ClassField(this.instance.name,importType(this.meta.type)));this.view.createMethod.resetDebugInfo(null,null);this.view.createMethod.addStmt(THIS_EXPR.prop(this.instance.name).set(importExpr(this.meta.type).instantiate(deps)).toStmt());}/**
-     * @param {?} view
-     * @param {?} name
-     * @param {?} args
-     * @return {?}
-     */_createClass(CompilePipe,[{key:'_call',/**
-     * @param {?} callingView
-     * @param {?} args
-     * @return {?}
-     */value:function _call(callingView,args){if(this.meta.pure){// PurePipeProxies live on the view that called them.
-var/** @type {?} */purePipeProxyInstance=THIS_EXPR.prop(this.instance.name+'_'+this._purePipeProxyCount++);var/** @type {?} */pipeInstanceSeenFromPureProxy=getPropertyInView(this.instance,callingView,this.view);createPureProxy(pipeInstanceSeenFromPureProxy.prop('transform').callMethod(BuiltinMethod.Bind,[pipeInstanceSeenFromPureProxy]),args.length,purePipeProxyInstance,{fields:callingView.fields,ctorStmts:callingView.createMethod});return importExpr(createIdentifier(Identifiers.castByValue)).callFn([purePipeProxyInstance,pipeInstanceSeenFromPureProxy.prop('transform')]).callFn(args);}else{return getPropertyInView(this.instance,callingView,this.view).callMethod('transform',args);}}},{key:'pure',/**
-     * @return {?}
-     */get:function get(){return this.meta.pure;}}],[{key:'call',value:function call(view,name,args){var/** @type {?} */compView=view.componentView;var/** @type {?} */meta=_findPipeMeta(compView,name);var/** @type {?} */pipe=void 0;if(meta.pure){// pure pipes live on the component view
-pipe=compView.purePipes.get(name);if(!pipe){pipe=new CompilePipe(compView,meta);compView.purePipes.set(name,pipe);compView.pipes.push(pipe);}}else{// Non pure pipes live on the view that called it
-pipe=new CompilePipe(view,meta);view.pipes.push(pipe);}return pipe._call(view,args);}}]);return CompilePipe;}();/**
- * @param {?} view
- * @param {?} name
- * @return {?}
- */function _findPipeMeta(view,name){var/** @type {?} */pipeMeta=null;for(var/** @type {?} */i=view.pipeMetas.length-1;i>=0;i--){var/** @type {?} */localPipeMeta=view.pipeMetas[i];if(localPipeMeta.name==name){pipeMeta=localPipeMeta;break;}}if(!pipeMeta){throw new Error('Illegal state: Could not find pipe '+name+' although the parser should have detected this error!');}return pipeMeta;}var CompileViewRootNodeType={};CompileViewRootNodeType.Node=0;CompileViewRootNodeType.ViewContainer=1;CompileViewRootNodeType.NgContent=2;CompileViewRootNodeType[CompileViewRootNodeType.Node]="Node";CompileViewRootNodeType[CompileViewRootNodeType.ViewContainer]="ViewContainer";CompileViewRootNodeType[CompileViewRootNodeType.NgContent]="NgContent";var CompileViewRootNode=/**
-     * @param {?} type
-     * @param {?} expr
-     * @param {?=} ngContentIndex
-     */function CompileViewRootNode(type,expr,ngContentIndex){_classCallCheck(this,CompileViewRootNode);this.type=type;this.expr=expr;this.ngContentIndex=ngContentIndex;};var CompileView=function(){/**
-     * @param {?} component
-     * @param {?} genConfig
-     * @param {?} pipeMetas
-     * @param {?} styles
-     * @param {?} animations
-     * @param {?} viewIndex
-     * @param {?} declarationElement
-     * @param {?} templateVariableBindings
-     * @param {?} targetDependencies
-     */function CompileView(component,genConfig,pipeMetas,styles,animations,viewIndex,declarationElement,templateVariableBindings,targetDependencies){var _this209=this;_classCallCheck(this,CompileView);this.component=component;this.genConfig=genConfig;this.pipeMetas=pipeMetas;this.styles=styles;this.animations=animations;this.viewIndex=viewIndex;this.declarationElement=declarationElement;this.templateVariableBindings=templateVariableBindings;this.targetDependencies=targetDependencies;this.viewChildren=[];this.nodes=[];this.rootNodes=[];this.lastRenderNode=NULL_EXPR;this.viewContainers=[];this.methods=[];this.ctorStmts=[];this.fields=[];this.getters=[];this.disposables=[];this.purePipes=new Map();this.pipes=[];this.locals=new Map();this.literalArrayCount=0;this.literalMapCount=0;this.pipeCount=0;this.createMethod=new CompileMethod(this);this.animationBindingsMethod=new CompileMethod(this);this.injectorGetMethod=new CompileMethod(this);this.updateContentQueriesMethod=new CompileMethod(this);this.dirtyParentQueriesMethod=new CompileMethod(this);this.updateViewQueriesMethod=new CompileMethod(this);this.detectChangesInInputsMethod=new CompileMethod(this);this.detectChangesRenderPropertiesMethod=new CompileMethod(this);this.afterContentLifecycleCallbacksMethod=new CompileMethod(this);this.afterViewLifecycleCallbacksMethod=new CompileMethod(this);this.destroyMethod=new CompileMethod(this);this.detachMethod=new CompileMethod(this);this.viewType=getViewType(component,viewIndex);this.className=viewClassName(component.type.reference,viewIndex);this.rendererTypeName=rendererTypeName(component.type.reference);this.classType=expressionType(variable(this.className));this.classExpr=variable(this.className);if(this.viewType===ɵViewType.COMPONENT||this.viewType===ɵViewType.HOST){this.componentView=this;}else{this.componentView=this.declarationElement.view.componentView;}this.componentContext=getPropertyInView(THIS_EXPR.prop('context'),this,this.componentView);var viewQueries=new Map();if(this.viewType===ɵViewType.COMPONENT){var _directiveInstance=THIS_EXPR.prop('context');this.component.viewQueries.forEach(function(queryMeta,queryIndex){var propName='_viewQuery_'+tokenName(queryMeta.selectors[0])+'_'+queryIndex;var queryList=createQueryList(propName,_this209);var query=new CompileQuery(queryMeta,queryList,_directiveInstance,_this209);addQueryToTokenMap(viewQueries,query);});}this.viewQueries=viewQueries;templateVariableBindings.forEach(function(entry){_this209.locals.set(entry[1],THIS_EXPR.prop('context').prop(entry[0]));});if(!this.declarationElement.isNull()){this.declarationElement.setEmbeddedView(this);}}/**
-     * @param {?} name
-     * @param {?} input
-     * @param {?} args
-     * @return {?}
-     */_createClass(CompileView,[{key:'callPipe',value:function callPipe(name,input,args){return CompilePipe.call(this,name,[input].concat(args));}/**
-     * @param {?} name
-     * @return {?}
-     */},{key:'getLocal',value:function getLocal(name){if(name==EventHandlerVars.event.name){return EventHandlerVars.event;}var/** @type {?} */currView=this;var/** @type {?} */result=currView.locals.get(name);while(!result&&isPresent(currView.declarationElement.view)){currView=currView.declarationElement.view;result=currView.locals.get(name);}if(isPresent(result)){return getPropertyInView(result,this,currView);}else{return null;}}/**
-     * @return {?}
-     */},{key:'finish',value:function finish(){var _this210=this;Array.from(this.viewQueries.values()).forEach(function(queries){return queries.forEach(function(q){return q.generateStatements(_this210.createMethod,_this210.updateViewQueriesMethod);});});}}]);return CompileView;}();/**
- * @param {?} component
- * @param {?} embeddedTemplateIndex
- * @return {?}
- */function getViewType(component,embeddedTemplateIndex){if(embeddedTemplateIndex>0){return ɵViewType.EMBEDDED;}if(component.isHost){return ɵViewType.HOST;}return ɵViewType.COMPONENT;}/**
- * @param {?} boundEvents
- * @param {?} directives
- * @param {?} compileElement
- * @param {?} bindToRenderer
- * @return {?}
- */function bindOutputs(boundEvents,directives,compileElement,bindToRenderer){var/** @type {?} */usedEvents=collectEvents(boundEvents,directives);if(!usedEvents.size){return false;}if(bindToRenderer){subscribeToRenderEvents(usedEvents,compileElement);}subscribeToDirectiveEvents(usedEvents,directives,compileElement);generateHandleEventMethod(boundEvents,directives,compileElement);return true;}/**
- * @param {?} boundEvents
- * @param {?} directives
- * @return {?}
- */function collectEvents(boundEvents,directives){var/** @type {?} */usedEvents=new Map();boundEvents.forEach(function(event){usedEvents.set(event.fullName,event);});directives.forEach(function(dirAst){dirAst.hostEvents.forEach(function(event){usedEvents.set(event.fullName,event);});});return usedEvents;}/**
- * @param {?} usedEvents
- * @param {?} compileElement
- * @return {?}
- */function subscribeToRenderEvents(usedEvents,compileElement){var/** @type {?} */eventAndTargetExprs=[];usedEvents.forEach(function(event){if(!event.phase){eventAndTargetExprs.push(literal(event.name),literal(event.target));}});if(eventAndTargetExprs.length){var/** @type {?} */disposableVar=variable('disposable_'+compileElement.view.disposables.length);compileElement.view.disposables.push(disposableVar);compileElement.view.createMethod.addStmt(disposableVar.set(importExpr(createIdentifier(Identifiers.subscribeToRenderElement)).callFn([THIS_EXPR,compileElement.renderNode,createInlineArray(eventAndTargetExprs),handleEventExpr(compileElement)])).toDeclStmt(FUNCTION_TYPE,[StmtModifier.Private]));}}/**
- * @param {?} usedEvents
- * @param {?} directives
- * @param {?} compileElement
- * @return {?}
- */function subscribeToDirectiveEvents(usedEvents,directives,compileElement){var/** @type {?} */usedEventNames=Array.from(usedEvents.keys());directives.forEach(function(dirAst){var/** @type {?} */dirWrapper=compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);compileElement.view.createMethod.addStmts(DirectiveWrapperExpressions.subscribe(dirAst.directive,dirAst.hostProperties,usedEventNames,dirWrapper,THIS_EXPR,handleEventExpr(compileElement)));});}/**
- * @param {?} boundEvents
- * @param {?} directives
- * @param {?} compileElement
- * @return {?}
- */function generateHandleEventMethod(boundEvents,directives,compileElement){var/** @type {?} */hasComponentHostListener=directives.some(function(dirAst){return dirAst.hostEvents.some(function(event){return dirAst.directive.isComponent;});});var/** @type {?} */markPathToRootStart=hasComponentHostListener?compileElement.compViewExpr:THIS_EXPR;var/** @type {?} */handleEventStmts=new CompileMethod(compileElement.view);handleEventStmts.resetDebugInfo(compileElement.nodeIndex,compileElement.sourceAst);handleEventStmts.push(markPathToRootStart.callMethod('markPathToRootAsCheckOnce',[]).toStmt());var/** @type {?} */eventNameVar=variable('eventName');var/** @type {?} */resultVar=variable('result');handleEventStmts.push(resultVar.set(literal(true)).toDeclStmt(BOOL_TYPE));directives.forEach(function(dirAst,dirIdx){var/** @type {?} */dirWrapper=compileElement.directiveWrapperInstance.get(dirAst.directive.type.reference);if(dirAst.hostEvents.length>0){handleEventStmts.push(resultVar.set(DirectiveWrapperExpressions.handleEvent(dirAst.hostEvents,dirWrapper,eventNameVar,EventHandlerVars.event).and(resultVar)).toStmt());}});boundEvents.forEach(function(renderEvent,renderEventIdx){var/** @type {?} */evalResult=convertActionBinding(compileElement.view,compileElement.view.componentContext,renderEvent.handler,'sub_'+renderEventIdx);var/** @type {?} */trueStmts=evalResult.stmts;if(evalResult.allowDefault){trueStmts.push(resultVar.set(evalResult.allowDefault.and(resultVar)).toStmt());}// TODO(tbosch): convert this into a `switch` once our OutputAst supports it.
-handleEventStmts.push(new IfStmt(eventNameVar.equals(literal(renderEvent.fullName)),trueStmts));});handleEventStmts.push(new ReturnStatement(resultVar));compileElement.view.methods.push(new ClassMethod(getHandleEventMethodName(compileElement.nodeIndex),[new FnParam(eventNameVar.name,STRING_TYPE),new FnParam(EventHandlerVars.event.name,DYNAMIC_TYPE)],handleEventStmts.finish(),BOOL_TYPE));}/**
- * @param {?} compileElement
- * @return {?}
- */function handleEventExpr(compileElement){var/** @type {?} */handleEventMethodName=getHandleEventMethodName(compileElement.nodeIndex);return THIS_EXPR.callMethod('eventHandler',[THIS_EXPR.prop(handleEventMethodName)]);}/**
- * @param {?} directiveMeta
- * @param {?} directiveInstance
- * @param {?} compileElement
- * @return {?}
- */function bindDirectiveAfterContentLifecycleCallbacks(directiveMeta,directiveInstance,compileElement){var/** @type {?} */view=compileElement.view;var/** @type {?} */lifecycleHooks=directiveMeta.type.lifecycleHooks;var/** @type {?} */afterContentLifecycleCallbacksMethod=view.afterContentLifecycleCallbacksMethod;afterContentLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex,compileElement.sourceAst);if(lifecycleHooks.indexOf(ɵLifecycleHooks.AfterContentInit)!==-1){afterContentLifecycleCallbacksMethod.addStmt(new IfStmt(isFirstViewCheck(THIS_EXPR),[directiveInstance.callMethod('ngAfterContentInit',[]).toStmt()]));}if(lifecycleHooks.indexOf(ɵLifecycleHooks.AfterContentChecked)!==-1){afterContentLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterContentChecked',[]).toStmt());}}/**
- * @param {?} directiveMeta
- * @param {?} directiveInstance
- * @param {?} compileElement
- * @return {?}
- */function bindDirectiveAfterViewLifecycleCallbacks(directiveMeta,directiveInstance,compileElement){var/** @type {?} */view=compileElement.view;var/** @type {?} */lifecycleHooks=directiveMeta.type.lifecycleHooks;var/** @type {?} */afterViewLifecycleCallbacksMethod=view.afterViewLifecycleCallbacksMethod;afterViewLifecycleCallbacksMethod.resetDebugInfo(compileElement.nodeIndex,compileElement.sourceAst);if(lifecycleHooks.indexOf(ɵLifecycleHooks.AfterViewInit)!==-1){afterViewLifecycleCallbacksMethod.addStmt(new IfStmt(isFirstViewCheck(THIS_EXPR),[directiveInstance.callMethod('ngAfterViewInit',[]).toStmt()]));}if(lifecycleHooks.indexOf(ɵLifecycleHooks.AfterViewChecked)!==-1){afterViewLifecycleCallbacksMethod.addStmt(directiveInstance.callMethod('ngAfterViewChecked',[]).toStmt());}}/**
- * @param {?} dir
- * @param {?} directiveWrapperIntance
- * @param {?} compileElement
- * @return {?}
- */function bindDirectiveWrapperLifecycleCallbacks(dir,directiveWrapperIntance,compileElement){compileElement.view.destroyMethod.addStmts(DirectiveWrapperExpressions.ngOnDestroy(dir.directive,directiveWrapperIntance));compileElement.view.detachMethod.addStmts(DirectiveWrapperExpressions.ngOnDetach(dir.hostProperties,directiveWrapperIntance,THIS_EXPR,compileElement.compViewExpr||THIS_EXPR,compileElement.renderNode));}/**
- * @param {?} provider
- * @param {?} providerInstance
- * @param {?} compileElement
- * @return {?}
- */function bindInjectableDestroyLifecycleCallbacks(provider,providerInstance,compileElement){var/** @type {?} */onDestroyMethod=compileElement.view.destroyMethod;onDestroyMethod.resetDebugInfo(compileElement.nodeIndex,compileElement.sourceAst);if(provider.providerType!==ProviderAstType.Directive&&provider.providerType!==ProviderAstType.Component&&provider.lifecycleHooks.indexOf(ɵLifecycleHooks.OnDestroy)!==-1){onDestroyMethod.addStmt(providerInstance.callMethod('ngOnDestroy',[]).toStmt());}}/**
- * @param {?} pipeMeta
- * @param {?} pipeInstance
- * @param {?} view
- * @return {?}
- */function bindPipeDestroyLifecycleCallbacks(pipeMeta,pipeInstance,view){var/** @type {?} */onDestroyMethod=view.destroyMethod;if(pipeMeta.type.lifecycleHooks.indexOf(ɵLifecycleHooks.OnDestroy)!==-1){onDestroyMethod.addStmt(pipeInstance.callMethod('ngOnDestroy',[]).toStmt());}}/**
- * @param {?} boundText
- * @param {?} compileNode
- * @param {?} view
- * @return {?}
- */function bindRenderText(boundText,compileNode,view){var/** @type {?} */valueField=createCheckBindingField(view);var/** @type {?} */evalResult=legacyConvertPropertyBinding(view,view,view.componentContext,boundText.value,valueField.bindingId);if(!evalResult){return null;}view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileNode.nodeIndex,boundText);view.detectChangesRenderPropertiesMethod.addStmts(evalResult.stmts);view.detectChangesRenderPropertiesMethod.addStmt(importExpr(createIdentifier(Identifiers.checkRenderText)).callFn([THIS_EXPR,compileNode.renderNode,valueField.expression,valueField.expression.set(evalResult.currValExpr),evalResult.forceUpdate||literal(false)]).toStmt());}/**
- * @param {?} boundProps
- * @param {?} boundOutputs
- * @param {?} hasEvents
- * @param {?} compileElement
- * @return {?}
- */function bindRenderInputs(boundProps,boundOutputs,hasEvents,compileElement){var/** @type {?} */view=compileElement.view;var/** @type {?} */renderNode=compileElement.renderNode;boundProps.forEach(function(boundProp){var/** @type {?} */bindingField=createCheckBindingField(view);view.detectChangesRenderPropertiesMethod.resetDebugInfo(compileElement.nodeIndex,boundProp);var/** @type {?} */evalResult=legacyConvertPropertyBinding(view,view,compileElement.view.componentContext,boundProp.value,bindingField.bindingId);if(!evalResult){return;}var/** @type {?} */compileMethod=view.detectChangesRenderPropertiesMethod;switch(boundProp.type){case PropertyBindingType.Property:case PropertyBindingType.Attribute:case PropertyBindingType.Class:case PropertyBindingType.Style:compileMethod.addStmts(createCheckRenderBindingStmt(THIS_EXPR,renderNode,boundProp,bindingField.expression,evalResult));break;case PropertyBindingType.Animation:compileMethod=view.animationBindingsMethod;var _createCheckAnimation2=createCheckAnimationBindingStmts(THIS_EXPR,THIS_EXPR,boundProp,boundOutputs,(hasEvents?THIS_EXPR.prop(getHandleEventMethodName(compileElement.nodeIndex)):importExpr(createIdentifier(Identifiers.noop))).callMethod(BuiltinMethod.Bind,[THIS_EXPR]),compileElement.renderNode,bindingField.expression,evalResult),checkUpdateStmts=_createCheckAnimation2.checkUpdateStmts,checkDetachStmts=_createCheckAnimation2.checkDetachStmts;view.detachMethod.addStmts(checkDetachStmts);compileMethod.addStmts(checkUpdateStmts);break;}});}/**
- * @param {?} directiveAst
- * @param {?} directiveWrapperInstance
- * @param {?} compileElement
- * @param {?} elementName
- * @param {?} schemaRegistry
- * @return {?}
- */function bindDirectiveHostProps(directiveAst,directiveWrapperInstance,compileElement,elementName,schemaRegistry){// We need to provide the SecurityContext for properties that could need sanitization.
-var/** @type {?} */runtimeSecurityCtxExprs=directiveAst.hostProperties.filter(function(boundProp){return boundProp.needsRuntimeSecurityContext;}).map(function(boundProp){var/** @type {?} */ctx=void 0;switch(boundProp.type){case PropertyBindingType.Property:ctx=schemaRegistry.securityContext(elementName,boundProp.name,false);break;case PropertyBindingType.Attribute:ctx=schemaRegistry.securityContext(elementName,boundProp.name,true);break;default:throw new Error('Illegal state: Only property / attribute bindings can have an unknown security context! Binding '+boundProp.name);}return createEnumExpression(Identifiers.SecurityContext,ctx);});compileElement.view.detectChangesRenderPropertiesMethod.addStmts(DirectiveWrapperExpressions.checkHost(directiveAst.hostProperties,directiveWrapperInstance,THIS_EXPR,compileElement.compViewExpr||THIS_EXPR,compileElement.renderNode,runtimeSecurityCtxExprs));}/**
- * @param {?} directiveAst
- * @param {?} directiveWrapperInstance
- * @param {?} dirIndex
- * @param {?} compileElement
- * @return {?}
- */function bindDirectiveInputs(directiveAst,directiveWrapperInstance,dirIndex,compileElement){var/** @type {?} */view=compileElement.view;var/** @type {?} */detectChangesInInputsMethod=view.detectChangesInInputsMethod;detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex,compileElement.sourceAst);directiveAst.inputs.forEach(function(input,inputIdx){// Note: We can't use `fields.length` here, as we are not adding a field!
-var/** @type {?} */bindingId=compileElement.nodeIndex+'_'+dirIndex+'_'+inputIdx;detectChangesInInputsMethod.resetDebugInfo(compileElement.nodeIndex,input);var/** @type {?} */evalResult=legacyConvertPropertyBinding(view,view,view.componentContext,input.value,bindingId);if(!evalResult){return;}detectChangesInInputsMethod.addStmts(evalResult.stmts);detectChangesInInputsMethod.addStmt(directiveWrapperInstance.callMethod('check_'+input.directiveName,[THIS_EXPR,evalResult.currValExpr,evalResult.forceUpdate||literal(false)]).toStmt());});var/** @type {?} */isOnPushComp=directiveAst.directive.isComponent&&!ɵisDefaultChangeDetectionStrategy(directiveAst.directive.changeDetection);var/** @type {?} */directiveDetectChangesExpr=DirectiveWrapperExpressions.ngDoCheck(directiveWrapperInstance,THIS_EXPR,compileElement.renderNode);var/** @type {?} */directiveDetectChangesStmt=isOnPushComp?new IfStmt(directiveDetectChangesExpr,[compileElement.compViewExpr.callMethod('markAsCheckOnce',[]).toStmt()]):directiveDetectChangesExpr.toStmt();detectChangesInInputsMethod.addStmt(directiveDetectChangesStmt);}/**
- * @param {?} ce
- * @return {?}
- */function bindQueryValues(ce){var/** @type {?} */queriesWithReads=[];ce.getProviderTokens().forEach(function(token){var/** @type {?} */queriesForProvider=ce.getQueriesFor(token);queriesWithReads.push.apply(queriesWithReads,_toConsumableArray(queriesForProvider.map(function(query){return new _QueryWithRead(query,token);})));});Object.keys(ce.referenceTokens).forEach(function(varName){var/** @type {?} */varToken={value:varName};queriesWithReads.push.apply(queriesWithReads,_toConsumableArray(ce.getQueriesFor(varToken).map(function(query){return new _QueryWithRead(query,varToken);})));});queriesWithReads.forEach(function(queryWithRead){var/** @type {?} */value=void 0;if(queryWithRead.read.identifier){// query for an identifier
-value=ce.instances.get(tokenReference(queryWithRead.read));}else{// query for a reference
-var/** @type {?} */token=ce.referenceTokens[queryWithRead.read.value];if(token){value=ce.instances.get(tokenReference(token));}else{value=ce.elementRef;}}if(value){queryWithRead.query.addValue(value,ce.view);}});}var _QueryWithRead=/**
-     * @param {?} query
-     * @param {?} match
-     */function _QueryWithRead(query,match){_classCallCheck(this,_QueryWithRead);this.query=query;this.read=query.meta.read||match;};/**
- * @param {?} view
- * @param {?} parsedTemplate
- * @param {?} schemaRegistry
- * @return {?}
- */function bindView(view,parsedTemplate,schemaRegistry){var/** @type {?} */visitor=new ViewBinderVisitor(view,schemaRegistry);templateVisitAll(visitor,parsedTemplate);view.pipes.forEach(function(pipe){bindPipeDestroyLifecycleCallbacks(pipe.meta,pipe.instance,pipe.view);});}var ViewBinderVisitor=function(){/**
-     * @param {?} view
-     * @param {?} _schemaRegistry
-     */function ViewBinderVisitor(view,_schemaRegistry){_classCallCheck(this,ViewBinderVisitor);this.view=view;this._schemaRegistry=_schemaRegistry;this._nodeIndex=0;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */_createClass(ViewBinderVisitor,[{key:'visitBoundText',value:function visitBoundText(ast,parent){var/** @type {?} */node=this.view.nodes[this._nodeIndex++];bindRenderText(ast,node,this.view);return null;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitText',value:function visitText(ast,parent){this._nodeIndex++;return null;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitNgContent',value:function visitNgContent(ast,parent){return null;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitElement',value:function visitElement(ast,parent){var _this211=this;var/** @type {?} */compileElement=this.view.nodes[this._nodeIndex++];bindQueryValues(compileElement);var/** @type {?} */hasEvents=bindOutputs(ast.outputs,ast.directives,compileElement,true);bindRenderInputs(ast.inputs,ast.outputs,hasEvents,compileElement);ast.directives.forEach(function(directiveAst,dirIndex){var/** @type {?} */directiveWrapperInstance=compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);bindDirectiveInputs(directiveAst,directiveWrapperInstance,dirIndex,compileElement);bindDirectiveHostProps(directiveAst,directiveWrapperInstance,compileElement,ast.name,_this211._schemaRegistry);});templateVisitAll(this,ast.children,compileElement);// afterContent and afterView lifecycles need to be called bottom up
-// so that children are notified before parents
-ast.directives.forEach(function(directiveAst){var/** @type {?} */directiveInstance=compileElement.instances.get(directiveAst.directive.type.reference);var/** @type {?} */directiveWrapperInstance=compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive,directiveInstance,compileElement);bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive,directiveInstance,compileElement);bindDirectiveWrapperLifecycleCallbacks(directiveAst,directiveWrapperInstance,compileElement);});ast.providers.forEach(function(providerAst){var/** @type {?} */providerInstance=compileElement.instances.get(tokenReference(providerAst.token));bindInjectableDestroyLifecycleCallbacks(providerAst,providerInstance,compileElement);});return null;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitEmbeddedTemplate',value:function visitEmbeddedTemplate(ast,parent){var/** @type {?} */compileElement=this.view.nodes[this._nodeIndex++];bindQueryValues(compileElement);bindOutputs(ast.outputs,ast.directives,compileElement,false);ast.directives.forEach(function(directiveAst,dirIndex){var/** @type {?} */directiveInstance=compileElement.instances.get(directiveAst.directive.type.reference);var/** @type {?} */directiveWrapperInstance=compileElement.directiveWrapperInstance.get(directiveAst.directive.type.reference);bindDirectiveInputs(directiveAst,directiveWrapperInstance,dirIndex,compileElement);bindDirectiveAfterContentLifecycleCallbacks(directiveAst.directive,directiveInstance,compileElement);bindDirectiveAfterViewLifecycleCallbacks(directiveAst.directive,directiveInstance,compileElement);bindDirectiveWrapperLifecycleCallbacks(directiveAst,directiveWrapperInstance,compileElement);});ast.providers.forEach(function(providerAst){var/** @type {?} */providerInstance=compileElement.instances.get(tokenReference(providerAst.token));bindInjectableDestroyLifecycleCallbacks(providerAst,providerInstance,compileElement);});bindView(compileElement.embeddedView,ast.children,this._schemaRegistry);return null;}/**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */},{key:'visitAttr',value:function visitAttr(ast,ctx){return null;}/**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */},{key:'visitDirective',value:function visitDirective(ast,ctx){return null;}/**
-     * @param {?} ast
-     * @param {?} eventTargetAndNames
-     * @return {?}
-     */},{key:'visitEvent',value:function visitEvent(ast,eventTargetAndNames){return null;}/**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */},{key:'visitReference',value:function visitReference(ast,ctx){return null;}/**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */},{key:'visitVariable',value:function visitVariable(ast,ctx){return null;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitDirectiveProperty',value:function visitDirectiveProperty(ast,context){return null;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitElementProperty',value:function visitElementProperty(ast,context){return null;}}]);return ViewBinderVisitor;}();var/** @type {?} */IMPLICIT_TEMPLATE_VAR='\$implicit';var/** @type {?} */CLASS_ATTR$1='class';var/** @type {?} */STYLE_ATTR='style';var/** @type {?} */NG_CONTAINER_TAG='ng-container';var/** @type {?} */parentRenderNodeVar=variable('parentRenderNode');var/** @type {?} */rootSelectorVar=variable('rootSelector');/**
- * @param {?} view
- * @param {?} template
- * @param {?} targetDependencies
- * @return {?}
- */function buildView(view,template,targetDependencies){var/** @type {?} */builderVisitor=new ViewBuilderVisitor(view,targetDependencies);var/** @type {?} */parentEl=view.declarationElement.isNull()?view.declarationElement:view.declarationElement.parent;templateVisitAll(builderVisitor,template,parentEl);if(view.viewType===ɵViewType.EMBEDDED||view.viewType===ɵViewType.HOST){view.lastRenderNode=builderVisitor.getOrCreateLastRenderNode();}return builderVisitor.nestedViewCount;}/**
- * @param {?} view
- * @param {?} targetStatements
- * @return {?}
- */function finishView(view,targetStatements){view.nodes.forEach(function(node){if(node instanceof CompileElement){node.finish();if(node.hasEmbeddedView){finishView(node.embeddedView,targetStatements);}}});view.finish();createViewTopLevelStmts(view,targetStatements);}var ViewBuilderVisitor=function(){/**
-     * @param {?} view
-     * @param {?} targetDependencies
-     */function ViewBuilderVisitor(view,targetDependencies){_classCallCheck(this,ViewBuilderVisitor);this.view=view;this.targetDependencies=targetDependencies;this.nestedViewCount=0;}/**
-     * @param {?} parent
-     * @return {?}
-     */_createClass(ViewBuilderVisitor,[{key:'_isRootNode',value:function _isRootNode(parent){return parent.view!==this.view;}/**
-     * @param {?} node
-     * @return {?}
-     */},{key:'_addRootNodeAndProject',value:function _addRootNodeAndProject(node){var/** @type {?} */projectedNode=_getOuterContainerOrSelf(node);var/** @type {?} */parent=projectedNode.parent;var/** @type {?} */ngContentIndex=projectedNode.sourceAst.ngContentIndex;var/** @type {?} */viewContainer=node instanceof CompileElement&&node.hasViewContainer?node.viewContainer:null;if(this._isRootNode(parent)){if(this.view.viewType!==ɵViewType.COMPONENT){this.view.rootNodes.push(new CompileViewRootNode(viewContainer?CompileViewRootNodeType.ViewContainer:CompileViewRootNodeType.Node,viewContainer||node.renderNode));}}else if(isPresent(parent.component)&&isPresent(ngContentIndex)){parent.addContentNode(ngContentIndex,new CompileViewRootNode(viewContainer?CompileViewRootNodeType.ViewContainer:CompileViewRootNodeType.Node,viewContainer||node.renderNode));}}/**
-     * @param {?} parent
-     * @return {?}
-     */},{key:'_getParentRenderNode',value:function _getParentRenderNode(parent){parent=_getOuterContainerParentOrSelf(parent);if(this._isRootNode(parent)){if(this.view.viewType===ɵViewType.COMPONENT){return parentRenderNodeVar;}else{// root node of an embedded/host view
-return NULL_EXPR;}}else{return isPresent(parent.component)&&parent.component.template.encapsulation!==ViewEncapsulation.Native?NULL_EXPR:parent.renderNode;}}/**
-     * @return {?}
-     */},{key:'getOrCreateLastRenderNode',value:function getOrCreateLastRenderNode(){var/** @type {?} */view=this.view;if(view.rootNodes.length===0||view.rootNodes[view.rootNodes.length-1].type!==CompileViewRootNodeType.Node){var/** @type {?} */fieldName='_el_'+view.nodes.length;view.fields.push(new ClassField(fieldName,importType(view.genConfig.renderTypes.renderElement)));view.createMethod.addStmt(THIS_EXPR.prop(fieldName).set(ViewProperties.renderer.callMethod('createTemplateAnchor',[NULL_EXPR,NULL_EXPR])).toStmt());view.rootNodes.push(new CompileViewRootNode(CompileViewRootNodeType.Node,THIS_EXPR.prop(fieldName)));}return view.rootNodes[view.rootNodes.length-1].expr;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitBoundText',value:function visitBoundText(ast,parent){return this._visitText(ast,'',parent);}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitText',value:function visitText(ast,parent){return this._visitText(ast,ast.value,parent);}/**
-     * @param {?} ast
-     * @param {?} value
-     * @param {?} parent
-     * @return {?}
-     */},{key:'_visitText',value:function _visitText(ast,value,parent){var/** @type {?} */fieldName='_text_'+this.view.nodes.length;this.view.fields.push(new ClassField(fieldName,importType(this.view.genConfig.renderTypes.renderText)));var/** @type {?} */renderNode=THIS_EXPR.prop(fieldName);var/** @type {?} */compileNode=new CompileNode(parent,this.view,this.view.nodes.length,renderNode,ast);var/** @type {?} */createRenderNode=THIS_EXPR.prop(fieldName).set(ViewProperties.renderer.callMethod('createText',[this._getParentRenderNode(parent),literal(value),this.view.createMethod.resetDebugInfoExpr(this.view.nodes.length,ast)])).toStmt();this.view.nodes.push(compileNode);this.view.createMethod.addStmt(createRenderNode);this._addRootNodeAndProject(compileNode);return renderNode;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitNgContent',value:function visitNgContent(ast,parent){// the projected nodes originate from a different view, so we don't
-// have debug information for them...
-this.view.createMethod.resetDebugInfo(null,ast);var/** @type {?} */parentRenderNode=this._getParentRenderNode(parent);if(parentRenderNode!==NULL_EXPR){this.view.createMethod.addStmt(THIS_EXPR.callMethod('projectNodes',[parentRenderNode,literal(ast.index)]).toStmt());}else if(this._isRootNode(parent)){if(this.view.viewType!==ɵViewType.COMPONENT){// store root nodes only for embedded/host views
-this.view.rootNodes.push(new CompileViewRootNode(CompileViewRootNodeType.NgContent,null,ast.index));}}else{if(isPresent(parent.component)&&isPresent(ast.ngContentIndex)){parent.addContentNode(ast.ngContentIndex,new CompileViewRootNode(CompileViewRootNodeType.NgContent,null,ast.index));}}return null;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitElement',value:function visitElement(ast,parent){var/** @type {?} */nodeIndex=this.view.nodes.length;var/** @type {?} */createRenderNodeExpr=void 0;var/** @type {?} */debugContextExpr=this.view.createMethod.resetDebugInfoExpr(nodeIndex,ast);var/** @type {?} */directives=ast.directives.map(function(directiveAst){return directiveAst.directive;});var/** @type {?} */component=directives.find(function(directive){return directive.isComponent;});if(ast.name===NG_CONTAINER_TAG){createRenderNodeExpr=ViewProperties.renderer.callMethod('createTemplateAnchor',[this._getParentRenderNode(parent),debugContextExpr]);}else{var/** @type {?} */htmlAttrs=_readHtmlAttrs(ast.attrs);var/** @type {?} */attrNameAndValues=createInlineArray(_mergeHtmlAndDirectiveAttrs(htmlAttrs,directives).map(function(v){return literal(v);}));if(nodeIndex===0&&this.view.viewType===ɵViewType.HOST){createRenderNodeExpr=importExpr(createIdentifier(Identifiers.selectOrCreateRenderHostElement)).callFn([ViewProperties.renderer,literal(ast.name),attrNameAndValues,rootSelectorVar,debugContextExpr]);}else{createRenderNodeExpr=importExpr(createIdentifier(Identifiers.createRenderElement)).callFn([ViewProperties.renderer,this._getParentRenderNode(parent),literal(ast.name),attrNameAndValues,debugContextExpr]);}}var/** @type {?} */fieldName='_el_'+nodeIndex;this.view.fields.push(new ClassField(fieldName,importType(this.view.genConfig.renderTypes.renderElement)));this.view.createMethod.addStmt(THIS_EXPR.prop(fieldName).set(createRenderNodeExpr).toStmt());var/** @type {?} */renderNode=THIS_EXPR.prop(fieldName);var/** @type {?} */compileElement=new CompileElement(parent,this.view,nodeIndex,renderNode,ast,component,directives,ast.providers,ast.hasViewContainer,false,ast.references);this.view.nodes.push(compileElement);var/** @type {?} */compViewExpr=null;if(isPresent(component)){this.targetDependencies.push(new ComponentViewDependency(component.type.reference));compViewExpr=THIS_EXPR.prop('compView_'+nodeIndex);// fix highlighting: `
-this.view.fields.push(new ClassField(compViewExpr.name,importType(createIdentifier(Identifiers.AppView),[importType(component.type)])));this.view.viewChildren.push(compViewExpr);compileElement.setComponentView(compViewExpr);this.view.createMethod.addStmt(compViewExpr.set(importExpr({reference:component.componentViewType}).instantiate([ViewProperties.viewUtils,THIS_EXPR,literal(nodeIndex),renderNode])).toStmt());}compileElement.beforeChildren();this._addRootNodeAndProject(compileElement);templateVisitAll(this,ast.children,compileElement);compileElement.afterChildren(this.view.nodes.length-nodeIndex-1);if(isPresent(compViewExpr)){this.view.createMethod.addStmt(compViewExpr.callMethod('create',[compileElement.getComponent()]).toStmt());}return null;}/**
-     * @param {?} ast
-     * @param {?} parent
-     * @return {?}
-     */},{key:'visitEmbeddedTemplate',value:function visitEmbeddedTemplate(ast,parent){var/** @type {?} */nodeIndex=this.view.nodes.length;var/** @type {?} */fieldName='_anchor_'+nodeIndex;this.view.fields.push(new ClassField(fieldName,importType(this.view.genConfig.renderTypes.renderComment)));this.view.createMethod.addStmt(THIS_EXPR.prop(fieldName).set(ViewProperties.renderer.callMethod('createTemplateAnchor',[this._getParentRenderNode(parent),this.view.createMethod.resetDebugInfoExpr(nodeIndex,ast)])).toStmt());var/** @type {?} */renderNode=THIS_EXPR.prop(fieldName);var/** @type {?} */templateVariableBindings=ast.variables.map(function(varAst){return[varAst.value.length>0?varAst.value:IMPLICIT_TEMPLATE_VAR,varAst.name];});var/** @type {?} */directives=ast.directives.map(function(directiveAst){return directiveAst.directive;});var/** @type {?} */compileElement=new CompileElement(parent,this.view,nodeIndex,renderNode,ast,null,directives,ast.providers,ast.hasViewContainer,true,ast.references);this.view.nodes.push(compileElement);this.nestedViewCount++;var/** @type {?} */embeddedView=new CompileView(this.view.component,this.view.genConfig,this.view.pipeMetas,NULL_EXPR,this.view.animations,this.view.viewIndex+this.nestedViewCount,compileElement,templateVariableBindings,this.targetDependencies);this.nestedViewCount+=buildView(embeddedView,ast.children,this.targetDependencies);compileElement.beforeChildren();this._addRootNodeAndProject(compileElement);compileElement.afterChildren(0);return null;}/**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */},{key:'visitAttr',value:function visitAttr(ast,ctx){return null;}/**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */},{key:'visitDirective',value:function visitDirective(ast,ctx){return null;}/**
-     * @param {?} ast
-     * @param {?} eventTargetAndNames
-     * @return {?}
-     */},{key:'visitEvent',value:function visitEvent(ast,eventTargetAndNames){return null;}/**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */},{key:'visitReference',value:function visitReference(ast,ctx){return null;}/**
-     * @param {?} ast
-     * @param {?} ctx
-     * @return {?}
-     */},{key:'visitVariable',value:function visitVariable(ast,ctx){return null;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitDirectiveProperty',value:function visitDirectiveProperty(ast,context){return null;}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitElementProperty',value:function visitElementProperty(ast,context){return null;}}]);return ViewBuilderVisitor;}();/**
- * Walks up the nodes while the direct parent is a container.
- *
- * Returns the outer container or the node itself when it is not a direct child of a container.
- *
- * \@internal
- * @param {?} node
- * @return {?}
- */function _getOuterContainerOrSelf(node){var/** @type {?} */view=node.view;while(_isNgContainer(node.parent,view)){node=node.parent;}return node;}/**
- * Walks up the nodes while they are container and returns the first parent which is not.
- *
- * Returns the parent of the outer container or the node itself when it is not a container.
- *
- * \@internal
- * @param {?} el
- * @return {?}
- */function _getOuterContainerParentOrSelf(el){var/** @type {?} */view=el.view;while(_isNgContainer(el,view)){el=el.parent;}return el;}/**
- * @param {?} node
- * @param {?} view
- * @return {?}
- */function _isNgContainer(node,view){return!node.isNull()&&node.sourceAst.name===NG_CONTAINER_TAG&&node.view===view;}/**
- * @param {?} declaredHtmlAttrs
- * @param {?} directives
- * @return {?}
- */function _mergeHtmlAndDirectiveAttrs(declaredHtmlAttrs,directives){var/** @type {?} */mapResult={};Object.keys(declaredHtmlAttrs).forEach(function(key){mapResult[key]=declaredHtmlAttrs[key];});directives.forEach(function(directiveMeta){Object.keys(directiveMeta.hostAttributes).forEach(function(name){var/** @type {?} */value=directiveMeta.hostAttributes[name];var/** @type {?} */prevValue=mapResult[name];mapResult[name]=isPresent(prevValue)?mergeAttributeValue(name,prevValue,value):value;});});var/** @type {?} */arrResult=[];// Note: We need to sort to get a defined output order
-// for tests and for caching generated artifacts...
-Object.keys(mapResult).sort().forEach(function(attrName){arrResult.push(attrName,mapResult[attrName]);});return arrResult;}/**
- * @param {?} attrs
- * @return {?}
- */function _readHtmlAttrs(attrs){var/** @type {?} */htmlAttrs={};attrs.forEach(function(ast){htmlAttrs[ast.name]=ast.value;});return htmlAttrs;}/**
- * @param {?} attrName
- * @param {?} attrValue1
- * @param {?} attrValue2
- * @return {?}
- */function mergeAttributeValue(attrName,attrValue1,attrValue2){if(attrName==CLASS_ATTR$1||attrName==STYLE_ATTR){return attrValue1+' '+attrValue2;}else{return attrValue2;}}/**
- * @param {?} view
- * @param {?} targetStatements
- * @return {?}
- */function createViewTopLevelStmts(view,targetStatements){var/** @type {?} */nodeDebugInfosVar=NULL_EXPR;if(view.genConfig.genDebugInfo){nodeDebugInfosVar=variable('nodeDebugInfos_'+identifierName(view.component.type)+view.viewIndex);// fix
-// highlighting:
-// `
-targetStatements.push(nodeDebugInfosVar.set(literalArr(view.nodes.map(createStaticNodeDebugInfo),new ArrayType(importType(createIdentifier(Identifiers.StaticNodeDebugInfo)),[TypeModifier.Const]))).toDeclStmt(null,[StmtModifier.Final]));}var/** @type {?} */renderCompTypeVar=variable(view.rendererTypeName);// fix highlighting: `
-if(view.viewIndex===0){var/** @type {?} */templateUrlInfo=void 0;if(view.component.template.templateUrl==identifierModuleUrl(view.component.type)){templateUrlInfo=identifierModuleUrl(view.component.type)+' class '+identifierName(view.component.type)+' - inline template';}else{templateUrlInfo=view.component.template.templateUrl;}targetStatements.push(renderCompTypeVar.set(importExpr(createIdentifier(Identifiers.createRenderComponentType)).callFn([view.genConfig.genDebugInfo?literal(templateUrlInfo):literal(''),literal(view.component.template.ngContentSelectors.length),ViewEncapsulationEnum.fromValue(view.component.template.encapsulation),view.styles,literalMap(view.animations.map(function(entry){return[entry.name,entry.fnExp];}),null,true)])).toDeclStmt(importType(createIdentifier(Identifiers.RenderComponentType))));}var/** @type {?} */viewClass=createViewClass(view,renderCompTypeVar,nodeDebugInfosVar);targetStatements.push(viewClass);}/**
- * @param {?} node
- * @return {?}
- */function createStaticNodeDebugInfo(node){var/** @type {?} */compileElement=node instanceof CompileElement?node:null;var/** @type {?} */providerTokens=[];var/** @type {?} */componentToken=NULL_EXPR;var/** @type {?} */varTokenEntries=[];if(isPresent(compileElement)){providerTokens=compileElement.getProviderTokens().map(function(token){return createDiTokenExpression(token);});if(isPresent(compileElement.component)){componentToken=createDiTokenExpression(identifierToken(compileElement.component.type));}Object.keys(compileElement.referenceTokens).forEach(function(varName){var/** @type {?} */token=compileElement.referenceTokens[varName];varTokenEntries.push([varName,isPresent(token)?createDiTokenExpression(token):NULL_EXPR]);});}return importExpr(createIdentifier(Identifiers.StaticNodeDebugInfo)).instantiate([literalArr(providerTokens,new ArrayType(DYNAMIC_TYPE,[TypeModifier.Const])),componentToken,literalMap(varTokenEntries,new MapType(DYNAMIC_TYPE,[TypeModifier.Const]))],importType(createIdentifier(Identifiers.StaticNodeDebugInfo),null,[TypeModifier.Const]));}/**
- * @param {?} view
- * @param {?} renderCompTypeVar
- * @param {?} nodeDebugInfosVar
- * @return {?}
- */function createViewClass(view,renderCompTypeVar,nodeDebugInfosVar){var/** @type {?} */viewConstructorArgs=[new FnParam(ViewConstructorVars.viewUtils.name,importType(createIdentifier(Identifiers.ViewUtils))),new FnParam(ViewConstructorVars.parentView.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(ViewConstructorVars.parentIndex.name,NUMBER_TYPE),new FnParam(ViewConstructorVars.parentElement.name,DYNAMIC_TYPE)];var/** @type {?} */superConstructorArgs=[variable(view.className),renderCompTypeVar,ViewTypeEnum.fromValue(view.viewType),ViewConstructorVars.viewUtils,ViewConstructorVars.parentView,ViewConstructorVars.parentIndex,ViewConstructorVars.parentElement,ChangeDetectorStatusEnum.fromValue(getChangeDetectionMode(view))];if(view.genConfig.genDebugInfo){superConstructorArgs.push(nodeDebugInfosVar);}if(view.viewType===ɵViewType.EMBEDDED){viewConstructorArgs.push(new FnParam('declaredViewContainer',importType(createIdentifier(Identifiers.ViewContainer))));superConstructorArgs.push(variable('declaredViewContainer'));}var/** @type {?} */viewMethods=[new ClassMethod('createInternal',[new FnParam(rootSelectorVar.name,STRING_TYPE)],generateCreateMethod(view),importType(createIdentifier(Identifiers.ComponentRef),[DYNAMIC_TYPE])),new ClassMethod('injectorGetInternal',[new FnParam(InjectMethodVars$1.token.name,DYNAMIC_TYPE),// Note: Can't use o.INT_TYPE here as the method in AppView uses number
-new FnParam(InjectMethodVars$1.requestNodeIndex.name,NUMBER_TYPE),new FnParam(InjectMethodVars$1.notFoundResult.name,DYNAMIC_TYPE)],addReturnValuefNotEmpty(view.injectorGetMethod.finish(),InjectMethodVars$1.notFoundResult),DYNAMIC_TYPE),new ClassMethod('detectChangesInternal',[],generateDetectChangesMethod(view)),new ClassMethod('dirtyParentQueriesInternal',[],view.dirtyParentQueriesMethod.finish()),new ClassMethod('destroyInternal',[],generateDestroyMethod(view)),new ClassMethod('detachInternal',[],view.detachMethod.finish()),generateVisitRootNodesMethod(view),generateVisitProjectableNodesMethod(view),generateCreateEmbeddedViewsMethod(view)].filter(function(method){return method.body.length>0;});var/** @type {?} */superClass=view.genConfig.genDebugInfo?Identifiers.DebugAppView:Identifiers.AppView;var/** @type {?} */viewClass=createClassStmt({name:view.className,parent:importExpr(createIdentifier(superClass),[getContextType(view)]),parentArgs:superConstructorArgs,ctorParams:viewConstructorArgs,builders:[{methods:viewMethods},view]});return viewClass;}/**
- * @param {?} view
- * @return {?}
- */function generateDestroyMethod(view){var/** @type {?} */stmts=[];view.viewContainers.forEach(function(viewContainer){stmts.push(viewContainer.callMethod('destroyNestedViews',[]).toStmt());});view.viewChildren.forEach(function(viewChild){stmts.push(viewChild.callMethod('destroy',[]).toStmt());});stmts.push.apply(stmts,_toConsumableArray(view.destroyMethod.finish()));return stmts;}/**
- * @param {?} view
- * @return {?}
- */function generateCreateMethod(view){var/** @type {?} */parentRenderNodeExpr=NULL_EXPR;var/** @type {?} */parentRenderNodeStmts=[];if(view.viewType===ɵViewType.COMPONENT){parentRenderNodeExpr=ViewProperties.renderer.callMethod('createViewRoot',[THIS_EXPR.prop('parentElement')]);parentRenderNodeStmts=[parentRenderNodeVar.set(parentRenderNodeExpr).toDeclStmt(importType(view.genConfig.renderTypes.renderNode),[StmtModifier.Final])];}var/** @type {?} */resultExpr=void 0;if(view.viewType===ɵViewType.HOST){var/** @type {?} */hostEl=view.nodes[0];resultExpr=importExpr(createIdentifier(Identifiers.ComponentRef_),[DYNAMIC_TYPE]).instantiate([literal(hostEl.nodeIndex),THIS_EXPR,hostEl.renderNode,hostEl.getComponent()]);}else{resultExpr=NULL_EXPR;}var/** @type {?} */allNodesExpr=ViewProperties.renderer.cast(DYNAMIC_TYPE).prop('directRenderer').conditional(NULL_EXPR,literalArr(view.nodes.map(function(node){return node.renderNode;})));return parentRenderNodeStmts.concat(view.createMethod.finish(),[THIS_EXPR.callMethod('init',[view.lastRenderNode,allNodesExpr,view.disposables.length?literalArr(view.disposables):NULL_EXPR]).toStmt(),new ReturnStatement(resultExpr)]);}/**
- * @param {?} view
- * @return {?}
- */function generateDetectChangesMethod(view){var/** @type {?} */stmts=[];if(view.animationBindingsMethod.isEmpty()&&view.detectChangesInInputsMethod.isEmpty()&&view.updateContentQueriesMethod.isEmpty()&&view.afterContentLifecycleCallbacksMethod.isEmpty()&&view.detectChangesRenderPropertiesMethod.isEmpty()&&view.updateViewQueriesMethod.isEmpty()&&view.afterViewLifecycleCallbacksMethod.isEmpty()&&view.viewContainers.length===0&&view.viewChildren.length===0){return stmts;}stmts.push.apply(stmts,_toConsumableArray(view.animationBindingsMethod.finish()));stmts.push.apply(stmts,_toConsumableArray(view.detectChangesInInputsMethod.finish()));view.viewContainers.forEach(function(viewContainer){stmts.push(viewContainer.callMethod('detectChangesInNestedViews',[ViewProperties.throwOnChange]).toStmt());});var/** @type {?} */afterContentStmts=view.updateContentQueriesMethod.finish().concat(view.afterContentLifecycleCallbacksMethod.finish());if(afterContentStmts.length>0){stmts.push(new IfStmt(not(ViewProperties.throwOnChange),afterContentStmts));}stmts.push.apply(stmts,_toConsumableArray(view.detectChangesRenderPropertiesMethod.finish()));view.viewChildren.forEach(function(viewChild){stmts.push(viewChild.callMethod('internalDetectChanges',[ViewProperties.throwOnChange]).toStmt());});var/** @type {?} */afterViewStmts=view.updateViewQueriesMethod.finish().concat(view.afterViewLifecycleCallbacksMethod.finish());if(afterViewStmts.length>0){stmts.push(new IfStmt(not(ViewProperties.throwOnChange),afterViewStmts));}var/** @type {?} */varStmts=legacyCreateSharedBindingVariablesIfNeeded(stmts);return varStmts.concat(stmts);}/**
+ */function temporaryDeclaration(bindingId,temporaryNumber){return new DeclareVarStmt(temporaryName(bindingId,temporaryNumber),NULL_EXPR);}/**
+ * @param {?} temporaryCount
+ * @param {?} bindingId
  * @param {?} statements
- * @param {?} value
  * @return {?}
- */function addReturnValuefNotEmpty(statements,value){if(statements.length>0){return statements.concat([new ReturnStatement(value)]);}else{return statements;}}/**
- * @param {?} view
+ */function prependTemporaryDecls(temporaryCount,bindingId,statements){for(var/** @type {?} */i=temporaryCount-1;i>=0;i--){statements.unshift(temporaryDeclaration(bindingId,i));}}var _Mode={};_Mode.Statement=0;_Mode.Expression=1;_Mode[_Mode.Statement]="Statement";_Mode[_Mode.Expression]="Expression";/**
+ * @param {?} mode
+ * @param {?} ast
  * @return {?}
- */function getContextType(view){if(view.viewType===ɵViewType.COMPONENT){return importType(view.component.type);}return DYNAMIC_TYPE;}/**
- * @param {?} view
+ */function ensureStatementMode(mode,ast){if(mode!==_Mode.Statement){throw new Error('Expected a statement, but saw '+ast);}}/**
+ * @param {?} mode
+ * @param {?} ast
  * @return {?}
- */function getChangeDetectionMode(view){var/** @type {?} */mode=void 0;if(view.viewType===ɵViewType.COMPONENT){mode=ɵisDefaultChangeDetectionStrategy(view.component.changeDetection)?ɵChangeDetectorStatus.CheckAlways:ɵChangeDetectorStatus.CheckOnce;}else{mode=ɵChangeDetectorStatus.CheckAlways;}return mode;}/**
- * @param {?} view
+ */function ensureExpressionMode(mode,ast){if(mode!==_Mode.Expression){throw new Error('Expected an expression, but saw '+ast);}}/**
+ * @param {?} mode
+ * @param {?} expr
  * @return {?}
- */function generateVisitRootNodesMethod(view){var/** @type {?} */cbVar=variable('cb');var/** @type {?} */ctxVar=variable('ctx');var/** @type {?} */stmts=generateVisitNodesStmts(view.rootNodes,cbVar,ctxVar);return new ClassMethod('visitRootNodesInternal',[new FnParam(cbVar.name,DYNAMIC_TYPE),new FnParam(ctxVar.name,DYNAMIC_TYPE)],stmts);}/**
- * @param {?} view
+ */function convertToStatementIfNeeded(mode,expr){if(mode===_Mode.Statement){return expr.toStmt();}else{return expr;}}var _BuiltinAstConverter=function(_AstTransformer){_inherits(_BuiltinAstConverter,_AstTransformer);/**
+     * @param {?} _converterFactory
+     */function _BuiltinAstConverter(_converterFactory){_classCallCheck(this,_BuiltinAstConverter);var _this168=_possibleConstructorReturn(this,(_BuiltinAstConverter.__proto__||Object.getPrototypeOf(_BuiltinAstConverter)).call(this));_this168._converterFactory=_converterFactory;return _this168;}/**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */_createClass(_BuiltinAstConverter,[{key:'visitPipe',value:function visitPipe(ast,context){var _this169=this;var/** @type {?} */args=[ast.exp].concat(_toConsumableArray(ast.args)).map(function(ast){return ast.visit(_this169,context);});return new BuiltinFunctionCall(ast.span,args,this._converterFactory.createPipeConverter(ast.name,args.length));}/**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */},{key:'visitLiteralArray',value:function visitLiteralArray(ast,context){var _this170=this;var/** @type {?} */args=ast.expressions.map(function(ast){return ast.visit(_this170,context);});return new BuiltinFunctionCall(ast.span,args,this._converterFactory.createLiteralArrayConverter(ast.expressions.length));}/**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */},{key:'visitLiteralMap',value:function visitLiteralMap(ast,context){var _this171=this;var/** @type {?} */args=ast.values.map(function(ast){return ast.visit(_this171,context);});return new BuiltinFunctionCall(ast.span,args,this._converterFactory.createLiteralMapConverter(ast.keys));}}]);return _BuiltinAstConverter;}(AstTransformer);var _AstToIrVisitor=function(){/**
+     * @param {?} _localResolver
+     * @param {?} _implicitReceiver
+     * @param {?} bindingId
+     */function _AstToIrVisitor(_localResolver,_implicitReceiver,bindingId){_classCallCheck(this,_AstToIrVisitor);this._localResolver=_localResolver;this._implicitReceiver=_implicitReceiver;this.bindingId=bindingId;this._nodeMap=new Map();this._resultMap=new Map();this._currentTemporary=0;this.temporaryCount=0;}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */_createClass(_AstToIrVisitor,[{key:'visitBinary',value:function visitBinary(ast,mode){var/** @type {?} */op=void 0;switch(ast.operation){case'+':op=BinaryOperator.Plus;break;case'-':op=BinaryOperator.Minus;break;case'*':op=BinaryOperator.Multiply;break;case'/':op=BinaryOperator.Divide;break;case'%':op=BinaryOperator.Modulo;break;case'&&':op=BinaryOperator.And;break;case'||':op=BinaryOperator.Or;break;case'==':op=BinaryOperator.Equals;break;case'!=':op=BinaryOperator.NotEquals;break;case'===':op=BinaryOperator.Identical;break;case'!==':op=BinaryOperator.NotIdentical;break;case'<':op=BinaryOperator.Lower;break;case'>':op=BinaryOperator.Bigger;break;case'<=':op=BinaryOperator.LowerEquals;break;case'>=':op=BinaryOperator.BiggerEquals;break;default:throw new Error('Unsupported operation '+ast.operation);}return convertToStatementIfNeeded(mode,new BinaryOperatorExpr(op,this.visit(ast.left,_Mode.Expression),this.visit(ast.right,_Mode.Expression)));}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitChain',value:function visitChain(ast,mode){ensureStatementMode(mode,ast);return this.visitAll(ast.expressions,mode);}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitConditional',value:function visitConditional(ast,mode){var/** @type {?} */value=this.visit(ast.condition,_Mode.Expression);return convertToStatementIfNeeded(mode,value.conditional(this.visit(ast.trueExp,_Mode.Expression),this.visit(ast.falseExp,_Mode.Expression)));}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitPipe',value:function visitPipe(ast,mode){throw new Error('Illegal state: Pipes should have been converted into functions. Pipe: '+ast.name);}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitFunctionCall',value:function visitFunctionCall(ast,mode){var/** @type {?} */convertedArgs=this.visitAll(ast.args,_Mode.Expression);var/** @type {?} */fnResult=void 0;if(ast instanceof BuiltinFunctionCall){fnResult=ast.converter(convertedArgs);}else{fnResult=this.visit(ast.target,_Mode.Expression).callFn(convertedArgs);}return convertToStatementIfNeeded(mode,fnResult);}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitImplicitReceiver',value:function visitImplicitReceiver(ast,mode){ensureExpressionMode(mode,ast);return this._implicitReceiver;}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitInterpolation',value:function visitInterpolation(ast,mode){ensureExpressionMode(mode,ast);var/** @type {?} */args=[literal(ast.expressions.length)];for(var/** @type {?} */i=0;i<ast.strings.length-1;i++){args.push(literal(ast.strings[i]));args.push(this.visit(ast.expressions[i],_Mode.Expression));}args.push(literal(ast.strings[ast.strings.length-1]));return ast.expressions.length<=9?importExpr(createIdentifier(Identifiers.inlineInterpolate)).callFn(args):importExpr(createIdentifier(Identifiers.interpolate)).callFn([args[0],literalArr(args.slice(1))]);}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitKeyedRead',value:function visitKeyedRead(ast,mode){var/** @type {?} */leftMostSafe=this.leftMostSafeNode(ast);if(leftMostSafe){return this.convertSafeAccess(ast,leftMostSafe,mode);}else{return convertToStatementIfNeeded(mode,this.visit(ast.obj,_Mode.Expression).key(this.visit(ast.key,_Mode.Expression)));}}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitKeyedWrite',value:function visitKeyedWrite(ast,mode){var/** @type {?} */obj=this.visit(ast.obj,_Mode.Expression);var/** @type {?} */key=this.visit(ast.key,_Mode.Expression);var/** @type {?} */value=this.visit(ast.value,_Mode.Expression);return convertToStatementIfNeeded(mode,obj.key(key).set(value));}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitLiteralArray',value:function visitLiteralArray(ast,mode){throw new Error('Illegal State: literal arrays should have been converted into functions');}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitLiteralMap',value:function visitLiteralMap(ast,mode){throw new Error('Illegal State: literal maps should have been converted into functions');}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitLiteralPrimitive',value:function visitLiteralPrimitive(ast,mode){return convertToStatementIfNeeded(mode,literal(ast.value));}/**
+     * @param {?} name
+     * @return {?}
+     */},{key:'_getLocal',value:function _getLocal(name){return this._localResolver.getLocal(name);}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitMethodCall',value:function visitMethodCall(ast,mode){var/** @type {?} */leftMostSafe=this.leftMostSafeNode(ast);if(leftMostSafe){return this.convertSafeAccess(ast,leftMostSafe,mode);}else{var/** @type {?} */args=this.visitAll(ast.args,_Mode.Expression);var/** @type {?} */result=null;var/** @type {?} */receiver=this.visit(ast.receiver,_Mode.Expression);if(receiver===this._implicitReceiver){var/** @type {?} */varExpr=this._getLocal(ast.name);if(varExpr){result=varExpr.callFn(args);}}if(isBlank(result)){result=receiver.callMethod(ast.name,args);}return convertToStatementIfNeeded(mode,result);}}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitPrefixNot',value:function visitPrefixNot(ast,mode){return convertToStatementIfNeeded(mode,not(this.visit(ast.expression,_Mode.Expression)));}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitPropertyRead',value:function visitPropertyRead(ast,mode){var/** @type {?} */leftMostSafe=this.leftMostSafeNode(ast);if(leftMostSafe){return this.convertSafeAccess(ast,leftMostSafe,mode);}else{var/** @type {?} */result=null;var/** @type {?} */receiver=this.visit(ast.receiver,_Mode.Expression);if(receiver===this._implicitReceiver){result=this._getLocal(ast.name);}if(isBlank(result)){result=receiver.prop(ast.name);}return convertToStatementIfNeeded(mode,result);}}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitPropertyWrite',value:function visitPropertyWrite(ast,mode){var/** @type {?} */receiver=this.visit(ast.receiver,_Mode.Expression);if(receiver===this._implicitReceiver){var/** @type {?} */varExpr=this._getLocal(ast.name);if(varExpr){throw new Error('Cannot assign to a reference or variable!');}}return convertToStatementIfNeeded(mode,receiver.prop(ast.name).set(this.visit(ast.value,_Mode.Expression)));}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitSafePropertyRead',value:function visitSafePropertyRead(ast,mode){return this.convertSafeAccess(ast,this.leftMostSafeNode(ast),mode);}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitSafeMethodCall',value:function visitSafeMethodCall(ast,mode){return this.convertSafeAccess(ast,this.leftMostSafeNode(ast),mode);}/**
+     * @param {?} asts
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitAll',value:function visitAll(asts,mode){var _this172=this;return asts.map(function(ast){return _this172.visit(ast,mode);});}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visitQuote',value:function visitQuote(ast,mode){throw new Error('Quotes are not supported for evaluation!');}/**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */},{key:'visit',value:function visit(ast,mode){var/** @type {?} */result=this._resultMap.get(ast);if(result)return result;return(this._nodeMap.get(ast)||ast).visit(this,mode);}/**
+     * @param {?} ast
+     * @param {?} leftMostSafe
+     * @param {?} mode
+     * @return {?}
+     */},{key:'convertSafeAccess',value:function convertSafeAccess(ast,leftMostSafe,mode){// If the expression contains a safe access node on the left it needs to be converted to
+// an expression that guards the access to the member by checking the receiver for blank. As
+// execution proceeds from left to right, the left most part of the expression must be guarded
+// first but, because member access is left associative, the right side of the expression is at
+// the top of the AST. The desired result requires lifting a copy of the the left part of the
+// expression up to test it for blank before generating the unguarded version.
+// Consider, for example the following expression: a?.b.c?.d.e
+// This results in the ast:
+//         .
+//        / \
+//       ?.   e
+//      /  \
+//     .    d
+//    / \
+//   ?.  c
+//  /  \
+// a    b
+// The following tree should be generated:
+//
+//        /---- ? ----\
+//       /      |      \
+//     a   /--- ? ---\  null
+//        /     |     \
+//       .      .     null
+//      / \    / \
+//     .  c   .   e
+//    / \    / \
+//   a   b  ,   d
+//         / \
+//        .   c
+//       / \
+//      a   b
+//
+// Notice that the first guard condition is the left hand of the left most safe access node
+// which comes in as leftMostSafe to this routine.
+var/** @type {?} */guardedExpression=this.visit(leftMostSafe.receiver,_Mode.Expression);var/** @type {?} */temporary=void 0;if(this.needsTemporary(leftMostSafe.receiver)){// If the expression has method calls or pipes then we need to save the result into a
+// temporary variable to avoid calling stateful or impure code more than once.
+temporary=this.allocateTemporary();// Preserve the result in the temporary variable
+guardedExpression=temporary.set(guardedExpression);// Ensure all further references to the guarded expression refer to the temporary instead.
+this._resultMap.set(leftMostSafe.receiver,temporary);}var/** @type {?} */condition=guardedExpression.isBlank();// Convert the ast to an unguarded access to the receiver's member. The map will substitute
+// leftMostNode with its unguarded version in the call to `this.visit()`.
+if(leftMostSafe instanceof SafeMethodCall){this._nodeMap.set(leftMostSafe,new MethodCall(leftMostSafe.span,leftMostSafe.receiver,leftMostSafe.name,leftMostSafe.args));}else{this._nodeMap.set(leftMostSafe,new PropertyRead(leftMostSafe.span,leftMostSafe.receiver,leftMostSafe.name));}// Recursively convert the node now without the guarded member access.
+var/** @type {?} */access=this.visit(ast,_Mode.Expression);// Remove the mapping. This is not strictly required as the converter only traverses each node
+// once but is safer if the conversion is changed to traverse the nodes more than once.
+this._nodeMap.delete(leftMostSafe);// If we allcoated a temporary, release it.
+if(temporary){this.releaseTemporary(temporary);}// Produce the conditional
+return convertToStatementIfNeeded(mode,condition.conditional(literal(null),access));}/**
+     * @param {?} ast
+     * @return {?}
+     */},{key:'leftMostSafeNode',value:function leftMostSafeNode(ast){var _this173=this;var/** @type {?} */visit=function visit(visitor,ast){return(_this173._nodeMap.get(ast)||ast).visit(visitor);};return ast.visit({/**
+             * @param {?} ast
+             * @return {?}
+             */visitBinary:function visitBinary(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitChain:function visitChain(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitConditional:function visitConditional(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitFunctionCall:function visitFunctionCall(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitImplicitReceiver:function visitImplicitReceiver(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitInterpolation:function visitInterpolation(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitKeyedRead:function visitKeyedRead(ast){return visit(this,ast.obj);},/**
+             * @param {?} ast
+             * @return {?}
+             */visitKeyedWrite:function visitKeyedWrite(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitLiteralArray:function visitLiteralArray(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitLiteralMap:function visitLiteralMap(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitLiteralPrimitive:function visitLiteralPrimitive(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitMethodCall:function visitMethodCall(ast){return visit(this,ast.receiver);},/**
+             * @param {?} ast
+             * @return {?}
+             */visitPipe:function visitPipe(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitPrefixNot:function visitPrefixNot(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitPropertyRead:function visitPropertyRead(ast){return visit(this,ast.receiver);},/**
+             * @param {?} ast
+             * @return {?}
+             */visitPropertyWrite:function visitPropertyWrite(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitQuote:function visitQuote(ast){return null;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitSafeMethodCall:function visitSafeMethodCall(ast){return visit(this,ast.receiver)||ast;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitSafePropertyRead:function visitSafePropertyRead(ast){return visit(this,ast.receiver)||ast;}});}/**
+     * @param {?} ast
+     * @return {?}
+     */},{key:'needsTemporary',value:function needsTemporary(ast){var _this174=this;var/** @type {?} */visit=function visit(visitor,ast){return ast&&(_this174._nodeMap.get(ast)||ast).visit(visitor);};var/** @type {?} */visitSome=function visitSome(visitor,ast){return ast.some(function(ast){return visit(visitor,ast);});};return ast.visit({/**
+             * @param {?} ast
+             * @return {?}
+             */visitBinary:function visitBinary(ast){return visit(this,ast.left)||visit(this,ast.right);},/**
+             * @param {?} ast
+             * @return {?}
+             */visitChain:function visitChain(ast){return false;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitConditional:function visitConditional(ast){return visit(this,ast.condition)||visit(this,ast.trueExp)||visit(this,ast.falseExp);},/**
+             * @param {?} ast
+             * @return {?}
+             */visitFunctionCall:function visitFunctionCall(ast){return true;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitImplicitReceiver:function visitImplicitReceiver(ast){return false;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitInterpolation:function visitInterpolation(ast){return visitSome(this,ast.expressions);},/**
+             * @param {?} ast
+             * @return {?}
+             */visitKeyedRead:function visitKeyedRead(ast){return false;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitKeyedWrite:function visitKeyedWrite(ast){return false;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitLiteralArray:function visitLiteralArray(ast){return true;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitLiteralMap:function visitLiteralMap(ast){return true;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitLiteralPrimitive:function visitLiteralPrimitive(ast){return false;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitMethodCall:function visitMethodCall(ast){return true;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitPipe:function visitPipe(ast){return true;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitPrefixNot:function visitPrefixNot(ast){return visit(this,ast.expression);},/**
+             * @param {?} ast
+             * @return {?}
+             */visitPropertyRead:function visitPropertyRead(ast){return false;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitPropertyWrite:function visitPropertyWrite(ast){return false;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitQuote:function visitQuote(ast){return false;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitSafeMethodCall:function visitSafeMethodCall(ast){return true;},/**
+             * @param {?} ast
+             * @return {?}
+             */visitSafePropertyRead:function visitSafePropertyRead(ast){return false;}});}/**
+     * @return {?}
+     */},{key:'allocateTemporary',value:function allocateTemporary(){var/** @type {?} */tempNumber=this._currentTemporary++;this.temporaryCount=Math.max(this._currentTemporary,this.temporaryCount);return new ReadVarExpr(temporaryName(this.bindingId,tempNumber));}/**
+     * @param {?} temporary
+     * @return {?}
+     */},{key:'releaseTemporary',value:function releaseTemporary(temporary){this._currentTemporary--;if(temporary.name!=temporaryName(this.bindingId,this._currentTemporary)){throw new Error('Temporary '+temporary.name+' released out of order');}}}]);return _AstToIrVisitor;}();/**
+ * @param {?} arg
+ * @param {?} output
  * @return {?}
- */function generateVisitProjectableNodesMethod(view){var/** @type {?} */nodeIndexVar=variable('nodeIndex');var/** @type {?} */ngContentIndexVar=variable('ngContentIndex');var/** @type {?} */cbVar=variable('cb');var/** @type {?} */ctxVar=variable('ctx');var/** @type {?} */stmts=[];view.nodes.forEach(function(node){if(node instanceof CompileElement&&node.component){node.contentNodesByNgContentIndex.forEach(function(projectedNodes,ngContentIndex){stmts.push(new IfStmt(nodeIndexVar.equals(literal(node.nodeIndex)).and(ngContentIndexVar.equals(literal(ngContentIndex))),generateVisitNodesStmts(projectedNodes,cbVar,ctxVar)));});}});return new ClassMethod('visitProjectableNodesInternal',[new FnParam(nodeIndexVar.name,NUMBER_TYPE),new FnParam(ngContentIndexVar.name,NUMBER_TYPE),new FnParam(cbVar.name,DYNAMIC_TYPE),new FnParam(ctxVar.name,DYNAMIC_TYPE)],stmts);}/**
- * @param {?} nodes
- * @param {?} cb
- * @param {?} ctx
+ */function flattenStatements(arg,output){if(Array.isArray(arg)){arg.forEach(function(entry){return flattenStatements(entry,output);});}else{output.push(arg);}}var DefaultLocalResolver=function(){function DefaultLocalResolver(){_classCallCheck(this,DefaultLocalResolver);}_createClass(DefaultLocalResolver,[{key:'getLocal',/**
+     * @param {?} name
+     * @return {?}
+     */value:function getLocal(name){if(name===EventHandlerVars.event.name){return EventHandlerVars.event;}return null;}}]);return DefaultLocalResolver;}();/**
+ * @param {?} bindingId
  * @return {?}
- */function generateVisitNodesStmts(nodes,cb,ctx){var/** @type {?} */stmts=[];nodes.forEach(function(node){switch(node.type){case CompileViewRootNodeType.Node:stmts.push(cb.callFn([node.expr,ctx]).toStmt());break;case CompileViewRootNodeType.ViewContainer:stmts.push(cb.callFn([node.expr.prop('nativeElement'),ctx]).toStmt());stmts.push(node.expr.callMethod('visitNestedViewRootNodes',[cb,ctx]).toStmt());break;case CompileViewRootNodeType.NgContent:stmts.push(THIS_EXPR.callMethod('visitProjectedNodes',[literal(node.ngContentIndex),cb,ctx]).toStmt());break;}});return stmts;}/**
- * @param {?} view
+ */function createCurrValueExpr(bindingId){return variable('currVal_'+bindingId);// fix syntax highlighting: `
+}/**
+ * @param {?} bindingId
  * @return {?}
- */function generateCreateEmbeddedViewsMethod(view){var/** @type {?} */nodeIndexVar=variable('nodeIndex');var/** @type {?} */stmts=[];view.nodes.forEach(function(node){if(node instanceof CompileElement){if(node.embeddedView){stmts.push(new IfStmt(nodeIndexVar.equals(literal(node.nodeIndex)),[new ReturnStatement(node.embeddedView.classExpr.instantiate([ViewProperties.viewUtils,THIS_EXPR,literal(node.nodeIndex),node.renderNode,node.viewContainer]))]));}}});if(stmts.length>0){stmts.push(new ReturnStatement(NULL_EXPR));}return new ClassMethod('createEmbeddedViewInternal',[new FnParam(nodeIndexVar.name,NUMBER_TYPE)],stmts,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE]));}var ViewCompileResult=/**
+ */function createPreventDefaultVar(bindingId){return variable('pd_'+bindingId);}/**
+ * @param {?} stmt
+ * @return {?}
+ */function convertStmtIntoExpression(stmt){if(stmt instanceof ExpressionStatement){return stmt.expr;}else if(stmt instanceof ReturnStatement){return stmt.value;}return null;}var BuiltinFunctionCall=function(_FunctionCall){_inherits(BuiltinFunctionCall,_FunctionCall);/**
+     * @param {?} span
+     * @param {?} args
+     * @param {?} converter
+     */function BuiltinFunctionCall(span,args,converter){_classCallCheck(this,BuiltinFunctionCall);var _this175=_possibleConstructorReturn(this,(BuiltinFunctionCall.__proto__||Object.getPrototypeOf(BuiltinFunctionCall)).call(this,span,null,args));_this175.args=args;_this175.converter=converter;return _this175;}return BuiltinFunctionCall;}(FunctionCall);var/** @type {?} */CLASS_ATTR$1='class';var/** @type {?} */STYLE_ATTR='style';var/** @type {?} */IMPLICIT_TEMPLATE_VAR='\$implicit';var/** @type {?} */NG_CONTAINER_TAG='ng-container';var ViewCompileResult=/**
      * @param {?} statements
      * @param {?} viewClassVar
      * @param {?} rendererTypeVar
-     * @param {?} dependencies
-     */function ViewCompileResult(statements,viewClassVar,rendererTypeVar,dependencies){_classCallCheck(this,ViewCompileResult);this.statements=statements;this.viewClassVar=viewClassVar;this.rendererTypeVar=rendererTypeVar;this.dependencies=dependencies;};var ViewCompiler=function(){/**
-     * @param {?} _genConfig
-     * @param {?} _schemaRegistry
-     */function ViewCompiler(_genConfig,_schemaRegistry){_classCallCheck(this,ViewCompiler);this._genConfig=_genConfig;this._schemaRegistry=_schemaRegistry;}/**
-     * @param {?} component
-     * @param {?} template
-     * @param {?} styles
-     * @param {?} pipes
-     * @param {?} compiledAnimations
-     * @return {?}
-     */_createClass(ViewCompiler,[{key:'compileComponent',value:function compileComponent(component,template,styles,pipes,compiledAnimations){var/** @type {?} */dependencies=[];var/** @type {?} */view=new CompileView(component,this._genConfig,pipes,styles,compiledAnimations,0,CompileElement.createNull(),[],dependencies);var/** @type {?} */statements=[];buildView(view,template,dependencies);// Need to separate binding from creation to be able to refer to
-// variables that have been declared after usage.
-bindView(view,template,this._schemaRegistry);finishView(view,statements);return new ViewCompileResult(statements,view.classExpr.name,view.rendererTypeName,dependencies);}}]);return ViewCompiler;}();ViewCompiler.decorators=[{type:CompilerInjectable}];/** @nocollapse */ViewCompiler.ctorParameters=function(){return[{type:CompilerConfig},{type:ElementSchemaRegistry}];};var/** @type {?} */CLASS_ATTR$2='class';var/** @type {?} */STYLE_ATTR$1='style';var/** @type {?} */IMPLICIT_TEMPLATE_VAR$1='\$implicit';var/** @type {?} */NG_CONTAINER_TAG$1='ng-container';var ViewCompilerNext=function(_ViewCompiler){_inherits(ViewCompilerNext,_ViewCompiler);/**
+     */function ViewCompileResult(statements,viewClassVar,rendererTypeVar){_classCallCheck(this,ViewCompileResult);this.statements=statements;this.viewClassVar=viewClassVar;this.rendererTypeVar=rendererTypeVar;};var ViewCompiler=function(){/**
      * @param {?} _genConfigNext
      * @param {?} _schemaRegistryNext
-     */function ViewCompilerNext(_genConfigNext,_schemaRegistryNext){_classCallCheck(this,ViewCompilerNext);var _this212=_possibleConstructorReturn(this,(ViewCompilerNext.__proto__||Object.getPrototypeOf(ViewCompilerNext)).call(this,_genConfigNext,_schemaRegistryNext));_this212._genConfigNext=_genConfigNext;_this212._schemaRegistryNext=_schemaRegistryNext;return _this212;}/**
+     */function ViewCompiler(_genConfigNext,_schemaRegistryNext){_classCallCheck(this,ViewCompiler);this._genConfigNext=_genConfigNext;this._schemaRegistryNext=_schemaRegistryNext;}/**
      * @param {?} component
      * @param {?} template
      * @param {?} styles
      * @param {?} usedPipes
-     * @param {?} compiledAnimations
      * @return {?}
-     */_createClass(ViewCompilerNext,[{key:'compileComponent',value:function compileComponent(component,template,styles,usedPipes,compiledAnimations){var/** @type {?} */embeddedViewCount=0;var/** @type {?} */staticQueryIds=findStaticQueryIds(template);var/** @type {?} */statements=[];var/** @type {?} */customRenderData=[];if(component.template.animations&&component.template.animations.length){customRenderData.push(new LiteralMapEntry('animation',convertValueToOutputAst(component.template.animations),true));}var/** @type {?} */renderComponentVar=variable(rendererTypeName(component.type.reference));statements.push(renderComponentVar.set(importExpr(createIdentifier(Identifiers.createRendererTypeV2)).callFn([new LiteralMapExpr([new LiteralMapEntry('encapsulation',literal(component.template.encapsulation)),new LiteralMapEntry('styles',styles),new LiteralMapEntry('data',new LiteralMapExpr(customRenderData))])])).toDeclStmt(importType(createIdentifier(Identifiers.RendererTypeV2)),[StmtModifier.Final]));var/** @type {?} */viewBuilderFactory=function viewBuilderFactory(parent){var/** @type {?} */embeddedViewIndex=embeddedViewCount++;return new ViewBuilder(parent,component,embeddedViewIndex,usedPipes,staticQueryIds,viewBuilderFactory);};var/** @type {?} */visitor=viewBuilderFactory(null);visitor.visitAll([],template);statements.push.apply(statements,_toConsumableArray(visitor.build()));return new ViewCompileResult(statements,visitor.viewName,renderComponentVar.name,[]);}}]);return ViewCompilerNext;}(ViewCompiler);ViewCompilerNext.decorators=[{type:CompilerInjectable}];/** @nocollapse */ViewCompilerNext.ctorParameters=function(){return[{type:CompilerConfig},{type:ElementSchemaRegistry}];};var/** @type {?} */VIEW_VAR$1=variable('view');var/** @type {?} */CHECK_VAR=variable('check');var/** @type {?} */COMP_VAR=variable('comp');var/** @type {?} */NODE_INDEX_VAR=variable('nodeIndex');var/** @type {?} */EVENT_NAME_VAR$1=variable('eventName');var/** @type {?} */ALLOW_DEFAULT_VAR=variable('allowDefault');var ViewBuilder=function(){/**
+     */_createClass(ViewCompiler,[{key:'compileComponent',value:function compileComponent(component,template,styles,usedPipes){var/** @type {?} */embeddedViewCount=0;var/** @type {?} */staticQueryIds=findStaticQueryIds(template);var/** @type {?} */statements=[];var/** @type {?} */customRenderData=[];if(component.template.animations&&component.template.animations.length){customRenderData.push(new LiteralMapEntry('animation',convertValueToOutputAst(component.template.animations),true));}var/** @type {?} */renderComponentVar=variable(rendererTypeName(component.type.reference));statements.push(renderComponentVar.set(importExpr(createIdentifier(Identifiers.createRendererTypeV2)).callFn([new LiteralMapExpr([new LiteralMapEntry('encapsulation',literal(component.template.encapsulation)),new LiteralMapEntry('styles',styles),new LiteralMapEntry('data',new LiteralMapExpr(customRenderData))])])).toDeclStmt(importType(createIdentifier(Identifiers.RendererTypeV2)),[StmtModifier.Final]));var/** @type {?} */viewBuilderFactory=function viewBuilderFactory(parent){var/** @type {?} */embeddedViewIndex=embeddedViewCount++;return new ViewBuilder(parent,component,embeddedViewIndex,usedPipes,staticQueryIds,viewBuilderFactory);};var/** @type {?} */visitor=viewBuilderFactory(null);visitor.visitAll([],template);statements.push.apply(statements,_toConsumableArray(visitor.build()));return new ViewCompileResult(statements,visitor.viewName,renderComponentVar.name);}}]);return ViewCompiler;}();ViewCompiler.decorators=[{type:CompilerInjectable}];/** @nocollapse */ViewCompiler.ctorParameters=function(){return[{type:CompilerConfig},{type:ElementSchemaRegistry}];};var/** @type {?} */VIEW_VAR=variable('view');var/** @type {?} */CHECK_VAR=variable('check');var/** @type {?} */COMP_VAR=variable('comp');var/** @type {?} */NODE_INDEX_VAR=variable('nodeIndex');var/** @type {?} */EVENT_NAME_VAR=variable('eventName');var/** @type {?} */ALLOW_DEFAULT_VAR=variable('allowDefault');var ViewBuilder=function(){/**
      * @param {?} parent
      * @param {?} component
      * @param {?} embeddedViewIndex
@@ -6900,9 +5579,9 @@ this.compType=this.embeddedViewIndex>0?DYNAMIC_TYPE:importType(this.component.ty
      * @param {?} variables
      * @param {?} astNodes
      * @return {?}
-     */value:function visitAll(variables,astNodes){var _this213=this;this.variables=variables;// create the pipes for the pure pipes immediately, so that we know their indices.
-if(!this.parent){this.usedPipes.forEach(function(pipe){if(pipe.pure){_this213.purePipeNodeIndices[pipe.name]=_this213._createPipe(pipe);}});}if(!this.parent){var/** @type {?} */queryIds=staticViewQueryIds(this.staticQueryIds);this.component.viewQueries.forEach(function(query,queryIndex){// Note: queries start with id 1 so we can use the number in a Bloom filter!
-var/** @type {?} */queryId=queryIndex+1;var/** @type {?} */bindingType=query.first?0/* First */:1/* All */;var/** @type {?} */flags=67108864/* TypeViewQuery */;if(queryIds.staticQueryIds.has(queryId)){flags|=134217728/* StaticQuery */;}else{flags|=268435456/* DynamicQuery */;}_this213.nodeDefs.push(function(){return importExpr(createIdentifier(Identifiers.queryDef)).callFn([literal(flags),literal(queryId),new LiteralMapExpr([new LiteralMapEntry(query.propertyName,literal(bindingType))])]);});});}templateVisitAll(this,astNodes);if(astNodes.length===0||this.parent&&needsAdditionalRootNode(astNodes[astNodes.length-1])){// if the view is empty, or an embedded view has a view container as last root nde,
+     */value:function visitAll(variables,astNodes){var _this176=this;this.variables=variables;// create the pipes for the pure pipes immediately, so that we know their indices.
+if(!this.parent){this.usedPipes.forEach(function(pipe){if(pipe.pure){_this176.purePipeNodeIndices[pipe.name]=_this176._createPipe(pipe);}});}if(!this.parent){var/** @type {?} */queryIds=staticViewQueryIds(this.staticQueryIds);this.component.viewQueries.forEach(function(query,queryIndex){// Note: queries start with id 1 so we can use the number in a Bloom filter!
+var/** @type {?} */queryId=queryIndex+1;var/** @type {?} */bindingType=query.first?0/* First */:1/* All */;var/** @type {?} */flags=67108864/* TypeViewQuery */;if(queryIds.staticQueryIds.has(queryId)){flags|=134217728/* StaticQuery */;}else{flags|=268435456/* DynamicQuery */;}_this176.nodeDefs.push(function(){return importExpr(createIdentifier(Identifiers.queryDef)).callFn([literal(flags),literal(queryId),new LiteralMapExpr([new LiteralMapEntry(query.propertyName,literal(bindingType))])]);});});}templateVisitAll(this,astNodes);if(astNodes.length===0||this.parent&&needsAdditionalRootNode(astNodes[astNodes.length-1])){// if the view is empty, or an embedded view has a view container as last root nde,
 // create an additional root node.
 this.nodeDefs.push(function(){return importExpr(createIdentifier(Identifiers.anchorDef)).callFn([literal(0/* None */),NULL_EXPR,NULL_EXPR,literal(0)]);});}}/**
      * @param {?=} targetStatements
@@ -6910,7 +5589,7 @@ this.nodeDefs.push(function(){return importExpr(createIdentifier(Identifiers.anc
      */},{key:'build',value:function build(){var targetStatements=arguments.length>0&&arguments[0]!==undefined?arguments[0]:[];this.children.forEach(function(child){return child.build(targetStatements);});var/** @type {?} */updateDirectivesFn=this._createUpdateFn(this.updateDirectivesExpressions);var/** @type {?} */updateRendererFn=this._createUpdateFn(this.updateRendererExpressions);var/** @type {?} */viewFlags=0/* None */;if(!this.parent&&this.component.changeDetection===ChangeDetectionStrategy.OnPush){viewFlags|=2/* OnPush */;}var/** @type {?} */viewFactory=new DeclareFunctionStmt(this.viewName,[],[new ReturnStatement(importExpr(createIdentifier(Identifiers.viewDef)).callFn([literal(viewFlags),literalArr(this.nodeDefs.map(function(nd){return nd();})),updateDirectivesFn,updateRendererFn]))],importType(createIdentifier(Identifiers.ViewDefinition)));targetStatements.push(viewFactory);return targetStatements;}/**
      * @param {?} expressions
      * @return {?}
-     */},{key:'_createUpdateFn',value:function _createUpdateFn(expressions){var _this214=this;var/** @type {?} */updateStmts=[];var/** @type {?} */updateBindingCount=0;expressions.forEach(function(_ref33){var expressions=_ref33.expressions,nodeIndex=_ref33.nodeIndex;var/** @type {?} */exprs=expressions.map(function(_ref34){var context=_ref34.context,value=_ref34.value;var/** @type {?} */bindingId=''+updateBindingCount++;var/** @type {?} */nameResolver=context===COMP_VAR?_this214:null;var _convertPropertyBindi2=convertPropertyBinding(nameResolver,context,value,bindingId),stmts=_convertPropertyBindi2.stmts,currValExpr=_convertPropertyBindi2.currValExpr;updateStmts.push.apply(updateStmts,_toConsumableArray(stmts));return currValExpr;});updateStmts.push(callCheckStmt(nodeIndex,exprs).toStmt());});var/** @type {?} */updateFn=void 0;if(updateStmts.length>0){var/** @type {?} */preStmts=[];if(!this.component.isHost){preStmts.push(COMP_VAR.set(VIEW_VAR$1.prop('component')).toDeclStmt(this.compType));}updateFn=fn([new FnParam(CHECK_VAR.name,INFERRED_TYPE),new FnParam(VIEW_VAR$1.name,INFERRED_TYPE)],[].concat(preStmts,updateStmts),INFERRED_TYPE);}else{updateFn=NULL_EXPR;}return updateFn;}/**
+     */},{key:'_createUpdateFn',value:function _createUpdateFn(expressions){var _this177=this;var/** @type {?} */updateStmts=[];var/** @type {?} */updateBindingCount=0;expressions.forEach(function(_ref33){var expressions=_ref33.expressions,nodeIndex=_ref33.nodeIndex;var/** @type {?} */exprs=expressions.map(function(_ref34){var context=_ref34.context,value=_ref34.value;var/** @type {?} */bindingId=''+updateBindingCount++;var/** @type {?} */nameResolver=context===COMP_VAR?_this177:null;var _convertPropertyBindi=convertPropertyBinding(nameResolver,context,value,bindingId),stmts=_convertPropertyBindi.stmts,currValExpr=_convertPropertyBindi.currValExpr;updateStmts.push.apply(updateStmts,_toConsumableArray(stmts));return currValExpr;});updateStmts.push(callCheckStmt(nodeIndex,exprs).toStmt());});var/** @type {?} */updateFn=void 0;if(updateStmts.length>0){var/** @type {?} */preStmts=[];if(!this.component.isHost){preStmts.push(COMP_VAR.set(VIEW_VAR.prop('component')).toDeclStmt(this.compType));}updateFn=fn([new FnParam(CHECK_VAR.name,INFERRED_TYPE),new FnParam(VIEW_VAR.name,INFERRED_TYPE)],[].concat(preStmts,updateStmts),INFERRED_TYPE);}else{updateFn=NULL_EXPR;}return updateFn;}/**
      * @param {?} ast
      * @param {?} context
      * @return {?}
@@ -6930,17 +5609,17 @@ this.nodeDefs[nodeIndex]=function(){return importExpr(createIdentifier(Identifie
      * @param {?} ast
      * @param {?} context
      * @return {?}
-     */},{key:'visitEmbeddedTemplate',value:function visitEmbeddedTemplate(ast,context){var _this215=this;var/** @type {?} */nodeIndex=this.nodeDefs.length;// reserve the space in the nodeDefs array
+     */},{key:'visitEmbeddedTemplate',value:function visitEmbeddedTemplate(ast,context){var _this178=this;var/** @type {?} */nodeIndex=this.nodeDefs.length;// reserve the space in the nodeDefs array
 this.nodeDefs.push(null);var _visitElementOrTempla=this._visitElementOrTemplate(nodeIndex,ast),flags=_visitElementOrTempla.flags,queryMatchesExpr=_visitElementOrTempla.queryMatchesExpr,hostEvents=_visitElementOrTempla.hostEvents;var/** @type {?} */childVisitor=this.viewBuilderFactory(this);this.children.push(childVisitor);childVisitor.visitAll(ast.variables,ast.children);var/** @type {?} */childCount=this.nodeDefs.length-nodeIndex-1;// anchorDef(
 //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], ngContentIndex: number,
 //   childCount: number, handleEventFn?: ElementHandleEventFn, templateFactory?:
 //   ViewDefinitionFactory): NodeDef;
-var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier(Identifiers.anchorDef)).callFn([literal(flags),queryMatchesExpr,literal(ast.ngContentIndex),literal(childCount),_this215._createElementHandleEventFn(nodeIndex,hostEvents),variable(childVisitor.viewName)]);};this.nodeDefs[nodeIndex]=nodeDef;}/**
+var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier(Identifiers.anchorDef)).callFn([literal(flags),queryMatchesExpr,literal(ast.ngContentIndex),literal(childCount),_this178._createElementHandleEventFn(nodeIndex,hostEvents),variable(childVisitor.viewName)]);};this.nodeDefs[nodeIndex]=nodeDef;}/**
      * @param {?} ast
      * @param {?} context
      * @return {?}
-     */},{key:'visitElement',value:function visitElement(ast,context){var _this216=this;var/** @type {?} */nodeIndex=this.nodeDefs.length;// reserve the space in the nodeDefs array so we can add children
-this.nodeDefs.push(null);var/** @type {?} */elName=ast.name;if(ast.name===NG_CONTAINER_TAG$1){// Using a null element name creates an anchor.
+     */},{key:'visitElement',value:function visitElement(ast,context){var _this179=this;var/** @type {?} */nodeIndex=this.nodeDefs.length;// reserve the space in the nodeDefs array so we can add children
+this.nodeDefs.push(null);var/** @type {?} */elName=ast.name;if(ast.name===NG_CONTAINER_TAG){// Using a null element name creates an anchor.
 elName=null;}var _visitElementOrTempla2=this._visitElementOrTemplate(nodeIndex,ast),flags=_visitElementOrTempla2.flags,usedEvents=_visitElementOrTempla2.usedEvents,queryMatchesExpr=_visitElementOrTempla2.queryMatchesExpr,hostBindings=_visitElementOrTempla2.hostBindings,hostEvents=_visitElementOrTempla2.hostEvents;var/** @type {?} */inputDefs=[];var/** @type {?} */outputDefs=[];if(elName){ast.inputs.forEach(function(inputAst){return hostBindings.push({context:COMP_VAR,value:inputAst.value});});if(hostBindings.length){this._addUpdateExpressions(nodeIndex,hostBindings,this.updateRendererExpressions);}// Note: inputDefs have to be in the same order as hostBindings:
 // - first the entries from the directives, then the ones from the element.
 ast.directives.forEach(function(dirAst,dirIndex){return inputDefs.push.apply(inputDefs,_toConsumableArray(elementBindingDefs(dirAst.hostProperties,dirAst)));});inputDefs.push.apply(inputDefs,_toConsumableArray(elementBindingDefs(ast.inputs,null)));outputDefs=usedEvents.map(function(_ref35){var _ref36=_slicedToArray(_ref35,2),target=_ref36[0],eventName=_ref36[1];return literalArr([literal(target),literal(eventName)]);});}templateVisitAll(this,ast.children);var/** @type {?} */childCount=this.nodeDefs.length-nodeIndex-1;var/** @type {?} */compAst=ast.directives.find(function(dirAst){return dirAst.directive.isComponent;});var/** @type {?} */compRendererType=NULL_EXPR;var/** @type {?} */compView=NULL_EXPR;if(compAst){compView=importExpr({reference:compAst.directive.componentViewType});compRendererType=importExpr({reference:compAst.directive.rendererType});}// elementDef(
@@ -6954,11 +5633,11 @@ ast.directives.forEach(function(dirAst,dirIndex){return inputDefs.push.apply(inp
 //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
 //   handleEvent?: ElementHandleEventFn,
 //   componentView?: () => ViewDefinition, componentRendererType?: RendererTypeV2): NodeDef;
-var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier(Identifiers.elementDef)).callFn([literal(flags),queryMatchesExpr,literal(ast.ngContentIndex),literal(childCount),literal(elName),elName?fixedAttrsDef(ast):NULL_EXPR,inputDefs.length?literalArr(inputDefs):NULL_EXPR,outputDefs.length?literalArr(outputDefs):NULL_EXPR,_this216._createElementHandleEventFn(nodeIndex,hostEvents),compView,compRendererType]);};this.nodeDefs[nodeIndex]=nodeDef;}/**
+var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier(Identifiers.elementDef)).callFn([literal(flags),queryMatchesExpr,literal(ast.ngContentIndex),literal(childCount),literal(elName),elName?fixedAttrsDef(ast):NULL_EXPR,inputDefs.length?literalArr(inputDefs):NULL_EXPR,outputDefs.length?literalArr(outputDefs):NULL_EXPR,_this179._createElementHandleEventFn(nodeIndex,hostEvents),compView,compRendererType]);};this.nodeDefs[nodeIndex]=nodeDef;}/**
      * @param {?} nodeIndex
      * @param {?} ast
      * @return {?}
-     */},{key:'_visitElementOrTemplate',value:function _visitElementOrTemplate(nodeIndex,ast){var _this217=this;var/** @type {?} */flags=0/* None */;if(ast.hasViewContainer){flags|=8388608/* EmbeddedViews */;}var/** @type {?} */usedEvents=new Map();ast.outputs.forEach(function(event){var _elementEventNameAndT=elementEventNameAndTarget(event,null),name=_elementEventNameAndT.name,target=_elementEventNameAndT.target;usedEvents.set(ɵelementEventFullName(target,name),[target,name]);});ast.directives.forEach(function(dirAst){dirAst.hostEvents.forEach(function(event){var _elementEventNameAndT2=elementEventNameAndTarget(event,dirAst),name=_elementEventNameAndT2.name,target=_elementEventNameAndT2.target;usedEvents.set(ɵelementEventFullName(target,name),[target,name]);});});var/** @type {?} */hostBindings=[];var/** @type {?} */hostEvents=[];var/** @type {?} */componentFactoryResolverProvider=createComponentFactoryResolver(ast.directives);if(componentFactoryResolverProvider){this._visitProvider(componentFactoryResolverProvider,ast.queryMatches);}ast.providers.forEach(function(providerAst,providerIndex){var/** @type {?} */dirAst=void 0;var/** @type {?} */dirIndex=void 0;ast.directives.forEach(function(localDirAst,i){if(localDirAst.directive.type.reference===tokenReference(providerAst.token)){dirAst=localDirAst;dirIndex=i;}});if(dirAst){var _visitDirective2=_this217._visitDirective(providerAst,dirAst,dirIndex,nodeIndex,ast.references,ast.queryMatches,usedEvents,_this217.staticQueryIds.get(/** @type {?} */ast)),dirHostBindings=_visitDirective2.hostBindings,dirHostEvents=_visitDirective2.hostEvents;hostBindings.push.apply(hostBindings,_toConsumableArray(dirHostBindings));hostEvents.push.apply(hostEvents,_toConsumableArray(dirHostEvents));}else{_this217._visitProvider(providerAst,ast.queryMatches);}});var/** @type {?} */queryMatchExprs=[];ast.queryMatches.forEach(function(match){var/** @type {?} */valueType=void 0;if(tokenReference(match.value)===resolveIdentifier(Identifiers.ElementRef)){valueType=0/* ElementRef */;}else if(tokenReference(match.value)===resolveIdentifier(Identifiers.ViewContainerRef)){valueType=3/* ViewContainerRef */;}else if(tokenReference(match.value)===resolveIdentifier(Identifiers.TemplateRef)){valueType=2/* TemplateRef */;}if(valueType!=null){queryMatchExprs.push(literalArr([literal(match.queryId),literal(valueType)]));}});ast.references.forEach(function(ref){var/** @type {?} */valueType=void 0;if(!ref.value){valueType=1/* RenderElement */;}else if(tokenReference(ref.value)===resolveIdentifier(Identifiers.TemplateRef)){valueType=2/* TemplateRef */;}if(valueType!=null){_this217.refNodeIndices[ref.name]=nodeIndex;queryMatchExprs.push(literalArr([literal(ref.name),literal(valueType)]));}});ast.outputs.forEach(function(outputAst){hostEvents.push({context:COMP_VAR,eventAst:outputAst,dirAst:null});});return{flags:flags,usedEvents:Array.from(usedEvents.values()),queryMatchesExpr:queryMatchExprs.length?literalArr(queryMatchExprs):NULL_EXPR,hostBindings:hostBindings,hostEvents:hostEvents};}/**
+     */},{key:'_visitElementOrTemplate',value:function _visitElementOrTemplate(nodeIndex,ast){var _this180=this;var/** @type {?} */flags=0/* None */;if(ast.hasViewContainer){flags|=8388608/* EmbeddedViews */;}var/** @type {?} */usedEvents=new Map();ast.outputs.forEach(function(event){var _elementEventNameAndT=elementEventNameAndTarget(event,null),name=_elementEventNameAndT.name,target=_elementEventNameAndT.target;usedEvents.set(ɵelementEventFullName(target,name),[target,name]);});ast.directives.forEach(function(dirAst){dirAst.hostEvents.forEach(function(event){var _elementEventNameAndT2=elementEventNameAndTarget(event,dirAst),name=_elementEventNameAndT2.name,target=_elementEventNameAndT2.target;usedEvents.set(ɵelementEventFullName(target,name),[target,name]);});});var/** @type {?} */hostBindings=[];var/** @type {?} */hostEvents=[];var/** @type {?} */componentFactoryResolverProvider=createComponentFactoryResolver(ast.directives);if(componentFactoryResolverProvider){this._visitProvider(componentFactoryResolverProvider,ast.queryMatches);}ast.providers.forEach(function(providerAst,providerIndex){var/** @type {?} */dirAst=void 0;var/** @type {?} */dirIndex=void 0;ast.directives.forEach(function(localDirAst,i){if(localDirAst.directive.type.reference===tokenReference(providerAst.token)){dirAst=localDirAst;dirIndex=i;}});if(dirAst){var _visitDirective2=_this180._visitDirective(providerAst,dirAst,dirIndex,nodeIndex,ast.references,ast.queryMatches,usedEvents,_this180.staticQueryIds.get(/** @type {?} */ast)),dirHostBindings=_visitDirective2.hostBindings,dirHostEvents=_visitDirective2.hostEvents;hostBindings.push.apply(hostBindings,_toConsumableArray(dirHostBindings));hostEvents.push.apply(hostEvents,_toConsumableArray(dirHostEvents));}else{_this180._visitProvider(providerAst,ast.queryMatches);}});var/** @type {?} */queryMatchExprs=[];ast.queryMatches.forEach(function(match){var/** @type {?} */valueType=void 0;if(tokenReference(match.value)===resolveIdentifier(Identifiers.ElementRef)){valueType=0/* ElementRef */;}else if(tokenReference(match.value)===resolveIdentifier(Identifiers.ViewContainerRef)){valueType=3/* ViewContainerRef */;}else if(tokenReference(match.value)===resolveIdentifier(Identifiers.TemplateRef)){valueType=2/* TemplateRef */;}if(valueType!=null){queryMatchExprs.push(literalArr([literal(match.queryId),literal(valueType)]));}});ast.references.forEach(function(ref){var/** @type {?} */valueType=void 0;if(!ref.value){valueType=1/* RenderElement */;}else if(tokenReference(ref.value)===resolveIdentifier(Identifiers.TemplateRef)){valueType=2/* TemplateRef */;}if(valueType!=null){_this180.refNodeIndices[ref.name]=nodeIndex;queryMatchExprs.push(literalArr([literal(ref.name),literal(valueType)]));}});ast.outputs.forEach(function(outputAst){hostEvents.push({context:COMP_VAR,eventAst:outputAst,dirAst:null});});return{flags:flags,usedEvents:Array.from(usedEvents.values()),queryMatchesExpr:queryMatchExprs.length?literalArr(queryMatchExprs):NULL_EXPR,hostBindings:hostBindings,hostEvents:hostEvents};}/**
      * @param {?} providerAst
      * @param {?} dirAst
      * @param {?} directiveIndex
@@ -6968,16 +5647,16 @@ var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier
      * @param {?} usedEvents
      * @param {?} queryIds
      * @return {?}
-     */},{key:'_visitDirective',value:function _visitDirective(providerAst,dirAst,directiveIndex,elementNodeIndex,refs,queryMatches,usedEvents,queryIds){var _this218=this;var/** @type {?} */nodeIndex=this.nodeDefs.length;// reserve the space in the nodeDefs array so we can add children
+     */},{key:'_visitDirective',value:function _visitDirective(providerAst,dirAst,directiveIndex,elementNodeIndex,refs,queryMatches,usedEvents,queryIds){var _this181=this;var/** @type {?} */nodeIndex=this.nodeDefs.length;// reserve the space in the nodeDefs array so we can add children
 this.nodeDefs.push(null);dirAst.directive.queries.forEach(function(query,queryIndex){var/** @type {?} */flags=33554432/* TypeContentQuery */;var/** @type {?} */queryId=dirAst.contentQueryStartId+queryIndex;// Note: We only make queries static that query for a single item.
 // This is because of backwards compatibility with the old view compiler...
-if(queryIds.staticQueryIds.has(queryId)&&query.first){flags|=134217728/* StaticQuery */;}else{flags|=268435456/* DynamicQuery */;}var/** @type {?} */bindingType=query.first?0/* First */:1/* All */;_this218.nodeDefs.push(function(){return importExpr(createIdentifier(Identifiers.queryDef)).callFn([literal(flags),literal(queryId),new LiteralMapExpr([new LiteralMapEntry(query.propertyName,literal(bindingType))])]);});});// Note: the operation below might also create new nodeDefs,
+if(queryIds.staticQueryIds.has(queryId)&&query.first){flags|=134217728/* StaticQuery */;}else{flags|=268435456/* DynamicQuery */;}var/** @type {?} */bindingType=query.first?0/* First */:1/* All */;_this181.nodeDefs.push(function(){return importExpr(createIdentifier(Identifiers.queryDef)).callFn([literal(flags),literal(queryId),new LiteralMapExpr([new LiteralMapEntry(query.propertyName,literal(bindingType))])]);});});// Note: the operation below might also create new nodeDefs,
 // but we don't want them to be a child of a directive,
 // as they might be a provider/pipe on their own.
 // I.e. we only allow queries as children of directives nodes.
-var/** @type {?} */childCount=this.nodeDefs.length-nodeIndex-1;var _visitProviderOrDirec=this._visitProviderOrDirective(providerAst,queryMatches),flags=_visitProviderOrDirec.flags,queryMatchExprs=_visitProviderOrDirec.queryMatchExprs,providerExpr=_visitProviderOrDirec.providerExpr,depsExpr=_visitProviderOrDirec.depsExpr;refs.forEach(function(ref){if(ref.value&&tokenReference(ref.value)===tokenReference(providerAst.token)){_this218.refNodeIndices[ref.name]=nodeIndex;queryMatchExprs.push(literalArr([literal(ref.name),literal(4/* Provider */)]));}});if(dirAst.directive.isComponent){flags|=16384/* Component */;}var/** @type {?} */inputDefs=dirAst.inputs.map(function(inputAst,inputIndex){var/** @type {?} */mapValue=literalArr([literal(inputIndex),literal(inputAst.directiveName)]);// Note: it's important to not quote the key so that we can capture renames by minifiers!
+var/** @type {?} */childCount=this.nodeDefs.length-nodeIndex-1;var _visitProviderOrDirec=this._visitProviderOrDirective(providerAst,queryMatches),flags=_visitProviderOrDirec.flags,queryMatchExprs=_visitProviderOrDirec.queryMatchExprs,providerExpr=_visitProviderOrDirec.providerExpr,depsExpr=_visitProviderOrDirec.depsExpr;refs.forEach(function(ref){if(ref.value&&tokenReference(ref.value)===tokenReference(providerAst.token)){_this181.refNodeIndices[ref.name]=nodeIndex;queryMatchExprs.push(literalArr([literal(ref.name),literal(4/* Provider */)]));}});if(dirAst.directive.isComponent){flags|=16384/* Component */;}var/** @type {?} */inputDefs=dirAst.inputs.map(function(inputAst,inputIndex){var/** @type {?} */mapValue=literalArr([literal(inputIndex),literal(inputAst.directiveName)]);// Note: it's important to not quote the key so that we can capture renames by minifiers!
 return new LiteralMapEntry(inputAst.directiveName,mapValue,false);});var/** @type {?} */outputDefs=[];var/** @type {?} */dirMeta=dirAst.directive;Object.keys(dirMeta.outputs).forEach(function(propName){var/** @type {?} */eventName=dirMeta.outputs[propName];if(usedEvents.has(eventName)){// Note: it's important to not quote the key so that we can capture renames by minifiers!
-outputDefs.push(new LiteralMapEntry(propName,literal(eventName),false));}});if(dirAst.inputs.length||(flags&(131072/* DoCheck */|32768/* OnInit */))>0){this._addUpdateExpressions(nodeIndex,dirAst.inputs.map(function(input){return{context:COMP_VAR,value:input.value};}),this.updateDirectivesExpressions);}var/** @type {?} */dirContextExpr=importExpr(createIdentifier(Identifiers.nodeValue)).callFn([VIEW_VAR$1,literal(nodeIndex)]);var/** @type {?} */hostBindings=dirAst.hostProperties.map(function(hostBindingAst){return{value:hostBindingAst.value.ast,context:dirContextExpr};});var/** @type {?} */hostEvents=dirAst.hostEvents.map(function(hostEventAst){return{context:dirContextExpr,eventAst:hostEventAst,dirAst:dirAst};});// directiveDef(
+outputDefs.push(new LiteralMapEntry(propName,literal(eventName),false));}});if(dirAst.inputs.length||(flags&(131072/* DoCheck */|32768/* OnInit */))>0){this._addUpdateExpressions(nodeIndex,dirAst.inputs.map(function(input){return{context:COMP_VAR,value:input.value};}),this.updateDirectivesExpressions);}var/** @type {?} */dirContextExpr=importExpr(createIdentifier(Identifiers.nodeValue)).callFn([VIEW_VAR,literal(nodeIndex)]);var/** @type {?} */hostBindings=dirAst.hostProperties.map(function(hostBindingAst){return{value:hostBindingAst.value.ast,context:dirContextExpr};});var/** @type {?} */hostEvents=dirAst.hostEvents.map(function(hostEventAst){return{context:dirContextExpr,eventAst:hostEventAst,dirAst:dirAst};});// directiveDef(
 //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], childCount: number, ctor:
 //   any,
 //   deps: ([DepFlags, any] | any)[], props?: {[name: string]: [number, string]},
@@ -6998,9 +5677,9 @@ var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier
 if(lifecycleHook===ɵLifecycleHooks.OnDestroy||providerAst.providerType===ProviderAstType.Directive||providerAst.providerType===ProviderAstType.Component){flags|=lifecycleHookToNodeFlag(lifecycleHook);}});var/** @type {?} */queryMatchExprs=[];queryMatches.forEach(function(match){if(tokenReference(match.value)===tokenReference(providerAst.token)){queryMatchExprs.push(literalArr([literal(match.queryId),literal(4/* Provider */)]));}});var _providerDef=providerDef(providerAst),providerExpr=_providerDef.providerExpr,depsExpr=_providerDef.depsExpr,providerType=_providerDef.flags;return{flags:flags|providerType,queryMatchExprs:queryMatchExprs,providerExpr:providerExpr,depsExpr:depsExpr};}/**
      * @param {?} name
      * @return {?}
-     */},{key:'getLocal',value:function getLocal(name){if(name==EventHandlerVars.event.name){return EventHandlerVars.event;}var/** @type {?} */currViewExpr=VIEW_VAR$1;for(var/** @type {?} */currBuilder=this;currBuilder;currBuilder=currBuilder.parent,currViewExpr=currViewExpr.prop('parent')){// check references
+     */},{key:'getLocal',value:function getLocal(name){if(name==EventHandlerVars.event.name){return EventHandlerVars.event;}var/** @type {?} */currViewExpr=VIEW_VAR;for(var/** @type {?} */currBuilder=this;currBuilder;currBuilder=currBuilder.parent,currViewExpr=currViewExpr.prop('parent')){// check references
 var/** @type {?} */refNodeIndex=currBuilder.refNodeIndices[name];if(refNodeIndex!=null){return importExpr(createIdentifier(Identifiers.nodeValue)).callFn([currViewExpr,literal(refNodeIndex)]);}// check variables
-var/** @type {?} */varAst=currBuilder.variables.find(function(varAst){return varAst.name===name;});if(varAst){var/** @type {?} */varValue=varAst.value||IMPLICIT_TEMPLATE_VAR$1;return currViewExpr.prop('context').prop(varValue);}}return null;}/**
+var/** @type {?} */varAst=currBuilder.variables.find(function(varAst){return varAst.name===name;});if(varAst){var/** @type {?} */varValue=varAst.value||IMPLICIT_TEMPLATE_VAR;return currViewExpr.prop('context').prop(varValue);}}return null;}/**
      * @param {?} argCount
      * @return {?}
      */},{key:'createLiteralArrayConverter',value:function createLiteralArrayConverter(argCount){if(argCount===0){var/** @type {?} */valueExpr=importExpr(createIdentifier(Identifiers.EMPTY_ARRAY));return function(){return valueExpr;};}var/** @type {?} */nodeIndex=this.nodeDefs.length;// pureArrayDef(argCount: number): NodeDef;
@@ -7014,7 +5693,7 @@ var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier
      * @return {?}
      */},{key:'createPipeConverter',value:function createPipeConverter(name,argCount){var/** @type {?} */pipe=this._findPipe(name);if(pipe.pure){var/** @type {?} */nodeIndex=this.nodeDefs.length;// function purePipeDef(argCount: number): NodeDef;
 var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier(Identifiers.purePipeDef)).callFn([literal(argCount)]);};this.nodeDefs.push(nodeDef);// find underlying pipe in the component view
-var/** @type {?} */compViewExpr=VIEW_VAR$1;var/** @type {?} */compBuilder=this;while(compBuilder.parent){compBuilder=compBuilder.parent;compViewExpr=compViewExpr.prop('parent');}var/** @type {?} */pipeNodeIndex=compBuilder.purePipeNodeIndices[name];var/** @type {?} */pipeValueExpr=importExpr(createIdentifier(Identifiers.nodeValue)).callFn([compViewExpr,literal(pipeNodeIndex)]);return function(args){return callUnwrapValue(callCheckStmt(nodeIndex,[pipeValueExpr].concat(args)));};}else{var/** @type {?} */_nodeIndex=this._createPipe(pipe);var/** @type {?} */nodeValueExpr=importExpr(createIdentifier(Identifiers.nodeValue)).callFn([VIEW_VAR$1,literal(_nodeIndex)]);return function(args){return callUnwrapValue(nodeValueExpr.callMethod('transform',args));};}}/**
+var/** @type {?} */compViewExpr=VIEW_VAR;var/** @type {?} */compBuilder=this;while(compBuilder.parent){compBuilder=compBuilder.parent;compViewExpr=compViewExpr.prop('parent');}var/** @type {?} */pipeNodeIndex=compBuilder.purePipeNodeIndices[name];var/** @type {?} */pipeValueExpr=importExpr(createIdentifier(Identifiers.nodeValue)).callFn([compViewExpr,literal(pipeNodeIndex)]);return function(args){return callUnwrapValue(callCheckStmt(nodeIndex,[pipeValueExpr].concat(args)));};}else{var/** @type {?} */_nodeIndex=this._createPipe(pipe);var/** @type {?} */nodeValueExpr=importExpr(createIdentifier(Identifiers.nodeValue)).callFn([VIEW_VAR,literal(_nodeIndex)]);return function(args){return callUnwrapValue(nodeValueExpr.callMethod('transform',args));};}}/**
      * @param {?} name
      * @return {?}
      */},{key:'_findPipe',value:function _findPipe(name){return this.usedPipes.find(function(pipeSummary){return pipeSummary.name===name;});}/**
@@ -7028,11 +5707,11 @@ var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier
      * @param {?} expressions
      * @param {?} target
      * @return {?}
-     */},{key:'_addUpdateExpressions',value:function _addUpdateExpressions(nodeIndex,expressions,target){var _this219=this;var/** @type {?} */transformedExpressions=expressions.map(function(_ref37){var context=_ref37.context,value=_ref37.value;if(value instanceof ASTWithSource){value=value.ast;}return{context:context,value:convertPropertyBindingBuiltins(_this219,value)};});target.push({nodeIndex:nodeIndex,expressions:transformedExpressions});}/**
+     */},{key:'_addUpdateExpressions',value:function _addUpdateExpressions(nodeIndex,expressions,target){var _this182=this;var/** @type {?} */transformedExpressions=expressions.map(function(_ref37){var context=_ref37.context,value=_ref37.value;if(value instanceof ASTWithSource){value=value.ast;}return{context:context,value:convertPropertyBindingBuiltins(_this182,value)};});target.push({nodeIndex:nodeIndex,expressions:transformedExpressions});}/**
      * @param {?} nodeIndex
      * @param {?} handlers
      * @return {?}
-     */},{key:'_createElementHandleEventFn',value:function _createElementHandleEventFn(nodeIndex,handlers){var _this220=this;var/** @type {?} */handleEventStmts=[];var/** @type {?} */handleEventBindingCount=0;handlers.forEach(function(_ref38){var context=_ref38.context,eventAst=_ref38.eventAst,dirAst=_ref38.dirAst;var/** @type {?} */bindingId=''+handleEventBindingCount++;var/** @type {?} */nameResolver=context===COMP_VAR?_this220:null;var/** @type {?} */expression=eventAst.handler instanceof ASTWithSource?eventAst.handler.ast:eventAst.handler;var _convertActionBinding=convertActionBinding(nameResolver,context,expression,bindingId),stmts=_convertActionBinding.stmts,allowDefault=_convertActionBinding.allowDefault;var/** @type {?} */trueStmts=stmts;if(allowDefault){trueStmts.push(ALLOW_DEFAULT_VAR.set(allowDefault.and(ALLOW_DEFAULT_VAR)).toStmt());}var _elementEventNameAndT3=elementEventNameAndTarget(eventAst,dirAst),eventTarget=_elementEventNameAndT3.target,eventName=_elementEventNameAndT3.name;var/** @type {?} */fullEventName=ɵelementEventFullName(eventTarget,eventName);handleEventStmts.push(new IfStmt(literal(fullEventName).identical(EVENT_NAME_VAR$1),trueStmts));});var/** @type {?} */handleEventFn=void 0;if(handleEventStmts.length>0){var/** @type {?} */preStmts=[ALLOW_DEFAULT_VAR.set(literal(true)).toDeclStmt(BOOL_TYPE)];if(!this.component.isHost){preStmts.push(COMP_VAR.set(VIEW_VAR$1.prop('component')).toDeclStmt(this.compType));}handleEventFn=fn([new FnParam(VIEW_VAR$1.name,INFERRED_TYPE),new FnParam(EVENT_NAME_VAR$1.name,INFERRED_TYPE),new FnParam(EventHandlerVars.event.name,INFERRED_TYPE)],[].concat(preStmts,handleEventStmts,[new ReturnStatement(ALLOW_DEFAULT_VAR)]),INFERRED_TYPE);}else{handleEventFn=NULL_EXPR;}return handleEventFn;}/**
+     */},{key:'_createElementHandleEventFn',value:function _createElementHandleEventFn(nodeIndex,handlers){var _this183=this;var/** @type {?} */handleEventStmts=[];var/** @type {?} */handleEventBindingCount=0;handlers.forEach(function(_ref38){var context=_ref38.context,eventAst=_ref38.eventAst,dirAst=_ref38.dirAst;var/** @type {?} */bindingId=''+handleEventBindingCount++;var/** @type {?} */nameResolver=context===COMP_VAR?_this183:null;var/** @type {?} */expression=eventAst.handler instanceof ASTWithSource?eventAst.handler.ast:eventAst.handler;var _convertActionBinding=convertActionBinding(nameResolver,context,expression,bindingId),stmts=_convertActionBinding.stmts,allowDefault=_convertActionBinding.allowDefault;var/** @type {?} */trueStmts=stmts;if(allowDefault){trueStmts.push(ALLOW_DEFAULT_VAR.set(allowDefault.and(ALLOW_DEFAULT_VAR)).toStmt());}var _elementEventNameAndT3=elementEventNameAndTarget(eventAst,dirAst),eventTarget=_elementEventNameAndT3.target,eventName=_elementEventNameAndT3.name;var/** @type {?} */fullEventName=ɵelementEventFullName(eventTarget,eventName);handleEventStmts.push(new IfStmt(literal(fullEventName).identical(EVENT_NAME_VAR),trueStmts));});var/** @type {?} */handleEventFn=void 0;if(handleEventStmts.length>0){var/** @type {?} */preStmts=[ALLOW_DEFAULT_VAR.set(literal(true)).toDeclStmt(BOOL_TYPE)];if(!this.component.isHost){preStmts.push(COMP_VAR.set(VIEW_VAR.prop('component')).toDeclStmt(this.compType));}handleEventFn=fn([new FnParam(VIEW_VAR.name,INFERRED_TYPE),new FnParam(EVENT_NAME_VAR.name,INFERRED_TYPE),new FnParam(EventHandlerVars.event.name,INFERRED_TYPE)],[].concat(preStmts,handleEventStmts,[new ReturnStatement(ALLOW_DEFAULT_VAR)]),INFERRED_TYPE);}else{handleEventFn=NULL_EXPR;}return handleEventFn;}/**
      * @param {?} ast
      * @param {?} context
      * @return {?}
@@ -7085,7 +5764,7 @@ var/** @type {?} */nodeDef=function nodeDef(){return importExpr(createIdentifier
 var/** @type {?} */expr=dep.isValue?convertValueToOutputAst(dep.value):tokenExpr(dep.token);var/** @type {?} */flags=0/* None */;if(dep.isSkipSelf){flags|=1/* SkipSelf */;}if(dep.isOptional){flags|=2/* Optional */;}if(dep.isValue){flags|=8/* Value */;}return flags===0/* None */?expr:literalArr([literal(flags),expr]);}/**
  * @param {?} ast
  * @return {?}
- */function needsAdditionalRootNode(ast){if(ast instanceof EmbeddedTemplateAst){return ast.hasViewContainer;}if(ast instanceof ElementAst){if(ast.name===NG_CONTAINER_TAG$1&&ast.children.length){return needsAdditionalRootNode(ast.children[ast.children.length-1]);}return ast.hasViewContainer;}return ast instanceof NgContentAst;}/**
+ */function needsAdditionalRootNode(ast){if(ast instanceof EmbeddedTemplateAst){return ast.hasViewContainer;}if(ast instanceof ElementAst){if(ast.name===NG_CONTAINER_TAG&&ast.children.length){return needsAdditionalRootNode(ast.children[ast.children.length-1]);}return ast.hasViewContainer;}return ast instanceof NgContentAst;}/**
  * @param {?} lifecycleHook
  * @return {?}
  */function lifecycleHookToNodeFlag(lifecycleHook){var/** @type {?} */nodeFlag=0/* None */;switch(lifecycleHook){case ɵLifecycleHooks.AfterContentChecked:nodeFlag=1048576/* AfterContentChecked */;break;case ɵLifecycleHooks.AfterContentInit:nodeFlag=524288/* AfterContentInit */;break;case ɵLifecycleHooks.AfterViewChecked:nodeFlag=4194304/* AfterViewChecked */;break;case ɵLifecycleHooks.AfterViewInit:nodeFlag=2097152/* AfterViewInit */;break;case ɵLifecycleHooks.DoCheck:nodeFlag=131072/* DoCheck */;break;case ɵLifecycleHooks.OnChanges:nodeFlag=262144/* OnChanges */;break;case ɵLifecycleHooks.OnDestroy:nodeFlag=65536/* OnDestroy */;break;case ɵLifecycleHooks.OnInit:nodeFlag=32768/* OnInit */;break;}return nodeFlag;}/**
@@ -7095,18 +5774,18 @@ var/** @type {?} */expr=dep.isValue?convertValueToOutputAst(dep.value):tokenExpr
  */function elementBindingDefs(inputAsts,dirAst){return inputAsts.map(function(inputAst){switch(inputAst.type){case PropertyBindingType.Attribute:return literalArr([literal(0/* ElementAttribute */),literal(inputAst.name),literal(inputAst.securityContext)]);case PropertyBindingType.Property:return literalArr([literal(3/* ElementProperty */),literal(inputAst.name),literal(inputAst.securityContext)]);case PropertyBindingType.Animation:var/** @type {?} */bindingType=dirAst&&dirAst.directive.isComponent?4/* ComponentHostProperty */:3/* ElementProperty */;return literalArr([literal(bindingType),literal('@'+inputAst.name),literal(inputAst.securityContext)]);case PropertyBindingType.Class:return literalArr([literal(1/* ElementClass */),literal(inputAst.name)]);case PropertyBindingType.Style:return literalArr([literal(2/* ElementStyle */),literal(inputAst.name),literal(inputAst.unit)]);}});}/**
  * @param {?} elementAst
  * @return {?}
- */function fixedAttrsDef(elementAst){var/** @type {?} */mapResult=Object.create(null);elementAst.attrs.forEach(function(attrAst){mapResult[attrAst.name]=attrAst.value;});elementAst.directives.forEach(function(dirAst){Object.keys(dirAst.directive.hostAttributes).forEach(function(name){var/** @type {?} */value=dirAst.directive.hostAttributes[name];var/** @type {?} */prevValue=mapResult[name];mapResult[name]=prevValue!=null?mergeAttributeValue$1(name,prevValue,value):value;});});var/** @type {?} */mapEntries=[];// Note: We need to sort to get a defined output order
+ */function fixedAttrsDef(elementAst){var/** @type {?} */mapResult=Object.create(null);elementAst.attrs.forEach(function(attrAst){mapResult[attrAst.name]=attrAst.value;});elementAst.directives.forEach(function(dirAst){Object.keys(dirAst.directive.hostAttributes).forEach(function(name){var/** @type {?} */value=dirAst.directive.hostAttributes[name];var/** @type {?} */prevValue=mapResult[name];mapResult[name]=prevValue!=null?mergeAttributeValue(name,prevValue,value):value;});});var/** @type {?} */mapEntries=[];// Note: We need to sort to get a defined output order
 // for tests and for caching generated artifacts...
 return literalArr(Object.keys(mapResult).sort().map(function(attrName){return literalArr([literal(attrName),literal(mapResult[attrName])]);}));}/**
  * @param {?} attrName
  * @param {?} attrValue1
  * @param {?} attrValue2
  * @return {?}
- */function mergeAttributeValue$1(attrName,attrValue1,attrValue2){if(attrName==CLASS_ATTR$2||attrName==STYLE_ATTR$1){return attrValue1+' '+attrValue2;}else{return attrValue2;}}/**
+ */function mergeAttributeValue(attrName,attrValue1,attrValue2){if(attrName==CLASS_ATTR$1||attrName==STYLE_ATTR){return attrValue1+' '+attrValue2;}else{return attrValue2;}}/**
  * @param {?} nodeIndex
  * @param {?} exprs
  * @return {?}
- */function callCheckStmt(nodeIndex,exprs){if(exprs.length>10){return CHECK_VAR.callFn([VIEW_VAR$1,literal(nodeIndex),literal(1/* Dynamic */),literalArr(exprs)]);}else{return CHECK_VAR.callFn([VIEW_VAR$1,literal(nodeIndex),literal(0/* Inline */)].concat(_toConsumableArray(exprs)));}}/**
+ */function callCheckStmt(nodeIndex,exprs){if(exprs.length>10){return CHECK_VAR.callFn([VIEW_VAR,literal(nodeIndex),literal(1/* Dynamic */),literalArr(exprs)]);}else{return CHECK_VAR.callFn([VIEW_VAR,literal(nodeIndex),literal(0/* Inline */)].concat(_toConsumableArray(exprs)));}}/**
  * @param {?} expr
  * @return {?}
  */function callUnwrapValue(expr){return importExpr(createIdentifier(Identifiers.unwrapValue)).callFn([expr]);}/**
@@ -7123,93 +5802,7 @@ return literalArr(Object.keys(mapResult).sort().map(function(attrName){return li
  * @param {?} eventAst
  * @param {?} dirAst
  * @return {?}
- */function elementEventNameAndTarget(eventAst,dirAst){if(eventAst.isAnimation){return{name:'@'+eventAst.name+'.'+eventAst.phase,target:dirAst&&dirAst.directive.isComponent?'component':null};}else{return eventAst;}}var AnimationEntryCompileResult=/**
-     * @param {?} name
-     * @param {?} statements
-     * @param {?} fnExp
-     */function AnimationEntryCompileResult(name,statements,fnExp){_classCallCheck(this,AnimationEntryCompileResult);this.name=name;this.statements=statements;this.fnExp=fnExp;};var AnimationCompiler=function(){function AnimationCompiler(){_classCallCheck(this,AnimationCompiler);}_createClass(AnimationCompiler,[{key:'compile',/**
-     * @param {?} factoryNamePrefix
-     * @param {?} parsedAnimations
-     * @return {?}
-     */value:function compile(factoryNamePrefix,parsedAnimations){return parsedAnimations.map(function(entry){var/** @type {?} */factoryName=factoryNamePrefix+'_'+entry.name;var/** @type {?} */visitor=new _AnimationBuilder(entry.name,factoryName);return visitor.build(entry);});}}]);return AnimationCompiler;}();var/** @type {?} */_ANIMATION_FACTORY_ELEMENT_VAR=variable('element');var/** @type {?} */_ANIMATION_DEFAULT_STATE_VAR=variable('defaultStateStyles');var/** @type {?} */_ANIMATION_FACTORY_VIEW_VAR=variable('view');var/** @type {?} */_ANIMATION_FACTORY_VIEW_CONTEXT=_ANIMATION_FACTORY_VIEW_VAR.prop('animationContext');var/** @type {?} */_ANIMATION_FACTORY_RENDERER_VAR=_ANIMATION_FACTORY_VIEW_VAR.prop('renderer');var/** @type {?} */_ANIMATION_CURRENT_STATE_VAR=variable('currentState');var/** @type {?} */_ANIMATION_NEXT_STATE_VAR=variable('nextState');var/** @type {?} */_ANIMATION_PLAYER_VAR=variable('player');var/** @type {?} */_ANIMATION_TIME_VAR=variable('totalTime');var/** @type {?} */_ANIMATION_START_STATE_STYLES_VAR=variable('startStateStyles');var/** @type {?} */_ANIMATION_END_STATE_STYLES_VAR=variable('endStateStyles');var/** @type {?} */_ANIMATION_COLLECTED_STYLES=variable('collectedStyles');var/** @type {?} */_PREVIOUS_ANIMATION_PLAYERS=variable('previousPlayers');var/** @type {?} */_EMPTY_MAP=literalMap([]);var/** @type {?} */_EMPTY_ARRAY=literalArr([]);var _AnimationBuilder=function(){/**
-     * @param {?} animationName
-     * @param {?} factoryName
-     */function _AnimationBuilder(animationName,factoryName){_classCallCheck(this,_AnimationBuilder);this.animationName=animationName;this._fnVarName=factoryName+'_factory';this._statesMapVarName=factoryName+'_states';this._statesMapVar=variable(this._statesMapVarName);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */_createClass(_AnimationBuilder,[{key:'visitAnimationStyles',value:function visitAnimationStyles(ast,context){var/** @type {?} */stylesArr=[];if(context.isExpectingFirstStyleStep){stylesArr.push(_ANIMATION_START_STATE_STYLES_VAR);context.isExpectingFirstStyleStep=false;}ast.styles.forEach(function(entry){var/** @type {?} */entries=Object.keys(entry).map(function(key){return[key,literal(entry[key])];});stylesArr.push(literalMap(entries,null,true));});return importExpr(createIdentifier(Identifiers.AnimationStyles)).instantiate([importExpr(createIdentifier(Identifiers.collectAndResolveStyles)).callFn([_ANIMATION_COLLECTED_STYLES,literalArr(stylesArr)])]);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAnimationKeyframe',value:function visitAnimationKeyframe(ast,context){return importExpr(createIdentifier(Identifiers.AnimationKeyframe)).instantiate([literal(ast.offset),ast.styles.visit(this,context)]);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAnimationStep',value:function visitAnimationStep(ast,context){var _this221=this;if(context.endStateAnimateStep===ast){return this._visitEndStateAnimation(ast,context);}var/** @type {?} */startingStylesExpr=ast.startingStyles.visit(this,context);var/** @type {?} */keyframeExpressions=ast.keyframes.map(function(keyframeEntry){return keyframeEntry.visit(_this221,context);});return this._callAnimateMethod(ast,startingStylesExpr,literalArr(keyframeExpressions),context);}/**
-     * \@internal
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'_visitEndStateAnimation',value:function _visitEndStateAnimation(ast,context){var _this222=this;var/** @type {?} */startingStylesExpr=ast.startingStyles.visit(this,context);var/** @type {?} */keyframeExpressions=ast.keyframes.map(function(keyframe){return keyframe.visit(_this222,context);});var/** @type {?} */keyframesExpr=importExpr(createIdentifier(Identifiers.balanceAnimationKeyframes)).callFn([_ANIMATION_COLLECTED_STYLES,_ANIMATION_END_STATE_STYLES_VAR,literalArr(keyframeExpressions)]);return this._callAnimateMethod(ast,startingStylesExpr,keyframesExpr,context);}/**
-     * \@internal
-     * @param {?} ast
-     * @param {?} startingStylesExpr
-     * @param {?} keyframesExpr
-     * @param {?} context
-     * @return {?}
-     */},{key:'_callAnimateMethod',value:function _callAnimateMethod(ast,startingStylesExpr,keyframesExpr,context){var/** @type {?} */previousStylesValue=_EMPTY_ARRAY;if(context.isExpectingFirstAnimateStep){previousStylesValue=_PREVIOUS_ANIMATION_PLAYERS;context.isExpectingFirstAnimateStep=false;}context.totalTransitionTime+=ast.duration+ast.delay;return _ANIMATION_FACTORY_RENDERER_VAR.callMethod('animate',[_ANIMATION_FACTORY_ELEMENT_VAR,startingStylesExpr,keyframesExpr,literal(ast.duration),literal(ast.delay),literal(ast.easing),previousStylesValue]);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAnimationSequence',value:function visitAnimationSequence(ast,context){var _this223=this;var/** @type {?} */playerExprs=ast.steps.map(function(step){return step.visit(_this223,context);});return importExpr(createIdentifier(Identifiers.AnimationSequencePlayer)).instantiate([literalArr(playerExprs)]);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAnimationGroup',value:function visitAnimationGroup(ast,context){var _this224=this;var/** @type {?} */playerExprs=ast.steps.map(function(step){return step.visit(_this224,context);});return importExpr(createIdentifier(Identifiers.AnimationGroupPlayer)).instantiate([literalArr(playerExprs)]);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAnimationStateDeclaration',value:function visitAnimationStateDeclaration(ast,context){var/** @type {?} */flatStyles={};_getStylesArray(ast).forEach(function(entry){Object.keys(entry).forEach(function(key){flatStyles[key]=entry[key];});});context.stateMap.registerState(ast.stateName,flatStyles);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAnimationStateTransition',value:function visitAnimationStateTransition(ast,context){var/** @type {?} */steps=ast.animation.steps;var/** @type {?} */lastStep=steps[steps.length-1];if(_isEndStateAnimateStep(lastStep)){context.endStateAnimateStep=lastStep;}context.totalTransitionTime=0;context.isExpectingFirstStyleStep=true;context.isExpectingFirstAnimateStep=true;var/** @type {?} */stateChangePreconditions=[];ast.stateChanges.forEach(function(stateChange){if(stateChange instanceof AnimationStateTransitionFnExpression){stateChangePreconditions.push(importExpr({reference:stateChange.fn}).callFn([_ANIMATION_CURRENT_STATE_VAR,_ANIMATION_NEXT_STATE_VAR]));}else{stateChangePreconditions.push(_compareToAnimationStateExpr(_ANIMATION_CURRENT_STATE_VAR,stateChange.fromState).and(_compareToAnimationStateExpr(_ANIMATION_NEXT_STATE_VAR,stateChange.toState)));if(stateChange.fromState!=ɵANY_STATE){context.stateMap.registerState(stateChange.fromState);}if(stateChange.toState!=ɵANY_STATE){context.stateMap.registerState(stateChange.toState);}}});var/** @type {?} */animationPlayerExpr=ast.animation.visit(this,context);var/** @type {?} */reducedStateChangesPrecondition=stateChangePreconditions.reduce(function(a,b){return a.or(b);});var/** @type {?} */precondition=_ANIMATION_PLAYER_VAR.equals(NULL_EXPR).and(reducedStateChangesPrecondition);var/** @type {?} */animationStmt=_ANIMATION_PLAYER_VAR.set(animationPlayerExpr).toStmt();var/** @type {?} */totalTimeStmt=_ANIMATION_TIME_VAR.set(literal(context.totalTransitionTime)).toStmt();return new IfStmt(precondition,[animationStmt,totalTimeStmt]);}/**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */},{key:'visitAnimationEntry',value:function visitAnimationEntry(ast,context){var _this225=this;// visit each of the declarations first to build the context state map
-ast.stateDeclarations.forEach(function(def){return def.visit(_this225,context);});// this should always be defined even if the user overrides it
-context.stateMap.registerState(ɵDEFAULT_STATE,{});var/** @type {?} */statements=[];statements.push(_PREVIOUS_ANIMATION_PLAYERS.set(_ANIMATION_FACTORY_VIEW_CONTEXT.callMethod('getAnimationPlayers',[_ANIMATION_FACTORY_ELEMENT_VAR,_ANIMATION_NEXT_STATE_VAR.equals(literal(ɵEMPTY_STATE)).conditional(NULL_EXPR,literal(this.animationName))])).toDeclStmt());statements.push(_ANIMATION_COLLECTED_STYLES.set(_EMPTY_MAP).toDeclStmt());statements.push(_ANIMATION_PLAYER_VAR.set(NULL_EXPR).toDeclStmt());statements.push(_ANIMATION_TIME_VAR.set(literal(0)).toDeclStmt());statements.push(_ANIMATION_DEFAULT_STATE_VAR.set(this._statesMapVar.key(literal(ɵDEFAULT_STATE))).toDeclStmt());statements.push(_ANIMATION_START_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_CURRENT_STATE_VAR)).toDeclStmt());statements.push(new IfStmt(_ANIMATION_START_STATE_STYLES_VAR.equals(NULL_EXPR),[_ANIMATION_START_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));statements.push(_ANIMATION_END_STATE_STYLES_VAR.set(this._statesMapVar.key(_ANIMATION_NEXT_STATE_VAR)).toDeclStmt());statements.push(new IfStmt(_ANIMATION_END_STATE_STYLES_VAR.equals(NULL_EXPR),[_ANIMATION_END_STATE_STYLES_VAR.set(_ANIMATION_DEFAULT_STATE_VAR).toStmt()]));var/** @type {?} */RENDER_STYLES_FN=importExpr(createIdentifier(Identifiers.renderStyles));ast.stateTransitions.forEach(function(transAst){return statements.push(transAst.visit(_this225,context));});// this check ensures that the animation factory always returns a player
-// so that the onDone callback can be used for tracking
-statements.push(new IfStmt(_ANIMATION_PLAYER_VAR.equals(NULL_EXPR),[_ANIMATION_PLAYER_VAR.set(importExpr(createIdentifier(Identifiers.NoOpAnimationPlayer)).instantiate([])).toStmt()]));// once complete we want to apply the styles on the element
-// since the destination state's values should persist once
-// the animation sequence has completed.
-statements.push(_ANIMATION_PLAYER_VAR.callMethod('onDone',[fn([],[_ANIMATION_PLAYER_VAR.callMethod('destroy',[]).toStmt(),RENDER_STYLES_FN.callFn([_ANIMATION_FACTORY_ELEMENT_VAR,_ANIMATION_FACTORY_RENDERER_VAR,importExpr(createIdentifier(Identifiers.prepareFinalAnimationStyles)).callFn([_ANIMATION_START_STATE_STYLES_VAR,_ANIMATION_END_STATE_STYLES_VAR])]).toStmt()])]).toStmt());statements.push(importExpr(createIdentifier(Identifiers.AnimationSequencePlayer)).instantiate([_PREVIOUS_ANIMATION_PLAYERS]).callMethod('destroy',[]).toStmt());// before we start any animation we want to clear out the starting
-// styles from the element's style property (since they were placed
-// there at the end of the last animation
-statements.push(RENDER_STYLES_FN.callFn([_ANIMATION_FACTORY_ELEMENT_VAR,_ANIMATION_FACTORY_RENDERER_VAR,importExpr(createIdentifier(Identifiers.clearStyles)).callFn([_ANIMATION_START_STATE_STYLES_VAR])]).toStmt());statements.push(_ANIMATION_FACTORY_VIEW_CONTEXT.callMethod('queueAnimation',[_ANIMATION_FACTORY_ELEMENT_VAR,literal(this.animationName),_ANIMATION_PLAYER_VAR]).toStmt());statements.push(new ReturnStatement(importExpr(createIdentifier(Identifiers.AnimationTransition)).instantiate([_ANIMATION_PLAYER_VAR,_ANIMATION_FACTORY_ELEMENT_VAR,literal(this.animationName),_ANIMATION_CURRENT_STATE_VAR,_ANIMATION_NEXT_STATE_VAR,_ANIMATION_TIME_VAR])));return fn([new FnParam(_ANIMATION_FACTORY_VIEW_VAR.name,importType(createIdentifier(Identifiers.AppView),[DYNAMIC_TYPE])),new FnParam(_ANIMATION_FACTORY_ELEMENT_VAR.name,DYNAMIC_TYPE),new FnParam(_ANIMATION_CURRENT_STATE_VAR.name,DYNAMIC_TYPE),new FnParam(_ANIMATION_NEXT_STATE_VAR.name,DYNAMIC_TYPE)],statements,importType(createIdentifier(Identifiers.AnimationTransition)));}/**
-     * @param {?} ast
-     * @return {?}
-     */},{key:'build',value:function build(ast){var/** @type {?} */context=new _AnimationBuilderContext();var/** @type {?} */fnStatement=ast.visit(this,context).toDeclStmt(this._fnVarName);var/** @type {?} */fnVariable=variable(this._fnVarName);var/** @type {?} */lookupMap=[];Object.keys(context.stateMap.states).forEach(function(stateName){var/** @type {?} */value=context.stateMap.states[stateName];var/** @type {?} */variableValue=_EMPTY_MAP;if(isPresent(value)){var/** @type {?} */styleMap=[];Object.keys(value).forEach(function(key){styleMap.push([key,literal(value[key])]);});variableValue=literalMap(styleMap,null,true);}lookupMap.push([stateName,variableValue]);});var/** @type {?} */compiledStatesMapStmt=this._statesMapVar.set(literalMap(lookupMap,null,true)).toDeclStmt();var/** @type {?} */statements=[compiledStatesMapStmt,fnStatement];return new AnimationEntryCompileResult(this.animationName,statements,fnVariable);}}]);return _AnimationBuilder;}();var _AnimationBuilderContext=function _AnimationBuilderContext(){_classCallCheck(this,_AnimationBuilderContext);this.stateMap=new _AnimationBuilderStateMap();this.endStateAnimateStep=null;this.isExpectingFirstStyleStep=false;this.isExpectingFirstAnimateStep=false;this.totalTransitionTime=0;};var _AnimationBuilderStateMap=function(){function _AnimationBuilderStateMap(){_classCallCheck(this,_AnimationBuilderStateMap);this._states={};}/**
-     * @return {?}
-     */_createClass(_AnimationBuilderStateMap,[{key:'registerState',/**
-     * @param {?} name
-     * @param {?=} value
-     * @return {?}
-     */value:function registerState(name){var value=arguments.length>1&&arguments[1]!==undefined?arguments[1]:null;var/** @type {?} */existingEntry=this._states[name];if(!existingEntry){this._states[name]=value;}}},{key:'states',get:function get(){return this._states;}}]);return _AnimationBuilderStateMap;}();/**
- * @param {?} value
- * @param {?} animationState
- * @return {?}
- */function _compareToAnimationStateExpr(value,animationState){var/** @type {?} */emptyStateLiteral=literal(ɵEMPTY_STATE);switch(animationState){case ɵEMPTY_STATE:return value.equals(emptyStateLiteral);case ɵANY_STATE:return literal(true);default:return value.equals(literal(animationState));}}/**
- * @param {?} step
- * @return {?}
- */function _isEndStateAnimateStep(step){// the final animation step is characterized by having only TWO
-// keyframe values and it must have zero styles for both keyframes
-if(step instanceof AnimationStepAst&&step.duration>0&&step.keyframes.length==2){var/** @type {?} */styles1=_getStylesArray(step.keyframes[0])[0];var/** @type {?} */styles2=_getStylesArray(step.keyframes[1])[0];return Object.keys(styles1).length===0&&Object.keys(styles2).length===0;}return false;}/**
- * @param {?} obj
- * @return {?}
- */function _getStylesArray(obj){return obj.styles.styles;}/**
+ */function elementEventNameAndTarget(eventAst,dirAst){if(eventAst.isAnimation){return{name:'@'+eventAst.name+'.'+eventAst.phase,target:dirAst&&dirAst.directive.isComponent?'component':null};}else{return eventAst;}}/**
  * @license
  * Copyright Google Inc. All Rights Reserved.
  *
@@ -7245,8 +5838,8 @@ types.forEach(function(typeSummary){serializer.addOrMergeSummary({symbol:typeSum
  */function deserializeSummaries(symbolCache,json){var/** @type {?} */deserializer=new Deserializer(symbolCache);return deserializer.deserialize(json);}var Serializer$1=function(_ValueTransformer2){_inherits(Serializer$1,_ValueTransformer2);/**
      * @param {?} symbolResolver
      * @param {?} summaryResolver
-     */function Serializer$1(symbolResolver,summaryResolver){_classCallCheck(this,Serializer$1);var _this226=_possibleConstructorReturn(this,(Serializer$1.__proto__||Object.getPrototypeOf(Serializer$1)).call(this));_this226.symbolResolver=symbolResolver;_this226.summaryResolver=summaryResolver;// Note: This only contains symbols without members.
-_this226.symbols=[];_this226.indexBySymbol=new Map();_this226.processedSummaryBySymbol=new Map();_this226.processedSummaries=[];return _this226;}/**
+     */function Serializer$1(symbolResolver,summaryResolver){_classCallCheck(this,Serializer$1);var _this184=_possibleConstructorReturn(this,(Serializer$1.__proto__||Object.getPrototypeOf(Serializer$1)).call(this));_this184.symbolResolver=symbolResolver;_this184.summaryResolver=summaryResolver;// Note: This only contains symbols without members.
+_this184.symbols=[];_this184.indexBySymbol=new Map();_this184.processedSummaryBySymbol=new Map();_this184.processedSummaries=[];return _this184;}/**
      * @param {?} summary
      * @return {?}
      */_createClass(Serializer$1,[{key:'addOrMergeSummary',value:function addOrMergeSummary(summary){var/** @type {?} */symbolMeta=summary.metadata;if(symbolMeta&&symbolMeta.__symbolic==='class'){// For classes, we only keep their statics and arity, but not the metadata
@@ -7256,10 +5849,10 @@ symbolMeta={__symbolic:'class',statics:symbolMeta.statics,arity:symbolMeta.arity
 if(processedSummary.metadata==null&&symbolMeta!=null){processedSummary.metadata=this.processValue(symbolMeta);}// Note: == on purpose to compare with undefined!
 if(processedSummary.type==null&&summary.type!=null){processedSummary.type=this.processValue(summary.type);}}/**
      * @return {?}
-     */},{key:'serialize',value:function serialize(){var _this227=this;var/** @type {?} */exportAs=[];var/** @type {?} */json=JSON.stringify({summaries:this.processedSummaries,symbols:this.symbols.map(function(symbol,index){symbol.assertNoMembers();var/** @type {?} */importAs=void 0;if(_this227.summaryResolver.isLibraryFile(symbol.filePath)){importAs=symbol.name+'_'+index;exportAs.push({symbol:symbol,exportAs:importAs});}return{__symbol:index,name:symbol.name,// We convert the source filenames tinto output filenames,
+     */},{key:'serialize',value:function serialize(){var _this185=this;var/** @type {?} */exportAs=[];var/** @type {?} */json=JSON.stringify({summaries:this.processedSummaries,symbols:this.symbols.map(function(symbol,index){symbol.assertNoMembers();var/** @type {?} */importAs=void 0;if(_this185.summaryResolver.isLibraryFile(symbol.filePath)){importAs=symbol.name+'_'+index;exportAs.push({symbol:symbol,exportAs:importAs});}return{__symbol:index,name:symbol.name,// We convert the source filenames tinto output filenames,
 // as the generated summary file will be used when teh current
 // compilation unit is used as a library
-filePath:_this227.summaryResolver.getLibraryFileName(symbol.filePath),importAs:importAs};})});return{json:json,exportAs:exportAs};}/**
+filePath:_this185.summaryResolver.getLibraryFileName(symbol.filePath),importAs:importAs};})});return{json:json,exportAs:exportAs};}/**
      * @param {?} value
      * @return {?}
      */},{key:'processValue',value:function processValue(value){return visitValue(value,this,null);}/**
@@ -7269,10 +5862,10 @@ filePath:_this227.summaryResolver.getLibraryFileName(symbol.filePath),importAs:i
      */},{key:'visitOther',value:function visitOther(value,context){if(value instanceof StaticSymbol){var/** @type {?} */baseSymbol=this.symbolResolver.getStaticSymbol(value.filePath,value.name);var/** @type {?} */index=this.indexBySymbol.get(baseSymbol);// Note: == on purpose to compare with undefined!
 if(index==null){index=this.indexBySymbol.size;this.indexBySymbol.set(baseSymbol,index);this.symbols.push(baseSymbol);}return{__symbol:index,members:value.members};}}}]);return Serializer$1;}(ValueTransformer);var Deserializer=function(_ValueTransformer3){_inherits(Deserializer,_ValueTransformer3);/**
      * @param {?} symbolCache
-     */function Deserializer(symbolCache){_classCallCheck(this,Deserializer);var _this228=_possibleConstructorReturn(this,(Deserializer.__proto__||Object.getPrototypeOf(Deserializer)).call(this));_this228.symbolCache=symbolCache;return _this228;}/**
+     */function Deserializer(symbolCache){_classCallCheck(this,Deserializer);var _this186=_possibleConstructorReturn(this,(Deserializer.__proto__||Object.getPrototypeOf(Deserializer)).call(this));_this186.symbolCache=symbolCache;return _this186;}/**
      * @param {?} json
      * @return {?}
-     */_createClass(Deserializer,[{key:'deserialize',value:function deserialize(json){var _this229=this;var/** @type {?} */data=JSON.parse(json);var/** @type {?} */importAs=[];this.symbols=[];data.symbols.forEach(function(serializedSymbol){var/** @type {?} */symbol=_this229.symbolCache.get(serializedSymbol.filePath,serializedSymbol.name);_this229.symbols.push(symbol);if(serializedSymbol.importAs){importAs.push({symbol:symbol,importAs:serializedSymbol.importAs});}});var/** @type {?} */summaries=visitValue(data.summaries,this,null);return{summaries:summaries,importAs:importAs};}/**
+     */_createClass(Deserializer,[{key:'deserialize',value:function deserialize(json){var _this187=this;var/** @type {?} */data=JSON.parse(json);var/** @type {?} */importAs=[];this.symbols=[];data.symbols.forEach(function(serializedSymbol){var/** @type {?} */symbol=_this187.symbolCache.get(serializedSymbol.filePath,serializedSymbol.name);_this187.symbols.push(symbol);if(serializedSymbol.importAs){importAs.push({symbol:symbol,importAs:serializedSymbol.importAs});}});var/** @type {?} */summaries=visitValue(data.summaries,this,null);return{summaries:summaries,importAs:importAs};}/**
      * @param {?} map
      * @param {?} context
      * @return {?}
@@ -7283,20 +5876,18 @@ if(index==null){index=this.indexBySymbol.size;this.indexBySymbol.set(baseSymbol,
      * @param {?} _templateParser
      * @param {?} _styleCompiler
      * @param {?} _viewCompiler
-     * @param {?} _dirWrapperCompiler
      * @param {?} _ngModuleCompiler
      * @param {?} _outputEmitter
      * @param {?} _summaryResolver
      * @param {?} _localeId
      * @param {?} _translationFormat
-     * @param {?} _animationParser
      * @param {?} _symbolResolver
-     */function AotCompiler(_config,_host,_metadataResolver,_templateParser,_styleCompiler,_viewCompiler,_dirWrapperCompiler,_ngModuleCompiler,_outputEmitter,_summaryResolver,_localeId,_translationFormat,_animationParser,_symbolResolver){_classCallCheck(this,AotCompiler);this._config=_config;this._host=_host;this._metadataResolver=_metadataResolver;this._templateParser=_templateParser;this._styleCompiler=_styleCompiler;this._viewCompiler=_viewCompiler;this._dirWrapperCompiler=_dirWrapperCompiler;this._ngModuleCompiler=_ngModuleCompiler;this._outputEmitter=_outputEmitter;this._summaryResolver=_summaryResolver;this._localeId=_localeId;this._translationFormat=_translationFormat;this._animationParser=_animationParser;this._symbolResolver=_symbolResolver;this._animationCompiler=new AnimationCompiler();}/**
+     */function AotCompiler(_config,_host,_metadataResolver,_templateParser,_styleCompiler,_viewCompiler,_ngModuleCompiler,_outputEmitter,_summaryResolver,_localeId,_translationFormat,_symbolResolver){_classCallCheck(this,AotCompiler);this._config=_config;this._host=_host;this._metadataResolver=_metadataResolver;this._templateParser=_templateParser;this._styleCompiler=_styleCompiler;this._viewCompiler=_viewCompiler;this._ngModuleCompiler=_ngModuleCompiler;this._outputEmitter=_outputEmitter;this._summaryResolver=_summaryResolver;this._localeId=_localeId;this._translationFormat=_translationFormat;this._symbolResolver=_symbolResolver;}/**
      * @return {?}
      */_createClass(AotCompiler,[{key:'clearCache',value:function clearCache(){this._metadataResolver.clearCache();}/**
      * @param {?} rootFiles
      * @return {?}
-     */},{key:'compileAll',value:function compileAll(rootFiles){var _this230=this;var/** @type {?} */programSymbols=extractProgramSymbols(this._symbolResolver,rootFiles,this._host);var _analyzeAndValidateNg=analyzeAndValidateNgModules(programSymbols,this._host,this._metadataResolver),ngModuleByPipeOrDirective=_analyzeAndValidateNg.ngModuleByPipeOrDirective,files=_analyzeAndValidateNg.files,ngModules=_analyzeAndValidateNg.ngModules;return Promise.all(ngModules.map(function(ngModule){return _this230._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference,false);})).then(function(){var/** @type {?} */sourceModules=files.map(function(file){return _this230._compileSrcFile(file.srcUrl,ngModuleByPipeOrDirective,file.directives,file.pipes,file.ngModules,file.injectables);});return ListWrapper.flatten(sourceModules);});}/**
+     */},{key:'compileAll',value:function compileAll(rootFiles){var _this188=this;var/** @type {?} */programSymbols=extractProgramSymbols(this._symbolResolver,rootFiles,this._host);var _analyzeAndValidateNg=analyzeAndValidateNgModules(programSymbols,this._host,this._metadataResolver),ngModuleByPipeOrDirective=_analyzeAndValidateNg.ngModuleByPipeOrDirective,files=_analyzeAndValidateNg.files,ngModules=_analyzeAndValidateNg.ngModules;return Promise.all(ngModules.map(function(ngModule){return _this188._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference,false);})).then(function(){var/** @type {?} */sourceModules=files.map(function(file){return _this188._compileSrcFile(file.srcUrl,ngModuleByPipeOrDirective,file.directives,file.pipes,file.ngModules,file.injectables);});return ListWrapper.flatten(sourceModules);});}/**
      * @param {?} srcFileUrl
      * @param {?} ngModuleByPipeOrDirective
      * @param {?} directives
@@ -7304,12 +5895,11 @@ if(index==null){index=this.indexBySymbol.size;this.indexBySymbol.set(baseSymbol,
      * @param {?} ngModules
      * @param {?} injectables
      * @return {?}
-     */},{key:'_compileSrcFile',value:function _compileSrcFile(srcFileUrl,ngModuleByPipeOrDirective,directives,pipes,ngModules,injectables){var _this231=this;var/** @type {?} */fileSuffix=splitTypescriptSuffix(srcFileUrl)[1];var/** @type {?} */statements=[];var/** @type {?} */exportedVars=[];var/** @type {?} */generatedFiles=[];generatedFiles.push(this._createSummary(srcFileUrl,directives,pipes,ngModules,injectables,statements,exportedVars));// compile all ng modules
-exportedVars.push.apply(exportedVars,_toConsumableArray(ngModules.map(function(ngModuleType){return _this231._compileModule(ngModuleType,statements);})));// compile directive wrappers
-if(!this._config.useViewEngine){exportedVars.push.apply(exportedVars,_toConsumableArray(directives.map(function(directiveType){return _this231._compileDirectiveWrapper(directiveType,statements);})));}// compile components
-directives.forEach(function(dirType){var/** @type {?} */compMeta=_this231._metadataResolver.getDirectiveMetadata(/** @type {?} */dirType);if(!compMeta.isComponent){return Promise.resolve(null);}var/** @type {?} */ngModule=ngModuleByPipeOrDirective.get(dirType);if(!ngModule){throw new Error('Internal Error: cannot determine the module for component '+identifierName(compMeta.type)+'!');}_assertComponent(compMeta);// compile styles
-var/** @type {?} */stylesCompileResults=_this231._styleCompiler.compileComponent(compMeta);stylesCompileResults.externalStylesheets.forEach(function(compiledStyleSheet){generatedFiles.push(_this231._codgenStyles(srcFileUrl,compiledStyleSheet,fileSuffix));});// compile components
-var/** @type {?} */compViewVars=_this231._compileComponent(compMeta,ngModule,ngModule.transitiveModule.directives,stylesCompileResults.componentStylesheet,fileSuffix,statements);exportedVars.push(_this231._compileComponentFactory(compMeta,ngModule,fileSuffix,statements),compViewVars.viewClassVar,compViewVars.compRenderTypeVar);});if(statements.length>0){var/** @type {?} */srcModule=this._codegenSourceModule(srcFileUrl,ngfactoryFilePath(srcFileUrl),statements,exportedVars);generatedFiles.unshift(srcModule);}return generatedFiles;}/**
+     */},{key:'_compileSrcFile',value:function _compileSrcFile(srcFileUrl,ngModuleByPipeOrDirective,directives,pipes,ngModules,injectables){var _this189=this;var/** @type {?} */fileSuffix=splitTypescriptSuffix(srcFileUrl)[1];var/** @type {?} */statements=[];var/** @type {?} */exportedVars=[];var/** @type {?} */generatedFiles=[];generatedFiles.push(this._createSummary(srcFileUrl,directives,pipes,ngModules,injectables,statements,exportedVars));// compile all ng modules
+exportedVars.push.apply(exportedVars,_toConsumableArray(ngModules.map(function(ngModuleType){return _this189._compileModule(ngModuleType,statements);})));// compile components
+directives.forEach(function(dirType){var/** @type {?} */compMeta=_this189._metadataResolver.getDirectiveMetadata(/** @type {?} */dirType);if(!compMeta.isComponent){return Promise.resolve(null);}var/** @type {?} */ngModule=ngModuleByPipeOrDirective.get(dirType);if(!ngModule){throw new Error('Internal Error: cannot determine the module for component '+identifierName(compMeta.type)+'!');}_assertComponent(compMeta);// compile styles
+var/** @type {?} */stylesCompileResults=_this189._styleCompiler.compileComponent(compMeta);stylesCompileResults.externalStylesheets.forEach(function(compiledStyleSheet){generatedFiles.push(_this189._codgenStyles(srcFileUrl,compiledStyleSheet,fileSuffix));});// compile components
+var/** @type {?} */compViewVars=_this189._compileComponent(compMeta,ngModule,ngModule.transitiveModule.directives,stylesCompileResults.componentStylesheet,fileSuffix,statements);exportedVars.push(_this189._compileComponentFactory(compMeta,ngModule,fileSuffix,statements),compViewVars.viewClassVar,compViewVars.compRenderTypeVar);});if(statements.length>0){var/** @type {?} */srcModule=this._codegenSourceModule(srcFileUrl,ngfactoryFilePath(srcFileUrl),statements,exportedVars);generatedFiles.unshift(srcModule);}return generatedFiles;}/**
      * @param {?} srcFileUrl
      * @param {?} directives
      * @param {?} pipes
@@ -7318,21 +5908,17 @@ var/** @type {?} */compViewVars=_this231._compileComponent(compMeta,ngModule,ngM
      * @param {?} targetStatements
      * @param {?} targetExportedVars
      * @return {?}
-     */},{key:'_createSummary',value:function _createSummary(srcFileUrl,directives,pipes,ngModules,injectables,targetStatements,targetExportedVars){var _this232=this;var/** @type {?} */symbolSummaries=this._symbolResolver.getSymbolsOf(srcFileUrl).map(function(symbol){return _this232._symbolResolver.resolveSymbol(symbol);});var/** @type {?} */typeSummaries=[].concat(_toConsumableArray(ngModules.map(function(ref){return _this232._metadataResolver.getNgModuleSummary(ref);})),_toConsumableArray(directives.map(function(ref){return _this232._metadataResolver.getDirectiveSummary(ref);})),_toConsumableArray(pipes.map(function(ref){return _this232._metadataResolver.getPipeSummary(ref);})),_toConsumableArray(injectables.map(function(ref){return _this232._metadataResolver.getInjectableSummary(ref);})));var _serializeSummaries=serializeSummaries(this._summaryResolver,this._symbolResolver,symbolSummaries,typeSummaries),json=_serializeSummaries.json,exportAs=_serializeSummaries.exportAs;exportAs.forEach(function(entry){targetStatements.push(variable(entry.exportAs).set(importExpr({reference:entry.symbol})).toDeclStmt());targetExportedVars.push(entry.exportAs);});return new GeneratedFile(srcFileUrl,summaryFileName(srcFileUrl),json);}/**
+     */},{key:'_createSummary',value:function _createSummary(srcFileUrl,directives,pipes,ngModules,injectables,targetStatements,targetExportedVars){var _this190=this;var/** @type {?} */symbolSummaries=this._symbolResolver.getSymbolsOf(srcFileUrl).map(function(symbol){return _this190._symbolResolver.resolveSymbol(symbol);});var/** @type {?} */typeSummaries=[].concat(_toConsumableArray(ngModules.map(function(ref){return _this190._metadataResolver.getNgModuleSummary(ref);})),_toConsumableArray(directives.map(function(ref){return _this190._metadataResolver.getDirectiveSummary(ref);})),_toConsumableArray(pipes.map(function(ref){return _this190._metadataResolver.getPipeSummary(ref);})),_toConsumableArray(injectables.map(function(ref){return _this190._metadataResolver.getInjectableSummary(ref);})));var _serializeSummaries=serializeSummaries(this._summaryResolver,this._symbolResolver,symbolSummaries,typeSummaries),json=_serializeSummaries.json,exportAs=_serializeSummaries.exportAs;exportAs.forEach(function(entry){targetStatements.push(variable(entry.exportAs).set(importExpr({reference:entry.symbol})).toDeclStmt());targetExportedVars.push(entry.exportAs);});return new GeneratedFile(srcFileUrl,summaryFileName(srcFileUrl),json);}/**
      * @param {?} ngModuleType
      * @param {?} targetStatements
      * @return {?}
      */},{key:'_compileModule',value:function _compileModule(ngModuleType,targetStatements){var/** @type {?} */ngModule=this._metadataResolver.getNgModuleMetadata(ngModuleType);var/** @type {?} */providers=[];if(this._localeId){providers.push({token:createIdentifierToken(Identifiers.LOCALE_ID),useValue:this._localeId});}if(this._translationFormat){providers.push({token:createIdentifierToken(Identifiers.TRANSLATIONS_FORMAT),useValue:this._translationFormat});}var/** @type {?} */appCompileResult=this._ngModuleCompiler.compile(ngModule,providers);targetStatements.push.apply(targetStatements,_toConsumableArray(appCompileResult.statements));return appCompileResult.ngModuleFactoryVar;}/**
-     * @param {?} directiveType
-     * @param {?} targetStatements
-     * @return {?}
-     */},{key:'_compileDirectiveWrapper',value:function _compileDirectiveWrapper(directiveType,targetStatements){var/** @type {?} */dirMeta=this._metadataResolver.getDirectiveMetadata(directiveType);var/** @type {?} */dirCompileResult=this._dirWrapperCompiler.compile(dirMeta);targetStatements.push.apply(targetStatements,_toConsumableArray(dirCompileResult.statements));return dirCompileResult.dirWrapperClassVar;}/**
      * @param {?} compMeta
      * @param {?} ngModule
      * @param {?} fileSuffix
      * @param {?} targetStatements
      * @return {?}
-     */},{key:'_compileComponentFactory',value:function _compileComponentFactory(compMeta,ngModule,fileSuffix,targetStatements){var/** @type {?} */hostType=this._metadataResolver.getHostComponentType(compMeta.type.reference);var/** @type {?} */hostMeta=createHostComponentMeta(hostType,compMeta,this._metadataResolver.getHostComponentViewClass(hostType));var/** @type {?} */hostViewFactoryVar=this._compileComponent(hostMeta,ngModule,[compMeta.type],null,fileSuffix,targetStatements).viewClassVar;var/** @type {?} */compFactoryVar=componentFactoryName(compMeta.type.reference);if(this._config.useViewEngine){targetStatements.push(variable(compFactoryVar).set(importExpr(createIdentifier(Identifiers.createComponentFactory)).callFn([literal(compMeta.selector),importExpr(compMeta.type),variable(hostViewFactoryVar)])).toDeclStmt(importType(createIdentifier(Identifiers.ComponentFactory),[importType(compMeta.type)],[TypeModifier.Const]),[StmtModifier.Final]));}else{targetStatements.push(variable(compFactoryVar).set(importExpr(createIdentifier(Identifiers.ComponentFactory),[importType(compMeta.type)]).instantiate([literal(compMeta.selector),variable(hostViewFactoryVar),importExpr(compMeta.type)],importType(createIdentifier(Identifiers.ComponentFactory),[importType(compMeta.type)],[TypeModifier.Const]))).toDeclStmt(null,[StmtModifier.Final]));}return compFactoryVar;}/**
+     */},{key:'_compileComponentFactory',value:function _compileComponentFactory(compMeta,ngModule,fileSuffix,targetStatements){var/** @type {?} */hostType=this._metadataResolver.getHostComponentType(compMeta.type.reference);var/** @type {?} */hostMeta=createHostComponentMeta(hostType,compMeta,this._metadataResolver.getHostComponentViewClass(hostType));var/** @type {?} */hostViewFactoryVar=this._compileComponent(hostMeta,ngModule,[compMeta.type],null,fileSuffix,targetStatements).viewClassVar;var/** @type {?} */compFactoryVar=componentFactoryName(compMeta.type.reference);targetStatements.push(variable(compFactoryVar).set(importExpr(createIdentifier(Identifiers.createComponentFactory)).callFn([literal(compMeta.selector),importExpr(compMeta.type),variable(hostViewFactoryVar)])).toDeclStmt(importType(createIdentifier(Identifiers.ComponentFactory),[importType(compMeta.type)],[TypeModifier.Const]),[StmtModifier.Final]));return compFactoryVar;}/**
      * @param {?} compMeta
      * @param {?} ngModule
      * @param {?} directiveIdentifiers
@@ -7340,7 +5926,7 @@ var/** @type {?} */compViewVars=_this231._compileComponent(compMeta,ngModule,ngM
      * @param {?} fileSuffix
      * @param {?} targetStatements
      * @return {?}
-     */},{key:'_compileComponent',value:function _compileComponent(compMeta,ngModule,directiveIdentifiers,componentStyles,fileSuffix,targetStatements){var _this233=this;var/** @type {?} */directives=directiveIdentifiers.map(function(dir){return _this233._metadataResolver.getDirectiveSummary(dir.reference);});var/** @type {?} */pipes=ngModule.transitiveModule.pipes.map(function(pipe){return _this233._metadataResolver.getPipeSummary(pipe.reference);});var _templateParser$parse=this._templateParser.parse(compMeta,compMeta.template.template,directives,pipes,ngModule.schemas,identifierName(compMeta.type)),parsedTemplate=_templateParser$parse.template,usedPipes=_templateParser$parse.pipes;var/** @type {?} */stylesExpr=componentStyles?variable(componentStyles.stylesVar):literalArr([]);var/** @type {?} */viewResult=this._viewCompiler.compileComponent(compMeta,parsedTemplate,stylesExpr,usedPipes,null);if(componentStyles){targetStatements.push.apply(targetStatements,_toConsumableArray(_resolveStyleStatements(this._symbolResolver,componentStyles,fileSuffix)));}targetStatements.push.apply(targetStatements,_toConsumableArray(viewResult.statements));return{viewClassVar:viewResult.viewClassVar,compRenderTypeVar:viewResult.rendererTypeVar};}/**
+     */},{key:'_compileComponent',value:function _compileComponent(compMeta,ngModule,directiveIdentifiers,componentStyles,fileSuffix,targetStatements){var _this191=this;var/** @type {?} */directives=directiveIdentifiers.map(function(dir){return _this191._metadataResolver.getDirectiveSummary(dir.reference);});var/** @type {?} */pipes=ngModule.transitiveModule.pipes.map(function(pipe){return _this191._metadataResolver.getPipeSummary(pipe.reference);});var _templateParser$parse=this._templateParser.parse(compMeta,compMeta.template.template,directives,pipes,ngModule.schemas,identifierName(compMeta.type)),parsedTemplate=_templateParser$parse.template,usedPipes=_templateParser$parse.pipes;var/** @type {?} */stylesExpr=componentStyles?variable(componentStyles.stylesVar):literalArr([]);var/** @type {?} */viewResult=this._viewCompiler.compileComponent(compMeta,parsedTemplate,stylesExpr,usedPipes);if(componentStyles){targetStatements.push.apply(targetStatements,_toConsumableArray(_resolveStyleStatements(this._symbolResolver,componentStyles,fileSuffix)));}targetStatements.push.apply(targetStatements,_toConsumableArray(viewResult.statements));return{viewClassVar:viewResult.viewClassVar,compRenderTypeVar:viewResult.rendererTypeVar};}/**
      * @param {?} fileUrl
      * @param {?} stylesCompileResult
      * @param {?} fileSuffix
@@ -7457,7 +6043,7 @@ var/** @type {?} */symbolsMissingModule=programPipesAndDirectives.filter(functio
      * @param {?=} knownMetadataClasses
      * @param {?=} knownMetadataFunctions
      * @param {?=} errorRecorder
-     */function StaticReflector(symbolResolver){var knownMetadataClasses=arguments.length>1&&arguments[1]!==undefined?arguments[1]:[];var _this234=this;var knownMetadataFunctions=arguments.length>2&&arguments[2]!==undefined?arguments[2]:[];var errorRecorder=arguments[3];_classCallCheck(this,StaticReflector);this.symbolResolver=symbolResolver;this.errorRecorder=errorRecorder;this.annotationCache=new Map();this.propertyCache=new Map();this.parameterCache=new Map();this.methodCache=new Map();this.conversionMap=new Map();this.initializeConversionMap();knownMetadataClasses.forEach(function(kc){return _this234._registerDecoratorOrConstructor(_this234.getStaticSymbol(kc.filePath,kc.name),kc.ctor);});knownMetadataFunctions.forEach(function(kf){return _this234._registerFunction(_this234.getStaticSymbol(kf.filePath,kf.name),kf.fn);});}/**
+     */function StaticReflector(symbolResolver){var knownMetadataClasses=arguments.length>1&&arguments[1]!==undefined?arguments[1]:[];var _this192=this;var knownMetadataFunctions=arguments.length>2&&arguments[2]!==undefined?arguments[2]:[];var errorRecorder=arguments[3];_classCallCheck(this,StaticReflector);this.symbolResolver=symbolResolver;this.errorRecorder=errorRecorder;this.annotationCache=new Map();this.propertyCache=new Map();this.parameterCache=new Map();this.methodCache=new Map();this.conversionMap=new Map();this.initializeConversionMap();knownMetadataClasses.forEach(function(kc){return _this192._registerDecoratorOrConstructor(_this192.getStaticSymbol(kc.filePath,kc.name),kc.ctor);});knownMetadataFunctions.forEach(function(kf){return _this192._registerFunction(_this192.getStaticSymbol(kf.filePath,kf.name),kf.fn);});}/**
      * @param {?} typeOrFunc
      * @return {?}
      */_createClass(StaticReflector,[{key:'importUri',value:function importUri(typeOrFunc){var/** @type {?} */staticSymbol=this.findSymbolDeclaration(typeOrFunc);return staticSymbol?staticSymbol.filePath:null;}/**
@@ -7483,7 +6069,7 @@ var/** @type {?} */symbolsMissingModule=programPipesAndDirectives.filter(functio
      */},{key:'annotations',value:function annotations(type){var/** @type {?} */annotations=this.annotationCache.get(type);if(!annotations){annotations=[];var/** @type {?} */classMetadata=this.getTypeMetadata(type);if(classMetadata['extends']){var/** @type {?} */parentType=this.trySimplify(type,classMetadata['extends']);if(parentType&&parentType instanceof StaticSymbol){var _annotations;var/** @type {?} */parentAnnotations=this.annotations(parentType);(_annotations=annotations).push.apply(_annotations,_toConsumableArray(parentAnnotations));}}if(classMetadata['decorators']){var _annotations2;var/** @type {?} */ownAnnotations=this.simplify(type,classMetadata['decorators']);(_annotations2=annotations).push.apply(_annotations2,_toConsumableArray(ownAnnotations));}this.annotationCache.set(type,annotations.filter(function(ann){return!!ann;}));}return annotations;}/**
      * @param {?} type
      * @return {?}
-     */},{key:'propMetadata',value:function propMetadata(type){var _this235=this;var/** @type {?} */propMetadata=this.propertyCache.get(type);if(!propMetadata){var/** @type {?} */classMetadata=this.getTypeMetadata(type);propMetadata={};if(classMetadata['extends']){var/** @type {?} */parentType=this.simplify(type,classMetadata['extends']);if(parentType instanceof StaticSymbol){var/** @type {?} */parentPropMetadata=this.propMetadata(parentType);Object.keys(parentPropMetadata).forEach(function(parentProp){propMetadata[parentProp]=parentPropMetadata[parentProp];});}}var/** @type {?} */members=classMetadata['members']||{};Object.keys(members).forEach(function(propName){var/** @type {?} */propData=members[propName];var/** @type {?} */prop=propData.find(function(a){return a['__symbolic']=='property'||a['__symbolic']=='method';});var/** @type {?} */decorators=[];if(propMetadata[propName]){decorators.push.apply(decorators,_toConsumableArray(propMetadata[propName]));}propMetadata[propName]=decorators;if(prop&&prop['decorators']){decorators.push.apply(decorators,_toConsumableArray(_this235.simplify(type,prop['decorators'])));}});this.propertyCache.set(type,propMetadata);}return propMetadata;}/**
+     */},{key:'propMetadata',value:function propMetadata(type){var _this193=this;var/** @type {?} */propMetadata=this.propertyCache.get(type);if(!propMetadata){var/** @type {?} */classMetadata=this.getTypeMetadata(type);propMetadata={};if(classMetadata['extends']){var/** @type {?} */parentType=this.simplify(type,classMetadata['extends']);if(parentType instanceof StaticSymbol){var/** @type {?} */parentPropMetadata=this.propMetadata(parentType);Object.keys(parentPropMetadata).forEach(function(parentProp){propMetadata[parentProp]=parentPropMetadata[parentProp];});}}var/** @type {?} */members=classMetadata['members']||{};Object.keys(members).forEach(function(propName){var/** @type {?} */propData=members[propName];var/** @type {?} */prop=propData.find(function(a){return a['__symbolic']=='property'||a['__symbolic']=='method';});var/** @type {?} */decorators=[];if(propMetadata[propName]){decorators.push.apply(decorators,_toConsumableArray(propMetadata[propName]));}propMetadata[propName]=decorators;if(prop&&prop['decorators']){decorators.push.apply(decorators,_toConsumableArray(_this193.simplify(type,prop['decorators'])));}});this.propertyCache.set(type,propMetadata);}return propMetadata;}/**
      * @param {?} type
      * @return {?}
      */},{key:'parameters',value:function parameters(type){if(!(type instanceof StaticSymbol)){this.reportError(new Error('parameters received '+JSON.stringify(type)+' which is not a StaticSymbol'),type);return[];}try{var/** @type {?} */parameters=this.parameterCache.get(type);if(!parameters){var/** @type {?} */classMetadata=this.getTypeMetadata(type);var/** @type {?} */members=classMetadata?classMetadata['members']:null;var/** @type {?} */ctorData=members?members['__ctor__']:null;if(ctorData){var/** @type {?} */ctor=ctorData.find(function(a){return a['__symbolic']=='constructor';});var/** @type {?} */parameterTypes=this.simplify(type,ctor['parameters']||[]);var/** @type {?} */parameterDecorators=this.simplify(type,ctor['parameterDecorators']||[]);parameters=[];parameterTypes.forEach(function(paramType,index){var/** @type {?} */nestedResult=[];if(paramType){nestedResult.push(paramType);}var/** @type {?} */decorators=parameterDecorators?parameterDecorators[index]:null;if(decorators){nestedResult.push.apply(nestedResult,_toConsumableArray(decorators));}parameters.push(nestedResult);});}else if(classMetadata['extends']){var/** @type {?} */parentType=this.simplify(type,classMetadata['extends']);if(parentType instanceof StaticSymbol){parameters=this.parameters(parentType);}}if(!parameters){parameters=[];}this.parameterCache.set(type,parameters);}return parameters;}catch(e){console.error('Failed on type '+JSON.stringify(type)+' with error '+e);throw e;}}/**
@@ -7527,7 +6113,7 @@ this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE,'Host'),H
      * @param {?} context
      * @param {?} value
      * @return {?}
-     */},{key:'simplify',value:function simplify(context,value){var _this236=this;var/** @type {?} */self=this;var/** @type {?} */scope=BindingScope.empty;var/** @type {?} */calling=new Map();/**
+     */},{key:'simplify',value:function simplify(context,value){var _this194=this;var/** @type {?} */self=this;var/** @type {?} */scope=BindingScope.empty;var/** @type {?} */calling=new Map();/**
          * @param {?} context
          * @param {?} value
          * @param {?} depth
@@ -7555,7 +6141,7 @@ var/** @type {?} */name=expression['name'];var/** @type {?} */localValue=scope.r
 _staticSymbol=simplifyInContext(context,expression['expression'],depth+1);if(_staticSymbol instanceof StaticSymbol){if(_staticSymbol===self.injectionToken||_staticSymbol===self.opaqueToken){// if somebody calls new InjectionToken, don't create an InjectionToken,
 // but rather return the symbol to which the InjectionToken is assigned to.
 return context;}var/** @type {?} */argExpressions=expression['arguments']||[];var/** @type {?} */converter=self.conversionMap.get(_staticSymbol);if(converter){var/** @type {?} */args=argExpressions.map(function(arg){return simplifyInContext(context,arg,depth+1);});return converter(context,args);}else{// Determine if the function is one we can simplify.
-var/** @type {?} */targetFunction=resolveReferenceValue(_staticSymbol);return simplifyCall(_staticSymbol,targetFunction,argExpressions);}}break;case'error':var/** @type {?} */message=produceErrorMessage(expression);if(expression['line']){message=message+' (position '+(expression['line']+1)+':'+(expression['character']+1)+' in the original .ts file)';throw positionalError(message,context.filePath,expression['line'],expression['character']);}throw new Error(message);}return null;}return mapStringMap(expression,function(value,name){return simplify(value);});}return null;}try{return simplify(value);}catch(e){var/** @type {?} */members=context.members.length?'.'+context.members.join('.'):'';var/** @type {?} */message=e.message+', resolving symbol '+context.name+members+' in '+context.filePath;if(e.fileName){throw positionalError(message,e.fileName,e.line,e.column);}throw syntaxError(message);}}var/** @type {?} */recordedSimplifyInContext=function recordedSimplifyInContext(context,value,depth){try{return simplifyInContext(context,value,depth);}catch(e){_this236.reportError(e,context);}};var/** @type {?} */result=this.errorRecorder?recordedSimplifyInContext(context,value,0):simplifyInContext(context,value,0);if(shouldIgnore(result)){return undefined;}return result;}/**
+var/** @type {?} */targetFunction=resolveReferenceValue(_staticSymbol);return simplifyCall(_staticSymbol,targetFunction,argExpressions);}}break;case'error':var/** @type {?} */message=produceErrorMessage(expression);if(expression['line']){message=message+' (position '+(expression['line']+1)+':'+(expression['character']+1)+' in the original .ts file)';throw positionalError(message,context.filePath,expression['line'],expression['character']);}throw new Error(message);}return null;}return mapStringMap(expression,function(value,name){return simplify(value);});}return null;}try{return simplify(value);}catch(e){var/** @type {?} */members=context.members.length?'.'+context.members.join('.'):'';var/** @type {?} */message=e.message+', resolving symbol '+context.name+members+' in '+context.filePath;if(e.fileName){throw positionalError(message,e.fileName,e.line,e.column);}throw syntaxError(message);}}var/** @type {?} */recordedSimplifyInContext=function recordedSimplifyInContext(context,value,depth){try{return simplifyInContext(context,value,depth);}catch(e){_this194.reportError(e,context);}};var/** @type {?} */result=this.errorRecorder?recordedSimplifyInContext(context,value,0):simplifyInContext(context,value,0);if(shouldIgnore(result)){return undefined;}return result;}/**
      * @param {?} type
      * @return {?}
      */},{key:'getTypeMetadata',value:function getTypeMetadata(type){var/** @type {?} */resolvedSymbol=this.symbolResolver.resolveSymbol(type);return resolvedSymbol&&resolvedSymbol.metadata?resolvedSymbol.metadata:{__symbolic:'class'};}}]);return StaticReflector;}();/**
@@ -7581,7 +6167,7 @@ var/** @type {?} */targetFunction=resolveReferenceValue(_staticSymbol);return si
      * @return {?}
      */}],[{key:'build',value:function build(){var/** @type {?} */current=new Map();return{define:function define(name,value){current.set(name,value);return this;},done:function done(){return current.size>0?new PopulatedScope(current):BindingScope.empty;}};}}]);return BindingScope;}();BindingScope.missing={};BindingScope.empty={resolve:function resolve(name){return BindingScope.missing;}};var PopulatedScope=function(_BindingScope){_inherits(PopulatedScope,_BindingScope);/**
      * @param {?} bindings
-     */function PopulatedScope(bindings){_classCallCheck(this,PopulatedScope);var _this237=_possibleConstructorReturn(this,(PopulatedScope.__proto__||Object.getPrototypeOf(PopulatedScope)).call(this));_this237.bindings=bindings;return _this237;}/**
+     */function PopulatedScope(bindings){_classCallCheck(this,PopulatedScope);var _this195=_possibleConstructorReturn(this,(PopulatedScope.__proto__||Object.getPrototypeOf(PopulatedScope)).call(this));_this195.bindings=bindings;return _this195;}/**
      * @param {?} name
      * @return {?}
      */_createClass(PopulatedScope,[{key:'resolve',value:function resolve(name){return this.bindings.has(name)?this.bindings.get(name):BindingScope.missing;}}]);return PopulatedScope;}(BindingScope);/**
@@ -7659,13 +6245,13 @@ if(isNgFactoryFile(staticSymbol.filePath)){return null;}var/** @type {?} */resol
 var/** @type {?} */symbols=new Set(this.summaryResolver.getSymbolsOf(filePath));this._createSymbolsOf(filePath);this.resolvedSymbols.forEach(function(resolvedSymbol){if(resolvedSymbol.symbol.filePath===filePath){symbols.add(resolvedSymbol.symbol);}});return Array.from(symbols);}/**
      * @param {?} filePath
      * @return {?}
-     */},{key:'_createSymbolsOf',value:function _createSymbolsOf(filePath){var _this238=this;if(this.resolvedFilePaths.has(filePath)){return;}this.resolvedFilePaths.add(filePath);var/** @type {?} */resolvedSymbols=[];var/** @type {?} */metadata=this.getModuleMetadata(filePath);if(metadata['metadata']){// handle direct declarations of the symbol
-var/** @type {?} */topLevelSymbolNames=new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));Object.keys(metadata['metadata']).forEach(function(metadataKey){var/** @type {?} */symbolMeta=metadata['metadata'][metadataKey];var/** @type {?} */name=unescapeIdentifier(metadataKey);var/** @type {?} */canonicalSymbol=_this238.getStaticSymbol(filePath,name);if(metadata['importAs']){// Index bundle indexes should use the importAs module name instead of a reference
+     */},{key:'_createSymbolsOf',value:function _createSymbolsOf(filePath){var _this196=this;if(this.resolvedFilePaths.has(filePath)){return;}this.resolvedFilePaths.add(filePath);var/** @type {?} */resolvedSymbols=[];var/** @type {?} */metadata=this.getModuleMetadata(filePath);if(metadata['metadata']){// handle direct declarations of the symbol
+var/** @type {?} */topLevelSymbolNames=new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));Object.keys(metadata['metadata']).forEach(function(metadataKey){var/** @type {?} */symbolMeta=metadata['metadata'][metadataKey];var/** @type {?} */name=unescapeIdentifier(metadataKey);var/** @type {?} */canonicalSymbol=_this196.getStaticSymbol(filePath,name);if(metadata['importAs']){// Index bundle indexes should use the importAs module name instead of a reference
 // to the .d.ts file directly.
-var/** @type {?} */importSymbol=_this238.getStaticSymbol(metadata['importAs'],name);_this238.recordImportAs(canonicalSymbol,importSymbol);}resolvedSymbols.push(_this238.createResolvedSymbol(canonicalSymbol,topLevelSymbolNames,symbolMeta));});}// handle the symbols in one of the re-export location
-if(metadata['exports']){var _iteratorNormalCompletion7=true;var _didIteratorError7=false;var _iteratorError7=undefined;try{var _loop3=function _loop3(){var moduleExport=_step7.value;// handle the symbols in the list of explicitly re-exported symbols.
-if(moduleExport.export){moduleExport.export.forEach(function(exportSymbol){var/** @type {?} */symbolName=void 0;if(typeof exportSymbol==='string'){symbolName=exportSymbol;}else{symbolName=exportSymbol.as;}symbolName=unescapeIdentifier(symbolName);var/** @type {?} */symName=symbolName;if(typeof exportSymbol!=='string'){symName=unescapeIdentifier(exportSymbol.name);}var/** @type {?} */resolvedModule=_this238.resolveModule(moduleExport.from,filePath);if(resolvedModule){var/** @type {?} */targetSymbol=_this238.getStaticSymbol(resolvedModule,symName);var/** @type {?} */sourceSymbol=_this238.getStaticSymbol(filePath,symbolName);resolvedSymbols.push(_this238.createExport(sourceSymbol,targetSymbol));}});}else{// handle the symbols via export * directives.
-var/** @type {?} */resolvedModule=_this238.resolveModule(moduleExport.from,filePath);if(resolvedModule){var/** @type {?} */nestedExports=_this238.getSymbolsOf(resolvedModule);nestedExports.forEach(function(targetSymbol){var/** @type {?} */sourceSymbol=_this238.getStaticSymbol(filePath,targetSymbol.name);resolvedSymbols.push(_this238.createExport(sourceSymbol,targetSymbol));});}}};for(var _iterator7=metadata['exports'][Symbol.iterator](),_step7;!(_iteratorNormalCompletion7=(_step7=_iterator7.next()).done);_iteratorNormalCompletion7=true){_loop3();}}catch(err){_didIteratorError7=true;_iteratorError7=err;}finally{try{if(!_iteratorNormalCompletion7&&_iterator7.return){_iterator7.return();}}finally{if(_didIteratorError7){throw _iteratorError7;}}}}resolvedSymbols.forEach(function(resolvedSymbol){return _this238.resolvedSymbols.set(resolvedSymbol.symbol,resolvedSymbol);});}/**
+var/** @type {?} */importSymbol=_this196.getStaticSymbol(metadata['importAs'],name);_this196.recordImportAs(canonicalSymbol,importSymbol);}resolvedSymbols.push(_this196.createResolvedSymbol(canonicalSymbol,topLevelSymbolNames,symbolMeta));});}// handle the symbols in one of the re-export location
+if(metadata['exports']){var _iteratorNormalCompletion7=true;var _didIteratorError7=false;var _iteratorError7=undefined;try{var _loop=function _loop(){var moduleExport=_step7.value;// handle the symbols in the list of explicitly re-exported symbols.
+if(moduleExport.export){moduleExport.export.forEach(function(exportSymbol){var/** @type {?} */symbolName=void 0;if(typeof exportSymbol==='string'){symbolName=exportSymbol;}else{symbolName=exportSymbol.as;}symbolName=unescapeIdentifier(symbolName);var/** @type {?} */symName=symbolName;if(typeof exportSymbol!=='string'){symName=unescapeIdentifier(exportSymbol.name);}var/** @type {?} */resolvedModule=_this196.resolveModule(moduleExport.from,filePath);if(resolvedModule){var/** @type {?} */targetSymbol=_this196.getStaticSymbol(resolvedModule,symName);var/** @type {?} */sourceSymbol=_this196.getStaticSymbol(filePath,symbolName);resolvedSymbols.push(_this196.createExport(sourceSymbol,targetSymbol));}});}else{// handle the symbols via export * directives.
+var/** @type {?} */resolvedModule=_this196.resolveModule(moduleExport.from,filePath);if(resolvedModule){var/** @type {?} */nestedExports=_this196.getSymbolsOf(resolvedModule);nestedExports.forEach(function(targetSymbol){var/** @type {?} */sourceSymbol=_this196.getStaticSymbol(filePath,targetSymbol.name);resolvedSymbols.push(_this196.createExport(sourceSymbol,targetSymbol));});}}};for(var _iterator7=metadata['exports'][Symbol.iterator](),_step7;!(_iteratorNormalCompletion7=(_step7=_iterator7.next()).done);_iteratorNormalCompletion7=true){_loop();}}catch(err){_didIteratorError7=true;_iteratorError7=err;}finally{try{if(!_iteratorNormalCompletion7&&_iterator7.return){_iterator7.return();}}finally{if(_didIteratorError7){throw _iteratorError7;}}}}resolvedSymbols.forEach(function(resolvedSymbol){return _this196.resolvedSymbols.set(resolvedSymbol.symbol,resolvedSymbol);});}/**
      * @param {?} sourceSymbol
      * @param {?} topLevelSymbolNames
      * @param {?} metadata
@@ -7728,13 +6314,13 @@ return!this.host.isSourceFile(stripNgFactory(filePath));}/**
      */},{key:'getImportAs',value:function getImportAs(staticSymbol){staticSymbol.assertNoMembers();return this.importAs.get(staticSymbol);}/**
      * @param {?} filePath
      * @return {?}
-     */},{key:'_loadSummaryFile',value:function _loadSummaryFile(filePath){var _this240=this;if(this.loadedFilePaths.has(filePath)){return;}this.loadedFilePaths.add(filePath);if(this.isLibraryFile(filePath)){var/** @type {?} */summaryFilePath=summaryFileName(filePath);var/** @type {?} */json=void 0;try{json=this.host.loadSummary(summaryFilePath);}catch(e){console.error('Error loading summary file '+summaryFilePath);throw e;}if(json){var _deserializeSummaries=deserializeSummaries(this.staticSymbolCache,json),summaries=_deserializeSummaries.summaries,importAs=_deserializeSummaries.importAs;summaries.forEach(function(summary){return _this240.summaryCache.set(summary.symbol,summary);});importAs.forEach(function(importAs){_this240.importAs.set(importAs.symbol,_this240.staticSymbolCache.get(ngfactoryFilePath(filePath),importAs.importAs));});}}}}]);return AotSummaryResolver;}();/**
+     */},{key:'_loadSummaryFile',value:function _loadSummaryFile(filePath){var _this198=this;if(this.loadedFilePaths.has(filePath)){return;}this.loadedFilePaths.add(filePath);if(this.isLibraryFile(filePath)){var/** @type {?} */summaryFilePath=summaryFileName(filePath);var/** @type {?} */json=void 0;try{json=this.host.loadSummary(summaryFilePath);}catch(e){console.error('Error loading summary file '+summaryFilePath);throw e;}if(json){var _deserializeSummaries=deserializeSummaries(this.staticSymbolCache,json),summaries=_deserializeSummaries.summaries,importAs=_deserializeSummaries.importAs;summaries.forEach(function(summary){return _this198.summaryCache.set(summary.symbol,summary);});importAs.forEach(function(importAs){_this198.importAs.set(importAs.symbol,_this198.staticSymbolCache.get(ngfactoryFilePath(filePath),importAs.importAs));});}}}}]);return AotSummaryResolver;}();/**
  * Creates a new AotCompiler based on options and a host.
  * @param {?} compilerHost
  * @param {?} options
  * @return {?}
- */function createAotCompiler(compilerHost,options){var/** @type {?} */translations=options.translations||'';var/** @type {?} */urlResolver=createOfflineCompileUrlResolver();var/** @type {?} */symbolCache=new StaticSymbolCache();var/** @type {?} */summaryResolver=new AotSummaryResolver(compilerHost,symbolCache);var/** @type {?} */symbolResolver=new StaticSymbolResolver(compilerHost,symbolCache,summaryResolver);var/** @type {?} */staticReflector=new StaticReflector(symbolResolver);StaticAndDynamicReflectionCapabilities.install(staticReflector);var/** @type {?} */console=new ɵConsole();var/** @type {?} */htmlParser=new I18NHtmlParser(new HtmlParser(),translations,options.i18nFormat,MissingTranslationStrategy.Warning,console);var/** @type {?} */config=new CompilerConfig({genDebugInfo:options.debug===true,defaultEncapsulation:ViewEncapsulation.Emulated,logBindingUpdate:false,useJit:false,useViewEngine:options.useViewEngine,enableLegacyTemplate:options.enableLegacyTemplate!==false});var/** @type {?} */normalizer=new DirectiveNormalizer({get:function get(url){return compilerHost.loadResource(url);}},urlResolver,htmlParser,config);var/** @type {?} */expressionParser=new Parser(new Lexer());var/** @type {?} */elementSchemaRegistry=new DomElementSchemaRegistry();var/** @type {?} */tmplParser=new TemplateParser(config,expressionParser,elementSchemaRegistry,htmlParser,console,[]);var/** @type {?} */resolver=new CompileMetadataResolver(config,new NgModuleResolver(staticReflector),new DirectiveResolver(staticReflector),new PipeResolver(staticReflector),summaryResolver,elementSchemaRegistry,normalizer,symbolCache,staticReflector);// TODO(vicb): do not pass options.i18nFormat here
-var/** @type {?} */importResolver={getImportAs:function getImportAs(symbol){return symbolResolver.getImportAs(symbol);},fileNameToModuleName:function fileNameToModuleName(fileName,containingFilePath){return compilerHost.fileNameToModuleName(fileName,containingFilePath);},getTypeArity:function getTypeArity(symbol){return symbolResolver.getTypeArity(symbol);}};var/** @type {?} */viewCompiler=config.useViewEngine?new ViewCompilerNext(config,elementSchemaRegistry):new ViewCompiler(config,elementSchemaRegistry);var/** @type {?} */compiler=new AotCompiler(config,compilerHost,resolver,tmplParser,new StyleCompiler(urlResolver),viewCompiler,new DirectiveWrapperCompiler(config,expressionParser,elementSchemaRegistry,console),new NgModuleCompiler(),new TypeScriptEmitter(importResolver),summaryResolver,options.locale,options.i18nFormat,new AnimationParser(elementSchemaRegistry),symbolResolver);return{compiler:compiler,reflector:staticReflector};}/**
+ */function createAotCompiler(compilerHost,options){var/** @type {?} */translations=options.translations||'';var/** @type {?} */urlResolver=createOfflineCompileUrlResolver();var/** @type {?} */symbolCache=new StaticSymbolCache();var/** @type {?} */summaryResolver=new AotSummaryResolver(compilerHost,symbolCache);var/** @type {?} */symbolResolver=new StaticSymbolResolver(compilerHost,symbolCache,summaryResolver);var/** @type {?} */staticReflector=new StaticReflector(symbolResolver);StaticAndDynamicReflectionCapabilities.install(staticReflector);var/** @type {?} */console=new ɵConsole();var/** @type {?} */htmlParser=new I18NHtmlParser(new HtmlParser(),translations,options.i18nFormat,MissingTranslationStrategy.Warning,console);var/** @type {?} */config=new CompilerConfig({genDebugInfo:options.debug===true,defaultEncapsulation:ViewEncapsulation.Emulated,logBindingUpdate:false,useJit:false,enableLegacyTemplate:options.enableLegacyTemplate!==false});var/** @type {?} */normalizer=new DirectiveNormalizer({get:function get(url){return compilerHost.loadResource(url);}},urlResolver,htmlParser,config);var/** @type {?} */expressionParser=new Parser(new Lexer());var/** @type {?} */elementSchemaRegistry=new DomElementSchemaRegistry();var/** @type {?} */tmplParser=new TemplateParser(config,expressionParser,elementSchemaRegistry,htmlParser,console,[]);var/** @type {?} */resolver=new CompileMetadataResolver(config,new NgModuleResolver(staticReflector),new DirectiveResolver(staticReflector),new PipeResolver(staticReflector),summaryResolver,elementSchemaRegistry,normalizer,symbolCache,staticReflector);// TODO(vicb): do not pass options.i18nFormat here
+var/** @type {?} */importResolver={getImportAs:function getImportAs(symbol){return symbolResolver.getImportAs(symbol);},fileNameToModuleName:function fileNameToModuleName(fileName,containingFilePath){return compilerHost.fileNameToModuleName(fileName,containingFilePath);},getTypeArity:function getTypeArity(symbol){return symbolResolver.getTypeArity(symbol);}};var/** @type {?} */viewCompiler=new ViewCompiler(config,elementSchemaRegistry);var/** @type {?} */compiler=new AotCompiler(config,compilerHost,resolver,tmplParser,new StyleCompiler(urlResolver),viewCompiler,new NgModuleCompiler(),new TypeScriptEmitter(importResolver),summaryResolver,options.locale,options.i18nFormat,symbolResolver);return{compiler:compiler,reflector:staticReflector};}/**
  * @param {?} statements
  * @param {?} resultVars
  * @return {?}
@@ -7761,8 +6347,8 @@ var/** @type {?} */importResolver={getImportAs:function getImportAs(symbol){retu
  * @return {?}
  */function createDynamicClass(_classStmt,_ctx,_visitor){var/** @type {?} */propertyDescriptors={};_classStmt.getters.forEach(function(getter){// Note: use `function` instead of arrow function to capture `this`
 propertyDescriptors[getter.name]={configurable:false,get:function get(){var/** @type {?} */instanceCtx=new _ExecutionContext(_ctx,this,_classStmt.name,_ctx.vars);return _executeFunctionStatements([],[],getter.body,instanceCtx,_visitor);}};});_classStmt.methods.forEach(function(method){var/** @type {?} */paramNames=method.params.map(function(param){return param.name;});// Note: use `function` instead of arrow function to capture `this`
-propertyDescriptors[method.name]={writable:false,configurable:false,value:function value(){var/** @type {?} */instanceCtx=new _ExecutionContext(_ctx,this,_classStmt.name,_ctx.vars);for(var _len5=arguments.length,args=Array(_len5),_key5=0;_key5<_len5;_key5++){args[_key5]=arguments[_key5];}return _executeFunctionStatements(paramNames,args,method.body,instanceCtx,_visitor);}};});var/** @type {?} */ctorParamNames=_classStmt.constructorMethod.params.map(function(param){return param.name;});// Note: use `function` instead of arrow function to capture `this`
-var/** @type {?} */ctor=function ctor(){var _this241=this;var/** @type {?} */instanceCtx=new _ExecutionContext(_ctx,this,_classStmt.name,_ctx.vars);_classStmt.fields.forEach(function(field){_this241[field.name]=undefined;});for(var _len6=arguments.length,args=Array(_len6),_key6=0;_key6<_len6;_key6++){args[_key6]=arguments[_key6];}_executeFunctionStatements(ctorParamNames,args,_classStmt.constructorMethod.body,instanceCtx,_visitor);};var/** @type {?} */superClass=_classStmt.parent?_classStmt.parent.visitExpression(_visitor,_ctx):Object;ctor.prototype=Object.create(superClass.prototype,propertyDescriptors);return ctor;}var StatementInterpreter=function(){function StatementInterpreter(){_classCallCheck(this,StatementInterpreter);}_createClass(StatementInterpreter,[{key:'debugAst',/**
+propertyDescriptors[method.name]={writable:false,configurable:false,value:function value(){var/** @type {?} */instanceCtx=new _ExecutionContext(_ctx,this,_classStmt.name,_ctx.vars);for(var _len4=arguments.length,args=Array(_len4),_key4=0;_key4<_len4;_key4++){args[_key4]=arguments[_key4];}return _executeFunctionStatements(paramNames,args,method.body,instanceCtx,_visitor);}};});var/** @type {?} */ctorParamNames=_classStmt.constructorMethod.params.map(function(param){return param.name;});// Note: use `function` instead of arrow function to capture `this`
+var/** @type {?} */ctor=function ctor(){var _this199=this;var/** @type {?} */instanceCtx=new _ExecutionContext(_ctx,this,_classStmt.name,_ctx.vars);_classStmt.fields.forEach(function(field){_this199[field.name]=undefined;});for(var _len5=arguments.length,args=Array(_len5),_key5=0;_key5<_len5;_key5++){args[_key5]=arguments[_key5];}_executeFunctionStatements(ctorParamNames,args,_classStmt.constructorMethod.body,instanceCtx,_visitor);};var/** @type {?} */superClass=_classStmt.parent?_classStmt.parent.visitExpression(_visitor,_ctx):Object;ctor.prototype=Object.create(superClass.prototype,propertyDescriptors);return ctor;}var StatementInterpreter=function(){function StatementInterpreter(){_classCallCheck(this,StatementInterpreter);}_createClass(StatementInterpreter,[{key:'debugAst',/**
      * @param {?} ast
      * @return {?}
      */value:function debugAst(ast){return debugOutputAstAsTypeScript(ast);}/**
@@ -7857,7 +6443,7 @@ var/** @type {?} */ctor=function ctor(){var _this241=this;var/** @type {?} */ins
      * @param {?} ast
      * @param {?} ctx
      * @return {?}
-     */},{key:'visitBinaryOperatorExpr',value:function visitBinaryOperatorExpr(ast,ctx){var _this242=this;var/** @type {?} */lhs=function lhs(){return ast.lhs.visitExpression(_this242,ctx);};var/** @type {?} */rhs=function rhs(){return ast.rhs.visitExpression(_this242,ctx);};switch(ast.operator){case BinaryOperator.Equals:return lhs()==rhs();case BinaryOperator.Identical:return lhs()===rhs();case BinaryOperator.NotEquals:return lhs()!=rhs();case BinaryOperator.NotIdentical:return lhs()!==rhs();case BinaryOperator.And:return lhs()&&rhs();case BinaryOperator.Or:return lhs()||rhs();case BinaryOperator.Plus:return lhs()+rhs();case BinaryOperator.Minus:return lhs()-rhs();case BinaryOperator.Divide:return lhs()/rhs();case BinaryOperator.Multiply:return lhs()*rhs();case BinaryOperator.Modulo:return lhs()%rhs();case BinaryOperator.Lower:return lhs()<rhs();case BinaryOperator.LowerEquals:return lhs()<=rhs();case BinaryOperator.Bigger:return lhs()>rhs();case BinaryOperator.BiggerEquals:return lhs()>=rhs();default:throw new Error('Unknown operator '+ast.operator);}}/**
+     */},{key:'visitBinaryOperatorExpr',value:function visitBinaryOperatorExpr(ast,ctx){var _this200=this;var/** @type {?} */lhs=function lhs(){return ast.lhs.visitExpression(_this200,ctx);};var/** @type {?} */rhs=function rhs(){return ast.rhs.visitExpression(_this200,ctx);};switch(ast.operator){case BinaryOperator.Equals:return lhs()==rhs();case BinaryOperator.Identical:return lhs()===rhs();case BinaryOperator.NotEquals:return lhs()!=rhs();case BinaryOperator.NotIdentical:return lhs()!==rhs();case BinaryOperator.And:return lhs()&&rhs();case BinaryOperator.Or:return lhs()||rhs();case BinaryOperator.Plus:return lhs()+rhs();case BinaryOperator.Minus:return lhs()-rhs();case BinaryOperator.Divide:return lhs()/rhs();case BinaryOperator.Multiply:return lhs()*rhs();case BinaryOperator.Modulo:return lhs()%rhs();case BinaryOperator.Lower:return lhs()<rhs();case BinaryOperator.LowerEquals:return lhs()<=rhs();case BinaryOperator.Bigger:return lhs()>rhs();case BinaryOperator.BiggerEquals:return lhs()>=rhs();default:throw new Error('Unknown operator '+ast.operator);}}/**
      * @param {?} ast
      * @param {?} ctx
      * @return {?}
@@ -7873,11 +6459,11 @@ var/** @type {?} */ctor=function ctor(){var _this241=this;var/** @type {?} */ins
      * @param {?} ast
      * @param {?} ctx
      * @return {?}
-     */},{key:'visitLiteralMapExpr',value:function visitLiteralMapExpr(ast,ctx){var _this243=this;var/** @type {?} */result={};ast.entries.forEach(function(entry){return result[entry.key]=entry.value.visitExpression(_this243,ctx);});return result;}/**
+     */},{key:'visitLiteralMapExpr',value:function visitLiteralMapExpr(ast,ctx){var _this201=this;var/** @type {?} */result={};ast.entries.forEach(function(entry){return result[entry.key]=entry.value.visitExpression(_this201,ctx);});return result;}/**
      * @param {?} expressions
      * @param {?} ctx
      * @return {?}
-     */},{key:'visitAllExpressions',value:function visitAllExpressions(expressions,ctx){var _this244=this;return expressions.map(function(expr){return expr.visitExpression(_this244,ctx);});}/**
+     */},{key:'visitAllExpressions',value:function visitAllExpressions(expressions,ctx){var _this202=this;return expressions.map(function(expr){return expr.visitExpression(_this202,ctx);});}/**
      * @param {?} statements
      * @param {?} ctx
      * @return {?}
@@ -7887,13 +6473,13 @@ var/** @type {?} */ctor=function ctor(){var _this241=this;var/** @type {?} */ins
  * @param {?} ctx
  * @param {?} visitor
  * @return {?}
- */function _declareFn(varNames,statements,ctx,visitor){return function(){for(var _len7=arguments.length,args=Array(_len7),_key7=0;_key7<_len7;_key7++){args[_key7]=arguments[_key7];}return _executeFunctionStatements(varNames,args,statements,ctx,visitor);};}var/** @type {?} */CATCH_ERROR_VAR$2='error';var/** @type {?} */CATCH_STACK_VAR$2='stack';/**
+ */function _declareFn(varNames,statements,ctx,visitor){return function(){for(var _len6=arguments.length,args=Array(_len6),_key6=0;_key6<_len6;_key6++){args[_key6]=arguments[_key6];}return _executeFunctionStatements(varNames,args,statements,ctx,visitor);};}var/** @type {?} */CATCH_ERROR_VAR$2='error';var/** @type {?} */CATCH_STACK_VAR$2='stack';/**
  * @abstract
  */var AbstractJsEmitterVisitor=function(_AbstractEmitterVisit2){_inherits(AbstractJsEmitterVisitor,_AbstractEmitterVisit2);function AbstractJsEmitterVisitor(){_classCallCheck(this,AbstractJsEmitterVisitor);return _possibleConstructorReturn(this,(AbstractJsEmitterVisitor.__proto__||Object.getPrototypeOf(AbstractJsEmitterVisitor)).call(this,false));}/**
      * @param {?} stmt
      * @param {?} ctx
      * @return {?}
-     */_createClass(AbstractJsEmitterVisitor,[{key:'visitDeclareClassStmt',value:function visitDeclareClassStmt(stmt,ctx){var _this246=this;ctx.pushClass(stmt);this._visitClassConstructor(stmt,ctx);if(isPresent(stmt.parent)){ctx.print(stmt,stmt.name+'.prototype = Object.create(');stmt.parent.visitExpression(this,ctx);ctx.println(stmt,'.prototype);');}stmt.getters.forEach(function(getter){return _this246._visitClassGetter(stmt,getter,ctx);});stmt.methods.forEach(function(method){return _this246._visitClassMethod(stmt,method,ctx);});ctx.popClass();return null;}/**
+     */_createClass(AbstractJsEmitterVisitor,[{key:'visitDeclareClassStmt',value:function visitDeclareClassStmt(stmt,ctx){var _this204=this;ctx.pushClass(stmt);this._visitClassConstructor(stmt,ctx);if(isPresent(stmt.parent)){ctx.print(stmt,stmt.name+'.prototype = Object.create(');stmt.parent.visitExpression(this,ctx);ctx.println(stmt,'.prototype);');}stmt.getters.forEach(function(getter){return _this204._visitClassGetter(stmt,getter,ctx);});stmt.methods.forEach(function(method){return _this204._visitClassMethod(stmt,method,ctx);});ctx.popClass();return null;}/**
      * @param {?} stmt
      * @param {?} ctx
      * @return {?}
@@ -7952,7 +6538,7 @@ var/** @type {?} */ctor=function ctor(){var _this241=this;var/** @type {?} */ins
  * @param {?} statements
  * @param {?} resultVars
  * @return {?}
- */function jitStatements(sourceUrl,statements,resultVars){var/** @type {?} */converter=new JitEmitterVisitor();var/** @type {?} */ctx=EmitterVisitorContext.createRoot(resultVars);var/** @type {?} */returnStmt=new ReturnStatement(literalArr(resultVars.map(function(resultVar){return variable(resultVar);})));converter.visitAllStatements(statements.concat([returnStmt]),ctx);return evalExpression(sourceUrl,ctx,converter.getArgs());}var JitEmitterVisitor=function(_AbstractJsEmitterVis){_inherits(JitEmitterVisitor,_AbstractJsEmitterVis);function JitEmitterVisitor(){_classCallCheck(this,JitEmitterVisitor);var _this247=_possibleConstructorReturn(this,(JitEmitterVisitor.__proto__||Object.getPrototypeOf(JitEmitterVisitor)).apply(this,arguments));_this247._evalArgNames=[];_this247._evalArgValues=[];return _this247;}/**
+ */function jitStatements(sourceUrl,statements,resultVars){var/** @type {?} */converter=new JitEmitterVisitor();var/** @type {?} */ctx=EmitterVisitorContext.createRoot(resultVars);var/** @type {?} */returnStmt=new ReturnStatement(literalArr(resultVars.map(function(resultVar){return variable(resultVar);})));converter.visitAllStatements(statements.concat([returnStmt]),ctx);return evalExpression(sourceUrl,ctx,converter.getArgs());}var JitEmitterVisitor=function(_AbstractJsEmitterVis){_inherits(JitEmitterVisitor,_AbstractJsEmitterVis);function JitEmitterVisitor(){_classCallCheck(this,JitEmitterVisitor);var _this205=_possibleConstructorReturn(this,(JitEmitterVisitor.__proto__||Object.getPrototypeOf(JitEmitterVisitor)).apply(this,arguments));_this205._evalArgNames=[];_this205._evalArgValues=[];return _this205;}/**
      * @return {?}
      */_createClass(JitEmitterVisitor,[{key:'getArgs',value:function getArgs(){var/** @type {?} */result={};for(var/** @type {?} */i=0;i<this._evalArgNames.length;i++){result[this._evalArgNames[i]]=this._evalArgValues[i];}return result;}/**
      * @param {?} ast
@@ -7973,10 +6559,8 @@ var/** @type {?} */ctor=function ctor(){var _this241=this;var/** @type {?} */ins
      * @param {?} _styleCompiler
      * @param {?} _viewCompiler
      * @param {?} _ngModuleCompiler
-     * @param {?} _directiveWrapperCompiler
      * @param {?} _compilerConfig
-     * @param {?} _animationParser
-     */function JitCompiler(_injector,_metadataResolver,_templateParser,_styleCompiler,_viewCompiler,_ngModuleCompiler,_directiveWrapperCompiler,_compilerConfig,_animationParser){_classCallCheck(this,JitCompiler);this._injector=_injector;this._metadataResolver=_metadataResolver;this._templateParser=_templateParser;this._styleCompiler=_styleCompiler;this._viewCompiler=_viewCompiler;this._ngModuleCompiler=_ngModuleCompiler;this._directiveWrapperCompiler=_directiveWrapperCompiler;this._compilerConfig=_compilerConfig;this._animationParser=_animationParser;this._compiledTemplateCache=new Map();this._compiledHostTemplateCache=new Map();this._compiledDirectiveWrapperCache=new Map();this._compiledNgModuleCache=new Map();this._animationCompiler=new AnimationCompiler();}/**
+     */function JitCompiler(_injector,_metadataResolver,_templateParser,_styleCompiler,_viewCompiler,_ngModuleCompiler,_compilerConfig){_classCallCheck(this,JitCompiler);this._injector=_injector;this._metadataResolver=_metadataResolver;this._templateParser=_templateParser;this._styleCompiler=_styleCompiler;this._viewCompiler=_viewCompiler;this._ngModuleCompiler=_ngModuleCompiler;this._compilerConfig=_compilerConfig;this._compiledTemplateCache=new Map();this._compiledHostTemplateCache=new Map();this._compiledDirectiveWrapperCache=new Map();this._compiledNgModuleCache=new Map();}/**
      * @return {?}
      */_createClass(JitCompiler,[{key:'compileModuleSync',/**
      * @param {?} moduleType
@@ -7997,28 +6581,28 @@ var/** @type {?} */ctor=function ctor(){var _this241=this;var/** @type {?} */ins
      * @param {?} moduleType
      * @param {?} isSync
      * @return {?}
-     */},{key:'_compileModuleAndComponents',value:function _compileModuleAndComponents(moduleType,isSync){var _this248=this;var/** @type {?} */loadingPromise=this._loadModules(moduleType,isSync);var/** @type {?} */createResult=function createResult(){_this248._compileComponents(moduleType,null);return _this248._compileModule(moduleType);};if(isSync){return new SyncAsyncResult(createResult());}else{return new SyncAsyncResult(null,loadingPromise.then(createResult));}}/**
+     */},{key:'_compileModuleAndComponents',value:function _compileModuleAndComponents(moduleType,isSync){var _this206=this;var/** @type {?} */loadingPromise=this._loadModules(moduleType,isSync);var/** @type {?} */createResult=function createResult(){_this206._compileComponents(moduleType,null);return _this206._compileModule(moduleType);};if(isSync){return new SyncAsyncResult(createResult());}else{return new SyncAsyncResult(null,loadingPromise.then(createResult));}}/**
      * @param {?} moduleType
      * @param {?} isSync
      * @return {?}
-     */},{key:'_compileModuleAndAllComponents',value:function _compileModuleAndAllComponents(moduleType,isSync){var _this249=this;var/** @type {?} */loadingPromise=this._loadModules(moduleType,isSync);var/** @type {?} */createResult=function createResult(){var/** @type {?} */componentFactories=[];_this249._compileComponents(moduleType,componentFactories);return new ModuleWithComponentFactories(_this249._compileModule(moduleType),componentFactories);};if(isSync){return new SyncAsyncResult(createResult());}else{return new SyncAsyncResult(null,loadingPromise.then(createResult));}}/**
+     */},{key:'_compileModuleAndAllComponents',value:function _compileModuleAndAllComponents(moduleType,isSync){var _this207=this;var/** @type {?} */loadingPromise=this._loadModules(moduleType,isSync);var/** @type {?} */createResult=function createResult(){var/** @type {?} */componentFactories=[];_this207._compileComponents(moduleType,componentFactories);return new ModuleWithComponentFactories(_this207._compileModule(moduleType),componentFactories);};if(isSync){return new SyncAsyncResult(createResult());}else{return new SyncAsyncResult(null,loadingPromise.then(createResult));}}/**
      * @param {?} mainModule
      * @param {?} isSync
      * @return {?}
-     */},{key:'_loadModules',value:function _loadModules(mainModule,isSync){var _this250=this;var/** @type {?} */loadingPromises=[];var/** @type {?} */ngModule=this._metadataResolver.getNgModuleMetadata(mainModule);// Note: the loadingPromise for a module only includes the loading of the exported directives
+     */},{key:'_loadModules',value:function _loadModules(mainModule,isSync){var _this208=this;var/** @type {?} */loadingPromises=[];var/** @type {?} */ngModule=this._metadataResolver.getNgModuleMetadata(mainModule);// Note: the loadingPromise for a module only includes the loading of the exported directives
 // of imported modules.
 // However, for runtime compilation, we want to transitively compile all modules,
 // so we also need to call loadNgModuleDirectiveAndPipeMetadata for all nested modules.
-ngModule.transitiveModule.modules.forEach(function(localModuleMeta){loadingPromises.push(_this250._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(localModuleMeta.reference,isSync));});return Promise.all(loadingPromises);}/**
+ngModule.transitiveModule.modules.forEach(function(localModuleMeta){loadingPromises.push(_this208._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(localModuleMeta.reference,isSync));});return Promise.all(loadingPromises);}/**
      * @param {?} moduleType
      * @return {?}
-     */},{key:'_compileModule',value:function _compileModule(moduleType){var _this251=this;var/** @type {?} */ngModuleFactory=this._compiledNgModuleCache.get(moduleType);if(!ngModuleFactory){var/** @type {?} */moduleMeta=this._metadataResolver.getNgModuleMetadata(moduleType);// Always provide a bound Compiler
-var/** @type {?} */extraProviders=[this._metadataResolver.getProviderMetadata(new ProviderMeta(Compiler,{useFactory:function useFactory(){return new ModuleBoundCompiler(_this251,moduleMeta.type.reference);}}))];var/** @type {?} */compileResult=this._ngModuleCompiler.compile(moduleMeta,extraProviders);if(!this._compilerConfig.useJit){ngModuleFactory=interpretStatements(compileResult.statements,[compileResult.ngModuleFactoryVar])[0];}else{ngModuleFactory=jitStatements('/'+identifierName(moduleMeta.type)+'/module.ngfactory.js',compileResult.statements,[compileResult.ngModuleFactoryVar])[0];}this._compiledNgModuleCache.set(moduleMeta.type.reference,ngModuleFactory);}return ngModuleFactory;}/**
+     */},{key:'_compileModule',value:function _compileModule(moduleType){var _this209=this;var/** @type {?} */ngModuleFactory=this._compiledNgModuleCache.get(moduleType);if(!ngModuleFactory){var/** @type {?} */moduleMeta=this._metadataResolver.getNgModuleMetadata(moduleType);// Always provide a bound Compiler
+var/** @type {?} */extraProviders=[this._metadataResolver.getProviderMetadata(new ProviderMeta(Compiler,{useFactory:function useFactory(){return new ModuleBoundCompiler(_this209,moduleMeta.type.reference);}}))];var/** @type {?} */compileResult=this._ngModuleCompiler.compile(moduleMeta,extraProviders);if(!this._compilerConfig.useJit){ngModuleFactory=interpretStatements(compileResult.statements,[compileResult.ngModuleFactoryVar])[0];}else{ngModuleFactory=jitStatements('/'+identifierName(moduleMeta.type)+'/module.ngfactory.js',compileResult.statements,[compileResult.ngModuleFactoryVar])[0];}this._compiledNgModuleCache.set(moduleMeta.type.reference,ngModuleFactory);}return ngModuleFactory;}/**
      * \@internal
      * @param {?} mainModule
      * @param {?} allComponentFactories
      * @return {?}
-     */},{key:'_compileComponents',value:function _compileComponents(mainModule,allComponentFactories){var _this252=this;var/** @type {?} */ngModule=this._metadataResolver.getNgModuleMetadata(mainModule);var/** @type {?} */moduleByDirective=new Map();var/** @type {?} */templates=new Set();ngModule.transitiveModule.modules.forEach(function(localModuleSummary){var/** @type {?} */localModuleMeta=_this252._metadataResolver.getNgModuleMetadata(localModuleSummary.reference);localModuleMeta.declaredDirectives.forEach(function(dirIdentifier){moduleByDirective.set(dirIdentifier.reference,localModuleMeta);var/** @type {?} */dirMeta=_this252._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);_this252._compileDirectiveWrapper(dirMeta,localModuleMeta);if(dirMeta.isComponent){templates.add(_this252._createCompiledTemplate(dirMeta,localModuleMeta));if(allComponentFactories){var/** @type {?} */template=_this252._createCompiledHostTemplate(dirMeta.type.reference,localModuleMeta);templates.add(template);allComponentFactories.push(/** @type {?} */dirMeta.componentFactory);}}});});ngModule.transitiveModule.modules.forEach(function(localModuleSummary){var/** @type {?} */localModuleMeta=_this252._metadataResolver.getNgModuleMetadata(localModuleSummary.reference);localModuleMeta.declaredDirectives.forEach(function(dirIdentifier){var/** @type {?} */dirMeta=_this252._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);if(dirMeta.isComponent){dirMeta.entryComponents.forEach(function(entryComponentType){var/** @type {?} */moduleMeta=moduleByDirective.get(entryComponentType.componentType);templates.add(_this252._createCompiledHostTemplate(entryComponentType.componentType,moduleMeta));});}});localModuleMeta.entryComponents.forEach(function(entryComponentType){var/** @type {?} */moduleMeta=moduleByDirective.get(entryComponentType.componentType);templates.add(_this252._createCompiledHostTemplate(entryComponentType.componentType,moduleMeta));});});templates.forEach(function(template){return _this252._compileTemplate(template);});}/**
+     */},{key:'_compileComponents',value:function _compileComponents(mainModule,allComponentFactories){var _this210=this;var/** @type {?} */ngModule=this._metadataResolver.getNgModuleMetadata(mainModule);var/** @type {?} */moduleByDirective=new Map();var/** @type {?} */templates=new Set();ngModule.transitiveModule.modules.forEach(function(localModuleSummary){var/** @type {?} */localModuleMeta=_this210._metadataResolver.getNgModuleMetadata(localModuleSummary.reference);localModuleMeta.declaredDirectives.forEach(function(dirIdentifier){moduleByDirective.set(dirIdentifier.reference,localModuleMeta);var/** @type {?} */dirMeta=_this210._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);if(dirMeta.isComponent){templates.add(_this210._createCompiledTemplate(dirMeta,localModuleMeta));if(allComponentFactories){var/** @type {?} */template=_this210._createCompiledHostTemplate(dirMeta.type.reference,localModuleMeta);templates.add(template);allComponentFactories.push(/** @type {?} */dirMeta.componentFactory);}}});});ngModule.transitiveModule.modules.forEach(function(localModuleSummary){var/** @type {?} */localModuleMeta=_this210._metadataResolver.getNgModuleMetadata(localModuleSummary.reference);localModuleMeta.declaredDirectives.forEach(function(dirIdentifier){var/** @type {?} */dirMeta=_this210._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);if(dirMeta.isComponent){dirMeta.entryComponents.forEach(function(entryComponentType){var/** @type {?} */moduleMeta=moduleByDirective.get(entryComponentType.componentType);templates.add(_this210._createCompiledHostTemplate(entryComponentType.componentType,moduleMeta));});}});localModuleMeta.entryComponents.forEach(function(entryComponentType){var/** @type {?} */moduleMeta=moduleByDirective.get(entryComponentType.componentType);templates.add(_this210._createCompiledHostTemplate(entryComponentType.componentType,moduleMeta));});});templates.forEach(function(template){return _this210._compileTemplate(template);});}/**
      * @param {?} type
      * @return {?}
      */},{key:'clearCacheFor',value:function clearCacheFor(type){this._compiledNgModuleCache.delete(type);this._metadataResolver.clearCacheFor(type);this._compiledHostTemplateCache.delete(type);var/** @type {?} */compiledTemplate=this._compiledTemplateCache.get(type);if(compiledTemplate){this._compiledTemplateCache.delete(type);}}/**
@@ -8027,26 +6611,22 @@ var/** @type {?} */extraProviders=[this._metadataResolver.getProviderMetadata(ne
      * @param {?} compType
      * @param {?} ngModule
      * @return {?}
-     */},{key:'_createCompiledHostTemplate',value:function _createCompiledHostTemplate(compType,ngModule){if(!ngModule){throw new Error('Component '+stringify(compType)+' is not part of any NgModule or the module has not been imported into your module.');}var/** @type {?} */compiledTemplate=this._compiledHostTemplateCache.get(compType);if(!compiledTemplate){var/** @type {?} */compMeta=this._metadataResolver.getDirectiveMetadata(compType);assertComponent(compMeta);var/** @type {?} */componentFactory=compMeta.componentFactory;var/** @type {?} */hostClass=this._metadataResolver.getHostComponentType(compType);var/** @type {?} */hostMeta=createHostComponentMeta(hostClass,compMeta,/** @type {?} */ɵgetComponentFactoryViewClass(componentFactory));compiledTemplate=new CompiledTemplate(true,compMeta.type,hostMeta,ngModule,[compMeta.type]);this._compiledHostTemplateCache.set(compType,compiledTemplate);}return compiledTemplate;}/**
+     */},{key:'_createCompiledHostTemplate',value:function _createCompiledHostTemplate(compType,ngModule){if(!ngModule){throw new Error('Component '+stringify(compType)+' is not part of any NgModule or the module has not been imported into your module.');}var/** @type {?} */compiledTemplate=this._compiledHostTemplateCache.get(compType);if(!compiledTemplate){var/** @type {?} */compMeta=this._metadataResolver.getDirectiveMetadata(compType);assertComponent(compMeta);var/** @type {?} */componentFactory=compMeta.componentFactory;var/** @type {?} */hostClass=this._metadataResolver.getHostComponentType(compType);var/** @type {?} */hostMeta=createHostComponentMeta(hostClass,compMeta,/** @type {?} */ɵgetComponentViewDefinitionFactory(componentFactory));compiledTemplate=new CompiledTemplate(true,compMeta.type,hostMeta,ngModule,[compMeta.type]);this._compiledHostTemplateCache.set(compType,compiledTemplate);}return compiledTemplate;}/**
      * @param {?} compMeta
      * @param {?} ngModule
      * @return {?}
      */},{key:'_createCompiledTemplate',value:function _createCompiledTemplate(compMeta,ngModule){var/** @type {?} */compiledTemplate=this._compiledTemplateCache.get(compMeta.type.reference);if(!compiledTemplate){assertComponent(compMeta);compiledTemplate=new CompiledTemplate(false,compMeta.type,compMeta,ngModule,ngModule.transitiveModule.directives);this._compiledTemplateCache.set(compMeta.type.reference,compiledTemplate);}return compiledTemplate;}/**
-     * @param {?} dirMeta
-     * @param {?} moduleMeta
-     * @return {?}
-     */},{key:'_compileDirectiveWrapper',value:function _compileDirectiveWrapper(dirMeta,moduleMeta){if(this._compilerConfig.useViewEngine){return;}var/** @type {?} */compileResult=this._directiveWrapperCompiler.compile(dirMeta);var/** @type {?} */statements=compileResult.statements;var/** @type {?} */directiveWrapperClass=void 0;if(!this._compilerConfig.useJit){directiveWrapperClass=interpretStatements(statements,[compileResult.dirWrapperClassVar])[0];}else{directiveWrapperClass=jitStatements('/'+identifierName(moduleMeta.type)+'/'+identifierName(dirMeta.type)+'/wrapper.ngfactory.js',statements,[compileResult.dirWrapperClassVar])[0];}dirMeta.wrapperType.setDelegate(directiveWrapperClass);this._compiledDirectiveWrapperCache.set(dirMeta.type.reference,directiveWrapperClass);}/**
      * @param {?} template
      * @return {?}
-     */},{key:'_compileTemplate',value:function _compileTemplate(template){var _this253=this,_stylesCompileResult$;if(template.isCompiled){return;}var/** @type {?} */compMeta=template.compMeta;var/** @type {?} */externalStylesheetsByModuleUrl=new Map();var/** @type {?} */stylesCompileResult=this._styleCompiler.compileComponent(compMeta);stylesCompileResult.externalStylesheets.forEach(function(r){externalStylesheetsByModuleUrl.set(r.meta.moduleUrl,r);});this._resolveStylesCompileResult(stylesCompileResult.componentStylesheet,externalStylesheetsByModuleUrl);var/** @type {?} */parsedAnimations=this._compilerConfig.useViewEngine?[]:this._animationParser.parseComponent(compMeta);var/** @type {?} */directives=template.directives.map(function(dir){return _this253._metadataResolver.getDirectiveSummary(dir.reference);});var/** @type {?} */pipes=template.ngModule.transitiveModule.pipes.map(function(pipe){return _this253._metadataResolver.getPipeSummary(pipe.reference);});var _templateParser$parse2=this._templateParser.parse(compMeta,compMeta.template.template,directives,pipes,template.ngModule.schemas,identifierName(compMeta.type)),parsedTemplate=_templateParser$parse2.template,usedPipes=_templateParser$parse2.pipes;var/** @type {?} */compiledAnimations=this._compilerConfig.useViewEngine?[]:this._animationCompiler.compile(identifierName(compMeta.type),parsedAnimations);var/** @type {?} */compileResult=this._viewCompiler.compileComponent(compMeta,parsedTemplate,variable(stylesCompileResult.componentStylesheet.stylesVar),usedPipes,compiledAnimations);var/** @type {?} */statements=(_stylesCompileResult$=stylesCompileResult.componentStylesheet.statements).concat.apply(_stylesCompileResult$,_toConsumableArray(compiledAnimations.map(function(ca){return ca.statements;}))).concat(compileResult.statements);var/** @type {?} */viewClass=void 0;var/** @type {?} */rendererType=void 0;if(!this._compilerConfig.useJit){var _interpretStatements=interpretStatements(statements,[compileResult.viewClassVar,compileResult.rendererTypeVar]);var _interpretStatements2=_slicedToArray(_interpretStatements,2);viewClass=_interpretStatements2[0];rendererType=_interpretStatements2[1];}else{var/** @type {?} */sourceUrl='/'+identifierName(template.ngModule.type)+'/'+identifierName(template.compType)+'/'+(template.isHost?'host':'component')+'.ngfactory.js';var _jitStatements=jitStatements(sourceUrl,statements,[compileResult.viewClassVar,compileResult.rendererTypeVar]);var _jitStatements2=_slicedToArray(_jitStatements,2);viewClass=_jitStatements2[0];rendererType=_jitStatements2[1];}template.compiled(viewClass,rendererType);}/**
+     */},{key:'_compileTemplate',value:function _compileTemplate(template){var _this211=this;if(template.isCompiled){return;}var/** @type {?} */compMeta=template.compMeta;var/** @type {?} */externalStylesheetsByModuleUrl=new Map();var/** @type {?} */stylesCompileResult=this._styleCompiler.compileComponent(compMeta);stylesCompileResult.externalStylesheets.forEach(function(r){externalStylesheetsByModuleUrl.set(r.meta.moduleUrl,r);});this._resolveStylesCompileResult(stylesCompileResult.componentStylesheet,externalStylesheetsByModuleUrl);var/** @type {?} */directives=template.directives.map(function(dir){return _this211._metadataResolver.getDirectiveSummary(dir.reference);});var/** @type {?} */pipes=template.ngModule.transitiveModule.pipes.map(function(pipe){return _this211._metadataResolver.getPipeSummary(pipe.reference);});var _templateParser$parse2=this._templateParser.parse(compMeta,compMeta.template.template,directives,pipes,template.ngModule.schemas,identifierName(compMeta.type)),parsedTemplate=_templateParser$parse2.template,usedPipes=_templateParser$parse2.pipes;var/** @type {?} */compileResult=this._viewCompiler.compileComponent(compMeta,parsedTemplate,variable(stylesCompileResult.componentStylesheet.stylesVar),usedPipes);var/** @type {?} */statements=stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);var/** @type {?} */viewClass=void 0;var/** @type {?} */rendererType=void 0;if(!this._compilerConfig.useJit){var _interpretStatements=interpretStatements(statements,[compileResult.viewClassVar,compileResult.rendererTypeVar]);var _interpretStatements2=_slicedToArray(_interpretStatements,2);viewClass=_interpretStatements2[0];rendererType=_interpretStatements2[1];}else{var/** @type {?} */sourceUrl='/'+identifierName(template.ngModule.type)+'/'+identifierName(template.compType)+'/'+(template.isHost?'host':'component')+'.ngfactory.js';var _jitStatements=jitStatements(sourceUrl,statements,[compileResult.viewClassVar,compileResult.rendererTypeVar]);var _jitStatements2=_slicedToArray(_jitStatements,2);viewClass=_jitStatements2[0];rendererType=_jitStatements2[1];}template.compiled(viewClass,rendererType);}/**
      * @param {?} result
      * @param {?} externalStylesheetsByModuleUrl
      * @return {?}
-     */},{key:'_resolveStylesCompileResult',value:function _resolveStylesCompileResult(result,externalStylesheetsByModuleUrl){var _this254=this;result.dependencies.forEach(function(dep,i){var/** @type {?} */nestedCompileResult=externalStylesheetsByModuleUrl.get(dep.moduleUrl);var/** @type {?} */nestedStylesArr=_this254._resolveAndEvalStylesCompileResult(nestedCompileResult,externalStylesheetsByModuleUrl);dep.valuePlaceholder.reference=nestedStylesArr;});}/**
+     */},{key:'_resolveStylesCompileResult',value:function _resolveStylesCompileResult(result,externalStylesheetsByModuleUrl){var _this212=this;result.dependencies.forEach(function(dep,i){var/** @type {?} */nestedCompileResult=externalStylesheetsByModuleUrl.get(dep.moduleUrl);var/** @type {?} */nestedStylesArr=_this212._resolveAndEvalStylesCompileResult(nestedCompileResult,externalStylesheetsByModuleUrl);dep.valuePlaceholder.reference=nestedStylesArr;});}/**
      * @param {?} result
      * @param {?} externalStylesheetsByModuleUrl
      * @return {?}
-     */},{key:'_resolveAndEvalStylesCompileResult',value:function _resolveAndEvalStylesCompileResult(result,externalStylesheetsByModuleUrl){this._resolveStylesCompileResult(result,externalStylesheetsByModuleUrl);if(!this._compilerConfig.useJit){return interpretStatements(result.statements,[result.stylesVar])[0];}else{return jitStatements('/'+result.meta.moduleUrl+'.ngstyle.js',result.statements,[result.stylesVar])[0];}}},{key:'injector',get:function get(){return this._injector;}}]);return JitCompiler;}();JitCompiler.decorators=[{type:CompilerInjectable}];/** @nocollapse */JitCompiler.ctorParameters=function(){return[{type:Injector},{type:CompileMetadataResolver},{type:TemplateParser},{type:StyleCompiler},{type:ViewCompiler},{type:NgModuleCompiler},{type:DirectiveWrapperCompiler},{type:CompilerConfig},{type:AnimationParser}];};var CompiledTemplate=function(){/**
+     */},{key:'_resolveAndEvalStylesCompileResult',value:function _resolveAndEvalStylesCompileResult(result,externalStylesheetsByModuleUrl){this._resolveStylesCompileResult(result,externalStylesheetsByModuleUrl);if(!this._compilerConfig.useJit){return interpretStatements(result.statements,[result.stylesVar])[0];}else{return jitStatements('/'+result.meta.moduleUrl+'.ngstyle.js',result.statements,[result.stylesVar])[0];}}},{key:'injector',get:function get(){return this._injector;}}]);return JitCompiler;}();JitCompiler.decorators=[{type:CompilerInjectable}];/** @nocollapse */JitCompiler.ctorParameters=function(){return[{type:Injector},{type:CompileMetadataResolver},{type:TemplateParser},{type:StyleCompiler},{type:ViewCompiler},{type:NgModuleCompiler},{type:CompilerConfig}];};var CompiledTemplate=function(){/**
      * @param {?} isHost
      * @param {?} compType
      * @param {?} compMeta
@@ -8111,11 +6691,11 @@ var/** @type {?} */msgList=Object.keys(messages).map(function(id){var/** @type {
      * @param {?} nodes
      * @param {?} mapper
      * @return {?}
-     */value:function convert(nodes,mapper){var _this256=this;return mapper?nodes.map(function(n){return n.visit(_this256,mapper);}):nodes;}/**
+     */value:function convert(nodes,mapper){var _this214=this;return mapper?nodes.map(function(n){return n.visit(_this214,mapper);}):nodes;}/**
      * @param {?} ph
      * @param {?} mapper
      * @return {?}
-     */},{key:'visitTagPlaceholder',value:function visitTagPlaceholder(ph,mapper){var _this257=this;var/** @type {?} */startName=mapper.toPublicName(ph.startName);var/** @type {?} */closeName=ph.closeName?mapper.toPublicName(ph.closeName):ph.closeName;var/** @type {?} */children=ph.children.map(function(n){return n.visit(_this257,mapper);});return new TagPlaceholder(ph.tag,ph.attrs,startName,closeName,children,ph.isVoid,ph.sourceSpan);}/**
+     */},{key:'visitTagPlaceholder',value:function visitTagPlaceholder(ph,mapper){var _this215=this;var/** @type {?} */startName=mapper.toPublicName(ph.startName);var/** @type {?} */closeName=ph.closeName?mapper.toPublicName(ph.closeName):ph.closeName;var/** @type {?} */children=ph.children.map(function(n){return n.visit(_this215,mapper);});return new TagPlaceholder(ph.tag,ph.attrs,startName,closeName,children,ph.isVoid,ph.sourceSpan);}/**
      * @param {?} ph
      * @param {?} mapper
      * @return {?}
@@ -8131,7 +6711,7 @@ var/** @type {?} */msgList=Object.keys(messages).map(function(id){var/** @type {
      */function Extractor(host,staticSymbolResolver,messageBundle,metadataResolver){_classCallCheck(this,Extractor);this.host=host;this.staticSymbolResolver=staticSymbolResolver;this.messageBundle=messageBundle;this.metadataResolver=metadataResolver;}/**
      * @param {?} rootFiles
      * @return {?}
-     */_createClass(Extractor,[{key:'extract',value:function extract(rootFiles){var _this258=this;var/** @type {?} */programSymbols=extractProgramSymbols(this.staticSymbolResolver,rootFiles,this.host);var _analyzeAndValidateNg2=analyzeAndValidateNgModules(programSymbols,this.host,this.metadataResolver),files=_analyzeAndValidateNg2.files,ngModules=_analyzeAndValidateNg2.ngModules;return Promise.all(ngModules.map(function(ngModule){return _this258.metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference,false);})).then(function(){var/** @type {?} */errors=[];files.forEach(function(file){var/** @type {?} */compMetas=[];file.directives.forEach(function(directiveType){var/** @type {?} */dirMeta=_this258.metadataResolver.getDirectiveMetadata(directiveType);if(dirMeta&&dirMeta.isComponent){compMetas.push(dirMeta);}});compMetas.forEach(function(compMeta){var/** @type {?} */html=compMeta.template.template;var/** @type {?} */interpolationConfig=InterpolationConfig.fromArray(compMeta.template.interpolation);errors.push.apply(errors,_toConsumableArray(_this258.messageBundle.updateFromTemplate(html,file.srcUrl,interpolationConfig)));});});if(errors.length){throw new Error(errors.map(function(e){return e.toString();}).join('\n'));}return _this258.messageBundle;});}/**
+     */_createClass(Extractor,[{key:'extract',value:function extract(rootFiles){var _this216=this;var/** @type {?} */programSymbols=extractProgramSymbols(this.staticSymbolResolver,rootFiles,this.host);var _analyzeAndValidateNg2=analyzeAndValidateNgModules(programSymbols,this.host,this.metadataResolver),files=_analyzeAndValidateNg2.files,ngModules=_analyzeAndValidateNg2.ngModules;return Promise.all(ngModules.map(function(ngModule){return _this216.metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference,false);})).then(function(){var/** @type {?} */errors=[];files.forEach(function(file){var/** @type {?} */compMetas=[];file.directives.forEach(function(directiveType){var/** @type {?} */dirMeta=_this216.metadataResolver.getDirectiveMetadata(directiveType);if(dirMeta&&dirMeta.isComponent){compMetas.push(dirMeta);}});compMetas.forEach(function(compMeta){var/** @type {?} */html=compMeta.template.template;var/** @type {?} */interpolationConfig=InterpolationConfig.fromArray(compMeta.template.interpolation);errors.push.apply(errors,_toConsumableArray(_this216.messageBundle.updateFromTemplate(html,file.srcUrl,interpolationConfig)));});});if(errors.length){throw new Error(errors.map(function(e){return e.toString();}).join('\n'));}return _this216.messageBundle;});}/**
      * @param {?} host
      * @param {?} locale
      * @return {?}
@@ -8140,24 +6720,20 @@ var/** @type {?} */messageBundle=new MessageBundle(htmlParser,[],{},locale);var/
      * @param {?} url
      * @return {?}
      */get:function get(url){throw new Error('No ResourceLoader implementation has been provided. Can\'t read the url "'+url+'"');}};var/** @type {?} */baseHtmlParser=new InjectionToken('HtmlParser');/**
- * @param {?} cc
- * @param {?} sr
- * @return {?}
- */function viewCompilerFactory(cc,sr){return cc.useViewEngine?new ViewCompilerNext(cc,sr):new ViewCompiler(cc,sr);}/**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
- */var/** @type {?} */COMPILER_PROVIDERS=[{provide:ɵReflector,useValue:ɵreflector},{provide:ɵReflectorReader,useExisting:ɵReflector},{provide:ResourceLoader,useValue:_NO_RESOURCE_LOADER},SummaryResolver,ɵConsole,Lexer,Parser,{provide:baseHtmlParser,useClass:HtmlParser},{provide:I18NHtmlParser,useFactory:function useFactory(parser,translations,format,config,console){return new I18NHtmlParser(parser,translations,format,config.missingTranslation,console);},deps:[baseHtmlParser,[new Optional(),new Inject(TRANSLATIONS)],[new Optional(),new Inject(TRANSLATIONS_FORMAT)],[CompilerConfig],[ɵConsole]]},{provide:HtmlParser,useExisting:I18NHtmlParser},TemplateParser,DirectiveNormalizer,CompileMetadataResolver,DEFAULT_PACKAGE_URL_PROVIDER,StyleCompiler,{provide:USE_VIEW_ENGINE,useValue:false},{provide:ViewCompiler,useFactory:viewCompilerFactory,deps:[CompilerConfig,ElementSchemaRegistry]},NgModuleCompiler,DirectiveWrapperCompiler,{provide:CompilerConfig,useValue:new CompilerConfig()},JitCompiler,{provide:Compiler,useExisting:JitCompiler},DomElementSchemaRegistry,{provide:ElementSchemaRegistry,useExisting:DomElementSchemaRegistry},UrlResolver,DirectiveResolver,PipeResolver,NgModuleResolver,AnimationParser];var JitCompilerFactory=function(){/**
+ */var/** @type {?} */COMPILER_PROVIDERS=[{provide:ɵReflector,useValue:ɵreflector},{provide:ɵReflectorReader,useExisting:ɵReflector},{provide:ResourceLoader,useValue:_NO_RESOURCE_LOADER},SummaryResolver,ɵConsole,Lexer,Parser,{provide:baseHtmlParser,useClass:HtmlParser},{provide:I18NHtmlParser,useFactory:function useFactory(parser,translations,format,config,console){return new I18NHtmlParser(parser,translations,format,config.missingTranslation,console);},deps:[baseHtmlParser,[new Optional(),new Inject(TRANSLATIONS)],[new Optional(),new Inject(TRANSLATIONS_FORMAT)],[CompilerConfig],[ɵConsole]]},{provide:HtmlParser,useExisting:I18NHtmlParser},TemplateParser,DirectiveNormalizer,CompileMetadataResolver,DEFAULT_PACKAGE_URL_PROVIDER,StyleCompiler,ViewCompiler,NgModuleCompiler,{provide:CompilerConfig,useValue:new CompilerConfig()},JitCompiler,{provide:Compiler,useExisting:JitCompiler},DomElementSchemaRegistry,{provide:ElementSchemaRegistry,useExisting:DomElementSchemaRegistry},UrlResolver,DirectiveResolver,PipeResolver,NgModuleResolver];var JitCompilerFactory=function(){/**
      * @param {?} defaultOptions
      */function JitCompilerFactory(defaultOptions){_classCallCheck(this,JitCompilerFactory);var compilerOptions={useDebug:isDevMode(),useJit:true,defaultEncapsulation:ViewEncapsulation.Emulated,missingTranslation:MissingTranslationStrategy.Warning,enableLegacyTemplate:true};this._defaultOptions=[compilerOptions].concat(_toConsumableArray(defaultOptions));}/**
      * @param {?=} options
      * @return {?}
-     */_createClass(JitCompilerFactory,[{key:'createCompiler',value:function createCompiler(){var options=arguments.length>0&&arguments[0]!==undefined?arguments[0]:[];var/** @type {?} */opts=_mergeOptions(this._defaultOptions.concat(options));var/** @type {?} */injector=ReflectiveInjector.resolveAndCreate([COMPILER_PROVIDERS,{provide:CompilerConfig,useFactory:function useFactory(useViewEngine){return new CompilerConfig({// let explicit values from the compiler options overwrite options
+     */_createClass(JitCompilerFactory,[{key:'createCompiler',value:function createCompiler(){var options=arguments.length>0&&arguments[0]!==undefined?arguments[0]:[];var/** @type {?} */opts=_mergeOptions(this._defaultOptions.concat(options));var/** @type {?} */injector=ReflectiveInjector.resolveAndCreate([COMPILER_PROVIDERS,{provide:CompilerConfig,useFactory:function useFactory(){return new CompilerConfig({// let explicit values from the compiler options overwrite options
 // from the app providers. E.g. important for the testing platform.
 genDebugInfo:opts.useDebug,// let explicit values from the compiler options overwrite options
 // from the app providers
 useJit:opts.useJit,// let explicit values from the compiler options overwrite options
 // from the app providers
-defaultEncapsulation:opts.defaultEncapsulation,logBindingUpdate:opts.useDebug,missingTranslation:opts.missingTranslation,useViewEngine:useViewEngine,enableLegacyTemplate:opts.enableLegacyTemplate});},deps:[USE_VIEW_ENGINE]},opts.providers]);return injector.get(Compiler);}}]);return JitCompilerFactory;}();JitCompilerFactory.decorators=[{type:CompilerInjectable}];/** @nocollapse */JitCompilerFactory.ctorParameters=function(){return[{type:Array,decorators:[{type:Inject,args:[COMPILER_OPTIONS]}]}];};/**
+defaultEncapsulation:opts.defaultEncapsulation,logBindingUpdate:opts.useDebug,missingTranslation:opts.missingTranslation,enableLegacyTemplate:opts.enableLegacyTemplate});},deps:[]},opts.providers]);return injector.get(Compiler);}}]);return JitCompilerFactory;}();JitCompilerFactory.decorators=[{type:CompilerInjectable}];/** @nocollapse */JitCompilerFactory.ctorParameters=function(){return[{type:Array,decorators:[{type:Inject,args:[COMPILER_OPTIONS]}]}];};/**
  * @return {?}
  */function _initReflector(){ɵreflector.reflectionCapabilities=new ɵReflectionCapabilities();}/**
  * A platform that included corePlatform and the compiler.
@@ -8199,4 +6775,4 @@ defaultEncapsulation:opts.defaultEncapsulation,logBindingUpdate:opts.useDebug,mi
      * @abstract
      * @param {?} symbol
      * @return {?}
-     */},{key:'getTypeArity',value:function getTypeArity(symbol){}}]);return ImportResolver;}();export{VERSION,TEMPLATE_TRANSFORMS,CompilerConfig,RenderTypes,JitCompiler,DirectiveResolver,PipeResolver,NgModuleResolver,DEFAULT_INTERPOLATION_CONFIG,InterpolationConfig,NgModuleCompiler,DirectiveWrapperCompiler,ViewCompiler,AnimationParser,isSyntaxError,syntaxError,TextAst,BoundTextAst,AttrAst,BoundElementPropertyAst,BoundEventAst,ReferenceAst,VariableAst,ElementAst,EmbeddedTemplateAst,BoundDirectivePropertyAst,DirectiveAst,ProviderAst,ProviderAstType,NgContentAst,PropertyBindingType,templateVisitAll,CompileAnimationEntryMetadata,CompileAnimationStateMetadata,CompileAnimationStateDeclarationMetadata,CompileAnimationStateTransitionMetadata,CompileAnimationMetadata,CompileAnimationKeyframesSequenceMetadata,CompileAnimationStyleMetadata,CompileAnimationAnimateMetadata,CompileAnimationWithStepsMetadata,CompileAnimationSequenceMetadata,CompileAnimationGroupMetadata,identifierName,identifierModuleUrl,viewClassName,rendererTypeName,hostViewClassName,dirWrapperClassName,componentFactoryName,CompileSummaryKind,tokenName,tokenReference,CompileStylesheetMetadata,CompileTemplateMetadata,CompileDirectiveMetadata,createHostComponentMeta,CompilePipeMetadata,CompileNgModuleMetadata,TransitiveCompileNgModuleMetadata,ProviderMeta,createAotCompiler,AotCompiler,analyzeNgModules,analyzeAndValidateNgModules,extractProgramSymbols,StaticReflector,StaticAndDynamicReflectionCapabilities,StaticSymbol,StaticSymbolCache,ResolvedStaticSymbol,StaticSymbolResolver,unescapeIdentifier,AotSummaryResolver,SummaryResolver,COMPILER_PROVIDERS,JitCompilerFactory,platformCoreDynamic,createUrlResolverWithoutPackagePrefix,createOfflineCompileUrlResolver,DEFAULT_PACKAGE_URL_PROVIDER,UrlResolver,getUrlScheme,ResourceLoader,ElementSchemaRegistry,Extractor,I18NHtmlParser,MessageBundle,Serializer,Xliff,Xmb,Xtb,DirectiveNormalizer,ParserError,ParseSpan,AST,Quote,EmptyExpr,ImplicitReceiver,Chain,Conditional,PropertyRead,PropertyWrite,SafePropertyRead,KeyedRead,KeyedWrite,BindingPipe,LiteralPrimitive,LiteralArray,LiteralMap,Interpolation,Binary,PrefixNot,MethodCall,SafeMethodCall,FunctionCall,ASTWithSource,TemplateBinding,RecursiveAstVisitor,AstTransformer,TokenType,Lexer,Token,EOF,isIdentifier,isQuote,SplitInterpolation,TemplateBindingParseResult,Parser,_ParseAST,ERROR_COLLECTOR_TOKEN,CompileMetadataResolver,componentModuleUrl,Text,Expansion,ExpansionCase,Attribute$1 as Attribute,Element,Comment,visitAll,ParseTreeResult,TreeError,HtmlParser,HtmlTagDefinition,getHtmlTagDefinition,TagContentType,splitNsName,getNsPrefix,mergeNsAndName,NAMED_ENTITIES,ImportResolver,debugOutputAstAsTypeScript,TypeScriptEmitter,ParseLocation,ParseSourceFile,ParseSourceSpan,ParseErrorLevel,ParseError,DomElementSchemaRegistry,CssSelector,SelectorMatcher,SelectorListContext,SelectorContext,StylesCompileDependency,StylesCompileResult,CompiledStylesheet,StyleCompiler,TemplateParseError,TemplateParseResult,TemplateParser,splitClasses,createElementCssSelector,removeSummaryDuplicates};
+     */},{key:'getTypeArity',value:function getTypeArity(symbol){}}]);return ImportResolver;}();export{VERSION,TEMPLATE_TRANSFORMS,CompilerConfig,JitCompiler,DirectiveResolver,PipeResolver,NgModuleResolver,DEFAULT_INTERPOLATION_CONFIG,InterpolationConfig,NgModuleCompiler,ViewCompiler,isSyntaxError,syntaxError,TextAst,BoundTextAst,AttrAst,BoundElementPropertyAst,BoundEventAst,ReferenceAst,VariableAst,ElementAst,EmbeddedTemplateAst,BoundDirectivePropertyAst,DirectiveAst,ProviderAst,ProviderAstType,NgContentAst,PropertyBindingType,templateVisitAll,CompileAnimationEntryMetadata,CompileAnimationStateMetadata,CompileAnimationStateDeclarationMetadata,CompileAnimationStateTransitionMetadata,CompileAnimationMetadata,CompileAnimationKeyframesSequenceMetadata,CompileAnimationStyleMetadata,CompileAnimationAnimateMetadata,CompileAnimationWithStepsMetadata,CompileAnimationSequenceMetadata,CompileAnimationGroupMetadata,identifierName,identifierModuleUrl,viewClassName,rendererTypeName,hostViewClassName,dirWrapperClassName,componentFactoryName,CompileSummaryKind,tokenName,tokenReference,CompileStylesheetMetadata,CompileTemplateMetadata,CompileDirectiveMetadata,createHostComponentMeta,CompilePipeMetadata,CompileNgModuleMetadata,TransitiveCompileNgModuleMetadata,ProviderMeta,createAotCompiler,AotCompiler,analyzeNgModules,analyzeAndValidateNgModules,extractProgramSymbols,StaticReflector,StaticAndDynamicReflectionCapabilities,StaticSymbol,StaticSymbolCache,ResolvedStaticSymbol,StaticSymbolResolver,unescapeIdentifier,AotSummaryResolver,SummaryResolver,COMPILER_PROVIDERS,JitCompilerFactory,platformCoreDynamic,createUrlResolverWithoutPackagePrefix,createOfflineCompileUrlResolver,DEFAULT_PACKAGE_URL_PROVIDER,UrlResolver,getUrlScheme,ResourceLoader,ElementSchemaRegistry,Extractor,I18NHtmlParser,MessageBundle,Serializer,Xliff,Xmb,Xtb,DirectiveNormalizer,ParserError,ParseSpan,AST,Quote,EmptyExpr,ImplicitReceiver,Chain,Conditional,PropertyRead,PropertyWrite,SafePropertyRead,KeyedRead,KeyedWrite,BindingPipe,LiteralPrimitive,LiteralArray,LiteralMap,Interpolation,Binary,PrefixNot,MethodCall,SafeMethodCall,FunctionCall,ASTWithSource,TemplateBinding,RecursiveAstVisitor,AstTransformer,TokenType,Lexer,Token,EOF,isIdentifier,isQuote,SplitInterpolation,TemplateBindingParseResult,Parser,_ParseAST,ERROR_COLLECTOR_TOKEN,CompileMetadataResolver,componentModuleUrl,Text,Expansion,ExpansionCase,Attribute$1 as Attribute,Element,Comment,visitAll,ParseTreeResult,TreeError,HtmlParser,HtmlTagDefinition,getHtmlTagDefinition,TagContentType,splitNsName,getNsPrefix,mergeNsAndName,NAMED_ENTITIES,ImportResolver,debugOutputAstAsTypeScript,TypeScriptEmitter,ParseLocation,ParseSourceFile,ParseSourceSpan,ParseErrorLevel,ParseError,DomElementSchemaRegistry,CssSelector,SelectorMatcher,SelectorListContext,SelectorContext,StylesCompileDependency,StylesCompileResult,CompiledStylesheet,StyleCompiler,TemplateParseError,TemplateParseResult,TemplateParser,splitClasses,createElementCssSelector,removeSummaryDuplicates};

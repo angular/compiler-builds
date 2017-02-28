@@ -1,7 +1,12 @@
-import { AnimationParser } from '../animation/animation_parser';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 import { CompileNgModuleMetadata } from '../compile_metadata';
 import { CompilerConfig } from '../config';
-import { DirectiveWrapperCompiler } from '../directive_wrapper_compiler';
 import { CompileMetadataResolver } from '../metadata_resolver';
 import { NgModuleCompiler } from '../ng_module_compiler';
 import { OutputEmitter } from '../output/abstract_emitter';
@@ -20,22 +25,18 @@ export declare class AotCompiler {
     private _templateParser;
     private _styleCompiler;
     private _viewCompiler;
-    private _dirWrapperCompiler;
     private _ngModuleCompiler;
     private _outputEmitter;
     private _summaryResolver;
     private _localeId;
     private _translationFormat;
-    private _animationParser;
     private _symbolResolver;
-    private _animationCompiler;
-    constructor(_config: CompilerConfig, _host: AotCompilerHost, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _dirWrapperCompiler: DirectiveWrapperCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string, _translationFormat: string, _animationParser: AnimationParser, _symbolResolver: StaticSymbolResolver);
+    constructor(_config: CompilerConfig, _host: AotCompilerHost, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string, _translationFormat: string, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     compileAll(rootFiles: string[]): Promise<GeneratedFile[]>;
     private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
     private _createSummary(srcFileUrl, directives, pipes, ngModules, injectables, targetStatements, targetExportedVars);
     private _compileModule(ngModuleType, targetStatements);
-    private _compileDirectiveWrapper(directiveType, targetStatements);
     private _compileComponentFactory(compMeta, ngModule, fileSuffix, targetStatements);
     private _compileComponent(compMeta, ngModule, directiveIdentifiers, componentStyles, fileSuffix, targetStatements);
     private _codgenStyles(fileUrl, stylesCompileResult, fileSuffix);
