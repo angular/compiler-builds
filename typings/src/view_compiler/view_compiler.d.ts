@@ -11,7 +11,7 @@ export declare class ViewCompileResult {
 }
 export declare class ViewCompiler {
     private _genConfigNext;
-    private _schemaRegistryNext;
-    constructor(_genConfigNext: CompilerConfig, _schemaRegistryNext: ElementSchemaRegistry);
+    private _schemaRegistry;
+    constructor(_genConfigNext: CompilerConfig, _schemaRegistry: ElementSchemaRegistry);
     compileComponent(component: CompileDirectiveMetadata, template: TemplateAst[], styles: o.Expression, usedPipes: CompilePipeSummary[]): ViewCompileResult;
 }

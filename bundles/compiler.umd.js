@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-rc.1-9402df9');
+  var VERSION = new _angular_core.Version('4.0.0-rc.1-79fc1e3');
 
   /**
    * @license
@@ -14497,9 +14497,9 @@
       return ViewCompileResult;
   }());
   var ViewCompiler = (function () {
-      function ViewCompiler(_genConfigNext, _schemaRegistryNext) {
+      function ViewCompiler(_genConfigNext, _schemaRegistry) {
           this._genConfigNext = _genConfigNext;
-          this._schemaRegistryNext = _schemaRegistryNext;
+          this._schemaRegistry = _schemaRegistry;
       }
       ViewCompiler.prototype.compileComponent = function (component, template, styles, usedPipes) {
           var embeddedViewCount = 0;
@@ -14720,20 +14720,21 @@
               // Using a null element name creates an anchor.
               elName = null;
           }
-          var _a = this._visitElementOrTemplate(nodeIndex, ast), flags = _a.flags, usedEvents = _a.usedEvents, queryMatchesExpr = _a.queryMatchesExpr, hostBindings = _a.hostBindings, hostEvents = _a.hostEvents;
+          var _a = this._visitElementOrTemplate(nodeIndex, ast), flags = _a.flags, usedEvents = _a.usedEvents, queryMatchesExpr = _a.queryMatchesExpr, dirHostBindings = _a.hostBindings, hostEvents = _a.hostEvents;
           var inputDefs = [];
           var outputDefs = [];
           if (elName) {
-              ast.inputs.forEach(function (inputAst) { return hostBindings.push({ context: COMP_VAR, value: inputAst.value }); });
+              var hostBindings = ast.inputs
+                  .map(function (inputAst) { return ({
+                  context: COMP_VAR,
+                  value: inputAst.value,
+                  bindingDef: elementBindingDef(inputAst, null),
+              }); })
+                  .concat(dirHostBindings);
               if (hostBindings.length) {
                   this._addUpdateExpressions(nodeIndex, hostBindings, this.updateRendererExpressions);
+                  inputDefs = hostBindings.map(function (entry) { return entry.bindingDef; });
               }
-              // Note: inputDefs have to be in the same order as hostBindings:
-              // - first the entries from the directives, then the ones from the element.
-              ast.directives.forEach(function (dirAst, dirIndex) {
-                  return inputDefs.push.apply(inputDefs, elementBindingDefs(dirAst.hostProperties, dirAst));
-              });
-              inputDefs.push.apply(inputDefs, elementBindingDefs(ast.inputs, null));
               outputDefs = usedEvents.map(function (_a) {
                   var target = _a[0], eventName = _a[1];
                   return literalArr([literal(target), literal(eventName)]);
@@ -14906,13 +14907,15 @@
           var dirContextExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
               VIEW_VAR, literal(nodeIndex)
           ]);
-          var hostBindings = dirAst.hostProperties.map(function (hostBindingAst) {
-              return {
-                  value: hostBindingAst.value.ast,
-                  context: dirContextExpr,
-              };
-          });
-          var hostEvents = dirAst.hostEvents.map(function (hostEventAst) { return { context: dirContextExpr, eventAst: hostEventAst, dirAst: dirAst }; });
+          var hostBindings = dirAst.hostProperties.map(function (hostBindingAst) { return ({
+              value: hostBindingAst.value.ast,
+              context: dirContextExpr,
+              bindingDef: elementBindingDef(hostBindingAst, dirAst),
+          }); });
+          var hostEvents = dirAst.hostEvents.map(function (hostEventAst) { return ({
+              context: dirContextExpr,
+              eventAst: hostEventAst, dirAst: dirAst,
+          }); });
           // directiveDef(
           //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], childCount: number, ctor:
           //   any,
@@ -15256,35 +15259,32 @@
       }
       return nodeFlag;
   }
-  function elementBindingDefs(inputAsts, dirAst) {
-      return inputAsts.map(function (inputAst) {
-          switch (inputAst.type) {
-              case exports.PropertyBindingType.Attribute:
-                  return literalArr([
-                      literal(0 /* ElementAttribute */), literal(inputAst.name),
-                      literal(inputAst.securityContext)
-                  ]);
-              case exports.PropertyBindingType.Property:
-                  return literalArr([
-                      literal(3 /* ElementProperty */), literal(inputAst.name),
-                      literal(inputAst.securityContext)
-                  ]);
-              case exports.PropertyBindingType.Animation:
-                  var bindingType = dirAst && dirAst.directive.isComponent ?
-                      4 /* ComponentHostProperty */ :
-                      3 /* ElementProperty */;
-                  return literalArr([
-                      literal(bindingType), literal('@' + inputAst.name),
-                      literal(inputAst.securityContext)
-                  ]);
-              case exports.PropertyBindingType.Class:
-                  return literalArr([literal(1 /* ElementClass */), literal(inputAst.name)]);
-              case exports.PropertyBindingType.Style:
-                  return literalArr([
-                      literal(2 /* ElementStyle */), literal(inputAst.name), literal(inputAst.unit)
-                  ]);
-          }
-      });
+  function elementBindingDef(inputAst, dirAst) {
+      switch (inputAst.type) {
+          case exports.PropertyBindingType.Attribute:
+              return literalArr([
+                  literal(0 /* ElementAttribute */), literal(inputAst.name),
+                  literal(inputAst.securityContext)
+              ]);
+          case exports.PropertyBindingType.Property:
+              return literalArr([
+                  literal(3 /* ElementProperty */), literal(inputAst.name),
+                  literal(inputAst.securityContext)
+              ]);
+          case exports.PropertyBindingType.Animation:
+              var bindingType = dirAst && dirAst.directive.isComponent ?
+                  4 /* ComponentHostProperty */ :
+                  3 /* ElementProperty */;
+              return literalArr([
+                  literal(bindingType), literal('@' + inputAst.name), literal(inputAst.securityContext)
+              ]);
+          case exports.PropertyBindingType.Class:
+              return literalArr([literal(1 /* ElementClass */), literal(inputAst.name)]);
+          case exports.PropertyBindingType.Style:
+              return literalArr([
+                  literal(2 /* ElementStyle */), literal(inputAst.name), literal(inputAst.unit)
+              ]);
+      }
   }
   function fixedAttrsDef(elementAst) {
       var mapResult = Object.create(null);

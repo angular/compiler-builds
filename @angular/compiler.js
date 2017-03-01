@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.1-9402df9
+ * @license Angular v4.0.0-rc.1-79fc1e3
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-9402df9');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-79fc1e3');
 
 /**
  * @license
@@ -18703,11 +18703,11 @@ class ViewCompileResult {
 class ViewCompiler {
     /**
      * @param {?} _genConfigNext
-     * @param {?} _schemaRegistryNext
+     * @param {?} _schemaRegistry
      */
-    constructor(_genConfigNext, _schemaRegistryNext) {
+    constructor(_genConfigNext, _schemaRegistry) {
         this._genConfigNext = _genConfigNext;
-        this._schemaRegistryNext = _schemaRegistryNext;
+        this._schemaRegistry = _schemaRegistry;
     }
     /**
      * @param {?} component
@@ -18971,18 +18971,21 @@ class ViewBuilder {
             // Using a null element name creates an anchor.
             elName = null;
         }
-        const { flags, usedEvents, queryMatchesExpr, hostBindings, hostEvents } = this._visitElementOrTemplate(nodeIndex, ast);
+        const { flags, usedEvents, queryMatchesExpr, hostBindings: dirHostBindings, hostEvents } = this._visitElementOrTemplate(nodeIndex, ast);
         let /** @type {?} */ inputDefs = [];
         let /** @type {?} */ outputDefs = [];
         if (elName) {
-            ast.inputs.forEach((inputAst) => hostBindings.push({ context: COMP_VAR, value: inputAst.value }));
+            const /** @type {?} */ hostBindings = ast.inputs
+                .map((inputAst) => ({
+                context: /** @type {?} */ (COMP_VAR),
+                value: inputAst.value,
+                bindingDef: elementBindingDef(inputAst, null),
+            }))
+                .concat(dirHostBindings);
             if (hostBindings.length) {
                 this._addUpdateExpressions(nodeIndex, hostBindings, this.updateRendererExpressions);
+                inputDefs = hostBindings.map(entry => entry.bindingDef);
             }
-            // Note: inputDefs have to be in the same order as hostBindings:
-            // - first the entries from the directives, then the ones from the element.
-            ast.directives.forEach((dirAst, dirIndex) => inputDefs.push(...elementBindingDefs(dirAst.hostProperties, dirAst)));
-            inputDefs.push(...elementBindingDefs(ast.inputs, null));
             outputDefs = usedEvents.map(([target, eventName]) => literalArr([literal(target), literal(eventName)]));
         }
         templateVisitAll(this, ast.children);
@@ -19166,13 +19169,15 @@ class ViewBuilder {
         const /** @type {?} */ dirContextExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
             VIEW_VAR, literal(nodeIndex)
         ]);
-        const /** @type {?} */ hostBindings = dirAst.hostProperties.map((hostBindingAst) => {
-            return {
-                value: ((hostBindingAst.value)).ast,
-                context: dirContextExpr,
-            };
-        });
-        const /** @type {?} */ hostEvents = dirAst.hostEvents.map((hostEventAst) => { return { context: dirContextExpr, eventAst: hostEventAst, dirAst }; });
+        const /** @type {?} */ hostBindings = dirAst.hostProperties.map((hostBindingAst) => ({
+            value: ((hostBindingAst.value)).ast,
+            context: dirContextExpr,
+            bindingDef: elementBindingDef(hostBindingAst, dirAst),
+        }));
+        const /** @type {?} */ hostEvents = dirAst.hostEvents.map((hostEventAst) => ({
+            context: dirContextExpr,
+            eventAst: hostEventAst, dirAst,
+        }));
         // directiveDef(
         //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], childCount: number, ctor:
         //   any,
@@ -19618,39 +19623,36 @@ function lifecycleHookToNodeFlag(lifecycleHook) {
     return nodeFlag;
 }
 /**
- * @param {?} inputAsts
+ * @param {?} inputAst
  * @param {?} dirAst
  * @return {?}
  */
-function elementBindingDefs(inputAsts, dirAst) {
-    return inputAsts.map((inputAst) => {
-        switch (inputAst.type) {
-            case PropertyBindingType.Attribute:
-                return literalArr([
-                    literal(0 /* ElementAttribute */), literal(inputAst.name),
-                    literal(inputAst.securityContext)
-                ]);
-            case PropertyBindingType.Property:
-                return literalArr([
-                    literal(3 /* ElementProperty */), literal(inputAst.name),
-                    literal(inputAst.securityContext)
-                ]);
-            case PropertyBindingType.Animation:
-                const /** @type {?} */ bindingType = dirAst && dirAst.directive.isComponent ?
-                    4 /* ComponentHostProperty */ :
-                    3 /* ElementProperty */;
-                return literalArr([
-                    literal(bindingType), literal('@' + inputAst.name),
-                    literal(inputAst.securityContext)
-                ]);
-            case PropertyBindingType.Class:
-                return literalArr([literal(1 /* ElementClass */), literal(inputAst.name)]);
-            case PropertyBindingType.Style:
-                return literalArr([
-                    literal(2 /* ElementStyle */), literal(inputAst.name), literal(inputAst.unit)
-                ]);
-        }
-    });
+function elementBindingDef(inputAst, dirAst) {
+    switch (inputAst.type) {
+        case PropertyBindingType.Attribute:
+            return literalArr([
+                literal(0 /* ElementAttribute */), literal(inputAst.name),
+                literal(inputAst.securityContext)
+            ]);
+        case PropertyBindingType.Property:
+            return literalArr([
+                literal(3 /* ElementProperty */), literal(inputAst.name),
+                literal(inputAst.securityContext)
+            ]);
+        case PropertyBindingType.Animation:
+            const /** @type {?} */ bindingType = dirAst && dirAst.directive.isComponent ?
+                4 /* ComponentHostProperty */ :
+                3 /* ElementProperty */;
+            return literalArr([
+                literal(bindingType), literal('@' + inputAst.name), literal(inputAst.securityContext)
+            ]);
+        case PropertyBindingType.Class:
+            return literalArr([literal(1 /* ElementClass */), literal(inputAst.name)]);
+        case PropertyBindingType.Style:
+            return literalArr([
+                literal(2 /* ElementStyle */), literal(inputAst.name), literal(inputAst.unit)
+            ]);
+    }
 }
 /**
  * @param {?} elementAst
