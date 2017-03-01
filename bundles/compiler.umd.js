@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-rc.1-7a66a41');
+  var VERSION = new _angular_core.Version('4.0.0-rc.1-6bae737');
 
   /**
    * @license
@@ -15904,6 +15904,12 @@
   };
   var ANGULAR_CORE = '@angular/core';
   var HIDDEN_KEY = /^\$.*\$$/;
+  var IGNORE = {
+      __symbolic: 'ignore'
+  };
+  function shouldIgnore(value) {
+      return value && value.__symbolic == 'ignore';
+  }
   /**
    * A static reflector implements enough of the Reflector API that is necessary to compile
    * templates statically.
@@ -16183,7 +16189,8 @@
                           if (value_1 && (depth != 0 || value_1.__symbolic != 'error')) {
                               var parameters = targetFunction['parameters'];
                               var defaults = targetFunction.defaults;
-                              args = args.map(function (arg) { return simplifyInContext(context, arg, depth + 1); });
+                              args = args.map(function (arg) { return simplifyInContext(context, arg, depth + 1); })
+                                  .map(function (arg) { return shouldIgnore(arg) ? undefined : arg; });
                               if (defaults && defaults.length > args.length) {
                                   args.push.apply(args, defaults.slice(args.length).map(function (value) { return simplify(value); }));
                               }
@@ -16211,7 +16218,7 @@
                       // If depth is 0 we are evaluating the top level expression that is describing element
                       // decorator. In this case, it is a decorator we don't understand, such as a custom
                       // non-angular decorator, and we should just ignore it.
-                      return { __symbolic: 'ignore' };
+                      return IGNORE;
                   }
                   return simplify({ __symbolic: 'error', message: 'Function call not supported', context: functionSymbol });
               }
@@ -16384,7 +16391,8 @@
                                       var argExpressions = expression['arguments'] || [];
                                       var converter = self.conversionMap.get(staticSymbol);
                                       if (converter) {
-                                          var args = argExpressions.map(function (arg) { return simplifyInContext(context, arg, depth + 1); });
+                                          var args = argExpressions.map(function (arg) { return simplifyInContext(context, arg, depth + 1); })
+                                              .map(function (arg) { return shouldIgnore(arg) ? undefined : arg; });
                                           return converter(context, args);
                                       }
                                       else {
@@ -16399,15 +16407,20 @@
                                   if (expression['line']) {
                                       message =
                                           message + " (position " + (expression['line'] + 1) + ":" + (expression['character'] + 1) + " in the original .ts file)";
-                                      throw positionalError(message, context.filePath, expression['line'], expression['character']);
+                                      self.reportError(positionalError(message, context.filePath, expression['line'], expression['character']), context);
                                   }
-                                  throw new Error(message);
+                                  else {
+                                      self.reportError(new Error(message), context);
+                                  }
+                                  return IGNORE;
+                              case 'ignore':
+                                  return expression;
                           }
                           return null;
                       }
                       return mapStringMap(expression, function (value, name) { return simplify(value); });
                   }
-                  return null;
+                  return IGNORE;
               }
               try {
                   return simplify(value);
@@ -16525,9 +16538,6 @@
       };
       return PopulatedScope;
   }(BindingScope));
-  function shouldIgnore(value) {
-      return value && value.__symbolic == 'ignore';
-  }
   function positionalError(message, fileName, line, column) {
       var result = new Error(message);
       result.fileName = fileName;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.1-7a66a41
+ * @license Angular v4.0.0-rc.1-6bae737
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-7a66a41');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-6bae737');
 
 /**
  * @license
@@ -20506,6 +20506,16 @@ function isStaticType(type) {
 
 const /** @type {?} */ ANGULAR_CORE = '@angular/core';
 const /** @type {?} */ HIDDEN_KEY = /^\$.*\$$/;
+const /** @type {?} */ IGNORE = {
+    __symbolic: 'ignore'
+};
+/**
+ * @param {?} value
+ * @return {?}
+ */
+function shouldIgnore(value) {
+    return value && value.__symbolic == 'ignore';
+}
 /**
  * A static reflector implements enough of the Reflector API that is necessary to compile
  * templates statically.
@@ -20877,7 +20887,8 @@ class StaticReflector {
                         if (value && (depth != 0 || value.__symbolic != 'error')) {
                             const /** @type {?} */ parameters = targetFunction['parameters'];
                             const /** @type {?} */ defaults = targetFunction.defaults;
-                            args = args.map(arg => simplifyInContext(context, arg, depth + 1));
+                            args = args.map(arg => simplifyInContext(context, arg, depth + 1))
+                                .map(arg => shouldIgnore(arg) ? undefined : arg);
                             if (defaults && defaults.length > args.length) {
                                 args.push(...defaults.slice(args.length).map((value) => simplify(value)));
                             }
@@ -20905,7 +20916,7 @@ class StaticReflector {
                     // If depth is 0 we are evaluating the top level expression that is describing element
                     // decorator. In this case, it is a decorator we don't understand, such as a custom
                     // non-angular decorator, and we should just ignore it.
-                    return { __symbolic: 'ignore' };
+                    return IGNORE;
                 }
                 return simplify({ __symbolic: 'error', message: 'Function call not supported', context: functionSymbol });
             }
@@ -21080,7 +21091,8 @@ class StaticReflector {
                                     const /** @type {?} */ argExpressions = expression['arguments'] || [];
                                     let /** @type {?} */ converter = self.conversionMap.get(staticSymbol);
                                     if (converter) {
-                                        const /** @type {?} */ args = argExpressions.map(arg => simplifyInContext(context, arg, depth + 1));
+                                        const /** @type {?} */ args = argExpressions.map(arg => simplifyInContext(context, arg, depth + 1))
+                                            .map(arg => shouldIgnore(arg) ? undefined : arg);
                                         return converter(context, args);
                                     }
                                     else {
@@ -21095,15 +21107,20 @@ class StaticReflector {
                                 if (expression['line']) {
                                     message =
                                         `${message} (position ${expression['line'] + 1}:${expression['character'] + 1} in the original .ts file)`;
-                                    throw positionalError(message, context.filePath, expression['line'], expression['character']);
+                                    self.reportError(positionalError(message, context.filePath, expression['line'], expression['character']), context);
                                 }
-                                throw new Error(message);
+                                else {
+                                    self.reportError(new Error(message), context);
+                                }
+                                return IGNORE;
+                            case 'ignore':
+                                return expression;
                         }
                         return null;
                     }
                     return mapStringMap(expression, (value, name) => simplify(value));
                 }
-                return null;
+                return IGNORE;
             }
             try {
                 return simplify(value);
@@ -21253,13 +21270,6 @@ class PopulatedScope extends BindingScope {
     resolve(name) {
         return this.bindings.has(name) ? this.bindings.get(name) : BindingScope.missing;
     }
-}
-/**
- * @param {?} value
- * @return {?}
- */
-function shouldIgnore(value) {
-    return value && value.__symbolic == 'ignore';
 }
 /**
  * @param {?} message
