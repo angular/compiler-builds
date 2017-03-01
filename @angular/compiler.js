@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.1-47bdc2b
+ * @license Angular v4.0.0-rc.1-9402df9
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-47bdc2b');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-9402df9');
 
 /**
  * @license
@@ -1096,7 +1096,9 @@ const /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
     // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
-    '(?:\\[([-.\\w*]+)(?:=([^\\]]*))?\\])|' +
+    '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' +
+    // "[name="value"]",
+    // "[name='value']"
     '(\\))|' +
     '(\\s*,\\s*)', // ","
 'g');
@@ -1146,13 +1148,13 @@ class CssSelector {
                 current.addClassName(match[3]);
             }
             if (match[4]) {
-                current.addAttribute(match[4], match[5]);
+                current.addAttribute(match[4], match[6]);
             }
-            if (match[6]) {
+            if (match[7]) {
                 inNot = false;
                 current = cssSelector;
             }
-            if (match[7]) {
+            if (match[8]) {
                 if (inNot) {
                     throw new Error('Multiple selectors in :not are not supported');
                 }

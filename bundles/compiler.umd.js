@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-rc.1-47bdc2b');
+  var VERSION = new _angular_core.Version('4.0.0-rc.1-9402df9');
 
   /**
    * @license
@@ -876,7 +876,9 @@
       '([-\\w]+)|' +
       '(?:\\.([-\\w]+))|' +
       // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
-      '(?:\\[([-.\\w*]+)(?:=([^\\]]*))?\\])|' +
+      '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' +
+      // "[name="value"]",
+      // "[name='value']"
       '(\\))|' +
       '(\\s*,\\s*)', // ","
   'g');
@@ -922,13 +924,13 @@
                   current.addClassName(match[3]);
               }
               if (match[4]) {
-                  current.addAttribute(match[4], match[5]);
+                  current.addAttribute(match[4], match[6]);
               }
-              if (match[6]) {
+              if (match[7]) {
                   inNot = false;
                   current = cssSelector;
               }
-              if (match[7]) {
+              if (match[8]) {
                   if (inNot) {
                       throw new Error('Multiple selectors in :not are not supported');
                   }
