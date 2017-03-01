@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.1-126fda2
+ * @license Angular v4.0.0-rc.1-5ba55b0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-126fda2');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-5ba55b0');
 
 /**
  * @license
@@ -9300,8 +9300,8 @@ Identifiers.LOCALE_ID = { name: 'LOCALE_ID', moduleUrl: CORE, runtime: LOCALE_ID
 Identifiers.TRANSLATIONS_FORMAT = { name: 'TRANSLATIONS_FORMAT', moduleUrl: CORE, runtime: TRANSLATIONS_FORMAT };
 Identifiers.inlineInterpolate = { name: 'ɵinlineInterpolate', moduleUrl: CORE, runtime: ɵinlineInterpolate };
 Identifiers.interpolate = { name: 'ɵinterpolate', moduleUrl: CORE, runtime: ɵinterpolate };
-Identifiers.EMPTY_ARRAY = { name: 'ÉµEMPTY_ARRAY', moduleUrl: CORE, runtime: ɵEMPTY_ARRAY };
-Identifiers.EMPTY_MAP = { name: 'ÉµEMPTY_MAP', moduleUrl: CORE, runtime: ɵEMPTY_MAP };
+Identifiers.EMPTY_ARRAY = { name: 'ɵEMPTY_ARRAY', moduleUrl: CORE, runtime: ɵEMPTY_ARRAY };
+Identifiers.EMPTY_MAP = { name: 'ɵEMPTY_MAP', moduleUrl: CORE, runtime: ɵEMPTY_MAP };
 Identifiers.Renderer = { name: 'Renderer', moduleUrl: CORE, runtime: Renderer };
 Identifiers.viewDef = { name: 'ɵvid', moduleUrl: CORE, runtime: ɵvid };
 Identifiers.elementDef = { name: 'ɵeld', moduleUrl: CORE, runtime: ɵeld };

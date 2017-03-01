@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-rc.1-126fda2');
+  var VERSION = new _angular_core.Version('4.0.0-rc.1-5ba55b0');
 
   /**
    * @license
@@ -6933,8 +6933,8 @@
   Identifiers.TRANSLATIONS_FORMAT = { name: 'TRANSLATIONS_FORMAT', moduleUrl: CORE, runtime: _angular_core.TRANSLATIONS_FORMAT };
   Identifiers.inlineInterpolate = { name: 'ɵinlineInterpolate', moduleUrl: CORE, runtime: _angular_core.ɵinlineInterpolate };
   Identifiers.interpolate = { name: 'ɵinterpolate', moduleUrl: CORE, runtime: _angular_core.ɵinterpolate };
-  Identifiers.EMPTY_ARRAY = { name: 'ÉµEMPTY_ARRAY', moduleUrl: CORE, runtime: _angular_core.ɵEMPTY_ARRAY };
-  Identifiers.EMPTY_MAP = { name: 'ÉµEMPTY_MAP', moduleUrl: CORE, runtime: _angular_core.ɵEMPTY_MAP };
+  Identifiers.EMPTY_ARRAY = { name: 'ɵEMPTY_ARRAY', moduleUrl: CORE, runtime: _angular_core.ɵEMPTY_ARRAY };
+  Identifiers.EMPTY_MAP = { name: 'ɵEMPTY_MAP', moduleUrl: CORE, runtime: _angular_core.ɵEMPTY_MAP };
   Identifiers.Renderer = { name: 'Renderer', moduleUrl: CORE, runtime: _angular_core.Renderer };
   Identifiers.viewDef = { name: 'ɵvid', moduleUrl: CORE, runtime: _angular_core.ɵvid };
   Identifiers.elementDef = { name: 'ɵeld', moduleUrl: CORE, runtime: _angular_core.ɵeld };
