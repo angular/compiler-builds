@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.1-a6996a9
+ * @license Angular v4.0.0-rc.1-dd49901
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-a6996a9');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.1-dd49901');
 
 /**
  * @license
