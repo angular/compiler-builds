@@ -17,7 +17,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
- * @license Angular v4.0.0-rc.2-49aa508
+ * @license Angular v4.0.0-rc.2-e6e8123
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -26,7 +26,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵreflector, View
 /**
  * @stable
  */
-var /** @type {?} */VERSION = new Version('4.0.0-rc.2-49aa508');
+var /** @type {?} */VERSION = new Version('4.0.0-rc.2-e6e8123');
 
 /**
  * @license
