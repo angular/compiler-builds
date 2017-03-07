@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.2-07122f0
+ * @license Angular v4.0.0-rc.2-1cff125
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.2-07122f0');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.2-1cff125');
 
 /**
  * @license
@@ -2043,25 +2043,11 @@ class CompilerConfig {
     /**
      * @param {?=} __0
      */
-    constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, genDebugInfo, logBindingUpdate, useJit = true, missingTranslation, enableLegacyTemplate } = {}) {
+    constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation, enableLegacyTemplate } = {}) {
         this.defaultEncapsulation = defaultEncapsulation;
-        this._genDebugInfo = genDebugInfo;
-        this._logBindingUpdate = logBindingUpdate;
         this.useJit = useJit;
         this.missingTranslation = missingTranslation;
         this.enableLegacyTemplate = enableLegacyTemplate !== false;
-    }
-    /**
-     * @return {?}
-     */
-    get genDebugInfo() {
-        return this._genDebugInfo === void 0 ? isDevMode() : this._genDebugInfo;
-    }
-    /**
-     * @return {?}
-     */
-    get logBindingUpdate() {
-        return this._logBindingUpdate === void 0 ? isDevMode() : this._logBindingUpdate;
     }
 }
 
@@ -21701,9 +21687,7 @@ function createAotCompiler(compilerHost, options) {
     const /** @type {?} */ console = new ɵConsole();
     const /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, MissingTranslationStrategy.Warning, console);
     const /** @type {?} */ config = new CompilerConfig({
-        genDebugInfo: options.debug === true,
         defaultEncapsulation: ViewEncapsulation.Emulated,
-        logBindingUpdate: false,
         useJit: false,
         enableLegacyTemplate: options.enableLegacyTemplate !== false,
     });
@@ -23079,12 +23063,7 @@ class Extractor {
         const /** @type {?} */ staticSymbolResolver = new StaticSymbolResolver(host, symbolCache, summaryResolver);
         const /** @type {?} */ staticReflector = new StaticReflector(staticSymbolResolver);
         StaticAndDynamicReflectionCapabilities.install(staticReflector);
-        const /** @type {?} */ config = new CompilerConfig({
-            genDebugInfo: false,
-            defaultEncapsulation: ViewEncapsulation.Emulated,
-            logBindingUpdate: false,
-            useJit: false
-        });
+        const /** @type {?} */ config = new CompilerConfig({ defaultEncapsulation: ViewEncapsulation.Emulated, useJit: false });
         const /** @type {?} */ normalizer = new DirectiveNormalizer({ get: (url) => host.loadResource(url) }, urlResolver, htmlParser, config);
         const /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
         const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
@@ -23179,15 +23158,11 @@ class JitCompilerFactory {
                 useFactory: () => {
                     return new CompilerConfig({
                         // let explicit values from the compiler options overwrite options
-                        // from the app providers. E.g. important for the testing platform.
-                        genDebugInfo: opts.useDebug,
-                        // let explicit values from the compiler options overwrite options
                         // from the app providers
                         useJit: opts.useJit,
                         // let explicit values from the compiler options overwrite options
                         // from the app providers
                         defaultEncapsulation: opts.defaultEncapsulation,
-                        logBindingUpdate: opts.useDebug,
                         missingTranslation: opts.missingTranslation,
                         enableLegacyTemplate: opts.enableLegacyTemplate,
                     });
@@ -23228,7 +23203,6 @@ const /** @type {?} */ platformCoreDynamic = createPlatformFactory(platformCore,
  */
 function _mergeOptions(optionsArr) {
     return {
-        useDebug: _lastDefined(optionsArr.map(options => options.useDebug)),
         useJit: _lastDefined(optionsArr.map(options => options.useJit)),
         defaultEncapsulation: _lastDefined(optionsArr.map(options => options.defaultEncapsulation)),
         providers: _mergeArrays(optionsArr.map(options => options.providers)),

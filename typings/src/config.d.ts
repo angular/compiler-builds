@@ -11,16 +11,10 @@ export declare class CompilerConfig {
     enableLegacyTemplate: boolean;
     useJit: boolean;
     missingTranslation: MissingTranslationStrategy;
-    private _genDebugInfo;
-    private _logBindingUpdate;
-    constructor({defaultEncapsulation, genDebugInfo, logBindingUpdate, useJit, missingTranslation, enableLegacyTemplate}?: {
+    constructor({defaultEncapsulation, useJit, missingTranslation, enableLegacyTemplate}?: {
         defaultEncapsulation?: ViewEncapsulation;
-        genDebugInfo?: boolean;
-        logBindingUpdate?: boolean;
         useJit?: boolean;
         missingTranslation?: MissingTranslationStrategy;
         enableLegacyTemplate?: boolean;
     });
-    readonly genDebugInfo: boolean;
-    readonly logBindingUpdate: boolean;
 }

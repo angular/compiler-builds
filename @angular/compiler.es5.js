@@ -17,7 +17,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
- * @license Angular v4.0.0-rc.2-07122f0
+ * @license Angular v4.0.0-rc.2-1cff125
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -26,7 +26,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-var /** @type {?} */VERSION = new Version('4.0.0-rc.2-07122f0');
+var /** @type {?} */VERSION = new Version('4.0.0-rc.2-1cff125');
 
 /**
  * @license
@@ -2659,53 +2659,26 @@ function flatten(list) {
     }, []);
 }
 
-var CompilerConfig = function () {
-    /**
-     * @param {?=} __0
-     */
-    function CompilerConfig() {
-        var _ref9 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-            _ref9$defaultEncapsul = _ref9.defaultEncapsulation,
-            defaultEncapsulation = _ref9$defaultEncapsul === undefined ? ViewEncapsulation.Emulated : _ref9$defaultEncapsul,
-            genDebugInfo = _ref9.genDebugInfo,
-            logBindingUpdate = _ref9.logBindingUpdate,
-            _ref9$useJit = _ref9.useJit,
-            useJit = _ref9$useJit === undefined ? true : _ref9$useJit,
-            missingTranslation = _ref9.missingTranslation,
-            enableLegacyTemplate = _ref9.enableLegacyTemplate;
+var CompilerConfig =
+/**
+ * @param {?=} __0
+ */
+function CompilerConfig() {
+    var _ref9 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref9$defaultEncapsul = _ref9.defaultEncapsulation,
+        defaultEncapsulation = _ref9$defaultEncapsul === undefined ? ViewEncapsulation.Emulated : _ref9$defaultEncapsul,
+        _ref9$useJit = _ref9.useJit,
+        useJit = _ref9$useJit === undefined ? true : _ref9$useJit,
+        missingTranslation = _ref9.missingTranslation,
+        enableLegacyTemplate = _ref9.enableLegacyTemplate;
 
-        _classCallCheck(this, CompilerConfig);
+    _classCallCheck(this, CompilerConfig);
 
-        this.defaultEncapsulation = defaultEncapsulation;
-        this._genDebugInfo = genDebugInfo;
-        this._logBindingUpdate = logBindingUpdate;
-        this.useJit = useJit;
-        this.missingTranslation = missingTranslation;
-        this.enableLegacyTemplate = enableLegacyTemplate !== false;
-    }
-    /**
-     * @return {?}
-     */
-
-
-    _createClass(CompilerConfig, [{
-        key: 'genDebugInfo',
-        get: function get() {
-            return this._genDebugInfo === void 0 ? isDevMode() : this._genDebugInfo;
-        }
-        /**
-         * @return {?}
-         */
-
-    }, {
-        key: 'logBindingUpdate',
-        get: function get() {
-            return this._logBindingUpdate === void 0 ? isDevMode() : this._logBindingUpdate;
-        }
-    }]);
-
-    return CompilerConfig;
-}();
+    this.defaultEncapsulation = defaultEncapsulation;
+    this.useJit = useJit;
+    this.missingTranslation = missingTranslation;
+    this.enableLegacyTemplate = enableLegacyTemplate !== false;
+};
 
 /**
  * @license
@@ -27523,9 +27496,7 @@ function createAotCompiler(compilerHost, options) {
     var /** @type {?} */console = new ɵConsole();
     var /** @type {?} */htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, MissingTranslationStrategy.Warning, console);
     var /** @type {?} */config = new CompilerConfig({
-        genDebugInfo: options.debug === true,
         defaultEncapsulation: ViewEncapsulation.Emulated,
-        logBindingUpdate: false,
         useJit: false,
         enableLegacyTemplate: options.enableLegacyTemplate !== false
     });
@@ -29352,12 +29323,7 @@ var Extractor = function () {
             var /** @type {?} */staticSymbolResolver = new StaticSymbolResolver(host, symbolCache, summaryResolver);
             var /** @type {?} */staticReflector = new StaticReflector(staticSymbolResolver);
             StaticAndDynamicReflectionCapabilities.install(staticReflector);
-            var /** @type {?} */config = new CompilerConfig({
-                genDebugInfo: false,
-                defaultEncapsulation: ViewEncapsulation.Emulated,
-                logBindingUpdate: false,
-                useJit: false
-            });
+            var /** @type {?} */config = new CompilerConfig({ defaultEncapsulation: ViewEncapsulation.Emulated, useJit: false });
             var /** @type {?} */normalizer = new DirectiveNormalizer({ get: function get(url) {
                     return host.loadResource(url);
                 } }, urlResolver, htmlParser, config);
@@ -29434,15 +29400,11 @@ var JitCompilerFactory = function () {
                 useFactory: function useFactory() {
                     return new CompilerConfig({
                         // let explicit values from the compiler options overwrite options
-                        // from the app providers. E.g. important for the testing platform.
-                        genDebugInfo: opts.useDebug,
-                        // let explicit values from the compiler options overwrite options
                         // from the app providers
                         useJit: opts.useJit,
                         // let explicit values from the compiler options overwrite options
                         // from the app providers
                         defaultEncapsulation: opts.defaultEncapsulation,
-                        logBindingUpdate: opts.useDebug,
                         missingTranslation: opts.missingTranslation,
                         enableLegacyTemplate: opts.enableLegacyTemplate
                     });
@@ -29479,9 +29441,6 @@ var /** @type {?} */platformCoreDynamic = createPlatformFactory(platformCore, 'c
  */
 function _mergeOptions(optionsArr) {
     return {
-        useDebug: _lastDefined(optionsArr.map(function (options) {
-            return options.useDebug;
-        })),
         useJit: _lastDefined(optionsArr.map(function (options) {
             return options.useJit;
         })),
