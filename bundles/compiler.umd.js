@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-rc.2-207298c');
+  var VERSION = new _angular_core.Version('4.0.0-rc.2-b7e76cc');
 
   /**
    * @license
@@ -351,135 +351,6 @@
           return result;
       };
       return StaticSymbolCache;
-  }());
-
-  function isPresent(obj) {
-      return obj != null;
-  }
-  function isBlank(obj) {
-      return obj == null;
-  }
-  var STRING_MAP_PROTO = Object.getPrototypeOf({});
-  function isStrictStringMap(obj) {
-      return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
-  }
-  function stringify(token) {
-      if (typeof token === 'string') {
-          return token;
-      }
-      if (token == null) {
-          return '' + token;
-      }
-      if (token.overriddenName) {
-          return "" + token.overriddenName;
-      }
-      if (token.name) {
-          return "" + token.name;
-      }
-      var res = token.toString();
-      var newLineIndex = res.indexOf('\n');
-      return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
-  }
-  var NumberWrapper = (function () {
-      function NumberWrapper() {
-      }
-      NumberWrapper.parseIntAutoRadix = function (text) {
-          var result = parseInt(text);
-          if (isNaN(result)) {
-              throw new Error('Invalid integer literal when parsing ' + text);
-          }
-          return result;
-      };
-      NumberWrapper.isNumeric = function (value) { return !isNaN(value - parseFloat(value)); };
-      return NumberWrapper;
-  }());
-  function isJsObject(o) {
-      return o !== null && (typeof o === 'function' || typeof o === 'object');
-  }
-  function isPrimitive(obj) {
-      return !isJsObject(obj);
-  }
-  function escapeRegExp(s) {
-      return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-  }
-
-  /**
-   * Wraps Javascript Objects
-   */
-  var StringMapWrapper = (function () {
-      function StringMapWrapper() {
-      }
-      StringMapWrapper.merge = function (m1, m2) {
-          var m = {};
-          for (var _i = 0, _a = Object.keys(m1); _i < _a.length; _i++) {
-              var k = _a[_i];
-              m[k] = m1[k];
-          }
-          for (var _b = 0, _c = Object.keys(m2); _b < _c.length; _b++) {
-              var k = _c[_b];
-              m[k] = m2[k];
-          }
-          return m;
-      };
-      StringMapWrapper.equals = function (m1, m2) {
-          var k1 = Object.keys(m1);
-          var k2 = Object.keys(m2);
-          if (k1.length != k2.length) {
-              return false;
-          }
-          for (var i = 0; i < k1.length; i++) {
-              var key = k1[i];
-              if (m1[key] !== m2[key]) {
-                  return false;
-              }
-          }
-          return true;
-      };
-      return StringMapWrapper;
-  }());
-  var ListWrapper = (function () {
-      function ListWrapper() {
-      }
-      ListWrapper.findLast = function (arr, condition) {
-          for (var i = arr.length - 1; i >= 0; i--) {
-              if (condition(arr[i])) {
-                  return arr[i];
-              }
-          }
-          return null;
-      };
-      ListWrapper.removeAll = function (list, items) {
-          for (var i = 0; i < items.length; ++i) {
-              var index = list.indexOf(items[i]);
-              if (index > -1) {
-                  list.splice(index, 1);
-              }
-          }
-      };
-      ListWrapper.remove = function (list, el) {
-          var index = list.indexOf(el);
-          if (index > -1) {
-              list.splice(index, 1);
-              return true;
-          }
-          return false;
-      };
-      ListWrapper.equals = function (a, b) {
-          if (a.length != b.length)
-              return false;
-          for (var i = 0; i < a.length; ++i) {
-              if (a[i] !== b[i])
-                  return false;
-          }
-          return true;
-      };
-      ListWrapper.flatten = function (list) {
-          return list.reduce(function (flat, item) {
-              var flatItem = Array.isArray(item) ? ListWrapper.flatten(item) : item;
-              return flat.concat(flatItem);
-          }, []);
-      };
-      return ListWrapper;
   }());
 
   /**
@@ -1206,7 +1077,20 @@
       return SelectorContext;
   }());
 
-  var MODULE_SUFFIX = '';
+  /**
+   * @license
+   * Copyright Google Inc. All Rights Reserved.
+   *
+   * Use of this source code is governed by an MIT-style license that can be
+   * found in the LICENSE file at https://angular.io/license
+   */
+  /**
+   * @license
+   * Copyright Google Inc. All Rights Reserved.
+   *
+   * Use of this source code is governed by an MIT-style license that can be
+   * found in the LICENSE file at https://angular.io/license
+   */ var MODULE_SUFFIX = '';
   var DASH_CASE_REGEXP = /-+([a-z0-9])/g;
   function dashCaseToCamelCase(input) {
       return input.replace(DASH_CASE_REGEXP, function () {
@@ -1236,7 +1120,8 @@
       if (isStrictStringMap(value)) {
           return visitor.visitStringMap(value, context);
       }
-      if (value == null || isPrimitive(value)) {
+      if (value == null || typeof value == 'string' || typeof value == 'number' ||
+          typeof value == 'boolean') {
           return visitor.visitPrimitive(value, context);
       }
       return visitor.visitOther(value, context);
@@ -1277,6 +1162,13 @@
   var ERROR_SYNTAX_ERROR = 'ngSyntaxError';
   function isSyntaxError(error) {
       return error[ERROR_SYNTAX_ERROR];
+  }
+  function escapeRegExp(s) {
+      return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+  }
+  var STRING_MAP_PROTO = Object.getPrototypeOf({});
+  function isStrictStringMap(obj) {
+      return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
   }
 
   /**
@@ -1409,7 +1301,7 @@
       if (ref['__anonymousType']) {
           return ref['__anonymousType'];
       }
-      var identifier = stringify(ref);
+      var identifier = _angular_core.ɵstringify(ref);
       if (identifier.indexOf('(') >= 0) {
           // case: anonymous functions!
           identifier = "anonymous_" + _anonymousTypeIndex++;
@@ -1450,11 +1342,10 @@
       CompileSummaryKind[CompileSummaryKind["Injectable"] = 3] = "Injectable";
   })(exports.CompileSummaryKind || (exports.CompileSummaryKind = {}));
   function tokenName(token) {
-      return isPresent(token.value) ? _sanitizeIdentifier(token.value) :
-          identifierName(token.identifier);
+      return token.value != null ? _sanitizeIdentifier(token.value) : identifierName(token.identifier);
   }
   function tokenReference(token) {
-      if (isPresent(token.identifier)) {
+      if (token.identifier != null) {
           return token.identifier.reference;
       }
       else {
@@ -1485,7 +1376,7 @@
           this.styles = _normalizeArray(styles);
           this.styleUrls = _normalizeArray(styleUrls);
           this.externalStylesheets = _normalizeArray(externalStylesheets);
-          this.animations = animations ? ListWrapper.flatten(animations) : [];
+          this.animations = animations ? flatten(animations) : [];
           this.ngContentSelectors = ngContentSelectors || [];
           if (interpolation && interpolation.length != 2) {
               throw new Error("'interpolation' should have a start and an end symbol.");
@@ -1533,23 +1424,23 @@
           var hostListeners = {};
           var hostProperties = {};
           var hostAttributes = {};
-          if (isPresent(host)) {
+          if (host != null) {
               Object.keys(host).forEach(function (key) {
                   var value = host[key];
                   var matches = key.match(HOST_REG_EXP);
                   if (matches === null) {
                       hostAttributes[key] = value;
                   }
-                  else if (isPresent(matches[1])) {
+                  else if (matches[1] != null) {
                       hostProperties[matches[1]] = value;
                   }
-                  else if (isPresent(matches[2])) {
+                  else if (matches[2] != null) {
                       hostListeners[matches[2]] = value;
                   }
               });
           }
           var inputsMap = {};
-          if (isPresent(inputs)) {
+          if (inputs != null) {
               inputs.forEach(function (bindConfig) {
                   // canonical syntax: `dirProp: elProp`
                   // if there is no `:`, use dirProp = elProp
@@ -1558,7 +1449,7 @@
               });
           }
           var outputsMap = {};
-          if (isPresent(outputs)) {
+          if (outputs != null) {
               outputs.forEach(function (bindConfig) {
                   // canonical syntax: `dirProp: elProp`
                   // if there is no `:`, use dirProp = elProp
@@ -1766,6 +1657,12 @@
       }
       return ProviderMeta;
   }());
+  function flatten(list) {
+      return list.reduce(function (flat, item) {
+          var flatItem = Array.isArray(item) ? flatten(item) : item;
+          return flat.concat(flatItem);
+      }, []);
+  }
 
   var CompilerConfig = (function () {
       function CompilerConfig(_a) {
@@ -2131,7 +2028,7 @@
   var ASTWithSource = (function (_super) {
       __extends$2(ASTWithSource, _super);
       function ASTWithSource(ast, source, location, errors) {
-          var _this = _super.call(this, new ParseSpan(0, isBlank(source) ? 0 : source.length)) || this;
+          var _this = _super.call(this, new ParseSpan(0, source == null ? 0 : source.length)) || this;
           _this.ast = ast;
           _this.source = source;
           _this.location = location;
@@ -2247,7 +2144,7 @@
           return new PropertyRead(ast.span, ast.receiver.visit(this), ast.name);
       };
       AstTransformer.prototype.visitPropertyWrite = function (ast, context) {
-          return new PropertyWrite(ast.span, ast.receiver.visit(this), ast.name, ast.value);
+          return new PropertyWrite(ast.span, ast.receiver.visit(this), ast.name, ast.value.visit(this));
       };
       AstTransformer.prototype.visitSafePropertyRead = function (ast, context) {
           return new SafePropertyRead(ast.span, ast.receiver.visit(this), ast.name);
@@ -2406,7 +2303,7 @@
   }
 
   function assertArrayOfStrings(identifier, value) {
-      if (!_angular_core.isDevMode() || isBlank(value)) {
+      if (!_angular_core.isDevMode() || value == null) {
           return;
       }
       if (!Array.isArray(value)) {
@@ -2426,10 +2323,10 @@
       /^\/\//,
   ];
   function assertInterpolationSymbols(identifier, value) {
-      if (isPresent(value) && !(Array.isArray(value) && value.length == 2)) {
+      if (value != null && !(Array.isArray(value) && value.length == 2)) {
           throw new Error("Expected '" + identifier + "' to be an array, [start, end].");
       }
-      else if (_angular_core.isDevMode() && !isBlank(value)) {
+      else if (_angular_core.isDevMode() && value != null) {
           var start_1 = value[0];
           var end_1 = value[1];
           // black list checking
@@ -2700,7 +2597,7 @@
               this.advance();
           }
           var str = this.input.substring(start, this.index);
-          var value = simple ? NumberWrapper.parseIntAutoRadix(str) : parseFloat(str);
+          var value = simple ? parseIntAutoRadix(str) : parseFloat(str);
           return newNumberToken(start, value);
       };
       _Scanner.prototype.scanString = function () {
@@ -2801,6 +2698,13 @@
               return code;
       }
   }
+  function parseIntAutoRadix(text) {
+      var result = parseInt(text);
+      if (isNaN(result)) {
+          throw new Error('Invalid integer literal when parsing ' + text);
+      }
+      return result;
+  }
 
   var SplitInterpolation = (function () {
       function SplitInterpolation(strings, expressions, offsets) {
@@ -2857,7 +2761,7 @@
           // Quotes expressions use 3rd-party expression language. We don't want to use
           // our lexer or parser for that, so we check for that ahead of time.
           var quote = this._parseQuote(input, location);
-          if (isPresent(quote)) {
+          if (quote != null) {
               return quote;
           }
           this._checkNoInterpolation(input, location, interpolationConfig);
@@ -2867,7 +2771,7 @@
               .parseChain();
       };
       Parser.prototype._parseQuote = function (input, location) {
-          if (isBlank(input))
+          if (input == null)
               return null;
           var prefixSeparatorIndex = input.indexOf(':');
           if (prefixSeparatorIndex == -1)
@@ -2905,7 +2809,7 @@
                   .parseChain();
               expressions.push(ast);
           }
-          return new ASTWithSource(new Interpolation(new ParseSpan(0, isBlank(input) ? 0 : input.length), split.strings, expressions), input, location, this.errors);
+          return new ASTWithSource(new Interpolation(new ParseSpan(0, input == null ? 0 : input.length), split.strings, expressions), input, location, this.errors);
       };
       Parser.prototype.splitInterpolation = function (input, location, interpolationConfig) {
           if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
@@ -2940,23 +2844,23 @@
           return new SplitInterpolation(strings, expressions, offsets);
       };
       Parser.prototype.wrapLiteralPrimitive = function (input, location) {
-          return new ASTWithSource(new LiteralPrimitive(new ParseSpan(0, isBlank(input) ? 0 : input.length), input), input, location, this.errors);
+          return new ASTWithSource(new LiteralPrimitive(new ParseSpan(0, input == null ? 0 : input.length), input), input, location, this.errors);
       };
       Parser.prototype._stripComments = function (input) {
           var i = this._commentStart(input);
-          return isPresent(i) ? input.substring(0, i).trim() : input;
+          return i != null ? input.substring(0, i).trim() : input;
       };
       Parser.prototype._commentStart = function (input) {
           var outerQuote = null;
           for (var i = 0; i < input.length - 1; i++) {
               var char = input.charCodeAt(i);
               var nextChar = input.charCodeAt(i + 1);
-              if (char === $SLASH && nextChar == $SLASH && isBlank(outerQuote))
+              if (char === $SLASH && nextChar == $SLASH && outerQuote == null)
                   return i;
               if (outerQuote === char) {
                   outerQuote = null;
               }
-              else if (isBlank(outerQuote) && isQuote(char)) {
+              else if (outerQuote == null && isQuote(char)) {
                   outerQuote = char;
               }
           }
@@ -3475,7 +3379,7 @@
       };
       _ParseAST.prototype.locationText = function (index) {
           if (index === void 0) { index = null; }
-          if (isBlank(index))
+          if (index == null)
               index = this.index;
           return (index < this.tokens.length) ? "at column " + (this.tokens[index].index + 1) + " in" :
               "at the end of the expression";
@@ -3550,7 +3454,7 @@
           this.col = col;
       }
       ParseLocation.prototype.toString = function () {
-          return isPresent(this.offset) ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
+          return this.offset != null ? this.file.url + "@" + this.line + ":" + this.col : this.file.url;
       };
       ParseLocation.prototype.moveBy = function (delta) {
           var source = this.file.content;
@@ -3590,7 +3494,7 @@
       ParseLocation.prototype.getContext = function (maxChars, maxLines) {
           var content = this.file.content;
           var startOffset = this.offset;
-          if (isPresent(startOffset)) {
+          if (startOffset != null) {
               if (startOffset > content.length - 1) {
                   startOffset = content.length - 1;
               }
@@ -4512,7 +4416,7 @@
       _TreeBuilder.prototype._consumeComment = function (token) {
           var text = this._advanceIf(TokenType$1.RAW_TEXT);
           this._advanceIf(TokenType$1.COMMENT_END);
-          var value = isPresent(text) ? text.parts[0].trim() : null;
+          var value = text != null ? text.parts[0].trim() : null;
           this._addToParent(new Comment(value, token.sourceSpan));
       };
       _TreeBuilder.prototype._consumeExpansion = function (token) {
@@ -4598,7 +4502,7 @@
           var text = token.parts[0];
           if (text.length > 0 && text[0] == '\n') {
               var parent_1 = this._getParentElement();
-              if (isPresent(parent_1) && parent_1.children.length == 0 &&
+              if (parent_1 != null && parent_1.children.length == 0 &&
                   this.getTagDefinition(parent_1.name).ignoreFirstLf) {
                   text = text.substring(1);
               }
@@ -4721,7 +4625,7 @@
       };
       _TreeBuilder.prototype._addToParent = function (node) {
           var parent = this._getParentElement();
-          if (isPresent(parent)) {
+          if (parent != null) {
               parent.children.push(node);
           }
           else {
@@ -4754,9 +4658,9 @@
           }
       };
       _TreeBuilder.prototype._getElementFullName = function (prefix, localName, parentElement) {
-          if (isBlank(prefix)) {
+          if (prefix == null) {
               prefix = this.getTagDefinition(localName).implicitNamespacePrefix;
-              if (isBlank(prefix) && isPresent(parentElement)) {
+              if (prefix == null && parentElement != null) {
                   prefix = getNsPrefix(parentElement.name);
               }
           }
@@ -7128,7 +7032,7 @@
           this.viewQueries = _getViewQueries(component);
           this.viewProviders = new Map();
           component.viewProviders.forEach(function (provider) {
-              if (isBlank(_this.viewProviders.get(tokenReference(provider.token)))) {
+              if (_this.viewProviders.get(tokenReference(provider.token)) == null) {
                   _this.viewProviders.set(tokenReference(provider.token), true);
               }
           });
@@ -7262,7 +7166,7 @@
           if (transformedProviderAst) {
               return transformedProviderAst;
           }
-          if (isPresent(this._seenProviders.get(tokenReference(token)))) {
+          if (this._seenProviders.get(tokenReference(token)) != null) {
               this.viewContext.errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + tokenName(token), this._sourceSpan));
               return null;
           }
@@ -7271,9 +7175,9 @@
               var transformedUseValue = provider.useValue;
               var transformedUseExisting = provider.useExisting;
               var transformedDeps;
-              if (isPresent(provider.useExisting)) {
+              if (provider.useExisting != null) {
                   var existingDiDep = _this._getDependency(resolvedProvider.providerType, { token: provider.useExisting }, eager);
-                  if (isPresent(existingDiDep.token)) {
+                  if (existingDiDep.token != null) {
                       transformedUseExisting = existingDiDep.token;
                   }
                   else {
@@ -7308,7 +7212,7 @@
               var attrValue = this._attrs[dep.token.value];
               return { isValue: true, value: attrValue == null ? null : attrValue };
           }
-          if (isPresent(dep.token)) {
+          if (dep.token != null) {
               // access builtints
               if ((requestingProviderType === exports.ProviderAstType.Directive ||
                   requestingProviderType === exports.ProviderAstType.Component)) {
@@ -7327,7 +7231,7 @@
                   return dep;
               }
               // access providers
-              if (isPresent(this._getOrCreateLocalProvider(requestingProviderType, dep.token, eager))) {
+              if (this._getOrCreateLocalProvider(requestingProviderType, dep.token, eager) != null) {
                   return dep;
               }
           }
@@ -7360,7 +7264,7 @@
               if (!result) {
                   if (!dep.isHost || this.viewContext.component.isHost ||
                       this.viewContext.component.type.reference === tokenReference(dep.token) ||
-                      isPresent(this.viewContext.viewProviders.get(tokenReference(dep.token)))) {
+                      this.viewContext.viewProviders.get(tokenReference(dep.token)) != null) {
                       result = dep;
                   }
                   else {
@@ -7409,7 +7313,7 @@
           if (transformedProviderAst) {
               return transformedProviderAst;
           }
-          if (isPresent(this._seenProviders.get(tokenReference(token)))) {
+          if (this._seenProviders.get(tokenReference(token)) != null) {
               this._errors.push(new ProviderError("Cannot instantiate cyclic dependency! " + tokenName(token), resolvedProvider.sourceSpan));
               return null;
           }
@@ -7418,9 +7322,9 @@
               var transformedUseValue = provider.useValue;
               var transformedUseExisting = provider.useExisting;
               var transformedDeps;
-              if (isPresent(provider.useExisting)) {
+              if (provider.useExisting != null) {
                   var existingDiDep = _this._getDependency({ token: provider.useExisting }, eager, resolvedProvider.sourceSpan);
-                  if (isPresent(existingDiDep.token)) {
+                  if (existingDiDep.token != null) {
                       transformedUseExisting = existingDiDep.token;
                   }
                   else {
@@ -7452,13 +7356,13 @@
       NgModuleProviderAnalyzer.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
           if (eager === void 0) { eager = null; }
           var foundLocal = false;
-          if (!dep.isSkipSelf && isPresent(dep.token)) {
+          if (!dep.isSkipSelf && dep.token != null) {
               // access the injector
               if (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector) ||
                   tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver)) {
                   foundLocal = true;
               }
-              else if (isPresent(this._getOrCreateLocalProvider(dep.token, eager))) {
+              else if (this._getOrCreateLocalProvider(dep.token, eager) != null) {
                   foundLocal = true;
               }
           }
@@ -7508,7 +7412,7 @@
   function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken) {
       providers.forEach(function (provider) {
           var resolvedProvider = targetProvidersByToken.get(tokenReference(provider.token));
-          if (isPresent(resolvedProvider) && !!resolvedProvider.multiProvider !== !!provider.multi) {
+          if (resolvedProvider != null && !!resolvedProvider.multiProvider !== !!provider.multi) {
               targetErrors.push(new ProviderError("Mixing multi and non multi provider is not possible for token " + tokenName(resolvedProvider.token), sourceSpan));
           }
           if (!resolvedProvider) {
@@ -8313,7 +8217,7 @@
                   templateBindingsSource = attr.value;
                   prefixToken = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length) + ':';
               }
-              var hasTemplateBinding = isPresent(templateBindingsSource);
+              var hasTemplateBinding = templateBindingsSource != null;
               if (hasTemplateBinding) {
                   if (hasInlineTemplates) {
                       _this._reportError("Can't have multiple template bindings on one element. Use only one attribute named 'template' or prefixed with *", attr.sourceSpan);
@@ -8338,7 +8242,7 @@
           var children = visitAll(preparsedElement.nonBindable ? NON_BINDABLE_VISITOR : this, element.children, ElementContext.create(isTemplateElement, directiveAsts, isTemplateElement ? parent.providerContext : providerContext));
           providerContext.afterElement();
           // Override the actual selector when the `ngProjectAs` attribute is provided
-          var projectionSelector = isPresent(preparsedElement.projectAs) ?
+          var projectionSelector = preparsedElement.projectAs != null ?
               CssSelector.parse(preparsedElement.projectAs)[0] :
               elementCssSelector;
           var ngContentIndex = parent.findNgContentIndex(projectionSelector);
@@ -8382,7 +8286,7 @@
           var hasBinding = false;
           if (bindParts !== null) {
               hasBinding = true;
-              if (isPresent(bindParts[KW_BIND_IDX])) {
+              if (bindParts[KW_BIND_IDX] != null) {
                   this._bindingParser.parsePropertyBinding(bindParts[IDENT_KW_IDX], value, false, srcSpan, targetMatchableAttrs, targetProps);
               }
               else if (bindParts[KW_LET_IDX]) {
@@ -8599,7 +8503,7 @@
               });
           });
           events.forEach(function (event) {
-              if (isPresent(event.target) || !allDirectiveEvents.has(event.name)) {
+              if (event.target != null || !allDirectiveEvents.has(event.name)) {
                   _this._reportError("Event binding " + event.fullName + " not emitted by any directive on an embedded template. Make sure that the event name is spelled correctly and all directives are listed in the \"@NgModule.declarations\".", event.sourceSpan);
               }
           });
@@ -8705,7 +8609,7 @@
           var ngContentIndices = [];
           this._ngContentIndexMatcher.match(selector, function (selector, ngContentIndex) { ngContentIndices.push(ngContentIndex); });
           ngContentIndices.sort();
-          if (isPresent(this._wildcardNgContentIndex)) {
+          if (this._wildcardNgContentIndex != null) {
               ngContentIndices.push(this._wildcardNgContentIndex);
           }
           return ngContentIndices.length > 0 ? ngContentIndices[0] : null;
@@ -8829,12 +8733,12 @@
        */
       UrlResolver.prototype.resolve = function (baseUrl, url) {
           var resolvedUrl = url;
-          if (isPresent(baseUrl) && baseUrl.length > 0) {
+          if (baseUrl != null && baseUrl.length > 0) {
               resolvedUrl = _resolveUrl(baseUrl, resolvedUrl);
           }
           var resolvedParts = _split(resolvedUrl);
           var prefix = this._packagePrefix;
-          if (isPresent(prefix) && isPresent(resolvedParts) &&
+          if (prefix != null && resolvedParts != null &&
               resolvedParts[_ComponentIndex.Scheme] == 'package') {
               var path = resolvedParts[_ComponentIndex.Path];
               prefix = prefix.replace(/\/+$/, '');
@@ -8880,26 +8784,26 @@
    */
   function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, opt_path, opt_queryData, opt_fragment) {
       var out = [];
-      if (isPresent(opt_scheme)) {
+      if (opt_scheme != null) {
           out.push(opt_scheme + ':');
       }
-      if (isPresent(opt_domain)) {
+      if (opt_domain != null) {
           out.push('//');
-          if (isPresent(opt_userInfo)) {
+          if (opt_userInfo != null) {
               out.push(opt_userInfo + '@');
           }
           out.push(opt_domain);
-          if (isPresent(opt_port)) {
+          if (opt_port != null) {
               out.push(':' + opt_port);
           }
       }
-      if (isPresent(opt_path)) {
+      if (opt_path != null) {
           out.push(opt_path);
       }
-      if (isPresent(opt_queryData)) {
+      if (opt_queryData != null) {
           out.push('?' + opt_queryData);
       }
-      if (isPresent(opt_fragment)) {
+      if (opt_fragment != null) {
           out.push('#' + opt_fragment);
       }
       return out.join('');
@@ -9063,7 +8967,7 @@
    */
   function _joinAndCanonicalizePath(parts) {
       var path = parts[_ComponentIndex.Path];
-      path = isBlank(path) ? '' : _removeDotSegments(path);
+      path = path == null ? '' : _removeDotSegments(path);
       parts[_ComponentIndex.Path] = path;
       return _buildFromEncodedParts(parts[_ComponentIndex.Scheme], parts[_ComponentIndex.UserInfo], parts[_ComponentIndex.Domain], parts[_ComponentIndex.Port], path, parts[_ComponentIndex.QueryData], parts[_ComponentIndex.Fragment]);
   }
@@ -9075,14 +8979,14 @@
   function _resolveUrl(base, url) {
       var parts = _split(encodeURI(url));
       var baseParts = _split(base);
-      if (isPresent(parts[_ComponentIndex.Scheme])) {
+      if (parts[_ComponentIndex.Scheme] != null) {
           return _joinAndCanonicalizePath(parts);
       }
       else {
           parts[_ComponentIndex.Scheme] = baseParts[_ComponentIndex.Scheme];
       }
       for (var i = _ComponentIndex.Scheme; i <= _ComponentIndex.Port; i++) {
-          if (isBlank(parts[i])) {
+          if (parts[i] == null) {
               parts[i] = baseParts[i];
           }
       }
@@ -9090,7 +8994,7 @@
           return _joinAndCanonicalizePath(parts);
       }
       var path = baseParts[_ComponentIndex.Path];
-      if (isBlank(path))
+      if (path == null)
           path = '/';
       var index = path.lastIndexOf('/');
       path = path.substring(0, index + 1) + parts[_ComponentIndex.Path];
@@ -9129,19 +9033,19 @@
           var normalizedTemplateAsync;
           if (prenormData.template != null) {
               if (typeof prenormData.template !== 'string') {
-                  throw syntaxError("The template specified for component " + stringify(prenormData.componentType) + " is not a string");
+                  throw syntaxError("The template specified for component " + _angular_core.ɵstringify(prenormData.componentType) + " is not a string");
               }
               normalizedTemplateSync = this.normalizeTemplateSync(prenormData);
               normalizedTemplateAsync = Promise.resolve(normalizedTemplateSync);
           }
           else if (prenormData.templateUrl) {
               if (typeof prenormData.templateUrl !== 'string') {
-                  throw syntaxError("The templateUrl specified for component " + stringify(prenormData.componentType) + " is not a string");
+                  throw syntaxError("The templateUrl specified for component " + _angular_core.ɵstringify(prenormData.componentType) + " is not a string");
               }
               normalizedTemplateAsync = this.normalizeTemplateAsync(prenormData);
           }
           else {
-              throw syntaxError("No template specified for component " + stringify(prenormData.componentType));
+              throw syntaxError("No template specified for component " + _angular_core.ɵstringify(prenormData.componentType));
           }
           if (normalizedTemplateSync && normalizedTemplateSync.styleUrls.length === 0) {
               // sync case
@@ -9163,7 +9067,7 @@
       };
       DirectiveNormalizer.prototype.normalizeLoadedTemplate = function (prenomData, template, templateAbsUrl) {
           var interpolationConfig = InterpolationConfig.fromArray(prenomData.interpolation);
-          var rootNodesAndErrors = this._htmlParser.parse(template, stringify(prenomData.componentType), true, interpolationConfig);
+          var rootNodesAndErrors = this._htmlParser.parse(template, _angular_core.ɵstringify(prenomData.componentType), true, interpolationConfig);
           if (rootNodesAndErrors.errors.length > 0) {
               var errorString = rootNodesAndErrors.errors.join('\n');
               throw syntaxError("Template parse errors:\n" + errorString);
@@ -9316,14 +9220,14 @@
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
           var typeMetadata = this._reflector.annotations(_angular_core.resolveForwardRef(type));
           if (typeMetadata) {
-              var metadata = ListWrapper.findLast(typeMetadata, isDirectiveMetadata);
+              var metadata = findLast(typeMetadata, isDirectiveMetadata);
               if (metadata) {
                   var propertyMetadata = this._reflector.propMetadata(type);
                   return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
               }
           }
           if (throwIfNotFound) {
-              throw new Error("No Directive annotation found on " + stringify(type));
+              throw new Error("No Directive annotation found on " + _angular_core.ɵstringify(type));
           }
           return null;
       };
@@ -9333,7 +9237,7 @@
           var host = {};
           var queries = {};
           Object.keys(propertyMetadata).forEach(function (propName) {
-              var input = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Input; });
+              var input = findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Input; });
               if (input) {
                   if (input.bindingPropertyName) {
                       inputs.push(propName + ": " + input.bindingPropertyName);
@@ -9342,7 +9246,7 @@
                       inputs.push(propName);
                   }
               }
-              var output = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Output; });
+              var output = findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Output; });
               if (output) {
                   if (output.bindingPropertyName) {
                       outputs.push(propName + ": " + output.bindingPropertyName);
@@ -9372,7 +9276,7 @@
                   var args = hostListener.args || [];
                   host["(" + hostListener.eventName + ")"] = propName + "(" + args.join(',') + ")";
               });
-              var query = ListWrapper.findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Query; });
+              var query = findLast(propertyMetadata[propName], function (a) { return a instanceof _angular_core.Query; });
               if (query) {
                   queries[propName] = query;
               }
@@ -9397,8 +9301,8 @@
       DirectiveResolver.prototype._merge = function (directive, inputs, outputs, host, queries, directiveType) {
           var mergedInputs = this._dedupeBindings(directive.inputs ? directive.inputs.concat(inputs) : inputs);
           var mergedOutputs = this._dedupeBindings(directive.outputs ? directive.outputs.concat(outputs) : outputs);
-          var mergedHost = directive.host ? StringMapWrapper.merge(directive.host, host) : host;
-          var mergedQueries = directive.queries ? StringMapWrapper.merge(directive.queries, queries) : queries;
+          var mergedHost = directive.host ? _angular_core.ɵmerge(directive.host, host) : host;
+          var mergedQueries = directive.queries ? _angular_core.ɵmerge(directive.queries, queries) : queries;
           if (directive instanceof _angular_core.Component) {
               return new _angular_core.Component({
                   selector: directive.selector,
@@ -9444,6 +9348,14 @@
   ]; };
   function isDirectiveMetadata(type) {
       return type instanceof _angular_core.Directive;
+  }
+  function findLast(arr, condition) {
+      for (var i = arr.length - 1; i >= 0; i--) {
+          if (condition(arr[i])) {
+              return arr[i];
+          }
+      }
+      return null;
   }
 
   /**
@@ -9518,13 +9430,13 @@
       NgModuleResolver.prototype.isNgModule = function (type) { return this._reflector.annotations(type).some(_isNgModuleMetadata); };
       NgModuleResolver.prototype.resolve = function (type, throwIfNotFound) {
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-          var ngModuleMeta = ListWrapper.findLast(this._reflector.annotations(type), _isNgModuleMetadata);
+          var ngModuleMeta = findLast(this._reflector.annotations(type), _isNgModuleMetadata);
           if (ngModuleMeta) {
               return ngModuleMeta;
           }
           else {
               if (throwIfNotFound) {
-                  throw new Error("No NgModule metadata found for '" + stringify(type) + "'.");
+                  throw new Error("No NgModule metadata found for '" + _angular_core.ɵstringify(type) + "'.");
               }
               return null;
           }
@@ -9565,13 +9477,13 @@
           if (throwIfNotFound === void 0) { throwIfNotFound = true; }
           var metas = this._reflector.annotations(_angular_core.resolveForwardRef(type));
           if (metas) {
-              var annotation = ListWrapper.findLast(metas, _isPipeMetadata);
+              var annotation = findLast(metas, _isPipeMetadata);
               if (annotation) {
                   return annotation;
               }
           }
           if (throwIfNotFound) {
-              throw new Error("No Pipe decorator found on " + stringify(type));
+              throw new Error("No Pipe decorator found on " + _angular_core.ɵstringify(type));
           }
           return null;
       };
@@ -9669,7 +9581,7 @@
           var delegate = null;
           var proxyClass = function () {
               if (!delegate) {
-                  throw new Error("Illegal state: Class " + name + " for type " + stringify(baseType) + " is not compiled yet!");
+                  throw new Error("Illegal state: Class " + name + " for type " + _angular_core.ɵstringify(baseType) + " is not compiled yet!");
               }
               return delegate.apply(this, arguments);
           };
@@ -9975,6 +9887,8 @@
                       }
                   }
                   if (importedModuleType) {
+                      if (_this._checkSelfImport(moduleType, importedModuleType))
+                          return;
                       var importedModuleSummary = _this.getNgModuleSummary(importedModuleType);
                       if (!importedModuleSummary) {
                           _this._reportError(syntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'"), moduleType);
@@ -10087,6 +10001,13 @@
           transitiveModule.addModule(compileMeta.type);
           this._ngModuleCache.set(moduleType, compileMeta);
           return compileMeta;
+      };
+      CompileMetadataResolver.prototype._checkSelfImport = function (moduleType, importedModuleType) {
+          if (moduleType === importedModuleType) {
+              this._reportError(syntaxError("'" + stringifyType(moduleType) + "' module can't import itself"), moduleType);
+              return true;
+          }
+          return false;
       };
       CompileMetadataResolver.prototype._getTypeDescriptor = function (type) {
           if (this._directiveResolver.isDirective(type)) {
@@ -10528,7 +10449,7 @@
           return type.name + " in " + type.filePath;
       }
       else {
-          return stringify(type);
+          return _angular_core.ɵstringify(type);
       }
   }
   /**
@@ -10536,7 +10457,7 @@
    */
   function componentStillLoadingError(compType) {
       debugger;
-      var error = Error("Can't compile synchronously as " + stringify(compType) + " is still being loaded!");
+      var error = Error("Can't compile synchronously as " + _angular_core.ɵstringify(compType) + " is still being loaded!");
       error[_angular_core.ɵERROR_COMPONENT_TYPE] = compType;
       return error;
   }
@@ -11502,11 +11423,11 @@
   function importType(id, typeParams, typeModifiers) {
       if (typeParams === void 0) { typeParams = null; }
       if (typeModifiers === void 0) { typeModifiers = null; }
-      return isPresent(id) ? expressionType(importExpr(id, typeParams), typeModifiers) : null;
+      return id != null ? expressionType(importExpr(id, typeParams), typeModifiers) : null;
   }
   function expressionType(expr, typeModifiers) {
       if (typeModifiers === void 0) { typeModifiers = null; }
-      return isPresent(expr) ? new ExpressionType(expr, typeModifiers) : null;
+      return expr != null ? new ExpressionType(expr, typeModifiers) : null;
   }
   function literalArr(values, type, sourceSpan) {
       if (type === void 0) { type = null; }
@@ -11604,7 +11525,7 @@
       }
       NgModuleCompiler.prototype.compile = function (ngModuleMeta, extraProviders) {
           var moduleUrl = identifierModuleUrl(ngModuleMeta.type);
-          var sourceFileName = isPresent(moduleUrl) ?
+          var sourceFileName = moduleUrl != null ?
               "in NgModule " + identifierName(ngModuleMeta.type) + " in " + moduleUrl :
               "in NgModule " + identifierName(ngModuleMeta.type);
           var sourceFile = new ParseSourceFile('', sourceFileName);
@@ -11700,15 +11621,15 @@
       _InjectorBuilder.prototype._getProviderValue = function (provider) {
           var _this = this;
           var result;
-          if (isPresent(provider.useExisting)) {
+          if (provider.useExisting != null) {
               result = this._getDependency({ token: provider.useExisting });
           }
-          else if (isPresent(provider.useFactory)) {
+          else if (provider.useFactory != null) {
               var deps = provider.deps || provider.useFactory.diDeps;
               var depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
               result = importExpr(provider.useFactory).callFn(depsExpr);
           }
-          else if (isPresent(provider.useClass)) {
+          else if (provider.useClass != null) {
               var deps = provider.deps || provider.useClass.diDeps;
               var depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
               result =
@@ -11776,7 +11697,7 @@
       return _InjectorBuilder;
   }());
   function createDiTokenExpression(token) {
-      if (isPresent(token.value)) {
+      if (token.value != null) {
           return literal(token.value);
       }
       else {
@@ -12085,7 +12006,7 @@
           ctx.print(stmt, "if (");
           stmt.condition.visitExpression(this, ctx);
           ctx.print(stmt, ") {");
-          var hasElseCase = isPresent(stmt.falseCase) && stmt.falseCase.length > 0;
+          var hasElseCase = stmt.falseCase != null && stmt.falseCase.length > 0;
           if (stmt.trueCase.length <= 1 && !hasElseCase) {
               ctx.print(stmt, " ");
               this.visitAllStatements(stmt.trueCase, ctx);
@@ -12161,9 +12082,9 @@
       AbstractEmitterVisitor.prototype.visitInvokeMethodExpr = function (expr, ctx) {
           expr.receiver.visitExpression(this, ctx);
           var name = expr.name;
-          if (isPresent(expr.builtin)) {
+          if (expr.builtin != null) {
               name = this.getBuiltinMethodName(expr.builtin);
-              if (isBlank(name)) {
+              if (name == null) {
                   // some builtins just mean to skip the call.
                   return null;
               }
@@ -12182,7 +12103,7 @@
       };
       AbstractEmitterVisitor.prototype.visitReadVarExpr = function (ast, ctx) {
           var varName = ast.name;
-          if (isPresent(ast.builtin)) {
+          if (ast.builtin != null) {
               switch (ast.builtin) {
                   case BuiltinVar.Super:
                       varName = 'super';
@@ -12354,7 +12275,7 @@
   }());
   function escapeIdentifier(input, escapeDollar, alwaysQuote) {
       if (alwaysQuote === void 0) { alwaysQuote = true; }
-      if (isBlank(input)) {
+      if (input == null) {
           return null;
       }
       var body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, function () {
@@ -12465,7 +12386,7 @@
       }
       _TsEmitterVisitor.prototype.visitType = function (t, ctx, defaultType) {
           if (defaultType === void 0) { defaultType = 'any'; }
-          if (isPresent(t)) {
+          if (t != null) {
               this.typeExpression++;
               t.visitType(this, ctx);
               this.typeExpression--;
@@ -12476,7 +12397,7 @@
       };
       _TsEmitterVisitor.prototype.visitLiteralExpr = function (ast, ctx) {
           var value = ast.value;
-          if (isBlank(value) && ast.type != INFERRED_TYPE) {
+          if (value == null && ast.type != INFERRED_TYPE) {
               ctx.print(ast, "(" + value + " as any)");
               return null;
           }
@@ -12555,7 +12476,7 @@
               ctx.print(stmt, "export ");
           }
           ctx.print(stmt, "class " + stmt.name);
-          if (isPresent(stmt.parent)) {
+          if (stmt.parent != null) {
               ctx.print(stmt, " extends ");
               this.typeExpression++;
               stmt.parent.visitExpression(this, ctx);
@@ -12564,7 +12485,7 @@
           ctx.println(stmt, " {");
           ctx.incIndent();
           stmt.fields.forEach(function (field) { return _this._visitClassField(field, ctx); });
-          if (isPresent(stmt.constructorMethod)) {
+          if (stmt.constructorMethod != null) {
               this._visitClassConstructor(stmt, ctx);
           }
           stmt.getters.forEach(function (getter) { return _this._visitClassGetter(getter, ctx); });
@@ -12744,7 +12665,7 @@
           var _a = this._resolveStaticSymbol(value), name = _a.name, filePath = _a.filePath, members = _a.members, arity = _a.arity;
           if (filePath != this._genFilePath) {
               var prefix = this.importsWithPrefixes.get(filePath);
-              if (isBlank(prefix)) {
+              if (prefix == null) {
                   prefix = "import" + this.importsWithPrefixes.size;
                   this.importsWithPrefixes.set(filePath, prefix);
               }
@@ -14231,7 +14152,7 @@
                       result = varExpr.callFn(args);
                   }
               }
-              if (isBlank(result)) {
+              if (result == null) {
                   result = receiver.callMethod(ast.name, args);
               }
               return convertToStatementIfNeeded(mode, result);
@@ -14251,7 +14172,7 @@
               if (receiver === this._implicitReceiver) {
                   result = this._getLocal(ast.name);
               }
-              if (isBlank(result)) {
+              if (result == null) {
                   result = receiver.prop(ast.name);
               }
               return convertToStatementIfNeeded(mode, result);
@@ -15605,7 +15526,7 @@
               .all(ngModules.map(function (ngModule) { return _this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false); }))
               .then(function () {
               var sourceModules = files.map(function (file) { return _this._compileSrcFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables); });
-              return ListWrapper.flatten(sourceModules);
+              return flatten(sourceModules);
           });
       };
       AotCompiler.prototype._compileSrcFile = function (srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
@@ -16223,7 +16144,7 @@
                   return simplify({ __symbolic: 'error', message: 'Function call not supported', context: functionSymbol });
               }
               function simplify(expression) {
-                  if (isPrimitive$1(expression)) {
+                  if (isPrimitive(expression)) {
                       return expression;
                   }
                   if (expression instanceof Array) {
@@ -16342,7 +16263,7 @@
                               case 'index':
                                   var indexTarget = simplify(expression['expression']);
                                   var index = simplify(expression['index']);
-                                  if (indexTarget && isPrimitive$1(index))
+                                  if (indexTarget && isPrimitive(index))
                                       return indexTarget[index];
                                   return null;
                               case 'select':
@@ -16361,7 +16282,7 @@
                                           return selectContext;
                                       }
                                   }
-                                  if (selectTarget && isPrimitive$1(member))
+                                  if (selectTarget && isPrimitive(member))
                                       return simplifyInContext(selectContext, selectTarget[member], depth + 1);
                                   return null;
                               case 'reference':
@@ -16504,7 +16425,7 @@
       });
       return result;
   }
-  function isPrimitive$1(o) {
+  function isPrimitive(o) {
       return o === null || (typeof o !== 'function' && typeof o !== 'object');
   }
   var BindingScope = (function () {
@@ -17011,7 +16932,7 @@
       var ctx = new _ExecutionContext(null, null, null, new Map());
       var visitor = new StatementInterpreter();
       var result = visitor.visitAllStatements(stmtsWithReturn, ctx);
-      return isPresent(result) ? result.value : null;
+      return result != null ? result.value : null;
   }
   function _executeFunctionStatements(varNames, varValues, statements, ctx, visitor) {
       var childCtx = ctx.createChildWihtLocalVars();
@@ -17105,7 +17026,7 @@
       };
       StatementInterpreter.prototype.visitReadVarExpr = function (ast, ctx) {
           var varName = ast.name;
-          if (isPresent(ast.builtin)) {
+          if (ast.builtin != null) {
               switch (ast.builtin) {
                   case BuiltinVar.Super:
                       return ctx.instance.__proto__;
@@ -17147,7 +17068,7 @@
           var receiver = expr.receiver.visitExpression(this, ctx);
           var args = this.visitAllExpressions(expr.args, ctx);
           var result;
-          if (isPresent(expr.builtin)) {
+          if (expr.builtin != null) {
               switch (expr.builtin) {
                   case BuiltinMethod.ConcatArray:
                       result = receiver.concat.apply(receiver, args);
@@ -17195,7 +17116,7 @@
           if (condition) {
               return this.visitAllStatements(stmt.trueCase, ctx);
           }
-          else if (isPresent(stmt.falseCase)) {
+          else if (stmt.falseCase != null) {
               return this.visitAllStatements(stmt.falseCase, ctx);
           }
           return null;
@@ -17228,7 +17149,7 @@
           if (ast.condition.visitExpression(this, ctx)) {
               return ast.trueCase.visitExpression(this, ctx);
           }
-          else if (isPresent(ast.falseCase)) {
+          else if (ast.falseCase != null) {
               return ast.falseCase.visitExpression(this, ctx);
           }
           return null;
@@ -17356,7 +17277,7 @@
           var _this = this;
           ctx.pushClass(stmt);
           this._visitClassConstructor(stmt, ctx);
-          if (isPresent(stmt.parent)) {
+          if (stmt.parent != null) {
               ctx.print(stmt, stmt.name + ".prototype = Object.create(");
               stmt.parent.visitExpression(this, ctx);
               ctx.println(stmt, ".prototype);");
@@ -17368,12 +17289,12 @@
       };
       AbstractJsEmitterVisitor.prototype._visitClassConstructor = function (stmt, ctx) {
           ctx.print(stmt, "function " + stmt.name + "(");
-          if (isPresent(stmt.constructorMethod)) {
+          if (stmt.constructorMethod != null) {
               this._visitParams(stmt.constructorMethod.params, ctx);
           }
           ctx.println(stmt, ") {");
           ctx.incIndent();
-          if (isPresent(stmt.constructorMethod)) {
+          if (stmt.constructorMethod != null) {
               if (stmt.constructorMethod.body.length > 0) {
                   ctx.println(stmt, "var self = this;");
                   this.visitAllStatements(stmt.constructorMethod.body, ctx);
@@ -17602,7 +17523,7 @@
       JitCompiler.prototype.getNgContentSelectors = function (component) {
           var template = this._compiledTemplateCache.get(component);
           if (!template) {
-              throw new Error("The component " + stringify(component) + " is not yet compiled!");
+              throw new Error("The component " + _angular_core.ɵstringify(component) + " is not yet compiled!");
           }
           return template.compMeta.template.ngContentSelectors;
       };
@@ -17725,7 +17646,7 @@
       };
       JitCompiler.prototype._createCompiledHostTemplate = function (compType, ngModule) {
           if (!ngModule) {
-              throw new Error("Component " + stringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
+              throw new Error("Component " + _angular_core.ɵstringify(compType) + " is not part of any NgModule or the module has not been imported into your module.");
           }
           var compiledTemplate = this._compiledHostTemplateCache.get(compType);
           if (!compiledTemplate) {
@@ -18229,6 +18150,7 @@
   exports.CompileNgModuleMetadata = CompileNgModuleMetadata;
   exports.TransitiveCompileNgModuleMetadata = TransitiveCompileNgModuleMetadata;
   exports.ProviderMeta = ProviderMeta;
+  exports.flatten = flatten;
   exports.createAotCompiler = createAotCompiler;
   exports.AotCompiler = AotCompiler;
   exports.analyzeNgModules = analyzeNgModules;

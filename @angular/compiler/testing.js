@@ -1,4 +1,4 @@
-import { Injectable, CompilerFactory, Pipe, Component, Directive, NgModule, COMPILER_OPTIONS, createPlatformFactory, SecurityContext, Compiler, Injector, resolveForwardRef } from '@angular/core';
+import { Injectable, CompilerFactory, Pipe, Component, Directive, NgModule, COMPILER_OPTIONS, createPlatformFactory, SecurityContext, Compiler, Injector, resolveForwardRef, ɵstringify } from '@angular/core';
 import { NgModuleResolver, DirectiveResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
 import { ɵTestingCompilerFactory } from '@angular/core/testing';
 
@@ -49,27 +49,6 @@ class MockSchemaRegistry {
     }
 }
 
-function isPresent(obj) {
-    return obj != null;
-}
-function stringify(token) {
-    if (typeof token === 'string') {
-        return token;
-    }
-    if (token == null) {
-        return '' + token;
-    }
-    if (token.overriddenName) {
-        return `${token.overriddenName}`;
-    }
-    if (token.name) {
-        return `${token.name}`;
-    }
-    const res = token.toString();
-    const newLineIndex = res.indexOf('\n');
-    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
-}
-
 /**
  * An implementation of {@link DirectiveResolver} that allows overriding
  * various properties of directives.
@@ -97,13 +76,13 @@ class MockDirectiveResolver extends DirectiveResolver {
         const providerOverrides = this._providerOverrides.get(type);
         const viewProviderOverrides = this._viewProviderOverrides.get(type);
         let providers = metadata.providers;
-        if (isPresent(providerOverrides)) {
+        if (providerOverrides != null) {
             const originalViewProviders = metadata.providers || [];
             providers = originalViewProviders.concat(providerOverrides);
         }
         if (metadata instanceof Component) {
             let viewProviders = metadata.viewProviders;
-            if (isPresent(viewProviderOverrides)) {
+            if (viewProviderOverrides != null) {
                 const originalViewProviders = metadata.viewProviders || [];
                 viewProviders = originalViewProviders.concat(viewProviderOverrides);
             }
@@ -114,7 +93,7 @@ class MockDirectiveResolver extends DirectiveResolver {
             let animations = view.animations;
             let templateUrl = view.templateUrl;
             let inlineTemplate = this._inlineTemplates.get(type);
-            if (isPresent(inlineTemplate)) {
+            if (inlineTemplate != null) {
                 templateUrl = null;
             }
             else {
@@ -275,7 +254,7 @@ class MetadataOverrider {
         }
         if (override.set) {
             if (override.remove || override.add) {
-                throw new Error(`Cannot set and add/remove ${stringify(metadataClass)} at the same time!`);
+                throw new Error(`Cannot set and add/remove ${ɵstringify(metadataClass)} at the same time!`);
             }
             setMetadata(props, override.set);
         }
@@ -340,7 +319,7 @@ function _propHashKey(propName, propValue, references) {
 function _serializeReference(ref, references) {
     let id = references.get(ref);
     if (!id) {
-        id = `${stringify(ref)}${_nextReferenceId++}`;
+        id = `${ɵstringify(ref)}${_nextReferenceId++}`;
         references.set(ref, id);
     }
     return id;

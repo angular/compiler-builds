@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.2-207298c
+ * @license Angular v4.0.0-rc.2-b7e76cc
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -177,32 +177,6 @@
         return MockSchemaRegistry;
     }();
 
-    function isPresent(obj) {
-        return obj != null;
-    }
-    function stringify(token) {
-        if (typeof token === 'string') {
-            return token;
-        }
-        if (token == null) {
-            return '' + token;
-        }
-        if (token.overriddenName) {
-            return '' + token.overriddenName;
-        }
-        if (token.name) {
-            return '' + token.name;
-        }
-        var res = token.toString();
-        var newLineIndex = res.indexOf('\n');
-        return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
-    }
-
-    /**
-     * An implementation of {@link DirectiveResolver} that allows overriding
-     * various properties of directives.
-     */
-
     var MockDirectiveResolver = function (_DirectiveResolver) {
         _inherits(MockDirectiveResolver, _DirectiveResolver);
 
@@ -240,13 +214,13 @@
                 var providerOverrides = this._providerOverrides.get(type);
                 var viewProviderOverrides = this._viewProviderOverrides.get(type);
                 var providers = metadata.providers;
-                if (isPresent(providerOverrides)) {
+                if (providerOverrides != null) {
                     var originalViewProviders = metadata.providers || [];
                     providers = originalViewProviders.concat(providerOverrides);
                 }
                 if (metadata instanceof _core.Component) {
                     var viewProviders = metadata.viewProviders;
-                    if (isPresent(viewProviderOverrides)) {
+                    if (viewProviderOverrides != null) {
                         var _originalViewProviders = metadata.viewProviders || [];
                         viewProviders = _originalViewProviders.concat(viewProviderOverrides);
                     }
@@ -257,7 +231,7 @@
                     var animations = view.animations;
                     var templateUrl = view.templateUrl;
                     var inlineTemplate = this._inlineTemplates.get(type);
-                    if (isPresent(inlineTemplate)) {
+                    if (inlineTemplate != null) {
                         templateUrl = null;
                     } else {
                         inlineTemplate = view.template;
@@ -466,7 +440,7 @@
                 }
                 if (override.set) {
                     if (override.remove || override.add) {
-                        throw new Error('Cannot set and add/remove ' + stringify(metadataClass) + ' at the same time!');
+                        throw new Error('Cannot set and add/remove ' + (0, _core.ɵstringify)(metadataClass) + ' at the same time!');
                     }
                     setMetadata(props, override.set);
                 }
@@ -546,7 +520,7 @@
     function _serializeReference(ref, references) {
         var id = references.get(ref);
         if (!id) {
-            id = '' + stringify(ref) + _nextReferenceId++;
+            id = '' + (0, _core.ɵstringify)(ref) + _nextReferenceId++;
             references.set(ref, id);
         }
         return id;

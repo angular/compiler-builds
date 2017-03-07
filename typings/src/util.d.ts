@@ -1,3 +1,10 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 export declare const MODULE_SUFFIX = "";
 export declare function camelCaseToDashCase(input: string): string;
 export declare function dashCaseToCamelCase(input: string): string;
@@ -27,3 +34,4 @@ export declare class SyncAsyncResult<T> {
 }
 export declare function syntaxError(msg: string): Error;
 export declare function isSyntaxError(error: Error): boolean;
+export declare function escapeRegExp(s: string): string;

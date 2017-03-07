@@ -8,7 +8,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-import { Injectable, CompilerFactory, Pipe, Component, Directive, NgModule, COMPILER_OPTIONS, createPlatformFactory, SecurityContext, Compiler, Injector, resolveForwardRef } from '@angular/core';
+import { Injectable, CompilerFactory, Pipe, Component, Directive, NgModule, COMPILER_OPTIONS, createPlatformFactory, SecurityContext, Compiler, Injector, resolveForwardRef, ɵstringify } from '@angular/core';
 import { NgModuleResolver, DirectiveResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
 import { ɵTestingCompilerFactory } from '@angular/core/testing';
 
@@ -91,31 +91,11 @@ var MockSchemaRegistry = function () {
     return MockSchemaRegistry;
 }();
 
-function isPresent(obj) {
-    return obj != null;
-}
-function stringify(token) {
-    if (typeof token === 'string') {
-        return token;
-    }
-    if (token == null) {
-        return '' + token;
-    }
-    if (token.overriddenName) {
-        return '' + token.overriddenName;
-    }
-    if (token.name) {
-        return '' + token.name;
-    }
-    var res = token.toString();
-    var newLineIndex = res.indexOf('\n');
-    return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
-}
-
 /**
  * An implementation of {@link DirectiveResolver} that allows overriding
  * various properties of directives.
  */
+
 
 var MockDirectiveResolver = function (_DirectiveResolver) {
     _inherits(MockDirectiveResolver, _DirectiveResolver);
@@ -154,13 +134,13 @@ var MockDirectiveResolver = function (_DirectiveResolver) {
             var providerOverrides = this._providerOverrides.get(type);
             var viewProviderOverrides = this._viewProviderOverrides.get(type);
             var providers = metadata.providers;
-            if (isPresent(providerOverrides)) {
+            if (providerOverrides != null) {
                 var originalViewProviders = metadata.providers || [];
                 providers = originalViewProviders.concat(providerOverrides);
             }
             if (metadata instanceof Component) {
                 var viewProviders = metadata.viewProviders;
-                if (isPresent(viewProviderOverrides)) {
+                if (viewProviderOverrides != null) {
                     var _originalViewProviders = metadata.viewProviders || [];
                     viewProviders = _originalViewProviders.concat(viewProviderOverrides);
                 }
@@ -171,7 +151,7 @@ var MockDirectiveResolver = function (_DirectiveResolver) {
                 var animations = view.animations;
                 var templateUrl = view.templateUrl;
                 var inlineTemplate = this._inlineTemplates.get(type);
-                if (isPresent(inlineTemplate)) {
+                if (inlineTemplate != null) {
                     templateUrl = null;
                 } else {
                     inlineTemplate = view.template;
@@ -410,7 +390,7 @@ var MetadataOverrider = function () {
             }
             if (override.set) {
                 if (override.remove || override.add) {
-                    throw new Error('Cannot set and add/remove ' + stringify(metadataClass) + ' at the same time!');
+                    throw new Error('Cannot set and add/remove ' + ɵstringify(metadataClass) + ' at the same time!');
                 }
                 setMetadata(props, override.set);
             }
@@ -490,7 +470,7 @@ function _propHashKey(propName, propValue, references) {
 function _serializeReference(ref, references) {
     var id = references.get(ref);
     if (!id) {
-        id = '' + stringify(ref) + _nextReferenceId++;
+        id = '' + ɵstringify(ref) + _nextReferenceId++;
         references.set(ref, id);
     }
     return id;

@@ -405,3 +405,4 @@ export declare class ProviderMeta {
         multi?: boolean;
     });
 }
+export declare function flatten<T>(list: Array<T | T[]>): T[];

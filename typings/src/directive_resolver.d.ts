@@ -19,3 +19,4 @@ export declare class DirectiveResolver {
     private _dedupeBindings(bindings);
     private _merge(directive, inputs, outputs, host, queries, directiveType);
 }
+export declare function findLast<T>(arr: T[], condition: (value: T) => boolean): T;
