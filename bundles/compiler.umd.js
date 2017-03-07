@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-rc.2-1cff125');
+  var VERSION = new _angular_core.Version('4.0.0-rc.2-5df998d');
 
   /**
    * @license
