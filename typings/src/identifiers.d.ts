@@ -43,8 +43,8 @@ export declare class Identifiers {
     static nodeValue: IdentifierSpec;
     static ngContentDef: IdentifierSpec;
     static unwrapValue: IdentifierSpec;
-    static createRendererTypeV2: IdentifierSpec;
-    static RendererTypeV2: IdentifierSpec;
+    static createRendererType2: IdentifierSpec;
+    static RendererType2: IdentifierSpec;
     static ViewDefinition: IdentifierSpec;
     static createComponentFactory: IdentifierSpec;
 }

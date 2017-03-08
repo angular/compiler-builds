@@ -7,7 +7,7 @@
   /**
    * @stable
    */
-  var VERSION = new _angular_core.Version('4.0.0-rc.2-5df998d');
+  var VERSION = new _angular_core.Version('4.0.0-rc.2-ad3b44a');
 
   /**
    * @license
@@ -6840,9 +6840,9 @@
   Identifiers.nodeValue = { name: 'ɵnov', moduleUrl: CORE, runtime: _angular_core.ɵnov };
   Identifiers.ngContentDef = { name: 'ɵncd', moduleUrl: CORE, runtime: _angular_core.ɵncd };
   Identifiers.unwrapValue = { name: 'ɵunv', moduleUrl: CORE, runtime: _angular_core.ɵunv };
-  Identifiers.createRendererTypeV2 = { name: 'ɵcrt', moduleUrl: CORE, runtime: _angular_core.ɵcrt };
-  Identifiers.RendererTypeV2 = {
-      name: 'RendererTypeV2',
+  Identifiers.createRendererType2 = { name: 'ɵcrt', moduleUrl: CORE, runtime: _angular_core.ɵcrt };
+  Identifiers.RendererType2 = {
+      name: 'RendererType2',
       moduleUrl: CORE,
       // type only
       runtime: null
@@ -14416,14 +14416,14 @@
           }
           var renderComponentVar = variable(rendererTypeName(component.type.reference));
           statements.push(renderComponentVar
-              .set(importExpr(createIdentifier(Identifiers.createRendererTypeV2)).callFn([
+              .set(importExpr(createIdentifier(Identifiers.createRendererType2)).callFn([
               new LiteralMapExpr([
                   new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
                   new LiteralMapEntry('styles', styles),
                   new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
               ])
           ]))
-              .toDeclStmt(importType(createIdentifier(Identifiers.RendererTypeV2)), [StmtModifier.Final]));
+              .toDeclStmt(importType(createIdentifier(Identifiers.RendererType2)), [StmtModifier.Final]));
           var viewBuilderFactory = function (parent) {
               var embeddedViewIndex = embeddedViewCount++;
               return new ViewBuilder(parent, component, embeddedViewIndex, usedPipes, staticQueryIds, viewBuilderFactory);
@@ -14664,7 +14664,7 @@
           //        BindingType.DirectiveHostProperty, string, SecurityContext])[],
           //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
           //   handleEvent?: ElementHandleEventFn,
-          //   componentView?: () => ViewDefinition, componentRendererType?: RendererTypeV2): NodeDef;
+          //   componentView?: () => ViewDefinition, componentRendererType?: RendererType2): NodeDef;
           var nodeDef = function () { return importExpr(createIdentifier(Identifiers.elementDef)).callFn([
               literal(flags), queryMatchesExpr, literal(ast.ngContentIndex), literal(childCount),
               literal(elName), elName ? fixedAttrsDef(ast) : NULL_EXPR,

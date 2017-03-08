@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ChangeDetectionStrategy, ComponentFactory, RendererTypeV2, SchemaMetadata, Type, ViewEncapsulation, ɵLifecycleHooks } from '@angular/core';
+import { ChangeDetectionStrategy, ComponentFactory, RendererType2, SchemaMetadata, Type, ViewEncapsulation, ɵLifecycleHooks } from '@angular/core';
 import { StaticSymbol } from './aot/static_symbol';
 export declare class CompileAnimationEntryMetadata {
     name: string;
@@ -205,7 +205,7 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
     changeDetection: ChangeDetectionStrategy;
     template: CompileTemplateSummary;
     componentViewType: StaticSymbol | ProxyClass;
-    rendererType: StaticSymbol | RendererTypeV2;
+    rendererType: StaticSymbol | RendererType2;
     componentFactory: StaticSymbol | ComponentFactory<any>;
 }
 /**
@@ -231,7 +231,7 @@ export declare class CompileDirectiveMetadata {
         entryComponents?: CompileEntryComponentMetadata[];
         template?: CompileTemplateMetadata;
         componentViewType?: StaticSymbol | ProxyClass;
-        rendererType?: StaticSymbol | RendererTypeV2;
+        rendererType?: StaticSymbol | RendererType2;
         componentFactory?: StaticSymbol | ComponentFactory<any>;
     }): CompileDirectiveMetadata;
     isHost: boolean;
@@ -262,7 +262,7 @@ export declare class CompileDirectiveMetadata {
     entryComponents: CompileEntryComponentMetadata[];
     template: CompileTemplateMetadata;
     componentViewType: StaticSymbol | ProxyClass;
-    rendererType: StaticSymbol | RendererTypeV2;
+    rendererType: StaticSymbol | RendererType2;
     componentFactory: StaticSymbol | ComponentFactory<any>;
     constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}?: {
         isHost?: boolean;
@@ -293,7 +293,7 @@ export declare class CompileDirectiveMetadata {
         entryComponents?: CompileEntryComponentMetadata[];
         template?: CompileTemplateMetadata;
         componentViewType?: StaticSymbol | ProxyClass;
-        rendererType?: StaticSymbol | RendererTypeV2;
+        rendererType?: StaticSymbol | RendererType2;
         componentFactory?: StaticSymbol | ComponentFactory<any>;
     });
     toSummary(): CompileDirectiveSummary;

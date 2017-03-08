@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.2-5df998d
+ * @license Angular v4.0.0-rc.2-ad3b44a
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.2-5df998d');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.2-ad3b44a');
 
 /**
  * @license
@@ -9173,9 +9173,9 @@ Identifiers.pipeDef = { name: 'ɵpid', moduleUrl: CORE, runtime: ɵpid };
 Identifiers.nodeValue = { name: 'ɵnov', moduleUrl: CORE, runtime: ɵnov };
 Identifiers.ngContentDef = { name: 'ɵncd', moduleUrl: CORE, runtime: ɵncd };
 Identifiers.unwrapValue = { name: 'ɵunv', moduleUrl: CORE, runtime: ɵunv };
-Identifiers.createRendererTypeV2 = { name: 'ɵcrt', moduleUrl: CORE, runtime: ɵcrt };
-Identifiers.RendererTypeV2 = {
-    name: 'RendererTypeV2',
+Identifiers.createRendererType2 = { name: 'ɵcrt', moduleUrl: CORE, runtime: ɵcrt };
+Identifiers.RendererType2 = {
+    name: 'RendererType2',
     moduleUrl: CORE,
     // type only
     runtime: null
@@ -18614,14 +18614,14 @@ class ViewCompiler {
         }
         const /** @type {?} */ renderComponentVar = variable(rendererTypeName(component.type.reference));
         statements.push(renderComponentVar
-            .set(importExpr(createIdentifier(Identifiers.createRendererTypeV2)).callFn([
+            .set(importExpr(createIdentifier(Identifiers.createRendererType2)).callFn([
             new LiteralMapExpr([
                 new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
                 new LiteralMapEntry('styles', styles),
                 new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
             ])
         ]))
-            .toDeclStmt(importType(createIdentifier(Identifiers.RendererTypeV2)), [StmtModifier.Final]));
+            .toDeclStmt(importType(createIdentifier(Identifiers.RendererType2)), [StmtModifier.Final]));
         const /** @type {?} */ viewBuilderFactory = (parent) => {
             const /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
             return new ViewBuilder(parent, component, embeddedViewIndex, usedPipes, staticQueryIds, viewBuilderFactory);
@@ -18895,7 +18895,7 @@ class ViewBuilder {
         //        BindingType.DirectiveHostProperty, string, SecurityContext])[],
         //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
         //   handleEvent?: ElementHandleEventFn,
-        //   componentView?: () => ViewDefinition, componentRendererType?: RendererTypeV2): NodeDef;
+        //   componentView?: () => ViewDefinition, componentRendererType?: RendererType2): NodeDef;
         const /** @type {?} */ nodeDef = () => importExpr(createIdentifier(Identifiers.elementDef)).callFn([
             literal(flags), queryMatchesExpr, literal(ast.ngContentIndex), literal(childCount),
             literal(elName), elName ? fixedAttrsDef(ast) : NULL_EXPR,
