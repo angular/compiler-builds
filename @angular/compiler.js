@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.2-5ad5301
+ * @license Angular v4.0.0-rc.3-6c8638c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.2-5ad5301');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-6c8638c');
 
 /**
  * @license
@@ -1564,6 +1564,8 @@ function _sanitizeIdentifier(name) {
     return name.replace(/\W/g, '_');
 }
 let /** @type {?} */ _anonymousTypeIndex = 0;
+let /** @type {?} */ symbolId = 0;
+const /** @type {?} */ symbolIds = new Map();
 /**
  * @param {?} compileIdentifier
  * @return {?}
@@ -1575,6 +1577,14 @@ function identifierName(compileIdentifier) {
     const /** @type {?} */ ref = compileIdentifier.reference;
     if (ref instanceof StaticSymbol) {
         return ref.name;
+    }
+    if (isSymbol(ref)) {
+        if (symbolIds.has(ref)) {
+            return symbolIds.get(ref);
+        }
+        const /** @type {?} */ symbolStr = `_symbol_${_sanitizeIdentifier(ref.toString())}_${symbolId++}`;
+        symbolIds.set(ref, symbolStr);
+        return symbolStr;
     }
     if (ref['__anonymousType']) {
         return ref['__anonymousType'];
@@ -1589,6 +1599,13 @@ function identifierName(compileIdentifier) {
         identifier = _sanitizeIdentifier(identifier);
     }
     return identifier;
+}
+/**
+ * @param {?} sym
+ * @return {?}
+ */
+function isSymbol(sym) {
+    return typeof sym === 'symbol';
 }
 /**
  * @param {?} compileIdentifier
@@ -6097,7 +6114,8 @@ class _TreeBuilder {
             this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, `Void elements do not have end tags "${endTagToken.parts[1]}"`));
         }
         else if (!this._popElement(fullName)) {
-            this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, `Unexpected closing tag "${endTagToken.parts[1]}"`));
+            const /** @type {?} */ errMsg = `Unexpected closing tag "${fullName}". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags`;
+            this._errors.push(TreeError.create(fullName, endTagToken.sourceSpan, errMsg));
         }
     }
     /**

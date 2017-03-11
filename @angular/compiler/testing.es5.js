@@ -1,110 +1,71 @@
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-import { Injectable, CompilerFactory, Pipe, Component, Directive, NgModule, COMPILER_OPTIONS, createPlatformFactory, SecurityContext, Compiler, Injector, resolveForwardRef, ɵstringify } from '@angular/core';
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+/**
+ * @license Angular v4.0.0-rc.3-6c8638c
+ * (c) 2010-2017 Google, Inc. https://angular.io/
+ * License: MIT
+ */
+import { Injectable, CompilerFactory, Pipe, Component, Directive, NgModule, COMPILER_OPTIONS, createPlatformFactory, SecurityContext, Compiler, Injector, ɵstringify } from '@angular/core';
 import { NgModuleResolver, DirectiveResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
 import { ɵTestingCompilerFactory } from '@angular/core/testing';
-
-var MockSchemaRegistry = function () {
+var MockSchemaRegistry = (function () {
     function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements, invalidProperties, invalidAttributes) {
-        _classCallCheck(this, MockSchemaRegistry);
-
         this.existingProperties = existingProperties;
         this.attrPropMapping = attrPropMapping;
         this.existingElements = existingElements;
         this.invalidProperties = invalidProperties;
         this.invalidAttributes = invalidAttributes;
     }
-
-    _createClass(MockSchemaRegistry, [{
-        key: 'hasProperty',
-        value: function hasProperty(tagName, property, schemas) {
-            var value = this.existingProperties[property];
-            return value === void 0 ? true : value;
+    MockSchemaRegistry.prototype.hasProperty = function (tagName, property, schemas) {
+        var value = this.existingProperties[property];
+        return value === void 0 ? true : value;
+    };
+    MockSchemaRegistry.prototype.hasElement = function (tagName, schemaMetas) {
+        var value = this.existingElements[tagName.toLowerCase()];
+        return value === void 0 ? true : value;
+    };
+    MockSchemaRegistry.prototype.allKnownElementNames = function () { return Object.keys(this.existingElements); };
+    MockSchemaRegistry.prototype.securityContext = function (selector, property, isAttribute) {
+        return SecurityContext.NONE;
+    };
+    MockSchemaRegistry.prototype.getMappedPropName = function (attrName) { return this.attrPropMapping[attrName] || attrName; };
+    MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
+    MockSchemaRegistry.prototype.validateProperty = function (name) {
+        if (this.invalidProperties.indexOf(name) > -1) {
+            return { error: true, msg: "Binding to property '" + name + "' is disallowed for security reasons" };
         }
-    }, {
-        key: 'hasElement',
-        value: function hasElement(tagName, schemaMetas) {
-            var value = this.existingElements[tagName.toLowerCase()];
-            return value === void 0 ? true : value;
+        else {
+            return { error: false };
         }
-    }, {
-        key: 'allKnownElementNames',
-        value: function allKnownElementNames() {
-            return Object.keys(this.existingElements);
+    };
+    MockSchemaRegistry.prototype.validateAttribute = function (name) {
+        if (this.invalidAttributes.indexOf(name) > -1) {
+            return {
+                error: true,
+                msg: "Binding to attribute '" + name + "' is disallowed for security reasons"
+            };
         }
-    }, {
-        key: 'securityContext',
-        value: function securityContext(selector, property, isAttribute) {
-            return SecurityContext.NONE;
+        else {
+            return { error: false };
         }
-    }, {
-        key: 'getMappedPropName',
-        value: function getMappedPropName(attrName) {
-            return this.attrPropMapping[attrName] || attrName;
-        }
-    }, {
-        key: 'getDefaultComponentElementName',
-        value: function getDefaultComponentElementName() {
-            return 'ng-component';
-        }
-    }, {
-        key: 'validateProperty',
-        value: function validateProperty(name) {
-            if (this.invalidProperties.indexOf(name) > -1) {
-                return { error: true, msg: 'Binding to property \'' + name + '\' is disallowed for security reasons' };
-            } else {
-                return { error: false };
-            }
-        }
-    }, {
-        key: 'validateAttribute',
-        value: function validateAttribute(name) {
-            if (this.invalidAttributes.indexOf(name) > -1) {
-                return {
-                    error: true,
-                    msg: 'Binding to attribute \'' + name + '\' is disallowed for security reasons'
-                };
-            } else {
-                return { error: false };
-            }
-        }
-    }, {
-        key: 'normalizeAnimationStyleProperty',
-        value: function normalizeAnimationStyleProperty(propName) {
-            return propName;
-        }
-    }, {
-        key: 'normalizeAnimationStyleValue',
-        value: function normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) {
-            return { error: null, value: val.toString() };
-        }
-    }]);
-
+    };
+    MockSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) { return propName; };
+    MockSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) {
+        return { error: null, value: val.toString() };
+    };
     return MockSchemaRegistry;
-}();
-
+}());
 /**
  * An implementation of {@link DirectiveResolver} that allows overriding
  * various properties of directives.
  */
-
-
-var MockDirectiveResolver = function (_DirectiveResolver) {
-    _inherits(MockDirectiveResolver, _DirectiveResolver);
-
+var MockDirectiveResolver = (function (_super) {
+    __extends(MockDirectiveResolver, _super);
     function MockDirectiveResolver(_injector) {
-        _classCallCheck(this, MockDirectiveResolver);
-
-        var _this = _possibleConstructorReturn(this, (MockDirectiveResolver.__proto__ || Object.getPrototypeOf(MockDirectiveResolver)).call(this));
-
+        var _this = _super.call(this) || this;
         _this._injector = _injector;
         _this._directives = new Map();
         _this._providerOverrides = new Map();
@@ -113,342 +74,267 @@ var MockDirectiveResolver = function (_DirectiveResolver) {
         _this._inlineTemplates = new Map();
         return _this;
     }
-
-    _createClass(MockDirectiveResolver, [{
-        key: '_clearCacheFor',
-        value: function _clearCacheFor(component) {
-            this._compiler.clearCacheFor(component);
+    Object.defineProperty(MockDirectiveResolver.prototype, "_compiler", {
+        get: function () { return this._injector.get(Compiler); },
+        enumerable: true,
+        configurable: true
+    });
+    MockDirectiveResolver.prototype._clearCacheFor = function (component) { this._compiler.clearCacheFor(component); };
+    MockDirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        var metadata = this._directives.get(type);
+        if (!metadata) {
+            metadata = _super.prototype.resolve.call(this, type, throwIfNotFound);
         }
-    }, {
-        key: 'resolve',
-        value: function resolve(type) {
-            var throwIfNotFound = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-            var metadata = this._directives.get(type);
-            if (!metadata) {
-                metadata = _get(MockDirectiveResolver.prototype.__proto__ || Object.getPrototypeOf(MockDirectiveResolver.prototype), 'resolve', this).call(this, type, throwIfNotFound);
+        if (!metadata) {
+            return null;
+        }
+        var providerOverrides = this._providerOverrides.get(type);
+        var viewProviderOverrides = this._viewProviderOverrides.get(type);
+        var providers = metadata.providers;
+        if (providerOverrides != null) {
+            var originalViewProviders = metadata.providers || [];
+            providers = originalViewProviders.concat(providerOverrides);
+        }
+        if (metadata instanceof Component) {
+            var viewProviders = metadata.viewProviders;
+            if (viewProviderOverrides != null) {
+                var originalViewProviders = metadata.viewProviders || [];
+                viewProviders = originalViewProviders.concat(viewProviderOverrides);
             }
-            if (!metadata) {
-                return null;
+            var view = this._views.get(type);
+            if (!view) {
+                view = metadata;
             }
-            var providerOverrides = this._providerOverrides.get(type);
-            var viewProviderOverrides = this._viewProviderOverrides.get(type);
-            var providers = metadata.providers;
-            if (providerOverrides != null) {
-                var originalViewProviders = metadata.providers || [];
-                providers = originalViewProviders.concat(providerOverrides);
+            var animations = view.animations;
+            var templateUrl = view.templateUrl;
+            var inlineTemplate = this._inlineTemplates.get(type);
+            if (inlineTemplate != null) {
+                templateUrl = null;
             }
-            if (metadata instanceof Component) {
-                var viewProviders = metadata.viewProviders;
-                if (viewProviderOverrides != null) {
-                    var _originalViewProviders = metadata.viewProviders || [];
-                    viewProviders = _originalViewProviders.concat(viewProviderOverrides);
-                }
-                var view = this._views.get(type);
-                if (!view) {
-                    view = metadata;
-                }
-                var animations = view.animations;
-                var templateUrl = view.templateUrl;
-                var inlineTemplate = this._inlineTemplates.get(type);
-                if (inlineTemplate != null) {
-                    templateUrl = null;
-                } else {
-                    inlineTemplate = view.template;
-                }
-                return new Component({
-                    selector: metadata.selector,
-                    inputs: metadata.inputs,
-                    outputs: metadata.outputs,
-                    host: metadata.host,
-                    exportAs: metadata.exportAs,
-                    moduleId: metadata.moduleId,
-                    queries: metadata.queries,
-                    changeDetection: metadata.changeDetection,
-                    providers: providers,
-                    viewProviders: viewProviders,
-                    entryComponents: metadata.entryComponents,
-                    template: inlineTemplate,
-                    templateUrl: templateUrl,
-                    animations: animations,
-                    styles: view.styles,
-                    styleUrls: view.styleUrls,
-                    encapsulation: view.encapsulation,
-                    interpolation: view.interpolation
-                });
+            else {
+                inlineTemplate = view.template;
             }
-            return new Directive({
+            return new Component({
                 selector: metadata.selector,
                 inputs: metadata.inputs,
                 outputs: metadata.outputs,
                 host: metadata.host,
-                providers: providers,
                 exportAs: metadata.exportAs,
-                queries: metadata.queries
+                moduleId: metadata.moduleId,
+                queries: metadata.queries,
+                changeDetection: metadata.changeDetection,
+                providers: providers,
+                viewProviders: viewProviders,
+                entryComponents: metadata.entryComponents,
+                template: inlineTemplate,
+                templateUrl: templateUrl,
+                animations: animations,
+                styles: view.styles,
+                styleUrls: view.styleUrls,
+                encapsulation: view.encapsulation,
+                interpolation: view.interpolation
             });
         }
-        /**
-         * Overrides the {@link Directive} for a directive.
-         */
-
-    }, {
-        key: 'setDirective',
-        value: function setDirective(type, metadata) {
-            this._directives.set(type, metadata);
-            this._clearCacheFor(type);
-        }
-    }, {
-        key: 'setProvidersOverride',
-        value: function setProvidersOverride(type, providers) {
-            this._providerOverrides.set(type, providers);
-            this._clearCacheFor(type);
-        }
-    }, {
-        key: 'setViewProvidersOverride',
-        value: function setViewProvidersOverride(type, viewProviders) {
-            this._viewProviderOverrides.set(type, viewProviders);
-            this._clearCacheFor(type);
-        }
-        /**
-         * Overrides the {@link ViewMetadata} for a component.
-         */
-
-    }, {
-        key: 'setView',
-        value: function setView(component, view) {
-            this._views.set(component, view);
-            this._clearCacheFor(component);
-        }
-        /**
-         * Overrides the inline template for a component - other configuration remains unchanged.
-         */
-
-    }, {
-        key: 'setInlineTemplate',
-        value: function setInlineTemplate(component, template) {
-            this._inlineTemplates.set(component, template);
-            this._clearCacheFor(component);
-        }
-    }, {
-        key: '_compiler',
-        get: function get() {
-            return this._injector.get(Compiler);
-        }
-    }]);
-
+        return new Directive({
+            selector: metadata.selector,
+            inputs: metadata.inputs,
+            outputs: metadata.outputs,
+            host: metadata.host,
+            providers: providers,
+            exportAs: metadata.exportAs,
+            queries: metadata.queries
+        });
+    };
+    /**
+     * Overrides the {@link Directive} for a directive.
+     */
+    MockDirectiveResolver.prototype.setDirective = function (type, metadata) {
+        this._directives.set(type, metadata);
+        this._clearCacheFor(type);
+    };
+    MockDirectiveResolver.prototype.setProvidersOverride = function (type, providers) {
+        this._providerOverrides.set(type, providers);
+        this._clearCacheFor(type);
+    };
+    MockDirectiveResolver.prototype.setViewProvidersOverride = function (type, viewProviders) {
+        this._viewProviderOverrides.set(type, viewProviders);
+        this._clearCacheFor(type);
+    };
+    /**
+     * Overrides the {@link ViewMetadata} for a component.
+     */
+    MockDirectiveResolver.prototype.setView = function (component, view) {
+        this._views.set(component, view);
+        this._clearCacheFor(component);
+    };
+    /**
+     * Overrides the inline template for a component - other configuration remains unchanged.
+     */
+    MockDirectiveResolver.prototype.setInlineTemplate = function (component, template) {
+        this._inlineTemplates.set(component, template);
+        this._clearCacheFor(component);
+    };
     return MockDirectiveResolver;
-}(DirectiveResolver);
-
-MockDirectiveResolver.decorators = [{ type: Injectable }];
+}(DirectiveResolver));
+MockDirectiveResolver.decorators = [
+    { type: Injectable },
+];
 /** @nocollapse */
-MockDirectiveResolver.ctorParameters = function () {
-    return [{ type: Injector }];
-};
-
-var MockNgModuleResolver = function (_NgModuleResolver) {
-    _inherits(MockNgModuleResolver, _NgModuleResolver);
-
+MockDirectiveResolver.ctorParameters = function () { return [
+    { type: Injector, },
+]; };
+var MockNgModuleResolver = (function (_super) {
+    __extends(MockNgModuleResolver, _super);
     function MockNgModuleResolver(_injector) {
-        _classCallCheck(this, MockNgModuleResolver);
-
-        var _this2 = _possibleConstructorReturn(this, (MockNgModuleResolver.__proto__ || Object.getPrototypeOf(MockNgModuleResolver)).call(this));
-
-        _this2._injector = _injector;
-        _this2._ngModules = new Map();
-        return _this2;
+        var _this = _super.call(this) || this;
+        _this._injector = _injector;
+        _this._ngModules = new Map();
+        return _this;
     }
     /**
      * Overrides the {@link NgModule} for a module.
      */
-
-
-    _createClass(MockNgModuleResolver, [{
-        key: 'setNgModule',
-        value: function setNgModule(type, metadata) {
-            this._ngModules.set(type, metadata);
-            this._clearCacheFor(type);
-        }
-        /**
-         * Returns the {@link NgModule} for a module:
-         * - Set the {@link NgModule} to the overridden view when it exists or fallback to the
-         * default
-         * `NgModuleResolver`, see `setNgModule`.
-         */
-
-    }, {
-        key: 'resolve',
-        value: function resolve(type) {
-            var throwIfNotFound = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-            return this._ngModules.get(type) || _get(MockNgModuleResolver.prototype.__proto__ || Object.getPrototypeOf(MockNgModuleResolver.prototype), 'resolve', this).call(this, type, throwIfNotFound);
-        }
-    }, {
-        key: '_clearCacheFor',
-        value: function _clearCacheFor(component) {
-            this._compiler.clearCacheFor(component);
-        }
-    }, {
-        key: '_compiler',
-        get: function get() {
-            return this._injector.get(Compiler);
-        }
-    }]);
-
+    MockNgModuleResolver.prototype.setNgModule = function (type, metadata) {
+        this._ngModules.set(type, metadata);
+        this._clearCacheFor(type);
+    };
+    /**
+     * Returns the {@link NgModule} for a module:
+     * - Set the {@link NgModule} to the overridden view when it exists or fallback to the
+     * default
+     * `NgModuleResolver`, see `setNgModule`.
+     */
+    MockNgModuleResolver.prototype.resolve = function (type, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        return this._ngModules.get(type) || _super.prototype.resolve.call(this, type, throwIfNotFound);
+    };
+    Object.defineProperty(MockNgModuleResolver.prototype, "_compiler", {
+        get: function () { return this._injector.get(Compiler); },
+        enumerable: true,
+        configurable: true
+    });
+    MockNgModuleResolver.prototype._clearCacheFor = function (component) { this._compiler.clearCacheFor(component); };
     return MockNgModuleResolver;
-}(NgModuleResolver);
-
-MockNgModuleResolver.decorators = [{ type: Injectable }];
+}(NgModuleResolver));
+MockNgModuleResolver.decorators = [
+    { type: Injectable },
+];
 /** @nocollapse */
-MockNgModuleResolver.ctorParameters = function () {
-    return [{ type: Injector }];
-};
-
-var MockPipeResolver = function (_PipeResolver) {
-    _inherits(MockPipeResolver, _PipeResolver);
-
+MockNgModuleResolver.ctorParameters = function () { return [
+    { type: Injector, },
+]; };
+var MockPipeResolver = (function (_super) {
+    __extends(MockPipeResolver, _super);
     function MockPipeResolver(_injector) {
-        _classCallCheck(this, MockPipeResolver);
-
-        var _this3 = _possibleConstructorReturn(this, (MockPipeResolver.__proto__ || Object.getPrototypeOf(MockPipeResolver)).call(this));
-
-        _this3._injector = _injector;
-        _this3._pipes = new Map();
-        return _this3;
+        var _this = _super.call(this) || this;
+        _this._injector = _injector;
+        _this._pipes = new Map();
+        return _this;
     }
-
-    _createClass(MockPipeResolver, [{
-        key: '_clearCacheFor',
-        value: function _clearCacheFor(pipe) {
-            this._compiler.clearCacheFor(pipe);
+    Object.defineProperty(MockPipeResolver.prototype, "_compiler", {
+        get: function () { return this._injector.get(Compiler); },
+        enumerable: true,
+        configurable: true
+    });
+    MockPipeResolver.prototype._clearCacheFor = function (pipe) { this._compiler.clearCacheFor(pipe); };
+    /**
+     * Overrides the {@link Pipe} for a pipe.
+     */
+    MockPipeResolver.prototype.setPipe = function (type, metadata) {
+        this._pipes.set(type, metadata);
+        this._clearCacheFor(type);
+    };
+    /**
+     * Returns the {@link Pipe} for a pipe:
+     * - Set the {@link Pipe} to the overridden view when it exists or fallback to the
+     * default
+     * `PipeResolver`, see `setPipe`.
+     */
+    MockPipeResolver.prototype.resolve = function (type, throwIfNotFound) {
+        if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        var metadata = this._pipes.get(type);
+        if (!metadata) {
+            metadata = _super.prototype.resolve.call(this, type, throwIfNotFound);
         }
-        /**
-         * Overrides the {@link Pipe} for a pipe.
-         */
-
-    }, {
-        key: 'setPipe',
-        value: function setPipe(type, metadata) {
-            this._pipes.set(type, metadata);
-            this._clearCacheFor(type);
-        }
-        /**
-         * Returns the {@link Pipe} for a pipe:
-         * - Set the {@link Pipe} to the overridden view when it exists or fallback to the
-         * default
-         * `PipeResolver`, see `setPipe`.
-         */
-
-    }, {
-        key: 'resolve',
-        value: function resolve(type) {
-            var throwIfNotFound = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-            var metadata = this._pipes.get(type);
-            if (!metadata) {
-                metadata = _get(MockPipeResolver.prototype.__proto__ || Object.getPrototypeOf(MockPipeResolver.prototype), 'resolve', this).call(this, type, throwIfNotFound);
-            }
-            return metadata;
-        }
-    }, {
-        key: '_compiler',
-        get: function get() {
-            return this._injector.get(Compiler);
-        }
-    }]);
-
+        return metadata;
+    };
     return MockPipeResolver;
-}(PipeResolver);
-
-MockPipeResolver.decorators = [{ type: Injectable }];
+}(PipeResolver));
+MockPipeResolver.decorators = [
+    { type: Injectable },
+];
 /** @nocollapse */
-MockPipeResolver.ctorParameters = function () {
-    return [{ type: Injector }];
-};
-
+MockPipeResolver.ctorParameters = function () { return [
+    { type: Injector, },
+]; };
 var _nextReferenceId = 0;
-
-var MetadataOverrider = function () {
+var MetadataOverrider = (function () {
     function MetadataOverrider() {
-        _classCallCheck(this, MetadataOverrider);
-
         this._references = new Map();
     }
     /**
      * Creates a new instance for the given metadata class
      * based on an old instance and overrides.
      */
-
-
-    _createClass(MetadataOverrider, [{
-        key: 'overrideMetadata',
-        value: function overrideMetadata(metadataClass, oldMetadata, override) {
-            var props = {};
-            if (oldMetadata) {
-                _valueProps(oldMetadata).forEach(function (prop) {
-                    return props[prop] = oldMetadata[prop];
-                });
-            }
-            if (override.set) {
-                if (override.remove || override.add) {
-                    throw new Error('Cannot set and add/remove ' + ɵstringify(metadataClass) + ' at the same time!');
-                }
-                setMetadata(props, override.set);
-            }
-            if (override.remove) {
-                removeMetadata(props, override.remove, this._references);
-            }
-            if (override.add) {
-                addMetadata(props, override.add);
-            }
-            return new metadataClass(props);
+    MetadataOverrider.prototype.overrideMetadata = function (metadataClass, oldMetadata, override) {
+        var props = {};
+        if (oldMetadata) {
+            _valueProps(oldMetadata).forEach(function (prop) { return props[prop] = oldMetadata[prop]; });
         }
-    }]);
-
+        if (override.set) {
+            if (override.remove || override.add) {
+                throw new Error("Cannot set and add/remove " + ɵstringify(metadataClass) + " at the same time!");
+            }
+            setMetadata(props, override.set);
+        }
+        if (override.remove) {
+            removeMetadata(props, override.remove, this._references);
+        }
+        if (override.add) {
+            addMetadata(props, override.add);
+        }
+        return new metadataClass(props);
+    };
     return MetadataOverrider;
-}();
-
+}());
 function removeMetadata(metadata, remove, references) {
     var removeObjects = new Set();
-
-    var _loop = function _loop(prop) {
+    var _loop_1 = function (prop) {
         var removeValue = remove[prop];
         if (removeValue instanceof Array) {
-            removeValue.forEach(function (value) {
-                removeObjects.add(_propHashKey(prop, value, references));
-            });
-        } else {
+            removeValue.forEach(function (value) { removeObjects.add(_propHashKey(prop, value, references)); });
+        }
+        else {
             removeObjects.add(_propHashKey(prop, removeValue, references));
         }
     };
-
     for (var prop in remove) {
-        _loop(prop);
+        _loop_1(prop);
     }
-
-    var _loop2 = function _loop2(prop) {
+    var _loop_2 = function (prop) {
         var propValue = metadata[prop];
         if (propValue instanceof Array) {
-            metadata[prop] = propValue.filter(function (value) {
-                return !removeObjects.has(_propHashKey(prop, value, references));
-            });
-        } else {
+            metadata[prop] = propValue.filter(function (value) { return !removeObjects.has(_propHashKey(prop, value, references)); });
+        }
+        else {
             if (removeObjects.has(_propHashKey(prop, propValue, references))) {
                 metadata[prop] = undefined;
             }
         }
     };
-
     for (var prop in metadata) {
-        _loop2(prop);
+        _loop_2(prop);
     }
 }
 function addMetadata(metadata, add) {
     for (var prop in add) {
         var addValue = add[prop];
-        var _propValue = metadata[prop];
-        if (_propValue != null && _propValue instanceof Array) {
-            metadata[prop] = _propValue.concat(addValue);
-        } else {
+        var propValue = metadata[prop];
+        if (propValue != null && propValue instanceof Array) {
+            metadata[prop] = propValue.concat(addValue);
+        }
+        else {
             metadata[prop] = addValue;
         }
     }
@@ -459,18 +345,18 @@ function setMetadata(metadata, set) {
     }
 }
 function _propHashKey(propName, propValue, references) {
-    var replacer = function replacer(key, value) {
+    var replacer = function (key, value) {
         if (typeof value === 'function') {
             value = _serializeReference(value, references);
         }
         return value;
     };
-    return propName + ':' + JSON.stringify(propValue, replacer);
+    return propName + ":" + JSON.stringify(propValue, replacer);
 }
 function _serializeReference(ref, references) {
     var id = references.get(ref);
     if (!id) {
-        id = '' + ɵstringify(ref) + _nextReferenceId++;
+        id = "" + ɵstringify(ref) + _nextReferenceId++;
         references.set(ref, id);
     }
     return id;
@@ -495,123 +381,91 @@ function _valueProps(obj) {
     }
     return props;
 }
-
-var TestingCompilerFactoryImpl = function () {
+var TestingCompilerFactoryImpl = (function () {
     function TestingCompilerFactoryImpl(_compilerFactory) {
-        _classCallCheck(this, TestingCompilerFactoryImpl);
-
         this._compilerFactory = _compilerFactory;
     }
-
-    _createClass(TestingCompilerFactoryImpl, [{
-        key: 'createTestingCompiler',
-        value: function createTestingCompiler(options) {
-            var compiler = this._compilerFactory.createCompiler(options);
-            return new TestingCompilerImpl(compiler, compiler.injector.get(MockDirectiveResolver), compiler.injector.get(MockPipeResolver), compiler.injector.get(MockNgModuleResolver));
-        }
-    }]);
-
+    TestingCompilerFactoryImpl.prototype.createTestingCompiler = function (options) {
+        var compiler = this._compilerFactory.createCompiler(options);
+        return new TestingCompilerImpl(compiler, compiler.injector.get(MockDirectiveResolver), compiler.injector.get(MockPipeResolver), compiler.injector.get(MockNgModuleResolver));
+    };
     return TestingCompilerFactoryImpl;
-}();
-
-TestingCompilerFactoryImpl.decorators = [{ type: Injectable }];
+}());
+TestingCompilerFactoryImpl.decorators = [
+    { type: Injectable },
+];
 /** @nocollapse */
-TestingCompilerFactoryImpl.ctorParameters = function () {
-    return [{ type: CompilerFactory }];
-};
-
-var TestingCompilerImpl = function () {
+TestingCompilerFactoryImpl.ctorParameters = function () { return [
+    { type: CompilerFactory, },
+]; };
+var TestingCompilerImpl = (function () {
     function TestingCompilerImpl(_compiler, _directiveResolver, _pipeResolver, _moduleResolver) {
-        _classCallCheck(this, TestingCompilerImpl);
-
         this._compiler = _compiler;
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
         this._moduleResolver = _moduleResolver;
         this._overrider = new MetadataOverrider();
     }
-
-    _createClass(TestingCompilerImpl, [{
-        key: 'compileModuleSync',
-        value: function compileModuleSync(moduleType) {
-            return this._compiler.compileModuleSync(moduleType);
-        }
-    }, {
-        key: 'compileModuleAsync',
-        value: function compileModuleAsync(moduleType) {
-            return this._compiler.compileModuleAsync(moduleType);
-        }
-    }, {
-        key: 'compileModuleAndAllComponentsSync',
-        value: function compileModuleAndAllComponentsSync(moduleType) {
-            return this._compiler.compileModuleAndAllComponentsSync(moduleType);
-        }
-    }, {
-        key: 'compileModuleAndAllComponentsAsync',
-        value: function compileModuleAndAllComponentsAsync(moduleType) {
-            return this._compiler.compileModuleAndAllComponentsAsync(moduleType);
-        }
-    }, {
-        key: 'getNgContentSelectors',
-        value: function getNgContentSelectors(component) {
-            return this._compiler.getNgContentSelectors(component);
-        }
-    }, {
-        key: 'overrideModule',
-        value: function overrideModule(ngModule, override) {
-            var oldMetadata = this._moduleResolver.resolve(ngModule, false);
-            this._moduleResolver.setNgModule(ngModule, this._overrider.overrideMetadata(NgModule, oldMetadata, override));
-        }
-    }, {
-        key: 'overrideDirective',
-        value: function overrideDirective(directive, override) {
-            var oldMetadata = this._directiveResolver.resolve(directive, false);
-            this._directiveResolver.setDirective(directive, this._overrider.overrideMetadata(Directive, oldMetadata, override));
-        }
-    }, {
-        key: 'overrideComponent',
-        value: function overrideComponent(component, override) {
-            var oldMetadata = this._directiveResolver.resolve(component, false);
-            this._directiveResolver.setDirective(component, this._overrider.overrideMetadata(Component, oldMetadata, override));
-        }
-    }, {
-        key: 'overridePipe',
-        value: function overridePipe(pipe, override) {
-            var oldMetadata = this._pipeResolver.resolve(pipe, false);
-            this._pipeResolver.setPipe(pipe, this._overrider.overrideMetadata(Pipe, oldMetadata, override));
-        }
-    }, {
-        key: 'clearCache',
-        value: function clearCache() {
-            this._compiler.clearCache();
-        }
-    }, {
-        key: 'clearCacheFor',
-        value: function clearCacheFor(type) {
-            this._compiler.clearCacheFor(type);
-        }
-    }, {
-        key: 'injector',
-        get: function get() {
-            return this._compiler.injector;
-        }
-    }]);
-
+    Object.defineProperty(TestingCompilerImpl.prototype, "injector", {
+        get: function () { return this._compiler.injector; },
+        enumerable: true,
+        configurable: true
+    });
+    TestingCompilerImpl.prototype.compileModuleSync = function (moduleType) {
+        return this._compiler.compileModuleSync(moduleType);
+    };
+    TestingCompilerImpl.prototype.compileModuleAsync = function (moduleType) {
+        return this._compiler.compileModuleAsync(moduleType);
+    };
+    TestingCompilerImpl.prototype.compileModuleAndAllComponentsSync = function (moduleType) {
+        return this._compiler.compileModuleAndAllComponentsSync(moduleType);
+    };
+    TestingCompilerImpl.prototype.compileModuleAndAllComponentsAsync = function (moduleType) {
+        return this._compiler.compileModuleAndAllComponentsAsync(moduleType);
+    };
+    TestingCompilerImpl.prototype.getNgContentSelectors = function (component) {
+        return this._compiler.getNgContentSelectors(component);
+    };
+    TestingCompilerImpl.prototype.overrideModule = function (ngModule, override) {
+        var oldMetadata = this._moduleResolver.resolve(ngModule, false);
+        this._moduleResolver.setNgModule(ngModule, this._overrider.overrideMetadata(NgModule, oldMetadata, override));
+    };
+    TestingCompilerImpl.prototype.overrideDirective = function (directive, override) {
+        var oldMetadata = this._directiveResolver.resolve(directive, false);
+        this._directiveResolver.setDirective(directive, this._overrider.overrideMetadata(Directive, oldMetadata, override));
+    };
+    TestingCompilerImpl.prototype.overrideComponent = function (component, override) {
+        var oldMetadata = this._directiveResolver.resolve(component, false);
+        this._directiveResolver.setDirective(component, this._overrider.overrideMetadata(Component, oldMetadata, override));
+    };
+    TestingCompilerImpl.prototype.overridePipe = function (pipe, override) {
+        var oldMetadata = this._pipeResolver.resolve(pipe, false);
+        this._pipeResolver.setPipe(pipe, this._overrider.overrideMetadata(Pipe, oldMetadata, override));
+    };
+    TestingCompilerImpl.prototype.clearCache = function () { this._compiler.clearCache(); };
+    TestingCompilerImpl.prototype.clearCacheFor = function (type) { this._compiler.clearCacheFor(type); };
     return TestingCompilerImpl;
-}();
+}());
 /**
  * Platform for dynamic tests
  *
  * @experimental
  */
-
-
-var platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'coreDynamicTesting', [{
-    provide: COMPILER_OPTIONS,
-    useValue: {
-        providers: [MockPipeResolver, { provide: PipeResolver, useExisting: MockPipeResolver }, MockDirectiveResolver, { provide: DirectiveResolver, useExisting: MockDirectiveResolver }, MockNgModuleResolver, { provide: NgModuleResolver, useExisting: MockNgModuleResolver }]
+var platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'coreDynamicTesting', [
+    {
+        provide: COMPILER_OPTIONS,
+        useValue: {
+            providers: [
+                MockPipeResolver,
+                { provide: PipeResolver, useExisting: MockPipeResolver },
+                MockDirectiveResolver,
+                { provide: DirectiveResolver, useExisting: MockDirectiveResolver },
+                MockNgModuleResolver,
+                { provide: NgModuleResolver, useExisting: MockNgModuleResolver },
+            ]
+        },
+        multi: true
     },
-    multi: true
-}, { provide: ɵTestingCompilerFactory, useClass: TestingCompilerFactoryImpl }]);
-
+    { provide: ɵTestingCompilerFactory, useClass: TestingCompilerFactoryImpl }
+]);
 export { TestingCompilerFactoryImpl, TestingCompilerImpl, platformCoreDynamicTesting, MockSchemaRegistry, MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver };

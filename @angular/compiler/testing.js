@@ -1,3 +1,8 @@
+/**
+ * @license Angular v4.0.0-rc.3-6c8638c
+ * (c) 2010-2017 Google, Inc. https://angular.io/
+ * License: MIT
+ */
 import { Injectable, CompilerFactory, Pipe, Component, Directive, NgModule, COMPILER_OPTIONS, createPlatformFactory, SecurityContext, Compiler, Injector, resolveForwardRef, ɵstringify } from '@angular/core';
 import { NgModuleResolver, DirectiveResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
 import { ɵTestingCompilerFactory } from '@angular/core/testing';
