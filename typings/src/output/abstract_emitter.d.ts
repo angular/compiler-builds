@@ -70,6 +70,7 @@ export declare abstract class AbstractEmitterVisitor implements o.StatementVisit
     visitReadKeyExpr(ast: o.ReadKeyExpr, ctx: EmitterVisitorContext): any;
     visitLiteralArrayExpr(ast: o.LiteralArrayExpr, ctx: EmitterVisitorContext): any;
     visitLiteralMapExpr(ast: o.LiteralMapExpr, ctx: EmitterVisitorContext): any;
+    visitCommaExpr(ast: o.CommaExpr, ctx: EmitterVisitorContext): any;
     visitAllExpressions(expressions: o.Expression[], ctx: EmitterVisitorContext, separator: string, newLine?: boolean): void;
     visitAllObjects<T>(handler: (t: T) => void, expressions: T[], ctx: EmitterVisitorContext, separator: string, newLine?: boolean): void;
     visitAllStatements(statements: o.Statement[], ctx: EmitterVisitorContext): void;

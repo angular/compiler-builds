@@ -45,7 +45,7 @@ export declare class CompileMetadataResolver {
     private getRendererType(dirType);
     private getComponentFactory(selector, dirType);
     private _loadSummary(type, kind);
-    private _loadDirectiveMetadata(directiveType, isSync);
+    private _loadDirectiveMetadata(ngModuleType, directiveType, isSync);
     getNonNormalizedDirectiveMetadata(directiveType: any): {
         annotation: Directive;
         metadata: cpl.CompileDirectiveMetadata;

@@ -17,9 +17,8 @@ export interface QueryWithId {
 }
 export declare class ProviderViewContext {
     component: CompileDirectiveMetadata;
-    sourceSpan: ParseSourceSpan;
     errors: ProviderError[];
-    constructor(component: CompileDirectiveMetadata, sourceSpan: ParseSourceSpan);
+    constructor(component: CompileDirectiveMetadata);
 }
 export declare class ProviderElementContext {
     viewContext: ProviderViewContext;

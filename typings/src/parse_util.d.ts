@@ -1,3 +1,4 @@
+import { CompileIdentifierMetadata } from './compile_metadata';
 export declare class ParseLocation {
     file: ParseSourceFile;
     offset: number;
@@ -34,3 +35,4 @@ export declare class ParseError {
     constructor(span: ParseSourceSpan, msg: string, level?: ParseErrorLevel);
     toString(): string;
 }
+export declare function typeSourceSpan(kind: string, type: CompileIdentifierMetadata): ParseSourceSpan;

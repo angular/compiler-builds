@@ -242,6 +242,11 @@ export declare class LiteralMapExpr extends Expression {
     constructor(entries: LiteralMapEntry[], type?: MapType, sourceSpan?: ParseSourceSpan);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
+export declare class CommaExpr extends Expression {
+    parts: Expression[];
+    constructor(parts: Expression[], sourceSpan?: ParseSourceSpan);
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+}
 export interface ExpressionVisitor {
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
@@ -261,6 +266,7 @@ export interface ExpressionVisitor {
     visitReadKeyExpr(ast: ReadKeyExpr, context: any): any;
     visitLiteralArrayExpr(ast: LiteralArrayExpr, context: any): any;
     visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
+    visitCommaExpr(ast: CommaExpr, context: any): any;
 }
 export declare const THIS_EXPR: ReadVarExpr;
 export declare const SUPER_EXPR: ReadVarExpr;
@@ -369,7 +375,9 @@ export interface StatementVisitor {
     visitThrowStmt(stmt: ThrowStmt, context: any): any;
     visitCommentStmt(stmt: CommentStmt, context: any): any;
 }
-export declare class ExpressionTransformer implements StatementVisitor, ExpressionVisitor {
+export declare class AstTransformer implements StatementVisitor, ExpressionVisitor {
+    transformExpr(expr: Expression, context: any): Expression;
+    transformStmt(stmt: Statement, context: any): Statement;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
@@ -388,6 +396,7 @@ export declare class ExpressionTransformer implements StatementVisitor, Expressi
     visitReadKeyExpr(ast: ReadKeyExpr, context: any): any;
     visitLiteralArrayExpr(ast: LiteralArrayExpr, context: any): any;
     visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
+    visitCommaExpr(ast: CommaExpr, context: any): any;
     visitAllExpressions(exprs: Expression[], context: any): Expression[];
     visitDeclareVarStmt(stmt: DeclareVarStmt, context: any): any;
     visitDeclareFunctionStmt(stmt: DeclareFunctionStmt, context: any): any;
@@ -400,7 +409,7 @@ export declare class ExpressionTransformer implements StatementVisitor, Expressi
     visitCommentStmt(stmt: CommentStmt, context: any): any;
     visitAllStatements(stmts: Statement[], context: any): Statement[];
 }
-export declare class RecursiveExpressionVisitor implements StatementVisitor, ExpressionVisitor {
+export declare class RecursiveAstVisitor implements StatementVisitor, ExpressionVisitor {
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
@@ -419,6 +428,7 @@ export declare class RecursiveExpressionVisitor implements StatementVisitor, Exp
     visitReadKeyExpr(ast: ReadKeyExpr, context: any): any;
     visitLiteralArrayExpr(ast: LiteralArrayExpr, context: any): any;
     visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
+    visitCommaExpr(ast: CommaExpr, context: any): any;
     visitAllExpressions(exprs: Expression[], context: any): void;
     visitDeclareVarStmt(stmt: DeclareVarStmt, context: any): any;
     visitDeclareFunctionStmt(stmt: DeclareFunctionStmt, context: any): any;
@@ -431,8 +441,8 @@ export declare class RecursiveExpressionVisitor implements StatementVisitor, Exp
     visitCommentStmt(stmt: CommentStmt, context: any): any;
     visitAllStatements(stmts: Statement[], context: any): void;
 }
-export declare function replaceVarInExpression(varName: string, newValue: Expression, expression: Expression): Expression;
-export declare function findReadVarNames(stmts: Statement[]): Set<string>;
+export declare function applySourceSpanToStatementIfNeeded(stmt: Statement, sourceSpan: ParseSourceSpan): Statement;
+export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, sourceSpan: ParseSourceSpan): Expression;
 export declare function variable(name: string, type?: Type, sourceSpan?: ParseSourceSpan): ReadVarExpr;
 export declare function importExpr(id: CompileIdentifierMetadata, typeParams?: Type[], sourceSpan?: ParseSourceSpan): ExternalExpr;
 export declare function importType(id: CompileIdentifierMetadata, typeParams?: Type[], typeModifiers?: TypeModifier[]): ExpressionType;
