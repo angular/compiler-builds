@@ -4,15 +4,15 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.3-f093501
+ * @license Angular v4.0.0-rc.3-13686bb
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
-import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵreflector, ViewEncapsulation, ChangeDetectionStrategy, isDevMode, MissingTranslationStrategy, ANALYZE_FOR_ENTRY_COMPONENTS, ElementRef, ViewContainerRef, ChangeDetectorRef, QueryList, TemplateRef, ɵCodegenComponentFactoryResolver, ComponentFactoryResolver, ComponentFactory, ComponentRef, NgModuleFactory, ɵNgModuleInjector, ɵregisterModuleFactory, Injector, SecurityContext, LOCALE_ID, TRANSLATIONS_FORMAT, ɵinlineInterpolate, ɵinterpolate, ɵEMPTY_ARRAY, ɵEMPTY_MAP, Renderer, ɵvid, ɵeld, ɵand, ɵted, ɵdid, ɵprd, ɵqud, ɵpad, ɵpod, ɵppd, ɵpid, ɵnov, ɵncd, ɵunv, ɵcrt, ɵccf, PACKAGE_ROOT_URL, Directive, Component, ɵmerge, Query, HostListener, HostBinding, Output, Input, resolveForwardRef, ɵReflectorReader, Attribute, SkipSelf, Self, Host, ɵLIFECYCLE_HOOKS_VALUES, Injectable, Type, ɵERROR_COMPONENT_TYPE, ɵLifecycleHooks, NgModule, Pipe, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, ɵelementEventFullName, ɵReflectionCapabilities, group, sequence, keyframes, animate, style, transition, state, trigger, ViewChildren, ViewChild, ContentChildren, ContentChild, ɵgetComponentViewDefinitionFactory, Compiler, ModuleWithComponentFactories, TRANSLATIONS, ɵReflector, ReflectiveInjector, COMPILER_OPTIONS, PLATFORM_INITIALIZER, CompilerFactory, platformCore, createPlatformFactory } from '@angular/core';
+import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵreflector, ViewEncapsulation, ChangeDetectionStrategy, isDevMode, MissingTranslationStrategy, ANALYZE_FOR_ENTRY_COMPONENTS, ElementRef, NgModuleRef, ViewContainerRef, ChangeDetectorRef, QueryList, TemplateRef, ɵCodegenComponentFactoryResolver, ComponentFactoryResolver, ComponentFactory, ComponentRef, NgModuleFactory, ɵNgModuleInjector, ɵregisterModuleFactory, Injector, SecurityContext, LOCALE_ID, TRANSLATIONS_FORMAT, ɵinlineInterpolate, ɵinterpolate, ɵEMPTY_ARRAY, ɵEMPTY_MAP, Renderer, ɵvid, ɵeld, ɵand, ɵted, ɵdid, ɵprd, ɵqud, ɵpad, ɵpod, ɵppd, ɵpid, ɵnov, ɵncd, ɵunv, ɵcrt, ɵccf, PACKAGE_ROOT_URL, Directive, Component, ɵmerge, Query, HostListener, HostBinding, Output, Input, resolveForwardRef, ɵReflectorReader, Attribute, SkipSelf, Self, Host, ɵLIFECYCLE_HOOKS_VALUES, Injectable, Type, ɵERROR_COMPONENT_TYPE, ɵLifecycleHooks, NgModule, Pipe, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, ɵelementEventFullName, ɵReflectionCapabilities, group, sequence, keyframes, animate, style, transition, state, trigger, ViewChildren, ViewChild, ContentChildren, ContentChild, ɵgetComponentViewDefinitionFactory, Compiler, ModuleWithComponentFactories, TRANSLATIONS, ɵReflector, ReflectiveInjector, COMPILER_OPTIONS, PLATFORM_INITIALIZER, CompilerFactory, platformCore, createPlatformFactory } from '@angular/core';
 /**
  * @stable
  */
-var /** @type {?} */ VERSION = new Version('4.0.0-rc.3-f093501');
+var /** @type {?} */ VERSION = new Version('4.0.0-rc.3-13686bb');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -9582,6 +9582,7 @@ Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
     runtime: ANALYZE_FOR_ENTRY_COMPONENTS
 };
 Identifiers.ElementRef = { name: 'ElementRef', moduleUrl: CORE, runtime: ElementRef };
+Identifiers.NgModuleRef = { name: 'NgModuleRef', moduleUrl: CORE, runtime: NgModuleRef };
 Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleUrl: CORE, runtime: ViewContainerRef };
 Identifiers.ChangeDetectorRef = { name: 'ChangeDetectorRef', moduleUrl: CORE, runtime: ChangeDetectorRef };
 Identifiers.QueryList = { name: 'QueryList', moduleUrl: CORE, runtime: QueryList };
@@ -16352,10 +16353,13 @@ var _InjectorBuilder = (function () {
             result = literal(dep.value);
         }
         if (!dep.isSkipSelf) {
-            if (dep.token &&
-                (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector) ||
-                    tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver))) {
-                result = THIS_EXPR;
+            if (dep.token) {
+                if (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector)) {
+                    result = THIS_EXPR;
+                }
+                else if (tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver)) {
+                    result = THIS_EXPR.prop('componentFactoryResolver');
+                }
             }
             if (!result) {
                 result = this._instances.get(tokenReference(dep.token));
@@ -21047,13 +21051,12 @@ function createComponentFactoryResolver(directives) {
     var /** @type {?} */ componentDirMeta = directives.find(function (dirAst) { return dirAst.directive.isComponent; });
     if (componentDirMeta && componentDirMeta.directive.entryComponents.length) {
         var /** @type {?} */ entryComponentFactories = componentDirMeta.directive.entryComponents.map(function (entryComponent) { return importExpr({ reference: entryComponent.componentFactory }); });
-        var /** @type {?} */ cfrExpr = importExpr(createIdentifier(Identifiers.CodegenComponentFactoryResolver))
-            .instantiate([literalArr(entryComponentFactories)]);
         var /** @type {?} */ token = createIdentifierToken(Identifiers.ComponentFactoryResolver);
         var /** @type {?} */ classMeta = {
             diDeps: [
                 { isValue: true, value: literalArr(entryComponentFactories) },
-                { token: token, isSkipSelf: true, isOptional: true }
+                { token: token, isSkipSelf: true, isOptional: true },
+                { token: createIdentifierToken(Identifiers.NgModuleRef) },
             ],
             lifecycleHooks: [],
             reference: resolveIdentifier(Identifiers.CodegenComponentFactoryResolver)

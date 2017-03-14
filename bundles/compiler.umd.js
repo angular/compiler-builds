@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-f093501
+ * @license Angular v4.0.0-rc.3-13686bb
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -17,7 +17,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-f093501');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-13686bb');
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -9587,6 +9587,7 @@
         runtime: _angular_core.ANALYZE_FOR_ENTRY_COMPONENTS
     };
     Identifiers.ElementRef = { name: 'ElementRef', moduleUrl: CORE, runtime: _angular_core.ElementRef };
+    Identifiers.NgModuleRef = { name: 'NgModuleRef', moduleUrl: CORE, runtime: _angular_core.NgModuleRef };
     Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleUrl: CORE, runtime: _angular_core.ViewContainerRef };
     Identifiers.ChangeDetectorRef = { name: 'ChangeDetectorRef', moduleUrl: CORE, runtime: _angular_core.ChangeDetectorRef };
     Identifiers.QueryList = { name: 'QueryList', moduleUrl: CORE, runtime: _angular_core.QueryList };
@@ -16357,10 +16358,13 @@
                 result = literal(dep.value);
             }
             if (!dep.isSkipSelf) {
-                if (dep.token &&
-                    (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector) ||
-                        tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver))) {
-                    result = THIS_EXPR;
+                if (dep.token) {
+                    if (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector)) {
+                        result = THIS_EXPR;
+                    }
+                    else if (tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver)) {
+                        result = THIS_EXPR.prop('componentFactoryResolver');
+                    }
                 }
                 if (!result) {
                     result = this._instances.get(tokenReference(dep.token));
@@ -21052,13 +21056,12 @@
         var /** @type {?} */ componentDirMeta = directives.find(function (dirAst) { return dirAst.directive.isComponent; });
         if (componentDirMeta && componentDirMeta.directive.entryComponents.length) {
             var /** @type {?} */ entryComponentFactories = componentDirMeta.directive.entryComponents.map(function (entryComponent) { return importExpr({ reference: entryComponent.componentFactory }); });
-            var /** @type {?} */ cfrExpr = importExpr(createIdentifier(Identifiers.CodegenComponentFactoryResolver))
-                .instantiate([literalArr(entryComponentFactories)]);
             var /** @type {?} */ token = createIdentifierToken(Identifiers.ComponentFactoryResolver);
             var /** @type {?} */ classMeta = {
                 diDeps: [
                     { isValue: true, value: literalArr(entryComponentFactories) },
-                    { token: token, isSkipSelf: true, isOptional: true }
+                    { token: token, isSkipSelf: true, isOptional: true },
+                    { token: createIdentifierToken(Identifiers.NgModuleRef) },
                 ],
                 lifecycleHooks: [],
                 reference: resolveIdentifier(Identifiers.CodegenComponentFactoryResolver)
