@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.3-1c1085b
+ * @license Angular v4.0.0-rc.3-d4205bb
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-var /** @type {?} */ VERSION = new Version('4.0.0-rc.3-1c1085b');
+var /** @type {?} */ VERSION = new Version('4.0.0-rc.3-d4205bb');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
