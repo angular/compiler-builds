@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.3-a3e32fb
+ * @license Angular v4.0.0-rc.3-322bf7a
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-var /** @type {?} */ VERSION = new Version('4.0.0-rc.3-a3e32fb');
+var /** @type {?} */ VERSION = new Version('4.0.0-rc.3-322bf7a');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13351,31 +13351,8 @@ var CompileMetadataResolver = (function () {
         }
         else {
             var /** @type {?} */ hostView = this.getHostComponentViewClass(dirType);
-            // Note: inputs / outputs / ngContentSelectors will be filled later once the template is
-            // loaded.
-            return ɵccf(selector, dirType, /** @type {?} */ (hostView), {}, {}, []);
+            return ɵccf(selector, dirType, /** @type {?} */ (hostView));
         }
-    };
-    /**
-     * @param {?} factory
-     * @param {?} inputs
-     * @param {?} outputs
-     * @param {?} ngContentSelectors
-     * @return {?}
-     */
-    CompileMetadataResolver.prototype.initComponentFactory = function (factory, inputs, outputs, ngContentSelectors) {
-        if (!(factory instanceof StaticSymbol)) {
-            for (var /** @type {?} */ propName in inputs) {
-                var /** @type {?} */ templateName = inputs[propName];
-                factory.inputs.push({ propName: propName, templateName: templateName });
-            }
-            for (var /** @type {?} */ propName in outputs) {
-                var /** @type {?} */ templateName = outputs[propName];
-                factory.outputs.push({ propName: propName, templateName: templateName });
-            }
-            (_a = factory.ngContentSelectors).push.apply(_a, ngContentSelectors);
-        }
-        var _a;
     };
     /**
      * @param {?} type
@@ -13426,9 +13403,6 @@ var CompileMetadataResolver = (function () {
                 componentFactory: metadata.componentFactory,
                 template: templateMetadata
             });
-            if (templateMetadata) {
-                _this.initComponentFactory(metadata.componentFactory, metadata.inputs, metadata.outputs, templateMetadata.ngContentSelectors);
-            }
             _this._directiveCache.set(directiveType, normalizedDirMeta);
             _this._summaryCache.set(directiveType, normalizedDirMeta.toSummary());
             return normalizedDirMeta;
@@ -21868,24 +21842,11 @@ var AotCompiler = (function () {
         var /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements)
             .viewClassVar;
         var /** @type {?} */ compFactoryVar = componentFactoryName(compMeta.type.reference);
-        var /** @type {?} */ inputsExprs = [];
-        for (var /** @type {?} */ propName in compMeta.inputs) {
-            var /** @type {?} */ templateName = compMeta.inputs[propName];
-            // Don't quote so that the key gets minified...
-            inputsExprs.push(new LiteralMapEntry(propName, literal(templateName), false));
-        }
-        var /** @type {?} */ outputsExprs = [];
-        for (var /** @type {?} */ propName in compMeta.outputs) {
-            var /** @type {?} */ templateName = compMeta.outputs[propName];
-            // Don't quote so that the key gets minified...
-            outputsExprs.push(new LiteralMapEntry(propName, literal(templateName), false));
-        }
         targetStatements.push(variable(compFactoryVar)
             .set(importExpr(createIdentifier(Identifiers.createComponentFactory)).callFn([
-            literal(compMeta.selector), importExpr(compMeta.type),
-            variable(hostViewFactoryVar), new LiteralMapExpr(inputsExprs),
-            new LiteralMapExpr(outputsExprs),
-            literalArr(compMeta.template.ngContentSelectors.map(function (selector) { return literal(selector); }))
+            literal(compMeta.selector),
+            importExpr(compMeta.type),
+            variable(hostViewFactoryVar),
         ]))
             .toDeclStmt(importType(createIdentifier(Identifiers.ComponentFactory), [importType(compMeta.type)], [TypeModifier.Const]), [StmtModifier.Final]));
         return compFactoryVar;
@@ -24392,9 +24353,8 @@ var JitCompiler = (function () {
      * @param {?} _viewCompiler
      * @param {?} _ngModuleCompiler
      * @param {?} _compilerConfig
-     * @param {?} _console
      */
-    function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+    function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
@@ -24402,7 +24362,6 @@ var JitCompiler = (function () {
         this._viewCompiler = _viewCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
         this._compilerConfig = _compilerConfig;
-        this._console = _console;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledDirectiveWrapperCache = new Map();
@@ -24450,7 +24409,6 @@ var JitCompiler = (function () {
      * @return {?}
      */
     JitCompiler.prototype.getNgContentSelectors = function (component) {
-        this._console.warn('Compiler.getNgContentSelectors is deprecated. Use ComponentFactory.ngContentSelectors instead!');
         var /** @type {?} */ template = this._compiledTemplateCache.get(component);
         if (!template) {
             throw new Error("The component " + ɵstringify(component) + " is not yet compiled!");
@@ -24715,7 +24673,6 @@ JitCompiler.ctorParameters = function () { return [
     { type: ViewCompiler, },
     { type: NgModuleCompiler, },
     { type: CompilerConfig, },
-    { type: ɵConsole, },
 ]; };
 var CompiledTemplate = (function () {
     /**

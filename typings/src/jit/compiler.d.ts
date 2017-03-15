@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Compiler, Injector, ModuleWithComponentFactories, NgModuleFactory, Type, ɵConsole as Console } from '@angular/core';
+import { Compiler, Injector, ModuleWithComponentFactories, NgModuleFactory, Type } from '@angular/core';
 import { CompilerConfig } from '../config';
 import { CompileMetadataResolver } from '../metadata_resolver';
 import { NgModuleCompiler } from '../ng_module_compiler';
@@ -29,13 +29,12 @@ export declare class JitCompiler implements Compiler {
     private _viewCompiler;
     private _ngModuleCompiler;
     private _compilerConfig;
-    private _console;
     private _compiledTemplateCache;
     private _compiledHostTemplateCache;
     private _compiledDirectiveWrapperCache;
     private _compiledNgModuleCache;
     private _sharedStylesheetCount;
-    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _compilerConfig: CompilerConfig, _console: Console);
+    constructor(_injector: Injector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _compilerConfig: CompilerConfig);
     readonly injector: Injector;
     compileModuleSync<T>(moduleType: Type<T>): NgModuleFactory<T>;
     compileModuleAsync<T>(moduleType: Type<T>): Promise<NgModuleFactory<T>>;
