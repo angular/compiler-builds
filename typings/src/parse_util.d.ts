@@ -26,7 +26,7 @@ export declare class ParseSourceSpan {
 }
 export declare enum ParseErrorLevel {
     WARNING = 0,
-    ERROR = 1,
+    FATAL = 1,
 }
 export declare class ParseError {
     span: ParseSourceSpan;

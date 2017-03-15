@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-959a03a
+ * @license Angular v4.0.0-rc.3-3c15916
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -17,7 +17,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-959a03a');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-3c15916');
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -1507,38 +1507,6 @@
      */
     function isStrictStringMap(obj) {
         return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
-    }
-    /**
-     * @param {?} str
-     * @return {?}
-     */
-    function utf8Encode(str) {
-        var /** @type {?} */ encoded = '';
-        for (var /** @type {?} */ index = 0; index < str.length; index++) {
-            var /** @type {?} */ codePoint = str.charCodeAt(index);
-            // decode surrogate
-            // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
-            if (codePoint >= 0xd800 && codePoint <= 0xdbff && str.length > (index + 1)) {
-                var /** @type {?} */ low = str.charCodeAt(index + 1);
-                if (low >= 0xdc00 && low <= 0xdfff) {
-                    index++;
-                    codePoint = ((codePoint - 0xd800) << 10) + low - 0xdc00 + 0x10000;
-                }
-            }
-            if (codePoint <= 0x7f) {
-                encoded += String.fromCharCode(codePoint);
-            }
-            else if (codePoint <= 0x7ff) {
-                encoded += String.fromCharCode(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
-            }
-            else if (codePoint <= 0xffff) {
-                encoded += String.fromCharCode((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
-            }
-            else if (codePoint <= 0x1fffff) {
-                encoded += String.fromCharCode(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
-            }
-        }
-        return encoded;
     }
     // group 0: "[prop] or (event) or @trigger"
     // group 1: "prop" from "[prop]"
@@ -5072,9 +5040,9 @@
     }());
     var ParseErrorLevel = {};
     ParseErrorLevel.WARNING = 0;
-    ParseErrorLevel.ERROR = 1;
+    ParseErrorLevel.FATAL = 1;
     ParseErrorLevel[ParseErrorLevel.WARNING] = "WARNING";
-    ParseErrorLevel[ParseErrorLevel.ERROR] = "ERROR";
+    ParseErrorLevel[ParseErrorLevel.FATAL] = "FATAL";
     var ParseError = (function () {
         /**
          * @param {?} span
@@ -5082,7 +5050,7 @@
          * @param {?=} level
          */
         function ParseError(span, msg, level) {
-            if (level === void 0) { level = ParseErrorLevel.ERROR; }
+            if (level === void 0) { level = ParseErrorLevel.FATAL; }
             this.span = span;
             this.msg = msg;
             this.level = level;
@@ -5092,7 +5060,7 @@
          */
         ParseError.prototype.toString = function () {
             var /** @type {?} */ ctx = this.span.start.getContext(100, 3);
-            var /** @type {?} */ contextStr = ctx ? " (\"" + ctx.before + "[" + ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" : '';
+            var /** @type {?} */ contextStr = ctx ? " (\"" + ctx.before + "[ERROR ->]" + ctx.after + "\")" : '';
             var /** @type {?} */ details = this.span.details ? ", " + this.span.details : '';
             return "" + this.msg + contextStr + ": " + this.span.start + details;
         };
@@ -7730,6 +7698,13 @@
         return XmlParser;
     }(Parser$1));
     /**
+     * @license
+     * Copyright Google Inc. All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://angular.io/license
+     */
+    /**
      * @param {?} message
      * @return {?}
      */
@@ -7996,6 +7971,47 @@
     Endian.Big = 1;
     Endian[Endian.Little] = "Little";
     Endian[Endian.Big] = "Big";
+    /**
+     * @param {?} str
+     * @return {?}
+     */
+    function utf8Encode(str) {
+        var /** @type {?} */ encoded = '';
+        for (var /** @type {?} */ index = 0; index < str.length; index++) {
+            var /** @type {?} */ codePoint = decodeSurrogatePairs(str, index);
+            if (codePoint <= 0x7f) {
+                encoded += String.fromCharCode(codePoint);
+            }
+            else if (codePoint <= 0x7ff) {
+                encoded += String.fromCharCode(0xc0 | codePoint >>> 6, 0x80 | codePoint & 0x3f);
+            }
+            else if (codePoint <= 0xffff) {
+                encoded += String.fromCharCode(0xe0 | codePoint >>> 12, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
+            }
+            else if (codePoint <= 0x1fffff) {
+                encoded += String.fromCharCode(0xf0 | codePoint >>> 18, 0x80 | codePoint >>> 12 & 0x3f, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
+            }
+        }
+        return encoded;
+    }
+    /**
+     * @param {?} str
+     * @param {?} index
+     * @return {?}
+     */
+    function decodeSurrogatePairs(str, index) {
+        if (index < 0 || index >= str.length) {
+            throw new Error("index=" + index + " is out of range in \"" + str + "\"");
+        }
+        var /** @type {?} */ high = str.charCodeAt(index);
+        if (high >= 0xd800 && high <= 0xdfff && str.length > index + 1) {
+            var /** @type {?} */ low = byteAt(str, index + 1);
+            if (low >= 0xdc00 && low <= 0xdfff) {
+                return (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
+            }
+        }
+        return high;
+    }
     /**
      * @param {?} a
      * @param {?} b
@@ -10732,7 +10748,7 @@
                 name = name.substring(1);
                 if (value) {
                     this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid." +
-                        " Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", sourceSpan, ParseErrorLevel.ERROR);
+                        " Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", sourceSpan, ParseErrorLevel.FATAL);
                 }
                 this._parseAnimation(name, value, sourceSpan, targetMatchableAttrs, targetProps);
             }
@@ -10973,7 +10989,7 @@
          * @return {?}
          */
         BindingParser.prototype._reportError = function (message, sourceSpan, level) {
-            if (level === void 0) { level = ParseErrorLevel.ERROR; }
+            if (level === void 0) { level = ParseErrorLevel.FATAL; }
             this._targetErrors.push(new ParseError(sourceSpan, message, level));
         };
         /**
@@ -11018,7 +11034,7 @@
             var /** @type {?} */ report = isAttr ? this._schemaRegistry.validateAttribute(propName) :
                 this._schemaRegistry.validateProperty(propName);
             if (report.error) {
-                this._reportError(report.msg, sourceSpan, ParseErrorLevel.ERROR);
+                this._reportError(report.msg, sourceSpan, ParseErrorLevel.FATAL);
             }
         };
         return BindingParser;
@@ -11254,7 +11270,7 @@
         TemplateParser.prototype.parse = function (component, template, directives, pipes, schemas, templateUrl) {
             var /** @type {?} */ result = this.tryParse(component, template, directives, pipes, schemas, templateUrl);
             var /** @type {?} */ warnings = result.errors.filter(function (error) { return error.level === ParseErrorLevel.WARNING; });
-            var /** @type {?} */ errors = result.errors.filter(function (error) { return error.level === ParseErrorLevel.ERROR; });
+            var /** @type {?} */ errors = result.errors.filter(function (error) { return error.level === ParseErrorLevel.FATAL; });
             if (warnings.length > 0) {
                 this._console.warn("Template parse warnings:\n" + warnings.join('\n'));
             }
@@ -11359,7 +11375,7 @@
                     existingReferences.push(name);
                 }
                 else {
-                    var /** @type {?} */ error = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, ParseErrorLevel.ERROR);
+                    var /** @type {?} */ error = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, ParseErrorLevel.FATAL);
                     errors.push(error);
                 }
             }); });
@@ -11908,7 +11924,7 @@
          * @return {?}
          */
         TemplateParseVisitor.prototype._reportError = function (message, sourceSpan, level) {
-            if (level === void 0) { level = ParseErrorLevel.ERROR; }
+            if (level === void 0) { level = ParseErrorLevel.FATAL; }
             this._targetErrors.push(new ParseError(sourceSpan, message, level));
         };
         return TemplateParseVisitor;
