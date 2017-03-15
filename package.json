@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "4.0.0-rc.3-bf98d9d",
+  "version": "4.0.0-rc.3-6772c91",
   "description": "Angular - the compiler library",
   "main": "./bundles/compiler.umd.js",
   "module": "./@angular/compiler.es5.js",
@@ -9,7 +9,7 @@
   "author": "angular",
   "license": "MIT",
   "peerDependencies": {
-    "@angular/core": "4.0.0-rc.3-bf98d9d"
+    "@angular/core": "4.0.0-rc.3-6772c91"
   },
   "repository": {
     "type": "git",

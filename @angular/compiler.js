@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-bf98d9d
+ * @license Angular v4.0.0-rc.3-6772c91
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-bf98d9d');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-6772c91');
 
 /**
  * @license
@@ -3198,7 +3198,9 @@ class Lexer {
 Lexer.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 Lexer.ctorParameters = () => [];
 class Token {
     /**
@@ -3945,7 +3947,9 @@ class Parser {
 Parser.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 Parser.ctorParameters = () => [
     { type: Lexer, },
 ];
@@ -8933,7 +8937,9 @@ class HtmlParser extends Parser$1 {
 HtmlParser.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 HtmlParser.ctorParameters = () => [];
 
 /**
@@ -8942,8 +8948,8 @@ HtmlParser.ctorParameters = () => [];
 class TranslationBundle {
     /**
      * @param {?=} _i18nNodesByMsgId
-     * @param {?} locale
-     * @param {?} digest
+     * @param {?=} locale
+     * @param {?=} digest
      * @param {?=} mapperFactory
      * @param {?=} missingTranslationStrategy
      * @param {?=} console
@@ -8988,10 +8994,10 @@ class TranslationBundle {
 class I18nToHtmlVisitor {
     /**
      * @param {?=} _i18nNodesByMsgId
-     * @param {?} _locale
-     * @param {?} _digest
-     * @param {?} _mapperFactory
-     * @param {?} _missingTranslationStrategy
+     * @param {?=} _locale
+     * @param {?=} _digest
+     * @param {?=} _mapperFactory
+     * @param {?=} _missingTranslationStrategy
      * @param {?=} _console
      */
     constructor(_i18nNodesByMsgId = {}, _locale, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
@@ -9846,7 +9852,7 @@ class NgModuleProviderAnalyzer {
     /**
      * @param {?} dep
      * @param {?=} eager
-     * @param {?} requestorSourceSpan
+     * @param {?=} requestorSourceSpan
      * @return {?}
      */
     _getDependency(dep, eager = null, requestorSourceSpan) {
@@ -10932,7 +10938,9 @@ class TemplateParser {
 TemplateParser.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 TemplateParser.ctorParameters = () => [
     { type: CompilerConfig, },
     { type: Parser, },
@@ -11754,7 +11762,9 @@ class UrlResolver {
 UrlResolver.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 UrlResolver.ctorParameters = () => [
     { type: undefined, decorators: [{ type: Inject, args: [PACKAGE_ROOT_URL,] },] },
 ];
@@ -12190,7 +12200,9 @@ class DirectiveNormalizer {
 DirectiveNormalizer.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 DirectiveNormalizer.ctorParameters = () => [
     { type: ResourceLoader, },
     { type: UrlResolver, },
@@ -12443,7 +12455,9 @@ class DirectiveResolver {
 DirectiveResolver.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 DirectiveResolver.ctorParameters = () => [
     { type: ɵReflectorReader, },
 ];
@@ -12598,7 +12612,9 @@ class NgModuleResolver {
 NgModuleResolver.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 NgModuleResolver.ctorParameters = () => [
     { type: ɵReflectorReader, },
 ];
@@ -12655,7 +12671,9 @@ class PipeResolver {
 PipeResolver.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 PipeResolver.ctorParameters = () => [
     { type: ɵReflectorReader, },
 ];
@@ -12692,7 +12710,9 @@ class SummaryResolver {
 SummaryResolver.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 SummaryResolver.ctorParameters = () => [];
 
 const /** @type {?} */ ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
@@ -13746,7 +13766,9 @@ class CompileMetadataResolver {
 CompileMetadataResolver.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 CompileMetadataResolver.ctorParameters = () => [
     { type: CompilerConfig, },
     { type: NgModuleResolver, },
@@ -14850,7 +14872,7 @@ class ReturnStatement extends Statement {
 class AbstractClassPart {
     /**
      * @param {?=} type
-     * @param {?} modifiers
+     * @param {?=} modifiers
      */
     constructor(type = null, modifiers) {
         this.type = type;
@@ -15857,7 +15879,9 @@ class NgModuleCompiler {
 NgModuleCompiler.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 NgModuleCompiler.ctorParameters = () => [];
 class _InjectorBuilder {
     /**
@@ -17881,7 +17905,9 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
 DomElementSchemaRegistry.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 DomElementSchemaRegistry.ctorParameters = () => [];
 /**
  * @param {?} prop
@@ -18492,7 +18518,9 @@ class StyleCompiler {
 StyleCompiler.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 StyleCompiler.ctorParameters = () => [
     { type: UrlResolver, },
 ];
@@ -19474,7 +19502,9 @@ class ViewCompiler {
 ViewCompiler.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 ViewCompiler.ctorParameters = () => [
     { type: CompilerConfig, },
     { type: ElementSchemaRegistry, },
@@ -23730,7 +23760,9 @@ class JitCompiler {
 JitCompiler.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 JitCompiler.ctorParameters = () => [
     { type: Injector, },
     { type: CompileMetadataResolver, },
@@ -24115,7 +24147,9 @@ class JitCompilerFactory {
 JitCompilerFactory.decorators = [
     { type: CompilerInjectable },
 ];
-/** @nocollapse */
+/**
+ * @nocollapse
+ */
 JitCompilerFactory.ctorParameters = () => [
     { type: Array, decorators: [{ type: Inject, args: [COMPILER_OPTIONS,] },] },
 ];
