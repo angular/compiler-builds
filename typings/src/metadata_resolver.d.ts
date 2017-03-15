@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Component, Directive, InjectionToken, Type, ɵReflectorReader } from '@angular/core';
+import { Component, Directive, InjectionToken, Type, ɵConsole as Console, ɵReflectorReader } from '@angular/core';
 import { StaticSymbol, StaticSymbolCache } from './aot/static_symbol';
 import * as cpl from './compile_metadata';
 import { CompilerConfig } from './config';
@@ -25,6 +25,7 @@ export declare class CompileMetadataResolver {
     private _summaryResolver;
     private _schemaRegistry;
     private _directiveNormalizer;
+    private _console;
     private _staticSymbolCache;
     private _reflector;
     private _errorCollector;
@@ -34,7 +35,7 @@ export declare class CompileMetadataResolver {
     private _pipeCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    constructor(_config: CompilerConfig, _ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _staticSymbolCache: StaticSymbolCache, _reflector?: ɵReflectorReader, _errorCollector?: ErrorCollector);
+    constructor(_config: CompilerConfig, _ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _console: Console, _staticSymbolCache: StaticSymbolCache, _reflector?: ɵReflectorReader, _errorCollector?: ErrorCollector);
     clearCacheFor(type: Type<any>): void;
     clearCache(): void;
     private _createProxyClass(baseType, name);
@@ -72,7 +73,7 @@ export declare class CompileMetadataResolver {
     isInjectable(type: any): boolean;
     getInjectableSummary(type: any): cpl.CompileTypeSummary;
     private _getInjectableMetadata(type, dependencies?);
-    private _getTypeMetadata(type, dependencies?);
+    private _getTypeMetadata(type, dependencies?, throwOnUnknownDeps?);
     private _getFactoryMetadata(factory, dependencies?);
     /**
      * Gets the metadata for the given pipe.
@@ -82,7 +83,7 @@ export declare class CompileMetadataResolver {
     getPipeSummary(pipeType: any): cpl.CompilePipeSummary;
     getOrLoadPipeMetadata(pipeType: any): cpl.CompilePipeMetadata;
     private _loadPipeMetadata(pipeType);
-    private _getDependenciesMetadata(typeOrFunc, dependencies);
+    private _getDependenciesMetadata(typeOrFunc, dependencies, throwOnUnknownDeps?);
     private _getTokenMetadata(token);
     private _getProvidersMetadata(providers, targetEntryComponents, debugInfo?, compileProviders?, type?);
     private _validateProvider(provider);

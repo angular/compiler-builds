@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-3c15916
+ * @license Angular v4.0.0-rc.3-5c34066
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -17,7 +17,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-3c15916');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-5c34066');
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -1507,6 +1507,38 @@
      */
     function isStrictStringMap(obj) {
         return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
+    }
+    /**
+     * @param {?} str
+     * @return {?}
+     */
+    function utf8Encode(str) {
+        var /** @type {?} */ encoded = '';
+        for (var /** @type {?} */ index = 0; index < str.length; index++) {
+            var /** @type {?} */ codePoint = str.charCodeAt(index);
+            // decode surrogate
+            // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+            if (codePoint >= 0xd800 && codePoint <= 0xdbff && str.length > (index + 1)) {
+                var /** @type {?} */ low = str.charCodeAt(index + 1);
+                if (low >= 0xdc00 && low <= 0xdfff) {
+                    index++;
+                    codePoint = ((codePoint - 0xd800) << 10) + low - 0xdc00 + 0x10000;
+                }
+            }
+            if (codePoint <= 0x7f) {
+                encoded += String.fromCharCode(codePoint);
+            }
+            else if (codePoint <= 0x7ff) {
+                encoded += String.fromCharCode(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
+            }
+            else if (codePoint <= 0xffff) {
+                encoded += String.fromCharCode((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+            }
+            else if (codePoint <= 0x1fffff) {
+                encoded += String.fromCharCode(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+            }
+        }
+        return encoded;
     }
     // group 0: "[prop] or (event) or @trigger"
     // group 1: "prop" from "[prop]"
@@ -5040,9 +5072,9 @@
     }());
     var ParseErrorLevel = {};
     ParseErrorLevel.WARNING = 0;
-    ParseErrorLevel.FATAL = 1;
+    ParseErrorLevel.ERROR = 1;
     ParseErrorLevel[ParseErrorLevel.WARNING] = "WARNING";
-    ParseErrorLevel[ParseErrorLevel.FATAL] = "FATAL";
+    ParseErrorLevel[ParseErrorLevel.ERROR] = "ERROR";
     var ParseError = (function () {
         /**
          * @param {?} span
@@ -5050,7 +5082,7 @@
          * @param {?=} level
          */
         function ParseError(span, msg, level) {
-            if (level === void 0) { level = ParseErrorLevel.FATAL; }
+            if (level === void 0) { level = ParseErrorLevel.ERROR; }
             this.span = span;
             this.msg = msg;
             this.level = level;
@@ -5060,7 +5092,7 @@
          */
         ParseError.prototype.toString = function () {
             var /** @type {?} */ ctx = this.span.start.getContext(100, 3);
-            var /** @type {?} */ contextStr = ctx ? " (\"" + ctx.before + "[ERROR ->]" + ctx.after + "\")" : '';
+            var /** @type {?} */ contextStr = ctx ? " (\"" + ctx.before + "[" + ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" : '';
             var /** @type {?} */ details = this.span.details ? ", " + this.span.details : '';
             return "" + this.msg + contextStr + ": " + this.span.start + details;
         };
@@ -7698,13 +7730,6 @@
         return XmlParser;
     }(Parser$1));
     /**
-     * @license
-     * Copyright Google Inc. All Rights Reserved.
-     *
-     * Use of this source code is governed by an MIT-style license that can be
-     * found in the LICENSE file at https://angular.io/license
-     */
-    /**
      * @param {?} message
      * @return {?}
      */
@@ -7971,47 +7996,6 @@
     Endian.Big = 1;
     Endian[Endian.Little] = "Little";
     Endian[Endian.Big] = "Big";
-    /**
-     * @param {?} str
-     * @return {?}
-     */
-    function utf8Encode(str) {
-        var /** @type {?} */ encoded = '';
-        for (var /** @type {?} */ index = 0; index < str.length; index++) {
-            var /** @type {?} */ codePoint = decodeSurrogatePairs(str, index);
-            if (codePoint <= 0x7f) {
-                encoded += String.fromCharCode(codePoint);
-            }
-            else if (codePoint <= 0x7ff) {
-                encoded += String.fromCharCode(0xc0 | codePoint >>> 6, 0x80 | codePoint & 0x3f);
-            }
-            else if (codePoint <= 0xffff) {
-                encoded += String.fromCharCode(0xe0 | codePoint >>> 12, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-            }
-            else if (codePoint <= 0x1fffff) {
-                encoded += String.fromCharCode(0xf0 | codePoint >>> 18, 0x80 | codePoint >>> 12 & 0x3f, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-            }
-        }
-        return encoded;
-    }
-    /**
-     * @param {?} str
-     * @param {?} index
-     * @return {?}
-     */
-    function decodeSurrogatePairs(str, index) {
-        if (index < 0 || index >= str.length) {
-            throw new Error("index=" + index + " is out of range in \"" + str + "\"");
-        }
-        var /** @type {?} */ high = str.charCodeAt(index);
-        if (high >= 0xd800 && high <= 0xdfff && str.length > index + 1) {
-            var /** @type {?} */ low = byteAt(str, index + 1);
-            if (low >= 0xdc00 && low <= 0xdfff) {
-                return (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
-            }
-        }
-        return high;
-    }
     /**
      * @param {?} a
      * @param {?} b
@@ -10748,7 +10732,7 @@
                 name = name.substring(1);
                 if (value) {
                     this._reportError("Assigning animation triggers via @prop=\"exp\" attributes with an expression is invalid." +
-                        " Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", sourceSpan, ParseErrorLevel.FATAL);
+                        " Use property bindings (e.g. [@prop]=\"exp\") or use an attribute without a value (e.g. @prop) instead.", sourceSpan, ParseErrorLevel.ERROR);
                 }
                 this._parseAnimation(name, value, sourceSpan, targetMatchableAttrs, targetProps);
             }
@@ -10989,7 +10973,7 @@
          * @return {?}
          */
         BindingParser.prototype._reportError = function (message, sourceSpan, level) {
-            if (level === void 0) { level = ParseErrorLevel.FATAL; }
+            if (level === void 0) { level = ParseErrorLevel.ERROR; }
             this._targetErrors.push(new ParseError(sourceSpan, message, level));
         };
         /**
@@ -11034,7 +11018,7 @@
             var /** @type {?} */ report = isAttr ? this._schemaRegistry.validateAttribute(propName) :
                 this._schemaRegistry.validateProperty(propName);
             if (report.error) {
-                this._reportError(report.msg, sourceSpan, ParseErrorLevel.FATAL);
+                this._reportError(report.msg, sourceSpan, ParseErrorLevel.ERROR);
             }
         };
         return BindingParser;
@@ -11270,7 +11254,7 @@
         TemplateParser.prototype.parse = function (component, template, directives, pipes, schemas, templateUrl) {
             var /** @type {?} */ result = this.tryParse(component, template, directives, pipes, schemas, templateUrl);
             var /** @type {?} */ warnings = result.errors.filter(function (error) { return error.level === ParseErrorLevel.WARNING; });
-            var /** @type {?} */ errors = result.errors.filter(function (error) { return error.level === ParseErrorLevel.FATAL; });
+            var /** @type {?} */ errors = result.errors.filter(function (error) { return error.level === ParseErrorLevel.ERROR; });
             if (warnings.length > 0) {
                 this._console.warn("Template parse warnings:\n" + warnings.join('\n'));
             }
@@ -11375,7 +11359,7 @@
                     existingReferences.push(name);
                 }
                 else {
-                    var /** @type {?} */ error = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, ParseErrorLevel.FATAL);
+                    var /** @type {?} */ error = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, ParseErrorLevel.ERROR);
                     errors.push(error);
                 }
             }); });
@@ -11924,7 +11908,7 @@
          * @return {?}
          */
         TemplateParseVisitor.prototype._reportError = function (message, sourceSpan, level) {
-            if (level === void 0) { level = ParseErrorLevel.FATAL; }
+            if (level === void 0) { level = ParseErrorLevel.ERROR; }
             this._targetErrors.push(new ParseError(sourceSpan, message, level));
         };
         return TemplateParseVisitor;
@@ -13188,11 +13172,12 @@
          * @param {?} _summaryResolver
          * @param {?} _schemaRegistry
          * @param {?} _directiveNormalizer
+         * @param {?} _console
          * @param {?} _staticSymbolCache
          * @param {?=} _reflector
          * @param {?=} _errorCollector
          */
-        function CompileMetadataResolver(_config, _ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector, _errorCollector) {
+        function CompileMetadataResolver(_config, _ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _console, _staticSymbolCache, _reflector, _errorCollector) {
             if (_reflector === void 0) { _reflector = _angular_core.ɵreflector; }
             this._config = _config;
             this._ngModuleResolver = _ngModuleResolver;
@@ -13201,6 +13186,7 @@
             this._summaryResolver = _summaryResolver;
             this._schemaRegistry = _schemaRegistry;
             this._directiveNormalizer = _directiveNormalizer;
+            this._console = _console;
             this._staticSymbolCache = _staticSymbolCache;
             this._reflector = _reflector;
             this._errorCollector = _errorCollector;
@@ -13848,7 +13834,10 @@
          * @return {?}
          */
         CompileMetadataResolver.prototype.getInjectableSummary = function (type) {
-            return { summaryKind: CompileSummaryKind.Injectable, type: this._getTypeMetadata(type) };
+            return {
+                summaryKind: CompileSummaryKind.Injectable,
+                type: this._getTypeMetadata(type, null, false)
+            };
         };
         /**
          * @param {?} type
@@ -13866,14 +13855,16 @@
         /**
          * @param {?} type
          * @param {?=} dependencies
+         * @param {?=} throwOnUnknownDeps
          * @return {?}
          */
-        CompileMetadataResolver.prototype._getTypeMetadata = function (type, dependencies) {
+        CompileMetadataResolver.prototype._getTypeMetadata = function (type, dependencies, throwOnUnknownDeps) {
             if (dependencies === void 0) { dependencies = null; }
+            if (throwOnUnknownDeps === void 0) { throwOnUnknownDeps = true; }
             var /** @type {?} */ identifier = this._getIdentifierMetadata(type);
             return {
                 reference: identifier.reference,
-                diDeps: this._getDependenciesMetadata(identifier.reference, dependencies),
+                diDeps: this._getDependenciesMetadata(identifier.reference, dependencies, throwOnUnknownDeps),
                 lifecycleHooks: _angular_core.ɵLIFECYCLE_HOOKS_VALUES.filter(function (hook) { return hasLifecycleHook(hook, identifier.reference); }),
             };
         };
@@ -13941,10 +13932,12 @@
         /**
          * @param {?} typeOrFunc
          * @param {?} dependencies
+         * @param {?=} throwOnUnknownDeps
          * @return {?}
          */
-        CompileMetadataResolver.prototype._getDependenciesMetadata = function (typeOrFunc, dependencies) {
+        CompileMetadataResolver.prototype._getDependenciesMetadata = function (typeOrFunc, dependencies, throwOnUnknownDeps) {
             var _this = this;
+            if (throwOnUnknownDeps === void 0) { throwOnUnknownDeps = true; }
             var /** @type {?} */ hasUnknownDeps = false;
             var /** @type {?} */ params = dependencies || this._reflector.parameters(typeOrFunc) || [];
             var /** @type {?} */ dependenciesMetadata = params.map(function (param) {
@@ -14001,7 +13994,13 @@
             });
             if (hasUnknownDeps) {
                 var /** @type {?} */ depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringifyType(dep.token) : '?'; }).join(', ');
-                this._reportError(syntaxError("Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ")."), typeOrFunc);
+                var /** @type {?} */ message = "Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ").";
+                if (throwOnUnknownDeps) {
+                    this._reportError(syntaxError(message), typeOrFunc);
+                }
+                else {
+                    this._console.warn("Warning: " + message + " This will become an error in Angular v5.x");
+                }
             }
             return dependenciesMetadata;
         };
@@ -14240,6 +14239,7 @@
         { type: SummaryResolver, },
         { type: ElementSchemaRegistry, },
         { type: DirectiveNormalizer, },
+        { type: _angular_core.ɵConsole, },
         { type: StaticSymbolCache, decorators: [{ type: _angular_core.Optional },] },
         { type: _angular_core.ɵReflectorReader, },
         { type: undefined, decorators: [{ type: _angular_core.Optional }, { type: _angular_core.Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
@@ -15899,6 +15899,333 @@
         };
         return AstTransformer$1;
     }());
+    var RecursiveAstVisitor$1 = (function () {
+        function RecursiveAstVisitor$1() {
+        }
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitReadVarExpr = function (ast, context) { return ast; };
+        /**
+         * @param {?} expr
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitWriteVarExpr = function (expr, context) {
+            expr.value.visitExpression(this, context);
+            return expr;
+        };
+        /**
+         * @param {?} expr
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitWriteKeyExpr = function (expr, context) {
+            expr.receiver.visitExpression(this, context);
+            expr.index.visitExpression(this, context);
+            expr.value.visitExpression(this, context);
+            return expr;
+        };
+        /**
+         * @param {?} expr
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitWritePropExpr = function (expr, context) {
+            expr.receiver.visitExpression(this, context);
+            expr.value.visitExpression(this, context);
+            return expr;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitInvokeMethodExpr = function (ast, context) {
+            ast.receiver.visitExpression(this, context);
+            this.visitAllExpressions(ast.args, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitInvokeFunctionExpr = function (ast, context) {
+            ast.fn.visitExpression(this, context);
+            this.visitAllExpressions(ast.args, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitInstantiateExpr = function (ast, context) {
+            ast.classExpr.visitExpression(this, context);
+            this.visitAllExpressions(ast.args, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitLiteralExpr = function (ast, context) { return ast; };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitExternalExpr = function (ast, context) { return ast; };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitConditionalExpr = function (ast, context) {
+            ast.condition.visitExpression(this, context);
+            ast.trueCase.visitExpression(this, context);
+            ast.falseCase.visitExpression(this, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitNotExpr = function (ast, context) {
+            ast.condition.visitExpression(this, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitCastExpr = function (ast, context) {
+            ast.value.visitExpression(this, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitFunctionExpr = function (ast, context) {
+            this.visitAllStatements(ast.statements, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitBinaryOperatorExpr = function (ast, context) {
+            ast.lhs.visitExpression(this, context);
+            ast.rhs.visitExpression(this, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitReadPropExpr = function (ast, context) {
+            ast.receiver.visitExpression(this, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitReadKeyExpr = function (ast, context) {
+            ast.receiver.visitExpression(this, context);
+            ast.index.visitExpression(this, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitLiteralArrayExpr = function (ast, context) {
+            this.visitAllExpressions(ast.entries, context);
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitLiteralMapExpr = function (ast, context) {
+            var _this = this;
+            ast.entries.forEach(function (entry) { return entry.value.visitExpression(_this, context); });
+            return ast;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitCommaExpr = function (ast, context) {
+            this.visitAllExpressions(ast.parts, context);
+        };
+        /**
+         * @param {?} exprs
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitAllExpressions = function (exprs, context) {
+            var _this = this;
+            exprs.forEach(function (expr) { return expr.visitExpression(_this, context); });
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitDeclareVarStmt = function (stmt, context) {
+            stmt.value.visitExpression(this, context);
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitDeclareFunctionStmt = function (stmt, context) {
+            this.visitAllStatements(stmt.statements, context);
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitExpressionStmt = function (stmt, context) {
+            stmt.expr.visitExpression(this, context);
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitReturnStmt = function (stmt, context) {
+            stmt.value.visitExpression(this, context);
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitDeclareClassStmt = function (stmt, context) {
+            var _this = this;
+            stmt.parent.visitExpression(this, context);
+            stmt.getters.forEach(function (getter) { return _this.visitAllStatements(getter.body, context); });
+            if (stmt.constructorMethod) {
+                this.visitAllStatements(stmt.constructorMethod.body, context);
+            }
+            stmt.methods.forEach(function (method) { return _this.visitAllStatements(method.body, context); });
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitIfStmt = function (stmt, context) {
+            stmt.condition.visitExpression(this, context);
+            this.visitAllStatements(stmt.trueCase, context);
+            this.visitAllStatements(stmt.falseCase, context);
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitTryCatchStmt = function (stmt, context) {
+            this.visitAllStatements(stmt.bodyStmts, context);
+            this.visitAllStatements(stmt.catchStmts, context);
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitThrowStmt = function (stmt, context) {
+            stmt.error.visitExpression(this, context);
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitCommentStmt = function (stmt, context) { return stmt; };
+        /**
+         * @param {?} stmts
+         * @param {?} context
+         * @return {?}
+         */
+        RecursiveAstVisitor$1.prototype.visitAllStatements = function (stmts, context) {
+            var _this = this;
+            stmts.forEach(function (stmt) { return stmt.visitStatement(_this, context); });
+        };
+        return RecursiveAstVisitor$1;
+    }());
+    /**
+     * @param {?} stmts
+     * @return {?}
+     */
+    function findReadVarNames(stmts) {
+        var /** @type {?} */ visitor = new _ReadVarVisitor();
+        visitor.visitAllStatements(stmts, null);
+        return visitor.varNames;
+    }
+    var _ReadVarVisitor = (function (_super) {
+        __extends(_ReadVarVisitor, _super);
+        function _ReadVarVisitor() {
+            var _this = _super.apply(this, arguments) || this;
+            _this.varNames = new Set();
+            return _this;
+        }
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        _ReadVarVisitor.prototype.visitDeclareFunctionStmt = function (stmt, context) {
+            // Don't descend into nested functions
+            return stmt;
+        };
+        /**
+         * @param {?} stmt
+         * @param {?} context
+         * @return {?}
+         */
+        _ReadVarVisitor.prototype.visitDeclareClassStmt = function (stmt, context) {
+            // Don't descend into nested classes
+            return stmt;
+        };
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        _ReadVarVisitor.prototype.visitReadVarExpr = function (ast, context) {
+            this.varNames.add(ast.name);
+            return null;
+        };
+        return _ReadVarVisitor;
+    }(RecursiveAstVisitor$1));
     /**
      * @param {?} stmt
      * @param {?} sourceSpan
@@ -19912,20 +20239,23 @@
             var /** @type {?} */ embeddedViewCount = 0;
             var /** @type {?} */ staticQueryIds = findStaticQueryIds(template);
             var /** @type {?} */ statements = [];
-            var /** @type {?} */ customRenderData = [];
-            if (component.template.animations && component.template.animations.length) {
-                customRenderData.push(new LiteralMapEntry('animation', convertValueToOutputAst(component.template.animations), true));
+            var /** @type {?} */ renderComponentVarName;
+            if (!component.isHost) {
+                var /** @type {?} */ customRenderData = [];
+                if (component.template.animations && component.template.animations.length) {
+                    customRenderData.push(new LiteralMapEntry('animation', convertValueToOutputAst(component.template.animations), true));
+                }
+                var /** @type {?} */ renderComponentVar = variable(rendererTypeName(component.type.reference));
+                renderComponentVarName = renderComponentVar.name;
+                statements.push(renderComponentVar
+                    .set(importExpr(createIdentifier(Identifiers.createRendererType2))
+                    .callFn([new LiteralMapExpr([
+                        new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
+                        new LiteralMapEntry('styles', styles),
+                        new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
+                    ])]))
+                    .toDeclStmt(importType(createIdentifier(Identifiers.RendererType2)), [StmtModifier.Final]));
             }
-            var /** @type {?} */ renderComponentVar = variable(rendererTypeName(component.type.reference));
-            statements.push(renderComponentVar
-                .set(importExpr(createIdentifier(Identifiers.createRendererType2)).callFn([
-                new LiteralMapExpr([
-                    new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
-                    new LiteralMapEntry('styles', styles),
-                    new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
-                ])
-            ]))
-                .toDeclStmt(importType(createIdentifier(Identifiers.RendererType2)), [StmtModifier.Final]));
             var /** @type {?} */ viewBuilderFactory = function (parent) {
                 var /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
                 return new ViewBuilder(parent, component, embeddedViewIndex, usedPipes, staticQueryIds, viewBuilderFactory);
@@ -19933,7 +20263,7 @@
             var /** @type {?} */ visitor = viewBuilderFactory(null);
             visitor.visitAll([], template);
             statements.push.apply(statements, visitor.build());
-            return new ViewCompileResult(statements, visitor.viewName, renderComponentVar.name);
+            return new ViewCompileResult(statements, visitor.viewName, renderComponentVarName);
         };
         return ViewCompiler;
     }());
@@ -20070,7 +20400,7 @@
             var /** @type {?} */ updateFn;
             if (updateStmts.length > 0) {
                 var /** @type {?} */ preStmts = [];
-                if (!this.component.isHost) {
+                if (!this.component.isHost && findReadVarNames(updateStmts).has(COMP_VAR.name)) {
                     preStmts.push(COMP_VAR.set(VIEW_VAR.prop('component')).toDeclStmt(this.compType));
                 }
                 updateFn = fn([
@@ -20687,7 +21017,7 @@
             var /** @type {?} */ handleEventFn;
             if (handleEventStmts.length > 0) {
                 var /** @type {?} */ preStmts = [ALLOW_DEFAULT_VAR.set(literal(true)).toDeclStmt(BOOL_TYPE)];
-                if (!this.component.isHost) {
+                if (!this.component.isHost && findReadVarNames(handleEventStmts).has(COMP_VAR.name)) {
                     preStmts.push(COMP_VAR.set(VIEW_VAR.prop('component')).toDeclStmt(this.compType));
                 }
                 handleEventFn = fn([
@@ -23126,7 +23456,7 @@
         var /** @type {?} */ expressionParser = new Parser(new Lexer());
         var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
         var /** @type {?} */ tmplParser = new TemplateParser(config, expressionParser, elementSchemaRegistry, htmlParser, console, []);
-        var /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+        var /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, console, symbolCache, staticReflector);
         // TODO(vicb): do not pass options.i18nFormat here
         var /** @type {?} */ importResolver = {
             getImportAs: function (symbol) { return symbolResolver.getImportAs(symbol); },
@@ -24239,13 +24569,16 @@
             var _a = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, templateSourceUrl(template.ngModule.type, template.compMeta, template.compMeta.template)), parsedTemplate = _a.template, usedPipes = _a.pipes;
             var /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), usedPipes);
             var /** @type {?} */ statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
+            var /** @type {?} */ viewClassAndRendererTypeVars = compMeta.isHost ?
+                [compileResult.viewClassVar] :
+                [compileResult.viewClassVar, compileResult.rendererTypeVar];
             var /** @type {?} */ viewClass;
             var /** @type {?} */ rendererType;
             if (!this._compilerConfig.useJit) {
-                _b = interpretStatements(statements, [compileResult.viewClassVar, compileResult.rendererTypeVar]), viewClass = _b[0], rendererType = _b[1];
+                _b = interpretStatements(statements, viewClassAndRendererTypeVars), viewClass = _b[0], rendererType = _b[1];
             }
             else {
-                _c = jitStatements(templateJitUrl(template.ngModule.type, template.compMeta), statements, [compileResult.viewClassVar, compileResult.rendererTypeVar]), viewClass = _c[0], rendererType = _c[1];
+                _c = jitStatements(templateJitUrl(template.ngModule.type, template.compMeta), statements, viewClassAndRendererTypeVars), viewClass = _c[0], rendererType = _c[1];
             }
             template.compiled(viewClass, rendererType);
             var _b, _c;
@@ -24571,7 +24904,7 @@
             var /** @type {?} */ config = new CompilerConfig({ defaultEncapsulation: _angular_core.ViewEncapsulation.Emulated, useJit: false });
             var /** @type {?} */ normalizer = new DirectiveNormalizer({ get: function (url) { return host.loadResource(url); } }, urlResolver, htmlParser, config);
             var /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-            var /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+            var /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, new _angular_core.ɵConsole(), symbolCache, staticReflector);
             // TODO(vicb): implicit tags & attributes
             var /** @type {?} */ messageBundle = new MessageBundle(htmlParser, [], {}, locale);
             var /** @type {?} */ extractor = new Extractor(host, staticSymbolResolver, messageBundle, resolver);

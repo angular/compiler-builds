@@ -441,6 +441,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitCommentStmt(stmt: CommentStmt, context: any): any;
     visitAllStatements(stmts: Statement[], context: any): void;
 }
+export declare function findReadVarNames(stmts: Statement[]): Set<string>;
 export declare function applySourceSpanToStatementIfNeeded(stmt: Statement, sourceSpan: ParseSourceSpan): Statement;
 export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, sourceSpan: ParseSourceSpan): Expression;
 export declare function variable(name: string, type?: Type, sourceSpan?: ParseSourceSpan): ReadVarExpr;

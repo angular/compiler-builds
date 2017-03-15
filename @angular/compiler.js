@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-3c15916
+ * @license Angular v4.0.0-rc.3-5c34066
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-3c15916');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-5c34066');
 
 /**
  * @license
@@ -1452,6 +1452,38 @@ const /** @type {?} */ STRING_MAP_PROTO = Object.getPrototypeOf({});
  */
 function isStrictStringMap(obj) {
     return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
+}
+/**
+ * @param {?} str
+ * @return {?}
+ */
+function utf8Encode(str) {
+    let /** @type {?} */ encoded = '';
+    for (let /** @type {?} */ index = 0; index < str.length; index++) {
+        let /** @type {?} */ codePoint = str.charCodeAt(index);
+        // decode surrogate
+        // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+        if (codePoint >= 0xd800 && codePoint <= 0xdbff && str.length > (index + 1)) {
+            const /** @type {?} */ low = str.charCodeAt(index + 1);
+            if (low >= 0xdc00 && low <= 0xdfff) {
+                index++;
+                codePoint = ((codePoint - 0xd800) << 10) + low - 0xdc00 + 0x10000;
+            }
+        }
+        if (codePoint <= 0x7f) {
+            encoded += String.fromCharCode(codePoint);
+        }
+        else if (codePoint <= 0x7ff) {
+            encoded += String.fromCharCode(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
+        }
+        else if (codePoint <= 0xffff) {
+            encoded += String.fromCharCode((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+        }
+        else if (codePoint <= 0x1fffff) {
+            encoded += String.fromCharCode(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+        }
+    }
+    return encoded;
 }
 
 // group 0: "[prop] or (event) or @trigger"
@@ -4793,16 +4825,16 @@ class ParseSourceSpan {
 }
 let ParseErrorLevel = {};
 ParseErrorLevel.WARNING = 0;
-ParseErrorLevel.FATAL = 1;
+ParseErrorLevel.ERROR = 1;
 ParseErrorLevel[ParseErrorLevel.WARNING] = "WARNING";
-ParseErrorLevel[ParseErrorLevel.FATAL] = "FATAL";
+ParseErrorLevel[ParseErrorLevel.ERROR] = "ERROR";
 class ParseError {
     /**
      * @param {?} span
      * @param {?} msg
      * @param {?=} level
      */
-    constructor(span, msg, level = ParseErrorLevel.FATAL) {
+    constructor(span, msg, level = ParseErrorLevel.ERROR) {
         this.span = span;
         this.msg = msg;
         this.level = level;
@@ -4812,7 +4844,7 @@ class ParseError {
      */
     toString() {
         const /** @type {?} */ ctx = this.span.start.getContext(100, 3);
-        const /** @type {?} */ contextStr = ctx ? ` ("${ctx.before}[ERROR ->]${ctx.after}")` : '';
+        const /** @type {?} */ contextStr = ctx ? ` ("${ctx.before}[${ParseErrorLevel[this.level]} ->]${ctx.after}")` : '';
         const /** @type {?} */ details = this.span.details ? `, ${this.span.details}` : '';
         return `${this.msg}${contextStr}: ${this.span.start}${details}`;
     }
@@ -7386,13 +7418,6 @@ class XmlParser extends Parser$1 {
 }
 
 /**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * @param {?} message
  * @return {?}
  */
@@ -7643,47 +7668,6 @@ Endian.Little = 0;
 Endian.Big = 1;
 Endian[Endian.Little] = "Little";
 Endian[Endian.Big] = "Big";
-/**
- * @param {?} str
- * @return {?}
- */
-function utf8Encode(str) {
-    let /** @type {?} */ encoded = '';
-    for (let /** @type {?} */ index = 0; index < str.length; index++) {
-        const /** @type {?} */ codePoint = decodeSurrogatePairs(str, index);
-        if (codePoint <= 0x7f) {
-            encoded += String.fromCharCode(codePoint);
-        }
-        else if (codePoint <= 0x7ff) {
-            encoded += String.fromCharCode(0xc0 | codePoint >>> 6, 0x80 | codePoint & 0x3f);
-        }
-        else if (codePoint <= 0xffff) {
-            encoded += String.fromCharCode(0xe0 | codePoint >>> 12, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-        }
-        else if (codePoint <= 0x1fffff) {
-            encoded += String.fromCharCode(0xf0 | codePoint >>> 18, 0x80 | codePoint >>> 12 & 0x3f, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-        }
-    }
-    return encoded;
-}
-/**
- * @param {?} str
- * @param {?} index
- * @return {?}
- */
-function decodeSurrogatePairs(str, index) {
-    if (index < 0 || index >= str.length) {
-        throw new Error(`index=${index} is out of range in "${str}"`);
-    }
-    const /** @type {?} */ high = str.charCodeAt(index);
-    if (high >= 0xd800 && high <= 0xdfff && str.length > index + 1) {
-        const /** @type {?} */ low = byteAt(str, index + 1);
-        if (low >= 0xdc00 && low <= 0xdfff) {
-            return (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
-        }
-    }
-    return high;
-}
 /**
  * @param {?} a
  * @param {?} b
@@ -10300,7 +10284,7 @@ class BindingParser {
             name = name.substring(1);
             if (value) {
                 this._reportError(`Assigning animation triggers via @prop="exp" attributes with an expression is invalid.` +
-                    ` Use property bindings (e.g. [@prop]="exp") or use an attribute without a value (e.g. @prop) instead.`, sourceSpan, ParseErrorLevel.FATAL);
+                    ` Use property bindings (e.g. [@prop]="exp") or use an attribute without a value (e.g. @prop) instead.`, sourceSpan, ParseErrorLevel.ERROR);
             }
             this._parseAnimation(name, value, sourceSpan, targetMatchableAttrs, targetProps);
         }
@@ -10540,7 +10524,7 @@ class BindingParser {
      * @param {?=} level
      * @return {?}
      */
-    _reportError(message, sourceSpan, level = ParseErrorLevel.FATAL) {
+    _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
         this._targetErrors.push(new ParseError(sourceSpan, message, level));
     }
     /**
@@ -10583,7 +10567,7 @@ class BindingParser {
         const /** @type {?} */ report = isAttr ? this._schemaRegistry.validateAttribute(propName) :
             this._schemaRegistry.validateProperty(propName);
         if (report.error) {
-            this._reportError(report.msg, sourceSpan, ParseErrorLevel.FATAL);
+            this._reportError(report.msg, sourceSpan, ParseErrorLevel.ERROR);
         }
     }
 }
@@ -10813,7 +10797,7 @@ class TemplateParser {
     parse(component, template, directives, pipes, schemas, templateUrl) {
         const /** @type {?} */ result = this.tryParse(component, template, directives, pipes, schemas, templateUrl);
         const /** @type {?} */ warnings = result.errors.filter(error => error.level === ParseErrorLevel.WARNING);
-        const /** @type {?} */ errors = result.errors.filter(error => error.level === ParseErrorLevel.FATAL);
+        const /** @type {?} */ errors = result.errors.filter(error => error.level === ParseErrorLevel.ERROR);
         if (warnings.length > 0) {
             this._console.warn(`Template parse warnings:\n${warnings.join('\n')}`);
         }
@@ -10917,7 +10901,7 @@ class TemplateParser {
                 existingReferences.push(name);
             }
             else {
-                const /** @type {?} */ error = new TemplateParseError(`Reference "#${name}" is defined several times`, reference.sourceSpan, ParseErrorLevel.FATAL);
+                const /** @type {?} */ error = new TemplateParseError(`Reference "#${name}" is defined several times`, reference.sourceSpan, ParseErrorLevel.ERROR);
                 errors.push(error);
             }
         }));
@@ -11456,7 +11440,7 @@ class TemplateParseVisitor {
      * @param {?=} level
      * @return {?}
      */
-    _reportError(message, sourceSpan, level = ParseErrorLevel.FATAL) {
+    _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
         this._targetErrors.push(new ParseError(sourceSpan, message, level));
     }
 }
@@ -12699,11 +12683,12 @@ class CompileMetadataResolver {
      * @param {?} _summaryResolver
      * @param {?} _schemaRegistry
      * @param {?} _directiveNormalizer
+     * @param {?} _console
      * @param {?} _staticSymbolCache
      * @param {?=} _reflector
      * @param {?=} _errorCollector
      */
-    constructor(_config, _ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _staticSymbolCache, _reflector = ɵreflector, _errorCollector) {
+    constructor(_config, _ngModuleResolver, _directiveResolver, _pipeResolver, _summaryResolver, _schemaRegistry, _directiveNormalizer, _console, _staticSymbolCache, _reflector = ɵreflector, _errorCollector) {
         this._config = _config;
         this._ngModuleResolver = _ngModuleResolver;
         this._directiveResolver = _directiveResolver;
@@ -12711,6 +12696,7 @@ class CompileMetadataResolver {
         this._summaryResolver = _summaryResolver;
         this._schemaRegistry = _schemaRegistry;
         this._directiveNormalizer = _directiveNormalizer;
+        this._console = _console;
         this._staticSymbolCache = _staticSymbolCache;
         this._reflector = _reflector;
         this._errorCollector = _errorCollector;
@@ -13352,7 +13338,10 @@ class CompileMetadataResolver {
      * @return {?}
      */
     getInjectableSummary(type) {
-        return { summaryKind: CompileSummaryKind.Injectable, type: this._getTypeMetadata(type) };
+        return {
+            summaryKind: CompileSummaryKind.Injectable,
+            type: this._getTypeMetadata(type, null, false)
+        };
     }
     /**
      * @param {?} type
@@ -13369,13 +13358,14 @@ class CompileMetadataResolver {
     /**
      * @param {?} type
      * @param {?=} dependencies
+     * @param {?=} throwOnUnknownDeps
      * @return {?}
      */
-    _getTypeMetadata(type, dependencies = null) {
+    _getTypeMetadata(type, dependencies = null, throwOnUnknownDeps = true) {
         const /** @type {?} */ identifier = this._getIdentifierMetadata(type);
         return {
             reference: identifier.reference,
-            diDeps: this._getDependenciesMetadata(identifier.reference, dependencies),
+            diDeps: this._getDependenciesMetadata(identifier.reference, dependencies, throwOnUnknownDeps),
             lifecycleHooks: ɵLIFECYCLE_HOOKS_VALUES.filter(hook => hasLifecycleHook(hook, identifier.reference)),
         };
     }
@@ -13442,9 +13432,10 @@ class CompileMetadataResolver {
     /**
      * @param {?} typeOrFunc
      * @param {?} dependencies
+     * @param {?=} throwOnUnknownDeps
      * @return {?}
      */
-    _getDependenciesMetadata(typeOrFunc, dependencies) {
+    _getDependenciesMetadata(typeOrFunc, dependencies, throwOnUnknownDeps = true) {
         let /** @type {?} */ hasUnknownDeps = false;
         const /** @type {?} */ params = dependencies || this._reflector.parameters(typeOrFunc) || [];
         const /** @type {?} */ dependenciesMetadata = params.map((param) => {
@@ -13501,7 +13492,13 @@ class CompileMetadataResolver {
         });
         if (hasUnknownDeps) {
             const /** @type {?} */ depsTokens = dependenciesMetadata.map((dep) => dep ? stringifyType(dep.token) : '?').join(', ');
-            this._reportError(syntaxError(`Can't resolve all parameters for ${stringifyType(typeOrFunc)}: (${depsTokens}).`), typeOrFunc);
+            const /** @type {?} */ message = `Can't resolve all parameters for ${stringifyType(typeOrFunc)}: (${depsTokens}).`;
+            if (throwOnUnknownDeps) {
+                this._reportError(syntaxError(message), typeOrFunc);
+            }
+            else {
+                this._console.warn(`Warning: ${message} This will become an error in Angular v5.x`);
+            }
         }
         return dependenciesMetadata;
     }
@@ -13736,6 +13733,7 @@ CompileMetadataResolver.ctorParameters = () => [
     { type: SummaryResolver, },
     { type: ElementSchemaRegistry, },
     { type: DirectiveNormalizer, },
+    { type: ɵConsole, },
     { type: StaticSymbolCache, decorators: [{ type: Optional },] },
     { type: ɵReflectorReader, },
     { type: undefined, decorators: [{ type: Optional }, { type: Inject, args: [ERROR_COLLECTOR_TOKEN,] },] },
@@ -15229,6 +15227,323 @@ class AstTransformer$1 {
      */
     visitAllStatements(stmts, context) {
         return stmts.map(stmt => stmt.visitStatement(this, context));
+    }
+}
+class RecursiveAstVisitor$1 {
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitReadVarExpr(ast, context) { return ast; }
+    /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    visitWriteVarExpr(expr, context) {
+        expr.value.visitExpression(this, context);
+        return expr;
+    }
+    /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    visitWriteKeyExpr(expr, context) {
+        expr.receiver.visitExpression(this, context);
+        expr.index.visitExpression(this, context);
+        expr.value.visitExpression(this, context);
+        return expr;
+    }
+    /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    visitWritePropExpr(expr, context) {
+        expr.receiver.visitExpression(this, context);
+        expr.value.visitExpression(this, context);
+        return expr;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitInvokeMethodExpr(ast, context) {
+        ast.receiver.visitExpression(this, context);
+        this.visitAllExpressions(ast.args, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitInvokeFunctionExpr(ast, context) {
+        ast.fn.visitExpression(this, context);
+        this.visitAllExpressions(ast.args, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitInstantiateExpr(ast, context) {
+        ast.classExpr.visitExpression(this, context);
+        this.visitAllExpressions(ast.args, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralExpr(ast, context) { return ast; }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitExternalExpr(ast, context) { return ast; }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitConditionalExpr(ast, context) {
+        ast.condition.visitExpression(this, context);
+        ast.trueCase.visitExpression(this, context);
+        ast.falseCase.visitExpression(this, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitNotExpr(ast, context) {
+        ast.condition.visitExpression(this, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitCastExpr(ast, context) {
+        ast.value.visitExpression(this, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitFunctionExpr(ast, context) {
+        this.visitAllStatements(ast.statements, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitBinaryOperatorExpr(ast, context) {
+        ast.lhs.visitExpression(this, context);
+        ast.rhs.visitExpression(this, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitReadPropExpr(ast, context) {
+        ast.receiver.visitExpression(this, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitReadKeyExpr(ast, context) {
+        ast.receiver.visitExpression(this, context);
+        ast.index.visitExpression(this, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralArrayExpr(ast, context) {
+        this.visitAllExpressions(ast.entries, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralMapExpr(ast, context) {
+        ast.entries.forEach((entry) => entry.value.visitExpression(this, context));
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitCommaExpr(ast, context) {
+        this.visitAllExpressions(ast.parts, context);
+    }
+    /**
+     * @param {?} exprs
+     * @param {?} context
+     * @return {?}
+     */
+    visitAllExpressions(exprs, context) {
+        exprs.forEach(expr => expr.visitExpression(this, context));
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitDeclareVarStmt(stmt, context) {
+        stmt.value.visitExpression(this, context);
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitDeclareFunctionStmt(stmt, context) {
+        this.visitAllStatements(stmt.statements, context);
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitExpressionStmt(stmt, context) {
+        stmt.expr.visitExpression(this, context);
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitReturnStmt(stmt, context) {
+        stmt.value.visitExpression(this, context);
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitDeclareClassStmt(stmt, context) {
+        stmt.parent.visitExpression(this, context);
+        stmt.getters.forEach(getter => this.visitAllStatements(getter.body, context));
+        if (stmt.constructorMethod) {
+            this.visitAllStatements(stmt.constructorMethod.body, context);
+        }
+        stmt.methods.forEach(method => this.visitAllStatements(method.body, context));
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitIfStmt(stmt, context) {
+        stmt.condition.visitExpression(this, context);
+        this.visitAllStatements(stmt.trueCase, context);
+        this.visitAllStatements(stmt.falseCase, context);
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitTryCatchStmt(stmt, context) {
+        this.visitAllStatements(stmt.bodyStmts, context);
+        this.visitAllStatements(stmt.catchStmts, context);
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitThrowStmt(stmt, context) {
+        stmt.error.visitExpression(this, context);
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitCommentStmt(stmt, context) { return stmt; }
+    /**
+     * @param {?} stmts
+     * @param {?} context
+     * @return {?}
+     */
+    visitAllStatements(stmts, context) {
+        stmts.forEach(stmt => stmt.visitStatement(this, context));
+    }
+}
+/**
+ * @param {?} stmts
+ * @return {?}
+ */
+function findReadVarNames(stmts) {
+    const /** @type {?} */ visitor = new _ReadVarVisitor();
+    visitor.visitAllStatements(stmts, null);
+    return visitor.varNames;
+}
+class _ReadVarVisitor extends RecursiveAstVisitor$1 {
+    constructor() {
+        super(...arguments);
+        this.varNames = new Set();
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitDeclareFunctionStmt(stmt, context) {
+        // Don't descend into nested functions
+        return stmt;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    visitDeclareClassStmt(stmt, context) {
+        // Don't descend into nested classes
+        return stmt;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitReadVarExpr(ast, context) {
+        this.varNames.add(ast.name);
+        return null;
     }
 }
 /**
@@ -19107,20 +19422,23 @@ class ViewCompiler {
         let /** @type {?} */ embeddedViewCount = 0;
         const /** @type {?} */ staticQueryIds = findStaticQueryIds(template);
         const /** @type {?} */ statements = [];
-        const /** @type {?} */ customRenderData = [];
-        if (component.template.animations && component.template.animations.length) {
-            customRenderData.push(new LiteralMapEntry('animation', convertValueToOutputAst(component.template.animations), true));
+        let /** @type {?} */ renderComponentVarName;
+        if (!component.isHost) {
+            const /** @type {?} */ customRenderData = [];
+            if (component.template.animations && component.template.animations.length) {
+                customRenderData.push(new LiteralMapEntry('animation', convertValueToOutputAst(component.template.animations), true));
+            }
+            const /** @type {?} */ renderComponentVar = variable(rendererTypeName(component.type.reference));
+            renderComponentVarName = renderComponentVar.name;
+            statements.push(renderComponentVar
+                .set(importExpr(createIdentifier(Identifiers.createRendererType2))
+                .callFn([new LiteralMapExpr([
+                    new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
+                    new LiteralMapEntry('styles', styles),
+                    new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
+                ])]))
+                .toDeclStmt(importType(createIdentifier(Identifiers.RendererType2)), [StmtModifier.Final]));
         }
-        const /** @type {?} */ renderComponentVar = variable(rendererTypeName(component.type.reference));
-        statements.push(renderComponentVar
-            .set(importExpr(createIdentifier(Identifiers.createRendererType2)).callFn([
-            new LiteralMapExpr([
-                new LiteralMapEntry('encapsulation', literal(component.template.encapsulation)),
-                new LiteralMapEntry('styles', styles),
-                new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
-            ])
-        ]))
-            .toDeclStmt(importType(createIdentifier(Identifiers.RendererType2)), [StmtModifier.Final]));
         const /** @type {?} */ viewBuilderFactory = (parent) => {
             const /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
             return new ViewBuilder(parent, component, embeddedViewIndex, usedPipes, staticQueryIds, viewBuilderFactory);
@@ -19128,7 +19446,7 @@ class ViewCompiler {
         const /** @type {?} */ visitor = viewBuilderFactory(null);
         visitor.visitAll([], template);
         statements.push(...visitor.build());
-        return new ViewCompileResult(statements, visitor.viewName, renderComponentVar.name);
+        return new ViewCompileResult(statements, visitor.viewName, renderComponentVarName);
     }
 }
 ViewCompiler.decorators = [
@@ -19258,7 +19576,7 @@ class ViewBuilder {
         let /** @type {?} */ updateFn;
         if (updateStmts.length > 0) {
             const /** @type {?} */ preStmts = [];
-            if (!this.component.isHost) {
+            if (!this.component.isHost && findReadVarNames(updateStmts).has(COMP_VAR.name)) {
                 preStmts.push(COMP_VAR.set(VIEW_VAR.prop('component')).toDeclStmt(this.compType));
             }
             updateFn = fn([
@@ -19863,7 +20181,7 @@ class ViewBuilder {
         let /** @type {?} */ handleEventFn;
         if (handleEventStmts.length > 0) {
             const /** @type {?} */ preStmts = [ALLOW_DEFAULT_VAR.set(literal(true)).toDeclStmt(BOOL_TYPE)];
-            if (!this.component.isHost) {
+            if (!this.component.isHost && findReadVarNames(handleEventStmts).has(COMP_VAR.name)) {
                 preStmts.push(COMP_VAR.set(VIEW_VAR.prop('component')).toDeclStmt(this.compType));
             }
             handleEventFn = fn([
@@ -22271,7 +22589,7 @@ function createAotCompiler(compilerHost, options) {
     const /** @type {?} */ expressionParser = new Parser(new Lexer());
     const /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
     const /** @type {?} */ tmplParser = new TemplateParser(config, expressionParser, elementSchemaRegistry, htmlParser, console, []);
-    const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+    const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, console, symbolCache, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
     const /** @type {?} */ importResolver = {
         getImportAs: (symbol) => symbolResolver.getImportAs(symbol),
@@ -23347,13 +23665,16 @@ class JitCompiler {
         const { template: parsedTemplate, pipes: usedPipes } = this._templateParser.parse(compMeta, compMeta.template.template, directives, pipes, template.ngModule.schemas, templateSourceUrl(template.ngModule.type, template.compMeta, template.compMeta.template));
         const /** @type {?} */ compileResult = this._viewCompiler.compileComponent(compMeta, parsedTemplate, variable(stylesCompileResult.componentStylesheet.stylesVar), usedPipes);
         const /** @type {?} */ statements = stylesCompileResult.componentStylesheet.statements.concat(compileResult.statements);
+        let /** @type {?} */ viewClassAndRendererTypeVars = compMeta.isHost ?
+            [compileResult.viewClassVar] :
+            [compileResult.viewClassVar, compileResult.rendererTypeVar];
         let /** @type {?} */ viewClass;
         let /** @type {?} */ rendererType;
         if (!this._compilerConfig.useJit) {
-            [viewClass, rendererType] = interpretStatements(statements, [compileResult.viewClassVar, compileResult.rendererTypeVar]);
+            [viewClass, rendererType] = interpretStatements(statements, viewClassAndRendererTypeVars);
         }
         else {
-            [viewClass, rendererType] = jitStatements(templateJitUrl(template.ngModule.type, template.compMeta), statements, [compileResult.viewClassVar, compileResult.rendererTypeVar]);
+            [viewClass, rendererType] = jitStatements(templateJitUrl(template.ngModule.type, template.compMeta), statements, viewClassAndRendererTypeVars);
         }
         template.compiled(viewClass, rendererType);
     }
@@ -23661,7 +23982,7 @@ class Extractor {
         const /** @type {?} */ config = new CompilerConfig({ defaultEncapsulation: ViewEncapsulation.Emulated, useJit: false });
         const /** @type {?} */ normalizer = new DirectiveNormalizer({ get: (url) => host.loadResource(url) }, urlResolver, htmlParser, config);
         const /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
-        const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, symbolCache, staticReflector);
+        const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, new ɵConsole(), symbolCache, staticReflector);
         // TODO(vicb): implicit tags & attributes
         const /** @type {?} */ messageBundle = new MessageBundle(htmlParser, [], {}, locale);
         const /** @type {?} */ extractor = new Extractor(host, staticSymbolResolver, messageBundle, resolver);
