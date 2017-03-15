@@ -154,13 +154,14 @@ export declare class CompileTemplateMetadata {
     encapsulation: ViewEncapsulation;
     template: string;
     templateUrl: string;
+    isInline: boolean;
     styles: string[];
     styleUrls: string[];
     externalStylesheets: CompileStylesheetMetadata[];
     animations: any[];
     ngContentSelectors: string[];
     interpolation: [string, string];
-    constructor({encapsulation, template, templateUrl, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation}?: {
+    constructor({encapsulation, template, templateUrl, styles, styleUrls, externalStylesheets, animations, ngContentSelectors, interpolation, isInline}?: {
         encapsulation?: ViewEncapsulation;
         template?: string;
         templateUrl?: string;
@@ -170,6 +171,7 @@ export declare class CompileTemplateMetadata {
         ngContentSelectors?: string[];
         animations?: any[];
         interpolation?: [string, string];
+        isInline?: boolean;
     });
     toSummary(): CompileTemplateSummary;
 }
@@ -406,3 +408,12 @@ export declare class ProviderMeta {
     });
 }
 export declare function flatten<T>(list: Array<T | T[]>): T[];
+export declare function templateSourceUrl(ngModuleType: CompileIdentifierMetadata, compMeta: {
+    type: CompileIdentifierMetadata;
+}, templateMeta: {
+    isInline: boolean;
+    templateUrl: string;
+}): string;
+export declare function sharedStylesheetJitUrl(meta: CompileStylesheetMetadata, id: number): string;
+export declare function ngModuleJitUrl(moduleMeta: CompileNgModuleMetadata): string;
+export declare function templateJitUrl(ngModuleType: CompileIdentifierMetadata, compMeta: CompileDirectiveMetadata): string;

@@ -23,6 +23,7 @@ export declare class Token {
     isIdentifier(): boolean;
     isKeyword(): boolean;
     isKeywordLet(): boolean;
+    isKeywordAs(): boolean;
     isKeywordNull(): boolean;
     isKeywordUndefined(): boolean;
     isKeywordTrue(): boolean;

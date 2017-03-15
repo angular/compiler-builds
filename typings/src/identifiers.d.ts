@@ -7,6 +7,7 @@ export interface IdentifierSpec {
 export declare class Identifiers {
     static ANALYZE_FOR_ENTRY_COMPONENTS: IdentifierSpec;
     static ElementRef: IdentifierSpec;
+    static NgModuleRef: IdentifierSpec;
     static ViewContainerRef: IdentifierSpec;
     static ChangeDetectorRef: IdentifierSpec;
     static QueryList: IdentifierSpec;

@@ -52,6 +52,7 @@ export declare class _ParseAST {
     advance(): void;
     optionalCharacter(code: number): boolean;
     peekKeywordLet(): boolean;
+    peekKeywordAs(): boolean;
     expectCharacter(code: number): void;
     optionalOperator(op: string): boolean;
     expectOperator(operator: string): void;
