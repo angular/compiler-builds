@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-4f7d62a
+ * @license Angular v4.0.0-rc.3-5c0ea20
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -17,7 +17,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-4f7d62a');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-5c0ea20');
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -3417,7 +3417,9 @@
     Lexer.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     Lexer.ctorParameters = function () { return []; };
     var Token = (function () {
         /**
@@ -4173,7 +4175,9 @@
     Parser.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     Parser.ctorParameters = function () { return [
         { type: Lexer, },
     ]; };
@@ -9309,7 +9313,9 @@
     HtmlParser.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     HtmlParser.ctorParameters = function () { return []; };
     /**
      * A container for translated messages
@@ -9317,8 +9323,8 @@
     var TranslationBundle = (function () {
         /**
          * @param {?=} _i18nNodesByMsgId
-         * @param {?} locale
-         * @param {?} digest
+         * @param {?=} locale
+         * @param {?=} digest
          * @param {?=} mapperFactory
          * @param {?=} missingTranslationStrategy
          * @param {?=} console
@@ -9366,10 +9372,10 @@
     var I18nToHtmlVisitor = (function () {
         /**
          * @param {?=} _i18nNodesByMsgId
-         * @param {?} _locale
-         * @param {?} _digest
-         * @param {?} _mapperFactory
-         * @param {?} _missingTranslationStrategy
+         * @param {?=} _locale
+         * @param {?=} _digest
+         * @param {?=} _mapperFactory
+         * @param {?=} _missingTranslationStrategy
          * @param {?=} _console
          */
         function I18nToHtmlVisitor(_i18nNodesByMsgId, _locale, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
@@ -10272,7 +10278,7 @@
         /**
          * @param {?} dep
          * @param {?=} eager
-         * @param {?} requestorSourceSpan
+         * @param {?=} requestorSourceSpan
          * @return {?}
          */
         NgModuleProviderAnalyzer.prototype._getDependency = function (dep, eager, requestorSourceSpan) {
@@ -11391,7 +11397,9 @@
     TemplateParser.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     TemplateParser.ctorParameters = function () { return [
         { type: CompilerConfig, },
         { type: Parser, },
@@ -12231,7 +12239,9 @@
     UrlResolver.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     UrlResolver.ctorParameters = function () { return [
         { type: undefined, decorators: [{ type: _angular_core.Inject, args: [_angular_core.PACKAGE_ROOT_URL,] },] },
     ]; };
@@ -12673,7 +12683,9 @@
     DirectiveNormalizer.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     DirectiveNormalizer.ctorParameters = function () { return [
         { type: ResourceLoader, },
         { type: UrlResolver, },
@@ -12929,7 +12941,9 @@
     DirectiveResolver.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     DirectiveResolver.ctorParameters = function () { return [
         { type: _angular_core.ɵReflectorReader, },
     ]; };
@@ -13084,7 +13098,9 @@
     NgModuleResolver.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     NgModuleResolver.ctorParameters = function () { return [
         { type: _angular_core.ɵReflectorReader, },
     ]; };
@@ -13143,7 +13159,9 @@
     PipeResolver.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     PipeResolver.ctorParameters = function () { return [
         { type: _angular_core.ɵReflectorReader, },
     ]; };
@@ -13182,7 +13200,9 @@
     SummaryResolver.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     SummaryResolver.ctorParameters = function () { return []; };
     var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new _angular_core.InjectionToken('ErrorCollector');
     var CompileMetadataResolver = (function () {
@@ -14252,7 +14272,9 @@
     CompileMetadataResolver.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     CompileMetadataResolver.ctorParameters = function () { return [
         { type: CompilerConfig, },
         { type: NgModuleResolver, },
@@ -15482,7 +15504,7 @@
     var AbstractClassPart = (function () {
         /**
          * @param {?=} type
-         * @param {?} modifiers
+         * @param {?=} modifiers
          */
         function AbstractClassPart(type, modifiers) {
             if (type === void 0) { type = null; }
@@ -16558,7 +16580,9 @@
     NgModuleCompiler.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     NgModuleCompiler.ctorParameters = function () { return []; };
     var _InjectorBuilder = (function () {
         /**
@@ -18638,7 +18662,9 @@
     DomElementSchemaRegistry.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     DomElementSchemaRegistry.ctorParameters = function () { return []; };
     /**
      * @param {?} prop
@@ -19287,7 +19313,9 @@
     StyleCompiler.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     StyleCompiler.ctorParameters = function () { return [
         { type: UrlResolver, },
     ]; };
@@ -20292,7 +20320,9 @@
     ViewCompiler.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     ViewCompiler.ctorParameters = function () { return [
         { type: CompilerConfig, },
         { type: ElementSchemaRegistry, },
@@ -24637,7 +24667,9 @@
     JitCompiler.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     JitCompiler.ctorParameters = function () { return [
         { type: _angular_core.Injector, },
         { type: CompileMetadataResolver, },
@@ -25039,7 +25071,9 @@
     JitCompilerFactory.decorators = [
         { type: CompilerInjectable },
     ];
-    /** @nocollapse */
+    /**
+     * @nocollapse
+     */
     JitCompilerFactory.ctorParameters = function () { return [
         { type: Array, decorators: [{ type: _angular_core.Inject, args: [_angular_core.COMPILER_OPTIONS,] },] },
     ]; };
