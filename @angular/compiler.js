@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-ff60c04
+ * @license Angular v4.0.0-rc.3-3b1956b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-ff60c04');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-3b1956b');
 
 /**
  * @license
@@ -4793,16 +4793,16 @@ class ParseSourceSpan {
 }
 let ParseErrorLevel = {};
 ParseErrorLevel.WARNING = 0;
-ParseErrorLevel.FATAL = 1;
+ParseErrorLevel.ERROR = 1;
 ParseErrorLevel[ParseErrorLevel.WARNING] = "WARNING";
-ParseErrorLevel[ParseErrorLevel.FATAL] = "FATAL";
+ParseErrorLevel[ParseErrorLevel.ERROR] = "ERROR";
 class ParseError {
     /**
      * @param {?} span
      * @param {?} msg
      * @param {?=} level
      */
-    constructor(span, msg, level = ParseErrorLevel.FATAL) {
+    constructor(span, msg, level = ParseErrorLevel.ERROR) {
         this.span = span;
         this.msg = msg;
         this.level = level;
@@ -4812,7 +4812,7 @@ class ParseError {
      */
     toString() {
         const /** @type {?} */ ctx = this.span.start.getContext(100, 3);
-        const /** @type {?} */ contextStr = ctx ? ` ("${ctx.before}[ERROR ->]${ctx.after}")` : '';
+        const /** @type {?} */ contextStr = ctx ? ` ("${ctx.before}[${ParseErrorLevel[this.level]} ->]${ctx.after}")` : '';
         const /** @type {?} */ details = this.span.details ? `, ${this.span.details}` : '';
         return `${this.msg}${contextStr}: ${this.span.start}${details}`;
     }
@@ -10300,7 +10300,7 @@ class BindingParser {
             name = name.substring(1);
             if (value) {
                 this._reportError(`Assigning animation triggers via @prop="exp" attributes with an expression is invalid.` +
-                    ` Use property bindings (e.g. [@prop]="exp") or use an attribute without a value (e.g. @prop) instead.`, sourceSpan, ParseErrorLevel.FATAL);
+                    ` Use property bindings (e.g. [@prop]="exp") or use an attribute without a value (e.g. @prop) instead.`, sourceSpan, ParseErrorLevel.ERROR);
             }
             this._parseAnimation(name, value, sourceSpan, targetMatchableAttrs, targetProps);
         }
@@ -10540,7 +10540,7 @@ class BindingParser {
      * @param {?=} level
      * @return {?}
      */
-    _reportError(message, sourceSpan, level = ParseErrorLevel.FATAL) {
+    _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
         this._targetErrors.push(new ParseError(sourceSpan, message, level));
     }
     /**
@@ -10583,7 +10583,7 @@ class BindingParser {
         const /** @type {?} */ report = isAttr ? this._schemaRegistry.validateAttribute(propName) :
             this._schemaRegistry.validateProperty(propName);
         if (report.error) {
-            this._reportError(report.msg, sourceSpan, ParseErrorLevel.FATAL);
+            this._reportError(report.msg, sourceSpan, ParseErrorLevel.ERROR);
         }
     }
 }
@@ -10813,7 +10813,7 @@ class TemplateParser {
     parse(component, template, directives, pipes, schemas, templateUrl) {
         const /** @type {?} */ result = this.tryParse(component, template, directives, pipes, schemas, templateUrl);
         const /** @type {?} */ warnings = result.errors.filter(error => error.level === ParseErrorLevel.WARNING);
-        const /** @type {?} */ errors = result.errors.filter(error => error.level === ParseErrorLevel.FATAL);
+        const /** @type {?} */ errors = result.errors.filter(error => error.level === ParseErrorLevel.ERROR);
         if (warnings.length > 0) {
             this._console.warn(`Template parse warnings:\n${warnings.join('\n')}`);
         }
@@ -10917,7 +10917,7 @@ class TemplateParser {
                 existingReferences.push(name);
             }
             else {
-                const /** @type {?} */ error = new TemplateParseError(`Reference "#${name}" is defined several times`, reference.sourceSpan, ParseErrorLevel.FATAL);
+                const /** @type {?} */ error = new TemplateParseError(`Reference "#${name}" is defined several times`, reference.sourceSpan, ParseErrorLevel.ERROR);
                 errors.push(error);
             }
         }));
@@ -11456,7 +11456,7 @@ class TemplateParseVisitor {
      * @param {?=} level
      * @return {?}
      */
-    _reportError(message, sourceSpan, level = ParseErrorLevel.FATAL) {
+    _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
         this._targetErrors.push(new ParseError(sourceSpan, message, level));
     }
 }
@@ -13133,7 +13133,7 @@ class CompileMetadataResolver {
                         return;
                     const /** @type {?} */ importedModuleSummary = this.getNgModuleSummary(importedModuleType);
                     if (!importedModuleSummary) {
-                        this._reportError(syntaxError(`Unexpected ${this._getTypeDescriptor(importedType)} '${stringifyType(importedType)}' imported by the module '${stringifyType(moduleType)}'`), moduleType);
+                        this._reportError(syntaxError(`Unexpected ${this._getTypeDescriptor(importedType)} '${stringifyType(importedType)}' imported by the module '${stringifyType(moduleType)}'. Please add a @NgModule annotation.`), moduleType);
                         return;
                     }
                     importedModules.push(importedModuleSummary);
@@ -13181,7 +13181,7 @@ class CompileMetadataResolver {
                     this._addTypeToModule(declaredType, moduleType);
                 }
                 else {
-                    this._reportError(syntaxError(`Unexpected ${this._getTypeDescriptor(declaredType)} '${stringifyType(declaredType)}' declared by the module '${stringifyType(moduleType)}'`), moduleType);
+                    this._reportError(syntaxError(`Unexpected ${this._getTypeDescriptor(declaredType)} '${stringifyType(declaredType)}' declared by the module '${stringifyType(moduleType)}'. Please add a @Pipe/@Directive/@Component annotation.`), moduleType);
                     return;
                 }
             });
