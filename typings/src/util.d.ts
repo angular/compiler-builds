@@ -35,3 +35,4 @@ export declare class SyncAsyncResult<T> {
 export declare function syntaxError(msg: string): Error;
 export declare function isSyntaxError(error: Error): boolean;
 export declare function escapeRegExp(s: string): string;
+export declare function utf8Encode(str: string): string;

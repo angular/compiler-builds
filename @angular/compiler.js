@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-3b1956b
+ * @license Angular v4.0.0-rc.3-959a03a
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-3b1956b');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-959a03a');
 
 /**
  * @license
@@ -1452,6 +1452,38 @@ const /** @type {?} */ STRING_MAP_PROTO = Object.getPrototypeOf({});
  */
 function isStrictStringMap(obj) {
     return typeof obj === 'object' && obj !== null && Object.getPrototypeOf(obj) === STRING_MAP_PROTO;
+}
+/**
+ * @param {?} str
+ * @return {?}
+ */
+function utf8Encode(str) {
+    let /** @type {?} */ encoded = '';
+    for (let /** @type {?} */ index = 0; index < str.length; index++) {
+        let /** @type {?} */ codePoint = str.charCodeAt(index);
+        // decode surrogate
+        // see https://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+        if (codePoint >= 0xd800 && codePoint <= 0xdbff && str.length > (index + 1)) {
+            const /** @type {?} */ low = str.charCodeAt(index + 1);
+            if (low >= 0xdc00 && low <= 0xdfff) {
+                index++;
+                codePoint = ((codePoint - 0xd800) << 10) + low - 0xdc00 + 0x10000;
+            }
+        }
+        if (codePoint <= 0x7f) {
+            encoded += String.fromCharCode(codePoint);
+        }
+        else if (codePoint <= 0x7ff) {
+            encoded += String.fromCharCode(((codePoint >> 6) & 0x1F) | 0xc0, (codePoint & 0x3f) | 0x80);
+        }
+        else if (codePoint <= 0xffff) {
+            encoded += String.fromCharCode((codePoint >> 12) | 0xe0, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+        }
+        else if (codePoint <= 0x1fffff) {
+            encoded += String.fromCharCode(((codePoint >> 18) & 0x07) | 0xf0, ((codePoint >> 12) & 0x3f) | 0x80, ((codePoint >> 6) & 0x3f) | 0x80, (codePoint & 0x3f) | 0x80);
+        }
+    }
+    return encoded;
 }
 
 // group 0: "[prop] or (event) or @trigger"
@@ -7386,13 +7418,6 @@ class XmlParser extends Parser$1 {
 }
 
 /**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
  * @param {?} message
  * @return {?}
  */
@@ -7643,47 +7668,6 @@ Endian.Little = 0;
 Endian.Big = 1;
 Endian[Endian.Little] = "Little";
 Endian[Endian.Big] = "Big";
-/**
- * @param {?} str
- * @return {?}
- */
-function utf8Encode(str) {
-    let /** @type {?} */ encoded = '';
-    for (let /** @type {?} */ index = 0; index < str.length; index++) {
-        const /** @type {?} */ codePoint = decodeSurrogatePairs(str, index);
-        if (codePoint <= 0x7f) {
-            encoded += String.fromCharCode(codePoint);
-        }
-        else if (codePoint <= 0x7ff) {
-            encoded += String.fromCharCode(0xc0 | codePoint >>> 6, 0x80 | codePoint & 0x3f);
-        }
-        else if (codePoint <= 0xffff) {
-            encoded += String.fromCharCode(0xe0 | codePoint >>> 12, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-        }
-        else if (codePoint <= 0x1fffff) {
-            encoded += String.fromCharCode(0xf0 | codePoint >>> 18, 0x80 | codePoint >>> 12 & 0x3f, 0x80 | codePoint >>> 6 & 0x3f, 0x80 | codePoint & 0x3f);
-        }
-    }
-    return encoded;
-}
-/**
- * @param {?} str
- * @param {?} index
- * @return {?}
- */
-function decodeSurrogatePairs(str, index) {
-    if (index < 0 || index >= str.length) {
-        throw new Error(`index=${index} is out of range in "${str}"`);
-    }
-    const /** @type {?} */ high = str.charCodeAt(index);
-    if (high >= 0xd800 && high <= 0xdfff && str.length > index + 1) {
-        const /** @type {?} */ low = byteAt(str, index + 1);
-        if (low >= 0xdc00 && low <= 0xdfff) {
-            return (high - 0xd800) * 0x400 + low - 0xdc00 + 0x10000;
-        }
-    }
-    return high;
-}
 /**
  * @param {?} a
  * @param {?} b
