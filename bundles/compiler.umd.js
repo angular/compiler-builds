@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-5fe2d8f
+ * @license Angular v4.0.0-rc.3-c10c060
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -17,7 +17,7 @@
     /**
      * @stable
      */
-    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-5fe2d8f');
+    var /** @type {?} */ VERSION = new _angular_core.Version('4.0.0-rc.3-c10c060');
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -3394,7 +3394,7 @@
     TokenType[TokenType.Operator] = "Operator";
     TokenType[TokenType.Number] = "Number";
     TokenType[TokenType.Error] = "Error";
-    var /** @type {?} */ KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
+    var /** @type {?} */ KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
     var Lexer = (function () {
         function Lexer() {
         }
@@ -3466,6 +3466,10 @@
          * @return {?}
          */
         Token.prototype.isKeywordLet = function () { return this.type == TokenType.Keyword && this.strValue == 'let'; };
+        /**
+         * @return {?}
+         */
+        Token.prototype.isKeywordAs = function () { return this.type == TokenType.Keyword && this.strValue == 'as'; };
         /**
          * @return {?}
          */
@@ -4250,6 +4254,10 @@
          */
         _ParseAST.prototype.peekKeywordLet = function () { return this.next.isKeywordLet(); };
         /**
+         * @return {?}
+         */
+        _ParseAST.prototype.peekKeywordAs = function () { return this.next.isKeywordAs(); };
+        /**
          * @param {?} code
          * @return {?}
          */
@@ -4730,7 +4738,8 @@
                 if (keyIsVar) {
                     this.advance();
                 }
-                var /** @type {?} */ key = this.expectTemplateBindingKey();
+                var /** @type {?} */ rawKey = this.expectTemplateBindingKey();
+                var /** @type {?} */ key = rawKey;
                 if (!keyIsVar) {
                     if (prefix == null) {
                         prefix = key;
@@ -4750,6 +4759,13 @@
                         name = '\$implicit';
                     }
                 }
+                else if (this.peekKeywordAs()) {
+                    var /** @type {?} */ letStart = this.inputIndex;
+                    this.advance(); // consume `as`
+                    name = rawKey;
+                    key = this.expectTemplateBindingKey(); // read local var name
+                    keyIsVar = true;
+                }
                 else if (this.next !== EOF && !this.peekKeywordLet()) {
                     var /** @type {?} */ start_2 = this.inputIndex;
                     var /** @type {?} */ ast = this.parsePipe();
@@ -4757,6 +4773,12 @@
                     expression = new ASTWithSource(ast, source, this.location, this.errors);
                 }
                 bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
+                if (this.peekKeywordAs() && !keyIsVar) {
+                    var /** @type {?} */ letStart = this.inputIndex;
+                    this.advance(); // consume `as`
+                    var /** @type {?} */ letName = this.expectTemplateBindingKey(); // read local var name
+                    bindings.push(new TemplateBinding(this.span(letStart), letName, true, key, null));
+                }
                 if (!this.optionalCharacter($SEMICOLON)) {
                     this.optionalCharacter($COMMA);
                 }

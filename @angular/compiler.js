@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-5fe2d8f
+ * @license Angular v4.0.0-rc.3-c10c060
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -8,7 +8,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * @stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-5fe2d8f');
+const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-c10c060');
 
 /**
  * @license
@@ -3178,7 +3178,7 @@ TokenType[TokenType.String] = "String";
 TokenType[TokenType.Operator] = "Operator";
 TokenType[TokenType.Number] = "Number";
 TokenType[TokenType.Error] = "Error";
-const /** @type {?} */ KEYWORDS = ['var', 'let', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
+const /** @type {?} */ KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
 class Lexer {
     /**
      * @param {?} text
@@ -3247,6 +3247,10 @@ class Token {
      * @return {?}
      */
     isKeywordLet() { return this.type == TokenType.Keyword && this.strValue == 'let'; }
+    /**
+     * @return {?}
+     */
+    isKeywordAs() { return this.type == TokenType.Keyword && this.strValue == 'as'; }
     /**
      * @return {?}
      */
@@ -4014,6 +4018,10 @@ class _ParseAST {
      */
     peekKeywordLet() { return this.next.isKeywordLet(); }
     /**
+     * @return {?}
+     */
+    peekKeywordAs() { return this.next.isKeywordAs(); }
+    /**
      * @param {?} code
      * @return {?}
      */
@@ -4489,11 +4497,12 @@ class _ParseAST {
         const /** @type {?} */ warnings = [];
         while (this.index < this.tokens.length) {
             const /** @type {?} */ start = this.inputIndex;
-            const /** @type {?} */ keyIsVar = this.peekKeywordLet();
+            let /** @type {?} */ keyIsVar = this.peekKeywordLet();
             if (keyIsVar) {
                 this.advance();
             }
-            let /** @type {?} */ key = this.expectTemplateBindingKey();
+            let /** @type {?} */ rawKey = this.expectTemplateBindingKey();
+            let /** @type {?} */ key = rawKey;
             if (!keyIsVar) {
                 if (prefix == null) {
                     prefix = key;
@@ -4513,6 +4522,13 @@ class _ParseAST {
                     name = '\$implicit';
                 }
             }
+            else if (this.peekKeywordAs()) {
+                const /** @type {?} */ letStart = this.inputIndex;
+                this.advance(); // consume `as`
+                name = rawKey;
+                key = this.expectTemplateBindingKey(); // read local var name
+                keyIsVar = true;
+            }
             else if (this.next !== EOF && !this.peekKeywordLet()) {
                 const /** @type {?} */ start = this.inputIndex;
                 const /** @type {?} */ ast = this.parsePipe();
@@ -4520,6 +4536,12 @@ class _ParseAST {
                 expression = new ASTWithSource(ast, source, this.location, this.errors);
             }
             bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
+            if (this.peekKeywordAs() && !keyIsVar) {
+                const /** @type {?} */ letStart = this.inputIndex;
+                this.advance(); // consume `as`
+                const /** @type {?} */ letName = this.expectTemplateBindingKey(); // read local var name
+                bindings.push(new TemplateBinding(this.span(letStart), letName, true, key, null));
+            }
             if (!this.optionalCharacter($SEMICOLON)) {
                 this.optionalCharacter($COMMA);
             }
