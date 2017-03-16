@@ -5,5 +5,5 @@ export declare function debugOutputAstAsTypeScript(ast: o.Statement | o.Expressi
 export declare class TypeScriptEmitter implements OutputEmitter {
     private _importResolver;
     constructor(_importResolver: ImportResolver);
-    emitStatements(genFilePath: string, stmts: o.Statement[], exportedVars: string[]): string;
+    emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], exportedVars: string[], preamble?: string): string;
 }

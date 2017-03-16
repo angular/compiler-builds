@@ -11,7 +11,7 @@ import { SourceMapGenerator } from './source_map';
 export declare const CATCH_ERROR_VAR: o.ReadVarExpr;
 export declare const CATCH_STACK_VAR: o.ReadVarExpr;
 export declare abstract class OutputEmitter {
-    abstract emitStatements(moduleUrl: string, stmts: o.Statement[], exportedVars: string[]): string;
+    abstract emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], exportedVars: string[], preamble?: string): string;
 }
 export declare class EmitterVisitorContext {
     private _exportedVars;
@@ -36,7 +36,7 @@ export declare class EmitterVisitorContext {
     popClass(): o.ClassStmt;
     readonly currentClass: o.ClassStmt;
     toSource(): string;
-    toSourceMapGenerator(file?: string | null, startsAtLine?: number): SourceMapGenerator;
+    toSourceMapGenerator(sourceFilePath: string, genFilePath: string, startsAtLine?: number): SourceMapGenerator;
     private readonly sourceLines;
 }
 export declare abstract class AbstractEmitterVisitor implements o.StatementVisitor, o.ExpressionVisitor {
