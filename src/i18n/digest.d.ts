@@ -28,3 +28,4 @@ export declare function sha1(str: string): string;
  */
 export declare function fingerprint(str: string): [number, number];
 export declare function computeMsgId(msg: string, meaning: string): string;
+export declare function utf8Encode(str: string): string;
