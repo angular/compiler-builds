@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-a4076c7
+ * @license Angular v4.0.0-rc.3-992aa17
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -433,3 +433,4 @@ const platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'c
 ]);
 
 export { TestingCompilerFactoryImpl, TestingCompilerImpl, platformCoreDynamicTesting, MockSchemaRegistry, MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver };
+//# sourceMappingURL=testing.js.map
