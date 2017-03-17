@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.3-d2fbbb4
+ * @license Angular v4.0.0-rc.3-994089d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -17,7 +17,7 @@
     /**
      * \@stable
      */
-    var VERSION = new _angular_core.Version('4.0.0-rc.3-d2fbbb4');
+    var VERSION = new _angular_core.Version('4.0.0-rc.3-994089d');
     /**
      * @license
      * Copyright Google Inc. All Rights Reserved.
@@ -2195,13 +2195,13 @@
         }, []);
     }
     /**
-     * Note: Using `location.origin` as prefix helps displaying them as a hierarchy in chrome.
-     * It also helps long-stack-trace zone when rewriting stack traces to not break
-     * source maps (as now all scripts have the same origin).
+     * @param {?} url
      * @return {?}
      */
-    function ngJitFolder() {
-        return 'ng://';
+    function sourceUrl(url) {
+        // Note: We need 3 "/" so that ng shows up as a separate domain
+        // in the chrome dev tools.
+        return url.replace(/(\w+:\/\/[\w:-]+)?(\/+)?/, 'ng:///');
     }
     /**
      * @param {?} ngModuleType
@@ -2210,19 +2210,23 @@
      * @return {?}
      */
     function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
+        var /** @type {?} */ url;
         if (templateMeta.isInline) {
             if (compMeta.type.reference instanceof StaticSymbol) {
                 // Note: a .ts file might contain multiple components with inline templates,
                 // so we need to give them unique urls, as these will be used for sourcemaps.
-                return compMeta.type.reference.filePath + "#" + compMeta.type.reference.name + ".html";
+                url = compMeta.type.reference.filePath + "." + compMeta.type.reference.name + ".html";
             }
             else {
-                return ngJitFolder() + "/" + identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".html";
+                url = identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".html";
             }
         }
         else {
-            return templateMeta.templateUrl;
+            url = templateMeta.templateUrl;
         }
+        // always prepend ng:// to make angular resources easy to find and not clobber
+        // user resources.
+        return sourceUrl(url);
     }
     /**
      * @param {?} meta
@@ -2232,14 +2236,14 @@
     function sharedStylesheetJitUrl(meta, id) {
         var /** @type {?} */ pathParts = meta.moduleUrl.split(/\/\\/g);
         var /** @type {?} */ baseName = pathParts[pathParts.length - 1];
-        return ngJitFolder() + "/css/" + id + baseName + ".ngstyle.js";
+        return sourceUrl("css/" + id + baseName + ".ngstyle.js");
     }
     /**
      * @param {?} moduleMeta
      * @return {?}
      */
     function ngModuleJitUrl(moduleMeta) {
-        return ngJitFolder() + "/" + identifierName(moduleMeta.type) + "/module.ngfactory.js";
+        return sourceUrl(identifierName(moduleMeta.type) + "/module.ngfactory.js");
     }
     /**
      * @param {?} ngModuleType
@@ -2247,7 +2251,7 @@
      * @return {?}
      */
     function templateJitUrl(ngModuleType, compMeta) {
-        return ngJitFolder() + "/" + identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".ngfactory.js";
+        return sourceUrl(identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".ngfactory.js");
     }
     var CompilerConfig = (function () {
         /**
@@ -21906,7 +21910,7 @@
          * @return {?}
          */
         AotCompiler.prototype._codegenSourceModule = function (srcFileUrl, genFileUrl, statements, exportedVars) {
-            return new GeneratedFile(srcFileUrl, genFileUrl, this._outputEmitter.emitStatements(srcFileUrl, genFileUrl, statements, exportedVars, this._genFilePreamble));
+            return new GeneratedFile(srcFileUrl, genFileUrl, this._outputEmitter.emitStatements(sourceUrl(srcFileUrl), genFileUrl, statements, exportedVars, this._genFilePreamble));
         };
         return AotCompiler;
     }());
@@ -25248,6 +25252,7 @@
     exports.TransitiveCompileNgModuleMetadata = TransitiveCompileNgModuleMetadata;
     exports.ProviderMeta = ProviderMeta;
     exports.flatten = flatten;
+    exports.sourceUrl = sourceUrl;
     exports.templateSourceUrl = templateSourceUrl;
     exports.sharedStylesheetJitUrl = sharedStylesheetJitUrl;
     exports.ngModuleJitUrl = ngModuleJitUrl;

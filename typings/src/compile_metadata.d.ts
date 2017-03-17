@@ -408,6 +408,7 @@ export declare class ProviderMeta {
     });
 }
 export declare function flatten<T>(list: Array<T | T[]>): T[];
+export declare function sourceUrl(url: string): string;
 export declare function templateSourceUrl(ngModuleType: CompileIdentifierMetadata, compMeta: {
     type: CompileIdentifierMetadata;
 }, templateMeta: {
