@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.3-480a407
+ * @license Angular v4.0.0-rc.4-fcaca45
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -469,3 +469,4 @@ var platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'cor
     { provide: ɵTestingCompilerFactory, useClass: TestingCompilerFactoryImpl }
 ]);
 export { TestingCompilerFactoryImpl, TestingCompilerImpl, platformCoreDynamicTesting, MockSchemaRegistry, MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver };
+//# sourceMappingURL=testing.es5.js.map

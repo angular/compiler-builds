@@ -1,14 +1,14 @@
 /**
- * @license Angular v4.0.0-rc.3-480a407
+ * @license Angular v4.0.0-rc.4-fcaca45
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
 import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵreflector, ViewEncapsulation, ChangeDetectionStrategy, isDevMode, MissingTranslationStrategy, ANALYZE_FOR_ENTRY_COMPONENTS, ElementRef, NgModuleRef, ViewContainerRef, ChangeDetectorRef, QueryList, TemplateRef, ɵCodegenComponentFactoryResolver, ComponentFactoryResolver, ComponentFactory, ComponentRef, NgModuleFactory, ɵNgModuleInjector, ɵregisterModuleFactory, Injector, SecurityContext, LOCALE_ID, TRANSLATIONS_FORMAT, ɵinlineInterpolate, ɵinterpolate, ɵEMPTY_ARRAY, ɵEMPTY_MAP, Renderer, ɵvid, ɵeld, ɵand, ɵted, ɵdid, ɵprd, ɵqud, ɵpad, ɵpod, ɵppd, ɵpid, ɵnov, ɵncd, ɵunv, ɵcrt, ɵccf, PACKAGE_ROOT_URL, Directive, Component, ɵmerge, Query, HostListener, HostBinding, Output, Input, resolveForwardRef, ɵReflectorReader, Attribute, SkipSelf, Self, Host, ɵLIFECYCLE_HOOKS_VALUES, Injectable, Type, ɵERROR_COMPONENT_TYPE, ɵLifecycleHooks, NgModule, Pipe, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, ɵelementEventFullName, ɵReflectionCapabilities, group, sequence, keyframes, animate, style, transition, state, trigger, ViewChildren, ViewChild, ContentChildren, ContentChild, ɵgetComponentViewDefinitionFactory, Compiler, ModuleWithComponentFactories, TRANSLATIONS, ɵReflector, ReflectiveInjector, COMPILER_OPTIONS, PLATFORM_INITIALIZER, CompilerFactory, platformCore, createPlatformFactory } from '@angular/core';
 
 /**
- * @stable
+ * \@stable
  */
-const /** @type {?} */ VERSION = new Version('4.0.0-rc.3-480a407');
+const VERSION = new Version('4.0.0-rc.4-fcaca45');
 
 /**
  * @license
@@ -1314,13 +1314,7 @@ class SelectorContext {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */ const /** @type {?} */ MODULE_SUFFIX = '';
+const MODULE_SUFFIX = '';
 const /** @type {?} */ DASH_CASE_REGEXP = /-+([a-z0-9])/g;
 /**
  * @param {?} input
@@ -2080,6 +2074,7 @@ class ProviderMeta {
     }
 }
 /**
+ * @template T
  * @param {?} list
  * @return {?}
  */
@@ -2090,13 +2085,13 @@ function flatten(list) {
     }, []);
 }
 /**
- * Note: Using `location.origin` as prefix helps displaying them as a hierarchy in chrome.
- * It also helps long-stack-trace zone when rewriting stack traces to not break
- * source maps (as now all scripts have the same origin).
+ * @param {?} url
  * @return {?}
  */
-function ngJitFolder() {
-    return 'ng://';
+function sourceUrl(url) {
+    // Note: We need 3 "/" so that ng shows up as a separate domain
+    // in the chrome dev tools.
+    return url.replace(/(\w+:\/\/[\w:-]+)?(\/+)?/, 'ng:///');
 }
 /**
  * @param {?} ngModuleType
@@ -2105,17 +2100,23 @@ function ngJitFolder() {
  * @return {?}
  */
 function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
+    let /** @type {?} */ url;
     if (templateMeta.isInline) {
         if (compMeta.type.reference instanceof StaticSymbol) {
-            return compMeta.type.reference.filePath;
+            // Note: a .ts file might contain multiple components with inline templates,
+            // so we need to give them unique urls, as these will be used for sourcemaps.
+            url = `${compMeta.type.reference.filePath}.${compMeta.type.reference.name}.html`;
         }
         else {
-            return `${ngJitFolder()}/${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.html`;
+            url = `${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.html`;
         }
     }
     else {
-        return templateMeta.templateUrl;
+        url = templateMeta.templateUrl;
     }
+    // always prepend ng:// to make angular resources easy to find and not clobber
+    // user resources.
+    return sourceUrl(url);
 }
 /**
  * @param {?} meta
@@ -2125,14 +2126,14 @@ function templateSourceUrl(ngModuleType, compMeta, templateMeta) {
 function sharedStylesheetJitUrl(meta, id) {
     const /** @type {?} */ pathParts = meta.moduleUrl.split(/\/\\/g);
     const /** @type {?} */ baseName = pathParts[pathParts.length - 1];
-    return `${ngJitFolder()}/css/${id}${baseName}.ngstyle.js`;
+    return sourceUrl(`css/${id}${baseName}.ngstyle.js`);
 }
 /**
  * @param {?} moduleMeta
  * @return {?}
  */
 function ngModuleJitUrl(moduleMeta) {
-    return `${ngJitFolder()}/${identifierName(moduleMeta.type)}/module.ngfactory.js`;
+    return sourceUrl(`${identifierName(moduleMeta.type)}/module.ngfactory.js`);
 }
 /**
  * @param {?} ngModuleType
@@ -2140,7 +2141,7 @@ function ngModuleJitUrl(moduleMeta) {
  * @return {?}
  */
 function templateJitUrl(ngModuleType, compMeta) {
-    return `${ngJitFolder()}/${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.ngfactory.js`;
+    return sourceUrl(`${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.ngfactory.js`);
 }
 
 class CompilerConfig {
@@ -2992,13 +2993,7 @@ class AstTransformer {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */ const /** @type {?} */ $EOF = 0;
+const $EOF = 0;
 const /** @type {?} */ $TAB = 9;
 const /** @type {?} */ $LF = 10;
 const /** @type {?} */ $VTAB = 11;
@@ -6614,7 +6609,7 @@ class RecurseVisitor {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const /** @type {?} */ TAG_TO_PLACEHOLDER_NAMES = {
+const TAG_TO_PLACEHOLDER_NAMES = {
     'A': 'LINK',
     'B': 'BOLD_TEXT',
     'BR': 'LINE_BREAK',
@@ -11633,6 +11628,7 @@ function _isEmptyTextNode(node) {
     return node instanceof Text && node.value.trim().length == 0;
 }
 /**
+ * @template T
  * @param {?} items
  * @return {?}
  */
@@ -11823,7 +11819,7 @@ function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, 
 /**
  * A regular expression for breaking a URI into its component parts.
  *
- * {@link http://www.gbiv.com/protocols/uri/rfc/rfc3986.html#RFC2234} says
+ * {\@link http://www.gbiv.com/protocols/uri/rfc/rfc3986.html#RFC2234} says
  * As the "first-match-wins" algorithm is identical to the "greedy"
  * disambiguation method used by POSIX regular expressions, it is natural and
  * commonplace to use a regular expression for parsing the potential five
@@ -11879,10 +11875,9 @@ function _buildFromEncodedParts(opt_scheme, opt_userInfo, opt_domain, opt_port, 
  *    $6 = <undefined>       query without ?
  *    $7 = Related           fragment without #
  * </pre>
- * @type {!RegExp}
- * @internal
+ * \@internal
  */
-const /** @type {?} */ _splitRe = new RegExp('^' +
+const _splitRe = new RegExp('^' +
     '(?:' +
     '([^:/?#.]+)' +
     // used by other URL parts such as :,
@@ -12469,6 +12464,7 @@ function isDirectiveMetadata(type) {
     return type instanceof Directive;
 }
 /**
+ * @template T
  * @param {?} arr
  * @param {?} condition
  * @return {?}
@@ -12489,7 +12485,7 @@ function findLast(arr, condition) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const /** @type {?} */ STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
+const STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
 const /** @type {?} */ NG_FACTORY = /\.ngfactory\./;
 /**
  * @param {?} filePath
@@ -16358,16 +16354,25 @@ class EmitterVisitorContext {
             .join('\n');
     }
     /**
-     * @param {?=} file
+     * @param {?} sourceFilePath
+     * @param {?} genFilePath
      * @param {?=} startsAtLine
      * @return {?}
      */
-    toSourceMapGenerator(file = null, startsAtLine = 0) {
-        const /** @type {?} */ map = new SourceMapGenerator(file);
+    toSourceMapGenerator(sourceFilePath, genFilePath, startsAtLine = 0) {
+        const /** @type {?} */ map = new SourceMapGenerator(genFilePath);
+        let /** @type {?} */ firstOffsetMapped = false;
+        const /** @type {?} */ mapFirstOffsetIfNeeded = () => {
+            if (!firstOffsetMapped) {
+                map.addSource(sourceFilePath).addMapping(0, sourceFilePath, 0, 0);
+                firstOffsetMapped = true;
+            }
+        };
         for (let /** @type {?} */ i = 0; i < startsAtLine; i++) {
             map.addLine();
+            mapFirstOffsetIfNeeded();
         }
-        this.sourceLines.forEach(line => {
+        this.sourceLines.forEach((line, lineIdx) => {
             map.addLine();
             const /** @type {?} */ spans = line.srcSpans;
             const /** @type {?} */ parts = line.parts;
@@ -16377,6 +16382,12 @@ class EmitterVisitorContext {
             while (spanIdx < spans.length && !spans[spanIdx]) {
                 col0 += parts[spanIdx].length;
                 spanIdx++;
+            }
+            if (spanIdx < spans.length && lineIdx === 0 && col0 === 0) {
+                firstOffsetMapped = true;
+            }
+            else {
+                mapFirstOffsetIfNeeded();
             }
             while (spanIdx < spans.length) {
                 const /** @type {?} */ span = spans[spanIdx];
@@ -16851,6 +16862,7 @@ class AbstractEmitterVisitor {
         this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator, newLine);
     }
     /**
+     * @template T
      * @param {?} handler
      * @param {?} expressions
      * @param {?} ctx
@@ -16963,34 +16975,34 @@ class TypeScriptEmitter {
         this._importResolver = _importResolver;
     }
     /**
+     * @param {?} srcFilePath
      * @param {?} genFilePath
      * @param {?} stmts
      * @param {?} exportedVars
+     * @param {?=} preamble
      * @return {?}
      */
-    emitStatements(genFilePath, stmts, exportedVars) {
+    emitStatements(srcFilePath, genFilePath, stmts, exportedVars, preamble = '') {
         const /** @type {?} */ converter = new _TsEmitterVisitor(genFilePath, this._importResolver);
         const /** @type {?} */ ctx = EmitterVisitorContext.createRoot(exportedVars);
         converter.visitAllStatements(stmts, ctx);
-        const /** @type {?} */ srcParts = [];
+        const /** @type {?} */ preambleLines = preamble ? preamble.split('\n') : [];
         converter.reexports.forEach((reexports, exportedFilePath) => {
             const /** @type {?} */ reexportsCode = reexports.map(reexport => `${reexport.name} as ${reexport.as}`).join(',');
-            srcParts.push(`export {${reexportsCode}} from '${this._importResolver.fileNameToModuleName(exportedFilePath, genFilePath)}';`);
+            preambleLines.push(`export {${reexportsCode}} from '${this._importResolver.fileNameToModuleName(exportedFilePath, genFilePath)}';`);
         });
         converter.importsWithPrefixes.forEach((prefix, importedFilePath) => {
             // Note: can't write the real word for import as it screws up system.js auto detection...
-            srcParts.push(`imp` +
+            preambleLines.push(`imp` +
                 `ort * as ${prefix} from '${this._importResolver.fileNameToModuleName(importedFilePath, genFilePath)}';`);
         });
-        srcParts.push(ctx.toSource());
-        const /** @type {?} */ prefixLines = converter.reexports.size + converter.importsWithPrefixes.size;
-        const /** @type {?} */ sm = ctx.toSourceMapGenerator(genFilePath, prefixLines).toJsComment();
+        const /** @type {?} */ sm = ctx.toSourceMapGenerator(srcFilePath, genFilePath, preambleLines.length).toJsComment();
+        const /** @type {?} */ lines = [...preambleLines, ctx.toSource(), sm];
         if (sm) {
-            srcParts.push(sm);
+            // always add a newline at the end, as some tools have bugs without it.
+            lines.push('');
         }
-        // always add a newline at the end, as some tools have bugs without it.
-        srcParts.push('');
-        return srcParts.join('\n');
+        return lines.join('\n');
     }
 }
 class _TsEmitterVisitor extends AbstractEmitterVisitor {
@@ -20865,9 +20877,10 @@ class AotCompiler {
      * @param {?} _summaryResolver
      * @param {?} _localeId
      * @param {?} _translationFormat
+     * @param {?} _genFilePreamble
      * @param {?} _symbolResolver
      */
-    constructor(_config, _host, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _symbolResolver) {
+    constructor(_config, _host, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _genFilePreamble, _symbolResolver) {
         this._config = _config;
         this._host = _host;
         this._metadataResolver = _metadataResolver;
@@ -20879,6 +20892,7 @@ class AotCompiler {
         this._summaryResolver = _summaryResolver;
         this._localeId = _localeId;
         this._translationFormat = _translationFormat;
+        this._genFilePreamble = _genFilePreamble;
         this._symbolResolver = _symbolResolver;
     }
     /**
@@ -21053,7 +21067,7 @@ class AotCompiler {
      * @return {?}
      */
     _codegenSourceModule(srcFileUrl, genFileUrl, statements, exportedVars) {
-        return new GeneratedFile(srcFileUrl, genFileUrl, this._outputEmitter.emitStatements(genFileUrl, statements, exportedVars));
+        return new GeneratedFile(srcFileUrl, genFileUrl, this._outputEmitter.emitStatements(sourceUrl(srcFileUrl), genFileUrl, statements, exportedVars, this._genFilePreamble));
     }
 }
 /**
@@ -22649,7 +22663,7 @@ function createAotCompiler(compilerHost, options) {
         getTypeArity: (symbol) => symbolResolver.getTypeArity(symbol)
     };
     const /** @type {?} */ viewCompiler = new ViewCompiler(config, elementSchemaRegistry);
-    const /** @type {?} */ compiler = new AotCompiler(config, compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, symbolResolver);
+    const /** @type {?} */ compiler = new AotCompiler(config, compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, options.genFilePreamble, symbolResolver);
     return { compiler, reflector: staticReflector };
 }
 
@@ -23394,7 +23408,7 @@ function evalExpression(sourceUrl, ctx, vars) {
         // We don't want to hard code this fact, so we auto detect it via an empty function first.
         const /** @type {?} */ emptyFn = new Function(...fnArgNames.concat('return null;')).toString();
         const /** @type {?} */ headerLines = emptyFn.slice(0, emptyFn.indexOf('return null;')).split('\n').length - 1;
-        fnBody += `\n${ctx.toSourceMapGenerator(sourceUrl, headerLines).toJsComment()}`;
+        fnBody += `\n${ctx.toSourceMapGenerator(sourceUrl, sourceUrl, headerLines).toJsComment()}`;
     }
     return new Function(...fnArgNames.concat(fnBody))(...fnArgValues);
 }
@@ -23484,6 +23498,7 @@ class JitCompiler {
      */
     get injector() { return this._injector; }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -23491,6 +23506,7 @@ class JitCompiler {
         return this._compileModuleAndComponents(moduleType, true).syncResult;
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -23498,6 +23514,7 @@ class JitCompiler {
         return this._compileModuleAndComponents(moduleType, false).asyncResult;
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -23505,6 +23522,7 @@ class JitCompiler {
         return this._compileModuleAndAllComponents(moduleType, true).syncResult;
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -23523,6 +23541,7 @@ class JitCompiler {
         return template.compMeta.template.ngContentSelectors;
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @param {?} isSync
      * @return {?}
@@ -23541,6 +23560,7 @@ class JitCompiler {
         }
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @param {?} isSync
      * @return {?}
@@ -23577,6 +23597,7 @@ class JitCompiler {
         return Promise.all(loadingPromises);
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -23829,6 +23850,7 @@ class ModuleBoundCompiler {
      */
     get _injector() { return this._delegate.injector; }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -23836,6 +23858,7 @@ class ModuleBoundCompiler {
         return this._delegate.compileModuleSync(moduleType);
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -23843,6 +23866,7 @@ class ModuleBoundCompiler {
         return this._delegate.compileModuleAsync(moduleType);
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -23850,6 +23874,7 @@ class ModuleBoundCompiler {
         return this._delegate.compileModuleAndAllComponentsSync(moduleType);
     }
     /**
+     * @template T
      * @param {?} moduleType
      * @return {?}
      */
@@ -24162,9 +24187,9 @@ function _initReflector() {
 /**
  * A platform that included corePlatform and the compiler.
  *
- * @experimental
+ * \@experimental
  */
-const /** @type {?} */ platformCoreDynamic = createPlatformFactory(platformCore, 'coreDynamic', [
+const platformCoreDynamic = createPlatformFactory(platformCore, 'coreDynamic', [
     { provide: COMPILER_OPTIONS, useValue: {}, multi: true },
     { provide: CompilerFactory, useClass: JitCompilerFactory },
     { provide: PLATFORM_INITIALIZER, useValue: _initReflector, multi: true },
@@ -24182,6 +24207,7 @@ function _mergeOptions(optionsArr) {
     };
 }
 /**
+ * @template T
  * @param {?} args
  * @return {?}
  */
@@ -24241,4 +24267,5 @@ class ImportResolver {
     getTypeArity(symbol) { }
 }
 
-export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+//# sourceMappingURL=compiler.js.map
