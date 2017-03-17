@@ -44,7 +44,8 @@ export declare class CompileMetadataResolver {
     getHostComponentViewClass(dirType: any): StaticSymbol | cpl.ProxyClass;
     getHostComponentType(dirType: any): StaticSymbol | Type<any>;
     private getRendererType(dirType);
-    private getComponentFactory(selector, dirType);
+    private getComponentFactory(selector, dirType, inputs, outputs);
+    private initComponentFactory(factory, ngContentSelectors);
     private _loadSummary(type, kind);
     private _loadDirectiveMetadata(ngModuleType, directiveType, isSync);
     getNonNormalizedDirectiveMetadata(directiveType: any): {
