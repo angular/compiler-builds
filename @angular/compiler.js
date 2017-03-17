@@ -1,14 +1,26 @@
 /**
- * @license Angular v4.0.0-rc.5-5c5c2ae
+ * @license Angular v4.0.0-rc.5-bcc29ff
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
-import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵreflector, ViewEncapsulation, ChangeDetectionStrategy, isDevMode, MissingTranslationStrategy, ANALYZE_FOR_ENTRY_COMPONENTS, ElementRef, NgModuleRef, ViewContainerRef, ChangeDetectorRef, QueryList, TemplateRef, ɵCodegenComponentFactoryResolver, ComponentFactoryResolver, ComponentFactory, ComponentRef, NgModuleFactory, ɵNgModuleInjector, ɵregisterModuleFactory, Injector, SecurityContext, LOCALE_ID, TRANSLATIONS_FORMAT, ɵinlineInterpolate, ɵinterpolate, ɵEMPTY_ARRAY, ɵEMPTY_MAP, Renderer, ɵvid, ɵeld, ɵand, ɵted, ɵdid, ɵprd, ɵqud, ɵpad, ɵpod, ɵppd, ɵpid, ɵnov, ɵncd, ɵunv, ɵcrt, ɵccf, PACKAGE_ROOT_URL, Directive, Component, ɵmerge, Query, HostListener, HostBinding, Output, Input, resolveForwardRef, ɵReflectorReader, Attribute, SkipSelf, Self, Host, ɵLIFECYCLE_HOOKS_VALUES, Injectable, Type, ɵERROR_COMPONENT_TYPE, ɵLifecycleHooks, NgModule, Pipe, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, ɵelementEventFullName, ɵReflectionCapabilities, group, sequence, keyframes, animate, style, transition, state, trigger, ViewChildren, ViewChild, ContentChildren, ContentChild, ɵgetComponentViewDefinitionFactory, Compiler, ModuleWithComponentFactories, TRANSLATIONS, ɵReflector, ReflectiveInjector, COMPILER_OPTIONS, PLATFORM_INITIALIZER, CompilerFactory, platformCore, createPlatformFactory } from '@angular/core';
+import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, Compiler, CompilerFactory, Component, ComponentFactory, ComponentFactoryResolver, ComponentRef, ContentChild, ContentChildren, Directive, ElementRef, Host, HostBinding, HostListener, Inject, Injectable, InjectionToken, Injector, Input, LOCALE_ID, MissingTranslationStrategy, ModuleWithComponentFactories, NO_ERRORS_SCHEMA, NgModule, NgModuleFactory, NgModuleRef, Optional, Output, PACKAGE_ROOT_URL, PLATFORM_INITIALIZER, Pipe, Query, QueryList, ReflectiveInjector, Renderer, SecurityContext, Self, SkipSelf, TRANSLATIONS, TRANSLATIONS_FORMAT, TemplateRef, Type, Version, ViewChild, ViewChildren, ViewContainerRef, ViewEncapsulation, animate, createPlatformFactory, group, isDevMode, keyframes, platformCore, resolveForwardRef, sequence, state, style, transition, trigger, ɵCodegenComponentFactoryResolver, ɵConsole, ɵEMPTY_ARRAY, ɵEMPTY_MAP, ɵERROR_COMPONENT_TYPE, ɵLIFECYCLE_HOOKS_VALUES, ɵLifecycleHooks, ɵNgModuleInjector, ɵReflectionCapabilities, ɵReflector, ɵReflectorReader, ɵand, ɵccf, ɵcrt, ɵdid, ɵeld, ɵelementEventFullName, ɵgetComponentViewDefinitionFactory, ɵinlineInterpolate, ɵinterpolate, ɵmerge, ɵncd, ɵnov, ɵpad, ɵpid, ɵpod, ɵppd, ɵprd, ɵqud, ɵreflector, ɵregisterModuleFactory, ɵstringify, ɵted, ɵunv, ɵvid } from '@angular/core';
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all public APIs of the common package.
+ */
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.5-5c5c2ae');
+const VERSION = new Version('4.0.0-rc.5-bcc29ff');
 
 /**
  * @license
@@ -541,7 +553,7 @@ function mergeNsAndName(prefix, localName) {
 // see https://html.spec.whatwg.org/multipage/entities.json
 // This list is not exhaustive to keep the compiler footprint low.
 // The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not exist.
-const /** @type {?} */ NAMED_ENTITIES = {
+const NAMED_ENTITIES = {
     'Aacute': '\u00C1',
     'aacute': '\u00E1',
     'Acirc': '\u00C2',
@@ -796,6 +808,13 @@ const /** @type {?} */ NAMED_ENTITIES = {
     'zwnj': '\u200C',
 };
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class HtmlTagDefinition {
     /**
      * @param {?=} __0
@@ -844,7 +863,7 @@ class HtmlTagDefinition {
 }
 // see http://www.w3.org/TR/html51/syntax.html#optional-tags
 // This implementation does not fully conform to the HTML5 spec.
-const /** @type {?} */ TAG_DEFINITIONS = {
+const TAG_DEFINITIONS = {
     'base': new HtmlTagDefinition({ isVoid: true }),
     'meta': new HtmlTagDefinition({ isVoid: true }),
     'area': new HtmlTagDefinition({ isVoid: true }),
@@ -895,7 +914,7 @@ const /** @type {?} */ TAG_DEFINITIONS = {
     'title': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT }),
     'textarea': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
 };
-const /** @type {?} */ _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
+const _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
 /**
  * @param {?} tagName
  * @return {?}
@@ -904,7 +923,14 @@ function getHtmlTagDefinition(tagName) {
     return TAG_DEFINITIONS[tagName.toLowerCase()] || _DEFAULT_TAG_DEFINITION;
 }
 
-const /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
     // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
@@ -1315,7 +1341,12 @@ class SelectorContext {
  * found in the LICENSE file at https://angular.io/license
  */
 const MODULE_SUFFIX = '';
-const /** @type {?} */ DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+/**
+ * @param {?} input
+ * @return {?}
+ */
+
 /**
  * @param {?} input
  * @return {?}
@@ -1424,7 +1455,7 @@ function syntaxError(msg) {
     ((error))[ERROR_SYNTAX_ERROR] = true;
     return error;
 }
-const /** @type {?} */ ERROR_SYNTAX_ERROR = 'ngSyntaxError';
+const ERROR_SYNTAX_ERROR = 'ngSyntaxError';
 /**
  * @param {?} error
  * @return {?}
@@ -1439,7 +1470,7 @@ function isSyntaxError(error) {
 function escapeRegExp(s) {
     return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
 }
-const /** @type {?} */ STRING_MAP_PROTO = Object.getPrototypeOf({});
+const STRING_MAP_PROTO = Object.getPrototypeOf({});
 /**
  * @param {?} obj
  * @return {?}
@@ -1480,11 +1511,18 @@ function utf8Encode(str) {
     return encoded;
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // group 0: "[prop] or (event) or @trigger"
 // group 1: "prop" from "[prop]"
 // group 2: "event" from "(event)"
 // group 3: "@trigger" from "@trigger"
-const /** @type {?} */ HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
+const HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
 class CompileAnimationEntryMetadata {
     /**
      * @param {?=} name
@@ -1589,9 +1627,9 @@ class CompileAnimationGroupMetadata extends CompileAnimationWithStepsMetadata {
 function _sanitizeIdentifier(name) {
     return name.replace(/\W/g, '_');
 }
-let /** @type {?} */ _anonymousTypeIndex = 0;
-let /** @type {?} */ symbolId = 0;
-const /** @type {?} */ symbolIds = new Map();
+let _anonymousTypeIndex = 0;
+let symbolId = 0;
+const symbolIds = new Map();
 /**
  * @param {?} compileIdentifier
  * @return {?}
@@ -2144,6 +2182,13 @@ function templateJitUrl(ngModuleType, compMeta) {
     return sourceUrl(`${identifierName(ngModuleType)}/${identifierName(compMeta.type)}.ngfactory.js`);
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class CompilerConfig {
     /**
      * @param {?=} __0
@@ -2994,60 +3039,63 @@ class AstTransformer {
  * found in the LICENSE file at https://angular.io/license
  */
 const $EOF = 0;
-const /** @type {?} */ $TAB = 9;
-const /** @type {?} */ $LF = 10;
-const /** @type {?} */ $VTAB = 11;
-const /** @type {?} */ $FF = 12;
-const /** @type {?} */ $CR = 13;
-const /** @type {?} */ $SPACE = 32;
-const /** @type {?} */ $BANG = 33;
-const /** @type {?} */ $DQ = 34;
-const /** @type {?} */ $HASH = 35;
-const /** @type {?} */ $$ = 36;
-const /** @type {?} */ $PERCENT = 37;
-const /** @type {?} */ $AMPERSAND = 38;
-const /** @type {?} */ $SQ = 39;
-const /** @type {?} */ $LPAREN = 40;
-const /** @type {?} */ $RPAREN = 41;
-const /** @type {?} */ $STAR = 42;
-const /** @type {?} */ $PLUS = 43;
-const /** @type {?} */ $COMMA = 44;
-const /** @type {?} */ $MINUS = 45;
-const /** @type {?} */ $PERIOD = 46;
-const /** @type {?} */ $SLASH = 47;
-const /** @type {?} */ $COLON = 58;
-const /** @type {?} */ $SEMICOLON = 59;
-const /** @type {?} */ $LT = 60;
-const /** @type {?} */ $EQ = 61;
-const /** @type {?} */ $GT = 62;
-const /** @type {?} */ $QUESTION = 63;
-const /** @type {?} */ $0 = 48;
-const /** @type {?} */ $9 = 57;
-const /** @type {?} */ $A = 65;
-const /** @type {?} */ $E = 69;
-const /** @type {?} */ $F = 70;
-const /** @type {?} */ $X = 88;
-const /** @type {?} */ $Z = 90;
-const /** @type {?} */ $LBRACKET = 91;
-const /** @type {?} */ $BACKSLASH = 92;
-const /** @type {?} */ $RBRACKET = 93;
-const /** @type {?} */ $CARET = 94;
-const /** @type {?} */ $_ = 95;
-const /** @type {?} */ $a = 97;
-const /** @type {?} */ $e = 101;
-const /** @type {?} */ $f = 102;
-const /** @type {?} */ $n = 110;
-const /** @type {?} */ $r = 114;
-const /** @type {?} */ $t = 116;
-const /** @type {?} */ $u = 117;
-const /** @type {?} */ $v = 118;
-const /** @type {?} */ $x = 120;
-const /** @type {?} */ $z = 122;
-const /** @type {?} */ $LBRACE = 123;
-const /** @type {?} */ $BAR = 124;
-const /** @type {?} */ $RBRACE = 125;
-const /** @type {?} */ $NBSP = 160;
-const /** @type {?} */ $BT = 96;
+const $TAB = 9;
+const $LF = 10;
+const $VTAB = 11;
+const $FF = 12;
+const $CR = 13;
+const $SPACE = 32;
+const $BANG = 33;
+const $DQ = 34;
+const $HASH = 35;
+const $$ = 36;
+const $PERCENT = 37;
+const $AMPERSAND = 38;
+const $SQ = 39;
+const $LPAREN = 40;
+const $RPAREN = 41;
+const $STAR = 42;
+const $PLUS = 43;
+const $COMMA = 44;
+const $MINUS = 45;
+const $PERIOD = 46;
+const $SLASH = 47;
+const $COLON = 58;
+const $SEMICOLON = 59;
+const $LT = 60;
+const $EQ = 61;
+const $GT = 62;
+const $QUESTION = 63;
+const $0 = 48;
+const $9 = 57;
+const $A = 65;
+const $E = 69;
+const $F = 70;
+const $X = 88;
+const $Z = 90;
+const $LBRACKET = 91;
+const $BACKSLASH = 92;
+const $RBRACKET = 93;
+const $CARET = 94;
+const $_ = 95;
+const $a = 97;
+const $e = 101;
+const $f = 102;
+const $n = 110;
+const $r = 114;
+const $t = 116;
+const $u = 117;
+const $v = 118;
+const $x = 120;
+const $z = 122;
+const $LBRACE = 123;
+const $BAR = 124;
+const $RBRACE = 125;
+const $NBSP = 160;
+
+
+
+const $BT = 96;
 /**
  * @param {?} code
  * @return {?}
@@ -3089,6 +3137,13 @@ function CompilerInjectable() {
 }
 
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @param {?} identifier
  * @param {?} value
  * @return {?}
@@ -3106,7 +3161,7 @@ function assertArrayOfStrings(identifier, value) {
         }
     }
 }
-const /** @type {?} */ INTERPOLATION_BLACKLIST_REGEXPS = [
+const INTERPOLATION_BLACKLIST_REGEXPS = [
     /^\s*$/,
     /[<>]/,
     /^[{}]$/,
@@ -3134,6 +3189,13 @@ function assertInterpolationSymbols(identifier, value) {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class InterpolationConfig {
     /**
      * @param {?} start
@@ -3156,8 +3218,15 @@ class InterpolationConfig {
     }
     ;
 }
-const /** @type {?} */ DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
+const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 let TokenType = {};
 TokenType.Character = 0;
 TokenType.Identifier = 1;
@@ -3173,7 +3242,7 @@ TokenType[TokenType.String] = "String";
 TokenType[TokenType.Operator] = "Operator";
 TokenType[TokenType.Number] = "Number";
 TokenType[TokenType.Error] = "Error";
-const /** @type {?} */ KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
+const KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
 class Lexer {
     /**
      * @param {?} text
@@ -3353,7 +3422,7 @@ function newNumberToken(index, n) {
 function newErrorToken(index, message) {
     return new Token(index, TokenType.Error, 0, message);
 }
-const /** @type {?} */ EOF = new Token(-1, TokenType.Character, 0, '');
+const EOF = new Token(-1, TokenType.Character, 0, '');
 class _Scanner {
     /**
      * @param {?} input
@@ -3673,6 +3742,13 @@ function parseIntAutoRadix(text) {
     return result;
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class SplitInterpolation {
     /**
      * @param {?} strings
@@ -4717,6 +4793,13 @@ class SimpleExpressionChecker {
     visitQuote(ast, context) { }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class ParseLocation {
     /**
      * @param {?} file
@@ -5030,6 +5113,13 @@ function visitAll(visitor, nodes, context = null) {
     return result;
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 let TokenType$1 = {};
 TokenType$1.TAG_OPEN_START = 0;
 TokenType$1.TAG_OPEN_END = 1;
@@ -5116,7 +5206,7 @@ function tokenize(source, url, getTagDefinition, tokenizeExpansionForms = false,
     return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, tokenizeExpansionForms, interpolationConfig)
         .tokenize();
 }
-const /** @type {?} */ _CR_OR_CRLF_REGEXP = /\r\n?/g;
+const _CR_OR_CRLF_REGEXP = /\r\n?/g;
 /**
  * @param {?} charCode
  * @return {?}
@@ -5909,6 +5999,13 @@ function mergeTextTokens(srcTokens) {
     return dstTokens;
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class TreeError extends ParseError {
     /**
      * @param {?} elementName
@@ -6740,7 +6837,14 @@ class PlaceholderRegistry {
     }
 }
 
-const /** @type {?} */ _expParser = new Parser(new Lexer());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _expParser = new Parser(new Lexer());
 /**
  * Returns a function converting html nodes to an i18n Message given an interpolationConfig
  * @param {?} interpolationConfig
@@ -6893,7 +6997,7 @@ class _I18nVisitor {
         return container;
     }
 }
-const /** @type {?} */ _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
+const _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
 /**
  * @param {?} input
  * @return {?}
@@ -6902,6 +7006,13 @@ function _extractPlaceholderName(input) {
     return input.split(_CUSTOM_PH_EXP)[1];
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * An i18n error.
  */
@@ -6913,11 +7024,18 @@ class I18nError extends ParseError {
     constructor(span, msg) { super(span, msg); }
 }
 
-const /** @type {?} */ _I18N_ATTR = 'i18n';
-const /** @type {?} */ _I18N_ATTR_PREFIX = 'i18n-';
-const /** @type {?} */ _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
-const /** @type {?} */ MEANING_SEPARATOR = '|';
-const /** @type {?} */ ID_SEPARATOR = '@@';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _I18N_ATTR = 'i18n';
+const _I18N_ATTR_PREFIX = 'i18n-';
+const _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
+const MEANING_SEPARATOR = '|';
+const ID_SEPARATOR = '@@';
 /**
  * Extract translatable messages from an html AST
  * @param {?} nodes
@@ -7397,6 +7515,13 @@ function _parseMessageMeta(i18n) {
     return { meaning, description, id };
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class XmlTagDefinition {
     constructor() {
         this.closedByParent = false;
@@ -7416,7 +7541,7 @@ class XmlTagDefinition {
      */
     isClosedByChild(name) { return false; }
 }
-const /** @type {?} */ _TAG_DEFINITION = new XmlTagDefinition();
+const _TAG_DEFINITION = new XmlTagDefinition();
 /**
  * @param {?} tagName
  * @return {?}
@@ -7425,6 +7550,13 @@ function getXmlTagDefinition(tagName) {
     return _TAG_DEFINITION;
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class XmlParser extends Parser$1 {
     constructor() { super(getXmlTagDefinition); }
     /**
@@ -7438,6 +7570,13 @@ class XmlParser extends Parser$1 {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} message
  * @return {?}
@@ -7515,7 +7654,7 @@ class _SerializerVisitor {
         return `<ph icu name="${ph.name}">${ph.value.visit(this)}</ph>`;
     }
 }
-const /** @type {?} */ serializerVisitor = new _SerializerVisitor();
+const serializerVisitor = new _SerializerVisitor();
 /**
  * @param {?} nodes
  * @return {?}
@@ -7866,6 +8005,13 @@ function numberTimesBigInt(num, b) {
 }
 
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @abstract
  */
 class Serializer {
@@ -8029,7 +8175,7 @@ class _Visitor$1 {
         return `<!DOCTYPE ${doctype.rootTag} [\n${doctype.dtd}\n]>`;
     }
 }
-const /** @type {?} */ _visitor = new _Visitor$1();
+const _visitor = new _Visitor$1();
 /**
  * @param {?} nodes
  * @return {?}
@@ -8107,7 +8253,7 @@ class CR extends Text$2 {
      */
     constructor(ws = 0) { super(`\n${new Array(ws + 1).join(' ')}`); }
 }
-const /** @type {?} */ _ESCAPED_CHARS = [
+const _ESCAPED_CHARS = [
     [/&/g, '&amp;'],
     [/"/g, '&quot;'],
     [/'/g, '&apos;'],
@@ -8122,15 +8268,22 @@ function _escapeXml(text) {
     return _ESCAPED_CHARS.reduce((text, entry) => text.replace(entry[0], entry[1]), text);
 }
 
-const /** @type {?} */ _VERSION = '1.2';
-const /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _VERSION = '1.2';
+const _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
-const /** @type {?} */ _DEFAULT_SOURCE_LANG = 'en';
-const /** @type {?} */ _PLACEHOLDER_TAG = 'x';
-const /** @type {?} */ _FILE_TAG = 'file';
-const /** @type {?} */ _SOURCE_TAG = 'source';
-const /** @type {?} */ _TARGET_TAG = 'target';
-const /** @type {?} */ _UNIT_TAG = 'trans-unit';
+const _DEFAULT_SOURCE_LANG = 'en';
+const _PLACEHOLDER_TAG = 'x';
+const _FILE_TAG = 'file';
+const _SOURCE_TAG = 'source';
+const _TARGET_TAG = 'target';
+const _UNIT_TAG = 'trans-unit';
 class Xliff extends Serializer {
     /**
      * @param {?} messages
@@ -8457,11 +8610,18 @@ function getCtypeForTag(tag) {
     }
 }
 
-const /** @type {?} */ _MESSAGES_TAG = 'messagebundle';
-const /** @type {?} */ _MESSAGE_TAG = 'msg';
-const /** @type {?} */ _PLACEHOLDER_TAG$1 = 'ph';
-const /** @type {?} */ _EXEMPLE_TAG = 'ex';
-const /** @type {?} */ _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _MESSAGES_TAG = 'messagebundle';
+const _MESSAGE_TAG = 'msg';
+const _PLACEHOLDER_TAG$1 = 'ph';
+const _EXEMPLE_TAG = 'ex';
+const _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
 <!ATTLIST messagebundle class CDATA #IMPLIED>
 
 <!ELEMENT msg (#PCDATA|ph|source)*>
@@ -8656,9 +8816,16 @@ function toPublicName(internalName) {
     return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 }
 
-const /** @type {?} */ _TRANSLATIONS_TAG = 'translationbundle';
-const /** @type {?} */ _TRANSLATION_TAG = 'translation';
-const /** @type {?} */ _PLACEHOLDER_TAG$2 = 'ph';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _TRANSLATIONS_TAG = 'translationbundle';
+const _TRANSLATION_TAG = 'translation';
+const _PLACEHOLDER_TAG$2 = 'ph';
 class Xtb extends Serializer {
     /**
      * @param {?} messages
@@ -8916,6 +9083,13 @@ class XmlToI18n$1 {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class HtmlParser extends Parser$1 {
     constructor() { super(getHtmlTagDefinition); }
     /**
@@ -8937,6 +9111,13 @@ HtmlParser.decorators = [
  */
 HtmlParser.ctorParameters = () => [];
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * A container for translated messages
  */
@@ -9142,6 +9323,13 @@ class I18nToHtmlVisitor {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class I18NHtmlParser {
     /**
      * @param {?} _htmlParser
@@ -9195,8 +9383,14 @@ function createSerializer(format) {
     }
 }
 
-const /** @type {?} */ CORE = assetUrl('core');
-const /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const CORE = assetUrl('core');
 class Identifiers {
 }
 Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
@@ -9323,9 +9517,21 @@ function identifierToken(identifier) {
 function createIdentifierToken(identifier) {
     return identifierToken(createIdentifier(identifier));
 }
+/**
+ * @param {?} enumType
+ * @param {?} name
+ * @return {?}
+ */
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // http://cldr.unicode.org/index/cldr-spec/plural-rules
-const /** @type {?} */ PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
+const PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
 /**
  * Expands special forms into elements.
  *
@@ -9465,6 +9671,13 @@ function _expandDefaultForm(ast, errors) {
     return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class ProviderError extends ParseError {
     /**
      * @param {?} message
@@ -10084,8 +10297,8 @@ class StyleWithImports {
      * @param {?} style
      * @param {?} styleUrls
      */
-    constructor(style, styleUrls) {
-        this.style = style;
+    constructor(style$$1, styleUrls) {
+        this.style = style$$1;
         this.styleUrls = styleUrls;
     }
 }
@@ -10120,15 +10333,22 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
     });
     return new StyleWithImports(modifiedCssText, foundUrls);
 }
-const /** @type {?} */ CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-const /** @type {?} */ CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
-const /** @type {?} */ URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
+const CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
+const CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
+const URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 
-const /** @type {?} */ PROPERTY_PARTS_SEPARATOR = '.';
-const /** @type {?} */ ATTRIBUTE_PREFIX = 'attr';
-const /** @type {?} */ CLASS_PREFIX = 'class';
-const /** @type {?} */ STYLE_PREFIX = 'style';
-const /** @type {?} */ ANIMATE_PROP_PREFIX = 'animate-';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const PROPERTY_PARTS_SEPARATOR = '.';
+const ATTRIBUTE_PREFIX = 'attr';
+const CLASS_PREFIX = 'class';
+const STYLE_PREFIX = 'style';
+const ANIMATE_PROP_PREFIX = 'animate-';
 let BoundPropertyType = {};
 BoundPropertyType.DEFAULT = 0;
 BoundPropertyType.LITERAL_ATTR = 1;
@@ -10637,16 +10857,23 @@ function calcPossibleSecurityContexts(registry, selector, propName, isAttribute)
     return ctxs.length === 0 ? [SecurityContext.NONE] : Array.from(new Set(ctxs)).sort();
 }
 
-const /** @type {?} */ NG_CONTENT_SELECT_ATTR = 'select';
-const /** @type {?} */ NG_CONTENT_ELEMENT = 'ng-content';
-const /** @type {?} */ LINK_ELEMENT = 'link';
-const /** @type {?} */ LINK_STYLE_REL_ATTR = 'rel';
-const /** @type {?} */ LINK_STYLE_HREF_ATTR = 'href';
-const /** @type {?} */ LINK_STYLE_REL_VALUE = 'stylesheet';
-const /** @type {?} */ STYLE_ELEMENT = 'style';
-const /** @type {?} */ SCRIPT_ELEMENT = 'script';
-const /** @type {?} */ NG_NON_BINDABLE_ATTR = 'ngNonBindable';
-const /** @type {?} */ NG_PROJECT_AS = 'ngProjectAs';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const NG_CONTENT_SELECT_ATTR = 'select';
+const NG_CONTENT_ELEMENT = 'ng-content';
+const LINK_ELEMENT = 'link';
+const LINK_STYLE_REL_ATTR = 'rel';
+const LINK_STYLE_HREF_ATTR = 'href';
+const LINK_STYLE_REL_VALUE = 'stylesheet';
+const STYLE_ELEMENT = 'style';
+const SCRIPT_ELEMENT = 'script';
+const NG_NON_BINDABLE_ATTR = 'ngNonBindable';
+const NG_PROJECT_AS = 'ngProjectAs';
 /**
  * @param {?} ast
  * @return {?}
@@ -10732,35 +10959,42 @@ function normalizeNgContentSelect(selectAttr) {
     return selectAttr;
 }
 
-const /** @type {?} */ BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
 // Group 1 = "bind-"
-const /** @type {?} */ KW_BIND_IDX = 1;
+const KW_BIND_IDX = 1;
 // Group 2 = "let-"
-const /** @type {?} */ KW_LET_IDX = 2;
+const KW_LET_IDX = 2;
 // Group 3 = "ref-/#"
-const /** @type {?} */ KW_REF_IDX = 3;
+const KW_REF_IDX = 3;
 // Group 4 = "on-"
-const /** @type {?} */ KW_ON_IDX = 4;
+const KW_ON_IDX = 4;
 // Group 5 = "bindon-"
-const /** @type {?} */ KW_BINDON_IDX = 5;
+const KW_BINDON_IDX = 5;
 // Group 6 = "@"
-const /** @type {?} */ KW_AT_IDX = 6;
+const KW_AT_IDX = 6;
 // Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
-const /** @type {?} */ IDENT_KW_IDX = 7;
+const IDENT_KW_IDX = 7;
 // Group 8 = identifier inside [()]
-const /** @type {?} */ IDENT_BANANA_BOX_IDX = 8;
+const IDENT_BANANA_BOX_IDX = 8;
 // Group 9 = identifier inside []
-const /** @type {?} */ IDENT_PROPERTY_IDX = 9;
+const IDENT_PROPERTY_IDX = 9;
 // Group 10 = identifier inside ()
-const /** @type {?} */ IDENT_EVENT_IDX = 10;
-const /** @type {?} */ NG_TEMPLATE_ELEMENT = 'ng-template';
+const IDENT_EVENT_IDX = 10;
+const NG_TEMPLATE_ELEMENT = 'ng-template';
 // deprecated in 4.x
-const /** @type {?} */ TEMPLATE_ELEMENT = 'template';
+const TEMPLATE_ELEMENT = 'template';
 // deprecated in 4.x
-const /** @type {?} */ TEMPLATE_ATTR = 'template';
-const /** @type {?} */ TEMPLATE_ATTR_PREFIX = '*';
-const /** @type {?} */ CLASS_ATTR = 'class';
-const /** @type {?} */ TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
+const TEMPLATE_ATTR = 'template';
+const TEMPLATE_ATTR_PREFIX = '*';
+const CLASS_ATTR = 'class';
+const TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
 /**
  * Provides an array of {@link TemplateAstVisitor}s which will be used to transform
  * parsed templates before compilation is invoked, allowing custom expression syntax
@@ -10768,7 +11002,7 @@ const /** @type {?} */ TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
  *
  * This is currently an internal-only feature and not meant for general use.
  */
-const /** @type {?} */ TEMPLATE_TRANSFORMS = new InjectionToken('TemplateTransforms');
+const TEMPLATE_TRANSFORMS = new InjectionToken('TemplateTransforms');
 class TemplateParseError extends ParseError {
     /**
      * @param {?} message
@@ -11618,8 +11852,8 @@ function createElementCssSelector(elementName, attributes) {
     }
     return cssSelector;
 }
-const /** @type {?} */ EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null, null);
-const /** @type {?} */ NON_BINDABLE_VISITOR = new NonBindableVisitor();
+const EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null, null);
+const NON_BINDABLE_VISITOR = new NonBindableVisitor();
 /**
  * @param {?} node
  * @return {?}
@@ -11685,6 +11919,13 @@ class ResourceLoader {
 }
 
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Create a {\@link UrlResolver} with no package prefix.
  * @return {?}
  */
@@ -11700,7 +11941,7 @@ function createOfflineCompileUrlResolver() {
 /**
  * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
  */
-const /** @type {?} */ DEFAULT_PACKAGE_URL_PROVIDER = {
+const DEFAULT_PACKAGE_URL_PROVIDER = {
     provide: PACKAGE_ROOT_URL,
     useValue: '/'
 };
@@ -12013,6 +12254,13 @@ function _resolveUrl(base, url) {
     return _joinAndCanonicalizePath(parts);
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class DirectiveNormalizer {
     /**
      * @param {?} _resourceLoader
@@ -12184,8 +12432,8 @@ class DirectiveNormalizer {
     normalizeStylesheet(stylesheet) {
         const /** @type {?} */ allStyleUrls = stylesheet.styleUrls.filter(isStyleUrlResolvable)
             .map(url => this._urlResolver.resolve(stylesheet.moduleUrl, url));
-        const /** @type {?} */ allStyles = stylesheet.styles.map(style => {
-            const /** @type {?} */ styleWithImports = extractStyleUrls(this._urlResolver, stylesheet.moduleUrl, style);
+        const /** @type {?} */ allStyles = stylesheet.styles.map(style$$1 => {
+            const /** @type {?} */ styleWithImports = extractStyleUrls(this._urlResolver, stylesheet.moduleUrl, style$$1);
             allStyleUrls.push(...styleWithImports.styleUrls);
             return styleWithImports.style;
         });
@@ -12282,6 +12530,13 @@ class TemplatePreparseVisitor {
     visitText(ast, context) { return null; }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class DirectiveResolver {
     /**
      * @param {?=} _reflector
@@ -12486,7 +12741,7 @@ function findLast(arr, condition) {
  * found in the LICENSE file at https://angular.io/license
  */
 const STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
-const /** @type {?} */ NG_FACTORY = /\.ngfactory\./;
+const NG_FACTORY = /\.ngfactory\./;
 /**
  * @param {?} filePath
  * @return {?}
@@ -12533,6 +12788,13 @@ function summaryFileName(fileName) {
 }
 
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @param {?} hook
  * @param {?} token
  * @return {?}
@@ -12565,6 +12827,13 @@ function getHookName(hook) {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} obj
  * @return {?}
@@ -12615,6 +12884,13 @@ NgModuleResolver.ctorParameters = () => [
     { type: ɵReflectorReader, },
 ];
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} type
  * @return {?}
@@ -12674,6 +12950,13 @@ PipeResolver.ctorParameters = () => [
     { type: ɵReflectorReader, },
 ];
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class SummaryResolver {
     /**
      * @param {?} fileName
@@ -12711,7 +12994,14 @@ SummaryResolver.decorators = [
  */
 SummaryResolver.ctorParameters = () => [];
 
-const /** @type {?} */ ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
 class CompileMetadataResolver {
     /**
      * @param {?} _config
@@ -14024,13 +14314,13 @@ class MapType extends Type$1 {
      */
     visitType(visitor, context) { return visitor.visitMapType(this, context); }
 }
-const /** @type {?} */ DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
-const /** @type {?} */ INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
-const /** @type {?} */ BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
-const /** @type {?} */ INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
-const /** @type {?} */ NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
-const /** @type {?} */ STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
-const /** @type {?} */ FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
+const DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
+const INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
+const BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
+const INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
+const NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
+const STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
+const FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
 let BinaryOperator = {};
 BinaryOperator.Equals = 0;
 BinaryOperator.NotEquals = 1;
@@ -14761,12 +15051,12 @@ class CommaExpr extends Expression {
         return visitor.visitCommaExpr(this, context);
     }
 }
-const /** @type {?} */ THIS_EXPR = new ReadVarExpr(BuiltinVar.This);
-const /** @type {?} */ SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super);
-const /** @type {?} */ CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
-const /** @type {?} */ CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
-const /** @type {?} */ NULL_EXPR = new LiteralExpr(null, null);
-const /** @type {?} */ TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE);
+const THIS_EXPR = new ReadVarExpr(BuiltinVar.This);
+const SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super);
+const CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
+const CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
+const NULL_EXPR = new LiteralExpr(null, null);
+const TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE);
 let StmtModifier = {};
 StmtModifier.Final = 0;
 StmtModifier.Private = 1;
@@ -14992,6 +15282,7 @@ class IfStmt extends Statement {
         return visitor.visitIfStmt(this, context);
     }
 }
+
 class TryCatchStmt extends Statement {
     /**
      * @param {?} bodyStmts
@@ -15755,6 +16046,13 @@ function literal(value, type = null, sourceSpan) {
 }
 
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Create a new class stmts based on the given data.
  * @param {?} config
  * @return {?}
@@ -15779,7 +16077,14 @@ function concatClassBuilderParts(builders) {
     };
 }
 
-const /** @type {?} */ QUOTED_KEYS = '$quoted$';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const QUOTED_KEYS = '$quoted$';
 /**
  * @param {?} value
  * @param {?=} type
@@ -15831,6 +16136,13 @@ class _ValueOutputAstTransformer {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * This is currently not read, but will probably be used in the future.
  * We keep it as we already pass it through all the rigth places...
@@ -16084,9 +16396,16 @@ class InjectMethodVars {
 InjectMethodVars.token = variable('token');
 InjectMethodVars.notFoundResult = variable('notFoundResult');
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
-const /** @type {?} */ VERSION$1 = 3;
-const /** @type {?} */ JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
+const VERSION$1 = 3;
+const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
 class SourceMapGenerator {
     /**
      * @param {?=} file
@@ -16246,7 +16565,7 @@ function toBase64VLQ(value) {
     } while (value > 0);
     return out;
 }
-const /** @type {?} */ B64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const B64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 /**
  * @param {?} value
  * @return {?}
@@ -16258,11 +16577,22 @@ function toBase64Digit(value) {
     return B64_DIGITS[value];
 }
 
-const /** @type {?} */ _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
-const /** @type {?} */ _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
-const /** @type {?} */ _INDENT_WITH = '  ';
-const /** @type {?} */ CATCH_ERROR_VAR$1 = variable('error');
-const /** @type {?} */ CATCH_STACK_VAR$1 = variable('stack');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
+const _INDENT_WITH = '  ';
+const CATCH_ERROR_VAR$1 = variable('error');
+const CATCH_STACK_VAR$1 = variable('stack');
+/**
+ * @abstract
+ */
+
 class _EmittedLine {
     /**
      * @param {?} indent
@@ -16951,7 +17281,14 @@ function _createIndent(count) {
     return res;
 }
 
-const /** @type {?} */ _debugFilePath = '/debug/lib';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _debugFilePath = '/debug/lib';
 /**
  * @param {?} ast
  * @return {?}
@@ -17480,6 +17817,13 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // =================================================================================================
 // =================================================================================================
 // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -17491,7 +17835,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
 //
 // =================================================================================================
 /** Map from tagName|propertyName SecurityContext. Properties applying to all tags use '*'. */
-const /** @type {?} */ SECURITY_SCHEMA = {};
+const SECURITY_SCHEMA = {};
 /**
  * @param {?} ctx
  * @param {?} specs
@@ -17531,10 +17875,17 @@ registerContext(SecurityContext.RESOURCE_URL, [
     'script|src',
 ]);
 
-const /** @type {?} */ BOOLEAN = 'boolean';
-const /** @type {?} */ NUMBER = 'number';
-const /** @type {?} */ STRING = 'string';
-const /** @type {?} */ OBJECT = 'object';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const BOOLEAN = 'boolean';
+const NUMBER = 'number';
+const STRING = 'string';
+const OBJECT = 'object';
 /**
  * This array represents the DOM schema. It encodes inheritance, properties, and events.
  *
@@ -17589,7 +17940,7 @@ const /** @type {?} */ OBJECT = 'object';
 // dom_security_schema.ts. Reach out to mprobst & rjamet for details.
 //
 // =================================================================================================
-const /** @type {?} */ SCHEMA = [
+const SCHEMA = [
     '[Element]|textContent,%classList,className,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*copy,*cut,*paste,*search,*selectstart,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerHTML,#scrollLeft,#scrollTop',
     '[HTMLElement]^[Element]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
     'abbr,address,article,aside,b,bdi,bdo,cite,code,dd,dfn,dt,em,figcaption,figure,footer,header,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
@@ -17741,7 +18092,7 @@ const /** @type {?} */ SCHEMA = [
     'summary^[HTMLElement]|',
     'time^[HTMLElement]|dateTime',
 ];
-const /** @type {?} */ _ATTR_TO_PROP = {
+const _ATTR_TO_PROP = {
     'class': 'className',
     'for': 'htmlFor',
     'formaction': 'formAction',
@@ -18322,32 +18673,32 @@ class SafeSelector {
      */
     content() { return this._content; }
 }
-const /** @type {?} */ _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
-const /** @type {?} */ _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
-const /** @type {?} */ _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
-const /** @type {?} */ _polyfillHost = '-shadowcsshost';
+const _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
+const _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
+const _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
+const _polyfillHost = '-shadowcsshost';
 // note: :host-context pre-processed to -shadowcsshostcontext.
-const /** @type {?} */ _polyfillHostContext = '-shadowcsscontext';
-const /** @type {?} */ _parenSuffix = ')(?:\\((' +
+const _polyfillHostContext = '-shadowcsscontext';
+const _parenSuffix = ')(?:\\((' +
     '(?:\\([^)(]*\\)|[^)(]*)+?' +
     ')\\))?([^,{]*)';
-const /** @type {?} */ _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
-const /** @type {?} */ _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
-const /** @type {?} */ _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
-const /** @type {?} */ _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
-const /** @type {?} */ _shadowDOMSelectorsRe = [
+const _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
+const _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
+const _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
+const _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
+const _shadowDOMSelectorsRe = [
     /::shadow/g,
     /::content/g,
     // Deprecated selectors
     /\/shadow-deep\//g,
     /\/shadow\//g,
 ];
-const /** @type {?} */ _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
-const /** @type {?} */ _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
-const /** @type {?} */ _polyfillHostRe = /-shadowcsshost/gim;
-const /** @type {?} */ _colonHostRe = /:host/gim;
-const /** @type {?} */ _colonHostContextRe = /:host-context/gim;
-const /** @type {?} */ _commentRe = /\/\*\s*[\s\S]*?\*\//g;
+const _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
+const _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
+const _polyfillHostRe = /-shadowcsshost/gim;
+const _colonHostRe = /:host/gim;
+const _colonHostContextRe = /:host-context/gim;
+const _commentRe = /\/\*\s*[\s\S]*?\*\//g;
 /**
  * @param {?} input
  * @return {?}
@@ -18356,7 +18707,7 @@ function stripComments(input) {
     return input.replace(_commentRe, '');
 }
 // all comments except inline source mapping
-const /** @type {?} */ _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
+const _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
 /**
  * @param {?} input
  * @return {?}
@@ -18365,11 +18716,11 @@ function extractSourceMappingUrl(input) {
     const /** @type {?} */ matcher = input.match(_sourceMappingUrlRe);
     return matcher ? matcher[0] : '';
 }
-const /** @type {?} */ _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
-const /** @type {?} */ _curlyRe = /([{}])/g;
-const /** @type {?} */ OPEN_CURLY = '{';
-const /** @type {?} */ CLOSE_CURLY = '}';
-const /** @type {?} */ BLOCK_PLACEHOLDER = '%BLOCK%';
+const _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
+const _curlyRe = /([{}])/g;
+const OPEN_CURLY = '{';
+const CLOSE_CURLY = '}';
+const BLOCK_PLACEHOLDER = '%BLOCK%';
 class CssRule {
     /**
      * @param {?} selector
@@ -18449,9 +18800,16 @@ function escapeBlocks(input) {
     return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
 }
 
-const /** @type {?} */ COMPONENT_VARIABLE = '%COMP%';
-const /** @type {?} */ HOST_ATTR = `_nghost-${COMPONENT_VARIABLE}`;
-const /** @type {?} */ CONTENT_ATTR = `_ngcontent-${COMPONENT_VARIABLE}`;
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const COMPONENT_VARIABLE = '%COMP%';
+const HOST_ATTR = `_nghost-${COMPONENT_VARIABLE}`;
+const CONTENT_ATTR = `_ngcontent-${COMPONENT_VARIABLE}`;
 class StylesCompileDependency {
     /**
      * @param {?} name
@@ -18545,8 +18903,8 @@ class StyleCompiler {
      * @param {?} shim
      * @return {?}
      */
-    _shimIfNeeded(style, shim) {
-        return shim ? this._shadowCss.shimCssText(style, CONTENT_ATTR, HOST_ATTR) : style;
+    _shimIfNeeded(style$$1, shim) {
+        return shim ? this._shadowCss.shimCssText(style$$1, CONTENT_ATTR, HOST_ATTR) : style$$1;
     }
 }
 StyleCompiler.decorators = [
@@ -18570,6 +18928,13 @@ function getStylesVarName(component) {
     return result;
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class EventHandlerVars {
 }
 EventHandlerVars.event = variable('$event');
@@ -19470,10 +19835,17 @@ class BuiltinFunctionCall extends FunctionCall {
     }
 }
 
-const /** @type {?} */ CLASS_ATTR$1 = 'class';
-const /** @type {?} */ STYLE_ATTR = 'style';
-const /** @type {?} */ IMPLICIT_TEMPLATE_VAR = '\$implicit';
-const /** @type {?} */ NG_CONTAINER_TAG = 'ng-container';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const CLASS_ATTR$1 = 'class';
+const STYLE_ATTR = 'style';
+const IMPLICIT_TEMPLATE_VAR = '\$implicit';
+const NG_CONTAINER_TAG = 'ng-container';
 class ViewCompileResult {
     /**
      * @param {?} statements
@@ -19543,13 +19915,13 @@ ViewCompiler.ctorParameters = () => [
     { type: CompilerConfig, },
     { type: ElementSchemaRegistry, },
 ];
-const /** @type {?} */ LOG_VAR = variable('log');
-const /** @type {?} */ VIEW_VAR = variable('view');
-const /** @type {?} */ CHECK_VAR = variable('check');
-const /** @type {?} */ COMP_VAR = variable('comp');
-const /** @type {?} */ NODE_INDEX_VAR = variable('nodeIndex');
-const /** @type {?} */ EVENT_NAME_VAR = variable('eventName');
-const /** @type {?} */ ALLOW_DEFAULT_VAR = variable(`allowDefault`);
+const LOG_VAR = variable('log');
+const VIEW_VAR = variable('view');
+const CHECK_VAR = variable('check');
+const COMP_VAR = variable('comp');
+const NODE_INDEX_VAR = variable('nodeIndex');
+const EVENT_NAME_VAR = variable('eventName');
+const ALLOW_DEFAULT_VAR = variable(`allowDefault`);
 class ViewBuilder {
     /**
      * @param {?} parent
@@ -19602,8 +19974,8 @@ class ViewBuilder {
             this.component.viewQueries.forEach((query, queryIndex) => {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 const /** @type {?} */ queryId = queryIndex + 1;
-                const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1 /* All */;
-                let /** @type {?} */ flags = 67108864 /* TypeViewQuery */;
+                const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
+                let /** @type {?} */ flags = 67108864;
                 if (queryIds.staticQueryIds.has(queryId)) {
                     flags |= 134217728 /* StaticQuery */;
                 }
@@ -19641,7 +20013,7 @@ class ViewBuilder {
         const { updateRendererStmts, updateDirectivesStmts, nodeDefExprs } = this._createNodeExpressions();
         const /** @type {?} */ updateRendererFn = this._createUpdateFn(updateRendererStmts);
         const /** @type {?} */ updateDirectivesFn = this._createUpdateFn(updateDirectivesStmts);
-        let /** @type {?} */ viewFlags = 0 /* None */;
+        let /** @type {?} */ viewFlags = 0;
         if (!this.parent && this.component.changeDetection === ChangeDetectionStrategy.OnPush) {
             viewFlags |= 2 /* OnPush */;
         }
@@ -19714,7 +20086,7 @@ class ViewBuilder {
         this.nodes.push(null);
         const /** @type {?} */ astWithSource = (ast.value);
         const /** @type {?} */ inter = (astWithSource.ast);
-        const /** @type {?} */ updateRendererExpressions = inter.expressions.map((expr) => this._preprocessUpdateExpression({ sourceSpan: ast.sourceSpan, context: COMP_VAR, value: expr }));
+        const /** @type {?} */ updateRendererExpressions = inter.expressions.map((expr, bindingIndex) => this._preprocessUpdateExpression({ nodeIndex, bindingIndex, sourceSpan: ast.sourceSpan, context: COMP_VAR, value: expr }));
         // textDef(ngContentIndex: number, constants: string[]): NodeDef;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: ast.sourceSpan,
@@ -19782,8 +20154,10 @@ class ViewBuilder {
                 .concat(dirHostBindings);
             if (hostBindings.length) {
                 updateRendererExpressions =
-                    hostBindings.map((hostBinding) => this._preprocessUpdateExpression({
+                    hostBindings.map((hostBinding, bindingIndex) => this._preprocessUpdateExpression({
                         context: hostBinding.context,
+                        nodeIndex,
+                        bindingIndex,
                         sourceSpan: hostBinding.inputAst.sourceSpan,
                         value: hostBinding.inputAst.value
                     }));
@@ -19835,7 +20209,7 @@ class ViewBuilder {
      * @return {?}
      */
     _visitElementOrTemplate(nodeIndex, ast) {
-        let /** @type {?} */ flags = 0 /* None */;
+        let /** @type {?} */ flags = 0;
         if (ast.hasViewContainer) {
             flags |= 8388608 /* EmbeddedViews */;
         }
@@ -19930,7 +20304,7 @@ class ViewBuilder {
         // reserve the space in the nodeDefs array so we can add children
         this.nodes.push(null);
         dirAst.directive.queries.forEach((query, queryIndex) => {
-            let /** @type {?} */ flags = 33554432 /* TypeContentQuery */;
+            let /** @type {?} */ flags = 33554432;
             const /** @type {?} */ queryId = dirAst.contentQueryStartId + queryIndex;
             // Note: We only make queries static that query for a single item.
             // This is because of backwards compatibility with the old view compiler...
@@ -19940,7 +20314,7 @@ class ViewBuilder {
             else {
                 flags |= 268435456 /* DynamicQuery */;
             }
-            const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1 /* All */;
+            const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
                 nodeDef: importExpr(createIdentifier(Identifiers.queryDef)).callFn([
@@ -19980,7 +20354,14 @@ class ViewBuilder {
         });
         let /** @type {?} */ updateDirectiveExpressions = [];
         if (dirAst.inputs.length || (flags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0) {
-            updateDirectiveExpressions = dirAst.inputs.map((input) => this._preprocessUpdateExpression({ sourceSpan: input.sourceSpan, context: COMP_VAR, value: input.value }));
+            updateDirectiveExpressions =
+                dirAst.inputs.map((input, bindingIndex) => this._preprocessUpdateExpression({
+                    nodeIndex,
+                    bindingIndex,
+                    sourceSpan: input.sourceSpan,
+                    context: COMP_VAR,
+                    value: input.value
+                }));
         }
         const /** @type {?} */ dirContextExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
             VIEW_VAR, literal(nodeIndex)
@@ -20038,7 +20419,7 @@ class ViewBuilder {
      * @return {?}
      */
     _visitProviderOrDirective(providerAst, queryMatches) {
-        let /** @type {?} */ flags = 0 /* None */;
+        let /** @type {?} */ flags = 0;
         if (!providerAst.eager) {
             flags |= 2048 /* LazyProvider */;
         }
@@ -20126,18 +20507,18 @@ class ViewBuilder {
         return (args) => callCheckStmt(nodeIndex, args);
     }
     /**
-     * @param {?} sourceSpan
+     * @param {?} expression
      * @param {?} name
      * @param {?} argCount
      * @return {?}
      */
-    createPipeConverter(sourceSpan, name, argCount) {
+    createPipeConverter(expression, name, argCount) {
         const /** @type {?} */ pipe = this.usedPipes.find((pipeSummary) => pipeSummary.name === name);
         if (pipe.pure) {
             const /** @type {?} */ nodeIndex = this.nodes.length;
             // function purePipeDef(argCount: number): NodeDef;
             this.nodes.push(() => ({
-                sourceSpan,
+                sourceSpan: expression.sourceSpan,
                 nodeDef: importExpr(createIdentifier(Identifiers.purePipeDef))
                     .callFn([literal(argCount)])
             }));
@@ -20152,14 +20533,14 @@ class ViewBuilder {
             const /** @type {?} */ pipeValueExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
                 compViewExpr, literal(pipeNodeIndex)
             ]);
-            return (args) => callUnwrapValue(callCheckStmt(nodeIndex, [pipeValueExpr].concat(args)));
+            return (args) => callUnwrapValue(expression.nodeIndex, expression.bindingIndex, callCheckStmt(nodeIndex, [pipeValueExpr].concat(args)));
         }
         else {
-            const /** @type {?} */ nodeIndex = this._createPipe(sourceSpan, pipe);
+            const /** @type {?} */ nodeIndex = this._createPipe(expression.sourceSpan, pipe);
             const /** @type {?} */ nodeValueExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
                 VIEW_VAR, literal(nodeIndex)
             ]);
-            return (args) => callUnwrapValue(nodeValueExpr.callMethod('transform', args));
+            return (args) => callUnwrapValue(expression.nodeIndex, expression.bindingIndex, nodeValueExpr.callMethod('transform', args));
         }
     }
     /**
@@ -20169,7 +20550,7 @@ class ViewBuilder {
      */
     _createPipe(sourceSpan, pipe) {
         const /** @type {?} */ nodeIndex = this.nodes.length;
-        let /** @type {?} */ flags = 0 /* None */;
+        let /** @type {?} */ flags = 0;
         pipe.type.lifecycleHooks.forEach((lifecycleHook) => {
             // for pipes, we only support ngOnDestroy
             if (lifecycleHook === ɵLifecycleHooks.OnDestroy) {
@@ -20193,12 +20574,14 @@ class ViewBuilder {
      */
     _preprocessUpdateExpression(expression) {
         return {
+            nodeIndex: expression.nodeIndex,
+            bindingIndex: expression.bindingIndex,
             sourceSpan: expression.sourceSpan,
             context: expression.context,
             value: convertPropertyBindingBuiltins({
                 createLiteralArrayConverter: (argCount) => this.createLiteralArrayConverter(expression.sourceSpan, argCount),
                 createLiteralMapConverter: (keys) => this.createLiteralMapConverter(expression.sourceSpan, keys),
-                createPipeConverter: (name, argCount) => this.createPipeConverter(expression.sourceSpan, name, argCount)
+                createPipeConverter: (name, argCount) => this.createPipeConverter(expression, name, argCount)
             }, expression.value)
         };
     }
@@ -20429,7 +20812,7 @@ function depDef(dep) {
     // Note: the following fields have already been normalized out by provider_analyzer:
     // - isAttribute, isSelf, isHost
     const /** @type {?} */ expr = dep.isValue ? convertValueToOutputAst(dep.value) : tokenExpr(dep.token);
-    let /** @type {?} */ flags = 0 /* None */;
+    let /** @type {?} */ flags = 0;
     if (dep.isSkipSelf) {
         flags |= 1 /* SkipSelf */;
     }
@@ -20462,7 +20845,7 @@ function needsAdditionalRootNode(ast) {
  * @return {?}
  */
 function lifecycleHookToNodeFlag(lifecycleHook) {
-    let /** @type {?} */ nodeFlag = 0 /* None */;
+    let /** @type {?} */ nodeFlag = 0;
     switch (lifecycleHook) {
         case ɵLifecycleHooks.AfterContentChecked:
             nodeFlag = 1048576 /* AfterContentChecked */;
@@ -20511,7 +20894,7 @@ function elementBindingDef(inputAst, dirAst) {
         case PropertyBindingType.Animation:
             const /** @type {?} */ bindingType = dirAst && dirAst.directive.isComponent ?
                 4 /* ComponentHostProperty */ :
-                3 /* ElementProperty */;
+                3;
             return literalArr([
                 literal(bindingType), literal('@' + inputAst.name), literal(inputAst.securityContext)
             ]);
@@ -20570,11 +20953,15 @@ function callCheckStmt(nodeIndex, exprs) {
     }
 }
 /**
+ * @param {?} nodeIndex
+ * @param {?} bindingIdx
  * @param {?} expr
  * @return {?}
  */
-function callUnwrapValue(expr) {
-    return importExpr(createIdentifier(Identifiers.unwrapValue)).callFn([expr]);
+function callUnwrapValue(nodeIndex, bindingIdx, expr) {
+    return importExpr(createIdentifier(Identifiers.unwrapValue)).callFn([
+        VIEW_VAR, literal(nodeIndex), literal(bindingIdx), expr
+    ]);
 }
 /**
  * @param {?} nodes
@@ -20685,6 +21072,13 @@ class GeneratedFile {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} summaryResolver
  * @param {?} symbolResolver
@@ -20886,6 +21280,13 @@ class Deserializer extends ValueTransformer {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class AotCompiler {
     /**
      * @param {?} _config
@@ -21278,6 +21679,13 @@ function _createNgModules(programStaticSymbols, host, metadataResolver) {
     return { ngModules: Array.from(ngModules.values()), symbolsMissingModule };
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class StaticAndDynamicReflectionCapabilities {
     /**
      * @param {?} staticDelegate
@@ -21387,9 +21795,16 @@ function isStaticType(type) {
     return typeof type === 'object' && type.name && type.filePath;
 }
 
-const /** @type {?} */ ANGULAR_CORE = '@angular/core';
-const /** @type {?} */ HIDDEN_KEY = /^\$.*\$$/;
-const /** @type {?} */ IGNORE = {
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const ANGULAR_CORE = '@angular/core';
+const HIDDEN_KEY = /^\$.*\$$/;
+const IGNORE = {
     __symbolic: 'ignore'
 };
 /**
@@ -22169,6 +22584,13 @@ function positionalError(message, fileName, line, column) {
     return result;
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class ResolvedStaticSymbol {
     /**
      * @param {?} symbol
@@ -22179,7 +22601,7 @@ class ResolvedStaticSymbol {
         this.metadata = metadata;
     }
 }
-const /** @type {?} */ SUPPORTED_SCHEMA_VERSION = 3;
+const SUPPORTED_SCHEMA_VERSION = 3;
 /**
  * This class is responsible for loading metadata per symbol,
  * and normalizing references between symbols.
@@ -22579,6 +23001,13 @@ function unescapeIdentifier(identifier) {
     return identifier.startsWith('___') ? identifier.substr(1) : identifier;
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class AotSummaryResolver {
     /**
      * @param {?} host
@@ -22666,6 +23095,13 @@ class AotSummaryResolver {
 }
 
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Creates a new AotCompiler based on options and a host.
  * @param {?} compilerHost
  * @param {?} options
@@ -22702,6 +23138,13 @@ function createAotCompiler(compilerHost, options) {
     return { compiler, reflector: staticReflector };
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} statements
  * @param {?} resultVars
@@ -22928,8 +23371,8 @@ class StatementInterpreter {
             return null;
         }
         else {
-            const /** @type {?} */ fn = stmt.fn.visitExpression(this, ctx);
-            return fn.apply(null, args);
+            const /** @type {?} */ fn$$1 = stmt.fn.visitExpression(this, ctx);
+            return fn$$1.apply(null, args);
         }
     }
     /**
@@ -23201,9 +23644,16 @@ class StatementInterpreter {
 function _declareFn(varNames, statements, ctx, visitor) {
     return (...args) => _executeFunctionStatements(varNames, args, statements, ctx, visitor);
 }
-const /** @type {?} */ CATCH_ERROR_VAR$2 = 'error';
-const /** @type {?} */ CATCH_STACK_VAR$2 = 'stack';
+const CATCH_ERROR_VAR$2 = 'error';
+const CATCH_STACK_VAR$2 = 'stack';
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @abstract
  */
@@ -23422,13 +23872,20 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
 }
 
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @param {?} sourceUrl
  * @param {?} ctx
  * @param {?} vars
  * @return {?}
  */
-function evalExpression(sourceUrl, ctx, vars) {
-    let /** @type {?} */ fnBody = `${ctx.toSource()}\n//# sourceURL=${sourceUrl}`;
+function evalExpression(sourceUrl$$1, ctx, vars) {
+    let /** @type {?} */ fnBody = `${ctx.toSource()}\n//# sourceURL=${sourceUrl$$1}`;
     const /** @type {?} */ fnArgNames = [];
     const /** @type {?} */ fnArgValues = [];
     for (const /** @type {?} */ argName in vars) {
@@ -23443,7 +23900,7 @@ function evalExpression(sourceUrl, ctx, vars) {
         // We don't want to hard code this fact, so we auto detect it via an empty function first.
         const /** @type {?} */ emptyFn = new Function(...fnArgNames.concat('return null;')).toString();
         const /** @type {?} */ headerLines = emptyFn.slice(0, emptyFn.indexOf('return null;')).split('\n').length - 1;
-        fnBody += `\n${ctx.toSourceMapGenerator(sourceUrl, sourceUrl, headerLines).toJsComment()}`;
+        fnBody += `\n${ctx.toSourceMapGenerator(sourceUrl$$1, sourceUrl$$1, headerLines).toJsComment()}`;
     }
     return new Function(...fnArgNames.concat(fnBody))(...fnArgValues);
 }
@@ -23453,12 +23910,12 @@ function evalExpression(sourceUrl, ctx, vars) {
  * @param {?} resultVars
  * @return {?}
  */
-function jitStatements(sourceUrl, statements, resultVars) {
+function jitStatements(sourceUrl$$1, statements, resultVars) {
     const /** @type {?} */ converter = new JitEmitterVisitor();
     const /** @type {?} */ ctx = EmitterVisitorContext.createRoot(resultVars);
     const /** @type {?} */ returnStmt = new ReturnStatement(literalArr(resultVars.map(resultVar => variable(resultVar))));
     converter.visitAllStatements(statements.concat([returnStmt]), ctx);
-    return evalExpression(sourceUrl, ctx, converter.getArgs());
+    return evalExpression(sourceUrl$$1, ctx, converter.getArgs());
 }
 class JitEmitterVisitor extends AbstractJsEmitterVisitor {
     constructor() {
@@ -23495,6 +23952,13 @@ class JitEmitterVisitor extends AbstractJsEmitterVisitor {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * An internal module of the Angular compiler that begins with component types,
  * extracts templates, and eventually produces a compiled version of the component
@@ -23941,6 +24405,13 @@ class ModuleBoundCompiler {
 }
 
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * A container for message extracted from the templates.
  */
 class MessageBundle {
@@ -24040,6 +24511,16 @@ class MapPlaceholderNames extends CloneVisitor {
     }
 }
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Extract i18n messages from source code
+ */
 class Extractor {
     /**
      * @param {?} host
@@ -24108,7 +24589,22 @@ class Extractor {
     }
 }
 
-const /** @type {?} */ _NO_RESOURCE_LOADER = {
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+const _NO_RESOURCE_LOADER = {
     /**
      * @param {?} url
      * @return {?}
@@ -24117,12 +24613,12 @@ const /** @type {?} */ _NO_RESOURCE_LOADER = {
         throw new Error(`No ResourceLoader implementation has been provided. Can't read the url "${url}"`);
     }
 };
-const /** @type {?} */ baseHtmlParser = new InjectionToken('HtmlParser');
+const baseHtmlParser = new InjectionToken('HtmlParser');
 /**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
  */
-const /** @type {?} */ COMPILER_PROVIDERS = [
+const COMPILER_PROVIDERS = [
     { provide: ɵReflector, useValue: ɵreflector },
     { provide: ɵReflectorReader, useExisting: ɵReflector },
     { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
@@ -24305,6 +24801,46 @@ class ImportResolver {
      */
     getTypeArity(symbol) { }
 }
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all APIs of the compiler package.
+ *
+ * <div class="callout is-critical">
+ *   <header>Unstable APIs</header>
+ *   <p>
+ *     All compiler apis are currently considered experimental and private!
+ *   </p>
+ *   <p>
+ *     We expect the APIs in this package to keep on changing. Do not rely on them.
+ *   </p>
+ * </div>
+ */
+
+// This file only reexports content of the `src` folder. Keep it that way.
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all public APIs of the compiler package.
+ */
+
+// This file only reexports content of the `src` folder. Keep it that way.
 
 export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map
