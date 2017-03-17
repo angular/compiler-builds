@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-2d78c8c
+ * @license Angular v4.0.0-rc.5-f925910
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -12,7 +12,7 @@ import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵre
 /**
  * \@stable
  */
-var VERSION = new Version('4.0.0-rc.5-2d78c8c');
+var VERSION = new Version('4.0.0-rc.5-f925910');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13339,16 +13339,31 @@ var CompileMetadataResolver = (function () {
     /**
      * @param {?} selector
      * @param {?} dirType
+     * @param {?} inputs
+     * @param {?} outputs
      * @return {?}
      */
-    CompileMetadataResolver.prototype.getComponentFactory = function (selector, dirType) {
+    CompileMetadataResolver.prototype.getComponentFactory = function (selector, dirType, inputs, outputs) {
         if (dirType instanceof StaticSymbol) {
             return this._staticSymbolCache.get(ngfactoryFilePath(dirType.filePath), componentFactoryName(dirType));
         }
         else {
             var /** @type {?} */ hostView = this.getHostComponentViewClass(dirType);
-            return ɵccf(selector, dirType, /** @type {?} */ (hostView));
+            // Note: ngContentSelectors will be filled later once the template is
+            // loaded.
+            return ɵccf(selector, dirType, /** @type {?} */ (hostView), inputs, outputs, []);
         }
+    };
+    /**
+     * @param {?} factory
+     * @param {?} ngContentSelectors
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.initComponentFactory = function (factory, ngContentSelectors) {
+        if (!(factory instanceof StaticSymbol)) {
+            (_a = factory.ngContentSelectors).push.apply(_a, ngContentSelectors);
+        }
+        var _a;
     };
     /**
      * @param {?} type
@@ -13399,6 +13414,9 @@ var CompileMetadataResolver = (function () {
                 componentFactory: metadata.componentFactory,
                 template: templateMetadata
             });
+            if (templateMetadata) {
+                _this.initComponentFactory(metadata.componentFactory, templateMetadata.ngContentSelectors);
+            }
             _this._directiveCache.set(directiveType, normalizedDirMeta);
             _this._summaryCache.set(directiveType, normalizedDirMeta.toSummary());
             return normalizedDirMeta;
@@ -13524,10 +13542,12 @@ var CompileMetadataResolver = (function () {
             componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
                 undefined,
             rendererType: nonNormalizedTemplateMetadata ? this.getRendererType(directiveType) : undefined,
-            componentFactory: nonNormalizedTemplateMetadata ?
-                this.getComponentFactory(selector, directiveType) :
-                undefined
+            componentFactory: undefined
         });
+        if (nonNormalizedTemplateMetadata) {
+            metadata.componentFactory =
+                this.getComponentFactory(selector, directiveType, metadata.inputs, metadata.outputs);
+        }
         cacheEntry = { metadata: metadata, annotation: dirMeta };
         this._nonNormalizedDirectiveCache.set(directiveType, cacheEntry);
         return cacheEntry;
@@ -17088,7 +17108,10 @@ var EmitterVisitorContext = (function () {
         var /** @type {?} */ firstOffsetMapped = false;
         var /** @type {?} */ mapFirstOffsetIfNeeded = function () {
             if (!firstOffsetMapped) {
-                map.addSource(sourceFilePath).addMapping(0, sourceFilePath, 0, 0);
+                // Add a single space so that tools won't try to load the file from disk.
+                // Note: We are using virtual urls like `ng:///`, so we have to
+                // provide a content here.
+                map.addSource(sourceFilePath, ' ').addMapping(0, sourceFilePath, 0, 0);
                 firstOffsetMapped = true;
             }
         };
@@ -21856,11 +21879,24 @@ var AotCompiler = (function () {
         var /** @type {?} */ hostViewFactoryVar = this._compileComponent(hostMeta, ngModule, [compMeta.type], null, fileSuffix, targetStatements)
             .viewClassVar;
         var /** @type {?} */ compFactoryVar = componentFactoryName(compMeta.type.reference);
+        var /** @type {?} */ inputsExprs = [];
+        for (var /** @type {?} */ propName in compMeta.inputs) {
+            var /** @type {?} */ templateName = compMeta.inputs[propName];
+            // Don't quote so that the key gets minified...
+            inputsExprs.push(new LiteralMapEntry(propName, literal(templateName), false));
+        }
+        var /** @type {?} */ outputsExprs = [];
+        for (var /** @type {?} */ propName in compMeta.outputs) {
+            var /** @type {?} */ templateName = compMeta.outputs[propName];
+            // Don't quote so that the key gets minified...
+            outputsExprs.push(new LiteralMapEntry(propName, literal(templateName), false));
+        }
         targetStatements.push(variable(compFactoryVar)
             .set(importExpr(createIdentifier(Identifiers.createComponentFactory)).callFn([
-            literal(compMeta.selector),
-            importExpr(compMeta.type),
-            variable(hostViewFactoryVar),
+            literal(compMeta.selector), importExpr(compMeta.type),
+            variable(hostViewFactoryVar), new LiteralMapExpr(inputsExprs),
+            new LiteralMapExpr(outputsExprs),
+            literalArr(compMeta.template.ngContentSelectors.map(function (selector) { return literal(selector); }))
         ]))
             .toDeclStmt(importType(createIdentifier(Identifiers.ComponentFactory), [importType(compMeta.type)], [TypeModifier.Const]), [StmtModifier.Final]));
         return compFactoryVar;
@@ -24367,8 +24403,9 @@ var JitCompiler = (function () {
      * @param {?} _viewCompiler
      * @param {?} _ngModuleCompiler
      * @param {?} _compilerConfig
+     * @param {?} _console
      */
-    function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig) {
+    function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
@@ -24376,6 +24413,7 @@ var JitCompiler = (function () {
         this._viewCompiler = _viewCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
         this._compilerConfig = _compilerConfig;
+        this._console = _console;
         this._compiledTemplateCache = new Map();
         this._compiledHostTemplateCache = new Map();
         this._compiledDirectiveWrapperCache = new Map();
@@ -24427,6 +24465,7 @@ var JitCompiler = (function () {
      * @return {?}
      */
     JitCompiler.prototype.getNgContentSelectors = function (component) {
+        this._console.warn('Compiler.getNgContentSelectors is deprecated. Use ComponentFactory.ngContentSelectors instead!');
         var /** @type {?} */ template = this._compiledTemplateCache.get(component);
         if (!template) {
             throw new Error("The component " + ɵstringify(component) + " is not yet compiled!");
@@ -24694,6 +24733,7 @@ JitCompiler.ctorParameters = function () { return [
     { type: ViewCompiler, },
     { type: NgModuleCompiler, },
     { type: CompilerConfig, },
+    { type: ɵConsole, },
 ]; };
 var CompiledTemplate = (function () {
     /**
