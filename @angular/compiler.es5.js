@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-80075af
+ * @license Angular v4.0.0-rc.5-f634c62
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.0.0-rc.5-80075af');
+var VERSION = new Version('4.0.0-rc.5-f634c62');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -20805,10 +20805,8 @@ var ViewBuilder = (function () {
             });
         }
         templateVisitAll(this, astNodes);
-        if (astNodes.length === 0 ||
-            (this.parent && needsAdditionalRootNode(astNodes[astNodes.length - 1]))) {
-            // if the view is empty, or an embedded view has a view container as last root nde,
-            // create an additional root node.
+        if (this.parent && (astNodes.length === 0 || needsAdditionalRootNode(astNodes))) {
+            // if the view is an embedded view, then we need to add an additional root node in some cases
             this.nodes.push(function () { return ({
                 sourceSpan: null,
                 nodeDef: importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
@@ -20998,10 +20996,7 @@ var ViewBuilder = (function () {
         //   flags: NodeFlags, matchedQueriesDsl: [string | number, QueryValueType][],
         //   ngContentIndex: number, childCount: number, namespaceAndName: string,
         //   fixedAttrs: [string, string][] = [],
-        //   bindings?:
-        //       ([BindingType.ElementClass, string] | [BindingType.ElementStyle, string, string] |
-        //        [BindingType.ElementAttribute | BindingType.ElementProperty |
-        //        BindingType.DirectiveHostProperty, string, SecurityContext])[],
+        //   bindings?: [BindingFlags, string, string | SecurityContext][],
         //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
         //   handleEvent?: ElementHandleEventFn,
         //   componentView?: () => ViewDefinition, componentRendererType?: RendererType2): NodeDef;
@@ -21652,20 +21647,21 @@ function depDef(dep) {
     return flags === 0 /* None */ ? expr : literalArr([literal(flags), expr]);
 }
 /**
- * @param {?} ast
+ * @param {?} astNodes
  * @return {?}
  */
-function needsAdditionalRootNode(ast) {
-    if (ast instanceof EmbeddedTemplateAst) {
-        return ast.hasViewContainer;
+function needsAdditionalRootNode(astNodes) {
+    var /** @type {?} */ lastAstNode = astNodes[astNodes.length - 1];
+    if (lastAstNode instanceof EmbeddedTemplateAst) {
+        return lastAstNode.hasViewContainer;
     }
-    if (ast instanceof ElementAst) {
-        if (ast.name === NG_CONTAINER_TAG && ast.children.length) {
-            return needsAdditionalRootNode(ast.children[ast.children.length - 1]);
+    if (lastAstNode instanceof ElementAst) {
+        if (lastAstNode.name === NG_CONTAINER_TAG && lastAstNode.children.length) {
+            return needsAdditionalRootNode(lastAstNode.children);
         }
-        return ast.hasViewContainer;
+        return lastAstNode.hasViewContainer;
     }
-    return ast instanceof NgContentAst;
+    return lastAstNode instanceof NgContentAst;
 }
 /**
  * @param {?} lifecycleHook
@@ -21710,26 +21706,26 @@ function elementBindingDef(inputAst, dirAst) {
     switch (inputAst.type) {
         case PropertyBindingType.Attribute:
             return literalArr([
-                literal(0 /* ElementAttribute */), literal(inputAst.name),
+                literal(1 /* TypeElementAttribute */), literal(inputAst.name),
                 literal(inputAst.securityContext)
             ]);
         case PropertyBindingType.Property:
             return literalArr([
-                literal(3 /* ElementProperty */), literal(inputAst.name),
+                literal(8 /* TypeProperty */), literal(inputAst.name),
                 literal(inputAst.securityContext)
             ]);
         case PropertyBindingType.Animation:
-            var /** @type {?} */ bindingType = dirAst && dirAst.directive.isComponent ?
-                4 /* ComponentHostProperty */ :
-                3;
+            var /** @type {?} */ bindingType = 8 /* TypeProperty */ |
+                (dirAst && dirAst.directive.isComponent ? 32 /* SyntheticHostProperty */ :
+                    16 /* SyntheticProperty */);
             return literalArr([
                 literal(bindingType), literal('@' + inputAst.name), literal(inputAst.securityContext)
             ]);
         case PropertyBindingType.Class:
-            return literalArr([literal(1 /* ElementClass */), literal(inputAst.name)]);
+            return literalArr([literal(2 /* TypeElementClass */), literal(inputAst.name), NULL_EXPR]);
         case PropertyBindingType.Style:
             return literalArr([
-                literal(2 /* ElementStyle */), literal(inputAst.name), literal(inputAst.unit)
+                literal(4 /* TypeElementStyle */), literal(inputAst.name), literal(inputAst.unit)
             ]);
     }
 }
