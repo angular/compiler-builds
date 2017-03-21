@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-8e6995c
+ * @license Angular v4.0.0-rc.5-64beae9
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-8e6995c
+ * @license Angular v4.0.0-rc.5-64beae9
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.0.0-rc.5-8e6995c');
+var VERSION = new _angular_core.Version('4.0.0-rc.5-64beae9');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -20715,13 +20715,12 @@ ViewCompiler.ctorParameters = function () { return [
     { type: CompilerConfig, },
     { type: ElementSchemaRegistry, },
 ]; };
-var LOG_VAR = variable('log');
-var VIEW_VAR = variable('view');
-var CHECK_VAR = variable('check');
-var COMP_VAR = variable('comp');
-var NODE_INDEX_VAR = variable('nodeIndex');
-var EVENT_NAME_VAR = variable('eventName');
-var ALLOW_DEFAULT_VAR = variable("allowDefault");
+var LOG_VAR = variable('l');
+var VIEW_VAR = variable('v');
+var CHECK_VAR = variable('ck');
+var COMP_VAR = variable('co');
+var EVENT_NAME_VAR = variable('en');
+var ALLOW_DEFAULT_VAR = variable("ad");
 var ViewBuilder = (function () {
     /**
      * @param {?} parent
@@ -20789,6 +20788,7 @@ var ViewBuilder = (function () {
                 }
                 _this.nodes.push(function () { return ({
                     sourceSpan: null,
+                    nodeFlags: flags,
                     nodeDef: importExpr(createIdentifier(Identifiers.queryDef)).callFn([
                         literal(flags), literal(queryId),
                         new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
@@ -20801,6 +20801,7 @@ var ViewBuilder = (function () {
             // if the view is an embedded view, then we need to add an additional root node in some cases
             this.nodes.push(function () { return ({
                 sourceSpan: null,
+                nodeFlags: 1 /* TypeElement */,
                 nodeDef: importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
                     literal(0 /* None */), NULL_EXPR, NULL_EXPR, literal(0)
                 ])
@@ -20860,6 +20861,7 @@ var ViewBuilder = (function () {
         // ngContentDef(ngContentIndex: number, index: number): NodeDef;
         this.nodes.push(function () { return ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 4 /* TypeNgContent */,
             nodeDef: importExpr(createIdentifier(Identifiers.ngContentDef)).callFn([
                 literal(ast.ngContentIndex), literal(ast.index)
             ])
@@ -20874,6 +20876,7 @@ var ViewBuilder = (function () {
         // textDef(ngContentIndex: number, constants: string[]): NodeDef;
         this.nodes.push(function () { return ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 2 /* TypeText */,
             nodeDef: importExpr(createIdentifier(Identifiers.textDef)).callFn([
                 literal(ast.ngContentIndex), literalArr([literal(ast.value)])
             ])
@@ -20895,6 +20898,7 @@ var ViewBuilder = (function () {
         // textDef(ngContentIndex: number, constants: string[]): NodeDef;
         this.nodes[nodeIndex] = function () { return ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 2 /* TypeText */,
             nodeDef: importExpr(createIdentifier(Identifiers.textDef)).callFn([
                 literal(ast.ngContentIndex), literalArr(inter.strings.map(function (s) { return literal(s); }))
             ]),
@@ -20922,6 +20926,7 @@ var ViewBuilder = (function () {
         //   ViewDefinitionFactory): NodeDef;
         this.nodes[nodeIndex] = function () { return ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 1 /* TypeElement */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
                 literal(flags),
                 queryMatchesExpr,
@@ -20994,6 +20999,7 @@ var ViewBuilder = (function () {
         //   componentView?: () => ViewDefinition, componentRendererType?: RendererType2): NodeDef;
         this.nodes[nodeIndex] = function () { return ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 1 /* TypeElement */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.elementDef)).callFn([
                 literal(flags),
                 queryMatchesExpr,
@@ -21126,6 +21132,7 @@ var ViewBuilder = (function () {
             var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             _this.nodes.push(function () { return ({
                 sourceSpan: dirAst.sourceSpan,
+                nodeFlags: flags,
                 nodeDef: importExpr(createIdentifier(Identifiers.queryDef)).callFn([
                     literal(flags), literal(queryId),
                     new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
@@ -21191,6 +21198,7 @@ var ViewBuilder = (function () {
         //   outputs?: {[name: string]: string}, component?: () => ViewDefinition): NodeDef;
         this.nodes[nodeIndex] = function () { return ({
             sourceSpan: dirAst.sourceSpan,
+            nodeFlags: 8192 /* TypeDirective */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.directiveDef)).callFn([
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 literal(childCount), providerExpr, depsExpr,
@@ -21217,6 +21225,7 @@ var ViewBuilder = (function () {
         //   value: any, deps: ([DepFlags, any] | any)[]): NodeDef;
         this.nodes[nodeIndex] = function () { return ({
             sourceSpan: providerAst.sourceSpan,
+            nodeFlags: flags,
             nodeDef: importExpr(createIdentifier(Identifiers.providerDef)).callFn([
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 tokenExpr(providerAst.token), providerExpr, depsExpr
@@ -21293,6 +21302,7 @@ var ViewBuilder = (function () {
         // pureArrayDef(argCount: number): NodeDef;
         this.nodes.push(function () { return ({
             sourceSpan: sourceSpan,
+            nodeFlags: 16 /* TypePureArray */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureArrayDef)).callFn([literal(argCount)])
         }); });
         return function (args) { return callCheckStmt(nodeIndex, args); };
@@ -21311,6 +21321,7 @@ var ViewBuilder = (function () {
         // function pureObjectDef(propertyNames: string[]): NodeDef
         this.nodes.push(function () { return ({
             sourceSpan: sourceSpan,
+            nodeFlags: 32 /* TypePureObject */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureObjectDef))
                 .callFn([literalArr(keys.map(function (key) { return literal(key); }))])
         }); });
@@ -21329,6 +21340,7 @@ var ViewBuilder = (function () {
             // function purePipeDef(argCount: number): NodeDef;
             this.nodes.push(function () { return ({
                 sourceSpan: expression.sourceSpan,
+                nodeFlags: 64 /* TypePurePipe */,
                 nodeDef: importExpr(createIdentifier(Identifiers.purePipeDef))
                     .callFn([literal(argCount)])
             }); });
@@ -21372,6 +21384,7 @@ var ViewBuilder = (function () {
         //   flags: NodeFlags, ctor: any, deps: ([DepFlags, any] | any)[]): NodeDef
         this.nodes.push(function () { return ({
             sourceSpan: sourceSpan,
+            nodeFlags: 8 /* TypePipe */,
             nodeDef: importExpr(createIdentifier(Identifiers.pipeDef)).callFn([
                 literal(flags), importExpr(pipe.type), literalArr(depExprs)
             ])
@@ -21405,17 +21418,21 @@ var ViewBuilder = (function () {
         var /** @type {?} */ updateRendererStmts = [];
         var /** @type {?} */ updateDirectivesStmts = [];
         var /** @type {?} */ nodeDefExprs = this.nodes.map(function (factory, nodeIndex) {
-            var _a = factory(), nodeDef = _a.nodeDef, directive = _a.directive, updateDirectives = _a.updateDirectives, updateRenderer = _a.updateRenderer, sourceSpan = _a.sourceSpan;
+            var _a = factory(), nodeDef = _a.nodeDef, nodeFlags = _a.nodeFlags, updateDirectives = _a.updateDirectives, updateRenderer = _a.updateRenderer, sourceSpan = _a.sourceSpan;
             if (updateRenderer) {
-                updateRendererStmts.push.apply(updateRendererStmts, createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, null));
+                updateRendererStmts.push.apply(updateRendererStmts, createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, false));
             }
             if (updateDirectives) {
-                updateDirectivesStmts.push.apply(updateDirectivesStmts, createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, directive));
+                updateDirectivesStmts.push.apply(updateDirectivesStmts, createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, (nodeFlags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0));
             }
             // We use a comma expression to call the log function before
             // the nodeDef function, but still use the result of the nodeDef function
             // as the value.
-            var /** @type {?} */ logWithNodeDef = new CommaExpr([LOG_VAR.callFn([]).callFn([]), nodeDef]);
+            // Note: We only add the logger to elements / text nodes,
+            // so we don't generate too much code.
+            var /** @type {?} */ logWithNodeDef = nodeFlags & 3 /* CatRenderNode */ ?
+                new CommaExpr([LOG_VAR.callFn([]).callFn([]), nodeDef]) :
+                nodeDef;
             return applySourceSpanToExpressionIfNeeded(logWithNodeDef, sourceSpan);
         });
         return { updateRendererStmts: updateRendererStmts, updateDirectivesStmts: updateDirectivesStmts, nodeDefExprs: nodeDefExprs };
@@ -21423,10 +21440,10 @@ var ViewBuilder = (function () {
          * @param {?} nodeIndex
          * @param {?} sourceSpan
          * @param {?} expressions
-         * @param {?} directive
+         * @param {?} allowEmptyExprs
          * @return {?}
          */
-        function createUpdateStatements(nodeIndex, sourceSpan, expressions, directive) {
+        function createUpdateStatements(nodeIndex, sourceSpan, expressions, allowEmptyExprs) {
             var /** @type {?} */ updateStmts = [];
             var /** @type {?} */ exprs = expressions.map(function (_a) {
                 var sourceSpan = _a.sourceSpan, context = _a.context, value = _a.value;
@@ -21436,9 +21453,7 @@ var ViewBuilder = (function () {
                 updateStmts.push.apply(updateStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
                 return applySourceSpanToExpressionIfNeeded(currValExpr, sourceSpan);
             });
-            if (expressions.length ||
-                (directive && (directive.lifecycleHooks.indexOf(_angular_core.ɵLifecycleHooks.DoCheck) !== -1 ||
-                    directive.lifecycleHooks.indexOf(_angular_core.ɵLifecycleHooks.OnInit) !== -1))) {
+            if (expressions.length || allowEmptyExprs) {
                 updateStmts.push(applySourceSpanToStatementIfNeeded(callCheckStmt(nodeIndex, exprs).toStmt(), sourceSpan));
             }
             return updateStmts;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-8e6995c
+ * @license Angular v4.0.0-rc.5-64beae9
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.5-8e6995c');
+const VERSION = new Version('4.0.0-rc.5-64beae9');
 
 /**
  * @license
@@ -19897,13 +19897,12 @@ ViewCompiler.ctorParameters = () => [
     { type: CompilerConfig, },
     { type: ElementSchemaRegistry, },
 ];
-const LOG_VAR = variable('log');
-const VIEW_VAR = variable('view');
-const CHECK_VAR = variable('check');
-const COMP_VAR = variable('comp');
-const NODE_INDEX_VAR = variable('nodeIndex');
-const EVENT_NAME_VAR = variable('eventName');
-const ALLOW_DEFAULT_VAR = variable(`allowDefault`);
+const LOG_VAR = variable('l');
+const VIEW_VAR = variable('v');
+const CHECK_VAR = variable('ck');
+const COMP_VAR = variable('co');
+const EVENT_NAME_VAR = variable('en');
+const ALLOW_DEFAULT_VAR = variable(`ad`);
 class ViewBuilder {
     /**
      * @param {?} parent
@@ -19966,6 +19965,7 @@ class ViewBuilder {
                 }
                 this.nodes.push(() => ({
                     sourceSpan: null,
+                    nodeFlags: flags,
                     nodeDef: importExpr(createIdentifier(Identifiers.queryDef)).callFn([
                         literal(flags), literal(queryId),
                         new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
@@ -19978,6 +19978,7 @@ class ViewBuilder {
             // if the view is an embedded view, then we need to add an additional root node in some cases
             this.nodes.push(() => ({
                 sourceSpan: null,
+                nodeFlags: 1 /* TypeElement */,
                 nodeDef: importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
                     literal(0 /* None */), NULL_EXPR, NULL_EXPR, literal(0)
                 ])
@@ -20036,6 +20037,7 @@ class ViewBuilder {
         // ngContentDef(ngContentIndex: number, index: number): NodeDef;
         this.nodes.push(() => ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 4 /* TypeNgContent */,
             nodeDef: importExpr(createIdentifier(Identifiers.ngContentDef)).callFn([
                 literal(ast.ngContentIndex), literal(ast.index)
             ])
@@ -20050,6 +20052,7 @@ class ViewBuilder {
         // textDef(ngContentIndex: number, constants: string[]): NodeDef;
         this.nodes.push(() => ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 2 /* TypeText */,
             nodeDef: importExpr(createIdentifier(Identifiers.textDef)).callFn([
                 literal(ast.ngContentIndex), literalArr([literal(ast.value)])
             ])
@@ -20070,6 +20073,7 @@ class ViewBuilder {
         // textDef(ngContentIndex: number, constants: string[]): NodeDef;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 2 /* TypeText */,
             nodeDef: importExpr(createIdentifier(Identifiers.textDef)).callFn([
                 literal(ast.ngContentIndex), literalArr(inter.strings.map(s => literal(s)))
             ]),
@@ -20096,6 +20100,7 @@ class ViewBuilder {
         //   ViewDefinitionFactory): NodeDef;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 1 /* TypeElement */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
                 literal(flags),
                 queryMatchesExpr,
@@ -20164,6 +20169,7 @@ class ViewBuilder {
         //   componentView?: () => ViewDefinition, componentRendererType?: RendererType2): NodeDef;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: ast.sourceSpan,
+            nodeFlags: 1 /* TypeElement */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.elementDef)).callFn([
                 literal(flags),
                 queryMatchesExpr,
@@ -20294,6 +20300,7 @@ class ViewBuilder {
             const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
+                nodeFlags: flags,
                 nodeDef: importExpr(createIdentifier(Identifiers.queryDef)).callFn([
                     literal(flags), literal(queryId),
                     new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
@@ -20359,6 +20366,7 @@ class ViewBuilder {
         //   outputs?: {[name: string]: string}, component?: () => ViewDefinition): NodeDef;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: dirAst.sourceSpan,
+            nodeFlags: 8192 /* TypeDirective */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.directiveDef)).callFn([
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 literal(childCount), providerExpr, depsExpr,
@@ -20385,6 +20393,7 @@ class ViewBuilder {
         //   value: any, deps: ([DepFlags, any] | any)[]): NodeDef;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: providerAst.sourceSpan,
+            nodeFlags: flags,
             nodeDef: importExpr(createIdentifier(Identifiers.providerDef)).callFn([
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 tokenExpr(providerAst.token), providerExpr, depsExpr
@@ -20461,6 +20470,7 @@ class ViewBuilder {
         // pureArrayDef(argCount: number): NodeDef;
         this.nodes.push(() => ({
             sourceSpan,
+            nodeFlags: 16 /* TypePureArray */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureArrayDef)).callFn([literal(argCount)])
         }));
         return (args) => callCheckStmt(nodeIndex, args);
@@ -20479,6 +20489,7 @@ class ViewBuilder {
         // function pureObjectDef(propertyNames: string[]): NodeDef
         this.nodes.push(() => ({
             sourceSpan,
+            nodeFlags: 32 /* TypePureObject */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureObjectDef))
                 .callFn([literalArr(keys.map(key => literal(key)))])
         }));
@@ -20497,6 +20508,7 @@ class ViewBuilder {
             // function purePipeDef(argCount: number): NodeDef;
             this.nodes.push(() => ({
                 sourceSpan: expression.sourceSpan,
+                nodeFlags: 64 /* TypePurePipe */,
                 nodeDef: importExpr(createIdentifier(Identifiers.purePipeDef))
                     .callFn([literal(argCount)])
             }));
@@ -20540,6 +20552,7 @@ class ViewBuilder {
         //   flags: NodeFlags, ctor: any, deps: ([DepFlags, any] | any)[]): NodeDef
         this.nodes.push(() => ({
             sourceSpan,
+            nodeFlags: 8 /* TypePipe */,
             nodeDef: importExpr(createIdentifier(Identifiers.pipeDef)).callFn([
                 literal(flags), importExpr(pipe.type), literalArr(depExprs)
             ])
@@ -20572,17 +20585,21 @@ class ViewBuilder {
         const /** @type {?} */ updateRendererStmts = [];
         const /** @type {?} */ updateDirectivesStmts = [];
         const /** @type {?} */ nodeDefExprs = this.nodes.map((factory, nodeIndex) => {
-            const { nodeDef, directive, updateDirectives, updateRenderer, sourceSpan } = factory();
+            const { nodeDef, nodeFlags, updateDirectives, updateRenderer, sourceSpan } = factory();
             if (updateRenderer) {
-                updateRendererStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, null));
+                updateRendererStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, false));
             }
             if (updateDirectives) {
-                updateDirectivesStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, directive));
+                updateDirectivesStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, (nodeFlags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0));
             }
             // We use a comma expression to call the log function before
             // the nodeDef function, but still use the result of the nodeDef function
             // as the value.
-            const /** @type {?} */ logWithNodeDef = new CommaExpr([LOG_VAR.callFn([]).callFn([]), nodeDef]);
+            // Note: We only add the logger to elements / text nodes,
+            // so we don't generate too much code.
+            const /** @type {?} */ logWithNodeDef = nodeFlags & 3 /* CatRenderNode */ ?
+                new CommaExpr([LOG_VAR.callFn([]).callFn([]), nodeDef]) :
+                nodeDef;
             return applySourceSpanToExpressionIfNeeded(logWithNodeDef, sourceSpan);
         });
         return { updateRendererStmts, updateDirectivesStmts, nodeDefExprs };
@@ -20590,10 +20607,10 @@ class ViewBuilder {
          * @param {?} nodeIndex
          * @param {?} sourceSpan
          * @param {?} expressions
-         * @param {?} directive
+         * @param {?} allowEmptyExprs
          * @return {?}
          */
-        function createUpdateStatements(nodeIndex, sourceSpan, expressions, directive) {
+        function createUpdateStatements(nodeIndex, sourceSpan, expressions, allowEmptyExprs) {
             const /** @type {?} */ updateStmts = [];
             const /** @type {?} */ exprs = expressions.map(({ sourceSpan, context, value }) => {
                 const /** @type {?} */ bindingId = `${updateBindingCount++}`;
@@ -20602,9 +20619,7 @@ class ViewBuilder {
                 updateStmts.push(...stmts.map(stmt => applySourceSpanToStatementIfNeeded(stmt, sourceSpan)));
                 return applySourceSpanToExpressionIfNeeded(currValExpr, sourceSpan);
             });
-            if (expressions.length ||
-                (directive && (directive.lifecycleHooks.indexOf(ɵLifecycleHooks.DoCheck) !== -1 ||
-                    directive.lifecycleHooks.indexOf(ɵLifecycleHooks.OnInit) !== -1))) {
+            if (expressions.length || allowEmptyExprs) {
                 updateStmts.push(applySourceSpanToStatementIfNeeded(callCheckStmt(nodeIndex, exprs).toStmt(), sourceSpan));
             }
             return updateStmts;
