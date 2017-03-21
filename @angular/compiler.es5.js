@@ -4,15 +4,27 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-d5a6e69
+ * @license Angular v4.0.0-rc.5-b7ba331
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
-import { InjectionToken, Version, Inject, Optional, ɵConsole, ɵstringify, ɵreflector, ViewEncapsulation, ChangeDetectionStrategy, isDevMode, MissingTranslationStrategy, ANALYZE_FOR_ENTRY_COMPONENTS, ElementRef, NgModuleRef, ViewContainerRef, ChangeDetectorRef, QueryList, TemplateRef, ɵCodegenComponentFactoryResolver, ComponentFactoryResolver, ComponentFactory, ComponentRef, NgModuleFactory, ɵNgModuleInjector, ɵregisterModuleFactory, Injector, SecurityContext, LOCALE_ID, TRANSLATIONS_FORMAT, ɵinlineInterpolate, ɵinterpolate, ɵEMPTY_ARRAY, ɵEMPTY_MAP, Renderer, ɵvid, ɵeld, ɵand, ɵted, ɵdid, ɵprd, ɵqud, ɵpad, ɵpod, ɵppd, ɵpid, ɵnov, ɵncd, ɵunv, ɵcrt, ɵccf, PACKAGE_ROOT_URL, Directive, Component, ɵmerge, Query, HostListener, HostBinding, Output, Input, resolveForwardRef, ɵReflectorReader, Attribute, SkipSelf, Self, Host, ɵLIFECYCLE_HOOKS_VALUES, Injectable, Type, ɵERROR_COMPONENT_TYPE, ɵLifecycleHooks, NgModule, Pipe, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, ɵelementEventFullName, ɵReflectionCapabilities, group, sequence, keyframes, animate, style, transition, state, trigger, ViewChildren, ViewChild, ContentChildren, ContentChild, ɵgetComponentViewDefinitionFactory, Compiler, ModuleWithComponentFactories, TRANSLATIONS, ɵReflector, ReflectiveInjector, COMPILER_OPTIONS, PLATFORM_INITIALIZER, CompilerFactory, platformCore, createPlatformFactory } from '@angular/core';
+import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, Compiler, CompilerFactory, Component, ComponentFactory, ComponentFactoryResolver, ComponentRef, ContentChild, ContentChildren, Directive, ElementRef, Host, HostBinding, HostListener, Inject, Injectable, InjectionToken, Injector, Input, LOCALE_ID, MissingTranslationStrategy, ModuleWithComponentFactories, NO_ERRORS_SCHEMA, NgModule, NgModuleFactory, NgModuleRef, Optional, Output, PACKAGE_ROOT_URL, PLATFORM_INITIALIZER, Pipe, Query, QueryList, ReflectiveInjector, Renderer, SecurityContext, Self, SkipSelf, TRANSLATIONS, TRANSLATIONS_FORMAT, TemplateRef, Type, Version, ViewChild, ViewChildren, ViewContainerRef, ViewEncapsulation, animate, createPlatformFactory, group, isDevMode, keyframes, platformCore, resolveForwardRef, sequence, state, style, transition, trigger, ɵCodegenComponentFactoryResolver, ɵConsole, ɵEMPTY_ARRAY, ɵEMPTY_MAP, ɵERROR_COMPONENT_TYPE, ɵLIFECYCLE_HOOKS_VALUES, ɵLifecycleHooks, ɵNgModuleInjector, ɵReflectionCapabilities, ɵReflector, ɵReflectorReader, ɵand, ɵccf, ɵcrt, ɵdid, ɵeld, ɵelementEventFullName, ɵgetComponentViewDefinitionFactory, ɵinlineInterpolate, ɵinterpolate, ɵmerge, ɵncd, ɵnov, ɵpad, ɵpid, ɵpod, ɵppd, ɵprd, ɵqud, ɵreflector, ɵregisterModuleFactory, ɵstringify, ɵted, ɵunv, ɵvid } from '@angular/core';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all public APIs of the common package.
+ */
 /**
  * \@stable
  */
-var VERSION = new Version('4.0.0-rc.5-d5a6e69');
+var VERSION = new Version('4.0.0-rc.5-b7ba331');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -570,7 +582,7 @@ function mergeNsAndName(prefix, localName) {
 // see https://html.spec.whatwg.org/multipage/entities.json
 // This list is not exhaustive to keep the compiler footprint low.
 // The `&#123;` / `&#x1ab;` syntax should be used when the named character reference does not exist.
-var /** @type {?} */ NAMED_ENTITIES = {
+var NAMED_ENTITIES = {
     'Aacute': '\u00C1',
     'aacute': '\u00E1',
     'Acirc': '\u00C2',
@@ -824,6 +836,13 @@ var /** @type {?} */ NAMED_ENTITIES = {
     'zwj': '\u200D',
     'zwnj': '\u200C',
 };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var HtmlTagDefinition = (function () {
     /**
      * @param {?=} __0
@@ -875,7 +894,7 @@ var HtmlTagDefinition = (function () {
 }());
 // see http://www.w3.org/TR/html51/syntax.html#optional-tags
 // This implementation does not fully conform to the HTML5 spec.
-var /** @type {?} */ TAG_DEFINITIONS = {
+var TAG_DEFINITIONS = {
     'base': new HtmlTagDefinition({ isVoid: true }),
     'meta': new HtmlTagDefinition({ isVoid: true }),
     'area': new HtmlTagDefinition({ isVoid: true }),
@@ -926,7 +945,7 @@ var /** @type {?} */ TAG_DEFINITIONS = {
     'title': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT }),
     'textarea': new HtmlTagDefinition({ contentType: TagContentType.ESCAPABLE_RAW_TEXT, ignoreFirstLf: true }),
 };
-var /** @type {?} */ _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
+var _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
 /**
  * @param {?} tagName
  * @return {?}
@@ -934,7 +953,14 @@ var /** @type {?} */ _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
 function getHtmlTagDefinition(tagName) {
     return TAG_DEFINITIONS[tagName.toLowerCase()] || _DEFAULT_TAG_DEFINITION;
 }
-var /** @type {?} */ _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' +
     '([-\\w]+)|' +
     '(?:\\.([-\\w]+))|' +
     // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
@@ -1352,7 +1378,11 @@ var SelectorContext = (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 var MODULE_SUFFIX = '';
-var /** @type {?} */ DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+var DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+/**
+ * @param {?} input
+ * @return {?}
+ */
 /**
  * @param {?} input
  * @return {?}
@@ -1474,7 +1504,7 @@ function syntaxError(msg) {
     ((error))[ERROR_SYNTAX_ERROR] = true;
     return error;
 }
-var /** @type {?} */ ERROR_SYNTAX_ERROR = 'ngSyntaxError';
+var ERROR_SYNTAX_ERROR = 'ngSyntaxError';
 /**
  * @param {?} error
  * @return {?}
@@ -1489,7 +1519,7 @@ function isSyntaxError(error) {
 function escapeRegExp(s) {
     return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
 }
-var /** @type {?} */ STRING_MAP_PROTO = Object.getPrototypeOf({});
+var STRING_MAP_PROTO = Object.getPrototypeOf({});
 /**
  * @param {?} obj
  * @return {?}
@@ -1529,11 +1559,18 @@ function utf8Encode(str) {
     }
     return encoded;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // group 0: "[prop] or (event) or @trigger"
 // group 1: "prop" from "[prop]"
 // group 2: "event" from "(event)"
 // group 3: "@trigger" from "@trigger"
-var /** @type {?} */ HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
+var HOST_REG_EXP = /^(?:(?:\[([^\]]+)\])|(?:\(([^\)]+)\)))|(\@[-\w]+)$/;
 var CompileAnimationEntryMetadata = (function () {
     /**
      * @param {?=} name
@@ -1680,9 +1717,7 @@ var CompileAnimationGroupMetadata = (function (_super) {
 function _sanitizeIdentifier(name) {
     return name.replace(/\W/g, '_');
 }
-var /** @type {?} */ _anonymousTypeIndex = 0;
-var /** @type {?} */ symbolId = 0;
-var /** @type {?} */ symbolIds = new Map();
+var _anonymousTypeIndex = 0;
 /**
  * @param {?} compileIdentifier
  * @return {?}
@@ -1694,14 +1729,6 @@ function identifierName(compileIdentifier) {
     var /** @type {?} */ ref = compileIdentifier.reference;
     if (ref instanceof StaticSymbol) {
         return ref.name;
-    }
-    if (isSymbol(ref)) {
-        if (symbolIds.has(ref)) {
-            return symbolIds.get(ref);
-        }
-        var /** @type {?} */ symbolStr = "_symbol_" + _sanitizeIdentifier(ref.toString()) + "_" + symbolId++;
-        symbolIds.set(ref, symbolStr);
-        return symbolStr;
     }
     if (ref['__anonymousType']) {
         return ref['__anonymousType'];
@@ -1716,13 +1743,6 @@ function identifierName(compileIdentifier) {
         identifier = _sanitizeIdentifier(identifier);
     }
     return identifier;
-}
-/**
- * @param {?} sym
- * @return {?}
- */
-function isSymbol(sym) {
-    return typeof sym === 'symbol';
 }
 /**
  * @param {?} compileIdentifier
@@ -2248,6 +2268,13 @@ function ngModuleJitUrl(moduleMeta) {
 function templateJitUrl(ngModuleType, compMeta) {
     return sourceUrl(identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".ngfactory.js");
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var CompilerConfig = (function () {
     /**
      * @param {?=} __0
@@ -3208,60 +3235,60 @@ var AstTransformer = (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 var $EOF = 0;
-var /** @type {?} */ $TAB = 9;
-var /** @type {?} */ $LF = 10;
-var /** @type {?} */ $VTAB = 11;
-var /** @type {?} */ $FF = 12;
-var /** @type {?} */ $CR = 13;
-var /** @type {?} */ $SPACE = 32;
-var /** @type {?} */ $BANG = 33;
-var /** @type {?} */ $DQ = 34;
-var /** @type {?} */ $HASH = 35;
-var /** @type {?} */ $$ = 36;
-var /** @type {?} */ $PERCENT = 37;
-var /** @type {?} */ $AMPERSAND = 38;
-var /** @type {?} */ $SQ = 39;
-var /** @type {?} */ $LPAREN = 40;
-var /** @type {?} */ $RPAREN = 41;
-var /** @type {?} */ $STAR = 42;
-var /** @type {?} */ $PLUS = 43;
-var /** @type {?} */ $COMMA = 44;
-var /** @type {?} */ $MINUS = 45;
-var /** @type {?} */ $PERIOD = 46;
-var /** @type {?} */ $SLASH = 47;
-var /** @type {?} */ $COLON = 58;
-var /** @type {?} */ $SEMICOLON = 59;
-var /** @type {?} */ $LT = 60;
-var /** @type {?} */ $EQ = 61;
-var /** @type {?} */ $GT = 62;
-var /** @type {?} */ $QUESTION = 63;
-var /** @type {?} */ $0 = 48;
-var /** @type {?} */ $9 = 57;
-var /** @type {?} */ $A = 65;
-var /** @type {?} */ $E = 69;
-var /** @type {?} */ $F = 70;
-var /** @type {?} */ $X = 88;
-var /** @type {?} */ $Z = 90;
-var /** @type {?} */ $LBRACKET = 91;
-var /** @type {?} */ $BACKSLASH = 92;
-var /** @type {?} */ $RBRACKET = 93;
-var /** @type {?} */ $CARET = 94;
-var /** @type {?} */ $_ = 95;
-var /** @type {?} */ $a = 97;
-var /** @type {?} */ $e = 101;
-var /** @type {?} */ $f = 102;
-var /** @type {?} */ $n = 110;
-var /** @type {?} */ $r = 114;
-var /** @type {?} */ $t = 116;
-var /** @type {?} */ $u = 117;
-var /** @type {?} */ $v = 118;
-var /** @type {?} */ $x = 120;
-var /** @type {?} */ $z = 122;
-var /** @type {?} */ $LBRACE = 123;
-var /** @type {?} */ $BAR = 124;
-var /** @type {?} */ $RBRACE = 125;
-var /** @type {?} */ $NBSP = 160;
-var /** @type {?} */ $BT = 96;
+var $TAB = 9;
+var $LF = 10;
+var $VTAB = 11;
+var $FF = 12;
+var $CR = 13;
+var $SPACE = 32;
+var $BANG = 33;
+var $DQ = 34;
+var $HASH = 35;
+var $$ = 36;
+var $PERCENT = 37;
+var $AMPERSAND = 38;
+var $SQ = 39;
+var $LPAREN = 40;
+var $RPAREN = 41;
+var $STAR = 42;
+var $PLUS = 43;
+var $COMMA = 44;
+var $MINUS = 45;
+var $PERIOD = 46;
+var $SLASH = 47;
+var $COLON = 58;
+var $SEMICOLON = 59;
+var $LT = 60;
+var $EQ = 61;
+var $GT = 62;
+var $QUESTION = 63;
+var $0 = 48;
+var $9 = 57;
+var $A = 65;
+var $E = 69;
+var $F = 70;
+var $X = 88;
+var $Z = 90;
+var $LBRACKET = 91;
+var $BACKSLASH = 92;
+var $RBRACKET = 93;
+var $CARET = 94;
+var $_ = 95;
+var $a = 97;
+var $e = 101;
+var $f = 102;
+var $n = 110;
+var $r = 114;
+var $t = 116;
+var $u = 117;
+var $v = 118;
+var $x = 120;
+var $z = 122;
+var $LBRACE = 123;
+var $BAR = 124;
+var $RBRACE = 125;
+var $NBSP = 160;
+var $BT = 96;
 /**
  * @param {?} code
  * @return {?}
@@ -3301,6 +3328,13 @@ function CompilerInjectable() {
     return function (x) { return x; };
 }
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @param {?} identifier
  * @param {?} value
  * @return {?}
@@ -3318,7 +3352,7 @@ function assertArrayOfStrings(identifier, value) {
         }
     }
 }
-var /** @type {?} */ INTERPOLATION_BLACKLIST_REGEXPS = [
+var INTERPOLATION_BLACKLIST_REGEXPS = [
     /^\s*$/,
     /[<>]/,
     /^[{}]$/,
@@ -3345,6 +3379,13 @@ function assertInterpolationSymbols(identifier, value) {
         });
     }
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var InterpolationConfig = (function () {
     /**
      * @param {?} start
@@ -3368,7 +3409,14 @@ var InterpolationConfig = (function () {
     ;
     return InterpolationConfig;
 }());
-var /** @type {?} */ DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
+var DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var TokenType = {};
 TokenType.Character = 0;
 TokenType.Identifier = 1;
@@ -3384,7 +3432,7 @@ TokenType[TokenType.String] = "String";
 TokenType[TokenType.Operator] = "Operator";
 TokenType[TokenType.Number] = "Number";
 TokenType[TokenType.Error] = "Error";
-var /** @type {?} */ KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
+var KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
 var Lexer = (function () {
     function Lexer() {
     }
@@ -3568,7 +3616,7 @@ function newNumberToken(index, n) {
 function newErrorToken(index, message) {
     return new Token(index, TokenType.Error, 0, message);
 }
-var /** @type {?} */ EOF = new Token(-1, TokenType.Character, 0, '');
+var EOF = new Token(-1, TokenType.Character, 0, '');
 var _Scanner = (function () {
     /**
      * @param {?} input
@@ -3888,6 +3936,13 @@ function parseIntAutoRadix(text) {
     }
     return result;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var SplitInterpolation = (function () {
     /**
      * @param {?} strings
@@ -4955,6 +5010,13 @@ var SimpleExpressionChecker = (function () {
     SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { };
     return SimpleExpressionChecker;
 }());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var ParseLocation = (function () {
     /**
      * @param {?} file
@@ -5279,6 +5341,13 @@ function visitAll(visitor, nodes, context) {
     });
     return result;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var TokenType$1 = {};
 TokenType$1.TAG_OPEN_START = 0;
 TokenType$1.TAG_OPEN_END = 1;
@@ -5372,7 +5441,7 @@ function tokenize(source, url, getTagDefinition, tokenizeExpansionForms, interpo
     return new _Tokenizer(new ParseSourceFile(source, url), getTagDefinition, tokenizeExpansionForms, interpolationConfig)
         .tokenize();
 }
-var /** @type {?} */ _CR_OR_CRLF_REGEXP = /\r\n?/g;
+var _CR_OR_CRLF_REGEXP = /\r\n?/g;
 /**
  * @param {?} charCode
  * @return {?}
@@ -6174,6 +6243,13 @@ function mergeTextTokens(srcTokens) {
     }
     return dstTokens;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var TreeError = (function (_super) {
     __extends(TreeError, _super);
     /**
@@ -7030,7 +7106,14 @@ var PlaceholderRegistry = (function () {
     };
     return PlaceholderRegistry;
 }());
-var /** @type {?} */ _expParser = new Parser(new Lexer());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _expParser = new Parser(new Lexer());
 /**
  * Returns a function converting html nodes to an i18n Message given an interpolationConfig
  * @param {?} interpolationConfig
@@ -7185,7 +7268,7 @@ var _I18nVisitor = (function () {
     };
     return _I18nVisitor;
 }());
-var /** @type {?} */ _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
+var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*"([\s\S]*?)"[\s\S]*\)/g;
 /**
  * @param {?} input
  * @return {?}
@@ -7193,6 +7276,13 @@ var /** @type {?} */ _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=
 function _extractPlaceholderName(input) {
     return input.split(_CUSTOM_PH_EXP)[1];
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * An i18n error.
  */
@@ -7207,11 +7297,18 @@ var I18nError = (function (_super) {
     }
     return I18nError;
 }(ParseError));
-var /** @type {?} */ _I18N_ATTR = 'i18n';
-var /** @type {?} */ _I18N_ATTR_PREFIX = 'i18n-';
-var /** @type {?} */ _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
-var /** @type {?} */ MEANING_SEPARATOR = '|';
-var /** @type {?} */ ID_SEPARATOR = '@@';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _I18N_ATTR = 'i18n';
+var _I18N_ATTR_PREFIX = 'i18n-';
+var _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
+var MEANING_SEPARATOR = '|';
+var ID_SEPARATOR = '@@';
 /**
  * Extract translatable messages from an html AST
  * @param {?} nodes
@@ -7700,6 +7797,13 @@ function _parseMessageMeta(i18n) {
         ['', meaningAndDesc], meaning = _b[0], description = _b[1];
     return { meaning: meaning, description: description, id: id };
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var XmlTagDefinition = (function () {
     function XmlTagDefinition() {
         this.closedByParent = false;
@@ -7720,7 +7824,7 @@ var XmlTagDefinition = (function () {
     XmlTagDefinition.prototype.isClosedByChild = function (name) { return false; };
     return XmlTagDefinition;
 }());
-var /** @type {?} */ _TAG_DEFINITION = new XmlTagDefinition();
+var _TAG_DEFINITION = new XmlTagDefinition();
 /**
  * @param {?} tagName
  * @return {?}
@@ -7728,6 +7832,13 @@ var /** @type {?} */ _TAG_DEFINITION = new XmlTagDefinition();
 function getXmlTagDefinition(tagName) {
     return _TAG_DEFINITION;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var XmlParser = (function (_super) {
     __extends(XmlParser, _super);
     function XmlParser() {
@@ -7745,6 +7856,13 @@ var XmlParser = (function (_super) {
     };
     return XmlParser;
 }(Parser$1));
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} message
  * @return {?}
@@ -7828,7 +7946,7 @@ var _SerializerVisitor = (function () {
     };
     return _SerializerVisitor;
 }());
-var /** @type {?} */ serializerVisitor = new _SerializerVisitor();
+var serializerVisitor = new _SerializerVisitor();
 /**
  * @param {?} nodes
  * @return {?}
@@ -8191,6 +8309,13 @@ function numberTimesBigInt(num, b) {
     return product;
 }
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @abstract
  */
 var Serializer = (function () {
@@ -8363,7 +8488,7 @@ var _Visitor$1 = (function () {
     };
     return _Visitor$1;
 }());
-var /** @type {?} */ _visitor = new _Visitor$1();
+var _visitor = new _Visitor$1();
 /**
  * @param {?} nodes
  * @return {?}
@@ -8456,7 +8581,7 @@ var CR = (function (_super) {
     }
     return CR;
 }(Text$2));
-var /** @type {?} */ _ESCAPED_CHARS = [
+var _ESCAPED_CHARS = [
     [/&/g, '&amp;'],
     [/"/g, '&quot;'],
     [/'/g, '&apos;'],
@@ -8470,15 +8595,22 @@ var /** @type {?} */ _ESCAPED_CHARS = [
 function _escapeXml(text) {
     return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
 }
-var /** @type {?} */ _VERSION = '1.2';
-var /** @type {?} */ _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _VERSION = '1.2';
+var _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
-var /** @type {?} */ _DEFAULT_SOURCE_LANG = 'en';
-var /** @type {?} */ _PLACEHOLDER_TAG = 'x';
-var /** @type {?} */ _FILE_TAG = 'file';
-var /** @type {?} */ _SOURCE_TAG = 'source';
-var /** @type {?} */ _TARGET_TAG = 'target';
-var /** @type {?} */ _UNIT_TAG = 'trans-unit';
+var _DEFAULT_SOURCE_LANG = 'en';
+var _PLACEHOLDER_TAG = 'x';
+var _FILE_TAG = 'file';
+var _SOURCE_TAG = 'source';
+var _TARGET_TAG = 'target';
+var _UNIT_TAG = 'trans-unit';
 var Xliff = (function (_super) {
     __extends(Xliff, _super);
     function Xliff() {
@@ -8818,11 +8950,18 @@ function getCtypeForTag(tag) {
             return "x-" + tag;
     }
 }
-var /** @type {?} */ _MESSAGES_TAG = 'messagebundle';
-var /** @type {?} */ _MESSAGE_TAG = 'msg';
-var /** @type {?} */ _PLACEHOLDER_TAG$1 = 'ph';
-var /** @type {?} */ _EXEMPLE_TAG = 'ex';
-var /** @type {?} */ _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _MESSAGES_TAG = 'messagebundle';
+var _MESSAGE_TAG = 'msg';
+var _PLACEHOLDER_TAG$1 = 'ph';
+var _EXEMPLE_TAG = 'ex';
+var _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
 var Xmb = (function (_super) {
     __extends(Xmb, _super);
     function Xmb() {
@@ -9013,9 +9152,16 @@ var ExampleVisitor = (function () {
 function toPublicName(internalName) {
     return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 }
-var /** @type {?} */ _TRANSLATIONS_TAG = 'translationbundle';
-var /** @type {?} */ _TRANSLATION_TAG = 'translation';
-var /** @type {?} */ _PLACEHOLDER_TAG$2 = 'ph';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _TRANSLATIONS_TAG = 'translationbundle';
+var _TRANSLATION_TAG = 'translation';
+var _PLACEHOLDER_TAG$2 = 'ph';
 var Xtb = (function (_super) {
     __extends(Xtb, _super);
     function Xtb() {
@@ -9281,6 +9427,13 @@ var XmlToI18n$1 = (function () {
     };
     return XmlToI18n$1;
 }());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var HtmlParser = (function (_super) {
     __extends(HtmlParser, _super);
     function HtmlParser() {
@@ -9307,6 +9460,13 @@ HtmlParser.decorators = [
  * @nocollapse
  */
 HtmlParser.ctorParameters = function () { return []; };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * A container for translated messages
  */
@@ -9520,6 +9680,13 @@ var I18nToHtmlVisitor = (function () {
     };
     return I18nToHtmlVisitor;
 }());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var I18NHtmlParser = (function () {
     /**
      * @param {?} _htmlParser
@@ -9576,8 +9743,14 @@ function createSerializer(format) {
             return new Xliff();
     }
 }
-var /** @type {?} */ CORE = assetUrl('core');
-var /** @type {?} */ VIEW_UTILS_MODULE_URL = assetUrl('core', 'linker/view_utils');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var CORE = assetUrl('core');
 var Identifiers = (function () {
     function Identifiers() {
     }
@@ -9709,8 +9882,20 @@ function identifierToken(identifier) {
 function createIdentifierToken(identifier) {
     return identifierToken(createIdentifier(identifier));
 }
+/**
+ * @param {?} enumType
+ * @param {?} name
+ * @return {?}
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // http://cldr.unicode.org/index/cldr-spec/plural-rules
-var /** @type {?} */ PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
+var PLURAL_CASES = ['zero', 'one', 'two', 'few', 'many', 'other'];
 /**
  * Expands special forms into elements.
  *
@@ -9855,6 +10040,13 @@ function _expandDefaultForm(ast, errors) {
     var /** @type {?} */ switchAttr = new Attribute$1('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
     return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var ProviderError = (function (_super) {
     __extends(ProviderError, _super);
     /**
@@ -10510,8 +10702,8 @@ var StyleWithImports = (function () {
      * @param {?} style
      * @param {?} styleUrls
      */
-    function StyleWithImports(style, styleUrls) {
-        this.style = style;
+    function StyleWithImports(style$$1, styleUrls) {
+        this.style = style$$1;
         this.styleUrls = styleUrls;
     }
     return StyleWithImports;
@@ -10551,14 +10743,21 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
     });
     return new StyleWithImports(modifiedCssText, foundUrls);
 }
-var /** @type {?} */ CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-var /** @type {?} */ CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
-var /** @type {?} */ URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
-var /** @type {?} */ PROPERTY_PARTS_SEPARATOR = '.';
-var /** @type {?} */ ATTRIBUTE_PREFIX = 'attr';
-var /** @type {?} */ CLASS_PREFIX = 'class';
-var /** @type {?} */ STYLE_PREFIX = 'style';
-var /** @type {?} */ ANIMATE_PROP_PREFIX = 'animate-';
+var CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
+var CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
+var URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var PROPERTY_PARTS_SEPARATOR = '.';
+var ATTRIBUTE_PREFIX = 'attr';
+var CLASS_PREFIX = 'class';
+var STYLE_PREFIX = 'style';
+var ANIMATE_PROP_PREFIX = 'animate-';
 var BoundPropertyType = {};
 BoundPropertyType.DEFAULT = 0;
 BoundPropertyType.LITERAL_ATTR = 1;
@@ -11086,16 +11285,23 @@ function calcPossibleSecurityContexts(registry, selector, propName, isAttribute)
     });
     return ctxs.length === 0 ? [SecurityContext.NONE] : Array.from(new Set(ctxs)).sort();
 }
-var /** @type {?} */ NG_CONTENT_SELECT_ATTR = 'select';
-var /** @type {?} */ NG_CONTENT_ELEMENT = 'ng-content';
-var /** @type {?} */ LINK_ELEMENT = 'link';
-var /** @type {?} */ LINK_STYLE_REL_ATTR = 'rel';
-var /** @type {?} */ LINK_STYLE_HREF_ATTR = 'href';
-var /** @type {?} */ LINK_STYLE_REL_VALUE = 'stylesheet';
-var /** @type {?} */ STYLE_ELEMENT = 'style';
-var /** @type {?} */ SCRIPT_ELEMENT = 'script';
-var /** @type {?} */ NG_NON_BINDABLE_ATTR = 'ngNonBindable';
-var /** @type {?} */ NG_PROJECT_AS = 'ngProjectAs';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var NG_CONTENT_SELECT_ATTR = 'select';
+var NG_CONTENT_ELEMENT = 'ng-content';
+var LINK_ELEMENT = 'link';
+var LINK_STYLE_REL_ATTR = 'rel';
+var LINK_STYLE_HREF_ATTR = 'href';
+var LINK_STYLE_REL_VALUE = 'stylesheet';
+var STYLE_ELEMENT = 'style';
+var SCRIPT_ELEMENT = 'script';
+var NG_NON_BINDABLE_ATTR = 'ngNonBindable';
+var NG_PROJECT_AS = 'ngProjectAs';
 /**
  * @param {?} ast
  * @return {?}
@@ -11181,35 +11387,42 @@ function normalizeNgContentSelect(selectAttr) {
     }
     return selectAttr;
 }
-var /** @type {?} */ BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var BIND_NAME_REGEXP = /^(?:(?:(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.+))|\[\(([^\)]+)\)\]|\[([^\]]+)\]|\(([^\)]+)\))$/;
 // Group 1 = "bind-"
-var /** @type {?} */ KW_BIND_IDX = 1;
+var KW_BIND_IDX = 1;
 // Group 2 = "let-"
-var /** @type {?} */ KW_LET_IDX = 2;
+var KW_LET_IDX = 2;
 // Group 3 = "ref-/#"
-var /** @type {?} */ KW_REF_IDX = 3;
+var KW_REF_IDX = 3;
 // Group 4 = "on-"
-var /** @type {?} */ KW_ON_IDX = 4;
+var KW_ON_IDX = 4;
 // Group 5 = "bindon-"
-var /** @type {?} */ KW_BINDON_IDX = 5;
+var KW_BINDON_IDX = 5;
 // Group 6 = "@"
-var /** @type {?} */ KW_AT_IDX = 6;
+var KW_AT_IDX = 6;
 // Group 7 = the identifier after "bind-", "let-", "ref-/#", "on-", "bindon-" or "@"
-var /** @type {?} */ IDENT_KW_IDX = 7;
+var IDENT_KW_IDX = 7;
 // Group 8 = identifier inside [()]
-var /** @type {?} */ IDENT_BANANA_BOX_IDX = 8;
+var IDENT_BANANA_BOX_IDX = 8;
 // Group 9 = identifier inside []
-var /** @type {?} */ IDENT_PROPERTY_IDX = 9;
+var IDENT_PROPERTY_IDX = 9;
 // Group 10 = identifier inside ()
-var /** @type {?} */ IDENT_EVENT_IDX = 10;
-var /** @type {?} */ NG_TEMPLATE_ELEMENT = 'ng-template';
+var IDENT_EVENT_IDX = 10;
+var NG_TEMPLATE_ELEMENT = 'ng-template';
 // deprecated in 4.x
-var /** @type {?} */ TEMPLATE_ELEMENT = 'template';
+var TEMPLATE_ELEMENT = 'template';
 // deprecated in 4.x
-var /** @type {?} */ TEMPLATE_ATTR = 'template';
-var /** @type {?} */ TEMPLATE_ATTR_PREFIX = '*';
-var /** @type {?} */ CLASS_ATTR = 'class';
-var /** @type {?} */ TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
+var TEMPLATE_ATTR = 'template';
+var TEMPLATE_ATTR_PREFIX = '*';
+var CLASS_ATTR = 'class';
+var TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
 /**
  * Provides an array of {@link TemplateAstVisitor}s which will be used to transform
  * parsed templates before compilation is invoked, allowing custom expression syntax
@@ -11217,7 +11430,7 @@ var /** @type {?} */ TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
  *
  * This is currently an internal-only feature and not meant for general use.
  */
-var /** @type {?} */ TEMPLATE_TRANSFORMS = new InjectionToken('TemplateTransforms');
+var TEMPLATE_TRANSFORMS = new InjectionToken('TemplateTransforms');
 var TemplateParseError = (function (_super) {
     __extends(TemplateParseError, _super);
     /**
@@ -12087,8 +12300,8 @@ function createElementCssSelector(elementName, attributes) {
     }
     return cssSelector;
 }
-var /** @type {?} */ EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null, null);
-var /** @type {?} */ NON_BINDABLE_VISITOR = new NonBindableVisitor();
+var EMPTY_ELEMENT_CONTEXT = new ElementContext(true, new SelectorMatcher(), null, null);
+var NON_BINDABLE_VISITOR = new NonBindableVisitor();
 /**
  * @param {?} node
  * @return {?}
@@ -12155,6 +12368,13 @@ var ResourceLoader = (function () {
     return ResourceLoader;
 }());
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Create a {\@link UrlResolver} with no package prefix.
  * @return {?}
  */
@@ -12170,7 +12390,7 @@ function createOfflineCompileUrlResolver() {
 /**
  * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
  */
-var /** @type {?} */ DEFAULT_PACKAGE_URL_PROVIDER = {
+var DEFAULT_PACKAGE_URL_PROVIDER = {
     provide: PACKAGE_ROOT_URL,
     useValue: '/'
 };
@@ -12484,6 +12704,13 @@ function _resolveUrl(base, url) {
     parts[_ComponentIndex.Path] = path;
     return _joinAndCanonicalizePath(parts);
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var DirectiveNormalizer = (function () {
     /**
      * @param {?} _resourceLoader
@@ -12661,8 +12888,8 @@ var DirectiveNormalizer = (function () {
         var _this = this;
         var /** @type {?} */ allStyleUrls = stylesheet.styleUrls.filter(isStyleUrlResolvable)
             .map(function (url) { return _this._urlResolver.resolve(stylesheet.moduleUrl, url); });
-        var /** @type {?} */ allStyles = stylesheet.styles.map(function (style) {
-            var /** @type {?} */ styleWithImports = extractStyleUrls(_this._urlResolver, stylesheet.moduleUrl, style);
+        var /** @type {?} */ allStyles = stylesheet.styles.map(function (style$$1) {
+            var /** @type {?} */ styleWithImports = extractStyleUrls(_this._urlResolver, stylesheet.moduleUrl, style$$1);
             allStyleUrls.push.apply(allStyleUrls, styleWithImports.styleUrls);
             return styleWithImports.style;
         });
@@ -12760,6 +12987,13 @@ var TemplatePreparseVisitor = (function () {
     TemplatePreparseVisitor.prototype.visitText = function (ast, context) { return null; };
     return TemplatePreparseVisitor;
 }());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var DirectiveResolver = (function () {
     /**
      * @param {?=} _reflector
@@ -12966,7 +13200,7 @@ function findLast(arr, condition) {
  * found in the LICENSE file at https://angular.io/license
  */
 var STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
-var /** @type {?} */ NG_FACTORY = /\.ngfactory\./;
+var NG_FACTORY = /\.ngfactory\./;
 /**
  * @param {?} filePath
  * @return {?}
@@ -13012,6 +13246,13 @@ function summaryFileName(fileName) {
     return fileNameWithoutSuffix + ".ngsummary.json";
 }
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @param {?} hook
  * @param {?} token
  * @return {?}
@@ -13043,6 +13284,13 @@ function getHookName(hook) {
             return 'ngAfterViewChecked';
     }
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} obj
  * @return {?}
@@ -13095,6 +13343,13 @@ NgModuleResolver.decorators = [
 NgModuleResolver.ctorParameters = function () { return [
     { type: ɵReflectorReader, },
 ]; };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} type
  * @return {?}
@@ -13156,6 +13411,13 @@ PipeResolver.decorators = [
 PipeResolver.ctorParameters = function () { return [
     { type: ɵReflectorReader, },
 ]; };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var SummaryResolver = (function () {
     function SummaryResolver() {
     }
@@ -13195,7 +13457,14 @@ SummaryResolver.decorators = [
  * @nocollapse
  */
 SummaryResolver.ctorParameters = function () { return []; };
-var /** @type {?} */ ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var ERROR_COLLECTOR_TOKEN = new InjectionToken('ErrorCollector');
 var CompileMetadataResolver = (function () {
     /**
      * @param {?} _config
@@ -14405,7 +14674,6 @@ function stringifyType(type) {
  * @return {?}
  */
 function componentStillLoadingError(compType) {
-    debugger;
     var /** @type {?} */ error = Error("Can't compile synchronously as " + ɵstringify(compType) + " is still being loaded!");
     ((error))[ɵERROR_COMPONENT_TYPE] = compType;
     return error;
@@ -14549,13 +14817,13 @@ var MapType = (function (_super) {
     MapType.prototype.visitType = function (visitor, context) { return visitor.visitMapType(this, context); };
     return MapType;
 }(Type$1));
-var /** @type {?} */ DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
-var /** @type {?} */ INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
-var /** @type {?} */ BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
-var /** @type {?} */ INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
-var /** @type {?} */ NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
-var /** @type {?} */ STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
-var /** @type {?} */ FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
+var DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
+var INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
+var BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
+var INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
+var NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
+var STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
+var FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
 var BinaryOperator = {};
 BinaryOperator.Equals = 0;
 BinaryOperator.NotEquals = 1;
@@ -15371,12 +15639,12 @@ var CommaExpr = (function (_super) {
     };
     return CommaExpr;
 }(Expression));
-var /** @type {?} */ THIS_EXPR = new ReadVarExpr(BuiltinVar.This);
-var /** @type {?} */ SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super);
-var /** @type {?} */ CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
-var /** @type {?} */ CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
-var /** @type {?} */ NULL_EXPR = new LiteralExpr(null, null);
-var /** @type {?} */ TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE);
+var THIS_EXPR = new ReadVarExpr(BuiltinVar.This);
+var SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super);
+var CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError);
+var CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack);
+var NULL_EXPR = new LiteralExpr(null, null);
+var TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE);
 var StmtModifier = {};
 StmtModifier.Final = 0;
 StmtModifier.Private = 1;
@@ -16443,6 +16711,13 @@ function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
 }
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Create a new class stmts based on the given data.
  * @param {?} config
  * @return {?}
@@ -16466,7 +16741,14 @@ function concatClassBuilderParts(builders) {
         ctorStmts: [].concat.apply([], builders.map(function (builder) { return builder.ctorStmts || []; })),
     };
 }
-var /** @type {?} */ QUOTED_KEYS = '$quoted$';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var QUOTED_KEYS = '$quoted$';
 /**
  * @param {?} value
  * @param {?=} type
@@ -16523,6 +16805,13 @@ var _ValueOutputAstTransformer = (function () {
     };
     return _ValueOutputAstTransformer;
 }());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * This is currently not read, but will probably be used in the future.
  * We keep it as we already pass it through all the rigth places...
@@ -16790,9 +17079,16 @@ var InjectMethodVars = (function () {
 }());
 InjectMethodVars.token = variable('token');
 InjectMethodVars.notFoundResult = variable('notFoundResult');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
-var /** @type {?} */ VERSION$1 = 3;
-var /** @type {?} */ JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
+var VERSION$1 = 3;
+var JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
 var SourceMapGenerator = (function () {
     /**
      * @param {?=} file
@@ -16960,7 +17256,7 @@ function toBase64VLQ(value) {
     } while (value > 0);
     return out;
 }
-var /** @type {?} */ B64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+var B64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 /**
  * @param {?} value
  * @return {?}
@@ -16971,11 +17267,21 @@ function toBase64Digit(value) {
     }
     return B64_DIGITS[value];
 }
-var /** @type {?} */ _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
-var /** @type {?} */ _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
-var /** @type {?} */ _INDENT_WITH = '  ';
-var /** @type {?} */ CATCH_ERROR_VAR$1 = variable('error');
-var /** @type {?} */ CATCH_STACK_VAR$1 = variable('stack');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+var _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
+var _INDENT_WITH = '  ';
+var CATCH_ERROR_VAR$1 = variable('error');
+var CATCH_STACK_VAR$1 = variable('stack');
+/**
+ * @abstract
+ */
 var _EmittedLine = (function () {
     /**
      * @param {?} indent
@@ -17691,7 +17997,14 @@ function _createIndent(count) {
     }
     return res;
 }
-var /** @type {?} */ _debugFilePath = '/debug/lib';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _debugFilePath = '/debug/lib';
 /**
  * @param {?} ast
  * @return {?}
@@ -18229,6 +18542,13 @@ var _TsEmitterVisitor = (function (_super) {
     };
     return _TsEmitterVisitor;
 }(AbstractEmitterVisitor));
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 // =================================================================================================
 // =================================================================================================
 // =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
@@ -18240,7 +18560,7 @@ var _TsEmitterVisitor = (function (_super) {
 //
 // =================================================================================================
 /** Map from tagName|propertyName SecurityContext. Properties applying to all tags use '*'. */
-var /** @type {?} */ SECURITY_SCHEMA = {};
+var SECURITY_SCHEMA = {};
 /**
  * @param {?} ctx
  * @param {?} specs
@@ -18281,10 +18601,17 @@ registerContext(SecurityContext.RESOURCE_URL, [
     'object|data',
     'script|src',
 ]);
-var /** @type {?} */ BOOLEAN = 'boolean';
-var /** @type {?} */ NUMBER = 'number';
-var /** @type {?} */ STRING = 'string';
-var /** @type {?} */ OBJECT = 'object';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var BOOLEAN = 'boolean';
+var NUMBER = 'number';
+var STRING = 'string';
+var OBJECT = 'object';
 /**
  * This array represents the DOM schema. It encodes inheritance, properties, and events.
  *
@@ -18339,7 +18666,7 @@ var /** @type {?} */ OBJECT = 'object';
 // dom_security_schema.ts. Reach out to mprobst & rjamet for details.
 //
 // =================================================================================================
-var /** @type {?} */ SCHEMA = [
+var SCHEMA = [
     '[Element]|textContent,%classList,className,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*copy,*cut,*paste,*search,*selectstart,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerHTML,#scrollLeft,#scrollTop',
     '[HTMLElement]^[Element]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
     'abbr,address,article,aside,b,bdi,bdo,cite,code,dd,dfn,dt,em,figcaption,figure,footer,header,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,contentEditable,dir,!draggable,!hidden,innerText,lang,*abort,*beforecopy,*beforecut,*beforepaste,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*message,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*paste,*pause,*play,*playing,*progress,*ratechange,*reset,*resize,*scroll,*search,*seeked,*seeking,*select,*selectstart,*show,*stalled,*submit,*suspend,*timeupdate,*toggle,*volumechange,*waiting,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored,*webkitfullscreenchange,*webkitfullscreenerror,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate',
@@ -18491,7 +18818,7 @@ var /** @type {?} */ SCHEMA = [
     'summary^[HTMLElement]|',
     'time^[HTMLElement]|dateTime',
 ];
-var /** @type {?} */ _ATTR_TO_PROP = {
+var _ATTR_TO_PROP = {
     'class': 'className',
     'for': 'htmlFor',
     'formaction': 'formAction',
@@ -19102,32 +19429,32 @@ var SafeSelector = (function () {
     SafeSelector.prototype.content = function () { return this._content; };
     return SafeSelector;
 }());
-var /** @type {?} */ _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
-var /** @type {?} */ _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
-var /** @type {?} */ _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
-var /** @type {?} */ _polyfillHost = '-shadowcsshost';
+var _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
+var _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
+var _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
+var _polyfillHost = '-shadowcsshost';
 // note: :host-context pre-processed to -shadowcsshostcontext.
-var /** @type {?} */ _polyfillHostContext = '-shadowcsscontext';
-var /** @type {?} */ _parenSuffix = ')(?:\\((' +
+var _polyfillHostContext = '-shadowcsscontext';
+var _parenSuffix = ')(?:\\((' +
     '(?:\\([^)(]*\\)|[^)(]*)+?' +
     ')\\))?([^,{]*)';
-var /** @type {?} */ _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
-var /** @type {?} */ _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
-var /** @type {?} */ _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
-var /** @type {?} */ _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
-var /** @type {?} */ _shadowDOMSelectorsRe = [
+var _cssColonHostRe = new RegExp('(' + _polyfillHost + _parenSuffix, 'gim');
+var _cssColonHostContextRe = new RegExp('(' + _polyfillHostContext + _parenSuffix, 'gim');
+var _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
+var _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
+var _shadowDOMSelectorsRe = [
     /::shadow/g,
     /::content/g,
     // Deprecated selectors
     /\/shadow-deep\//g,
     /\/shadow\//g,
 ];
-var /** @type {?} */ _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
-var /** @type {?} */ _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
-var /** @type {?} */ _polyfillHostRe = /-shadowcsshost/gim;
-var /** @type {?} */ _colonHostRe = /:host/gim;
-var /** @type {?} */ _colonHostContextRe = /:host-context/gim;
-var /** @type {?} */ _commentRe = /\/\*\s*[\s\S]*?\*\//g;
+var _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
+var _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
+var _polyfillHostRe = /-shadowcsshost/gim;
+var _colonHostRe = /:host/gim;
+var _colonHostContextRe = /:host-context/gim;
+var _commentRe = /\/\*\s*[\s\S]*?\*\//g;
 /**
  * @param {?} input
  * @return {?}
@@ -19136,7 +19463,7 @@ function stripComments(input) {
     return input.replace(_commentRe, '');
 }
 // all comments except inline source mapping
-var /** @type {?} */ _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
+var _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
 /**
  * @param {?} input
  * @return {?}
@@ -19145,11 +19472,11 @@ function extractSourceMappingUrl(input) {
     var /** @type {?} */ matcher = input.match(_sourceMappingUrlRe);
     return matcher ? matcher[0] : '';
 }
-var /** @type {?} */ _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
-var /** @type {?} */ _curlyRe = /([{}])/g;
-var /** @type {?} */ OPEN_CURLY = '{';
-var /** @type {?} */ CLOSE_CURLY = '}';
-var /** @type {?} */ BLOCK_PLACEHOLDER = '%BLOCK%';
+var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
+var _curlyRe = /([{}])/g;
+var OPEN_CURLY = '{';
+var CLOSE_CURLY = '}';
+var BLOCK_PLACEHOLDER = '%BLOCK%';
 var CssRule = (function () {
     /**
      * @param {?} selector
@@ -19234,9 +19561,16 @@ function escapeBlocks(input) {
     }
     return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
 }
-var /** @type {?} */ COMPONENT_VARIABLE = '%COMP%';
-var /** @type {?} */ HOST_ATTR = "_nghost-" + COMPONENT_VARIABLE;
-var /** @type {?} */ CONTENT_ATTR = "_ngcontent-" + COMPONENT_VARIABLE;
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var COMPONENT_VARIABLE = '%COMP%';
+var HOST_ATTR = "_nghost-" + COMPONENT_VARIABLE;
+var CONTENT_ATTR = "_ngcontent-" + COMPONENT_VARIABLE;
 var StylesCompileDependency = (function () {
     /**
      * @param {?} name
@@ -19335,8 +19669,8 @@ var StyleCompiler = (function () {
      * @param {?} shim
      * @return {?}
      */
-    StyleCompiler.prototype._shimIfNeeded = function (style, shim) {
-        return shim ? this._shadowCss.shimCssText(style, CONTENT_ATTR, HOST_ATTR) : style;
+    StyleCompiler.prototype._shimIfNeeded = function (style$$1, shim) {
+        return shim ? this._shadowCss.shimCssText(style$$1, CONTENT_ATTR, HOST_ATTR) : style$$1;
     };
     return StyleCompiler;
 }());
@@ -19360,6 +19694,13 @@ function getStylesVarName(component) {
     }
     return result;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var EventHandlerVars = (function () {
     function EventHandlerVars() {
     }
@@ -20282,10 +20623,17 @@ var BuiltinFunctionCall = (function (_super) {
     }
     return BuiltinFunctionCall;
 }(FunctionCall));
-var /** @type {?} */ CLASS_ATTR$1 = 'class';
-var /** @type {?} */ STYLE_ATTR = 'style';
-var /** @type {?} */ IMPLICIT_TEMPLATE_VAR = '\$implicit';
-var /** @type {?} */ NG_CONTAINER_TAG = 'ng-container';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var CLASS_ATTR$1 = 'class';
+var STYLE_ATTR = 'style';
+var IMPLICIT_TEMPLATE_VAR = '\$implicit';
+var NG_CONTAINER_TAG = 'ng-container';
 var ViewCompileResult = (function () {
     /**
      * @param {?} statements
@@ -20357,13 +20705,13 @@ ViewCompiler.ctorParameters = function () { return [
     { type: CompilerConfig, },
     { type: ElementSchemaRegistry, },
 ]; };
-var /** @type {?} */ LOG_VAR = variable('log');
-var /** @type {?} */ VIEW_VAR = variable('view');
-var /** @type {?} */ CHECK_VAR = variable('check');
-var /** @type {?} */ COMP_VAR = variable('comp');
-var /** @type {?} */ NODE_INDEX_VAR = variable('nodeIndex');
-var /** @type {?} */ EVENT_NAME_VAR = variable('eventName');
-var /** @type {?} */ ALLOW_DEFAULT_VAR = variable("allowDefault");
+var LOG_VAR = variable('log');
+var VIEW_VAR = variable('view');
+var CHECK_VAR = variable('check');
+var COMP_VAR = variable('comp');
+var NODE_INDEX_VAR = variable('nodeIndex');
+var EVENT_NAME_VAR = variable('eventName');
+var ALLOW_DEFAULT_VAR = variable("allowDefault");
 var ViewBuilder = (function () {
     /**
      * @param {?} parent
@@ -20421,8 +20769,8 @@ var ViewBuilder = (function () {
             this.component.viewQueries.forEach(function (query, queryIndex) {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 var /** @type {?} */ queryId = queryIndex + 1;
-                var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1 /* All */;
-                var /** @type {?} */ flags = 67108864 /* TypeViewQuery */;
+                var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
+                var /** @type {?} */ flags = 67108864;
                 if (queryIds_1.staticQueryIds.has(queryId)) {
                     flags |= 134217728 /* StaticQuery */;
                 }
@@ -20439,10 +20787,8 @@ var ViewBuilder = (function () {
             });
         }
         templateVisitAll(this, astNodes);
-        if (astNodes.length === 0 ||
-            (this.parent && needsAdditionalRootNode(astNodes[astNodes.length - 1]))) {
-            // if the view is empty, or an embedded view has a view container as last root nde,
-            // create an additional root node.
+        if (this.parent && (astNodes.length === 0 || needsAdditionalRootNode(astNodes))) {
+            // if the view is an embedded view, then we need to add an additional root node in some cases
             this.nodes.push(function () { return ({
                 sourceSpan: null,
                 nodeDef: importExpr(createIdentifier(Identifiers.anchorDef)).callFn([
@@ -20461,7 +20807,7 @@ var ViewBuilder = (function () {
         var _a = this._createNodeExpressions(), updateRendererStmts = _a.updateRendererStmts, updateDirectivesStmts = _a.updateDirectivesStmts, nodeDefExprs = _a.nodeDefExprs;
         var /** @type {?} */ updateRendererFn = this._createUpdateFn(updateRendererStmts);
         var /** @type {?} */ updateDirectivesFn = this._createUpdateFn(updateDirectivesStmts);
-        var /** @type {?} */ viewFlags = 0 /* None */;
+        var /** @type {?} */ viewFlags = 0;
         if (!this.parent && this.component.changeDetection === ChangeDetectionStrategy.OnPush) {
             viewFlags |= 2 /* OnPush */;
         }
@@ -20535,7 +20881,7 @@ var ViewBuilder = (function () {
         this.nodes.push(null);
         var /** @type {?} */ astWithSource = (ast.value);
         var /** @type {?} */ inter = (astWithSource.ast);
-        var /** @type {?} */ updateRendererExpressions = inter.expressions.map(function (expr) { return _this._preprocessUpdateExpression({ sourceSpan: ast.sourceSpan, context: COMP_VAR, value: expr }); });
+        var /** @type {?} */ updateRendererExpressions = inter.expressions.map(function (expr, bindingIndex) { return _this._preprocessUpdateExpression({ nodeIndex: nodeIndex, bindingIndex: bindingIndex, sourceSpan: ast.sourceSpan, context: COMP_VAR, value: expr }); });
         // textDef(ngContentIndex: number, constants: string[]): NodeDef;
         this.nodes[nodeIndex] = function () { return ({
             sourceSpan: ast.sourceSpan,
@@ -20605,8 +20951,10 @@ var ViewBuilder = (function () {
                 .concat(dirHostBindings);
             if (hostBindings.length) {
                 updateRendererExpressions =
-                    hostBindings.map(function (hostBinding) { return _this._preprocessUpdateExpression({
+                    hostBindings.map(function (hostBinding, bindingIndex) { return _this._preprocessUpdateExpression({
                         context: hostBinding.context,
+                        nodeIndex: nodeIndex,
+                        bindingIndex: bindingIndex,
                         sourceSpan: hostBinding.inputAst.sourceSpan,
                         value: hostBinding.inputAst.value
                     }); });
@@ -20630,10 +20978,7 @@ var ViewBuilder = (function () {
         //   flags: NodeFlags, matchedQueriesDsl: [string | number, QueryValueType][],
         //   ngContentIndex: number, childCount: number, namespaceAndName: string,
         //   fixedAttrs: [string, string][] = [],
-        //   bindings?:
-        //       ([BindingType.ElementClass, string] | [BindingType.ElementStyle, string, string] |
-        //        [BindingType.ElementAttribute | BindingType.ElementProperty |
-        //        BindingType.DirectiveHostProperty, string, SecurityContext])[],
+        //   bindings?: [BindingFlags, string, string | SecurityContext][],
         //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
         //   handleEvent?: ElementHandleEventFn,
         //   componentView?: () => ViewDefinition, componentRendererType?: RendererType2): NodeDef;
@@ -20662,7 +21007,7 @@ var ViewBuilder = (function () {
      */
     ViewBuilder.prototype._visitElementOrTemplate = function (nodeIndex, ast) {
         var _this = this;
-        var /** @type {?} */ flags = 0 /* None */;
+        var /** @type {?} */ flags = 0;
         if (ast.hasViewContainer) {
             flags |= 8388608 /* EmbeddedViews */;
         }
@@ -20758,7 +21103,7 @@ var ViewBuilder = (function () {
         // reserve the space in the nodeDefs array so we can add children
         this.nodes.push(null);
         dirAst.directive.queries.forEach(function (query, queryIndex) {
-            var /** @type {?} */ flags = 33554432 /* TypeContentQuery */;
+            var /** @type {?} */ flags = 33554432;
             var /** @type {?} */ queryId = dirAst.contentQueryStartId + queryIndex;
             // Note: We only make queries static that query for a single item.
             // This is because of backwards compatibility with the old view compiler...
@@ -20768,7 +21113,7 @@ var ViewBuilder = (function () {
             else {
                 flags |= 268435456 /* DynamicQuery */;
             }
-            var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1 /* All */;
+            var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             _this.nodes.push(function () { return ({
                 sourceSpan: dirAst.sourceSpan,
                 nodeDef: importExpr(createIdentifier(Identifiers.queryDef)).callFn([
@@ -20808,7 +21153,14 @@ var ViewBuilder = (function () {
         });
         var /** @type {?} */ updateDirectiveExpressions = [];
         if (dirAst.inputs.length || (flags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0) {
-            updateDirectiveExpressions = dirAst.inputs.map(function (input) { return _this._preprocessUpdateExpression({ sourceSpan: input.sourceSpan, context: COMP_VAR, value: input.value }); });
+            updateDirectiveExpressions =
+                dirAst.inputs.map(function (input, bindingIndex) { return _this._preprocessUpdateExpression({
+                    nodeIndex: nodeIndex,
+                    bindingIndex: bindingIndex,
+                    sourceSpan: input.sourceSpan,
+                    context: COMP_VAR,
+                    value: input.value
+                }); });
         }
         var /** @type {?} */ dirContextExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
             VIEW_VAR, literal(nodeIndex)
@@ -20836,6 +21188,7 @@ var ViewBuilder = (function () {
                 outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR
             ]),
             updateDirectives: updateDirectiveExpressions,
+            directive: dirAst.directive.type,
         }); };
         return { hostBindings: hostBindings, hostEvents: hostEvents };
     };
@@ -20866,7 +21219,7 @@ var ViewBuilder = (function () {
      * @return {?}
      */
     ViewBuilder.prototype._visitProviderOrDirective = function (providerAst, queryMatches) {
-        var /** @type {?} */ flags = 0 /* None */;
+        var /** @type {?} */ flags = 0;
         if (!providerAst.eager) {
             flags |= 2048 /* LazyProvider */;
         }
@@ -20954,18 +21307,18 @@ var ViewBuilder = (function () {
         return function (args) { return callCheckStmt(nodeIndex, args); };
     };
     /**
-     * @param {?} sourceSpan
+     * @param {?} expression
      * @param {?} name
      * @param {?} argCount
      * @return {?}
      */
-    ViewBuilder.prototype.createPipeConverter = function (sourceSpan, name, argCount) {
+    ViewBuilder.prototype.createPipeConverter = function (expression, name, argCount) {
         var /** @type {?} */ pipe = this.usedPipes.find(function (pipeSummary) { return pipeSummary.name === name; });
         if (pipe.pure) {
             var /** @type {?} */ nodeIndex_1 = this.nodes.length;
             // function purePipeDef(argCount: number): NodeDef;
             this.nodes.push(function () { return ({
-                sourceSpan: sourceSpan,
+                sourceSpan: expression.sourceSpan,
                 nodeDef: importExpr(createIdentifier(Identifiers.purePipeDef))
                     .callFn([literal(argCount)])
             }); });
@@ -20980,14 +21333,14 @@ var ViewBuilder = (function () {
             var /** @type {?} */ pipeValueExpr_1 = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
                 compViewExpr, literal(pipeNodeIndex)
             ]);
-            return function (args) { return callUnwrapValue(callCheckStmt(nodeIndex_1, [pipeValueExpr_1].concat(args))); };
+            return function (args) { return callUnwrapValue(expression.nodeIndex, expression.bindingIndex, callCheckStmt(nodeIndex_1, [pipeValueExpr_1].concat(args))); };
         }
         else {
-            var /** @type {?} */ nodeIndex = this._createPipe(sourceSpan, pipe);
+            var /** @type {?} */ nodeIndex = this._createPipe(expression.sourceSpan, pipe);
             var /** @type {?} */ nodeValueExpr_1 = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
                 VIEW_VAR, literal(nodeIndex)
             ]);
-            return function (args) { return callUnwrapValue(nodeValueExpr_1.callMethod('transform', args)); };
+            return function (args) { return callUnwrapValue(expression.nodeIndex, expression.bindingIndex, nodeValueExpr_1.callMethod('transform', args)); };
         }
     };
     /**
@@ -20997,7 +21350,7 @@ var ViewBuilder = (function () {
      */
     ViewBuilder.prototype._createPipe = function (sourceSpan, pipe) {
         var /** @type {?} */ nodeIndex = this.nodes.length;
-        var /** @type {?} */ flags = 0 /* None */;
+        var /** @type {?} */ flags = 0;
         pipe.type.lifecycleHooks.forEach(function (lifecycleHook) {
             // for pipes, we only support ngOnDestroy
             if (lifecycleHook === ɵLifecycleHooks.OnDestroy) {
@@ -21022,12 +21375,14 @@ var ViewBuilder = (function () {
     ViewBuilder.prototype._preprocessUpdateExpression = function (expression) {
         var _this = this;
         return {
+            nodeIndex: expression.nodeIndex,
+            bindingIndex: expression.bindingIndex,
             sourceSpan: expression.sourceSpan,
             context: expression.context,
             value: convertPropertyBindingBuiltins({
                 createLiteralArrayConverter: function (argCount) { return _this.createLiteralArrayConverter(expression.sourceSpan, argCount); },
                 createLiteralMapConverter: function (keys) { return _this.createLiteralMapConverter(expression.sourceSpan, keys); },
-                createPipeConverter: function (name, argCount) { return _this.createPipeConverter(expression.sourceSpan, name, argCount); }
+                createPipeConverter: function (name, argCount) { return _this.createPipeConverter(expression, name, argCount); }
             }, expression.value)
         };
     };
@@ -21040,12 +21395,12 @@ var ViewBuilder = (function () {
         var /** @type {?} */ updateRendererStmts = [];
         var /** @type {?} */ updateDirectivesStmts = [];
         var /** @type {?} */ nodeDefExprs = this.nodes.map(function (factory, nodeIndex) {
-            var _a = factory(), nodeDef = _a.nodeDef, updateDirectives = _a.updateDirectives, updateRenderer = _a.updateRenderer, sourceSpan = _a.sourceSpan;
+            var _a = factory(), nodeDef = _a.nodeDef, directive = _a.directive, updateDirectives = _a.updateDirectives, updateRenderer = _a.updateRenderer, sourceSpan = _a.sourceSpan;
             if (updateRenderer) {
-                updateRendererStmts.push.apply(updateRendererStmts, createUpdateStatements(nodeIndex, sourceSpan, updateRenderer));
+                updateRendererStmts.push.apply(updateRendererStmts, createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, null));
             }
             if (updateDirectives) {
-                updateDirectivesStmts.push.apply(updateDirectivesStmts, createUpdateStatements(nodeIndex, sourceSpan, updateDirectives));
+                updateDirectivesStmts.push.apply(updateDirectivesStmts, createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, directive));
             }
             // We use a comma expression to call the log function before
             // the nodeDef function, but still use the result of the nodeDef function
@@ -21058,9 +21413,10 @@ var ViewBuilder = (function () {
          * @param {?} nodeIndex
          * @param {?} sourceSpan
          * @param {?} expressions
+         * @param {?} directive
          * @return {?}
          */
-        function createUpdateStatements(nodeIndex, sourceSpan, expressions) {
+        function createUpdateStatements(nodeIndex, sourceSpan, expressions, directive) {
             var /** @type {?} */ updateStmts = [];
             var /** @type {?} */ exprs = expressions.map(function (_a) {
                 var sourceSpan = _a.sourceSpan, context = _a.context, value = _a.value;
@@ -21070,7 +21426,11 @@ var ViewBuilder = (function () {
                 updateStmts.push.apply(updateStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
                 return applySourceSpanToExpressionIfNeeded(currValExpr, sourceSpan);
             });
-            updateStmts.push(applySourceSpanToStatementIfNeeded(callCheckStmt(nodeIndex, exprs).toStmt(), sourceSpan));
+            if (expressions.length ||
+                (directive && (directive.lifecycleHooks.indexOf(ɵLifecycleHooks.DoCheck) !== -1 ||
+                    directive.lifecycleHooks.indexOf(ɵLifecycleHooks.OnInit) !== -1))) {
+                updateStmts.push(applySourceSpanToStatementIfNeeded(callCheckStmt(nodeIndex, exprs).toStmt(), sourceSpan));
+            }
             return updateStmts;
         }
     };
@@ -21262,7 +21622,7 @@ function depDef(dep) {
     // Note: the following fields have already been normalized out by provider_analyzer:
     // - isAttribute, isSelf, isHost
     var /** @type {?} */ expr = dep.isValue ? convertValueToOutputAst(dep.value) : tokenExpr(dep.token);
-    var /** @type {?} */ flags = 0 /* None */;
+    var /** @type {?} */ flags = 0;
     if (dep.isSkipSelf) {
         flags |= 1 /* SkipSelf */;
     }
@@ -21275,27 +21635,28 @@ function depDef(dep) {
     return flags === 0 /* None */ ? expr : literalArr([literal(flags), expr]);
 }
 /**
- * @param {?} ast
+ * @param {?} astNodes
  * @return {?}
  */
-function needsAdditionalRootNode(ast) {
-    if (ast instanceof EmbeddedTemplateAst) {
-        return ast.hasViewContainer;
+function needsAdditionalRootNode(astNodes) {
+    var /** @type {?} */ lastAstNode = astNodes[astNodes.length - 1];
+    if (lastAstNode instanceof EmbeddedTemplateAst) {
+        return lastAstNode.hasViewContainer;
     }
-    if (ast instanceof ElementAst) {
-        if (ast.name === NG_CONTAINER_TAG && ast.children.length) {
-            return needsAdditionalRootNode(ast.children[ast.children.length - 1]);
+    if (lastAstNode instanceof ElementAst) {
+        if (lastAstNode.name === NG_CONTAINER_TAG && lastAstNode.children.length) {
+            return needsAdditionalRootNode(lastAstNode.children);
         }
-        return ast.hasViewContainer;
+        return lastAstNode.hasViewContainer;
     }
-    return ast instanceof NgContentAst;
+    return lastAstNode instanceof NgContentAst;
 }
 /**
  * @param {?} lifecycleHook
  * @return {?}
  */
 function lifecycleHookToNodeFlag(lifecycleHook) {
-    var /** @type {?} */ nodeFlag = 0 /* None */;
+    var /** @type {?} */ nodeFlag = 0;
     switch (lifecycleHook) {
         case ɵLifecycleHooks.AfterContentChecked:
             nodeFlag = 1048576 /* AfterContentChecked */;
@@ -21333,26 +21694,26 @@ function elementBindingDef(inputAst, dirAst) {
     switch (inputAst.type) {
         case PropertyBindingType.Attribute:
             return literalArr([
-                literal(0 /* ElementAttribute */), literal(inputAst.name),
+                literal(1 /* TypeElementAttribute */), literal(inputAst.name),
                 literal(inputAst.securityContext)
             ]);
         case PropertyBindingType.Property:
             return literalArr([
-                literal(3 /* ElementProperty */), literal(inputAst.name),
+                literal(8 /* TypeProperty */), literal(inputAst.name),
                 literal(inputAst.securityContext)
             ]);
         case PropertyBindingType.Animation:
-            var /** @type {?} */ bindingType = dirAst && dirAst.directive.isComponent ?
-                4 /* ComponentHostProperty */ :
-                3 /* ElementProperty */;
+            var /** @type {?} */ bindingType = 8 /* TypeProperty */ |
+                (dirAst && dirAst.directive.isComponent ? 32 /* SyntheticHostProperty */ :
+                    16 /* SyntheticProperty */);
             return literalArr([
                 literal(bindingType), literal('@' + inputAst.name), literal(inputAst.securityContext)
             ]);
         case PropertyBindingType.Class:
-            return literalArr([literal(1 /* ElementClass */), literal(inputAst.name)]);
+            return literalArr([literal(2 /* TypeElementClass */), literal(inputAst.name), NULL_EXPR]);
         case PropertyBindingType.Style:
             return literalArr([
-                literal(2 /* ElementStyle */), literal(inputAst.name), literal(inputAst.unit)
+                literal(4 /* TypeElementStyle */), literal(inputAst.name), literal(inputAst.unit)
             ]);
     }
 }
@@ -21403,11 +21764,15 @@ function callCheckStmt(nodeIndex, exprs) {
     }
 }
 /**
+ * @param {?} nodeIndex
+ * @param {?} bindingIdx
  * @param {?} expr
  * @return {?}
  */
-function callUnwrapValue(expr) {
-    return importExpr(createIdentifier(Identifiers.unwrapValue)).callFn([expr]);
+function callUnwrapValue(nodeIndex, bindingIdx, expr) {
+    return importExpr(createIdentifier(Identifiers.unwrapValue)).callFn([
+        VIEW_VAR, literal(nodeIndex), literal(bindingIdx), expr
+    ]);
 }
 /**
  * @param {?} nodes
@@ -21518,6 +21883,13 @@ var GeneratedFile = (function () {
     }
     return GeneratedFile;
 }());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} summaryResolver
  * @param {?} symbolResolver
@@ -21726,6 +22098,13 @@ var Deserializer = (function (_super) {
     };
     return Deserializer;
 }(ValueTransformer));
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var AotCompiler = (function () {
     /**
      * @param {?} _config
@@ -22117,6 +22496,13 @@ function _createNgModules(programStaticSymbols, host, metadataResolver) {
     var /** @type {?} */ symbolsMissingModule = programPipesAndDirectives.filter(function (s) { return !ngModulePipesAndDirective.has(s); });
     return { ngModules: Array.from(ngModules.values()), symbolsMissingModule: symbolsMissingModule };
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var StaticAndDynamicReflectionCapabilities = (function () {
     /**
      * @param {?} staticDelegate
@@ -22226,9 +22612,16 @@ var StaticAndDynamicReflectionCapabilities = (function () {
 function isStaticType(type) {
     return typeof type === 'object' && type.name && type.filePath;
 }
-var /** @type {?} */ ANGULAR_CORE = '@angular/core';
-var /** @type {?} */ HIDDEN_KEY = /^\$.*\$$/;
-var /** @type {?} */ IGNORE = {
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var ANGULAR_CORE = '@angular/core';
+var HIDDEN_KEY = /^\$.*\$$/;
+var IGNORE = {
     __symbolic: 'ignore'
 };
 /**
@@ -23021,6 +23414,13 @@ function positionalError(message, fileName, line, column) {
     ((result)).column = column;
     return result;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var ResolvedStaticSymbol = (function () {
     /**
      * @param {?} symbol
@@ -23032,7 +23432,7 @@ var ResolvedStaticSymbol = (function () {
     }
     return ResolvedStaticSymbol;
 }());
-var /** @type {?} */ SUPPORTED_SCHEMA_VERSION = 3;
+var SUPPORTED_SCHEMA_VERSION = 3;
 /**
  * This class is responsible for loading metadata per symbol,
  * and normalizing references between symbols.
@@ -23441,6 +23841,13 @@ var StaticSymbolResolver = (function () {
 function unescapeIdentifier(identifier) {
     return identifier.startsWith('___') ? identifier.substr(1) : identifier;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var AotSummaryResolver = (function () {
     /**
      * @param {?} host
@@ -23529,6 +23936,13 @@ var AotSummaryResolver = (function () {
     return AotSummaryResolver;
 }());
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Creates a new AotCompiler based on options and a host.
  * @param {?} compilerHost
  * @param {?} options
@@ -23564,6 +23978,13 @@ function createAotCompiler(compilerHost, options) {
     var /** @type {?} */ compiler = new AotCompiler(config, compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale, options.i18nFormat, options.genFilePreamble, symbolResolver);
     return { compiler: compiler, reflector: staticReflector };
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @param {?} statements
  * @param {?} resultVars
@@ -23803,8 +24224,8 @@ var StatementInterpreter = (function () {
             return null;
         }
         else {
-            var /** @type {?} */ fn_1 = stmt.fn.visitExpression(this, ctx);
-            return fn_1.apply(null, args);
+            var /** @type {?} */ fn$$1 = stmt.fn.visitExpression(this, ctx);
+            return fn$$1.apply(null, args);
         }
     };
     /**
@@ -24086,8 +24507,15 @@ function _declareFn(varNames, statements, ctx, visitor) {
         return _executeFunctionStatements(varNames, args, statements, ctx, visitor);
     };
 }
-var /** @type {?} */ CATCH_ERROR_VAR$2 = 'error';
-var /** @type {?} */ CATCH_STACK_VAR$2 = 'stack';
+var CATCH_ERROR_VAR$2 = 'error';
+var CATCH_STACK_VAR$2 = 'stack';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * @abstract
  */
@@ -24310,13 +24738,20 @@ var AbstractJsEmitterVisitor = (function (_super) {
     return AbstractJsEmitterVisitor;
 }(AbstractEmitterVisitor));
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @param {?} sourceUrl
  * @param {?} ctx
  * @param {?} vars
  * @return {?}
  */
-function evalExpression(sourceUrl, ctx, vars) {
-    var /** @type {?} */ fnBody = ctx.toSource() + "\n//# sourceURL=" + sourceUrl;
+function evalExpression(sourceUrl$$1, ctx, vars) {
+    var /** @type {?} */ fnBody = ctx.toSource() + "\n//# sourceURL=" + sourceUrl$$1;
     var /** @type {?} */ fnArgNames = [];
     var /** @type {?} */ fnArgValues = [];
     for (var /** @type {?} */ argName in vars) {
@@ -24331,7 +24766,7 @@ function evalExpression(sourceUrl, ctx, vars) {
         // We don't want to hard code this fact, so we auto detect it via an empty function first.
         var /** @type {?} */ emptyFn = new (Function.bind.apply(Function, [void 0].concat(fnArgNames.concat('return null;'))))().toString();
         var /** @type {?} */ headerLines = emptyFn.slice(0, emptyFn.indexOf('return null;')).split('\n').length - 1;
-        fnBody += "\n" + ctx.toSourceMapGenerator(sourceUrl, sourceUrl, headerLines).toJsComment();
+        fnBody += "\n" + ctx.toSourceMapGenerator(sourceUrl$$1, sourceUrl$$1, headerLines).toJsComment();
     }
     return new (Function.bind.apply(Function, [void 0].concat(fnArgNames.concat(fnBody))))().apply(void 0, fnArgValues);
 }
@@ -24341,12 +24776,12 @@ function evalExpression(sourceUrl, ctx, vars) {
  * @param {?} resultVars
  * @return {?}
  */
-function jitStatements(sourceUrl, statements, resultVars) {
+function jitStatements(sourceUrl$$1, statements, resultVars) {
     var /** @type {?} */ converter = new JitEmitterVisitor();
     var /** @type {?} */ ctx = EmitterVisitorContext.createRoot(resultVars);
     var /** @type {?} */ returnStmt = new ReturnStatement(literalArr(resultVars.map(function (resultVar) { return variable(resultVar); })));
     converter.visitAllStatements(statements.concat([returnStmt]), ctx);
-    return evalExpression(sourceUrl, ctx, converter.getArgs());
+    return evalExpression(sourceUrl$$1, ctx, converter.getArgs());
 }
 var JitEmitterVisitor = (function (_super) {
     __extends(JitEmitterVisitor, _super);
@@ -24385,6 +24820,13 @@ var JitEmitterVisitor = (function (_super) {
     };
     return JitEmitterVisitor;
 }(AbstractJsEmitterVisitor));
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * An internal module of the Angular compiler that begins with component types,
  * extracts templates, and eventually produces a compiled version of the component
@@ -24849,6 +25291,13 @@ var ModuleBoundCompiler = (function () {
     return ModuleBoundCompiler;
 }());
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * A container for message extracted from the templates.
  */
 var MessageBundle = (function () {
@@ -24957,6 +25406,16 @@ var MapPlaceholderNames = (function (_super) {
     };
     return MapPlaceholderNames;
 }(CloneVisitor));
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Extract i18n messages from source code
+ */
 var Extractor = (function () {
     /**
      * @param {?} host
@@ -25026,7 +25485,21 @@ var Extractor = (function () {
     };
     return Extractor;
 }());
-var /** @type {?} */ _NO_RESOURCE_LOADER = {
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var _NO_RESOURCE_LOADER = {
     /**
      * @param {?} url
      * @return {?}
@@ -25035,12 +25508,12 @@ var /** @type {?} */ _NO_RESOURCE_LOADER = {
         throw new Error("No ResourceLoader implementation has been provided. Can't read the url \"" + url + "\"");
     }
 };
-var /** @type {?} */ baseHtmlParser = new InjectionToken('HtmlParser');
+var baseHtmlParser = new InjectionToken('HtmlParser');
 /**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
  */
-var /** @type {?} */ COMPILER_PROVIDERS = [
+var COMPILER_PROVIDERS = [
     { provide: ɵReflector, useValue: ɵreflector },
     { provide: ɵReflectorReader, useExisting: ɵReflector },
     { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
@@ -25227,6 +25700,42 @@ var ImportResolver = (function () {
     ImportResolver.prototype.getTypeArity = function (symbol) { };
     return ImportResolver;
 }());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all APIs of the compiler package.
+ *
+ * <div class="callout is-critical">
+ *   <header>Unstable APIs</header>
+ *   <p>
+ *     All compiler apis are currently considered experimental and private!
+ *   </p>
+ *   <p>
+ *     We expect the APIs in this package to keep on changing. Do not rely on them.
+ *   </p>
+ * </div>
+ */
+// This file only reexports content of the `src` folder. Keep it that way.
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all public APIs of the compiler package.
+ */
+// This file only reexports content of the `src` folder. Keep it that way.
 export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
-//# sourceMappingURL=compiler.js.map 
+//# sourceMappingURL=compiler.js.map
 //# sourceMappingURL=compiler.es5.js.map

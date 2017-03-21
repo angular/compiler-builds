@@ -4,13 +4,20 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-d5a6e69
+ * @license Angular v4.0.0-rc.5-b7ba331
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
-import { Injectable, CompilerFactory, Pipe, Component, Directive, NgModule, COMPILER_OPTIONS, createPlatformFactory, SecurityContext, Compiler, Injector, ɵstringify } from '@angular/core';
-import { NgModuleResolver, DirectiveResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
+import { COMPILER_OPTIONS, Compiler, CompilerFactory, Component, Directive, Injectable, Injector, NgModule, Pipe, SecurityContext, createPlatformFactory, ɵstringify } from '@angular/core';
+import { DirectiveResolver, NgModuleResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
 import { ɵTestingCompilerFactory } from '@angular/core/testing';
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var MockSchemaRegistry = (function () {
     function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements, invalidProperties, invalidAttributes) {
         this.existingProperties = existingProperties;
@@ -58,6 +65,13 @@ var MockSchemaRegistry = (function () {
     };
     return MockSchemaRegistry;
 }());
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * An implementation of {@link DirectiveResolver} that allows overriding
  * various properties of directives.
@@ -184,6 +198,13 @@ MockDirectiveResolver.decorators = [
 MockDirectiveResolver.ctorParameters = function () { return [
     { type: Injector, },
 ]; };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var MockNgModuleResolver = (function (_super) {
     __extends(MockNgModuleResolver, _super);
     function MockNgModuleResolver(_injector) {
@@ -224,6 +245,13 @@ MockNgModuleResolver.decorators = [
 MockNgModuleResolver.ctorParameters = function () { return [
     { type: Injector, },
 ]; };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var MockPipeResolver = (function (_super) {
     __extends(MockPipeResolver, _super);
     function MockPipeResolver(_injector) {
@@ -268,6 +296,13 @@ MockPipeResolver.decorators = [
 MockPipeResolver.ctorParameters = function () { return [
     { type: Injector, },
 ]; };
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var _nextReferenceId = 0;
 var MetadataOverrider = (function () {
     function MetadataOverrider() {
@@ -381,6 +416,28 @@ function _valueProps(obj) {
     }
     return props;
 }
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all APIs of the compiler package.
+ *
+ * <div class="callout is-critical">
+ *   <header>Unstable APIs</header>
+ *   <p>
+ *     All compiler apis are currently considered experimental and private!
+ *   </p>
+ *   <p>
+ *     We expect the APIs in this package to keep on changing. Do not rely on them.
+ *   </p>
+ * </div>
+ */
 var TestingCompilerFactoryImpl = (function () {
     function TestingCompilerFactoryImpl(_compilerFactory) {
         this._compilerFactory = _compilerFactory;
@@ -468,5 +525,17 @@ var platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'cor
     },
     { provide: ɵTestingCompilerFactory, useClass: TestingCompilerFactoryImpl }
 ]);
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all public APIs of the compiler/testing package.
+ */
 export { TestingCompilerFactoryImpl, TestingCompilerImpl, platformCoreDynamicTesting, MockSchemaRegistry, MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver };
 //# sourceMappingURL=testing.es5.js.map
