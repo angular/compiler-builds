@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-d3eda7a
+ * @license Angular v4.0.0-rc.5-de3d2ee
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.0.0-rc.5-d3eda7a');
+var VERSION = new Version('4.0.0-rc.5-de3d2ee');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -1718,8 +1718,6 @@ function _sanitizeIdentifier(name) {
     return name.replace(/\W/g, '_');
 }
 var _anonymousTypeIndex = 0;
-var symbolId = 0;
-var symbolIds = new Map();
 /**
  * @param {?} compileIdentifier
  * @return {?}
@@ -1731,14 +1729,6 @@ function identifierName(compileIdentifier) {
     var /** @type {?} */ ref = compileIdentifier.reference;
     if (ref instanceof StaticSymbol) {
         return ref.name;
-    }
-    if (isSymbol(ref)) {
-        if (symbolIds.has(ref)) {
-            return symbolIds.get(ref);
-        }
-        var /** @type {?} */ symbolStr = "_symbol_" + _sanitizeIdentifier(ref.toString()) + "_" + symbolId++;
-        symbolIds.set(ref, symbolStr);
-        return symbolStr;
     }
     if (ref['__anonymousType']) {
         return ref['__anonymousType'];
@@ -1753,13 +1743,6 @@ function identifierName(compileIdentifier) {
         identifier = _sanitizeIdentifier(identifier);
     }
     return identifier;
-}
-/**
- * @param {?} sym
- * @return {?}
- */
-function isSymbol(sym) {
-    return typeof sym === 'symbol';
 }
 /**
  * @param {?} compileIdentifier
@@ -14691,7 +14674,6 @@ function stringifyType(type) {
  * @return {?}
  */
 function componentStillLoadingError(compType) {
-    debugger;
     var /** @type {?} */ error = Error("Can't compile synchronously as " + ɵstringify(compType) + " is still being loaded!");
     ((error))[ɵERROR_COMPONENT_TYPE] = compType;
     return error;
