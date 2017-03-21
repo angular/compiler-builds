@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-de3d2ee
+ * @license Angular v4.0.0-rc.5-2489e4b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.5-de3d2ee');
+const VERSION = new Version('4.0.0-rc.5-2489e4b');
 
 /**
  * @license
@@ -20366,6 +20366,7 @@ class ViewBuilder {
                 outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR
             ]),
             updateDirectives: updateDirectiveExpressions,
+            directive: dirAst.directive.type,
         });
         return { hostBindings, hostEvents };
     }
@@ -20571,12 +20572,12 @@ class ViewBuilder {
         const /** @type {?} */ updateRendererStmts = [];
         const /** @type {?} */ updateDirectivesStmts = [];
         const /** @type {?} */ nodeDefExprs = this.nodes.map((factory, nodeIndex) => {
-            const { nodeDef, updateDirectives, updateRenderer, sourceSpan } = factory();
+            const { nodeDef, directive, updateDirectives, updateRenderer, sourceSpan } = factory();
             if (updateRenderer) {
-                updateRendererStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateRenderer));
+                updateRendererStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, null));
             }
             if (updateDirectives) {
-                updateDirectivesStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateDirectives));
+                updateDirectivesStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, directive));
             }
             // We use a comma expression to call the log function before
             // the nodeDef function, but still use the result of the nodeDef function
@@ -20589,9 +20590,10 @@ class ViewBuilder {
          * @param {?} nodeIndex
          * @param {?} sourceSpan
          * @param {?} expressions
+         * @param {?} directive
          * @return {?}
          */
-        function createUpdateStatements(nodeIndex, sourceSpan, expressions) {
+        function createUpdateStatements(nodeIndex, sourceSpan, expressions, directive) {
             const /** @type {?} */ updateStmts = [];
             const /** @type {?} */ exprs = expressions.map(({ sourceSpan, context, value }) => {
                 const /** @type {?} */ bindingId = `${updateBindingCount++}`;
@@ -20600,7 +20602,11 @@ class ViewBuilder {
                 updateStmts.push(...stmts.map(stmt => applySourceSpanToStatementIfNeeded(stmt, sourceSpan)));
                 return applySourceSpanToExpressionIfNeeded(currValExpr, sourceSpan);
             });
-            updateStmts.push(applySourceSpanToStatementIfNeeded(callCheckStmt(nodeIndex, exprs).toStmt(), sourceSpan));
+            if (expressions.length ||
+                (directive && (directive.lifecycleHooks.indexOf(ɵLifecycleHooks.DoCheck) !== -1 ||
+                    directive.lifecycleHooks.indexOf(ɵLifecycleHooks.OnInit) !== -1))) {
+                updateStmts.push(applySourceSpanToStatementIfNeeded(callCheckStmt(nodeIndex, exprs).toStmt(), sourceSpan));
+            }
             return updateStmts;
         }
     }

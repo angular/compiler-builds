@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-de3d2ee
+ * @license Angular v4.0.0-rc.5-2489e4b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-de3d2ee
+ * @license Angular v4.0.0-rc.5-2489e4b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.0.0-rc.5-de3d2ee');
+var VERSION = new _angular_core.Version('4.0.0-rc.5-2489e4b');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -21198,6 +21198,7 @@ var ViewBuilder = (function () {
                 outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR
             ]),
             updateDirectives: updateDirectiveExpressions,
+            directive: dirAst.directive.type,
         }); };
         return { hostBindings: hostBindings, hostEvents: hostEvents };
     };
@@ -21404,12 +21405,12 @@ var ViewBuilder = (function () {
         var /** @type {?} */ updateRendererStmts = [];
         var /** @type {?} */ updateDirectivesStmts = [];
         var /** @type {?} */ nodeDefExprs = this.nodes.map(function (factory, nodeIndex) {
-            var _a = factory(), nodeDef = _a.nodeDef, updateDirectives = _a.updateDirectives, updateRenderer = _a.updateRenderer, sourceSpan = _a.sourceSpan;
+            var _a = factory(), nodeDef = _a.nodeDef, directive = _a.directive, updateDirectives = _a.updateDirectives, updateRenderer = _a.updateRenderer, sourceSpan = _a.sourceSpan;
             if (updateRenderer) {
-                updateRendererStmts.push.apply(updateRendererStmts, createUpdateStatements(nodeIndex, sourceSpan, updateRenderer));
+                updateRendererStmts.push.apply(updateRendererStmts, createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, null));
             }
             if (updateDirectives) {
-                updateDirectivesStmts.push.apply(updateDirectivesStmts, createUpdateStatements(nodeIndex, sourceSpan, updateDirectives));
+                updateDirectivesStmts.push.apply(updateDirectivesStmts, createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, directive));
             }
             // We use a comma expression to call the log function before
             // the nodeDef function, but still use the result of the nodeDef function
@@ -21422,9 +21423,10 @@ var ViewBuilder = (function () {
          * @param {?} nodeIndex
          * @param {?} sourceSpan
          * @param {?} expressions
+         * @param {?} directive
          * @return {?}
          */
-        function createUpdateStatements(nodeIndex, sourceSpan, expressions) {
+        function createUpdateStatements(nodeIndex, sourceSpan, expressions, directive) {
             var /** @type {?} */ updateStmts = [];
             var /** @type {?} */ exprs = expressions.map(function (_a) {
                 var sourceSpan = _a.sourceSpan, context = _a.context, value = _a.value;
@@ -21434,7 +21436,11 @@ var ViewBuilder = (function () {
                 updateStmts.push.apply(updateStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
                 return applySourceSpanToExpressionIfNeeded(currValExpr, sourceSpan);
             });
-            updateStmts.push(applySourceSpanToStatementIfNeeded(callCheckStmt(nodeIndex, exprs).toStmt(), sourceSpan));
+            if (expressions.length ||
+                (directive && (directive.lifecycleHooks.indexOf(_angular_core.ɵLifecycleHooks.DoCheck) !== -1 ||
+                    directive.lifecycleHooks.indexOf(_angular_core.ɵLifecycleHooks.OnInit) !== -1))) {
+                updateStmts.push(applySourceSpanToStatementIfNeeded(callCheckStmt(nodeIndex, exprs).toStmt(), sourceSpan));
+            }
             return updateStmts;
         }
     };
