@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-2489e4b
+ * @license Angular v4.0.0-rc.5-8e6995c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.0.0-rc.5-2489e4b');
+var VERSION = new Version('4.0.0-rc.5-8e6995c');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -7636,11 +7636,11 @@ var _Visitor = (function () {
     _Visitor.prototype._translateAttributes = function (el) {
         var _this = this;
         var /** @type {?} */ attributes = el.attrs;
-        var /** @type {?} */ i18nAttributeMeanings = {};
+        var /** @type {?} */ i18nParsedMessageMeta = {};
         attributes.forEach(function (attr) {
             if (attr.name.startsWith(_I18N_ATTR_PREFIX)) {
-                i18nAttributeMeanings[attr.name.slice(_I18N_ATTR_PREFIX.length)] =
-                    _parseMessageMeta(attr.value).meaning;
+                i18nParsedMessageMeta[attr.name.slice(_I18N_ATTR_PREFIX.length)] =
+                    _parseMessageMeta(attr.value);
             }
         });
         var /** @type {?} */ translatedAttributes = [];
@@ -7649,9 +7649,9 @@ var _Visitor = (function () {
                 // strip i18n specific attributes
                 return;
             }
-            if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
-                var /** @type {?} */ meaning = i18nAttributeMeanings[attr.name];
-                var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, '', '');
+            if (attr.value && attr.value != '' && i18nParsedMessageMeta.hasOwnProperty(attr.name)) {
+                var _a = i18nParsedMessageMeta[attr.name], meaning = _a.meaning, description = _a.description, id = _a.id;
+                var /** @type {?} */ message = _this._createI18nMessage([attr], meaning, description, id);
                 var /** @type {?} */ nodes = _this._translations.get(message);
                 if (nodes) {
                     if (nodes.length == 0) {
@@ -7662,11 +7662,11 @@ var _Visitor = (function () {
                         translatedAttributes.push(new Attribute$1(attr.name, value, attr.sourceSpan));
                     }
                     else {
-                        _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + _this._translations.digest(message) + "\")");
+                        _this._reportError(el, "Unexpected translation for attribute \"" + attr.name + "\" (id=\"" + (id || _this._translations.digest(message)) + "\")");
                     }
                 }
                 else {
-                    _this._reportError(el, "Translation unavailable for attribute \"" + attr.name + "\" (id=\"" + _this._translations.digest(message) + "\")");
+                    _this._reportError(el, "Translation unavailable for attribute \"" + attr.name + "\" (id=\"" + (id || _this._translations.digest(message)) + "\")");
                 }
             }
             else {

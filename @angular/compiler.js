@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-2489e4b
+ * @license Angular v4.0.0-rc.5-8e6995c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.5-2489e4b');
+const VERSION = new Version('4.0.0-rc.5-8e6995c');
 
 /**
  * @license
@@ -7341,11 +7341,11 @@ class _Visitor {
      */
     _translateAttributes(el) {
         const /** @type {?} */ attributes = el.attrs;
-        const /** @type {?} */ i18nAttributeMeanings = {};
+        const /** @type {?} */ i18nParsedMessageMeta = {};
         attributes.forEach(attr => {
             if (attr.name.startsWith(_I18N_ATTR_PREFIX)) {
-                i18nAttributeMeanings[attr.name.slice(_I18N_ATTR_PREFIX.length)] =
-                    _parseMessageMeta(attr.value).meaning;
+                i18nParsedMessageMeta[attr.name.slice(_I18N_ATTR_PREFIX.length)] =
+                    _parseMessageMeta(attr.value);
             }
         });
         const /** @type {?} */ translatedAttributes = [];
@@ -7354,9 +7354,9 @@ class _Visitor {
                 // strip i18n specific attributes
                 return;
             }
-            if (attr.value && attr.value != '' && i18nAttributeMeanings.hasOwnProperty(attr.name)) {
-                const /** @type {?} */ meaning = i18nAttributeMeanings[attr.name];
-                const /** @type {?} */ message = this._createI18nMessage([attr], meaning, '', '');
+            if (attr.value && attr.value != '' && i18nParsedMessageMeta.hasOwnProperty(attr.name)) {
+                const { meaning, description, id } = i18nParsedMessageMeta[attr.name];
+                const /** @type {?} */ message = this._createI18nMessage([attr], meaning, description, id);
                 const /** @type {?} */ nodes = this._translations.get(message);
                 if (nodes) {
                     if (nodes.length == 0) {
@@ -7367,11 +7367,11 @@ class _Visitor {
                         translatedAttributes.push(new Attribute$1(attr.name, value, attr.sourceSpan));
                     }
                     else {
-                        this._reportError(el, `Unexpected translation for attribute "${attr.name}" (id="${this._translations.digest(message)}")`);
+                        this._reportError(el, `Unexpected translation for attribute "${attr.name}" (id="${id || this._translations.digest(message)}")`);
                     }
                 }
                 else {
-                    this._reportError(el, `Translation unavailable for attribute "${attr.name}" (id="${this._translations.digest(message)}")`);
+                    this._reportError(el, `Translation unavailable for attribute "${attr.name}" (id="${id || this._translations.digest(message)}")`);
                 }
             }
             else {
