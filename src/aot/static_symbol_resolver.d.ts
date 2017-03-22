@@ -54,6 +54,7 @@ export declare class StaticSymbolResolver {
     private resolvedSymbols;
     private resolvedFilePaths;
     private importAs;
+    private symbolResourcePaths;
     constructor(host: StaticSymbolResolverHost, staticSymbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, errorRecorder?: (error: any, fileName: string) => void);
     resolveSymbol(staticSymbol: StaticSymbol): ResolvedStaticSymbol;
     /**
@@ -66,6 +67,12 @@ export declare class StaticSymbolResolver {
      * @param staticSymbol the symbol for which to generate a import symbol
      */
     getImportAs(staticSymbol: StaticSymbol): StaticSymbol;
+    /**
+     * getResourcePath produces the path to the original location of the symbol and should
+     * be used to determine the relative location of resource references recorded in
+     * symbol metadata.
+     */
+    getResourcePath(staticSymbol: StaticSymbol): string;
     /**
      * getTypeArity returns the number of generic type parameters the given symbol
      * has. If the symbol is not a type the result is null.
@@ -85,7 +92,7 @@ export declare class StaticSymbolResolver {
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
     getSymbolsOf(filePath: string): StaticSymbol[];
     private _createSymbolsOf(filePath);
-    private createResolvedSymbol(sourceSymbol, topLevelSymbolNames, metadata);
+    private createResolvedSymbol(sourceSymbol, topLevelPath, topLevelSymbolNames, metadata);
     private createExport(sourceSymbol, targetSymbol);
     private reportError(error, context, path?);
     /**
