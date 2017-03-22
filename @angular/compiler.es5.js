@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-5efc860
+ * @license Angular v4.0.0-rc.5-1bcbcfd
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.0.0-rc.5-5efc860');
+var VERSION = new Version('4.0.0-rc.5-1bcbcfd');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -14620,7 +14620,7 @@ function isValidType(value) {
  */
 function componentModuleUrl(reflector, type, cmpMetadata) {
     if (type instanceof StaticSymbol) {
-        return type.filePath;
+        return reflector.resourceUri(type);
     }
     var /** @type {?} */ moduleId = cmpMetadata.moduleId;
     if (typeof moduleId === 'string') {
@@ -22596,6 +22596,11 @@ var StaticAndDynamicReflectionCapabilities = (function () {
      */
     StaticAndDynamicReflectionCapabilities.prototype.importUri = function (type) { return this.staticDelegate.importUri(type); };
     /**
+     * @param {?} type
+     * @return {?}
+     */
+    StaticAndDynamicReflectionCapabilities.prototype.resourceUri = function (type) { return this.staticDelegate.resourceUri(type); };
+    /**
      * @param {?} name
      * @param {?} moduleUrl
      * @param {?} members
@@ -22679,6 +22684,14 @@ var StaticReflector = (function () {
     StaticReflector.prototype.importUri = function (typeOrFunc) {
         var /** @type {?} */ staticSymbol = this.findSymbolDeclaration(typeOrFunc);
         return staticSymbol ? staticSymbol.filePath : null;
+    };
+    /**
+     * @param {?} typeOrFunc
+     * @return {?}
+     */
+    StaticReflector.prototype.resourceUri = function (typeOrFunc) {
+        var /** @type {?} */ staticSymbol = this.findSymbolDeclaration(typeOrFunc);
+        return this.symbolResolver.getResourcePath(staticSymbol);
     };
     /**
      * @param {?} name
@@ -23472,6 +23485,7 @@ var StaticSymbolResolver = (function () {
         this.resolvedSymbols = new Map();
         this.resolvedFilePaths = new Set();
         this.importAs = new Map();
+        this.symbolResourcePaths = new Map();
     }
     /**
      * @param {?} staticSymbol
@@ -23519,6 +23533,16 @@ var StaticSymbolResolver = (function () {
             result = this.importAs.get(staticSymbol);
         }
         return result;
+    };
+    /**
+     * getResourcePath produces the path to the original location of the symbol and should
+     * be used to determine the relative location of resource references recorded in
+     * symbol metadata.
+     * @param {?} staticSymbol
+     * @return {?}
+     */
+    StaticSymbolResolver.prototype.getResourcePath = function (staticSymbol) {
+        return this.symbolResourcePaths.get(staticSymbol) || staticSymbol.filePath;
     };
     /**
      * getTypeArity returns the number of generic type parameters the given symbol
@@ -23630,17 +23654,32 @@ var StaticSymbolResolver = (function () {
         if (metadata['metadata']) {
             // handle direct declarations of the symbol
             var /** @type {?} */ topLevelSymbolNames_1 = new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));
+            var /** @type {?} */ origins_1 = metadata['origins'] || {};
             Object.keys(metadata['metadata']).forEach(function (metadataKey) {
                 var /** @type {?} */ symbolMeta = metadata['metadata'][metadataKey];
                 var /** @type {?} */ name = unescapeIdentifier(metadataKey);
-                var /** @type {?} */ canonicalSymbol = _this.getStaticSymbol(filePath, name);
+                var /** @type {?} */ symbol = _this.getStaticSymbol(filePath, name);
+                var /** @type {?} */ importSymbol = undefined;
                 if (metadata['importAs']) {
                     // Index bundle indexes should use the importAs module name instead of a reference
                     // to the .d.ts file directly.
-                    var /** @type {?} */ importSymbol = _this.getStaticSymbol(metadata['importAs'], name);
-                    _this.recordImportAs(canonicalSymbol, importSymbol);
+                    importSymbol = _this.getStaticSymbol(metadata['importAs'], name);
+                    _this.recordImportAs(symbol, importSymbol);
                 }
-                resolvedSymbols.push(_this.createResolvedSymbol(canonicalSymbol, topLevelSymbolNames_1, symbolMeta));
+                var /** @type {?} */ origin = origins_1[metadataKey];
+                if (origin) {
+                    // If the symbol is from a bundled index, use the declaration location of the
+                    // symbol so relative references (such as './my.html') will be calculated
+                    // correctly.
+                    var /** @type {?} */ originFilePath = _this.resolveModule(origin, filePath);
+                    if (!originFilePath) {
+                        _this.reportError(new Error("Couldn't resolve original symbol for " + origin + " from " + filePath), null);
+                    }
+                    else {
+                        _this.symbolResourcePaths.set(symbol, originFilePath);
+                    }
+                }
+                resolvedSymbols.push(_this.createResolvedSymbol(symbol, filePath, topLevelSymbolNames_1, symbolMeta));
             });
         }
         // handle the symbols in one of the re-export location
@@ -23691,11 +23730,12 @@ var StaticSymbolResolver = (function () {
     };
     /**
      * @param {?} sourceSymbol
+     * @param {?} topLevelPath
      * @param {?} topLevelSymbolNames
      * @param {?} metadata
      * @return {?}
      */
-    StaticSymbolResolver.prototype.createResolvedSymbol = function (sourceSymbol, topLevelSymbolNames, metadata) {
+    StaticSymbolResolver.prototype.createResolvedSymbol = function (sourceSymbol, topLevelPath, topLevelSymbolNames, metadata) {
         var /** @type {?} */ self = this;
         var ReferenceTransformer = (function (_super) {
             __extends(ReferenceTransformer, _super);
@@ -23739,7 +23779,7 @@ var StaticSymbolResolver = (function () {
                     }
                     else {
                         if (topLevelSymbolNames.has(name)) {
-                            return self.getStaticSymbol(sourceSymbol.filePath, name);
+                            return self.getStaticSymbol(topLevelPath, name);
                         }
                         // ambient value
                         null;

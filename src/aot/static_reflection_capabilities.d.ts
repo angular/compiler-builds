@@ -25,6 +25,7 @@ export declare class StaticAndDynamicReflectionCapabilities {
     setter(name: string): ɵSetterFn;
     method(name: string): ɵMethodFn;
     importUri(type: any): string;
+    resourceUri(type: any): string;
     resolveIdentifier(name: string, moduleUrl: string, members: string[], runtime: any): StaticSymbol;
     resolveEnum(enumIdentifier: any, name: string): any;
 }
