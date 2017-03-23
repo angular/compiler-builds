@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-08d8675
+ * @license Angular v4.0.0-rc.5-de87c47
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.5-08d8675');
+const VERSION = new Version('4.0.0-rc.5-de87c47');
 
 /**
  * @license
@@ -24851,7 +24851,7 @@ class ImportResolver {
      */
     getImportAs(symbol) { }
     /**
-     * Determine the airty of a type.
+     * Determine the arity of a type.
      * @abstract
      * @param {?} symbol
      * @return {?}
