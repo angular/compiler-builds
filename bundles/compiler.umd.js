@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.6-c8ab5cb
+ * @license Angular v4.0.0-rc.6-b800a0c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.6-c8ab5cb
+ * @license Angular v4.0.0-rc.6-b800a0c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.0.0-rc.6-c8ab5cb');
+var VERSION = new _angular_core.Version('4.0.0-rc.6-b800a0c');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -23698,7 +23698,7 @@ var StaticSymbolResolver = (function () {
                     importSymbol = _this.getStaticSymbol(metadata['importAs'], name);
                     _this.recordImportAs(symbol, importSymbol);
                 }
-                var /** @type {?} */ origin = origins_1[metadataKey];
+                var /** @type {?} */ origin = origins_1.hasOwnProperty(metadataKey) && origins_1[metadataKey];
                 if (origin) {
                     // If the symbol is from a bundled index, use the declaration location of the
                     // symbol so relative references (such as './my.html') will be calculated

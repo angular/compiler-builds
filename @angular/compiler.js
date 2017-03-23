@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.6-c8ab5cb
+ * @license Angular v4.0.0-rc.6-b800a0c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.6-c8ab5cb');
+const VERSION = new Version('4.0.0-rc.6-b800a0c');
 
 /**
  * @license
@@ -22840,7 +22840,7 @@ class StaticSymbolResolver {
                     importSymbol = this.getStaticSymbol(metadata['importAs'], name);
                     this.recordImportAs(symbol, importSymbol);
                 }
-                const /** @type {?} */ origin = origins[metadataKey];
+                const /** @type {?} */ origin = origins.hasOwnProperty(metadataKey) && origins[metadataKey];
                 if (origin) {
                     // If the symbol is from a bundled index, use the declaration location of the
                     // symbol so relative references (such as './my.html') will be calculated
