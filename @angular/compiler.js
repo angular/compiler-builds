@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-98cb974
+ * @license Angular v4.0.0-rc.5-08d8675
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.5-98cb974');
+const VERSION = new Version('4.0.0-rc.5-08d8675');
 
 /**
  * @license
@@ -10978,6 +10978,22 @@ const TEMPLATE_ATTR = 'template';
 const TEMPLATE_ATTR_PREFIX = '*';
 const CLASS_ATTR = 'class';
 const TEXT_CSS_SELECTOR = CssSelector.parse('*')[0];
+const TEMPLATE_ELEMENT_DEPRECATION_WARNING = 'The <template> element is deprecated. Use <ng-template> instead';
+const TEMPLATE_ATTR_DEPRECATION_WARNING = 'The template attribute is deprecated. Use an ng-template element instead.';
+let warningCounts = {};
+/**
+ * @param {?} warnings
+ * @return {?}
+ */
+function warnOnlyOnce(warnings) {
+    return (error) => {
+        if (warnings.indexOf(error.msg) !== -1) {
+            warningCounts[error.msg] = (warningCounts[error.msg] || 0) + 1;
+            return warningCounts[error.msg] <= 1;
+        }
+        return true;
+    };
+}
 /**
  * Provides an array of {@link TemplateAstVisitor}s which will be used to transform
  * parsed templates before compilation is invoked, allowing custom expression syntax
@@ -11036,7 +11052,9 @@ class TemplateParser {
      */
     parse(component, template, directives, pipes, schemas, templateUrl) {
         const /** @type {?} */ result = this.tryParse(component, template, directives, pipes, schemas, templateUrl);
-        const /** @type {?} */ warnings = result.errors.filter(error => error.level === ParseErrorLevel.WARNING);
+        const /** @type {?} */ warnings = result.errors.filter(error => error.level === ParseErrorLevel.WARNING).filter(warnOnlyOnce([
+            TEMPLATE_ATTR_DEPRECATION_WARNING, TEMPLATE_ELEMENT_DEPRECATION_WARNING
+        ]));
         const /** @type {?} */ errors = result.errors.filter(error => error.level === ParseErrorLevel.ERROR);
         if (warnings.length > 0) {
             this._console.warn(`Template parse warnings:\n${warnings.join('\n')}`);
@@ -11265,7 +11283,7 @@ class TemplateParseVisitor {
             let /** @type {?} */ prefixToken;
             let /** @type {?} */ normalizedName = this._normalizeAttributeName(attr.name);
             if (this.config.enableLegacyTemplate && normalizedName == TEMPLATE_ATTR) {
-                this._reportError(`The template attribute is deprecated. Use an ng-template element instead.`, attr.sourceSpan, ParseErrorLevel.WARNING);
+                this._reportError(TEMPLATE_ATTR_DEPRECATION_WARNING, attr.sourceSpan, ParseErrorLevel.WARNING);
                 templateBindingsSource = attr.value;
             }
             else if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
@@ -11882,7 +11900,7 @@ function isTemplate(el, enableLegacyTemplate, reportDeprecation) {
     // `<template>` is HTML and case insensitive
     if (tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
         if (enableLegacyTemplate && tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
-            reportDeprecation(`The <template> element is deprecated. Use <ng-template> instead`, el.sourceSpan);
+            reportDeprecation(TEMPLATE_ELEMENT_DEPRECATION_WARNING, el.sourceSpan);
             return true;
         }
         return false;
@@ -19506,7 +19524,7 @@ class _AstToIrVisitor {
         // Remove the mapping. This is not strictly required as the converter only traverses each node
         // once but is safer if the conversion is changed to traverse the nodes more than once.
         this._nodeMap.delete(leftMostSafe);
-        // If we allcoated a temporary, release it.
+        // If we allocated a temporary, release it.
         if (temporary) {
             this.releaseTemporary(temporary);
         }
