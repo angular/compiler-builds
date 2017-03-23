@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.6-92084f2
+ * @license Angular v4.0.0-rc.6-0dda01e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.6-92084f2
+ * @license Angular v4.0.0-rc.6-0dda01e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.0.0-rc.6-92084f2');
+var VERSION = new _angular_core.Version('4.0.0-rc.6-0dda01e');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -20797,13 +20797,7 @@ var ViewBuilder = (function () {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 var /** @type {?} */ queryId = queryIndex + 1;
                 var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
-                var /** @type {?} */ flags = 67108864;
-                if (queryIds_1.staticQueryIds.has(queryId)) {
-                    flags |= 134217728 /* StaticQuery */;
-                }
-                else {
-                    flags |= 268435456 /* DynamicQuery */;
-                }
+                var /** @type {?} */ flags = 67108864 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds_1, queryId, query.first);
                 _this.nodes.push(function () { return ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -21137,16 +21131,8 @@ var ViewBuilder = (function () {
         // reserve the space in the nodeDefs array so we can add children
         this.nodes.push(null);
         dirAst.directive.queries.forEach(function (query, queryIndex) {
-            var /** @type {?} */ flags = 33554432;
             var /** @type {?} */ queryId = dirAst.contentQueryStartId + queryIndex;
-            // Note: We only make queries static that query for a single item.
-            // This is because of backwards compatibility with the old view compiler...
-            if (queryIds.staticQueryIds.has(queryId) && query.first) {
-                flags |= 134217728 /* StaticQuery */;
-            }
-            else {
-                flags |= 268435456 /* DynamicQuery */;
-            }
+            var /** @type {?} */ flags = 33554432 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
             var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             _this.nodes.push(function () { return ({
                 sourceSpan: dirAst.sourceSpan,
@@ -21905,6 +21891,24 @@ function elementEventNameAndTarget(eventAst, dirAst) {
     else {
         return eventAst;
     }
+}
+/**
+ * @param {?} queryIds
+ * @param {?} queryId
+ * @param {?} isFirst
+ * @return {?}
+ */
+function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
+    var /** @type {?} */ flags = 0;
+    // Note: We only make queries static that query for a single item.
+    // This is because of backwards compatibility with the old view compiler...
+    if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
+        flags |= 134217728 /* StaticQuery */;
+    }
+    else {
+        flags |= 268435456 /* DynamicQuery */;
+    }
+    return flags;
 }
 /**
  * @license
@@ -23694,7 +23698,7 @@ var StaticSymbolResolver = (function () {
                     importSymbol = _this.getStaticSymbol(metadata['importAs'], name);
                     _this.recordImportAs(symbol, importSymbol);
                 }
-                var /** @type {?} */ origin = origins_1[metadataKey];
+                var /** @type {?} */ origin = origins_1.hasOwnProperty(metadataKey) && origins_1[metadataKey];
                 if (origin) {
                     // If the symbol is from a bundled index, use the declaration location of the
                     // symbol so relative references (such as './my.html') will be calculated

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.6-92084f2
+ * @license Angular v4.0.0-rc.6-0dda01e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.6-92084f2');
+const VERSION = new Version('4.0.0-rc.6-0dda01e');
 
 /**
  * @license
@@ -19974,13 +19974,7 @@ class ViewBuilder {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 const /** @type {?} */ queryId = queryIndex + 1;
                 const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
-                let /** @type {?} */ flags = 67108864;
-                if (queryIds.staticQueryIds.has(queryId)) {
-                    flags |= 134217728 /* StaticQuery */;
-                }
-                else {
-                    flags |= 268435456 /* DynamicQuery */;
-                }
+                const /** @type {?} */ flags = 67108864 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
                 this.nodes.push(() => ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -20305,16 +20299,8 @@ class ViewBuilder {
         // reserve the space in the nodeDefs array so we can add children
         this.nodes.push(null);
         dirAst.directive.queries.forEach((query, queryIndex) => {
-            let /** @type {?} */ flags = 33554432;
             const /** @type {?} */ queryId = dirAst.contentQueryStartId + queryIndex;
-            // Note: We only make queries static that query for a single item.
-            // This is because of backwards compatibility with the old view compiler...
-            if (queryIds.staticQueryIds.has(queryId) && query.first) {
-                flags |= 134217728 /* StaticQuery */;
-            }
-            else {
-                flags |= 268435456 /* DynamicQuery */;
-            }
+            const /** @type {?} */ flags = 33554432 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
             const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
@@ -21067,6 +21053,24 @@ function elementEventNameAndTarget(eventAst, dirAst) {
     else {
         return eventAst;
     }
+}
+/**
+ * @param {?} queryIds
+ * @param {?} queryId
+ * @param {?} isFirst
+ * @return {?}
+ */
+function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
+    let /** @type {?} */ flags = 0;
+    // Note: We only make queries static that query for a single item.
+    // This is because of backwards compatibility with the old view compiler...
+    if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
+        flags |= 134217728 /* StaticQuery */;
+    }
+    else {
+        flags |= 268435456 /* DynamicQuery */;
+    }
+    return flags;
 }
 
 /**
@@ -22836,7 +22840,7 @@ class StaticSymbolResolver {
                     importSymbol = this.getStaticSymbol(metadata['importAs'], name);
                     this.recordImportAs(symbol, importSymbol);
                 }
-                const /** @type {?} */ origin = origins[metadataKey];
+                const /** @type {?} */ origin = origins.hasOwnProperty(metadataKey) && origins[metadataKey];
                 if (origin) {
                     // If the symbol is from a bundled index, use the declaration location of the
                     // symbol so relative references (such as './my.html') will be calculated
