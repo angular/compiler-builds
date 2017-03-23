@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-9319b5f
+ * @license Angular v4.0.0-rc.5-98cb974
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-rc.5-9319b5f');
+const VERSION = new Version('4.0.0-rc.5-98cb974');
 
 /**
  * @license
@@ -19506,7 +19506,7 @@ class _AstToIrVisitor {
         // Remove the mapping. This is not strictly required as the converter only traverses each node
         // once but is safer if the conversion is changed to traverse the nodes more than once.
         this._nodeMap.delete(leftMostSafe);
-        // If we allocated a temporary, release it.
+        // If we allcoated a temporary, release it.
         if (temporary) {
             this.releaseTemporary(temporary);
         }

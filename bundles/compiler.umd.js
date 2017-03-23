@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-rc.5-9319b5f
+ * @license Angular v4.0.0-rc.5-98cb974
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-rc.5-9319b5f
+ * @license Angular v4.0.0-rc.5-98cb974
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.0.0-rc.5-9319b5f');
+var VERSION = new _angular_core.Version('4.0.0-rc.5-98cb974');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -20314,7 +20314,7 @@ var _AstToIrVisitor = (function () {
         // Remove the mapping. This is not strictly required as the converter only traverses each node
         // once but is safer if the conversion is changed to traverse the nodes more than once.
         this._nodeMap.delete(leftMostSafe);
-        // If we allocated a temporary, release it.
+        // If we allcoated a temporary, release it.
         if (temporary) {
             this.releaseTemporary(temporary);
         }
