@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-d92930e
+ * @license Angular v4.0.0-b8d5f87
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-d92930e');
+const VERSION = new Version('4.0.0-b8d5f87');
 
 /**
  * @license
@@ -8307,12 +8307,12 @@ class Xliff extends Serializer {
     load(content, url) {
         // xliff to xml nodes
         const /** @type {?} */ xliffParser = new XliffParser();
-        const { locale, mlNodesByMsgId, errors } = xliffParser.parse(content, url);
+        const { locale, msgIdToHtml, errors } = xliffParser.parse(content, url);
         // xml nodes to i18n nodes
         const /** @type {?} */ i18nNodesByMsgId = {};
         const /** @type {?} */ converter = new XmlToI18n();
-        Object.keys(mlNodesByMsgId).forEach(msgId => {
-            const { i18nNodes, errors: e } = converter.convert(mlNodesByMsgId[msgId]);
+        Object.keys(msgIdToHtml).forEach(msgId => {
+            const { i18nNodes, errors: e } = converter.convert(msgIdToHtml[msgId], url);
             errors.push(...e);
             i18nNodesByMsgId[msgId] = i18nNodes;
         });
@@ -8350,16 +8350,11 @@ class _WriteVisitor {
      * @return {?}
      */
     visitIcu(icu, context) {
-        if (this._isInIcu) {
-            // nested ICU is not supported
-            throw new Error('xliff does not support nested ICU messages');
-        }
-        this._isInIcu = true;
-        // TODO(vicb): support ICU messages
-        // https://lists.oasis-open.org/archives/xliff/201201/msg00028.html
-        // http://docs.oasis-open.org/xliff/v1.2/xliff-profile-po/xliff-profile-po-1.2-cd02.html
-        const /** @type {?} */ nodes = [];
-        this._isInIcu = false;
+        const /** @type {?} */ nodes = [new Text$2(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
+        Object.keys(icu.cases).forEach((c) => {
+            nodes.push(new Text$2(`${c} {`), ...icu.cases[c].visit(this), new Text$2(`} `));
+        });
+        nodes.push(new Text$2(`}`));
         return nodes;
     }
     /**
@@ -8398,7 +8393,6 @@ class _WriteVisitor {
      * @return {?}
      */
     serialize(nodes) {
-        this._isInIcu = false;
         return [].concat(...nodes.map(node => node.visit(this)));
     }
 }
@@ -8412,13 +8406,13 @@ class XliffParser {
      * @return {?}
      */
     parse(xliff, url) {
-        this._unitMlNodes = [];
-        this._mlNodesByMsgId = {};
+        this._unitMlString = null;
+        this._msgIdToHtml = {};
         const /** @type {?} */ xml = new XmlParser().parse(xliff, url, false);
         this._errors = xml.errors;
         visitAll(this, xml.rootNodes, null);
         return {
-            mlNodesByMsgId: this._mlNodesByMsgId,
+            msgIdToHtml: this._msgIdToHtml,
             errors: this._errors,
             locale: this._locale,
         };
@@ -8431,20 +8425,20 @@ class XliffParser {
     visitElement(element, context) {
         switch (element.name) {
             case _UNIT_TAG:
-                this._unitMlNodes = null;
+                this._unitMlString = null;
                 const /** @type {?} */ idAttr = element.attrs.find((attr) => attr.name === 'id');
                 if (!idAttr) {
                     this._addError(element, `<${_UNIT_TAG}> misses the "id" attribute`);
                 }
                 else {
                     const /** @type {?} */ id = idAttr.value;
-                    if (this._mlNodesByMsgId.hasOwnProperty(id)) {
+                    if (this._msgIdToHtml.hasOwnProperty(id)) {
                         this._addError(element, `Duplicated translations for msg ${id}`);
                     }
                     else {
                         visitAll(this, element.children, null);
-                        if (this._unitMlNodes) {
-                            this._mlNodesByMsgId[id] = this._unitMlNodes;
+                        if (typeof this._unitMlString === 'string') {
+                            this._msgIdToHtml[id] = this._unitMlString;
                         }
                         else {
                             this._addError(element, `Message ${id} misses a translation`);
@@ -8456,7 +8450,11 @@ class XliffParser {
                 // ignore source message
                 break;
             case _TARGET_TAG:
-                this._unitMlNodes = element.children;
+                const /** @type {?} */ innerTextStart = element.startSourceSpan.end.offset;
+                const /** @type {?} */ innerTextEnd = element.endSourceSpan.start.offset;
+                const /** @type {?} */ content = element.startSourceSpan.start.file.content;
+                const /** @type {?} */ innerText = content.slice(innerTextStart, innerTextEnd);
+                this._unitMlString = innerText;
                 break;
             case _FILE_TAG:
                 const /** @type {?} */ localeAttr = element.attrs.find((attr) => attr.name === 'target-language');
@@ -8512,13 +8510,18 @@ class XliffParser {
 }
 class XmlToI18n {
     /**
-     * @param {?} nodes
+     * @param {?} message
+     * @param {?} url
      * @return {?}
      */
-    convert(nodes) {
-        this._errors = [];
+    convert(message, url) {
+        const /** @type {?} */ xmlIcu = new XmlParser().parse(message, url, true);
+        this._errors = xmlIcu.errors;
+        const /** @type {?} */ i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
+            [] :
+            visitAll(this, xmlIcu.rootNodes);
         return {
-            i18nNodes: visitAll(this, nodes),
+            i18nNodes: i18nNodes,
             errors: this._errors,
         };
     }
@@ -8550,13 +8553,24 @@ class XmlToI18n {
      * @param {?} context
      * @return {?}
      */
-    visitExpansion(icu, context) { }
+    visitExpansion(icu, context) {
+        const /** @type {?} */ caseMap = {};
+        visitAll(this, icu.cases).forEach((c) => {
+            caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
+        });
+        return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
+    }
     /**
      * @param {?} icuCase
      * @param {?} context
      * @return {?}
      */
-    visitExpansionCase(icuCase, context) { }
+    visitExpansionCase(icuCase, context) {
+        return {
+            value: icuCase.value,
+            nodes: visitAll(this, icuCase.expression),
+        };
+    }
     /**
      * @param {?} comment
      * @param {?} context
