@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-a5c972a
+ * @license Angular v4.0.0-6269d28
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-a5c972a');
+const VERSION = new Version('4.0.0-6269d28');
 
 /**
  * @license
@@ -21984,7 +21984,7 @@ class StaticReflector {
             const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             propMetadata = {};
             if (classMetadata['extends']) {
-                const /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
+                const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
                 if (parentType instanceof StaticSymbol) {
                     const /** @type {?} */ parentPropMetadata = this.propMetadata(parentType);
                     Object.keys(parentPropMetadata).forEach((parentProp) => {
@@ -22043,7 +22043,7 @@ class StaticReflector {
                     });
                 }
                 else if (classMetadata['extends']) {
-                    const /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
+                    const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
                     if (parentType instanceof StaticSymbol) {
                         parameters = this.parameters(parentType);
                     }
@@ -22070,7 +22070,7 @@ class StaticReflector {
             const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             methodNames = {};
             if (classMetadata['extends']) {
-                const /** @type {?} */ parentType = this.simplify(type, classMetadata['extends']);
+                const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
                 if (parentType instanceof StaticSymbol) {
                     const /** @type {?} */ parentMethodNames = this._methodNames(parentType);
                     Object.keys(parentMethodNames).forEach((parentProp) => {
@@ -22683,6 +22683,7 @@ class StaticSymbolResolver {
         this.resolvedFilePaths = new Set();
         this.importAs = new Map();
         this.symbolResourcePaths = new Map();
+        this.symbolFromFile = new Map();
     }
     /**
      * @param {?} staticSymbol
@@ -22770,6 +22771,25 @@ class StaticSymbolResolver {
         sourceSymbol.assertNoMembers();
         targetSymbol.assertNoMembers();
         this.importAs.set(sourceSymbol, targetSymbol);
+    }
+    /**
+     * Invalidate all information derived from the given file.
+     *
+     * @param {?} fileName the file to invalidate
+     * @return {?}
+     */
+    invalidateFile(fileName) {
+        this.metadataCache.delete(fileName);
+        this.resolvedFilePaths.delete(fileName);
+        const /** @type {?} */ symbols = this.symbolFromFile.get(fileName);
+        if (symbols) {
+            this.symbolFromFile.delete(fileName);
+            for (const /** @type {?} */ symbol of symbols) {
+                this.resolvedSymbols.delete(symbol);
+                this.importAs.delete(symbol);
+                this.symbolResourcePaths.delete(symbol);
+            }
+        }
     }
     /**
      * @param {?} staticSymbol
@@ -22918,6 +22938,7 @@ class StaticSymbolResolver {
             }
         }
         resolvedSymbols.forEach((resolvedSymbol) => this.resolvedSymbols.set(resolvedSymbol.symbol, resolvedSymbol));
+        this.symbolFromFile.set(filePath, resolvedSymbols.map(resolvedSymbol => resolvedSymbol.symbol));
     }
     /**
      * @param {?} sourceSymbol
