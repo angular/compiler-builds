@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-23bf348
+ * @license Angular v4.0.0-902bb2f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-23bf348');
+const VERSION = new Version('4.0.0-902bb2f');
 
 /**
  * @license
@@ -12311,6 +12311,9 @@ class DirectiveNormalizer {
         let /** @type {?} */ normalizedTemplateSync = null;
         let /** @type {?} */ normalizedTemplateAsync;
         if (prenormData.template != null) {
+            if (prenormData.templateUrl != null) {
+                throw syntaxError(`'${ɵstringify(prenormData.componentType)}' component cannot define both template and templateUrl`);
+            }
             if (typeof prenormData.template !== 'string') {
                 throw syntaxError(`The template specified for component ${ɵstringify(prenormData.componentType)} is not a string`);
             }
