@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-331b9f6
+ * @license Angular v4.0.0-9c77a7c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-331b9f6');
+const VERSION = new Version('4.0.0-9c77a7c');
 
 /**
  * @license
@@ -12325,6 +12325,9 @@ class DirectiveNormalizer {
         let /** @type {?} */ normalizedTemplateSync = null;
         let /** @type {?} */ normalizedTemplateAsync;
         if (prenormData.template != null) {
+            if (prenormData.templateUrl != null) {
+                throw syntaxError(`'${ɵstringify(prenormData.componentType)}' component cannot define both template and templateUrl`);
+            }
             if (typeof prenormData.template !== 'string') {
                 throw syntaxError(`The template specified for component ${ɵstringify(prenormData.componentType)} is not a string`);
             }
@@ -20465,7 +20468,8 @@ class ViewBuilder {
             return EventHandlerVars.event;
         }
         let /** @type {?} */ currViewExpr = VIEW_VAR;
-        for (let /** @type {?} */ currBuilder = this; currBuilder; currBuilder = currBuilder.parent, currViewExpr = currViewExpr.prop('parent')) {
+        for (let /** @type {?} */ currBuilder = this; currBuilder; currBuilder = currBuilder.parent,
+            currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
             // check references
             const /** @type {?} */ refNodeIndex = currBuilder.refNodeIndices[name];
             if (refNodeIndex != null) {
@@ -20543,7 +20547,7 @@ class ViewBuilder {
             let /** @type {?} */ compBuilder = this;
             while (compBuilder.parent) {
                 compBuilder = compBuilder.parent;
-                compViewExpr = compViewExpr.prop('parent');
+                compViewExpr = compViewExpr.prop('parent').cast(DYNAMIC_TYPE);
             }
             const /** @type {?} */ pipeNodeIndex = compBuilder.purePipeNodeIndices[name];
             const /** @type {?} */ pipeValueExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
