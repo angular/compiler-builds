@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-902bb2f
+ * @license Angular v4.0.0-23bf348
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-902bb2f
+ * @license Angular v4.0.0-23bf348
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.0.0-902bb2f');
+var VERSION = new _angular_core.Version('4.0.0-23bf348');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -12790,9 +12790,6 @@ var DirectiveNormalizer = (function () {
         var /** @type {?} */ normalizedTemplateSync = null;
         var /** @type {?} */ normalizedTemplateAsync;
         if (prenormData.template != null) {
-            if (prenormData.templateUrl != null) {
-                throw syntaxError("'" + _angular_core.ɵstringify(prenormData.componentType) + "' component cannot define both template and templateUrl");
-            }
             if (typeof prenormData.template !== 'string') {
                 throw syntaxError("The template specified for component " + _angular_core.ɵstringify(prenormData.componentType) + " is not a string");
             }
