@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-d58a242
+ * @license Angular v4.0.0-331b9f6
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.0.0-d58a242');
+const VERSION = new Version('4.0.0-331b9f6');
 
 /**
  * @license
@@ -20465,8 +20465,7 @@ class ViewBuilder {
             return EventHandlerVars.event;
         }
         let /** @type {?} */ currViewExpr = VIEW_VAR;
-        for (let /** @type {?} */ currBuilder = this; currBuilder; currBuilder = currBuilder.parent,
-            currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
+        for (let /** @type {?} */ currBuilder = this; currBuilder; currBuilder = currBuilder.parent, currViewExpr = currViewExpr.prop('parent')) {
             // check references
             const /** @type {?} */ refNodeIndex = currBuilder.refNodeIndices[name];
             if (refNodeIndex != null) {
@@ -20544,7 +20543,7 @@ class ViewBuilder {
             let /** @type {?} */ compBuilder = this;
             while (compBuilder.parent) {
                 compBuilder = compBuilder.parent;
-                compViewExpr = compViewExpr.prop('parent').cast(DYNAMIC_TYPE);
+                compViewExpr = compViewExpr.prop('parent');
             }
             const /** @type {?} */ pipeNodeIndex = compBuilder.purePipeNodeIndices[name];
             const /** @type {?} */ pipeValueExpr = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([

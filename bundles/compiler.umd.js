@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.0.0-d58a242
+ * @license Angular v4.0.0-331b9f6
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.0.0-d58a242
+ * @license Angular v4.0.0-331b9f6
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.0.0-d58a242');
+var VERSION = new _angular_core.Version('4.0.0-331b9f6');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -21299,8 +21299,7 @@ var ViewBuilder = (function () {
             return EventHandlerVars.event;
         }
         var /** @type {?} */ currViewExpr = VIEW_VAR;
-        for (var /** @type {?} */ currBuilder = this; currBuilder; currBuilder = currBuilder.parent,
-            currViewExpr = currViewExpr.prop('parent').cast(DYNAMIC_TYPE)) {
+        for (var /** @type {?} */ currBuilder = this; currBuilder; currBuilder = currBuilder.parent, currViewExpr = currViewExpr.prop('parent')) {
             // check references
             var /** @type {?} */ refNodeIndex = currBuilder.refNodeIndices[name];
             if (refNodeIndex != null) {
@@ -21378,7 +21377,7 @@ var ViewBuilder = (function () {
             var /** @type {?} */ compBuilder = this;
             while (compBuilder.parent) {
                 compBuilder = compBuilder.parent;
-                compViewExpr = compViewExpr.prop('parent').cast(DYNAMIC_TYPE);
+                compViewExpr = compViewExpr.prop('parent');
             }
             var /** @type {?} */ pipeNodeIndex = compBuilder.purePipeNodeIndices[name];
             var /** @type {?} */ pipeValueExpr_1 = importExpr(createIdentifier(Identifiers.nodeValue)).callFn([
