@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.0-8ef621a
+ * @license Angular v4.1.0-beta.0-28bf222
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.0-beta.0-8ef621a');
+const VERSION = new Version('4.1.0-beta.0-28bf222');
 
 /**
  * @license
@@ -13989,9 +13989,11 @@ class CompileMetadataResolver {
         if (dirMeta && dirMeta.metadata.isComponent) {
             return { componentType: dirType, componentFactory: dirMeta.metadata.componentFactory };
         }
-        const /** @type {?} */ dirSummary = (this._loadSummary(dirType, CompileSummaryKind.Directive));
-        if (dirSummary && dirSummary.isComponent) {
-            return { componentType: dirType, componentFactory: dirSummary.componentFactory };
+        else {
+            const /** @type {?} */ dirSummary = (this._loadSummary(dirType, CompileSummaryKind.Directive));
+            if (dirSummary && dirSummary.isComponent) {
+                return { componentType: dirType, componentFactory: dirSummary.componentFactory };
+            }
         }
         if (throwIfNotFound) {
             throw syntaxError(`${dirType.name} cannot be used as an entry component.`);
@@ -21163,7 +21165,7 @@ function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
     // as the type summaries already contain the transitive data that they require
     // (in a minimal way).
     types.forEach((typeSummary) => {
-        serializer.addOrMergeSummary({ symbol: typeSummary.type.reference, metadata: null, type: typeSummary });
+        serializer.addOrMergeSummary({ symbol: typeSummary.type.reference, metadata: { __symbolic: 'class' }, type: typeSummary });
         if (typeSummary.summaryKind === CompileSummaryKind.NgModule) {
             const /** @type {?} */ ngModuleSummary = (typeSummary);
             ngModuleSummary.exportedDirectives.concat(ngModuleSummary.exportedPipes).forEach((id) => {
@@ -21210,21 +21212,10 @@ class Serializer$1 extends ValueTransformer {
     addOrMergeSummary(summary) {
         let /** @type {?} */ symbolMeta = summary.metadata;
         if (symbolMeta && symbolMeta.__symbolic === 'class') {
-            // For classes, we keep everything except their class decorators.
-            // We need to keep e.g. the ctor args, method names, method decorators
-            // so that the class can be extended in another compilation unit.
-            // We don't keep the class decorators as
-            // 1) they refer to data
-            //   that should not cause a rebuild of downstream compilation units
-            //   (e.g. inline templates of @Component, or @NgModule.declarations)
-            // 2) their data is already captured in TypeSummaries, e.g. DirectiveSummary.
-            const /** @type {?} */ clone = {};
-            Object.keys(symbolMeta).forEach((propName) => {
-                if (propName !== 'decorators') {
-                    clone[propName] = symbolMeta[propName];
-                }
-            });
-            symbolMeta = clone;
+            // For classes, we only keep their statics and arity, but not the metadata
+            // of the class itself as that has been captured already via other summaries
+            // (e.g. DirectiveSummary, ...).
+            symbolMeta = { __symbolic: 'class', statics: symbolMeta.statics, arity: symbolMeta.arity };
         }
         let /** @type {?} */ processedSummary = this.processedSummaryBySymbol.get(summary.symbol);
         if (!processedSummary) {
@@ -21881,14 +21872,12 @@ function shouldIgnore(value) {
  */
 class StaticReflector {
     /**
-     * @param {?} summaryResolver
      * @param {?} symbolResolver
      * @param {?=} knownMetadataClasses
      * @param {?=} knownMetadataFunctions
      * @param {?=} errorRecorder
      */
-    constructor(summaryResolver, symbolResolver, knownMetadataClasses = [], knownMetadataFunctions = [], errorRecorder) {
-        this.summaryResolver = summaryResolver;
+    constructor(symbolResolver, knownMetadataClasses = [], knownMetadataFunctions = [], errorRecorder) {
         this.symbolResolver = symbolResolver;
         this.errorRecorder = errorRecorder;
         this.annotationCache = new Map();
@@ -21896,20 +21885,9 @@ class StaticReflector {
         this.parameterCache = new Map();
         this.methodCache = new Map();
         this.conversionMap = new Map();
-        this.annotationForParentClassWithSummaryKind = new Map();
-        this.annotationNames = new Map();
         this.initializeConversionMap();
         knownMetadataClasses.forEach((kc) => this._registerDecoratorOrConstructor(this.getStaticSymbol(kc.filePath, kc.name), kc.ctor));
         knownMetadataFunctions.forEach((kf) => this._registerFunction(this.getStaticSymbol(kf.filePath, kf.name), kf.fn));
-        this.annotationForParentClassWithSummaryKind.set(CompileSummaryKind.Directive, [Directive, Component]);
-        this.annotationForParentClassWithSummaryKind.set(CompileSummaryKind.Pipe, [Pipe]);
-        this.annotationForParentClassWithSummaryKind.set(CompileSummaryKind.NgModule, [NgModule]);
-        this.annotationForParentClassWithSummaryKind.set(CompileSummaryKind.Injectable, [Injectable, Pipe, Directive, Component, NgModule]);
-        this.annotationNames.set(Directive, 'Directive');
-        this.annotationNames.set(Component, 'Component');
-        this.annotationNames.set(Pipe, 'Pipe');
-        this.annotationNames.set(NgModule, 'NgModule');
-        this.annotationNames.set(Injectable, 'Injectable');
     }
     /**
      * @param {?} typeOrFunc
@@ -21985,27 +21963,16 @@ class StaticReflector {
         if (!annotations) {
             annotations = [];
             const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-            const /** @type {?} */ parentType = this.findParentType(type, classMetadata);
-            if (parentType) {
-                const /** @type {?} */ parentAnnotations = this.annotations(parentType);
-                annotations.push(...parentAnnotations);
-            }
-            let /** @type {?} */ ownAnnotations = [];
-            if (classMetadata['decorators']) {
-                ownAnnotations = this.simplify(type, classMetadata['decorators']);
-                annotations.push(...ownAnnotations);
-            }
-            if (parentType && !this.summaryResolver.isLibraryFile(type.filePath) &&
-                this.summaryResolver.isLibraryFile(parentType.filePath)) {
-                const /** @type {?} */ summary = this.summaryResolver.resolveSummary(parentType);
-                if (summary && summary.type) {
-                    const /** @type {?} */ requiredAnnotationTypes = this.annotationForParentClassWithSummaryKind.get(summary.type.summaryKind);
-                    const /** @type {?} */ typeHasRequiredAnnotation = requiredAnnotationTypes.some(requiredType => ownAnnotations.some(ann => ann instanceof requiredType));
-                    if (!typeHasRequiredAnnotation) {
-                        this.reportError(syntaxError(`Class ${type.name} in ${type.filePath} extends from a ${CompileSummaryKind[summary.type.summaryKind]} in another compilation unit without duplicating the decorator. ` +
-                            `Please add a ${requiredAnnotationTypes.map(type => this.annotationNames.get(type)).join(' or ')} decorator to the class.`), type);
-                    }
+            if (classMetadata['extends']) {
+                const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
+                if (parentType && (parentType instanceof StaticSymbol)) {
+                    const /** @type {?} */ parentAnnotations = this.annotations(parentType);
+                    annotations.push(...parentAnnotations);
                 }
+            }
+            if (classMetadata['decorators']) {
+                const /** @type {?} */ ownAnnotations = this.simplify(type, classMetadata['decorators']);
+                annotations.push(...ownAnnotations);
             }
             this.annotationCache.set(type, annotations.filter(ann => !!ann));
         }
@@ -22020,12 +21987,14 @@ class StaticReflector {
         if (!propMetadata) {
             const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             propMetadata = {};
-            const /** @type {?} */ parentType = this.findParentType(type, classMetadata);
-            if (parentType) {
-                const /** @type {?} */ parentPropMetadata = this.propMetadata(parentType);
-                Object.keys(parentPropMetadata).forEach((parentProp) => {
-                    propMetadata[parentProp] = parentPropMetadata[parentProp];
-                });
+            if (classMetadata['extends']) {
+                const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
+                if (parentType instanceof StaticSymbol) {
+                    const /** @type {?} */ parentPropMetadata = this.propMetadata(parentType);
+                    Object.keys(parentPropMetadata).forEach((parentProp) => {
+                        propMetadata[parentProp] = parentPropMetadata[parentProp];
+                    });
+                }
             }
             const /** @type {?} */ members = classMetadata['members'] || {};
             Object.keys(members).forEach((propName) => {
@@ -22058,7 +22027,6 @@ class StaticReflector {
             let /** @type {?} */ parameters = this.parameterCache.get(type);
             if (!parameters) {
                 const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
-                const /** @type {?} */ parentType = this.findParentType(type, classMetadata);
                 const /** @type {?} */ members = classMetadata ? classMetadata['members'] : null;
                 const /** @type {?} */ ctorData = members ? members['__ctor__'] : null;
                 if (ctorData) {
@@ -22078,8 +22046,11 @@ class StaticReflector {
                         parameters.push(nestedResult);
                     });
                 }
-                else if (parentType) {
-                    parameters = this.parameters(parentType);
+                else if (classMetadata['extends']) {
+                    const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
+                    if (parentType instanceof StaticSymbol) {
+                        parameters = this.parameters(parentType);
+                    }
                 }
                 if (!parameters) {
                     parameters = [];
@@ -22102,12 +22073,14 @@ class StaticReflector {
         if (!methodNames) {
             const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
             methodNames = {};
-            const /** @type {?} */ parentType = this.findParentType(type, classMetadata);
-            if (parentType) {
-                const /** @type {?} */ parentMethodNames = this._methodNames(parentType);
-                Object.keys(parentMethodNames).forEach((parentProp) => {
-                    methodNames[parentProp] = parentMethodNames[parentProp];
-                });
+            if (classMetadata['extends']) {
+                const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
+                if (parentType instanceof StaticSymbol) {
+                    const /** @type {?} */ parentMethodNames = this._methodNames(parentType);
+                    Object.keys(parentMethodNames).forEach((parentProp) => {
+                        methodNames[parentProp] = parentMethodNames[parentProp];
+                    });
+                }
             }
             const /** @type {?} */ members = classMetadata['members'] || {};
             Object.keys(members).forEach((propName) => {
@@ -22118,17 +22091,6 @@ class StaticReflector {
             this.methodCache.set(type, methodNames);
         }
         return methodNames;
-    }
-    /**
-     * @param {?} type
-     * @param {?} classMetadata
-     * @return {?}
-     */
-    findParentType(type, classMetadata) {
-        const /** @type {?} */ parentType = this.trySimplify(type, classMetadata['extends']);
-        if (parentType instanceof StaticSymbol) {
-            return parentType;
-        }
     }
     /**
      * @param {?} type
@@ -22990,16 +22952,6 @@ class StaticSymbolResolver {
      * @return {?}
      */
     createResolvedSymbol(sourceSymbol, topLevelPath, topLevelSymbolNames, metadata) {
-        // For classes that don't have Angular summaries / metadata,
-        // we only keep their arity, but nothing else
-        // (e.g. their constructor parameters).
-        // We do this to prevent introducing deep imports
-        // as we didn't generate .ngfactory.ts files with proper reexports.
-        if (this.summaryResolver.isLibraryFile(sourceSymbol.filePath) && metadata &&
-            metadata['__symbolic'] === 'class') {
-            const /** @type {?} */ transformedMeta = { __symbolic: 'class', arity: metadata.arity };
-            return new ResolvedStaticSymbol(sourceSymbol, transformedMeta);
-        }
         const /** @type {?} */ self = this;
         class ReferenceTransformer extends ValueTransformer {
             /**
@@ -23269,7 +23221,7 @@ function createAotCompiler(compilerHost, options) {
     const /** @type {?} */ symbolCache = new StaticSymbolCache();
     const /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
     const /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
-    const /** @type {?} */ staticReflector = new StaticReflector(summaryResolver, symbolResolver);
+    const /** @type {?} */ staticReflector = new StaticReflector(symbolResolver);
     StaticAndDynamicReflectionCapabilities.install(staticReflector);
     const /** @type {?} */ console = new ɵConsole();
     const /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, MissingTranslationStrategy.Warning, console);
@@ -24732,7 +24684,7 @@ class Extractor {
         const /** @type {?} */ symbolCache = new StaticSymbolCache();
         const /** @type {?} */ summaryResolver = new AotSummaryResolver(host, symbolCache);
         const /** @type {?} */ staticSymbolResolver = new StaticSymbolResolver(host, symbolCache, summaryResolver);
-        const /** @type {?} */ staticReflector = new StaticReflector(summaryResolver, staticSymbolResolver);
+        const /** @type {?} */ staticReflector = new StaticReflector(staticSymbolResolver);
         StaticAndDynamicReflectionCapabilities.install(staticReflector);
         const /** @type {?} */ config = new CompilerConfig({ defaultEncapsulation: ViewEncapsulation.Emulated, useJit: false });
         const /** @type {?} */ normalizer = new DirectiveNormalizer({ get: (url) => host.loadResource(url) }, urlResolver, htmlParser, config);

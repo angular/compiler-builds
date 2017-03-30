@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { ɵReflectorReader } from '@angular/core';
-import { SummaryResolver } from '../summary_resolver';
 import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
 /**
@@ -14,7 +13,6 @@ import { StaticSymbolResolver } from './static_symbol_resolver';
  * templates statically.
  */
 export declare class StaticReflector implements ɵReflectorReader {
-    private summaryResolver;
     private symbolResolver;
     private errorRecorder;
     private annotationCache;
@@ -24,9 +22,7 @@ export declare class StaticReflector implements ɵReflectorReader {
     private conversionMap;
     private injectionToken;
     private opaqueToken;
-    private annotationForParentClassWithSummaryKind;
-    private annotationNames;
-    constructor(summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, knownMetadataClasses?: {
+    constructor(symbolResolver: StaticSymbolResolver, knownMetadataClasses?: {
         name: string;
         filePath: string;
         ctor: any;
@@ -47,7 +43,6 @@ export declare class StaticReflector implements ɵReflectorReader {
     };
     parameters(type: StaticSymbol): any[];
     private _methodNames(type);
-    private findParentType(type, classMetadata);
     hasLifecycleHook(type: any, lcProperty: string): boolean;
     private _registerDecoratorOrConstructor(type, ctor);
     private _registerFunction(type, fn);
