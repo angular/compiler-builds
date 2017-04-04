@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.0-c6917d9
+ * @license Angular v4.1.0-beta.0-7764c5c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.1.0-beta.0-c6917d9
+ * @license Angular v4.1.0-beta.0-7764c5c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.1.0-beta.0-c6917d9');
+var VERSION = new _angular_core.Version('4.1.0-beta.0-7764c5c');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -14058,6 +14058,7 @@ var CompileMetadataResolver = (function () {
             }
             else {
                 _this._reportError(syntaxError("Can't export " + _this._getTypeDescriptor(exportedId.reference) + " " + stringifyType(exportedId.reference) + " from " + stringifyType(moduleType) + " as it was neither declared nor imported!"), moduleType);
+                return;
             }
         });
         // The providers of the module have to go last
@@ -14145,6 +14146,7 @@ var CompileMetadataResolver = (function () {
             this._reportError(syntaxError("Type " + stringifyType(type) + " is part of the declarations of 2 modules: " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + "! " +
                 ("Please consider moving " + stringifyType(type) + " to a higher module that imports " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ". ") +
                 ("You can also create a new NgModule that exports and includes " + stringifyType(type) + " then import that NgModule in " + stringifyType(oldModule) + " and " + stringifyType(moduleType) + ".")), moduleType);
+            return;
         }
         this._ngModuleOfTypes.set(type, moduleType);
     };
@@ -14423,6 +14425,7 @@ var CompileMetadataResolver = (function () {
                 }
                 else if (provider === void 0) {
                     _this._reportError(syntaxError("Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using 'barrel' index.ts files."));
+                    return;
                 }
                 else {
                     var /** @type {?} */ providersInfo = ((providers.reduce(function (soFar, seenProvider, seenProviderIdx) {
@@ -14439,6 +14442,7 @@ var CompileMetadataResolver = (function () {
                     }, [])))
                         .join(', ');
                     _this._reportError(syntaxError("Invalid " + (debugInfo ? debugInfo : 'provider') + " - only instances of Provider and Type are allowed, got: [" + providersInfo + "]"), type);
+                    return;
                 }
                 if (providerMeta.token === resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
                     targetEntryComponents.push.apply(targetEntryComponents, _this._getEntryComponentsFromProvider(providerMeta, type));
@@ -14573,8 +14577,11 @@ var CompileMetadataResolver = (function () {
         else {
             if (!q.selector) {
                 this._reportError(syntaxError("Can't construct a query for the property \"" + propertyName + "\" of \"" + stringifyType(typeOrFunc) + "\" since the query selector wasn't defined."), typeOrFunc);
+                selectors = [];
             }
-            selectors = [this._getTokenMetadata(q.selector)];
+            else {
+                selectors = [this._getTokenMetadata(q.selector)];
+            }
         }
         return {
             selectors: selectors,

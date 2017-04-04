@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.0-c6917d9
+ * @license Angular v4.1.0-beta.0-7764c5c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.0-beta.0-c6917d9');
+const VERSION = new Version('4.1.0-beta.0-7764c5c');
 
 /**
  * @license
@@ -13558,6 +13558,7 @@ class CompileMetadataResolver {
             }
             else {
                 this._reportError(syntaxError(`Can't export ${this._getTypeDescriptor(exportedId.reference)} ${stringifyType(exportedId.reference)} from ${stringifyType(moduleType)} as it was neither declared nor imported!`), moduleType);
+                return;
             }
         });
         // The providers of the module have to go last
@@ -13645,6 +13646,7 @@ class CompileMetadataResolver {
             this._reportError(syntaxError(`Type ${stringifyType(type)} is part of the declarations of 2 modules: ${stringifyType(oldModule)} and ${stringifyType(moduleType)}! ` +
                 `Please consider moving ${stringifyType(type)} to a higher module that imports ${stringifyType(oldModule)} and ${stringifyType(moduleType)}. ` +
                 `You can also create a new NgModule that exports and includes ${stringifyType(type)} then import that NgModule in ${stringifyType(oldModule)} and ${stringifyType(moduleType)}.`), moduleType);
+            return;
         }
         this._ngModuleOfTypes.set(type, moduleType);
     }
@@ -13915,6 +13917,7 @@ class CompileMetadataResolver {
                 }
                 else if (provider === void 0) {
                     this._reportError(syntaxError(`Encountered undefined provider! Usually this means you have a circular dependencies (might be caused by using 'barrel' index.ts files.`));
+                    return;
                 }
                 else {
                     const /** @type {?} */ providersInfo = ((providers.reduce((soFar, seenProvider, seenProviderIdx) => {
@@ -13931,6 +13934,7 @@ class CompileMetadataResolver {
                     }, [])))
                         .join(', ');
                     this._reportError(syntaxError(`Invalid ${debugInfo ? debugInfo : 'provider'} - only instances of Provider and Type are allowed, got: [${providersInfo}]`), type);
+                    return;
                 }
                 if (providerMeta.token === resolveIdentifier(Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS)) {
                     targetEntryComponents.push(...this._getEntryComponentsFromProvider(providerMeta, type));
@@ -14064,8 +14068,11 @@ class CompileMetadataResolver {
         else {
             if (!q.selector) {
                 this._reportError(syntaxError(`Can't construct a query for the property "${propertyName}" of "${stringifyType(typeOrFunc)}" since the query selector wasn't defined.`), typeOrFunc);
+                selectors = [];
             }
-            selectors = [this._getTokenMetadata(q.selector)];
+            else {
+                selectors = [this._getTokenMetadata(q.selector)];
+            }
         }
         return {
             selectors,
