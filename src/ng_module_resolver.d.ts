@@ -13,5 +13,5 @@ export declare class NgModuleResolver {
     private _reflector;
     constructor(_reflector?: ɵReflectorReader);
     isNgModule(type: any): boolean;
-    resolve(type: Type<any>, throwIfNotFound?: boolean): NgModule;
+    resolve(type: Type<any>, throwIfNotFound?: boolean): NgModule | null;
 }

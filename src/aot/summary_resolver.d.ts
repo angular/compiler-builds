@@ -11,7 +11,7 @@ export interface AotSummaryResolverHost {
     /**
      * Loads an NgModule/Directive/Pipe summary file
      */
-    loadSummary(filePath: string): string;
+    loadSummary(filePath: string): string | null;
     /**
      * Returns whether a file is a source file or not.
      */

@@ -11,7 +11,7 @@ import { SourceMapGenerator } from './source_map';
 export declare const CATCH_ERROR_VAR: o.ReadVarExpr;
 export declare const CATCH_STACK_VAR: o.ReadVarExpr;
 export declare abstract class OutputEmitter {
-    abstract emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], exportedVars: string[], preamble?: string): string;
+    abstract emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], exportedVars: string[], preamble?: string | null): string;
 }
 export declare class EmitterVisitorContext {
     private _exportedVars;
@@ -23,18 +23,18 @@ export declare class EmitterVisitorContext {
     private readonly _currentLine;
     isExportedVar(varName: string): boolean;
     println(from?: {
-        sourceSpan?: ParseSourceSpan;
+        sourceSpan: ParseSourceSpan | null;
     } | null, lastPart?: string): void;
     lineIsEmpty(): boolean;
     print(from: {
-        sourceSpan?: ParseSourceSpan;
+        sourceSpan: ParseSourceSpan | null;
     } | null, part: string, newLine?: boolean): void;
     removeEmptyLastLine(): void;
     incIndent(): void;
     decIndent(): void;
     pushClass(clazz: o.ClassStmt): void;
     popClass(): o.ClassStmt;
-    readonly currentClass: o.ClassStmt;
+    readonly currentClass: o.ClassStmt | null;
     toSource(): string;
     toSourceMapGenerator(sourceFilePath: string, genFilePath: string, startsAtLine?: number): SourceMapGenerator;
     private readonly sourceLines;

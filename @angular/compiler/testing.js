@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.0-4c566db
+ * @license Angular v4.1.0-beta.0-09d9f5f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -85,7 +85,7 @@ class MockDirectiveResolver extends DirectiveResolver {
     get _compiler() { return this._injector.get(Compiler); }
     _clearCacheFor(component) { this._compiler.clearCacheFor(component); }
     resolve(type, throwIfNotFound = true) {
-        let metadata = this._directives.get(type);
+        let metadata = this._directives.get(type) || null;
         if (!metadata) {
             metadata = super.resolve(type, throwIfNotFound);
         }
@@ -105,15 +105,12 @@ class MockDirectiveResolver extends DirectiveResolver {
                 const originalViewProviders = metadata.viewProviders || [];
                 viewProviders = originalViewProviders.concat(viewProviderOverrides);
             }
-            let view = this._views.get(type);
-            if (!view) {
-                view = metadata;
-            }
+            let view = this._views.get(type) || metadata;
             let animations = view.animations;
             let templateUrl = view.templateUrl;
             let inlineTemplate = this._inlineTemplates.get(type);
-            if (inlineTemplate != null) {
-                templateUrl = null;
+            if (inlineTemplate) {
+                templateUrl = undefined;
             }
             else {
                 inlineTemplate = view.template;

@@ -10,9 +10,9 @@ import * as html from './ast';
 import { InterpolationConfig } from './interpolation_config';
 import { TagDefinition } from './tags';
 export declare class TreeError extends ParseError {
-    elementName: string;
-    static create(elementName: string, span: ParseSourceSpan, msg: string): TreeError;
-    constructor(elementName: string, span: ParseSourceSpan, msg: string);
+    elementName: string | null;
+    static create(elementName: string | null, span: ParseSourceSpan, msg: string): TreeError;
+    constructor(elementName: string | null, span: ParseSourceSpan, msg: string);
 }
 export declare class ParseTreeResult {
     rootNodes: html.Node[];

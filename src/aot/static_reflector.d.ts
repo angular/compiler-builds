@@ -34,8 +34,8 @@ export declare class StaticReflector implements ɵReflectorReader {
         name: string;
         filePath: string;
         fn: any;
-    }[], errorRecorder?: (error: any, fileName: string) => void);
-    importUri(typeOrFunc: StaticSymbol): string;
+    }[], errorRecorder?: (error: any, fileName?: string) => void);
+    importUri(typeOrFunc: StaticSymbol): string | null;
     resourceUri(typeOrFunc: StaticSymbol): string;
     resolveIdentifier(name: string, moduleUrl: string, members: string[]): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;

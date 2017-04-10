@@ -11,6 +11,8 @@ export declare function dashCaseToCamelCase(input: string): string;
 export declare function splitAtColon(input: string, defaultValues: string[]): string[];
 export declare function splitAtPeriod(input: string, defaultValues: string[]): string[];
 export declare function visitValue(value: any, visitor: ValueVisitor, context: any): any;
+export declare function isDefined(val: any): boolean;
+export declare function noUndefined<T>(val: T | undefined): T;
 export interface ValueVisitor {
     visitArray(arr: any[], context: any): any;
     visitStringMap(map: {
@@ -28,9 +30,9 @@ export declare class ValueTransformer implements ValueVisitor {
     visitOther(value: any, context: any): any;
 }
 export declare class SyncAsyncResult<T> {
-    syncResult: T;
-    asyncResult: Promise<T>;
-    constructor(syncResult: T, asyncResult?: Promise<T>);
+    syncResult: T | null;
+    asyncResult: Promise<T> | null;
+    constructor(syncResult: T | null, asyncResult?: Promise<T> | null);
 }
 export declare function syntaxError(msg: string): Error;
 export declare function isSyntaxError(error: Error): boolean;

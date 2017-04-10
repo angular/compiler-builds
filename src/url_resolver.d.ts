@@ -36,7 +36,7 @@ export declare const DEFAULT_PACKAGE_URL_PROVIDER: {
  */
 export declare class UrlResolver {
     private _packagePrefix;
-    constructor(_packagePrefix?: string);
+    constructor(_packagePrefix?: string | null);
     /**
      * Resolves the `url` given the `baseUrl`:
      * - when the `url` is null, the `baseUrl` is returned,

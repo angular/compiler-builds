@@ -23,10 +23,10 @@ export declare class Parser {
     private _reportError(message, input, errLocation, ctxLocation?);
     private _parseBindingAst(input, location, interpolationConfig);
     private _parseQuote(input, location);
-    parseTemplateBindings(prefixToken: string, input: string, location: any): TemplateBindingParseResult;
-    parseInterpolation(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation;
-    wrapLiteralPrimitive(input: string, location: any): ASTWithSource;
+    parseTemplateBindings(prefixToken: string | null, input: string, location: any): TemplateBindingParseResult;
+    parseInterpolation(input: string, location: any, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
+    splitInterpolation(input: string, location: string, interpolationConfig?: InterpolationConfig): SplitInterpolation | null;
+    wrapLiteralPrimitive(input: string | null, location: any): ASTWithSource;
     private _stripComments(input);
     private _commentStart(input);
     private _checkNoInterpolation(input, location, interpolationConfig);
@@ -56,8 +56,8 @@ export declare class _ParseAST {
     expectCharacter(code: number): void;
     optionalOperator(op: string): boolean;
     expectOperator(operator: string): void;
-    expectIdentifierOrKeyword(): string;
-    expectIdentifierOrKeywordOrString(): string;
+    expectIdentifierOrKeyword(): string | null;
+    expectIdentifierOrKeywordOrString(): string | null;
     parseChain(): AST;
     parsePipe(): AST;
     parseExpression(): AST;
@@ -80,7 +80,7 @@ export declare class _ParseAST {
      */
     expectTemplateBindingKey(): string;
     parseTemplateBindings(): TemplateBindingParseResult;
-    error(message: string, index?: number): void;
+    error(message: string, index?: number | null): void;
     private locationText(index?);
     private skip();
 }

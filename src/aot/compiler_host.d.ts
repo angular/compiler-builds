@@ -18,7 +18,7 @@ export interface AotCompilerHost extends StaticSymbolResolverHost, AotSummaryRes
      *
      * See ImportResolver.
      */
-    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string;
+    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string | null;
     /**
      * Loads a resource (e.g. html / css)
      */

@@ -153,17 +153,17 @@ export declare class SafeMethodCall extends AST {
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class FunctionCall extends AST {
-    target: AST;
+    target: AST | null;
     args: any[];
-    constructor(span: ParseSpan, target: AST, args: any[]);
+    constructor(span: ParseSpan, target: AST | null, args: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class ASTWithSource extends AST {
     ast: AST;
-    source: string;
+    source: string | null;
     location: string;
     errors: ParserError[];
-    constructor(ast: AST, source: string, location: string, errors: ParserError[]);
+    constructor(ast: AST, source: string | null, location: string, errors: ParserError[]);
     visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
 }
