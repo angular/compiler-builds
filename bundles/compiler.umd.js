@@ -12194,7 +12194,8 @@ var TemplateParseVisitor = (function () {
                 if (elementName.startsWith('ng-')) {
                     errorMsg +=
                         "\n1. If '" + boundProp.name + "' is an Angular directive, then add 'CommonModule' to the '@NgModule.imports' of this component." +
-                            "\n2. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component.";
+                            "\n2. To allow any property add 'NO_ERRORS_SCHEMA' to the '@NgModule.schemas' of this component." +
+                            "\n3. If you are attempting to use the ngFor directive, make sure your syntax is *ngFor=\"let item of items\".";
                 }
                 else if (elementName.indexOf('-') > -1) {
                     errorMsg +=
