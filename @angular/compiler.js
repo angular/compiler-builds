@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.0-075f3f8
+ * @license Angular v4.1.0-beta.0-540581d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.0-beta.0-075f3f8');
+const VERSION = new Version('4.1.0-beta.0-540581d');
 
 /**
  * @license
@@ -5063,11 +5063,11 @@ class Element {
      * @param {?} name
      * @param {?} attrs
      * @param {?} children
-     * @param {?=} sourceSpan
+     * @param {?} sourceSpan
      * @param {?=} startSourceSpan
      * @param {?=} endSourceSpan
      */
-    constructor(name, attrs, children, sourceSpan = null, startSourceSpan = null, endSourceSpan = null) {
+    constructor(name, attrs, children, sourceSpan, startSourceSpan = null, endSourceSpan = null) {
         this.name = name;
         this.attrs = attrs;
         this.children = children;
@@ -7121,7 +7121,7 @@ class _Visitor {
         this._init(_VisitorMode.Merge, interpolationConfig);
         this._translations = translations;
         // Construct a single fake root element
-        const /** @type {?} */ wrapper = new Element('wrapper', [], nodes, undefined, undefined, undefined);
+        const /** @type {?} */ wrapper = new Element('wrapper', [], nodes, /** @type {?} */ ((undefined)), undefined, undefined);
         const /** @type {?} */ translatedNode = wrapper.visit(this, null);
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
@@ -11376,7 +11376,7 @@ class TemplateParseVisitor {
             this._assertElementExists(matchElement, element);
             this._assertOnlyOneComponent(directiveAsts, /** @type {?} */ ((element.sourceSpan)));
             const /** @type {?} */ ngContentIndex = hasInlineTemplates ? null : parent.findNgContentIndex(projectionSelector);
-            parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, providerContext.queryMatches, children, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan || null, element.endSourceSpan || null);
+            parsedElement = new ElementAst(nodeName, attrs, elementProps, events, references, providerContext.transformedDirectiveAsts, providerContext.transformProviders, providerContext.transformedHasViewContainer, providerContext.queryMatches, children, hasInlineTemplates ? null : ngContentIndex, element.sourceSpan, element.endSourceSpan || null);
         }
         if (hasInlineTemplates) {
             const /** @type {?} */ templateQueryStartIndex = this.contentQueryStartId;

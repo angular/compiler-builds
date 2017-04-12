@@ -7,13 +7,13 @@
  */
 import { ParseSourceSpan } from '../parse_util';
 export interface Node {
-    sourceSpan: ParseSourceSpan | null;
+    sourceSpan: ParseSourceSpan;
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Text implements Node {
     value: string;
-    sourceSpan: ParseSourceSpan | null;
-    constructor(value: string, sourceSpan: ParseSourceSpan | null);
+    sourceSpan: ParseSourceSpan;
+    constructor(value: string, sourceSpan: ParseSourceSpan);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Expansion implements Node {
@@ -46,10 +46,10 @@ export declare class Element implements Node {
     name: string;
     attrs: Attribute[];
     children: Node[];
-    sourceSpan: ParseSourceSpan | null;
+    sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan | null;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan?: ParseSourceSpan | null, startSourceSpan?: ParseSourceSpan | null, endSourceSpan?: ParseSourceSpan | null);
+    constructor(name: string, attrs: Attribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan?: ParseSourceSpan | null, endSourceSpan?: ParseSourceSpan | null);
     visit(visitor: Visitor, context: any): any;
 }
 export declare class Comment implements Node {

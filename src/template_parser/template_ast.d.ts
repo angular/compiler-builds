@@ -16,7 +16,7 @@ export interface TemplateAst {
     /**
      * The source span from which this node was parsed.
      */
-    sourceSpan: ParseSourceSpan | null;
+    sourceSpan: ParseSourceSpan;
     /**
      * Visit this node and possibly transform it.
      */
@@ -118,9 +118,9 @@ export declare class ElementAst implements TemplateAst {
     queryMatches: QueryMatch[];
     children: TemplateAst[];
     ngContentIndex: number | null;
-    sourceSpan: ParseSourceSpan | null;
+    sourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(name: string, attrs: AttrAst[], inputs: BoundElementPropertyAst[], outputs: BoundEventAst[], references: ReferenceAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, queryMatches: QueryMatch[], children: TemplateAst[], ngContentIndex: number | null, sourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null);
+    constructor(name: string, attrs: AttrAst[], inputs: BoundElementPropertyAst[], outputs: BoundEventAst[], references: ReferenceAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, queryMatches: QueryMatch[], children: TemplateAst[], ngContentIndex: number | null, sourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
