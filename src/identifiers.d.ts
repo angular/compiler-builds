@@ -49,7 +49,7 @@ export declare class Identifiers {
     static ViewDefinition: IdentifierSpec;
     static createComponentFactory: IdentifierSpec;
 }
-export declare function assetUrl(pkg: string, path?: string, type?: string): string;
+export declare function assetUrl(pkg: string, path?: string | null, type?: string): string;
 export declare function resolveIdentifier(identifier: IdentifierSpec): any;
 export declare function createIdentifier(identifier: IdentifierSpec): CompileIdentifierMetadata;
 export declare function identifierToken(identifier: CompileIdentifierMetadata): CompileTokenMetadata;

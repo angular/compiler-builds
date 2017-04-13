@@ -16,13 +16,13 @@ export interface PrenormalizedTemplateMetadata {
     ngModuleType: any;
     componentType: any;
     moduleUrl: string;
-    template?: string;
-    templateUrl?: string;
-    styles?: string[];
-    styleUrls?: string[];
-    interpolation?: [string, string];
-    encapsulation?: ViewEncapsulation;
-    animations?: CompileAnimationEntryMetadata[];
+    template: string | null;
+    templateUrl: string | null;
+    styles: string[];
+    styleUrls: string[];
+    interpolation: [string, string] | null;
+    encapsulation: ViewEncapsulation | null;
+    animations: CompileAnimationEntryMetadata[];
 }
 export declare class DirectiveNormalizer {
     private _resourceLoader;

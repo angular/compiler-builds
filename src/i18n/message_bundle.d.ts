@@ -22,7 +22,7 @@ export declare class MessageBundle {
     constructor(_htmlParser: HtmlParser, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
     }, _locale?: string | null);
-    updateFromTemplate(html: string, url: string, interpolationConfig: InterpolationConfig): ParseError[];
+    updateFromTemplate(html: string, url: string, interpolationConfig: InterpolationConfig): ParseError[] | null;
     getMessages(): i18n.Message[];
     write(serializer: Serializer): string;
 }

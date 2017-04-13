@@ -7,10 +7,10 @@
  */
 import { MissingTranslationStrategy, ViewEncapsulation } from '@angular/core';
 export declare class CompilerConfig {
-    defaultEncapsulation: ViewEncapsulation;
+    defaultEncapsulation: ViewEncapsulation | null;
     enableLegacyTemplate: boolean;
     useJit: boolean;
-    missingTranslation: MissingTranslationStrategy;
+    missingTranslation: MissingTranslationStrategy | null;
     constructor({defaultEncapsulation, useJit, missingTranslation, enableLegacyTemplate}?: {
         defaultEncapsulation?: ViewEncapsulation;
         useJit?: boolean;

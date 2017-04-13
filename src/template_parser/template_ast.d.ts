@@ -61,9 +61,9 @@ export declare class BoundElementPropertyAst implements TemplateAst {
     type: PropertyBindingType;
     securityContext: SecurityContext;
     value: AST;
-    unit: string;
+    unit: string | null;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, type: PropertyBindingType, securityContext: SecurityContext, value: AST, unit: string, sourceSpan: ParseSourceSpan);
+    constructor(name: string, type: PropertyBindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
     readonly isAnimation: boolean;
 }
@@ -73,12 +73,12 @@ export declare class BoundElementPropertyAst implements TemplateAst {
  */
 export declare class BoundEventAst implements TemplateAst {
     name: string;
-    target: string;
-    phase: string;
+    target: string | null;
+    phase: string | null;
     handler: AST;
     sourceSpan: ParseSourceSpan;
-    static calcFullName(name: string, target: string, phase: string): string;
-    constructor(name: string, target: string, phase: string, handler: AST, sourceSpan: ParseSourceSpan);
+    static calcFullName(name: string, target: string | null, phase: string | null): string;
+    constructor(name: string, target: string | null, phase: string | null, handler: AST, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
     readonly fullName: string;
     readonly isAnimation: boolean;
@@ -117,10 +117,10 @@ export declare class ElementAst implements TemplateAst {
     hasViewContainer: boolean;
     queryMatches: QueryMatch[];
     children: TemplateAst[];
-    ngContentIndex: number;
+    ngContentIndex: number | null;
     sourceSpan: ParseSourceSpan;
-    endSourceSpan: ParseSourceSpan;
-    constructor(name: string, attrs: AttrAst[], inputs: BoundElementPropertyAst[], outputs: BoundEventAst[], references: ReferenceAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, queryMatches: QueryMatch[], children: TemplateAst[], ngContentIndex: number, sourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan);
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(name: string, attrs: AttrAst[], inputs: BoundElementPropertyAst[], outputs: BoundEventAst[], references: ReferenceAst[], directives: DirectiveAst[], providers: ProviderAst[], hasViewContainer: boolean, queryMatches: QueryMatch[], children: TemplateAst[], ngContentIndex: number | null, sourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**

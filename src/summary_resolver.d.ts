@@ -13,8 +13,8 @@ export interface Summary<T> {
 }
 export declare class SummaryResolver<T> {
     isLibraryFile(fileName: string): boolean;
-    getLibraryFileName(fileName: string): string;
-    resolveSummary(reference: T): Summary<T>;
+    getLibraryFileName(fileName: string): string | null;
+    resolveSummary(reference: T): Summary<T> | null;
     getSymbolsOf(filePath: string): T[];
     getImportAs(reference: T): T;
 }

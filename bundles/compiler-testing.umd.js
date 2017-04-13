@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.0-f4b5784
+ * @license Angular v4.1.0-beta.1-c664486
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.1.0-beta.0-f4b5784
+ * @license Angular v4.1.0-beta.1-c664486
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -104,7 +104,7 @@ var MockDirectiveResolver = (function (_super) {
     MockDirectiveResolver.prototype._clearCacheFor = function (component) { this._compiler.clearCacheFor(component); };
     MockDirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        var metadata = this._directives.get(type);
+        var metadata = this._directives.get(type) || null;
         if (!metadata) {
             metadata = _super.prototype.resolve.call(this, type, throwIfNotFound);
         }
@@ -124,15 +124,12 @@ var MockDirectiveResolver = (function (_super) {
                 var originalViewProviders = metadata.viewProviders || [];
                 viewProviders = originalViewProviders.concat(viewProviderOverrides);
             }
-            var view = this._views.get(type);
-            if (!view) {
-                view = metadata;
-            }
+            var view = this._views.get(type) || metadata;
             var animations = view.animations;
             var templateUrl = view.templateUrl;
             var inlineTemplate = this._inlineTemplates.get(type);
-            if (inlineTemplate != null) {
-                templateUrl = null;
+            if (inlineTemplate) {
+                templateUrl = undefined;
             }
             else {
                 inlineTemplate = view.template;

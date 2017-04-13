@@ -13,10 +13,12 @@ export declare class DirectiveResolver {
     /**
      * Return {@link Directive} for a given `Type`.
      */
-    resolve(type: Type<any>, throwIfNotFound?: boolean): Directive;
+    resolve(type: Type<any>): Directive;
+    resolve(type: Type<any>, throwIfNotFound: true): Directive;
+    resolve(type: Type<any>, throwIfNotFound: boolean): Directive | null;
     private _mergeWithPropertyMetadata(dm, propertyMetadata, directiveType);
     private _extractPublicName(def);
     private _dedupeBindings(bindings);
     private _merge(directive, inputs, outputs, host, queries, directiveType);
 }
-export declare function findLast<T>(arr: T[], condition: (value: T) => boolean): T;
+export declare function findLast<T>(arr: T[], condition: (value: T) => boolean): T | null;

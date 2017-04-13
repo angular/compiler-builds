@@ -31,7 +31,7 @@ export declare class Token {
     isKeywordThis(): boolean;
     isError(): boolean;
     toNumber(): number;
-    toString(): string;
+    toString(): string | null;
 }
 export declare const EOF: Token;
 export declare function isIdentifier(input: string): boolean;

@@ -51,7 +51,7 @@ export declare class CompileMetadataResolver {
     getNonNormalizedDirectiveMetadata(directiveType: any): {
         annotation: Directive;
         metadata: cpl.CompileDirectiveMetadata;
-    };
+    } | null;
     /**
      * Gets the metadata for the given directive.
      * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
@@ -60,12 +60,12 @@ export declare class CompileMetadataResolver {
     getDirectiveSummary(dirType: any): cpl.CompileDirectiveSummary;
     isDirective(type: any): boolean;
     isPipe(type: any): boolean;
-    getNgModuleSummary(moduleType: any): cpl.CompileNgModuleSummary;
+    getNgModuleSummary(moduleType: any): cpl.CompileNgModuleSummary | null;
     /**
      * Loads the declared directives and pipes of an NgModule.
      */
     loadNgModuleDirectiveAndPipeMetadata(moduleType: any, isSync: boolean, throwIfNotFound?: boolean): Promise<any>;
-    getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean): cpl.CompileNgModuleMetadata;
+    getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean): cpl.CompileNgModuleMetadata | null;
     private _checkSelfImport(moduleType, importedModuleType);
     private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
@@ -80,7 +80,7 @@ export declare class CompileMetadataResolver {
      * Gets the metadata for the given pipe.
      * This assumes `loadNgModuleDirectiveAndPipeMetadata` has been called first.
      */
-    getPipeMetadata(pipeType: any): cpl.CompilePipeMetadata;
+    getPipeMetadata(pipeType: any): cpl.CompilePipeMetadata | null;
     getPipeSummary(pipeType: any): cpl.CompilePipeSummary;
     getOrLoadPipeMetadata(pipeType: any): cpl.CompilePipeMetadata;
     private _loadPipeMetadata(pipeType);

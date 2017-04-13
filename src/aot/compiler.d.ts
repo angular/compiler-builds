@@ -32,7 +32,7 @@ export declare class AotCompiler {
     private _translationFormat;
     private _genFilePreamble;
     private _symbolResolver;
-    constructor(_config: CompilerConfig, _host: AotCompilerHost, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string, _translationFormat: string, _genFilePreamble: string, _symbolResolver: StaticSymbolResolver);
+    constructor(_config: CompilerConfig, _host: AotCompilerHost, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string | null, _translationFormat: string | null, _genFilePreamble: string | null, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     compileAll(rootFiles: string[]): Promise<GeneratedFile[]>;
     private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);

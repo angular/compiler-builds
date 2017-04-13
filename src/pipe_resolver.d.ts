@@ -20,5 +20,5 @@ export declare class PipeResolver {
     /**
      * Return {@link Pipe} for a given `Type`.
      */
-    resolve(type: Type<any>, throwIfNotFound?: boolean): Pipe;
+    resolve(type: Type<any>, throwIfNotFound?: boolean): Pipe | null;
 }

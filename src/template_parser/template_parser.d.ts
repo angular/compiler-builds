@@ -48,7 +48,7 @@ export declare class TemplateParser {
     tryParse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string): TemplateParseResult;
     tryParseHtml(htmlAstWithErrors: ParseTreeResult, component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string): TemplateParseResult;
     expandHtml(htmlAstWithErrors: ParseTreeResult, forced?: boolean): ParseTreeResult;
-    getInterpolationConfig(component: CompileDirectiveMetadata): InterpolationConfig;
+    getInterpolationConfig(component: CompileDirectiveMetadata): InterpolationConfig | undefined;
 }
 export declare function splitClasses(classAttrValue: string): string[];
 export declare function createElementCssSelector(elementName: string, attributes: [string, string][]): CssSelector;
