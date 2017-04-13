@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.1-14b7dfa
+ * @license Angular v4.1.0-beta.1-fdb3f26
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.0-beta.1-14b7dfa');
+const VERSION = new Version('4.1.0-beta.1-fdb3f26');
 
 /**
  * @license
@@ -11115,19 +11115,17 @@ class TemplateParser {
      * @return {?}
      */
     tryParse(component, template, directives, pipes, schemas, templateUrl) {
-        return this.tryParseHtml(this.expandHtml(/** @type {?} */ ((this._htmlParser)).parse(template, templateUrl, true, this.getInterpolationConfig(component))), component, template, directives, pipes, schemas, templateUrl);
+        return this.tryParseHtml(this.expandHtml(/** @type {?} */ ((this._htmlParser)).parse(template, templateUrl, true, this.getInterpolationConfig(component))), component, directives, pipes, schemas);
     }
     /**
      * @param {?} htmlAstWithErrors
      * @param {?} component
-     * @param {?} template
      * @param {?} directives
      * @param {?} pipes
      * @param {?} schemas
-     * @param {?} templateUrl
      * @return {?}
      */
-    tryParseHtml(htmlAstWithErrors, component, template, directives, pipes, schemas, templateUrl) {
+    tryParseHtml(htmlAstWithErrors, component, directives, pipes, schemas) {
         let /** @type {?} */ result;
         const /** @type {?} */ errors = htmlAstWithErrors.errors;
         const /** @type {?} */ usedPipes = [];

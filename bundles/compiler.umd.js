@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.1-14b7dfa
+ * @license Angular v4.1.0-beta.1-fdb3f26
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.1.0-beta.1-14b7dfa
+ * @license Angular v4.1.0-beta.1-fdb3f26
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.1.0-beta.1-14b7dfa');
+var VERSION = new _angular_core.Version('4.1.0-beta.1-fdb3f26');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -11576,19 +11576,17 @@ var TemplateParser = (function () {
      * @return {?}
      */
     TemplateParser.prototype.tryParse = function (component, template, directives, pipes, schemas, templateUrl) {
-        return this.tryParseHtml(this.expandHtml(/** @type {?} */ ((this._htmlParser)).parse(template, templateUrl, true, this.getInterpolationConfig(component))), component, template, directives, pipes, schemas, templateUrl);
+        return this.tryParseHtml(this.expandHtml(/** @type {?} */ ((this._htmlParser)).parse(template, templateUrl, true, this.getInterpolationConfig(component))), component, directives, pipes, schemas);
     };
     /**
      * @param {?} htmlAstWithErrors
      * @param {?} component
-     * @param {?} template
      * @param {?} directives
      * @param {?} pipes
      * @param {?} schemas
-     * @param {?} templateUrl
      * @return {?}
      */
-    TemplateParser.prototype.tryParseHtml = function (htmlAstWithErrors, component, template, directives, pipes, schemas, templateUrl) {
+    TemplateParser.prototype.tryParseHtml = function (htmlAstWithErrors, component, directives, pipes, schemas) {
         var /** @type {?} */ result;
         var /** @type {?} */ errors = htmlAstWithErrors.errors;
         var /** @type {?} */ usedPipes = [];
