@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.1-2e47a0d
+ * @license Angular v4.1.0-beta.1-ce47d33
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.0-beta.1-2e47a0d');
+const VERSION = new Version('4.1.0-beta.1-ce47d33');
 
 /**
  * @license
@@ -22557,7 +22557,7 @@ class StaticReflector {
                             case 'ignore':
                                 return expression;
                         }
-                        return null;
+                        return IGNORE;
                     }
                     return mapStringMap(expression, (value, name) => simplify(value));
                 }

@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.1.0-beta.1-2e47a0d
+ * @license Angular v4.1.0-beta.1-ce47d33
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.1.0-beta.1-2e47a0d');
+var VERSION = new Version('4.1.0-beta.1-ce47d33');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -23372,7 +23372,7 @@ var StaticReflector = (function () {
                             case 'ignore':
                                 return expression;
                         }
-                        return null;
+                        return IGNORE;
                     }
                     return mapStringMap(expression, function (value, name) { return simplify(value); });
                 }
