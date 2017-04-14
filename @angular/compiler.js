@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.1-cb5a7ef
+ * @license Angular v4.1.0-beta.1-86396a4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.0-beta.1-cb5a7ef');
+const VERSION = new Version('4.1.0-beta.1-86396a4');
 
 /**
  * @license
@@ -6486,6 +6486,18 @@ class Message {
         this.meaning = meaning;
         this.description = description;
         this.id = id;
+        if (nodes.length) {
+            this.sources = [{
+                    filePath: nodes[0].sourceSpan.start.file.url,
+                    startLine: nodes[0].sourceSpan.start.line + 1,
+                    startCol: nodes[0].sourceSpan.start.col + 1,
+                    endLine: nodes[nodes.length - 1].sourceSpan.end.line + 1,
+                    endCol: nodes[0].sourceSpan.start.col + 1
+                }];
+        }
+        else {
+            this.sources = [];
+        }
     }
 }
 class Text$1 {
@@ -8290,6 +8302,8 @@ const _FILE_TAG = 'file';
 const _SOURCE_TAG = 'source';
 const _TARGET_TAG = 'target';
 const _UNIT_TAG = 'trans-unit';
+const _CONTEXT_GROUP_TAG = 'context-group';
+const _CONTEXT_TAG = 'context';
 class Xliff extends Serializer {
     /**
      * @param {?} messages
@@ -8300,8 +8314,14 @@ class Xliff extends Serializer {
         const /** @type {?} */ visitor = new _WriteVisitor();
         const /** @type {?} */ transUnits = [];
         messages.forEach(message => {
+            let /** @type {?} */ contextTags = [];
+            message.sources.forEach((source) => {
+                let /** @type {?} */ contextGroupTag = new Tag(_CONTEXT_GROUP_TAG, { purpose: 'location' });
+                contextGroupTag.children.push(new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'sourcefile' }, [new Text$2(source.filePath)]), new CR(10), new Tag(_CONTEXT_TAG, { 'context-type': 'linenumber' }, [new Text$2(`${source.startLine}`)]), new CR(8));
+                contextTags.push(new CR(8), contextGroupTag);
+            });
             const /** @type {?} */ transUnit = new Tag(_UNIT_TAG, { id: message.id, datatype: 'html' });
-            transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new CR(8), new Tag(_TARGET_TAG));
+            transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new CR(8), new Tag(_TARGET_TAG), ...contextTags);
             if (message.description) {
                 transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$2(message.description)]));
             }
@@ -8638,10 +8658,422 @@ function getCtypeForTag(tag) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+const _VERSION$1 = '2.0';
+const _XMLNS$1 = 'urn:oasis:names:tc:xliff:document:2.0';
+// TODO(vicb): make this a param (s/_/-/)
+const _DEFAULT_SOURCE_LANG$1 = 'en';
+const _PLACEHOLDER_TAG$1 = 'ph';
+const _PLACEHOLDER_SPANNING_TAG = 'pc';
+const _XLIFF_TAG = 'xliff';
+const _SOURCE_TAG$1 = 'source';
+const _TARGET_TAG$1 = 'target';
+const _UNIT_TAG$1 = 'unit';
+class Xliff2 extends Serializer {
+    /**
+     * @param {?} messages
+     * @param {?} locale
+     * @return {?}
+     */
+    write(messages, locale) {
+        const /** @type {?} */ visitor = new _WriteVisitor$1();
+        const /** @type {?} */ units = [];
+        messages.forEach(message => {
+            const /** @type {?} */ unit = new Tag(_UNIT_TAG$1, { id: message.id });
+            if (message.description || message.meaning) {
+                const /** @type {?} */ notes = new Tag('notes');
+                if (message.description) {
+                    notes.children.push(new CR(8), new Tag('note', { category: 'description' }, [new Text$2(message.description)]));
+                }
+                if (message.meaning) {
+                    notes.children.push(new CR(8), new Tag('note', { category: 'meaning' }, [new Text$2(message.meaning)]));
+                }
+                notes.children.push(new CR(6));
+                unit.children.push(new CR(6), notes);
+            }
+            const /** @type {?} */ segment = new Tag('segment');
+            segment.children.push(new CR(8), new Tag(_SOURCE_TAG$1, {}, visitor.serialize(message.nodes)), new CR(6));
+            unit.children.push(new CR(6), segment, new CR(4));
+            units.push(new CR(4), unit);
+        });
+        const /** @type {?} */ file = new Tag('file', { 'original': 'ng.template', id: 'ngi18n' }, [...units, new CR(2)]);
+        const /** @type {?} */ xliff = new Tag(_XLIFF_TAG, { version: _VERSION$1, xmlns: _XMLNS$1, srcLang: locale || _DEFAULT_SOURCE_LANG$1 }, [new CR(2), file, new CR()]);
+        return serialize([
+            new Declaration({ version: '1.0', encoding: 'UTF-8' }), new CR(), xliff, new CR()
+        ]);
+    }
+    /**
+     * @param {?} content
+     * @param {?} url
+     * @return {?}
+     */
+    load(content, url) {
+        // xliff to xml nodes
+        const /** @type {?} */ xliff2Parser = new Xliff2Parser();
+        const { locale, msgIdToHtml, errors } = xliff2Parser.parse(content, url);
+        // xml nodes to i18n nodes
+        const /** @type {?} */ i18nNodesByMsgId = {};
+        const /** @type {?} */ converter = new XmlToI18n$1();
+        Object.keys(msgIdToHtml).forEach(msgId => {
+            const { i18nNodes, errors: e } = converter.convert(msgIdToHtml[msgId], url);
+            errors.push(...e);
+            i18nNodesByMsgId[msgId] = i18nNodes;
+        });
+        if (errors.length) {
+            throw new Error(`xliff2 parse errors:\n${errors.join('\n')}`);
+        }
+        return { locale: /** @type {?} */ ((locale)), i18nNodesByMsgId };
+    }
+    /**
+     * @param {?} message
+     * @return {?}
+     */
+    digest(message) { return decimalDigest(message); }
+}
+class _WriteVisitor$1 {
+    /**
+     * @param {?} text
+     * @param {?=} context
+     * @return {?}
+     */
+    visitText(text, context) { return [new Text$2(text.value)]; }
+    /**
+     * @param {?} container
+     * @param {?=} context
+     * @return {?}
+     */
+    visitContainer(container, context) {
+        const /** @type {?} */ nodes = [];
+        container.children.forEach((node) => nodes.push(...node.visit(this)));
+        return nodes;
+    }
+    /**
+     * @param {?} icu
+     * @param {?=} context
+     * @return {?}
+     */
+    visitIcu(icu, context) {
+        const /** @type {?} */ nodes = [new Text$2(`{${icu.expressionPlaceholder}, ${icu.type}, `)];
+        Object.keys(icu.cases).forEach((c) => {
+            nodes.push(new Text$2(`${c} {`), ...icu.cases[c].visit(this), new Text$2(`} `));
+        });
+        nodes.push(new Text$2(`}`));
+        return nodes;
+    }
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitTagPlaceholder(ph, context) {
+        const /** @type {?} */ type = getTypeForTag(ph.tag);
+        if (ph.isVoid) {
+            const /** @type {?} */ tagPh = new Tag(_PLACEHOLDER_TAG$1, {
+                id: (this._nextPlaceholderId++).toString(),
+                equiv: ph.startName,
+                type: type,
+                disp: `<${ph.tag}/>`,
+            });
+            return [tagPh];
+        }
+        const /** @type {?} */ tagPc = new Tag(_PLACEHOLDER_SPANNING_TAG, {
+            id: (this._nextPlaceholderId++).toString(),
+            equivStart: ph.startName,
+            equivEnd: ph.closeName,
+            type: type,
+            dispStart: `<${ph.tag}>`,
+            dispEnd: `</${ph.tag}>`,
+        });
+        const /** @type {?} */ nodes = [].concat(...ph.children.map(node => node.visit(this)));
+        if (nodes.length) {
+            nodes.forEach((node) => tagPc.children.push(node));
+        }
+        else {
+            tagPc.children.push(new Text$2(''));
+        }
+        return [tagPc];
+    }
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitPlaceholder(ph, context) {
+        return [new Tag(_PLACEHOLDER_TAG$1, {
+                id: (this._nextPlaceholderId++).toString(),
+                equiv: ph.name,
+                disp: `{{${ph.value}}}`,
+            })];
+    }
+    /**
+     * @param {?} ph
+     * @param {?=} context
+     * @return {?}
+     */
+    visitIcuPlaceholder(ph, context) {
+        return [new Tag(_PLACEHOLDER_TAG$1, { id: (this._nextPlaceholderId++).toString() })];
+    }
+    /**
+     * @param {?} nodes
+     * @return {?}
+     */
+    serialize(nodes) {
+        this._nextPlaceholderId = 0;
+        return [].concat(...nodes.map(node => node.visit(this)));
+    }
+}
+class Xliff2Parser {
+    constructor() {
+        this._locale = null;
+    }
+    /**
+     * @param {?} xliff
+     * @param {?} url
+     * @return {?}
+     */
+    parse(xliff, url) {
+        this._unitMlString = null;
+        this._msgIdToHtml = {};
+        const /** @type {?} */ xml = new XmlParser().parse(xliff, url, false);
+        this._errors = xml.errors;
+        visitAll(this, xml.rootNodes, null);
+        return {
+            msgIdToHtml: this._msgIdToHtml,
+            errors: this._errors,
+            locale: this._locale,
+        };
+    }
+    /**
+     * @param {?} element
+     * @param {?} context
+     * @return {?}
+     */
+    visitElement(element, context) {
+        switch (element.name) {
+            case _UNIT_TAG$1:
+                this._unitMlString = null;
+                const /** @type {?} */ idAttr = element.attrs.find((attr) => attr.name === 'id');
+                if (!idAttr) {
+                    this._addError(element, `<${_UNIT_TAG$1}> misses the "id" attribute`);
+                }
+                else {
+                    const /** @type {?} */ id = idAttr.value;
+                    if (this._msgIdToHtml.hasOwnProperty(id)) {
+                        this._addError(element, `Duplicated translations for msg ${id}`);
+                    }
+                    else {
+                        visitAll(this, element.children, null);
+                        if (typeof this._unitMlString === 'string') {
+                            this._msgIdToHtml[id] = this._unitMlString;
+                        }
+                        else {
+                            this._addError(element, `Message ${id} misses a translation`);
+                        }
+                    }
+                }
+                break;
+            case _SOURCE_TAG$1:
+                // ignore source message
+                break;
+            case _TARGET_TAG$1:
+                const /** @type {?} */ innerTextStart = ((element.startSourceSpan)).end.offset;
+                const /** @type {?} */ innerTextEnd = ((element.endSourceSpan)).start.offset;
+                const /** @type {?} */ content = ((element.startSourceSpan)).start.file.content;
+                const /** @type {?} */ innerText = content.slice(innerTextStart, innerTextEnd);
+                this._unitMlString = innerText;
+                break;
+            case _XLIFF_TAG:
+                const /** @type {?} */ localeAttr = element.attrs.find((attr) => attr.name === 'trgLang');
+                if (localeAttr) {
+                    this._locale = localeAttr.value;
+                }
+                const /** @type {?} */ versionAttr = element.attrs.find((attr) => attr.name === 'version');
+                if (versionAttr) {
+                    const /** @type {?} */ version = versionAttr.value;
+                    if (version !== '2.0') {
+                        this._addError(element, `The XLIFF file version ${version} is not compatible with XLIFF 2.0 serializer`);
+                    }
+                    else {
+                        visitAll(this, element.children, null);
+                    }
+                }
+                break;
+            default:
+                visitAll(this, element.children, null);
+        }
+    }
+    /**
+     * @param {?} attribute
+     * @param {?} context
+     * @return {?}
+     */
+    visitAttribute(attribute, context) { }
+    /**
+     * @param {?} text
+     * @param {?} context
+     * @return {?}
+     */
+    visitText(text, context) { }
+    /**
+     * @param {?} comment
+     * @param {?} context
+     * @return {?}
+     */
+    visitComment(comment, context) { }
+    /**
+     * @param {?} expansion
+     * @param {?} context
+     * @return {?}
+     */
+    visitExpansion(expansion, context) { }
+    /**
+     * @param {?} expansionCase
+     * @param {?} context
+     * @return {?}
+     */
+    visitExpansionCase(expansionCase, context) { }
+    /**
+     * @param {?} node
+     * @param {?} message
+     * @return {?}
+     */
+    _addError(node, message) {
+        this._errors.push(new I18nError(node.sourceSpan, message));
+    }
+}
+class XmlToI18n$1 {
+    /**
+     * @param {?} message
+     * @param {?} url
+     * @return {?}
+     */
+    convert(message, url) {
+        const /** @type {?} */ xmlIcu = new XmlParser().parse(message, url, true);
+        this._errors = xmlIcu.errors;
+        const /** @type {?} */ i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
+            [] :
+            [].concat(...visitAll(this, xmlIcu.rootNodes));
+        return {
+            i18nNodes,
+            errors: this._errors,
+        };
+    }
+    /**
+     * @param {?} text
+     * @param {?} context
+     * @return {?}
+     */
+    visitText(text, context) { return new Text$1(text.value, text.sourceSpan); }
+    /**
+     * @param {?} el
+     * @param {?} context
+     * @return {?}
+     */
+    visitElement(el, context) {
+        switch (el.name) {
+            case _PLACEHOLDER_TAG$1:
+                const /** @type {?} */ nameAttr = el.attrs.find((attr) => attr.name === 'equiv');
+                if (nameAttr) {
+                    return [new Placeholder('', nameAttr.value, el.sourceSpan)];
+                }
+                this._addError(el, `<${_PLACEHOLDER_TAG$1}> misses the "equiv" attribute`);
+                break;
+            case _PLACEHOLDER_SPANNING_TAG:
+                const /** @type {?} */ startAttr = el.attrs.find((attr) => attr.name === 'equivStart');
+                const /** @type {?} */ endAttr = el.attrs.find((attr) => attr.name === 'equivEnd');
+                if (!startAttr) {
+                    this._addError(el, `<${_PLACEHOLDER_TAG$1}> misses the "equivStart" attribute`);
+                }
+                else if (!endAttr) {
+                    this._addError(el, `<${_PLACEHOLDER_TAG$1}> misses the "equivEnd" attribute`);
+                }
+                else {
+                    const /** @type {?} */ startId = startAttr.value;
+                    const /** @type {?} */ endId = endAttr.value;
+                    const /** @type {?} */ nodes = [];
+                    return nodes.concat(new Placeholder('', startId, el.sourceSpan), ...el.children.map(node => node.visit(this, null)), new Placeholder('', endId, el.sourceSpan));
+                }
+                break;
+            default:
+                this._addError(el, `Unexpected tag`);
+        }
+        return null;
+    }
+    /**
+     * @param {?} icu
+     * @param {?} context
+     * @return {?}
+     */
+    visitExpansion(icu, context) {
+        const /** @type {?} */ caseMap = {};
+        visitAll(this, icu.cases).forEach((c) => {
+            caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
+        });
+        return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
+    }
+    /**
+     * @param {?} icuCase
+     * @param {?} context
+     * @return {?}
+     */
+    visitExpansionCase(icuCase, context) {
+        return {
+            value: icuCase.value,
+            nodes: [].concat(...visitAll(this, icuCase.expression)),
+        };
+    }
+    /**
+     * @param {?} comment
+     * @param {?} context
+     * @return {?}
+     */
+    visitComment(comment, context) { }
+    /**
+     * @param {?} attribute
+     * @param {?} context
+     * @return {?}
+     */
+    visitAttribute(attribute, context) { }
+    /**
+     * @param {?} node
+     * @param {?} message
+     * @return {?}
+     */
+    _addError(node, message) {
+        this._errors.push(new I18nError(node.sourceSpan, message));
+    }
+}
+/**
+ * @param {?} tag
+ * @return {?}
+ */
+function getTypeForTag(tag) {
+    switch (tag.toLowerCase()) {
+        case 'br':
+        case 'b':
+        case 'i':
+        case 'u':
+            return 'fmt';
+        case 'img':
+            return 'image';
+        case 'a':
+            return 'link';
+        default:
+            return 'other';
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 const _MESSAGES_TAG = 'messagebundle';
 const _MESSAGE_TAG = 'msg';
-const _PLACEHOLDER_TAG$1 = 'ph';
+const _PLACEHOLDER_TAG$2 = 'ph';
 const _EXEMPLE_TAG = 'ex';
+const _SOURCE_TAG$2 = 'source';
 const _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
 <!ATTLIST messagebundle class CDATA #IMPLIED>
 
@@ -8679,7 +9111,13 @@ class Xmb extends Serializer {
             if (message.meaning) {
                 attrs['meaning'] = message.meaning;
             }
-            rootNode.children.push(new CR(2), new Tag(_MESSAGE_TAG, attrs, visitor.serialize(message.nodes)));
+            let /** @type {?} */ sourceTags = [];
+            message.sources.forEach((source) => {
+                sourceTags.push(new Tag(_SOURCE_TAG$2, {}, [
+                    new Text$2(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
+                ]));
+            });
+            rootNode.children.push(new CR(2), new Tag(_MESSAGE_TAG, attrs, [...sourceTags, ...visitor.serialize(message.nodes)]));
         });
         rootNode.children.push(new CR());
         return serialize([
@@ -8749,13 +9187,13 @@ class _Visitor$2 {
      */
     visitTagPlaceholder(ph, context) {
         const /** @type {?} */ startEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2(`<${ph.tag}>`)]);
-        const /** @type {?} */ startTagPh = new Tag(_PLACEHOLDER_TAG$1, { name: ph.startName }, [startEx]);
+        const /** @type {?} */ startTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.startName }, [startEx]);
         if (ph.isVoid) {
             // void tags have no children nor closing tags
             return [startTagPh];
         }
         const /** @type {?} */ closeEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2(`</${ph.tag}>`)]);
-        const /** @type {?} */ closeTagPh = new Tag(_PLACEHOLDER_TAG$1, { name: ph.closeName }, [closeEx]);
+        const /** @type {?} */ closeTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.closeName }, [closeEx]);
         return [startTagPh, ...this.serialize(ph.children), closeTagPh];
     }
     /**
@@ -8764,7 +9202,7 @@ class _Visitor$2 {
      * @return {?}
      */
     visitPlaceholder(ph, context) {
-        return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name })];
+        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name })];
     }
     /**
      * @param {?} ph
@@ -8772,7 +9210,7 @@ class _Visitor$2 {
      * @return {?}
      */
     visitIcuPlaceholder(ph, context) {
-        return [new Tag(_PLACEHOLDER_TAG$1, { name: ph.name })];
+        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name })];
     }
     /**
      * @param {?} nodes
@@ -8803,7 +9241,7 @@ class ExampleVisitor {
      * @return {?}
      */
     visitTag(tag) {
-        if (tag.name === _PLACEHOLDER_TAG$1) {
+        if (tag.name === _PLACEHOLDER_TAG$2) {
             if (!tag.children || tag.children.length == 0) {
                 const /** @type {?} */ exText = new Text$2(tag.attrs['name'] || '...');
                 tag.children = [new Tag(_EXEMPLE_TAG, {}, [exText])];
@@ -8846,7 +9284,7 @@ function toPublicName(internalName) {
  */
 const _TRANSLATIONS_TAG = 'translationbundle';
 const _TRANSLATION_TAG = 'translation';
-const _PLACEHOLDER_TAG$2 = 'ph';
+const _PLACEHOLDER_TAG$3 = 'ph';
 class Xtb extends Serializer {
     /**
      * @param {?} messages
@@ -8865,7 +9303,7 @@ class Xtb extends Serializer {
         const { locale, msgIdToHtml, errors } = xtbParser.parse(content, url);
         // xml nodes to i18n nodes
         const /** @type {?} */ i18nNodesByMsgId = {};
-        const /** @type {?} */ converter = new XmlToI18n$1();
+        const /** @type {?} */ converter = new XmlToI18n$2();
         // Because we should be able to load xtb files that rely on features not supported by angular,
         // we need to delay the conversion of html to i18n nodes so that non angular messages are not
         // converted
@@ -9019,7 +9457,7 @@ class XtbParser {
         this._errors.push(new I18nError(/** @type {?} */ ((node.sourceSpan)), message));
     }
 }
-class XmlToI18n$1 {
+class XmlToI18n$2 {
     /**
      * @param {?} message
      * @param {?} url
@@ -9071,12 +9509,12 @@ class XmlToI18n$1 {
      * @return {?}
      */
     visitElement(el, context) {
-        if (el.name === _PLACEHOLDER_TAG$2) {
+        if (el.name === _PLACEHOLDER_TAG$3) {
             const /** @type {?} */ nameAttr = el.attrs.find((attr) => attr.name === 'name');
             if (nameAttr) {
                 return new Placeholder('', nameAttr.value, /** @type {?} */ ((el.sourceSpan)));
             }
-            this._addError(el, `<${_PLACEHOLDER_TAG$2}> misses the "name" attribute`);
+            this._addError(el, `<${_PLACEHOLDER_TAG$3}> misses the "name" attribute`);
         }
         else {
             this._addError(el, `Unexpected tag`);
@@ -9398,6 +9836,9 @@ function createSerializer(format) {
             return new Xmb();
         case 'xtb':
             return new Xtb();
+        case 'xliff2':
+        case 'xlf2':
+            return new Xliff2();
         case 'xliff':
         case 'xlf':
         default:
@@ -22557,7 +22998,7 @@ class StaticReflector {
                             case 'ignore':
                                 return expression;
                         }
-                        return IGNORE;
+                        return null;
                     }
                     return mapStringMap(expression, (value, name) => simplify(value));
                 }
@@ -24654,9 +25095,10 @@ class MessageBundle {
     getMessages() { return this._messages; }
     /**
      * @param {?} serializer
+     * @param {?=} filterSources
      * @return {?}
      */
-    write(serializer) {
+    write(serializer, filterSources) {
         const /** @type {?} */ messages = {};
         const /** @type {?} */ mapperVisitor = new MapPlaceholderNames();
         // Deduplicate messages based on their ID
@@ -24665,13 +25107,21 @@ class MessageBundle {
             if (!messages.hasOwnProperty(id)) {
                 messages[id] = message;
             }
+            else {
+                messages[id].sources.push(...message.sources);
+            }
         });
         // Transform placeholder names using the serializer mapping
         const /** @type {?} */ msgList = Object.keys(messages).map(id => {
             const /** @type {?} */ mapper = serializer.createNameMapper(messages[id]);
             const /** @type {?} */ src = messages[id];
             const /** @type {?} */ nodes = mapper ? mapperVisitor.convert(src.nodes, mapper) : src.nodes;
-            return new Message(nodes, {}, {}, src.meaning, src.description, id);
+            let /** @type {?} */ transformedMessage = new Message(nodes, {}, {}, src.meaning, src.description, id);
+            transformedMessage.sources = src.sources;
+            if (filterSources) {
+                transformedMessage.sources.forEach((source) => source.filePath = filterSources(source.filePath));
+            }
+            return transformedMessage;
         });
         return serializer.write(msgList, this._locale);
     }
@@ -25044,5 +25494,5 @@ class ImportResolver {
 
 // This file only reexports content of the `src` folder. Keep it that way.
 
-export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map
