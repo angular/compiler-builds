@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.1.0-beta.1-2688842
+ * @license Angular v4.1.0-beta.1-5b141fb
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.1.0-beta.1-2688842');
+var VERSION = new Version('4.1.0-beta.1-5b141fb');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -562,6 +562,27 @@ function splitNsName(elementName) {
         throw new Error("Unsupported format \"" + elementName + "\" expecting \":namespace:name\"");
     }
     return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
+}
+/**
+ * @param {?} tagName
+ * @return {?}
+ */
+function isNgContainer(tagName) {
+    return splitNsName(tagName)[1] === 'ng-container';
+}
+/**
+ * @param {?} tagName
+ * @return {?}
+ */
+function isNgContent(tagName) {
+    return splitNsName(tagName)[1] === 'ng-content';
+}
+/**
+ * @param {?} tagName
+ * @return {?}
+ */
+function isNgTemplate(tagName) {
+    return splitNsName(tagName)[1] === 'ng-template';
 }
 /**
  * @param {?} fullName
@@ -6657,9 +6678,9 @@ var _TreeBuilder = (function () {
      * @return {?}
      */
     _TreeBuilder.prototype._getParentElementSkippingContainers = function () {
-        var /** @type {?} */ container = ((null));
+        var /** @type {?} */ container = null;
         for (var /** @type {?} */ i = this._elementStack.length - 1; i >= 0; i--) {
-            if (this._elementStack[i].name !== 'ng-container') {
+            if (!isNgContainer(this._elementStack[i].name)) {
                 return { parent: this._elementStack[i], container: container };
             }
             container = this._elementStack[i];
@@ -11794,7 +11815,6 @@ function calcPossibleSecurityContexts(registry, selector, propName, isAttribute)
  * found in the LICENSE file at https://angular.io/license
  */
 var NG_CONTENT_SELECT_ATTR = 'select';
-var NG_CONTENT_ELEMENT = 'ng-content';
 var LINK_ELEMENT = 'link';
 var LINK_STYLE_REL_ATTR = 'rel';
 var LINK_STYLE_HREF_ATTR = 'href';
@@ -11836,7 +11856,7 @@ function preparseElement(ast) {
     selectAttr = normalizeNgContentSelect(selectAttr);
     var /** @type {?} */ nodeName = ast.name.toLowerCase();
     var /** @type {?} */ type = PreparsedElementType.OTHER;
-    if (splitNsName(nodeName)[1] == NG_CONTENT_ELEMENT) {
+    if (isNgContent(nodeName)) {
         type = PreparsedElementType.NG_CONTENT;
     }
     else if (nodeName == STYLE_ELEMENT) {
@@ -11916,7 +11936,6 @@ var IDENT_BANANA_BOX_IDX = 8;
 var IDENT_PROPERTY_IDX = 9;
 // Group 10 = identifier inside ()
 var IDENT_EVENT_IDX = 10;
-var NG_TEMPLATE_ELEMENT = 'ng-template';
 // deprecated in 4.x
 var TEMPLATE_ELEMENT = 'template';
 // deprecated in 4.x
@@ -12857,10 +12876,9 @@ function isEmptyExpression(ast) {
  * @return {?}
  */
 function isTemplate(el, enableLegacyTemplate, reportDeprecation) {
-    var /** @type {?} */ tagNoNs = splitNsName(el.name)[1];
-    // `<ng-template>` is an angular construct and is lower case
-    if (tagNoNs === NG_TEMPLATE_ELEMENT)
+    if (isNgTemplate(el.name))
         return true;
+    var /** @type {?} */ tagNoNs = splitNsName(el.name)[1];
     // `<template>` is HTML and case insensitive
     if (tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
         if (enableLegacyTemplate && tagNoNs.toLowerCase() === TEMPLATE_ELEMENT) {
@@ -19393,7 +19411,7 @@ var DomElementSchemaRegistry = (function (_super) {
             return true;
         }
         if (tagName.indexOf('-') > -1) {
-            if (tagName === 'ng-container' || tagName === 'ng-content') {
+            if (isNgContainer(tagName) || isNgContent(tagName)) {
                 return false;
             }
             if (schemaMetas.some(function (schema) { return schema.name === CUSTOM_ELEMENTS_SCHEMA.name; })) {
@@ -19415,7 +19433,7 @@ var DomElementSchemaRegistry = (function (_super) {
             return true;
         }
         if (tagName.indexOf('-') > -1) {
-            if (tagName === 'ng-container' || tagName === 'ng-content') {
+            if (isNgContainer(tagName) || isNgContent(tagName)) {
                 return true;
             }
             if (schemaMetas.some(function (schema) { return schema.name === CUSTOM_ELEMENTS_SCHEMA.name; })) {
@@ -21148,7 +21166,6 @@ var BuiltinFunctionCall = (function (_super) {
 var CLASS_ATTR$1 = 'class';
 var STYLE_ATTR = 'style';
 var IMPLICIT_TEMPLATE_VAR = '\$implicit';
-var NG_CONTAINER_TAG = 'ng-container';
 var ViewCompileResult = (function () {
     /**
      * @param {?} statements
@@ -21448,11 +21465,8 @@ var ViewBuilder = (function () {
         var /** @type {?} */ nodeIndex = this.nodes.length;
         // reserve the space in the nodeDefs array so we can add children
         this.nodes.push(/** @type {?} */ ((null)));
-        var /** @type {?} */ elName = ast.name;
-        if (ast.name === NG_CONTAINER_TAG) {
-            // Using a null element name creates an anchor.
-            elName = null;
-        }
+        // Using a null element name creates an anchor.
+        var /** @type {?} */ elName = isNgContainer(ast.name) ? null : ast.name;
         var _a = this._visitElementOrTemplate(nodeIndex, ast), flags = _a.flags, usedEvents = _a.usedEvents, queryMatchesExpr = _a.queryMatchesExpr, dirHostBindings = _a.hostBindings, hostEvents = _a.hostEvents;
         var /** @type {?} */ inputDefs = [];
         var /** @type {?} */ updateRendererExpressions = [];
@@ -22163,7 +22177,7 @@ function needsAdditionalRootNode(astNodes) {
         return lastAstNode.hasViewContainer;
     }
     if (lastAstNode instanceof ElementAst) {
-        if (lastAstNode.name === NG_CONTAINER_TAG && lastAstNode.children.length) {
+        if (isNgContainer(lastAstNode.name) && lastAstNode.children.length) {
             return needsAdditionalRootNode(lastAstNode.children);
         }
         return lastAstNode.hasViewContainer;
@@ -22250,7 +22264,6 @@ function fixedAttrsDef(elementAst) {
             mapResult[name] = prevValue != null ? mergeAttributeValue(name, prevValue, value) : value;
         });
     });
-    var /** @type {?} */ mapEntries = [];
     // Note: We need to sort to get a defined output order
     // for tests and for caching generated artifacts...
     return literalArr(Object.keys(mapResult).sort().map(function (attrName) { return literalArr([literal(attrName), literal(mapResult[attrName])]); }));
@@ -26397,6 +26410,6 @@ var ImportResolver = (function () {
  * Entry point for all public APIs of the compiler package.
  */
 // This file only reexports content of the `src` folder. Keep it that way.
-export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map
 //# sourceMappingURL=compiler.es5.js.map
