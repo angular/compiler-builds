@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.1-82417b3
+ * @license Angular v4.1.0-beta.1-a77b126
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.0-beta.1-82417b3');
+const VERSION = new Version('4.1.0-beta.1-a77b126');
 
 /**
  * @license
@@ -19969,7 +19969,8 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitQuote(ast, mode) {
-        throw new Error('Quotes are not supported for evaluation!');
+        throw new Error(`Quotes are not supported for evaluation!
+        Statement: ${ast.uninterpretedExpression} located at ${ast.location}`);
     }
     /**
      * @param {?} ast
