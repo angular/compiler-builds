@@ -25,6 +25,9 @@ export interface TagDefinition {
     isClosedByChild(name: string): boolean;
 }
 export declare function splitNsName(elementName: string): [string | null, string];
+export declare function isNgContainer(tagName: string): boolean;
+export declare function isNgContent(tagName: string): boolean;
+export declare function isNgTemplate(tagName: string): boolean;
 export declare function getNsPrefix(fullName: string): string;
 export declare function getNsPrefix(fullName: null): null;
 export declare function mergeNsAndName(prefix: string, localName: string): string;
