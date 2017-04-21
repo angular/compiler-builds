@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-beta.1-47acf3d
+ * @license Angular v4.1.0-beta.1-70384db
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.1.0-beta.1-47acf3d
+ * @license Angular v4.1.0-beta.1-70384db
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.1.0-beta.1-47acf3d');
+var VERSION = new _angular_core.Version('4.1.0-beta.1-70384db');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -26195,6 +26195,17 @@ var _NO_RESOURCE_LOADER = {
 };
 var baseHtmlParser = new _angular_core.InjectionToken('HtmlParser');
 /**
+ * @param {?} parser
+ * @param {?} translations
+ * @param {?} format
+ * @param {?} config
+ * @param {?} console
+ * @return {?}
+ */
+function i18nHtmlParserFactory(parser, translations, format, config, console) {
+    return new I18NHtmlParser(parser, translations, format, /** @type {?} */ ((config.missingTranslation)), console);
+}
+/**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
  */
@@ -26212,7 +26223,7 @@ var COMPILER_PROVIDERS = [
     },
     {
         provide: I18NHtmlParser,
-        useFactory: function (parser, translations, format, config, console) { return new I18NHtmlParser(parser, translations, format, /** @type {?} */ ((config.missingTranslation)), console); },
+        useFactory: i18nHtmlParserFactory,
         deps: [
             baseHtmlParser,
             [new _angular_core.Optional(), new _angular_core.Inject(_angular_core.TRANSLATIONS)],
@@ -26464,6 +26475,7 @@ exports.StaticSymbolResolver = StaticSymbolResolver;
 exports.unescapeIdentifier = unescapeIdentifier;
 exports.AotSummaryResolver = AotSummaryResolver;
 exports.SummaryResolver = SummaryResolver;
+exports.i18nHtmlParserFactory = i18nHtmlParserFactory;
 exports.COMPILER_PROVIDERS = COMPILER_PROVIDERS;
 exports.JitCompilerFactory = JitCompilerFactory;
 exports.platformCoreDynamic = platformCoreDynamic;
