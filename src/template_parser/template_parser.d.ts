@@ -46,7 +46,7 @@ export declare class TemplateParser {
         pipes: CompilePipeSummary[];
     };
     tryParse(component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string): TemplateParseResult;
-    tryParseHtml(htmlAstWithErrors: ParseTreeResult, component: CompileDirectiveMetadata, template: string, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[], templateUrl: string): TemplateParseResult;
+    tryParseHtml(htmlAstWithErrors: ParseTreeResult, component: CompileDirectiveMetadata, directives: CompileDirectiveSummary[], pipes: CompilePipeSummary[], schemas: SchemaMetadata[]): TemplateParseResult;
     expandHtml(htmlAstWithErrors: ParseTreeResult, forced?: boolean): ParseTreeResult;
     getInterpolationConfig(component: CompileDirectiveMetadata): InterpolationConfig;
 }
