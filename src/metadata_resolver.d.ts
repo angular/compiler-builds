@@ -47,7 +47,7 @@ export declare class CompileMetadataResolver {
     private getComponentFactory(selector, dirType, inputs, outputs);
     private initComponentFactory(factory, ngContentSelectors);
     private _loadSummary(type, kind);
-    private _loadDirectiveMetadata(ngModuleType, directiveType, isSync);
+    loadDirectiveMetadata(ngModuleType: any, directiveType: any, isSync: boolean): Promise<any> | null;
     getNonNormalizedDirectiveMetadata(directiveType: any): {
         annotation: Directive;
         metadata: cpl.CompileDirectiveMetadata;
@@ -60,6 +60,7 @@ export declare class CompileMetadataResolver {
     getDirectiveSummary(dirType: any): cpl.CompileDirectiveSummary;
     isDirective(type: any): boolean;
     isPipe(type: any): boolean;
+    isNgModule(type: any): boolean;
     getNgModuleSummary(moduleType: any): cpl.CompileNgModuleSummary | null;
     /**
      * Loads the declared directives and pipes of an NgModule.

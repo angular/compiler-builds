@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.0-1092292
+ * @license Angular v4.2.0-beta.0-04197ee
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.0-1092292');
+const VERSION = new Version('4.2.0-beta.0-04197ee');
 
 /**
  * @license
@@ -13253,36 +13253,40 @@ function findLast(arr, condition) {
  * found in the LICENSE file at https://angular.io/license
  */
 const STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
-const NG_FACTORY = /\.ngfactory\./;
+const GENERATED_FILE = /\.ngfactory\.|\.ngsummary\./;
+const JIT_SUMMARY_FILE = /\.ngsummary\./;
+const JIT_SUMMARY_NAME = /NgSummary$/;
 /**
  * @param {?} filePath
+ * @param {?=} forceSourceFile
  * @return {?}
  */
-function ngfactoryFilePath(filePath) {
-    const /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath);
+function ngfactoryFilePath(filePath, forceSourceFile = false) {
+    const /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath, forceSourceFile);
     return `${urlWithSuffix[0]}.ngfactory${urlWithSuffix[1]}`;
 }
 /**
  * @param {?} filePath
  * @return {?}
  */
-function stripNgFactory(filePath) {
-    return filePath.replace(NG_FACTORY, '.');
+function stripGeneratedFileSuffix(filePath) {
+    return filePath.replace(GENERATED_FILE, '.');
 }
 /**
  * @param {?} filePath
  * @return {?}
  */
-function isNgFactoryFile(filePath) {
-    return NG_FACTORY.test(filePath);
+function isGeneratedFile(filePath) {
+    return GENERATED_FILE.test(filePath);
 }
 /**
  * @param {?} path
+ * @param {?=} forceSourceFile
  * @return {?}
  */
-function splitTypescriptSuffix(path) {
+function splitTypescriptSuffix(path, forceSourceFile = false) {
     if (path.endsWith('.d.ts')) {
-        return [path.slice(0, -5), '.ts'];
+        return [path.slice(0, -5), forceSourceFile ? '.ts' : '.d.ts'];
     }
     const /** @type {?} */ lastDot = path.lastIndexOf('.');
     if (lastDot !== -1) {
@@ -13297,6 +13301,36 @@ function splitTypescriptSuffix(path) {
 function summaryFileName(fileName) {
     const /** @type {?} */ fileNameWithoutSuffix = fileName.replace(STRIP_SRC_FILE_SUFFIXES, '');
     return `${fileNameWithoutSuffix}.ngsummary.json`;
+}
+/**
+ * @param {?} fileName
+ * @param {?=} forceSourceFile
+ * @return {?}
+ */
+function summaryForJitFileName(fileName, forceSourceFile = false) {
+    const /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(stripGeneratedFileSuffix(fileName), forceSourceFile);
+    return `${urlWithSuffix[0]}.ngsummary${urlWithSuffix[1]}`;
+}
+/**
+ * @param {?} filePath
+ * @return {?}
+ */
+function stripSummaryForJitFileSuffix(filePath) {
+    return filePath.replace(JIT_SUMMARY_FILE, '.');
+}
+/**
+ * @param {?} symbolName
+ * @return {?}
+ */
+function summaryForJitName(symbolName) {
+    return `${symbolName}NgSummary`;
+}
+/**
+ * @param {?} symbolName
+ * @return {?}
+ */
+function stripSummaryForJitNameSuffix(symbolName) {
+    return symbolName.replace(JIT_SUMMARY_NAME, '');
 }
 
 /**
@@ -13469,7 +13503,51 @@ PipeResolver.ctorParameters = () => [
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * @abstract
+ */
 class SummaryResolver {
+    /**
+     * @abstract
+     * @param {?} fileName
+     * @return {?}
+     */
+    isLibraryFile(fileName) { }
+    /**
+     * @abstract
+     * @param {?} fileName
+     * @return {?}
+     */
+    getLibraryFileName(fileName) { }
+    /**
+     * @abstract
+     * @param {?} reference
+     * @return {?}
+     */
+    resolveSummary(reference) { }
+    /**
+     * @abstract
+     * @param {?} filePath
+     * @return {?}
+     */
+    getSymbolsOf(filePath) { }
+    /**
+     * @abstract
+     * @param {?} reference
+     * @return {?}
+     */
+    getImportAs(reference) { }
+    /**
+     * @abstract
+     * @param {?} summary
+     * @return {?}
+     */
+    addSummary(summary) { }
+}
+class JitSummaryResolver {
+    constructor() {
+        this._summaries = new Map();
+    }
     /**
      * @param {?} fileName
      * @return {?}
@@ -13485,7 +13563,9 @@ class SummaryResolver {
      * @param {?} reference
      * @return {?}
      */
-    resolveSummary(reference) { return null; }
+    resolveSummary(reference) {
+        return this._summaries.get(reference) || null;
+    }
     ;
     /**
      * @param {?} filePath
@@ -13497,14 +13577,20 @@ class SummaryResolver {
      * @return {?}
      */
     getImportAs(reference) { return reference; }
+    /**
+     * @param {?} summary
+     * @return {?}
+     */
+    addSummary(summary) { this._summaries.set(summary.symbol, summary); }
+    ;
 }
-SummaryResolver.decorators = [
+JitSummaryResolver.decorators = [
     { type: CompilerInjectable },
 ];
 /**
  * @nocollapse
  */
-SummaryResolver.ctorParameters = () => [];
+JitSummaryResolver.ctorParameters = () => [];
 
 /**
  * @license
@@ -13701,7 +13787,7 @@ class CompileMetadataResolver {
      * @param {?} isSync
      * @return {?}
      */
-    _loadDirectiveMetadata(ngModuleType, directiveType, isSync) {
+    loadDirectiveMetadata(ngModuleType, directiveType, isSync) {
         if (this._directiveCache.has(directiveType)) {
             return null;
         }
@@ -13899,12 +13985,26 @@ class CompileMetadataResolver {
      * @param {?} type
      * @return {?}
      */
-    isDirective(type) { return this._directiveResolver.isDirective(type); }
+    isDirective(type) {
+        return !!this._loadSummary(type, CompileSummaryKind.Directive) ||
+            this._directiveResolver.isDirective(type);
+    }
     /**
      * @param {?} type
      * @return {?}
      */
-    isPipe(type) { return this._pipeResolver.isPipe(type); }
+    isPipe(type) {
+        return !!this._loadSummary(type, CompileSummaryKind.Pipe) ||
+            this._pipeResolver.isPipe(type);
+    }
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    isNgModule(type) {
+        return !!this._loadSummary(type, CompileSummaryKind.NgModule) ||
+            this._ngModuleResolver.isNgModule(type);
+    }
     /**
      * @param {?} moduleType
      * @return {?}
@@ -13932,7 +14032,7 @@ class CompileMetadataResolver {
         const /** @type {?} */ loading = [];
         if (ngModule) {
             ngModule.declaredDirectives.forEach((id) => {
-                const /** @type {?} */ promise = this._loadDirectiveMetadata(moduleType, id.reference, isSync);
+                const /** @type {?} */ promise = this.loadDirectiveMetadata(moduleType, id.reference, isSync);
                 if (promise) {
                     loading.push(promise);
                 }
@@ -14019,12 +14119,12 @@ class CompileMetadataResolver {
                     return;
                 }
                 const /** @type {?} */ declaredIdentifier = this._getIdentifierMetadata(declaredType);
-                if (this._directiveResolver.isDirective(declaredType)) {
+                if (this.isDirective(declaredType)) {
                     transitiveModule.addDirective(declaredIdentifier);
                     declaredDirectives.push(declaredIdentifier);
                     this._addTypeToModule(declaredType, moduleType);
                 }
-                else if (this._pipeResolver.isPipe(declaredType)) {
+                else if (this.isPipe(declaredType)) {
                     transitiveModule.addPipe(declaredIdentifier);
                     transitiveModule.pipes.push(declaredIdentifier);
                     declaredPipes.push(declaredIdentifier);
@@ -14112,13 +14212,13 @@ class CompileMetadataResolver {
      * @return {?}
      */
     _getTypeDescriptor(type) {
-        if (this._directiveResolver.isDirective(type)) {
+        if (this.isDirective(type)) {
             return 'directive';
         }
-        if (this._pipeResolver.isPipe(type)) {
+        if (this.isPipe(type)) {
             return 'pipe';
         }
-        if (this._ngModuleResolver.isNgModule(type)) {
+        if (this.isNgModule(type)) {
             return 'module';
         }
         if (((type)).provide) {
@@ -21632,16 +21732,17 @@ class GeneratedFile {
  * @return {?}
  */
 function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
-    const /** @type {?} */ serializer = new Serializer$1(symbolResolver, summaryResolver);
+    const /** @type {?} */ toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver);
+    const /** @type {?} */ forJitSerializer = new ForJitSerializer(symbolResolver);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
     // CompileTypeSummary.
-    symbols.forEach((resolvedSymbol) => serializer.addOrMergeSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }));
+    symbols.forEach((resolvedSymbol) => toJsonSerializer.addOrMergeSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }));
     // Add summaries that are referenced by the given symbols (transitively)
     // Note: the serializer.symbols array might be growing while
     // we execute the loop!
-    for (let /** @type {?} */ processedIndex = 0; processedIndex < serializer.symbols.length; processedIndex++) {
-        const /** @type {?} */ symbol = serializer.symbols[processedIndex];
+    for (let /** @type {?} */ processedIndex = 0; processedIndex < toJsonSerializer.symbols.length; processedIndex++) {
+        const /** @type {?} */ symbol = toJsonSerializer.symbols[processedIndex];
         if (summaryResolver.isLibraryFile(symbol.filePath)) {
             let /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
             if (!summary) {
@@ -21654,7 +21755,10 @@ function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
                 }
             }
             if (summary) {
-                serializer.addOrMergeSummary(summary);
+                if (summary.type) {
+                    forJitSerializer.addLibType(summary.type);
+                }
+                toJsonSerializer.addOrMergeSummary(summary);
             }
         }
     }
@@ -21662,22 +21766,25 @@ function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
     // Note: We don't add the summaries of all referenced symbols as for the ResolvedSymbols,
     // as the type summaries already contain the transitive data that they require
     // (in a minimal way).
-    types.forEach((typeSummary) => {
-        serializer.addOrMergeSummary({ symbol: typeSummary.type.reference, metadata: null, type: typeSummary });
-        if (typeSummary.summaryKind === CompileSummaryKind.NgModule) {
-            const /** @type {?} */ ngModuleSummary = (typeSummary);
+    types.forEach(({ summary, metadata }) => {
+        forJitSerializer.addSourceType(summary, metadata);
+        toJsonSerializer.addOrMergeSummary({ symbol: summary.type.reference, metadata: null, type: summary });
+        if (summary.summaryKind === CompileSummaryKind.NgModule) {
+            const /** @type {?} */ ngModuleSummary = (summary);
             ngModuleSummary.exportedDirectives.concat(ngModuleSummary.exportedPipes).forEach((id) => {
                 const /** @type {?} */ symbol = id.reference;
                 if (summaryResolver.isLibraryFile(symbol.filePath)) {
                     const /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
                     if (summary) {
-                        serializer.addOrMergeSummary(summary);
+                        toJsonSerializer.addOrMergeSummary(summary);
                     }
                 }
             });
         }
     });
-    return serializer.serialize();
+    const { json, exportAs } = toJsonSerializer.serialize();
+    const { statements, exportedVars } = forJitSerializer.serialize(exportAs);
+    return { json, forJit: { statements, exportedVars }, exportAs };
 }
 /**
  * @param {?} symbolCache
@@ -21685,10 +21792,10 @@ function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
  * @return {?}
  */
 function deserializeSummaries(symbolCache, json) {
-    const /** @type {?} */ deserializer = new Deserializer(symbolCache);
+    const /** @type {?} */ deserializer = new FromJsonDeserializer(symbolCache);
     return deserializer.deserialize(json);
 }
-class Serializer$1 extends ValueTransformer {
+class ToJsonSerializer extends ValueTransformer {
     /**
      * @param {?} symbolResolver
      * @param {?} summaryResolver
@@ -21792,7 +21899,153 @@ class Serializer$1 extends ValueTransformer {
         }
     }
 }
-class Deserializer extends ValueTransformer {
+class ForJitSerializer {
+    /**
+     * @param {?} symbolResolver
+     */
+    constructor(symbolResolver) {
+        this.symbolResolver = symbolResolver;
+        this.data = new Map();
+    }
+    /**
+     * @param {?} summary
+     * @param {?} metadata
+     * @return {?}
+     */
+    addSourceType(summary, metadata) {
+        this.data.set(summary.type.reference, { summary, metadata, isLibrary: false });
+    }
+    /**
+     * @param {?} summary
+     * @return {?}
+     */
+    addLibType(summary) {
+        this.data.set(summary.type.reference, { summary, metadata: null, isLibrary: true });
+    }
+    /**
+     * @param {?} exportAs
+     * @return {?}
+     */
+    serialize(exportAs) {
+        const /** @type {?} */ statements = [];
+        const /** @type {?} */ exportedVars = [];
+        const /** @type {?} */ ngModuleSymbols = new Set();
+        Array.from(this.data.values()).forEach(({ summary, metadata, isLibrary }) => {
+            if (summary.summaryKind === CompileSummaryKind.NgModule) {
+                // collect the symbols that refer to NgModule classes.
+                // Note: we can't just rely on `summary.type.summaryKind` to determine this as
+                // we don't add the summaries of all referenced symbols when we serialize type summaries.
+                // See serializeSummaries for details.
+                ngModuleSymbols.add(summary.type.reference);
+                const /** @type {?} */ modSummary = (summary);
+                modSummary.modules.forEach((mod) => { ngModuleSymbols.add(mod.reference); });
+            }
+            if (!isLibrary) {
+                const /** @type {?} */ fnName = summaryForJitName(summary.type.reference.name);
+                statements.push(fn([], [new ReturnStatement(this.serializeSummaryWithDeps(summary, /** @type {?} */ ((metadata))))], new ArrayType(DYNAMIC_TYPE))
+                    .toDeclStmt(fnName, [StmtModifier.Final]));
+                exportedVars.push(fnName);
+            }
+        });
+        exportAs.forEach((entry) => {
+            const /** @type {?} */ symbol = entry.symbol;
+            if (ngModuleSymbols.has(symbol)) {
+                const /** @type {?} */ jitExportAsName = summaryForJitName(entry.exportAs);
+                statements.push(variable(jitExportAsName).set(this.serializeSummaryRef(symbol)).toDeclStmt());
+                exportedVars.push(jitExportAsName);
+            }
+        });
+        return { statements, exportedVars };
+    }
+    /**
+     * @param {?} summary
+     * @param {?} metadata
+     * @return {?}
+     */
+    serializeSummaryWithDeps(summary, metadata) {
+        const /** @type {?} */ expressions = [this.serializeSummary(summary)];
+        let /** @type {?} */ providers = [];
+        if (metadata instanceof CompileNgModuleMetadata) {
+            expressions.push(...
+            // For directives / pipes, we only add the declared ones,
+            // and rely on transitively importing NgModules to get the transitive
+            // summaries.
+            metadata.declaredDirectives.concat(metadata.declaredPipes)
+                .map(type => type.reference)
+                .concat(metadata.transitiveModule.modules.map(type => type.reference)
+                .filter(ref => ref !== metadata.type.reference))
+                .map((ref) => this.serializeSummaryRef(ref)));
+            // Note: We don't use `NgModuleSummary.providers`, as that one is transitive,
+            // and we already have transitive modules.
+            providers = metadata.providers;
+        }
+        else if (summary.summaryKind === CompileSummaryKind.Directive) {
+            const /** @type {?} */ dirSummary = (summary);
+            providers = dirSummary.providers.concat(dirSummary.viewProviders);
+        }
+        // Note: We can't just refer to the `ngsummary.ts` files for `useClass` providers (as we do for
+        // declaredDirectives / declaredPipes), as we allow
+        // providers without ctor arguments to skip the `@Injectable` decorator,
+        // i.e. we didn't generate .ngsummary.ts files for these.
+        expressions.push(...providers.filter(provider => !!provider.useClass).map(provider => this.serializeSummary(/** @type {?} */ ({
+            summaryKind: CompileSummaryKind.Injectable, type: provider.useClass
+        }))));
+        return literalArr(expressions);
+    }
+    /**
+     * @param {?} typeSymbol
+     * @return {?}
+     */
+    serializeSummaryRef(typeSymbol) {
+        const /** @type {?} */ jitImportedSymbol = this.symbolResolver.getStaticSymbol(summaryForJitFileName(typeSymbol.filePath), summaryForJitName(typeSymbol.name));
+        return importExpr({ reference: jitImportedSymbol });
+    }
+    /**
+     * @param {?} data
+     * @return {?}
+     */
+    serializeSummary(data) {
+        class Transformer {
+            /**
+             * @param {?} arr
+             * @param {?} context
+             * @return {?}
+             */
+            visitArray(arr, context) {
+                return literalArr(arr.map(entry => visitValue(entry, this, context)));
+            }
+            /**
+             * @param {?} map
+             * @param {?} context
+             * @return {?}
+             */
+            visitStringMap(map, context) {
+                return new LiteralMapExpr(Object.keys(map).map((key) => new LiteralMapEntry(key, visitValue(map[key], this, context))));
+            }
+            /**
+             * @param {?} value
+             * @param {?} context
+             * @return {?}
+             */
+            visitPrimitive(value, context) { return literal(value); }
+            /**
+             * @param {?} value
+             * @param {?} context
+             * @return {?}
+             */
+            visitOther(value, context) {
+                if (value instanceof StaticSymbol) {
+                    return importExpr({ reference: value });
+                }
+                else {
+                    throw new Error(`Illegal State: Encountered value ${value}`);
+                }
+            }
+        }
+        return visitValue(data, new Transformer(), null);
+    }
+}
+class FromJsonDeserializer extends ValueTransformer {
     /**
      * @param {?} symbolCache
      */
@@ -21902,11 +22155,11 @@ class AotCompiler {
      * @return {?}
      */
     _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
-        const /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl)[1];
+        const /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
         const /** @type {?} */ statements = [];
         const /** @type {?} */ exportedVars = [];
         const /** @type {?} */ generatedFiles = [];
-        generatedFiles.push(this._createSummary(srcFileUrl, directives, pipes, ngModules, injectables, statements, exportedVars));
+        generatedFiles.push(...this._createSummary(srcFileUrl, directives, pipes, ngModules, injectables, statements, exportedVars));
         // compile all ng modules
         exportedVars.push(...ngModules.map((ngModuleType) => this._compileModule(ngModuleType, statements)));
         // compile components
@@ -21930,7 +22183,7 @@ class AotCompiler {
             exportedVars.push(this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), compViewVars.viewClassVar, compViewVars.compRenderTypeVar);
         });
         if (statements.length > 0) {
-            const /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, ngfactoryFilePath(srcFileUrl), statements, exportedVars);
+            const /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, ngfactoryFilePath(srcFileUrl, true), statements, exportedVars);
             generatedFiles.unshift(srcModule);
         }
         return generatedFiles;
@@ -21948,18 +22201,33 @@ class AotCompiler {
     _createSummary(srcFileUrl, directives, pipes, ngModules, injectables, targetStatements, targetExportedVars) {
         const /** @type {?} */ symbolSummaries = this._symbolResolver.getSymbolsOf(srcFileUrl)
             .map(symbol => this._symbolResolver.resolveSymbol(symbol));
-        const /** @type {?} */ typeSummaries = [
-            ...ngModules.map(ref => ((this._metadataResolver.getNgModuleSummary(ref)))),
-            ...directives.map(ref => ((this._metadataResolver.getDirectiveSummary(ref)))),
-            ...pipes.map(ref => ((this._metadataResolver.getPipeSummary(ref)))),
-            ...injectables.map(ref => ((this._metadataResolver.getInjectableSummary(ref))))
+        const /** @type {?} */ typeData = [
+            ...ngModules.map(ref => ({
+                summary: /** @type {?} */ ((this._metadataResolver.getNgModuleSummary(ref))),
+                metadata: /** @type {?} */ ((this._metadataResolver.getNgModuleMetadata(ref)))
+            })),
+            ...directives.map(ref => ({
+                summary: /** @type {?} */ ((this._metadataResolver.getDirectiveSummary(ref))),
+                metadata: /** @type {?} */ ((this._metadataResolver.getDirectiveMetadata(ref)))
+            })),
+            ...pipes.map(ref => ({
+                summary: /** @type {?} */ ((this._metadataResolver.getPipeSummary(ref))),
+                metadata: /** @type {?} */ ((this._metadataResolver.getPipeMetadata(ref)))
+            })),
+            ...injectables.map(ref => ({
+                summary: /** @type {?} */ ((this._metadataResolver.getInjectableSummary(ref))),
+                metadata: /** @type {?} */ ((this._metadataResolver.getInjectableSummary(ref))).type
+            }))
         ];
-        const { json, exportAs } = serializeSummaries(this._summaryResolver, this._symbolResolver, symbolSummaries, typeSummaries);
+        const { json, exportAs, forJit } = serializeSummaries(this._summaryResolver, this._symbolResolver, symbolSummaries, typeData);
         exportAs.forEach((entry) => {
             targetStatements.push(variable(entry.exportAs).set(importExpr({ reference: entry.symbol })).toDeclStmt());
             targetExportedVars.push(entry.exportAs);
         });
-        return new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), json);
+        return [
+            new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), json),
+            this._codegenSourceModule(srcFileUrl, summaryForJitFileName(srcFileUrl, true), forJit.statements, forJit.exportedVars)
+        ];
     }
     /**
      * @param {?} ngModuleType
@@ -23226,6 +23494,7 @@ class StaticSymbolResolver {
         this.importAs = new Map();
         this.symbolResourcePaths = new Map();
         this.symbolFromFile = new Map();
+        this.knownFileNameToModuleNames = new Map();
     }
     /**
      * @param {?} staticSymbol
@@ -23268,6 +23537,15 @@ class StaticSymbolResolver {
                 this.getStaticSymbol(baseImportAs.filePath, baseImportAs.name, staticSymbol.members) :
                 null;
         }
+        const /** @type {?} */ summarizedFileName = stripSummaryForJitFileSuffix(staticSymbol.filePath);
+        if (summarizedFileName !== staticSymbol.filePath) {
+            const /** @type {?} */ summarizedName = stripSummaryForJitNameSuffix(staticSymbol.name);
+            const /** @type {?} */ baseSymbol = this.getStaticSymbol(summarizedFileName, summarizedName, staticSymbol.members);
+            const /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol);
+            return baseImportAs ?
+                this.getStaticSymbol(summaryForJitFileName(baseImportAs.filePath), summaryForJitName(baseImportAs.name), baseSymbol.members) :
+                null;
+        }
         let /** @type {?} */ result = this.summaryResolver.getImportAs(staticSymbol);
         if (!result) {
             result = ((this.importAs.get(staticSymbol)));
@@ -23291,11 +23569,11 @@ class StaticSymbolResolver {
      * @return {?}
      */
     getTypeArity(staticSymbol) {
-        // If the file is a factory file, don't resolve the symbol as doing so would
-        // cause the metadata for an factory file to be loaded which doesn't exist.
+        // If the file is a factory/ngsummary file, don't resolve the symbol as doing so would
+        // cause the metadata for an factory/ngsummary file to be loaded which doesn't exist.
         // All references to generated classes must include the correct arity whenever
         // generating code.
-        if (isNgFactoryFile(staticSymbol.filePath)) {
+        if (isGeneratedFile(staticSymbol.filePath)) {
             return null;
         }
         let /** @type {?} */ resolvedSymbol = this.resolveSymbol(staticSymbol);
@@ -23303,6 +23581,19 @@ class StaticSymbolResolver {
             resolvedSymbol = this.resolveSymbol(resolvedSymbol.metadata);
         }
         return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
+    }
+    /**
+     * Converts a file path to a module name that can be used as an `import`.
+     * @param {?} importedFilePath
+     * @param {?} containingFilePath
+     * @return {?}
+     */
+    fileNameToModuleName(importedFilePath, containingFilePath) {
+        if (importedFilePath === containingFilePath) {
+            return null;
+        }
+        return this.knownFileNameToModuleNames.get(importedFilePath) ||
+            this.host.fileNameToModuleName(importedFilePath, containingFilePath);
     }
     /**
      * @param {?} sourceSymbol
@@ -23409,6 +23700,11 @@ class StaticSymbolResolver {
         this.resolvedFilePaths.add(filePath);
         const /** @type {?} */ resolvedSymbols = [];
         const /** @type {?} */ metadata = this.getModuleMetadata(filePath);
+        if (metadata['importAs']) {
+            // Index bundle indices should use the importAs module name defined
+            // in the bundle.
+            this.knownFileNameToModuleNames.set(filePath, metadata['importAs']);
+        }
         if (metadata['metadata']) {
             // handle direct declarations of the symbol
             const /** @type {?} */ topLevelSymbolNames = new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));
@@ -23417,13 +23713,6 @@ class StaticSymbolResolver {
                 const /** @type {?} */ symbolMeta = metadata['metadata'][metadataKey];
                 const /** @type {?} */ name = unescapeIdentifier(metadataKey);
                 const /** @type {?} */ symbol = this.getStaticSymbol(filePath, name);
-                let /** @type {?} */ importSymbol = undefined;
-                if (metadata['importAs']) {
-                    // Index bundle indexes should use the importAs module name instead of a reference
-                    // to the .d.ts file directly.
-                    importSymbol = this.getStaticSymbol(metadata['importAs'], name);
-                    this.recordImportAs(symbol, importSymbol);
-                }
                 const /** @type {?} */ origin = origins.hasOwnProperty(metadataKey) && origins[metadataKey];
                 if (origin) {
                     // If the symbol is from a bundled index, use the declaration location of the
@@ -23685,7 +23974,7 @@ class AotSummaryResolver {
         // Note: We need to strip the .ngfactory. file path,
         // so this method also works for generated files
         // (for which host.isSourceFile will always return false).
-        return !this.host.isSourceFile(stripNgFactory(filePath));
+        return !this.host.isSourceFile(stripGeneratedFileSuffix(filePath));
     }
     /**
      * @param {?} filePath
@@ -23721,6 +24010,11 @@ class AotSummaryResolver {
         staticSymbol.assertNoMembers();
         return ((this.importAs.get(staticSymbol)));
     }
+    /**
+     * @param {?} summary
+     * @return {?}
+     */
+    addSummary(summary) { this.summaryCache.set(summary.symbol, summary); }
     /**
      * @param {?} filePath
      * @return {?}
@@ -23786,13 +24080,8 @@ function createAotCompiler(compilerHost, options) {
     const /** @type {?} */ tmplParser = new TemplateParser(config, expressionParser, elementSchemaRegistry, htmlParser, console, []);
     const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, console, symbolCache, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
-    const /** @type {?} */ importResolver = {
-        getImportAs: (symbol) => ((symbolResolver.getImportAs(symbol))),
-        fileNameToModuleName: (fileName, containingFilePath) => compilerHost.fileNameToModuleName(fileName, containingFilePath),
-        getTypeArity: (symbol) => ((symbolResolver.getTypeArity(symbol)))
-    };
     const /** @type {?} */ viewCompiler = new ViewCompiler(config, elementSchemaRegistry);
-    const /** @type {?} */ compiler = new AotCompiler(config, compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale || null, options.i18nFormat || null, options.genFilePreamble || null, symbolResolver);
+    const /** @type {?} */ compiler = new AotCompiler(config, compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(), new TypeScriptEmitter(symbolResolver), summaryResolver, options.locale || null, options.i18nFormat || null, options.genFilePreamble || null, symbolResolver);
     return { compiler, reflector: staticReflector };
 }
 
@@ -24634,16 +24923,18 @@ class JitCompiler {
      * @param {?} _styleCompiler
      * @param {?} _viewCompiler
      * @param {?} _ngModuleCompiler
+     * @param {?} _summaryResolver
      * @param {?} _compilerConfig
      * @param {?} _console
      */
-    constructor(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+    constructor(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _summaryResolver, _compilerConfig, _console) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
         this._viewCompiler = _viewCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
+        this._summaryResolver = _summaryResolver;
         this._compilerConfig = _compilerConfig;
         this._console = _console;
         this._compiledTemplateCache = new Map();
@@ -24702,6 +24993,37 @@ class JitCompiler {
     }
     /**
      * @template T
+     * @param {?} component
+     * @return {?}
+     */
+    getComponentFactory(component) {
+        const /** @type {?} */ summary = this._metadataResolver.getDirectiveSummary(component);
+        return (summary.componentFactory);
+    }
+    /**
+     * @param {?} summaries
+     * @return {?}
+     */
+    loadAotSummaries(summaries) {
+        this.clearCache();
+        flattenSummaries(summaries).forEach((summary) => {
+            this._summaryResolver.addSummary({ symbol: summary.type.reference, metadata: null, type: summary });
+        });
+    }
+    /**
+     * @param {?} ref
+     * @return {?}
+     */
+    hasAotSummary(ref) { return !!this._summaryResolver.resolveSummary(ref); }
+    /**
+     * @param {?} ids
+     * @return {?}
+     */
+    _filterJitIdentifiers(ids) {
+        return ids.map(mod => mod.reference).filter((ref) => !this.hasAotSummary(ref));
+    }
+    /**
+     * @template T
      * @param {?} moduleType
      * @param {?} isSync
      * @return {?}
@@ -24746,13 +25068,20 @@ class JitCompiler {
      */
     _loadModules(mainModule, isSync) {
         const /** @type {?} */ loadingPromises = [];
-        const /** @type {?} */ ngModule = ((this._metadataResolver.getNgModuleMetadata(mainModule)));
-        // Note: the loadingPromise for a module only includes the loading of the exported directives
-        // of imported modules.
-        // However, for runtime compilation, we want to transitively compile all modules,
-        // so we also need to call loadNgModuleDirectiveAndPipeMetadata for all nested modules.
-        ngModule.transitiveModule.modules.forEach((localModuleMeta) => {
-            loadingPromises.push(this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(localModuleMeta.reference, isSync));
+        const /** @type {?} */ mainNgModule = ((this._metadataResolver.getNgModuleMetadata(mainModule)));
+        // Note: for runtime compilation, we want to transitively compile all modules,
+        // so we also need to load the declared directives / pipes for all nested modules.
+        this._filterJitIdentifiers(mainNgModule.transitiveModule.modules).forEach((nestedNgModule) => {
+            // getNgModuleMetadata only returns null if the value passed in is not an NgModule
+            const /** @type {?} */ moduleMeta = ((this._metadataResolver.getNgModuleMetadata(nestedNgModule)));
+            this._filterJitIdentifiers(moduleMeta.declaredDirectives).forEach((ref) => {
+                const /** @type {?} */ promise = this._metadataResolver.loadDirectiveMetadata(moduleMeta.type.reference, ref, isSync);
+                if (promise) {
+                    loadingPromises.push(promise);
+                }
+            });
+            this._filterJitIdentifiers(moduleMeta.declaredPipes)
+                .forEach((ref) => this._metadataResolver.getOrLoadPipeMetadata(ref));
         });
         return Promise.all(loadingPromises);
     }
@@ -24787,13 +25116,14 @@ class JitCompiler {
      */
     _compileComponents(mainModule, allComponentFactories) {
         const /** @type {?} */ ngModule = ((this._metadataResolver.getNgModuleMetadata(mainModule)));
-        const /** @type {?} */ moduleByDirective = new Map();
+        const /** @type {?} */ moduleByJitDirective = new Map();
         const /** @type {?} */ templates = new Set();
-        ngModule.transitiveModule.modules.forEach((localModuleSummary) => {
-            const /** @type {?} */ localModuleMeta = ((this._metadataResolver.getNgModuleMetadata(localModuleSummary.reference)));
-            localModuleMeta.declaredDirectives.forEach((dirIdentifier) => {
-                moduleByDirective.set(dirIdentifier.reference, localModuleMeta);
-                const /** @type {?} */ dirMeta = this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
+        const /** @type {?} */ transJitModules = this._filterJitIdentifiers(ngModule.transitiveModule.modules);
+        transJitModules.forEach((localMod) => {
+            const /** @type {?} */ localModuleMeta = ((this._metadataResolver.getNgModuleMetadata(localMod)));
+            this._filterJitIdentifiers(localModuleMeta.declaredDirectives).forEach((dirRef) => {
+                moduleByJitDirective.set(dirRef, localModuleMeta);
+                const /** @type {?} */ dirMeta = this._metadataResolver.getDirectiveMetadata(dirRef);
                 if (dirMeta.isComponent) {
                     templates.add(this._createCompiledTemplate(dirMeta, localModuleMeta));
                     if (allComponentFactories) {
@@ -24804,20 +25134,22 @@ class JitCompiler {
                 }
             });
         });
-        ngModule.transitiveModule.modules.forEach((localModuleSummary) => {
-            const /** @type {?} */ localModuleMeta = ((this._metadataResolver.getNgModuleMetadata(localModuleSummary.reference)));
-            localModuleMeta.declaredDirectives.forEach((dirIdentifier) => {
-                const /** @type {?} */ dirMeta = this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
+        transJitModules.forEach((localMod) => {
+            const /** @type {?} */ localModuleMeta = ((this._metadataResolver.getNgModuleMetadata(localMod)));
+            this._filterJitIdentifiers(localModuleMeta.declaredDirectives).forEach((dirRef) => {
+                const /** @type {?} */ dirMeta = this._metadataResolver.getDirectiveMetadata(dirRef);
                 if (dirMeta.isComponent) {
                     dirMeta.entryComponents.forEach((entryComponentType) => {
-                        const /** @type {?} */ moduleMeta = ((moduleByDirective.get(entryComponentType.componentType)));
+                        const /** @type {?} */ moduleMeta = ((moduleByJitDirective.get(entryComponentType.componentType)));
                         templates.add(this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
                     });
                 }
             });
             localModuleMeta.entryComponents.forEach((entryComponentType) => {
-                const /** @type {?} */ moduleMeta = ((moduleByDirective.get(entryComponentType.componentType)));
-                templates.add(this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
+                if (!this.hasAotSummary(entryComponentType.componentType.reference)) {
+                    const /** @type {?} */ moduleMeta = ((moduleByJitDirective.get(entryComponentType.componentType)));
+                    templates.add(this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
+                }
             });
         });
         templates.forEach((template) => this._compileTemplate(template));
@@ -24951,6 +25283,7 @@ JitCompiler.ctorParameters = () => [
     { type: StyleCompiler, },
     { type: ViewCompiler, },
     { type: NgModuleCompiler, },
+    { type: SummaryResolver, },
     { type: CompilerConfig, },
     { type: ɵConsole, },
 ];
@@ -25061,6 +25394,22 @@ class ModuleBoundCompiler {
      */
     clearCacheFor(type) { this._delegate.clearCacheFor(type); }
 }
+/**
+ * @param {?} fn
+ * @param {?=} out
+ * @return {?}
+ */
+function flattenSummaries(fn$$1, out = []) {
+    fn$$1().forEach((entry) => {
+        if (typeof entry === 'function') {
+            flattenSummaries(entry, out);
+        }
+        else {
+            out.push(entry);
+        }
+    });
+    return out;
+}
 
 /**
  * @license
@@ -25102,7 +25451,7 @@ class MessageBundle {
             return i18nParserResult.errors;
         }
         this._messages.push(...i18nParserResult.messages);
-        return null;
+        return [];
     }
     /**
      * @return {?}
@@ -25283,17 +25632,6 @@ const _NO_RESOURCE_LOADER = {
 };
 const baseHtmlParser = new InjectionToken('HtmlParser');
 /**
- * @param {?} parser
- * @param {?} translations
- * @param {?} format
- * @param {?} config
- * @param {?} console
- * @return {?}
- */
-function i18nHtmlParserFactory(parser, translations, format, config, console) {
-    return new I18NHtmlParser(parser, translations, format, /** @type {?} */ ((config.missingTranslation)), console);
-}
-/**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
  */
@@ -25301,7 +25639,8 @@ const COMPILER_PROVIDERS = [
     { provide: ɵReflector, useValue: ɵreflector },
     { provide: ɵReflectorReader, useExisting: ɵReflector },
     { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
-    SummaryResolver,
+    JitSummaryResolver,
+    { provide: SummaryResolver, useExisting: JitSummaryResolver },
     ɵConsole,
     Lexer,
     Parser,
@@ -25311,7 +25650,7 @@ const COMPILER_PROVIDERS = [
     },
     {
         provide: I18NHtmlParser,
-        useFactory: i18nHtmlParserFactory,
+        useFactory: (parser, translations, format, config, console) => new I18NHtmlParser(parser, translations, format, /** @type {?} */ ((config.missingTranslation)), console),
         deps: [
             baseHtmlParser,
             [new Optional(), new Inject(TRANSLATIONS)],
@@ -25520,5 +25859,5 @@ class ImportResolver {
 
 // This file only reexports content of the `src` folder. Keep it that way.
 
-export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, i18nHtmlParserFactory, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, JitSummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map

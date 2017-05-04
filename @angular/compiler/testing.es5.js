@@ -4,12 +4,12 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.1.0-1092292
+ * @license Angular v4.2.0-beta.0-04197ee
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
 import { COMPILER_OPTIONS, Compiler, CompilerFactory, Component, Directive, Injectable, Injector, NgModule, Pipe, SecurityContext, createPlatformFactory, ɵstringify } from '@angular/core';
-import { DirectiveResolver, NgModuleResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
+import { CompileMetadataResolver, DirectiveResolver, NgModuleResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
 import { ɵTestingCompilerFactory } from '@angular/core/testing';
 /**
  * @license
@@ -441,7 +441,7 @@ var TestingCompilerFactoryImpl = (function () {
     }
     TestingCompilerFactoryImpl.prototype.createTestingCompiler = function (options) {
         var compiler = this._compilerFactory.createCompiler(options);
-        return new TestingCompilerImpl(compiler, compiler.injector.get(MockDirectiveResolver), compiler.injector.get(MockPipeResolver), compiler.injector.get(MockNgModuleResolver));
+        return new TestingCompilerImpl(compiler, compiler.injector.get(MockDirectiveResolver), compiler.injector.get(MockPipeResolver), compiler.injector.get(MockNgModuleResolver), compiler.injector.get(CompileMetadataResolver));
     };
     return TestingCompilerFactoryImpl;
 }());
@@ -453,11 +453,12 @@ TestingCompilerFactoryImpl.ctorParameters = function () { return [
     { type: CompilerFactory, },
 ]; };
 var TestingCompilerImpl = (function () {
-    function TestingCompilerImpl(_compiler, _directiveResolver, _pipeResolver, _moduleResolver) {
+    function TestingCompilerImpl(_compiler, _directiveResolver, _pipeResolver, _moduleResolver, _metadataResolver) {
         this._compiler = _compiler;
         this._directiveResolver = _directiveResolver;
         this._pipeResolver = _pipeResolver;
         this._moduleResolver = _moduleResolver;
+        this._metadataResolver = _metadataResolver;
         this._overrider = new MetadataOverrider();
     }
     Object.defineProperty(TestingCompilerImpl.prototype, "injector", {
@@ -480,22 +481,35 @@ var TestingCompilerImpl = (function () {
     TestingCompilerImpl.prototype.getNgContentSelectors = function (component) {
         return this._compiler.getNgContentSelectors(component);
     };
+    TestingCompilerImpl.prototype.getComponentFactory = function (component) {
+        return this._compiler.getComponentFactory(component);
+    };
+    TestingCompilerImpl.prototype.checkOverrideAllowed = function (type) {
+        if (this._compiler.hasAotSummary(type)) {
+            throw new Error(ɵstringify(type) + " was AOT compiled, so its metadata cannot be changed.");
+        }
+    };
     TestingCompilerImpl.prototype.overrideModule = function (ngModule, override) {
+        this.checkOverrideAllowed(ngModule);
         var oldMetadata = this._moduleResolver.resolve(ngModule, false);
         this._moduleResolver.setNgModule(ngModule, this._overrider.overrideMetadata(NgModule, oldMetadata, override));
     };
     TestingCompilerImpl.prototype.overrideDirective = function (directive, override) {
+        this.checkOverrideAllowed(directive);
         var oldMetadata = this._directiveResolver.resolve(directive, false);
         this._directiveResolver.setDirective(directive, this._overrider.overrideMetadata(Directive, oldMetadata, override));
     };
     TestingCompilerImpl.prototype.overrideComponent = function (component, override) {
+        this.checkOverrideAllowed(component);
         var oldMetadata = this._directiveResolver.resolve(component, false);
         this._directiveResolver.setDirective(component, this._overrider.overrideMetadata(Component, oldMetadata, override));
     };
     TestingCompilerImpl.prototype.overridePipe = function (pipe, override) {
+        this.checkOverrideAllowed(pipe);
         var oldMetadata = this._pipeResolver.resolve(pipe, false);
         this._pipeResolver.setPipe(pipe, this._overrider.overrideMetadata(Pipe, oldMetadata, override));
     };
+    TestingCompilerImpl.prototype.loadAotSummaries = function (summaries) { this._compiler.loadAotSummaries(summaries); };
     TestingCompilerImpl.prototype.clearCache = function () { this._compiler.clearCache(); };
     TestingCompilerImpl.prototype.clearCacheFor = function (type) { this._compiler.clearCacheFor(type); };
     return TestingCompilerImpl;
