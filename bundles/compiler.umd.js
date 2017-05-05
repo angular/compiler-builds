@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-beta.0-d27588b
+ * @license Angular v4.2.0-beta.0-547c363
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.2.0-beta.0-d27588b
+ * @license Angular v4.2.0-beta.0-547c363
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.2.0-beta.0-d27588b');
+var VERSION = new _angular_core.Version('4.2.0-beta.0-547c363');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13759,36 +13759,42 @@ function findLast(arr, condition) {
  * found in the LICENSE file at https://angular.io/license
  */
 var STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
-var NG_FACTORY = /\.ngfactory\./;
+var GENERATED_FILE = /\.ngfactory\.|\.ngsummary\./;
+var JIT_SUMMARY_FILE = /\.ngsummary\./;
+var JIT_SUMMARY_NAME = /NgSummary$/;
 /**
  * @param {?} filePath
+ * @param {?=} forceSourceFile
  * @return {?}
  */
-function ngfactoryFilePath(filePath) {
-    var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath);
+function ngfactoryFilePath(filePath, forceSourceFile) {
+    if (forceSourceFile === void 0) { forceSourceFile = false; }
+    var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath, forceSourceFile);
     return urlWithSuffix[0] + ".ngfactory" + urlWithSuffix[1];
 }
 /**
  * @param {?} filePath
  * @return {?}
  */
-function stripNgFactory(filePath) {
-    return filePath.replace(NG_FACTORY, '.');
+function stripGeneratedFileSuffix(filePath) {
+    return filePath.replace(GENERATED_FILE, '.');
 }
 /**
  * @param {?} filePath
  * @return {?}
  */
-function isNgFactoryFile(filePath) {
-    return NG_FACTORY.test(filePath);
+function isGeneratedFile(filePath) {
+    return GENERATED_FILE.test(filePath);
 }
 /**
  * @param {?} path
+ * @param {?=} forceSourceFile
  * @return {?}
  */
-function splitTypescriptSuffix(path) {
+function splitTypescriptSuffix(path, forceSourceFile) {
+    if (forceSourceFile === void 0) { forceSourceFile = false; }
     if (path.endsWith('.d.ts')) {
-        return [path.slice(0, -5), '.ts'];
+        return [path.slice(0, -5), forceSourceFile ? '.ts' : '.d.ts'];
     }
     var /** @type {?} */ lastDot = path.lastIndexOf('.');
     if (lastDot !== -1) {
@@ -13803,6 +13809,37 @@ function splitTypescriptSuffix(path) {
 function summaryFileName(fileName) {
     var /** @type {?} */ fileNameWithoutSuffix = fileName.replace(STRIP_SRC_FILE_SUFFIXES, '');
     return fileNameWithoutSuffix + ".ngsummary.json";
+}
+/**
+ * @param {?} fileName
+ * @param {?=} forceSourceFile
+ * @return {?}
+ */
+function summaryForJitFileName(fileName, forceSourceFile) {
+    if (forceSourceFile === void 0) { forceSourceFile = false; }
+    var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(stripGeneratedFileSuffix(fileName), forceSourceFile);
+    return urlWithSuffix[0] + ".ngsummary" + urlWithSuffix[1];
+}
+/**
+ * @param {?} filePath
+ * @return {?}
+ */
+function stripSummaryForJitFileSuffix(filePath) {
+    return filePath.replace(JIT_SUMMARY_FILE, '.');
+}
+/**
+ * @param {?} symbolName
+ * @return {?}
+ */
+function summaryForJitName(symbolName) {
+    return symbolName + "NgSummary";
+}
+/**
+ * @param {?} symbolName
+ * @return {?}
+ */
+function stripSummaryForJitNameSuffix(symbolName) {
+    return symbolName.replace(JIT_SUMMARY_NAME, '');
 }
 /**
  * @license
@@ -13977,45 +14014,98 @@ PipeResolver.ctorParameters = function () { return [
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * @abstract
+ */
 var SummaryResolver = (function () {
     function SummaryResolver() {
+    }
+    /**
+     * @abstract
+     * @param {?} fileName
+     * @return {?}
+     */
+    SummaryResolver.prototype.isLibraryFile = function (fileName) { };
+    /**
+     * @abstract
+     * @param {?} fileName
+     * @return {?}
+     */
+    SummaryResolver.prototype.getLibraryFileName = function (fileName) { };
+    /**
+     * @abstract
+     * @param {?} reference
+     * @return {?}
+     */
+    SummaryResolver.prototype.resolveSummary = function (reference) { };
+    /**
+     * @abstract
+     * @param {?} filePath
+     * @return {?}
+     */
+    SummaryResolver.prototype.getSymbolsOf = function (filePath) { };
+    /**
+     * @abstract
+     * @param {?} reference
+     * @return {?}
+     */
+    SummaryResolver.prototype.getImportAs = function (reference) { };
+    /**
+     * @abstract
+     * @param {?} summary
+     * @return {?}
+     */
+    SummaryResolver.prototype.addSummary = function (summary) { };
+    return SummaryResolver;
+}());
+var JitSummaryResolver = (function () {
+    function JitSummaryResolver() {
+        this._summaries = new Map();
     }
     /**
      * @param {?} fileName
      * @return {?}
      */
-    SummaryResolver.prototype.isLibraryFile = function (fileName) { return false; };
+    JitSummaryResolver.prototype.isLibraryFile = function (fileName) { return false; };
     
     /**
      * @param {?} fileName
      * @return {?}
      */
-    SummaryResolver.prototype.getLibraryFileName = function (fileName) { return null; };
+    JitSummaryResolver.prototype.getLibraryFileName = function (fileName) { return null; };
     /**
      * @param {?} reference
      * @return {?}
      */
-    SummaryResolver.prototype.resolveSummary = function (reference) { return null; };
+    JitSummaryResolver.prototype.resolveSummary = function (reference) {
+        return this._summaries.get(reference) || null;
+    };
     
     /**
      * @param {?} filePath
      * @return {?}
      */
-    SummaryResolver.prototype.getSymbolsOf = function (filePath) { return []; };
+    JitSummaryResolver.prototype.getSymbolsOf = function (filePath) { return []; };
     /**
      * @param {?} reference
      * @return {?}
      */
-    SummaryResolver.prototype.getImportAs = function (reference) { return reference; };
-    return SummaryResolver;
+    JitSummaryResolver.prototype.getImportAs = function (reference) { return reference; };
+    /**
+     * @param {?} summary
+     * @return {?}
+     */
+    JitSummaryResolver.prototype.addSummary = function (summary) { this._summaries.set(summary.symbol, summary); };
+    
+    return JitSummaryResolver;
 }());
-SummaryResolver.decorators = [
+JitSummaryResolver.decorators = [
     { type: CompilerInjectable },
 ];
 /**
  * @nocollapse
  */
-SummaryResolver.ctorParameters = function () { return []; };
+JitSummaryResolver.ctorParameters = function () { return []; };
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -14213,7 +14303,7 @@ var CompileMetadataResolver = (function () {
      * @param {?} isSync
      * @return {?}
      */
-    CompileMetadataResolver.prototype._loadDirectiveMetadata = function (ngModuleType, directiveType, isSync) {
+    CompileMetadataResolver.prototype.loadDirectiveMetadata = function (ngModuleType, directiveType, isSync) {
         var _this = this;
         if (this._directiveCache.has(directiveType)) {
             return null;
@@ -14413,12 +14503,26 @@ var CompileMetadataResolver = (function () {
      * @param {?} type
      * @return {?}
      */
-    CompileMetadataResolver.prototype.isDirective = function (type) { return this._directiveResolver.isDirective(type); };
+    CompileMetadataResolver.prototype.isDirective = function (type) {
+        return !!this._loadSummary(type, CompileSummaryKind.Directive) ||
+            this._directiveResolver.isDirective(type);
+    };
     /**
      * @param {?} type
      * @return {?}
      */
-    CompileMetadataResolver.prototype.isPipe = function (type) { return this._pipeResolver.isPipe(type); };
+    CompileMetadataResolver.prototype.isPipe = function (type) {
+        return !!this._loadSummary(type, CompileSummaryKind.Pipe) ||
+            this._pipeResolver.isPipe(type);
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype.isNgModule = function (type) {
+        return !!this._loadSummary(type, CompileSummaryKind.NgModule) ||
+            this._ngModuleResolver.isNgModule(type);
+    };
     /**
      * @param {?} moduleType
      * @return {?}
@@ -14448,7 +14552,7 @@ var CompileMetadataResolver = (function () {
         var /** @type {?} */ loading = [];
         if (ngModule) {
             ngModule.declaredDirectives.forEach(function (id) {
-                var /** @type {?} */ promise = _this._loadDirectiveMetadata(moduleType, id.reference, isSync);
+                var /** @type {?} */ promise = _this.loadDirectiveMetadata(moduleType, id.reference, isSync);
                 if (promise) {
                     loading.push(promise);
                 }
@@ -14537,12 +14641,12 @@ var CompileMetadataResolver = (function () {
                     return;
                 }
                 var /** @type {?} */ declaredIdentifier = _this._getIdentifierMetadata(declaredType);
-                if (_this._directiveResolver.isDirective(declaredType)) {
+                if (_this.isDirective(declaredType)) {
                     transitiveModule.addDirective(declaredIdentifier);
                     declaredDirectives.push(declaredIdentifier);
                     _this._addTypeToModule(declaredType, moduleType);
                 }
-                else if (_this._pipeResolver.isPipe(declaredType)) {
+                else if (_this.isPipe(declaredType)) {
                     transitiveModule.addPipe(declaredIdentifier);
                     transitiveModule.pipes.push(declaredIdentifier);
                     declaredPipes.push(declaredIdentifier);
@@ -14630,13 +14734,13 @@ var CompileMetadataResolver = (function () {
      * @return {?}
      */
     CompileMetadataResolver.prototype._getTypeDescriptor = function (type) {
-        if (this._directiveResolver.isDirective(type)) {
+        if (this.isDirective(type)) {
             return 'directive';
         }
-        if (this._pipeResolver.isPipe(type)) {
+        if (this.isPipe(type)) {
             return 'pipe';
         }
-        if (this._ngModuleResolver.isNgModule(type)) {
+        if (this.isNgModule(type)) {
             return 'module';
         }
         if (((type)).provide) {
@@ -22458,16 +22562,17 @@ var GeneratedFile = (function () {
  * @return {?}
  */
 function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
-    var /** @type {?} */ serializer = new Serializer$1(symbolResolver, summaryResolver);
+    var /** @type {?} */ toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver);
+    var /** @type {?} */ forJitSerializer = new ForJitSerializer(symbolResolver);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
     // CompileTypeSummary.
-    symbols.forEach(function (resolvedSymbol) { return serializer.addOrMergeSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }); });
+    symbols.forEach(function (resolvedSymbol) { return toJsonSerializer.addOrMergeSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }); });
     // Add summaries that are referenced by the given symbols (transitively)
     // Note: the serializer.symbols array might be growing while
     // we execute the loop!
-    for (var /** @type {?} */ processedIndex = 0; processedIndex < serializer.symbols.length; processedIndex++) {
-        var /** @type {?} */ symbol = serializer.symbols[processedIndex];
+    for (var /** @type {?} */ processedIndex = 0; processedIndex < toJsonSerializer.symbols.length; processedIndex++) {
+        var /** @type {?} */ symbol = toJsonSerializer.symbols[processedIndex];
         if (summaryResolver.isLibraryFile(symbol.filePath)) {
             var /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
             if (!summary) {
@@ -22480,7 +22585,10 @@ function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
                 }
             }
             if (summary) {
-                serializer.addOrMergeSummary(summary);
+                if (summary.type) {
+                    forJitSerializer.addLibType(summary.type);
+                }
+                toJsonSerializer.addOrMergeSummary(summary);
             }
         }
     }
@@ -22488,22 +22596,26 @@ function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
     // Note: We don't add the summaries of all referenced symbols as for the ResolvedSymbols,
     // as the type summaries already contain the transitive data that they require
     // (in a minimal way).
-    types.forEach(function (typeSummary) {
-        serializer.addOrMergeSummary({ symbol: typeSummary.type.reference, metadata: null, type: typeSummary });
-        if (typeSummary.summaryKind === CompileSummaryKind.NgModule) {
-            var /** @type {?} */ ngModuleSummary = (typeSummary);
+    types.forEach(function (_a) {
+        var summary = _a.summary, metadata = _a.metadata;
+        forJitSerializer.addSourceType(summary, metadata);
+        toJsonSerializer.addOrMergeSummary({ symbol: summary.type.reference, metadata: null, type: summary });
+        if (summary.summaryKind === CompileSummaryKind.NgModule) {
+            var /** @type {?} */ ngModuleSummary = (summary);
             ngModuleSummary.exportedDirectives.concat(ngModuleSummary.exportedPipes).forEach(function (id) {
                 var /** @type {?} */ symbol = id.reference;
                 if (summaryResolver.isLibraryFile(symbol.filePath)) {
-                    var /** @type {?} */ summary = summaryResolver.resolveSummary(symbol);
-                    if (summary) {
-                        serializer.addOrMergeSummary(summary);
+                    var /** @type {?} */ summary_1 = summaryResolver.resolveSummary(symbol);
+                    if (summary_1) {
+                        toJsonSerializer.addOrMergeSummary(summary_1);
                     }
                 }
             });
         }
     });
-    return serializer.serialize();
+    var _a = toJsonSerializer.serialize(), json = _a.json, exportAs = _a.exportAs;
+    var _b = forJitSerializer.serialize(exportAs), statements = _b.statements, exportedVars = _b.exportedVars;
+    return { json: json, forJit: { statements: statements, exportedVars: exportedVars }, exportAs: exportAs };
 }
 /**
  * @param {?} symbolCache
@@ -22511,16 +22623,16 @@ function serializeSummaries(summaryResolver, symbolResolver, symbols, types) {
  * @return {?}
  */
 function deserializeSummaries(symbolCache, json) {
-    var /** @type {?} */ deserializer = new Deserializer(symbolCache);
+    var /** @type {?} */ deserializer = new FromJsonDeserializer(symbolCache);
     return deserializer.deserialize(json);
 }
-var Serializer$1 = (function (_super) {
-    __extends(Serializer$1, _super);
+var ToJsonSerializer = (function (_super) {
+    __extends(ToJsonSerializer, _super);
     /**
      * @param {?} symbolResolver
      * @param {?} summaryResolver
      */
-    function Serializer$1(symbolResolver, summaryResolver) {
+    function ToJsonSerializer(symbolResolver, summaryResolver) {
         var _this = _super.call(this) || this;
         _this.symbolResolver = symbolResolver;
         _this.summaryResolver = summaryResolver;
@@ -22535,7 +22647,7 @@ var Serializer$1 = (function (_super) {
      * @param {?} summary
      * @return {?}
      */
-    Serializer$1.prototype.addOrMergeSummary = function (summary) {
+    ToJsonSerializer.prototype.addOrMergeSummary = function (summary) {
         var /** @type {?} */ symbolMeta = summary.metadata;
         if (symbolMeta && symbolMeta.__symbolic === 'class') {
             // For classes, we keep everything except their class decorators.
@@ -22572,7 +22684,7 @@ var Serializer$1 = (function (_super) {
     /**
      * @return {?}
      */
-    Serializer$1.prototype.serialize = function () {
+    ToJsonSerializer.prototype.serialize = function () {
         var _this = this;
         var /** @type {?} */ exportAs = [];
         var /** @type {?} */ json = JSON.stringify({
@@ -22601,13 +22713,13 @@ var Serializer$1 = (function (_super) {
      * @param {?} value
      * @return {?}
      */
-    Serializer$1.prototype.processValue = function (value) { return visitValue(value, this, null); };
+    ToJsonSerializer.prototype.processValue = function (value) { return visitValue(value, this, null); };
     /**
      * @param {?} value
      * @param {?} context
      * @return {?}
      */
-    Serializer$1.prototype.visitOther = function (value, context) {
+    ToJsonSerializer.prototype.visitOther = function (value, context) {
         if (value instanceof StaticSymbol) {
             var /** @type {?} */ baseSymbol = this.symbolResolver.getStaticSymbol(value.filePath, value.name);
             var /** @type {?} */ index = this.indexBySymbol.get(baseSymbol);
@@ -22620,14 +22732,169 @@ var Serializer$1 = (function (_super) {
             return { __symbol: index, members: value.members };
         }
     };
-    return Serializer$1;
+    return ToJsonSerializer;
 }(ValueTransformer));
-var Deserializer = (function (_super) {
-    __extends(Deserializer, _super);
+var ForJitSerializer = (function () {
+    /**
+     * @param {?} symbolResolver
+     */
+    function ForJitSerializer(symbolResolver) {
+        this.symbolResolver = symbolResolver;
+        this.data = new Map();
+    }
+    /**
+     * @param {?} summary
+     * @param {?} metadata
+     * @return {?}
+     */
+    ForJitSerializer.prototype.addSourceType = function (summary, metadata) {
+        this.data.set(summary.type.reference, { summary: summary, metadata: metadata, isLibrary: false });
+    };
+    /**
+     * @param {?} summary
+     * @return {?}
+     */
+    ForJitSerializer.prototype.addLibType = function (summary) {
+        this.data.set(summary.type.reference, { summary: summary, metadata: null, isLibrary: true });
+    };
+    /**
+     * @param {?} exportAs
+     * @return {?}
+     */
+    ForJitSerializer.prototype.serialize = function (exportAs) {
+        var _this = this;
+        var /** @type {?} */ statements = [];
+        var /** @type {?} */ exportedVars = [];
+        var /** @type {?} */ ngModuleSymbols = new Set();
+        Array.from(this.data.values()).forEach(function (_a) {
+            var summary = _a.summary, metadata = _a.metadata, isLibrary = _a.isLibrary;
+            if (summary.summaryKind === CompileSummaryKind.NgModule) {
+                // collect the symbols that refer to NgModule classes.
+                // Note: we can't just rely on `summary.type.summaryKind` to determine this as
+                // we don't add the summaries of all referenced symbols when we serialize type summaries.
+                // See serializeSummaries for details.
+                ngModuleSymbols.add(summary.type.reference);
+                var /** @type {?} */ modSummary = (summary);
+                modSummary.modules.forEach(function (mod) { ngModuleSymbols.add(mod.reference); });
+            }
+            if (!isLibrary) {
+                var /** @type {?} */ fnName = summaryForJitName(summary.type.reference.name);
+                statements.push(fn([], [new ReturnStatement(_this.serializeSummaryWithDeps(summary, /** @type {?} */ ((metadata))))], new ArrayType(DYNAMIC_TYPE))
+                    .toDeclStmt(fnName, [StmtModifier.Final]));
+                exportedVars.push(fnName);
+            }
+        });
+        exportAs.forEach(function (entry) {
+            var /** @type {?} */ symbol = entry.symbol;
+            if (ngModuleSymbols.has(symbol)) {
+                var /** @type {?} */ jitExportAsName = summaryForJitName(entry.exportAs);
+                statements.push(variable(jitExportAsName).set(_this.serializeSummaryRef(symbol)).toDeclStmt());
+                exportedVars.push(jitExportAsName);
+            }
+        });
+        return { statements: statements, exportedVars: exportedVars };
+    };
+    /**
+     * @param {?} summary
+     * @param {?} metadata
+     * @return {?}
+     */
+    ForJitSerializer.prototype.serializeSummaryWithDeps = function (summary, metadata) {
+        var _this = this;
+        var /** @type {?} */ expressions = [this.serializeSummary(summary)];
+        var /** @type {?} */ providers = [];
+        if (metadata instanceof CompileNgModuleMetadata) {
+            expressions.push.apply(expressions, 
+            // For directives / pipes, we only add the declared ones,
+            // and rely on transitively importing NgModules to get the transitive
+            // summaries.
+            metadata.declaredDirectives.concat(metadata.declaredPipes)
+                .map(function (type) { return type.reference; })
+                .concat(metadata.transitiveModule.modules.map(function (type) { return type.reference; })
+                .filter(function (ref) { return ref !== metadata.type.reference; }))
+                .map(function (ref) { return _this.serializeSummaryRef(ref); }));
+            // Note: We don't use `NgModuleSummary.providers`, as that one is transitive,
+            // and we already have transitive modules.
+            providers = metadata.providers;
+        }
+        else if (summary.summaryKind === CompileSummaryKind.Directive) {
+            var /** @type {?} */ dirSummary = (summary);
+            providers = dirSummary.providers.concat(dirSummary.viewProviders);
+        }
+        // Note: We can't just refer to the `ngsummary.ts` files for `useClass` providers (as we do for
+        // declaredDirectives / declaredPipes), as we allow
+        // providers without ctor arguments to skip the `@Injectable` decorator,
+        // i.e. we didn't generate .ngsummary.ts files for these.
+        expressions.push.apply(expressions, providers.filter(function (provider) { return !!provider.useClass; }).map(function (provider) { return _this.serializeSummary(/** @type {?} */ ({
+            summaryKind: CompileSummaryKind.Injectable, type: provider.useClass
+        })); }));
+        return literalArr(expressions);
+    };
+    /**
+     * @param {?} typeSymbol
+     * @return {?}
+     */
+    ForJitSerializer.prototype.serializeSummaryRef = function (typeSymbol) {
+        var /** @type {?} */ jitImportedSymbol = this.symbolResolver.getStaticSymbol(summaryForJitFileName(typeSymbol.filePath), summaryForJitName(typeSymbol.name));
+        return importExpr({ reference: jitImportedSymbol });
+    };
+    /**
+     * @param {?} data
+     * @return {?}
+     */
+    ForJitSerializer.prototype.serializeSummary = function (data) {
+        var Transformer = (function () {
+            function Transformer() {
+            }
+            /**
+             * @param {?} arr
+             * @param {?} context
+             * @return {?}
+             */
+            Transformer.prototype.visitArray = function (arr, context) {
+                var _this = this;
+                return literalArr(arr.map(function (entry) { return visitValue(entry, _this, context); }));
+            };
+            /**
+             * @param {?} map
+             * @param {?} context
+             * @return {?}
+             */
+            Transformer.prototype.visitStringMap = function (map, context) {
+                var _this = this;
+                return new LiteralMapExpr(Object.keys(map).map(function (key) { return new LiteralMapEntry(key, visitValue(map[key], _this, context)); }));
+            };
+            /**
+             * @param {?} value
+             * @param {?} context
+             * @return {?}
+             */
+            Transformer.prototype.visitPrimitive = function (value, context) { return literal(value); };
+            /**
+             * @param {?} value
+             * @param {?} context
+             * @return {?}
+             */
+            Transformer.prototype.visitOther = function (value, context) {
+                if (value instanceof StaticSymbol) {
+                    return importExpr({ reference: value });
+                }
+                else {
+                    throw new Error("Illegal State: Encountered value " + value);
+                }
+            };
+            return Transformer;
+        }());
+        return visitValue(data, new Transformer(), null);
+    };
+    return ForJitSerializer;
+}());
+var FromJsonDeserializer = (function (_super) {
+    __extends(FromJsonDeserializer, _super);
     /**
      * @param {?} symbolCache
      */
-    function Deserializer(symbolCache) {
+    function FromJsonDeserializer(symbolCache) {
         var _this = _super.call(this) || this;
         _this.symbolCache = symbolCache;
         return _this;
@@ -22636,7 +22903,7 @@ var Deserializer = (function (_super) {
      * @param {?} json
      * @return {?}
      */
-    Deserializer.prototype.deserialize = function (json) {
+    FromJsonDeserializer.prototype.deserialize = function (json) {
         var _this = this;
         var /** @type {?} */ data = JSON.parse(json);
         var /** @type {?} */ importAs = [];
@@ -22656,7 +22923,7 @@ var Deserializer = (function (_super) {
      * @param {?} context
      * @return {?}
      */
-    Deserializer.prototype.visitStringMap = function (map, context) {
+    FromJsonDeserializer.prototype.visitStringMap = function (map, context) {
         if ('__symbol' in map) {
             var /** @type {?} */ baseSymbol = this.symbols[map['__symbol']];
             var /** @type {?} */ members = map['members'];
@@ -22667,7 +22934,7 @@ var Deserializer = (function (_super) {
             return _super.prototype.visitStringMap.call(this, map, context);
         }
     };
-    return Deserializer;
+    return FromJsonDeserializer;
 }(ValueTransformer));
 /**
  * @license
@@ -22737,11 +23004,11 @@ var AotCompiler = (function () {
      */
     AotCompiler.prototype._compileSrcFile = function (srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
         var _this = this;
-        var /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl)[1];
+        var /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
         var /** @type {?} */ statements = [];
         var /** @type {?} */ exportedVars = [];
         var /** @type {?} */ generatedFiles = [];
-        generatedFiles.push(this._createSummary(srcFileUrl, directives, pipes, ngModules, injectables, statements, exportedVars));
+        generatedFiles.push.apply(generatedFiles, this._createSummary(srcFileUrl, directives, pipes, ngModules, injectables, statements, exportedVars));
         // compile all ng modules
         exportedVars.push.apply(exportedVars, ngModules.map(function (ngModuleType) { return _this._compileModule(ngModuleType, statements); }));
         // compile components
@@ -22765,7 +23032,7 @@ var AotCompiler = (function () {
             exportedVars.push(_this._compileComponentFactory(compMeta, ngModule, fileSuffix, statements), compViewVars.viewClassVar, compViewVars.compRenderTypeVar);
         });
         if (statements.length > 0) {
-            var /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, ngfactoryFilePath(srcFileUrl), statements, exportedVars);
+            var /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, ngfactoryFilePath(srcFileUrl, true), statements, exportedVars);
             generatedFiles.unshift(srcModule);
         }
         return generatedFiles;
@@ -22784,13 +23051,28 @@ var AotCompiler = (function () {
         var _this = this;
         var /** @type {?} */ symbolSummaries = this._symbolResolver.getSymbolsOf(srcFileUrl)
             .map(function (symbol) { return _this._symbolResolver.resolveSymbol(symbol); });
-        var /** @type {?} */ typeSummaries = ngModules.map(function (ref) { return ((_this._metadataResolver.getNgModuleSummary(ref))); }).concat(directives.map(function (ref) { return ((_this._metadataResolver.getDirectiveSummary(ref))); }), pipes.map(function (ref) { return ((_this._metadataResolver.getPipeSummary(ref))); }), injectables.map(function (ref) { return ((_this._metadataResolver.getInjectableSummary(ref))); }));
-        var _a = serializeSummaries(this._summaryResolver, this._symbolResolver, symbolSummaries, typeSummaries), json = _a.json, exportAs = _a.exportAs;
+        var /** @type {?} */ typeData = ngModules.map(function (ref) { return ({
+            summary: /** @type {?} */ ((_this._metadataResolver.getNgModuleSummary(ref))),
+            metadata: /** @type {?} */ ((_this._metadataResolver.getNgModuleMetadata(ref)))
+        }); }).concat(directives.map(function (ref) { return ({
+            summary: /** @type {?} */ ((_this._metadataResolver.getDirectiveSummary(ref))),
+            metadata: /** @type {?} */ ((_this._metadataResolver.getDirectiveMetadata(ref)))
+        }); }), pipes.map(function (ref) { return ({
+            summary: /** @type {?} */ ((_this._metadataResolver.getPipeSummary(ref))),
+            metadata: /** @type {?} */ ((_this._metadataResolver.getPipeMetadata(ref)))
+        }); }), injectables.map(function (ref) { return ({
+            summary: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))),
+            metadata: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))).type
+        }); }));
+        var _a = serializeSummaries(this._summaryResolver, this._symbolResolver, symbolSummaries, typeData), json = _a.json, exportAs = _a.exportAs, forJit = _a.forJit;
         exportAs.forEach(function (entry) {
             targetStatements.push(variable(entry.exportAs).set(importExpr({ reference: entry.symbol })).toDeclStmt());
             targetExportedVars.push(entry.exportAs);
         });
-        return new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), json);
+        return [
+            new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), json),
+            this._codegenSourceModule(srcFileUrl, summaryForJitFileName(srcFileUrl, true), forJit.statements, forJit.exportedVars)
+        ];
     };
     /**
      * @param {?} ngModuleType
@@ -24073,6 +24355,7 @@ var StaticSymbolResolver = (function () {
         this.importAs = new Map();
         this.symbolResourcePaths = new Map();
         this.symbolFromFile = new Map();
+        this.knownFileNameToModuleNames = new Map();
     }
     /**
      * @param {?} staticSymbol
@@ -24115,6 +24398,15 @@ var StaticSymbolResolver = (function () {
                 this.getStaticSymbol(baseImportAs.filePath, baseImportAs.name, staticSymbol.members) :
                 null;
         }
+        var /** @type {?} */ summarizedFileName = stripSummaryForJitFileSuffix(staticSymbol.filePath);
+        if (summarizedFileName !== staticSymbol.filePath) {
+            var /** @type {?} */ summarizedName = stripSummaryForJitNameSuffix(staticSymbol.name);
+            var /** @type {?} */ baseSymbol = this.getStaticSymbol(summarizedFileName, summarizedName, staticSymbol.members);
+            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol);
+            return baseImportAs ?
+                this.getStaticSymbol(summaryForJitFileName(baseImportAs.filePath), summaryForJitName(baseImportAs.name), baseSymbol.members) :
+                null;
+        }
         var /** @type {?} */ result = this.summaryResolver.getImportAs(staticSymbol);
         if (!result) {
             result = ((this.importAs.get(staticSymbol)));
@@ -24138,11 +24430,11 @@ var StaticSymbolResolver = (function () {
      * @return {?}
      */
     StaticSymbolResolver.prototype.getTypeArity = function (staticSymbol) {
-        // If the file is a factory file, don't resolve the symbol as doing so would
-        // cause the metadata for an factory file to be loaded which doesn't exist.
+        // If the file is a factory/ngsummary file, don't resolve the symbol as doing so would
+        // cause the metadata for an factory/ngsummary file to be loaded which doesn't exist.
         // All references to generated classes must include the correct arity whenever
         // generating code.
-        if (isNgFactoryFile(staticSymbol.filePath)) {
+        if (isGeneratedFile(staticSymbol.filePath)) {
             return null;
         }
         var /** @type {?} */ resolvedSymbol = this.resolveSymbol(staticSymbol);
@@ -24150,6 +24442,19 @@ var StaticSymbolResolver = (function () {
             resolvedSymbol = this.resolveSymbol(resolvedSymbol.metadata);
         }
         return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
+    };
+    /**
+     * Converts a file path to a module name that can be used as an `import`.
+     * @param {?} importedFilePath
+     * @param {?} containingFilePath
+     * @return {?}
+     */
+    StaticSymbolResolver.prototype.fileNameToModuleName = function (importedFilePath, containingFilePath) {
+        if (importedFilePath === containingFilePath) {
+            return null;
+        }
+        return this.knownFileNameToModuleNames.get(importedFilePath) ||
+            this.host.fileNameToModuleName(importedFilePath, containingFilePath);
     };
     /**
      * @param {?} sourceSymbol
@@ -24258,6 +24563,11 @@ var StaticSymbolResolver = (function () {
         this.resolvedFilePaths.add(filePath);
         var /** @type {?} */ resolvedSymbols = [];
         var /** @type {?} */ metadata = this.getModuleMetadata(filePath);
+        if (metadata['importAs']) {
+            // Index bundle indices should use the importAs module name defined
+            // in the bundle.
+            this.knownFileNameToModuleNames.set(filePath, metadata['importAs']);
+        }
         if (metadata['metadata']) {
             // handle direct declarations of the symbol
             var /** @type {?} */ topLevelSymbolNames_1 = new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));
@@ -24266,13 +24576,6 @@ var StaticSymbolResolver = (function () {
                 var /** @type {?} */ symbolMeta = metadata['metadata'][metadataKey];
                 var /** @type {?} */ name = unescapeIdentifier(metadataKey);
                 var /** @type {?} */ symbol = _this.getStaticSymbol(filePath, name);
-                var /** @type {?} */ importSymbol = undefined;
-                if (metadata['importAs']) {
-                    // Index bundle indexes should use the importAs module name instead of a reference
-                    // to the .d.ts file directly.
-                    importSymbol = _this.getStaticSymbol(metadata['importAs'], name);
-                    _this.recordImportAs(symbol, importSymbol);
-                }
                 var /** @type {?} */ origin = origins_1.hasOwnProperty(metadataKey) && origins_1[metadataKey];
                 if (origin) {
                     // If the symbol is from a bundled index, use the declaration location of the
@@ -24542,7 +24845,7 @@ var AotSummaryResolver = (function () {
         // Note: We need to strip the .ngfactory. file path,
         // so this method also works for generated files
         // (for which host.isSourceFile will always return false).
-        return !this.host.isSourceFile(stripNgFactory(filePath));
+        return !this.host.isSourceFile(stripGeneratedFileSuffix(filePath));
     };
     /**
      * @param {?} filePath
@@ -24578,6 +24881,11 @@ var AotSummaryResolver = (function () {
         staticSymbol.assertNoMembers();
         return ((this.importAs.get(staticSymbol)));
     };
+    /**
+     * @param {?} summary
+     * @return {?}
+     */
+    AotSummaryResolver.prototype.addSummary = function (summary) { this.summaryCache.set(summary.symbol, summary); };
     /**
      * @param {?} filePath
      * @return {?}
@@ -24644,13 +24952,8 @@ function createAotCompiler(compilerHost, options) {
     var /** @type {?} */ tmplParser = new TemplateParser(config, expressionParser, elementSchemaRegistry, htmlParser, console, []);
     var /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, console, symbolCache, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
-    var /** @type {?} */ importResolver = {
-        getImportAs: function (symbol) { return ((symbolResolver.getImportAs(symbol))); },
-        fileNameToModuleName: function (fileName, containingFilePath) { return compilerHost.fileNameToModuleName(fileName, containingFilePath); },
-        getTypeArity: function (symbol) { return ((symbolResolver.getTypeArity(symbol))); }
-    };
     var /** @type {?} */ viewCompiler = new ViewCompiler(config, elementSchemaRegistry);
-    var /** @type {?} */ compiler = new AotCompiler(config, compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(), new TypeScriptEmitter(importResolver), summaryResolver, options.locale || null, options.i18nFormat || null, options.genFilePreamble || null, symbolResolver);
+    var /** @type {?} */ compiler = new AotCompiler(config, compilerHost, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(), new TypeScriptEmitter(symbolResolver), summaryResolver, options.locale || null, options.i18nFormat || null, options.genFilePreamble || null, symbolResolver);
     return { compiler: compiler, reflector: staticReflector };
 }
 /**
@@ -25519,16 +25822,18 @@ var JitCompiler = (function () {
      * @param {?} _styleCompiler
      * @param {?} _viewCompiler
      * @param {?} _ngModuleCompiler
+     * @param {?} _summaryResolver
      * @param {?} _compilerConfig
      * @param {?} _console
      */
-    function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _compilerConfig, _console) {
+    function JitCompiler(_injector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _summaryResolver, _compilerConfig, _console) {
         this._injector = _injector;
         this._metadataResolver = _metadataResolver;
         this._templateParser = _templateParser;
         this._styleCompiler = _styleCompiler;
         this._viewCompiler = _viewCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
+        this._summaryResolver = _summaryResolver;
         this._compilerConfig = _compilerConfig;
         this._console = _console;
         this._compiledTemplateCache = new Map();
@@ -25591,6 +25896,39 @@ var JitCompiler = (function () {
     };
     /**
      * @template T
+     * @param {?} component
+     * @return {?}
+     */
+    JitCompiler.prototype.getComponentFactory = function (component) {
+        var /** @type {?} */ summary = this._metadataResolver.getDirectiveSummary(component);
+        return (summary.componentFactory);
+    };
+    /**
+     * @param {?} summaries
+     * @return {?}
+     */
+    JitCompiler.prototype.loadAotSummaries = function (summaries) {
+        var _this = this;
+        this.clearCache();
+        flattenSummaries(summaries).forEach(function (summary) {
+            _this._summaryResolver.addSummary({ symbol: summary.type.reference, metadata: null, type: summary });
+        });
+    };
+    /**
+     * @param {?} ref
+     * @return {?}
+     */
+    JitCompiler.prototype.hasAotSummary = function (ref) { return !!this._summaryResolver.resolveSummary(ref); };
+    /**
+     * @param {?} ids
+     * @return {?}
+     */
+    JitCompiler.prototype._filterJitIdentifiers = function (ids) {
+        var _this = this;
+        return ids.map(function (mod) { return mod.reference; }).filter(function (ref) { return !_this.hasAotSummary(ref); });
+    };
+    /**
+     * @template T
      * @param {?} moduleType
      * @param {?} isSync
      * @return {?}
@@ -25638,13 +25976,20 @@ var JitCompiler = (function () {
     JitCompiler.prototype._loadModules = function (mainModule, isSync) {
         var _this = this;
         var /** @type {?} */ loadingPromises = [];
-        var /** @type {?} */ ngModule = ((this._metadataResolver.getNgModuleMetadata(mainModule)));
-        // Note: the loadingPromise for a module only includes the loading of the exported directives
-        // of imported modules.
-        // However, for runtime compilation, we want to transitively compile all modules,
-        // so we also need to call loadNgModuleDirectiveAndPipeMetadata for all nested modules.
-        ngModule.transitiveModule.modules.forEach(function (localModuleMeta) {
-            loadingPromises.push(_this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(localModuleMeta.reference, isSync));
+        var /** @type {?} */ mainNgModule = ((this._metadataResolver.getNgModuleMetadata(mainModule)));
+        // Note: for runtime compilation, we want to transitively compile all modules,
+        // so we also need to load the declared directives / pipes for all nested modules.
+        this._filterJitIdentifiers(mainNgModule.transitiveModule.modules).forEach(function (nestedNgModule) {
+            // getNgModuleMetadata only returns null if the value passed in is not an NgModule
+            var /** @type {?} */ moduleMeta = ((_this._metadataResolver.getNgModuleMetadata(nestedNgModule)));
+            _this._filterJitIdentifiers(moduleMeta.declaredDirectives).forEach(function (ref) {
+                var /** @type {?} */ promise = _this._metadataResolver.loadDirectiveMetadata(moduleMeta.type.reference, ref, isSync);
+                if (promise) {
+                    loadingPromises.push(promise);
+                }
+            });
+            _this._filterJitIdentifiers(moduleMeta.declaredPipes)
+                .forEach(function (ref) { return _this._metadataResolver.getOrLoadPipeMetadata(ref); });
         });
         return Promise.all(loadingPromises);
     };
@@ -25681,13 +26026,14 @@ var JitCompiler = (function () {
     JitCompiler.prototype._compileComponents = function (mainModule, allComponentFactories) {
         var _this = this;
         var /** @type {?} */ ngModule = ((this._metadataResolver.getNgModuleMetadata(mainModule)));
-        var /** @type {?} */ moduleByDirective = new Map();
+        var /** @type {?} */ moduleByJitDirective = new Map();
         var /** @type {?} */ templates = new Set();
-        ngModule.transitiveModule.modules.forEach(function (localModuleSummary) {
-            var /** @type {?} */ localModuleMeta = ((_this._metadataResolver.getNgModuleMetadata(localModuleSummary.reference)));
-            localModuleMeta.declaredDirectives.forEach(function (dirIdentifier) {
-                moduleByDirective.set(dirIdentifier.reference, localModuleMeta);
-                var /** @type {?} */ dirMeta = _this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
+        var /** @type {?} */ transJitModules = this._filterJitIdentifiers(ngModule.transitiveModule.modules);
+        transJitModules.forEach(function (localMod) {
+            var /** @type {?} */ localModuleMeta = ((_this._metadataResolver.getNgModuleMetadata(localMod)));
+            _this._filterJitIdentifiers(localModuleMeta.declaredDirectives).forEach(function (dirRef) {
+                moduleByJitDirective.set(dirRef, localModuleMeta);
+                var /** @type {?} */ dirMeta = _this._metadataResolver.getDirectiveMetadata(dirRef);
                 if (dirMeta.isComponent) {
                     templates.add(_this._createCompiledTemplate(dirMeta, localModuleMeta));
                     if (allComponentFactories) {
@@ -25698,20 +26044,22 @@ var JitCompiler = (function () {
                 }
             });
         });
-        ngModule.transitiveModule.modules.forEach(function (localModuleSummary) {
-            var /** @type {?} */ localModuleMeta = ((_this._metadataResolver.getNgModuleMetadata(localModuleSummary.reference)));
-            localModuleMeta.declaredDirectives.forEach(function (dirIdentifier) {
-                var /** @type {?} */ dirMeta = _this._metadataResolver.getDirectiveMetadata(dirIdentifier.reference);
+        transJitModules.forEach(function (localMod) {
+            var /** @type {?} */ localModuleMeta = ((_this._metadataResolver.getNgModuleMetadata(localMod)));
+            _this._filterJitIdentifiers(localModuleMeta.declaredDirectives).forEach(function (dirRef) {
+                var /** @type {?} */ dirMeta = _this._metadataResolver.getDirectiveMetadata(dirRef);
                 if (dirMeta.isComponent) {
                     dirMeta.entryComponents.forEach(function (entryComponentType) {
-                        var /** @type {?} */ moduleMeta = ((moduleByDirective.get(entryComponentType.componentType)));
+                        var /** @type {?} */ moduleMeta = ((moduleByJitDirective.get(entryComponentType.componentType)));
                         templates.add(_this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
                     });
                 }
             });
             localModuleMeta.entryComponents.forEach(function (entryComponentType) {
-                var /** @type {?} */ moduleMeta = ((moduleByDirective.get(entryComponentType.componentType)));
-                templates.add(_this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
+                if (!_this.hasAotSummary(entryComponentType.componentType.reference)) {
+                    var /** @type {?} */ moduleMeta = ((moduleByJitDirective.get(entryComponentType.componentType)));
+                    templates.add(_this._createCompiledHostTemplate(entryComponentType.componentType, moduleMeta));
+                }
             });
         });
         templates.forEach(function (template) { return _this._compileTemplate(template); });
@@ -25849,6 +26197,7 @@ JitCompiler.ctorParameters = function () { return [
     { type: StyleCompiler, },
     { type: ViewCompiler, },
     { type: NgModuleCompiler, },
+    { type: SummaryResolver, },
     { type: CompilerConfig, },
     { type: _angular_core.ɵConsole, },
 ]; };
@@ -25965,6 +26314,23 @@ var ModuleBoundCompiler = (function () {
     ModuleBoundCompiler.prototype.clearCacheFor = function (type) { this._delegate.clearCacheFor(type); };
     return ModuleBoundCompiler;
 }());
+/**
+ * @param {?} fn
+ * @param {?=} out
+ * @return {?}
+ */
+function flattenSummaries(fn$$1, out) {
+    if (out === void 0) { out = []; }
+    fn$$1().forEach(function (entry) {
+        if (typeof entry === 'function') {
+            flattenSummaries(entry, out);
+        }
+        else {
+            out.push(entry);
+        }
+    });
+    return out;
+}
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -26196,17 +26562,6 @@ var _NO_RESOURCE_LOADER = {
 };
 var baseHtmlParser = new _angular_core.InjectionToken('HtmlParser');
 /**
- * @param {?} parser
- * @param {?} translations
- * @param {?} format
- * @param {?} config
- * @param {?} console
- * @return {?}
- */
-function i18nHtmlParserFactory(parser, translations, format, config, console) {
-    return new I18NHtmlParser(parser, translations, format, /** @type {?} */ ((config.missingTranslation)), console);
-}
-/**
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
  */
@@ -26214,7 +26569,8 @@ var COMPILER_PROVIDERS = [
     { provide: _angular_core.ɵReflector, useValue: _angular_core.ɵreflector },
     { provide: _angular_core.ɵReflectorReader, useExisting: _angular_core.ɵReflector },
     { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
-    SummaryResolver,
+    JitSummaryResolver,
+    { provide: SummaryResolver, useExisting: JitSummaryResolver },
     _angular_core.ɵConsole,
     Lexer,
     Parser,
@@ -26224,7 +26580,7 @@ var COMPILER_PROVIDERS = [
     },
     {
         provide: I18NHtmlParser,
-        useFactory: i18nHtmlParserFactory,
+        useFactory: function (parser, translations, format, config, console) { return new I18NHtmlParser(parser, translations, format, /** @type {?} */ ((config.missingTranslation)), console); },
         deps: [
             baseHtmlParser,
             [new _angular_core.Optional(), new _angular_core.Inject(_angular_core.TRANSLATIONS)],
@@ -26476,7 +26832,7 @@ exports.StaticSymbolResolver = StaticSymbolResolver;
 exports.unescapeIdentifier = unescapeIdentifier;
 exports.AotSummaryResolver = AotSummaryResolver;
 exports.SummaryResolver = SummaryResolver;
-exports.i18nHtmlParserFactory = i18nHtmlParserFactory;
+exports.JitSummaryResolver = JitSummaryResolver;
 exports.COMPILER_PROVIDERS = COMPILER_PROVIDERS;
 exports.JitCompilerFactory = JitCompilerFactory;
 exports.platformCoreDynamic = platformCoreDynamic;
