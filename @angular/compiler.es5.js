@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.2.0-beta.0-04197ee
+ * @license Angular v4.2.0-beta.0-9da6340
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.2.0-beta.0-04197ee');
+var VERSION = new Version('4.2.0-beta.0-9da6340');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -26362,7 +26362,7 @@ var MessageBundle = (function () {
             return i18nParserResult.errors;
         }
         (_a = this._messages).push.apply(_a, i18nParserResult.messages);
-        return [];
+        return null;
         var _a;
     };
     /**
