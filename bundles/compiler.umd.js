@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-beta.0-9da6340
+ * @license Angular v4.2.0-beta.0-4874765
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.2.0-beta.0-9da6340
+ * @license Angular v4.2.0-beta.0-4874765
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.2.0-beta.0-9da6340');
+var VERSION = new _angular_core.Version('4.2.0-beta.0-4874765');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -26372,7 +26372,7 @@ var MessageBundle = (function () {
             return i18nParserResult.errors;
         }
         (_a = this._messages).push.apply(_a, i18nParserResult.messages);
-        return null;
+        return [];
         var _a;
     };
     /**

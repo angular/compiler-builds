@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-beta.0-9da6340
+ * @license Angular v4.2.0-beta.0-4874765
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-beta.0-9da6340');
+const VERSION = new Version('4.2.0-beta.0-4874765');
 
 /**
  * @license
@@ -25451,7 +25451,7 @@ class MessageBundle {
             return i18nParserResult.errors;
         }
         this._messages.push(...i18nParserResult.messages);
-        return null;
+        return [];
     }
     /**
      * @return {?}
