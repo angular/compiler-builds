@@ -4,7 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.2.0-beta.0-c5ce040
+ * @license Angular v4.2.0-beta.0-a2dcb7b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.2.0-beta.0-c5ce040');
+var VERSION = new Version('4.2.0-beta.0-a2dcb7b');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -468,6 +468,162 @@ PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
 PropertyBindingType[PropertyBindingType.Class] = "Class";
 PropertyBindingType[PropertyBindingType.Style] = "Style";
 PropertyBindingType[PropertyBindingType.Animation] = "Animation";
+/**
+ * A visitor that accepts each node but doesn't do anything. It is intended to be used
+ * as the base class for a visitor that is only interested in a subset of the node types.
+ */
+var NullTemplateVisitor = (function () {
+    function NullTemplateVisitor() {
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitNgContent = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitEmbeddedTemplate = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitElement = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitReference = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitVariable = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitEvent = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitElementProperty = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitAttr = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitBoundText = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitText = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitDirective = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullTemplateVisitor.prototype.visitDirectiveProperty = function (ast, context) { };
+    return NullTemplateVisitor;
+}());
+/**
+ * Base class that can be used to build a visitor that visits each node
+ * in an template ast recursively.
+ */
+var RecursiveTemplateAstVisitor = (function (_super) {
+    __extends(RecursiveTemplateAstVisitor, _super);
+    function RecursiveTemplateAstVisitor() {
+        return _super.call(this) || this;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveTemplateAstVisitor.prototype.visitEmbeddedTemplate = function (ast, context) {
+        return this.visitChildren(context, function (visit) {
+            visit(ast.attrs);
+            visit(ast.references);
+            visit(ast.variables);
+            visit(ast.directives);
+            visit(ast.providers);
+            visit(ast.children);
+        });
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveTemplateAstVisitor.prototype.visitElement = function (ast, context) {
+        return this.visitChildren(context, function (visit) {
+            visit(ast.attrs);
+            visit(ast.inputs);
+            visit(ast.outputs);
+            visit(ast.references);
+            visit(ast.directives);
+            visit(ast.providers);
+            visit(ast.children);
+        });
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveTemplateAstVisitor.prototype.visitDirective = function (ast, context) {
+        return this.visitChildren(context, function (visit) {
+            visit(ast.inputs);
+            visit(ast.hostProperties);
+            visit(ast.hostEvents);
+        });
+    };
+    /**
+     * @template T
+     * @param {?} context
+     * @param {?} cb
+     * @return {?}
+     */
+    RecursiveTemplateAstVisitor.prototype.visitChildren = function (context, cb) {
+        var /** @type {?} */ results = [];
+        var /** @type {?} */ t = this;
+        /**
+         * @template T
+         * @param {?} children
+         * @return {?}
+         */
+        function visit(children) {
+            if (children && children.length)
+                results.push(templateVisitAll(t, children, context));
+        }
+        cb(visit);
+        return [].concat.apply([], results);
+    };
+    return RecursiveTemplateAstVisitor;
+}(NullTemplateVisitor));
 /**
  * Visit every node in a list of {\@link TemplateAst}s with the given {\@link TemplateAstVisitor}.
  * @param {?} visitor
@@ -2926,6 +3082,125 @@ var TemplateBinding = (function () {
     }
     return TemplateBinding;
 }());
+var NullAstVisitor = (function () {
+    function NullAstVisitor() {
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitBinary = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitChain = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitConditional = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitFunctionCall = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitImplicitReceiver = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitInterpolation = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitKeyedRead = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitKeyedWrite = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitLiteralArray = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitLiteralMap = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitLiteralPrimitive = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitMethodCall = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitPipe = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitPrefixNot = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitPropertyRead = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitPropertyWrite = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitQuote = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitSafeMethodCall = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    NullAstVisitor.prototype.visitSafePropertyRead = function (ast, context) { };
+    return NullAstVisitor;
+}());
 var RecursiveAstVisitor = (function () {
     function RecursiveAstVisitor() {
     }
@@ -3270,6 +3545,155 @@ var AstTransformer = (function () {
     };
     return AstTransformer;
 }());
+/**
+ * @param {?} ast
+ * @param {?} visitor
+ * @param {?=} context
+ * @return {?}
+ */
+function visitAstChildren(ast, visitor, context) {
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function visit(ast) {
+        visitor.visit && visitor.visit(ast, context) || ast.visit(visitor, context);
+    }
+    /**
+     * @template T
+     * @param {?} asts
+     * @return {?}
+     */
+    function visitAll(asts) { asts.forEach(visit); }
+    ast.visit({
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitBinary: function (ast) {
+            visit(ast.left);
+            visit(ast.right);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitChain: function (ast) { visitAll(ast.expressions); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitConditional: function (ast) {
+            visit(ast.condition);
+            visit(ast.trueExp);
+            visit(ast.falseExp);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitFunctionCall: function (ast) {
+            if (ast.target) {
+                visit(ast.target);
+            }
+            visitAll(ast.args);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitImplicitReceiver: function (ast) { },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitInterpolation: function (ast) { visitAll(ast.expressions); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitKeyedRead: function (ast) {
+            visit(ast.obj);
+            visit(ast.key);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitKeyedWrite: function (ast) {
+            visit(ast.obj);
+            visit(ast.key);
+            visit(ast.obj);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitLiteralArray: function (ast) { visitAll(ast.expressions); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitLiteralMap: function (ast) { },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitLiteralPrimitive: function (ast) { },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitMethodCall: function (ast) {
+            visit(ast.receiver);
+            visitAll(ast.args);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitPipe: function (ast) {
+            visit(ast.exp);
+            visitAll(ast.args);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitPrefixNot: function (ast) { visit(ast.expression); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitPropertyRead: function (ast) { visit(ast.receiver); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitPropertyWrite: function (ast) {
+            visit(ast.receiver);
+            visit(ast.value);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitQuote: function (ast) { },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitSafeMethodCall: function (ast) {
+            visit(ast.receiver);
+            visitAll(ast.args);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitSafePropertyRead: function (ast) { visit(ast.receiver); },
+    });
+}
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -5232,6 +5656,92 @@ function typeSourceSpan(kind, type) {
     return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
 }
 /**
+ * A path is an ordered set of elements. Typically a path is to  a
+ * particular offset in a source file. The head of the list is the top
+ * most node. The tail is the node that contains the offset directly.
+ *
+ * For example, the expresion `a + b + c` might have an ast that looks
+ * like:
+ *     +
+ *    / \
+ *   a   +
+ *      / \
+ *     b   c
+ *
+ * The path to the node at offset 9 would be `['+' at 1-10, '+' at 7-10,
+ * 'c' at 9-10]` and the path the node at offset 1 would be
+ * `['+' at 1-10, 'a' at 1-2]`.
+ */
+var AstPath = (function () {
+    /**
+     * @param {?} path
+     * @param {?=} position
+     */
+    function AstPath(path, position) {
+        if (position === void 0) { position = -1; }
+        this.path = path;
+        this.position = position;
+    }
+    Object.defineProperty(AstPath.prototype, "empty", {
+        /**
+         * @return {?}
+         */
+        get: function () { return !this.path || !this.path.length; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(AstPath.prototype, "head", {
+        /**
+         * @return {?}
+         */
+        get: function () { return this.path[0]; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(AstPath.prototype, "tail", {
+        /**
+         * @return {?}
+         */
+        get: function () { return this.path[this.path.length - 1]; },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * @param {?} node
+     * @return {?}
+     */
+    AstPath.prototype.parentOf = function (node) {
+        return node && this.path[this.path.indexOf(node) - 1];
+    };
+    /**
+     * @param {?} node
+     * @return {?}
+     */
+    AstPath.prototype.childOf = function (node) { return this.path[this.path.indexOf(node) + 1]; };
+    /**
+     * @template N
+     * @param {?} ctor
+     * @return {?}
+     */
+    AstPath.prototype.first = function (ctor) {
+        for (var /** @type {?} */ i = this.path.length - 1; i >= 0; i--) {
+            var /** @type {?} */ item = this.path[i];
+            if (item instanceof ctor)
+                return (item);
+        }
+    };
+    /**
+     * @param {?} node
+     * @return {?}
+     */
+    AstPath.prototype.push = function (node) { this.path.push(node); };
+    /**
+     * @return {?}
+     */
+    AstPath.prototype.pop = function () { return ((this.path.pop())); };
+    return AstPath;
+}());
+/**
  * @license
  * Copyright Google Inc. All Rights Reserved.
  *
@@ -5385,6 +5895,124 @@ function visitAll(visitor, nodes, context) {
         }
     });
     return result;
+}
+var RecursiveVisitor = (function () {
+    function RecursiveVisitor() {
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveVisitor.prototype.visitElement = function (ast, context) {
+        this.visitChildren(context, function (visit) {
+            visit(ast.attrs);
+            visit(ast.children);
+        });
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveVisitor.prototype.visitAttribute = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveVisitor.prototype.visitText = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveVisitor.prototype.visitComment = function (ast, context) { };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveVisitor.prototype.visitExpansion = function (ast, context) {
+        return this.visitChildren(context, function (visit) { visit(ast.cases); });
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveVisitor.prototype.visitExpansionCase = function (ast, context) { };
+    /**
+     * @template T
+     * @param {?} context
+     * @param {?} cb
+     * @return {?}
+     */
+    RecursiveVisitor.prototype.visitChildren = function (context, cb) {
+        var /** @type {?} */ results = [];
+        var /** @type {?} */ t = this;
+        /**
+         * @template T
+         * @param {?} children
+         * @return {?}
+         */
+        function visit(children) {
+            if (children)
+                results.push(visitAll(t, children, context));
+        }
+        cb(visit);
+        return [].concat.apply([], results);
+    };
+    return RecursiveVisitor;
+}());
+/**
+ * @param {?} ast
+ * @return {?}
+ */
+function spanOf(ast) {
+    var /** @type {?} */ start = ast.sourceSpan.start.offset;
+    var /** @type {?} */ end = ast.sourceSpan.end.offset;
+    if (ast instanceof Element) {
+        if (ast.endSourceSpan) {
+            end = ast.endSourceSpan.end.offset;
+        }
+        else if (ast.children && ast.children.length) {
+            end = spanOf(ast.children[ast.children.length - 1]).end;
+        }
+    }
+    return { start: start, end: end };
+}
+/**
+ * @param {?} nodes
+ * @param {?} position
+ * @return {?}
+ */
+function findNode(nodes, position) {
+    var /** @type {?} */ path = [];
+    var /** @type {?} */ visitor = new (function (_super) {
+        __extends(class_1, _super);
+        function class_1() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        class_1.prototype.visit = function (ast, context) {
+            var /** @type {?} */ span = spanOf(ast);
+            if (span.start <= position && position < span.end) {
+                path.push(ast);
+            }
+            else {
+                // Returning a value here will result in the children being skipped.
+                return true;
+            }
+        };
+        return class_1;
+    }(RecursiveVisitor));
+    visitAll(visitor, nodes);
+    return new AstPath(path, position);
 }
 /**
  * @license
@@ -20633,7 +21261,7 @@ var _AstToIrVisitor = (function () {
             default:
                 throw new Error("Unsupported operation " + ast.operation);
         }
-        return convertToStatementIfNeeded(mode, new BinaryOperatorExpr(op, this.visit(ast.left, _Mode.Expression), this.visit(ast.right, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, new BinaryOperatorExpr(op, this._visit(ast.left, _Mode.Expression), this._visit(ast.right, _Mode.Expression)));
     };
     /**
      * @param {?} ast
@@ -20650,8 +21278,8 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitConditional = function (ast, mode) {
-        var /** @type {?} */ value = this.visit(ast.condition, _Mode.Expression);
-        return convertToStatementIfNeeded(mode, value.conditional(this.visit(ast.trueExp, _Mode.Expression), this.visit(ast.falseExp, _Mode.Expression)));
+        var /** @type {?} */ value = this._visit(ast.condition, _Mode.Expression);
+        return convertToStatementIfNeeded(mode, value.conditional(this._visit(ast.trueExp, _Mode.Expression), this._visit(ast.falseExp, _Mode.Expression)));
     };
     /**
      * @param {?} ast
@@ -20673,7 +21301,7 @@ var _AstToIrVisitor = (function () {
             fnResult = ast.converter(convertedArgs);
         }
         else {
-            fnResult = this.visit(/** @type {?} */ ((ast.target)), _Mode.Expression).callFn(convertedArgs);
+            fnResult = this._visit(/** @type {?} */ ((ast.target)), _Mode.Expression).callFn(convertedArgs);
         }
         return convertToStatementIfNeeded(mode, fnResult);
     };
@@ -20696,7 +21324,7 @@ var _AstToIrVisitor = (function () {
         var /** @type {?} */ args = [literal(ast.expressions.length)];
         for (var /** @type {?} */ i = 0; i < ast.strings.length - 1; i++) {
             args.push(literal(ast.strings[i]));
-            args.push(this.visit(ast.expressions[i], _Mode.Expression));
+            args.push(this._visit(ast.expressions[i], _Mode.Expression));
         }
         args.push(literal(ast.strings[ast.strings.length - 1]));
         return ast.expressions.length <= 9 ?
@@ -20716,7 +21344,7 @@ var _AstToIrVisitor = (function () {
             return this.convertSafeAccess(ast, leftMostSafe, mode);
         }
         else {
-            return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));
+            return convertToStatementIfNeeded(mode, this._visit(ast.obj, _Mode.Expression).key(this._visit(ast.key, _Mode.Expression)));
         }
     };
     /**
@@ -20725,9 +21353,9 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitKeyedWrite = function (ast, mode) {
-        var /** @type {?} */ obj = this.visit(ast.obj, _Mode.Expression);
-        var /** @type {?} */ key = this.visit(ast.key, _Mode.Expression);
-        var /** @type {?} */ value = this.visit(ast.value, _Mode.Expression);
+        var /** @type {?} */ obj = this._visit(ast.obj, _Mode.Expression);
+        var /** @type {?} */ key = this._visit(ast.key, _Mode.Expression);
+        var /** @type {?} */ value = this._visit(ast.value, _Mode.Expression);
         return convertToStatementIfNeeded(mode, obj.key(key).set(value));
     };
     /**
@@ -20772,7 +21400,7 @@ var _AstToIrVisitor = (function () {
         else {
             var /** @type {?} */ args = this.visitAll(ast.args, _Mode.Expression);
             var /** @type {?} */ result = null;
-            var /** @type {?} */ receiver = this.visit(ast.receiver, _Mode.Expression);
+            var /** @type {?} */ receiver = this._visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
                 var /** @type {?} */ varExpr = this._getLocal(ast.name);
                 if (varExpr) {
@@ -20791,7 +21419,7 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitPrefixNot = function (ast, mode) {
-        return convertToStatementIfNeeded(mode, not(this.visit(ast.expression, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, not(this._visit(ast.expression, _Mode.Expression)));
     };
     /**
      * @param {?} ast
@@ -20805,7 +21433,7 @@ var _AstToIrVisitor = (function () {
         }
         else {
             var /** @type {?} */ result = null;
-            var /** @type {?} */ receiver = this.visit(ast.receiver, _Mode.Expression);
+            var /** @type {?} */ receiver = this._visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
                 result = this._getLocal(ast.name);
             }
@@ -20821,14 +21449,14 @@ var _AstToIrVisitor = (function () {
      * @return {?}
      */
     _AstToIrVisitor.prototype.visitPropertyWrite = function (ast, mode) {
-        var /** @type {?} */ receiver = this.visit(ast.receiver, _Mode.Expression);
+        var /** @type {?} */ receiver = this._visit(ast.receiver, _Mode.Expression);
         if (receiver === this._implicitReceiver) {
             var /** @type {?} */ varExpr = this._getLocal(ast.name);
             if (varExpr) {
                 throw new Error('Cannot assign to a reference or variable!');
             }
         }
-        return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this.visit(ast.value, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this._visit(ast.value, _Mode.Expression)));
     };
     /**
      * @param {?} ast
@@ -20853,7 +21481,7 @@ var _AstToIrVisitor = (function () {
      */
     _AstToIrVisitor.prototype.visitAll = function (asts, mode) {
         var _this = this;
-        return asts.map(function (ast) { return _this.visit(ast, mode); });
+        return asts.map(function (ast) { return _this._visit(ast, mode); });
     };
     /**
      * @param {?} ast
@@ -20868,7 +21496,7 @@ var _AstToIrVisitor = (function () {
      * @param {?} mode
      * @return {?}
      */
-    _AstToIrVisitor.prototype.visit = function (ast, mode) {
+    _AstToIrVisitor.prototype._visit = function (ast, mode) {
         var /** @type {?} */ result = this._resultMap.get(ast);
         if (result)
             return result;
@@ -20916,7 +21544,7 @@ var _AstToIrVisitor = (function () {
         //
         // Notice that the first guard condition is the left hand of the left most safe access node
         // which comes in as leftMostSafe to this routine.
-        var /** @type {?} */ guardedExpression = this.visit(leftMostSafe.receiver, _Mode.Expression);
+        var /** @type {?} */ guardedExpression = this._visit(leftMostSafe.receiver, _Mode.Expression);
         var /** @type {?} */ temporary = ((undefined));
         if (this.needsTemporary(leftMostSafe.receiver)) {
             // If the expression has method calls or pipes then we need to save the result into a
@@ -20937,7 +21565,7 @@ var _AstToIrVisitor = (function () {
             this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name));
         }
         // Recursively convert the node now without the guarded member access.
-        var /** @type {?} */ access = this.visit(ast, _Mode.Expression);
+        var /** @type {?} */ access = this._visit(ast, _Mode.Expression);
         // Remove the mapping. This is not strictly required as the converter only traverses each node
         // once but is safer if the conversion is changed to traverse the nodes more than once.
         this._nodeMap.delete(leftMostSafe);
@@ -21407,7 +22035,7 @@ var ViewBuilder = (function () {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 var /** @type {?} */ queryId = queryIndex + 1;
                 var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
-                var /** @type {?} */ flags = 67108864 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds_1, queryId, query.first);
+                var /** @type {?} */ flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds_1, queryId, query.first);
                 _this.nodes.push(function () { return ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -21483,7 +22111,7 @@ var ViewBuilder = (function () {
         // ngContentDef(ngContentIndex: number, index: number): NodeDef;
         this.nodes.push(function () { return ({
             sourceSpan: ast.sourceSpan,
-            nodeFlags: 4 /* TypeNgContent */,
+            nodeFlags: 8 /* TypeNgContent */,
             nodeDef: importExpr(createIdentifier(Identifiers.ngContentDef)).callFn([
                 literal(ast.ngContentIndex), literal(ast.index)
             ])
@@ -21644,7 +22272,7 @@ var ViewBuilder = (function () {
         var _this = this;
         var /** @type {?} */ flags = 0;
         if (ast.hasViewContainer) {
-            flags |= 8388608 /* EmbeddedViews */;
+            flags |= 16777216 /* EmbeddedViews */;
         }
         var /** @type {?} */ usedEvents = new Map();
         ast.outputs.forEach(function (event) {
@@ -21739,7 +22367,7 @@ var ViewBuilder = (function () {
         this.nodes.push(/** @type {?} */ ((null)));
         dirAst.directive.queries.forEach(function (query, queryIndex) {
             var /** @type {?} */ queryId = dirAst.contentQueryStartId + queryIndex;
-            var /** @type {?} */ flags = 33554432 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
+            var /** @type {?} */ flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
             var /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             _this.nodes.push(function () { return ({
                 sourceSpan: dirAst.sourceSpan,
@@ -21763,7 +22391,7 @@ var ViewBuilder = (function () {
             }
         });
         if (dirAst.directive.isComponent) {
-            flags |= 16384 /* Component */;
+            flags |= 32768 /* Component */;
         }
         var /** @type {?} */ inputDefs = dirAst.inputs.map(function (inputAst, inputIndex) {
             var /** @type {?} */ mapValue = literalArr([literal(inputIndex), literal(inputAst.directiveName)]);
@@ -21780,7 +22408,7 @@ var ViewBuilder = (function () {
             }
         });
         var /** @type {?} */ updateDirectiveExpressions = [];
-        if (dirAst.inputs.length || (flags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0) {
+        if (dirAst.inputs.length || (flags & (262144 /* DoCheck */ | 65536 /* OnInit */)) > 0) {
             updateDirectiveExpressions =
                 dirAst.inputs.map(function (input, bindingIndex) { return _this._preprocessUpdateExpression({
                     nodeIndex: nodeIndex,
@@ -21809,7 +22437,7 @@ var ViewBuilder = (function () {
         //   outputs?: {[name: string]: string}, component?: () => ViewDefinition): NodeDef;
         this.nodes[nodeIndex] = function () { return ({
             sourceSpan: dirAst.sourceSpan,
-            nodeFlags: 8192 /* TypeDirective */ | flags,
+            nodeFlags: 16384 /* TypeDirective */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.directiveDef)).callFn([
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 literal(childCount), providerExpr, depsExpr,
@@ -21851,10 +22479,10 @@ var ViewBuilder = (function () {
     ViewBuilder.prototype._visitProviderOrDirective = function (providerAst, queryMatches) {
         var /** @type {?} */ flags = 0;
         if (!providerAst.eager) {
-            flags |= 2048 /* LazyProvider */;
+            flags |= 4096 /* LazyProvider */;
         }
         if (providerAst.providerType === ProviderAstType.PrivateService) {
-            flags |= 4096 /* PrivateProvider */;
+            flags |= 8192 /* PrivateProvider */;
         }
         providerAst.lifecycleHooks.forEach(function (lifecycleHook) {
             // for regular providers, we only support ngOnDestroy
@@ -21914,7 +22542,7 @@ var ViewBuilder = (function () {
         // pureArrayDef(argCount: number): NodeDef;
         this.nodes.push(function () { return ({
             sourceSpan: sourceSpan,
-            nodeFlags: 16 /* TypePureArray */,
+            nodeFlags: 32 /* TypePureArray */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureArrayDef)).callFn([literal(argCount)])
         }); });
         return function (args) { return callCheckStmt(nodeIndex, args); };
@@ -21933,7 +22561,7 @@ var ViewBuilder = (function () {
         // function pureObjectDef(propertyNames: string[]): NodeDef
         this.nodes.push(function () { return ({
             sourceSpan: sourceSpan,
-            nodeFlags: 32 /* TypePureObject */,
+            nodeFlags: 64 /* TypePureObject */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureObjectDef))
                 .callFn([literalArr(keys.map(function (key) { return literal(key); }))])
         }); });
@@ -21952,7 +22580,7 @@ var ViewBuilder = (function () {
             // function purePipeDef(argCount: number): NodeDef;
             this.nodes.push(function () { return ({
                 sourceSpan: expression.sourceSpan,
-                nodeFlags: 64 /* TypePurePipe */,
+                nodeFlags: 128 /* TypePurePipe */,
                 nodeDef: importExpr(createIdentifier(Identifiers.purePipeDef))
                     .callFn([literal(argCount)])
             }); });
@@ -21996,7 +22624,7 @@ var ViewBuilder = (function () {
         //   flags: NodeFlags, ctor: any, deps: ([DepFlags, any] | any)[]): NodeDef
         this.nodes.push(function () { return ({
             sourceSpan: sourceSpan,
-            nodeFlags: 8 /* TypePipe */,
+            nodeFlags: 16 /* TypePipe */,
             nodeDef: importExpr(createIdentifier(Identifiers.pipeDef)).callFn([
                 literal(flags), importExpr(pipe.type), literalArr(depExprs)
             ])
@@ -22035,7 +22663,7 @@ var ViewBuilder = (function () {
                 updateRendererStmts.push.apply(updateRendererStmts, createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, false));
             }
             if (updateDirectives) {
-                updateDirectivesStmts.push.apply(updateDirectivesStmts, createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, (nodeFlags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0));
+                updateDirectivesStmts.push.apply(updateDirectivesStmts, createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, (nodeFlags & (262144 /* DoCheck */ | 65536 /* OnInit */)) > 0));
             }
             // We use a comma expression to call the log function before
             // the nodeDef function, but still use the result of the nodeDef function
@@ -22190,7 +22818,7 @@ function multiProviderDef(providers) {
         return expr;
     });
     var /** @type {?} */ providerExpr = fn(allParams, [new ReturnStatement(literalArr(exprs))], INFERRED_TYPE);
-    return { providerExpr: providerExpr, flags: 512 /* TypeFactoryProvider */, depsExpr: literalArr(allDepDefs) };
+    return { providerExpr: providerExpr, flags: 1024 /* TypeFactoryProvider */, depsExpr: literalArr(allDepDefs) };
     /**
      * @param {?} providerIndex
      * @param {?} deps
@@ -22216,28 +22844,28 @@ function singleProviderDef(providerType, providerMeta) {
     var /** @type {?} */ deps;
     if (providerType === ProviderAstType.Directive || providerType === ProviderAstType.Component) {
         providerExpr = importExpr(/** @type {?} */ ((providerMeta.useClass)));
-        flags = 8192 /* TypeDirective */;
+        flags = 16384 /* TypeDirective */;
         deps = providerMeta.deps || ((providerMeta.useClass)).diDeps;
     }
     else {
         if (providerMeta.useClass) {
             providerExpr = importExpr(providerMeta.useClass);
-            flags = 256 /* TypeClassProvider */;
+            flags = 512 /* TypeClassProvider */;
             deps = providerMeta.deps || providerMeta.useClass.diDeps;
         }
         else if (providerMeta.useFactory) {
             providerExpr = importExpr(providerMeta.useFactory);
-            flags = 512 /* TypeFactoryProvider */;
+            flags = 1024 /* TypeFactoryProvider */;
             deps = providerMeta.deps || providerMeta.useFactory.diDeps;
         }
         else if (providerMeta.useExisting) {
             providerExpr = NULL_EXPR;
-            flags = 1024 /* TypeUseExistingProvider */;
+            flags = 2048 /* TypeUseExistingProvider */;
             deps = [{ token: providerMeta.useExisting }];
         }
         else {
             providerExpr = convertValueToOutputAst(providerMeta.useValue);
-            flags = 128 /* TypeValueProvider */;
+            flags = 256 /* TypeValueProvider */;
             deps = [];
         }
     }
@@ -22296,28 +22924,28 @@ function lifecycleHookToNodeFlag(lifecycleHook) {
     var /** @type {?} */ nodeFlag = 0;
     switch (lifecycleHook) {
         case ɵLifecycleHooks.AfterContentChecked:
-            nodeFlag = 1048576 /* AfterContentChecked */;
+            nodeFlag = 2097152 /* AfterContentChecked */;
             break;
         case ɵLifecycleHooks.AfterContentInit:
-            nodeFlag = 524288 /* AfterContentInit */;
+            nodeFlag = 1048576 /* AfterContentInit */;
             break;
         case ɵLifecycleHooks.AfterViewChecked:
-            nodeFlag = 4194304 /* AfterViewChecked */;
+            nodeFlag = 8388608 /* AfterViewChecked */;
             break;
         case ɵLifecycleHooks.AfterViewInit:
-            nodeFlag = 2097152 /* AfterViewInit */;
+            nodeFlag = 4194304 /* AfterViewInit */;
             break;
         case ɵLifecycleHooks.DoCheck:
-            nodeFlag = 131072 /* DoCheck */;
+            nodeFlag = 262144 /* DoCheck */;
             break;
         case ɵLifecycleHooks.OnChanges:
-            nodeFlag = 262144 /* OnChanges */;
+            nodeFlag = 524288 /* OnChanges */;
             break;
         case ɵLifecycleHooks.OnDestroy:
-            nodeFlag = 65536 /* OnDestroy */;
+            nodeFlag = 131072 /* OnDestroy */;
             break;
         case ɵLifecycleHooks.OnInit:
-            nodeFlag = 32768 /* OnInit */;
+            nodeFlag = 65536 /* OnInit */;
             break;
     }
     return nodeFlag;
@@ -22510,10 +23138,10 @@ function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
     // Note: We only make queries static that query for a single item.
     // This is because of backwards compatibility with the old view compiler...
     if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
-        flags |= 134217728 /* StaticQuery */;
+        flags |= 268435456 /* StaticQuery */;
     }
     else {
-        flags |= 268435456 /* DynamicQuery */;
+        flags |= 536870912 /* DynamicQuery */;
     }
     return flags;
 }
@@ -26362,7 +26990,7 @@ var MessageBundle = (function () {
             return i18nParserResult.errors;
         }
         (_a = this._messages).push.apply(_a, i18nParserResult.messages);
-        return null;
+        return [];
         var _a;
     };
     /**
@@ -26778,6 +27406,6 @@ var ImportResolver = (function () {
  * Entry point for all public APIs of the compiler package.
  */
 // This file only reexports content of the `src` folder. Keep it that way.
-export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, JitSummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map
 //# sourceMappingURL=compiler.es5.js.map

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-beta.0-c5ce040
+ * @license Angular v4.2.0-beta.0-a2dcb7b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-beta.0-c5ce040');
+const VERSION = new Version('4.2.0-beta.0-a2dcb7b');
 
 /**
  * @license
@@ -440,6 +440,155 @@ PropertyBindingType[PropertyBindingType.Attribute] = "Attribute";
 PropertyBindingType[PropertyBindingType.Class] = "Class";
 PropertyBindingType[PropertyBindingType.Style] = "Style";
 PropertyBindingType[PropertyBindingType.Animation] = "Animation";
+/**
+ * A visitor that accepts each node but doesn't do anything. It is intended to be used
+ * as the base class for a visitor that is only interested in a subset of the node types.
+ */
+class NullTemplateVisitor {
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitNgContent(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitEmbeddedTemplate(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitElement(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitReference(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitVariable(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitEvent(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitElementProperty(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitAttr(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitBoundText(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitText(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitDirective(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitDirectiveProperty(ast, context) { }
+}
+/**
+ * Base class that can be used to build a visitor that visits each node
+ * in an template ast recursively.
+ */
+class RecursiveTemplateAstVisitor extends NullTemplateVisitor {
+    constructor() { super(); }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitEmbeddedTemplate(ast, context) {
+        return this.visitChildren(context, visit => {
+            visit(ast.attrs);
+            visit(ast.references);
+            visit(ast.variables);
+            visit(ast.directives);
+            visit(ast.providers);
+            visit(ast.children);
+        });
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitElement(ast, context) {
+        return this.visitChildren(context, visit => {
+            visit(ast.attrs);
+            visit(ast.inputs);
+            visit(ast.outputs);
+            visit(ast.references);
+            visit(ast.directives);
+            visit(ast.providers);
+            visit(ast.children);
+        });
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitDirective(ast, context) {
+        return this.visitChildren(context, visit => {
+            visit(ast.inputs);
+            visit(ast.hostProperties);
+            visit(ast.hostEvents);
+        });
+    }
+    /**
+     * @template T
+     * @param {?} context
+     * @param {?} cb
+     * @return {?}
+     */
+    visitChildren(context, cb) {
+        let /** @type {?} */ results = [];
+        let /** @type {?} */ t = this;
+        /**
+         * @template T
+         * @param {?} children
+         * @return {?}
+         */
+        function visit(children) {
+            if (children && children.length)
+                results.push(templateVisitAll(t, children, context));
+        }
+        cb(visit);
+        return [].concat.apply([], results);
+    }
+}
 /**
  * Visit every node in a list of {\@link TemplateAst}s with the given {\@link TemplateAstVisitor}.
  * @param {?} visitor
@@ -2719,6 +2868,122 @@ class TemplateBinding {
         this.expression = expression;
     }
 }
+class NullAstVisitor {
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitBinary(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitChain(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitConditional(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitFunctionCall(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitImplicitReceiver(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitInterpolation(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitKeyedRead(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitKeyedWrite(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralArray(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralMap(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralPrimitive(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitMethodCall(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitPipe(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitPrefixNot(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitPropertyRead(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitPropertyWrite(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitQuote(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitSafeMethodCall(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitSafePropertyRead(ast, context) { }
+}
 class RecursiveAstVisitor {
     /**
      * @param {?} ast
@@ -3055,6 +3320,155 @@ class AstTransformer {
     visitQuote(ast, context) {
         return new Quote(ast.span, ast.prefix, ast.uninterpretedExpression, ast.location);
     }
+}
+/**
+ * @param {?} ast
+ * @param {?} visitor
+ * @param {?=} context
+ * @return {?}
+ */
+function visitAstChildren(ast, visitor, context) {
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function visit(ast) {
+        visitor.visit && visitor.visit(ast, context) || ast.visit(visitor, context);
+    }
+    /**
+     * @template T
+     * @param {?} asts
+     * @return {?}
+     */
+    function visitAll(asts) { asts.forEach(visit); }
+    ast.visit({
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitBinary(ast) {
+            visit(ast.left);
+            visit(ast.right);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitChain(ast) { visitAll(ast.expressions); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitConditional(ast) {
+            visit(ast.condition);
+            visit(ast.trueExp);
+            visit(ast.falseExp);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitFunctionCall(ast) {
+            if (ast.target) {
+                visit(ast.target);
+            }
+            visitAll(ast.args);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitImplicitReceiver(ast) { },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitInterpolation(ast) { visitAll(ast.expressions); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitKeyedRead(ast) {
+            visit(ast.obj);
+            visit(ast.key);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitKeyedWrite(ast) {
+            visit(ast.obj);
+            visit(ast.key);
+            visit(ast.obj);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitLiteralArray(ast) { visitAll(ast.expressions); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitLiteralMap(ast) { },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitLiteralPrimitive(ast) { },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitMethodCall(ast) {
+            visit(ast.receiver);
+            visitAll(ast.args);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitPipe(ast) {
+            visit(ast.exp);
+            visitAll(ast.args);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitPrefixNot(ast) { visit(ast.expression); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitPropertyRead(ast) { visit(ast.receiver); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitPropertyWrite(ast) {
+            visit(ast.receiver);
+            visit(ast.value);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitQuote(ast) { },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitSafeMethodCall(ast) {
+            visit(ast.receiver);
+            visitAll(ast.args);
+        },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitSafePropertyRead(ast) { visit(ast.receiver); },
+    });
 }
 
 /**
@@ -4993,6 +5407,79 @@ function typeSourceSpan(kind, type) {
 }
 
 /**
+ * A path is an ordered set of elements. Typically a path is to  a
+ * particular offset in a source file. The head of the list is the top
+ * most node. The tail is the node that contains the offset directly.
+ *
+ * For example, the expresion `a + b + c` might have an ast that looks
+ * like:
+ *     +
+ *    / \
+ *   a   +
+ *      / \
+ *     b   c
+ *
+ * The path to the node at offset 9 would be `['+' at 1-10, '+' at 7-10,
+ * 'c' at 9-10]` and the path the node at offset 1 would be
+ * `['+' at 1-10, 'a' at 1-2]`.
+ */
+class AstPath {
+    /**
+     * @param {?} path
+     * @param {?=} position
+     */
+    constructor(path, position = -1) {
+        this.path = path;
+        this.position = position;
+    }
+    /**
+     * @return {?}
+     */
+    get empty() { return !this.path || !this.path.length; }
+    /**
+     * @return {?}
+     */
+    get head() { return this.path[0]; }
+    /**
+     * @return {?}
+     */
+    get tail() { return this.path[this.path.length - 1]; }
+    /**
+     * @param {?} node
+     * @return {?}
+     */
+    parentOf(node) {
+        return node && this.path[this.path.indexOf(node) - 1];
+    }
+    /**
+     * @param {?} node
+     * @return {?}
+     */
+    childOf(node) { return this.path[this.path.indexOf(node) + 1]; }
+    /**
+     * @template N
+     * @param {?} ctor
+     * @return {?}
+     */
+    first(ctor) {
+        for (let /** @type {?} */ i = this.path.length - 1; i >= 0; i--) {
+            let /** @type {?} */ item = this.path[i];
+            if (item instanceof ctor)
+                return (item);
+        }
+    }
+    /**
+     * @param {?} node
+     * @return {?}
+     */
+    push(node) { this.path.push(node); }
+    /**
+     * @return {?}
+     */
+    pop() { return ((this.path.pop())); }
+}
+
+/**
  * @license
  * Copyright Google Inc. All Rights Reserved.
  *
@@ -5137,6 +5624,117 @@ function visitAll(visitor, nodes, context = null) {
         }
     });
     return result;
+}
+class RecursiveVisitor {
+    constructor() { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitElement(ast, context) {
+        this.visitChildren(context, visit => {
+            visit(ast.attrs);
+            visit(ast.children);
+        });
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitAttribute(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitText(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitComment(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitExpansion(ast, context) {
+        return this.visitChildren(context, visit => { visit(ast.cases); });
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitExpansionCase(ast, context) { }
+    /**
+     * @template T
+     * @param {?} context
+     * @param {?} cb
+     * @return {?}
+     */
+    visitChildren(context, cb) {
+        let /** @type {?} */ results = [];
+        let /** @type {?} */ t = this;
+        /**
+         * @template T
+         * @param {?} children
+         * @return {?}
+         */
+        function visit(children) {
+            if (children)
+                results.push(visitAll(t, children, context));
+        }
+        cb(visit);
+        return [].concat.apply([], results);
+    }
+}
+/**
+ * @param {?} ast
+ * @return {?}
+ */
+function spanOf(ast) {
+    const /** @type {?} */ start = ast.sourceSpan.start.offset;
+    let /** @type {?} */ end = ast.sourceSpan.end.offset;
+    if (ast instanceof Element) {
+        if (ast.endSourceSpan) {
+            end = ast.endSourceSpan.end.offset;
+        }
+        else if (ast.children && ast.children.length) {
+            end = spanOf(ast.children[ast.children.length - 1]).end;
+        }
+    }
+    return { start, end };
+}
+/**
+ * @param {?} nodes
+ * @param {?} position
+ * @return {?}
+ */
+function findNode(nodes, position) {
+    const /** @type {?} */ path = [];
+    const /** @type {?} */ visitor = new class extends RecursiveVisitor {
+        /**
+         * @param {?} ast
+         * @param {?} context
+         * @return {?}
+         */
+        visit(ast, context) {
+            const /** @type {?} */ span = spanOf(ast);
+            if (span.start <= position && position < span.end) {
+                path.push(ast);
+            }
+            else {
+                // Returning a value here will result in the children being skipped.
+                return true;
+            }
+        }
+    };
+    visitAll(visitor, nodes);
+    return new AstPath(path, position);
 }
 
 /**
@@ -19844,7 +20442,7 @@ class _AstToIrVisitor {
             default:
                 throw new Error(`Unsupported operation ${ast.operation}`);
         }
-        return convertToStatementIfNeeded(mode, new BinaryOperatorExpr(op, this.visit(ast.left, _Mode.Expression), this.visit(ast.right, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, new BinaryOperatorExpr(op, this._visit(ast.left, _Mode.Expression), this._visit(ast.right, _Mode.Expression)));
     }
     /**
      * @param {?} ast
@@ -19861,8 +20459,8 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitConditional(ast, mode) {
-        const /** @type {?} */ value = this.visit(ast.condition, _Mode.Expression);
-        return convertToStatementIfNeeded(mode, value.conditional(this.visit(ast.trueExp, _Mode.Expression), this.visit(ast.falseExp, _Mode.Expression)));
+        const /** @type {?} */ value = this._visit(ast.condition, _Mode.Expression);
+        return convertToStatementIfNeeded(mode, value.conditional(this._visit(ast.trueExp, _Mode.Expression), this._visit(ast.falseExp, _Mode.Expression)));
     }
     /**
      * @param {?} ast
@@ -19884,7 +20482,7 @@ class _AstToIrVisitor {
             fnResult = ast.converter(convertedArgs);
         }
         else {
-            fnResult = this.visit(/** @type {?} */ ((ast.target)), _Mode.Expression).callFn(convertedArgs);
+            fnResult = this._visit(/** @type {?} */ ((ast.target)), _Mode.Expression).callFn(convertedArgs);
         }
         return convertToStatementIfNeeded(mode, fnResult);
     }
@@ -19907,7 +20505,7 @@ class _AstToIrVisitor {
         const /** @type {?} */ args = [literal(ast.expressions.length)];
         for (let /** @type {?} */ i = 0; i < ast.strings.length - 1; i++) {
             args.push(literal(ast.strings[i]));
-            args.push(this.visit(ast.expressions[i], _Mode.Expression));
+            args.push(this._visit(ast.expressions[i], _Mode.Expression));
         }
         args.push(literal(ast.strings[ast.strings.length - 1]));
         return ast.expressions.length <= 9 ?
@@ -19927,7 +20525,7 @@ class _AstToIrVisitor {
             return this.convertSafeAccess(ast, leftMostSafe, mode);
         }
         else {
-            return convertToStatementIfNeeded(mode, this.visit(ast.obj, _Mode.Expression).key(this.visit(ast.key, _Mode.Expression)));
+            return convertToStatementIfNeeded(mode, this._visit(ast.obj, _Mode.Expression).key(this._visit(ast.key, _Mode.Expression)));
         }
     }
     /**
@@ -19936,9 +20534,9 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitKeyedWrite(ast, mode) {
-        const /** @type {?} */ obj = this.visit(ast.obj, _Mode.Expression);
-        const /** @type {?} */ key = this.visit(ast.key, _Mode.Expression);
-        const /** @type {?} */ value = this.visit(ast.value, _Mode.Expression);
+        const /** @type {?} */ obj = this._visit(ast.obj, _Mode.Expression);
+        const /** @type {?} */ key = this._visit(ast.key, _Mode.Expression);
+        const /** @type {?} */ value = this._visit(ast.value, _Mode.Expression);
         return convertToStatementIfNeeded(mode, obj.key(key).set(value));
     }
     /**
@@ -19983,7 +20581,7 @@ class _AstToIrVisitor {
         else {
             const /** @type {?} */ args = this.visitAll(ast.args, _Mode.Expression);
             let /** @type {?} */ result = null;
-            const /** @type {?} */ receiver = this.visit(ast.receiver, _Mode.Expression);
+            const /** @type {?} */ receiver = this._visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
                 const /** @type {?} */ varExpr = this._getLocal(ast.name);
                 if (varExpr) {
@@ -20002,7 +20600,7 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitPrefixNot(ast, mode) {
-        return convertToStatementIfNeeded(mode, not(this.visit(ast.expression, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, not(this._visit(ast.expression, _Mode.Expression)));
     }
     /**
      * @param {?} ast
@@ -20016,7 +20614,7 @@ class _AstToIrVisitor {
         }
         else {
             let /** @type {?} */ result = null;
-            const /** @type {?} */ receiver = this.visit(ast.receiver, _Mode.Expression);
+            const /** @type {?} */ receiver = this._visit(ast.receiver, _Mode.Expression);
             if (receiver === this._implicitReceiver) {
                 result = this._getLocal(ast.name);
             }
@@ -20032,14 +20630,14 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitPropertyWrite(ast, mode) {
-        const /** @type {?} */ receiver = this.visit(ast.receiver, _Mode.Expression);
+        const /** @type {?} */ receiver = this._visit(ast.receiver, _Mode.Expression);
         if (receiver === this._implicitReceiver) {
             const /** @type {?} */ varExpr = this._getLocal(ast.name);
             if (varExpr) {
                 throw new Error('Cannot assign to a reference or variable!');
             }
         }
-        return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this.visit(ast.value, _Mode.Expression)));
+        return convertToStatementIfNeeded(mode, receiver.prop(ast.name).set(this._visit(ast.value, _Mode.Expression)));
     }
     /**
      * @param {?} ast
@@ -20062,7 +20660,7 @@ class _AstToIrVisitor {
      * @param {?} mode
      * @return {?}
      */
-    visitAll(asts, mode) { return asts.map(ast => this.visit(ast, mode)); }
+    visitAll(asts, mode) { return asts.map(ast => this._visit(ast, mode)); }
     /**
      * @param {?} ast
      * @param {?} mode
@@ -20077,7 +20675,7 @@ class _AstToIrVisitor {
      * @param {?} mode
      * @return {?}
      */
-    visit(ast, mode) {
+    _visit(ast, mode) {
         const /** @type {?} */ result = this._resultMap.get(ast);
         if (result)
             return result;
@@ -20125,7 +20723,7 @@ class _AstToIrVisitor {
         //
         // Notice that the first guard condition is the left hand of the left most safe access node
         // which comes in as leftMostSafe to this routine.
-        let /** @type {?} */ guardedExpression = this.visit(leftMostSafe.receiver, _Mode.Expression);
+        let /** @type {?} */ guardedExpression = this._visit(leftMostSafe.receiver, _Mode.Expression);
         let /** @type {?} */ temporary = ((undefined));
         if (this.needsTemporary(leftMostSafe.receiver)) {
             // If the expression has method calls or pipes then we need to save the result into a
@@ -20146,7 +20744,7 @@ class _AstToIrVisitor {
             this._nodeMap.set(leftMostSafe, new PropertyRead(leftMostSafe.span, leftMostSafe.receiver, leftMostSafe.name));
         }
         // Recursively convert the node now without the guarded member access.
-        const /** @type {?} */ access = this.visit(ast, _Mode.Expression);
+        const /** @type {?} */ access = this._visit(ast, _Mode.Expression);
         // Remove the mapping. This is not strictly required as the converter only traverses each node
         // once but is safer if the conversion is changed to traverse the nodes more than once.
         this._nodeMap.delete(leftMostSafe);
@@ -20601,7 +21199,7 @@ class ViewBuilder {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 const /** @type {?} */ queryId = queryIndex + 1;
                 const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
-                const /** @type {?} */ flags = 67108864 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
+                const /** @type {?} */ flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
                 this.nodes.push(() => ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -20676,7 +21274,7 @@ class ViewBuilder {
         // ngContentDef(ngContentIndex: number, index: number): NodeDef;
         this.nodes.push(() => ({
             sourceSpan: ast.sourceSpan,
-            nodeFlags: 4 /* TypeNgContent */,
+            nodeFlags: 8 /* TypeNgContent */,
             nodeDef: importExpr(createIdentifier(Identifiers.ngContentDef)).callFn([
                 literal(ast.ngContentIndex), literal(ast.index)
             ])
@@ -20830,7 +21428,7 @@ class ViewBuilder {
     _visitElementOrTemplate(nodeIndex, ast) {
         let /** @type {?} */ flags = 0;
         if (ast.hasViewContainer) {
-            flags |= 8388608 /* EmbeddedViews */;
+            flags |= 16777216 /* EmbeddedViews */;
         }
         const /** @type {?} */ usedEvents = new Map();
         ast.outputs.forEach((event) => {
@@ -20924,7 +21522,7 @@ class ViewBuilder {
         this.nodes.push(/** @type {?} */ ((null)));
         dirAst.directive.queries.forEach((query, queryIndex) => {
             const /** @type {?} */ queryId = dirAst.contentQueryStartId + queryIndex;
-            const /** @type {?} */ flags = 33554432 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
+            const /** @type {?} */ flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
             const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
@@ -20948,7 +21546,7 @@ class ViewBuilder {
             }
         });
         if (dirAst.directive.isComponent) {
-            flags |= 16384 /* Component */;
+            flags |= 32768 /* Component */;
         }
         const /** @type {?} */ inputDefs = dirAst.inputs.map((inputAst, inputIndex) => {
             const /** @type {?} */ mapValue = literalArr([literal(inputIndex), literal(inputAst.directiveName)]);
@@ -20965,7 +21563,7 @@ class ViewBuilder {
             }
         });
         let /** @type {?} */ updateDirectiveExpressions = [];
-        if (dirAst.inputs.length || (flags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0) {
+        if (dirAst.inputs.length || (flags & (262144 /* DoCheck */ | 65536 /* OnInit */)) > 0) {
             updateDirectiveExpressions =
                 dirAst.inputs.map((input, bindingIndex) => this._preprocessUpdateExpression({
                     nodeIndex,
@@ -20994,7 +21592,7 @@ class ViewBuilder {
         //   outputs?: {[name: string]: string}, component?: () => ViewDefinition): NodeDef;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: dirAst.sourceSpan,
-            nodeFlags: 8192 /* TypeDirective */ | flags,
+            nodeFlags: 16384 /* TypeDirective */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.directiveDef)).callFn([
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 literal(childCount), providerExpr, depsExpr,
@@ -21036,10 +21634,10 @@ class ViewBuilder {
     _visitProviderOrDirective(providerAst, queryMatches) {
         let /** @type {?} */ flags = 0;
         if (!providerAst.eager) {
-            flags |= 2048 /* LazyProvider */;
+            flags |= 4096 /* LazyProvider */;
         }
         if (providerAst.providerType === ProviderAstType.PrivateService) {
-            flags |= 4096 /* PrivateProvider */;
+            flags |= 8192 /* PrivateProvider */;
         }
         providerAst.lifecycleHooks.forEach((lifecycleHook) => {
             // for regular providers, we only support ngOnDestroy
@@ -21099,7 +21697,7 @@ class ViewBuilder {
         // pureArrayDef(argCount: number): NodeDef;
         this.nodes.push(() => ({
             sourceSpan,
-            nodeFlags: 16 /* TypePureArray */,
+            nodeFlags: 32 /* TypePureArray */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureArrayDef)).callFn([literal(argCount)])
         }));
         return (args) => callCheckStmt(nodeIndex, args);
@@ -21118,7 +21716,7 @@ class ViewBuilder {
         // function pureObjectDef(propertyNames: string[]): NodeDef
         this.nodes.push(() => ({
             sourceSpan,
-            nodeFlags: 32 /* TypePureObject */,
+            nodeFlags: 64 /* TypePureObject */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureObjectDef))
                 .callFn([literalArr(keys.map(key => literal(key)))])
         }));
@@ -21137,7 +21735,7 @@ class ViewBuilder {
             // function purePipeDef(argCount: number): NodeDef;
             this.nodes.push(() => ({
                 sourceSpan: expression.sourceSpan,
-                nodeFlags: 64 /* TypePurePipe */,
+                nodeFlags: 128 /* TypePurePipe */,
                 nodeDef: importExpr(createIdentifier(Identifiers.purePipeDef))
                     .callFn([literal(argCount)])
             }));
@@ -21181,7 +21779,7 @@ class ViewBuilder {
         //   flags: NodeFlags, ctor: any, deps: ([DepFlags, any] | any)[]): NodeDef
         this.nodes.push(() => ({
             sourceSpan,
-            nodeFlags: 8 /* TypePipe */,
+            nodeFlags: 16 /* TypePipe */,
             nodeDef: importExpr(createIdentifier(Identifiers.pipeDef)).callFn([
                 literal(flags), importExpr(pipe.type), literalArr(depExprs)
             ])
@@ -21219,7 +21817,7 @@ class ViewBuilder {
                 updateRendererStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, false));
             }
             if (updateDirectives) {
-                updateDirectivesStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, (nodeFlags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0));
+                updateDirectivesStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, (nodeFlags & (262144 /* DoCheck */ | 65536 /* OnInit */)) > 0));
             }
             // We use a comma expression to call the log function before
             // the nodeDef function, but still use the result of the nodeDef function
@@ -21370,7 +21968,7 @@ function multiProviderDef(providers) {
         return expr;
     });
     const /** @type {?} */ providerExpr = fn(allParams, [new ReturnStatement(literalArr(exprs))], INFERRED_TYPE);
-    return { providerExpr, flags: 512 /* TypeFactoryProvider */, depsExpr: literalArr(allDepDefs) };
+    return { providerExpr, flags: 1024 /* TypeFactoryProvider */, depsExpr: literalArr(allDepDefs) };
     /**
      * @param {?} providerIndex
      * @param {?} deps
@@ -21396,28 +21994,28 @@ function singleProviderDef(providerType, providerMeta) {
     let /** @type {?} */ deps;
     if (providerType === ProviderAstType.Directive || providerType === ProviderAstType.Component) {
         providerExpr = importExpr(/** @type {?} */ ((providerMeta.useClass)));
-        flags = 8192 /* TypeDirective */;
+        flags = 16384 /* TypeDirective */;
         deps = providerMeta.deps || ((providerMeta.useClass)).diDeps;
     }
     else {
         if (providerMeta.useClass) {
             providerExpr = importExpr(providerMeta.useClass);
-            flags = 256 /* TypeClassProvider */;
+            flags = 512 /* TypeClassProvider */;
             deps = providerMeta.deps || providerMeta.useClass.diDeps;
         }
         else if (providerMeta.useFactory) {
             providerExpr = importExpr(providerMeta.useFactory);
-            flags = 512 /* TypeFactoryProvider */;
+            flags = 1024 /* TypeFactoryProvider */;
             deps = providerMeta.deps || providerMeta.useFactory.diDeps;
         }
         else if (providerMeta.useExisting) {
             providerExpr = NULL_EXPR;
-            flags = 1024 /* TypeUseExistingProvider */;
+            flags = 2048 /* TypeUseExistingProvider */;
             deps = [{ token: providerMeta.useExisting }];
         }
         else {
             providerExpr = convertValueToOutputAst(providerMeta.useValue);
-            flags = 128 /* TypeValueProvider */;
+            flags = 256 /* TypeValueProvider */;
             deps = [];
         }
     }
@@ -21476,28 +22074,28 @@ function lifecycleHookToNodeFlag(lifecycleHook) {
     let /** @type {?} */ nodeFlag = 0;
     switch (lifecycleHook) {
         case ɵLifecycleHooks.AfterContentChecked:
-            nodeFlag = 1048576 /* AfterContentChecked */;
+            nodeFlag = 2097152 /* AfterContentChecked */;
             break;
         case ɵLifecycleHooks.AfterContentInit:
-            nodeFlag = 524288 /* AfterContentInit */;
+            nodeFlag = 1048576 /* AfterContentInit */;
             break;
         case ɵLifecycleHooks.AfterViewChecked:
-            nodeFlag = 4194304 /* AfterViewChecked */;
+            nodeFlag = 8388608 /* AfterViewChecked */;
             break;
         case ɵLifecycleHooks.AfterViewInit:
-            nodeFlag = 2097152 /* AfterViewInit */;
+            nodeFlag = 4194304 /* AfterViewInit */;
             break;
         case ɵLifecycleHooks.DoCheck:
-            nodeFlag = 131072 /* DoCheck */;
+            nodeFlag = 262144 /* DoCheck */;
             break;
         case ɵLifecycleHooks.OnChanges:
-            nodeFlag = 262144 /* OnChanges */;
+            nodeFlag = 524288 /* OnChanges */;
             break;
         case ɵLifecycleHooks.OnDestroy:
-            nodeFlag = 65536 /* OnDestroy */;
+            nodeFlag = 131072 /* OnDestroy */;
             break;
         case ɵLifecycleHooks.OnInit:
-            nodeFlag = 32768 /* OnInit */;
+            nodeFlag = 65536 /* OnInit */;
             break;
     }
     return nodeFlag;
@@ -21689,10 +22287,10 @@ function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
     // Note: We only make queries static that query for a single item.
     // This is because of backwards compatibility with the old view compiler...
     if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
-        flags |= 134217728 /* StaticQuery */;
+        flags |= 268435456 /* StaticQuery */;
     }
     else {
-        flags |= 268435456 /* DynamicQuery */;
+        flags |= 536870912 /* DynamicQuery */;
     }
     return flags;
 }
@@ -25451,7 +26049,7 @@ class MessageBundle {
             return i18nParserResult.errors;
         }
         this._messages.push(...i18nParserResult.messages);
-        return null;
+        return [];
     }
     /**
      * @return {?}
@@ -25859,5 +26457,5 @@ class ImportResolver {
 
 // This file only reexports content of the `src` folder. Keep it that way.
 
-export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, SummaryResolver, JitSummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, RecursiveAstVisitor, AstTransformer, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map
