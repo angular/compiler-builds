@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.1.1-5f6d0f2
+ * @license Angular v4.1.1-e46a65f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.1.1-5f6d0f2');
+const VERSION = new Version('4.1.1-e46a65f');
 
 /**
  * @license
@@ -20501,7 +20501,7 @@ class ViewBuilder {
                 // Note: queries start with id 1 so we can use the number in a Bloom filter!
                 const /** @type {?} */ queryId = queryIndex + 1;
                 const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
-                const /** @type {?} */ flags = 67108864 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
+                const /** @type {?} */ flags = 134217728 /* TypeViewQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
                 this.nodes.push(() => ({
                     sourceSpan: null,
                     nodeFlags: flags,
@@ -20576,7 +20576,7 @@ class ViewBuilder {
         // ngContentDef(ngContentIndex: number, index: number): NodeDef;
         this.nodes.push(() => ({
             sourceSpan: ast.sourceSpan,
-            nodeFlags: 4 /* TypeNgContent */,
+            nodeFlags: 8 /* TypeNgContent */,
             nodeDef: importExpr(createIdentifier(Identifiers.ngContentDef)).callFn([
                 literal(ast.ngContentIndex), literal(ast.index)
             ])
@@ -20730,7 +20730,7 @@ class ViewBuilder {
     _visitElementOrTemplate(nodeIndex, ast) {
         let /** @type {?} */ flags = 0;
         if (ast.hasViewContainer) {
-            flags |= 8388608 /* EmbeddedViews */;
+            flags |= 16777216 /* EmbeddedViews */;
         }
         const /** @type {?} */ usedEvents = new Map();
         ast.outputs.forEach((event) => {
@@ -20824,7 +20824,7 @@ class ViewBuilder {
         this.nodes.push(/** @type {?} */ ((null)));
         dirAst.directive.queries.forEach((query, queryIndex) => {
             const /** @type {?} */ queryId = dirAst.contentQueryStartId + queryIndex;
-            const /** @type {?} */ flags = 33554432 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
+            const /** @type {?} */ flags = 67108864 /* TypeContentQuery */ | calcStaticDynamicQueryFlags(queryIds, queryId, query.first);
             const /** @type {?} */ bindingType = query.first ? 0 /* First */ : 1;
             this.nodes.push(() => ({
                 sourceSpan: dirAst.sourceSpan,
@@ -20848,7 +20848,7 @@ class ViewBuilder {
             }
         });
         if (dirAst.directive.isComponent) {
-            flags |= 16384 /* Component */;
+            flags |= 32768 /* Component */;
         }
         const /** @type {?} */ inputDefs = dirAst.inputs.map((inputAst, inputIndex) => {
             const /** @type {?} */ mapValue = literalArr([literal(inputIndex), literal(inputAst.directiveName)]);
@@ -20865,7 +20865,7 @@ class ViewBuilder {
             }
         });
         let /** @type {?} */ updateDirectiveExpressions = [];
-        if (dirAst.inputs.length || (flags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0) {
+        if (dirAst.inputs.length || (flags & (262144 /* DoCheck */ | 65536 /* OnInit */)) > 0) {
             updateDirectiveExpressions =
                 dirAst.inputs.map((input, bindingIndex) => this._preprocessUpdateExpression({
                     nodeIndex,
@@ -20894,7 +20894,7 @@ class ViewBuilder {
         //   outputs?: {[name: string]: string}, component?: () => ViewDefinition): NodeDef;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: dirAst.sourceSpan,
-            nodeFlags: 8192 /* TypeDirective */ | flags,
+            nodeFlags: 16384 /* TypeDirective */ | flags,
             nodeDef: importExpr(createIdentifier(Identifiers.directiveDef)).callFn([
                 literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
                 literal(childCount), providerExpr, depsExpr,
@@ -20936,10 +20936,10 @@ class ViewBuilder {
     _visitProviderOrDirective(providerAst, queryMatches) {
         let /** @type {?} */ flags = 0;
         if (!providerAst.eager) {
-            flags |= 2048 /* LazyProvider */;
+            flags |= 4096 /* LazyProvider */;
         }
         if (providerAst.providerType === ProviderAstType.PrivateService) {
-            flags |= 4096 /* PrivateProvider */;
+            flags |= 8192 /* PrivateProvider */;
         }
         providerAst.lifecycleHooks.forEach((lifecycleHook) => {
             // for regular providers, we only support ngOnDestroy
@@ -20999,7 +20999,7 @@ class ViewBuilder {
         // pureArrayDef(argCount: number): NodeDef;
         this.nodes.push(() => ({
             sourceSpan,
-            nodeFlags: 16 /* TypePureArray */,
+            nodeFlags: 32 /* TypePureArray */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureArrayDef)).callFn([literal(argCount)])
         }));
         return (args) => callCheckStmt(nodeIndex, args);
@@ -21018,7 +21018,7 @@ class ViewBuilder {
         // function pureObjectDef(propertyNames: string[]): NodeDef
         this.nodes.push(() => ({
             sourceSpan,
-            nodeFlags: 32 /* TypePureObject */,
+            nodeFlags: 64 /* TypePureObject */,
             nodeDef: importExpr(createIdentifier(Identifiers.pureObjectDef))
                 .callFn([literalArr(keys.map(key => literal(key)))])
         }));
@@ -21037,7 +21037,7 @@ class ViewBuilder {
             // function purePipeDef(argCount: number): NodeDef;
             this.nodes.push(() => ({
                 sourceSpan: expression.sourceSpan,
-                nodeFlags: 64 /* TypePurePipe */,
+                nodeFlags: 128 /* TypePurePipe */,
                 nodeDef: importExpr(createIdentifier(Identifiers.purePipeDef))
                     .callFn([literal(argCount)])
             }));
@@ -21081,7 +21081,7 @@ class ViewBuilder {
         //   flags: NodeFlags, ctor: any, deps: ([DepFlags, any] | any)[]): NodeDef
         this.nodes.push(() => ({
             sourceSpan,
-            nodeFlags: 8 /* TypePipe */,
+            nodeFlags: 16 /* TypePipe */,
             nodeDef: importExpr(createIdentifier(Identifiers.pipeDef)).callFn([
                 literal(flags), importExpr(pipe.type), literalArr(depExprs)
             ])
@@ -21119,7 +21119,7 @@ class ViewBuilder {
                 updateRendererStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateRenderer, false));
             }
             if (updateDirectives) {
-                updateDirectivesStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, (nodeFlags & (131072 /* DoCheck */ | 32768 /* OnInit */)) > 0));
+                updateDirectivesStmts.push(...createUpdateStatements(nodeIndex, sourceSpan, updateDirectives, (nodeFlags & (262144 /* DoCheck */ | 65536 /* OnInit */)) > 0));
             }
             // We use a comma expression to call the log function before
             // the nodeDef function, but still use the result of the nodeDef function
@@ -21270,7 +21270,7 @@ function multiProviderDef(providers) {
         return expr;
     });
     const /** @type {?} */ providerExpr = fn(allParams, [new ReturnStatement(literalArr(exprs))], INFERRED_TYPE);
-    return { providerExpr, flags: 512 /* TypeFactoryProvider */, depsExpr: literalArr(allDepDefs) };
+    return { providerExpr, flags: 1024 /* TypeFactoryProvider */, depsExpr: literalArr(allDepDefs) };
     /**
      * @param {?} providerIndex
      * @param {?} deps
@@ -21296,28 +21296,28 @@ function singleProviderDef(providerType, providerMeta) {
     let /** @type {?} */ deps;
     if (providerType === ProviderAstType.Directive || providerType === ProviderAstType.Component) {
         providerExpr = importExpr(/** @type {?} */ ((providerMeta.useClass)));
-        flags = 8192 /* TypeDirective */;
+        flags = 16384 /* TypeDirective */;
         deps = providerMeta.deps || ((providerMeta.useClass)).diDeps;
     }
     else {
         if (providerMeta.useClass) {
             providerExpr = importExpr(providerMeta.useClass);
-            flags = 256 /* TypeClassProvider */;
+            flags = 512 /* TypeClassProvider */;
             deps = providerMeta.deps || providerMeta.useClass.diDeps;
         }
         else if (providerMeta.useFactory) {
             providerExpr = importExpr(providerMeta.useFactory);
-            flags = 512 /* TypeFactoryProvider */;
+            flags = 1024 /* TypeFactoryProvider */;
             deps = providerMeta.deps || providerMeta.useFactory.diDeps;
         }
         else if (providerMeta.useExisting) {
             providerExpr = NULL_EXPR;
-            flags = 1024 /* TypeUseExistingProvider */;
+            flags = 2048 /* TypeUseExistingProvider */;
             deps = [{ token: providerMeta.useExisting }];
         }
         else {
             providerExpr = convertValueToOutputAst(providerMeta.useValue);
-            flags = 128 /* TypeValueProvider */;
+            flags = 256 /* TypeValueProvider */;
             deps = [];
         }
     }
@@ -21376,28 +21376,28 @@ function lifecycleHookToNodeFlag(lifecycleHook) {
     let /** @type {?} */ nodeFlag = 0;
     switch (lifecycleHook) {
         case ɵLifecycleHooks.AfterContentChecked:
-            nodeFlag = 1048576 /* AfterContentChecked */;
+            nodeFlag = 2097152 /* AfterContentChecked */;
             break;
         case ɵLifecycleHooks.AfterContentInit:
-            nodeFlag = 524288 /* AfterContentInit */;
+            nodeFlag = 1048576 /* AfterContentInit */;
             break;
         case ɵLifecycleHooks.AfterViewChecked:
-            nodeFlag = 4194304 /* AfterViewChecked */;
+            nodeFlag = 8388608 /* AfterViewChecked */;
             break;
         case ɵLifecycleHooks.AfterViewInit:
-            nodeFlag = 2097152 /* AfterViewInit */;
+            nodeFlag = 4194304 /* AfterViewInit */;
             break;
         case ɵLifecycleHooks.DoCheck:
-            nodeFlag = 131072 /* DoCheck */;
+            nodeFlag = 262144 /* DoCheck */;
             break;
         case ɵLifecycleHooks.OnChanges:
-            nodeFlag = 262144 /* OnChanges */;
+            nodeFlag = 524288 /* OnChanges */;
             break;
         case ɵLifecycleHooks.OnDestroy:
-            nodeFlag = 65536 /* OnDestroy */;
+            nodeFlag = 131072 /* OnDestroy */;
             break;
         case ɵLifecycleHooks.OnInit:
-            nodeFlag = 32768 /* OnInit */;
+            nodeFlag = 65536 /* OnInit */;
             break;
     }
     return nodeFlag;
@@ -21589,10 +21589,10 @@ function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
     // Note: We only make queries static that query for a single item.
     // This is because of backwards compatibility with the old view compiler...
     if (isFirst && (queryIds.staticQueryIds.has(queryId) || !queryIds.dynamicQueryIds.has(queryId))) {
-        flags |= 134217728 /* StaticQuery */;
+        flags |= 268435456 /* StaticQuery */;
     }
     else {
-        flags |= 268435456 /* DynamicQuery */;
+        flags |= 536870912 /* DynamicQuery */;
     }
     return flags;
 }
@@ -25101,7 +25101,7 @@ class MessageBundle {
             return i18nParserResult.errors;
         }
         this._messages.push(...i18nParserResult.messages);
-        return null;
+        return [];
     }
     /**
      * @return {?}
