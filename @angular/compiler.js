@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-beta.1-2eca6e6
+ * @license Angular v4.2.0-beta.1-b9521b5
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-beta.1-2eca6e6');
+const VERSION = new Version('4.2.0-beta.1-b9521b5');
 
 /**
  * @license
@@ -2763,6 +2763,24 @@ class PrefixNot extends AST {
         return visitor.visitPrefixNot(this, context);
     }
 }
+class NonNullAssert extends AST {
+    /**
+     * @param {?} span
+     * @param {?} expression
+     */
+    constructor(span, expression) {
+        super(span);
+        this.expression = expression;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?=} context
+     * @return {?}
+     */
+    visit(visitor, context = null) {
+        return visitor.visitNonNullAssert(this, context);
+    }
+}
 class MethodCall extends AST {
     /**
      * @param {?} span
@@ -2958,6 +2976,12 @@ class NullAstVisitor {
      * @param {?} context
      * @return {?}
      */
+    visitNonNullAssert(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
     visitPropertyRead(ast, context) { }
     /**
      * @param {?} ast
@@ -3102,6 +3126,15 @@ class RecursiveAstVisitor {
      * @return {?}
      */
     visitPrefixNot(ast, context) {
+        ast.expression.visit(this);
+        return null;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitNonNullAssert(ast, context) {
         ast.expression.visit(this);
         return null;
     }
@@ -3260,6 +3293,14 @@ class AstTransformer {
      */
     visitPrefixNot(ast, context) {
         return new PrefixNot(ast.span, ast.expression.visit(this));
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitNonNullAssert(ast, context) {
+        return new NonNullAssert(ast.span, ast.expression.visit(this));
     }
     /**
      * @param {?} ast
@@ -3437,6 +3478,11 @@ function visitAstChildren(ast, visitor, context) {
          * @return {?}
          */
         visitPrefixNot(ast) { visit(ast.expression); },
+        /**
+         * @param {?} ast
+         * @return {?}
+         */
+        visitNonNullAssert(ast) { visit(ast.expression); },
         /**
          * @param {?} ast
          * @return {?}
@@ -4830,6 +4876,9 @@ class _ParseAST {
                 this.expectCharacter($RPAREN);
                 result = new FunctionCall(this.span(result.span.start), result, args);
             }
+            else if (this.optionalOperator('!')) {
+                result = new NonNullAssert(this.span(result.span.start), result);
+            }
             else {
                 return result;
             }
@@ -5190,6 +5239,12 @@ class SimpleExpressionChecker {
      * @return {?}
      */
     visitPrefixNot(ast, context) { }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitNonNullAssert(ast, context) { }
     /**
      * @param {?} ast
      * @param {?} context
@@ -16065,6 +16120,24 @@ class NotExpr extends Expression {
         return visitor.visitNotExpr(this, context);
     }
 }
+class AssertNotNull extends Expression {
+    /**
+     * @param {?} condition
+     * @param {?=} sourceSpan
+     */
+    constructor(condition, sourceSpan) {
+        super(condition.type, sourceSpan);
+        this.condition = condition;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    visitExpression(visitor, context) {
+        return visitor.visitAssertNotNullExpr(this, context);
+    }
+}
 class CastExpr extends Expression {
     /**
      * @param {?} value
@@ -16644,6 +16717,14 @@ class AstTransformer$1 {
      * @param {?} context
      * @return {?}
      */
+    visitAssertNotNullExpr(ast, context) {
+        return this.transformExpr(new AssertNotNull(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
     visitCastExpr(ast, context) {
         return this.transformExpr(new CastExpr(ast.value.visitExpression(this, context), ast.type, ast.sourceSpan), context);
     }
@@ -16895,6 +16976,15 @@ class RecursiveAstVisitor$1 {
      * @return {?}
      */
     visitNotExpr(ast, context) {
+        ast.condition.visitExpression(this, context);
+        return ast;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitAssertNotNullExpr(ast, context) {
         ast.condition.visitExpression(this, context);
         return ast;
     }
@@ -17246,6 +17336,14 @@ function literalMap(values, type = null, quoted = false) {
  */
 function not(expr, sourceSpan) {
     return new NotExpr(expr, sourceSpan);
+}
+/**
+ * @param {?} expr
+ * @param {?=} sourceSpan
+ * @return {?}
+ */
+function assertNotNull(expr, sourceSpan) {
+    return new AssertNotNull(expr, sourceSpan);
 }
 /**
  * @param {?} params
@@ -18284,6 +18382,15 @@ class AbstractEmitterVisitor {
         return null;
     }
     /**
+     * @param {?} ast
+     * @param {?} ctx
+     * @return {?}
+     */
+    visitAssertNotNullExpr(ast, ctx) {
+        ast.condition.visitExpression(this, ctx);
+        return null;
+    }
+    /**
      * @abstract
      * @param {?} ast
      * @param {?} ctx
@@ -18651,6 +18758,16 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
     visitExternalExpr(ast, ctx) {
         this._visitIdentifier(ast.value, ast.typeParams, ctx);
         return null;
+    }
+    /**
+     * @param {?} ast
+     * @param {?} ctx
+     * @return {?}
+     */
+    visitAssertNotNullExpr(ast, ctx) {
+        const /** @type {?} */ result = super.visitAssertNotNullExpr(ast, ctx);
+        ctx.print(ast, '!');
+        return result;
     }
     /**
      * @param {?} stmt
@@ -20607,6 +20724,14 @@ class _AstToIrVisitor {
      * @param {?} mode
      * @return {?}
      */
+    visitNonNullAssert(ast, mode) {
+        return convertToStatementIfNeeded(mode, assertNotNull(this._visit(ast.expression, _Mode.Expression)));
+    }
+    /**
+     * @param {?} ast
+     * @param {?} mode
+     * @return {?}
+     */
     visitPropertyRead(ast, mode) {
         const /** @type {?} */ leftMostSafe = this.leftMostSafeNode(ast);
         if (leftMostSafe) {
@@ -20838,6 +20963,11 @@ class _AstToIrVisitor {
              * @param {?} ast
              * @return {?}
              */
+            visitNonNullAssert(ast) { return null; },
+            /**
+             * @param {?} ast
+             * @return {?}
+             */
             visitPropertyRead(ast) { return visit(this, ast.receiver); },
             /**
              * @param {?} ast
@@ -20948,6 +21078,11 @@ class _AstToIrVisitor {
              * @return {?}
              */
             visitPrefixNot(ast) { return visit(this, ast.expression); },
+            /**
+             * @param {?} ast
+             * @return {?}
+             */
+            visitNonNullAssert(ast) { return visit(this, ast.expression); },
             /**
              * @param {?} ast
              * @return {?}
@@ -25042,6 +25177,14 @@ class StatementInterpreter {
      * @param {?} ctx
      * @return {?}
      */
+    visitAssertNotNullExpr(ast, ctx) {
+        return ast.condition.visitExpression(this, ctx);
+    }
+    /**
+     * @param {?} ast
+     * @param {?} ctx
+     * @return {?}
+     */
     visitCastExpr(ast, ctx) {
         return ast.value.visitExpression(this, ctx);
     }
@@ -26457,5 +26600,5 @@ class ImportResolver {
 
 // This file only reexports content of the `src` folder. Keep it that way.
 
-export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { VERSION, TEMPLATE_TRANSFORMS, CompilerConfig, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, ViewCompiler, isSyntaxError, syntaxError, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, dirWrapperClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, createHostComponentMeta, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, extractProgramSymbols, GeneratedFile, StaticReflector, StaticAndDynamicReflectionCapabilities, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, COMPILER_PROVIDERS, JitCompilerFactory, platformCoreDynamic, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, DEFAULT_PACKAGE_URL_PROVIDER, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COLLECTOR_TOKEN, CompileMetadataResolver, componentModuleUrl, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, ImportResolver, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, StylesCompileResult, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map

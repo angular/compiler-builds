@@ -187,6 +187,11 @@ export declare class NotExpr extends Expression {
     constructor(condition: Expression, sourceSpan?: ParseSourceSpan | null);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
+export declare class AssertNotNull extends Expression {
+    condition: Expression;
+    constructor(condition: Expression, sourceSpan?: ParseSourceSpan | null);
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+}
 export declare class CastExpr extends Expression {
     value: Expression;
     constructor(value: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
@@ -259,6 +264,7 @@ export interface ExpressionVisitor {
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
+    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
@@ -389,6 +395,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
+    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
@@ -421,6 +428,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitExternalExpr(ast: ExternalExpr, context: any): any;
     visitConditionalExpr(ast: ConditionalExpr, context: any): any;
     visitNotExpr(ast: NotExpr, context: any): any;
+    visitAssertNotNullExpr(ast: AssertNotNull, context: any): any;
     visitCastExpr(ast: CastExpr, context: any): any;
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
@@ -451,5 +459,6 @@ export declare function expressionType(expr: Expression, typeModifiers?: TypeMod
 export declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
 export declare function literalMap(values: [string, Expression][], type?: MapType | null, quoted?: boolean): LiteralMapExpr;
 export declare function not(expr: Expression, sourceSpan?: ParseSourceSpan | null): NotExpr;
+export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSourceSpan | null): AssertNotNull;
 export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): FunctionExpr;
 export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
