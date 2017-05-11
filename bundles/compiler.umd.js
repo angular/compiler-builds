@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-beta.1-b9521b5
+ * @license Angular v4.2.0-beta.1-ce1d7c4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -15,7 +15,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /**
- * @license Angular v4.2.0-beta.1-b9521b5
+ * @license Angular v4.2.0-beta.1-ce1d7c4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -34,7 +34,7 @@ var __extends = (undefined && undefined.__extends) || function (d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.2.0-beta.1-b9521b5');
+var VERSION = new _angular_core.Version('4.2.0-beta.1-ce1d7c4');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -10997,10 +10997,20 @@ Identifiers.ComponentFactoryResolver = {
 Identifiers.ComponentFactory = { name: 'ComponentFactory', moduleUrl: CORE, runtime: _angular_core.ComponentFactory };
 Identifiers.ComponentRef = { name: 'ComponentRef', moduleUrl: CORE, runtime: _angular_core.ComponentRef };
 Identifiers.NgModuleFactory = { name: 'NgModuleFactory', moduleUrl: CORE, runtime: _angular_core.NgModuleFactory };
-Identifiers.NgModuleInjector = {
-    name: 'ɵNgModuleInjector',
+Identifiers.createModuleFactory = {
+    name: 'ɵcmf',
     moduleUrl: CORE,
-    runtime: _angular_core.ɵNgModuleInjector,
+    runtime: _angular_core.ɵcmf,
+};
+Identifiers.moduleDef = {
+    name: 'ɵmod',
+    moduleUrl: CORE,
+    runtime: _angular_core.ɵmod,
+};
+Identifiers.moduleProviderDef = {
+    name: 'ɵmpd',
+    moduleUrl: CORE,
+    runtime: _angular_core.ɵmpd,
 };
 Identifiers.RegisterModuleFactoryFn = {
     name: 'ɵregisterModuleFactory',
@@ -11359,7 +11369,18 @@ var ProviderElementContext = (function () {
          * @return {?}
          */
         get: function () {
-            return Array.from(this._transformedProviders.values());
+            // Note: Maps keep their insertion order.
+            var /** @type {?} */ lazyProviders = [];
+            var /** @type {?} */ eagerProviders = [];
+            this._transformedProviders.forEach(function (provider) {
+                if (provider.eager) {
+                    eagerProviders.push(provider);
+                }
+                else {
+                    lazyProviders.push(provider);
+                }
+            });
+            return lazyProviders.concat(eagerProviders);
         },
         enumerable: true,
         configurable: true
@@ -11617,7 +11638,18 @@ var NgModuleProviderAnalyzer = (function () {
             var /** @type {?} */ errorString = this._errors.join('\n');
             throw new Error("Provider parse errors:\n" + errorString);
         }
-        return Array.from(this._transformedProviders.values());
+        // Note: Maps keep their insertion order.
+        var /** @type {?} */ lazyProviders = [];
+        var /** @type {?} */ eagerProviders = [];
+        this._transformedProviders.forEach(function (provider) {
+            if (provider.eager) {
+                eagerProviders.push(provider);
+            }
+            else {
+                lazyProviders.push(provider);
+            }
+        });
+        return lazyProviders.concat(eagerProviders);
     };
     /**
      * @param {?} token
@@ -17159,21 +17191,6 @@ var AbstractClassPart = (function () {
     AbstractClassPart.prototype.hasModifier = function (modifier) { return ((this.modifiers)).indexOf(modifier) !== -1; };
     return AbstractClassPart;
 }());
-var ClassField = (function (_super) {
-    __extends(ClassField, _super);
-    /**
-     * @param {?} name
-     * @param {?=} type
-     * @param {?=} modifiers
-     */
-    function ClassField(name, type, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, type, modifiers) || this;
-        _this.name = name;
-        return _this;
-    }
-    return ClassField;
-}(AbstractClassPart));
 var ClassMethod = (function (_super) {
     __extends(ClassMethod, _super);
     /**
@@ -18096,37 +18113,6 @@ function literal(value, type, sourceSpan) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Create a new class stmts based on the given data.
- * @param {?} config
- * @return {?}
- */
-function createClassStmt(config) {
-    var /** @type {?} */ parentArgs = config.parentArgs || [];
-    var /** @type {?} */ superCtorStmts = config.parent ? [SUPER_EXPR.callFn(parentArgs).toStmt()] : [];
-    var /** @type {?} */ builder = concatClassBuilderParts(Array.isArray(config.builders) ? config.builders : [config.builders]);
-    var /** @type {?} */ ctor = new ClassMethod(null, config.ctorParams || [], superCtorStmts.concat(builder.ctorStmts));
-    return new ClassStmt(config.name, config.parent || null, builder.fields, builder.getters, ctor, builder.methods, config.modifiers || [], config.sourceSpan);
-}
-/**
- * @param {?} builders
- * @return {?}
- */
-function concatClassBuilderParts(builders) {
-    return {
-        fields: [].concat.apply([], ((builders.map((function (builder) { return builder.fields || []; }))))),
-        methods: [].concat.apply([], ((builders.map(function (builder) { return builder.methods || []; })))),
-        getters: [].concat.apply([], ((builders.map(function (builder) { return builder.getters || []; })))),
-        ctorStmts: [].concat.apply([], ((builders.map(function (builder) { return builder.ctorStmts || []; })))),
-    };
-}
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 var QUOTED_KEYS = '$quoted$';
 /**
  * @param {?} value
@@ -18192,31 +18178,224 @@ var _ValueOutputAstTransformer = (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * This is currently not read, but will probably be used in the future.
- * We keep it as we already pass it through all the rigth places...
+ * @param {?} providerAst
+ * @return {?}
  */
-var ComponentFactoryDependency = (function () {
-    /**
-     * @param {?} compType
-     */
-    function ComponentFactoryDependency(compType) {
-        this.compType = compType;
+function providerDef(providerAst) {
+    var /** @type {?} */ flags = 0;
+    if (!providerAst.eager) {
+        flags |= 4096 /* LazyProvider */;
     }
-    return ComponentFactoryDependency;
-}());
+    if (providerAst.providerType === ProviderAstType.PrivateService) {
+        flags |= 8192 /* PrivateProvider */;
+    }
+    providerAst.lifecycleHooks.forEach(function (lifecycleHook) {
+        // for regular providers, we only support ngOnDestroy
+        if (lifecycleHook === _angular_core.ɵLifecycleHooks.OnDestroy ||
+            providerAst.providerType === ProviderAstType.Directive ||
+            providerAst.providerType === ProviderAstType.Component) {
+            flags |= lifecycleHookToNodeFlag(lifecycleHook);
+        }
+    });
+    var _a = providerAst.multiProvider ?
+        multiProviderDef(flags, providerAst.providers) :
+        singleProviderDef(flags, providerAst.providerType, providerAst.providers[0]), providerExpr = _a.providerExpr, providerFlags = _a.flags, depsExpr = _a.depsExpr;
+    return {
+        providerExpr: providerExpr,
+        flags: providerFlags, depsExpr: depsExpr,
+        tokenExpr: tokenExpr(providerAst.token),
+    };
+}
+/**
+ * @param {?} flags
+ * @param {?} providers
+ * @return {?}
+ */
+function multiProviderDef(flags, providers) {
+    var /** @type {?} */ allDepDefs = [];
+    var /** @type {?} */ allParams = [];
+    var /** @type {?} */ exprs = providers.map(function (provider, providerIndex) {
+        var /** @type {?} */ expr;
+        if (provider.useClass) {
+            var /** @type {?} */ depExprs = convertDeps(providerIndex, provider.deps || provider.useClass.diDeps);
+            expr = importExpr(provider.useClass).instantiate(depExprs);
+        }
+        else if (provider.useFactory) {
+            var /** @type {?} */ depExprs = convertDeps(providerIndex, provider.deps || provider.useFactory.diDeps);
+            expr = importExpr(provider.useFactory).callFn(depExprs);
+        }
+        else if (provider.useExisting) {
+            var /** @type {?} */ depExprs = convertDeps(providerIndex, [{ token: provider.useExisting }]);
+            expr = depExprs[0];
+        }
+        else {
+            expr = convertValueToOutputAst(provider.useValue);
+        }
+        return expr;
+    });
+    var /** @type {?} */ providerExpr = fn(allParams, [new ReturnStatement(literalArr(exprs))], INFERRED_TYPE);
+    return {
+        providerExpr: providerExpr,
+        flags: flags | 1024 /* TypeFactoryProvider */,
+        depsExpr: literalArr(allDepDefs)
+    };
+    /**
+     * @param {?} providerIndex
+     * @param {?} deps
+     * @return {?}
+     */
+    function convertDeps(providerIndex, deps) {
+        return deps.map(function (dep, depIndex) {
+            var /** @type {?} */ paramName = "p" + providerIndex + "_" + depIndex;
+            allParams.push(new FnParam(paramName, DYNAMIC_TYPE));
+            allDepDefs.push(depDef(dep));
+            return variable(paramName);
+        });
+    }
+}
+/**
+ * @param {?} flags
+ * @param {?} providerType
+ * @param {?} providerMeta
+ * @return {?}
+ */
+function singleProviderDef(flags, providerType, providerMeta) {
+    var /** @type {?} */ providerExpr;
+    var /** @type {?} */ deps;
+    if (providerType === ProviderAstType.Directive || providerType === ProviderAstType.Component) {
+        providerExpr = importExpr(/** @type {?} */ ((providerMeta.useClass)));
+        flags |= 16384 /* TypeDirective */;
+        deps = providerMeta.deps || ((providerMeta.useClass)).diDeps;
+    }
+    else {
+        if (providerMeta.useClass) {
+            providerExpr = importExpr(providerMeta.useClass);
+            flags |= 512 /* TypeClassProvider */;
+            deps = providerMeta.deps || providerMeta.useClass.diDeps;
+        }
+        else if (providerMeta.useFactory) {
+            providerExpr = importExpr(providerMeta.useFactory);
+            flags |= 1024 /* TypeFactoryProvider */;
+            deps = providerMeta.deps || providerMeta.useFactory.diDeps;
+        }
+        else if (providerMeta.useExisting) {
+            providerExpr = NULL_EXPR;
+            flags |= 2048 /* TypeUseExistingProvider */;
+            deps = [{ token: providerMeta.useExisting }];
+        }
+        else {
+            providerExpr = convertValueToOutputAst(providerMeta.useValue);
+            flags |= 256 /* TypeValueProvider */;
+            deps = [];
+        }
+    }
+    var /** @type {?} */ depsExpr = literalArr(deps.map(function (dep) { return depDef(dep); }));
+    return { providerExpr: providerExpr, flags: flags, depsExpr: depsExpr };
+}
+/**
+ * @param {?} tokenMeta
+ * @return {?}
+ */
+function tokenExpr(tokenMeta) {
+    return tokenMeta.identifier ? importExpr(tokenMeta.identifier) : literal(tokenMeta.value);
+}
+/**
+ * @param {?} dep
+ * @return {?}
+ */
+function depDef(dep) {
+    // Note: the following fields have already been normalized out by provider_analyzer:
+    // - isAttribute, isSelf, isHost
+    var /** @type {?} */ expr = dep.isValue ? convertValueToOutputAst(dep.value) : tokenExpr(/** @type {?} */ ((dep.token)));
+    var /** @type {?} */ flags = 0;
+    if (dep.isSkipSelf) {
+        flags |= 1 /* SkipSelf */;
+    }
+    if (dep.isOptional) {
+        flags |= 2 /* Optional */;
+    }
+    if (dep.isValue) {
+        flags |= 8 /* Value */;
+    }
+    return flags === 0 /* None */ ? expr : literalArr([literal(flags), expr]);
+}
+/**
+ * @param {?} lifecycleHook
+ * @return {?}
+ */
+function lifecycleHookToNodeFlag(lifecycleHook) {
+    var /** @type {?} */ nodeFlag = 0;
+    switch (lifecycleHook) {
+        case _angular_core.ɵLifecycleHooks.AfterContentChecked:
+            nodeFlag = 2097152 /* AfterContentChecked */;
+            break;
+        case _angular_core.ɵLifecycleHooks.AfterContentInit:
+            nodeFlag = 1048576 /* AfterContentInit */;
+            break;
+        case _angular_core.ɵLifecycleHooks.AfterViewChecked:
+            nodeFlag = 8388608 /* AfterViewChecked */;
+            break;
+        case _angular_core.ɵLifecycleHooks.AfterViewInit:
+            nodeFlag = 4194304 /* AfterViewInit */;
+            break;
+        case _angular_core.ɵLifecycleHooks.DoCheck:
+            nodeFlag = 262144 /* DoCheck */;
+            break;
+        case _angular_core.ɵLifecycleHooks.OnChanges:
+            nodeFlag = 524288 /* OnChanges */;
+            break;
+        case _angular_core.ɵLifecycleHooks.OnDestroy:
+            nodeFlag = 131072 /* OnDestroy */;
+            break;
+        case _angular_core.ɵLifecycleHooks.OnInit:
+            nodeFlag = 65536 /* OnInit */;
+            break;
+    }
+    return nodeFlag;
+}
+/**
+ * @param {?} flags
+ * @param {?} entryComponents
+ * @return {?}
+ */
+function componentFactoryResolverProviderDef(flags, entryComponents) {
+    var /** @type {?} */ entryComponentFactories = entryComponents.map(function (entryComponent) { return importExpr({ reference: entryComponent.componentFactory }); });
+    var /** @type {?} */ token = createIdentifierToken(Identifiers.ComponentFactoryResolver);
+    var /** @type {?} */ classMeta = {
+        diDeps: [
+            { isValue: true, value: literalArr(entryComponentFactories) },
+            { token: token, isSkipSelf: true, isOptional: true },
+            { token: createIdentifierToken(Identifiers.NgModuleRef) },
+        ],
+        lifecycleHooks: [],
+        reference: resolveIdentifier(Identifiers.CodegenComponentFactoryResolver)
+    };
+    var _a = singleProviderDef(flags, ProviderAstType.PrivateService, {
+        token: token,
+        multi: false,
+        useClass: classMeta,
+    }), providerExpr = _a.providerExpr, providerFlags = _a.flags, depsExpr = _a.depsExpr;
+    return { providerExpr: providerExpr, flags: providerFlags, depsExpr: depsExpr, tokenExpr: tokenExpr(token) };
+}
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var NgModuleCompileResult = (function () {
     /**
      * @param {?} statements
      * @param {?} ngModuleFactoryVar
-     * @param {?} dependencies
      */
-    function NgModuleCompileResult(statements, ngModuleFactoryVar, dependencies) {
+    function NgModuleCompileResult(statements, ngModuleFactoryVar) {
         this.statements = statements;
         this.ngModuleFactoryVar = ngModuleFactoryVar;
-        this.dependencies = dependencies;
     }
     return NgModuleCompileResult;
 }());
+var LOG_VAR = variable('_l');
 var NgModuleCompiler = (function () {
     function NgModuleCompiler() {
     }
@@ -18227,32 +18406,34 @@ var NgModuleCompiler = (function () {
      */
     NgModuleCompiler.prototype.compile = function (ngModuleMeta, extraProviders) {
         var /** @type {?} */ sourceSpan = typeSourceSpan('NgModule', ngModuleMeta.type);
-        var /** @type {?} */ deps = [];
-        var /** @type {?} */ bootstrapComponentFactories = [];
-        var /** @type {?} */ entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents.map(function (entryComponent) {
-            if (ngModuleMeta.bootstrapComponents.some(function (id) { return id.reference === entryComponent.componentType; })) {
-                bootstrapComponentFactories.push({ reference: entryComponent.componentFactory });
-            }
-            deps.push(new ComponentFactoryDependency(entryComponent.componentType));
-            return { reference: entryComponent.componentFactory };
-        });
-        var /** @type {?} */ builder = new _InjectorBuilder(ngModuleMeta, entryComponentFactories, bootstrapComponentFactories, sourceSpan);
+        var /** @type {?} */ entryComponentFactories = ngModuleMeta.transitiveModule.entryComponents;
+        var /** @type {?} */ bootstrapComponents = ngModuleMeta.bootstrapComponents;
         var /** @type {?} */ providerParser = new NgModuleProviderAnalyzer(ngModuleMeta, extraProviders, sourceSpan);
-        providerParser.parse().forEach(function (provider) { return builder.addProvider(provider); });
-        var /** @type {?} */ injectorClass = builder.build();
+        var /** @type {?} */ providerDefs = [componentFactoryResolverProviderDef(0 /* None */, entryComponentFactories)]
+            .concat(providerParser.parse().map(function (provider) { return providerDef(provider); }))
+            .map(function (_a) {
+            var providerExpr = _a.providerExpr, depsExpr = _a.depsExpr, flags = _a.flags, tokenExpr = _a.tokenExpr;
+            return importExpr(createIdentifier(Identifiers.moduleProviderDef)).callFn([
+                literal(flags), tokenExpr, providerExpr, depsExpr
+            ]);
+        });
+        var /** @type {?} */ ngModuleDef = importExpr(createIdentifier(Identifiers.moduleDef)).callFn([literalArr(providerDefs)]);
+        var /** @type {?} */ ngModuleDefFactory = fn([new FnParam(/** @type {?} */ ((LOG_VAR.name)))], [new ReturnStatement(ngModuleDef)], INFERRED_TYPE);
         var /** @type {?} */ ngModuleFactoryVar = identifierName(ngModuleMeta.type) + "NgFactory";
         var /** @type {?} */ ngModuleFactoryStmt = variable(ngModuleFactoryVar)
-            .set(importExpr(createIdentifier(Identifiers.NgModuleFactory))
-            .instantiate([variable(injectorClass.name), importExpr(ngModuleMeta.type)], importType(createIdentifier(Identifiers.NgModuleFactory), [/** @type {?} */ ((importType(ngModuleMeta.type)))], [TypeModifier.Const])))
-            .toDeclStmt(null, [StmtModifier.Final]);
-        var /** @type {?} */ stmts = [injectorClass, ngModuleFactoryStmt];
+            .set(importExpr(createIdentifier(Identifiers.createModuleFactory)).callFn([
+            importExpr(ngModuleMeta.type),
+            literalArr(bootstrapComponents.map(function (id) { return importExpr(id); })), ngModuleDefFactory
+        ]))
+            .toDeclStmt(importType(createIdentifier(Identifiers.NgModuleFactory), [/** @type {?} */ ((importType(ngModuleMeta.type)))], [TypeModifier.Const]), [StmtModifier.Final]);
+        var /** @type {?} */ stmts = [ngModuleFactoryStmt];
         if (ngModuleMeta.id) {
             var /** @type {?} */ registerFactoryStmt = importExpr(createIdentifier(Identifiers.RegisterModuleFactoryFn))
                 .callFn([literal(ngModuleMeta.id), variable(ngModuleFactoryVar)])
                 .toStmt();
             stmts.push(registerFactoryStmt);
         }
-        return new NgModuleCompileResult(stmts, ngModuleFactoryVar, deps);
+        return new NgModuleCompileResult(stmts, ngModuleFactoryVar);
     };
     return NgModuleCompiler;
 }());
@@ -18263,201 +18444,6 @@ NgModuleCompiler.decorators = [
  * @nocollapse
  */
 NgModuleCompiler.ctorParameters = function () { return []; };
-var _InjectorBuilder = (function () {
-    /**
-     * @param {?} _ngModuleMeta
-     * @param {?} _entryComponentFactories
-     * @param {?} _bootstrapComponentFactories
-     * @param {?} _sourceSpan
-     */
-    function _InjectorBuilder(_ngModuleMeta, _entryComponentFactories, _bootstrapComponentFactories, _sourceSpan) {
-        this._ngModuleMeta = _ngModuleMeta;
-        this._entryComponentFactories = _entryComponentFactories;
-        this._bootstrapComponentFactories = _bootstrapComponentFactories;
-        this._sourceSpan = _sourceSpan;
-        this.fields = [];
-        this.getters = [];
-        this.methods = [];
-        this.ctorStmts = [];
-        this._lazyProps = new Map();
-        this._tokens = [];
-        this._instances = new Map();
-        this._createStmts = [];
-        this._destroyStmts = [];
-    }
-    /**
-     * @param {?} resolvedProvider
-     * @return {?}
-     */
-    _InjectorBuilder.prototype.addProvider = function (resolvedProvider) {
-        var _this = this;
-        var /** @type {?} */ providerValueExpressions = resolvedProvider.providers.map(function (provider) { return _this._getProviderValue(provider); });
-        var /** @type {?} */ propName = "_" + tokenName(resolvedProvider.token) + "_" + this._instances.size;
-        var /** @type {?} */ instance = this._createProviderProperty(propName, resolvedProvider, providerValueExpressions, resolvedProvider.multiProvider, resolvedProvider.eager);
-        if (resolvedProvider.lifecycleHooks.indexOf(_angular_core.ɵLifecycleHooks.OnDestroy) !== -1) {
-            var /** @type {?} */ callNgOnDestroy = instance.callMethod('ngOnDestroy', []);
-            if (!resolvedProvider.eager) {
-                callNgOnDestroy = ((this._lazyProps.get(instance.name))).and(callNgOnDestroy);
-            }
-            this._destroyStmts.push(callNgOnDestroy.toStmt());
-        }
-        this._tokens.push(resolvedProvider.token);
-        this._instances.set(tokenReference(resolvedProvider.token), instance);
-    };
-    /**
-     * @return {?}
-     */
-    _InjectorBuilder.prototype.build = function () {
-        var _this = this;
-        var /** @type {?} */ getMethodStmts = this._tokens.map(function (token) {
-            var /** @type {?} */ providerExpr = ((_this._instances.get(tokenReference(token))));
-            return new IfStmt(InjectMethodVars.token.identical(createDiTokenExpression(token)), [new ReturnStatement(providerExpr)]);
-        });
-        var /** @type {?} */ methods = [
-            new ClassMethod('createInternal', [], this._createStmts.concat(new ReturnStatement(/** @type {?} */ ((this._instances.get(this._ngModuleMeta.type.reference))))), importType(this._ngModuleMeta.type)),
-            new ClassMethod('getInternal', [
-                new FnParam(/** @type {?} */ ((InjectMethodVars.token.name)), DYNAMIC_TYPE),
-                new FnParam(/** @type {?} */ ((InjectMethodVars.notFoundResult.name)), DYNAMIC_TYPE)
-            ], getMethodStmts.concat([new ReturnStatement(InjectMethodVars.notFoundResult)]), DYNAMIC_TYPE),
-            new ClassMethod('destroyInternal', [], this._destroyStmts),
-        ];
-        var /** @type {?} */ parentArgs = [
-            variable(InjectorProps.parent.name),
-            literalArr(this._entryComponentFactories.map(function (componentFactory) { return importExpr(componentFactory); })),
-            literalArr(this._bootstrapComponentFactories.map(function (componentFactory) { return importExpr(componentFactory); }))
-        ];
-        var /** @type {?} */ injClassName = identifierName(this._ngModuleMeta.type) + "Injector";
-        return createClassStmt({
-            name: injClassName,
-            ctorParams: [new FnParam(InjectorProps.parent.name, importType(createIdentifier(Identifiers.Injector)))],
-            parent: importExpr(createIdentifier(Identifiers.NgModuleInjector), [/** @type {?} */ ((importType(this._ngModuleMeta.type)))]),
-            parentArgs: parentArgs,
-            builders: [{ methods: methods }, this]
-        });
-    };
-    /**
-     * @param {?} provider
-     * @return {?}
-     */
-    _InjectorBuilder.prototype._getProviderValue = function (provider) {
-        var _this = this;
-        var /** @type {?} */ result;
-        if (provider.useExisting != null) {
-            result = this._getDependency({ token: provider.useExisting });
-        }
-        else if (provider.useFactory != null) {
-            var /** @type {?} */ deps = provider.deps || provider.useFactory.diDeps;
-            var /** @type {?} */ depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
-            result = importExpr(provider.useFactory).callFn(depsExpr);
-        }
-        else if (provider.useClass != null) {
-            var /** @type {?} */ deps = provider.deps || provider.useClass.diDeps;
-            var /** @type {?} */ depsExpr = deps.map(function (dep) { return _this._getDependency(dep); });
-            result =
-                importExpr(provider.useClass).instantiate(depsExpr, importType(provider.useClass));
-        }
-        else {
-            result = convertValueToOutputAst(provider.useValue);
-        }
-        return result;
-    };
-    /**
-     * @param {?} propName
-     * @param {?} provider
-     * @param {?} providerValueExpressions
-     * @param {?} isMulti
-     * @param {?} isEager
-     * @return {?}
-     */
-    _InjectorBuilder.prototype._createProviderProperty = function (propName, provider, providerValueExpressions, isMulti, isEager) {
-        var /** @type {?} */ resolvedProviderValueExpr;
-        var /** @type {?} */ type;
-        if (isMulti) {
-            resolvedProviderValueExpr = literalArr(providerValueExpressions);
-            type = new ArrayType(DYNAMIC_TYPE);
-        }
-        else {
-            resolvedProviderValueExpr = providerValueExpressions[0];
-            type = ((providerValueExpressions[0].type));
-        }
-        if (!type) {
-            type = DYNAMIC_TYPE;
-        }
-        if (isEager) {
-            this.fields.push(new ClassField(propName, type));
-            this._createStmts.push(THIS_EXPR.prop(propName).set(resolvedProviderValueExpr).toStmt());
-        }
-        else {
-            var /** @type {?} */ internalFieldProp = THIS_EXPR.prop("_" + propName);
-            this.fields.push(new ClassField(internalFieldProp.name, type));
-            // Note: Equals is important for JS so that it also checks the undefined case!
-            var /** @type {?} */ getterStmts = [
-                new IfStmt(internalFieldProp.isBlank(), [internalFieldProp.set(resolvedProviderValueExpr).toStmt()]),
-                new ReturnStatement(internalFieldProp)
-            ];
-            this.getters.push(new ClassGetter(propName, getterStmts, type));
-            this._lazyProps.set(propName, internalFieldProp);
-        }
-        return THIS_EXPR.prop(propName);
-    };
-    /**
-     * @param {?} dep
-     * @return {?}
-     */
-    _InjectorBuilder.prototype._getDependency = function (dep) {
-        var /** @type {?} */ result = ((null));
-        if (dep.isValue) {
-            result = literal(dep.value);
-        }
-        if (!dep.isSkipSelf) {
-            if (dep.token) {
-                if (tokenReference(dep.token) === resolveIdentifier(Identifiers.Injector)) {
-                    result = THIS_EXPR;
-                }
-                else if (tokenReference(dep.token) === resolveIdentifier(Identifiers.ComponentFactoryResolver)) {
-                    result = THIS_EXPR.prop('componentFactoryResolver');
-                }
-            }
-            if (!result) {
-                result = ((this._instances.get(tokenReference(/** @type {?} */ ((dep.token))))));
-            }
-        }
-        if (!result) {
-            var /** @type {?} */ args = [createDiTokenExpression(/** @type {?} */ ((dep.token)))];
-            if (dep.isOptional) {
-                args.push(NULL_EXPR);
-            }
-            result = InjectorProps.parent.callMethod('get', args);
-        }
-        return result;
-    };
-    return _InjectorBuilder;
-}());
-/**
- * @param {?} token
- * @return {?}
- */
-function createDiTokenExpression(token) {
-    if (token.value != null) {
-        return literal(token.value);
-    }
-    else {
-        return importExpr(/** @type {?} */ ((token.identifier)));
-    }
-}
-var InjectorProps = (function () {
-    function InjectorProps() {
-    }
-    return InjectorProps;
-}());
-InjectorProps.parent = THIS_EXPR.prop('parent');
-var InjectMethodVars = (function () {
-    function InjectMethodVars() {
-    }
-    return InjectMethodVars;
-}());
-InjectMethodVars.token = variable('token');
-InjectMethodVars.notFoundResult = variable('notFoundResult');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -22122,10 +22108,10 @@ ViewCompiler.ctorParameters = function () { return [
     { type: CompilerConfig, },
     { type: ElementSchemaRegistry, },
 ]; };
-var LOG_VAR = variable('l');
-var VIEW_VAR = variable('v');
-var CHECK_VAR = variable('ck');
-var COMP_VAR = variable('co');
+var LOG_VAR$1 = variable('_l');
+var VIEW_VAR = variable('_v');
+var CHECK_VAR = variable('_ck');
+var COMP_VAR = variable('_co');
 var EVENT_NAME_VAR = variable('en');
 var ALLOW_DEFAULT_VAR = variable("ad");
 var ViewBuilder = (function () {
@@ -22224,7 +22210,7 @@ var ViewBuilder = (function () {
         if (!this.parent && this.component.changeDetection === _angular_core.ChangeDetectionStrategy.OnPush) {
             viewFlags |= 2 /* OnPush */;
         }
-        var /** @type {?} */ viewFactory = new DeclareFunctionStmt(this.viewName, [new FnParam(/** @type {?} */ ((LOG_VAR.name)))], [new ReturnStatement(importExpr(createIdentifier(Identifiers.viewDef)).callFn([
+        var /** @type {?} */ viewFactory = new DeclareFunctionStmt(this.viewName, [new FnParam(/** @type {?} */ ((LOG_VAR$1.name)))], [new ReturnStatement(importExpr(createIdentifier(Identifiers.viewDef)).callFn([
                 literal(viewFlags),
                 literalArr(nodeDefExprs),
                 updateDirectivesFn,
@@ -22439,10 +22425,7 @@ var ViewBuilder = (function () {
         });
         var /** @type {?} */ hostBindings = [];
         var /** @type {?} */ hostEvents = [];
-        var /** @type {?} */ componentFactoryResolverProvider = createComponentFactoryResolver(ast.directives);
-        if (componentFactoryResolverProvider) {
-            this._visitProvider(componentFactoryResolverProvider, ast.queryMatches);
-        }
+        this._visitComponentFactoryResolverProvider(ast.directives);
         ast.providers.forEach(function (providerAst, providerIndex) {
             var /** @type {?} */ dirAst = ((undefined));
             var /** @type {?} */ dirIndex = ((undefined));
@@ -22607,21 +22590,44 @@ var ViewBuilder = (function () {
      * @return {?}
      */
     ViewBuilder.prototype._visitProvider = function (providerAst, queryMatches) {
+        this._addProviderNode(this._visitProviderOrDirective(providerAst, queryMatches));
+    };
+    /**
+     * @param {?} directives
+     * @return {?}
+     */
+    ViewBuilder.prototype._visitComponentFactoryResolverProvider = function (directives) {
+        var /** @type {?} */ componentDirMeta = directives.find(function (dirAst) { return dirAst.directive.isComponent; });
+        if (componentDirMeta && componentDirMeta.directive.entryComponents.length) {
+            var _a = componentFactoryResolverProviderDef(8192 /* PrivateProvider */, componentDirMeta.directive.entryComponents), providerExpr = _a.providerExpr, depsExpr = _a.depsExpr, flags = _a.flags, tokenExpr_1 = _a.tokenExpr;
+            this._addProviderNode({
+                providerExpr: providerExpr,
+                depsExpr: depsExpr,
+                flags: flags,
+                tokenExpr: tokenExpr_1,
+                queryMatchExprs: [],
+                sourceSpan: componentDirMeta.sourceSpan
+            });
+        }
+    };
+    /**
+     * @param {?} data
+     * @return {?}
+     */
+    ViewBuilder.prototype._addProviderNode = function (data) {
         var /** @type {?} */ nodeIndex = this.nodes.length;
-        // reserve the space in the nodeDefs array so we can add children
-        this.nodes.push(/** @type {?} */ ((null)));
-        var _a = this._visitProviderOrDirective(providerAst, queryMatches), flags = _a.flags, queryMatchExprs = _a.queryMatchExprs, providerExpr = _a.providerExpr, depsExpr = _a.depsExpr;
         // providerDef(
         //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], token:any,
         //   value: any, deps: ([DepFlags, any] | any)[]): NodeDef;
-        this.nodes[nodeIndex] = function () { return ({
-            sourceSpan: providerAst.sourceSpan,
-            nodeFlags: flags,
+        this.nodes.push(function () { return ({
+            sourceSpan: data.sourceSpan,
+            nodeFlags: data.flags,
             nodeDef: importExpr(createIdentifier(Identifiers.providerDef)).callFn([
-                literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
-                tokenExpr(providerAst.token), providerExpr, depsExpr
+                literal(data.flags),
+                data.queryMatchExprs.length ? literalArr(data.queryMatchExprs) : NULL_EXPR,
+                data.tokenExpr, data.providerExpr, data.depsExpr
             ])
-        }); };
+        }); });
     };
     /**
      * @param {?} providerAst
@@ -22630,28 +22636,21 @@ var ViewBuilder = (function () {
      */
     ViewBuilder.prototype._visitProviderOrDirective = function (providerAst, queryMatches) {
         var /** @type {?} */ flags = 0;
-        if (!providerAst.eager) {
-            flags |= 4096 /* LazyProvider */;
-        }
-        if (providerAst.providerType === ProviderAstType.PrivateService) {
-            flags |= 8192 /* PrivateProvider */;
-        }
-        providerAst.lifecycleHooks.forEach(function (lifecycleHook) {
-            // for regular providers, we only support ngOnDestroy
-            if (lifecycleHook === _angular_core.ɵLifecycleHooks.OnDestroy ||
-                providerAst.providerType === ProviderAstType.Directive ||
-                providerAst.providerType === ProviderAstType.Component) {
-                flags |= lifecycleHookToNodeFlag(lifecycleHook);
-            }
-        });
         var /** @type {?} */ queryMatchExprs = [];
         queryMatches.forEach(function (match) {
             if (tokenReference(match.value) === tokenReference(providerAst.token)) {
                 queryMatchExprs.push(literalArr([literal(match.queryId), literal(4 /* Provider */)]));
             }
         });
-        var _a = providerDef(providerAst), providerExpr = _a.providerExpr, depsExpr = _a.depsExpr, providerType = _a.flags;
-        return { flags: flags | providerType, queryMatchExprs: queryMatchExprs, providerExpr: providerExpr, depsExpr: depsExpr };
+        var _a = providerDef(providerAst), providerExpr = _a.providerExpr, depsExpr = _a.depsExpr, providerFlags = _a.flags, tokenExpr = _a.tokenExpr;
+        return {
+            flags: flags | providerFlags,
+            queryMatchExprs: queryMatchExprs,
+            providerExpr: providerExpr,
+            depsExpr: depsExpr,
+            tokenExpr: tokenExpr,
+            sourceSpan: providerAst.sourceSpan
+        };
     };
     /**
      * @param {?} name
@@ -22823,7 +22822,7 @@ var ViewBuilder = (function () {
             // Note: We only add the logger to elements / text nodes,
             // so we don't generate too much code.
             var /** @type {?} */ logWithNodeDef = nodeFlags & 3 /* CatRenderNode */ ?
-                new CommaExpr([LOG_VAR.callFn([]).callFn([]), nodeDef]) :
+                new CommaExpr([LOG_VAR$1.callFn([]).callFn([]), nodeDef]) :
                 nodeDef;
             return applySourceSpanToExpressionIfNeeded(logWithNodeDef, sourceSpan);
         });
@@ -22935,123 +22934,6 @@ var ViewBuilder = (function () {
     return ViewBuilder;
 }());
 /**
- * @param {?} providerAst
- * @return {?}
- */
-function providerDef(providerAst) {
-    return providerAst.multiProvider ?
-        multiProviderDef(providerAst.providers) :
-        singleProviderDef(providerAst.providerType, providerAst.providers[0]);
-}
-/**
- * @param {?} providers
- * @return {?}
- */
-function multiProviderDef(providers) {
-    var /** @type {?} */ allDepDefs = [];
-    var /** @type {?} */ allParams = [];
-    var /** @type {?} */ exprs = providers.map(function (provider, providerIndex) {
-        var /** @type {?} */ expr;
-        if (provider.useClass) {
-            var /** @type {?} */ depExprs = convertDeps(providerIndex, provider.deps || provider.useClass.diDeps);
-            expr = importExpr(provider.useClass).instantiate(depExprs);
-        }
-        else if (provider.useFactory) {
-            var /** @type {?} */ depExprs = convertDeps(providerIndex, provider.deps || provider.useFactory.diDeps);
-            expr = importExpr(provider.useFactory).callFn(depExprs);
-        }
-        else if (provider.useExisting) {
-            var /** @type {?} */ depExprs = convertDeps(providerIndex, [{ token: provider.useExisting }]);
-            expr = depExprs[0];
-        }
-        else {
-            expr = convertValueToOutputAst(provider.useValue);
-        }
-        return expr;
-    });
-    var /** @type {?} */ providerExpr = fn(allParams, [new ReturnStatement(literalArr(exprs))], INFERRED_TYPE);
-    return { providerExpr: providerExpr, flags: 1024 /* TypeFactoryProvider */, depsExpr: literalArr(allDepDefs) };
-    /**
-     * @param {?} providerIndex
-     * @param {?} deps
-     * @return {?}
-     */
-    function convertDeps(providerIndex, deps) {
-        return deps.map(function (dep, depIndex) {
-            var /** @type {?} */ paramName = "p" + providerIndex + "_" + depIndex;
-            allParams.push(new FnParam(paramName, DYNAMIC_TYPE));
-            allDepDefs.push(depDef(dep));
-            return variable(paramName);
-        });
-    }
-}
-/**
- * @param {?} providerType
- * @param {?} providerMeta
- * @return {?}
- */
-function singleProviderDef(providerType, providerMeta) {
-    var /** @type {?} */ providerExpr;
-    var /** @type {?} */ flags;
-    var /** @type {?} */ deps;
-    if (providerType === ProviderAstType.Directive || providerType === ProviderAstType.Component) {
-        providerExpr = importExpr(/** @type {?} */ ((providerMeta.useClass)));
-        flags = 16384 /* TypeDirective */;
-        deps = providerMeta.deps || ((providerMeta.useClass)).diDeps;
-    }
-    else {
-        if (providerMeta.useClass) {
-            providerExpr = importExpr(providerMeta.useClass);
-            flags = 512 /* TypeClassProvider */;
-            deps = providerMeta.deps || providerMeta.useClass.diDeps;
-        }
-        else if (providerMeta.useFactory) {
-            providerExpr = importExpr(providerMeta.useFactory);
-            flags = 1024 /* TypeFactoryProvider */;
-            deps = providerMeta.deps || providerMeta.useFactory.diDeps;
-        }
-        else if (providerMeta.useExisting) {
-            providerExpr = NULL_EXPR;
-            flags = 2048 /* TypeUseExistingProvider */;
-            deps = [{ token: providerMeta.useExisting }];
-        }
-        else {
-            providerExpr = convertValueToOutputAst(providerMeta.useValue);
-            flags = 256 /* TypeValueProvider */;
-            deps = [];
-        }
-    }
-    var /** @type {?} */ depsExpr = literalArr(deps.map(function (dep) { return depDef(dep); }));
-    return { providerExpr: providerExpr, flags: flags, depsExpr: depsExpr };
-}
-/**
- * @param {?} tokenMeta
- * @return {?}
- */
-function tokenExpr(tokenMeta) {
-    return tokenMeta.identifier ? importExpr(tokenMeta.identifier) : literal(tokenMeta.value);
-}
-/**
- * @param {?} dep
- * @return {?}
- */
-function depDef(dep) {
-    // Note: the following fields have already been normalized out by provider_analyzer:
-    // - isAttribute, isSelf, isHost
-    var /** @type {?} */ expr = dep.isValue ? convertValueToOutputAst(dep.value) : tokenExpr(/** @type {?} */ ((dep.token)));
-    var /** @type {?} */ flags = 0;
-    if (dep.isSkipSelf) {
-        flags |= 1 /* SkipSelf */;
-    }
-    if (dep.isOptional) {
-        flags |= 2 /* Optional */;
-    }
-    if (dep.isValue) {
-        flags |= 8 /* Value */;
-    }
-    return flags === 0 /* None */ ? expr : literalArr([literal(flags), expr]);
-}
-/**
  * @param {?} astNodes
  * @return {?}
  */
@@ -23067,40 +22949,6 @@ function needsAdditionalRootNode(astNodes) {
         return lastAstNode.hasViewContainer;
     }
     return lastAstNode instanceof NgContentAst;
-}
-/**
- * @param {?} lifecycleHook
- * @return {?}
- */
-function lifecycleHookToNodeFlag(lifecycleHook) {
-    var /** @type {?} */ nodeFlag = 0;
-    switch (lifecycleHook) {
-        case _angular_core.ɵLifecycleHooks.AfterContentChecked:
-            nodeFlag = 2097152 /* AfterContentChecked */;
-            break;
-        case _angular_core.ɵLifecycleHooks.AfterContentInit:
-            nodeFlag = 1048576 /* AfterContentInit */;
-            break;
-        case _angular_core.ɵLifecycleHooks.AfterViewChecked:
-            nodeFlag = 8388608 /* AfterViewChecked */;
-            break;
-        case _angular_core.ɵLifecycleHooks.AfterViewInit:
-            nodeFlag = 4194304 /* AfterViewInit */;
-            break;
-        case _angular_core.ɵLifecycleHooks.DoCheck:
-            nodeFlag = 262144 /* DoCheck */;
-            break;
-        case _angular_core.ɵLifecycleHooks.OnChanges:
-            nodeFlag = 524288 /* OnChanges */;
-            break;
-        case _angular_core.ɵLifecycleHooks.OnDestroy:
-            nodeFlag = 131072 /* OnDestroy */;
-            break;
-        case _angular_core.ɵLifecycleHooks.OnInit:
-            nodeFlag = 65536 /* OnInit */;
-            break;
-    }
-    return nodeFlag;
 }
 /**
  * @param {?} inputAst
@@ -23240,28 +23088,6 @@ function staticViewQueryIds(nodeStaticQueryIds) {
     });
     dynamicQueryIds.forEach(function (queryId) { return staticQueryIds.delete(queryId); });
     return { staticQueryIds: staticQueryIds, dynamicQueryIds: dynamicQueryIds };
-}
-/**
- * @param {?} directives
- * @return {?}
- */
-function createComponentFactoryResolver(directives) {
-    var /** @type {?} */ componentDirMeta = directives.find(function (dirAst) { return dirAst.directive.isComponent; });
-    if (componentDirMeta && componentDirMeta.directive.entryComponents.length) {
-        var /** @type {?} */ entryComponentFactories = componentDirMeta.directive.entryComponents.map(function (entryComponent) { return importExpr({ reference: entryComponent.componentFactory }); });
-        var /** @type {?} */ token = createIdentifierToken(Identifiers.ComponentFactoryResolver);
-        var /** @type {?} */ classMeta = {
-            diDeps: [
-                { isValue: true, value: literalArr(entryComponentFactories) },
-                { token: token, isSkipSelf: true, isOptional: true },
-                { token: createIdentifierToken(Identifiers.NgModuleRef) },
-            ],
-            lifecycleHooks: [],
-            reference: resolveIdentifier(Identifiers.CodegenComponentFactoryResolver)
-        };
-        return new ProviderAst(token, false, true, [{ token: token, multi: false, useClass: classMeta }], ProviderAstType.PrivateService, [], componentDirMeta.sourceSpan);
-    }
-    return null;
 }
 /**
  * @param {?} eventAst

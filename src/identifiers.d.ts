@@ -17,7 +17,9 @@ export declare class Identifiers {
     static ComponentFactory: IdentifierSpec;
     static ComponentRef: IdentifierSpec;
     static NgModuleFactory: IdentifierSpec;
-    static NgModuleInjector: IdentifierSpec;
+    static createModuleFactory: IdentifierSpec;
+    static moduleDef: IdentifierSpec;
+    static moduleProviderDef: IdentifierSpec;
     static RegisterModuleFactoryFn: IdentifierSpec;
     static Injector: IdentifierSpec;
     static ViewEncapsulation: IdentifierSpec;
