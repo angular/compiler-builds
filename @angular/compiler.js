@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-beta.1-ce1d7c4
+ * @license Angular v4.2.0-beta.1-5afaa39
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-beta.1-ce1d7c4');
+const VERSION = new Version('4.2.0-beta.1-5afaa39');
 
 /**
  * @license
@@ -17920,6 +17920,7 @@ class _EmittedLine {
      */
     constructor(indent) {
         this.indent = indent;
+        this.partsLength = 0;
         this.parts = [];
         this.srcSpans = [];
     }
@@ -17964,6 +17965,12 @@ class EmitterVisitorContext {
      */
     lineIsEmpty() { return this._currentLine.parts.length === 0; }
     /**
+     * @return {?}
+     */
+    lineLength() {
+        return this._currentLine.indent * _INDENT_WITH.length + this._currentLine.partsLength;
+    }
+    /**
      * @param {?} from
      * @param {?} part
      * @param {?=} newLine
@@ -17972,6 +17979,7 @@ class EmitterVisitorContext {
     print(from, part, newLine = false) {
         if (part.length > 0) {
             this._currentLine.parts.push(part);
+            this._currentLine.partsLength += part.length;
             this._currentLine.srcSpans.push(from && from.sourceSpan || null);
         }
         if (newLine) {
@@ -17991,14 +17999,18 @@ class EmitterVisitorContext {
      */
     incIndent() {
         this._indent++;
-        this._currentLine.indent = this._indent;
+        if (this.lineIsEmpty()) {
+            this._currentLine.indent = this._indent;
+        }
     }
     /**
      * @return {?}
      */
     decIndent() {
         this._indent--;
-        this._currentLine.indent = this._indent;
+        if (this.lineIsEmpty()) {
+            this._currentLine.indent = this._indent;
+        }
     }
     /**
      * @param {?} clazz
@@ -18497,12 +18509,9 @@ class AbstractEmitterVisitor {
      * @return {?}
      */
     visitLiteralArrayExpr(ast, ctx) {
-        const /** @type {?} */ useNewLine = ast.entries.length > 1;
-        ctx.print(ast, `[`, useNewLine);
-        ctx.incIndent();
-        this.visitAllExpressions(ast.entries, ctx, ',', useNewLine);
-        ctx.decIndent();
-        ctx.print(ast, `]`, useNewLine);
+        ctx.print(ast, `[`);
+        this.visitAllExpressions(ast.entries, ctx, ',');
+        ctx.print(ast, `]`);
         return null;
     }
     /**
@@ -18511,15 +18520,12 @@ class AbstractEmitterVisitor {
      * @return {?}
      */
     visitLiteralMapExpr(ast, ctx) {
-        const /** @type {?} */ useNewLine = ast.entries.length > 1;
-        ctx.print(ast, `{`, useNewLine);
-        ctx.incIndent();
+        ctx.print(ast, `{`);
         this.visitAllObjects(entry => {
-            ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}: `);
+            ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}:`);
             entry.value.visitExpression(this, ctx);
-        }, ast.entries, ctx, ',', useNewLine);
-        ctx.decIndent();
-        ctx.print(ast, `}`, useNewLine);
+        }, ast.entries, ctx, ',');
+        ctx.print(ast, `}`);
         return null;
     }
     /**
@@ -18537,11 +18543,10 @@ class AbstractEmitterVisitor {
      * @param {?} expressions
      * @param {?} ctx
      * @param {?} separator
-     * @param {?=} newLine
      * @return {?}
      */
-    visitAllExpressions(expressions, ctx, separator, newLine = false) {
-        this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator, newLine);
+    visitAllExpressions(expressions, ctx, separator) {
+        this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator);
     }
     /**
      * @template T
@@ -18549,18 +18554,31 @@ class AbstractEmitterVisitor {
      * @param {?} expressions
      * @param {?} ctx
      * @param {?} separator
-     * @param {?=} newLine
      * @return {?}
      */
-    visitAllObjects(handler, expressions, ctx, separator, newLine = false) {
+    visitAllObjects(handler, expressions, ctx, separator) {
+        let /** @type {?} */ incrementedIndent = false;
         for (let /** @type {?} */ i = 0; i < expressions.length; i++) {
             if (i > 0) {
-                ctx.print(null, separator, newLine);
+                if (ctx.lineLength() > 80) {
+                    ctx.print(null, separator, true);
+                    if (!incrementedIndent) {
+                        // continuation are marked with double indent.
+                        ctx.incIndent();
+                        ctx.incIndent();
+                        incrementedIndent = true;
+                    }
+                }
+                else {
+                    ctx.print(null, separator, false);
+                }
             }
             handler(expressions[i]);
         }
-        if (newLine) {
-            ctx.println();
+        if (incrementedIndent) {
+            // continuation are marked with double indent.
+            ctx.decIndent();
+            ctx.decIndent();
         }
     }
     /**
@@ -19106,7 +19124,7 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         if (filePath != this._genFilePath) {
             let /** @type {?} */ prefix = this.importsWithPrefixes.get(filePath);
             if (prefix == null) {
-                prefix = `import${this.importsWithPrefixes.size}`;
+                prefix = `i${this.importsWithPrefixes.size}`;
                 this.importsWithPrefixes.set(filePath, prefix);
             }
             ctx.print(null, `${prefix}.`);
