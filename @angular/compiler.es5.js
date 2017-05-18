@@ -9,7 +9,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 /**
- * @license Angular v4.2.0-beta.1-0e13a59
+ * @license Angular v4.2.0-beta.1-6531806
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -29,7 +29,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.2.0-beta.1-0e13a59');
+var VERSION = new Version('4.2.0-beta.1-6531806');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
