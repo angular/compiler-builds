@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-rc.0-85d4c4b
+ * @license Angular v4.2.0-rc.0-08dfe91
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-rc.0-85d4c4b');
+const VERSION = new Version('4.2.0-rc.0-08dfe91');
 
 /**
  * @license
@@ -9354,17 +9354,22 @@ class Xliff2 extends Serializer {
         const /** @type {?} */ units = [];
         messages.forEach(message => {
             const /** @type {?} */ unit = new Tag(_UNIT_TAG$1, { id: message.id });
+            const /** @type {?} */ notes = new Tag('notes');
             if (message.description || message.meaning) {
-                const /** @type {?} */ notes = new Tag('notes');
                 if (message.description) {
                     notes.children.push(new CR(8), new Tag('note', { category: 'description' }, [new Text$2(message.description)]));
                 }
                 if (message.meaning) {
                     notes.children.push(new CR(8), new Tag('note', { category: 'meaning' }, [new Text$2(message.meaning)]));
                 }
-                notes.children.push(new CR(6));
-                unit.children.push(new CR(6), notes);
             }
+            message.sources.forEach((source) => {
+                notes.children.push(new CR(8), new Tag('note', { category: 'location' }, [
+                    new Text$2(`${source.filePath}:${source.startLine}${source.endLine !== source.startLine ? ',' + source.endLine : ''}`)
+                ]));
+            });
+            notes.children.push(new CR(6));
+            unit.children.push(new CR(6), notes);
             const /** @type {?} */ segment = new Tag('segment');
             segment.children.push(new CR(8), new Tag(_SOURCE_TAG$1, {}, visitor.serialize(message.nodes)), new CR(6));
             unit.children.push(new CR(6), segment, new CR(4));
