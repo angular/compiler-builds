@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileIdentifierMetadata } from '../compile_metadata';
 import { ParseSourceSpan } from '../parse_util';
 export declare enum TypeModifier {
     Const = 0,
@@ -170,10 +169,16 @@ export declare class LiteralExpr extends Expression {
     visitExpression(visitor: ExpressionVisitor, context: any): any;
 }
 export declare class ExternalExpr extends Expression {
-    value: CompileIdentifierMetadata;
+    value: ExternalReference;
     typeParams: Type[] | null;
-    constructor(value: CompileIdentifierMetadata, type?: Type | null, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null);
+    constructor(value: ExternalReference, type?: Type | null, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
+}
+export declare class ExternalReference {
+    moduleName: string | null;
+    name: string | null;
+    runtime: any | null;
+    constructor(moduleName: string | null, name: string | null, runtime: any | null);
 }
 export declare class ConditionalExpr extends Expression {
     condition: Expression;
@@ -283,6 +288,7 @@ export declare const TYPED_NULL_EXPR: LiteralExpr;
 export declare enum StmtModifier {
     Final = 0,
     Private = 1,
+    Exported = 2,
 }
 export declare abstract class Statement {
     modifiers: StmtModifier[];
@@ -453,8 +459,8 @@ export declare function findReadVarNames(stmts: Statement[]): Set<string>;
 export declare function applySourceSpanToStatementIfNeeded(stmt: Statement, sourceSpan: ParseSourceSpan | null): Statement;
 export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, sourceSpan: ParseSourceSpan | null): Expression;
 export declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;
-export declare function importExpr(id: CompileIdentifierMetadata, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null): ExternalExpr;
-export declare function importType(id: CompileIdentifierMetadata, typeParams?: Type[] | null, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
+export declare function importExpr(id: ExternalReference, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null): ExternalExpr;
+export declare function importType(id: ExternalReference, typeParams?: Type[] | null, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
 export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
 export declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
 export declare function literalMap(values: [string, Expression][], type?: MapType | null, quoted?: boolean): LiteralMapExpr;

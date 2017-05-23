@@ -1,10 +1,12 @@
 import { CompileNgModuleMetadata, CompileProviderMetadata } from './compile_metadata';
-import * as o from './output/output_ast';
+import { CompileReflector } from './compile_reflector';
+import { OutputContext } from './util';
 export declare class NgModuleCompileResult {
-    statements: o.Statement[];
     ngModuleFactoryVar: string;
-    constructor(statements: o.Statement[], ngModuleFactoryVar: string);
+    constructor(ngModuleFactoryVar: string);
 }
 export declare class NgModuleCompiler {
-    compile(ngModuleMeta: CompileNgModuleMetadata, extraProviders: CompileProviderMetadata[]): NgModuleCompileResult;
+    private reflector;
+    constructor(reflector: CompileReflector);
+    compile(ctx: OutputContext, ngModuleMeta: CompileNgModuleMetadata, extraProviders: CompileProviderMetadata[]): NgModuleCompileResult;
 }

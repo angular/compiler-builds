@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-rc.0-3b28c75
+ * @license Angular v4.2.0-rc.0-5af143e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ var __extends = (undefined && undefined.__extends) || (function () {
     };
 })();
 /**
- * @license Angular v4.2.0-rc.0-3b28c75
+ * @license Angular v4.2.0-rc.0-5af143e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -91,8 +91,8 @@ var MockSchemaRegistry = (function () {
  */
 var MockDirectiveResolver = (function (_super) {
     __extends(MockDirectiveResolver, _super);
-    function MockDirectiveResolver(_injector) {
-        var _this = _super.call(this) || this;
+    function MockDirectiveResolver(_injector, reflector) {
+        var _this = _super.call(this, reflector) || this;
         _this._injector = _injector;
         _this._directives = new Map();
         _this._providerOverrides = new Map();
@@ -207,6 +207,7 @@ MockDirectiveResolver.decorators = [
 /** @nocollapse */
 MockDirectiveResolver.ctorParameters = function () { return [
     { type: _angular_core.Injector, },
+    { type: _angular_compiler.CompileReflector, },
 ]; };
 /**
  * @license
@@ -217,8 +218,8 @@ MockDirectiveResolver.ctorParameters = function () { return [
  */
 var MockNgModuleResolver = (function (_super) {
     __extends(MockNgModuleResolver, _super);
-    function MockNgModuleResolver(_injector) {
-        var _this = _super.call(this) || this;
+    function MockNgModuleResolver(_injector, reflector) {
+        var _this = _super.call(this, reflector) || this;
         _this._injector = _injector;
         _this._ngModules = new Map();
         return _this;
@@ -254,6 +255,7 @@ MockNgModuleResolver.decorators = [
 /** @nocollapse */
 MockNgModuleResolver.ctorParameters = function () { return [
     { type: _angular_core.Injector, },
+    { type: _angular_compiler.CompileReflector, },
 ]; };
 /**
  * @license
@@ -264,8 +266,8 @@ MockNgModuleResolver.ctorParameters = function () { return [
  */
 var MockPipeResolver = (function (_super) {
     __extends(MockPipeResolver, _super);
-    function MockPipeResolver(_injector) {
-        var _this = _super.call(this) || this;
+    function MockPipeResolver(_injector, refector) {
+        var _this = _super.call(this, refector) || this;
         _this._injector = _injector;
         _this._pipes = new Map();
         return _this;
@@ -305,6 +307,7 @@ MockPipeResolver.decorators = [
 /** @nocollapse */
 MockPipeResolver.ctorParameters = function () { return [
     { type: _angular_core.Injector, },
+    { type: _angular_compiler.CompileReflector, },
 ]; };
 /**
  * @license

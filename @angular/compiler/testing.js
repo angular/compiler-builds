@@ -1,10 +1,10 @@
 /**
- * @license Angular v4.2.0-rc.0-3b28c75
+ * @license Angular v4.2.0-rc.0-5af143e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
 import { COMPILER_OPTIONS, Compiler, CompilerFactory, Component, Directive, Injectable, Injector, NgModule, Pipe, SecurityContext, createPlatformFactory, ɵstringify } from '@angular/core';
-import { CompileMetadataResolver, DirectiveResolver, NgModuleResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
+import { CompileMetadataResolver, CompileReflector, DirectiveResolver, NgModuleResolver, PipeResolver, platformCoreDynamic } from '@angular/compiler';
 import { ɵTestingCompilerFactory } from '@angular/core/testing';
 
 /**
@@ -73,8 +73,8 @@ class MockSchemaRegistry {
  * various properties of directives.
  */
 class MockDirectiveResolver extends DirectiveResolver {
-    constructor(_injector) {
-        super();
+    constructor(_injector, reflector) {
+        super(reflector);
         this._injector = _injector;
         this._directives = new Map();
         this._providerOverrides = new Map();
@@ -182,6 +182,7 @@ MockDirectiveResolver.decorators = [
 /** @nocollapse */
 MockDirectiveResolver.ctorParameters = () => [
     { type: Injector, },
+    { type: CompileReflector, },
 ];
 
 /**
@@ -192,8 +193,8 @@ MockDirectiveResolver.ctorParameters = () => [
  * found in the LICENSE file at https://angular.io/license
  */
 class MockNgModuleResolver extends NgModuleResolver {
-    constructor(_injector) {
-        super();
+    constructor(_injector, reflector) {
+        super(reflector);
         this._injector = _injector;
         this._ngModules = new Map();
     }
@@ -222,6 +223,7 @@ MockNgModuleResolver.decorators = [
 /** @nocollapse */
 MockNgModuleResolver.ctorParameters = () => [
     { type: Injector, },
+    { type: CompileReflector, },
 ];
 
 /**
@@ -232,8 +234,8 @@ MockNgModuleResolver.ctorParameters = () => [
  * found in the LICENSE file at https://angular.io/license
  */
 class MockPipeResolver extends PipeResolver {
-    constructor(_injector) {
-        super();
+    constructor(_injector, refector) {
+        super(refector);
         this._injector = _injector;
         this._pipes = new Map();
     }
@@ -266,6 +268,7 @@ MockPipeResolver.decorators = [
 /** @nocollapse */
 MockPipeResolver.ctorParameters = () => [
     { type: Injector, },
+    { type: CompileReflector, },
 ];
 
 /**

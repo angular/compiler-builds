@@ -11,17 +11,15 @@ import { SourceMapGenerator } from './source_map';
 export declare const CATCH_ERROR_VAR: o.ReadVarExpr;
 export declare const CATCH_STACK_VAR: o.ReadVarExpr;
 export declare abstract class OutputEmitter {
-    abstract emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], exportedVars: string[], preamble?: string | null): string;
+    abstract emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], preamble?: string | null): string;
 }
 export declare class EmitterVisitorContext {
-    private _exportedVars;
     private _indent;
-    static createRoot(exportedVars: string[]): EmitterVisitorContext;
+    static createRoot(): EmitterVisitorContext;
     private _lines;
     private _classes;
-    constructor(_exportedVars: string[], _indent: number);
+    constructor(_indent: number);
     private readonly _currentLine;
-    isExportedVar(varName: string): boolean;
     println(from?: {
         sourceSpan: ParseSourceSpan | null;
     } | null, lastPart?: string): void;
