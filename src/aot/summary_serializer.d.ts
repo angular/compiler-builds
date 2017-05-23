@@ -27,3 +27,4 @@ export declare function deserializeSummaries(symbolCache: StaticSymbolCache, jso
         importAs: string;
     }[];
 };
+export declare function createForJitStub(outputCtx: OutputContext, reference: StaticSymbol): void;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-rc.0-fa809ec
+ * @license Angular v4.2.0-rc.0-eba59aa
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-rc.0-fa809ec');
+const VERSION = new Version('4.2.0-rc.0-eba59aa');
 
 /**
  * @license
@@ -17774,14 +17774,11 @@ class NgModuleCompiler {
         const /** @type {?} */ ngModuleDef = importExpr(Identifiers.moduleDef).callFn([literalArr(providerDefs)]);
         const /** @type {?} */ ngModuleDefFactory = fn([new FnParam(/** @type {?} */ ((LOG_VAR.name)))], [new ReturnStatement(ngModuleDef)], INFERRED_TYPE);
         const /** @type {?} */ ngModuleFactoryVar = `${identifierName(ngModuleMeta.type)}NgFactory`;
-        const /** @type {?} */ ngModuleFactoryStmt = variable(ngModuleFactoryVar)
-            .set(importExpr(Identifiers.createModuleFactory).callFn([
+        this._createNgModuleFactory(ctx, ngModuleMeta.type.reference, importExpr(Identifiers.createModuleFactory).callFn([
             ctx.importExpr(ngModuleMeta.type.reference),
             literalArr(bootstrapComponents.map(id => ctx.importExpr(id.reference))),
             ngModuleDefFactory
-        ]))
-            .toDeclStmt(importType(Identifiers.NgModuleFactory, [/** @type {?} */ ((expressionType(ctx.importExpr(ngModuleMeta.type.reference))))], [TypeModifier.Const]), [StmtModifier.Final, StmtModifier.Exported]);
-        ctx.statements.push(ngModuleFactoryStmt);
+        ]));
         if (ngModuleMeta.id) {
             const /** @type {?} */ registerFactoryStmt = importExpr(Identifiers.RegisterModuleFactoryFn)
                 .callFn([literal(ngModuleMeta.id), variable(ngModuleFactoryVar)])
@@ -17789,6 +17786,27 @@ class NgModuleCompiler {
             ctx.statements.push(registerFactoryStmt);
         }
         return new NgModuleCompileResult(ngModuleFactoryVar);
+    }
+    /**
+     * @param {?} ctx
+     * @param {?} ngModuleReference
+     * @return {?}
+     */
+    createStub(ctx, ngModuleReference) {
+        this._createNgModuleFactory(ctx, ngModuleReference, NULL_EXPR);
+    }
+    /**
+     * @param {?} ctx
+     * @param {?} reference
+     * @param {?} value
+     * @return {?}
+     */
+    _createNgModuleFactory(ctx, reference, value) {
+        const /** @type {?} */ ngModuleFactoryVar = `${identifierName({ reference: reference })}NgFactory`;
+        const /** @type {?} */ ngModuleFactoryStmt = variable(ngModuleFactoryVar)
+            .set(value)
+            .toDeclStmt(importType(Identifiers.NgModuleFactory, [/** @type {?} */ ((expressionType(ctx.importExpr(reference))))], [TypeModifier.Const]), [StmtModifier.Final, StmtModifier.Exported]);
+        ctx.statements.push(ngModuleFactoryStmt);
     }
 }
 NgModuleCompiler.decorators = [
@@ -22413,6 +22431,26 @@ function deserializeSummaries(symbolCache, json) {
     const /** @type {?} */ deserializer = new FromJsonDeserializer(symbolCache);
     return deserializer.deserialize(json);
 }
+/**
+ * @param {?} outputCtx
+ * @param {?} reference
+ * @return {?}
+ */
+function createForJitStub(outputCtx, reference) {
+    return createSummaryForJitFunction(outputCtx, reference, NULL_EXPR);
+}
+/**
+ * @param {?} outputCtx
+ * @param {?} reference
+ * @param {?} value
+ * @return {?}
+ */
+function createSummaryForJitFunction(outputCtx, reference, value) {
+    const /** @type {?} */ fnName = summaryForJitName(reference.name);
+    outputCtx.statements.push(fn([], [new ReturnStatement(value)], new ArrayType(DYNAMIC_TYPE)).toDeclStmt(fnName, [
+        StmtModifier.Final, StmtModifier.Exported
+    ]));
+}
 class ToJsonSerializer extends ValueTransformer {
     /**
      * @param {?} symbolResolver
@@ -22560,8 +22598,7 @@ class ForJitSerializer {
             }
             if (!isLibrary) {
                 const /** @type {?} */ fnName = summaryForJitName(summary.type.reference.name);
-                this.outputCtx.statements.push(fn([], [new ReturnStatement(this.serializeSummaryWithDeps(summary, /** @type {?} */ ((metadata))))], new ArrayType(DYNAMIC_TYPE))
-                    .toDeclStmt(fnName, [StmtModifier.Final, StmtModifier.Exported]));
+                createSummaryForJitFunction(this.outputCtx, summary.type.reference, this.serializeSummaryWithDeps(summary, /** @type {?} */ ((metadata))));
             }
         });
         exportAs.forEach((entry) => {
@@ -22753,26 +22790,79 @@ class AotCompiler {
      * @param {?} rootFiles
      * @return {?}
      */
-    compileAllAsync(rootFiles) {
+    analyzeModulesSync(rootFiles) {
         const /** @type {?} */ programSymbols = extractProgramSymbols(this._symbolResolver, rootFiles, this._host);
-        const { ngModuleByPipeOrDirective, files, ngModules } = analyzeAndValidateNgModules(programSymbols, this._host, this._metadataResolver);
-        return Promise
-            .all(ngModules.map(ngModule => this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false)))
-            .then(() => {
-            const /** @type {?} */ sourceModules = files.map(file => this._compileSrcFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables));
-            return flatten(sourceModules);
-        });
+        const /** @type {?} */ analyzeResult = analyzeAndValidateNgModules(programSymbols, this._host, this._metadataResolver);
+        analyzeResult.ngModules.forEach(ngModule => this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, true));
+        return analyzeResult;
     }
     /**
      * @param {?} rootFiles
      * @return {?}
      */
-    compileAllSync(rootFiles) {
+    analyzeModulesAsync(rootFiles) {
         const /** @type {?} */ programSymbols = extractProgramSymbols(this._symbolResolver, rootFiles, this._host);
-        const { ngModuleByPipeOrDirective, files, ngModules } = analyzeAndValidateNgModules(programSymbols, this._host, this._metadataResolver);
-        ngModules.forEach(ngModule => this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, true));
-        const /** @type {?} */ sourceModules = files.map(file => this._compileSrcFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables));
+        const /** @type {?} */ analyzeResult = analyzeAndValidateNgModules(programSymbols, this._host, this._metadataResolver);
+        return Promise
+            .all(analyzeResult.ngModules.map(ngModule => this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false)))
+            .then(() => analyzeResult);
+    }
+    /**
+     * @param {?} analyzeResult
+     * @return {?}
+     */
+    emitAllStubs(analyzeResult) {
+        const { files } = analyzeResult;
+        const /** @type {?} */ sourceModules = files.map(file => this._compileStubFile(file.srcUrl, file.directives, file.ngModules));
         return flatten(sourceModules);
+    }
+    /**
+     * @param {?} analyzeResult
+     * @return {?}
+     */
+    emitAllImpls(analyzeResult) {
+        const { ngModuleByPipeOrDirective, files } = analyzeResult;
+        const /** @type {?} */ sourceModules = files.map(file => this._compileImplFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables));
+        return flatten(sourceModules);
+    }
+    /**
+     * @param {?} srcFileUrl
+     * @param {?} directives
+     * @param {?} ngModules
+     * @return {?}
+     */
+    _compileStubFile(srcFileUrl, directives, ngModules) {
+        const /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
+        const /** @type {?} */ generatedFiles = [];
+        const /** @type {?} */ jitSummaryStmts = [];
+        const /** @type {?} */ ngFactoryStms = [];
+        const /** @type {?} */ ngFactoryOutputCtx = this._createOutputContext(ngfactoryFilePath(srcFileUrl, true));
+        const /** @type {?} */ jitSummaryOutputCtx = this._createOutputContext(summaryForJitFileName(srcFileUrl, true));
+        // create exports that user code can reference
+        ngModules.forEach((ngModuleReference) => {
+            this._ngModuleCompiler.createStub(ngFactoryOutputCtx, ngModuleReference);
+            createForJitStub(jitSummaryOutputCtx, ngModuleReference);
+        });
+        // Note: we are creating stub ngfactory/ngsummary for all source files,
+        // as the real calculation requires almost the same logic as producing the real content for
+        // them.
+        // Our pipeline will filter out empty ones at the end.
+        generatedFiles.push(this._codegenSourceModule(srcFileUrl, ngFactoryOutputCtx));
+        generatedFiles.push(this._codegenSourceModule(srcFileUrl, jitSummaryOutputCtx));
+        // create stubs for external stylesheets (always empty, as users should not import anything from
+        // the generated code)
+        directives.forEach((dirType) => {
+            const /** @type {?} */ compMeta = this._metadataResolver.getDirectiveMetadata(/** @type {?} */ (dirType));
+            if (!compMeta.isComponent) {
+                return;
+            } /** @type {?} */
+            ((
+            // Note: compMeta is a component and therefore template is non null.
+            compMeta.template)).externalStylesheets.forEach((stylesheetMeta) => {
+                generatedFiles.push(this._codegenSourceModule(/** @type {?} */ ((stylesheetMeta.moduleUrl)), this._createOutputContext(_stylesModuleUrl(/** @type {?} */ ((stylesheetMeta.moduleUrl)), this._styleCompiler.needsStyleShim(compMeta), fileSuffix))));
+            });
+        });
+        return generatedFiles;
     }
     /**
      * @param {?} srcFileUrl
@@ -22783,7 +22873,7 @@ class AotCompiler {
      * @param {?} injectables
      * @return {?}
      */
-    _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
+    _compileImplFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
         const /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
         const /** @type {?} */ generatedFiles = [];
         const /** @type {?} */ outputCtx = this._createOutputContext(ngfactoryFilePath(srcFileUrl, true));
@@ -22794,19 +22884,18 @@ class AotCompiler {
         directives.forEach((dirType) => {
             const /** @type {?} */ compMeta = this._metadataResolver.getDirectiveMetadata(/** @type {?} */ (dirType));
             if (!compMeta.isComponent) {
-                return Promise.resolve(null);
+                return;
             }
             const /** @type {?} */ ngModule = ngModuleByPipeOrDirective.get(dirType);
             if (!ngModule) {
                 throw new Error(`Internal Error: cannot determine the module for component ${identifierName(compMeta.type)}!`);
             }
-            _assertComponent(compMeta);
             // compile styles
             const /** @type {?} */ componentStylesheet = this._styleCompiler.compileComponent(outputCtx, compMeta); /** @type {?} */
             ((
             // Note: compMeta is a component and therefore template is non null.
             compMeta.template)).externalStylesheets.forEach((stylesheetMeta) => {
-                generatedFiles.push(this._codegenStyles(srcFileUrl, compMeta, stylesheetMeta, fileSuffix));
+                generatedFiles.push(this._codegenStyles(/** @type {?} */ ((stylesheetMeta.moduleUrl)), compMeta, stylesheetMeta, fileSuffix));
             });
             // compile components
             const /** @type {?} */ compViewVars = this._compileComponent(outputCtx, compMeta, ngModule, ngModule.transitiveModule.directives, componentStylesheet, fileSuffix);
@@ -22849,7 +22938,6 @@ class AotCompiler {
             }))
         ];
         const /** @type {?} */ forJitOutputCtx = this._createOutputContext(summaryForJitFileName(srcFileUrl, true));
-        const /** @type {?} */ forJitTargetFilePath = summaryForJitFileName(srcFileUrl, true);
         const { json, exportAs } = serializeSummaries(forJitOutputCtx, this._summaryResolver, this._symbolResolver, symbolSummaries, typeData);
         exportAs.forEach((entry) => {
             ngFactoryCtx.statements.push(variable(entry.exportAs).set(ngFactoryCtx.importExpr(entry.symbol)).toDeclStmt(null, [
@@ -23003,15 +23091,6 @@ function _resolveStyleStatements(symbolResolver, compileResult, needsShim, fileS
  */
 function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
     return `${stylesheetUrl}${shim ? '.shim' : ''}.ngstyle${suffix}`;
-}
-/**
- * @param {?} meta
- * @return {?}
- */
-function _assertComponent(meta) {
-    if (!meta.isComponent) {
-        throw new Error(`Could not compile '${identifierName(meta.type)}' because it is not a component.`);
-    }
 }
 /**
  * @param {?} programStaticSymbols

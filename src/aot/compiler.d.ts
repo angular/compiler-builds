@@ -35,9 +35,12 @@ export declare class AotCompiler {
     private _symbolResolver;
     constructor(_config: CompilerConfig, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string | null, _translationFormat: string | null, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
-    compileAllAsync(rootFiles: string[]): Promise<GeneratedFile[]>;
-    compileAllSync(rootFiles: string[]): GeneratedFile[];
-    private _compileSrcFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
+    analyzeModulesSync(rootFiles: string[]): NgAnalyzedModules;
+    analyzeModulesAsync(rootFiles: string[]): Promise<NgAnalyzedModules>;
+    emitAllStubs(analyzeResult: NgAnalyzedModules): GeneratedFile[];
+    emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
+    private _compileStubFile(srcFileUrl, directives, ngModules);
+    private _compileImplFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
     private _createSummary(srcFileUrl, directives, pipes, ngModules, injectables, ngFactoryCtx);
     private _compileModule(outputCtx, ngModuleType);
     private _compileComponentFactory(outputCtx, compMeta, ngModule, fileSuffix);
