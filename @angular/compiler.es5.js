@@ -1,15 +1,6 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
+import * as tslib_1 from "tslib";
 /**
- * @license Angular v4.2.0-rc.0-1651a8f
+ * @license Angular v4.2.0-rc.0-fa809ec
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -29,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.2.0-rc.0-1651a8f');
+var VERSION = new Version('4.2.0-rc.0-fa809ec');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -559,7 +550,7 @@ var NullTemplateVisitor = (function () {
  * in an template ast recursively.
  */
 var RecursiveTemplateAstVisitor = (function (_super) {
-    __extends(RecursiveTemplateAstVisitor, _super);
+    tslib_1.__extends(RecursiveTemplateAstVisitor, _super);
     function RecursiveTemplateAstVisitor() {
         return _super.call(this) || this;
     }
@@ -1788,7 +1779,7 @@ var CompileAnimationStateMetadata = (function () {
     return CompileAnimationStateMetadata;
 }());
 var CompileAnimationStateDeclarationMetadata = (function (_super) {
-    __extends(CompileAnimationStateDeclarationMetadata, _super);
+    tslib_1.__extends(CompileAnimationStateDeclarationMetadata, _super);
     /**
      * @param {?} stateNameExpr
      * @param {?} styles
@@ -1802,7 +1793,7 @@ var CompileAnimationStateDeclarationMetadata = (function (_super) {
     return CompileAnimationStateDeclarationMetadata;
 }(CompileAnimationStateMetadata));
 var CompileAnimationStateTransitionMetadata = (function (_super) {
-    __extends(CompileAnimationStateTransitionMetadata, _super);
+    tslib_1.__extends(CompileAnimationStateTransitionMetadata, _super);
     /**
      * @param {?} stateChangeExpr
      * @param {?} steps
@@ -1824,7 +1815,7 @@ var CompileAnimationMetadata = (function () {
     return CompileAnimationMetadata;
 }());
 var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
-    __extends(CompileAnimationKeyframesSequenceMetadata, _super);
+    tslib_1.__extends(CompileAnimationKeyframesSequenceMetadata, _super);
     /**
      * @param {?=} steps
      */
@@ -1837,7 +1828,7 @@ var CompileAnimationKeyframesSequenceMetadata = (function (_super) {
     return CompileAnimationKeyframesSequenceMetadata;
 }(CompileAnimationMetadata));
 var CompileAnimationStyleMetadata = (function (_super) {
-    __extends(CompileAnimationStyleMetadata, _super);
+    tslib_1.__extends(CompileAnimationStyleMetadata, _super);
     /**
      * @param {?} offset
      * @param {?=} styles
@@ -1852,7 +1843,7 @@ var CompileAnimationStyleMetadata = (function (_super) {
     return CompileAnimationStyleMetadata;
 }(CompileAnimationMetadata));
 var CompileAnimationAnimateMetadata = (function (_super) {
-    __extends(CompileAnimationAnimateMetadata, _super);
+    tslib_1.__extends(CompileAnimationAnimateMetadata, _super);
     /**
      * @param {?=} timings
      * @param {?=} styles
@@ -1871,7 +1862,7 @@ var CompileAnimationAnimateMetadata = (function (_super) {
  * @abstract
  */
 var CompileAnimationWithStepsMetadata = (function (_super) {
-    __extends(CompileAnimationWithStepsMetadata, _super);
+    tslib_1.__extends(CompileAnimationWithStepsMetadata, _super);
     /**
      * @param {?=} steps
      */
@@ -1884,7 +1875,7 @@ var CompileAnimationWithStepsMetadata = (function (_super) {
     return CompileAnimationWithStepsMetadata;
 }(CompileAnimationMetadata));
 var CompileAnimationSequenceMetadata = (function (_super) {
-    __extends(CompileAnimationSequenceMetadata, _super);
+    tslib_1.__extends(CompileAnimationSequenceMetadata, _super);
     /**
      * @param {?=} steps
      */
@@ -1895,7 +1886,7 @@ var CompileAnimationSequenceMetadata = (function (_super) {
     return CompileAnimationSequenceMetadata;
 }(CompileAnimationWithStepsMetadata));
 var CompileAnimationGroupMetadata = (function (_super) {
-    __extends(CompileAnimationGroupMetadata, _super);
+    tslib_1.__extends(CompileAnimationGroupMetadata, _super);
     /**
      * @param {?=} steps
      */
@@ -2613,7 +2604,7 @@ var AST = (function () {
  * therefore not interpreted by the Angular's own expression parser.
  */
 var Quote = (function (_super) {
-    __extends(Quote, _super);
+    tslib_1.__extends(Quote, _super);
     /**
      * @param {?} span
      * @param {?} prefix
@@ -2643,7 +2634,7 @@ var Quote = (function (_super) {
     return Quote;
 }(AST));
 var EmptyExpr = (function (_super) {
-    __extends(EmptyExpr, _super);
+    tslib_1.__extends(EmptyExpr, _super);
     function EmptyExpr() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -2659,7 +2650,7 @@ var EmptyExpr = (function (_super) {
     return EmptyExpr;
 }(AST));
 var ImplicitReceiver = (function (_super) {
-    __extends(ImplicitReceiver, _super);
+    tslib_1.__extends(ImplicitReceiver, _super);
     function ImplicitReceiver() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -2678,7 +2669,7 @@ var ImplicitReceiver = (function (_super) {
  * Multiple expressions separated by a semicolon.
  */
 var Chain = (function (_super) {
-    __extends(Chain, _super);
+    tslib_1.__extends(Chain, _super);
     /**
      * @param {?} span
      * @param {?} expressions
@@ -2700,7 +2691,7 @@ var Chain = (function (_super) {
     return Chain;
 }(AST));
 var Conditional = (function (_super) {
-    __extends(Conditional, _super);
+    tslib_1.__extends(Conditional, _super);
     /**
      * @param {?} span
      * @param {?} condition
@@ -2726,7 +2717,7 @@ var Conditional = (function (_super) {
     return Conditional;
 }(AST));
 var PropertyRead = (function (_super) {
-    __extends(PropertyRead, _super);
+    tslib_1.__extends(PropertyRead, _super);
     /**
      * @param {?} span
      * @param {?} receiver
@@ -2750,7 +2741,7 @@ var PropertyRead = (function (_super) {
     return PropertyRead;
 }(AST));
 var PropertyWrite = (function (_super) {
-    __extends(PropertyWrite, _super);
+    tslib_1.__extends(PropertyWrite, _super);
     /**
      * @param {?} span
      * @param {?} receiver
@@ -2776,7 +2767,7 @@ var PropertyWrite = (function (_super) {
     return PropertyWrite;
 }(AST));
 var SafePropertyRead = (function (_super) {
-    __extends(SafePropertyRead, _super);
+    tslib_1.__extends(SafePropertyRead, _super);
     /**
      * @param {?} span
      * @param {?} receiver
@@ -2800,7 +2791,7 @@ var SafePropertyRead = (function (_super) {
     return SafePropertyRead;
 }(AST));
 var KeyedRead = (function (_super) {
-    __extends(KeyedRead, _super);
+    tslib_1.__extends(KeyedRead, _super);
     /**
      * @param {?} span
      * @param {?} obj
@@ -2824,7 +2815,7 @@ var KeyedRead = (function (_super) {
     return KeyedRead;
 }(AST));
 var KeyedWrite = (function (_super) {
-    __extends(KeyedWrite, _super);
+    tslib_1.__extends(KeyedWrite, _super);
     /**
      * @param {?} span
      * @param {?} obj
@@ -2850,7 +2841,7 @@ var KeyedWrite = (function (_super) {
     return KeyedWrite;
 }(AST));
 var BindingPipe = (function (_super) {
-    __extends(BindingPipe, _super);
+    tslib_1.__extends(BindingPipe, _super);
     /**
      * @param {?} span
      * @param {?} exp
@@ -2876,7 +2867,7 @@ var BindingPipe = (function (_super) {
     return BindingPipe;
 }(AST));
 var LiteralPrimitive = (function (_super) {
-    __extends(LiteralPrimitive, _super);
+    tslib_1.__extends(LiteralPrimitive, _super);
     /**
      * @param {?} span
      * @param {?} value
@@ -2898,7 +2889,7 @@ var LiteralPrimitive = (function (_super) {
     return LiteralPrimitive;
 }(AST));
 var LiteralArray = (function (_super) {
-    __extends(LiteralArray, _super);
+    tslib_1.__extends(LiteralArray, _super);
     /**
      * @param {?} span
      * @param {?} expressions
@@ -2920,7 +2911,7 @@ var LiteralArray = (function (_super) {
     return LiteralArray;
 }(AST));
 var LiteralMap = (function (_super) {
-    __extends(LiteralMap, _super);
+    tslib_1.__extends(LiteralMap, _super);
     /**
      * @param {?} span
      * @param {?} keys
@@ -2944,7 +2935,7 @@ var LiteralMap = (function (_super) {
     return LiteralMap;
 }(AST));
 var Interpolation = (function (_super) {
-    __extends(Interpolation, _super);
+    tslib_1.__extends(Interpolation, _super);
     /**
      * @param {?} span
      * @param {?} strings
@@ -2968,7 +2959,7 @@ var Interpolation = (function (_super) {
     return Interpolation;
 }(AST));
 var Binary = (function (_super) {
-    __extends(Binary, _super);
+    tslib_1.__extends(Binary, _super);
     /**
      * @param {?} span
      * @param {?} operation
@@ -2994,7 +2985,7 @@ var Binary = (function (_super) {
     return Binary;
 }(AST));
 var PrefixNot = (function (_super) {
-    __extends(PrefixNot, _super);
+    tslib_1.__extends(PrefixNot, _super);
     /**
      * @param {?} span
      * @param {?} expression
@@ -3016,7 +3007,7 @@ var PrefixNot = (function (_super) {
     return PrefixNot;
 }(AST));
 var NonNullAssert = (function (_super) {
-    __extends(NonNullAssert, _super);
+    tslib_1.__extends(NonNullAssert, _super);
     /**
      * @param {?} span
      * @param {?} expression
@@ -3038,7 +3029,7 @@ var NonNullAssert = (function (_super) {
     return NonNullAssert;
 }(AST));
 var MethodCall = (function (_super) {
-    __extends(MethodCall, _super);
+    tslib_1.__extends(MethodCall, _super);
     /**
      * @param {?} span
      * @param {?} receiver
@@ -3064,7 +3055,7 @@ var MethodCall = (function (_super) {
     return MethodCall;
 }(AST));
 var SafeMethodCall = (function (_super) {
-    __extends(SafeMethodCall, _super);
+    tslib_1.__extends(SafeMethodCall, _super);
     /**
      * @param {?} span
      * @param {?} receiver
@@ -3090,7 +3081,7 @@ var SafeMethodCall = (function (_super) {
     return SafeMethodCall;
 }(AST));
 var FunctionCall = (function (_super) {
-    __extends(FunctionCall, _super);
+    tslib_1.__extends(FunctionCall, _super);
     /**
      * @param {?} span
      * @param {?} target
@@ -3114,7 +3105,7 @@ var FunctionCall = (function (_super) {
     return FunctionCall;
 }(AST));
 var ASTWithSource = (function (_super) {
-    __extends(ASTWithSource, _super);
+    tslib_1.__extends(ASTWithSource, _super);
     /**
      * @param {?} ast
      * @param {?} source
@@ -6107,7 +6098,7 @@ function spanOf(ast) {
 function findNode(nodes, position) {
     var /** @type {?} */ path = [];
     var /** @type {?} */ visitor = new (function (_super) {
-        __extends(class_1, _super);
+        tslib_1.__extends(class_1, _super);
         function class_1() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
@@ -6193,7 +6184,7 @@ var Token$1 = (function () {
     return Token$1;
 }());
 var TokenError = (function (_super) {
-    __extends(TokenError, _super);
+    tslib_1.__extends(TokenError, _super);
     /**
      * @param {?} errorMsg
      * @param {?} tokenType
@@ -7041,7 +7032,7 @@ function mergeTextTokens(srcTokens) {
  * found in the LICENSE file at https://angular.io/license
  */
 var TreeError = (function (_super) {
-    __extends(TreeError, _super);
+    tslib_1.__extends(TreeError, _super);
     /**
      * @param {?} elementName
      * @param {?} span
@@ -8089,7 +8080,7 @@ function _extractPlaceholderName(input) {
  * An i18n error.
  */
 var I18nError = (function (_super) {
-    __extends(I18nError, _super);
+    tslib_1.__extends(I18nError, _super);
     /**
      * @param {?} span
      * @param {?} msg
@@ -8643,7 +8634,7 @@ function getXmlTagDefinition(tagName) {
  * found in the LICENSE file at https://angular.io/license
  */
 var XmlParser = (function (_super) {
-    __extends(XmlParser, _super);
+    tslib_1.__extends(XmlParser, _super);
     function XmlParser() {
         return _super.call(this, getXmlTagDefinition) || this;
     }
@@ -8765,7 +8756,7 @@ function serializeNodes(nodes) {
  * \@internal
  */
 var _SerializerIgnoreIcuExpVisitor = (function (_super) {
-    __extends(_SerializerIgnoreIcuExpVisitor, _super);
+    tslib_1.__extends(_SerializerIgnoreIcuExpVisitor, _super);
     function _SerializerIgnoreIcuExpVisitor() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -9155,7 +9146,7 @@ var Serializer = (function () {
  * A simple mapper that take a function to transform an internal name to a public name
  */
 var SimplePlaceholderMapper = (function (_super) {
-    __extends(SimplePlaceholderMapper, _super);
+    tslib_1.__extends(SimplePlaceholderMapper, _super);
     /**
      * @param {?} message
      * @param {?} mapName
@@ -9374,7 +9365,7 @@ var Text$2 = (function () {
     return Text$2;
 }());
 var CR = (function (_super) {
-    __extends(CR, _super);
+    tslib_1.__extends(CR, _super);
     /**
      * @param {?=} ws
      */
@@ -9417,7 +9408,7 @@ var _UNIT_TAG = 'trans-unit';
 var _CONTEXT_GROUP_TAG = 'context-group';
 var _CONTEXT_TAG = 'context';
 var Xliff = (function (_super) {
-    __extends(Xliff, _super);
+    tslib_1.__extends(Xliff, _super);
     function Xliff() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -9796,7 +9787,7 @@ var _SOURCE_TAG$1 = 'source';
 var _TARGET_TAG$1 = 'target';
 var _UNIT_TAG$1 = 'unit';
 var Xliff2 = (function (_super) {
-    __extends(Xliff2, _super);
+    tslib_1.__extends(Xliff2, _super);
     function Xliff2() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -10223,7 +10214,7 @@ var _EXEMPLE_TAG = 'ex';
 var _SOURCE_TAG$2 = 'source';
 var _DOCTYPE = "<!ELEMENT messagebundle (msg)*>\n<!ATTLIST messagebundle class CDATA #IMPLIED>\n\n<!ELEMENT msg (#PCDATA|ph|source)*>\n<!ATTLIST msg id CDATA #IMPLIED>\n<!ATTLIST msg seq CDATA #IMPLIED>\n<!ATTLIST msg name CDATA #IMPLIED>\n<!ATTLIST msg desc CDATA #IMPLIED>\n<!ATTLIST msg meaning CDATA #IMPLIED>\n<!ATTLIST msg obsolete (obsolete) #IMPLIED>\n<!ATTLIST msg xml:space (default|preserve) \"default\">\n<!ATTLIST msg is_hidden CDATA #IMPLIED>\n\n<!ELEMENT source (#PCDATA)>\n\n<!ELEMENT ph (#PCDATA|ex)*>\n<!ATTLIST ph name CDATA #REQUIRED>\n\n<!ELEMENT ex (#PCDATA)>";
 var Xmb = (function (_super) {
-    __extends(Xmb, _super);
+    tslib_1.__extends(Xmb, _super);
     function Xmb() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -10429,7 +10420,7 @@ var _TRANSLATIONS_TAG = 'translationbundle';
 var _TRANSLATION_TAG = 'translation';
 var _PLACEHOLDER_TAG$3 = 'ph';
 var Xtb = (function (_super) {
-    __extends(Xtb, _super);
+    tslib_1.__extends(Xtb, _super);
     function Xtb() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -10702,7 +10693,7 @@ var XmlToI18n$2 = (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 var HtmlParser = (function (_super) {
-    __extends(HtmlParser, _super);
+    tslib_1.__extends(HtmlParser, _super);
     function HtmlParser() {
         return _super.call(this, getHtmlTagDefinition) || this;
     }
@@ -11200,7 +11191,7 @@ var ExpansionResult = (function () {
     return ExpansionResult;
 }());
 var ExpansionError = (function (_super) {
-    __extends(ExpansionError, _super);
+    tslib_1.__extends(ExpansionError, _super);
     /**
      * @param {?} span
      * @param {?} errorMsg
@@ -11309,7 +11300,7 @@ function _expandDefaultForm(ast, errors) {
  * found in the LICENSE file at https://angular.io/license
  */
 var ProviderError = (function (_super) {
-    __extends(ProviderError, _super);
+    tslib_1.__extends(ProviderError, _super);
     /**
      * @param {?} message
      * @param {?} span
@@ -12540,7 +12531,7 @@ var BindingParser = (function () {
     return BindingParser;
 }());
 var PipeCollector = (function (_super) {
-    __extends(PipeCollector, _super);
+    tslib_1.__extends(PipeCollector, _super);
     function PipeCollector() {
         var _this = _super.apply(this, arguments) || this;
         _this.pipes = new Map();
@@ -12745,7 +12736,7 @@ function warnOnlyOnce(warnings) {
  */
 var TEMPLATE_TRANSFORMS = new InjectionToken('TemplateTransforms');
 var TemplateParseError = (function (_super) {
-    __extends(TemplateParseError, _super);
+    tslib_1.__extends(TemplateParseError, _super);
     /**
      * @param {?} message
      * @param {?} span
@@ -16070,7 +16061,7 @@ function extractIdentifiers(value, targetIdentifiers) {
     visitValue(value, new _CompileValueConverter(), targetIdentifiers);
 }
 var _CompileValueConverter = (function (_super) {
-    __extends(_CompileValueConverter, _super);
+    tslib_1.__extends(_CompileValueConverter, _super);
     function _CompileValueConverter() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
@@ -16160,7 +16151,7 @@ BuiltinTypeName[BuiltinTypeName.Number] = "Number";
 BuiltinTypeName[BuiltinTypeName.Function] = "Function";
 BuiltinTypeName[BuiltinTypeName.Inferred] = "Inferred";
 var BuiltinType = (function (_super) {
-    __extends(BuiltinType, _super);
+    tslib_1.__extends(BuiltinType, _super);
     /**
      * @param {?} name
      * @param {?=} modifiers
@@ -16182,7 +16173,7 @@ var BuiltinType = (function (_super) {
     return BuiltinType;
 }(Type$1));
 var ExpressionType = (function (_super) {
-    __extends(ExpressionType, _super);
+    tslib_1.__extends(ExpressionType, _super);
     /**
      * @param {?} value
      * @param {?=} modifiers
@@ -16204,7 +16195,7 @@ var ExpressionType = (function (_super) {
     return ExpressionType;
 }(Type$1));
 var ArrayType = (function (_super) {
-    __extends(ArrayType, _super);
+    tslib_1.__extends(ArrayType, _super);
     /**
      * @param {?} of
      * @param {?=} modifiers
@@ -16226,7 +16217,7 @@ var ArrayType = (function (_super) {
     return ArrayType;
 }(Type$1));
 var MapType = (function (_super) {
-    __extends(MapType, _super);
+    tslib_1.__extends(MapType, _super);
     /**
      * @param {?} valueType
      * @param {?=} modifiers
@@ -16508,7 +16499,7 @@ BuiltinVar[BuiltinVar.Super] = "Super";
 BuiltinVar[BuiltinVar.CatchError] = "CatchError";
 BuiltinVar[BuiltinVar.CatchStack] = "CatchStack";
 var ReadVarExpr = (function (_super) {
-    __extends(ReadVarExpr, _super);
+    tslib_1.__extends(ReadVarExpr, _super);
     /**
      * @param {?} name
      * @param {?=} type
@@ -16547,7 +16538,7 @@ var ReadVarExpr = (function (_super) {
     return ReadVarExpr;
 }(Expression));
 var WriteVarExpr = (function (_super) {
-    __extends(WriteVarExpr, _super);
+    tslib_1.__extends(WriteVarExpr, _super);
     /**
      * @param {?} name
      * @param {?} value
@@ -16579,7 +16570,7 @@ var WriteVarExpr = (function (_super) {
     return WriteVarExpr;
 }(Expression));
 var WriteKeyExpr = (function (_super) {
-    __extends(WriteKeyExpr, _super);
+    tslib_1.__extends(WriteKeyExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} index
@@ -16605,7 +16596,7 @@ var WriteKeyExpr = (function (_super) {
     return WriteKeyExpr;
 }(Expression));
 var WritePropExpr = (function (_super) {
-    __extends(WritePropExpr, _super);
+    tslib_1.__extends(WritePropExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} name
@@ -16638,7 +16629,7 @@ BuiltinMethod[BuiltinMethod.ConcatArray] = "ConcatArray";
 BuiltinMethod[BuiltinMethod.SubscribeObservable] = "SubscribeObservable";
 BuiltinMethod[BuiltinMethod.Bind] = "Bind";
 var InvokeMethodExpr = (function (_super) {
-    __extends(InvokeMethodExpr, _super);
+    tslib_1.__extends(InvokeMethodExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} method
@@ -16671,7 +16662,7 @@ var InvokeMethodExpr = (function (_super) {
     return InvokeMethodExpr;
 }(Expression));
 var InvokeFunctionExpr = (function (_super) {
-    __extends(InvokeFunctionExpr, _super);
+    tslib_1.__extends(InvokeFunctionExpr, _super);
     /**
      * @param {?} fn
      * @param {?} args
@@ -16695,7 +16686,7 @@ var InvokeFunctionExpr = (function (_super) {
     return InvokeFunctionExpr;
 }(Expression));
 var InstantiateExpr = (function (_super) {
-    __extends(InstantiateExpr, _super);
+    tslib_1.__extends(InstantiateExpr, _super);
     /**
      * @param {?} classExpr
      * @param {?} args
@@ -16719,7 +16710,7 @@ var InstantiateExpr = (function (_super) {
     return InstantiateExpr;
 }(Expression));
 var LiteralExpr = (function (_super) {
-    __extends(LiteralExpr, _super);
+    tslib_1.__extends(LiteralExpr, _super);
     /**
      * @param {?} value
      * @param {?=} type
@@ -16741,7 +16732,7 @@ var LiteralExpr = (function (_super) {
     return LiteralExpr;
 }(Expression));
 var ExternalExpr = (function (_super) {
-    __extends(ExternalExpr, _super);
+    tslib_1.__extends(ExternalExpr, _super);
     /**
      * @param {?} value
      * @param {?=} type
@@ -16779,7 +16770,7 @@ var ExternalReference = (function () {
     return ExternalReference;
 }());
 var ConditionalExpr = (function (_super) {
-    __extends(ConditionalExpr, _super);
+    tslib_1.__extends(ConditionalExpr, _super);
     /**
      * @param {?} condition
      * @param {?} trueCase
@@ -16806,7 +16797,7 @@ var ConditionalExpr = (function (_super) {
     return ConditionalExpr;
 }(Expression));
 var NotExpr = (function (_super) {
-    __extends(NotExpr, _super);
+    tslib_1.__extends(NotExpr, _super);
     /**
      * @param {?} condition
      * @param {?=} sourceSpan
@@ -16827,7 +16818,7 @@ var NotExpr = (function (_super) {
     return NotExpr;
 }(Expression));
 var AssertNotNull = (function (_super) {
-    __extends(AssertNotNull, _super);
+    tslib_1.__extends(AssertNotNull, _super);
     /**
      * @param {?} condition
      * @param {?=} sourceSpan
@@ -16848,7 +16839,7 @@ var AssertNotNull = (function (_super) {
     return AssertNotNull;
 }(Expression));
 var CastExpr = (function (_super) {
-    __extends(CastExpr, _super);
+    tslib_1.__extends(CastExpr, _super);
     /**
      * @param {?} value
      * @param {?=} type
@@ -16882,7 +16873,7 @@ var FnParam = (function () {
     return FnParam;
 }());
 var FunctionExpr = (function (_super) {
-    __extends(FunctionExpr, _super);
+    tslib_1.__extends(FunctionExpr, _super);
     /**
      * @param {?} params
      * @param {?} statements
@@ -16915,7 +16906,7 @@ var FunctionExpr = (function (_super) {
     return FunctionExpr;
 }(Expression));
 var BinaryOperatorExpr = (function (_super) {
-    __extends(BinaryOperatorExpr, _super);
+    tslib_1.__extends(BinaryOperatorExpr, _super);
     /**
      * @param {?} operator
      * @param {?} lhs
@@ -16941,7 +16932,7 @@ var BinaryOperatorExpr = (function (_super) {
     return BinaryOperatorExpr;
 }(Expression));
 var ReadPropExpr = (function (_super) {
-    __extends(ReadPropExpr, _super);
+    tslib_1.__extends(ReadPropExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} name
@@ -16972,7 +16963,7 @@ var ReadPropExpr = (function (_super) {
     return ReadPropExpr;
 }(Expression));
 var ReadKeyExpr = (function (_super) {
-    __extends(ReadKeyExpr, _super);
+    tslib_1.__extends(ReadKeyExpr, _super);
     /**
      * @param {?} receiver
      * @param {?} index
@@ -17003,7 +16994,7 @@ var ReadKeyExpr = (function (_super) {
     return ReadKeyExpr;
 }(Expression));
 var LiteralArrayExpr = (function (_super) {
-    __extends(LiteralArrayExpr, _super);
+    tslib_1.__extends(LiteralArrayExpr, _super);
     /**
      * @param {?} entries
      * @param {?=} type
@@ -17039,7 +17030,7 @@ var LiteralMapEntry = (function () {
     return LiteralMapEntry;
 }());
 var LiteralMapExpr = (function (_super) {
-    __extends(LiteralMapExpr, _super);
+    tslib_1.__extends(LiteralMapExpr, _super);
     /**
      * @param {?} entries
      * @param {?=} type
@@ -17065,7 +17056,7 @@ var LiteralMapExpr = (function (_super) {
     return LiteralMapExpr;
 }(Expression));
 var CommaExpr = (function (_super) {
-    __extends(CommaExpr, _super);
+    tslib_1.__extends(CommaExpr, _super);
     /**
      * @param {?} parts
      * @param {?=} sourceSpan
@@ -17125,7 +17116,7 @@ var Statement = (function () {
     return Statement;
 }());
 var DeclareVarStmt = (function (_super) {
-    __extends(DeclareVarStmt, _super);
+    tslib_1.__extends(DeclareVarStmt, _super);
     /**
      * @param {?} name
      * @param {?} value
@@ -17152,7 +17143,7 @@ var DeclareVarStmt = (function (_super) {
     return DeclareVarStmt;
 }(Statement));
 var DeclareFunctionStmt = (function (_super) {
-    __extends(DeclareFunctionStmt, _super);
+    tslib_1.__extends(DeclareFunctionStmt, _super);
     /**
      * @param {?} name
      * @param {?} params
@@ -17181,7 +17172,7 @@ var DeclareFunctionStmt = (function (_super) {
     return DeclareFunctionStmt;
 }(Statement));
 var ExpressionStatement = (function (_super) {
-    __extends(ExpressionStatement, _super);
+    tslib_1.__extends(ExpressionStatement, _super);
     /**
      * @param {?} expr
      * @param {?=} sourceSpan
@@ -17202,7 +17193,7 @@ var ExpressionStatement = (function (_super) {
     return ExpressionStatement;
 }(Statement));
 var ReturnStatement = (function (_super) {
-    __extends(ReturnStatement, _super);
+    tslib_1.__extends(ReturnStatement, _super);
     /**
      * @param {?} value
      * @param {?=} sourceSpan
@@ -17242,7 +17233,7 @@ var AbstractClassPart = (function () {
     return AbstractClassPart;
 }());
 var ClassMethod = (function (_super) {
-    __extends(ClassMethod, _super);
+    tslib_1.__extends(ClassMethod, _super);
     /**
      * @param {?} name
      * @param {?} params
@@ -17261,7 +17252,7 @@ var ClassMethod = (function (_super) {
     return ClassMethod;
 }(AbstractClassPart));
 var ClassGetter = (function (_super) {
-    __extends(ClassGetter, _super);
+    tslib_1.__extends(ClassGetter, _super);
     /**
      * @param {?} name
      * @param {?} body
@@ -17278,7 +17269,7 @@ var ClassGetter = (function (_super) {
     return ClassGetter;
 }(AbstractClassPart));
 var ClassStmt = (function (_super) {
-    __extends(ClassStmt, _super);
+    tslib_1.__extends(ClassStmt, _super);
     /**
      * @param {?} name
      * @param {?} parent
@@ -17311,7 +17302,7 @@ var ClassStmt = (function (_super) {
     return ClassStmt;
 }(Statement));
 var IfStmt = (function (_super) {
-    __extends(IfStmt, _super);
+    tslib_1.__extends(IfStmt, _super);
     /**
      * @param {?} condition
      * @param {?} trueCase
@@ -17337,7 +17328,7 @@ var IfStmt = (function (_super) {
     return IfStmt;
 }(Statement));
 var TryCatchStmt = (function (_super) {
-    __extends(TryCatchStmt, _super);
+    tslib_1.__extends(TryCatchStmt, _super);
     /**
      * @param {?} bodyStmts
      * @param {?} catchStmts
@@ -17360,7 +17351,7 @@ var TryCatchStmt = (function (_super) {
     return TryCatchStmt;
 }(Statement));
 var ThrowStmt = (function (_super) {
-    __extends(ThrowStmt, _super);
+    tslib_1.__extends(ThrowStmt, _super);
     /**
      * @param {?} error
      * @param {?=} sourceSpan
@@ -17954,7 +17945,7 @@ function findReadVarNames(stmts) {
     return visitor.varNames;
 }
 var _ReadVarVisitor = (function (_super) {
-    __extends(_ReadVarVisitor, _super);
+    tslib_1.__extends(_ReadVarVisitor, _super);
     function _ReadVarVisitor() {
         var _this = _super.apply(this, arguments) || this;
         _this.varNames = new Set();
@@ -18016,7 +18007,7 @@ function applySourceSpanToExpressionIfNeeded(expr, sourceSpan) {
     return expr.visitExpression(transformer, null);
 }
 var _ApplySourceSpanTransformer = (function (_super) {
-    __extends(_ApplySourceSpanTransformer, _super);
+    tslib_1.__extends(_ApplySourceSpanTransformer, _super);
     /**
      * @param {?} sourceSpan
      */
@@ -19513,7 +19504,7 @@ var TypeScriptEmitter = (function () {
     return TypeScriptEmitter;
 }());
 var _TsEmitterVisitor = (function (_super) {
-    __extends(_TsEmitterVisitor, _super);
+    tslib_1.__extends(_TsEmitterVisitor, _super);
     function _TsEmitterVisitor() {
         var _this = _super.call(this, false) || this;
         _this.typeExpression = 0;
@@ -20219,7 +20210,7 @@ var _ATTR_TO_PROP = {
     'tabindex': 'tabIndex',
 };
 var DomElementSchemaRegistry = (function (_super) {
-    __extends(DomElementSchemaRegistry, _super);
+    tslib_1.__extends(DomElementSchemaRegistry, _super);
     function DomElementSchemaRegistry() {
         var _this = _super.call(this) || this;
         _this._schema = {};
@@ -21279,7 +21270,7 @@ function convertToStatementIfNeeded(mode, expr) {
     }
 }
 var _BuiltinAstConverter = (function (_super) {
-    __extends(_BuiltinAstConverter, _super);
+    tslib_1.__extends(_BuiltinAstConverter, _super);
     /**
      * @param {?} _converterFactory
      */
@@ -22020,7 +22011,7 @@ function convertStmtIntoExpression(stmt) {
     return null;
 }
 var BuiltinFunctionCall = (function (_super) {
-    __extends(BuiltinFunctionCall, _super);
+    tslib_1.__extends(BuiltinFunctionCall, _super);
     /**
      * @param {?} span
      * @param {?} args
@@ -23253,7 +23244,7 @@ function deserializeSummaries(symbolCache, json) {
     return deserializer.deserialize(json);
 }
 var ToJsonSerializer = (function (_super) {
-    __extends(ToJsonSerializer, _super);
+    tslib_1.__extends(ToJsonSerializer, _super);
     /**
      * @param {?} symbolResolver
      * @param {?} summaryResolver
@@ -23516,7 +23507,7 @@ var ForJitSerializer = (function () {
     return ForJitSerializer;
 }());
 var FromJsonDeserializer = (function (_super) {
-    __extends(FromJsonDeserializer, _super);
+    tslib_1.__extends(FromJsonDeserializer, _super);
     /**
      * @param {?} symbolCache
      */
@@ -24799,7 +24790,7 @@ var BindingScope = (function () {
 BindingScope.missing = {};
 BindingScope.empty = { resolve: function (name) { return BindingScope.missing; } };
 var PopulatedScope = (function (_super) {
-    __extends(PopulatedScope, _super);
+    tslib_1.__extends(PopulatedScope, _super);
     /**
      * @param {?} bindings
      */
@@ -25180,7 +25171,7 @@ var StaticSymbolResolver = (function () {
         }
         var /** @type {?} */ self = this;
         var ReferenceTransformer = (function (_super) {
-            __extends(ReferenceTransformer, _super);
+            tslib_1.__extends(ReferenceTransformer, _super);
             function ReferenceTransformer() {
                 return _super !== null && _super.apply(this, arguments) || this;
             }
@@ -26034,7 +26025,7 @@ var CATCH_STACK_VAR$2 = 'stack';
  * @abstract
  */
 var AbstractJsEmitterVisitor = (function (_super) {
-    __extends(AbstractJsEmitterVisitor, _super);
+    tslib_1.__extends(AbstractJsEmitterVisitor, _super);
     function AbstractJsEmitterVisitor() {
         return _super.call(this, false) || this;
     }
@@ -26297,7 +26288,7 @@ function jitStatements(sourceUrl$$1, statements) {
     return evalExpression(sourceUrl$$1, ctx, converter.getArgs());
 }
 var JitEmitterVisitor = (function (_super) {
-    __extends(JitEmitterVisitor, _super);
+    tslib_1.__extends(JitEmitterVisitor, _super);
     function JitEmitterVisitor() {
         var _this = _super.apply(this, arguments) || this;
         _this._evalArgNames = [];
@@ -26986,7 +26977,7 @@ var MessageBundle = (function () {
     return MessageBundle;
 }());
 var MapPlaceholderNames = (function (_super) {
-    __extends(MapPlaceholderNames, _super);
+    tslib_1.__extends(MapPlaceholderNames, _super);
     function MapPlaceholderNames() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
