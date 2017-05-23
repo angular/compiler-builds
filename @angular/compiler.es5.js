@@ -9,7 +9,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 /**
- * @license Angular v4.2.0-rc.0-a80ac0a
+ * @license Angular v4.2.0-rc.0-1651a8f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -29,7 +29,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.2.0-rc.0-a80ac0a');
+var VERSION = new Version('4.2.0-rc.0-1651a8f');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -24189,6 +24189,7 @@ var StaticReflector = (function () {
      * @return {?}
      */
     StaticReflector.prototype.parameters = function (type) {
+        var _this = this;
         if (!(type instanceof StaticSymbol)) {
             this.reportError(new Error("parameters received " + JSON.stringify(type) + " which is not a StaticSymbol"), type);
             return [];
@@ -24202,14 +24203,14 @@ var StaticReflector = (function () {
                 var /** @type {?} */ ctorData = members ? members['__ctor__'] : null;
                 if (ctorData) {
                     var /** @type {?} */ ctor = ((ctorData)).find(function (a) { return a['__symbolic'] == 'constructor'; });
-                    var /** @type {?} */ parameterTypes = (this.simplify(type, ctor['parameters'] || []));
+                    var /** @type {?} */ rawParameterTypes = (ctor['parameters']) || [];
                     var /** @type {?} */ parameterDecorators_1 = (this.simplify(type, ctor['parameterDecorators'] || []));
                     parameters_1 = [];
-                    parameterTypes.forEach(function (paramType, index) {
+                    rawParameterTypes.forEach(function (rawParamType, index) {
                         var /** @type {?} */ nestedResult = [];
-                        if (paramType) {
+                        var /** @type {?} */ paramType = _this.trySimplify(type, rawParamType);
+                        if (paramType)
                             nestedResult.push(paramType);
-                        }
                         var /** @type {?} */ decorators = parameterDecorators_1 ? parameterDecorators_1[index] : null;
                         if (decorators) {
                             nestedResult.push.apply(nestedResult, decorators);

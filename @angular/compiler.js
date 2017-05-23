@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-rc.0-a80ac0a
+ * @license Angular v4.2.0-rc.0-1651a8f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-rc.0-a80ac0a');
+const VERSION = new Version('4.2.0-rc.0-1651a8f');
 
 /**
  * @license
@@ -23340,14 +23340,14 @@ class StaticReflector {
                 const /** @type {?} */ ctorData = members ? members['__ctor__'] : null;
                 if (ctorData) {
                     const /** @type {?} */ ctor = ((ctorData)).find(a => a['__symbolic'] == 'constructor');
-                    const /** @type {?} */ parameterTypes = (this.simplify(type, ctor['parameters'] || []));
+                    const /** @type {?} */ rawParameterTypes = (ctor['parameters']) || [];
                     const /** @type {?} */ parameterDecorators = (this.simplify(type, ctor['parameterDecorators'] || []));
                     parameters = [];
-                    parameterTypes.forEach((paramType, index) => {
+                    rawParameterTypes.forEach((rawParamType, index) => {
                         const /** @type {?} */ nestedResult = [];
-                        if (paramType) {
+                        const /** @type {?} */ paramType = this.trySimplify(type, rawParamType);
+                        if (paramType)
                             nestedResult.push(paramType);
-                        }
                         const /** @type {?} */ decorators = parameterDecorators ? parameterDecorators[index] : null;
                         if (decorators) {
                             nestedResult.push(...decorators);
