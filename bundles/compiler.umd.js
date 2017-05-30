@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-rc.1-160221c
+ * @license Angular v4.2.0-rc.1-18bf772
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v4.2.0-rc.1-160221c
+ * @license Angular v4.2.0-rc.1-18bf772
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -55,7 +55,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.2.0-rc.1-160221c');
+var VERSION = new _angular_core.Version('4.2.0-rc.1-18bf772');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -17362,6 +17362,27 @@ var IfStmt = (function (_super) {
     };
     return IfStmt;
 }(Statement));
+var CommentStmt = (function (_super) {
+    __extends(CommentStmt, _super);
+    /**
+     * @param {?} comment
+     * @param {?=} sourceSpan
+     */
+    function CommentStmt(comment, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.comment = comment;
+        return _this;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    CommentStmt.prototype.visitStatement = function (visitor, context) {
+        return visitor.visitCommentStmt(this, context);
+    };
+    return CommentStmt;
+}(Statement));
 var TryCatchStmt = (function (_super) {
     __extends(TryCatchStmt, _super);
     /**
@@ -27457,6 +27478,41 @@ exports.NgModuleResolver = NgModuleResolver;
 exports.DEFAULT_INTERPOLATION_CONFIG = DEFAULT_INTERPOLATION_CONFIG;
 exports.InterpolationConfig = InterpolationConfig;
 exports.NgModuleCompiler = NgModuleCompiler;
+exports.AssertNotNull = AssertNotNull;
+exports.BinaryOperator = BinaryOperator;
+exports.BinaryOperatorExpr = BinaryOperatorExpr;
+exports.BuiltinMethod = BuiltinMethod;
+exports.BuiltinVar = BuiltinVar;
+exports.CastExpr = CastExpr;
+exports.ClassStmt = ClassStmt;
+exports.CommaExpr = CommaExpr;
+exports.CommentStmt = CommentStmt;
+exports.ConditionalExpr = ConditionalExpr;
+exports.DeclareFunctionStmt = DeclareFunctionStmt;
+exports.DeclareVarStmt = DeclareVarStmt;
+exports.ExpressionStatement = ExpressionStatement;
+exports.ExternalExpr = ExternalExpr;
+exports.ExternalReference = ExternalReference;
+exports.FunctionExpr = FunctionExpr;
+exports.IfStmt = IfStmt;
+exports.InstantiateExpr = InstantiateExpr;
+exports.InvokeFunctionExpr = InvokeFunctionExpr;
+exports.InvokeMethodExpr = InvokeMethodExpr;
+exports.LiteralArrayExpr = LiteralArrayExpr;
+exports.LiteralExpr = LiteralExpr;
+exports.LiteralMapExpr = LiteralMapExpr;
+exports.NotExpr = NotExpr;
+exports.ReadKeyExpr = ReadKeyExpr;
+exports.ReadPropExpr = ReadPropExpr;
+exports.ReadVarExpr = ReadVarExpr;
+exports.ReturnStatement = ReturnStatement;
+exports.ThrowStmt = ThrowStmt;
+exports.TryCatchStmt = TryCatchStmt;
+exports.WriteKeyExpr = WriteKeyExpr;
+exports.WritePropExpr = WritePropExpr;
+exports.WriteVarExpr = WriteVarExpr;
+exports.StmtModifier = StmtModifier;
+exports.Statement = Statement;
 exports.ViewCompiler = ViewCompiler;
 exports.isSyntaxError = isSyntaxError;
 exports.syntaxError = syntaxError;
