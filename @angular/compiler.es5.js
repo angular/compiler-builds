@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v4.2.0-rc.1-ea8a43d
+ * @license Angular v4.2.0-rc.1-8ffa483
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.2.0-rc.1-ea8a43d');
+var VERSION = new Version('4.2.0-rc.1-8ffa483');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -27408,6 +27408,7 @@ function _mergeOptions(optionsArr) {
         defaultEncapsulation: _lastDefined(optionsArr.map(function (options) { return options.defaultEncapsulation; })),
         providers: _mergeArrays(optionsArr.map(function (options) { return ((options.providers)); })),
         missingTranslation: _lastDefined(optionsArr.map(function (options) { return options.missingTranslation; })),
+        enableLegacyTemplate: _lastDefined(optionsArr.map(function (options) { return options.enableLegacyTemplate; })),
     };
 }
 /**

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-rc.1-ea8a43d
+ * @license Angular v4.2.0-rc.1-8ffa483
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-rc.1-ea8a43d');
+const VERSION = new Version('4.2.0-rc.1-8ffa483');
 
 /**
  * @license
@@ -26465,6 +26465,7 @@ function _mergeOptions(optionsArr) {
         defaultEncapsulation: _lastDefined(optionsArr.map(options => options.defaultEncapsulation)),
         providers: _mergeArrays(optionsArr.map(options => ((options.providers)))),
         missingTranslation: _lastDefined(optionsArr.map(options => options.missingTranslation)),
+        enableLegacyTemplate: _lastDefined(optionsArr.map(options => options.enableLegacyTemplate)),
     };
 }
 /**
