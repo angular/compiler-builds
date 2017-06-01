@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-rc.1-1338995
+ * @license Angular v4.2.0-rc.1-230255f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v4.2.0-rc.1-1338995
+ * @license Angular v4.2.0-rc.1-230255f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -55,7 +55,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.2.0-rc.1-1338995');
+var VERSION = new _angular_core.Version('4.2.0-rc.1-230255f');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -18800,6 +18800,7 @@ var EmitterVisitorContext = (function () {
     function EmitterVisitorContext(_indent) {
         this._indent = _indent;
         this._classes = [];
+        this._preambleLineCount = 0;
         this._lines = [new _EmittedLine(_indent)];
     }
     /**
@@ -18960,6 +18961,30 @@ var EmitterVisitorContext = (function () {
             }
         });
         return map;
+    };
+    /**
+     * @param {?} count
+     * @return {?}
+     */
+    EmitterVisitorContext.prototype.setPreambleLineCount = function (count) { return this._preambleLineCount = count; };
+    /**
+     * @param {?} line
+     * @param {?} column
+     * @return {?}
+     */
+    EmitterVisitorContext.prototype.spanOf = function (line, column) {
+        var /** @type {?} */ emittedLine = this._lines[line - this._preambleLineCount];
+        if (emittedLine) {
+            var /** @type {?} */ columnsLeft = column - emittedLine.indent;
+            for (var /** @type {?} */ partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
+                var /** @type {?} */ part = emittedLine.parts[partIndex];
+                if (part.length > columnsLeft) {
+                    return emittedLine.srcSpans[partIndex];
+                }
+                columnsLeft -= part.length;
+            }
+        }
+        return null;
     };
     Object.defineProperty(EmitterVisitorContext.prototype, "sourceLines", {
         /**
@@ -19550,10 +19575,12 @@ var TypeScriptEmitter = (function () {
      * @param {?} genFilePath
      * @param {?} stmts
      * @param {?=} preamble
+     * @param {?=} emitSourceMaps
      * @return {?}
      */
-    TypeScriptEmitter.prototype.emitStatements = function (srcFilePath, genFilePath, stmts, preamble) {
+    TypeScriptEmitter.prototype.emitStatementsAndContext = function (srcFilePath, genFilePath, stmts, preamble, emitSourceMaps) {
         if (preamble === void 0) { preamble = ''; }
+        if (emitSourceMaps === void 0) { emitSourceMaps = true; }
         var /** @type {?} */ converter = new _TsEmitterVisitor();
         var /** @type {?} */ ctx = EmitterVisitorContext.createRoot();
         converter.visitAllStatements(stmts, ctx);
@@ -19567,13 +19594,27 @@ var TypeScriptEmitter = (function () {
             preambleLines.push("imp" +
                 ("ort * as " + prefix + " from '" + importedModuleName + "';"));
         });
-        var /** @type {?} */ sm = ctx.toSourceMapGenerator(srcFilePath, genFilePath, preambleLines.length).toJsComment();
+        var /** @type {?} */ sm = emitSourceMaps ?
+            ctx.toSourceMapGenerator(srcFilePath, genFilePath, preambleLines.length).toJsComment() :
+            '';
         var /** @type {?} */ lines = preambleLines.concat([ctx.toSource(), sm]);
         if (sm) {
             // always add a newline at the end, as some tools have bugs without it.
             lines.push('');
         }
-        return lines.join('\n');
+        ctx.setPreambleLineCount(preambleLines.length);
+        return { sourceText: lines.join('\n'), context: ctx };
+    };
+    /**
+     * @param {?} srcFilePath
+     * @param {?} genFilePath
+     * @param {?} stmts
+     * @param {?=} preamble
+     * @return {?}
+     */
+    TypeScriptEmitter.prototype.emitStatements = function (srcFilePath, genFilePath, stmts, preamble) {
+        if (preamble === void 0) { preamble = ''; }
+        return this.emitStatementsAndContext(srcFilePath, genFilePath, stmts, preamble).sourceText;
     };
     return TypeScriptEmitter;
 }());
@@ -27514,6 +27555,7 @@ exports.WritePropExpr = WritePropExpr;
 exports.WriteVarExpr = WriteVarExpr;
 exports.StmtModifier = StmtModifier;
 exports.Statement = Statement;
+exports.EmitterVisitorContext = EmitterVisitorContext;
 exports.ViewCompiler = ViewCompiler;
 exports.isSyntaxError = isSyntaxError;
 exports.syntaxError = syntaxError;

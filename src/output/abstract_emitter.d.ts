@@ -18,6 +18,7 @@ export declare class EmitterVisitorContext {
     static createRoot(): EmitterVisitorContext;
     private _lines;
     private _classes;
+    private _preambleLineCount;
     constructor(_indent: number);
     private readonly _currentLine;
     println(from?: {
@@ -36,6 +37,8 @@ export declare class EmitterVisitorContext {
     readonly currentClass: o.ClassStmt | null;
     toSource(): string;
     toSourceMapGenerator(sourceFilePath: string, genFilePath: string, startsAtLine?: number): SourceMapGenerator;
+    setPreambleLineCount(count: number): number;
+    spanOf(line: number, column: number): ParseSourceSpan | null;
     private readonly sourceLines;
 }
 export declare abstract class AbstractEmitterVisitor implements o.StatementVisitor, o.ExpressionVisitor {
