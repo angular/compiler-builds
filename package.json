@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "4.2.0-db5e506",
+  "version": "4.2.0-c2d31fb",
   "description": "Angular - the compiler library",
   "main": "./bundles/compiler.umd.js",
   "module": "./@angular/compiler.es5.js",
@@ -12,7 +12,7 @@
     "tslib": "^1.7.1"
   },
   "peerDependencies": {
-    "@angular/core": "4.2.0-db5e506"
+    "@angular/core": "4.2.0-c2d31fb"
   },
   "repository": {
     "type": "git",
