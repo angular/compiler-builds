@@ -32,8 +32,9 @@ export declare class AotCompiler {
     private _summaryResolver;
     private _localeId;
     private _translationFormat;
+    private _enableSummariesForJit;
     private _symbolResolver;
-    constructor(_config: CompilerConfig, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string | null, _translationFormat: string | null, _symbolResolver: StaticSymbolResolver);
+    constructor(_config: CompilerConfig, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string | null, _translationFormat: string | null, _enableSummariesForJit: boolean | null, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     analyzeModulesSync(rootFiles: string[]): NgAnalyzedModules;
     analyzeModulesAsync(rootFiles: string[]): Promise<NgAnalyzedModules>;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.0-d56b7ed
+ * @license Angular v4.2.0-90b0713
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.0-d56b7ed');
+const VERSION = new Version('4.2.0-90b0713');
 
 /**
  * @license
@@ -22821,9 +22821,10 @@ class AotCompiler {
      * @param {?} _summaryResolver
      * @param {?} _localeId
      * @param {?} _translationFormat
+     * @param {?} _enableSummariesForJit
      * @param {?} _symbolResolver
      */
-    constructor(_config, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _symbolResolver) {
+    constructor(_config, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, _enableSummariesForJit, _symbolResolver) {
         this._config = _config;
         this._host = _host;
         this._reflector = _reflector;
@@ -22836,6 +22837,7 @@ class AotCompiler {
         this._summaryResolver = _summaryResolver;
         this._localeId = _localeId;
         this._translationFormat = _translationFormat;
+        this._enableSummariesForJit = _enableSummariesForJit;
         this._symbolResolver = _symbolResolver;
     }
     /**
@@ -23000,10 +23002,12 @@ class AotCompiler {
                 StmtModifier.Exported
             ]));
         });
-        return [
-            new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), json),
-            this._codegenSourceModule(srcFileUrl, forJitOutputCtx)
-        ];
+        const /** @type {?} */ summaryJson = new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), json);
+        if (this._enableSummariesForJit) {
+            return [summaryJson, this._codegenSourceModule(srcFileUrl, forJitOutputCtx)];
+        }
+        
+        return [summaryJson];
     }
     /**
      * @param {?} outputCtx
@@ -24724,7 +24728,7 @@ function createAotCompiler(compilerHost, options) {
     const /** @type {?} */ resolver = new CompileMetadataResolver(config, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, console, symbolCache, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
     const /** @type {?} */ viewCompiler = new ViewCompiler(config, staticReflector, elementSchemaRegistry);
-    const /** @type {?} */ compiler = new AotCompiler(config, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(staticReflector), new TypeScriptEmitter(), summaryResolver, options.locale || null, options.i18nFormat || null, symbolResolver);
+    const /** @type {?} */ compiler = new AotCompiler(config, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(staticReflector), new TypeScriptEmitter(), summaryResolver, options.locale || null, options.i18nFormat || null, options.enableSummariesForJit || null, symbolResolver);
     return { compiler, reflector: staticReflector };
 }
 
