@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v4.2.2-4164369
+ * @license Angular v4.2.2-11dfb68
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.2.2-4164369');
+var VERSION = new Version('4.2.2-11dfb68');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -4672,7 +4672,7 @@ var Parser = (function () {
         for (var /** @type {?} */ i = 0; i < split.expressions.length; ++i) {
             var /** @type {?} */ expressionText = split.expressions[i];
             var /** @type {?} */ sourceToLex = this._stripComments(expressionText);
-            var /** @type {?} */ tokens = this._lexer.tokenize(this._stripComments(split.expressions[i]));
+            var /** @type {?} */ tokens = this._lexer.tokenize(sourceToLex);
             var /** @type {?} */ ast = new _ParseAST(input, location, tokens, sourceToLex.length, false, this.errors, split.offsets[i] + (expressionText.length - sourceToLex.length))
                 .parseChain();
             expressions.push(ast);
