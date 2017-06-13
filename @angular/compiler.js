@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.2-98308cd
+ * @license Angular v4.2.2-fa81c8e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.2-98308cd');
+const VERSION = new Version('4.2.2-fa81c8e');
 
 /**
  * @license
