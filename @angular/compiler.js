@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.2-fa81c8e
+ * @license Angular v4.2.2-93d1b4e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.2.2-fa81c8e');
+const VERSION = new Version('4.2.2-93d1b4e');
 
 /**
  * @license
@@ -4445,7 +4445,7 @@ class Parser {
         for (let /** @type {?} */ i = 0; i < split.expressions.length; ++i) {
             const /** @type {?} */ expressionText = split.expressions[i];
             const /** @type {?} */ sourceToLex = this._stripComments(expressionText);
-            const /** @type {?} */ tokens = this._lexer.tokenize(this._stripComments(split.expressions[i]));
+            const /** @type {?} */ tokens = this._lexer.tokenize(sourceToLex);
             const /** @type {?} */ ast = new _ParseAST(input, location, tokens, sourceToLex.length, false, this.errors, split.offsets[i] + (expressionText.length - sourceToLex.length))
                 .parseChain();
             expressions.push(ast);

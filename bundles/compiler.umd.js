@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.2.2-fa81c8e
+ * @license Angular v4.2.2-93d1b4e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v4.2.2-fa81c8e
+ * @license Angular v4.2.2-93d1b4e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -55,7 +55,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.2.2-fa81c8e');
+var VERSION = new _angular_core.Version('4.2.2-93d1b4e');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -4707,7 +4707,7 @@ var Parser = (function () {
         for (var /** @type {?} */ i = 0; i < split.expressions.length; ++i) {
             var /** @type {?} */ expressionText = split.expressions[i];
             var /** @type {?} */ sourceToLex = this._stripComments(expressionText);
-            var /** @type {?} */ tokens = this._lexer.tokenize(this._stripComments(split.expressions[i]));
+            var /** @type {?} */ tokens = this._lexer.tokenize(sourceToLex);
             var /** @type {?} */ ast = new _ParseAST(input, location, tokens, sourceToLex.length, false, this.errors, split.offsets[i] + (expressionText.length - sourceToLex.length))
                 .parseChain();
             expressions.push(ast);
