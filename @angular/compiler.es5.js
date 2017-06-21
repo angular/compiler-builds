@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v4.2.3-3634832
+ * @license Angular v4.2.3-c112232
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.2.3-3634832');
+var VERSION = new Version('4.2.3-c112232');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -23952,7 +23952,9 @@ var AotCompiler = (function () {
             }
             var /** @type {?} */ arity = _this._symbolResolver.getTypeArity(symbol) || 0;
             var _a = _this._symbolResolver.getImportAs(symbol) || symbol, filePath = _a.filePath, name = _a.name, members = _a.members;
-            var /** @type {?} */ moduleName = _this._symbolResolver.fileNameToModuleName(filePath, genFilePath);
+            var /** @type {?} */ importModule = _this._symbolResolver.fileNameToModuleName(filePath, genFilePath);
+            var /** @type {?} */ selfReference = _this._symbolResolver.fileNameToModuleName(genFilePath, genFilePath);
+            var /** @type {?} */ moduleName = importModule === selfReference ? null : importModule;
             // If we are in a type expression that refers to a generic type then supply
             // the required type parameters. If there were not enough type parameters
             // supplied, supply any as the type. Outside a type expression the reference
@@ -25109,9 +25111,6 @@ var StaticSymbolResolver = (function () {
      * @return {?}
      */
     StaticSymbolResolver.prototype.fileNameToModuleName = function (importedFilePath, containingFilePath) {
-        if (importedFilePath === containingFilePath) {
-            return null;
-        }
         return this.knownFileNameToModuleNames.get(importedFilePath) ||
             this.host.fileNameToModuleName(importedFilePath, containingFilePath);
     };
