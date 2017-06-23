@@ -60,7 +60,6 @@ export declare function identifierModuleUrl(compileIdentifier: CompileIdentifier
 export declare function viewClassName(compType: any, embeddedTemplateIndex: number): string;
 export declare function rendererTypeName(compType: any): string;
 export declare function hostViewClassName(compType: any): string;
-export declare function dirWrapperClassName(dirType: any): string;
 export declare function componentFactoryName(compType: any): string;
 export interface ProxyClass {
     setDelegate(delegate: any): void;

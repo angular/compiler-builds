@@ -68,4 +68,4 @@ export * from './selector';
 export * from './style_compiler';
 export * from './template_parser/template_parser';
 export { ViewCompiler } from './view_compiler/view_compiler';
-export { isSyntaxError, syntaxError } from './util';
+export { getParseErrors, isSyntaxError, syntaxError } from './util';
