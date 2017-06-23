@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.0-beta.0-81734cf
+ * @license Angular v4.3.0-beta.0-3165fd3
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.3.0-beta.0-81734cf');
+const VERSION = new Version('4.3.0-beta.0-3165fd3');
 
 /**
  * @license
@@ -20131,7 +20131,10 @@ const _shadowDOMSelectorsRe = [
     /\/shadow-deep\//g,
     /\/shadow\//g,
 ];
-const _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
+// The deep combinator is deprecated in the CSS spec
+// Support for `>>>`, `deep`, `::ng-deep` is then also deprecated and will be removed in the future.
+// see https://github.com/angular/angular/pull/17677
+const _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)|(?:::ng-deep)/g;
 const _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
 const _polyfillHostRe = /-shadowcsshost/gim;
 const _colonHostRe = /:host/gim;
