@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.0-beta.0-30f4fe2
+ * @license Angular v4.3.0-beta.0-e80851d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.3.0-beta.0-30f4fe2');
+const VERSION = new Version('4.3.0-beta.0-e80851d');
 
 /**
  * @license
@@ -20131,7 +20131,10 @@ const _shadowDOMSelectorsRe = [
     /\/shadow-deep\//g,
     /\/shadow\//g,
 ];
-const _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)/g;
+// The deep combinator is deprecated in the CSS spec
+// Support for `>>>`, `deep`, `::ng-deep` is then also deprecated and will be removed in the future.
+// see https://github.com/angular/angular/pull/17677
+const _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)|(?:::ng-deep)/g;
 const _selectorReSuffix = '([>\\s~+\[.,{:][\\s\\S]*)?$';
 const _polyfillHostRe = /-shadowcsshost/gim;
 const _colonHostRe = /:host/gim;
@@ -23097,6 +23100,10 @@ class AotCompiler {
             const /** @type {?} */ arity = this._symbolResolver.getTypeArity(symbol) || 0;
             const { filePath, name, members } = this._symbolResolver.getImportAs(symbol) || symbol;
             const /** @type {?} */ importModule = this._symbolResolver.fileNameToModuleName(filePath, genFilePath);
+            // It should be good enough to compare filePath to genFilePath and if they are equal
+            // there is a self reference. However, ngfactory files generate to .ts but their
+            // symbols have .d.ts so a simple compare is insufficient. They should be canonical
+            // and is tracked by #17705.
             const /** @type {?} */ selfReference = this._symbolResolver.fileNameToModuleName(genFilePath, genFilePath);
             const /** @type {?} */ moduleName = importModule === selfReference ? null : importModule;
             // If we are in a type expression that refers to a generic type then supply
