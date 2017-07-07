@@ -28,10 +28,7 @@ export interface BuiltinConverter {
 }
 export interface BuiltinConverterFactory {
     createLiteralArrayConverter(argCount: number): BuiltinConverter;
-    createLiteralMapConverter(keys: {
-        key: string;
-        quoted: boolean;
-    }[]): BuiltinConverter;
+    createLiteralMapConverter(keys: string[]): BuiltinConverter;
     createPipeConverter(name: string, argCount: number): BuiltinConverter;
 }
 export declare function convertPropertyBindingBuiltins(converterFactory: BuiltinConverterFactory, ast: cdAst.AST): cdAst.AST;
