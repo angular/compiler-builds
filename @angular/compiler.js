@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.0-beta.1-9c3386b
+ * @license Angular v4.3.0-beta.1-671a175
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.3.0-beta.1-9c3386b');
+const VERSION = new Version('4.3.0-beta.1-671a175');
 
 /**
  * @license
@@ -4680,7 +4680,7 @@ class _ParseAST {
             return '';
         }
         this.advance();
-        return n.toString();
+        return (n.toString());
     }
     /**
      * @return {?}
@@ -4692,7 +4692,7 @@ class _ParseAST {
             return '';
         }
         this.advance();
-        return n.toString();
+        return (n.toString());
     }
     /**
      * @return {?}
@@ -4730,7 +4730,7 @@ class _ParseAST {
                 this.error('Cannot have a pipe in an action expression');
             }
             do {
-                const /** @type {?} */ name = ((this.expectIdentifierOrKeyword()));
+                const /** @type {?} */ name = this.expectIdentifierOrKeyword();
                 const /** @type {?} */ args = [];
                 while (this.optionalCharacter($COLON)) {
                     args.push(this.parseExpression());
@@ -5029,8 +5029,9 @@ class _ParseAST {
         if (!this.optionalCharacter($RBRACE)) {
             this.rbracesExpected++;
             do {
-                const /** @type {?} */ key = ((this.expectIdentifierOrKeywordOrString()));
-                keys.push(key);
+                const /** @type {?} */ quoted = this.next.isString();
+                const /** @type {?} */ key = this.expectIdentifierOrKeywordOrString();
+                keys.push({ key, quoted });
                 this.expectCharacter($COLON);
                 values.push(this.parsePipe());
             } while (this.optionalCharacter($COMMA));
@@ -5046,7 +5047,7 @@ class _ParseAST {
      */
     parseAccessMemberOrMethodCall(receiver, isSafe = false) {
         const /** @type {?} */ start = receiver.span.start;
-        const /** @type {?} */ id = ((this.expectIdentifierOrKeyword()));
+        const /** @type {?} */ id = this.expectIdentifierOrKeyword();
         if (this.optionalCharacter($LPAREN)) {
             this.rparensExpected++;
             const /** @type {?} */ args = this.parseCallArguments();
@@ -16398,9 +16399,9 @@ class LiteralMapEntry {
     /**
      * @param {?} key
      * @param {?} value
-     * @param {?=} quoted
+     * @param {?} quoted
      */
-    constructor(key, value, quoted = false) {
+    constructor(key, value, quoted) {
         this.key = key;
         this.value = value;
         this.quoted = quoted;
@@ -17432,11 +17433,10 @@ function literalArr(values, type, sourceSpan) {
 /**
  * @param {?} values
  * @param {?=} type
- * @param {?=} quoted
  * @return {?}
  */
-function literalMap(values, type = null, quoted = false) {
-    return new LiteralMapExpr(values.map(entry => new LiteralMapEntry(entry[0], entry[1], quoted)), type, null);
+function literalMap(values, type = null) {
+    return new LiteralMapExpr(values.map(e => new LiteralMapEntry(e.key, e.value, e.quoted)), type, null);
 }
 /**
  * @param {?} expr
@@ -20426,7 +20426,14 @@ function convertActionBinding(localResolver, implicitReceiver, action, bindingId
         },
         createLiteralMapConverter: (keys) => {
             // Note: no caching for literal maps in actions.
-            return (args) => literalMap(/** @type {?} */ (keys.map((key, i) => [key, args[i]])));
+            return (values) => {
+                const /** @type {?} */ entries = keys.map((k, i) => ({
+                    key: k.key,
+                    value: values[i],
+                    quoted: k.quoted,
+                }));
+                return literalMap(entries);
+            };
         },
         createPipeConverter: (name) => {
             throw new Error(`Illegal State: Actions are not allowed to contain pipes. Pipe: ${name}`);
@@ -21363,9 +21370,9 @@ class ViewCompiler {
             renderComponentVarName = ((renderComponentVar.name));
             outputCtx.statements.push(renderComponentVar
                 .set(importExpr(Identifiers.createRendererType2).callFn([new LiteralMapExpr([
-                    new LiteralMapEntry('encapsulation', literal(template.encapsulation)),
-                    new LiteralMapEntry('styles', styles),
-                    new LiteralMapEntry('data', new LiteralMapExpr(customRenderData))
+                    new LiteralMapEntry('encapsulation', literal(template.encapsulation), false),
+                    new LiteralMapEntry('styles', styles, false),
+                    new LiteralMapEntry('data', new LiteralMapExpr(customRenderData), false)
                 ])]))
                 .toDeclStmt(importType(Identifiers.RendererType2), [StmtModifier.Final, StmtModifier.Exported]));
         }
@@ -21461,7 +21468,7 @@ class ViewBuilder {
                     nodeFlags: flags,
                     nodeDef: importExpr(Identifiers.queryDef).callFn([
                         literal(flags), literal(queryId),
-                        new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
+                        new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType), false)])
                     ])
                 }));
             });
@@ -21786,7 +21793,7 @@ class ViewBuilder {
                 nodeFlags: flags,
                 nodeDef: importExpr(Identifiers.queryDef).callFn([
                     literal(flags), literal(queryId),
-                    new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType))])
+                    new LiteralMapExpr([new LiteralMapEntry(query.propertyName, literal(bindingType), false)])
                 ]),
             }));
         });
@@ -21981,12 +21988,13 @@ class ViewBuilder {
             const /** @type {?} */ valueExpr = importExpr(Identifiers.EMPTY_MAP);
             return () => valueExpr;
         }
+        // function pureObjectDef(propToIndex: {[p: string]: number}): NodeDef
+        const /** @type {?} */ map = literalMap(keys.map((e, i) => (Object.assign({}, e, { value: literal(i) }))));
         const /** @type {?} */ nodeIndex = this.nodes.length;
-        // function pureObjectDef(propertyNames: string[]): NodeDef
         this.nodes.push(() => ({
             sourceSpan,
             nodeFlags: 64 /* TypePureObject */,
-            nodeDef: importExpr(Identifiers.pureObjectDef).callFn([literalArr(keys.map(key => literal(key)))])
+            nodeDef: importExpr(Identifiers.pureObjectDef).callFn([map])
         }));
         return (args) => callCheckStmt(nodeIndex, args);
     }
@@ -22746,7 +22754,7 @@ class ForJitSerializer {
              * @return {?}
              */
             visitStringMap(map, context) {
-                return new LiteralMapExpr(Object.keys(map).map((key) => new LiteralMapEntry(key, visitValue(map[key], this, context))));
+                return new LiteralMapExpr(Object.keys(map).map((key) => new LiteralMapEntry(key, visitValue(map[key], this, context), false)));
             }
             /**
              * @param {?} value
@@ -25271,7 +25279,7 @@ class StatementInterpreter {
      */
     visitLiteralMapExpr(ast, ctx) {
         const /** @type {?} */ result = {};
-        ast.entries.forEach((entry) => ((result))[entry.key] = entry.value.visitExpression(this, ctx));
+        ast.entries.forEach(entry => result[entry.key] = entry.value.visitExpression(this, ctx));
         return result;
     }
     /**
@@ -25601,7 +25609,7 @@ class JitEmitterVisitor extends AbstractJsEmitterVisitor {
      * @return {?}
      */
     createReturnStmt(ctx) {
-        const /** @type {?} */ stmt = new ReturnStatement(new LiteralMapExpr(this._evalExportedVars.map(resultVar => new LiteralMapEntry(resultVar, variable(resultVar)))));
+        const /** @type {?} */ stmt = new ReturnStatement(new LiteralMapExpr(this._evalExportedVars.map(resultVar => new LiteralMapEntry(resultVar, variable(resultVar), false))));
         stmt.visitStatement(this, ctx);
     }
     /**
