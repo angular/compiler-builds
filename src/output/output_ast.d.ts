@@ -244,7 +244,7 @@ export declare class LiteralMapEntry {
     key: string;
     value: Expression;
     quoted: boolean;
-    constructor(key: string, value: Expression, quoted?: boolean);
+    constructor(key: string, value: Expression, quoted: boolean);
 }
 export declare class LiteralMapExpr extends Expression {
     entries: LiteralMapEntry[];
@@ -463,7 +463,11 @@ export declare function importExpr(id: ExternalReference, typeParams?: Type[] | 
 export declare function importType(id: ExternalReference, typeParams?: Type[] | null, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
 export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
 export declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
-export declare function literalMap(values: [string, Expression][], type?: MapType | null, quoted?: boolean): LiteralMapExpr;
+export declare function literalMap(values: {
+    key: string;
+    quoted: boolean;
+    value: Expression;
+}[], type?: MapType | null): LiteralMapExpr;
 export declare function not(expr: Expression, sourceSpan?: ParseSourceSpan | null): NotExpr;
 export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSourceSpan | null): AssertNotNull;
 export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): FunctionExpr;
