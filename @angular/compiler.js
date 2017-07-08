@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.0-beta.1-9dd550f
+ * @license Angular v4.3.0-beta.1-c723d42
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.3.0-beta.1-9dd550f');
+const VERSION = new Version('4.3.0-beta.1-c723d42');
 
 /**
  * @license
@@ -22601,7 +22601,7 @@ class ToJsonSerializer extends ValueTransformer {
                     __symbol: index,
                     name: symbol.name,
                     // We convert the source filenames tinto output filenames,
-                    // as the generated summary file will be used when teh current
+                    // as the generated summary file will be used when the current
                     // compilation unit is used as a library
                     filePath: this.summaryResolver.getLibraryFileName(symbol.filePath),
                     importAs: importAs
