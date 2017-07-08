@@ -1,0 +1,21 @@
+{
+  "name": "@angular/compiler",
+  "version": "4.2.6-b69f0fa",
+  "description": "Angular - the compiler library",
+  "main": "./bundles/compiler.umd.js",
+  "module": "./@angular/compiler.es5.js",
+  "es2015": "./@angular/compiler.js",
+  "typings": "./compiler.d.ts",
+  "author": "angular",
+  "license": "MIT",
+  "dependencies": {
+    "tslib": "^1.7.1"
+  },
+  "peerDependencies": {
+    "@angular/core": "4.2.6-b69f0fa"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angular/angular.git"
+  }
+}
