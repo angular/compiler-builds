@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.0-rc.0-72143e8
+ * @license Angular v4.3.0-rc.0-ddb766e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.3.0-rc.0-72143e8');
+const VERSION = new Version('4.3.0-rc.0-ddb766e');
 
 /**
  * @license
@@ -23377,10 +23377,14 @@ function _createNgModules(programStaticSymbols, host, metadataResolver) {
  * found in the LICENSE file at https://angular.io/license
  */
 const ANGULAR_CORE = '@angular/core';
+const ANGULAR_ROUTER = '@angular/router';
 const HIDDEN_KEY = /^\$.*\$$/;
 const IGNORE = {
     __symbolic: 'ignore'
 };
+const USE_VALUE = 'useValue';
+const PROVIDE = 'provide';
+const REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data']);
 /**
  * @param {?} value
  * @return {?}
@@ -23452,6 +23456,14 @@ class StaticReflector {
      */
     findDeclaration(moduleUrl, name, containingFile) {
         return this.findSymbolDeclaration(this.symbolResolver.getSymbolByModule(moduleUrl, name, containingFile));
+    }
+    /**
+     * @param {?} moduleUrl
+     * @param {?} name
+     * @return {?}
+     */
+    tryFindDeclaration(moduleUrl, name) {
+        return this.symbolResolver.ignoreErrorsFor(() => this.findDeclaration(moduleUrl, name));
     }
     /**
      * @param {?} symbol
@@ -23659,6 +23671,9 @@ class StaticReflector {
     initializeConversionMap() {
         this.injectionToken = this.findDeclaration(ANGULAR_CORE, 'InjectionToken');
         this.opaqueToken = this.findDeclaration(ANGULAR_CORE, 'OpaqueToken');
+        this.ROUTES = this.tryFindDeclaration(ANGULAR_ROUTER, 'ROUTES');
+        this.ANALYZE_FOR_ENTRY_COMPONENTS =
+            this.findDeclaration(ANGULAR_CORE, 'ANALYZE_FOR_ENTRY_COMPONENTS');
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Host'), Host);
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Injectable'), Injectable);
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Self'), Self);
@@ -23745,9 +23760,10 @@ class StaticReflector {
          * @param {?} context
          * @param {?} value
          * @param {?} depth
+         * @param {?} references
          * @return {?}
          */
-        function simplifyInContext(context, value, depth) {
+        function simplifyInContext(context, value, depth, references) {
             /**
              * @param {?} staticSymbol
              * @return {?}
@@ -23773,7 +23789,7 @@ class StaticReflector {
                         if (value && (depth != 0 || value.__symbolic != 'error')) {
                             const /** @type {?} */ parameters = targetFunction['parameters'];
                             const /** @type {?} */ defaults = targetFunction.defaults;
-                            args = args.map(arg => simplifyInContext(context, arg, depth + 1))
+                            args = args.map(arg => simplifyInContext(context, arg, depth + 1, references))
                                 .map(arg => shouldIgnore(arg) ? undefined : arg);
                             if (defaults && defaults.length > args.length) {
                                 args.push(...defaults.slice(args.length).map((value) => simplify(value)));
@@ -23786,7 +23802,7 @@ class StaticReflector {
                             let /** @type {?} */ result;
                             try {
                                 scope = functionScope.done();
-                                result = simplifyInContext(functionSymbol, value, depth + 1);
+                                result = simplifyInContext(functionSymbol, value, depth + 1, references);
                             }
                             finally {
                                 scope = oldScope;
@@ -23836,16 +23852,16 @@ class StaticReflector {
                     return result;
                 }
                 if (expression instanceof StaticSymbol) {
-                    // Stop simplification at builtin symbols
+                    // Stop simplification at builtin symbols or if we are in a reference context
                     if (expression === self.injectionToken || expression === self.opaqueToken ||
-                        self.conversionMap.has(expression)) {
+                        self.conversionMap.has(expression) || references > 0) {
                         return expression;
                     }
                     else {
                         const /** @type {?} */ staticSymbol = expression;
                         const /** @type {?} */ declarationValue = resolveReferenceValue(staticSymbol);
                         if (declarationValue) {
-                            return simplifyInContext(staticSymbol, declarationValue, depth + 1);
+                            return simplifyInContext(staticSymbol, declarationValue, depth + 1, references);
                         }
                         else {
                             return staticSymbol;
@@ -23941,14 +23957,14 @@ class StaticReflector {
                                         self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     const /** @type {?} */ declarationValue = resolveReferenceValue(selectContext);
                                     if (declarationValue) {
-                                        return simplifyInContext(selectContext, declarationValue, depth + 1);
+                                        return simplifyInContext(selectContext, declarationValue, depth + 1, references);
                                     }
                                     else {
                                         return selectContext;
                                     }
                                 }
                                 if (selectTarget && isPrimitive(member))
-                                    return simplifyInContext(selectContext, selectTarget[member], depth + 1);
+                                    return simplifyInContext(selectContext, selectTarget[member], depth + 1, references);
                                 return null;
                             case 'reference':
                                 // Note: This only has to deal with variable references,
@@ -23967,7 +23983,7 @@ class StaticReflector {
                             case 'new':
                             case 'call':
                                 // Determine if the function is a built-in conversion
-                                staticSymbol = simplifyInContext(context, expression['expression'], depth + 1);
+                                staticSymbol = simplifyInContext(context, expression['expression'], depth + 1, /* references */ 0);
                                 if (staticSymbol instanceof StaticSymbol) {
                                     if (staticSymbol === self.injectionToken || staticSymbol === self.opaqueToken) {
                                         // if somebody calls new InjectionToken, don't create an InjectionToken,
@@ -23977,7 +23993,8 @@ class StaticReflector {
                                     const /** @type {?} */ argExpressions = expression['arguments'] || [];
                                     let /** @type {?} */ converter = self.conversionMap.get(staticSymbol);
                                     if (converter) {
-                                        const /** @type {?} */ args = argExpressions.map(arg => simplifyInContext(context, arg, depth + 1))
+                                        const /** @type {?} */ args = argExpressions
+                                            .map(arg => simplifyInContext(context, arg, depth + 1, references))
                                             .map(arg => shouldIgnore(arg) ? undefined : arg);
                                         return converter(context, args);
                                     }
@@ -24004,7 +24021,20 @@ class StaticReflector {
                         }
                         return null;
                     }
-                    return mapStringMap(expression, (value, name) => simplify(value));
+                    return mapStringMap(expression, (value, name) => {
+                        if (REFERENCE_SET.has(name)) {
+                            if (name === USE_VALUE && PROVIDE in expression) {
+                                // If this is a provider expression, check for special tokens that need the value
+                                // during analysis.
+                                const /** @type {?} */ provide = simplify(expression.provide);
+                                if (provide === self.ROUTES || provide == self.ANALYZE_FOR_ENTRY_COMPONENTS) {
+                                    return simplify(value);
+                                }
+                            }
+                            return simplifyInContext(context, value, depth, references + 1);
+                        }
+                        return simplify(value);
+                    });
                 }
                 return IGNORE;
             }
@@ -24020,16 +24050,16 @@ class StaticReflector {
                 throw syntaxError(message);
             }
         }
-        const /** @type {?} */ recordedSimplifyInContext = (context, value, depth) => {
+        const /** @type {?} */ recordedSimplifyInContext = (context, value) => {
             try {
-                return simplifyInContext(context, value, depth);
+                return simplifyInContext(context, value, 0, 0);
             }
             catch (e) {
                 this.reportError(e, context);
             }
         };
-        const /** @type {?} */ result = this.errorRecorder ? recordedSimplifyInContext(context, value, 0) :
-            simplifyInContext(context, value, 0);
+        const /** @type {?} */ result = this.errorRecorder ? recordedSimplifyInContext(context, value) :
+            simplifyInContext(context, value, 0, 0);
         if (shouldIgnore(result)) {
             return undefined;
         }
@@ -24341,6 +24371,21 @@ class StaticSymbolResolver {
                 this.importAs.delete(symbol);
                 this.symbolResourcePaths.delete(symbol);
             }
+        }
+    }
+    /**
+     * @template T
+     * @param {?} cb
+     * @return {?}
+     */
+    ignoreErrorsFor(cb) {
+        const /** @type {?} */ recorder = this.errorRecorder;
+        this.errorRecorder = () => { };
+        try {
+            return cb();
+        }
+        finally {
+            this.errorRecorder = recorder;
         }
     }
     /**
