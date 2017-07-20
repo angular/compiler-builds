@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.0-5344be5
+ * @license Angular v5.0.0-beta.0-54ea5b6
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.3.0-5344be5');
+const VERSION = new Version('5.0.0-beta.0-54ea5b6');
 
 /**
  * @license
@@ -9058,7 +9058,7 @@ class Xliff extends Serializer {
                 contextTags.push(new CR(8), contextGroupTag);
             });
             const /** @type {?} */ transUnit = new Tag(_UNIT_TAG, { id: message.id, datatype: 'html' });
-            transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), new CR(8), new Tag(_TARGET_TAG), ...contextTags);
+            transUnit.children.push(new CR(8), new Tag(_SOURCE_TAG, {}, visitor.serialize(message.nodes)), ...contextTags);
             if (message.description) {
                 transUnit.children.push(new CR(8), new Tag('note', { priority: '1', from: 'description' }, [new Text$2(message.description)]));
             }
