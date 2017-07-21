@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.0-54e0244
+ * @license Angular v5.0.0-beta.0-a6c635e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.0-54e0244
+ * @license Angular v5.0.0-beta.0-a6c635e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -55,7 +55,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('5.0.0-beta.0-54e0244');
+var VERSION = new _angular_core.Version('5.0.0-beta.0-a6c635e');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -7032,7 +7032,7 @@ function isExpansionFormStart(input, offset, interpolationConfig) {
  * @return {?}
  */
 function isExpansionCaseStart(peek) {
-    return peek === $EQ || isAsciiLetter(peek);
+    return peek === $EQ || isAsciiLetter(peek) || isDigit(peek);
 }
 /**
  * @param {?} code1
