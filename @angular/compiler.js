@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.0-6279e50
+ * @license Angular v5.0.0-beta.0-91ab39c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.0-6279e50');
+const VERSION = new Version('5.0.0-beta.0-91ab39c');
 
 /**
  * @fileoverview added by tsickle
@@ -9335,12 +9335,12 @@ class _WriteVisitor {
      */
     visitTagPlaceholder(ph, context) {
         const /** @type {?} */ ctype = getCtypeForTag(ph.tag);
-        const /** @type {?} */ startTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype });
         if (ph.isVoid) {
             // void tags have no children nor closing tags
-            return [startTagPh];
+            return [new Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype, 'equiv-text': `<${ph.tag}/>` })];
         }
-        const /** @type {?} */ closeTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.closeName, ctype });
+        const /** @type {?} */ startTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.startName, ctype, 'equiv-text': `<${ph.tag}>` });
+        const /** @type {?} */ closeTagPh = new Tag(_PLACEHOLDER_TAG, { id: ph.closeName, ctype, 'equiv-text': `</${ph.tag}>` });
         return [startTagPh, ...this.serialize(ph.children), closeTagPh];
     }
     /**
@@ -9349,7 +9349,7 @@ class _WriteVisitor {
      * @return {?}
      */
     visitPlaceholder(ph, context) {
-        return [new Tag(_PLACEHOLDER_TAG, { id: ph.name })];
+        return [new Tag(_PLACEHOLDER_TAG, { id: ph.name, 'equiv-text': `{{${ph.value}}}` })];
     }
     /**
      * @param {?} ph
@@ -9357,7 +9357,8 @@ class _WriteVisitor {
      * @return {?}
      */
     visitIcuPlaceholder(ph, context) {
-        return [new Tag(_PLACEHOLDER_TAG, { id: ph.name })];
+        const /** @type {?} */ equivText = `{${ph.value.expression}, ${ph.value.type}, ${Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ')}}`;
+        return [new Tag(_PLACEHOLDER_TAG, { id: ph.name, 'equiv-text': equivText })];
     }
     /**
      * @param {?} nodes
@@ -9735,8 +9736,9 @@ class _WriteVisitor$1 {
      * @return {?}
      */
     visitPlaceholder(ph, context) {
+        const /** @type {?} */ idStr = (this._nextPlaceholderId++).toString();
         return [new Tag(_PLACEHOLDER_TAG$1, {
-                id: (this._nextPlaceholderId++).toString(),
+                id: idStr,
                 equiv: ph.name,
                 disp: `{{${ph.value}}}`,
             })];
@@ -9747,7 +9749,9 @@ class _WriteVisitor$1 {
      * @return {?}
      */
     visitIcuPlaceholder(ph, context) {
-        return [new Tag(_PLACEHOLDER_TAG$1, { id: (this._nextPlaceholderId++).toString() })];
+        const /** @type {?} */ cases = Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ');
+        const /** @type {?} */ idStr = (this._nextPlaceholderId++).toString();
+        return [new Tag(_PLACEHOLDER_TAG$1, { id: idStr, equiv: ph.name, disp: `{${ph.value.expression}, ${ph.value.type}, ${cases}}` })];
     }
     /**
      * @param {?} nodes
@@ -10143,7 +10147,8 @@ class _Visitor$2 {
      * @return {?}
      */
     visitPlaceholder(ph, context) {
-        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name })];
+        const /** @type {?} */ exTag = new Tag(_EXEMPLE_TAG, {}, [new Text$2(`{{${ph.value}}}`)]);
+        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag])];
     }
     /**
      * @param {?} ph
@@ -10151,7 +10156,10 @@ class _Visitor$2 {
      * @return {?}
      */
     visitIcuPlaceholder(ph, context) {
-        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name })];
+        const /** @type {?} */ exTag = new Tag(_EXEMPLE_TAG, {}, [
+            new Text$2(`{${ph.value.expression}, ${ph.value.type}, ${Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ')}}`)
+        ]);
+        return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag])];
     }
     /**
      * @param {?} nodes
