@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.1-5808153
+ * @license Angular v5.0.0-beta.1-0fb7484
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.1-5808153');
+const VERSION = new Version('5.0.0-beta.1-0fb7484');
 
 /**
  * @fileoverview added by tsickle
