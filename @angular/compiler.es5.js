@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v5.0.0-beta.1-cc2a4c4
+ * @license Angular v5.0.0-beta.1-e64b54b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-beta.1-cc2a4c4');
+var VERSION = new Version('5.0.0-beta.1-e64b54b');
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
@@ -24770,7 +24770,6 @@ var StaticReflector = (function () {
                     if (calling.get(functionSymbol)) {
                         throw new Error('Recursion not supported');
                     }
-                    calling.set(functionSymbol, true);
                     try {
                         var /** @type {?} */ value_1 = targetFunction['value'];
                         if (value_1 && (depth != 0 || value_1.__symbolic != 'error')) {
@@ -24781,6 +24780,7 @@ var StaticReflector = (function () {
                             if (defaults && defaults.length > args.length) {
                                 args.push.apply(args, defaults.slice(args.length).map(function (value) { return simplify(value); }));
                             }
+                            calling.set(functionSymbol, true);
                             var /** @type {?} */ functionScope = BindingScope.build();
                             for (var /** @type {?} */ i = 0; i < parameters.length; i++) {
                                 functionScope.define(parameters[i], args[i]);

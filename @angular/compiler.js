@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.1-cc2a4c4
+ * @license Angular v5.0.0-beta.1-e64b54b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.1-cc2a4c4');
+const VERSION = new Version('5.0.0-beta.1-e64b54b');
 
 /**
  * @fileoverview added by tsickle
@@ -23918,7 +23918,6 @@ class StaticReflector {
                     if (calling.get(functionSymbol)) {
                         throw new Error('Recursion not supported');
                     }
-                    calling.set(functionSymbol, true);
                     try {
                         const /** @type {?} */ value = targetFunction['value'];
                         if (value && (depth != 0 || value.__symbolic != 'error')) {
@@ -23929,6 +23928,7 @@ class StaticReflector {
                             if (defaults && defaults.length > args.length) {
                                 args.push(...defaults.slice(args.length).map((value) => simplify(value)));
                             }
+                            calling.set(functionSymbol, true);
                             const /** @type {?} */ functionScope = BindingScope.build();
                             for (let /** @type {?} */ i = 0; i < parameters.length; i++) {
                                 functionScope.define(parameters[i], args[i]);
