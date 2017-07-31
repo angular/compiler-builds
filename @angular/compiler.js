@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.1-ebef5e6
+ * @license Angular v5.0.0-beta.1-381471d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.1-ebef5e6');
+const VERSION = new Version('5.0.0-beta.1-381471d');
 
 /**
  * @fileoverview added by tsickle
@@ -7142,11 +7142,9 @@ class _TreeBuilder {
      * @return {?}
      */
     _closeVoidElement() {
-        if (this._elementStack.length > 0) {
-            const /** @type {?} */ el = this._elementStack[this._elementStack.length - 1];
-            if (this.getTagDefinition(el.name).isVoid) {
-                this._elementStack.pop();
-            }
+        const /** @type {?} */ el = this._getParentElement();
+        if (el && this.getTagDefinition(el.name).isVoid) {
+            this._elementStack.pop();
         }
     }
     /**
@@ -7190,11 +7188,9 @@ class _TreeBuilder {
      * @return {?}
      */
     _pushElement(el) {
-        if (this._elementStack.length > 0) {
-            const /** @type {?} */ parentEl = this._elementStack[this._elementStack.length - 1];
-            if (this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
-                this._elementStack.pop();
-            }
+        const /** @type {?} */ parentEl = this._getParentElement();
+        if (parentEl && this.getTagDefinition(parentEl.name).isClosedByChild(el.name)) {
+            this._elementStack.pop();
         }
         const /** @type {?} */ tagDef = this.getTagDefinition(el.name);
         const { parent, container } = this._getParentElementSkippingContainers();
@@ -7276,7 +7272,7 @@ class _TreeBuilder {
             }
             container = this._elementStack[i];
         }
-        return { parent: this._elementStack[this._elementStack.length - 1], container };
+        return { parent: null, container };
     }
     /**
      * @param {?} node
