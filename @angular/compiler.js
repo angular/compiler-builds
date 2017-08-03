@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.3-4176832
+ * @license Angular v4.3.3-e7e7622
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.3.3-4176832');
+const VERSION = new Version('4.3.3-e7e7622');
 
 /**
  * @license
@@ -11567,7 +11567,7 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
     return new StyleWithImports(modifiedCssText, foundUrls);
 }
 const CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-const CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
+const CSS_COMMENT_REGEXP = /\/\*[\s\S]+?\*\//g;
 const URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 
 /**
