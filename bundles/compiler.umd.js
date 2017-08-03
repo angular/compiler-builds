@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.2-333a708
+ * @license Angular v5.0.0-beta.2-1dca575
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.2-333a708
+ * @license Angular v5.0.0-beta.2-1dca575
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -59,7 +59,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('5.0.0-beta.2-333a708');
+var VERSION = new _angular_core.Version('5.0.0-beta.2-1dca575');
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
@@ -12232,7 +12232,7 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
     return new StyleWithImports(modifiedCssText, foundUrls);
 }
 var CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-var CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
+var CSS_COMMENT_REGEXP = /\/\*[\s\S]+?\*\//g;
 var URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 /**
  * @fileoverview added by tsickle

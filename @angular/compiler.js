@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.2-333a708
+ * @license Angular v5.0.0-beta.2-1dca575
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.2-333a708');
+const VERSION = new Version('5.0.0-beta.2-1dca575');
 
 /**
  * @fileoverview added by tsickle
@@ -11730,7 +11730,7 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
     return new StyleWithImports(modifiedCssText, foundUrls);
 }
 const CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-const CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
+const CSS_COMMENT_REGEXP = /\/\*[\s\S]+?\*\//g;
 const URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 
 /**

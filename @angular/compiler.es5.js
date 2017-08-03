@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v5.0.0-beta.2-333a708
+ * @license Angular v5.0.0-beta.2-1dca575
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-beta.2-333a708');
+var VERSION = new Version('5.0.0-beta.2-1dca575');
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
@@ -12197,7 +12197,7 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
     return new StyleWithImports(modifiedCssText, foundUrls);
 }
 var CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-var CSS_COMMENT_REGEXP = /\/\*.+?\*\//g;
+var CSS_COMMENT_REGEXP = /\/\*[\s\S]+?\*\//g;
 var URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 /**
  * @fileoverview added by tsickle
