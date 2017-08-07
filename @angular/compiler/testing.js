@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.2-fcadbf4
+ * @license Angular v5.0.0-beta.2-f69561b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -490,21 +490,17 @@ const platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'c
         provide: COMPILER_OPTIONS,
         useValue: {
             providers: [
-                { provide: MockPipeResolver, deps: [Injector, CompileReflector] },
+                MockPipeResolver,
                 { provide: PipeResolver, useExisting: MockPipeResolver },
-                { provide: MockDirectiveResolver, deps: [Injector, CompileReflector] },
+                MockDirectiveResolver,
                 { provide: DirectiveResolver, useExisting: MockDirectiveResolver },
-                { provide: MockNgModuleResolver, deps: [Injector, CompileReflector] },
+                MockNgModuleResolver,
                 { provide: NgModuleResolver, useExisting: MockNgModuleResolver },
             ]
         },
         multi: true
     },
-    {
-        provide: ɵTestingCompilerFactory,
-        useClass: TestingCompilerFactoryImpl,
-        deps: [CompilerFactory]
-    }
+    { provide: ɵTestingCompilerFactory, useClass: TestingCompilerFactoryImpl }
 ]);
 
 /**
