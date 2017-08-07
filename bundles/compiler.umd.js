@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.2-685cc26
+ * @license Angular v5.0.0-beta.2-fcadbf4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.2-685cc26
+ * @license Angular v5.0.0-beta.2-fcadbf4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -59,7 +59,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('5.0.0-beta.2-685cc26');
+var VERSION = new _angular_core.Version('5.0.0-beta.2-fcadbf4');
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
@@ -27666,17 +27666,18 @@ var baseHtmlParser = new _angular_core.InjectionToken('HtmlParser');
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
  */
-var COMPILER_PROVIDERS = [
+var COMPILER_PROVIDERS = ([
     { provide: CompileReflector, useValue: new JitReflector() },
     { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
-    JitSummaryResolver,
+    { provide: JitSummaryResolver, deps: [] },
     { provide: SummaryResolver, useExisting: JitSummaryResolver },
-    _angular_core.ɵConsole,
-    Lexer,
-    Parser,
+    { provide: _angular_core.ɵConsole, deps: [] },
+    { provide: Lexer, deps: [] },
+    { provide: Parser, deps: [Lexer] },
     {
         provide: baseHtmlParser,
         useClass: HtmlParser,
+        deps: [],
     },
     {
         provide: I18NHtmlParser,
@@ -27697,23 +27698,38 @@ var COMPILER_PROVIDERS = [
         provide: HtmlParser,
         useExisting: I18NHtmlParser,
     },
-    TemplateParser,
-    DirectiveNormalizer,
-    CompileMetadataResolver,
+    {
+        provide: TemplateParser, deps: [CompilerConfig, CompileReflector,
+            Parser, ElementSchemaRegistry,
+            I18NHtmlParser, _angular_core.ɵConsole, [_angular_core.Optional, TEMPLATE_TRANSFORMS]]
+    },
+    { provide: DirectiveNormalizer, deps: [ResourceLoader, UrlResolver, HtmlParser, CompilerConfig] },
+    { provide: CompileMetadataResolver, deps: [CompilerConfig, NgModuleResolver,
+            DirectiveResolver, PipeResolver,
+            SummaryResolver,
+            ElementSchemaRegistry,
+            DirectiveNormalizer, _angular_core.ɵConsole,
+            [_angular_core.Optional, StaticSymbolCache],
+            CompileReflector,
+            [_angular_core.Optional, ERROR_COLLECTOR_TOKEN]] },
     DEFAULT_PACKAGE_URL_PROVIDER,
-    StyleCompiler,
-    ViewCompiler,
-    NgModuleCompiler,
+    { provide: StyleCompiler, deps: [UrlResolver] },
+    { provide: ViewCompiler, deps: [CompilerConfig, CompileReflector, ElementSchemaRegistry] },
+    { provide: NgModuleCompiler, deps: [CompileReflector] },
     { provide: CompilerConfig, useValue: new CompilerConfig() },
-    JitCompiler,
+    { provide: JitCompiler, deps: [_angular_core.Injector, CompileMetadataResolver,
+            TemplateParser, StyleCompiler,
+            ViewCompiler, NgModuleCompiler,
+            SummaryResolver, CompilerConfig,
+            _angular_core.ɵConsole] },
     { provide: _angular_core.Compiler, useExisting: JitCompiler },
-    DomElementSchemaRegistry,
+    { provide: DomElementSchemaRegistry, deps: [] },
     { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
-    UrlResolver,
-    DirectiveResolver,
-    PipeResolver,
-    NgModuleResolver,
-];
+    { provide: UrlResolver, deps: [_angular_core.PACKAGE_ROOT_URL] },
+    { provide: DirectiveResolver, deps: [CompileReflector] },
+    { provide: PipeResolver, deps: [CompileReflector] },
+    { provide: NgModuleResolver, deps: [CompileReflector] },
+]);
 var JitCompilerFactory = (function () {
     /**
      * @param {?} defaultOptions
@@ -27735,7 +27751,7 @@ var JitCompilerFactory = (function () {
     JitCompilerFactory.prototype.createCompiler = function (options) {
         if (options === void 0) { options = []; }
         var /** @type {?} */ opts = _mergeOptions(this._defaultOptions.concat(options));
-        var /** @type {?} */ injector = _angular_core.ReflectiveInjector.resolveAndCreate([
+        var /** @type {?} */ injector = _angular_core.Injector.create([
             COMPILER_PROVIDERS, {
                 provide: CompilerConfig,
                 useFactory: function () {
@@ -27771,7 +27787,7 @@ JitCompilerFactory.ctorParameters = function () { return [
  */
 var platformCoreDynamic = _angular_core.createPlatformFactory(_angular_core.platformCore, 'coreDynamic', [
     { provide: _angular_core.COMPILER_OPTIONS, useValue: {}, multi: true },
-    { provide: _angular_core.CompilerFactory, useClass: JitCompilerFactory },
+    { provide: _angular_core.CompilerFactory, useClass: JitCompilerFactory, deps: [_angular_core.COMPILER_OPTIONS] },
 ]);
 /**
  * @param {?} optionsArr

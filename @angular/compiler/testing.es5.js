@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v5.0.0-beta.2-685cc26
+ * @license Angular v5.0.0-beta.2-fcadbf4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -523,17 +523,21 @@ var platformCoreDynamicTesting = createPlatformFactory(platformCoreDynamic, 'cor
         provide: COMPILER_OPTIONS,
         useValue: {
             providers: [
-                MockPipeResolver,
+                { provide: MockPipeResolver, deps: [Injector, CompileReflector] },
                 { provide: PipeResolver, useExisting: MockPipeResolver },
-                MockDirectiveResolver,
+                { provide: MockDirectiveResolver, deps: [Injector, CompileReflector] },
                 { provide: DirectiveResolver, useExisting: MockDirectiveResolver },
-                MockNgModuleResolver,
+                { provide: MockNgModuleResolver, deps: [Injector, CompileReflector] },
                 { provide: NgModuleResolver, useExisting: MockNgModuleResolver },
             ]
         },
         multi: true
     },
-    { provide: ɵTestingCompilerFactory, useClass: TestingCompilerFactoryImpl }
+    {
+        provide: ɵTestingCompilerFactory,
+        useClass: TestingCompilerFactoryImpl,
+        deps: [CompilerFactory]
+    }
 ]);
 /**
  * @license

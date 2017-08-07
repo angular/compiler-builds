@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.2-685cc26
+ * @license Angular v5.0.0-beta.2-fcadbf4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.2-685cc26
+ * @license Angular v5.0.0-beta.2-fcadbf4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -556,17 +556,21 @@ var platformCoreDynamicTesting = _angular_core.createPlatformFactory(_angular_co
         provide: _angular_core.COMPILER_OPTIONS,
         useValue: {
             providers: [
-                MockPipeResolver,
+                { provide: MockPipeResolver, deps: [_angular_core.Injector, _angular_compiler.CompileReflector] },
                 { provide: _angular_compiler.PipeResolver, useExisting: MockPipeResolver },
-                MockDirectiveResolver,
+                { provide: MockDirectiveResolver, deps: [_angular_core.Injector, _angular_compiler.CompileReflector] },
                 { provide: _angular_compiler.DirectiveResolver, useExisting: MockDirectiveResolver },
-                MockNgModuleResolver,
+                { provide: MockNgModuleResolver, deps: [_angular_core.Injector, _angular_compiler.CompileReflector] },
                 { provide: _angular_compiler.NgModuleResolver, useExisting: MockNgModuleResolver },
             ]
         },
         multi: true
     },
-    { provide: _angular_core_testing.ɵTestingCompilerFactory, useClass: TestingCompilerFactoryImpl }
+    {
+        provide: _angular_core_testing.ɵTestingCompilerFactory,
+        useClass: TestingCompilerFactoryImpl,
+        deps: [_angular_core.CompilerFactory]
+    }
 ]);
 
 exports.TestingCompilerFactoryImpl = TestingCompilerFactoryImpl;
