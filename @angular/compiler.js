@@ -1,9 +1,9 @@
 /**
- * @license Angular v5.0.0-beta.2-f69561b
+ * @license Angular v5.0.0-beta.2-f0a5501
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
-import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, Compiler, CompilerFactory, Component, ComponentFactory, ComponentFactoryResolver, ComponentRef, ContentChild, ContentChildren, Directive, ElementRef, Host, HostBinding, HostListener, Inject, Injectable, InjectionToken, Injector, Input, LOCALE_ID, MissingTranslationStrategy, ModuleWithComponentFactories, NO_ERRORS_SCHEMA, NgModule, NgModuleFactory, NgModuleRef, Optional, Output, PACKAGE_ROOT_URL, Pipe, Query, QueryList, ReflectiveInjector, Renderer, SecurityContext, Self, SkipSelf, TRANSLATIONS, TRANSLATIONS_FORMAT, TemplateRef, Type, Version, ViewChild, ViewChildren, ViewContainerRef, ViewEncapsulation, animate, createPlatformFactory, group, isDevMode, keyframes, platformCore, resolveForwardRef, sequence, state, style, transition, trigger, ɵCodegenComponentFactoryResolver, ɵConsole, ɵEMPTY_ARRAY, ɵEMPTY_MAP, ɵERROR_COMPONENT_TYPE, ɵReflectionCapabilities, ɵand, ɵccf, ɵcmf, ɵcrt, ɵdid, ɵeld, ɵelementEventFullName, ɵgetComponentViewDefinitionFactory, ɵinlineInterpolate, ɵinterpolate, ɵisPromise, ɵmod, ɵmpd, ɵncd, ɵnov, ɵpad, ɵpid, ɵpod, ɵppd, ɵprd, ɵqud, ɵregisterModuleFactory, ɵstringify, ɵted, ɵunv, ɵvid } from '@angular/core';
+import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, Compiler, CompilerFactory, Component, ComponentFactory, ComponentFactoryResolver, ComponentRef, ContentChild, ContentChildren, Directive, ElementRef, Host, HostBinding, HostListener, Inject, Injectable, InjectionToken, Injector, Input, LOCALE_ID, MissingTranslationStrategy, ModuleWithComponentFactories, NO_ERRORS_SCHEMA, NgModule, NgModuleFactory, NgModuleRef, Optional, Output, PACKAGE_ROOT_URL, Pipe, Query, QueryList, Renderer, SecurityContext, Self, SkipSelf, TRANSLATIONS, TRANSLATIONS_FORMAT, TemplateRef, Type, Version, ViewChild, ViewChildren, ViewContainerRef, ViewEncapsulation, animate, createPlatformFactory, group, isDevMode, keyframes, platformCore, resolveForwardRef, sequence, state, style, transition, trigger, ɵCodegenComponentFactoryResolver, ɵConsole, ɵEMPTY_ARRAY, ɵEMPTY_MAP, ɵERROR_COMPONENT_TYPE, ɵReflectionCapabilities, ɵand, ɵccf, ɵcmf, ɵcrt, ɵdid, ɵeld, ɵelementEventFullName, ɵgetComponentViewDefinitionFactory, ɵinlineInterpolate, ɵinterpolate, ɵisPromise, ɵmod, ɵmpd, ɵncd, ɵnov, ɵpad, ɵpid, ɵpod, ɵppd, ɵprd, ɵqud, ɵregisterModuleFactory, ɵstringify, ɵted, ɵunv, ɵvid } from '@angular/core';
 
 /**
  * @fileoverview added by tsickle
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.2-f69561b');
+const VERSION = new Version('5.0.0-beta.2-f0a5501');
 
 /**
  * @fileoverview added by tsickle
@@ -26702,17 +26702,18 @@ const baseHtmlParser = new InjectionToken('HtmlParser');
  * A set of providers that provide `JitCompiler` and its dependencies to use for
  * template compilation.
  */
-const COMPILER_PROVIDERS = [
+const COMPILER_PROVIDERS = ([
     { provide: CompileReflector, useValue: new JitReflector() },
     { provide: ResourceLoader, useValue: _NO_RESOURCE_LOADER },
-    JitSummaryResolver,
+    { provide: JitSummaryResolver, deps: [] },
     { provide: SummaryResolver, useExisting: JitSummaryResolver },
-    ɵConsole,
-    Lexer,
-    Parser,
+    { provide: ɵConsole, deps: [] },
+    { provide: Lexer, deps: [] },
+    { provide: Parser, deps: [Lexer] },
     {
         provide: baseHtmlParser,
         useClass: HtmlParser,
+        deps: [],
     },
     {
         provide: I18NHtmlParser,
@@ -26733,23 +26734,38 @@ const COMPILER_PROVIDERS = [
         provide: HtmlParser,
         useExisting: I18NHtmlParser,
     },
-    TemplateParser,
-    DirectiveNormalizer,
-    CompileMetadataResolver,
+    {
+        provide: TemplateParser, deps: [CompilerConfig, CompileReflector,
+            Parser, ElementSchemaRegistry,
+            I18NHtmlParser, ɵConsole, [Optional, TEMPLATE_TRANSFORMS]]
+    },
+    { provide: DirectiveNormalizer, deps: [ResourceLoader, UrlResolver, HtmlParser, CompilerConfig] },
+    { provide: CompileMetadataResolver, deps: [CompilerConfig, NgModuleResolver,
+            DirectiveResolver, PipeResolver,
+            SummaryResolver,
+            ElementSchemaRegistry,
+            DirectiveNormalizer, ɵConsole,
+            [Optional, StaticSymbolCache],
+            CompileReflector,
+            [Optional, ERROR_COLLECTOR_TOKEN]] },
     DEFAULT_PACKAGE_URL_PROVIDER,
-    StyleCompiler,
-    ViewCompiler,
-    NgModuleCompiler,
+    { provide: StyleCompiler, deps: [UrlResolver] },
+    { provide: ViewCompiler, deps: [CompilerConfig, CompileReflector, ElementSchemaRegistry] },
+    { provide: NgModuleCompiler, deps: [CompileReflector] },
     { provide: CompilerConfig, useValue: new CompilerConfig() },
-    JitCompiler,
+    { provide: JitCompiler, deps: [Injector, CompileMetadataResolver,
+            TemplateParser, StyleCompiler,
+            ViewCompiler, NgModuleCompiler,
+            SummaryResolver, CompilerConfig,
+            ɵConsole] },
     { provide: Compiler, useExisting: JitCompiler },
-    DomElementSchemaRegistry,
+    { provide: DomElementSchemaRegistry, deps: [] },
     { provide: ElementSchemaRegistry, useExisting: DomElementSchemaRegistry },
-    UrlResolver,
-    DirectiveResolver,
-    PipeResolver,
-    NgModuleResolver,
-];
+    { provide: UrlResolver, deps: [PACKAGE_ROOT_URL] },
+    { provide: DirectiveResolver, deps: [CompileReflector] },
+    { provide: PipeResolver, deps: [CompileReflector] },
+    { provide: NgModuleResolver, deps: [CompileReflector] },
+]);
 class JitCompilerFactory {
     /**
      * @param {?} defaultOptions
@@ -26770,7 +26786,7 @@ class JitCompilerFactory {
      */
     createCompiler(options = []) {
         const /** @type {?} */ opts = _mergeOptions(this._defaultOptions.concat(options));
-        const /** @type {?} */ injector = ReflectiveInjector.resolveAndCreate([
+        const /** @type {?} */ injector = Injector.create([
             COMPILER_PROVIDERS, {
                 provide: CompilerConfig,
                 useFactory: () => {
@@ -26805,7 +26821,7 @@ JitCompilerFactory.ctorParameters = () => [
  */
 const platformCoreDynamic = createPlatformFactory(platformCore, 'coreDynamic', [
     { provide: COMPILER_OPTIONS, useValue: {}, multi: true },
-    { provide: CompilerFactory, useClass: JitCompilerFactory },
+    { provide: CompilerFactory, useClass: JitCompilerFactory, deps: [COMPILER_OPTIONS] },
 ]);
 /**
  * @param {?} optionsArr
