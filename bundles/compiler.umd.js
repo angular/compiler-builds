@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.3-679608d
+ * @license Angular v5.0.0-beta.3-cac130e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.3-679608d
+ * @license Angular v5.0.0-beta.3-cac130e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -59,7 +59,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('5.0.0-beta.3-679608d');
+var VERSION = new _angular_core.Version('5.0.0-beta.3-cac130e');
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
