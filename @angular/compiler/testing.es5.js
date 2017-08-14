@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v5.0.0-beta.3-27d901a
+ * @license Angular v5.0.0-beta.3-d2c0d98
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -140,7 +140,8 @@ var MockDirectiveResolver = (function (_super) {
                 styles: view.styles,
                 styleUrls: view.styleUrls,
                 encapsulation: view.encapsulation,
-                interpolation: view.interpolation
+                interpolation: view.interpolation,
+                preserveWhitespaces: view.preserveWhitespaces,
             });
         }
         return new Directive({
