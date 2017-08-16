@@ -92,6 +92,7 @@ export declare class StaticSymbolResolver {
      */
     fileNameToModuleName(importedFilePath: string, containingFilePath: string): string | null;
     recordImportAs(sourceSymbol: StaticSymbol, targetSymbol: StaticSymbol): void;
+    recordModuleNameForFileName(fileName: string, moduleName: string): void;
     /**
      * Invalidate all information derived from the given file.
      *

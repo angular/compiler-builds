@@ -43,7 +43,7 @@ export declare class AotCompiler {
     emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
     private _compileStubFile(srcFileUrl, directives, pipes, ngModules, partial);
     private _compileImplFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
-    private _createSummary(srcFileUrl, directives, pipes, ngModules, injectables, ngFactoryCtx);
+    private _createSummary(srcFileName, directives, pipes, ngModules, injectables, ngFactoryCtx);
     private _compileModule(outputCtx, ngModuleType);
     private _compileComponentFactory(outputCtx, compMeta, ngModule, fileSuffix);
     private _compileComponent(outputCtx, compMeta, ngModule, directiveIdentifiers, componentStyles, fileSuffix);

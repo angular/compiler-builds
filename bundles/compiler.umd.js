@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.4-9aa0521
+ * @license Angular v5.0.0-beta.4-43226cb
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.4-9aa0521
+ * @license Angular v5.0.0-beta.4-43226cb
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -59,7 +59,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('5.0.0-beta.4-9aa0521');
+var VERSION = new _angular_core.Version('5.0.0-beta.4-43226cb');
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
@@ -14025,13 +14025,6 @@ function isTemplate(el, enableLegacyTemplate, reportDeprecation) {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * Create a {\@link UrlResolver} with no package prefix.
- * @return {?}
- */
-function createUrlResolverWithoutPackagePrefix() {
-    return new UrlResolver();
-}
-/**
  * @return {?}
  */
 function createOfflineCompileUrlResolver() {
@@ -14045,26 +14038,14 @@ var DEFAULT_PACKAGE_URL_PROVIDER = {
     useValue: '/'
 };
 /**
- * Used by the {\@link Compiler} when resolving HTML and CSS template URLs.
- *
- * This class can be overridden by the application developer to create custom behavior.
- *
- * See {\@link Compiler}
- *
- * ## Example
- *
- * {\@example compiler/ts/url_resolver/url_resolver.ts region='url_resolver'}
- *
- * \@security When compiling templates at runtime, you must
- * ensure that the entire template comes from a trusted source.
- * Attacker-controlled data introduced by a template could expose your
- * application to XSS risks. For more detail, see the [Security Guide](http://g.co/ng/security).
+ * @record
  */
+function UrlResolverCtor() { }
 var UrlResolver = (function () {
     /**
      * @param {?=} _packagePrefix
      */
-    function UrlResolver(_packagePrefix) {
+    function UrlResolverImpl(_packagePrefix) {
         if (_packagePrefix === void 0) { _packagePrefix = null; }
         this._packagePrefix = _packagePrefix;
     }
@@ -14079,7 +14060,7 @@ var UrlResolver = (function () {
      * @param {?} url
      * @return {?}
      */
-    UrlResolver.prototype.resolve = function (baseUrl, url) {
+    UrlResolverImpl.prototype.resolve = function (baseUrl, url) {
         var /** @type {?} */ resolvedUrl = url;
         if (baseUrl != null && baseUrl.length > 0) {
             resolvedUrl = _resolveUrl(baseUrl, resolvedUrl);
@@ -14095,15 +14076,8 @@ var UrlResolver = (function () {
         }
         return resolvedUrl;
     };
-    return UrlResolver;
+    return UrlResolverImpl;
 }());
-UrlResolver.decorators = [
-    { type: CompilerInjectable },
-];
-/** @nocollapse */
-UrlResolver.ctorParameters = function () { return [
-    { type: undefined, decorators: [{ type: _angular_core.Inject, args: [_angular_core.PACKAGE_ROOT_URL,] },] },
-]; };
 /**
  * Extract the scheme of a URL.
  * @param {?} url
@@ -15156,16 +15130,20 @@ var JitSummaryResolver = (function () {
         this._summaries = new Map();
     }
     /**
-     * @param {?} fileName
      * @return {?}
      */
-    JitSummaryResolver.prototype.isLibraryFile = function (fileName) { return false; };
+    JitSummaryResolver.prototype.isLibraryFile = function () { return false; };
     
     /**
      * @param {?} fileName
      * @return {?}
      */
-    JitSummaryResolver.prototype.getLibraryFileName = function (fileName) { return null; };
+    JitSummaryResolver.prototype.toSummaryFileName = function (fileName) { return fileName; };
+    /**
+     * @param {?} fileName
+     * @return {?}
+     */
+    JitSummaryResolver.prototype.fromSummaryFileName = function (fileName) { return fileName; };
     /**
      * @param {?} reference
      * @return {?}
@@ -15175,10 +15153,9 @@ var JitSummaryResolver = (function () {
     };
     
     /**
-     * @param {?} filePath
      * @return {?}
      */
-    JitSummaryResolver.prototype.getSymbolsOf = function (filePath) { return []; };
+    JitSummaryResolver.prototype.getSymbolsOf = function () { return []; };
     /**
      * @param {?} reference
      * @return {?}
@@ -23552,6 +23529,7 @@ function toTypeScript(file, preamble) {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * @param {?} srcFileName
  * @param {?} forJitCtx
  * @param {?} summaryResolver
  * @param {?} symbolResolver
@@ -23559,7 +23537,7 @@ function toTypeScript(file, preamble) {
  * @param {?} types
  * @return {?}
  */
-function serializeSummaries(forJitCtx, summaryResolver, symbolResolver, symbols, types) {
+function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types) {
     var /** @type {?} */ toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver);
     var /** @type {?} */ forJitSerializer = new ForJitSerializer(forJitCtx, symbolResolver);
     // for symbols, we use everything except for the class metadata itself
@@ -23611,18 +23589,20 @@ function serializeSummaries(forJitCtx, summaryResolver, symbolResolver, symbols,
             });
         }
     });
-    var _a = toJsonSerializer.serialize(), json = _a.json, exportAs = _a.exportAs;
+    var _a = toJsonSerializer.serialize(srcFileName), json = _a.json, exportAs = _a.exportAs;
     forJitSerializer.serialize(exportAs);
     return { json: json, exportAs: exportAs };
 }
 /**
  * @param {?} symbolCache
+ * @param {?} summaryResolver
+ * @param {?} libraryFileName
  * @param {?} json
  * @return {?}
  */
-function deserializeSummaries(symbolCache, json) {
-    var /** @type {?} */ deserializer = new FromJsonDeserializer(symbolCache);
-    return deserializer.deserialize(json);
+function deserializeSummaries(symbolCache, summaryResolver, libraryFileName, json) {
+    var /** @type {?} */ deserializer = new FromJsonDeserializer(symbolCache, summaryResolver);
+    return deserializer.deserialize(libraryFileName, json);
 }
 /**
  * @param {?} outputCtx
@@ -23700,9 +23680,10 @@ var ToJsonSerializer = (function (_super) {
         }
     };
     /**
+     * @param {?} srcFileName
      * @return {?}
      */
-    ToJsonSerializer.prototype.serialize = function () {
+    ToJsonSerializer.prototype.serialize = function (srcFileName) {
         var _this = this;
         var /** @type {?} */ exportAs = [];
         var /** @type {?} */ json = JSON.stringify({
@@ -23717,10 +23698,7 @@ var ToJsonSerializer = (function (_super) {
                 return {
                     __symbol: index,
                     name: symbol.name,
-                    // We convert the source filenames tinto output filenames,
-                    // as the generated summary file will be used when the current
-                    // compilation unit is used as a library
-                    filePath: _this.summaryResolver.getLibraryFileName(symbol.filePath),
+                    filePath: _this.summaryResolver.toSummaryFileName(symbol.filePath, srcFileName),
                     importAs: importAs
                 };
             })
@@ -23910,23 +23888,26 @@ var FromJsonDeserializer = (function (_super) {
     __extends(FromJsonDeserializer, _super);
     /**
      * @param {?} symbolCache
+     * @param {?} summaryResolver
      */
-    function FromJsonDeserializer(symbolCache) {
+    function FromJsonDeserializer(symbolCache, summaryResolver) {
         var _this = _super.call(this) || this;
         _this.symbolCache = symbolCache;
+        _this.summaryResolver = summaryResolver;
         return _this;
     }
     /**
+     * @param {?} libraryFileName
      * @param {?} json
      * @return {?}
      */
-    FromJsonDeserializer.prototype.deserialize = function (json) {
+    FromJsonDeserializer.prototype.deserialize = function (libraryFileName, json) {
         var _this = this;
         var /** @type {?} */ data = JSON.parse(json);
         var /** @type {?} */ importAs = [];
         this.symbols = [];
         data.symbols.forEach(function (serializedSymbol) {
-            var /** @type {?} */ symbol = _this.symbolCache.get(serializedSymbol.filePath, serializedSymbol.name);
+            var /** @type {?} */ symbol = _this.symbolCache.get(_this.summaryResolver.fromSummaryFileName(serializedSymbol.filePath, libraryFileName), serializedSymbol.name);
             _this.symbols.push(symbol);
             if (serializedSymbol.importAs) {
                 importAs.push({ symbol: symbol, importAs: serializedSymbol.importAs });
@@ -24167,7 +24148,7 @@ var AotCompiler = (function () {
         return generatedFiles;
     };
     /**
-     * @param {?} srcFileUrl
+     * @param {?} srcFileName
      * @param {?} directives
      * @param {?} pipes
      * @param {?} ngModules
@@ -24175,9 +24156,9 @@ var AotCompiler = (function () {
      * @param {?} ngFactoryCtx
      * @return {?}
      */
-    AotCompiler.prototype._createSummary = function (srcFileUrl, directives, pipes, ngModules, injectables, ngFactoryCtx) {
+    AotCompiler.prototype._createSummary = function (srcFileName, directives, pipes, ngModules, injectables, ngFactoryCtx) {
         var _this = this;
-        var /** @type {?} */ symbolSummaries = this._symbolResolver.getSymbolsOf(srcFileUrl)
+        var /** @type {?} */ symbolSummaries = this._symbolResolver.getSymbolsOf(srcFileName)
             .map(function (symbol) { return _this._symbolResolver.resolveSymbol(symbol); });
         var /** @type {?} */ typeData = ngModules.map(function (ref) { return ({
             summary: /** @type {?} */ ((_this._metadataResolver.getNgModuleSummary(ref))),
@@ -24192,16 +24173,16 @@ var AotCompiler = (function () {
             summary: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))),
             metadata: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))).type
         }); }));
-        var /** @type {?} */ forJitOutputCtx = this._createOutputContext(summaryForJitFileName(srcFileUrl, true));
-        var _a = serializeSummaries(forJitOutputCtx, this._summaryResolver, this._symbolResolver, symbolSummaries, typeData), json = _a.json, exportAs = _a.exportAs;
+        var /** @type {?} */ forJitOutputCtx = this._createOutputContext(summaryForJitFileName(srcFileName, true));
+        var _a = serializeSummaries(srcFileName, forJitOutputCtx, this._summaryResolver, this._symbolResolver, symbolSummaries, typeData), json = _a.json, exportAs = _a.exportAs;
         exportAs.forEach(function (entry) {
             ngFactoryCtx.statements.push(variable(entry.exportAs).set(ngFactoryCtx.importExpr(entry.symbol)).toDeclStmt(null, [
                 StmtModifier.Exported
             ]));
         });
-        var /** @type {?} */ summaryJson = new GeneratedFile(srcFileUrl, summaryFileName(srcFileUrl), json);
+        var /** @type {?} */ summaryJson = new GeneratedFile(srcFileName, summaryFileName(srcFileName), json);
         if (this._enableSummariesForJit) {
-            return [summaryJson, this._codegenSourceModule(srcFileUrl, forJitOutputCtx)];
+            return [summaryJson, this._codegenSourceModule(srcFileName, forJitOutputCtx)];
         }
         return [summaryJson];
     };
@@ -24596,12 +24577,11 @@ var StaticReflector = (function () {
      * @return {?}
      */
     StaticReflector.prototype.resolveExternalReference = function (ref) {
-        var /** @type {?} */ importSymbol = this.getStaticSymbol(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)));
-        var /** @type {?} */ rootSymbol = this.findDeclaration(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)));
-        if (importSymbol != rootSymbol) {
-            this.symbolResolver.recordImportAs(rootSymbol, importSymbol);
-        }
-        return rootSymbol;
+        var /** @type {?} */ refSymbol = this.symbolResolver.getSymbolByModule(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)));
+        var /** @type {?} */ declarationSymbol = this.findSymbolDeclaration(refSymbol);
+        this.symbolResolver.recordModuleNameForFileName(refSymbol.filePath, /** @type {?} */ ((ref.moduleName)));
+        this.symbolResolver.recordImportAs(declarationSymbol, refSymbol);
+        return declarationSymbol;
     };
     /**
      * @param {?} moduleUrl
@@ -25522,6 +25502,14 @@ var StaticSymbolResolver = (function () {
         this.importAs.set(sourceSymbol, targetSymbol);
     };
     /**
+     * @param {?} fileName
+     * @param {?} moduleName
+     * @return {?}
+     */
+    StaticSymbolResolver.prototype.recordModuleNameForFileName = function (fileName, moduleName) {
+        this.knownFileNameToModuleNames.set(fileName, moduleName);
+    };
+    /**
      * Invalidate all information derived from the given file.
      *
      * @param {?} fileName the file to invalidate
@@ -25920,9 +25908,20 @@ var AotSummaryResolver = (function () {
     };
     /**
      * @param {?} filePath
+     * @param {?} referringSrcFileName
      * @return {?}
      */
-    AotSummaryResolver.prototype.getLibraryFileName = function (filePath) { return this.host.getOutputFileName(filePath); };
+    AotSummaryResolver.prototype.toSummaryFileName = function (filePath, referringSrcFileName) {
+        return this.host.toSummaryFileName(filePath, referringSrcFileName);
+    };
+    /**
+     * @param {?} fileName
+     * @param {?} referringLibFileName
+     * @return {?}
+     */
+    AotSummaryResolver.prototype.fromSummaryFileName = function (fileName, referringLibFileName) {
+        return this.host.fromSummaryFileName(fileName, referringLibFileName);
+    };
     /**
      * @param {?} staticSymbol
      * @return {?}
@@ -25978,7 +25977,7 @@ var AotSummaryResolver = (function () {
                 throw e;
             }
             if (json) {
-                var _a = deserializeSummaries(this.staticSymbolCache, json), summaries = _a.summaries, importAs = _a.importAs;
+                var _a = deserializeSummaries(this.staticSymbolCache, this, filePath, json), summaries = _a.summaries, importAs = _a.importAs;
                 summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
                 importAs.forEach(function (importAs) {
                     _this.importAs.set(importAs.symbol, _this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
@@ -26000,6 +25999,21 @@ var AotSummaryResolver = (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * @param {?} host
+ * @return {?}
+ */
+function createAotUrlResolver(host) {
+    return {
+        resolve: function (basePath, url) {
+            var /** @type {?} */ filePath = host.resourceNameToFileName(url, basePath);
+            if (!filePath) {
+                throw syntaxError("Couldn't resolve resource " + url + " from " + basePath);
+            }
+            return filePath;
+        }
+    };
+}
+/**
  * Creates a new AotCompiler based on options and a host.
  * @param {?} compilerHost
  * @param {?} options
@@ -26007,7 +26021,7 @@ var AotSummaryResolver = (function () {
  */
 function createAotCompiler(compilerHost, options) {
     var /** @type {?} */ translations = options.translations || '';
-    var /** @type {?} */ urlResolver = createOfflineCompileUrlResolver();
+    var /** @type {?} */ urlResolver = createAotUrlResolver(compilerHost);
     var /** @type {?} */ symbolCache = new StaticSymbolCache();
     var /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
     var /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
@@ -27686,7 +27700,7 @@ var Extractor = (function () {
      */
     Extractor.create = function (host, locale) {
         var /** @type {?} */ htmlParser = new HtmlParser();
-        var /** @type {?} */ urlResolver = createOfflineCompileUrlResolver();
+        var /** @type {?} */ urlResolver = createAotUrlResolver(host);
         var /** @type {?} */ symbolCache = new StaticSymbolCache();
         var /** @type {?} */ summaryResolver = new AotSummaryResolver(host, symbolCache);
         var /** @type {?} */ staticSymbolResolver = new StaticSymbolResolver(host, symbolCache, summaryResolver);
@@ -28090,6 +28104,7 @@ exports.templateSourceUrl = templateSourceUrl;
 exports.sharedStylesheetJitUrl = sharedStylesheetJitUrl;
 exports.ngModuleJitUrl = ngModuleJitUrl;
 exports.templateJitUrl = templateJitUrl;
+exports.createAotUrlResolver = createAotUrlResolver;
 exports.createAotCompiler = createAotCompiler;
 exports.AotCompiler = AotCompiler;
 exports.NgAnalyzedModules = NgAnalyzedModules;
@@ -28119,10 +28134,10 @@ exports.JitCompilerFactory = JitCompilerFactory;
 exports.platformCoreDynamic = platformCoreDynamic;
 exports.JitReflector = JitReflector;
 exports.CompileReflector = CompileReflector;
-exports.createUrlResolverWithoutPackagePrefix = createUrlResolverWithoutPackagePrefix;
 exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;
 exports.DEFAULT_PACKAGE_URL_PROVIDER = DEFAULT_PACKAGE_URL_PROVIDER;
 exports.UrlResolver = UrlResolver;
+exports.UrlResolverCtor = UrlResolverCtor;
 exports.getUrlScheme = getUrlScheme;
 exports.ResourceLoader = ResourceLoader;
 exports.ElementSchemaRegistry = ElementSchemaRegistry;
