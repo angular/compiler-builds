@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.3-1cfa79c
+ * @license Angular v5.0.0-beta.3-0a73e8d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -24,7 +24,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.3-1cfa79c');
+const VERSION = new Version('5.0.0-beta.3-0a73e8d');
 
 /**
  * @fileoverview added by tsickle
@@ -11835,10 +11835,12 @@ function isStyleUrlResolvable(url) {
  */
 function extractStyleUrls(resolver, baseUrl, cssText) {
     const /** @type {?} */ foundUrls = [];
-    const /** @type {?} */ modifiedCssText = cssText.replace(CSS_COMMENT_REGEXP, '').replace(CSS_IMPORT_REGEXP, (...m) => {
+    const /** @type {?} */ modifiedCssText = cssText.replace(CSS_STRIPPABLE_COMMENT_REGEXP, '')
+        .replace(CSS_IMPORT_REGEXP, (...m) => {
         const /** @type {?} */ url = m[1] || m[2];
         if (!isStyleUrlResolvable(url)) {
-            // Do not attempt to resolve non-package absolute URLs with URI scheme
+            // Do not attempt to resolve non-package absolute URLs with URI
+            // scheme
             return m[0];
         }
         foundUrls.push(resolver.resolve(baseUrl, url));
@@ -11847,7 +11849,7 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
     return new StyleWithImports(modifiedCssText, foundUrls);
 }
 const CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
-const CSS_COMMENT_REGEXP = /\/\*[\s\S]+?\*\//g;
+const CSS_STRIPPABLE_COMMENT_REGEXP = /\/\*(?!#\s*(?:sourceURL|sourceMappingURL)=)[\s\S]+?\*\//g;
 const URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
 
 /**
