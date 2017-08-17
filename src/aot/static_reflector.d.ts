@@ -21,7 +21,6 @@ export declare class StaticReflector implements CompileReflector {
     private ROUTES;
     private ANALYZE_FOR_ENTRY_COMPONENTS;
     private annotationForParentClassWithSummaryKind;
-    private annotationNames;
     constructor(summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, knownMetadataClasses?: {
         name: string;
         filePath: string;
