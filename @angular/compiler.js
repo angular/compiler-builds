@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.4-56a5b02
+ * @license Angular v5.0.0-beta.4-a56468c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -11,7 +11,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 const createInject = makeMetadataFactory('Inject', (token) => ({ token }));
-const createInjectionToken = makeMetadataFactory('InjectionToken', (token) => token);
+const createInjectionToken = makeMetadataFactory('InjectionToken', (desc) => ({ _desc: desc }));
 const createAttribute = makeMetadataFactory('Attribute', (attributeName) => ({ attributeName }));
 const createContentChildren = makeMetadataFactory('ContentChildren', (selector, data = {}) => (Object.assign({ selector, first: false, isViewQuery: false, descendants: false }, data)));
 const createContentChild = makeMetadataFactory('ContentChild', (selector, data = {}) => (Object.assign({ selector, first: true, isViewQuery: false, descendants: true }, data)));
@@ -287,7 +287,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.4-56a5b02');
+const VERSION = new Version('5.0.0-beta.4-a56468c');
 
 /**
  * @license

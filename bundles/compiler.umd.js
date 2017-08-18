@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.4-56a5b02
+ * @license Angular v5.0.0-beta.4-a56468c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.4-56a5b02
+ * @license Angular v5.0.0-beta.4-a56468c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -48,7 +48,7 @@ function __extends(d, b) {
  * found in the LICENSE file at https://angular.io/license
  */
 var createInject = makeMetadataFactory('Inject', function (token) { return ({ token: token }); });
-var createInjectionToken = makeMetadataFactory('InjectionToken', function (token) { return token; });
+var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc }); });
 var createAttribute = makeMetadataFactory('Attribute', function (attributeName) { return ({ attributeName: attributeName }); });
 var createContentChildren = makeMetadataFactory('ContentChildren', function (selector, data) {
     if (data === void 0) { data = {}; }
@@ -362,7 +362,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.4-56a5b02');
+var VERSION = new Version('5.0.0-beta.4-a56468c');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
