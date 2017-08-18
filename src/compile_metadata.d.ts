@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ChangeDetectionStrategy, ComponentFactory, RendererType2, SchemaMetadata, Type, ViewEncapsulation } from '@angular/core';
 import { StaticSymbol } from './aot/static_symbol';
+import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from './core';
 import { LifecycleHooks } from './lifecycle_reflector';
 export declare class CompileAnimationEntryMetadata {
     name: string | null;
@@ -179,7 +179,7 @@ export declare class CompileTemplateMetadata {
 }
 export interface CompileEntryComponentMetadata {
     componentType: any;
-    componentFactory: StaticSymbol | ComponentFactory<any>;
+    componentFactory: StaticSymbol | object;
 }
 export interface CompileDirectiveSummary extends CompileTypeSummary {
     type: CompileTypeMetadata;
@@ -209,8 +209,8 @@ export interface CompileDirectiveSummary extends CompileTypeSummary {
     changeDetection: ChangeDetectionStrategy | null;
     template: CompileTemplateSummary | null;
     componentViewType: StaticSymbol | ProxyClass | null;
-    rendererType: StaticSymbol | RendererType2 | null;
-    componentFactory: StaticSymbol | ComponentFactory<any> | null;
+    rendererType: StaticSymbol | object | null;
+    componentFactory: StaticSymbol | object | null;
 }
 /**
  * Metadata regarding compilation of a directive.
@@ -235,8 +235,8 @@ export declare class CompileDirectiveMetadata {
         entryComponents: CompileEntryComponentMetadata[];
         template: CompileTemplateMetadata;
         componentViewType: StaticSymbol | ProxyClass | null;
-        rendererType: StaticSymbol | RendererType2 | null;
-        componentFactory: StaticSymbol | ComponentFactory<any> | null;
+        rendererType: StaticSymbol | object | null;
+        componentFactory: StaticSymbol | object | null;
     }): CompileDirectiveMetadata;
     isHost: boolean;
     type: CompileTypeMetadata;
@@ -266,8 +266,8 @@ export declare class CompileDirectiveMetadata {
     entryComponents: CompileEntryComponentMetadata[];
     template: CompileTemplateMetadata | null;
     componentViewType: StaticSymbol | ProxyClass | null;
-    rendererType: StaticSymbol | RendererType2 | null;
-    componentFactory: StaticSymbol | ComponentFactory<any> | null;
+    rendererType: StaticSymbol | object | null;
+    componentFactory: StaticSymbol | object | null;
     constructor({isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory}: {
         isHost: boolean;
         type: CompileTypeMetadata;
@@ -297,8 +297,8 @@ export declare class CompileDirectiveMetadata {
         entryComponents: CompileEntryComponentMetadata[];
         template: CompileTemplateMetadata | null;
         componentViewType: StaticSymbol | ProxyClass | null;
-        rendererType: StaticSymbol | RendererType2 | null;
-        componentFactory: StaticSymbol | ComponentFactory<any> | null;
+        rendererType: StaticSymbol | object | null;
+        componentFactory: StaticSymbol | object | null;
     });
     toSummary(): CompileDirectiveSummary;
 }
@@ -394,14 +394,14 @@ export declare class TransitiveCompileNgModuleMetadata {
 }
 export declare class ProviderMeta {
     token: any;
-    useClass: Type<any> | null;
+    useClass: Type | null;
     useValue: any;
     useExisting: any;
     useFactory: Function | null;
     dependencies: Object[] | null;
     multi: boolean;
     constructor(token: any, {useClass, useValue, useExisting, useFactory, deps, multi}: {
-        useClass?: Type<any>;
+        useClass?: Type;
         useValue?: any;
         useExisting?: any;
         useFactory?: Function | null;

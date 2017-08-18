@@ -5,15 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { InjectionToken } from '@angular/core';
-export declare function createOfflineCompileUrlResolver(): UrlResolver;
 /**
- * A default provider for {@link PACKAGE_ROOT_URL} that maps to '/'.
+ * Create a {@link UrlResolver} with no package prefix.
  */
-export declare const DEFAULT_PACKAGE_URL_PROVIDER: {
-    provide: InjectionToken<string>;
-    useValue: string;
-};
+export declare function createUrlResolverWithoutPackagePrefix(): UrlResolver;
+export declare function createOfflineCompileUrlResolver(): UrlResolver;
 /**
  * Used by the {@link Compiler} when resolving HTML and CSS template URLs.
  *
