@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.4-a56468c
+ * @license Angular v5.0.0-beta.4-f2a2a6b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.4-a56468c
+ * @license Angular v5.0.0-beta.4-f2a2a6b
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -362,7 +362,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.4-a56468c');
+var VERSION = new Version('5.0.0-beta.4-f2a2a6b');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13404,21 +13404,25 @@ function hasPreserveWhitespacesAttr(attrs) {
     return attrs.some(function (attr) { return attr.name === PRESERVE_WS_ATTR_NAME; });
 }
 /**
+ * Angular Dart introduced &ngsp; as a placeholder for non-removable space, see:
+ * https://github.com/dart-lang/angular/blob/0bb611387d29d65b5af7f9d2515ab571fd3fbee4/_tests/test/compiler/preserve_whitespace_test.dart#L25-L32
+ * In Angular Dart &ngsp; is converted to the 0xE500 PUA (Private Use Areas) unicode character
+ * and later on replaced by a space. We are re-implementing the same idea here.
+ */
+function replaceNgsp(value) {
+    // lexer is replacing the &ngsp; pseudo-entity with NGSP_UNICODE
+    return value.replace(new RegExp(NGSP_UNICODE, 'g'), ' ');
+}
+/**
  * This visitor can walk HTML parse tree and remove / trim text nodes using the following rules:
  * - consider spaces, tabs and new lines as whitespace characters;
  * - drop text nodes consisting of whitespace characters only;
  * - for all other text nodes replace consecutive whitespace characters with one space;
  * - convert &ngsp; pseudo-entity to a single space;
  *
- * The idea of using &ngsp; as a placeholder for non-removable space was originally introduced in
- * Angular Dart, see:
- * https://github.com/dart-lang/angular/blob/0bb611387d29d65b5af7f9d2515ab571fd3fbee4/_tests/test/compiler/preserve_whitespace_test.dart#L25-L32
- * In Angular Dart &ngsp; is converted to the 0xE500 PUA (Private Use Areas) unicode character
- * and later on replaced by a space. We are re-implementing the same idea here.
- *
  * Removal and trimming of whitespaces have positive performance impact (less code to generate
  * while compiling templates, faster view creation). At the same time it can be "destructive"
- * in some cases (whitespaces can influence layout). Becouse of the potential of breaking layout
+ * in some cases (whitespaces can influence layout). Because of the potential of breaking layout
  * this visitor is not activated by default in Angular 5 and people need to explicitly opt-in for
  * whitespace removal. The default option for whitespace removal will be revisited in Angular 6
  * and might be changed to "on" by default.
@@ -13440,8 +13444,7 @@ var WhitespaceVisitor = (function () {
     WhitespaceVisitor.prototype.visitText = function (text, context) {
         var isBlank = text.value.trim().length === 0;
         if (!isBlank) {
-            // lexer is replacing the &ngsp; pseudo-entity with NGSP_UNICODE
-            return new Text(text.value.replace(NGSP_UNICODE, ' ').replace(/\s\s+/g, ' '), text.sourceSpan);
+            return new Text(replaceNgsp(text.value).replace(/\s\s+/g, ' '), text.sourceSpan);
         }
         return null;
     };
@@ -14116,9 +14119,10 @@ var TemplateParseVisitor = (function () {
     TemplateParseVisitor.prototype.visitExpansionCase = function (expansionCase, context) { return null; };
     TemplateParseVisitor.prototype.visitText = function (text, parent) {
         var ngContentIndex = parent.findNgContentIndex(TEXT_CSS_SELECTOR);
-        var expr = this._bindingParser.parseInterpolation(text.value, text.sourceSpan);
+        var valueNoNgsp = replaceNgsp(text.value);
+        var expr = this._bindingParser.parseInterpolation(valueNoNgsp, text.sourceSpan);
         return expr ? new BoundTextAst(expr, ngContentIndex, text.sourceSpan) :
-            new TextAst(text.value, ngContentIndex, text.sourceSpan);
+            new TextAst(valueNoNgsp, ngContentIndex, text.sourceSpan);
     };
     TemplateParseVisitor.prototype.visitAttribute = function (attribute, context) {
         return new AttrAst(attribute.name, attribute.value, attribute.sourceSpan);
