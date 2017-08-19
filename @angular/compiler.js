@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.5-77ebd2b
+ * @license Angular v4.3.5-e1f45a3
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.3.5-77ebd2b');
+const VERSION = new Version('4.3.5-e1f45a3');
 
 /**
  * @license
@@ -11836,7 +11836,7 @@ class BindingParser {
         // This will occur when a @trigger is not paired with an expression.
         // For animations it is valid to not have an expression since */void
         // states will be applied by angular when the element is attached/detached
-        const /** @type {?} */ ast = this._parseBinding(expression || 'null', false, sourceSpan);
+        const /** @type {?} */ ast = this._parseBinding(expression || 'undefined', false, sourceSpan);
         targetMatchableAttrs.push([name, /** @type {?} */ ((ast.source))]);
         targetProps.push(new BoundProperty(name, ast, BoundPropertyType.ANIMATION, sourceSpan));
     }
