@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v5.0.0-beta.4-e228f2c
+ * @license Angular v5.0.0-beta.4-55d151a
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -326,7 +326,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.4-e228f2c');
+var VERSION = new Version('5.0.0-beta.4-55d151a');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13743,7 +13743,7 @@ var BindingParser = (function () {
         // This will occur when a @trigger is not paired with an expression.
         // For animations it is valid to not have an expression since */void
         // states will be applied by angular when the element is attached/detached
-        var ast = this._parseBinding(expression || 'null', false, sourceSpan);
+        var ast = this._parseBinding(expression || 'undefined', false, sourceSpan);
         targetMatchableAttrs.push([name, ast.source]);
         targetProps.push(new BoundProperty(name, ast, BoundPropertyType.ANIMATION, sourceSpan));
     };
