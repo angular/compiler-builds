@@ -5,8 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { Type } from '@angular/core';
 import { CompileTypeSummary } from './compile_metadata';
+import { Type } from './core';
 export interface Summary<T> {
     symbol: T;
     metadata: any;
@@ -14,18 +14,20 @@ export interface Summary<T> {
 }
 export declare abstract class SummaryResolver<T> {
     abstract isLibraryFile(fileName: string): boolean;
-    abstract getLibraryFileName(fileName: string): string | null;
+    abstract toSummaryFileName(fileName: string, referringSrcFileName: string): string;
+    abstract fromSummaryFileName(fileName: string, referringLibFileName: string): string;
     abstract resolveSummary(reference: T): Summary<T> | null;
     abstract getSymbolsOf(filePath: string): T[];
     abstract getImportAs(reference: T): T;
     abstract addSummary(summary: Summary<T>): void;
 }
-export declare class JitSummaryResolver implements SummaryResolver<Type<any>> {
+export declare class JitSummaryResolver implements SummaryResolver<Type> {
     private _summaries;
-    isLibraryFile(fileName: string): boolean;
-    getLibraryFileName(fileName: string): string | null;
-    resolveSummary(reference: Type<any>): Summary<Type<any>> | null;
-    getSymbolsOf(filePath: string): Type<any>[];
-    getImportAs(reference: Type<any>): Type<any>;
-    addSummary(summary: Summary<Type<any>>): void;
+    isLibraryFile(): boolean;
+    toSummaryFileName(fileName: string): string;
+    fromSummaryFileName(fileName: string): string;
+    resolveSummary(reference: Type): Summary<Type> | null;
+    getSymbolsOf(): Type[];
+    getImportAs(reference: Type): Type;
+    addSummary(summary: Summary<Type>): void;
 }

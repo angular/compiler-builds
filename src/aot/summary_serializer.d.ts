@@ -6,11 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { CompileDirectiveMetadata, CompileNgModuleMetadata, CompilePipeMetadata, CompileTypeMetadata, CompileTypeSummary } from '../compile_metadata';
-import * as o from '../output/output_ast';
 import { Summary, SummaryResolver } from '../summary_resolver';
+import { OutputContext } from '../util';
 import { StaticSymbol, StaticSymbolCache } from './static_symbol';
 import { ResolvedStaticSymbol, StaticSymbolResolver } from './static_symbol_resolver';
-export declare function serializeSummaries(summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, symbols: ResolvedStaticSymbol[], types: {
+export declare function serializeSummaries(srcFileName: string, forJitCtx: OutputContext, summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, symbols: ResolvedStaticSymbol[], types: {
     summary: CompileTypeSummary;
     metadata: CompileNgModuleMetadata | CompileDirectiveMetadata | CompilePipeMetadata | CompileTypeMetadata;
 }[]): {
@@ -19,15 +19,12 @@ export declare function serializeSummaries(summaryResolver: SummaryResolver<Stat
         symbol: StaticSymbol;
         exportAs: string;
     }[];
-    forJit: {
-        statements: o.Statement[];
-        exportedVars: string[];
-    };
 };
-export declare function deserializeSummaries(symbolCache: StaticSymbolCache, json: string): {
+export declare function deserializeSummaries(symbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, libraryFileName: string, json: string): {
     summaries: Summary<StaticSymbol>[];
     importAs: {
         symbol: StaticSymbol;
         importAs: string;
     }[];
 };
+export declare function createForJitStub(outputCtx: OutputContext, reference: StaticSymbol): void;
