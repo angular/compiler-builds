@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.5-2e714f9
+ * @license Angular v5.0.0-beta.5-72c7b6e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.5-2e714f9
+ * @license Angular v5.0.0-beta.5-72c7b6e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -362,7 +362,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.5-2e714f9');
+var VERSION = new Version('5.0.0-beta.5-72c7b6e');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -16098,50 +16098,16 @@ function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResol
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
     // CompileTypeSummary.
-    symbols.forEach(function (resolvedSymbol) { return toJsonSerializer.addOrMergeSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }); });
-    // Add summaries that are referenced by the given symbols (transitively)
-    // Note: the serializer.symbols array might be growing while
-    // we execute the loop!
-    for (var processedIndex = 0; processedIndex < toJsonSerializer.symbols.length; processedIndex++) {
-        var symbol = toJsonSerializer.symbols[processedIndex];
-        if (summaryResolver.isLibraryFile(symbol.filePath)) {
-            var summary = summaryResolver.resolveSummary(symbol);
-            if (!summary) {
-                // some symbols might originate from a plain typescript library
-                // that just exported .d.ts and .metadata.json files, i.e. where no summary
-                // files were created.
-                var resolvedSymbol = symbolResolver.resolveSymbol(symbol);
-                if (resolvedSymbol) {
-                    summary = { symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata };
-                }
-            }
-            if (summary) {
-                if (summary.type) {
-                    forJitSerializer.addLibType(summary.type);
-                }
-                toJsonSerializer.addOrMergeSummary(summary);
-            }
-        }
-    }
+    symbols.forEach(function (resolvedSymbol) { return toJsonSerializer.addSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }); });
     // Add type summaries.
-    // Note: We don't add the summaries of all referenced symbols as for the ResolvedSymbols,
-    // as the type summaries already contain the transitive data that they require
-    // (in a minimal way).
     types.forEach(function (_a) {
         var summary = _a.summary, metadata = _a.metadata;
         forJitSerializer.addSourceType(summary, metadata);
-        toJsonSerializer.addOrMergeSummary({ symbol: summary.type.reference, metadata: null, type: summary });
-        if (summary.summaryKind === exports.CompileSummaryKind.NgModule) {
-            var ngModuleSummary = summary;
-            ngModuleSummary.exportedDirectives.concat(ngModuleSummary.exportedPipes).forEach(function (id) {
-                var symbol = id.reference;
-                if (summaryResolver.isLibraryFile(symbol.filePath)) {
-                    var summary_1 = summaryResolver.resolveSummary(symbol);
-                    if (summary_1) {
-                        toJsonSerializer.addOrMergeSummary(summary_1);
-                    }
-                }
-            });
+        toJsonSerializer.addSummary({ symbol: summary.type.reference, metadata: undefined, type: summary });
+    });
+    toJsonSerializer.unprocessedSymbolSummariesBySymbol.forEach(function (summary) {
+        if (summaryResolver.isLibraryFile(summary.symbol.filePath) && summary.type) {
+            forJitSerializer.addLibType(summary.type);
         }
     });
     var _a = toJsonSerializer.serialize(srcFileName), json = _a.json, exportAs = _a.exportAs;
@@ -16174,40 +16140,63 @@ var ToJsonSerializer = (function (_super) {
         // StaticSymbols, but otherwise has the same shape as the original objects.
         _this.processedSummaryBySymbol = new Map();
         _this.processedSummaries = [];
+        _this.unprocessedSymbolSummariesBySymbol = new Map();
         return _this;
     }
-    ToJsonSerializer.prototype.addOrMergeSummary = function (summary) {
-        var symbolMeta = summary.metadata;
-        if (symbolMeta && symbolMeta.__symbolic === 'class') {
-            // For classes, we keep everything except their class decorators.
-            // We need to keep e.g. the ctor args, method names, method decorators
-            // so that the class can be extended in another compilation unit.
-            // We don't keep the class decorators as
-            // 1) they refer to data
-            //   that should not cause a rebuild of downstream compilation units
-            //   (e.g. inline templates of @Component, or @NgModule.declarations)
-            // 2) their data is already captured in TypeSummaries, e.g. DirectiveSummary.
-            var clone_1 = {};
-            Object.keys(symbolMeta).forEach(function (propName) {
-                if (propName !== 'decorators') {
-                    clone_1[propName] = symbolMeta[propName];
-                }
-            });
-            symbolMeta = clone_1;
-        }
+    ToJsonSerializer.prototype.addSummary = function (summary) {
+        var _this = this;
+        var unprocessedSummary = this.unprocessedSymbolSummariesBySymbol.get(summary.symbol);
         var processedSummary = this.processedSummaryBySymbol.get(summary.symbol);
-        if (!processedSummary) {
-            processedSummary = this.processValue({ symbol: summary.symbol });
+        if (!unprocessedSummary) {
+            unprocessedSummary = { symbol: summary.symbol, metadata: undefined };
+            this.unprocessedSymbolSummariesBySymbol.set(summary.symbol, unprocessedSummary);
+            processedSummary = { symbol: this.processValue(summary.symbol, 0 /* None */) };
             this.processedSummaries.push(processedSummary);
             this.processedSummaryBySymbol.set(summary.symbol, processedSummary);
         }
-        // Note: == on purpose to compare with undefined!
-        if (processedSummary.metadata == null && symbolMeta != null) {
-            processedSummary.metadata = this.processValue(symbolMeta);
+        if (!unprocessedSummary.metadata && summary.metadata) {
+            var metadata_1 = summary.metadata || {};
+            if (metadata_1.__symbolic === 'class') {
+                // For classes, we keep everything except their class decorators.
+                // We need to keep e.g. the ctor args, method names, method decorators
+                // so that the class can be extended in another compilation unit.
+                // We don't keep the class decorators as
+                // 1) they refer to data
+                //   that should not cause a rebuild of downstream compilation units
+                //   (e.g. inline templates of @Component, or @NgModule.declarations)
+                // 2) their data is already captured in TypeSummaries, e.g. DirectiveSummary.
+                var clone_1 = {};
+                Object.keys(metadata_1).forEach(function (propName) {
+                    if (propName !== 'decorators') {
+                        clone_1[propName] = metadata_1[propName];
+                    }
+                });
+                metadata_1 = clone_1;
+            }
+            unprocessedSummary.metadata = metadata_1;
+            processedSummary.metadata = this.processValue(metadata_1, 1 /* ResolveValue */);
         }
-        // Note: == on purpose to compare with undefined!
-        if (processedSummary.type == null && summary.type != null) {
-            processedSummary.type = this.processValue(summary.type);
+        if (!unprocessedSummary.type && summary.type) {
+            unprocessedSummary.type = summary.type;
+            // Note: We don't add the summaries of all referenced symbols as for the ResolvedSymbols,
+            // as the type summaries already contain the transitive data that they require
+            // (in a minimal way).
+            processedSummary.type = this.processValue(summary.type, 0 /* None */);
+            // except for reexported directives / pipes, so we need to store
+            // their summaries explicitly.
+            if (summary.type.summaryKind === exports.CompileSummaryKind.NgModule) {
+                var ngModuleSummary = summary.type;
+                ngModuleSummary.exportedDirectives.concat(ngModuleSummary.exportedPipes).forEach(function (id) {
+                    var symbol = id.reference;
+                    if (_this.summaryResolver.isLibraryFile(symbol.filePath) &&
+                        !_this.unprocessedSymbolSummariesBySymbol.has(symbol)) {
+                        var summary_1 = _this.summaryResolver.resolveSummary(symbol);
+                        if (summary_1) {
+                            _this.addSummary(summary_1);
+                        }
+                    }
+                });
+            }
         }
     };
     ToJsonSerializer.prototype.serialize = function (srcFileName) {
@@ -16219,8 +16208,11 @@ var ToJsonSerializer = (function (_super) {
                 symbol.assertNoMembers();
                 var importAs = undefined;
                 if (_this.summaryResolver.isLibraryFile(symbol.filePath)) {
-                    importAs = symbol.name + "_" + index;
-                    exportAs.push({ symbol: symbol, exportAs: importAs });
+                    var summary = _this.unprocessedSymbolSummariesBySymbol.get(symbol);
+                    if (!summary || !summary.metadata || summary.metadata.__symbolic !== 'interface') {
+                        importAs = symbol.name + "_" + index;
+                        exportAs.push({ symbol: symbol, exportAs: importAs });
+                    }
                 }
                 return {
                     __symbol: index,
@@ -16232,19 +16224,66 @@ var ToJsonSerializer = (function (_super) {
         });
         return { json: json, exportAs: exportAs };
     };
-    ToJsonSerializer.prototype.processValue = function (value) { return visitValue(value, this, null); };
+    ToJsonSerializer.prototype.processValue = function (value, flags) {
+        return visitValue(value, this, flags);
+    };
     ToJsonSerializer.prototype.visitOther = function (value, context) {
         if (value instanceof StaticSymbol) {
             var baseSymbol = this.symbolResolver.getStaticSymbol(value.filePath, value.name);
-            var index = this.indexBySymbol.get(baseSymbol);
-            // Note: == on purpose to compare with undefined!
-            if (index == null) {
-                index = this.indexBySymbol.size;
-                this.indexBySymbol.set(baseSymbol, index);
-                this.symbols.push(baseSymbol);
-            }
+            var index = this.visitStaticSymbol(baseSymbol, context);
             return { __symbol: index, members: value.members };
         }
+    };
+    /**
+     * Returns null if the options.resolveValue is true, and the summary for the symbol
+     * resolved to a type or could not be resolved.
+     */
+    ToJsonSerializer.prototype.visitStaticSymbol = function (baseSymbol, flags) {
+        var index = this.indexBySymbol.get(baseSymbol);
+        var summary = null;
+        if (flags & 1 /* ResolveValue */ &&
+            this.summaryResolver.isLibraryFile(baseSymbol.filePath)) {
+            if (this.unprocessedSymbolSummariesBySymbol.has(baseSymbol)) {
+                // the summary for this symbol was already added
+                // -> nothing to do.
+                return index;
+            }
+            summary = this.loadSummary(baseSymbol);
+            if (summary && summary.metadata instanceof StaticSymbol) {
+                // The summary is a reexport
+                index = this.visitStaticSymbol(summary.metadata, flags);
+                // reset the summary as it is just a reexport, so we don't want to store it.
+                summary = null;
+            }
+        }
+        else if (index != null) {
+            // Note: == on purpose to compare with undefined!
+            // No summary and the symbol is already added -> nothing to do.
+            return index;
+        }
+        // Note: == on purpose to compare with undefined!
+        if (index == null) {
+            index = this.symbols.length;
+            this.symbols.push(baseSymbol);
+        }
+        this.indexBySymbol.set(baseSymbol, index);
+        if (summary) {
+            this.addSummary(summary);
+        }
+        return index;
+    };
+    ToJsonSerializer.prototype.loadSummary = function (symbol) {
+        var summary = this.summaryResolver.resolveSummary(symbol);
+        if (!summary) {
+            // some symbols might originate from a plain typescript library
+            // that just exported .d.ts and .metadata.json files, i.e. where no summary
+            // files were created.
+            var resolvedSymbol = this.symbolResolver.resolveSymbol(symbol);
+            if (resolvedSymbol) {
+                summary = { symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata };
+            }
+        }
+        return summary;
     };
     return ToJsonSerializer;
 }(ValueTransformer));
@@ -16431,13 +16470,7 @@ var AotCompiler = (function () {
     AotCompiler.prototype.emitAllStubs = function (analyzeResult) {
         var _this = this;
         var files = analyzeResult.files;
-        var sourceModules = files.map(function (file) { return _this._compileStubFile(file.srcUrl, file.directives, file.pipes, file.ngModules, false); });
-        return flatten(sourceModules);
-    };
-    AotCompiler.prototype.emitPartialStubs = function (analyzeResult) {
-        var _this = this;
-        var files = analyzeResult.files;
-        var sourceModules = files.map(function (file) { return _this._compileStubFile(file.srcUrl, file.directives, file.pipes, file.ngModules, true); });
+        var sourceModules = files.map(function (file) { return _this._compileStubFile(file.srcUrl, file.directives, file.pipes, file.ngModules); });
         return flatten(sourceModules);
     };
     AotCompiler.prototype.emitAllImpls = function (analyzeResult) {
@@ -16446,19 +16479,8 @@ var AotCompiler = (function () {
         var sourceModules = files.map(function (file) { return _this._compileImplFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables); });
         return flatten(sourceModules);
     };
-    AotCompiler.prototype._compileStubFile = function (srcFileUrl, directives, pipes, ngModules, partial) {
+    AotCompiler.prototype._compileStubFile = function (srcFileUrl, directives, pipes, ngModules) {
         var _this = this;
-        // partial is true when we only need the files we are certain will produce a factory and/or
-        // summary.
-        // This is the normal case for `ngc` but if we assume libraryies are generating their own
-        // factories
-        // then we might need a factory for a file that re-exports a module or factory which we cannot
-        // know
-        // ahead of time so we need a stub generate for all non-.d.ts files. The .d.ts files do not need
-        // to
-        // be excluded here because they are excluded when the modules are analyzed. If a factory ends
-        // up
-        // not being needed, the factory file is not written in writeFile callback.
         var fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
         var generatedFiles = [];
         var ngFactoryOutputCtx = this._createOutputContext(ngfactoryFilePath(srcFileUrl, true));
@@ -16468,31 +16490,25 @@ var AotCompiler = (function () {
             _this._ngModuleCompiler.createStub(ngFactoryOutputCtx, ngModuleReference);
             createForJitStub(jitSummaryOutputCtx, ngModuleReference);
         });
-        var partialJitStubRequired = false;
-        var partialFactoryStubRequired = false;
         // create stubs for external stylesheets (always empty, as users should not import anything from
         // the generated code)
         directives.forEach(function (dirType) {
             var compMeta = _this._metadataResolver.getDirectiveMetadata(dirType);
-            partialJitStubRequired = true;
             if (!compMeta.isComponent) {
                 return;
             }
             // Note: compMeta is a component and therefore template is non null.
             compMeta.template.externalStylesheets.forEach(function (stylesheetMeta) {
                 var styleContext = _this._createOutputContext(_stylesModuleUrl(stylesheetMeta.moduleUrl, _this._styleCompiler.needsStyleShim(compMeta), fileSuffix));
-                _createTypeReferenceStub(styleContext, Identifiers.ComponentFactory);
+                _createStub(styleContext);
                 generatedFiles.push(_this._codegenSourceModule(stylesheetMeta.moduleUrl, styleContext));
             });
-            partialFactoryStubRequired = true;
         });
-        // If we need all the stubs to be generated then insert an arbitrary reference into the stub
-        if ((partialFactoryStubRequired || !partial) && ngFactoryOutputCtx.statements.length <= 0) {
-            _createTypeReferenceStub(ngFactoryOutputCtx, Identifiers.ComponentFactory);
+        if (ngFactoryOutputCtx.statements.length <= 0) {
+            _createStub(ngFactoryOutputCtx);
         }
-        if ((partialJitStubRequired || !partial || (pipes && pipes.length > 0)) &&
-            jitSummaryOutputCtx.statements.length <= 0) {
-            _createTypeReferenceStub(jitSummaryOutputCtx, Identifiers.ComponentFactory);
+        if (jitSummaryOutputCtx.statements.length <= 0) {
+            _createStub(jitSummaryOutputCtx);
         }
         // Note: we are creating stub ngfactory/ngsummary for all source files,
         // as the real calculation requires almost the same logic as producing the real content for
@@ -16665,8 +16681,11 @@ var AotCompiler = (function () {
     };
     return AotCompiler;
 }());
-function _createTypeReferenceStub(outputCtx, reference) {
-    outputCtx.statements.push(importExpr(reference).toStmt());
+function _createStub(outputCtx) {
+    // Note: We need to produce at least one import statement so that
+    // TypeScript knows that the file is an es6 module. Otherwise our generated
+    // exports / imports won't be emitted properly by TypeScript.
+    outputCtx.statements.push(importExpr(Identifiers.ComponentFactory).toStmt());
 }
 function _resolveStyleStatements(symbolResolver, compileResult, needsShim, fileSuffix) {
     compileResult.dependencies.forEach(function (dep) {
@@ -17510,20 +17529,22 @@ var StaticSymbolResolver = (function () {
         if (staticSymbol.members.length > 0) {
             return this._resolveSymbolMembers(staticSymbol);
         }
-        var result = this.resolvedSymbols.get(staticSymbol);
-        if (result) {
-            return result;
+        // Note: always ask for a summary first,
+        // as we might have read shallow metadata via a .d.ts file
+        // for the symbol.
+        var resultFromSummary = this._resolveSymbolFromSummary(staticSymbol);
+        if (resultFromSummary) {
+            return resultFromSummary;
         }
-        result = this._resolveSymbolFromSummary(staticSymbol);
-        if (result) {
-            return result;
+        var resultFromCache = this.resolvedSymbols.get(staticSymbol);
+        if (resultFromCache) {
+            return resultFromCache;
         }
         // Note: Some users use libraries that were not compiled with ngc, i.e. they don't
         // have summaries, only .d.ts files. So we always need to check both, the summary
         // and metadata.
         this._createSymbolsOf(staticSymbol.filePath);
-        result = this.resolvedSymbols.get(staticSymbol);
-        return result;
+        return this.resolvedSymbols.get(staticSymbol);
     };
     /**
      * getImportAs produces a symbol that can be used to import the given symbol.
