@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.5-fdd5010
+ * @license Angular v5.0.0-beta.5-65e26d7
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.5-fdd5010
+ * @license Angular v5.0.0-beta.5-65e26d7
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -362,7 +362,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.5-fdd5010');
+var VERSION = new Version('5.0.0-beta.5-65e26d7');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
