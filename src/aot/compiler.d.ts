@@ -65,6 +65,6 @@ export interface NgAnalyzedModules {
 export interface NgAnalyzeModulesHost {
     isSourceFile(filePath: string): boolean;
 }
-export declare function analyzeNgModules(programStaticSymbols: StaticSymbol[], host: NgAnalyzeModulesHost, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
-export declare function analyzeAndValidateNgModules(programStaticSymbols: StaticSymbol[], host: NgAnalyzeModulesHost, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
+export declare function analyzeNgModules(programStaticSymbols: StaticSymbol[], host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
+export declare function analyzeAndValidateNgModules(programStaticSymbols: StaticSymbol[], host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
 export declare function extractProgramSymbols(staticSymbolResolver: StaticSymbolResolver, files: string[], host: NgAnalyzeModulesHost): StaticSymbol[];

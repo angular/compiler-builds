@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.5-c7e1bda
+ * @license Angular v5.0.0-beta.5-cf7d47d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -287,7 +287,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.5-c7e1bda');
+const VERSION = new Version('5.0.0-beta.5-cf7d47d');
 
 /**
  * @license
@@ -11139,8 +11139,8 @@ function debugOutputAstAsTypeScript(ast) {
     return ctx.toSource();
 }
 class TypeScriptEmitter {
-    emitStatementsAndContext(srcFilePath, genFilePath, stmts, preamble = '', emitSourceMaps = true) {
-        const converter = new _TsEmitterVisitor();
+    emitStatementsAndContext(srcFilePath, genFilePath, stmts, preamble = '', emitSourceMaps = true, referenceFilter) {
+        const converter = new _TsEmitterVisitor(referenceFilter);
         const ctx = EmitterVisitorContext.createRoot();
         converter.visitAllStatements(stmts, ctx);
         const preambleLines = preamble ? preamble.split('\n') : [];
@@ -11169,8 +11169,9 @@ class TypeScriptEmitter {
     }
 }
 class _TsEmitterVisitor extends AbstractEmitterVisitor {
-    constructor() {
+    constructor(referenceFilter) {
         super(false);
+        this.referenceFilter = referenceFilter;
         this.typeExpression = 0;
         this.importsWithPrefixes = new Map();
         this.reexports = new Map();
@@ -11443,6 +11444,10 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
     }
     _visitIdentifier(value, typeParams, ctx) {
         const { name, moduleName } = value;
+        if (this.referenceFilter && this.referenceFilter(value)) {
+            ctx.print(null, '(null as any)');
+            return;
+        }
         if (moduleName) {
             let prefix = this.importsWithPrefixes.get(moduleName);
             if (prefix == null) {
@@ -15576,13 +15581,13 @@ class AotCompiler {
     clearCache() { this._metadataResolver.clearCache(); }
     analyzeModulesSync(rootFiles) {
         const programSymbols = extractProgramSymbols(this._symbolResolver, rootFiles, this._host);
-        const analyzeResult = analyzeAndValidateNgModules(programSymbols, this._host, this._metadataResolver);
+        const analyzeResult = analyzeAndValidateNgModules(programSymbols, this._host, this._symbolResolver, this._metadataResolver);
         analyzeResult.ngModules.forEach(ngModule => this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, true));
         return analyzeResult;
     }
     analyzeModulesAsync(rootFiles) {
         const programSymbols = extractProgramSymbols(this._symbolResolver, rootFiles, this._host);
-        const analyzeResult = analyzeAndValidateNgModules(programSymbols, this._host, this._metadataResolver);
+        const analyzeResult = analyzeAndValidateNgModules(programSymbols, this._host, this._symbolResolver, this._metadataResolver);
         return Promise
             .all(analyzeResult.ngModules.map(ngModule => this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false)))
             .then(() => analyzeResult);
@@ -15814,19 +15819,21 @@ function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
     return `${stylesheetUrl}${shim ? '.shim' : ''}.ngstyle${suffix}`;
 }
 // Returns all the source files and a mapping from modules to directives
-function analyzeNgModules(programStaticSymbols, host, metadataResolver) {
-    const { ngModules, symbolsMissingModule } = _createNgModules(programStaticSymbols, host, metadataResolver);
-    return _analyzeNgModules(programStaticSymbols, ngModules, symbolsMissingModule, metadataResolver);
+function analyzeNgModules(programStaticSymbols, host, staticSymbolResolver, metadataResolver) {
+    const programStaticSymbolsWithDecorators = programStaticSymbols.filter(symbol => !symbol.filePath.endsWith('.d.ts') ||
+        staticSymbolResolver.hasDecorators(symbol.filePath));
+    const { ngModules, symbolsMissingModule } = _createNgModules(programStaticSymbolsWithDecorators, host, metadataResolver);
+    return _analyzeNgModules(programStaticSymbols, programStaticSymbolsWithDecorators, ngModules, symbolsMissingModule, metadataResolver);
 }
-function analyzeAndValidateNgModules(programStaticSymbols, host, metadataResolver) {
-    const result = analyzeNgModules(programStaticSymbols, host, metadataResolver);
+function analyzeAndValidateNgModules(programStaticSymbols, host, staticSymbolResolver, metadataResolver) {
+    const result = analyzeNgModules(programStaticSymbols, host, staticSymbolResolver, metadataResolver);
     if (result.symbolsMissingModule && result.symbolsMissingModule.length) {
         const messages = result.symbolsMissingModule.map(s => `Cannot determine the module for class ${s.name} in ${s.filePath}! Add ${s.name} to the NgModule to fix it.`);
         throw syntaxError(messages.join('\n'));
     }
     return result;
 }
-function _analyzeNgModules(programSymbols, ngModuleMetas, symbolsMissingModule, metadataResolver) {
+function _analyzeNgModules(programSymbols, programSymbolsWithDecorators, ngModuleMetas, symbolsMissingModule, metadataResolver) {
     const moduleMetasByRef = new Map();
     ngModuleMetas.forEach((ngModule) => moduleMetasByRef.set(ngModule.type.reference, ngModule));
     const ngModuleByPipeOrDirective = new Map();
@@ -15839,7 +15846,10 @@ function _analyzeNgModules(programSymbols, ngModuleMetas, symbolsMissingModule, 
     programSymbols.forEach((symbol) => {
         const filePath = symbol.filePath;
         filePaths.add(filePath);
+    });
+    programSymbolsWithDecorators.forEach((symbol) => {
         if (metadataResolver.isInjectable(symbol)) {
+            const filePath = symbol.filePath;
             ngInjectablesByFile.set(filePath, (ngInjectablesByFile.get(filePath) || []).concat(symbol));
         }
     });
@@ -16789,6 +16799,23 @@ class StaticSymbolResolver {
      */
     getStaticSymbol(declarationFile, name, members) {
         return this.staticSymbolCache.get(declarationFile, name, members);
+    }
+    /**
+     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * metada.
+     *
+     * @param filePath the absolute path to examine for decorators.
+     * @returns true if any class in the file has a decorator.
+     */
+    hasDecorators(filePath) {
+        const metadata = this.getModuleMetadata(filePath);
+        if (metadata['metadata']) {
+            return Object.keys(metadata['metadata']).some((metadataKey) => {
+                const entry = metadata['metadata'][metadataKey];
+                return entry && entry.__symbolic === 'class' && entry.decorators;
+            });
+        }
+        return false;
     }
     getSymbolsOf(filePath) {
         // Note: Some users use libraries that were not compiled with ngc, i.e. they don't
@@ -18445,7 +18472,7 @@ class Extractor {
     }
     extract(rootFiles) {
         const programSymbols = extractProgramSymbols(this.staticSymbolResolver, rootFiles, this.host);
-        const { files, ngModules } = analyzeAndValidateNgModules(programSymbols, this.host, this.metadataResolver);
+        const { files, ngModules } = analyzeAndValidateNgModules(programSymbols, this.host, this.staticSymbolResolver, this.metadataResolver);
         return Promise
             .all(ngModules.map(ngModule => this.metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false)))
             .then(() => {

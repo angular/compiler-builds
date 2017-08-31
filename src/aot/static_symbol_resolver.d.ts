@@ -110,6 +110,14 @@ export declare class StaticSymbolResolver {
      * @param members a symbol for a static member of the named type
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
+    /**
+     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * metada.
+     *
+     * @param filePath the absolute path to examine for decorators.
+     * @returns true if any class in the file has a decorator.
+     */
+    hasDecorators(filePath: string): boolean;
     getSymbolsOf(filePath: string): StaticSymbol[];
     private _createSymbolsOf(filePath);
     private createResolvedSymbol(sourceSymbol, topLevelPath, topLevelSymbolNames, metadata);
