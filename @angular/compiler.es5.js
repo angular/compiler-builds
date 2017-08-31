@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v5.0.0-beta.5-4ec5e28
+ * @license Angular v5.0.0-beta.5-043f104
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -326,7 +326,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.5-4ec5e28');
+var VERSION = new Version('5.0.0-beta.5-043f104');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -16588,9 +16588,10 @@ var AotCompiler = (function () {
         var ngModule = this._metadataResolver.getNgModuleMetadata(ngModuleType);
         var providers = [];
         if (this._localeId) {
+            var normalizedLocale = this._localeId.replace(/_/g, '-');
             providers.push({
                 token: createTokenForExternalReference(this._reflector, Identifiers.LOCALE_ID),
-                useValue: this._localeId,
+                useValue: normalizedLocale,
             });
         }
         if (this._translationFormat) {
