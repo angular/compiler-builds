@@ -17,7 +17,7 @@ export declare abstract class SummaryResolver<T> {
     abstract toSummaryFileName(fileName: string, referringSrcFileName: string): string;
     abstract fromSummaryFileName(fileName: string, referringLibFileName: string): string;
     abstract resolveSummary(reference: T): Summary<T> | null;
-    abstract getSymbolsOf(filePath: string): T[];
+    abstract getSymbolsOf(filePath: string): T[] | null;
     abstract getImportAs(reference: T): T;
     abstract addSummary(summary: Summary<T>): void;
 }

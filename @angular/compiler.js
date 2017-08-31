@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.5-56b751e
+ * @license Angular v5.0.0-beta.5-a1293b2
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -287,7 +287,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.5-56b751e');
+const VERSION = new Version('5.0.0-beta.5-a1293b2');
 
 /**
  * @license
@@ -16818,17 +16818,20 @@ class StaticSymbolResolver {
         return false;
     }
     getSymbolsOf(filePath) {
+        const summarySymbols = this.summaryResolver.getSymbolsOf(filePath);
+        if (summarySymbols) {
+            return summarySymbols;
+        }
         // Note: Some users use libraries that were not compiled with ngc, i.e. they don't
-        // have summaries, only .d.ts files. So we always need to check both, the summary
-        // and metadata.
-        let symbols = new Set(this.summaryResolver.getSymbolsOf(filePath));
+        // have summaries, only .d.ts files, but `summaryResolver.isLibraryFile` returns true.
         this._createSymbolsOf(filePath);
+        const metadataSymbols = [];
         this.resolvedSymbols.forEach((resolvedSymbol) => {
             if (resolvedSymbol.symbol.filePath === filePath) {
-                symbols.add(resolvedSymbol.symbol);
+                metadataSymbols.push(resolvedSymbol.symbol);
             }
         });
-        return Array.from(symbols);
+        return metadataSymbols;
     }
     _createSymbolsOf(filePath) {
         if (this.resolvedFilePaths.has(filePath)) {
@@ -17060,7 +17063,7 @@ class AotSummaryResolver {
         this.staticSymbolCache = staticSymbolCache;
         // Note: this will only contain StaticSymbols without members!
         this.summaryCache = new Map();
-        this.loadedFilePaths = new Set();
+        this.loadedFilePaths = new Map();
         // Note: this will only contain StaticSymbols without members!
         this.importAs = new Map();
     }
@@ -17083,11 +17086,13 @@ class AotSummaryResolver {
             this._loadSummaryFile(staticSymbol.filePath);
             summary = this.summaryCache.get(staticSymbol);
         }
-        return summary;
+        return summary || null;
     }
     getSymbolsOf(filePath) {
-        this._loadSummaryFile(filePath);
-        return Array.from(this.summaryCache.keys()).filter((symbol) => symbol.filePath === filePath);
+        if (this._loadSummaryFile(filePath)) {
+            return Array.from(this.summaryCache.keys()).filter((symbol) => symbol.filePath === filePath);
+        }
+        return null;
     }
     getImportAs(staticSymbol) {
         staticSymbol.assertNoMembers();
@@ -17095,13 +17100,13 @@ class AotSummaryResolver {
     }
     addSummary(summary) { this.summaryCache.set(summary.symbol, summary); }
     _loadSummaryFile(filePath) {
-        if (this.loadedFilePaths.has(filePath)) {
-            return;
+        let hasSummary = this.loadedFilePaths.get(filePath);
+        if (hasSummary != null) {
+            return hasSummary;
         }
-        this.loadedFilePaths.add(filePath);
+        let json = null;
         if (this.isLibraryFile(filePath)) {
             const summaryFilePath = summaryFileName(filePath);
-            let json;
             try {
                 json = this.host.loadSummary(summaryFilePath);
             }
@@ -17109,14 +17114,17 @@ class AotSummaryResolver {
                 console.error(`Error loading summary file ${summaryFilePath}`);
                 throw e;
             }
-            if (json) {
-                const { summaries, importAs } = deserializeSummaries(this.staticSymbolCache, this, filePath, json);
-                summaries.forEach((summary) => this.summaryCache.set(summary.symbol, summary));
-                importAs.forEach((importAs) => {
-                    this.importAs.set(importAs.symbol, this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
-                });
-            }
         }
+        hasSummary = json != null;
+        this.loadedFilePaths.set(filePath, hasSummary);
+        if (json) {
+            const { summaries, importAs } = deserializeSummaries(this.staticSymbolCache, this, filePath, json);
+            summaries.forEach((summary) => this.summaryCache.set(summary.symbol, summary));
+            importAs.forEach((importAs) => {
+                this.importAs.set(importAs.symbol, this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
+            });
+        }
+        return hasSummary;
     }
 }
 

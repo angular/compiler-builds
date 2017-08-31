@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.5-56b751e
+ * @license Angular v5.0.0-beta.5-a1293b2
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.5-56b751e
+ * @license Angular v5.0.0-beta.5-a1293b2
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -362,7 +362,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.5-56b751e');
+var VERSION = new Version('5.0.0-beta.5-a1293b2');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -17717,17 +17717,20 @@ var StaticSymbolResolver = (function () {
         return false;
     };
     StaticSymbolResolver.prototype.getSymbolsOf = function (filePath) {
+        var summarySymbols = this.summaryResolver.getSymbolsOf(filePath);
+        if (summarySymbols) {
+            return summarySymbols;
+        }
         // Note: Some users use libraries that were not compiled with ngc, i.e. they don't
-        // have summaries, only .d.ts files. So we always need to check both, the summary
-        // and metadata.
-        var symbols = new Set(this.summaryResolver.getSymbolsOf(filePath));
+        // have summaries, only .d.ts files, but `summaryResolver.isLibraryFile` returns true.
         this._createSymbolsOf(filePath);
+        var metadataSymbols = [];
         this.resolvedSymbols.forEach(function (resolvedSymbol) {
             if (resolvedSymbol.symbol.filePath === filePath) {
-                symbols.add(resolvedSymbol.symbol);
+                metadataSymbols.push(resolvedSymbol.symbol);
             }
         });
-        return Array.from(symbols);
+        return metadataSymbols;
     };
     StaticSymbolResolver.prototype._createSymbolsOf = function (filePath) {
         var _this = this;
@@ -17968,7 +17971,7 @@ var AotSummaryResolver = (function () {
         this.staticSymbolCache = staticSymbolCache;
         // Note: this will only contain StaticSymbols without members!
         this.summaryCache = new Map();
-        this.loadedFilePaths = new Set();
+        this.loadedFilePaths = new Map();
         // Note: this will only contain StaticSymbols without members!
         this.importAs = new Map();
     }
@@ -17991,11 +17994,13 @@ var AotSummaryResolver = (function () {
             this._loadSummaryFile(staticSymbol.filePath);
             summary = this.summaryCache.get(staticSymbol);
         }
-        return summary;
+        return summary || null;
     };
     AotSummaryResolver.prototype.getSymbolsOf = function (filePath) {
-        this._loadSummaryFile(filePath);
-        return Array.from(this.summaryCache.keys()).filter(function (symbol) { return symbol.filePath === filePath; });
+        if (this._loadSummaryFile(filePath)) {
+            return Array.from(this.summaryCache.keys()).filter(function (symbol) { return symbol.filePath === filePath; });
+        }
+        return null;
     };
     AotSummaryResolver.prototype.getImportAs = function (staticSymbol) {
         staticSymbol.assertNoMembers();
@@ -18004,13 +18009,13 @@ var AotSummaryResolver = (function () {
     AotSummaryResolver.prototype.addSummary = function (summary) { this.summaryCache.set(summary.symbol, summary); };
     AotSummaryResolver.prototype._loadSummaryFile = function (filePath) {
         var _this = this;
-        if (this.loadedFilePaths.has(filePath)) {
-            return;
+        var hasSummary = this.loadedFilePaths.get(filePath);
+        if (hasSummary != null) {
+            return hasSummary;
         }
-        this.loadedFilePaths.add(filePath);
+        var json = null;
         if (this.isLibraryFile(filePath)) {
             var summaryFilePath = summaryFileName(filePath);
-            var json = void 0;
             try {
                 json = this.host.loadSummary(summaryFilePath);
             }
@@ -18018,14 +18023,17 @@ var AotSummaryResolver = (function () {
                 console.error("Error loading summary file " + summaryFilePath);
                 throw e;
             }
-            if (json) {
-                var _a = deserializeSummaries(this.staticSymbolCache, this, filePath, json), summaries = _a.summaries, importAs = _a.importAs;
-                summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
-                importAs.forEach(function (importAs) {
-                    _this.importAs.set(importAs.symbol, _this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
-                });
-            }
         }
+        hasSummary = json != null;
+        this.loadedFilePaths.set(filePath, hasSummary);
+        if (json) {
+            var _a = deserializeSummaries(this.staticSymbolCache, this, filePath, json), summaries = _a.summaries, importAs = _a.importAs;
+            summaries.forEach(function (summary) { return _this.summaryCache.set(summary.symbol, summary); });
+            importAs.forEach(function (importAs) {
+                _this.importAs.set(importAs.symbol, _this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
+            });
+        }
+        return hasSummary;
     };
     return AotSummaryResolver;
 }());
