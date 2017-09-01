@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.5-fd701b0
+ * @license Angular v5.0.0-beta.5-56238fe
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -287,7 +287,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.5-fd701b0');
+const VERSION = new Version('5.0.0-beta.5-56238fe');
 
 /**
  * @license
@@ -637,7 +637,7 @@ class CompilerConfig {
         this.useJit = !!useJit;
         this.jitDevMode = !!jitDevMode;
         this.missingTranslation = missingTranslation || null;
-        this.enableLegacyTemplate = enableLegacyTemplate !== false;
+        this.enableLegacyTemplate = enableLegacyTemplate === true;
         this.preserveWhitespaces = preserveWhitespacesDefault(noUndefined(preserveWhitespaces));
     }
 }
@@ -17160,7 +17160,7 @@ function createAotCompiler(compilerHost, options) {
     const config = new CompilerConfig({
         defaultEncapsulation: ViewEncapsulation.Emulated,
         useJit: false,
-        enableLegacyTemplate: options.enableLegacyTemplate !== false,
+        enableLegacyTemplate: options.enableLegacyTemplate === true,
         missingTranslation: options.missingTranslation,
         preserveWhitespaces: options.preserveWhitespaces,
     });
