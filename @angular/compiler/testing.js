@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.3.6-1cc3fe2
+ * @license Angular v4.3.6-b8b551c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -133,7 +133,8 @@ class MockDirectiveResolver extends DirectiveResolver {
                 styles: view.styles,
                 styleUrls: view.styleUrls,
                 encapsulation: view.encapsulation,
-                interpolation: view.interpolation
+                interpolation: view.interpolation,
+                preserveWhitespaces: view.preserveWhitespaces,
             });
         }
         return new Directive({
