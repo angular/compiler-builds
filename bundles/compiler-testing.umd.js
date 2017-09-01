@@ -1,12 +1,12 @@
 /**
- * @license Angular v5.0.0-beta.5-ee04217
+ * @license Angular v5.0.0-beta.5-fd701b0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/compiler')) :
 	typeof define === 'function' && define.amd ? define(['exports', '@angular/compiler'], factory) :
-	(factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}, global.ng.compiler.testing = global.ng.compiler.testing || {}),global.ng.compiler));
+	(factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}, global.ng.compiler.testing = {}),global.ng.compiler));
 }(this, (function (exports,_angular_compiler) { 'use strict';
 
 /*! *****************************************************************************
@@ -36,9 +36,13 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.5-ee04217
+ * @license Angular v5.0.0-beta.5-fd701b0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
+ */
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
  */
 /**
  * @license
@@ -48,23 +52,30 @@ function __extends(d, b) {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * A mock implementation of {@link ResourceLoader} that allows outgoing requests to be mocked
+ * A mock implementation of {\@link ResourceLoader} that allows outgoing requests to be mocked
  * and responded to within a single test, without going to the network.
  */
 var MockResourceLoader = (function (_super) {
     __extends(MockResourceLoader, _super);
     function MockResourceLoader() {
-        var _this = _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
         _this._expectations = [];
         _this._definitions = new Map();
         _this._requests = [];
         return _this;
     }
+    /**
+     * @param {?} url
+     * @return {?}
+     */
     MockResourceLoader.prototype.get = function (url) {
-        var request = new _PendingRequest(url);
+        var /** @type {?} */ request = new _PendingRequest(url);
         this._requests.push(request);
         return request.getPromise();
     };
+    /**
+     * @return {?}
+     */
     MockResourceLoader.prototype.hasPendingRequests = function () { return !!this._requests.length; };
     /**
      * Add an expectation for the given URL. Incoming requests will be checked against
@@ -72,9 +83,12 @@ var MockResourceLoader = (function (_super) {
      * can be used to check if any expectations have not yet been met.
      *
      * The response given will be returned if the expectation matches.
+     * @param {?} url
+     * @param {?} response
+     * @return {?}
      */
     MockResourceLoader.prototype.expect = function (url, response) {
-        var expectation = new _Expectation(url, response);
+        var /** @type {?} */ expectation = new _Expectation(url, response);
         this._expectations.push(expectation);
     };
     /**
@@ -82,38 +96,47 @@ var MockResourceLoader = (function (_super) {
      * definitions have no order and will satisfy any matching request at any time. Also
      * unlike expectations, unused definitions do not cause `verifyNoOutstandingExpectations`
      * to return an error.
+     * @param {?} url
+     * @param {?} response
+     * @return {?}
      */
     MockResourceLoader.prototype.when = function (url, response) { this._definitions.set(url, response); };
     /**
      * Process pending requests and verify there are no outstanding expectations. Also fails
      * if no requests are pending.
+     * @return {?}
      */
     MockResourceLoader.prototype.flush = function () {
         if (this._requests.length === 0) {
             throw new Error('No pending requests to flush');
         }
         do {
-            this._processRequest(this._requests.shift());
+            this._processRequest(/** @type {?} */ ((this._requests.shift())));
         } while (this._requests.length > 0);
         this.verifyNoOutstandingExpectations();
     };
     /**
      * Throw an exception if any expectations have not been satisfied.
+     * @return {?}
      */
     MockResourceLoader.prototype.verifyNoOutstandingExpectations = function () {
         if (this._expectations.length === 0)
             return;
-        var urls = [];
-        for (var i = 0; i < this._expectations.length; i++) {
-            var expectation = this._expectations[i];
+        var /** @type {?} */ urls = [];
+        for (var /** @type {?} */ i = 0; i < this._expectations.length; i++) {
+            var /** @type {?} */ expectation = this._expectations[i];
             urls.push(expectation.url);
         }
         throw new Error("Unsatisfied requests: " + urls.join(', '));
     };
+    /**
+     * @param {?} request
+     * @return {?}
+     */
     MockResourceLoader.prototype._processRequest = function (request) {
-        var url = request.url;
+        var /** @type {?} */ url = request.url;
         if (this._expectations.length > 0) {
-            var expectation = this._expectations[0];
+            var /** @type {?} */ expectation = this._expectations[0];
             if (expectation.url == url) {
                 remove(this._expectations, expectation);
                 request.complete(expectation.response);
@@ -121,7 +144,7 @@ var MockResourceLoader = (function (_super) {
             }
         }
         if (this._definitions.has(url)) {
-            var response = this._definitions.get(url);
+            var /** @type {?} */ response = this._definitions.get(url);
             request.complete(response == null ? null : response);
             return;
         }
@@ -130,6 +153,9 @@ var MockResourceLoader = (function (_super) {
     return MockResourceLoader;
 }(_angular_compiler.ResourceLoader));
 var _PendingRequest = (function () {
+    /**
+     * @param {?} url
+     */
     function _PendingRequest(url) {
         var _this = this;
         this.url = url;
@@ -138,6 +164,10 @@ var _PendingRequest = (function () {
             _this.reject = rej;
         });
     }
+    /**
+     * @param {?} response
+     * @return {?}
+     */
     _PendingRequest.prototype.complete = function (response) {
         if (response == null) {
             this.reject("Failed to load " + this.url);
@@ -146,22 +176,40 @@ var _PendingRequest = (function () {
             this.resolve(response);
         }
     };
+    /**
+     * @return {?}
+     */
     _PendingRequest.prototype.getPromise = function () { return this.promise; };
     return _PendingRequest;
 }());
 var _Expectation = (function () {
+    /**
+     * @param {?} url
+     * @param {?} response
+     */
     function _Expectation(url, response) {
         this.url = url;
         this.response = response;
     }
     return _Expectation;
 }());
+/**
+ * @template T
+ * @param {?} list
+ * @param {?} el
+ * @return {?}
+ */
 function remove(list, el) {
-    var index = list.indexOf(el);
+    var /** @type {?} */ index = list.indexOf(el);
     if (index > -1) {
         list.splice(index, 1);
     }
 }
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -170,6 +218,13 @@ function remove(list, el) {
  * found in the LICENSE file at https://angular.io/license
  */
 var MockSchemaRegistry = (function () {
+    /**
+     * @param {?} existingProperties
+     * @param {?} attrPropMapping
+     * @param {?} existingElements
+     * @param {?} invalidProperties
+     * @param {?} invalidAttributes
+     */
     function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements, invalidProperties, invalidAttributes) {
         this.existingProperties = existingProperties;
         this.attrPropMapping = attrPropMapping;
@@ -177,20 +232,51 @@ var MockSchemaRegistry = (function () {
         this.invalidProperties = invalidProperties;
         this.invalidAttributes = invalidAttributes;
     }
+    /**
+     * @param {?} tagName
+     * @param {?} property
+     * @param {?} schemas
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.hasProperty = function (tagName, property, schemas) {
-        var value = this.existingProperties[property];
+        var /** @type {?} */ value = this.existingProperties[property];
         return value === void 0 ? true : value;
     };
+    /**
+     * @param {?} tagName
+     * @param {?} schemaMetas
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.hasElement = function (tagName, schemaMetas) {
-        var value = this.existingElements[tagName.toLowerCase()];
+        var /** @type {?} */ value = this.existingElements[tagName.toLowerCase()];
         return value === void 0 ? true : value;
     };
+    /**
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.allKnownElementNames = function () { return Object.keys(this.existingElements); };
+    /**
+     * @param {?} selector
+     * @param {?} property
+     * @param {?} isAttribute
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.securityContext = function (selector, property, isAttribute) {
         return _angular_compiler.core.SecurityContext.NONE;
     };
+    /**
+     * @param {?} attrName
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.getMappedPropName = function (attrName) { return this.attrPropMapping[attrName] || attrName; };
+    /**
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
+    /**
+     * @param {?} name
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.validateProperty = function (name) {
         if (this.invalidProperties.indexOf(name) > -1) {
             return { error: true, msg: "Binding to property '" + name + "' is disallowed for security reasons" };
@@ -199,6 +285,10 @@ var MockSchemaRegistry = (function () {
             return { error: false };
         }
     };
+    /**
+     * @param {?} name
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.validateAttribute = function (name) {
         if (this.invalidAttributes.indexOf(name) > -1) {
             return {
@@ -210,12 +300,27 @@ var MockSchemaRegistry = (function () {
             return { error: false };
         }
     };
+    /**
+     * @param {?} propName
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) { return propName; };
+    /**
+     * @param {?} camelCaseProp
+     * @param {?} userProvidedProp
+     * @param {?} val
+     * @return {?}
+     */
     MockSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) {
-        return { error: null, value: val.toString() };
+        return { error: /** @type {?} */ ((null)), value: val.toString() };
     };
     return MockSchemaRegistry;
 }());
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -224,28 +329,44 @@ var MockSchemaRegistry = (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * An implementation of {@link DirectiveResolver} that allows overriding
+ * An implementation of {\@link DirectiveResolver} that allows overriding
  * various properties of directives.
  */
 var MockDirectiveResolver = (function (_super) {
     __extends(MockDirectiveResolver, _super);
+    /**
+     * @param {?} reflector
+     */
     function MockDirectiveResolver(reflector) {
         var _this = _super.call(this, reflector) || this;
         _this._directives = new Map();
         return _this;
     }
+    /**
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */
     MockDirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         return this._directives.get(type) || _super.prototype.resolve.call(this, type, throwIfNotFound);
     };
     /**
-     * Overrides the {@link core.Directive} for a directive.
+     * Overrides the {\@link core.Directive} for a directive.
+     * @param {?} type
+     * @param {?} metadata
+     * @return {?}
      */
     MockDirectiveResolver.prototype.setDirective = function (type, metadata) {
         this._directives.set(type, metadata);
     };
     return MockDirectiveResolver;
 }(_angular_compiler.DirectiveResolver));
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -255,29 +376,43 @@ var MockDirectiveResolver = (function (_super) {
  */
 var MockNgModuleResolver = (function (_super) {
     __extends(MockNgModuleResolver, _super);
+    /**
+     * @param {?} reflector
+     */
     function MockNgModuleResolver(reflector) {
         var _this = _super.call(this, reflector) || this;
         _this._ngModules = new Map();
         return _this;
     }
     /**
-     * Overrides the {@link NgModule} for a module.
+     * Overrides the {\@link NgModule} for a module.
+     * @param {?} type
+     * @param {?} metadata
+     * @return {?}
      */
     MockNgModuleResolver.prototype.setNgModule = function (type, metadata) {
         this._ngModules.set(type, metadata);
     };
     /**
-     * Returns the {@link NgModule} for a module:
-     * - Set the {@link NgModule} to the overridden view when it exists or fallback to the
+     * Returns the {\@link NgModule} for a module:
+     * - Set the {\@link NgModule} to the overridden view when it exists or fallback to the
      * default
      * `NgModuleResolver`, see `setNgModule`.
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
      */
     MockNgModuleResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        return this._ngModules.get(type) || _super.prototype.resolve.call(this, type, throwIfNotFound);
+        return this._ngModules.get(type) || ((_super.prototype.resolve.call(this, type, throwIfNotFound)));
     };
     return MockNgModuleResolver;
 }(_angular_compiler.NgModuleResolver));
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -287,26 +422,35 @@ var MockNgModuleResolver = (function (_super) {
  */
 var MockPipeResolver = (function (_super) {
     __extends(MockPipeResolver, _super);
+    /**
+     * @param {?} refector
+     */
     function MockPipeResolver(refector) {
         var _this = _super.call(this, refector) || this;
         _this._pipes = new Map();
         return _this;
     }
     /**
-     * Overrides the {@link Pipe} for a pipe.
+     * Overrides the {\@link Pipe} for a pipe.
+     * @param {?} type
+     * @param {?} metadata
+     * @return {?}
      */
     MockPipeResolver.prototype.setPipe = function (type, metadata) { this._pipes.set(type, metadata); };
     /**
-     * Returns the {@link Pipe} for a pipe:
-     * - Set the {@link Pipe} to the overridden view when it exists or fallback to the
+     * Returns the {\@link Pipe} for a pipe:
+     * - Set the {\@link Pipe} to the overridden view when it exists or fallback to the
      * default
      * `PipeResolver`, see `setPipe`.
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
      */
     MockPipeResolver.prototype.resolve = function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        var metadata = this._pipes.get(type);
+        var /** @type {?} */ metadata = this._pipes.get(type);
         if (!metadata) {
-            metadata = _super.prototype.resolve.call(this, type, throwIfNotFound);
+            metadata = ((_super.prototype.resolve.call(this, type, throwIfNotFound)));
         }
         return metadata;
     };

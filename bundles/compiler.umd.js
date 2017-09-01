@@ -1,12 +1,12 @@
 /**
- * @license Angular v5.0.0-beta.5-ee04217
+ * @license Angular v5.0.0-beta.5-fd701b0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {})));
+	(factory((global.ng = global.ng || {}, global.ng.compiler = {})));
 }(this, (function (exports) { 'use strict';
 
 /*! *****************************************************************************
@@ -35,8 +35,16 @@ function __extends(d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
 
+var __assign = Object.assign || function __assign(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+    }
+    return t;
+};
+
 /**
- * @license Angular v5.0.0-beta.5-ee04217
+ * @license Angular v5.0.0-beta.5-fd701b0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -52,17 +60,19 @@ var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc)
 var createAttribute = makeMetadataFactory('Attribute', function (attributeName) { return ({ attributeName: attributeName }); });
 var createContentChildren = makeMetadataFactory('ContentChildren', function (selector, data) {
     if (data === void 0) { data = {}; }
-    return (Object.assign({ selector: selector, first: false, isViewQuery: false, descendants: false }, data));
+    return (__assign({ selector: selector, first: false, isViewQuery: false, descendants: false }, data));
 });
 var createContentChild = makeMetadataFactory('ContentChild', function (selector, data) {
     if (data === void 0) { data = {}; }
-    return (Object.assign({ selector: selector, first: true, isViewQuery: false, descendants: true }, data));
+    return (__assign({ selector: selector, first: true, isViewQuery: false, descendants: true }, data));
 });
 var createViewChildren = makeMetadataFactory('ViewChildren', function (selector, data) {
     if (data === void 0) { data = {}; }
-    return (Object.assign({ selector: selector, first: false, isViewQuery: true, descendants: true }, data));
+    return (__assign({ selector: selector, first: false, isViewQuery: true, descendants: true }, data));
 });
-var createViewChild = makeMetadataFactory('ViewChild', function (selector, data) { return (Object.assign({ selector: selector, first: true, isViewQuery: true, descendants: true }, data)); });
+var createViewChild = makeMetadataFactory('ViewChild', function (selector, data) {
+    return (__assign({ selector: selector, first: true, isViewQuery: true, descendants: true }, data));
+});
 var createDirective = makeMetadataFactory('Directive', function (dir) {
     if (dir === void 0) { dir = {}; }
     return dir;
@@ -80,9 +90,9 @@ var ChangeDetectionStrategy;
 })(ChangeDetectionStrategy || (ChangeDetectionStrategy = {}));
 var createComponent = makeMetadataFactory('Component', function (c) {
     if (c === void 0) { c = {}; }
-    return (Object.assign({ changeDetection: ChangeDetectionStrategy.Default }, c));
+    return (__assign({ changeDetection: ChangeDetectionStrategy.Default }, c));
 });
-var createPipe = makeMetadataFactory('Pipe', function (p) { return (Object.assign({ pure: true }, p)); });
+var createPipe = makeMetadataFactory('Pipe', function (p) { return (__assign({ pure: true }, p)); });
 var createInput = makeMetadataFactory('Input', function (bindingPropertyName) { return ({ bindingPropertyName: bindingPropertyName }); });
 var createOutput = makeMetadataFactory('Output', function (bindingPropertyName) { return ({ bindingPropertyName: bindingPropertyName }); });
 var createHostBinding = makeMetadataFactory('HostBinding', function (hostPropertyName) { return ({ hostPropertyName: hostPropertyName }); });
@@ -122,41 +132,44 @@ function makeMetadataFactory(name, props) {
             args[_i] = arguments[_i];
         }
         var values = props ? props.apply(void 0, args) : {};
-        return Object.assign({ ngMetadataName: name }, values);
+        return __assign({ ngMetadataName: name }, values);
     };
     factory.isTypeOf = function (obj) { return obj && obj.ngMetadataName === name; };
     factory.ngMetadataName = name;
     return factory;
 }
+
+
 var core = Object.freeze({
-    createInject: createInject,
-    createInjectionToken: createInjectionToken,
-    createAttribute: createAttribute,
-    createContentChildren: createContentChildren,
-    createContentChild: createContentChild,
-    createViewChildren: createViewChildren,
-    createViewChild: createViewChild,
-    createDirective: createDirective,
-    get ViewEncapsulation() { return ViewEncapsulation; },
-    get ChangeDetectionStrategy() { return ChangeDetectionStrategy; },
-    createComponent: createComponent,
-    createPipe: createPipe,
-    createInput: createInput,
-    createOutput: createOutput,
-    createHostBinding: createHostBinding,
-    createHostListener: createHostListener,
-    createNgModule: createNgModule,
-    CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
-    NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
-    createOptional: createOptional,
-    createInjectable: createInjectable,
-    createSelf: createSelf,
-    createSkipSelf: createSkipSelf,
-    createHost: createHost,
-    Type: Type,
-    get SecurityContext() { return SecurityContext; },
-    get MissingTranslationStrategy() { return MissingTranslationStrategy; }
+	createInject: createInject,
+	createInjectionToken: createInjectionToken,
+	createAttribute: createAttribute,
+	createContentChildren: createContentChildren,
+	createContentChild: createContentChild,
+	createViewChildren: createViewChildren,
+	createViewChild: createViewChild,
+	createDirective: createDirective,
+	get ViewEncapsulation () { return ViewEncapsulation; },
+	get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
+	createComponent: createComponent,
+	createPipe: createPipe,
+	createInput: createInput,
+	createOutput: createOutput,
+	createHostBinding: createHostBinding,
+	createHostListener: createHostListener,
+	createNgModule: createNgModule,
+	CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
+	NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
+	createOptional: createOptional,
+	createInjectable: createInjectable,
+	createSelf: createSelf,
+	createSkipSelf: createSkipSelf,
+	createHost: createHost,
+	Type: Type,
+	get SecurityContext () { return SecurityContext; },
+	get MissingTranslationStrategy () { return MissingTranslationStrategy; }
 });
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -165,6 +178,7 @@ var core = Object.freeze({
  * found in the LICENSE file at https://angular.io/license
  */
 var DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+
 function dashCaseToCamelCase(input) {
     return input.replace(DASH_CASE_REGEXP, function () {
         var m = [];
@@ -347,6 +361,7 @@ var Version = (function () {
     });
     return Version;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -362,7 +377,8 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.5-ee04217');
+var VERSION = new Version('5.0.0-beta.5-fd701b0');
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -725,6 +741,7 @@ function templateVisitAll(visitor, asts, context) {
     });
     return result;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -748,6 +765,7 @@ function preserveWhitespacesDefault(preserveWhitespacesOption, defaultSetting) {
     if (defaultSetting === void 0) { defaultSetting = true; }
     return preserveWhitespacesOption === null ? defaultSetting : preserveWhitespacesOption;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -760,13 +778,7 @@ function preserveWhitespacesDefault(preserveWhitespacesOption, defaultSetting) {
  *
  * This token is unique for a filePath and name and can be used as a hash table key.
  */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */ var StaticSymbol = (function () {
+var StaticSymbol = (function () {
     function StaticSymbol(filePath, name, members) {
         this.filePath = filePath;
         this.name = name;
@@ -800,6 +812,7 @@ var StaticSymbolCache = (function () {
     };
     return StaticSymbolCache;
 }());
+
 (function (TagContentType) {
     TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
     TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
@@ -1096,6 +1109,7 @@ var NAMED_ENTITIES = {
 // https://github.com/dart-lang/angular/blob/0bb611387d29d65b5af7f9d2515ab571fd3fbee4/_tests/test/compiler/preserve_whitespace_test.dart
 var NGSP_UNICODE = '\uE500';
 NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -1198,6 +1212,7 @@ var _DEFAULT_TAG_DEFINITION = new HtmlTagDefinition();
 function getHtmlTagDefinition(tagName) {
     return TAG_DEFINITIONS[tagName.toLowerCase()] || _DEFAULT_TAG_DEFINITION;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -1308,9 +1323,9 @@ var CssSelector = (function () {
         }
         if (this.attrs) {
             for (var i = 0; i < this.attrs.length; i += 2) {
-                var name = this.attrs[i];
+                var name_1 = this.attrs[i];
                 var value = this.attrs[i + 1];
-                res += "[" + name + (value ? '=' + value : '') + "]";
+                res += "[" + name_1 + (value ? '=' + value : '') + "]";
             }
         }
         this.notSelectors.forEach(function (notSelector) { return res += ":not(" + notSelector + ")"; });
@@ -1382,23 +1397,23 @@ var SelectorMatcher = (function () {
         if (attrs) {
             for (var i = 0; i < attrs.length; i += 2) {
                 var isTerminal = i === attrs.length - 2;
-                var name = attrs[i];
+                var name_2 = attrs[i];
                 var value = attrs[i + 1];
                 if (isTerminal) {
                     var terminalMap = matcher._attrValueMap;
-                    var terminalValuesMap = terminalMap.get(name);
+                    var terminalValuesMap = terminalMap.get(name_2);
                     if (!terminalValuesMap) {
                         terminalValuesMap = new Map();
-                        terminalMap.set(name, terminalValuesMap);
+                        terminalMap.set(name_2, terminalValuesMap);
                     }
                     this._addTerminal(terminalValuesMap, value, selectable);
                 }
                 else {
                     var partialMap = matcher._attrValuePartialMap;
-                    var partialValuesMap = partialMap.get(name);
+                    var partialValuesMap = partialMap.get(name_2);
                     if (!partialValuesMap) {
                         partialValuesMap = new Map();
-                        partialMap.set(name, partialValuesMap);
+                        partialMap.set(name_2, partialValuesMap);
                     }
                     matcher = this._addPartial(partialValuesMap, value);
                 }
@@ -1451,16 +1466,16 @@ var SelectorMatcher = (function () {
         }
         if (attrs) {
             for (var i = 0; i < attrs.length; i += 2) {
-                var name = attrs[i];
+                var name_3 = attrs[i];
                 var value = attrs[i + 1];
-                var terminalValuesMap = this._attrValueMap.get(name);
+                var terminalValuesMap = this._attrValueMap.get(name_3);
                 if (value) {
                     result =
                         this._matchTerminal(terminalValuesMap, '', cssSelector, matchedCallback) || result;
                 }
                 result =
                     this._matchTerminal(terminalValuesMap, value, cssSelector, matchedCallback) || result;
-                var partialValuesMap = this._attrValuePartialMap.get(name);
+                var partialValuesMap = this._attrValuePartialMap.get(name_3);
                 if (value) {
                     result = this._matchPartial(partialValuesMap, '', cssSelector, matchedCallback) || result;
                 }
@@ -1538,6 +1553,7 @@ var SelectorContext = (function () {
     };
     return SelectorContext;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2067,6 +2083,7 @@ function ngModuleJitUrl(moduleMeta) {
 function templateJitUrl(ngModuleType, compMeta) {
     return sourceUrl(identifierName(ngModuleType) + "/" + identifierName(compMeta.type) + ".ngfactory.js");
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2091,13 +2108,7 @@ function templateJitUrl(ngModuleType, compMeta) {
  * 'c' at 9-10]` and the path the node at offset 1 would be
  * `['+' at 1-10, 'a' at 1-2]`.
  */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */ var AstPath = (function () {
+var AstPath = (function () {
     function AstPath(path, position) {
         if (position === void 0) { position = -1; }
         this.path = path;
@@ -2133,6 +2144,7 @@ function templateJitUrl(ngModuleType, compMeta) {
     AstPath.prototype.pop = function () { return this.path.pop(); };
     return AstPath;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2279,6 +2291,7 @@ function findNode(nodes, position) {
     visitAll(visitor, nodes);
     return new AstPath(path, position);
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2327,6 +2340,7 @@ function assertInterpolationSymbols(identifier, value) {
         });
     }
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2350,6 +2364,7 @@ var InterpolationConfig = (function () {
     return InterpolationConfig;
 }());
 var DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2396,6 +2411,7 @@ function extractStyleUrls(resolver, baseUrl, cssText) {
 var CSS_IMPORT_REGEXP = /@import\s+(?:url\()?\s*(?:(?:['"]([^'"]*))|([^;\)\s]*))[^;]*;?/g;
 var CSS_STRIPPABLE_COMMENT_REGEXP = /\/\*(?!#\s*(?:sourceURL|sourceMappingURL)=)[\s\S]+?\*\//g;
 var URL_WITH_SCHEMA_REGEXP = /^([^:/?#]+):/;
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2479,6 +2495,7 @@ function normalizeNgContentSelect(selectAttr) {
     }
     return selectAttr;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2674,6 +2691,7 @@ var TemplatePreparseVisitor = (function () {
     TemplatePreparseVisitor.prototype.visitText = function (ast, context) { return null; };
     return TemplatePreparseVisitor;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2776,9 +2794,9 @@ var DirectiveResolver = (function () {
         // go last to first to allow later entries to overwrite previous entries
         for (var i = bindings.length - 1; i >= 0; i--) {
             var binding = bindings[i];
-            var name = this._extractPublicName(binding);
-            if (!names.has(name)) {
-                names.add(name);
+            var name_1 = this._extractPublicName(binding);
+            if (!names.has(name_1)) {
+                names.add(name_1);
                 reversedResult.push(binding);
             }
         }
@@ -2787,8 +2805,8 @@ var DirectiveResolver = (function () {
     DirectiveResolver.prototype._merge = function (directive, inputs, outputs, host, queries, directiveType) {
         var mergedInputs = this._dedupeBindings(directive.inputs ? directive.inputs.concat(inputs) : inputs);
         var mergedOutputs = this._dedupeBindings(directive.outputs ? directive.outputs.concat(outputs) : outputs);
-        var mergedHost = directive.host ? Object.assign({}, directive.host, host) : host;
-        var mergedQueries = directive.queries ? Object.assign({}, directive.queries, queries) : queries;
+        var mergedHost = directive.host ? __assign({}, directive.host, host) : host;
+        var mergedQueries = directive.queries ? __assign({}, directive.queries, queries) : queries;
         if (createComponent.isTypeOf(directive)) {
             var comp = directive;
             return createComponent({
@@ -2838,6 +2856,7 @@ function findLast(arr, condition) {
     }
     return null;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -2905,6 +2924,9 @@ var $LBRACE = 123;
 var $BAR = 124;
 var $RBRACE = 125;
 var $NBSP = 160;
+
+
+
 var $BT = 96;
 function isWhitespace(code) {
     return (code >= $TAB && code <= $SPACE) || (code == $NBSP);
@@ -2918,6 +2940,7 @@ function isAsciiLetter(code) {
 function isAsciiHexDigit(code) {
     return code >= $a && code <= $f || code >= $A && code <= $F || isDigit(code);
 }
+
 (function (TokenType) {
     TokenType[TokenType["Character"] = 0] = "Character";
     TokenType[TokenType["Identifier"] = 1] = "Identifier";
@@ -3263,6 +3286,7 @@ function parseIntAutoRadix(text) {
     }
     return result;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -3270,13 +3294,7 @@ function parseIntAutoRadix(text) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */ var ParserError = (function () {
+var ParserError = (function () {
     function ParserError(message, input, errLocation, ctxLocation) {
         this.input = input;
         this.errLocation = errLocation;
@@ -3874,6 +3892,7 @@ function visitAstChildren(ast, visitor, context) {
         visitSafePropertyRead: function (ast) { visit(ast.receiver); },
     });
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -4170,12 +4189,12 @@ var _ParseAST = (function () {
                 this.error('Cannot have a pipe in an action expression');
             }
             do {
-                var name = this.expectIdentifierOrKeyword();
+                var name_1 = this.expectIdentifierOrKeyword();
                 var args = [];
                 while (this.optionalCharacter($COLON)) {
                     args.push(this.parseExpression());
                 }
-                result = new BindingPipe(this.span(result.span.start), result, name, args);
+                result = new BindingPipe(this.span(result.span.start), result, name_1, args);
             } while (this.optionalOperator('|'));
         }
         return result;
@@ -4523,30 +4542,30 @@ var _ParseAST = (function () {
                 }
             }
             this.optionalCharacter($COLON);
-            var name = null;
+            var name_2 = null;
             var expression = null;
             if (keyIsVar) {
                 if (this.optionalOperator('=')) {
-                    name = this.expectTemplateBindingKey();
+                    name_2 = this.expectTemplateBindingKey();
                 }
                 else {
-                    name = '\$implicit';
+                    name_2 = '\$implicit';
                 }
             }
             else if (this.peekKeywordAs()) {
                 var letStart = this.inputIndex;
                 this.advance(); // consume `as`
-                name = rawKey;
+                name_2 = rawKey;
                 key = this.expectTemplateBindingKey(); // read local var name
                 keyIsVar = true;
             }
             else if (this.next !== EOF && !this.peekKeywordLet()) {
-                var start_2 = this.inputIndex;
+                var start_1 = this.inputIndex;
                 var ast = this.parsePipe();
-                var source = this.input.substring(start_2 - this.offset, this.inputIndex - this.offset);
+                var source = this.input.substring(start_1 - this.offset, this.inputIndex - this.offset);
                 expression = new ASTWithSource(ast, source, this.location, this.errors);
             }
-            bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name, expression));
+            bindings.push(new TemplateBinding(this.span(start), key, keyIsVar, name_2, expression));
             if (this.peekKeywordAs() && !keyIsVar) {
                 var letStart = this.inputIndex;
                 this.advance(); // consume `as`
@@ -4633,6 +4652,7 @@ var SimpleExpressionChecker = (function () {
     SimpleExpressionChecker.prototype.visitQuote = function (ast, context) { };
     return SimpleExpressionChecker;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -4771,6 +4791,7 @@ function typeSourceSpan(kind, type) {
     var sourceFile = new ParseSourceFile('', sourceFileName);
     return new ParseSourceSpan(new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -4802,12 +4823,12 @@ var TokenType$1;
     TokenType[TokenType["EOF"] = 19] = "EOF";
 })(TokenType$1 || (TokenType$1 = {}));
 var Token$1 = (function () {
-    function Token$1(type, parts, sourceSpan) {
+    function Token(type, parts, sourceSpan) {
         this.type = type;
         this.parts = parts;
         this.sourceSpan = sourceSpan;
     }
-    return Token$1;
+    return Token;
 }());
 var TokenError = (function (_super) {
     __extends(TokenError, _super);
@@ -5097,10 +5118,10 @@ var _Tokenizer = (function () {
                 return '&';
             }
             this._advance();
-            var name = this._input.substring(start.offset + 1, this._index - 1);
-            var char = NAMED_ENTITIES[name];
+            var name_1 = this._input.substring(start.offset + 1, this._index - 1);
+            var char = NAMED_ENTITIES[name_1];
             if (!char) {
-                throw this._createError(_unknownEntityErrorMsg(name), this._getSpan(start));
+                throw this._createError(_unknownEntityErrorMsg(name_1), this._getSpan(start));
             }
             return char;
         }
@@ -5422,6 +5443,7 @@ function mergeTextTokens(srcTokens) {
     }
     return dstTokens;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -5449,17 +5471,17 @@ var ParseTreeResult = (function () {
     return ParseTreeResult;
 }());
 var Parser$1 = (function () {
-    function Parser$1(getTagDefinition) {
+    function Parser(getTagDefinition) {
         this.getTagDefinition = getTagDefinition;
     }
-    Parser$1.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
+    Parser.prototype.parse = function (source, url, parseExpansionForms, interpolationConfig) {
         if (parseExpansionForms === void 0) { parseExpansionForms = false; }
         if (interpolationConfig === void 0) { interpolationConfig = DEFAULT_INTERPOLATION_CONFIG; }
         var tokensAndErrors = tokenize(source, url, this.getTagDefinition, parseExpansionForms, interpolationConfig);
         var treeAndErrors = new _TreeBuilder(tokensAndErrors.tokens, this.getTagDefinition).build();
         return new ParseTreeResult(treeAndErrors.rootNodes, tokensAndErrors.errors.concat(treeAndErrors.errors));
     };
-    return Parser$1;
+    return Parser;
 }());
 var _TreeBuilder = (function () {
     function _TreeBuilder(tokens, getTagDefinition) {
@@ -5609,9 +5631,9 @@ var _TreeBuilder = (function () {
     _TreeBuilder.prototype._consumeText = function (token) {
         var text = token.parts[0];
         if (text.length > 0 && text[0] == '\n') {
-            var parent = this._getParentElement();
-            if (parent != null && parent.children.length == 0 &&
-                this.getTagDefinition(parent.name).ignoreFirstLf) {
+            var parent_1 = this._getParentElement();
+            if (parent_1 != null && parent_1.children.length == 0 &&
+                this.getTagDefinition(parent_1.name).ignoreFirstLf) {
                 text = text.substring(1);
             }
         }
@@ -5776,6 +5798,7 @@ var _TreeBuilder = (function () {
 function lastOnStack(stack, element) {
     return stack.length > 0 && stack[stack.length - 1] === element;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6091,6 +6114,7 @@ function numberTimesBigInt(num, b) {
     }
     return product;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6130,12 +6154,12 @@ var Message = (function () {
     return Message;
 }());
 var Text$1 = (function () {
-    function Text$1(value, sourceSpan) {
+    function Text(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
     }
-    Text$1.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
-    return Text$1;
+    Text.prototype.visit = function (visitor, context) { return visitor.visitText(this, context); };
+    return Text;
 }());
 // TODO(vicb): do we really need this node (vs an array) ?
 var Container = (function () {
@@ -6242,6 +6266,7 @@ var RecurseVisitor = (function () {
     
     return RecurseVisitor;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6350,6 +6375,7 @@ var PlaceholderRegistry = (function () {
     };
     return PlaceholderRegistry;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6363,7 +6389,9 @@ var _expParser = new Parser(new Lexer());
  */
 function createI18nMessageFactory(interpolationConfig) {
     var visitor = new _I18nVisitor(_expParser, interpolationConfig);
-    return function (nodes, meaning, description, id) { return visitor.toI18nMessage(nodes, meaning, description, id); };
+    return function (nodes, meaning, description, id) {
+        return visitor.toI18nMessage(nodes, meaning, description, id);
+    };
 }
 var _I18nVisitor = (function () {
     function _I18nVisitor(_expressionParser, _interpolationConfig) {
@@ -6468,6 +6496,7 @@ var _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\
 function _extractPlaceholderName(input) {
     return input.split(_CUSTOM_PH_EXP)[2];
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6485,6 +6514,7 @@ var I18nError = (function (_super) {
     }
     return I18nError;
 }(ParseError));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6883,6 +6913,7 @@ function _parseMessageMeta(i18n) {
         ['', meaningAndDesc], meaning = _b[0], description = _b[1];
     return { meaning: meaning, description: description, id: id };
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6906,6 +6937,7 @@ var _TAG_DEFINITION = new XmlTagDefinition();
 function getXmlTagDefinition(tagName) {
     return _TAG_DEFINITION;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6924,6 +6956,7 @@ var XmlParser = (function (_super) {
     };
     return XmlParser;
 }(Parser$1));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -6993,6 +7026,7 @@ var SimplePlaceholderMapper = (function (_super) {
     };
     return SimplePlaceholderMapper;
 }(RecurseVisitor));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -7001,9 +7035,9 @@ var SimplePlaceholderMapper = (function (_super) {
  * found in the LICENSE file at https://angular.io/license
  */
 var _Visitor$1 = (function () {
-    function _Visitor$1() {
+    function _Visitor() {
     }
-    _Visitor$1.prototype.visitTag = function (tag) {
+    _Visitor.prototype.visitTag = function (tag) {
         var _this = this;
         var strAttrs = this._serializeAttributes(tag.attrs);
         if (tag.children.length == 0) {
@@ -7012,18 +7046,18 @@ var _Visitor$1 = (function () {
         var strChildren = tag.children.map(function (node) { return node.visit(_this); });
         return "<" + tag.name + strAttrs + ">" + strChildren.join('') + "</" + tag.name + ">";
     };
-    _Visitor$1.prototype.visitText = function (text) { return text.value; };
-    _Visitor$1.prototype.visitDeclaration = function (decl) {
+    _Visitor.prototype.visitText = function (text) { return text.value; };
+    _Visitor.prototype.visitDeclaration = function (decl) {
         return "<?xml" + this._serializeAttributes(decl.attrs) + " ?>";
     };
-    _Visitor$1.prototype._serializeAttributes = function (attrs) {
+    _Visitor.prototype._serializeAttributes = function (attrs) {
         var strAttrs = Object.keys(attrs).map(function (name) { return name + "=\"" + attrs[name] + "\""; }).join(' ');
         return strAttrs.length > 0 ? ' ' + strAttrs : '';
     };
-    _Visitor$1.prototype.visitDoctype = function (doctype) {
+    _Visitor.prototype.visitDoctype = function (doctype) {
         return "<!DOCTYPE " + doctype.rootTag + " [\n" + doctype.dtd + "\n]>";
     };
-    return _Visitor$1;
+    return _Visitor;
 }());
 var _visitor = new _Visitor$1();
 function serialize(nodes) {
@@ -7065,12 +7099,12 @@ var Tag = (function () {
     return Tag;
 }());
 var Text$2 = (function () {
-    function Text$2(unescapedValue) {
+    function Text(unescapedValue) {
         this.value = _escapeXml(unescapedValue);
     }
     
-    Text$2.prototype.visit = function (visitor) { return visitor.visitText(this); };
-    return Text$2;
+    Text.prototype.visit = function (visitor) { return visitor.visitText(this); };
+    return Text;
 }());
 var CR = (function (_super) {
     __extends(CR, _super);
@@ -7090,6 +7124,7 @@ var _ESCAPED_CHARS = [
 function _escapeXml(text) {
     return _ESCAPED_CHARS.reduce(function (text, entry) { return text.replace(entry[0], entry[1]); }, text);
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -7344,6 +7379,7 @@ function getCtypeForTag(tag) {
             return "x-" + tag;
     }
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -7420,16 +7456,16 @@ var Xliff2 = (function (_super) {
     return Xliff2;
 }(Serializer));
 var _WriteVisitor$1 = (function () {
-    function _WriteVisitor$1() {
+    function _WriteVisitor() {
     }
-    _WriteVisitor$1.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
-    _WriteVisitor$1.prototype.visitContainer = function (container, context) {
+    _WriteVisitor.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
+    _WriteVisitor.prototype.visitContainer = function (container, context) {
         var _this = this;
         var nodes = [];
         container.children.forEach(function (node) { return nodes.push.apply(nodes, node.visit(_this)); });
         return nodes;
     };
-    _WriteVisitor$1.prototype.visitIcu = function (icu, context) {
+    _WriteVisitor.prototype.visitIcu = function (icu, context) {
         var _this = this;
         var nodes = [new Text$2("{" + icu.expressionPlaceholder + ", " + icu.type + ", ")];
         Object.keys(icu.cases).forEach(function (c) {
@@ -7438,7 +7474,7 @@ var _WriteVisitor$1 = (function () {
         nodes.push(new Text$2("}"));
         return nodes;
     };
-    _WriteVisitor$1.prototype.visitTagPlaceholder = function (ph, context) {
+    _WriteVisitor.prototype.visitTagPlaceholder = function (ph, context) {
         var _this = this;
         var type = getTypeForTag(ph.tag);
         if (ph.isVoid) {
@@ -7467,7 +7503,7 @@ var _WriteVisitor$1 = (function () {
         }
         return [tagPc];
     };
-    _WriteVisitor$1.prototype.visitPlaceholder = function (ph, context) {
+    _WriteVisitor.prototype.visitPlaceholder = function (ph, context) {
         var idStr = (this._nextPlaceholderId++).toString();
         return [new Tag(_PLACEHOLDER_TAG$1, {
                 id: idStr,
@@ -7475,17 +7511,17 @@ var _WriteVisitor$1 = (function () {
                 disp: "{{" + ph.value + "}}",
             })];
     };
-    _WriteVisitor$1.prototype.visitIcuPlaceholder = function (ph, context) {
+    _WriteVisitor.prototype.visitIcuPlaceholder = function (ph, context) {
         var cases = Object.keys(ph.value.cases).map(function (value) { return value + ' {...}'; }).join(' ');
         var idStr = (this._nextPlaceholderId++).toString();
         return [new Tag(_PLACEHOLDER_TAG$1, { id: idStr, equiv: ph.name, disp: "{" + ph.value.expression + ", " + ph.value.type + ", " + cases + "}" })];
     };
-    _WriteVisitor$1.prototype.serialize = function (nodes) {
+    _WriteVisitor.prototype.serialize = function (nodes) {
         var _this = this;
         this._nextPlaceholderId = 0;
         return [].concat.apply([], nodes.map(function (node) { return node.visit(_this); }));
     };
-    return _WriteVisitor$1;
+    return _WriteVisitor;
 }());
 // Extract messages as xml nodes from the xliff file
 var Xliff2Parser = (function () {
@@ -7570,9 +7606,9 @@ var Xliff2Parser = (function () {
 }());
 // Convert ml nodes (xliff syntax) to i18n nodes
 var XmlToI18n$1 = (function () {
-    function XmlToI18n$1() {
+    function XmlToI18n() {
     }
-    XmlToI18n$1.prototype.convert = function (message, url) {
+    XmlToI18n.prototype.convert = function (message, url) {
         var xmlIcu = new XmlParser().parse(message, url, true);
         this._errors = xmlIcu.errors;
         var i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
@@ -7582,8 +7618,8 @@ var XmlToI18n$1 = (function () {
             errors: this._errors,
         };
     };
-    XmlToI18n$1.prototype.visitText = function (text, context) { return new Text$1(text.value, text.sourceSpan); };
-    XmlToI18n$1.prototype.visitElement = function (el, context) {
+    XmlToI18n.prototype.visitText = function (text, context) { return new Text$1(text.value, text.sourceSpan); };
+    XmlToI18n.prototype.visitElement = function (el, context) {
         var _this = this;
         switch (el.name) {
             case _PLACEHOLDER_TAG$1:
@@ -7614,25 +7650,25 @@ var XmlToI18n$1 = (function () {
         }
         return null;
     };
-    XmlToI18n$1.prototype.visitExpansion = function (icu, context) {
+    XmlToI18n.prototype.visitExpansion = function (icu, context) {
         var caseMap = {};
         visitAll(this, icu.cases).forEach(function (c) {
             caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
         });
         return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
     };
-    XmlToI18n$1.prototype.visitExpansionCase = function (icuCase, context) {
+    XmlToI18n.prototype.visitExpansionCase = function (icuCase, context) {
         return {
             value: icuCase.value,
             nodes: [].concat.apply([], visitAll(this, icuCase.expression)),
         };
     };
-    XmlToI18n$1.prototype.visitComment = function (comment, context) { };
-    XmlToI18n$1.prototype.visitAttribute = function (attribute, context) { };
-    XmlToI18n$1.prototype._addError = function (node, message) {
+    XmlToI18n.prototype.visitComment = function (comment, context) { };
+    XmlToI18n.prototype.visitAttribute = function (attribute, context) { };
+    XmlToI18n.prototype._addError = function (node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     };
-    return XmlToI18n$1;
+    return XmlToI18n;
 }());
 function getTypeForTag(tag) {
     switch (tag.toLowerCase()) {
@@ -7649,6 +7685,7 @@ function getTypeForTag(tag) {
             return 'other';
     }
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -7707,16 +7744,16 @@ var Xmb = (function (_super) {
     return Xmb;
 }(Serializer));
 var _Visitor$2 = (function () {
-    function _Visitor$2() {
+    function _Visitor() {
     }
-    _Visitor$2.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
-    _Visitor$2.prototype.visitContainer = function (container, context) {
+    _Visitor.prototype.visitText = function (text, context) { return [new Text$2(text.value)]; };
+    _Visitor.prototype.visitContainer = function (container, context) {
         var _this = this;
         var nodes = [];
         container.children.forEach(function (node) { return nodes.push.apply(nodes, node.visit(_this)); });
         return nodes;
     };
-    _Visitor$2.prototype.visitIcu = function (icu, context) {
+    _Visitor.prototype.visitIcu = function (icu, context) {
         var _this = this;
         var nodes = [new Text$2("{" + icu.expressionPlaceholder + ", " + icu.type + ", ")];
         Object.keys(icu.cases).forEach(function (c) {
@@ -7725,7 +7762,7 @@ var _Visitor$2 = (function () {
         nodes.push(new Text$2("}"));
         return nodes;
     };
-    _Visitor$2.prototype.visitTagPlaceholder = function (ph, context) {
+    _Visitor.prototype.visitTagPlaceholder = function (ph, context) {
         var startEx = new Tag(_EXEMPLE_TAG, {}, [new Text$2("<" + ph.tag + ">")]);
         var startTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.startName }, [startEx]);
         if (ph.isVoid) {
@@ -7736,21 +7773,21 @@ var _Visitor$2 = (function () {
         var closeTagPh = new Tag(_PLACEHOLDER_TAG$2, { name: ph.closeName }, [closeEx]);
         return [startTagPh].concat(this.serialize(ph.children), [closeTagPh]);
     };
-    _Visitor$2.prototype.visitPlaceholder = function (ph, context) {
+    _Visitor.prototype.visitPlaceholder = function (ph, context) {
         var exTag = new Tag(_EXEMPLE_TAG, {}, [new Text$2("{{" + ph.value + "}}")]);
         return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag])];
     };
-    _Visitor$2.prototype.visitIcuPlaceholder = function (ph, context) {
+    _Visitor.prototype.visitIcuPlaceholder = function (ph, context) {
         var exTag = new Tag(_EXEMPLE_TAG, {}, [
             new Text$2("{" + ph.value.expression + ", " + ph.value.type + ", " + Object.keys(ph.value.cases).map(function (value) { return value + ' {...}'; }).join(' ') + "}")
         ]);
         return [new Tag(_PLACEHOLDER_TAG$2, { name: ph.name }, [exTag])];
     };
-    _Visitor$2.prototype.serialize = function (nodes) {
+    _Visitor.prototype.serialize = function (nodes) {
         var _this = this;
         return [].concat.apply([], nodes.map(function (node) { return node.visit(_this); }));
     };
-    return _Visitor$2;
+    return _Visitor;
 }());
 function digest$1(message) {
     return decimalDigest(message);
@@ -7784,6 +7821,7 @@ var ExampleVisitor = (function () {
 function toPublicName(internalName) {
     return internalName.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -7911,9 +7949,9 @@ var XtbParser = (function () {
 }());
 // Convert ml nodes (xtb syntax) to i18n nodes
 var XmlToI18n$2 = (function () {
-    function XmlToI18n$2() {
+    function XmlToI18n() {
     }
-    XmlToI18n$2.prototype.convert = function (message, url) {
+    XmlToI18n.prototype.convert = function (message, url) {
         var xmlIcu = new XmlParser().parse(message, url, true);
         this._errors = xmlIcu.errors;
         var i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
@@ -7924,21 +7962,21 @@ var XmlToI18n$2 = (function () {
             errors: this._errors,
         };
     };
-    XmlToI18n$2.prototype.visitText = function (text, context) { return new Text$1(text.value, text.sourceSpan); };
-    XmlToI18n$2.prototype.visitExpansion = function (icu, context) {
+    XmlToI18n.prototype.visitText = function (text, context) { return new Text$1(text.value, text.sourceSpan); };
+    XmlToI18n.prototype.visitExpansion = function (icu, context) {
         var caseMap = {};
         visitAll(this, icu.cases).forEach(function (c) {
             caseMap[c.value] = new Container(c.nodes, icu.sourceSpan);
         });
         return new Icu(icu.switchValue, icu.type, caseMap, icu.sourceSpan);
     };
-    XmlToI18n$2.prototype.visitExpansionCase = function (icuCase, context) {
+    XmlToI18n.prototype.visitExpansionCase = function (icuCase, context) {
         return {
             value: icuCase.value,
             nodes: visitAll(this, icuCase.expression),
         };
     };
-    XmlToI18n$2.prototype.visitElement = function (el, context) {
+    XmlToI18n.prototype.visitElement = function (el, context) {
         if (el.name === _PLACEHOLDER_TAG$3) {
             var nameAttr = el.attrs.find(function (attr) { return attr.name === 'name'; });
             if (nameAttr) {
@@ -7951,13 +7989,14 @@ var XmlToI18n$2 = (function () {
         }
         return null;
     };
-    XmlToI18n$2.prototype.visitComment = function (comment, context) { };
-    XmlToI18n$2.prototype.visitAttribute = function (attribute, context) { };
-    XmlToI18n$2.prototype._addError = function (node, message) {
+    XmlToI18n.prototype.visitComment = function (comment, context) { };
+    XmlToI18n.prototype.visitAttribute = function (attribute, context) { };
+    XmlToI18n.prototype._addError = function (node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     };
-    return XmlToI18n$2;
+    return XmlToI18n;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -7977,6 +8016,7 @@ var HtmlParser = (function (_super) {
     };
     return HtmlParser;
 }(Parser$1));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -8132,6 +8172,7 @@ var I18nToHtmlVisitor = (function () {
     };
     return I18nToHtmlVisitor;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -8180,6 +8221,7 @@ function createSerializer(format) {
             return new Xliff();
     }
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -8231,6 +8273,7 @@ function summaryForJitName(symbolName) {
 function stripSummaryForJitNameSuffix(symbolName) {
     return symbolName.replace(JIT_SUMMARY_NAME, '');
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -8342,6 +8385,7 @@ function createTokenForReference(reference) {
 function createTokenForExternalReference(reflector, reference) {
     return createTokenForReference(reflector.resolveExternalReference(reference));
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -8391,6 +8435,7 @@ function getHookName(hook) {
             return 'ngAfterViewChecked';
     }
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -9346,6 +9391,7 @@ function componentStillLoadingError(compType) {
     error[ERROR_COMPONENT_TYPE] = compType;
     return error;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -9359,15 +9405,15 @@ var TypeModifier;
     TypeModifier[TypeModifier["Const"] = 0] = "Const";
 })(TypeModifier || (TypeModifier = {}));
 var Type$1 = (function () {
-    function Type$1(modifiers) {
+    function Type(modifiers) {
         if (modifiers === void 0) { modifiers = null; }
         this.modifiers = modifiers;
         if (!modifiers) {
             this.modifiers = [];
         }
     }
-    Type$1.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
-    return Type$1;
+    Type.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
+    return Type;
 }());
 var BuiltinTypeName;
 (function (BuiltinTypeName) {
@@ -9949,6 +9995,16 @@ var AbstractClassPart = (function () {
     AbstractClassPart.prototype.hasModifier = function (modifier) { return this.modifiers.indexOf(modifier) !== -1; };
     return AbstractClassPart;
 }());
+var ClassField = (function (_super) {
+    __extends(ClassField, _super);
+    function ClassField(name, type, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, type, modifiers) || this;
+        _this.name = name;
+        return _this;
+    }
+    return ClassField;
+}(AbstractClassPart));
 var ClassMethod = (function (_super) {
     __extends(ClassMethod, _super);
     function ClassMethod(name, params, body, type, modifiers) {
@@ -10043,87 +10099,87 @@ var ThrowStmt = (function (_super) {
     return ThrowStmt;
 }(Statement));
 var AstTransformer$1 = (function () {
-    function AstTransformer$1() {
+    function AstTransformer() {
     }
-    AstTransformer$1.prototype.transformExpr = function (expr, context) { return expr; };
-    AstTransformer$1.prototype.transformStmt = function (stmt, context) { return stmt; };
-    AstTransformer$1.prototype.visitReadVarExpr = function (ast, context) { return this.transformExpr(ast, context); };
-    AstTransformer$1.prototype.visitWriteVarExpr = function (expr, context) {
+    AstTransformer.prototype.transformExpr = function (expr, context) { return expr; };
+    AstTransformer.prototype.transformStmt = function (stmt, context) { return stmt; };
+    AstTransformer.prototype.visitReadVarExpr = function (ast, context) { return this.transformExpr(ast, context); };
+    AstTransformer.prototype.visitWriteVarExpr = function (expr, context) {
         return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitWriteKeyExpr = function (expr, context) {
+    AstTransformer.prototype.visitWriteKeyExpr = function (expr, context) {
         return this.transformExpr(new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitWritePropExpr = function (expr, context) {
+    AstTransformer.prototype.visitWritePropExpr = function (expr, context) {
         return this.transformExpr(new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitInvokeMethodExpr = function (ast, context) {
+    AstTransformer.prototype.visitInvokeMethodExpr = function (ast, context) {
         var method = ast.builtin || ast.name;
         return this.transformExpr(new InvokeMethodExpr(ast.receiver.visitExpression(this, context), method, this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitInvokeFunctionExpr = function (ast, context) {
+    AstTransformer.prototype.visitInvokeFunctionExpr = function (ast, context) {
         return this.transformExpr(new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitInstantiateExpr = function (ast, context) {
+    AstTransformer.prototype.visitInstantiateExpr = function (ast, context) {
         return this.transformExpr(new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitLiteralExpr = function (ast, context) { return this.transformExpr(ast, context); };
-    AstTransformer$1.prototype.visitExternalExpr = function (ast, context) {
+    AstTransformer.prototype.visitLiteralExpr = function (ast, context) { return this.transformExpr(ast, context); };
+    AstTransformer.prototype.visitExternalExpr = function (ast, context) {
         return this.transformExpr(ast, context);
     };
-    AstTransformer$1.prototype.visitConditionalExpr = function (ast, context) {
+    AstTransformer.prototype.visitConditionalExpr = function (ast, context) {
         return this.transformExpr(new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), ast.falseCase.visitExpression(this, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitNotExpr = function (ast, context) {
+    AstTransformer.prototype.visitNotExpr = function (ast, context) {
         return this.transformExpr(new NotExpr(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitAssertNotNullExpr = function (ast, context) {
+    AstTransformer.prototype.visitAssertNotNullExpr = function (ast, context) {
         return this.transformExpr(new AssertNotNull(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitCastExpr = function (ast, context) {
+    AstTransformer.prototype.visitCastExpr = function (ast, context) {
         return this.transformExpr(new CastExpr(ast.value.visitExpression(this, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitFunctionExpr = function (ast, context) {
+    AstTransformer.prototype.visitFunctionExpr = function (ast, context) {
         return this.transformExpr(new FunctionExpr(ast.params, this.visitAllStatements(ast.statements, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitBinaryOperatorExpr = function (ast, context) {
+    AstTransformer.prototype.visitBinaryOperatorExpr = function (ast, context) {
         return this.transformExpr(new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitReadPropExpr = function (ast, context) {
+    AstTransformer.prototype.visitReadPropExpr = function (ast, context) {
         return this.transformExpr(new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitReadKeyExpr = function (ast, context) {
+    AstTransformer.prototype.visitReadKeyExpr = function (ast, context) {
         return this.transformExpr(new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitLiteralArrayExpr = function (ast, context) {
+    AstTransformer.prototype.visitLiteralArrayExpr = function (ast, context) {
         return this.transformExpr(new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context), ast.type, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitLiteralMapExpr = function (ast, context) {
+    AstTransformer.prototype.visitLiteralMapExpr = function (ast, context) {
         var _this = this;
         var entries = ast.entries.map(function (entry) { return new LiteralMapEntry(entry.key, entry.value.visitExpression(_this, context), entry.quoted); });
         var mapType = new MapType(ast.valueType, null);
         return this.transformExpr(new LiteralMapExpr(entries, mapType, ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitCommaExpr = function (ast, context) {
+    AstTransformer.prototype.visitCommaExpr = function (ast, context) {
         return this.transformExpr(new CommaExpr(this.visitAllExpressions(ast.parts, context), ast.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitAllExpressions = function (exprs, context) {
+    AstTransformer.prototype.visitAllExpressions = function (exprs, context) {
         var _this = this;
         return exprs.map(function (expr) { return expr.visitExpression(_this, context); });
     };
-    AstTransformer$1.prototype.visitDeclareVarStmt = function (stmt, context) {
+    AstTransformer.prototype.visitDeclareVarStmt = function (stmt, context) {
         return this.transformStmt(new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitDeclareFunctionStmt = function (stmt, context) {
+    AstTransformer.prototype.visitDeclareFunctionStmt = function (stmt, context) {
         return this.transformStmt(new DeclareFunctionStmt(stmt.name, stmt.params, this.visitAllStatements(stmt.statements, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitExpressionStmt = function (stmt, context) {
+    AstTransformer.prototype.visitExpressionStmt = function (stmt, context) {
         return this.transformStmt(new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitReturnStmt = function (stmt, context) {
+    AstTransformer.prototype.visitReturnStmt = function (stmt, context) {
         return this.transformStmt(new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitDeclareClassStmt = function (stmt, context) {
+    AstTransformer.prototype.visitDeclareClassStmt = function (stmt, context) {
         var _this = this;
         var parent = stmt.parent.visitExpression(this, context);
         var getters = stmt.getters.map(function (getter) { return new ClassGetter(getter.name, _this.visitAllStatements(getter.body, context), getter.type, getter.modifiers); });
@@ -10132,129 +10188,129 @@ var AstTransformer$1 = (function () {
         var methods = stmt.methods.map(function (method) { return new ClassMethod(method.name, method.params, _this.visitAllStatements(method.body, context), method.type, method.modifiers); });
         return this.transformStmt(new ClassStmt(stmt.name, parent, stmt.fields, getters, ctorMethod, methods, stmt.modifiers, stmt.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitIfStmt = function (stmt, context) {
+    AstTransformer.prototype.visitIfStmt = function (stmt, context) {
         return this.transformStmt(new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitTryCatchStmt = function (stmt, context) {
+    AstTransformer.prototype.visitTryCatchStmt = function (stmt, context) {
         return this.transformStmt(new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitThrowStmt = function (stmt, context) {
+    AstTransformer.prototype.visitThrowStmt = function (stmt, context) {
         return this.transformStmt(new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan), context);
     };
-    AstTransformer$1.prototype.visitCommentStmt = function (stmt, context) {
+    AstTransformer.prototype.visitCommentStmt = function (stmt, context) {
         return this.transformStmt(stmt, context);
     };
-    AstTransformer$1.prototype.visitAllStatements = function (stmts, context) {
+    AstTransformer.prototype.visitAllStatements = function (stmts, context) {
         var _this = this;
         return stmts.map(function (stmt) { return stmt.visitStatement(_this, context); });
     };
-    return AstTransformer$1;
+    return AstTransformer;
 }());
 var RecursiveAstVisitor$1 = (function () {
-    function RecursiveAstVisitor$1() {
+    function RecursiveAstVisitor() {
     }
-    RecursiveAstVisitor$1.prototype.visitReadVarExpr = function (ast, context) { return ast; };
-    RecursiveAstVisitor$1.prototype.visitWriteVarExpr = function (expr, context) {
+    RecursiveAstVisitor.prototype.visitReadVarExpr = function (ast, context) { return ast; };
+    RecursiveAstVisitor.prototype.visitWriteVarExpr = function (expr, context) {
         expr.value.visitExpression(this, context);
         return expr;
     };
-    RecursiveAstVisitor$1.prototype.visitWriteKeyExpr = function (expr, context) {
+    RecursiveAstVisitor.prototype.visitWriteKeyExpr = function (expr, context) {
         expr.receiver.visitExpression(this, context);
         expr.index.visitExpression(this, context);
         expr.value.visitExpression(this, context);
         return expr;
     };
-    RecursiveAstVisitor$1.prototype.visitWritePropExpr = function (expr, context) {
+    RecursiveAstVisitor.prototype.visitWritePropExpr = function (expr, context) {
         expr.receiver.visitExpression(this, context);
         expr.value.visitExpression(this, context);
         return expr;
     };
-    RecursiveAstVisitor$1.prototype.visitInvokeMethodExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitInvokeMethodExpr = function (ast, context) {
         ast.receiver.visitExpression(this, context);
         this.visitAllExpressions(ast.args, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitInvokeFunctionExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitInvokeFunctionExpr = function (ast, context) {
         ast.fn.visitExpression(this, context);
         this.visitAllExpressions(ast.args, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitInstantiateExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitInstantiateExpr = function (ast, context) {
         ast.classExpr.visitExpression(this, context);
         this.visitAllExpressions(ast.args, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitLiteralExpr = function (ast, context) { return ast; };
-    RecursiveAstVisitor$1.prototype.visitExternalExpr = function (ast, context) { return ast; };
-    RecursiveAstVisitor$1.prototype.visitConditionalExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitLiteralExpr = function (ast, context) { return ast; };
+    RecursiveAstVisitor.prototype.visitExternalExpr = function (ast, context) { return ast; };
+    RecursiveAstVisitor.prototype.visitConditionalExpr = function (ast, context) {
         ast.condition.visitExpression(this, context);
         ast.trueCase.visitExpression(this, context);
         ast.falseCase.visitExpression(this, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitNotExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitNotExpr = function (ast, context) {
         ast.condition.visitExpression(this, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitAssertNotNullExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitAssertNotNullExpr = function (ast, context) {
         ast.condition.visitExpression(this, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitCastExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitCastExpr = function (ast, context) {
         ast.value.visitExpression(this, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitFunctionExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitFunctionExpr = function (ast, context) {
         this.visitAllStatements(ast.statements, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitBinaryOperatorExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitBinaryOperatorExpr = function (ast, context) {
         ast.lhs.visitExpression(this, context);
         ast.rhs.visitExpression(this, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitReadPropExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitReadPropExpr = function (ast, context) {
         ast.receiver.visitExpression(this, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitReadKeyExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitReadKeyExpr = function (ast, context) {
         ast.receiver.visitExpression(this, context);
         ast.index.visitExpression(this, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitLiteralArrayExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitLiteralArrayExpr = function (ast, context) {
         this.visitAllExpressions(ast.entries, context);
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitLiteralMapExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitLiteralMapExpr = function (ast, context) {
         var _this = this;
         ast.entries.forEach(function (entry) { return entry.value.visitExpression(_this, context); });
         return ast;
     };
-    RecursiveAstVisitor$1.prototype.visitCommaExpr = function (ast, context) {
+    RecursiveAstVisitor.prototype.visitCommaExpr = function (ast, context) {
         this.visitAllExpressions(ast.parts, context);
     };
-    RecursiveAstVisitor$1.prototype.visitAllExpressions = function (exprs, context) {
+    RecursiveAstVisitor.prototype.visitAllExpressions = function (exprs, context) {
         var _this = this;
         exprs.forEach(function (expr) { return expr.visitExpression(_this, context); });
     };
-    RecursiveAstVisitor$1.prototype.visitDeclareVarStmt = function (stmt, context) {
+    RecursiveAstVisitor.prototype.visitDeclareVarStmt = function (stmt, context) {
         stmt.value.visitExpression(this, context);
         return stmt;
     };
-    RecursiveAstVisitor$1.prototype.visitDeclareFunctionStmt = function (stmt, context) {
+    RecursiveAstVisitor.prototype.visitDeclareFunctionStmt = function (stmt, context) {
         this.visitAllStatements(stmt.statements, context);
         return stmt;
     };
-    RecursiveAstVisitor$1.prototype.visitExpressionStmt = function (stmt, context) {
+    RecursiveAstVisitor.prototype.visitExpressionStmt = function (stmt, context) {
         stmt.expr.visitExpression(this, context);
         return stmt;
     };
-    RecursiveAstVisitor$1.prototype.visitReturnStmt = function (stmt, context) {
+    RecursiveAstVisitor.prototype.visitReturnStmt = function (stmt, context) {
         stmt.value.visitExpression(this, context);
         return stmt;
     };
-    RecursiveAstVisitor$1.prototype.visitDeclareClassStmt = function (stmt, context) {
+    RecursiveAstVisitor.prototype.visitDeclareClassStmt = function (stmt, context) {
         var _this = this;
         stmt.parent.visitExpression(this, context);
         stmt.getters.forEach(function (getter) { return _this.visitAllStatements(getter.body, context); });
@@ -10264,27 +10320,27 @@ var RecursiveAstVisitor$1 = (function () {
         stmt.methods.forEach(function (method) { return _this.visitAllStatements(method.body, context); });
         return stmt;
     };
-    RecursiveAstVisitor$1.prototype.visitIfStmt = function (stmt, context) {
+    RecursiveAstVisitor.prototype.visitIfStmt = function (stmt, context) {
         stmt.condition.visitExpression(this, context);
         this.visitAllStatements(stmt.trueCase, context);
         this.visitAllStatements(stmt.falseCase, context);
         return stmt;
     };
-    RecursiveAstVisitor$1.prototype.visitTryCatchStmt = function (stmt, context) {
+    RecursiveAstVisitor.prototype.visitTryCatchStmt = function (stmt, context) {
         this.visitAllStatements(stmt.bodyStmts, context);
         this.visitAllStatements(stmt.catchStmts, context);
         return stmt;
     };
-    RecursiveAstVisitor$1.prototype.visitThrowStmt = function (stmt, context) {
+    RecursiveAstVisitor.prototype.visitThrowStmt = function (stmt, context) {
         stmt.error.visitExpression(this, context);
         return stmt;
     };
-    RecursiveAstVisitor$1.prototype.visitCommentStmt = function (stmt, context) { return stmt; };
-    RecursiveAstVisitor$1.prototype.visitAllStatements = function (stmts, context) {
+    RecursiveAstVisitor.prototype.visitCommentStmt = function (stmt, context) { return stmt; };
+    RecursiveAstVisitor.prototype.visitAllStatements = function (stmts, context) {
         var _this = this;
         stmts.forEach(function (stmt) { return stmt.visitStatement(_this, context); });
     };
-    return RecursiveAstVisitor$1;
+    return RecursiveAstVisitor;
 }());
 function findReadVarNames(stmts) {
     var visitor = new _ReadVarVisitor();
@@ -10294,7 +10350,7 @@ function findReadVarNames(stmts) {
 var _ReadVarVisitor = (function (_super) {
     __extends(_ReadVarVisitor, _super);
     function _ReadVarVisitor() {
-        var _this = _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.varNames = new Set();
         return _this;
     }
@@ -10393,6 +10449,7 @@ function fn(params, body, type, sourceSpan) {
 function literal(value, type, sourceSpan) {
     return new LiteralExpr(value, type, sourceSpan);
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -10878,6 +10935,7 @@ function _addQueryToTokenMap(map, query) {
         entry.push(query);
     });
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -10918,6 +10976,7 @@ var _ValueOutputAstTransformer = (function () {
     };
     return _ValueOutputAstTransformer;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -11089,6 +11148,7 @@ function componentFactoryResolverProviderDef(reflector, ctx, flags, entryCompone
     }), providerExpr = _a.providerExpr, providerFlags = _a.flags, depsExpr = _a.depsExpr;
     return { providerExpr: providerExpr, flags: providerFlags, depsExpr: depsExpr, tokenExpr: tokenExpr(ctx, token) };
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -11148,6 +11208,7 @@ var NgModuleCompiler = (function () {
     };
     return NgModuleCompiler;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -11178,6 +11239,7 @@ var NgModuleResolver = (function () {
     };
     return NgModuleResolver;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -11328,6 +11390,7 @@ function toBase64Digit(value) {
     }
     return B64_DIGITS[value];
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -11826,6 +11889,7 @@ function _createIndent(count) {
     }
     return res;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -11945,14 +12009,14 @@ var _TsEmitterVisitor = (function (_super) {
         if (stmt.hasModifier(exports.StmtModifier.Exported) && stmt.value instanceof ExternalExpr &&
             !stmt.type) {
             // check for a reexport
-            var _a = stmt.value.value, name = _a.name, moduleName = _a.moduleName;
+            var _a = stmt.value.value, name_1 = _a.name, moduleName = _a.moduleName;
             if (moduleName) {
                 var reexports = this.reexports.get(moduleName);
                 if (!reexports) {
                     reexports = [];
                     this.reexports.set(moduleName, reexports);
                 }
-                reexports.push({ name: name, as: stmt.name });
+                reexports.push({ name: name_1, as: stmt.name });
                 return null;
             }
         }
@@ -12206,6 +12270,7 @@ var _TsEmitterVisitor = (function (_super) {
     };
     return _TsEmitterVisitor;
 }(AbstractEmitterVisitor));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -12247,6 +12312,7 @@ var PipeResolver = (function () {
     };
     return PipeResolver;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -12301,6 +12367,7 @@ registerContext(SecurityContext.RESOURCE_URL, [
     'object|data',
     'script|src',
 ]);
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -12313,6 +12380,7 @@ var ElementSchemaRegistry = (function () {
     }
     return ElementSchemaRegistry;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -12723,6 +12791,7 @@ function _isPixelDimensionStyle(prop) {
             return false;
     }
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -12854,13 +12923,7 @@ function _isPixelDimensionStyle(prop) {
   declaration. This is a directive to the styling shim to use the selector
   in comments in lieu of the next selector when running under polyfill.
 */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */ var ShadowCss = (function () {
+var ShadowCss = (function () {
     function ShadowCss() {
         this.strictStyling = true;
     }
@@ -13315,6 +13378,7 @@ function escapeBlocks(input) {
     }
     return new StringWithEscapedBlocks(resultParts.join(''), escapedBlocks);
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13396,6 +13460,7 @@ function getStylesVarName(component) {
     }
     return result;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13461,6 +13526,7 @@ var WhitespaceVisitor = (function () {
 function removeWhitespaces(htmlAstWithErrors) {
     return new ParseTreeResult(visitAll(new WhitespaceVisitor(), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13565,6 +13631,7 @@ function _expandDefaultForm(ast, errors) {
     var switchAttr = new Attribute('[ngSwitch]', ast.switchValue, ast.switchValueSourceSpan);
     return new Element('ng-container', [switchAttr], children, ast.sourceSpan, ast.sourceSpan, ast.sourceSpan);
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -13787,8 +13854,8 @@ var BindingParser = (function () {
                 var nsSeparatorIdx = boundPropertyName.indexOf(':');
                 if (nsSeparatorIdx > -1) {
                     var ns = boundPropertyName.substring(0, nsSeparatorIdx);
-                    var name = boundPropertyName.substring(nsSeparatorIdx + 1);
-                    boundPropertyName = mergeNsAndName(ns, name);
+                    var name_1 = boundPropertyName.substring(nsSeparatorIdx + 1);
+                    boundPropertyName = mergeNsAndName(ns, name_1);
                 }
                 bindingType = exports.PropertyBindingType.Attribute;
             }
@@ -13913,7 +13980,7 @@ var BindingParser = (function () {
 var PipeCollector = (function (_super) {
     __extends(PipeCollector, _super);
     function PipeCollector() {
-        var _this = _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.pipes = new Map();
         return _this;
     }
@@ -13939,6 +14006,7 @@ function calcPossibleSecurityContexts(registry, selector, propName, isAttribute)
     });
     return ctxs.length === 0 ? [SecurityContext.NONE] : Array.from(new Set(ctxs)).sort();
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -14639,6 +14707,7 @@ function isTemplate(el, enableLegacyTemplate, reportDeprecation) {
     }
     return false;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -15198,6 +15267,7 @@ var BuiltinFunctionCall = (function (_super) {
     }
     return BuiltinFunctionCall;
 }(FunctionCall));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -15677,12 +15747,12 @@ var ViewBuilder = (function () {
     ViewBuilder.prototype._visitComponentFactoryResolverProvider = function (directives) {
         var componentDirMeta = directives.find(function (dirAst) { return dirAst.directive.isComponent; });
         if (componentDirMeta && componentDirMeta.directive.entryComponents.length) {
-            var _a = componentFactoryResolverProviderDef(this.reflector, this.outputCtx, 8192 /* PrivateProvider */, componentDirMeta.directive.entryComponents), providerExpr = _a.providerExpr, depsExpr = _a.depsExpr, flags = _a.flags, tokenExpr_1 = _a.tokenExpr;
+            var _a = componentFactoryResolverProviderDef(this.reflector, this.outputCtx, 8192 /* PrivateProvider */, componentDirMeta.directive.entryComponents), providerExpr = _a.providerExpr, depsExpr = _a.depsExpr, flags = _a.flags, tokenExpr = _a.tokenExpr;
             this._addProviderNode({
                 providerExpr: providerExpr,
                 depsExpr: depsExpr,
                 flags: flags,
-                tokenExpr: tokenExpr_1,
+                tokenExpr: tokenExpr,
                 queryMatchExprs: [],
                 sourceSpan: componentDirMeta.sourceSpan
             });
@@ -15762,7 +15832,7 @@ var ViewBuilder = (function () {
             return function () { return valueExpr_2; };
         }
         // function pureObjectDef(propToIndex: {[p: string]: number}): NodeDef
-        var map = literalMap(keys.map(function (e, i) { return (Object.assign({}, e, { value: literal(i) })); }));
+        var map = literalMap(keys.map(function (e, i) { return (__assign({}, e, { value: literal(i) })); }));
         var nodeIndex = this.nodes.length;
         this.nodes.push(function () { return ({
             sourceSpan: sourceSpan,
@@ -15830,8 +15900,12 @@ var ViewBuilder = (function () {
             context: expression.context,
             value: convertPropertyBindingBuiltins({
                 createLiteralArrayConverter: function (argCount) { return _this.createLiteralArrayConverter(expression.sourceSpan, argCount); },
-                createLiteralMapConverter: function (keys) { return _this.createLiteralMapConverter(expression.sourceSpan, keys); },
-                createPipeConverter: function (name, argCount) { return _this.createPipeConverter(expression, name, argCount); }
+                createLiteralMapConverter: function (keys) {
+                    return _this.createLiteralMapConverter(expression.sourceSpan, keys);
+                },
+                createPipeConverter: function (name, argCount) {
+                    return _this.createPipeConverter(expression, name, argCount);
+                }
             }, expression.value)
         };
     };
@@ -16061,6 +16135,7 @@ function calcStaticDynamicQueryFlags(queryIds, queryId, isFirst) {
 function elementEventFullName(target, name) {
     return target ? target + ":" + name : name;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -16090,6 +16165,7 @@ function toTypeScript(file, preamble) {
     }
     return new TypeScriptEmitter().emitStatements(sourceUrl(file.srcFileUrl), file.genFileUrl, file.stmts, preamble);
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -16432,6 +16508,7 @@ var FromJsonDeserializer = (function (_super) {
     };
     return FromJsonDeserializer;
 }(ValueTransformer));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -16588,6 +16665,7 @@ var AotCompiler = (function () {
         if (this._enableSummariesForJit) {
             return [summaryJson, this._codegenSourceModule(srcFileName, forJitOutputCtx)];
         }
+        
         return [summaryJson];
     };
     AotCompiler.prototype._compileModule = function (outputCtx, ngModuleType) {
@@ -16711,7 +16789,9 @@ function analyzeNgModules(programStaticSymbols, host, staticSymbolResolver, meta
 function analyzeAndValidateNgModules(programStaticSymbols, host, staticSymbolResolver, metadataResolver) {
     var result = analyzeNgModules(programStaticSymbols, host, staticSymbolResolver, metadataResolver);
     if (result.symbolsMissingModule && result.symbolsMissingModule.length) {
-        var messages = result.symbolsMissingModule.map(function (s) { return "Cannot determine the module for class " + s.name + " in " + s.filePath + "! Add " + s.name + " to the NgModule to fix it."; });
+        var messages = result.symbolsMissingModule.map(function (s) {
+            return "Cannot determine the module for class " + s.name + " in " + s.filePath + "! Add " + s.name + " to the NgModule to fix it.";
+        });
         throw syntaxError(messages.join('\n'));
     }
     return result;
@@ -16821,6 +16901,7 @@ function _createNgModules(programStaticSymbols, host, metadataResolver) {
     var symbolsMissingModule = programPipesAndDirectives.filter(function (s) { return !ngModulePipesAndDirective.has(s); });
     return { ngModules: Array.from(ngModules.values()), symbolsMissingModule: symbolsMissingModule };
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -17166,14 +17247,14 @@ var StaticReflector = (function () {
                 }
                 if (expression instanceof Array) {
                     var result_2 = [];
-                    for (var _i = 0, expression_1 = expression; _i < expression_1.length; _i++) {
-                        var item = expression_1[_i];
+                    for (var _i = 0, _a = expression; _i < _a.length; _i++) {
+                        var item = _a[_i];
                         // Check for a spread expression
                         if (item && item.__symbolic === 'spread') {
                             var spreadArray = simplify(item.expression);
                             if (Array.isArray(spreadArray)) {
-                                for (var _a = 0, spreadArray_1 = spreadArray; _a < spreadArray_1.length; _a++) {
-                                    var spreadItem = spreadArray_1[_a];
+                                for (var _b = 0, spreadArray_1 = spreadArray; _b < spreadArray_1.length; _b++) {
+                                    var spreadItem = spreadArray_1[_b];
                                     result_2.push(spreadItem);
                                 }
                                 continue;
@@ -17306,8 +17387,8 @@ var StaticReflector = (function () {
                                 // Note: This only has to deal with variable references,
                                 // as symbol references have been converted into StaticSymbols already
                                 // in the StaticSymbolResolver!
-                                var name = expression['name'];
-                                var localValue = scope.resolve(name);
+                                var name_1 = expression['name'];
+                                var localValue = scope.resolve(name_1);
                                 if (localValue != BindingScope.missing) {
                                     return localValue;
                                 }
@@ -17497,6 +17578,7 @@ function positionalError(message, fileName, line, column) {
     result.column = column;
     return result;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -17843,29 +17925,29 @@ var StaticSymbolResolver = (function () {
                     return result;
                 }
                 else if (symbolic === 'reference') {
-                    var module_1 = map['module'];
-                    var name = map['name'] ? unescapeIdentifier(map['name']) : map['name'];
-                    if (!name) {
+                    var module = map['module'];
+                    var name_1 = map['name'] ? unescapeIdentifier(map['name']) : map['name'];
+                    if (!name_1) {
                         return null;
                     }
                     var filePath = void 0;
-                    if (module_1) {
-                        filePath = self.resolveModule(module_1, sourceSymbol.filePath);
+                    if (module) {
+                        filePath = self.resolveModule(module, sourceSymbol.filePath);
                         if (!filePath) {
                             return {
                                 __symbolic: 'error',
-                                message: "Could not resolve " + module_1 + " relative to " + sourceSymbol.filePath + "."
+                                message: "Could not resolve " + module + " relative to " + sourceSymbol.filePath + "."
                             };
                         }
-                        return self.getStaticSymbol(filePath, name);
+                        return self.getStaticSymbol(filePath, name_1);
                     }
-                    else if (functionParams.indexOf(name) >= 0) {
+                    else if (functionParams.indexOf(name_1) >= 0) {
                         // reference to a function parameter
-                        return { __symbolic: 'reference', name: name };
+                        return { __symbolic: 'reference', name: name_1 };
                     }
                     else {
-                        if (topLevelSymbolNames.has(name)) {
-                            return self.getStaticSymbol(topLevelPath, name);
+                        if (topLevelSymbolNames.has(name_1)) {
+                            return self.getStaticSymbol(topLevelPath, name_1);
                         }
                         // ambient value
                         null;
@@ -17958,6 +18040,7 @@ var StaticSymbolResolver = (function () {
 function unescapeIdentifier(identifier) {
     return identifier.startsWith('___') ? identifier.substr(1) : identifier;
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -18037,6 +18120,7 @@ var AotSummaryResolver = (function () {
     };
     return AotSummaryResolver;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -18083,6 +18167,7 @@ function createAotCompiler(compilerHost, options) {
     var compiler = new AotCompiler(config, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, new NgModuleCompiler(staticReflector), new TypeScriptEmitter(), summaryResolver, options.locale || null, options.i18nFormat || null, options.enableSummariesForJit || null, symbolResolver);
     return { compiler: compiler, reflector: staticReflector };
 }
+
 var SummaryResolver = (function () {
     function SummaryResolver() {
     }
@@ -18106,6 +18191,7 @@ var JitSummaryResolver = (function () {
     
     return JitSummaryResolver;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -18460,6 +18546,7 @@ function _declareFn(varNames, statements, ctx, visitor) {
 }
 var CATCH_ERROR_VAR$2 = 'error';
 var CATCH_STACK_VAR$2 = 'stack';
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -18619,6 +18706,7 @@ var AbstractJsEmitterVisitor = (function (_super) {
     };
     return AbstractJsEmitterVisitor;
 }(AbstractEmitterVisitor));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -18680,8 +18768,8 @@ var JitEmitterVisitor = (function (_super) {
         if (id === -1) {
             id = this._evalArgValues.length;
             this._evalArgValues.push(value);
-            var name = identifierName({ reference: value }) || 'val';
-            this._evalArgNames.push("jit_" + name + "_" + id);
+            var name_1 = identifierName({ reference: value }) || 'val';
+            this._evalArgNames.push("jit_" + name_1 + "_" + id);
         }
         ctx.print(ast, this._evalArgNames[id]);
         return null;
@@ -18706,6 +18794,7 @@ var JitEmitterVisitor = (function (_super) {
     };
     return JitEmitterVisitor;
 }(AbstractJsEmitterVisitor));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -18995,9 +19084,12 @@ function flattenSummaries(fn$$1, out) {
     return out;
 }
 function createOutputContext() {
-    var importExpr$$1 = function (symbol) { return importExpr({ name: identifierName(symbol), moduleName: null, runtime: symbol }); };
+    var importExpr$$1 = function (symbol) {
+        return importExpr({ name: identifierName(symbol), moduleName: null, runtime: symbol });
+    };
     return { statements: [], genFilePath: '', importExpr: importExpr$$1 };
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -19013,6 +19105,7 @@ var CompileReflector = (function () {
     }
     return CompileReflector;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -19310,6 +19403,7 @@ function _resolveUrl(base, url) {
     parts[_ComponentIndex.Path] = path;
     return _joinAndCanonicalizePath(parts);
 }
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -19321,18 +19415,13 @@ function _resolveUrl(base, url) {
  * An interface for retrieving documents by URL that the compiler uses
  * to load templates.
  */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */ var ResourceLoader = (function () {
+var ResourceLoader = (function () {
     function ResourceLoader() {
     }
     ResourceLoader.prototype.get = function (url) { return ''; };
     return ResourceLoader;
 }());
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -19423,6 +19512,7 @@ var MapPlaceholderNames = (function (_super) {
     };
     return MapPlaceholderNames;
 }(CloneVisitor));
+
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
