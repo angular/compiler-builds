@@ -17,7 +17,6 @@ export declare class StaticReflector implements CompileReflector {
     private methodCache;
     private conversionMap;
     private injectionToken;
-    private opaqueToken;
     private ROUTES;
     private ANALYZE_FOR_ENTRY_COMPONENTS;
     private annotationForParentClassWithSummaryKind;

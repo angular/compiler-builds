@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.5-185a941
+ * @license Angular v5.0.0-beta.5-6ab4966
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.0-beta.5-185a941
+ * @license Angular v5.0.0-beta.5-6ab4966
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -377,7 +377,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.5-185a941');
+var VERSION = new Version('5.0.0-beta.5-6ab4966');
 
 /**
  * @license
@@ -17129,7 +17129,6 @@ var StaticReflector = (function () {
     };
     StaticReflector.prototype.initializeConversionMap = function () {
         this.injectionToken = this.findDeclaration(ANGULAR_CORE, 'InjectionToken');
-        this.opaqueToken = this.findDeclaration(ANGULAR_CORE, 'OpaqueToken');
         this.ROUTES = this.tryFindDeclaration(ANGULAR_ROUTER, 'ROUTES');
         this.ANALYZE_FOR_ENTRY_COMPONENTS =
             this.findDeclaration(ANGULAR_CORE, 'ANALYZE_FOR_ENTRY_COMPONENTS');
@@ -17270,8 +17269,8 @@ var StaticReflector = (function () {
                 }
                 if (expression instanceof StaticSymbol) {
                     // Stop simplification at builtin symbols or if we are in a reference context
-                    if (expression === self.injectionToken || expression === self.opaqueToken ||
-                        self.conversionMap.has(expression) || references > 0) {
+                    if (expression === self.injectionToken || self.conversionMap.has(expression) ||
+                        references > 0) {
                         return expression;
                     }
                     else {
@@ -17402,7 +17401,7 @@ var StaticReflector = (function () {
                                 // Determine if the function is a built-in conversion
                                 staticSymbol = simplifyInContext(context, expression['expression'], depth + 1, /* references */ 0);
                                 if (staticSymbol instanceof StaticSymbol) {
-                                    if (staticSymbol === self.injectionToken || staticSymbol === self.opaqueToken) {
+                                    if (staticSymbol === self.injectionToken) {
                                         // if somebody calls new InjectionToken, don't create an InjectionToken,
                                         // but rather return the symbol to which the InjectionToken is assigned to.
                                         return context;
