@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.6-fa6b802
+ * @license Angular v5.0.0-beta.6-66f0ab0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -287,7 +287,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.6-fa6b802');
+const VERSION = new Version('5.0.0-beta.6-66f0ab0');
 
 /**
  * @license
@@ -6108,6 +6108,7 @@ const _I18N_ATTR_PREFIX = 'i18n-';
 const _I18N_COMMENT_PREFIX_REGEXP = /^i18n:?/;
 const MEANING_SEPARATOR = '|';
 const ID_SEPARATOR = '@@';
+let i18nCommentsWarned = false;
 /**
  * Extract translatable messages from an html AST
  */
@@ -6205,6 +6206,13 @@ class _Visitor {
         if (!this._inI18nNode && !this._inIcu) {
             if (!this._inI18nBlock) {
                 if (isOpening) {
+                    // deprecated from v5 you should use <ng-container i18n> instead of i18n comments
+                    if (!i18nCommentsWarned && console && console.warn) {
+                        i18nCommentsWarned = true;
+                        const details = comment.sourceSpan.details ? `, ${comment.sourceSpan.details}` : '';
+                        // TODO(ocombe): use a log service once there is a public one available
+                        console.warn(` I18n comments are deprecated, use an <ng - container> element instead (${comment.sourceSpan.start}${details})`);
+                    }
                     this._inI18nBlock = true;
                     this._blockStartDepth = this._depth;
                     this._blockChildren = [];
@@ -13451,7 +13459,7 @@ class TemplateParseVisitor {
                     this._parseVariable(identifier, value, srcSpan, targetVars);
                 }
                 else {
-                    this._reportError(`"let-" is only supported on template elements.`, srcSpan);
+                    this._reportError(`"let-" is only supported on ng-template elements.`, srcSpan);
                 }
             }
             else if (bindParts[KW_REF_IDX]) {
