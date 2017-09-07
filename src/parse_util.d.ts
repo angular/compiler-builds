@@ -10,7 +10,7 @@ export declare class ParseLocation {
     getContext(maxChars: number, maxLines: number): {
         before: string;
         after: string;
-    };
+    } | null;
 }
 export declare class ParseSourceFile {
     content: string;
@@ -20,8 +20,8 @@ export declare class ParseSourceFile {
 export declare class ParseSourceSpan {
     start: ParseLocation;
     end: ParseLocation;
-    details: string;
-    constructor(start: ParseLocation, end: ParseLocation, details?: string);
+    details: string | null;
+    constructor(start: ParseLocation, end: ParseLocation, details?: string | null);
     toString(): string;
 }
 export declare enum ParseErrorLevel {
@@ -33,6 +33,7 @@ export declare class ParseError {
     msg: string;
     level: ParseErrorLevel;
     constructor(span: ParseSourceSpan, msg: string, level?: ParseErrorLevel);
+    contextualMessage(): string;
     toString(): string;
 }
 export declare function typeSourceSpan(kind: string, type: CompileIdentifierMetadata): ParseSourceSpan;

@@ -29,13 +29,20 @@ export interface StaticSymbolResolverHost {
      */
     getMetadataFor(modulePath: string): {
         [key: string]: any;
-    }[];
+    }[] | undefined;
     /**
      * Converts a module name that is used in an `import` to a file path.
      * I.e.
      * `path/to/containingFile.ts` containing `import {...} from 'module-name'`.
      */
-    moduleNameToFileName(moduleName: string, containingFile: string): string;
+    moduleNameToFileName(moduleName: string, containingFile?: string): string | null;
+    /**
+     * Converts a file path to a module name that can be used as an `import.
+     * I.e. `path/to/importedFile.ts` should be imported by `path/to/containingFile.ts`.
+     *
+     * See ImportResolver.
+     */
+    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string | null;
 }
 /**
  * This class is responsible for loading metadata per symbol,
@@ -55,7 +62,9 @@ export declare class StaticSymbolResolver {
     private resolvedFilePaths;
     private importAs;
     private symbolResourcePaths;
-    constructor(host: StaticSymbolResolverHost, staticSymbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, errorRecorder?: (error: any, fileName: string) => void);
+    private symbolFromFile;
+    private knownFileNameToModuleNames;
+    constructor(host: StaticSymbolResolverHost, staticSymbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, errorRecorder?: (error: any, fileName?: string) => void);
     resolveSymbol(staticSymbol: StaticSymbol): ResolvedStaticSymbol;
     /**
      * getImportAs produces a symbol that can be used to import the given symbol.
@@ -66,7 +75,7 @@ export declare class StaticSymbolResolver {
      *
      * @param staticSymbol the symbol for which to generate a import symbol
      */
-    getImportAs(staticSymbol: StaticSymbol): StaticSymbol;
+    getImportAs(staticSymbol: StaticSymbol): StaticSymbol | null;
     /**
      * getResourcePath produces the path to the original location of the symbol and should
      * be used to determine the relative location of resource references recorded in
@@ -77,8 +86,19 @@ export declare class StaticSymbolResolver {
      * getTypeArity returns the number of generic type parameters the given symbol
      * has. If the symbol is not a type the result is null.
      */
-    getTypeArity(staticSymbol: StaticSymbol): number;
+    getTypeArity(staticSymbol: StaticSymbol): number | null;
+    /**
+     * Converts a file path to a module name that can be used as an `import`.
+     */
+    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string | null;
     recordImportAs(sourceSymbol: StaticSymbol, targetSymbol: StaticSymbol): void;
+    recordModuleNameForFileName(fileName: string, moduleName: string): void;
+    /**
+     * Invalidate all information derived from the given file.
+     *
+     * @param fileName the file to invalidate
+     */
+    invalidateFile(fileName: string): void;
     private _resolveSymbolMembers(staticSymbol);
     private _resolveSymbolFromSummary(staticSymbol);
     /**
@@ -90,16 +110,24 @@ export declare class StaticSymbolResolver {
      * @param members a symbol for a static member of the named type
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
+    /**
+     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * metada.
+     *
+     * @param filePath the absolute path to examine for decorators.
+     * @returns true if any class in the file has a decorator.
+     */
+    hasDecorators(filePath: string): boolean;
     getSymbolsOf(filePath: string): StaticSymbol[];
     private _createSymbolsOf(filePath);
     private createResolvedSymbol(sourceSymbol, topLevelPath, topLevelSymbolNames, metadata);
     private createExport(sourceSymbol, targetSymbol);
-    private reportError(error, context, path?);
+    private reportError(error, context?, path?);
     /**
      * @param module an absolute path to a module file.
      */
     private getModuleMetadata(module);
     getSymbolByModule(module: string, symbolName: string, containingFile?: string): StaticSymbol;
-    private resolveModule(module, containingFile);
+    private resolveModule(module, containingFile?);
 }
 export declare function unescapeIdentifier(identifier: string): string;

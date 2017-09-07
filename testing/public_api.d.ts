@@ -8,6 +8,6 @@
 /**
  * @module
  * @description
- * Entry point for all public APIs of the compiler package.
+ * Entry point for all public APIs of this package.
  */
-export * from './src/compiler';
+export * from './src/testing';
