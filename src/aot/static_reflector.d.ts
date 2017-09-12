@@ -28,7 +28,7 @@ export declare class StaticReflector implements CompileReflector {
         name: string;
         filePath: string;
         fn: any;
-    }[], errorRecorder?: (error: any, fileName?: string) => void);
+    }[], errorRecorder?: ((error: any, fileName?: string | undefined) => void) | undefined);
     componentModuleUrl(typeOrFunc: StaticSymbol): string;
     resolveExternalReference(ref: o.ExternalReference): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;

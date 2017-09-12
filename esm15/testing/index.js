@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.6-112e777
+ * @license Angular v5.0.0-beta.6-ca5aeba
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -355,7 +355,7 @@ class MockNgModuleResolver extends NgModuleResolver {
      * @return {?}
      */
     resolve(type, throwIfNotFound = true) {
-        return this._ngModules.get(type) || ((super.resolve(type, throwIfNotFound)));
+        return this._ngModules.get(type) || /** @type {?} */ ((super.resolve(type, throwIfNotFound)));
     }
 }
 
@@ -397,7 +397,7 @@ class MockPipeResolver extends PipeResolver {
     resolve(type, throwIfNotFound = true) {
         let /** @type {?} */ metadata = this._pipes.get(type);
         if (!metadata) {
-            metadata = ((super.resolve(type, throwIfNotFound)));
+            metadata = /** @type {?} */ ((super.resolve(type, throwIfNotFound)));
         }
         return metadata;
     }

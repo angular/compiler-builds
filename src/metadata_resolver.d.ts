@@ -37,7 +37,7 @@ export declare class CompileMetadataResolver {
     private _pipeCache;
     private _ngModuleCache;
     private _ngModuleOfTypes;
-    constructor(_config: CompilerConfig, _ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _console: Console, _staticSymbolCache: StaticSymbolCache, _reflector: CompileReflector, _errorCollector?: ErrorCollector);
+    constructor(_config: CompilerConfig, _ngModuleResolver: NgModuleResolver, _directiveResolver: DirectiveResolver, _pipeResolver: PipeResolver, _summaryResolver: SummaryResolver<any>, _schemaRegistry: ElementSchemaRegistry, _directiveNormalizer: DirectiveNormalizer, _console: Console, _staticSymbolCache: StaticSymbolCache, _reflector: CompileReflector, _errorCollector?: ErrorCollector | undefined);
     getReflector(): CompileReflector;
     clearCacheFor(type: Type): void;
     clearCache(): void;

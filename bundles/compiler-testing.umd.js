@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.6-112e777
+ * @license Angular v5.0.0-beta.6-ca5aeba
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v5.0.0-beta.6-112e777
+ * @license Angular v5.0.0-beta.6-ca5aeba
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -68,7 +68,11 @@ var MockResourceLoader = (function (_super) {
      * @param {?} url
      * @return {?}
      */
-    MockResourceLoader.prototype.get = function (url) {
+    MockResourceLoader.prototype.get = /**
+     * @param {?} url
+     * @return {?}
+     */
+    function (url) {
         var /** @type {?} */ request = new _PendingRequest(url);
         this._requests.push(request);
         return request.getPromise();
@@ -76,7 +80,17 @@ var MockResourceLoader = (function (_super) {
     /**
      * @return {?}
      */
-    MockResourceLoader.prototype.hasPendingRequests = function () { return !!this._requests.length; };
+    MockResourceLoader.prototype.hasPendingRequests = /**
+     * @return {?}
+     */
+    function () { return !!this._requests.length; };
+    /**
+     * Add an expectation for the given URL. Incoming requests will be checked against
+     * the next expectation (in FIFO order). The `verifyNoOutstandingExpectations` method
+     * can be used to check if any expectations have not yet been met.
+     *
+     * The response given will be returned if the expectation matches.
+     */
     /**
      * Add an expectation for the given URL. Incoming requests will be checked against
      * the next expectation (in FIFO order). The `verifyNoOutstandingExpectations` method
@@ -87,10 +101,26 @@ var MockResourceLoader = (function (_super) {
      * @param {?} response
      * @return {?}
      */
-    MockResourceLoader.prototype.expect = function (url, response) {
+    MockResourceLoader.prototype.expect = /**
+     * Add an expectation for the given URL. Incoming requests will be checked against
+     * the next expectation (in FIFO order). The `verifyNoOutstandingExpectations` method
+     * can be used to check if any expectations have not yet been met.
+     *
+     * The response given will be returned if the expectation matches.
+     * @param {?} url
+     * @param {?} response
+     * @return {?}
+     */
+    function (url, response) {
         var /** @type {?} */ expectation = new _Expectation(url, response);
         this._expectations.push(expectation);
     };
+    /**
+     * Add a definition for the given URL to return the given response. Unlike expectations,
+     * definitions have no order and will satisfy any matching request at any time. Also
+     * unlike expectations, unused definitions do not cause `verifyNoOutstandingExpectations`
+     * to return an error.
+     */
     /**
      * Add a definition for the given URL to return the given response. Unlike expectations,
      * definitions have no order and will satisfy any matching request at any time. Also
@@ -100,13 +130,31 @@ var MockResourceLoader = (function (_super) {
      * @param {?} response
      * @return {?}
      */
-    MockResourceLoader.prototype.when = function (url, response) { this._definitions.set(url, response); };
+    MockResourceLoader.prototype.when = /**
+     * Add a definition for the given URL to return the given response. Unlike expectations,
+     * definitions have no order and will satisfy any matching request at any time. Also
+     * unlike expectations, unused definitions do not cause `verifyNoOutstandingExpectations`
+     * to return an error.
+     * @param {?} url
+     * @param {?} response
+     * @return {?}
+     */
+    function (url, response) { this._definitions.set(url, response); };
+    /**
+     * Process pending requests and verify there are no outstanding expectations. Also fails
+     * if no requests are pending.
+     */
     /**
      * Process pending requests and verify there are no outstanding expectations. Also fails
      * if no requests are pending.
      * @return {?}
      */
-    MockResourceLoader.prototype.flush = function () {
+    MockResourceLoader.prototype.flush = /**
+     * Process pending requests and verify there are no outstanding expectations. Also fails
+     * if no requests are pending.
+     * @return {?}
+     */
+    function () {
         if (this._requests.length === 0) {
             throw new Error('No pending requests to flush');
         }
@@ -117,9 +165,16 @@ var MockResourceLoader = (function (_super) {
     };
     /**
      * Throw an exception if any expectations have not been satisfied.
+     */
+    /**
+     * Throw an exception if any expectations have not been satisfied.
      * @return {?}
      */
-    MockResourceLoader.prototype.verifyNoOutstandingExpectations = function () {
+    MockResourceLoader.prototype.verifyNoOutstandingExpectations = /**
+     * Throw an exception if any expectations have not been satisfied.
+     * @return {?}
+     */
+    function () {
         if (this._expectations.length === 0)
             return;
         var /** @type {?} */ urls = [];
@@ -133,7 +188,11 @@ var MockResourceLoader = (function (_super) {
      * @param {?} request
      * @return {?}
      */
-    MockResourceLoader.prototype._processRequest = function (request) {
+    MockResourceLoader.prototype._processRequest = /**
+     * @param {?} request
+     * @return {?}
+     */
+    function (request) {
         var /** @type {?} */ url = request.url;
         if (this._expectations.length > 0) {
             var /** @type {?} */ expectation = this._expectations[0];
@@ -153,9 +212,6 @@ var MockResourceLoader = (function (_super) {
     return MockResourceLoader;
 }(_angular_compiler.ResourceLoader));
 var _PendingRequest = (function () {
-    /**
-     * @param {?} url
-     */
     function _PendingRequest(url) {
         var _this = this;
         this.url = url;
@@ -168,7 +224,11 @@ var _PendingRequest = (function () {
      * @param {?} response
      * @return {?}
      */
-    _PendingRequest.prototype.complete = function (response) {
+    _PendingRequest.prototype.complete = /**
+     * @param {?} response
+     * @return {?}
+     */
+    function (response) {
         if (response == null) {
             this.reject("Failed to load " + this.url);
         }
@@ -179,14 +239,13 @@ var _PendingRequest = (function () {
     /**
      * @return {?}
      */
-    _PendingRequest.prototype.getPromise = function () { return this.promise; };
+    _PendingRequest.prototype.getPromise = /**
+     * @return {?}
+     */
+    function () { return this.promise; };
     return _PendingRequest;
 }());
 var _Expectation = (function () {
-    /**
-     * @param {?} url
-     * @param {?} response
-     */
     function _Expectation(url, response) {
         this.url = url;
         this.response = response;
@@ -218,13 +277,6 @@ function remove(list, el) {
  * found in the LICENSE file at https://angular.io/license
  */
 var MockSchemaRegistry = (function () {
-    /**
-     * @param {?} existingProperties
-     * @param {?} attrPropMapping
-     * @param {?} existingElements
-     * @param {?} invalidProperties
-     * @param {?} invalidAttributes
-     */
     function MockSchemaRegistry(existingProperties, attrPropMapping, existingElements, invalidProperties, invalidAttributes) {
         this.existingProperties = existingProperties;
         this.attrPropMapping = attrPropMapping;
@@ -238,7 +290,13 @@ var MockSchemaRegistry = (function () {
      * @param {?} schemas
      * @return {?}
      */
-    MockSchemaRegistry.prototype.hasProperty = function (tagName, property, schemas) {
+    MockSchemaRegistry.prototype.hasProperty = /**
+     * @param {?} tagName
+     * @param {?} property
+     * @param {?} schemas
+     * @return {?}
+     */
+    function (tagName, property, schemas) {
         var /** @type {?} */ value = this.existingProperties[property];
         return value === void 0 ? true : value;
     };
@@ -247,37 +305,62 @@ var MockSchemaRegistry = (function () {
      * @param {?} schemaMetas
      * @return {?}
      */
-    MockSchemaRegistry.prototype.hasElement = function (tagName, schemaMetas) {
+    MockSchemaRegistry.prototype.hasElement = /**
+     * @param {?} tagName
+     * @param {?} schemaMetas
+     * @return {?}
+     */
+    function (tagName, schemaMetas) {
         var /** @type {?} */ value = this.existingElements[tagName.toLowerCase()];
         return value === void 0 ? true : value;
     };
     /**
      * @return {?}
      */
-    MockSchemaRegistry.prototype.allKnownElementNames = function () { return Object.keys(this.existingElements); };
+    MockSchemaRegistry.prototype.allKnownElementNames = /**
+     * @return {?}
+     */
+    function () { return Object.keys(this.existingElements); };
     /**
      * @param {?} selector
      * @param {?} property
      * @param {?} isAttribute
      * @return {?}
      */
-    MockSchemaRegistry.prototype.securityContext = function (selector, property, isAttribute) {
+    MockSchemaRegistry.prototype.securityContext = /**
+     * @param {?} selector
+     * @param {?} property
+     * @param {?} isAttribute
+     * @return {?}
+     */
+    function (selector, property, isAttribute) {
         return _angular_compiler.core.SecurityContext.NONE;
     };
     /**
      * @param {?} attrName
      * @return {?}
      */
-    MockSchemaRegistry.prototype.getMappedPropName = function (attrName) { return this.attrPropMapping[attrName] || attrName; };
+    MockSchemaRegistry.prototype.getMappedPropName = /**
+     * @param {?} attrName
+     * @return {?}
+     */
+    function (attrName) { return this.attrPropMapping[attrName] || attrName; };
     /**
      * @return {?}
      */
-    MockSchemaRegistry.prototype.getDefaultComponentElementName = function () { return 'ng-component'; };
+    MockSchemaRegistry.prototype.getDefaultComponentElementName = /**
+     * @return {?}
+     */
+    function () { return 'ng-component'; };
     /**
      * @param {?} name
      * @return {?}
      */
-    MockSchemaRegistry.prototype.validateProperty = function (name) {
+    MockSchemaRegistry.prototype.validateProperty = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) {
         if (this.invalidProperties.indexOf(name) > -1) {
             return { error: true, msg: "Binding to property '" + name + "' is disallowed for security reasons" };
         }
@@ -289,7 +372,11 @@ var MockSchemaRegistry = (function () {
      * @param {?} name
      * @return {?}
      */
-    MockSchemaRegistry.prototype.validateAttribute = function (name) {
+    MockSchemaRegistry.prototype.validateAttribute = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) {
         if (this.invalidAttributes.indexOf(name) > -1) {
             return {
                 error: true,
@@ -304,14 +391,24 @@ var MockSchemaRegistry = (function () {
      * @param {?} propName
      * @return {?}
      */
-    MockSchemaRegistry.prototype.normalizeAnimationStyleProperty = function (propName) { return propName; };
+    MockSchemaRegistry.prototype.normalizeAnimationStyleProperty = /**
+     * @param {?} propName
+     * @return {?}
+     */
+    function (propName) { return propName; };
     /**
      * @param {?} camelCaseProp
      * @param {?} userProvidedProp
      * @param {?} val
      * @return {?}
      */
-    MockSchemaRegistry.prototype.normalizeAnimationStyleValue = function (camelCaseProp, userProvidedProp, val) {
+    MockSchemaRegistry.prototype.normalizeAnimationStyleValue = /**
+     * @param {?} camelCaseProp
+     * @param {?} userProvidedProp
+     * @param {?} val
+     * @return {?}
+     */
+    function (camelCaseProp, userProvidedProp, val) {
         return { error: /** @type {?} */ ((null)), value: val.toString() };
     };
     return MockSchemaRegistry;
@@ -334,9 +431,6 @@ var MockSchemaRegistry = (function () {
  */
 var MockDirectiveResolver = (function (_super) {
     __extends(MockDirectiveResolver, _super);
-    /**
-     * @param {?} reflector
-     */
     function MockDirectiveResolver(reflector) {
         var _this = _super.call(this, reflector) || this;
         _this._directives = new Map();
@@ -347,17 +441,31 @@ var MockDirectiveResolver = (function (_super) {
      * @param {?=} throwIfNotFound
      * @return {?}
      */
-    MockDirectiveResolver.prototype.resolve = function (type, throwIfNotFound) {
+    MockDirectiveResolver.prototype.resolve = /**
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */
+    function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         return this._directives.get(type) || _super.prototype.resolve.call(this, type, throwIfNotFound);
     };
+    /**
+     * Overrides the {@link core.Directive} for a directive.
+     */
     /**
      * Overrides the {\@link core.Directive} for a directive.
      * @param {?} type
      * @param {?} metadata
      * @return {?}
      */
-    MockDirectiveResolver.prototype.setDirective = function (type, metadata) {
+    MockDirectiveResolver.prototype.setDirective = /**
+     * Overrides the {\@link core.Directive} for a directive.
+     * @param {?} type
+     * @param {?} metadata
+     * @return {?}
+     */
+    function (type, metadata) {
         this._directives.set(type, metadata);
     };
     return MockDirectiveResolver;
@@ -376,23 +484,35 @@ var MockDirectiveResolver = (function (_super) {
  */
 var MockNgModuleResolver = (function (_super) {
     __extends(MockNgModuleResolver, _super);
-    /**
-     * @param {?} reflector
-     */
     function MockNgModuleResolver(reflector) {
         var _this = _super.call(this, reflector) || this;
         _this._ngModules = new Map();
         return _this;
     }
     /**
+     * Overrides the {@link NgModule} for a module.
+     */
+    /**
      * Overrides the {\@link NgModule} for a module.
      * @param {?} type
      * @param {?} metadata
      * @return {?}
      */
-    MockNgModuleResolver.prototype.setNgModule = function (type, metadata) {
+    MockNgModuleResolver.prototype.setNgModule = /**
+     * Overrides the {\@link NgModule} for a module.
+     * @param {?} type
+     * @param {?} metadata
+     * @return {?}
+     */
+    function (type, metadata) {
         this._ngModules.set(type, metadata);
     };
+    /**
+     * Returns the {@link NgModule} for a module:
+     * - Set the {@link NgModule} to the overridden view when it exists or fallback to the
+     * default
+     * `NgModuleResolver`, see `setNgModule`.
+     */
     /**
      * Returns the {\@link NgModule} for a module:
      * - Set the {\@link NgModule} to the overridden view when it exists or fallback to the
@@ -402,9 +522,18 @@ var MockNgModuleResolver = (function (_super) {
      * @param {?=} throwIfNotFound
      * @return {?}
      */
-    MockNgModuleResolver.prototype.resolve = function (type, throwIfNotFound) {
+    MockNgModuleResolver.prototype.resolve = /**
+     * Returns the {\@link NgModule} for a module:
+     * - Set the {\@link NgModule} to the overridden view when it exists or fallback to the
+     * default
+     * `NgModuleResolver`, see `setNgModule`.
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */
+    function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
-        return this._ngModules.get(type) || ((_super.prototype.resolve.call(this, type, throwIfNotFound)));
+        return this._ngModules.get(type) || /** @type {?} */ ((_super.prototype.resolve.call(this, type, throwIfNotFound)));
     };
     return MockNgModuleResolver;
 }(_angular_compiler.NgModuleResolver));
@@ -422,21 +551,33 @@ var MockNgModuleResolver = (function (_super) {
  */
 var MockPipeResolver = (function (_super) {
     __extends(MockPipeResolver, _super);
-    /**
-     * @param {?} refector
-     */
     function MockPipeResolver(refector) {
         var _this = _super.call(this, refector) || this;
         _this._pipes = new Map();
         return _this;
     }
     /**
+     * Overrides the {@link Pipe} for a pipe.
+     */
+    /**
      * Overrides the {\@link Pipe} for a pipe.
      * @param {?} type
      * @param {?} metadata
      * @return {?}
      */
-    MockPipeResolver.prototype.setPipe = function (type, metadata) { this._pipes.set(type, metadata); };
+    MockPipeResolver.prototype.setPipe = /**
+     * Overrides the {\@link Pipe} for a pipe.
+     * @param {?} type
+     * @param {?} metadata
+     * @return {?}
+     */
+    function (type, metadata) { this._pipes.set(type, metadata); };
+    /**
+     * Returns the {@link Pipe} for a pipe:
+     * - Set the {@link Pipe} to the overridden view when it exists or fallback to the
+     * default
+     * `PipeResolver`, see `setPipe`.
+     */
     /**
      * Returns the {\@link Pipe} for a pipe:
      * - Set the {\@link Pipe} to the overridden view when it exists or fallback to the
@@ -446,11 +587,20 @@ var MockPipeResolver = (function (_super) {
      * @param {?=} throwIfNotFound
      * @return {?}
      */
-    MockPipeResolver.prototype.resolve = function (type, throwIfNotFound) {
+    MockPipeResolver.prototype.resolve = /**
+     * Returns the {\@link Pipe} for a pipe:
+     * - Set the {\@link Pipe} to the overridden view when it exists or fallback to the
+     * default
+     * `PipeResolver`, see `setPipe`.
+     * @param {?} type
+     * @param {?=} throwIfNotFound
+     * @return {?}
+     */
+    function (type, throwIfNotFound) {
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
         var /** @type {?} */ metadata = this._pipes.get(type);
         if (!metadata) {
-            metadata = ((_super.prototype.resolve.call(this, type, throwIfNotFound)));
+            metadata = /** @type {?} */ ((_super.prototype.resolve.call(this, type, throwIfNotFound)));
         }
         return metadata;
     };

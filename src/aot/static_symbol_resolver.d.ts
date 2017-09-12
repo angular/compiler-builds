@@ -64,7 +64,7 @@ export declare class StaticSymbolResolver {
     private symbolResourcePaths;
     private symbolFromFile;
     private knownFileNameToModuleNames;
-    constructor(host: StaticSymbolResolverHost, staticSymbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, errorRecorder?: (error: any, fileName?: string) => void);
+    constructor(host: StaticSymbolResolverHost, staticSymbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, errorRecorder?: ((error: any, fileName?: string | undefined) => void) | undefined);
     resolveSymbol(staticSymbol: StaticSymbol): ResolvedStaticSymbol;
     /**
      * getImportAs produces a symbol that can be used to import the given symbol.

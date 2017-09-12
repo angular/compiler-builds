@@ -177,8 +177,8 @@ export declare class ExternalExpr extends Expression {
 export declare class ExternalReference {
     moduleName: string | null;
     name: string | null;
-    runtime: any | null;
-    constructor(moduleName: string | null, name: string | null, runtime?: any | null);
+    runtime: any;
+    constructor(moduleName: string | null, name: string | null, runtime?: any);
 }
 export declare class ConditionalExpr extends Expression {
     condition: Expression;

@@ -22,10 +22,10 @@ export declare class TemplateParseError extends ParseError {
     constructor(message: string, span: ParseSourceSpan, level: ParseErrorLevel);
 }
 export declare class TemplateParseResult {
-    templateAst: TemplateAst[];
-    usedPipes: CompilePipeSummary[];
-    errors: ParseError[];
-    constructor(templateAst?: TemplateAst[], usedPipes?: CompilePipeSummary[], errors?: ParseError[]);
+    templateAst: TemplateAst[] | undefined;
+    usedPipes: CompilePipeSummary[] | undefined;
+    errors: ParseError[] | undefined;
+    constructor(templateAst?: TemplateAst[] | undefined, usedPipes?: CompilePipeSummary[] | undefined, errors?: ParseError[] | undefined);
 }
 export declare class TemplateParser {
     private _config;
