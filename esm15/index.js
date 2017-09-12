@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.6-9ab9437
+ * @license Angular v5.0.0-beta.6-c8f742e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -112,7 +112,6 @@ var core = Object.freeze({
  * found in the LICENSE file at https://angular.io/license
  */
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
-
 function dashCaseToCamelCase(input) {
     return input.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
 }
@@ -287,7 +286,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.6-9ab9437');
+const VERSION = new Version('5.0.0-beta.6-c8f742e');
 
 /**
  * @license
@@ -10636,7 +10635,6 @@ const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 const _INDENT_WITH = '  ';
 const CATCH_ERROR_VAR$1 = variable('error', null, null);
 const CATCH_STACK_VAR$1 = variable('stack', null, null);
-
 class _EmittedLine {
     constructor(indent) {
         this.indent = indent;
