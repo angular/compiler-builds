@@ -7,6 +7,7 @@
  */
 import { CompileNgModuleMetadata } from '../compile_metadata';
 import { CompilerConfig } from '../config';
+import { MessageBundle } from '../i18n/message_bundle';
 import { CompileMetadataResolver } from '../metadata_resolver';
 import { NgModuleCompiler } from '../ng_module_compiler';
 import { OutputEmitter } from '../output/abstract_emitter';
@@ -40,6 +41,7 @@ export declare class AotCompiler {
     analyzeModulesAsync(rootFiles: string[]): Promise<NgAnalyzedModules>;
     emitAllStubs(analyzeResult: NgAnalyzedModules): GeneratedFile[];
     emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
+    emitMessageBundle(analyzeResult: NgAnalyzedModules, locale: string | null): MessageBundle;
     private _compileStubFile(srcFileUrl, directives, pipes, ngModules);
     private _compileImplFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
     private _createSummary(srcFileName, directives, pipes, ngModules, injectables, ngFactoryCtx);

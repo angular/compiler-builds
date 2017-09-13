@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.6-c8f742e
+ * @license Angular v5.0.0-beta.6-bf94f87
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -286,7 +286,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.6-c8f742e');
+const VERSION = new Version('5.0.0-beta.6-bf94f87');
 
 /**
  * @license
@@ -15186,6 +15186,86 @@ function elementEventFullName(target, name) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * A container for message extracted from the templates.
+ */
+class MessageBundle {
+    constructor(_htmlParser, _implicitTags, _implicitAttrs, _locale = null) {
+        this._htmlParser = _htmlParser;
+        this._implicitTags = _implicitTags;
+        this._implicitAttrs = _implicitAttrs;
+        this._locale = _locale;
+        this._messages = [];
+    }
+    updateFromTemplate(html, url, interpolationConfig) {
+        const htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
+        if (htmlParserResult.errors.length) {
+            return htmlParserResult.errors;
+        }
+        const i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
+        if (i18nParserResult.errors.length) {
+            return i18nParserResult.errors;
+        }
+        this._messages.push(...i18nParserResult.messages);
+        return [];
+    }
+    // Return the message in the internal format
+    // The public (serialized) format might be different, see the `write` method.
+    getMessages() { return this._messages; }
+    write(serializer, filterSources) {
+        const messages = {};
+        const mapperVisitor = new MapPlaceholderNames();
+        // Deduplicate messages based on their ID
+        this._messages.forEach(message => {
+            const id = serializer.digest(message);
+            if (!messages.hasOwnProperty(id)) {
+                messages[id] = message;
+            }
+            else {
+                messages[id].sources.push(...message.sources);
+            }
+        });
+        // Transform placeholder names using the serializer mapping
+        const msgList = Object.keys(messages).map(id => {
+            const mapper = serializer.createNameMapper(messages[id]);
+            const src = messages[id];
+            const nodes = mapper ? mapperVisitor.convert(src.nodes, mapper) : src.nodes;
+            let transformedMessage = new Message(nodes, {}, {}, src.meaning, src.description, id);
+            transformedMessage.sources = src.sources;
+            if (filterSources) {
+                transformedMessage.sources.forEach((source) => source.filePath = filterSources(source.filePath));
+            }
+            return transformedMessage;
+        });
+        return serializer.write(msgList, this._locale);
+    }
+}
+// Transform an i18n AST by renaming the placeholder nodes with the given mapper
+class MapPlaceholderNames extends CloneVisitor {
+    convert(nodes, mapper) {
+        return mapper ? nodes.map(n => n.visit(this, mapper)) : nodes;
+    }
+    visitTagPlaceholder(ph, mapper) {
+        const startName = (mapper.toPublicName(ph.startName));
+        const closeName = ph.closeName ? mapper.toPublicName(ph.closeName) : ph.closeName;
+        const children = ph.children.map(n => n.visit(this, mapper));
+        return new TagPlaceholder(ph.tag, ph.attrs, startName, closeName, children, ph.isVoid, ph.sourceSpan);
+    }
+    visitPlaceholder(ph, mapper) {
+        return new Placeholder(ph.value, (mapper.toPublicName(ph.name)), ph.sourceSpan);
+    }
+    visitIcuPlaceholder(ph, mapper) {
+        return new IcuPlaceholder(ph.value, (mapper.toPublicName(ph.name)), ph.sourceSpan);
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 class GeneratedFile {
     constructor(srcFileUrl, genFileUrl, sourceOrStmts) {
         this.srcFileUrl = srcFileUrl;
@@ -15578,6 +15658,30 @@ class AotCompiler {
         const { ngModuleByPipeOrDirective, files } = analyzeResult;
         const sourceModules = files.map(file => this._compileImplFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables));
         return flatten(sourceModules);
+    }
+    emitMessageBundle(analyzeResult, locale) {
+        const errors = [];
+        const htmlParser = new HtmlParser();
+        // TODO(vicb): implicit tags & attributes
+        const messageBundle = new MessageBundle(htmlParser, [], {}, locale);
+        analyzeResult.files.forEach(file => {
+            const compMetas = [];
+            file.directives.forEach(directiveType => {
+                const dirMeta = this._metadataResolver.getDirectiveMetadata(directiveType);
+                if (dirMeta && dirMeta.isComponent) {
+                    compMetas.push(dirMeta);
+                }
+            });
+            compMetas.forEach(compMeta => {
+                const html = (compMeta.template.template);
+                const interpolationConfig = InterpolationConfig.fromArray(compMeta.template.interpolation);
+                errors.push(...(messageBundle.updateFromTemplate(html, file.srcUrl, interpolationConfig)));
+            });
+        });
+        if (errors.length) {
+            throw new Error(errors.map(e => e.toString()).join('\n'));
+        }
+        return messageBundle;
     }
     _compileStubFile(srcFileUrl, directives, pipes, ngModules) {
         const fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
@@ -18349,86 +18453,6 @@ function _resolveUrl(base, url) {
  */
 class ResourceLoader {
     get(url) { return ''; }
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * A container for message extracted from the templates.
- */
-class MessageBundle {
-    constructor(_htmlParser, _implicitTags, _implicitAttrs, _locale = null) {
-        this._htmlParser = _htmlParser;
-        this._implicitTags = _implicitTags;
-        this._implicitAttrs = _implicitAttrs;
-        this._locale = _locale;
-        this._messages = [];
-    }
-    updateFromTemplate(html, url, interpolationConfig) {
-        const htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
-        if (htmlParserResult.errors.length) {
-            return htmlParserResult.errors;
-        }
-        const i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
-        if (i18nParserResult.errors.length) {
-            return i18nParserResult.errors;
-        }
-        this._messages.push(...i18nParserResult.messages);
-        return [];
-    }
-    // Return the message in the internal format
-    // The public (serialized) format might be different, see the `write` method.
-    getMessages() { return this._messages; }
-    write(serializer, filterSources) {
-        const messages = {};
-        const mapperVisitor = new MapPlaceholderNames();
-        // Deduplicate messages based on their ID
-        this._messages.forEach(message => {
-            const id = serializer.digest(message);
-            if (!messages.hasOwnProperty(id)) {
-                messages[id] = message;
-            }
-            else {
-                messages[id].sources.push(...message.sources);
-            }
-        });
-        // Transform placeholder names using the serializer mapping
-        const msgList = Object.keys(messages).map(id => {
-            const mapper = serializer.createNameMapper(messages[id]);
-            const src = messages[id];
-            const nodes = mapper ? mapperVisitor.convert(src.nodes, mapper) : src.nodes;
-            let transformedMessage = new Message(nodes, {}, {}, src.meaning, src.description, id);
-            transformedMessage.sources = src.sources;
-            if (filterSources) {
-                transformedMessage.sources.forEach((source) => source.filePath = filterSources(source.filePath));
-            }
-            return transformedMessage;
-        });
-        return serializer.write(msgList, this._locale);
-    }
-}
-// Transform an i18n AST by renaming the placeholder nodes with the given mapper
-class MapPlaceholderNames extends CloneVisitor {
-    convert(nodes, mapper) {
-        return mapper ? nodes.map(n => n.visit(this, mapper)) : nodes;
-    }
-    visitTagPlaceholder(ph, mapper) {
-        const startName = (mapper.toPublicName(ph.startName));
-        const closeName = ph.closeName ? mapper.toPublicName(ph.closeName) : ph.closeName;
-        const children = ph.children.map(n => n.visit(this, mapper));
-        return new TagPlaceholder(ph.tag, ph.attrs, startName, closeName, children, ph.isVoid, ph.sourceSpan);
-    }
-    visitPlaceholder(ph, mapper) {
-        return new Placeholder(ph.value, (mapper.toPublicName(ph.name)), ph.sourceSpan);
-    }
-    visitIcuPlaceholder(ph, mapper) {
-        return new IcuPlaceholder(ph.value, (mapper.toPublicName(ph.name)), ph.sourceSpan);
-    }
 }
 
 /**

@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.6-c8f742e
+ * @license Angular v5.0.0-beta.6-bf94f87
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.0-beta.6-c8f742e
+ * @license Angular v5.0.0-beta.6-bf94f87
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -376,7 +376,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.6-c8f742e');
+var VERSION = new Version('5.0.0-beta.6-bf94f87');
 
 /**
  * @license
@@ -16753,6 +16753,102 @@ function elementEventFullName(target, name) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * A container for message extracted from the templates.
+ */
+var MessageBundle = (function () {
+    function MessageBundle(_htmlParser, _implicitTags, _implicitAttrs, _locale) {
+        if (_locale === void 0) { _locale = null; }
+        this._htmlParser = _htmlParser;
+        this._implicitTags = _implicitTags;
+        this._implicitAttrs = _implicitAttrs;
+        this._locale = _locale;
+        this._messages = [];
+    }
+    MessageBundle.prototype.updateFromTemplate = function (html, url, interpolationConfig) {
+        var htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
+        if (htmlParserResult.errors.length) {
+            return htmlParserResult.errors;
+        }
+        var i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
+        if (i18nParserResult.errors.length) {
+            return i18nParserResult.errors;
+        }
+        (_a = this._messages).push.apply(_a, i18nParserResult.messages);
+        return [];
+        var _a;
+    };
+    // Return the message in the internal format
+    // The public (serialized) format might be different, see the `write` method.
+    // Return the message in the internal format
+    // The public (serialized) format might be different, see the `write` method.
+    MessageBundle.prototype.getMessages = 
+    // Return the message in the internal format
+    // The public (serialized) format might be different, see the `write` method.
+    function () { return this._messages; };
+    MessageBundle.prototype.write = function (serializer, filterSources) {
+        var messages = {};
+        var mapperVisitor = new MapPlaceholderNames();
+        // Deduplicate messages based on their ID
+        this._messages.forEach(function (message) {
+            var id = serializer.digest(message);
+            if (!messages.hasOwnProperty(id)) {
+                messages[id] = message;
+            }
+            else {
+                (_a = messages[id].sources).push.apply(_a, message.sources);
+            }
+            var _a;
+        });
+        // Transform placeholder names using the serializer mapping
+        var msgList = Object.keys(messages).map(function (id) {
+            var mapper = serializer.createNameMapper(messages[id]);
+            var src = messages[id];
+            var nodes = mapper ? mapperVisitor.convert(src.nodes, mapper) : src.nodes;
+            var transformedMessage = new Message(nodes, {}, {}, src.meaning, src.description, id);
+            transformedMessage.sources = src.sources;
+            if (filterSources) {
+                transformedMessage.sources.forEach(function (source) { return source.filePath = filterSources(source.filePath); });
+            }
+            return transformedMessage;
+        });
+        return serializer.write(msgList, this._locale);
+    };
+    return MessageBundle;
+}());
+// Transform an i18n AST by renaming the placeholder nodes with the given mapper
+var MapPlaceholderNames = (function (_super) {
+    __extends(MapPlaceholderNames, _super);
+    function MapPlaceholderNames() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    MapPlaceholderNames.prototype.convert = function (nodes, mapper) {
+        var _this = this;
+        return mapper ? nodes.map(function (n) { return n.visit(_this, mapper); }) : nodes;
+    };
+    MapPlaceholderNames.prototype.visitTagPlaceholder = function (ph, mapper) {
+        var _this = this;
+        var startName = (mapper.toPublicName(ph.startName));
+        var closeName = ph.closeName ? mapper.toPublicName(ph.closeName) : ph.closeName;
+        var children = ph.children.map(function (n) { return n.visit(_this, mapper); });
+        return new TagPlaceholder(ph.tag, ph.attrs, startName, closeName, children, ph.isVoid, ph.sourceSpan);
+    };
+    MapPlaceholderNames.prototype.visitPlaceholder = function (ph, mapper) {
+        return new Placeholder(ph.value, (mapper.toPublicName(ph.name)), ph.sourceSpan);
+    };
+    MapPlaceholderNames.prototype.visitIcuPlaceholder = function (ph, mapper) {
+        return new IcuPlaceholder(ph.value, (mapper.toPublicName(ph.name)), ph.sourceSpan);
+    };
+    return MapPlaceholderNames;
+}(CloneVisitor));
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var GeneratedFile = (function () {
     function GeneratedFile(srcFileUrl, genFileUrl, sourceOrStmts) {
         this.srcFileUrl = srcFileUrl;
@@ -17188,6 +17284,31 @@ var AotCompiler = (function () {
             return _this._compileImplFile(file.srcUrl, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables);
         });
         return flatten(sourceModules);
+    };
+    AotCompiler.prototype.emitMessageBundle = function (analyzeResult, locale) {
+        var _this = this;
+        var errors = [];
+        var htmlParser = new HtmlParser();
+        // TODO(vicb): implicit tags & attributes
+        var messageBundle = new MessageBundle(htmlParser, [], {}, locale);
+        analyzeResult.files.forEach(function (file) {
+            var compMetas = [];
+            file.directives.forEach(function (directiveType) {
+                var dirMeta = _this._metadataResolver.getDirectiveMetadata(directiveType);
+                if (dirMeta && dirMeta.isComponent) {
+                    compMetas.push(dirMeta);
+                }
+            });
+            compMetas.forEach(function (compMeta) {
+                var html = (compMeta.template.template);
+                var interpolationConfig = InterpolationConfig.fromArray(compMeta.template.interpolation);
+                errors.push.apply(errors, (messageBundle.updateFromTemplate(html, file.srcUrl, interpolationConfig)));
+            });
+        });
+        if (errors.length) {
+            throw new Error(errors.map(function (e) { return e.toString(); }).join('\n'));
+        }
+        return messageBundle;
     };
     AotCompiler.prototype._compileStubFile = function (srcFileUrl, directives, pipes, ngModules) {
         var _this = this;
@@ -20194,102 +20315,6 @@ var ResourceLoader = (function () {
     ResourceLoader.prototype.get = function (url) { return ''; };
     return ResourceLoader;
 }());
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/**
- * A container for message extracted from the templates.
- */
-var MessageBundle = (function () {
-    function MessageBundle(_htmlParser, _implicitTags, _implicitAttrs, _locale) {
-        if (_locale === void 0) { _locale = null; }
-        this._htmlParser = _htmlParser;
-        this._implicitTags = _implicitTags;
-        this._implicitAttrs = _implicitAttrs;
-        this._locale = _locale;
-        this._messages = [];
-    }
-    MessageBundle.prototype.updateFromTemplate = function (html, url, interpolationConfig) {
-        var htmlParserResult = this._htmlParser.parse(html, url, true, interpolationConfig);
-        if (htmlParserResult.errors.length) {
-            return htmlParserResult.errors;
-        }
-        var i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
-        if (i18nParserResult.errors.length) {
-            return i18nParserResult.errors;
-        }
-        (_a = this._messages).push.apply(_a, i18nParserResult.messages);
-        return [];
-        var _a;
-    };
-    // Return the message in the internal format
-    // The public (serialized) format might be different, see the `write` method.
-    // Return the message in the internal format
-    // The public (serialized) format might be different, see the `write` method.
-    MessageBundle.prototype.getMessages = 
-    // Return the message in the internal format
-    // The public (serialized) format might be different, see the `write` method.
-    function () { return this._messages; };
-    MessageBundle.prototype.write = function (serializer, filterSources) {
-        var messages = {};
-        var mapperVisitor = new MapPlaceholderNames();
-        // Deduplicate messages based on their ID
-        this._messages.forEach(function (message) {
-            var id = serializer.digest(message);
-            if (!messages.hasOwnProperty(id)) {
-                messages[id] = message;
-            }
-            else {
-                (_a = messages[id].sources).push.apply(_a, message.sources);
-            }
-            var _a;
-        });
-        // Transform placeholder names using the serializer mapping
-        var msgList = Object.keys(messages).map(function (id) {
-            var mapper = serializer.createNameMapper(messages[id]);
-            var src = messages[id];
-            var nodes = mapper ? mapperVisitor.convert(src.nodes, mapper) : src.nodes;
-            var transformedMessage = new Message(nodes, {}, {}, src.meaning, src.description, id);
-            transformedMessage.sources = src.sources;
-            if (filterSources) {
-                transformedMessage.sources.forEach(function (source) { return source.filePath = filterSources(source.filePath); });
-            }
-            return transformedMessage;
-        });
-        return serializer.write(msgList, this._locale);
-    };
-    return MessageBundle;
-}());
-// Transform an i18n AST by renaming the placeholder nodes with the given mapper
-var MapPlaceholderNames = (function (_super) {
-    __extends(MapPlaceholderNames, _super);
-    function MapPlaceholderNames() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    MapPlaceholderNames.prototype.convert = function (nodes, mapper) {
-        var _this = this;
-        return mapper ? nodes.map(function (n) { return n.visit(_this, mapper); }) : nodes;
-    };
-    MapPlaceholderNames.prototype.visitTagPlaceholder = function (ph, mapper) {
-        var _this = this;
-        var startName = (mapper.toPublicName(ph.startName));
-        var closeName = ph.closeName ? mapper.toPublicName(ph.closeName) : ph.closeName;
-        var children = ph.children.map(function (n) { return n.visit(_this, mapper); });
-        return new TagPlaceholder(ph.tag, ph.attrs, startName, closeName, children, ph.isVoid, ph.sourceSpan);
-    };
-    MapPlaceholderNames.prototype.visitPlaceholder = function (ph, mapper) {
-        return new Placeholder(ph.value, (mapper.toPublicName(ph.name)), ph.sourceSpan);
-    };
-    MapPlaceholderNames.prototype.visitIcuPlaceholder = function (ph, mapper) {
-        return new IcuPlaceholder(ph.value, (mapper.toPublicName(ph.name)), ph.sourceSpan);
-    };
-    return MapPlaceholderNames;
-}(CloneVisitor));
 
 /**
  * @license
