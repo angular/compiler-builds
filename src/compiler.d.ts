@@ -20,10 +20,11 @@
  *   </p>
  * </div>
  */
-export { VERSION } from './version';
+import * as core from './core';
+export { core };
+export * from './version';
 export * from './template_parser/template_ast';
-export { TEMPLATE_TRANSFORMS } from './template_parser/template_parser';
-export { CompilerConfig } from './config';
+export { CompilerConfig, preserveWhitespacesDefault } from './config';
 export * from './compile_metadata';
 export * from './aot/compiler_factory';
 export * from './aot/compiler';
@@ -36,9 +37,8 @@ export * from './aot/static_symbol_resolver';
 export * from './aot/summary_resolver';
 export * from './ast_path';
 export * from './summary_resolver';
+export { Identifiers } from './identifiers';
 export { JitCompiler } from './jit/compiler';
-export * from './jit/compiler_factory';
-export * from './jit/jit_reflector';
 export * from './compile_reflector';
 export * from './url_resolver';
 export * from './resource_loader';
@@ -68,4 +68,4 @@ export * from './selector';
 export * from './style_compiler';
 export * from './template_parser/template_parser';
 export { ViewCompiler } from './view_compiler/view_compiler';
-export { getParseErrors, isSyntaxError, syntaxError } from './util';
+export { getParseErrors, isSyntaxError, syntaxError, Version } from './util';

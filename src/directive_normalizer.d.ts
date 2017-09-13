@@ -5,9 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { ViewEncapsulation } from '@angular/core';
 import { CompileAnimationEntryMetadata, CompileDirectiveMetadata, CompileStylesheetMetadata, CompileTemplateMetadata } from './compile_metadata';
 import { CompilerConfig } from './config';
+import { ViewEncapsulation } from './core';
 import { HtmlParser } from './ml_parser/html_parser';
 import { ResourceLoader } from './resource_loader';
 import { UrlResolver } from './url_resolver';
@@ -23,6 +23,7 @@ export interface PrenormalizedTemplateMetadata {
     interpolation: [string, string] | null;
     encapsulation: ViewEncapsulation | null;
     animations: CompileAnimationEntryMetadata[];
+    preserveWhitespaces: boolean | null;
 }
 export declare class DirectiveNormalizer {
     private _resourceLoader;

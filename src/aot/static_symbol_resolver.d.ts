@@ -64,7 +64,7 @@ export declare class StaticSymbolResolver {
     private symbolResourcePaths;
     private symbolFromFile;
     private knownFileNameToModuleNames;
-    constructor(host: StaticSymbolResolverHost, staticSymbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, errorRecorder?: (error: any, fileName?: string) => void);
+    constructor(host: StaticSymbolResolverHost, staticSymbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, errorRecorder?: ((error: any, fileName?: string | undefined) => void) | undefined);
     resolveSymbol(staticSymbol: StaticSymbol): ResolvedStaticSymbol;
     /**
      * getImportAs produces a symbol that can be used to import the given symbol.
@@ -92,6 +92,7 @@ export declare class StaticSymbolResolver {
      */
     fileNameToModuleName(importedFilePath: string, containingFilePath: string): string | null;
     recordImportAs(sourceSymbol: StaticSymbol, targetSymbol: StaticSymbol): void;
+    recordModuleNameForFileName(fileName: string, moduleName: string): void;
     /**
      * Invalidate all information derived from the given file.
      *
@@ -109,6 +110,14 @@ export declare class StaticSymbolResolver {
      * @param members a symbol for a static member of the named type
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
+    /**
+     * hasDecorators checks a file's metadata for the presense of decorators without evalutating the
+     * metada.
+     *
+     * @param filePath the absolute path to examine for decorators.
+     * @returns true if any class in the file has a decorator.
+     */
+    hasDecorators(filePath: string): boolean;
     getSymbolsOf(filePath: string): StaticSymbol[];
     private _createSymbolsOf(filePath);
     private createResolvedSymbol(sourceSymbol, topLevelPath, topLevelSymbolNames, metadata);
