@@ -10,6 +10,7 @@ import { CompileReflector } from '../compile_reflector';
 import { CompilerConfig } from '../config';
 import { Type } from '../core';
 import { CompileMetadataResolver } from '../metadata_resolver';
+import { HtmlParser } from '../ml_parser/html_parser';
 import { NgModuleCompiler } from '../ng_module_compiler';
 import { StyleCompiler } from '../style_compiler';
 import { SummaryResolver } from '../summary_resolver';
@@ -31,6 +32,7 @@ export interface ModuleWithComponentFactories {
  */
 export declare class JitCompiler {
     private _metadataResolver;
+    private _htmlParser;
     private _templateParser;
     private _styleCompiler;
     private _viewCompiler;
@@ -45,7 +47,7 @@ export declare class JitCompiler {
     private _compiledDirectiveWrapperCache;
     private _compiledNgModuleCache;
     private _sharedStylesheetCount;
-    constructor(_metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _summaryResolver: SummaryResolver<Type>, _reflector: CompileReflector, _compilerConfig: CompilerConfig, _console: Console, getExtraNgModuleProviders: (ngModule: any) => CompileProviderMetadata[]);
+    constructor(_metadataResolver: CompileMetadataResolver, _htmlParser: HtmlParser, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _summaryResolver: SummaryResolver<Type>, _reflector: CompileReflector, _compilerConfig: CompilerConfig, _console: Console, getExtraNgModuleProviders: (ngModule: any) => CompileProviderMetadata[]);
     compileModuleSync(moduleType: Type): object;
     compileModuleAsync(moduleType: Type): Promise<object>;
     compileModuleAndAllComponentsSync(moduleType: Type): ModuleWithComponentFactories;

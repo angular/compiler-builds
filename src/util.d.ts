@@ -56,10 +56,10 @@ export declare function resolveForwardRef(type: any): any;
 export declare function isPromise(obj: any): obj is Promise<any>;
 export declare class Version {
     full: string;
-    constructor(full: string);
     readonly major: string;
     readonly minor: string;
     readonly patch: string;
+    constructor(full: string);
 }
 export interface Console {
     log(message: string): void;

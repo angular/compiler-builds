@@ -13,6 +13,7 @@ export declare class CompilerConfig {
         missingTranslation?: MissingTranslationStrategy;
         enableLegacyTemplate?: boolean;
         preserveWhitespaces?: boolean;
+        fullTemplateTypeCheck?: boolean;
     });
 }
 export declare function preserveWhitespacesDefault(preserveWhitespacesOption: boolean | null, defaultSetting?: boolean): boolean;

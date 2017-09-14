@@ -461,7 +461,7 @@ export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, so
 export declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;
 export declare function importExpr(id: ExternalReference, typeParams?: Type[] | null, sourceSpan?: ParseSourceSpan | null): ExternalExpr;
 export declare function importType(id: ExternalReference, typeParams?: Type[] | null, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
-export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null): ExpressionType | null;
+export declare function expressionType(expr: Expression, typeModifiers?: TypeModifier[] | null): ExpressionType;
 export declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
 export declare function literalMap(values: {
     key: string;
