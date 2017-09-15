@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v4.4.0-RC.0-e8d1858
+ * @license Angular v4.4.0-RC.0-0bafd03
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.4.0-RC.0-e8d1858');
+var VERSION = new Version('4.4.0-RC.0-0bafd03');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -1557,6 +1557,10 @@ var SelectorContext = (function () {
  */
 var MODULE_SUFFIX = '';
 var DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+/**
+ * @param {?} input
+ * @return {?}
+ */
 /**
  * @param {?} input
  * @return {?}
@@ -18905,6 +18909,9 @@ var _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 var _INDENT_WITH = '  ';
 var CATCH_ERROR_VAR$1 = variable('error', null, null);
 var CATCH_STACK_VAR$1 = variable('stack', null, null);
+/**
+ * @abstract
+ */
 var _EmittedLine = (function () {
     /**
      * @param {?} indent

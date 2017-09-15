@@ -10,8 +10,8 @@ import * as o from './output_ast';
 import { SourceMapGenerator } from './source_map';
 export declare const CATCH_ERROR_VAR: o.ReadVarExpr;
 export declare const CATCH_STACK_VAR: o.ReadVarExpr;
-export interface OutputEmitter {
-    emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], preamble?: string | null): string;
+export declare abstract class OutputEmitter {
+    abstract emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], preamble?: string | null): string;
 }
 export declare class EmitterVisitorContext {
     private _indent;
