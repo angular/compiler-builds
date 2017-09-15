@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.4.0-RC.0-dd2d1be
+ * @license Angular v4.4.0-RC.0-e8d1858
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v4.4.0-RC.0-dd2d1be
+ * @license Angular v4.4.0-RC.0-e8d1858
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -55,7 +55,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.4.0-RC.0-dd2d1be');
+var VERSION = new _angular_core.Version('4.4.0-RC.0-e8d1858');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -1592,10 +1592,6 @@ var SelectorContext = (function () {
  */
 var MODULE_SUFFIX = '';
 var DASH_CASE_REGEXP = /-+([a-z0-9])/g;
-/**
- * @param {?} input
- * @return {?}
- */
 /**
  * @param {?} input
  * @return {?}
@@ -18944,9 +18940,6 @@ var _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 var _INDENT_WITH = '  ';
 var CATCH_ERROR_VAR$1 = variable('error', null, null);
 var CATCH_STACK_VAR$1 = variable('stack', null, null);
-/**
- * @abstract
- */
 var _EmittedLine = (function () {
     /**
      * @param {?} indent

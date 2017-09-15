@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.4.0-RC.0-dd2d1be
+ * @license Angular v4.4.0-RC.0-e8d1858
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.4.0-RC.0-dd2d1be');
+const VERSION = new Version('4.4.0-RC.0-e8d1858');
 
 /**
  * @license
@@ -1517,11 +1517,6 @@ class SelectorContext {
  */
 const MODULE_SUFFIX = '';
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
-/**
- * @param {?} input
- * @return {?}
- */
-
 /**
  * @param {?} input
  * @return {?}
@@ -18194,10 +18189,6 @@ const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 const _INDENT_WITH = '  ';
 const CATCH_ERROR_VAR$1 = variable('error', null, null);
 const CATCH_STACK_VAR$1 = variable('stack', null, null);
-/**
- * @abstract
- */
-
 class _EmittedLine {
     /**
      * @param {?} indent
