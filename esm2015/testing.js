@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-9d2236a
+ * @license Angular v5.0.0-beta.7-5751865
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -458,4 +458,4 @@ class MockPipeResolver extends PipeResolver {
  */
 
 export { MockResourceLoader, MockSchemaRegistry, MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver };
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=testing.js.map

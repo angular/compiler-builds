@@ -423,10 +423,16 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
     visitAllStatements(stmts: Statement[], context: any): Statement[];
 }
 export declare class RecursiveAstVisitor implements StatementVisitor, ExpressionVisitor {
+    visitType(ast: Type, context: any): any;
+    visitExpression(ast: Expression, context: any): any;
+    visitBuiltintType(type: BuiltinType, context: any): any;
+    visitExpressionType(type: ExpressionType, context: any): any;
+    visitArrayType(type: ArrayType, context: any): any;
+    visitMapType(type: MapType, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
-    visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
-    visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
-    visitWritePropExpr(expr: WritePropExpr, context: any): any;
+    visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
+    visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
+    visitWritePropExpr(ast: WritePropExpr, context: any): any;
     visitInvokeMethodExpr(ast: InvokeMethodExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
@@ -456,6 +462,7 @@ export declare class RecursiveAstVisitor implements StatementVisitor, Expression
     visitAllStatements(stmts: Statement[], context: any): void;
 }
 export declare function findReadVarNames(stmts: Statement[]): Set<string>;
+export declare function collectExternalReferences(stmts: Statement[]): ExternalReference[];
 export declare function applySourceSpanToStatementIfNeeded(stmt: Statement, sourceSpan: ParseSourceSpan | null): Statement;
 export declare function applySourceSpanToExpressionIfNeeded(expr: Expression, sourceSpan: ParseSourceSpan | null): Expression;
 export declare function variable(name: string, type?: Type | null, sourceSpan?: ParseSourceSpan | null): ReadVarExpr;

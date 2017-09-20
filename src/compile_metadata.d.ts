@@ -8,7 +8,6 @@
 import { StaticSymbol } from './aot/static_symbol';
 import { ChangeDetectionStrategy, SchemaMetadata, Type, ViewEncapsulation } from './core';
 import { LifecycleHooks } from './lifecycle_reflector';
-import { HtmlParser } from './ml_parser/html_parser';
 import { ParseTreeResult as HtmlParseTreeResult } from './ml_parser/parser';
 export declare class CompileAnimationEntryMetadata {
     name: string | null;
@@ -306,10 +305,6 @@ export declare class CompileDirectiveMetadata {
     });
     toSummary(): CompileDirectiveSummary;
 }
-/**
- * Construct {@link CompileDirectiveMetadata} from {@link ComponentTypeMetadata} and a selector.
- */
-export declare function createHostComponentMeta(hostTypeReference: any, compMeta: CompileDirectiveMetadata, hostViewType: StaticSymbol | ProxyClass, htmlParser: HtmlParser): CompileDirectiveMetadata;
 export interface CompilePipeSummary extends CompileTypeSummary {
     type: CompileTypeMetadata;
     name: string;
