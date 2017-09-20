@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-5751865
+ * @license Angular v5.0.0-beta.7-b14c2d1
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -287,7 +287,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.7-5751865');
+const VERSION = new Version('5.0.0-beta.7-b14c2d1');
 
 /**
  * @license
@@ -5841,7 +5841,7 @@ class _Visitor {
                         i18nCommentsWarned = true;
                         const details = comment.sourceSpan.details ? `, ${comment.sourceSpan.details}` : '';
                         // TODO(ocombe): use a log service once there is a public one available
-                        console.warn(` I18n comments are deprecated, use an <ng - container> element instead (${comment.sourceSpan.start}${details})`);
+                        console.warn(`I18n comments are deprecated, use an <ng-container> element instead (${comment.sourceSpan.start}${details})`);
                     }
                     this._inI18nBlock = true;
                     this._blockStartDepth = this._depth;
