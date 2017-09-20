@@ -17,11 +17,19 @@ export interface AotSummaryResolverHost {
      */
     isSourceFile(sourceFilePath: string): boolean;
     /**
-     * Returns the output file path of a source file.
+     * Converts a file name into a representation that should be stored in a summary file.
+     * This has to include changing the suffix as well.
      * E.g.
      * `some_file.ts` -> `some_file.d.ts`
+     *
+     * @param referringSrcFileName the soure file that refers to fileName
      */
-    getOutputFileName(sourceFilePath: string): string;
+    toSummaryFileName(fileName: string, referringSrcFileName: string): string;
+    /**
+     * Converts a fileName that was processed by `toSummaryFileName` back into a real fileName
+     * given the fileName of the library that is referrig to it.
+     */
+    fromSummaryFileName(fileName: string, referringLibFileName: string): string;
 }
 export declare class AotSummaryResolver implements SummaryResolver<StaticSymbol> {
     private host;
@@ -31,9 +39,11 @@ export declare class AotSummaryResolver implements SummaryResolver<StaticSymbol>
     private importAs;
     constructor(host: AotSummaryResolverHost, staticSymbolCache: StaticSymbolCache);
     isLibraryFile(filePath: string): boolean;
-    getLibraryFileName(filePath: string): string;
-    resolveSummary(staticSymbol: StaticSymbol): Summary<StaticSymbol>;
-    getSymbolsOf(filePath: string): StaticSymbol[];
+    toSummaryFileName(filePath: string, referringSrcFileName: string): string;
+    fromSummaryFileName(fileName: string, referringLibFileName: string): string;
+    resolveSummary(staticSymbol: StaticSymbol): Summary<StaticSymbol> | null;
+    getSymbolsOf(filePath: string): StaticSymbol[] | null;
     getImportAs(staticSymbol: StaticSymbol): StaticSymbol;
+    addSummary(summary: Summary<StaticSymbol>): void;
     private _loadSummaryFile(filePath);
 }
