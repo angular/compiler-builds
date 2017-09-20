@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-b14c2d1
+ * @license Angular v5.0.0-beta.7-2c4107c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -287,7 +287,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.7-b14c2d1');
+const VERSION = new Version('5.0.0-beta.7-2c4107c');
 
 /**
  * @license
@@ -14655,10 +14655,8 @@ class ViewCompileResult {
     }
 }
 class ViewCompiler {
-    constructor(_config, _reflector, _schemaRegistry) {
-        this._config = _config;
+    constructor(_reflector) {
         this._reflector = _reflector;
-        this._schemaRegistry = _schemaRegistry;
     }
     compileComponent(outputCtx, component, template, styles, usedPipes) {
         let embeddedViewCount = 0;
@@ -15162,7 +15160,7 @@ class ViewBuilder$1 {
         }
         return null;
     }
-    createLiteralArrayConverter(sourceSpan, argCount) {
+    _createLiteralArrayConverter(sourceSpan, argCount) {
         if (argCount === 0) {
             const valueExpr = importExpr(Identifiers.EMPTY_ARRAY);
             return () => valueExpr;
@@ -15176,7 +15174,7 @@ class ViewBuilder$1 {
         }));
         return (args) => callCheckStmt(nodeIndex, args);
     }
-    createLiteralMapConverter(sourceSpan, keys) {
+    _createLiteralMapConverter(sourceSpan, keys) {
         if (keys.length === 0) {
             const valueExpr = importExpr(Identifiers.EMPTY_MAP);
             return () => valueExpr;
@@ -15191,7 +15189,7 @@ class ViewBuilder$1 {
         }));
         return (args) => callCheckStmt(nodeIndex, args);
     }
-    createPipeConverter(expression, name, argCount) {
+    _createPipeConverter(expression, name, argCount) {
         const pipe = (this.usedPipes.find((pipeSummary) => pipeSummary.name === name));
         if (pipe.pure) {
             const nodeIndex = this.nodes.length;
@@ -15239,7 +15237,13 @@ class ViewBuilder$1 {
         }));
         return nodeIndex;
     }
-    // Attention: This might create new nodeDefs (for pipes and literal arrays and literal maps)!
+    /**
+       * For the AST in `UpdateExpression.value`:
+       * - create nodes for pipes, literal arrays and, literal maps,
+       * - update the AST to replace pipes, literal arrays and, literal maps with calls to check fn.
+       *
+       * WARNING: This might create new nodeDefs (for pipes and literal arrays and literal maps)!
+       */
     _preprocessUpdateExpression(expression) {
         return {
             nodeIndex: expression.nodeIndex,
@@ -15247,9 +15251,9 @@ class ViewBuilder$1 {
             sourceSpan: expression.sourceSpan,
             context: expression.context,
             value: convertPropertyBindingBuiltins({
-                createLiteralArrayConverter: (argCount) => this.createLiteralArrayConverter(expression.sourceSpan, argCount),
-                createLiteralMapConverter: (keys) => this.createLiteralMapConverter(expression.sourceSpan, keys),
-                createPipeConverter: (name, argCount) => this.createPipeConverter(expression, name, argCount)
+                createLiteralArrayConverter: (argCount) => this._createLiteralArrayConverter(expression.sourceSpan, argCount),
+                createLiteralMapConverter: (keys) => this._createLiteralMapConverter(expression.sourceSpan, keys),
+                createPipeConverter: (name, argCount) => this._createPipeConverter(expression, name, argCount)
             }, expression.value)
         };
     }
@@ -17659,7 +17663,7 @@ function createAotCompiler(compilerHost, options) {
     const tmplParser = new TemplateParser(config, staticReflector, expressionParser, elementSchemaRegistry, htmlParser, console, []);
     const resolver = new CompileMetadataResolver(config, htmlParser, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, console, symbolCache, staticReflector);
     // TODO(vicb): do not pass options.i18nFormat here
-    const viewCompiler = new ViewCompiler(config, staticReflector, elementSchemaRegistry);
+    const viewCompiler = new ViewCompiler(staticReflector);
     const typeCheckCompiler = new TypeCheckCompiler(options, staticReflector);
     const compiler = new AotCompiler(config, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, typeCheckCompiler, new NgModuleCompiler(staticReflector), new TypeScriptEmitter(), summaryResolver, options.locale || null, options.i18nFormat || null, options.enableSummariesForJit || null, symbolResolver);
     return { compiler, reflector: staticReflector };
