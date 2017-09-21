@@ -21,11 +21,6 @@ import { GeneratedFile } from './generated_file';
 import { StaticReflector } from './static_reflector';
 import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
-export declare enum StubEmitFlags {
-    Basic = 1,
-    TypeCheck = 2,
-    All = 3,
-}
 export declare class AotCompiler {
     private _config;
     private _host;

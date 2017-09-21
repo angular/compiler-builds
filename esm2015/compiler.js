@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-4586fcc
+ * @license Angular v5.0.0-beta.7-4c73b52
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -287,7 +287,7 @@ class Version {
 /**
  * @stable
  */
-const VERSION = new Version('5.0.0-beta.7-4586fcc');
+const VERSION = new Version('5.0.0-beta.7-4c73b52');
 
 /**
  * @license
@@ -14605,25 +14605,30 @@ class ViewBuilder {
             sourceSpan: expression.sourceSpan,
             context: expression.context,
             value: convertPropertyBindingBuiltins({
-                createLiteralArrayConverter: (argCount) => (args) => literalArr(args),
+                createLiteralArrayConverter: (argCount) => (args) => {
+                    const arr = literalArr(args);
+                    // Note: The old view compiler used to use an `any` type
+                    // for arrays.
+                    return this.options.fullTemplateTypeCheck ? arr : arr.cast(DYNAMIC_TYPE);
+                },
                 createLiteralMapConverter: (keys) => (values) => {
                     const entries = keys.map((k, i) => ({
                         key: k.key,
                         value: values[i],
                         quoted: k.quoted,
                     }));
-                    return literalMap(entries);
+                    const map = literalMap(entries);
+                    // Note: The old view compiler used to use an `any` type
+                    // for maps.
+                    return this.options.fullTemplateTypeCheck ? map : map.cast(DYNAMIC_TYPE);
                 },
                 createPipeConverter: (name, argCount) => (args) => {
                     // Note: The old view compiler used to use an `any` type
-                    // for pipe calls.
-                    // We keep this behaivor behind a flag for now.
-                    if (this.options.fullTemplateTypeCheck) {
-                        return variable(this.pipeOutputVar(name)).callMethod('transform', args);
-                    }
-                    else {
-                        return variable(this.getOutputVar(BuiltinTypeName.Dynamic));
-                    }
+                    // for pipes.
+                    const pipeExpr = this.options.fullTemplateTypeCheck ?
+                        variable(this.pipeOutputVar(name)) :
+                        variable(this.getOutputVar(BuiltinTypeName.Dynamic));
+                    return pipeExpr.callMethod('transform', args);
                 },
             }, expression.value)
         };
@@ -16025,19 +16030,14 @@ class AotCompiler {
                 });
             }
         });
-        // make sure we create a .ngfactory if we have a least one component
-        // in the file.
+        // Make sure we create a .ngfactory if we have a injectable/directive/pipe/NgModule
+        // or a reference to a non source file.
+        // Note: This is overestimating the required .ngfactory files as the real calculation is harder.
         // Only do this for StubEmitFlags.Basic, as adding a type check block
         // does not change this file (as we generate type check blocks based on NgModules).
         if (outputCtx.statements.length === 0 && (emitFlags & StubEmitFlags.Basic) &&
-            file.directives.some(dir => this._metadataResolver.getNonNormalizedDirectiveMetadata(dir).metadata.isComponent)) {
-            _createEmptyStub(outputCtx);
-        }
-        // make sure we create a .ngfactory if we reexport a non source file.
-        // Only do this for StubEmitFlags.Basic, as adding a type check block
-        // does not change this file (as we generate type check blocks based on NgModules).
-        if (outputCtx.statements.length === 0 && (emitFlags & StubEmitFlags.Basic) &&
-            file.exportsNonSourceFiles) {
+            (file.directives.length || file.pipes.length || file.injectables.length ||
+                file.ngModules.length || file.exportsNonSourceFiles)) {
             _createEmptyStub(outputCtx);
         }
         if (outputCtx.statements.length > 0) {
@@ -16360,24 +16360,31 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
             if (!symbolMeta || symbolMeta.__symbolic === 'error') {
                 return;
             }
-            exportsNonSourceFiles =
-                exportsNonSourceFiles || isValueExportingNonSourceFile(host, symbolMeta);
+            let isNgSymbol = false;
             if (symbolMeta.__symbolic === 'class') {
                 if (metadataResolver.isDirective(symbol)) {
+                    isNgSymbol = true;
                     directives.push(symbol);
                 }
                 else if (metadataResolver.isPipe(symbol)) {
+                    isNgSymbol = true;
                     pipes.push(symbol);
                 }
                 else if (metadataResolver.isInjectable(symbol)) {
+                    isNgSymbol = true;
                     injectables.push(symbol);
                 }
                 else {
                     const ngModule = metadataResolver.getNgModuleMetadata(symbol, false);
                     if (ngModule) {
+                        isNgSymbol = true;
                         ngModules.push(ngModule);
                     }
                 }
+            }
+            if (!isNgSymbol) {
+                exportsNonSourceFiles =
+                    exportsNonSourceFiles || isValueExportingNonSourceFile(host, symbolMeta);
             }
         });
     }
@@ -18992,5 +18999,5 @@ class Extractor {
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, StubEmitFlags, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, mergeAnalyzedFiles, GeneratedFile, toTypeScript, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { core, CompilerConfig, preserveWhitespacesDefault, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, CompileAnimationEntryMetadata, CompileAnimationStateMetadata, CompileAnimationStateDeclarationMetadata, CompileAnimationStateTransitionMetadata, CompileAnimationMetadata, CompileAnimationKeyframesSequenceMetadata, CompileAnimationStyleMetadata, CompileAnimationAnimateMetadata, CompileAnimationWithStepsMetadata, CompileAnimationSequenceMetadata, CompileAnimationGroupMetadata, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, sourceUrl, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, mergeAnalyzedFiles, GeneratedFile, toTypeScript, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, HtmlParser, ParseTreeResult, TreeError, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map

@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-4586fcc
+ * @license Angular v5.0.0-beta.7-4c73b52
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.0-beta.7-4586fcc
+ * @license Angular v5.0.0-beta.7-4c73b52
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -365,7 +365,7 @@ var Version = (function () {
 /**
  * @stable
  */
-var VERSION = new Version('5.0.0-beta.7-4586fcc');
+var VERSION = new Version('5.0.0-beta.7-4c73b52');
 
 /**
  * @license
@@ -16101,7 +16101,10 @@ var ViewBuilder = (function () {
             value: convertPropertyBindingBuiltins({
                 createLiteralArrayConverter: function (argCount) {
                     return function (args) {
-                        return literalArr(args);
+                        var arr = literalArr(args);
+                        // Note: The old view compiler used to use an `any` type
+                        // for arrays.
+                        return _this.options.fullTemplateTypeCheck ? arr : arr.cast(DYNAMIC_TYPE);
                     };
                 },
                 createLiteralMapConverter: function (keys) {
@@ -16113,20 +16116,20 @@ var ViewBuilder = (function () {
                                 quoted: k.quoted,
                             });
                         });
-                        return literalMap(entries);
+                        var map = literalMap(entries);
+                        // Note: The old view compiler used to use an `any` type
+                        // for maps.
+                        return _this.options.fullTemplateTypeCheck ? map : map.cast(DYNAMIC_TYPE);
                     };
                 },
                 createPipeConverter: function (name, argCount) {
                     return function (args) {
                         // Note: The old view compiler used to use an `any` type
-                        // for pipe calls.
-                        // We keep this behaivor behind a flag for now.
-                        if (_this.options.fullTemplateTypeCheck) {
-                            return variable(_this.pipeOutputVar(name)).callMethod('transform', args);
-                        }
-                        else {
-                            return variable(_this.getOutputVar(BuiltinTypeName.Dynamic));
-                        }
+                        // for pipes.
+                        var pipeExpr = _this.options.fullTemplateTypeCheck ?
+                            variable(_this.pipeOutputVar(name)) :
+                            variable(_this.getOutputVar(BuiltinTypeName.Dynamic));
+                        return pipeExpr.callMethod('transform', args);
                     };
                 },
             }, expression.value)
@@ -17550,11 +17553,19 @@ var FromJsonDeserializer = (function (_super) {
     return FromJsonDeserializer;
 }(ValueTransformer));
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var StubEmitFlags;
 (function (StubEmitFlags) {
     StubEmitFlags[StubEmitFlags["Basic"] = 1] = "Basic";
     StubEmitFlags[StubEmitFlags["TypeCheck"] = 2] = "TypeCheck";
     StubEmitFlags[StubEmitFlags["All"] = 3] = "All";
-})(exports.StubEmitFlags || (exports.StubEmitFlags = {}));
+})(StubEmitFlags || (StubEmitFlags = {}));
 var AotCompiler = (function () {
     function AotCompiler(_config, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _localeId, _translationFormat, /** TODO(tbosch): remove this flag as it is always on in the new ngc */
         _enableSummariesForJit, _symbolResolver) {
@@ -17597,13 +17608,13 @@ var AotCompiler = (function () {
         return analyzeFile(this._host, this._symbolResolver, this._metadataResolver, fileName);
     };
     AotCompiler.prototype.emitBasicStubs = function (file) {
-        return this._emitStubs(file, exports.StubEmitFlags.Basic);
+        return this._emitStubs(file, StubEmitFlags.Basic);
     };
     AotCompiler.prototype.emitTypeCheckStubs = function (files) {
         var _this = this;
         var generatedFiles = [];
         files.files.forEach(function (file) {
-            return _this._emitStubs(file, exports.StubEmitFlags.TypeCheck)
+            return _this._emitStubs(file, StubEmitFlags.TypeCheck)
                 .forEach(function (genFile) { return generatedFiles.push(genFile); });
         });
         return generatedFiles;
@@ -17658,7 +17669,7 @@ var AotCompiler = (function () {
                     .set(NULL_EXPR.cast(DYNAMIC_TYPE))
                     .toDeclStmt(expressionType(outputCtx.importExpr(reference))));
             });
-            if (emitFlags & exports.StubEmitFlags.TypeCheck) {
+            if (emitFlags & StubEmitFlags.TypeCheck) {
                 // add the typecheck block for all components of the NgModule
                 ngModuleMeta.declaredDirectives.forEach(function (dirId) {
                     var compMeta = _this._metadataResolver.getDirectiveMetadata(dirId.reference);
@@ -17670,21 +17681,14 @@ var AotCompiler = (function () {
                 });
             }
         });
-        // make sure we create a .ngfactory if we have a least one component
-        // in the file.
+        // Make sure we create a .ngfactory if we have a injectable/directive/pipe/NgModule
+        // or a reference to a non source file.
+        // Note: This is overestimating the required .ngfactory files as the real calculation is harder.
         // Only do this for StubEmitFlags.Basic, as adding a type check block
         // does not change this file (as we generate type check blocks based on NgModules).
-        if (outputCtx.statements.length === 0 && (emitFlags & exports.StubEmitFlags.Basic) &&
-            file.directives.some(function (dir) {
-                return _this._metadataResolver.getNonNormalizedDirectiveMetadata(dir).metadata.isComponent;
-            })) {
-            _createEmptyStub(outputCtx);
-        }
-        // make sure we create a .ngfactory if we reexport a non source file.
-        // Only do this for StubEmitFlags.Basic, as adding a type check block
-        // does not change this file (as we generate type check blocks based on NgModules).
-        if (outputCtx.statements.length === 0 && (emitFlags & exports.StubEmitFlags.Basic) &&
-            file.exportsNonSourceFiles) {
+        if (outputCtx.statements.length === 0 && (emitFlags & StubEmitFlags.Basic) &&
+            (file.directives.length || file.pipes.length || file.injectables.length ||
+                file.ngModules.length || file.exportsNonSourceFiles)) {
             _createEmptyStub(outputCtx);
         }
         if (outputCtx.statements.length > 0) {
@@ -17695,7 +17699,7 @@ var AotCompiler = (function () {
     AotCompiler.prototype._createExternalStyleSheetNgFactoryStubs = function (file, emitFlags) {
         var _this = this;
         var generatedFiles = [];
-        if (!(emitFlags & exports.StubEmitFlags.Basic)) {
+        if (!(emitFlags & StubEmitFlags.Basic)) {
             // note: stylesheet stubs don't change when we produce type check stubs
             return generatedFiles;
         }
@@ -17723,7 +17727,7 @@ var AotCompiler = (function () {
     AotCompiler.prototype._createNgSummaryStub = function (file, emitFlags) {
         var generatedFiles = [];
         // note: .ngsummary.js stubs don't change when we produce type check stubs
-        if (!this._enableSummariesForJit || !(emitFlags & exports.StubEmitFlags.Basic)) {
+        if (!this._enableSummariesForJit || !(emitFlags & StubEmitFlags.Basic)) {
             return generatedFiles;
         }
         if (file.directives.length || file.injectables.length || file.ngModules.length ||
@@ -18024,24 +18028,31 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
             if (!symbolMeta || symbolMeta.__symbolic === 'error') {
                 return;
             }
-            exportsNonSourceFiles =
-                exportsNonSourceFiles || isValueExportingNonSourceFile(host, symbolMeta);
+            var isNgSymbol = false;
             if (symbolMeta.__symbolic === 'class') {
                 if (metadataResolver.isDirective(symbol)) {
+                    isNgSymbol = true;
                     directives.push(symbol);
                 }
                 else if (metadataResolver.isPipe(symbol)) {
+                    isNgSymbol = true;
                     pipes.push(symbol);
                 }
                 else if (metadataResolver.isInjectable(symbol)) {
+                    isNgSymbol = true;
                     injectables.push(symbol);
                 }
                 else {
                     var ngModule = metadataResolver.getNgModuleMetadata(symbol, false);
                     if (ngModule) {
+                        isNgSymbol = true;
                         ngModules.push(ngModule);
                     }
                 }
+            }
+            if (!isNgSymbol) {
+                exportsNonSourceFiles =
+                    exportsNonSourceFiles || isValueExportingNonSourceFile(host, symbolMeta);
             }
         });
     }
