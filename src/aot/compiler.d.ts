@@ -17,12 +17,14 @@ import { TemplateParser } from '../template_parser/template_parser';
 import { TypeCheckCompiler } from '../view_compiler/type_check_compiler';
 import { ViewCompiler } from '../view_compiler/view_compiler';
 import { AotCompilerHost } from './compiler_host';
+import { AotCompilerOptions } from './compiler_options';
 import { GeneratedFile } from './generated_file';
 import { StaticReflector } from './static_reflector';
 import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
 export declare class AotCompiler {
     private _config;
+    private options;
     private _host;
     private _reflector;
     private _metadataResolver;
@@ -33,15 +35,9 @@ export declare class AotCompiler {
     private _ngModuleCompiler;
     private _outputEmitter;
     private _summaryResolver;
-    private _localeId;
-    private _translationFormat;
-    /** TODO(tbosch): remove this flag as it is always on in the new ngc */
-    private _enableSummariesForJit;
     private _symbolResolver;
     private _templateAstCache;
-    constructor(_config: CompilerConfig, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string | null, _translationFormat: string | null, 
-        /** TODO(tbosch): remove this flag as it is always on in the new ngc */
-        _enableSummariesForJit: boolean | null, _symbolResolver: StaticSymbolResolver);
+    constructor(_config: CompilerConfig, options: AotCompilerOptions, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     analyzeModulesSync(rootFiles: string[]): NgAnalyzedModules;
     analyzeModulesAsync(rootFiles: string[]): Promise<NgAnalyzedModules>;
