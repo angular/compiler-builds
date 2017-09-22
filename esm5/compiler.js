@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-9bbf009
+ * @license Angular v5.0.0-beta.7-0f5c70d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -613,7 +613,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-beta.7-9bbf009');
+var VERSION = new Version('5.0.0-beta.7-0f5c70d');
 
 /**
  * @fileoverview added by tsickle
@@ -2631,7 +2631,6 @@ var InterpolationConfig = (function () {
         assertInterpolationSymbols('interpolation', markers);
         return new InterpolationConfig(markers[0], markers[1]);
     };
-    
     return InterpolationConfig;
 }());
 var DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
@@ -9944,7 +9943,6 @@ var RecurseVisitor = (function () {
      * @return {?}
      */
     function (text, context) { };
-    
     /**
      * @param {?} container
      * @param {?=} context
@@ -9998,7 +9996,6 @@ var RecurseVisitor = (function () {
      * @return {?}
      */
     function (ph, context) { };
-    
     /**
      * @param {?} ph
      * @param {?=} context
@@ -10010,7 +10007,6 @@ var RecurseVisitor = (function () {
      * @return {?}
      */
     function (ph, context) { };
-    
     return RecurseVisitor;
 }());
 
@@ -11521,7 +11517,6 @@ var Doctype = (function () {
         this.rootTag = rootTag;
         this.dtd = dtd;
     }
-    
     /**
      * @param {?} visitor
      * @return {?}
@@ -11560,7 +11555,6 @@ var Text$2 = (function () {
     function Text(unescapedValue) {
         this.value = _escapeXml(unescapedValue);
     }
-    
     /**
      * @param {?} visitor
      * @return {?}
@@ -22606,7 +22600,6 @@ var SafeSelector = (function () {
             return pseudo + replaceBy;
         });
     }
-    
     /**
      * @param {?} content
      * @return {?}
@@ -29118,7 +29111,6 @@ var AotCompiler = (function () {
         if (this.options.enableSummariesForJit) {
             return [summaryJson, this._codegenSourceModule(srcFileName, forJitOutputCtx)];
         }
-        
         return [summaryJson];
     };
     /**
@@ -31470,7 +31462,6 @@ var JitSummaryResolver = (function () {
      * @return {?}
      */
     function () { return false; };
-    
     /**
      * @param {?} fileName
      * @return {?}
@@ -31500,7 +31491,6 @@ var JitSummaryResolver = (function () {
     function (reference) {
         return this._summaries.get(reference) || null;
     };
-    
     /**
      * @return {?}
      */
@@ -31526,7 +31516,6 @@ var JitSummaryResolver = (function () {
      * @return {?}
      */
     function (summary) { this._summaries.set(summary.symbol, summary); };
-    
     return JitSummaryResolver;
 }());
 

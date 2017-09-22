@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-9bbf009
+ * @license Angular v5.0.0-beta.7-0f5c70d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.7-9bbf009');
+const VERSION = new Version('5.0.0-beta.7-0f5c70d');
 
 /**
  * @fileoverview added by tsickle
@@ -2364,7 +2364,6 @@ class InterpolationConfig {
         assertInterpolationSymbols('interpolation', markers);
         return new InterpolationConfig(markers[0], markers[1]);
     }
-    ;
 }
 const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
 
@@ -8364,7 +8363,6 @@ class RecurseVisitor {
      * @return {?}
      */
     visitText(text, context) { }
-    ;
     /**
      * @param {?} container
      * @param {?=} context
@@ -8395,14 +8393,12 @@ class RecurseVisitor {
      * @return {?}
      */
     visitPlaceholder(ph, context) { }
-    ;
     /**
      * @param {?} ph
      * @param {?=} context
      * @return {?}
      */
     visitIcuPlaceholder(ph, context) { }
-    ;
 }
 
 /**
@@ -9631,7 +9627,6 @@ class Doctype {
         this.rootTag = rootTag;
         this.dtd = dtd;
     }
-    ;
     /**
      * @param {?} visitor
      * @return {?}
@@ -9663,7 +9658,6 @@ class Text$2 {
      * @param {?} unescapedValue
      */
     constructor(unescapedValue) { this.value = _escapeXml(unescapedValue); }
-    ;
     /**
      * @param {?} visitor
      * @return {?}
@@ -18462,7 +18456,6 @@ class SafeSelector {
             return pseudo + replaceBy;
         });
     }
-    ;
     /**
      * @param {?} content
      * @return {?}
@@ -23819,7 +23812,6 @@ class AotCompiler {
         if (this.options.enableSummariesForJit) {
             return [summaryJson, this._codegenSourceModule(srcFileName, forJitOutputCtx)];
         }
-        
         return [summaryJson];
     }
     /**
@@ -25774,7 +25766,6 @@ class JitSummaryResolver {
      * @return {?}
      */
     isLibraryFile() { return false; }
-    ;
     /**
      * @param {?} fileName
      * @return {?}
@@ -25792,7 +25783,6 @@ class JitSummaryResolver {
     resolveSummary(reference) {
         return this._summaries.get(reference) || null;
     }
-    ;
     /**
      * @return {?}
      */
@@ -25807,7 +25797,6 @@ class JitSummaryResolver {
      * @return {?}
      */
     addSummary(summary) { this._summaries.set(summary.symbol, summary); }
-    ;
 }
 
 /**
