@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-13613d4
+ * @license Angular v5.0.0-beta.7-bb1665c
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.7-13613d4');
+const VERSION = new Version('5.0.0-beta.7-bb1665c');
 
 /**
  * @fileoverview added by tsickle
@@ -18658,16 +18658,17 @@ class StyleCompiler {
             styles: template.styles,
             styleUrls: template.styleUrls,
             moduleUrl: identifierModuleUrl(comp.type)
-        }), true);
+        }), this.needsStyleShim(comp), true);
     }
     /**
      * @param {?} outputCtx
      * @param {?} comp
      * @param {?} stylesheet
+     * @param {?=} shim
      * @return {?}
      */
-    compileStyles(outputCtx, comp, stylesheet) {
-        return this._compileStyles(outputCtx, comp, stylesheet, false);
+    compileStyles(outputCtx, comp, stylesheet, shim = this.needsStyleShim(comp)) {
+        return this._compileStyles(outputCtx, comp, stylesheet, shim, false);
     }
     /**
      * @param {?} comp
@@ -18680,11 +18681,11 @@ class StyleCompiler {
      * @param {?} outputCtx
      * @param {?} comp
      * @param {?} stylesheet
+     * @param {?} shim
      * @param {?} isComponentStylesheet
      * @return {?}
      */
-    _compileStyles(outputCtx, comp, stylesheet, isComponentStylesheet) {
-        const /** @type {?} */ shim = this.needsStyleShim(comp);
+    _compileStyles(outputCtx, comp, stylesheet, shim, isComponentStylesheet) {
         const /** @type {?} */ styleExpressions = stylesheet.styles.map(plainStyle => literal(this._shimIfNeeded(plainStyle, shim)));
         const /** @type {?} */ dependencies = [];
         stylesheet.styleUrls.forEach((styleUrl) => {
@@ -23460,7 +23461,7 @@ StubEmitFlags[StubEmitFlags.All] = "All";
 class AotCompiler {
     /**
      * @param {?} _config
-     * @param {?} options
+     * @param {?} _options
      * @param {?} _host
      * @param {?} _reflector
      * @param {?} _metadataResolver
@@ -23473,9 +23474,9 @@ class AotCompiler {
      * @param {?} _summaryResolver
      * @param {?} _symbolResolver
      */
-    constructor(_config, options, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
+    constructor(_config, _options, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
         this._config = _config;
-        this.options = options;
+        this._options = _options;
         this._host = _host;
         this._reflector = _reflector;
         this._metadataResolver = _metadataResolver;
@@ -23488,6 +23489,7 @@ class AotCompiler {
         this._summaryResolver = _summaryResolver;
         this._symbolResolver = _symbolResolver;
         this._templateAstCache = new Map();
+        this._analyzedFiles = new Map();
     }
     /**
      * @return {?}
@@ -23516,63 +23518,132 @@ class AotCompiler {
      * @param {?} fileName
      * @return {?}
      */
-    analyzeFile(fileName) {
-        return analyzeFile(this._host, this._symbolResolver, this._metadataResolver, fileName);
+    _analyzeFile(fileName) {
+        let /** @type {?} */ analyzedFile = this._analyzedFiles.get(fileName);
+        if (!analyzedFile) {
+            analyzedFile =
+                analyzeFile(this._host, this._symbolResolver, this._metadataResolver, fileName);
+            this._analyzedFiles.set(fileName, analyzedFile);
+        }
+        return analyzedFile;
     }
     /**
-     * @param {?} file
+     * @param {?} fileName
      * @return {?}
      */
-    emitBasicStubs(file) {
-        return this._emitStubs(file, StubEmitFlags.Basic);
+    findGeneratedFileNames(fileName) {
+        const /** @type {?} */ genFileNames = [];
+        const /** @type {?} */ file = this._analyzeFile(fileName);
+        // Make sure we create a .ngfactory if we have a injectable/directive/pipe/NgModule
+        // or a reference to a non source file.
+        // Note: This is overestimating the required .ngfactory files as the real calculation is harder.
+        // Only do this for StubEmitFlags.Basic, as adding a type check block
+        // does not change this file (as we generate type check blocks based on NgModules).
+        if (this._options.allowEmptyCodegenFiles || file.directives.length || file.pipes.length ||
+            file.injectables.length || file.ngModules.length || file.exportsNonSourceFiles) {
+            genFileNames.push(ngfactoryFilePath(file.fileName, true));
+            genFileNames.push(summaryForJitFileName(file.fileName, true));
+        }
+        const /** @type {?} */ fileSuffix = splitTypescriptSuffix(file.fileName, true)[1];
+        file.directives.forEach((dirSymbol) => {
+            const /** @type {?} */ compMeta = /** @type {?} */ ((this._metadataResolver.getNonNormalizedDirectiveMetadata(dirSymbol))).metadata;
+            if (!compMeta.isComponent) {
+                return;
+            } /** @type {?} */
+            ((
+            // Note: compMeta is a component and therefore template is non null.
+            compMeta.template)).styleUrls.forEach((styleUrl) => {
+                const /** @type {?} */ normalizedUrl = this._host.resourceNameToFileName(styleUrl, file.fileName);
+                if (!normalizedUrl) {
+                    throw new Error(`Couldn't resolve resource ${styleUrl} relative to ${file.fileName}`);
+                }
+                const /** @type {?} */ needsShim = (/** @type {?} */ ((compMeta.template)).encapsulation || this._config.defaultEncapsulation) === ViewEncapsulation.Emulated;
+                genFileNames.push(_stylesModuleUrl(normalizedUrl, needsShim, fileSuffix));
+                if (this._options.allowEmptyCodegenFiles) {
+                    genFileNames.push(_stylesModuleUrl(normalizedUrl, !needsShim, fileSuffix));
+                }
+            });
+        });
+        return genFileNames;
     }
     /**
-     * @param {?} files
+     * @param {?} genFileName
+     * @param {?=} originalFileName
      * @return {?}
      */
-    emitTypeCheckStubs(files) {
-        const /** @type {?} */ generatedFiles = [];
-        files.files.forEach(file => this._emitStubs(file, StubEmitFlags.TypeCheck)
-            .forEach(genFile => generatedFiles.push(genFile)));
-        return generatedFiles;
+    emitBasicStub(genFileName, originalFileName) {
+        const /** @type {?} */ outputCtx = this._createOutputContext(genFileName);
+        if (genFileName.endsWith('.ngfactory.ts')) {
+            if (!originalFileName) {
+                throw new Error(`Assertion error: require the original file for .ngfactory.ts stubs. File: ${genFileName}`);
+            }
+            const /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
+            this._createNgFactoryStub(outputCtx, originalFile, StubEmitFlags.Basic);
+        }
+        else if (genFileName.endsWith('.ngsummary.ts')) {
+            if (this._options.enableSummariesForJit) {
+                if (!originalFileName) {
+                    throw new Error(`Assertion error: require the original file for .ngsummary.ts stubs. File: ${genFileName}`);
+                }
+                const /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
+                _createEmptyStub(outputCtx);
+                originalFile.ngModules.forEach(ngModule => {
+                    // create exports that user code can reference
+                    createForJitStub(outputCtx, ngModule.type.reference);
+                });
+            }
+        }
+        else if (genFileName.endsWith('.ngstyle.ts')) {
+            _createEmptyStub(outputCtx);
+        }
+        // Note: for the stubs, we don't need a property srcFileUrl,
+        // as lateron in emitAllImpls we will create the proper GeneratedFiles with the
+        // correct srcFileUrl.
+        // This is good as e.g. for .ngstyle.ts files we can't derive
+        // the url of components based on the genFileUrl.
+        return this._codegenSourceModule('unknown', outputCtx);
     }
     /**
-     * @param {?} files
+     * @param {?} genFileName
+     * @param {?} originalFileName
      * @return {?}
      */
-    loadFilesAsync(files) {
+    emitTypeCheckStub(genFileName, originalFileName) {
+        const /** @type {?} */ originalFile = this._analyzeFile(originalFileName);
+        const /** @type {?} */ outputCtx = this._createOutputContext(genFileName);
+        if (genFileName.endsWith('.ngfactory.ts')) {
+            this._createNgFactoryStub(outputCtx, originalFile, StubEmitFlags.TypeCheck);
+        }
+        return outputCtx.statements.length > 0 ?
+            this._codegenSourceModule(originalFile.fileName, outputCtx) :
+            null;
+    }
+    /**
+     * @param {?} fileNames
+     * @return {?}
+     */
+    loadFilesAsync(fileNames) {
+        const /** @type {?} */ files = fileNames.map(fileName => this._analyzeFile(fileName));
         const /** @type {?} */ loadingPromises = [];
         files.forEach(file => file.ngModules.forEach(ngModule => loadingPromises.push(this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false))));
         return Promise.all(loadingPromises).then(_ => mergeAndValidateNgFiles(files));
     }
     /**
-     * @param {?} files
+     * @param {?} fileNames
      * @return {?}
      */
-    loadFilesSync(files) {
+    loadFilesSync(fileNames) {
+        const /** @type {?} */ files = fileNames.map(fileName => this._analyzeFile(fileName));
         files.forEach(file => file.ngModules.forEach(ngModule => this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, true)));
         return mergeAndValidateNgFiles(files);
     }
     /**
+     * @param {?} outputCtx
      * @param {?} file
      * @param {?} emitFlags
      * @return {?}
      */
-    _emitStubs(file, emitFlags) {
-        return [
-            ...this._createNgFactoryStub(file, emitFlags),
-            ...this._createExternalStyleSheetNgFactoryStubs(file, emitFlags),
-            ...this._createNgSummaryStub(file, emitFlags)
-        ];
-    }
-    /**
-     * @param {?} file
-     * @param {?} emitFlags
-     * @return {?}
-     */
-    _createNgFactoryStub(file, emitFlags) {
-        const /** @type {?} */ generatedFiles = [];
-        const /** @type {?} */ outputCtx = this._createOutputContext(calculateGenFileName(ngfactoryFilePath(file.fileName, true), this.options.rootDir));
+    _createNgFactoryStub(outputCtx, file, emitFlags) {
         file.ngModules.forEach((ngModuleMeta, ngModuleIndex) => {
             // Note: the code below needs to executed for StubEmitFlags.Basic and StubEmitFlags.TypeCheck,
             // so we don't change the .ngfactory file too much when adding the typecheck block.
@@ -23611,77 +23682,9 @@ class AotCompiler {
                 });
             }
         });
-        // Make sure we create a .ngfactory if we have a injectable/directive/pipe/NgModule
-        // or a reference to a non source file.
-        // Note: This is overestimating the required .ngfactory files as the real calculation is harder.
-        // Only do this for StubEmitFlags.Basic, as adding a type check block
-        // does not change this file (as we generate type check blocks based on NgModules).
-        if (outputCtx.statements.length === 0 && (emitFlags & StubEmitFlags.Basic) &&
-            (file.directives.length || file.pipes.length || file.injectables.length ||
-                file.ngModules.length || file.exportsNonSourceFiles)) {
+        if (outputCtx.statements.length === 0) {
             _createEmptyStub(outputCtx);
         }
-        if (outputCtx.statements.length > 0) {
-            generatedFiles.push(this._codegenSourceModule(file.fileName, outputCtx));
-        }
-        return generatedFiles;
-    }
-    /**
-     * @param {?} file
-     * @param {?} emitFlags
-     * @return {?}
-     */
-    _createExternalStyleSheetNgFactoryStubs(file, emitFlags) {
-        const /** @type {?} */ generatedFiles = [];
-        if (!(emitFlags & StubEmitFlags.Basic)) {
-            // note: stylesheet stubs don't change when we produce type check stubs
-            return generatedFiles;
-        }
-        const /** @type {?} */ fileSuffix = splitTypescriptSuffix(file.fileName, true)[1];
-        file.directives.forEach((dirSymbol) => {
-            const /** @type {?} */ compMeta = /** @type {?} */ ((this._metadataResolver.getNonNormalizedDirectiveMetadata(dirSymbol))).metadata;
-            if (!compMeta.isComponent) {
-                return;
-            } /** @type {?} */
-            ((
-            // Note: compMeta is a component and therefore template is non null.
-            compMeta.template)).styleUrls.forEach((styleUrl) => {
-                const /** @type {?} */ normalizedUrl = this._host.resourceNameToFileName(styleUrl, file.fileName);
-                if (!normalizedUrl) {
-                    throw new Error(`Couldn't resolve resource ${styleUrl} relative to ${file.fileName}`);
-                }
-                const /** @type {?} */ encapsulation = /** @type {?} */ ((compMeta.template)).encapsulation || this._config.defaultEncapsulation;
-                const /** @type {?} */ outputCtx = this._createOutputContext(calculateGenFileName(_stylesModuleUrl(normalizedUrl, encapsulation === ViewEncapsulation.Emulated, fileSuffix), this.options.rootDir));
-                _createEmptyStub(outputCtx);
-                generatedFiles.push(this._codegenSourceModule(normalizedUrl, outputCtx));
-            });
-        });
-        return generatedFiles;
-    }
-    /**
-     * @param {?} file
-     * @param {?} emitFlags
-     * @return {?}
-     */
-    _createNgSummaryStub(file, emitFlags) {
-        const /** @type {?} */ generatedFiles = [];
-        // note: .ngsummary.js stubs don't change when we produce type check stubs
-        if (!this.options.enableSummariesForJit || !(emitFlags & StubEmitFlags.Basic)) {
-            return generatedFiles;
-        }
-        if (file.directives.length || file.injectables.length || file.ngModules.length ||
-            file.pipes.length || file.exportsNonSourceFiles) {
-            const /** @type {?} */ outputCtx = this._createOutputContext(calculateGenFileName(summaryForJitFileName(file.fileName, true), this.options.rootDir));
-            file.ngModules.forEach(ngModule => {
-                // create exports that user code can reference
-                createForJitStub(outputCtx, ngModule.type.reference);
-            });
-            if (outputCtx.statements.length === 0) {
-                _createEmptyStub(outputCtx);
-            }
-            generatedFiles.push(this._codegenSourceModule(file.fileName, outputCtx));
-        }
-        return generatedFiles;
     }
     /**
      * @param {?} ctx
@@ -23745,7 +23748,7 @@ class AotCompiler {
     _compileImplFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
         const /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
         const /** @type {?} */ generatedFiles = [];
-        const /** @type {?} */ outputCtx = this._createOutputContext(calculateGenFileName(ngfactoryFilePath(srcFileUrl, true), this.options.rootDir));
+        const /** @type {?} */ outputCtx = this._createOutputContext(ngfactoryFilePath(srcFileUrl, true));
         generatedFiles.push(...this._createSummary(srcFileUrl, directives, pipes, ngModules, injectables, outputCtx));
         // compile all ng modules
         ngModules.forEach((ngModuleMeta) => this._compileModule(outputCtx, ngModuleMeta));
@@ -23764,13 +23767,19 @@ class AotCompiler {
             ((
             // Note: compMeta is a component and therefore template is non null.
             compMeta.template)).externalStylesheets.forEach((stylesheetMeta) => {
-                generatedFiles.push(this._codegenStyles(/** @type {?} */ ((stylesheetMeta.moduleUrl)), compMeta, stylesheetMeta, fileSuffix));
+                // Note: fill non shim and shim style files as they might
+                // be shared by component with and without ViewEncapsulation.
+                const /** @type {?} */ shim = this._styleCompiler.needsStyleShim(compMeta);
+                generatedFiles.push(this._codegenStyles(srcFileUrl, compMeta, stylesheetMeta, shim, fileSuffix));
+                if (this._options.allowEmptyCodegenFiles) {
+                    generatedFiles.push(this._codegenStyles(srcFileUrl, compMeta, stylesheetMeta, !shim, fileSuffix));
+                }
             });
             // compile components
             const /** @type {?} */ compViewVars = this._compileComponent(outputCtx, compMeta, ngModule, ngModule.transitiveModule.directives, componentStylesheet, fileSuffix);
             this._compileComponentFactory(outputCtx, compMeta, ngModule, fileSuffix);
         });
-        if (outputCtx.statements.length > 0) {
+        if (outputCtx.statements.length > 0 || this._options.allowEmptyCodegenFiles) {
             const /** @type {?} */ srcModule = this._codegenSourceModule(srcFileUrl, outputCtx);
             generatedFiles.unshift(srcModule);
         }
@@ -23806,7 +23815,7 @@ class AotCompiler {
                 metadata: /** @type {?} */ ((this._metadataResolver.getInjectableSummary(ref))).type
             }))
         ];
-        const /** @type {?} */ forJitOutputCtx = this._createOutputContext(calculateGenFileName(summaryForJitFileName(srcFileName, true), this.options.rootDir));
+        const /** @type {?} */ forJitOutputCtx = this._createOutputContext(summaryForJitFileName(srcFileName, true));
         const { json, exportAs } = serializeSummaries(srcFileName, forJitOutputCtx, this._summaryResolver, this._symbolResolver, symbolSummaries, typeData);
         exportAs.forEach((entry) => {
             ngFactoryCtx.statements.push(variable(entry.exportAs).set(ngFactoryCtx.importExpr(entry.symbol)).toDeclStmt(null, [
@@ -23814,7 +23823,7 @@ class AotCompiler {
             ]));
         });
         const /** @type {?} */ summaryJson = new GeneratedFile(srcFileName, summaryFileName(srcFileName), json);
-        if (this.options.enableSummariesForJit) {
+        if (this._options.enableSummariesForJit) {
             return [summaryJson, this._codegenSourceModule(srcFileName, forJitOutputCtx)];
         }
         return [summaryJson];
@@ -23826,17 +23835,17 @@ class AotCompiler {
      */
     _compileModule(outputCtx, ngModule) {
         const /** @type {?} */ providers = [];
-        if (this.options.locale) {
-            const /** @type {?} */ normalizedLocale = this.options.locale.replace(/_/g, '-');
+        if (this._options.locale) {
+            const /** @type {?} */ normalizedLocale = this._options.locale.replace(/_/g, '-');
             providers.push({
                 token: createTokenForExternalReference(this._reflector, Identifiers.LOCALE_ID),
                 useValue: normalizedLocale,
             });
         }
-        if (this.options.i18nFormat) {
+        if (this._options.i18nFormat) {
             providers.push({
                 token: createTokenForExternalReference(this._reflector, Identifiers.TRANSLATIONS_FORMAT),
-                useValue: this.options.i18nFormat
+                useValue: this._options.i18nFormat
             });
         }
         this._ngModuleCompiler.compile(outputCtx, ngModule, providers);
@@ -23943,13 +23952,14 @@ class AotCompiler {
      * @param {?} srcFileUrl
      * @param {?} compMeta
      * @param {?} stylesheetMetadata
+     * @param {?} isShimmed
      * @param {?} fileSuffix
      * @return {?}
      */
-    _codegenStyles(srcFileUrl, compMeta, stylesheetMetadata, fileSuffix) {
-        const /** @type {?} */ outputCtx = this._createOutputContext(calculateGenFileName(_stylesModuleUrl(/** @type {?} */ ((stylesheetMetadata.moduleUrl)), this._styleCompiler.needsStyleShim(compMeta), fileSuffix), this.options.rootDir));
-        const /** @type {?} */ compiledStylesheet = this._styleCompiler.compileStyles(outputCtx, compMeta, stylesheetMetadata);
-        _resolveStyleStatements(this._symbolResolver, compiledStylesheet, this._styleCompiler.needsStyleShim(compMeta), fileSuffix);
+    _codegenStyles(srcFileUrl, compMeta, stylesheetMetadata, isShimmed, fileSuffix) {
+        const /** @type {?} */ outputCtx = this._createOutputContext(_stylesModuleUrl(/** @type {?} */ ((stylesheetMetadata.moduleUrl)), isShimmed, fileSuffix));
+        const /** @type {?} */ compiledStylesheet = this._styleCompiler.compileStyles(outputCtx, compMeta, stylesheetMetadata, isShimmed);
+        _resolveStyleStatements(this._symbolResolver, compiledStylesheet, isShimmed, fileSuffix);
         return this._codegenSourceModule(srcFileUrl, outputCtx);
     }
     /**
@@ -24196,25 +24206,6 @@ function mergeAnalyzedFiles(analyzedFiles) {
  */
 function mergeAndValidateNgFiles(files) {
     return validateAnalyzedModules(mergeAnalyzedFiles(files));
-}
-/**
- * @param {?} fileName
- * @param {?} rootDir
- * @return {?}
- */
-function calculateGenFileName(fileName, rootDir) {
-    if (!rootDir)
-        return fileName;
-    const /** @type {?} */ fileNameParts = fileName.split(/\\|\//);
-    const /** @type {?} */ rootDirParts = rootDir.split(/\\|\//);
-    if (!rootDirParts[rootDirParts.length - 1])
-        rootDirParts.pop();
-    let /** @type {?} */ i = 0;
-    while (i < Math.min(fileNameParts.length, rootDirParts.length) &&
-        fileNameParts[i] === rootDirParts[i])
-        i++;
-    const /** @type {?} */ result = [...rootDirParts, ...fileNameParts.slice(i)].join('/');
-    return result;
 }
 
 /**
@@ -25328,35 +25319,6 @@ class StaticSymbolResolver {
         this.resolvedFilePaths.add(filePath);
         const /** @type {?} */ resolvedSymbols = [];
         const /** @type {?} */ metadata = this.getModuleMetadata(filePath);
-        if (metadata['importAs']) {
-            // Index bundle indices should use the importAs module name defined
-            // in the bundle.
-            this.knownFileNameToModuleNames.set(filePath, metadata['importAs']);
-        }
-        if (metadata['metadata']) {
-            // handle direct declarations of the symbol
-            const /** @type {?} */ topLevelSymbolNames = new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));
-            const /** @type {?} */ origins = metadata['origins'] || {};
-            Object.keys(metadata['metadata']).forEach((metadataKey) => {
-                const /** @type {?} */ symbolMeta = metadata['metadata'][metadataKey];
-                const /** @type {?} */ name = unescapeIdentifier(metadataKey);
-                const /** @type {?} */ symbol = this.getStaticSymbol(filePath, name);
-                const /** @type {?} */ origin = origins.hasOwnProperty(metadataKey) && origins[metadataKey];
-                if (origin) {
-                    // If the symbol is from a bundled index, use the declaration location of the
-                    // symbol so relative references (such as './my.html') will be calculated
-                    // correctly.
-                    const /** @type {?} */ originFilePath = this.resolveModule(origin, filePath);
-                    if (!originFilePath) {
-                        this.reportError(new Error(`Couldn't resolve original symbol for ${origin} from ${filePath}`));
-                    }
-                    else {
-                        this.symbolResourcePaths.set(symbol, originFilePath);
-                    }
-                }
-                resolvedSymbols.push(this.createResolvedSymbol(symbol, filePath, topLevelSymbolNames, symbolMeta));
-            });
-        }
         // handle the symbols in one of the re-export location
         if (metadata['exports']) {
             for (const /** @type {?} */ moduleExport of metadata['exports']) {
@@ -25395,6 +25357,33 @@ class StaticSymbolResolver {
                     }
                 }
             }
+        }
+        // handle the actual metadata. Has to be after the exports
+        // as there migth be collisions in the names, and we want the symbols
+        // of the current module to win ofter reexports.
+        if (metadata['metadata']) {
+            // handle direct declarations of the symbol
+            const /** @type {?} */ topLevelSymbolNames = new Set(Object.keys(metadata['metadata']).map(unescapeIdentifier));
+            const /** @type {?} */ origins = metadata['origins'] || {};
+            Object.keys(metadata['metadata']).forEach((metadataKey) => {
+                const /** @type {?} */ symbolMeta = metadata['metadata'][metadataKey];
+                const /** @type {?} */ name = unescapeIdentifier(metadataKey);
+                const /** @type {?} */ symbol = this.getStaticSymbol(filePath, name);
+                const /** @type {?} */ origin = origins.hasOwnProperty(metadataKey) && origins[metadataKey];
+                if (origin) {
+                    // If the symbol is from a bundled index, use the declaration location of the
+                    // symbol so relative references (such as './my.html') will be calculated
+                    // correctly.
+                    const /** @type {?} */ originFilePath = this.resolveModule(origin, filePath);
+                    if (!originFilePath) {
+                        this.reportError(new Error(`Couldn't resolve original symbol for ${origin} from ${filePath}`));
+                    }
+                    else {
+                        this.symbolResourcePaths.set(symbol, originFilePath);
+                    }
+                }
+                resolvedSymbols.push(this.createResolvedSymbol(symbol, filePath, topLevelSymbolNames, symbolMeta));
+            });
         }
         resolvedSymbols.forEach((resolvedSymbol) => this.resolvedSymbols.set(resolvedSymbol.symbol, resolvedSymbol));
         this.symbolFromFile.set(filePath, resolvedSymbols.map(resolvedSymbol => resolvedSymbol.symbol));

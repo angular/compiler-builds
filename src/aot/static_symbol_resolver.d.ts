@@ -42,7 +42,7 @@ export interface StaticSymbolResolverHost {
      *
      * See ImportResolver.
      */
-    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string | null;
+    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string;
 }
 /**
  * This class is responsible for loading metadata per symbol,
@@ -90,7 +90,7 @@ export declare class StaticSymbolResolver {
     /**
      * Converts a file path to a module name that can be used as an `import`.
      */
-    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string | null;
+    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string;
     recordImportAs(sourceSymbol: StaticSymbol, targetSymbol: StaticSymbol): void;
     recordModuleNameForFileName(fileName: string, moduleName: string): void;
     /**

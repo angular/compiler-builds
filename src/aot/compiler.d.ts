@@ -24,7 +24,7 @@ import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
 export declare class AotCompiler {
     private _config;
-    private options;
+    private _options;
     private _host;
     private _reflector;
     private _metadataResolver;
@@ -37,19 +37,18 @@ export declare class AotCompiler {
     private _summaryResolver;
     private _symbolResolver;
     private _templateAstCache;
-    constructor(_config: CompilerConfig, options: AotCompilerOptions, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _symbolResolver: StaticSymbolResolver);
+    private _analyzedFiles;
+    constructor(_config: CompilerConfig, _options: AotCompilerOptions, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     analyzeModulesSync(rootFiles: string[]): NgAnalyzedModules;
     analyzeModulesAsync(rootFiles: string[]): Promise<NgAnalyzedModules>;
-    analyzeFile(fileName: string): NgAnalyzedFile;
-    emitBasicStubs(file: NgAnalyzedFile): GeneratedFile[];
-    emitTypeCheckStubs(files: NgAnalyzedModules): GeneratedFile[];
-    loadFilesAsync(files: NgAnalyzedFile[]): Promise<NgAnalyzedModules>;
-    loadFilesSync(files: NgAnalyzedFile[]): NgAnalyzedModules;
-    private _emitStubs(file, emitFlags);
-    private _createNgFactoryStub(file, emitFlags);
-    private _createExternalStyleSheetNgFactoryStubs(file, emitFlags);
-    private _createNgSummaryStub(file, emitFlags);
+    private _analyzeFile(fileName);
+    findGeneratedFileNames(fileName: string): string[];
+    emitBasicStub(genFileName: string, originalFileName?: string): GeneratedFile;
+    emitTypeCheckStub(genFileName: string, originalFileName: string): GeneratedFile | null;
+    loadFilesAsync(fileNames: string[]): Promise<NgAnalyzedModules>;
+    loadFilesSync(fileNames: string[]): NgAnalyzedModules;
+    private _createNgFactoryStub(outputCtx, file, emitFlags);
     private _createTypeCheckBlock(ctx, moduleMeta, compMeta, directives, externalReferenceVars);
     emitMessageBundle(analyzeResult: NgAnalyzedModules, locale: string | null): MessageBundle;
     emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
@@ -60,7 +59,7 @@ export declare class AotCompiler {
     private _compileComponent(outputCtx, compMeta, ngModule, directiveIdentifiers, componentStyles, fileSuffix);
     private _parseTemplate(compMeta, ngModule, directiveIdentifiers);
     private _createOutputContext(genFilePath);
-    private _codegenStyles(srcFileUrl, compMeta, stylesheetMetadata, fileSuffix);
+    private _codegenStyles(srcFileUrl, compMeta, stylesheetMetadata, isShimmed, fileSuffix);
     private _codegenSourceModule(srcFileUrl, ctx);
 }
 export interface NgAnalyzedModules {
