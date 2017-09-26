@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-86ffacf
+ * @license Angular v5.0.0-beta.7-a75040d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.7-86ffacf');
+const VERSION = new Version('5.0.0-beta.7-a75040d');
 
 /**
  * @fileoverview added by tsickle
@@ -25044,7 +25044,7 @@ class ResolvedStaticSymbol {
  * @record
  */
 
-const SUPPORTED_SCHEMA_VERSION = 3;
+const SUPPORTED_SCHEMA_VERSION = 4;
 /**
  * This class is responsible for loading metadata per symbol,
  * and normalizing references between symbols.
