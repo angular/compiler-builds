@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-2cf52c1
+ * @license Angular v5.0.0-beta.7-f57b7df
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -613,7 +613,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-beta.7-2cf52c1');
+var VERSION = new Version('5.0.0-beta.7-f57b7df');
 
 /**
  * @fileoverview added by tsickle
@@ -32756,22 +32756,6 @@ var JitCompiler = (function () {
      */
     function (moduleType) {
         return Promise.resolve(this._compileModuleAndAllComponents(moduleType, false));
-    };
-    /**
-     * @param {?} component
-     * @return {?}
-     */
-    JitCompiler.prototype.getNgContentSelectors = /**
-     * @param {?} component
-     * @return {?}
-     */
-    function (component) {
-        this._console.warn('Compiler.getNgContentSelectors is deprecated. Use ComponentFactory.ngContentSelectors instead!');
-        var /** @type {?} */ template = this._compiledTemplateCache.get(component);
-        if (!template) {
-            throw new Error("The component " + stringify(component) + " is not yet compiled!");
-        }
-        return /** @type {?} */ ((template.compMeta.template)).ngContentSelectors;
     };
     /**
      * @param {?} component

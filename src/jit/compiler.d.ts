@@ -50,7 +50,6 @@ export declare class JitCompiler {
     compileModuleAsync(moduleType: Type): Promise<object>;
     compileModuleAndAllComponentsSync(moduleType: Type): ModuleWithComponentFactories;
     compileModuleAndAllComponentsAsync(moduleType: Type): Promise<ModuleWithComponentFactories>;
-    getNgContentSelectors(component: Type): string[];
     getComponentFactory(component: Type): object;
     loadAotSummaries(summaries: () => any[]): void;
     hasAotSummary(ref: Type): boolean;
