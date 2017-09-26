@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-a75040d
+ * @license Angular v5.0.0-beta.7-dfb8d21
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.0-beta.7-a75040d
+ * @license Angular v5.0.0-beta.7-dfb8d21
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -656,7 +656,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-beta.7-a75040d');
+var VERSION = new Version('5.0.0-beta.7-dfb8d21');
 
 /**
  * @fileoverview added by tsickle
@@ -1351,13 +1351,14 @@ function templateVisitAll(visitor, asts, context) {
  */
 var CompilerConfig = (function () {
     function CompilerConfig(_a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.defaultEncapsulation, defaultEncapsulation = _c === void 0 ? ViewEncapsulation.Emulated : _c, _d = _b.useJit, useJit = _d === void 0 ? true : _d, _e = _b.jitDevMode, jitDevMode = _e === void 0 ? false : _e, missingTranslation = _b.missingTranslation, enableLegacyTemplate = _b.enableLegacyTemplate, preserveWhitespaces = _b.preserveWhitespaces;
+        var _b = _a === void 0 ? {} : _a, _c = _b.defaultEncapsulation, defaultEncapsulation = _c === void 0 ? ViewEncapsulation.Emulated : _c, _d = _b.useJit, useJit = _d === void 0 ? true : _d, _e = _b.jitDevMode, jitDevMode = _e === void 0 ? false : _e, missingTranslation = _b.missingTranslation, enableLegacyTemplate = _b.enableLegacyTemplate, preserveWhitespaces = _b.preserveWhitespaces, strictInjectionParameters = _b.strictInjectionParameters;
         this.defaultEncapsulation = defaultEncapsulation;
         this.useJit = !!useJit;
         this.jitDevMode = !!jitDevMode;
         this.missingTranslation = missingTranslation || null;
         this.enableLegacyTemplate = enableLegacyTemplate === true;
         this.preserveWhitespaces = preserveWhitespacesDefault(noUndefined(preserveWhitespaces));
+        this.strictInjectionParameters = strictInjectionParameters === true;
     }
     return CompilerConfig;
 }());
@@ -15671,11 +15672,11 @@ var CompileMetadataResolver = (function () {
         if (hasUnknownDeps) {
             var /** @type {?} */ depsTokens = dependenciesMetadata.map(function (dep) { return dep ? stringifyType(dep.token) : '?'; }).join(', ');
             var /** @type {?} */ message = "Can't resolve all parameters for " + stringifyType(typeOrFunc) + ": (" + depsTokens + ").";
-            if (throwOnUnknownDeps) {
+            if (throwOnUnknownDeps || this._config.strictInjectionParameters) {
                 this._reportError(syntaxError(message), typeOrFunc);
             }
             else {
-                this._console.warn("Warning: " + message + " This will become an error in Angular v5.x");
+                this._console.warn("Warning: " + message + " This will become an error in Angular v6.x");
             }
         }
         return dependenciesMetadata;
@@ -31456,6 +31457,7 @@ function createAotCompiler(compilerHost, options) {
         enableLegacyTemplate: options.enableLegacyTemplate === true,
         missingTranslation: options.missingTranslation,
         preserveWhitespaces: options.preserveWhitespaces,
+        strictInjectionParameters: options.strictInjectionParameters,
     });
     var /** @type {?} */ normalizer = new DirectiveNormalizer({ get: function (url) { return compilerHost.loadResource(url); } }, urlResolver, htmlParser, config);
     var /** @type {?} */ expressionParser = new Parser(new Lexer());
