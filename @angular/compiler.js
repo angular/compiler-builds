@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.4.3-2cd88bf
+ * @license Angular v4.4.3-c3b39ba
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.4.3-2cd88bf');
+const VERSION = new Version('4.4.3-c3b39ba');
 
 /**
  * @license
@@ -18385,7 +18385,7 @@ class EmitterVisitorContext {
     spanOf(line, column) {
         const /** @type {?} */ emittedLine = this._lines[line - this._preambleLineCount];
         if (emittedLine) {
-            let /** @type {?} */ columnsLeft = column - emittedLine.indent;
+            let /** @type {?} */ columnsLeft = column - _createIndent(emittedLine.indent).length;
             for (let /** @type {?} */ partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
                 const /** @type {?} */ part = emittedLine.parts[partIndex];
                 if (part.length > columnsLeft) {
