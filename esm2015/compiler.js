@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-2b84b86
+ * @license Angular v5.0.0-beta.7-ff5b050
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.7-2b84b86');
+const VERSION = new Version('5.0.0-beta.7-ff5b050');
 
 /**
  * @fileoverview added by tsickle
@@ -16571,7 +16571,7 @@ class EmitterVisitorContext {
     spanOf(line, column) {
         const /** @type {?} */ emittedLine = this._lines[line - this._preambleLineCount];
         if (emittedLine) {
-            let /** @type {?} */ columnsLeft = column - emittedLine.indent;
+            let /** @type {?} */ columnsLeft = column - _createIndent(emittedLine.indent).length;
             for (let /** @type {?} */ partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
                 const /** @type {?} */ part = emittedLine.parts[partIndex];
                 if (part.length > columnsLeft) {
@@ -24664,7 +24664,9 @@ class StaticReflector {
                     for (const /** @type {?} */ item of (/** @type {?} */ (expression))) {
                         // Check for a spread expression
                         if (item && item.__symbolic === 'spread') {
-                            const /** @type {?} */ spreadArray = simplify(item.expression);
+                            // We call with references as 0 because we require the actual value and cannot
+                            // tolerate a reference here.
+                            const /** @type {?} */ spreadArray = simplifyInContext(context, item.expression, depth, 0);
                             if (Array.isArray(spreadArray)) {
                                 for (const /** @type {?} */ spreadItem of spreadArray) {
                                     result.push(spreadItem);
@@ -24681,9 +24683,10 @@ class StaticReflector {
                     return result;
                 }
                 if (expression instanceof StaticSymbol) {
-                    // Stop simplification at builtin symbols or if we are in a reference context
+                    // Stop simplification at builtin symbols or if we are in a reference context and
+                    // the symbol doesn't have members.
                     if (expression === self.injectionToken || self.conversionMap.has(expression) ||
-                        references > 0) {
+                        (references > 0 && !expression.members.length)) {
                         return expression;
                     }
                     else {
