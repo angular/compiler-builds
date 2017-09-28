@@ -1,6 +1,6 @@
 import * as tslib_1 from "tslib";
 /**
- * @license Angular v4.4.3-0cefb0b
+ * @license Angular v4.4.3-2cd88bf
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-var VERSION = new Version('4.4.3-0cefb0b');
+var VERSION = new Version('4.4.3-2cd88bf');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
