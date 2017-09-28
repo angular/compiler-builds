@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-14e8e88
+ * @license Angular v5.0.0-beta.7-7c1d3e0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-beta.7-14e8e88');
+const VERSION = new Version('5.0.0-beta.7-7c1d3e0');
 
 /**
  * @fileoverview added by tsickle
@@ -23015,7 +23015,7 @@ function toTypeScript(file, preamble = '') {
  * @return {?}
  */
 function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types) {
-    const /** @type {?} */ toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver);
+    const /** @type {?} */ toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver, srcFileName);
     const /** @type {?} */ forJitSerializer = new ForJitSerializer(forJitCtx, symbolResolver);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
@@ -23031,7 +23031,7 @@ function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResol
             forJitSerializer.addLibType(summary.type);
         }
     });
-    const { json, exportAs } = toJsonSerializer.serialize(srcFileName);
+    const { json, exportAs } = toJsonSerializer.serialize();
     forJitSerializer.serialize(exportAs);
     return { json, exportAs };
 }
@@ -23070,16 +23070,19 @@ class ToJsonSerializer extends ValueTransformer {
     /**
      * @param {?} symbolResolver
      * @param {?} summaryResolver
+     * @param {?} srcFileName
      */
-    constructor(symbolResolver, summaryResolver) {
+    constructor(symbolResolver, summaryResolver, srcFileName) {
         super();
         this.symbolResolver = symbolResolver;
         this.summaryResolver = summaryResolver;
+        this.srcFileName = srcFileName;
         this.symbols = [];
         this.indexBySymbol = new Map();
         this.processedSummaryBySymbol = new Map();
         this.processedSummaries = [];
         this.unprocessedSymbolSummariesBySymbol = new Map();
+        this.moduleName = symbolResolver.getKnownModuleName(srcFileName);
     }
     /**
      * @param {?} summary
@@ -23141,12 +23144,12 @@ class ToJsonSerializer extends ValueTransformer {
         }
     }
     /**
-     * @param {?} srcFileName
      * @return {?}
      */
-    serialize(srcFileName) {
+    serialize() {
         const /** @type {?} */ exportAs = [];
         const /** @type {?} */ json = JSON.stringify({
+            moduleName: this.moduleName,
             summaries: this.processedSummaries,
             symbols: this.symbols.map((symbol, index) => {
                 symbol.assertNoMembers();
@@ -23161,7 +23164,7 @@ class ToJsonSerializer extends ValueTransformer {
                 return {
                     __symbol: index,
                     name: symbol.name,
-                    filePath: this.summaryResolver.toSummaryFileName(symbol.filePath, srcFileName),
+                    filePath: this.summaryResolver.toSummaryFileName(symbol.filePath, this.srcFileName),
                     importAs: importAs
                 };
             })
@@ -23419,7 +23422,7 @@ class FromJsonDeserializer extends ValueTransformer {
             }
         });
         const /** @type {?} */ summaries = visitValue(data.summaries, this, null);
-        return { summaries, importAs };
+        return { moduleName: data.moduleName, summaries, importAs };
     }
     /**
      * @param {?} map
@@ -25175,8 +25178,16 @@ class StaticSymbolResolver {
      * @return {?}
      */
     fileNameToModuleName(importedFilePath, containingFilePath) {
-        return this.knownFileNameToModuleNames.get(importedFilePath) ||
+        return this.summaryResolver.getKnownModuleName(importedFilePath) ||
+            this.knownFileNameToModuleNames.get(importedFilePath) ||
             this.host.fileNameToModuleName(importedFilePath, containingFilePath);
+    }
+    /**
+     * @param {?} filePath
+     * @return {?}
+     */
+    getKnownModuleName(filePath) {
+        return this.knownFileNameToModuleNames.get(filePath) || null;
     }
     /**
      * @param {?} sourceSymbol
@@ -25326,6 +25337,11 @@ class StaticSymbolResolver {
         this.resolvedFilePaths.add(filePath);
         const /** @type {?} */ resolvedSymbols = [];
         const /** @type {?} */ metadata = this.getModuleMetadata(filePath);
+        if (metadata['importAs']) {
+            // Index bundle indices should use the importAs module name defined
+            // in the bundle.
+            this.knownFileNameToModuleNames.set(filePath, metadata['importAs']);
+        }
         // handle the symbols in one of the re-export location
         if (metadata['exports']) {
             for (const /** @type {?} */ moduleExport of metadata['exports']) {
@@ -25591,6 +25607,7 @@ class AotSummaryResolver {
         this.summaryCache = new Map();
         this.loadedFilePaths = new Map();
         this.importAs = new Map();
+        this.knownFileNameToModuleNames = new Map();
     }
     /**
      * @param {?} filePath
@@ -25650,6 +25667,14 @@ class AotSummaryResolver {
         return /** @type {?} */ ((this.importAs.get(staticSymbol)));
     }
     /**
+     * Converts a file path to a module name that can be used as an `import`.
+     * @param {?} importedFilePath
+     * @return {?}
+     */
+    getKnownModuleName(importedFilePath) {
+        return this.knownFileNameToModuleNames.get(importedFilePath) || null;
+    }
+    /**
      * @param {?} summary
      * @return {?}
      */
@@ -25677,8 +25702,11 @@ class AotSummaryResolver {
         hasSummary = json != null;
         this.loadedFilePaths.set(filePath, hasSummary);
         if (json) {
-            const { summaries, importAs } = deserializeSummaries(this.staticSymbolCache, this, filePath, json);
+            const { moduleName, summaries, importAs } = deserializeSummaries(this.staticSymbolCache, this, filePath, json);
             summaries.forEach((summary) => this.summaryCache.set(summary.symbol, summary));
+            if (moduleName) {
+                this.knownFileNameToModuleNames.set(filePath, moduleName);
+            }
             importAs.forEach((importAs) => {
                 this.importAs.set(importAs.symbol, this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
             });
@@ -25794,6 +25822,11 @@ class JitSummaryResolver {
      * @return {?}
      */
     getImportAs(reference) { return reference; }
+    /**
+     * @param {?} fileName
+     * @return {?}
+     */
+    getKnownModuleName(fileName) { return null; }
     /**
      * @param {?} summary
      * @return {?}

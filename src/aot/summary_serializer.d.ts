@@ -21,6 +21,7 @@ export declare function serializeSummaries(srcFileName: string, forJitCtx: Outpu
     }[];
 };
 export declare function deserializeSummaries(symbolCache: StaticSymbolCache, summaryResolver: SummaryResolver<StaticSymbol>, libraryFileName: string, json: string): {
+    moduleName: string | null;
     summaries: Summary<StaticSymbol>[];
     importAs: {
         symbol: StaticSymbol;

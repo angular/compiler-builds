@@ -91,6 +91,7 @@ export declare class StaticSymbolResolver {
      * Converts a file path to a module name that can be used as an `import`.
      */
     fileNameToModuleName(importedFilePath: string, containingFilePath: string): string;
+    getKnownModuleName(filePath: string): string | null;
     recordImportAs(sourceSymbol: StaticSymbol, targetSymbol: StaticSymbol): void;
     recordModuleNameForFileName(fileName: string, moduleName: string): void;
     /**
