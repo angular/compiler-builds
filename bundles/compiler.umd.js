@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-beta.7-ff5b050
+ * @license Angular v5.0.0-beta.7-b3db3f8
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.0-beta.7-ff5b050
+ * @license Angular v5.0.0-beta.7-b3db3f8
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -656,7 +656,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-beta.7-ff5b050');
+var VERSION = new Version('5.0.0-beta.7-b3db3f8');
 
 /**
  * @fileoverview added by tsickle
@@ -20250,7 +20250,7 @@ var EmitterVisitorContext = (function () {
     function (line, column) {
         var /** @type {?} */ emittedLine = this._lines[line - this._preambleLineCount];
         if (emittedLine) {
-            var /** @type {?} */ columnsLeft = column - _createIndent(emittedLine.indent).length;
+            var /** @type {?} */ columnsLeft = column - emittedLine.indent;
             for (var /** @type {?} */ partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
                 var /** @type {?} */ part = emittedLine.parts[partIndex];
                 if (part.length > columnsLeft) {
