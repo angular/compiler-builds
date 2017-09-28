@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.4.3-c3b39ba
+ * @license Angular v4.4.3-7fc2dce
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.4.3-c3b39ba');
+const VERSION = new Version('4.4.3-7fc2dce');
 
 /**
  * @license
@@ -23998,7 +23998,9 @@ class StaticReflector {
                     for (const /** @type {?} */ item of ((expression))) {
                         // Check for a spread expression
                         if (item && item.__symbolic === 'spread') {
-                            const /** @type {?} */ spreadArray = simplify(item.expression);
+                            // We call with references as 0 because we require the actual value and cannot
+                            // tolerate a reference here.
+                            const /** @type {?} */ spreadArray = simplifyInContext(context, item.expression, depth, 0);
                             if (Array.isArray(spreadArray)) {
                                 for (const /** @type {?} */ spreadItem of spreadArray) {
                                     result.push(spreadItem);
@@ -24017,7 +24019,7 @@ class StaticReflector {
                 if (expression instanceof StaticSymbol) {
                     // Stop simplification at builtin symbols or if we are in a reference context
                     if (expression === self.injectionToken || expression === self.opaqueToken ||
-                        self.conversionMap.has(expression) || references > 0) {
+                        self.conversionMap.has(expression) || (references > 0 && !expression.members.length)) {
                         return expression;
                     }
                     else {
