@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.0-0038712
+ * @license Angular v5.0.0-rc.0-745b59f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -613,7 +613,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-rc.0-0038712');
+var VERSION = new Version('5.0.0-rc.0-745b59f');
 
 /**
  * @fileoverview added by tsickle
@@ -16196,6 +16196,36 @@ BinaryOperator[BinaryOperator.LowerEquals] = "LowerEquals";
 BinaryOperator[BinaryOperator.Bigger] = "Bigger";
 BinaryOperator[BinaryOperator.BiggerEquals] = "BiggerEquals";
 /**
+ * @template T
+ * @param {?} base
+ * @param {?} other
+ * @return {?}
+ */
+function nullSafeIsEquivalent(base, other) {
+    if (base == null || other == null) {
+        return base == other;
+    }
+    return base.isEquivalent(other);
+}
+/**
+ * @template T
+ * @param {?} base
+ * @param {?} other
+ * @return {?}
+ */
+function areAllEquivalent(base, other) {
+    var /** @type {?} */ len = base.length;
+    if (len !== other.length) {
+        return false;
+    }
+    for (var /** @type {?} */ i = 0; i < len; i++) {
+        if (!base[i].isEquivalent(other[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
  * @abstract
  */
 var Expression = (function () {
@@ -16546,6 +16576,17 @@ var ReadVarExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    ReadVarExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16582,6 +16623,17 @@ var WriteVarExpr = (function (_super) {
         _this.value = value;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    WriteVarExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof WriteVarExpr && this.name === e.name && this.value.isEquivalent(e.value);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16620,6 +16672,18 @@ var WriteKeyExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    WriteKeyExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof WriteKeyExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.index.isEquivalent(e.index) && this.value.isEquivalent(e.value);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16643,6 +16707,18 @@ var WritePropExpr = (function (_super) {
         _this.value = value;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    WritePropExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof WritePropExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name && this.value.isEquivalent(e.value);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16684,6 +16760,18 @@ var InvokeMethodExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    InvokeMethodExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof InvokeMethodExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16706,6 +16794,18 @@ var InvokeFunctionExpr = (function (_super) {
         _this.args = args;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    InvokeFunctionExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
+            areAllEquivalent(this.args, e.args);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16730,6 +16830,18 @@ var InstantiateExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    InstantiateExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof InstantiateExpr && this.classExpr.isEquivalent(e.classExpr) &&
+            areAllEquivalent(this.args, e.args);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16751,6 +16863,17 @@ var LiteralExpr = (function (_super) {
         _this.value = value;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    LiteralExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof LiteralExpr && this.value === e.value;
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16775,6 +16898,18 @@ var ExternalExpr = (function (_super) {
         _this.typeParams = typeParams;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    ExternalExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ExternalExpr && this.value.name === e.value.name &&
+            this.value.moduleName === e.value.moduleName && this.value.runtime === e.value.runtime;
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16809,6 +16944,18 @@ var ConditionalExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    ConditionalExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ConditionalExpr && this.condition.isEquivalent(e.condition) &&
+            this.trueCase.isEquivalent(e.trueCase) && nullSafeIsEquivalent(this.falseCase, e.falseCase);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16830,6 +16977,17 @@ var NotExpr = (function (_super) {
         _this.condition = condition;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    NotExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof NotExpr && this.condition.isEquivalent(e.condition);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16853,6 +17011,17 @@ var AssertNotNull = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    AssertNotNull.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16875,6 +17044,17 @@ var CastExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    CastExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof CastExpr && this.value.isEquivalent(e.value);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16895,6 +17075,15 @@ var FnParam = (function () {
         this.name = name;
         this.type = type;
     }
+    /**
+     * @param {?} param
+     * @return {?}
+     */
+    FnParam.prototype.isEquivalent = /**
+     * @param {?} param
+     * @return {?}
+     */
+    function (param) { return this.name === param.name; };
     return FnParam;
 }());
 var FunctionExpr = (function (_super) {
@@ -16905,6 +17094,18 @@ var FunctionExpr = (function (_super) {
         _this.statements = statements;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    FunctionExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof FunctionExpr && areAllEquivalent(this.params, e.params) &&
+            areAllEquivalent(this.statements, e.statements);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -16944,6 +17145,18 @@ var BinaryOperatorExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    BinaryOperatorExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof BinaryOperatorExpr && this.operator === e.operator &&
+            this.lhs.isEquivalent(e.lhs) && this.rhs.isEquivalent(e.rhs);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -16966,6 +17179,18 @@ var ReadPropExpr = (function (_super) {
         _this.name = name;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    ReadPropExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name;
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17001,6 +17226,18 @@ var ReadKeyExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    ReadKeyExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ReadKeyExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.index.isEquivalent(e.index);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17034,6 +17271,17 @@ var LiteralArrayExpr = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    LiteralArrayExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof LiteralArrayExpr && areAllEquivalent(this.entries, e.entries);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17054,6 +17302,17 @@ var LiteralMapEntry = (function () {
         this.value = value;
         this.quoted = quoted;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    LiteralMapEntry.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return this.key === e.key && this.value.isEquivalent(e.value);
+    };
     return LiteralMapEntry;
 }());
 var LiteralMapExpr = (function (_super) {
@@ -17067,6 +17326,17 @@ var LiteralMapExpr = (function (_super) {
         }
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    LiteralMapExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof LiteralMapExpr && areAllEquivalent(this.entries, e.entries);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17089,6 +17359,17 @@ var CommaExpr = (function (_super) {
         _this.parts = parts;
         return _this;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    CommaExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof CommaExpr && areAllEquivalent(this.parts, e.parts);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17153,6 +17434,18 @@ var DeclareVarStmt = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    DeclareVarStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof DeclareVarStmt && this.name === stmt.name &&
+            this.value.isEquivalent(stmt.value);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17179,6 +17472,18 @@ var DeclareFunctionStmt = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    DeclareFunctionStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof DeclareFunctionStmt && areAllEquivalent(this.params, stmt.params) &&
+            areAllEquivalent(this.statements, stmt.statements);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17201,6 +17506,17 @@ var ExpressionStatement = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    ExpressionStatement.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof ExpressionStatement && this.expr.isEquivalent(stmt.expr);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17222,6 +17538,17 @@ var ReturnStatement = (function (_super) {
         _this.value = value;
         return _this;
     }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    ReturnStatement.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof ReturnStatement && this.value.isEquivalent(stmt.value);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17264,6 +17591,15 @@ var ClassField = (function (_super) {
         _this.name = name;
         return _this;
     }
+    /**
+     * @param {?} f
+     * @return {?}
+     */
+    ClassField.prototype.isEquivalent = /**
+     * @param {?} f
+     * @return {?}
+     */
+    function (f) { return this.name === f.name; };
     return ClassField;
 }(AbstractClassPart));
 var ClassMethod = (function (_super) {
@@ -17276,6 +17612,17 @@ var ClassMethod = (function (_super) {
         _this.body = body;
         return _this;
     }
+    /**
+     * @param {?} m
+     * @return {?}
+     */
+    ClassMethod.prototype.isEquivalent = /**
+     * @param {?} m
+     * @return {?}
+     */
+    function (m) {
+        return this.name === m.name && areAllEquivalent(this.body, m.body);
+    };
     return ClassMethod;
 }(AbstractClassPart));
 var ClassGetter = (function (_super) {
@@ -17287,6 +17634,17 @@ var ClassGetter = (function (_super) {
         _this.body = body;
         return _this;
     }
+    /**
+     * @param {?} m
+     * @return {?}
+     */
+    ClassGetter.prototype.isEquivalent = /**
+     * @param {?} m
+     * @return {?}
+     */
+    function (m) {
+        return this.name === m.name && areAllEquivalent(this.body, m.body);
+    };
     return ClassGetter;
 }(AbstractClassPart));
 var ClassStmt = (function (_super) {
@@ -17302,6 +17660,22 @@ var ClassStmt = (function (_super) {
         _this.methods = methods;
         return _this;
     }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    ClassStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof ClassStmt && this.name === stmt.name &&
+            nullSafeIsEquivalent(this.parent, stmt.parent) &&
+            areAllEquivalent(this.fields, stmt.fields) &&
+            areAllEquivalent(this.getters, stmt.getters) &&
+            this.constructorMethod.isEquivalent(stmt.constructorMethod) &&
+            areAllEquivalent(this.methods, stmt.methods);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17328,6 +17702,19 @@ var IfStmt = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    IfStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof IfStmt && this.condition.isEquivalent(stmt.condition) &&
+            areAllEquivalent(this.trueCase, stmt.trueCase) &&
+            areAllEquivalent(this.falseCase, stmt.falseCase);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17349,6 +17736,15 @@ var CommentStmt = (function (_super) {
         _this.comment = comment;
         return _this;
     }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    CommentStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) { return stmt instanceof CommentStmt; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -17373,6 +17769,18 @@ var TryCatchStmt = (function (_super) {
         return _this;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    TryCatchStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof TryCatchStmt && areAllEquivalent(this.bodyStmts, stmt.bodyStmts) &&
+            areAllEquivalent(this.catchStmts, stmt.catchStmts);
+    };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -17394,6 +17802,17 @@ var ThrowStmt = (function (_super) {
         _this.error = error;
         return _this;
     }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    ThrowStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof TryCatchStmt && this.error.isEquivalent(stmt.error);
+    };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -28089,6 +28508,28 @@ var GeneratedFile = (function () {
             this.stmts = sourceOrStmts;
         }
     }
+    /**
+     * @param {?} other
+     * @return {?}
+     */
+    GeneratedFile.prototype.isEquivalent = /**
+     * @param {?} other
+     * @return {?}
+     */
+    function (other) {
+        if (this.genFileUrl !== other.genFileUrl) {
+            return false;
+        }
+        if (this.source) {
+            return this.source === other.source;
+        }
+        if (other.stmts == null) {
+            return false;
+        }
+        // Note: the constructor guarantees that if this.source is not filled,
+        // then this.stmts is.
+        return areAllEquivalent(/** @type {?} */ ((this.stmts)), /** @type {?} */ ((other.stmts)));
+    };
     return GeneratedFile;
 }());
 /**
@@ -28126,7 +28567,6 @@ function toTypeScript(file, preamble) {
  */
 function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types) {
     var /** @type {?} */ toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver, srcFileName);
-    var /** @type {?} */ forJitSerializer = new ForJitSerializer(forJitCtx, symbolResolver);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
     // CompileTypeSummary.
@@ -28136,16 +28576,22 @@ function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResol
     // Add type summaries.
     types.forEach(function (_a) {
         var summary = _a.summary, metadata = _a.metadata;
-        forJitSerializer.addSourceType(summary, metadata);
         toJsonSerializer.addSummary({ symbol: summary.type.reference, metadata: undefined, type: summary });
     });
-    toJsonSerializer.unprocessedSymbolSummariesBySymbol.forEach(function (summary) {
-        if (summaryResolver.isLibraryFile(summary.symbol.filePath) && summary.type) {
-            forJitSerializer.addLibType(summary.type);
-        }
-    });
     var _a = toJsonSerializer.serialize(), json = _a.json, exportAs = _a.exportAs;
-    forJitSerializer.serialize(exportAs);
+    if (forJitCtx) {
+        var /** @type {?} */ forJitSerializer_1 = new ForJitSerializer(forJitCtx, symbolResolver);
+        types.forEach(function (_a) {
+            var summary = _a.summary, metadata = _a.metadata;
+            forJitSerializer_1.addSourceType(summary, metadata);
+        });
+        toJsonSerializer.unprocessedSymbolSummariesBySymbol.forEach(function (summary) {
+            if (summaryResolver.isLibraryFile(summary.symbol.filePath) && summary.type) {
+                forJitSerializer_1.addLibType(summary.type);
+            }
+        });
+        forJitSerializer_1.serialize(exportAs);
+    }
     return { json: json, exportAs: exportAs };
 }
 /**
@@ -28761,7 +29207,9 @@ var AotCompiler = (function () {
         if (this._options.allowEmptyCodegenFiles || file.directives.length || file.pipes.length ||
             file.injectables.length || file.ngModules.length || file.exportsNonSourceFiles) {
             genFileNames.push(ngfactoryFilePath(file.fileName, true));
-            genFileNames.push(summaryForJitFileName(file.fileName, true));
+            if (this._options.enableSummariesForJit) {
+                genFileNames.push(summaryForJitFileName(file.fileName, true));
+            }
         }
         var /** @type {?} */ fileSuffix = splitTypescriptSuffix(file.fileName, true)[1];
         file.directives.forEach(function (dirSymbol) {
@@ -29112,7 +29560,9 @@ var AotCompiler = (function () {
                 metadata: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))).type
             });
         }));
-        var /** @type {?} */ forJitOutputCtx = this._createOutputContext(summaryForJitFileName(srcFileName, true));
+        var /** @type {?} */ forJitOutputCtx = this._options.enableSummariesForJit ?
+            this._createOutputContext(summaryForJitFileName(srcFileName, true)) :
+            null;
         var _a = serializeSummaries(srcFileName, forJitOutputCtx, this._summaryResolver, this._symbolResolver, symbolSummaries, typeData), json = _a.json, exportAs = _a.exportAs;
         exportAs.forEach(function (entry) {
             ngFactoryCtx.statements.push(variable(entry.exportAs).set(ngFactoryCtx.importExpr(entry.symbol)).toDeclStmt(null, [
@@ -29120,10 +29570,11 @@ var AotCompiler = (function () {
             ]));
         });
         var /** @type {?} */ summaryJson = new GeneratedFile(srcFileName, summaryFileName(srcFileName), json);
-        if (this._options.enableSummariesForJit) {
-            return [summaryJson, this._codegenSourceModule(srcFileName, forJitOutputCtx)];
+        var /** @type {?} */ result = [summaryJson];
+        if (forJitOutputCtx) {
+            result.push(this._codegenSourceModule(srcFileName, forJitOutputCtx));
         }
-        return [summaryJson];
+        return result;
     };
     /**
      * @param {?} outputCtx

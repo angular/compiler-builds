@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.0-0038712
+ * @license Angular v5.0.0-rc.0-745b59f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-rc.0-0038712');
+const VERSION = new Version('5.0.0-rc.0-745b59f');
 
 /**
  * @fileoverview added by tsickle
@@ -13369,6 +13369,36 @@ BinaryOperator[BinaryOperator.LowerEquals] = "LowerEquals";
 BinaryOperator[BinaryOperator.Bigger] = "Bigger";
 BinaryOperator[BinaryOperator.BiggerEquals] = "BiggerEquals";
 /**
+ * @template T
+ * @param {?} base
+ * @param {?} other
+ * @return {?}
+ */
+function nullSafeIsEquivalent(base, other) {
+    if (base == null || other == null) {
+        return base == other;
+    }
+    return base.isEquivalent(other);
+}
+/**
+ * @template T
+ * @param {?} base
+ * @param {?} other
+ * @return {?}
+ */
+function areAllEquivalent(base, other) {
+    const /** @type {?} */ len = base.length;
+    if (len !== other.length) {
+        return false;
+    }
+    for (let /** @type {?} */ i = 0; i < len; i++) {
+        if (!base[i].isEquivalent(other[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
  * @abstract
  */
 class Expression {
@@ -13603,6 +13633,13 @@ class ReadVarExpr extends Expression {
         }
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -13632,6 +13669,13 @@ class WriteVarExpr extends Expression {
         super(type || value.type, sourceSpan);
         this.name = name;
         this.value = value;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof WriteVarExpr && this.name === e.name && this.value.isEquivalent(e.value);
     }
     /**
      * @param {?} visitor
@@ -13665,6 +13709,14 @@ class WriteKeyExpr extends Expression {
         this.value = value;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof WriteKeyExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.index.isEquivalent(e.index) && this.value.isEquivalent(e.value);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -13686,6 +13738,14 @@ class WritePropExpr extends Expression {
         this.receiver = receiver;
         this.name = name;
         this.value = value;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof WritePropExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name && this.value.isEquivalent(e.value);
     }
     /**
      * @param {?} visitor
@@ -13727,6 +13787,14 @@ class InvokeMethodExpr extends Expression {
         }
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof InvokeMethodExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -13746,6 +13814,14 @@ class InvokeFunctionExpr extends Expression {
         super(type, sourceSpan);
         this.fn = fn;
         this.args = args;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
+            areAllEquivalent(this.args, e.args);
     }
     /**
      * @param {?} visitor
@@ -13769,6 +13845,14 @@ class InstantiateExpr extends Expression {
         this.args = args;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof InstantiateExpr && this.classExpr.isEquivalent(e.classExpr) &&
+            areAllEquivalent(this.args, e.args);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -13786,6 +13870,13 @@ class LiteralExpr extends Expression {
     constructor(value, type, sourceSpan) {
         super(type, sourceSpan);
         this.value = value;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof LiteralExpr && this.value === e.value;
     }
     /**
      * @param {?} visitor
@@ -13807,6 +13898,14 @@ class ExternalExpr extends Expression {
         super(type, sourceSpan);
         this.value = value;
         this.typeParams = typeParams;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof ExternalExpr && this.value.name === e.value.name &&
+            this.value.moduleName === e.value.moduleName && this.value.runtime === e.value.runtime;
     }
     /**
      * @param {?} visitor
@@ -13844,6 +13943,14 @@ class ConditionalExpr extends Expression {
         this.trueCase = trueCase;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof ConditionalExpr && this.condition.isEquivalent(e.condition) &&
+            this.trueCase.isEquivalent(e.trueCase) && nullSafeIsEquivalent(this.falseCase, e.falseCase);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -13862,6 +13969,13 @@ class NotExpr extends Expression {
         this.condition = condition;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof NotExpr && this.condition.isEquivalent(e.condition);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -13878,6 +13992,13 @@ class AssertNotNull extends Expression {
     constructor(condition, sourceSpan) {
         super(condition.type, sourceSpan);
         this.condition = condition;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
     }
     /**
      * @param {?} visitor
@@ -13899,6 +14020,13 @@ class CastExpr extends Expression {
         this.value = value;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof CastExpr && this.value.isEquivalent(e.value);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -13916,6 +14044,11 @@ class FnParam {
         this.name = name;
         this.type = type;
     }
+    /**
+     * @param {?} param
+     * @return {?}
+     */
+    isEquivalent(param) { return this.name === param.name; }
 }
 class FunctionExpr extends Expression {
     /**
@@ -13928,6 +14061,14 @@ class FunctionExpr extends Expression {
         super(type, sourceSpan);
         this.params = params;
         this.statements = statements;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof FunctionExpr && areAllEquivalent(this.params, e.params) &&
+            areAllEquivalent(this.statements, e.statements);
     }
     /**
      * @param {?} visitor
@@ -13961,6 +14102,14 @@ class BinaryOperatorExpr extends Expression {
         this.lhs = lhs;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof BinaryOperatorExpr && this.operator === e.operator &&
+            this.lhs.isEquivalent(e.lhs) && this.rhs.isEquivalent(e.rhs);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -13980,6 +14129,14 @@ class ReadPropExpr extends Expression {
         super(type, sourceSpan);
         this.receiver = receiver;
         this.name = name;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name;
     }
     /**
      * @param {?} visitor
@@ -14010,6 +14167,14 @@ class ReadKeyExpr extends Expression {
         this.index = index;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof ReadKeyExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.index.isEquivalent(e.index);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14036,6 +14201,13 @@ class LiteralArrayExpr extends Expression {
         this.entries = entries;
     }
     /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof LiteralArrayExpr && areAllEquivalent(this.entries, e.entries);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14055,6 +14227,13 @@ class LiteralMapEntry {
         this.value = value;
         this.quoted = quoted;
     }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return this.key === e.key && this.value.isEquivalent(e.value);
+    }
 }
 class LiteralMapExpr extends Expression {
     /**
@@ -14069,6 +14248,13 @@ class LiteralMapExpr extends Expression {
         if (type) {
             this.valueType = type.valueType;
         }
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof LiteralMapExpr && areAllEquivalent(this.entries, e.entries);
     }
     /**
      * @param {?} visitor
@@ -14087,6 +14273,13 @@ class CommaExpr extends Expression {
     constructor(parts, sourceSpan) {
         super(parts[parts.length - 1].type, sourceSpan);
         this.parts = parts;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    isEquivalent(e) {
+        return e instanceof CommaExpr && areAllEquivalent(this.parts, e.parts);
     }
     /**
      * @param {?} visitor
@@ -14149,6 +14342,14 @@ class DeclareVarStmt extends Statement {
         this.type = type || value.type;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) {
+        return stmt instanceof DeclareVarStmt && this.name === stmt.name &&
+            this.value.isEquivalent(stmt.value);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14174,6 +14375,14 @@ class DeclareFunctionStmt extends Statement {
         this.type = type || null;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) {
+        return stmt instanceof DeclareFunctionStmt && areAllEquivalent(this.params, stmt.params) &&
+            areAllEquivalent(this.statements, stmt.statements);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14192,6 +14401,13 @@ class ExpressionStatement extends Statement {
         this.expr = expr;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) {
+        return stmt instanceof ExpressionStatement && this.expr.isEquivalent(stmt.expr);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14208,6 +14424,13 @@ class ReturnStatement extends Statement {
     constructor(value, sourceSpan) {
         super(null, sourceSpan);
         this.value = value;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) {
+        return stmt instanceof ReturnStatement && this.value.isEquivalent(stmt.value);
     }
     /**
      * @param {?} visitor
@@ -14251,6 +14474,13 @@ class ClassMethod extends AbstractClassPart {
         this.params = params;
         this.body = body;
     }
+    /**
+     * @param {?} m
+     * @return {?}
+     */
+    isEquivalent(m) {
+        return this.name === m.name && areAllEquivalent(this.body, m.body);
+    }
 }
 class ClassGetter extends AbstractClassPart {
     /**
@@ -14263,6 +14493,13 @@ class ClassGetter extends AbstractClassPart {
         super(type, modifiers);
         this.name = name;
         this.body = body;
+    }
+    /**
+     * @param {?} m
+     * @return {?}
+     */
+    isEquivalent(m) {
+        return this.name === m.name && areAllEquivalent(this.body, m.body);
     }
 }
 class ClassStmt extends Statement {
@@ -14284,6 +14521,18 @@ class ClassStmt extends Statement {
         this.getters = getters;
         this.constructorMethod = constructorMethod;
         this.methods = methods;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) {
+        return stmt instanceof ClassStmt && this.name === stmt.name &&
+            nullSafeIsEquivalent(this.parent, stmt.parent) &&
+            areAllEquivalent(this.fields, stmt.fields) &&
+            areAllEquivalent(this.getters, stmt.getters) &&
+            this.constructorMethod.isEquivalent(stmt.constructorMethod) &&
+            areAllEquivalent(this.methods, stmt.methods);
     }
     /**
      * @param {?} visitor
@@ -14308,6 +14557,15 @@ class IfStmt extends Statement {
         this.falseCase = falseCase;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) {
+        return stmt instanceof IfStmt && this.condition.isEquivalent(stmt.condition) &&
+            areAllEquivalent(this.trueCase, stmt.trueCase) &&
+            areAllEquivalent(this.falseCase, stmt.falseCase);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14325,6 +14583,11 @@ class CommentStmt extends Statement {
         super(null, sourceSpan);
         this.comment = comment;
     }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) { return stmt instanceof CommentStmt; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -14346,6 +14609,14 @@ class TryCatchStmt extends Statement {
         this.catchStmts = catchStmts;
     }
     /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) {
+        return stmt instanceof TryCatchStmt && areAllEquivalent(this.bodyStmts, stmt.bodyStmts) &&
+            areAllEquivalent(this.catchStmts, stmt.catchStmts);
+    }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14362,6 +14633,13 @@ class ThrowStmt extends Statement {
     constructor(error, sourceSpan) {
         super(null, sourceSpan);
         this.error = error;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    isEquivalent(stmt) {
+        return stmt instanceof TryCatchStmt && this.error.isEquivalent(stmt.error);
     }
     /**
      * @param {?} visitor
@@ -22981,6 +23259,24 @@ class GeneratedFile {
             this.stmts = sourceOrStmts;
         }
     }
+    /**
+     * @param {?} other
+     * @return {?}
+     */
+    isEquivalent(other) {
+        if (this.genFileUrl !== other.genFileUrl) {
+            return false;
+        }
+        if (this.source) {
+            return this.source === other.source;
+        }
+        if (other.stmts == null) {
+            return false;
+        }
+        // Note: the constructor guarantees that if this.source is not filled,
+        // then this.stmts is.
+        return areAllEquivalent(/** @type {?} */ ((this.stmts)), /** @type {?} */ ((other.stmts)));
+    }
 }
 /**
  * @param {?} file
@@ -23016,23 +23312,25 @@ function toTypeScript(file, preamble = '') {
  */
 function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResolver, symbols, types) {
     const /** @type {?} */ toJsonSerializer = new ToJsonSerializer(symbolResolver, summaryResolver, srcFileName);
-    const /** @type {?} */ forJitSerializer = new ForJitSerializer(forJitCtx, symbolResolver);
     // for symbols, we use everything except for the class metadata itself
     // (we keep the statics though), as the class metadata is contained in the
     // CompileTypeSummary.
     symbols.forEach((resolvedSymbol) => toJsonSerializer.addSummary({ symbol: resolvedSymbol.symbol, metadata: resolvedSymbol.metadata }));
     // Add type summaries.
     types.forEach(({ summary, metadata }) => {
-        forJitSerializer.addSourceType(summary, metadata);
         toJsonSerializer.addSummary({ symbol: summary.type.reference, metadata: undefined, type: summary });
     });
-    toJsonSerializer.unprocessedSymbolSummariesBySymbol.forEach((summary) => {
-        if (summaryResolver.isLibraryFile(summary.symbol.filePath) && summary.type) {
-            forJitSerializer.addLibType(summary.type);
-        }
-    });
     const { json, exportAs } = toJsonSerializer.serialize();
-    forJitSerializer.serialize(exportAs);
+    if (forJitCtx) {
+        const /** @type {?} */ forJitSerializer = new ForJitSerializer(forJitCtx, symbolResolver);
+        types.forEach(({ summary, metadata }) => { forJitSerializer.addSourceType(summary, metadata); });
+        toJsonSerializer.unprocessedSymbolSummariesBySymbol.forEach((summary) => {
+            if (summaryResolver.isLibraryFile(summary.symbol.filePath) && summary.type) {
+                forJitSerializer.addLibType(summary.type);
+            }
+        });
+        forJitSerializer.serialize(exportAs);
+    }
     return { json, exportAs };
 }
 /**
@@ -23546,7 +23844,9 @@ class AotCompiler {
         if (this._options.allowEmptyCodegenFiles || file.directives.length || file.pipes.length ||
             file.injectables.length || file.ngModules.length || file.exportsNonSourceFiles) {
             genFileNames.push(ngfactoryFilePath(file.fileName, true));
-            genFileNames.push(summaryForJitFileName(file.fileName, true));
+            if (this._options.enableSummariesForJit) {
+                genFileNames.push(summaryForJitFileName(file.fileName, true));
+            }
         }
         const /** @type {?} */ fileSuffix = splitTypescriptSuffix(file.fileName, true)[1];
         file.directives.forEach((dirSymbol) => {
@@ -23819,7 +24119,9 @@ class AotCompiler {
                 metadata: /** @type {?} */ ((this._metadataResolver.getInjectableSummary(ref))).type
             }))
         ];
-        const /** @type {?} */ forJitOutputCtx = this._createOutputContext(summaryForJitFileName(srcFileName, true));
+        const /** @type {?} */ forJitOutputCtx = this._options.enableSummariesForJit ?
+            this._createOutputContext(summaryForJitFileName(srcFileName, true)) :
+            null;
         const { json, exportAs } = serializeSummaries(srcFileName, forJitOutputCtx, this._summaryResolver, this._symbolResolver, symbolSummaries, typeData);
         exportAs.forEach((entry) => {
             ngFactoryCtx.statements.push(variable(entry.exportAs).set(ngFactoryCtx.importExpr(entry.symbol)).toDeclStmt(null, [
@@ -23827,10 +24129,11 @@ class AotCompiler {
             ]));
         });
         const /** @type {?} */ summaryJson = new GeneratedFile(srcFileName, summaryFileName(srcFileName), json);
-        if (this._options.enableSummariesForJit) {
-            return [summaryJson, this._codegenSourceModule(srcFileName, forJitOutputCtx)];
+        const /** @type {?} */ result = [summaryJson];
+        if (forJitOutputCtx) {
+            result.push(this._codegenSourceModule(srcFileName, forJitOutputCtx));
         }
-        return [summaryJson];
+        return result;
     }
     /**
      * @param {?} outputCtx
