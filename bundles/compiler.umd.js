@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.4.4-6b96b06
+ * @license Angular v4.4.4-95f3b1d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v4.4.4-6b96b06
+ * @license Angular v4.4.4-95f3b1d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -55,7 +55,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.4.4-6b96b06');
+var VERSION = new _angular_core.Version('4.4.4-95f3b1d');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -24918,7 +24918,7 @@ var StaticReflector = (function () {
                     else {
                         var /** @type {?} */ staticSymbol = expression;
                         var /** @type {?} */ declarationValue = resolveReferenceValue(staticSymbol);
-                        if (declarationValue) {
+                        if (declarationValue != null) {
                             return simplifyInContext(staticSymbol, declarationValue, depth + 1, references);
                         }
                         else {
@@ -25000,8 +25000,8 @@ var StaticReflector = (function () {
                                 }
                                 return null;
                             case 'index':
-                                var /** @type {?} */ indexTarget = simplify(expression['expression']);
-                                var /** @type {?} */ index = simplify(expression['index']);
+                                var /** @type {?} */ indexTarget = simplifyInContext(context, expression['expression'], depth, 0);
+                                var /** @type {?} */ index = simplifyInContext(context, expression['index'], depth, 0);
                                 if (indexTarget && isPrimitive(index))
                                     return indexTarget[index];
                                 return null;
@@ -25014,7 +25014,7 @@ var StaticReflector = (function () {
                                     selectContext =
                                         self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     var /** @type {?} */ declarationValue = resolveReferenceValue(selectContext);
-                                    if (declarationValue) {
+                                    if (declarationValue != null) {
                                         return simplifyInContext(selectContext, declarationValue, depth + 1, references);
                                     }
                                     else {

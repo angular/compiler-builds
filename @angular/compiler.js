@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.4.4-6b96b06
+ * @license Angular v4.4.4-95f3b1d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.4.4-6b96b06');
+const VERSION = new Version('4.4.4-95f3b1d');
 
 /**
  * @license
@@ -24014,7 +24014,7 @@ class StaticReflector {
                     else {
                         const /** @type {?} */ staticSymbol = expression;
                         const /** @type {?} */ declarationValue = resolveReferenceValue(staticSymbol);
-                        if (declarationValue) {
+                        if (declarationValue != null) {
                             return simplifyInContext(staticSymbol, declarationValue, depth + 1, references);
                         }
                         else {
@@ -24096,8 +24096,8 @@ class StaticReflector {
                                 }
                                 return null;
                             case 'index':
-                                let /** @type {?} */ indexTarget = simplify(expression['expression']);
-                                let /** @type {?} */ index = simplify(expression['index']);
+                                let /** @type {?} */ indexTarget = simplifyInContext(context, expression['expression'], depth, 0);
+                                let /** @type {?} */ index = simplifyInContext(context, expression['index'], depth, 0);
                                 if (indexTarget && isPrimitive(index))
                                     return indexTarget[index];
                                 return null;
@@ -24110,7 +24110,7 @@ class StaticReflector {
                                     selectContext =
                                         self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     const /** @type {?} */ declarationValue = resolveReferenceValue(selectContext);
-                                    if (declarationValue) {
+                                    if (declarationValue != null) {
                                         return simplifyInContext(selectContext, declarationValue, depth + 1, references);
                                     }
                                     else {
