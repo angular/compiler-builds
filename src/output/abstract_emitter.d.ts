@@ -11,7 +11,7 @@ import { SourceMapGenerator } from './source_map';
 export declare const CATCH_ERROR_VAR: o.ReadVarExpr;
 export declare const CATCH_STACK_VAR: o.ReadVarExpr;
 export interface OutputEmitter {
-    emitStatements(srcFilePath: string, genFilePath: string, stmts: o.Statement[], preamble?: string | null): string;
+    emitStatements(genFilePath: string, stmts: o.Statement[], preamble?: string | null): string;
 }
 export declare class EmitterVisitorContext {
     private _indent;
@@ -36,7 +36,7 @@ export declare class EmitterVisitorContext {
     popClass(): o.ClassStmt;
     readonly currentClass: o.ClassStmt | null;
     toSource(): string;
-    toSourceMapGenerator(sourceFilePath: string, genFilePath: string, startsAtLine?: number): SourceMapGenerator;
+    toSourceMapGenerator(genFilePath: string, startsAtLine?: number): SourceMapGenerator;
     setPreambleLineCount(count: number): number;
     spanOf(line: number, column: number): ParseSourceSpan | null;
     private readonly sourceLines;
