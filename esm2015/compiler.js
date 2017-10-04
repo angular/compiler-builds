@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.0-696af79
+ * @license Angular v5.0.0-rc.0-fbc9537
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-rc.0-696af79');
+const VERSION = new Version('5.0.0-rc.0-fbc9537');
 
 /**
  * @fileoverview added by tsickle
@@ -27437,17 +27437,24 @@ function assertComponent(meta) {
 /**
  * @param {?} fn
  * @param {?=} out
+ * @param {?=} seen
  * @return {?}
  */
-function flattenSummaries(fn$$1, out = []) {
-    fn$$1().forEach((entry) => {
+function flattenSummaries(fn$$1, out = [], seen = new Set()) {
+    if (seen.has(fn$$1)) {
+        return out;
+    }
+    seen.add(fn$$1);
+    const /** @type {?} */ summaries = fn$$1();
+    for (let /** @type {?} */ i = 0; i < summaries.length; i++) {
+        const /** @type {?} */ entry = summaries[i];
         if (typeof entry === 'function') {
-            flattenSummaries(entry, out);
+            flattenSummaries(entry, out, seen);
         }
         else {
             out.push(entry);
         }
-    });
+    }
     return out;
 }
 /**
