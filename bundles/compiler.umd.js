@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.4.4-544a7ad
+ * @license Angular v4.4.4-df91fd0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -36,7 +36,7 @@ function __extends(d, b) {
 }
 
 /**
- * @license Angular v4.4.4-544a7ad
+ * @license Angular v4.4.4-df91fd0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -55,7 +55,7 @@ function __extends(d, b) {
 /**
  * \@stable
  */
-var VERSION = new _angular_core.Version('4.4.4-544a7ad');
+var VERSION = new _angular_core.Version('4.4.4-df91fd0');
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -4026,7 +4026,6 @@ var InterpolationConfig = (function () {
         assertInterpolationSymbols('interpolation', markers);
         return new InterpolationConfig(markers[0], markers[1]);
     };
-    
     return InterpolationConfig;
 }());
 var DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
@@ -8226,7 +8225,6 @@ var RecurseVisitor = (function () {
      * @return {?}
      */
     RecurseVisitor.prototype.visitText = function (text, context) { };
-    
     /**
      * @param {?} container
      * @param {?=} context
@@ -8260,14 +8258,12 @@ var RecurseVisitor = (function () {
      * @return {?}
      */
     RecurseVisitor.prototype.visitPlaceholder = function (ph, context) { };
-    
     /**
      * @param {?} ph
      * @param {?=} context
      * @return {?}
      */
     RecurseVisitor.prototype.visitIcuPlaceholder = function (ph, context) { };
-    
     return RecurseVisitor;
 }());
 /**
@@ -9374,7 +9370,6 @@ var Doctype = (function () {
         this.rootTag = rootTag;
         this.dtd = dtd;
     }
-    
     /**
      * @param {?} visitor
      * @return {?}
@@ -9413,7 +9408,6 @@ var Text$2 = (function () {
     function Text$2(unescapedValue) {
         this.value = _escapeXml(unescapedValue);
     }
-    
     /**
      * @param {?} visitor
      * @return {?}
@@ -15042,7 +15036,6 @@ var JitSummaryResolver = (function () {
      * @return {?}
      */
     JitSummaryResolver.prototype.isLibraryFile = function (fileName) { return false; };
-    
     /**
      * @param {?} fileName
      * @return {?}
@@ -15055,7 +15048,6 @@ var JitSummaryResolver = (function () {
     JitSummaryResolver.prototype.resolveSummary = function (reference) {
         return this._summaries.get(reference) || null;
     };
-    
     /**
      * @param {?} filePath
      * @return {?}
@@ -15071,7 +15063,6 @@ var JitSummaryResolver = (function () {
      * @return {?}
      */
     JitSummaryResolver.prototype.addSummary = function (summary) { this._summaries.set(summary.symbol, summary); };
-    
     return JitSummaryResolver;
 }());
 JitSummaryResolver.decorators = [
@@ -21086,7 +21077,6 @@ var SafeSelector = (function () {
             return pseudo + replaceBy;
         });
     }
-    
     /**
      * @param {?} content
      * @return {?}

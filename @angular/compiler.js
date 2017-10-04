@@ -1,5 +1,5 @@
 /**
- * @license Angular v4.4.4-544a7ad
+ * @license Angular v4.4.4-df91fd0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -20,7 +20,7 @@ import { ANALYZE_FOR_ENTRY_COMPONENTS, Attribute, COMPILER_OPTIONS, CUSTOM_ELEME
 /**
  * \@stable
  */
-const VERSION = new Version('4.4.4-544a7ad');
+const VERSION = new Version('4.4.4-df91fd0');
 
 /**
  * @license
@@ -3773,7 +3773,6 @@ class InterpolationConfig {
         assertInterpolationSymbols('interpolation', markers);
         return new InterpolationConfig(markers[0], markers[1]);
     }
-    ;
 }
 const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
 
@@ -7857,7 +7856,6 @@ class RecurseVisitor {
      * @return {?}
      */
     visitText(text, context) { }
-    ;
     /**
      * @param {?} container
      * @param {?=} context
@@ -7888,14 +7886,12 @@ class RecurseVisitor {
      * @return {?}
      */
     visitPlaceholder(ph, context) { }
-    ;
     /**
      * @param {?} ph
      * @param {?=} context
      * @return {?}
      */
     visitIcuPlaceholder(ph, context) { }
-    ;
 }
 
 /**
@@ -8974,7 +8970,6 @@ class Doctype {
         this.rootTag = rootTag;
         this.dtd = dtd;
     }
-    ;
     /**
      * @param {?} visitor
      * @return {?}
@@ -9006,7 +9001,6 @@ class Text$2 {
      * @param {?} unescapedValue
      */
     constructor(unescapedValue) { this.value = _escapeXml(unescapedValue); }
-    ;
     /**
      * @param {?} visitor
      * @return {?}
@@ -14476,7 +14470,6 @@ class JitSummaryResolver {
      * @return {?}
      */
     isLibraryFile(fileName) { return false; }
-    ;
     /**
      * @param {?} fileName
      * @return {?}
@@ -14489,7 +14482,6 @@ class JitSummaryResolver {
     resolveSummary(reference) {
         return this._summaries.get(reference) || null;
     }
-    ;
     /**
      * @param {?} filePath
      * @return {?}
@@ -14505,7 +14497,6 @@ class JitSummaryResolver {
      * @return {?}
      */
     addSummary(summary) { this._summaries.set(summary.symbol, summary); }
-    ;
 }
 JitSummaryResolver.decorators = [
     { type: CompilerInjectable },
@@ -20271,7 +20262,6 @@ class SafeSelector {
             return pseudo + replaceBy;
         });
     }
-    ;
     /**
      * @param {?} content
      * @return {?}
@@ -23227,7 +23217,6 @@ class AotCompiler {
         if (this._enableSummariesForJit) {
             return [summaryJson, this._codegenSourceModule(srcFileUrl, forJitOutputCtx)];
         }
-        
         return [summaryJson];
     }
     /**
