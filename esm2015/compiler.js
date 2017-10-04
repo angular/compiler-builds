@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.0-d4d9009
+ * @license Angular v5.0.0-rc.0-696af79
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-rc.0-d4d9009');
+const VERSION = new Version('5.0.0-rc.0-696af79');
 
 /**
  * @fileoverview added by tsickle
@@ -22259,12 +22259,15 @@ class ViewBuilder$1 {
      * @return {?}
      */
     visitText(ast, context) {
-        // textDef(ngContentIndex: number, constants: string[]): NodeDef;
+        // Static text nodes have no check function
+        const /** @type {?} */ checkIndex = -1;
         this.nodes.push(() => ({
             sourceSpan: ast.sourceSpan,
             nodeFlags: 2 /* TypeText */,
             nodeDef: importExpr(Identifiers.textDef).callFn([
-                literal(ast.ngContentIndex), literalArr([literal(ast.value)])
+                literal(checkIndex),
+                literal(ast.ngContentIndex),
+                literalArr([literal(ast.value)]),
             ])
         }));
     }
@@ -22280,12 +22283,16 @@ class ViewBuilder$1 {
         const /** @type {?} */ astWithSource = /** @type {?} */ (ast.value);
         const /** @type {?} */ inter = /** @type {?} */ (astWithSource.ast);
         const /** @type {?} */ updateRendererExpressions = inter.expressions.map((expr, bindingIndex) => this._preprocessUpdateExpression({ nodeIndex, bindingIndex, sourceSpan: ast.sourceSpan, context: COMP_VAR, value: expr }));
-        // textDef(ngContentIndex: number, constants: string[]): NodeDef;
+        // Check index is the same as the node index during compilation
+        // They might only differ at runtime
+        const /** @type {?} */ checkIndex = nodeIndex;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: ast.sourceSpan,
             nodeFlags: 2 /* TypeText */,
             nodeDef: importExpr(Identifiers.textDef).callFn([
-                literal(ast.ngContentIndex), literalArr(inter.strings.map(s => literal(s)))
+                literal(checkIndex),
+                literal(ast.ngContentIndex),
+                literalArr(inter.strings.map(s => literal(s))),
             ]),
             updateRenderer: updateRendererExpressions
         });
@@ -22366,18 +22373,14 @@ class ViewBuilder$1 {
             compView = this.outputCtx.importExpr(compAst.directive.componentViewType);
             compRendererType = this.outputCtx.importExpr(compAst.directive.rendererType);
         }
-        // elementDef(
-        //   flags: NodeFlags, matchedQueriesDsl: [string | number, QueryValueType][],
-        //   ngContentIndex: number, childCount: number, namespaceAndName: string,
-        //   fixedAttrs: [string, string][] = [],
-        //   bindings?: [BindingFlags, string, string | SecurityContext][],
-        //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
-        //   handleEvent?: ElementHandleEventFn,
-        //   componentView?: () => ViewDefinition, componentRendererType?: RendererType2): NodeDef;
+        // Check index is the same as the node index during compilation
+        // They might only differ at runtime
+        const /** @type {?} */ checkIndex = nodeIndex;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: ast.sourceSpan,
             nodeFlags: 1 /* TypeElement */ | flags,
             nodeDef: importExpr(Identifiers.elementDef).callFn([
+                literal(checkIndex),
                 literal(flags),
                 queryMatchesExpr,
                 literal(ast.ngContentIndex),
@@ -22557,19 +22560,21 @@ class ViewBuilder$1 {
             context: dirContextExpr,
             eventAst: hostEventAst, dirAst,
         }));
-        // directiveDef(
-        //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], childCount: number, ctor:
-        //   any,
-        //   deps: ([DepFlags, any] | any)[], props?: {[name: string]: [number, string]},
-        //   outputs?: {[name: string]: string}, component?: () => ViewDefinition): NodeDef;
+        // Check index is the same as the node index during compilation
+        // They might only differ at runtime
+        const /** @type {?} */ checkIndex = nodeIndex;
         this.nodes[nodeIndex] = () => ({
             sourceSpan: dirAst.sourceSpan,
             nodeFlags: 16384 /* TypeDirective */ | flags,
             nodeDef: importExpr(Identifiers.directiveDef).callFn([
-                literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
-                literal(childCount), providerExpr, depsExpr,
+                literal(checkIndex),
+                literal(flags),
+                queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
+                literal(childCount),
+                providerExpr,
+                depsExpr,
                 inputDefs.length ? new LiteralMapExpr(inputDefs) : NULL_EXPR,
-                outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR
+                outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR,
             ]),
             updateDirectives: updateDirectiveExpressions,
             directive: dirAst.directive.type,
@@ -22679,14 +22684,16 @@ class ViewBuilder$1 {
             const /** @type {?} */ valueExpr = importExpr(Identifiers.EMPTY_ARRAY);
             return () => valueExpr;
         }
-        const /** @type {?} */ nodeIndex = this.nodes.length;
-        // pureArrayDef(argCount: number): NodeDef;
+        const /** @type {?} */ checkIndex = this.nodes.length;
         this.nodes.push(() => ({
             sourceSpan,
             nodeFlags: 32 /* TypePureArray */,
-            nodeDef: importExpr(Identifiers.pureArrayDef).callFn([literal(argCount)])
+            nodeDef: importExpr(Identifiers.pureArrayDef).callFn([
+                literal(checkIndex),
+                literal(argCount),
+            ])
         }));
-        return (args) => callCheckStmt(nodeIndex, args);
+        return (args) => callCheckStmt(checkIndex, args);
     }
     /**
      * @param {?} sourceSpan
@@ -22698,15 +22705,17 @@ class ViewBuilder$1 {
             const /** @type {?} */ valueExpr = importExpr(Identifiers.EMPTY_MAP);
             return () => valueExpr;
         }
-        // function pureObjectDef(propToIndex: {[p: string]: number}): NodeDef
         const /** @type {?} */ map = literalMap(keys.map((e, i) => (Object.assign({}, e, { value: literal(i) }))));
-        const /** @type {?} */ nodeIndex = this.nodes.length;
+        const /** @type {?} */ checkIndex = this.nodes.length;
         this.nodes.push(() => ({
             sourceSpan,
             nodeFlags: 64 /* TypePureObject */,
-            nodeDef: importExpr(Identifiers.pureObjectDef).callFn([map])
+            nodeDef: importExpr(Identifiers.pureObjectDef).callFn([
+                literal(checkIndex),
+                map,
+            ])
         }));
-        return (args) => callCheckStmt(nodeIndex, args);
+        return (args) => callCheckStmt(checkIndex, args);
     }
     /**
      * @param {?} expression
@@ -22717,12 +22726,14 @@ class ViewBuilder$1 {
     _createPipeConverter(expression, name, argCount) {
         const /** @type {?} */ pipe = /** @type {?} */ ((this.usedPipes.find((pipeSummary) => pipeSummary.name === name)));
         if (pipe.pure) {
-            const /** @type {?} */ nodeIndex = this.nodes.length;
-            // function purePipeDef(argCount: number): NodeDef;
+            const /** @type {?} */ checkIndex = this.nodes.length;
             this.nodes.push(() => ({
                 sourceSpan: expression.sourceSpan,
                 nodeFlags: 128 /* TypePurePipe */,
-                nodeDef: importExpr(Identifiers.purePipeDef).callFn([literal(argCount)])
+                nodeDef: importExpr(Identifiers.purePipeDef).callFn([
+                    literal(checkIndex),
+                    literal(argCount),
+                ])
             }));
             // find underlying pipe in the component view
             let /** @type {?} */ compViewExpr = VIEW_VAR;
@@ -22733,7 +22744,7 @@ class ViewBuilder$1 {
             }
             const /** @type {?} */ pipeNodeIndex = compBuilder.purePipeNodeIndices[name];
             const /** @type {?} */ pipeValueExpr = importExpr(Identifiers.nodeValue).callFn([compViewExpr, literal(pipeNodeIndex)]);
-            return (args) => callUnwrapValue(expression.nodeIndex, expression.bindingIndex, callCheckStmt(nodeIndex, [pipeValueExpr].concat(args)));
+            return (args) => callUnwrapValue(expression.nodeIndex, expression.bindingIndex, callCheckStmt(checkIndex, [pipeValueExpr].concat(args)));
         }
         else {
             const /** @type {?} */ nodeIndex = this._createPipe(expression.sourceSpan, pipe);
@@ -24998,7 +25009,7 @@ class StaticReflector {
                     else {
                         const /** @type {?} */ staticSymbol = expression;
                         const /** @type {?} */ declarationValue = resolveReferenceValue(staticSymbol);
-                        if (declarationValue) {
+                        if (declarationValue != null) {
                             return simplifyInContext(staticSymbol, declarationValue, depth + 1, references);
                         }
                         else {
@@ -25080,8 +25091,8 @@ class StaticReflector {
                                 }
                                 return null;
                             case 'index':
-                                let /** @type {?} */ indexTarget = simplify(expression['expression']);
-                                let /** @type {?} */ index = simplify(expression['index']);
+                                let /** @type {?} */ indexTarget = simplifyInContext(context, expression['expression'], depth, 0);
+                                let /** @type {?} */ index = simplifyInContext(context, expression['index'], depth, 0);
                                 if (indexTarget && isPrimitive(index))
                                     return indexTarget[index];
                                 return null;
@@ -25094,7 +25105,7 @@ class StaticReflector {
                                     selectContext =
                                         self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     const /** @type {?} */ declarationValue = resolveReferenceValue(selectContext);
-                                    if (declarationValue) {
+                                    if (declarationValue != null) {
                                         return simplifyInContext(selectContext, declarationValue, depth + 1, references);
                                     }
                                     else {

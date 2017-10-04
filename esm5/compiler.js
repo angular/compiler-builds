@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.0-d4d9009
+ * @license Angular v5.0.0-rc.0-696af79
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -613,7 +613,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-rc.0-d4d9009');
+var VERSION = new Version('5.0.0-rc.0-696af79');
 
 /**
  * @fileoverview added by tsickle
@@ -27287,13 +27287,16 @@ var ViewBuilder$1 = (function () {
      * @return {?}
      */
     function (ast, context) {
-        // textDef(ngContentIndex: number, constants: string[]): NodeDef;
+        // Static text nodes have no check function
+        var /** @type {?} */ checkIndex = -1;
         this.nodes.push(function () {
             return ({
                 sourceSpan: ast.sourceSpan,
                 nodeFlags: 2 /* TypeText */,
                 nodeDef: importExpr(Identifiers.textDef).callFn([
-                    literal(ast.ngContentIndex), literalArr([literal(ast.value)])
+                    literal(checkIndex),
+                    literal(ast.ngContentIndex),
+                    literalArr([literal(ast.value)]),
                 ])
             });
         });
@@ -27318,13 +27321,17 @@ var ViewBuilder$1 = (function () {
         var /** @type {?} */ updateRendererExpressions = inter.expressions.map(function (expr, bindingIndex) {
             return _this._preprocessUpdateExpression({ nodeIndex: nodeIndex, bindingIndex: bindingIndex, sourceSpan: ast.sourceSpan, context: COMP_VAR, value: expr });
         });
-        // textDef(ngContentIndex: number, constants: string[]): NodeDef;
+        // Check index is the same as the node index during compilation
+        // They might only differ at runtime
+        var /** @type {?} */ checkIndex = nodeIndex;
         this.nodes[nodeIndex] = function () {
             return ({
                 sourceSpan: ast.sourceSpan,
                 nodeFlags: 2 /* TypeText */,
                 nodeDef: importExpr(Identifiers.textDef).callFn([
-                    literal(ast.ngContentIndex), literalArr(inter.strings.map(function (s) { return literal(s); }))
+                    literal(checkIndex),
+                    literal(ast.ngContentIndex),
+                    literalArr(inter.strings.map(function (s) { return literal(s); })),
                 ]),
                 updateRenderer: updateRendererExpressions
             });
@@ -27427,19 +27434,15 @@ var ViewBuilder$1 = (function () {
             compView = this.outputCtx.importExpr(compAst.directive.componentViewType);
             compRendererType = this.outputCtx.importExpr(compAst.directive.rendererType);
         }
-        // elementDef(
-        //   flags: NodeFlags, matchedQueriesDsl: [string | number, QueryValueType][],
-        //   ngContentIndex: number, childCount: number, namespaceAndName: string,
-        //   fixedAttrs: [string, string][] = [],
-        //   bindings?: [BindingFlags, string, string | SecurityContext][],
-        //   outputs?: ([OutputType.ElementOutput | OutputType.DirectiveHostOutput, string, string])[],
-        //   handleEvent?: ElementHandleEventFn,
-        //   componentView?: () => ViewDefinition, componentRendererType?: RendererType2): NodeDef;
+        // Check index is the same as the node index during compilation
+        // They might only differ at runtime
+        var /** @type {?} */ checkIndex = nodeIndex;
         this.nodes[nodeIndex] = function () {
             return ({
                 sourceSpan: ast.sourceSpan,
                 nodeFlags: 1 /* TypeElement */ | flags,
                 nodeDef: importExpr(Identifiers.elementDef).callFn([
+                    literal(checkIndex),
                     literal(flags),
                     queryMatchesExpr,
                     literal(ast.ngContentIndex),
@@ -27646,20 +27649,22 @@ var ViewBuilder$1 = (function () {
                 eventAst: hostEventAst, dirAst: dirAst,
             });
         });
-        // directiveDef(
-        //   flags: NodeFlags, matchedQueries: [string, QueryValueType][], childCount: number, ctor:
-        //   any,
-        //   deps: ([DepFlags, any] | any)[], props?: {[name: string]: [number, string]},
-        //   outputs?: {[name: string]: string}, component?: () => ViewDefinition): NodeDef;
+        // Check index is the same as the node index during compilation
+        // They might only differ at runtime
+        var /** @type {?} */ checkIndex = nodeIndex;
         this.nodes[nodeIndex] = function () {
             return ({
                 sourceSpan: dirAst.sourceSpan,
                 nodeFlags: 16384 /* TypeDirective */ | flags,
                 nodeDef: importExpr(Identifiers.directiveDef).callFn([
-                    literal(flags), queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
-                    literal(childCount), providerExpr, depsExpr,
+                    literal(checkIndex),
+                    literal(flags),
+                    queryMatchExprs.length ? literalArr(queryMatchExprs) : NULL_EXPR,
+                    literal(childCount),
+                    providerExpr,
+                    depsExpr,
                     inputDefs.length ? new LiteralMapExpr(inputDefs) : NULL_EXPR,
-                    outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR
+                    outputDefs.length ? new LiteralMapExpr(outputDefs) : NULL_EXPR,
                 ]),
                 updateDirectives: updateDirectiveExpressions,
                 directive: dirAst.directive.type,
@@ -27799,16 +27804,18 @@ var ViewBuilder$1 = (function () {
             var /** @type {?} */ valueExpr_1 = importExpr(Identifiers.EMPTY_ARRAY);
             return function () { return valueExpr_1; };
         }
-        var /** @type {?} */ nodeIndex = this.nodes.length;
-        // pureArrayDef(argCount: number): NodeDef;
+        var /** @type {?} */ checkIndex = this.nodes.length;
         this.nodes.push(function () {
             return ({
                 sourceSpan: sourceSpan,
                 nodeFlags: 32 /* TypePureArray */,
-                nodeDef: importExpr(Identifiers.pureArrayDef).callFn([literal(argCount)])
+                nodeDef: importExpr(Identifiers.pureArrayDef).callFn([
+                    literal(checkIndex),
+                    literal(argCount),
+                ])
             });
         });
-        return function (args) { return callCheckStmt(nodeIndex, args); };
+        return function (args) { return callCheckStmt(checkIndex, args); };
     };
     /**
      * @param {?} sourceSpan
@@ -27825,17 +27832,19 @@ var ViewBuilder$1 = (function () {
             var /** @type {?} */ valueExpr_2 = importExpr(Identifiers.EMPTY_MAP);
             return function () { return valueExpr_2; };
         }
-        // function pureObjectDef(propToIndex: {[p: string]: number}): NodeDef
         var /** @type {?} */ map = literalMap(keys.map(function (e, i) { return (__assign({}, e, { value: literal(i) })); }));
-        var /** @type {?} */ nodeIndex = this.nodes.length;
+        var /** @type {?} */ checkIndex = this.nodes.length;
         this.nodes.push(function () {
             return ({
                 sourceSpan: sourceSpan,
                 nodeFlags: 64 /* TypePureObject */,
-                nodeDef: importExpr(Identifiers.pureObjectDef).callFn([map])
+                nodeDef: importExpr(Identifiers.pureObjectDef).callFn([
+                    literal(checkIndex),
+                    map,
+                ])
             });
         });
-        return function (args) { return callCheckStmt(nodeIndex, args); };
+        return function (args) { return callCheckStmt(checkIndex, args); };
     };
     /**
      * @param {?} expression
@@ -27852,13 +27861,15 @@ var ViewBuilder$1 = (function () {
     function (expression, name, argCount) {
         var /** @type {?} */ pipe = /** @type {?} */ ((this.usedPipes.find(function (pipeSummary) { return pipeSummary.name === name; })));
         if (pipe.pure) {
-            var /** @type {?} */ nodeIndex_1 = this.nodes.length;
-            // function purePipeDef(argCount: number): NodeDef;
+            var /** @type {?} */ checkIndex_1 = this.nodes.length;
             this.nodes.push(function () {
                 return ({
                     sourceSpan: expression.sourceSpan,
                     nodeFlags: 128 /* TypePurePipe */,
-                    nodeDef: importExpr(Identifiers.purePipeDef).callFn([literal(argCount)])
+                    nodeDef: importExpr(Identifiers.purePipeDef).callFn([
+                        literal(checkIndex_1),
+                        literal(argCount),
+                    ])
                 });
             });
             // find underlying pipe in the component view
@@ -27871,7 +27882,7 @@ var ViewBuilder$1 = (function () {
             var /** @type {?} */ pipeNodeIndex = compBuilder.purePipeNodeIndices[name];
             var /** @type {?} */ pipeValueExpr_1 = importExpr(Identifiers.nodeValue).callFn([compViewExpr, literal(pipeNodeIndex)]);
             return function (args) {
-                return callUnwrapValue(expression.nodeIndex, expression.bindingIndex, callCheckStmt(nodeIndex_1, [pipeValueExpr_1].concat(args)));
+                return callUnwrapValue(expression.nodeIndex, expression.bindingIndex, callCheckStmt(checkIndex_1, [pipeValueExpr_1].concat(args)));
             };
         }
         else {
@@ -30616,7 +30627,7 @@ var StaticReflector = (function () {
                     else {
                         var /** @type {?} */ staticSymbol = expression;
                         var /** @type {?} */ declarationValue = resolveReferenceValue(staticSymbol);
-                        if (declarationValue) {
+                        if (declarationValue != null) {
                             return simplifyInContext(staticSymbol, declarationValue, depth + 1, references);
                         }
                         else {
@@ -30698,8 +30709,8 @@ var StaticReflector = (function () {
                                 }
                                 return null;
                             case 'index':
-                                var /** @type {?} */ indexTarget = simplify(expression['expression']);
-                                var /** @type {?} */ index = simplify(expression['index']);
+                                var /** @type {?} */ indexTarget = simplifyInContext(context, expression['expression'], depth, 0);
+                                var /** @type {?} */ index = simplifyInContext(context, expression['index'], depth, 0);
                                 if (indexTarget && isPrimitive(index))
                                     return indexTarget[index];
                                 return null;
@@ -30712,7 +30723,7 @@ var StaticReflector = (function () {
                                     selectContext =
                                         self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     var /** @type {?} */ declarationValue = resolveReferenceValue(selectContext);
-                                    if (declarationValue) {
+                                    if (declarationValue != null) {
                                         return simplifyInContext(selectContext, declarationValue, depth + 1, references);
                                     }
                                     else {
