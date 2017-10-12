@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.1-6b7cead
+ * @license Angular v5.0.0-rc.1-94a925a
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -613,7 +613,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-rc.1-6b7cead');
+var VERSION = new Version('5.0.0-rc.1-94a925a');
 
 /**
  * @fileoverview added by tsickle
@@ -28391,9 +28391,9 @@ var MapPlaceholderNames = (function (_super) {
  * found in the LICENSE file at https://angular.io/license
  */
 var GeneratedFile = (function () {
-    function GeneratedFile(srcFileName, genFileName, sourceOrStmts) {
-        this.srcFileName = srcFileName;
-        this.genFileName = genFileName;
+    function GeneratedFile(srcFileUrl, genFileUrl, sourceOrStmts) {
+        this.srcFileUrl = srcFileUrl;
+        this.genFileUrl = genFileUrl;
         if (typeof sourceOrStmts === 'string') {
             this.source = sourceOrStmts;
             this.stmts = null;
@@ -28412,7 +28412,7 @@ var GeneratedFile = (function () {
      * @return {?}
      */
     function (other) {
-        if (this.genFileName !== other.genFileName) {
+        if (this.genFileUrl !== other.genFileUrl) {
             return false;
         }
         if (this.source) {
@@ -28435,9 +28435,9 @@ var GeneratedFile = (function () {
 function toTypeScript(file, preamble) {
     if (preamble === void 0) { preamble = ''; }
     if (!file.stmts) {
-        throw new Error("Illegal state: No stmts present on GeneratedFile " + file.genFileName);
+        throw new Error("Illegal state: No stmts present on GeneratedFile " + file.genFileUrl);
     }
-    return new TypeScriptEmitter().emitStatements(file.genFileName, file.stmts, preamble);
+    return new TypeScriptEmitter().emitStatements(file.genFileUrl, file.stmts, preamble);
 }
 
 /**

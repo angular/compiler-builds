@@ -7,11 +7,11 @@
  */
 import { Statement } from '../output/output_ast';
 export declare class GeneratedFile {
-    srcFileName: string;
-    genFileName: string;
+    srcFileUrl: string;
+    genFileUrl: string;
     source: string | null;
     stmts: Statement[] | null;
-    constructor(srcFileName: string, genFileName: string, sourceOrStmts: string | Statement[]);
+    constructor(srcFileUrl: string, genFileUrl: string, sourceOrStmts: string | Statement[]);
     isEquivalent(other: GeneratedFile): boolean;
 }
 export declare function toTypeScript(file: GeneratedFile, preamble?: string): string;
