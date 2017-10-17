@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.2-d035175
+ * @license Angular v5.0.0-rc.2-15a8429
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -561,7 +561,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-rc.2-d035175');
+const VERSION = new Version('5.0.0-rc.2-15a8429');
 
 /**
  * @fileoverview added by tsickle
@@ -23866,8 +23866,8 @@ class AotCompiler {
             // and they also cause TypeScript to include these files into the program too,
             // which will make them part of the analyzedFiles.
             const /** @type {?} */ externalReferences = [
-                ...ngModuleMeta.declaredDirectives.map(d => d.reference),
-                ...ngModuleMeta.declaredPipes.map(d => d.reference),
+                ...ngModuleMeta.transitiveModule.directives.map(d => d.reference),
+                ...ngModuleMeta.transitiveModule.pipes.map(d => d.reference),
                 ...ngModuleMeta.importedModules.map(m => m.type.reference),
                 ...ngModuleMeta.exportedModules.map(m => m.type.reference),
             ];
