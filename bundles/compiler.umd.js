@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.2-81173b0
+ * @license Angular v5.0.0-rc.2-b922743
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.0-rc.2-81173b0
+ * @license Angular v5.0.0-rc.2-b922743
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -656,7 +656,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-rc.2-81173b0');
+var VERSION = new Version('5.0.0-rc.2-b922743');
 
 /**
  * @fileoverview added by tsickle
@@ -29160,7 +29160,7 @@ var AotCompiler = (function () {
             compMeta.template)).styleUrls.forEach(function (styleUrl) {
                 var /** @type {?} */ normalizedUrl = _this._host.resourceNameToFileName(styleUrl, file.fileName);
                 if (!normalizedUrl) {
-                    throw new Error("Couldn't resolve resource " + styleUrl + " relative to " + file.fileName);
+                    throw syntaxError("Couldn't resolve resource " + styleUrl + " relative to " + file.fileName);
                 }
                 var /** @type {?} */ needsShim = (/** @type {?} */ ((compMeta.template)).encapsulation || _this._config.defaultEncapsulation) === ViewEncapsulation.Emulated;
                 genFileNames.push(_stylesModuleUrl(normalizedUrl, needsShim, fileSuffix));
