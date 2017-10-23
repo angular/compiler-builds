@@ -207,3 +207,7 @@ export interface MetadataFactory<T> {
     isTypeOf(obj: any): obj is T;
     ngMetadataName: string;
 }
+export interface Route {
+    children?: Route[];
+    loadChildren?: string | Type | any;
+}

@@ -36,13 +36,6 @@ export interface StaticSymbolResolverHost {
      * `path/to/containingFile.ts` containing `import {...} from 'module-name'`.
      */
     moduleNameToFileName(moduleName: string, containingFile?: string): string | null;
-    /**
-     * Converts a file path to a module name that can be used as an `import.
-     * I.e. `path/to/importedFile.ts` should be imported by `path/to/containingFile.ts`.
-     *
-     * See ImportResolver.
-     */
-    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string;
 }
 /**
  * This class is responsible for loading metadata per symbol,
@@ -87,10 +80,6 @@ export declare class StaticSymbolResolver {
      * has. If the symbol is not a type the result is null.
      */
     getTypeArity(staticSymbol: StaticSymbol): number | null;
-    /**
-     * Converts a file path to a module name that can be used as an `import`.
-     */
-    fileNameToModuleName(importedFilePath: string, containingFilePath: string): string;
     getKnownModuleName(filePath: string): string | null;
     recordImportAs(sourceSymbol: StaticSymbol, targetSymbol: StaticSymbol): void;
     recordModuleNameForFileName(fileName: string, moduleName: string): void;

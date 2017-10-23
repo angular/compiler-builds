@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.3-5da96c7
+ * @license Angular v5.0.0-rc.3-fc0b1d5
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -222,6 +222,11 @@ function makeMetadataFactory(name, props) {
     factory.ngMetadataName = name;
     return factory;
 }
+/**
+ * @record
+ */
+function Route() { }
+
 
 
 var core = Object.freeze({
@@ -272,7 +277,8 @@ var core = Object.freeze({
 	QueryValueType: QueryValueType,
 	ViewFlags: ViewFlags,
 	MissingTranslationStrategy: MissingTranslationStrategy,
-	MetadataFactory: MetadataFactory
+	MetadataFactory: MetadataFactory,
+	Route: Route
 });
 
 /**
@@ -561,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-rc.3-5da96c7');
+const VERSION = new Version('5.0.0-rc.3-fc0b1d5');
 
 /**
  * @fileoverview added by tsickle
@@ -23210,6 +23216,75 @@ function toTypeScript(file, preamble = '') {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * @record
+ */
+
+/**
+ * @param {?} moduleMeta
+ * @param {?} reflector
+ * @return {?}
+ */
+function listLazyRoutes(moduleMeta, reflector) {
+    const /** @type {?} */ allLazyRoutes = [];
+    for (const { provider, module } of moduleMeta.transitiveModule.providers) {
+        if (tokenReference(provider.token) === reflector.ROUTES) {
+            const /** @type {?} */ loadChildren = _collectLoadChildren(provider.useValue);
+            for (const /** @type {?} */ route of loadChildren) {
+                allLazyRoutes.push(parseLazyRoute(route, reflector, module.reference));
+            }
+        }
+    }
+    return allLazyRoutes;
+}
+/**
+ * @param {?} routes
+ * @param {?=} target
+ * @return {?}
+ */
+function _collectLoadChildren(routes, target = []) {
+    if (typeof routes === 'string') {
+        target.push(routes);
+    }
+    else if (Array.isArray(routes)) {
+        for (const /** @type {?} */ route of routes) {
+            _collectLoadChildren(route, target);
+        }
+    }
+    else if (routes.loadChildren) {
+        _collectLoadChildren(routes.loadChildren, target);
+    }
+    else if (routes.children) {
+        _collectLoadChildren(routes.children, target);
+    }
+    return target;
+}
+/**
+ * @param {?} route
+ * @param {?} reflector
+ * @param {?=} module
+ * @return {?}
+ */
+function parseLazyRoute(route, reflector, module) {
+    const [routePath, routeName] = route.split('#');
+    const /** @type {?} */ referencedModule = reflector.resolveExternalReference({
+        moduleName: routePath,
+        name: routeName,
+    }, module ? module.filePath : undefined);
+    return { route: route, module: module || referencedModule, referencedModule };
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * @param {?} srcFileName
  * @param {?} forJitCtx
  * @param {?} summaryResolver
@@ -24144,12 +24219,12 @@ class AotCompiler {
             }
             const /** @type {?} */ arity = this._symbolResolver.getTypeArity(symbol) || 0;
             const { filePath, name, members } = this._symbolResolver.getImportAs(symbol) || symbol;
-            const /** @type {?} */ importModule = this._symbolResolver.fileNameToModuleName(filePath, genFilePath);
+            const /** @type {?} */ importModule = this._fileNameToModuleName(filePath, genFilePath);
             // It should be good enough to compare filePath to genFilePath and if they are equal
             // there is a self reference. However, ngfactory files generate to .ts but their
             // symbols have .d.ts so a simple compare is insufficient. They should be canonical
             // and is tracked by #17705.
-            const /** @type {?} */ selfReference = this._symbolResolver.fileNameToModuleName(genFilePath, genFilePath);
+            const /** @type {?} */ selfReference = this._fileNameToModuleName(genFilePath, genFilePath);
             const /** @type {?} */ moduleName = importModule === selfReference ? null : importModule;
             // If we are in a type expression that refers to a generic type then supply
             // the required type parameters. If there were not enough type parameters
@@ -24162,6 +24237,16 @@ class AotCompiler {
             return members.reduce((expr, memberName) => expr.prop(memberName), /** @type {?} */ (importExpr(new ExternalReference(moduleName, name, null), allTypeParams)));
         };
         return { statements: [], genFilePath, importExpr: importExpr$$1 };
+    }
+    /**
+     * @param {?} importedFilePath
+     * @param {?} containingFilePath
+     * @return {?}
+     */
+    _fileNameToModuleName(importedFilePath, containingFilePath) {
+        return this._summaryResolver.getKnownModuleName(importedFilePath) ||
+            this._symbolResolver.getKnownModuleName(importedFilePath) ||
+            this._host.fileNameToModuleName(importedFilePath, containingFilePath);
     }
     /**
      * @param {?} srcFileUrl
@@ -24184,6 +24269,51 @@ class AotCompiler {
      */
     _codegenSourceModule(srcFileUrl, ctx) {
         return new GeneratedFile(srcFileUrl, ctx.genFilePath, ctx.statements);
+    }
+    /**
+     * @param {?=} entryRoute
+     * @param {?=} analyzedModules
+     * @return {?}
+     */
+    listLazyRoutes(entryRoute, analyzedModules) {
+        const /** @type {?} */ self = this;
+        if (entryRoute) {
+            const /** @type {?} */ symbol = parseLazyRoute(entryRoute, this._reflector).referencedModule;
+            return visitLazyRoute(symbol);
+        }
+        else if (analyzedModules) {
+            const /** @type {?} */ allLazyRoutes = [];
+            for (const /** @type {?} */ ngModule of analyzedModules.ngModules) {
+                const /** @type {?} */ lazyRoutes = listLazyRoutes(ngModule, this._reflector);
+                for (const /** @type {?} */ lazyRoute of lazyRoutes) {
+                    allLazyRoutes.push(lazyRoute);
+                }
+            }
+            return allLazyRoutes;
+        }
+        else {
+            throw new Error(`Either route or analyzedModules has to be specified!`);
+        }
+        /**
+         * @param {?} symbol
+         * @param {?=} seenRoutes
+         * @param {?=} allLazyRoutes
+         * @return {?}
+         */
+        function visitLazyRoute(symbol, seenRoutes = new Set(), allLazyRoutes = []) {
+            // Support pointing to default exports, but stop recursing there,
+            // as the StaticReflector does not yet support default exports.
+            if (seenRoutes.has(symbol) || !symbol.name) {
+                return allLazyRoutes;
+            }
+            seenRoutes.add(symbol);
+            const /** @type {?} */ lazyRoutes = listLazyRoutes(/** @type {?} */ ((self._metadataResolver.getNgModuleMetadata(symbol, true))), self._reflector);
+            for (const /** @type {?} */ lazyRoute of lazyRoutes) {
+                allLazyRoutes.push(lazyRoute);
+                visitLazyRoute(lazyRoute.referencedModule, seenRoutes, allLazyRoutes);
+            }
+            return allLazyRoutes;
+        }
     }
 }
 /**
@@ -24490,10 +24620,11 @@ class StaticReflector {
     }
     /**
      * @param {?} ref
+     * @param {?=} containingFile
      * @return {?}
      */
-    resolveExternalReference(ref) {
-        const /** @type {?} */ refSymbol = this.symbolResolver.getSymbolByModule(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)));
+    resolveExternalReference(ref, containingFile) {
+        const /** @type {?} */ refSymbol = this.symbolResolver.getSymbolByModule(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)), containingFile);
         const /** @type {?} */ declarationSymbol = this.findSymbolDeclaration(refSymbol);
         this.symbolResolver.recordModuleNameForFileName(refSymbol.filePath, /** @type {?} */ ((ref.moduleName)));
         this.symbolResolver.recordImportAs(declarationSymbol, refSymbol);
@@ -25383,17 +25514,6 @@ class StaticSymbolResolver {
         return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
     }
     /**
-     * Converts a file path to a module name that can be used as an `import`.
-     * @param {?} importedFilePath
-     * @param {?} containingFilePath
-     * @return {?}
-     */
-    fileNameToModuleName(importedFilePath, containingFilePath) {
-        return this.summaryResolver.getKnownModuleName(importedFilePath) ||
-            this.knownFileNameToModuleNames.get(importedFilePath) ||
-            this.host.fileNameToModuleName(importedFilePath, containingFilePath);
-    }
-    /**
      * @param {?} filePath
      * @return {?}
      */
@@ -25768,9 +25888,8 @@ class StaticSymbolResolver {
     getSymbolByModule(module, symbolName, containingFile) {
         const /** @type {?} */ filePath = this.resolveModule(module, containingFile);
         if (!filePath) {
-            this.reportError(new Error(`Could not resolve module ${module}${containingFile ? ` relative to $ {
-            containingFile
-          } ` : ''}`));
+            this.reportError(new Error(`Could not resolve module ${module}${containingFile ? ' relative to ' +
+                containingFile : ''}`));
             return this.getStaticSymbol(`ERROR:${module}`, symbolName);
         }
         return this.getStaticSymbol(filePath, symbolName);
@@ -25956,15 +26075,16 @@ function createAotUrlResolver(host) {
  * Creates a new AotCompiler based on options and a host.
  * @param {?} compilerHost
  * @param {?} options
+ * @param {?} errorCollector
  * @return {?}
  */
-function createAotCompiler(compilerHost, options) {
+function createAotCompiler(compilerHost, options, errorCollector) {
     let /** @type {?} */ translations = options.translations || '';
     const /** @type {?} */ urlResolver = createAotUrlResolver(compilerHost);
     const /** @type {?} */ symbolCache = new StaticSymbolCache();
     const /** @type {?} */ summaryResolver = new AotSummaryResolver(compilerHost, symbolCache);
     const /** @type {?} */ symbolResolver = new StaticSymbolResolver(compilerHost, symbolCache, summaryResolver);
-    const /** @type {?} */ staticReflector = new StaticReflector(summaryResolver, symbolResolver);
+    const /** @type {?} */ staticReflector = new StaticReflector(summaryResolver, symbolResolver, [], [], errorCollector);
     const /** @type {?} */ htmlParser = new I18NHtmlParser(new HtmlParser(), translations, options.i18nFormat, options.missingTranslation, console);
     const /** @type {?} */ config = new CompilerConfig({
         defaultEncapsulation: ViewEncapsulation.Emulated,
@@ -25978,7 +26098,7 @@ function createAotCompiler(compilerHost, options) {
     const /** @type {?} */ expressionParser = new Parser(new Lexer());
     const /** @type {?} */ elementSchemaRegistry = new DomElementSchemaRegistry();
     const /** @type {?} */ tmplParser = new TemplateParser(config, staticReflector, expressionParser, elementSchemaRegistry, htmlParser, console, []);
-    const /** @type {?} */ resolver = new CompileMetadataResolver(config, htmlParser, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, console, symbolCache, staticReflector);
+    const /** @type {?} */ resolver = new CompileMetadataResolver(config, htmlParser, new NgModuleResolver(staticReflector), new DirectiveResolver(staticReflector), new PipeResolver(staticReflector), summaryResolver, elementSchemaRegistry, normalizer, console, symbolCache, staticReflector, errorCollector);
     // TODO(vicb): do not pass options.i18nFormat here
     const /** @type {?} */ viewCompiler = new ViewCompiler(staticReflector);
     const /** @type {?} */ typeCheckCompiler = new TypeCheckCompiler(options, staticReflector);
