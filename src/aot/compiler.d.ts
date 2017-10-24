@@ -19,6 +19,7 @@ import { ViewCompiler } from '../view_compiler/view_compiler';
 import { AotCompilerHost } from './compiler_host';
 import { AotCompilerOptions } from './compiler_options';
 import { GeneratedFile } from './generated_file';
+import { LazyRoute } from './lazy_routes';
 import { StaticReflector } from './static_reflector';
 import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
@@ -59,8 +60,10 @@ export declare class AotCompiler {
     private _compileComponent(outputCtx, compMeta, ngModule, directiveIdentifiers, componentStyles, fileSuffix);
     private _parseTemplate(compMeta, ngModule, directiveIdentifiers);
     private _createOutputContext(genFilePath);
+    private _fileNameToModuleName(importedFilePath, containingFilePath);
     private _codegenStyles(srcFileUrl, compMeta, stylesheetMetadata, isShimmed, fileSuffix);
     private _codegenSourceModule(srcFileUrl, ctx);
+    listLazyRoutes(entryRoute?: string, analyzedModules?: NgAnalyzedModules): LazyRoute[];
 }
 export interface NgAnalyzedModules {
     ngModules: CompileNgModuleMetadata[];

@@ -18,7 +18,7 @@ export declare class StaticReflector implements CompileReflector {
     private conversionMap;
     private injectionToken;
     private opaqueToken;
-    private ROUTES;
+    ROUTES: StaticSymbol;
     private ANALYZE_FOR_ENTRY_COMPONENTS;
     private annotationForParentClassWithSummaryKind;
     constructor(summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, knownMetadataClasses?: {
@@ -31,7 +31,7 @@ export declare class StaticReflector implements CompileReflector {
         fn: any;
     }[], errorRecorder?: ((error: any, fileName?: string | undefined) => void) | undefined);
     componentModuleUrl(typeOrFunc: StaticSymbol): string;
-    resolveExternalReference(ref: o.ExternalReference): StaticSymbol;
+    resolveExternalReference(ref: o.ExternalReference, containingFile?: string): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
     tryFindDeclaration(moduleUrl: string, name: string): StaticSymbol;
     findSymbolDeclaration(symbol: StaticSymbol): StaticSymbol;
