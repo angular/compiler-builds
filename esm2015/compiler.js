@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.6-14016c7
+ * @license Angular v5.0.0-rc.6-f4d5729
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -567,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-rc.6-14016c7');
+const VERSION = new Version('5.0.0-rc.6-f4d5729');
 
 /**
  * @fileoverview added by tsickle
@@ -21636,13 +21636,14 @@ class TypeCheckCompiler {
      *   This allows Typescript to reuse the old program's structure as no imports have changed.
      * - This must not produce any exports, as this would pollute the .d.ts file
      *   and also violate the point above.
+     * @param {?} componentId
      * @param {?} component
      * @param {?} template
      * @param {?} usedPipes
      * @param {?} externalReferenceVars
      * @return {?}
      */
-    compileComponent(component, template, usedPipes, externalReferenceVars) {
+    compileComponent(componentId, component, template, usedPipes, externalReferenceVars) {
         const /** @type {?} */ pipes = new Map();
         usedPipes.forEach(p => pipes.set(p.name, p.type.reference));
         let /** @type {?} */ embeddedViewCount = 0;
@@ -21652,7 +21653,7 @@ class TypeCheckCompiler {
         };
         const /** @type {?} */ visitor = viewBuilderFactory(null);
         visitor.visitAll([], template);
-        return visitor.build();
+        return visitor.build(componentId);
     }
 }
 const DYNAMIC_VAR_NAME = '_any';
@@ -21714,11 +21715,12 @@ class ViewBuilder {
         templateVisitAll(this, astNodes);
     }
     /**
+     * @param {?} componentId
      * @param {?=} targetStatements
      * @return {?}
      */
-    build(targetStatements = []) {
-        this.children.forEach((child) => child.build(targetStatements));
+    build(componentId, targetStatements = []) {
+        this.children.forEach((child) => child.build(componentId, targetStatements));
         const /** @type {?} */ viewStmts = [variable(DYNAMIC_VAR_NAME).set(NULL_EXPR).toDeclStmt(DYNAMIC_TYPE)];
         let /** @type {?} */ bindingCount = 0;
         this.updates.forEach((expression) => {
@@ -21735,7 +21737,7 @@ class ViewBuilder {
             const { stmts } = convertActionBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId);
             viewStmts.push(...stmts.map((stmt) => applySourceSpanToStatementIfNeeded(stmt, sourceSpan)));
         });
-        const /** @type {?} */ viewName = `_View_${this.component.name}_${this.embeddedViewIndex}`;
+        const /** @type {?} */ viewName = `_View_${componentId}_${this.embeddedViewIndex}`;
         const /** @type {?} */ viewFactory = new DeclareFunctionStmt(viewName, [], viewStmts);
         targetStatements.push(viewFactory);
         return targetStatements;
@@ -23931,6 +23933,7 @@ class AotCompiler {
      * @return {?}
      */
     _createNgFactoryStub(outputCtx, file, emitFlags) {
+        let /** @type {?} */ componentId = 0;
         file.ngModules.forEach((ngModuleMeta, ngModuleIndex) => {
             // Note: the code below needs to executed for StubEmitFlags.Basic and StubEmitFlags.TypeCheck,
             // so we don't change the .ngfactory file too much when adding the typecheck block.
@@ -23964,8 +23967,9 @@ class AotCompiler {
                     if (!compMeta.isComponent) {
                         return;
                     }
-                    this._createTypeCheckBlock(outputCtx, ngModuleMeta, this._metadataResolver.getHostComponentMetadata(compMeta), [compMeta.type], externalReferenceVars);
-                    this._createTypeCheckBlock(outputCtx, ngModuleMeta, compMeta, ngModuleMeta.transitiveModule.directives, externalReferenceVars);
+                    componentId++;
+                    this._createTypeCheckBlock(outputCtx, `${compMeta.type.reference.name}_Host_${componentId}`, ngModuleMeta, this._metadataResolver.getHostComponentMetadata(compMeta), [compMeta.type], externalReferenceVars);
+                    this._createTypeCheckBlock(outputCtx, `${compMeta.type.reference.name}_${componentId}`, ngModuleMeta, compMeta, ngModuleMeta.transitiveModule.directives, externalReferenceVars);
                 });
             }
         });
@@ -23975,15 +23979,16 @@ class AotCompiler {
     }
     /**
      * @param {?} ctx
+     * @param {?} componentId
      * @param {?} moduleMeta
      * @param {?} compMeta
      * @param {?} directives
      * @param {?} externalReferenceVars
      * @return {?}
      */
-    _createTypeCheckBlock(ctx, moduleMeta, compMeta, directives, externalReferenceVars) {
+    _createTypeCheckBlock(ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars) {
         const { template: parsedTemplate, pipes: usedPipes } = this._parseTemplate(compMeta, moduleMeta, directives);
-        ctx.statements.push(...this._typeCheckCompiler.compileComponent(compMeta, parsedTemplate, usedPipes, externalReferenceVars));
+        ctx.statements.push(...this._typeCheckCompiler.compileComponent(componentId, compMeta, parsedTemplate, usedPipes, externalReferenceVars));
     }
     /**
      * @param {?} analyzeResult
@@ -24626,8 +24631,10 @@ class StaticReflector {
     resolveExternalReference(ref, containingFile) {
         const /** @type {?} */ refSymbol = this.symbolResolver.getSymbolByModule(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)), containingFile);
         const /** @type {?} */ declarationSymbol = this.findSymbolDeclaration(refSymbol);
-        this.symbolResolver.recordModuleNameForFileName(refSymbol.filePath, /** @type {?} */ ((ref.moduleName)));
-        this.symbolResolver.recordImportAs(declarationSymbol, refSymbol);
+        if (!containingFile) {
+            this.symbolResolver.recordModuleNameForFileName(refSymbol.filePath, /** @type {?} */ ((ref.moduleName)));
+            this.symbolResolver.recordImportAs(declarationSymbol, refSymbol);
+        }
         return declarationSymbol;
     }
     /**
@@ -25368,7 +25375,7 @@ class PopulatedScope extends BindingScope {
  * @return {?}
  */
 function positionalError(message, fileName, line, column) {
-    const /** @type {?} */ result = new Error(message);
+    const /** @type {?} */ result = syntaxError(message);
     (/** @type {?} */ (result)).fileName = fileName;
     (/** @type {?} */ (result)).line = line;
     (/** @type {?} */ (result)).column = column;

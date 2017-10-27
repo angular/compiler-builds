@@ -26,5 +26,5 @@ export declare class TypeCheckCompiler {
      * - This must not produce any exports, as this would pollute the .d.ts file
      *   and also violate the point above.
      */
-    compileComponent(component: CompileDirectiveMetadata, template: TemplateAst[], usedPipes: CompilePipeSummary[], externalReferenceVars: Map<StaticSymbol, string>): o.Statement[];
+    compileComponent(componentId: string, component: CompileDirectiveMetadata, template: TemplateAst[], usedPipes: CompilePipeSummary[], externalReferenceVars: Map<StaticSymbol, string>): o.Statement[];
 }

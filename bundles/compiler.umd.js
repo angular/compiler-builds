@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.6-14016c7
+ * @license Angular v5.0.0-rc.6-f4d5729
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.0-rc.6-14016c7
+ * @license Angular v5.0.0-rc.6-f4d5729
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -662,7 +662,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-rc.6-14016c7');
+var VERSION = new Version('5.0.0-rc.6-f4d5729');
 
 /**
  * @fileoverview added by tsickle
@@ -26551,6 +26551,7 @@ var TypeCheckCompiler = (function () {
      *   This allows Typescript to reuse the old program's structure as no imports have changed.
      * - This must not produce any exports, as this would pollute the .d.ts file
      *   and also violate the point above.
+     * @param {?} componentId
      * @param {?} component
      * @param {?} template
      * @param {?} usedPipes
@@ -26564,13 +26565,14 @@ var TypeCheckCompiler = (function () {
      *   This allows Typescript to reuse the old program's structure as no imports have changed.
      * - This must not produce any exports, as this would pollute the .d.ts file
      *   and also violate the point above.
+     * @param {?} componentId
      * @param {?} component
      * @param {?} template
      * @param {?} usedPipes
      * @param {?} externalReferenceVars
      * @return {?}
      */
-    function (component, template, usedPipes, externalReferenceVars) {
+    function (componentId, component, template, usedPipes, externalReferenceVars) {
         var _this = this;
         var /** @type {?} */ pipes = new Map();
         usedPipes.forEach(function (p) { return pipes.set(p.name, p.type.reference); });
@@ -26581,7 +26583,7 @@ var TypeCheckCompiler = (function () {
         };
         var /** @type {?} */ visitor = viewBuilderFactory(null);
         visitor.visitAll([], template);
-        return visitor.build();
+        return visitor.build(componentId);
     };
     return TypeCheckCompiler;
 }());
@@ -26642,17 +26644,19 @@ var ViewBuilder = (function () {
         templateVisitAll(this, astNodes);
     };
     /**
+     * @param {?} componentId
      * @param {?=} targetStatements
      * @return {?}
      */
     ViewBuilder.prototype.build = /**
+     * @param {?} componentId
      * @param {?=} targetStatements
      * @return {?}
      */
-    function (targetStatements) {
+    function (componentId, targetStatements) {
         var _this = this;
         if (targetStatements === void 0) { targetStatements = []; }
-        this.children.forEach(function (child) { return child.build(targetStatements); });
+        this.children.forEach(function (child) { return child.build(componentId, targetStatements); });
         var /** @type {?} */ viewStmts = [variable(DYNAMIC_VAR_NAME).set(NULL_EXPR).toDeclStmt(DYNAMIC_TYPE)];
         var /** @type {?} */ bindingCount = 0;
         this.updates.forEach(function (expression) {
@@ -26670,7 +26674,7 @@ var ViewBuilder = (function () {
             var stmts = convertActionBinding(nameResolver, variable(_this.getOutputVar(context)), value, bindingId).stmts;
             viewStmts.push.apply(viewStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
         });
-        var /** @type {?} */ viewName = "_View_" + this.component.name + "_" + this.embeddedViewIndex;
+        var /** @type {?} */ viewName = "_View_" + componentId + "_" + this.embeddedViewIndex;
         var /** @type {?} */ viewFactory = new DeclareFunctionStmt(viewName, [], viewStmts);
         targetStatements.push(viewFactory);
         return targetStatements;
@@ -29363,6 +29367,7 @@ var AotCompiler = (function () {
      */
     function (outputCtx, file, emitFlags) {
         var _this = this;
+        var /** @type {?} */ componentId = 0;
         file.ngModules.forEach(function (ngModuleMeta, ngModuleIndex) {
             // Note: the code below needs to executed for StubEmitFlags.Basic and StubEmitFlags.TypeCheck,
             // so we don't change the .ngfactory file too much when adding the typecheck block.
@@ -29394,8 +29399,9 @@ var AotCompiler = (function () {
                     if (!compMeta.isComponent) {
                         return;
                     }
-                    _this._createTypeCheckBlock(outputCtx, ngModuleMeta, _this._metadataResolver.getHostComponentMetadata(compMeta), [compMeta.type], externalReferenceVars);
-                    _this._createTypeCheckBlock(outputCtx, ngModuleMeta, compMeta, ngModuleMeta.transitiveModule.directives, externalReferenceVars);
+                    componentId++;
+                    _this._createTypeCheckBlock(outputCtx, compMeta.type.reference.name + "_Host_" + componentId, ngModuleMeta, _this._metadataResolver.getHostComponentMetadata(compMeta), [compMeta.type], externalReferenceVars);
+                    _this._createTypeCheckBlock(outputCtx, compMeta.type.reference.name + "_" + componentId, ngModuleMeta, compMeta, ngModuleMeta.transitiveModule.directives, externalReferenceVars);
                 });
             }
         });
@@ -29405,6 +29411,7 @@ var AotCompiler = (function () {
     };
     /**
      * @param {?} ctx
+     * @param {?} componentId
      * @param {?} moduleMeta
      * @param {?} compMeta
      * @param {?} directives
@@ -29413,15 +29420,16 @@ var AotCompiler = (function () {
      */
     AotCompiler.prototype._createTypeCheckBlock = /**
      * @param {?} ctx
+     * @param {?} componentId
      * @param {?} moduleMeta
      * @param {?} compMeta
      * @param {?} directives
      * @param {?} externalReferenceVars
      * @return {?}
      */
-    function (ctx, moduleMeta, compMeta, directives, externalReferenceVars) {
+    function (ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars) {
         var _a = this._parseTemplate(compMeta, moduleMeta, directives), parsedTemplate = _a.template, usedPipes = _a.pipes;
-        (_b = ctx.statements).push.apply(_b, this._typeCheckCompiler.compileComponent(compMeta, parsedTemplate, usedPipes, externalReferenceVars));
+        (_b = ctx.statements).push.apply(_b, this._typeCheckCompiler.compileComponent(componentId, compMeta, parsedTemplate, usedPipes, externalReferenceVars));
         var _b;
     };
     /**
@@ -30200,8 +30208,10 @@ var StaticReflector = (function () {
     function (ref, containingFile) {
         var /** @type {?} */ refSymbol = this.symbolResolver.getSymbolByModule(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)), containingFile);
         var /** @type {?} */ declarationSymbol = this.findSymbolDeclaration(refSymbol);
-        this.symbolResolver.recordModuleNameForFileName(refSymbol.filePath, /** @type {?} */ ((ref.moduleName)));
-        this.symbolResolver.recordImportAs(declarationSymbol, refSymbol);
+        if (!containingFile) {
+            this.symbolResolver.recordModuleNameForFileName(refSymbol.filePath, /** @type {?} */ ((ref.moduleName)));
+            this.symbolResolver.recordImportAs(declarationSymbol, refSymbol);
+        }
         return declarationSymbol;
     };
     /**
@@ -31051,7 +31061,7 @@ var PopulatedScope = (function (_super) {
  * @return {?}
  */
 function positionalError(message, fileName, line, column) {
-    var /** @type {?} */ result = new Error(message);
+    var /** @type {?} */ result = syntaxError(message);
     (/** @type {?} */ (result)).fileName = fileName;
     (/** @type {?} */ (result)).line = line;
     (/** @type {?} */ (result)).column = column;
