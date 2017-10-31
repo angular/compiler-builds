@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-rc.8-04eb80c
+ * @license Angular v5.0.0-rc.8-420852e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.0-rc.8-04eb80c
+ * @license Angular v5.0.0-rc.8-420852e
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -662,7 +662,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-rc.8-04eb80c');
+var VERSION = new Version('5.0.0-rc.8-420852e');
 
 /**
  * @fileoverview added by tsickle
@@ -13761,6 +13761,21 @@ function summaryForJitName(symbolName) {
  */
 function stripSummaryForJitNameSuffix(symbolName) {
     return symbolName.replace(JIT_SUMMARY_NAME, '');
+}
+var LOWERED_SYMBOL = /\u0275\d+/;
+/**
+ * @param {?} name
+ * @return {?}
+ */
+function isLoweredSymbol(name) {
+    return LOWERED_SYMBOL.test(name);
+}
+/**
+ * @param {?} id
+ * @return {?}
+ */
+function createLoweredSymbol(id) {
+    return "\u0275" + id;
 }
 
 /**
@@ -28601,7 +28616,7 @@ function serializeSummaries(srcFileName, forJitCtx, summaryResolver, symbolResol
     });
     var _a = toJsonSerializer.serialize(), json = _a.json, exportAs = _a.exportAs;
     if (forJitCtx) {
-        var /** @type {?} */ forJitSerializer_1 = new ForJitSerializer(forJitCtx, symbolResolver);
+        var /** @type {?} */ forJitSerializer_1 = new ForJitSerializer(forJitCtx, symbolResolver, summaryResolver);
         types.forEach(function (_a) {
             var summary = _a.summary, metadata = _a.metadata;
             forJitSerializer_1.addSourceType(summary, metadata);
@@ -28655,6 +28670,7 @@ var ToJsonSerializer = (function (_super) {
         _this.srcFileName = srcFileName;
         _this.symbols = [];
         _this.indexBySymbol = new Map();
+        _this.reexportedBy = new Map();
         _this.processedSummaryBySymbol = new Map();
         _this.processedSummaries = [];
         _this.unprocessedSymbolSummariesBySymbol = new Map();
@@ -28699,8 +28715,33 @@ var ToJsonSerializer = (function (_super) {
                 });
                 metadata_1 = clone_1;
             }
+            else if (isCall(metadata_1)) {
+                if (!isFunctionCall(metadata_1) && !isMethodCallOnVariable(metadata_1)) {
+                    // Don't store complex calls as we won't be able to simplify them anyways later on.
+                    // Don't store complex calls as we won't be able to simplify them anyways later on.
+                    metadata_1 = {
+                        __symbolic: 'error',
+                        message: 'Complex function calls are not supported.',
+                    };
+                }
+            }
+            // Note: We need to keep storing ctor calls for e.g.
+            // `export const x = new InjectionToken(...)`
             unprocessedSummary.metadata = metadata_1;
             processedSummary.metadata = this.processValue(metadata_1, 1 /* ResolveValue */);
+            if (metadata_1 instanceof StaticSymbol &&
+                this.summaryResolver.isLibraryFile(metadata_1.filePath)) {
+                var /** @type {?} */ declarationSymbol = this.symbols[/** @type {?} */ ((this.indexBySymbol.get(metadata_1)))];
+                if (!isLoweredSymbol(declarationSymbol.name)) {
+                    // Note: symbols that were introduced during codegen in the user file can have a reexport
+                    // if a user used `export *`. However, we can't rely on this as tsickle will change
+                    // `export *` into named exports, using only the information from the typechecker.
+                    // As we introduce the new symbols after typecheck, Tsickle does not know about them,
+                    // and omits them when expanding `export *`.
+                    // So we have to keep reexporting these symbols manually via .ngfactory files.
+                    this.reexportedBy.set(declarationSymbol, summary.symbol);
+                }
+            }
         }
         if (!unprocessedSummary.type && summary.type) {
             unprocessedSummary.type = summary.type;
@@ -28741,10 +28782,16 @@ var ToJsonSerializer = (function (_super) {
                 symbol.assertNoMembers();
                 var /** @type {?} */ importAs = /** @type {?} */ ((undefined));
                 if (_this.summaryResolver.isLibraryFile(symbol.filePath)) {
-                    var /** @type {?} */ summary = _this.unprocessedSymbolSummariesBySymbol.get(symbol);
-                    if (!summary || !summary.metadata || summary.metadata.__symbolic !== 'interface') {
-                        importAs = symbol.name + "_" + index;
-                        exportAs.push({ symbol: symbol, exportAs: importAs });
+                    var /** @type {?} */ reexportSymbol = _this.reexportedBy.get(symbol);
+                    if (reexportSymbol) {
+                        importAs = /** @type {?} */ ((_this.indexBySymbol.get(reexportSymbol)));
+                    }
+                    else {
+                        var /** @type {?} */ summary = _this.unprocessedSymbolSummariesBySymbol.get(symbol);
+                        if (!summary || !summary.metadata || summary.metadata.__symbolic !== 'interface') {
+                            importAs = symbol.name + "_" + index;
+                            exportAs.push({ symbol: symbol, exportAs: importAs });
+                        }
                     }
                 }
                 return {
@@ -28859,10 +28906,11 @@ var ToJsonSerializer = (function (_super) {
     return ToJsonSerializer;
 }(ValueTransformer));
 var ForJitSerializer = (function () {
-    function ForJitSerializer(outputCtx, symbolResolver) {
+    function ForJitSerializer(outputCtx, symbolResolver, summaryResolver) {
         this.outputCtx = outputCtx;
         this.symbolResolver = symbolResolver;
-        this.data = new Map();
+        this.summaryResolver = summaryResolver;
+        this.data = [];
     }
     /**
      * @param {?} summary
@@ -28875,7 +28923,7 @@ var ForJitSerializer = (function () {
      * @return {?}
      */
     function (summary, metadata) {
-        this.data.set(summary.type.reference, { summary: summary, metadata: metadata, isLibrary: false });
+        this.data.push({ summary: summary, metadata: metadata, isLibrary: false });
     };
     /**
      * @param {?} summary
@@ -28886,21 +28934,26 @@ var ForJitSerializer = (function () {
      * @return {?}
      */
     function (summary) {
-        this.data.set(summary.type.reference, { summary: summary, metadata: null, isLibrary: true });
+        this.data.push({ summary: summary, metadata: null, isLibrary: true });
     };
     /**
-     * @param {?} exportAs
+     * @param {?} exportAsArr
      * @return {?}
      */
     ForJitSerializer.prototype.serialize = /**
-     * @param {?} exportAs
+     * @param {?} exportAsArr
      * @return {?}
      */
-    function (exportAs) {
+    function (exportAsArr) {
         var _this = this;
+        var /** @type {?} */ exportAsBySymbol = new Map();
+        for (var _i = 0, exportAsArr_1 = exportAsArr; _i < exportAsArr_1.length; _i++) {
+            var _a = exportAsArr_1[_i], symbol = _a.symbol, exportAs = _a.exportAs;
+            exportAsBySymbol.set(symbol, exportAs);
+        }
         var /** @type {?} */ ngModuleSymbols = new Set();
-        Array.from(this.data.values()).forEach(function (_a) {
-            var summary = _a.summary, metadata = _a.metadata, isLibrary = _a.isLibrary;
+        for (var _b = 0, _c = this.data; _b < _c.length; _b++) {
+            var _d = _c[_b], summary = _d.summary, metadata = _d.metadata, isLibrary = _d.isLibrary;
             if (summary.summaryKind === CompileSummaryKind.NgModule) {
                 // collect the symbols that refer to NgModule classes.
                 // Note: we can't just rely on `summary.type.summaryKind` to determine this as
@@ -28908,20 +28961,23 @@ var ForJitSerializer = (function () {
                 // See serializeSummaries for details.
                 ngModuleSymbols.add(summary.type.reference);
                 var /** @type {?} */ modSummary = /** @type {?} */ (summary);
-                modSummary.modules.forEach(function (mod) { ngModuleSymbols.add(mod.reference); });
+                for (var _e = 0, _f = modSummary.modules; _e < _f.length; _e++) {
+                    var mod = _f[_e];
+                    ngModuleSymbols.add(mod.reference);
+                }
             }
             if (!isLibrary) {
                 var /** @type {?} */ fnName = summaryForJitName(summary.type.reference.name);
-                createSummaryForJitFunction(_this.outputCtx, summary.type.reference, _this.serializeSummaryWithDeps(summary, /** @type {?} */ ((metadata))));
+                createSummaryForJitFunction(this.outputCtx, summary.type.reference, this.serializeSummaryWithDeps(summary, /** @type {?} */ ((metadata))));
             }
-        });
-        exportAs.forEach(function (entry) {
-            var /** @type {?} */ symbol = entry.symbol;
-            if (ngModuleSymbols.has(symbol)) {
-                var /** @type {?} */ jitExportAsName = summaryForJitName(entry.exportAs);
-                _this.outputCtx.statements.push(variable(jitExportAsName).set(_this.serializeSummaryRef(symbol)).toDeclStmt(null, [
-                    StmtModifier.Exported
-                ]));
+        }
+        ngModuleSymbols.forEach(function (ngModuleSymbol) {
+            if (_this.summaryResolver.isLibraryFile(ngModuleSymbol.filePath)) {
+                var /** @type {?} */ exportAs = exportAsBySymbol.get(ngModuleSymbol) || ngModuleSymbol.name;
+                var /** @type {?} */ jitExportAsName = summaryForJitName(exportAs);
+                _this.outputCtx.statements.push(variable(jitExportAsName)
+                    .set(_this.serializeSummaryRef(ngModuleSymbol))
+                    .toDeclStmt(null, [StmtModifier.Exported]));
             }
         });
     };
@@ -29077,17 +29133,22 @@ var FromJsonDeserializer = (function (_super) {
     function (libraryFileName, json) {
         var _this = this;
         var /** @type {?} */ data = JSON.parse(json);
-        var /** @type {?} */ importAs = [];
-        this.symbols = [];
-        data.symbols.forEach(function (serializedSymbol) {
-            var /** @type {?} */ symbol = _this.symbolCache.get(_this.summaryResolver.fromSummaryFileName(serializedSymbol.filePath, libraryFileName), serializedSymbol.name);
-            _this.symbols.push(symbol);
-            if (serializedSymbol.importAs) {
-                importAs.push({ symbol: symbol, importAs: serializedSymbol.importAs });
+        var /** @type {?} */ allImportAs = [];
+        this.symbols = data.symbols.map(function (serializedSymbol) {
+            return _this.symbolCache.get(_this.summaryResolver.fromSummaryFileName(serializedSymbol.filePath, libraryFileName), serializedSymbol.name);
+        });
+        data.symbols.forEach(function (serializedSymbol, index) {
+            var /** @type {?} */ symbol = _this.symbols[index];
+            var /** @type {?} */ importAs = serializedSymbol.importAs;
+            if (typeof importAs === 'number') {
+                allImportAs.push({ symbol: symbol, importAs: _this.symbols[importAs] });
+            }
+            else if (typeof importAs === 'string') {
+                allImportAs.push({ symbol: symbol, importAs: _this.symbolCache.get(ngfactoryFilePath(libraryFileName), importAs) });
             }
         });
-        var /** @type {?} */ summaries = visitValue(data.summaries, this, null);
-        return { moduleName: data.moduleName, summaries: summaries, importAs: importAs };
+        var /** @type {?} */ summaries = /** @type {?} */ (visitValue(data.summaries, this, null));
+        return { moduleName: data.moduleName, summaries: summaries, importAs: allImportAs };
     };
     /**
      * @param {?} map
@@ -29112,6 +29173,28 @@ var FromJsonDeserializer = (function (_super) {
     };
     return FromJsonDeserializer;
 }(ValueTransformer));
+/**
+ * @param {?} metadata
+ * @return {?}
+ */
+function isCall(metadata) {
+    return metadata && metadata.__symbolic === 'call';
+}
+/**
+ * @param {?} metadata
+ * @return {?}
+ */
+function isFunctionCall(metadata) {
+    return isCall(metadata) && metadata.expression instanceof StaticSymbol;
+}
+/**
+ * @param {?} metadata
+ * @return {?}
+ */
+function isMethodCallOnVariable(metadata) {
+    return isCall(metadata) && metadata.expression && metadata.expression.__symbolic === 'select' &&
+        metadata.expression.expression instanceof StaticSymbol;
+}
 
 /**
  * @fileoverview added by tsickle
@@ -31934,9 +32017,7 @@ var AotSummaryResolver = (function () {
             if (moduleName) {
                 this.knownFileNameToModuleNames.set(filePath, moduleName);
             }
-            importAs.forEach(function (importAs) {
-                _this.importAs.set(importAs.symbol, _this.staticSymbolCache.get(ngfactoryFilePath(filePath), importAs.importAs));
-            });
+            importAs.forEach(function (importAs) { _this.importAs.set(importAs.symbol, importAs.importAs); });
         }
         return hasSummary;
     };
@@ -34240,6 +34321,8 @@ var Extractor = (function () {
 exports.core = core;
 exports.CompilerConfig = CompilerConfig;
 exports.preserveWhitespacesDefault = preserveWhitespacesDefault;
+exports.isLoweredSymbol = isLoweredSymbol;
+exports.createLoweredSymbol = createLoweredSymbol;
 exports.Identifiers = Identifiers;
 exports.JitCompiler = JitCompiler;
 exports.DirectiveResolver = DirectiveResolver;
