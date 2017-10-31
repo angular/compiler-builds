@@ -25,7 +25,7 @@ export declare function deserializeSummaries(symbolCache: StaticSymbolCache, sum
     summaries: Summary<StaticSymbol>[];
     importAs: {
         symbol: StaticSymbol;
-        importAs: string;
+        importAs: StaticSymbol;
     }[];
 };
 export declare function createForJitStub(outputCtx: OutputContext, reference: StaticSymbol): void;
