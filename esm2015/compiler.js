@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-e6f16a7
+ * @license Angular v5.0.0-9811bef
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -567,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-e6f16a7');
+const VERSION = new Version('5.0.0-9811bef');
 
 /**
  * @fileoverview added by tsickle
@@ -1186,11 +1186,11 @@ class CompilerConfig {
     /**
      * @param {?=} __0
      */
-    constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, jitDevMode = false, missingTranslation, enableLegacyTemplate, preserveWhitespaces, strictInjectionParameters } = {}) {
+    constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, jitDevMode = false, missingTranslation = null, enableLegacyTemplate, preserveWhitespaces, strictInjectionParameters } = {}) {
         this.defaultEncapsulation = defaultEncapsulation;
         this.useJit = !!useJit;
         this.jitDevMode = !!jitDevMode;
-        this.missingTranslation = missingTranslation || null;
+        this.missingTranslation = missingTranslation;
         this.enableLegacyTemplate = enableLegacyTemplate === true;
         this.preserveWhitespaces = preserveWhitespacesDefault(noUndefined(preserveWhitespaces));
         this.strictInjectionParameters = strictInjectionParameters === true;
