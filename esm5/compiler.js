@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-7083791
+ * @license Angular v5.0.0-3ab0963
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -619,7 +619,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.0-7083791');
+var VERSION = new Version('5.0.0-3ab0963');
 
 /**
  * @fileoverview added by tsickle
@@ -15223,14 +15223,16 @@ var CompileMetadataResolver = (function () {
      * @return {?}
      */
     function (type) {
-        if (this.isDirective(type)) {
-            return 'directive';
-        }
-        if (this.isPipe(type)) {
-            return 'pipe';
-        }
-        if (this.isNgModule(type)) {
-            return 'module';
+        if (isValidType(type)) {
+            if (this.isDirective(type)) {
+                return 'directive';
+            }
+            if (this.isPipe(type)) {
+                return 'pipe';
+            }
+            if (this.isNgModule(type)) {
+                return 'module';
+            }
         }
         if ((/** @type {?} */ (type)).provide) {
             return 'provider';

@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.0-7083791
+ * @license Angular v5.0.0-3ab0963
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -567,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.0-7083791');
+const VERSION = new Version('5.0.0-3ab0963');
 
 /**
  * @fileoverview added by tsickle
@@ -12568,14 +12568,16 @@ class CompileMetadataResolver {
      * @return {?}
      */
     _getTypeDescriptor(type) {
-        if (this.isDirective(type)) {
-            return 'directive';
-        }
-        if (this.isPipe(type)) {
-            return 'pipe';
-        }
-        if (this.isNgModule(type)) {
-            return 'module';
+        if (isValidType(type)) {
+            if (this.isDirective(type)) {
+                return 'directive';
+            }
+            if (this.isPipe(type)) {
+                return 'pipe';
+            }
+            if (this.isNgModule(type)) {
+                return 'module';
+            }
         }
         if ((/** @type {?} */ (type)).provide) {
             return 'provider';
