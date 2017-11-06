@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.0-b489259
+ * @license Angular v5.1.0-beta.0-6e8e3bd
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -567,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.1.0-beta.0-b489259');
+const VERSION = new Version('5.1.0-beta.0-6e8e3bd');
 
 /**
  * @fileoverview added by tsickle
@@ -27196,6 +27196,7 @@ class JitCompiler {
         this._compiledDirectiveWrapperCache = new Map();
         this._compiledNgModuleCache = new Map();
         this._sharedStylesheetCount = 0;
+        this._addedAotSummaries = new Set();
     }
     /**
      * @param {?} moduleType
@@ -27239,9 +27240,28 @@ class JitCompiler {
      */
     loadAotSummaries(summaries) {
         this.clearCache();
-        flattenSummaries(summaries).forEach((summary) => {
-            this._summaryResolver.addSummary({ symbol: summary.type.reference, metadata: null, type: summary });
-        });
+        this._addAotSummaries(summaries);
+    }
+    /**
+     * @param {?} fn
+     * @return {?}
+     */
+    _addAotSummaries(fn$$1) {
+        if (this._addedAotSummaries.has(fn$$1)) {
+            return;
+        }
+        this._addedAotSummaries.add(fn$$1);
+        const /** @type {?} */ summaries = fn$$1();
+        for (let /** @type {?} */ i = 0; i < summaries.length; i++) {
+            const /** @type {?} */ entry = summaries[i];
+            if (typeof entry === 'function') {
+                this._addAotSummaries(entry);
+            }
+            else {
+                const /** @type {?} */ summary = /** @type {?} */ (entry);
+                this._summaryResolver.addSummary({ symbol: summary.type.reference, metadata: null, type: summary });
+            }
+        }
     }
     /**
      * @param {?} ref
@@ -27385,6 +27405,7 @@ class JitCompiler {
      * @return {?}
      */
     clearCache() {
+        // Note: don't clear the _addedAotSummaries, as they don't change!
         this._metadataResolver.clearCache();
         this._compiledTemplateCache.clear();
         this._compiledHostTemplateCache.clear();
@@ -27536,29 +27557,6 @@ function assertComponent(meta) {
     if (!meta.isComponent) {
         throw new Error(`Could not compile '${identifierName(meta.type)}' because it is not a component.`);
     }
-}
-/**
- * @param {?} fn
- * @param {?=} out
- * @param {?=} seen
- * @return {?}
- */
-function flattenSummaries(fn$$1, out = [], seen = new Set()) {
-    if (seen.has(fn$$1)) {
-        return out;
-    }
-    seen.add(fn$$1);
-    const /** @type {?} */ summaries = fn$$1();
-    for (let /** @type {?} */ i = 0; i < summaries.length; i++) {
-        const /** @type {?} */ entry = summaries[i];
-        if (typeof entry === 'function') {
-            flattenSummaries(entry, out, seen);
-        }
-        else {
-            out.push(entry);
-        }
-    }
-    return out;
 }
 /**
  * @return {?}

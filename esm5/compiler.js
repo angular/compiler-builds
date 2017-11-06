@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.0-b489259
+ * @license Angular v5.1.0-beta.0-6e8e3bd
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -619,7 +619,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-beta.0-b489259');
+var VERSION = new Version('5.1.0-beta.0-6e8e3bd');
 
 /**
  * @fileoverview added by tsickle
@@ -33339,6 +33339,7 @@ var JitCompiler = (function () {
         this._compiledDirectiveWrapperCache = new Map();
         this._compiledNgModuleCache = new Map();
         this._sharedStylesheetCount = 0;
+        this._addedAotSummaries = new Set();
     }
     /**
      * @param {?} moduleType
@@ -33405,11 +33406,33 @@ var JitCompiler = (function () {
      * @return {?}
      */
     function (summaries) {
-        var _this = this;
         this.clearCache();
-        flattenSummaries(summaries).forEach(function (summary) {
-            _this._summaryResolver.addSummary({ symbol: summary.type.reference, metadata: null, type: summary });
-        });
+        this._addAotSummaries(summaries);
+    };
+    /**
+     * @param {?} fn
+     * @return {?}
+     */
+    JitCompiler.prototype._addAotSummaries = /**
+     * @param {?} fn
+     * @return {?}
+     */
+    function (fn$$1) {
+        if (this._addedAotSummaries.has(fn$$1)) {
+            return;
+        }
+        this._addedAotSummaries.add(fn$$1);
+        var /** @type {?} */ summaries = fn$$1();
+        for (var /** @type {?} */ i = 0; i < summaries.length; i++) {
+            var /** @type {?} */ entry = summaries[i];
+            if (typeof entry === 'function') {
+                this._addAotSummaries(entry);
+            }
+            else {
+                var /** @type {?} */ summary = /** @type {?} */ (entry);
+                this._summaryResolver.addSummary({ symbol: summary.type.reference, metadata: null, type: summary });
+            }
+        }
     };
     /**
      * @param {?} ref
@@ -33601,6 +33624,7 @@ var JitCompiler = (function () {
      * @return {?}
      */
     function () {
+        // Note: don't clear the _addedAotSummaries, as they don't change!
         this._metadataResolver.clearCache();
         this._compiledTemplateCache.clear();
         this._compiledHostTemplateCache.clear();
@@ -33790,31 +33814,6 @@ function assertComponent(meta) {
     if (!meta.isComponent) {
         throw new Error("Could not compile '" + identifierName(meta.type) + "' because it is not a component.");
     }
-}
-/**
- * @param {?} fn
- * @param {?=} out
- * @param {?=} seen
- * @return {?}
- */
-function flattenSummaries(fn$$1, out, seen) {
-    if (out === void 0) { out = []; }
-    if (seen === void 0) { seen = new Set(); }
-    if (seen.has(fn$$1)) {
-        return out;
-    }
-    seen.add(fn$$1);
-    var /** @type {?} */ summaries = fn$$1();
-    for (var /** @type {?} */ i = 0; i < summaries.length; i++) {
-        var /** @type {?} */ entry = summaries[i];
-        if (typeof entry === 'function') {
-            flattenSummaries(entry, out, seen);
-        }
-        else {
-            out.push(entry);
-        }
-    }
-    return out;
 }
 /**
  * @return {?}
