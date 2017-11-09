@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.0-78ba39b
+ * @license Angular v5.1.0-beta.0-9bcd709
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -567,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.1.0-beta.0-78ba39b');
+const VERSION = new Version('5.1.0-beta.0-9bcd709');
 
 /**
  * @fileoverview added by tsickle
@@ -18608,17 +18608,31 @@ class ShadowCss {
         let /** @type {?} */ startIndex = 0;
         let /** @type {?} */ res;
         const /** @type {?} */ sep = /( |>|\+|~(?!=))\s*/g;
-        const /** @type {?} */ scopeAfter = selector.indexOf(_polyfillHostNoCombinator);
+        // If a selector appears before :host it should not be shimmed as it
+        // matches on ancestor elements and not on elements in the host's shadow
+        // `:host-context(div)` is transformed to
+        // `-shadowcsshost-no-combinatordiv, div -shadowcsshost-no-combinator`
+        // the `div` is not part of the component in the 2nd selectors and should not be scoped.
+        // Historically `component-tag:host` was matching the component so we also want to preserve
+        // this behavior to avoid breaking legacy apps (it should not match).
+        // The behavior should be:
+        // - `tag:host` -> `tag[h]` (this is to avoid breaking legacy apps, should not match anything)
+        // - `tag :host` -> `tag [h]` (`tag` is not scoped because it's considered part of a
+        //   `:host-context(tag)`)
+        const /** @type {?} */ hasHost = selector.indexOf(_polyfillHostNoCombinator) > -1;
+        // Only scope parts after the first `-shadowcsshost-no-combinator` when it is present
+        let /** @type {?} */ shouldScope = !hasHost;
         while ((res = sep.exec(selector)) !== null) {
             const /** @type {?} */ separator = res[1];
             const /** @type {?} */ part = selector.slice(startIndex, res.index).trim();
-            // if a selector appears before :host-context it should not be shimmed as it
-            // matches on ancestor elements and not on elements in the host's shadow
-            const /** @type {?} */ scopedPart = startIndex >= scopeAfter ? _scopeSelectorPart(part) : part;
+            shouldScope = shouldScope || part.indexOf(_polyfillHostNoCombinator) > -1;
+            const /** @type {?} */ scopedPart = shouldScope ? _scopeSelectorPart(part) : part;
             scopedSelector += `${scopedPart} ${separator} `;
             startIndex = sep.lastIndex;
         }
-        scopedSelector += _scopeSelectorPart(selector.substring(startIndex));
+        const /** @type {?} */ part = selector.substring(startIndex);
+        shouldScope = shouldScope || part.indexOf(_polyfillHostNoCombinator) > -1;
+        scopedSelector += shouldScope ? _scopeSelectorPart(part) : part;
         // replace the placeholders with their original values
         return safeContent.restore(scopedSelector);
     }
