@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.0-fb4b90a
+ * @license Angular v5.1.0-beta.0-161f88f
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -619,7 +619,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-beta.0-fb4b90a');
+var VERSION = new Version('5.1.0-beta.0-161f88f');
 
 /**
  * @fileoverview added by tsickle
@@ -30056,16 +30056,16 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
                     isNgSymbol = true;
                     pipes.push(symbol);
                 }
-                else if (metadataResolver.isInjectable(symbol)) {
-                    isNgSymbol = true;
-                    injectables.push(symbol);
-                }
-                else {
+                else if (metadataResolver.isNgModule(symbol)) {
                     var /** @type {?} */ ngModule = metadataResolver.getNgModuleMetadata(symbol, false);
                     if (ngModule) {
                         isNgSymbol = true;
                         ngModules.push(ngModule);
                     }
+                }
+                else if (metadataResolver.isInjectable(symbol)) {
+                    isNgSymbol = true;
+                    injectables.push(symbol);
                 }
             }
             if (!isNgSymbol) {
