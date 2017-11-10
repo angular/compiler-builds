@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.1-28985cb
+ * @license Angular v5.0.1-424a323
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -619,7 +619,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.1-28985cb');
+var VERSION = new Version('5.0.1-424a323');
 
 /**
  * @fileoverview added by tsickle
@@ -7446,7 +7446,8 @@ var ParseError = (function () {
      */
     function () {
         var /** @type {?} */ ctx = this.span.start.getContext(100, 3);
-        return ctx ? " (\"" + ctx.before + "[" + ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" : '';
+        return ctx ? this.msg + " (\"" + ctx.before + "[" + ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" :
+            this.msg;
     };
     /**
      * @return {?}
@@ -7456,7 +7457,7 @@ var ParseError = (function () {
      */
     function () {
         var /** @type {?} */ details = this.span.details ? ", " + this.span.details : '';
-        return "" + this.msg + this.contextualMessage() + ": " + this.span.start + details;
+        return this.contextualMessage() + ": " + this.span.start + details;
     };
     return ParseError;
 }());
