@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.0-9bcd709
+ * @license Angular v5.1.0-beta.0-3257fcd
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -567,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.1.0-beta.0-9bcd709');
+const VERSION = new Version('5.1.0-beta.0-3257fcd');
 
 /**
  * @fileoverview added by tsickle
@@ -6235,14 +6235,15 @@ class ParseError {
      */
     contextualMessage() {
         const /** @type {?} */ ctx = this.span.start.getContext(100, 3);
-        return ctx ? ` ("${ctx.before}[${ParseErrorLevel[this.level]} ->]${ctx.after}")` : '';
+        return ctx ? `${this.msg} ("${ctx.before}[${ParseErrorLevel[this.level]} ->]${ctx.after}")` :
+            this.msg;
     }
     /**
      * @return {?}
      */
     toString() {
         const /** @type {?} */ details = this.span.details ? `, ${this.span.details}` : '';
-        return `${this.msg}${this.contextualMessage()}: ${this.span.start}${details}`;
+        return `${this.contextualMessage()}: ${this.span.start}${details}`;
     }
 }
 /**

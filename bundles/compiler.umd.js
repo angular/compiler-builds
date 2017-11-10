@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.0-9bcd709
+ * @license Angular v5.1.0-beta.0-3257fcd
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.1.0-beta.0-9bcd709
+ * @license Angular v5.1.0-beta.0-3257fcd
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -662,7 +662,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-beta.0-9bcd709');
+var VERSION = new Version('5.1.0-beta.0-3257fcd');
 
 /**
  * @fileoverview added by tsickle
@@ -7489,7 +7489,8 @@ var ParseError = (function () {
      */
     function () {
         var /** @type {?} */ ctx = this.span.start.getContext(100, 3);
-        return ctx ? " (\"" + ctx.before + "[" + ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" : '';
+        return ctx ? this.msg + " (\"" + ctx.before + "[" + ParseErrorLevel[this.level] + " ->]" + ctx.after + "\")" :
+            this.msg;
     };
     /**
      * @return {?}
@@ -7499,7 +7500,7 @@ var ParseError = (function () {
      */
     function () {
         var /** @type {?} */ details = this.span.details ? ", " + this.span.details : '';
-        return "" + this.msg + this.contextualMessage() + ": " + this.span.start + details;
+        return this.contextualMessage() + ": " + this.span.start + details;
     };
     return ParseError;
 }());
