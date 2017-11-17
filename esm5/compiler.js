@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.1-4064cbe
+ * @license Angular v5.1.0-beta.1-1861e41
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -638,7 +638,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-beta.1-4064cbe');
+var VERSION = new Version('5.1.0-beta.1-1861e41');
 
 /**
  * @fileoverview added by tsickle
@@ -29755,7 +29755,7 @@ var AotCompiler = /** @class */ (function () {
             // These can be used by the type check block for components,
             // and they also cause TypeScript to include these files into the program too,
             // which will make them part of the analyzedFiles.
-            var /** @type {?} */ externalReferences = ngModuleMeta.transitiveModule.directives.map(function (d) { return d.reference; }).concat(ngModuleMeta.transitiveModule.pipes.map(function (d) { return d.reference; }), ngModuleMeta.importedModules.map(function (m) { return m.type.reference; }), ngModuleMeta.exportedModules.map(function (m) { return m.type.reference; }));
+            var /** @type {?} */ externalReferences = ngModuleMeta.transitiveModule.directives.map(function (d) { return d.reference; }).concat(ngModuleMeta.transitiveModule.pipes.map(function (d) { return d.reference; }), ngModuleMeta.importedModules.map(function (m) { return m.type.reference; }), ngModuleMeta.exportedModules.map(function (m) { return m.type.reference; }), _this._externalIdentifierReferences([Identifiers.TemplateRef, Identifiers.ElementRef]));
             var /** @type {?} */ externalReferenceVars = new Map();
             externalReferences.forEach(function (ref, typeIndex) {
                 if (_this._host.isSourceFile(ref.filePath)) {
@@ -29783,6 +29783,25 @@ var AotCompiler = /** @class */ (function () {
         if (outputCtx.statements.length === 0) {
             _createEmptyStub(outputCtx);
         }
+    };
+    /**
+     * @param {?} references
+     * @return {?}
+     */
+    AotCompiler.prototype._externalIdentifierReferences = /**
+     * @param {?} references
+     * @return {?}
+     */
+    function (references) {
+        var /** @type {?} */ result = [];
+        for (var _i = 0, references_1 = references; _i < references_1.length; _i++) {
+            var reference = references_1[_i];
+            var /** @type {?} */ token = createTokenForExternalReference(this._reflector, reference);
+            if (token.identifier) {
+                result.push(token.identifier.reference);
+            }
+        }
+        return result;
     };
     /**
      * @param {?} ctx
