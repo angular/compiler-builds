@@ -50,6 +50,7 @@ export declare class AotCompiler {
     loadFilesAsync(fileNames: string[]): Promise<NgAnalyzedModules>;
     loadFilesSync(fileNames: string[]): NgAnalyzedModules;
     private _createNgFactoryStub(outputCtx, file, emitFlags);
+    private _externalIdentifierReferences(references);
     private _createTypeCheckBlock(ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars);
     emitMessageBundle(analyzeResult: NgAnalyzedModules, locale: string | null): MessageBundle;
     emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];

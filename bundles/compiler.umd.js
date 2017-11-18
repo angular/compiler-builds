@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.2-b1f8eb1
+ * @license Angular v5.0.2-82aace6
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.0.2-b1f8eb1
+ * @license Angular v5.0.2-82aace6
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -662,7 +662,7 @@ var Version = (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.0.2-b1f8eb1');
+var VERSION = new Version('5.0.2-82aace6');
 
 /**
  * @fileoverview added by tsickle
@@ -29480,7 +29480,7 @@ var AotCompiler = (function () {
             // These can be used by the type check block for components,
             // and they also cause TypeScript to include these files into the program too,
             // which will make them part of the analyzedFiles.
-            var /** @type {?} */ externalReferences = ngModuleMeta.transitiveModule.directives.map(function (d) { return d.reference; }).concat(ngModuleMeta.transitiveModule.pipes.map(function (d) { return d.reference; }), ngModuleMeta.importedModules.map(function (m) { return m.type.reference; }), ngModuleMeta.exportedModules.map(function (m) { return m.type.reference; }));
+            var /** @type {?} */ externalReferences = ngModuleMeta.transitiveModule.directives.map(function (d) { return d.reference; }).concat(ngModuleMeta.transitiveModule.pipes.map(function (d) { return d.reference; }), ngModuleMeta.importedModules.map(function (m) { return m.type.reference; }), ngModuleMeta.exportedModules.map(function (m) { return m.type.reference; }), _this._externalIdentifierReferences([Identifiers.TemplateRef, Identifiers.ElementRef]));
             var /** @type {?} */ externalReferenceVars = new Map();
             externalReferences.forEach(function (ref, typeIndex) {
                 if (_this._host.isSourceFile(ref.filePath)) {
@@ -29508,6 +29508,25 @@ var AotCompiler = (function () {
         if (outputCtx.statements.length === 0) {
             _createEmptyStub(outputCtx);
         }
+    };
+    /**
+     * @param {?} references
+     * @return {?}
+     */
+    AotCompiler.prototype._externalIdentifierReferences = /**
+     * @param {?} references
+     * @return {?}
+     */
+    function (references) {
+        var /** @type {?} */ result = [];
+        for (var _i = 0, references_1 = references; _i < references_1.length; _i++) {
+            var reference = references_1[_i];
+            var /** @type {?} */ token = createTokenForExternalReference(this._reflector, reference);
+            if (token.identifier) {
+                result.push(token.identifier.reference);
+            }
+        }
+        return result;
     };
     /**
      * @param {?} ctx

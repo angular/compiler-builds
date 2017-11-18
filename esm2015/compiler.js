@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.2-b1f8eb1
+ * @license Angular v5.0.2-82aace6
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -567,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.2-b1f8eb1');
+const VERSION = new Version('5.0.2-82aace6');
 
 /**
  * @fileoverview added by tsickle
@@ -24040,10 +24040,13 @@ class AotCompiler {
             // and they also cause TypeScript to include these files into the program too,
             // which will make them part of the analyzedFiles.
             const /** @type {?} */ externalReferences = [
+                // Add references that are available from all the modules and imports.
                 ...ngModuleMeta.transitiveModule.directives.map(d => d.reference),
                 ...ngModuleMeta.transitiveModule.pipes.map(d => d.reference),
                 ...ngModuleMeta.importedModules.map(m => m.type.reference),
                 ...ngModuleMeta.exportedModules.map(m => m.type.reference),
+                // Add references that might be inserted by the template compiler.
+                ...this._externalIdentifierReferences([Identifiers.TemplateRef, Identifiers.ElementRef]),
             ];
             const /** @type {?} */ externalReferenceVars = new Map();
             externalReferences.forEach((ref, typeIndex) => {
@@ -24072,6 +24075,20 @@ class AotCompiler {
         if (outputCtx.statements.length === 0) {
             _createEmptyStub(outputCtx);
         }
+    }
+    /**
+     * @param {?} references
+     * @return {?}
+     */
+    _externalIdentifierReferences(references) {
+        const /** @type {?} */ result = [];
+        for (let /** @type {?} */ reference of references) {
+            const /** @type {?} */ token = createTokenForExternalReference(this._reflector, reference);
+            if (token.identifier) {
+                result.push(token.identifier.reference);
+            }
+        }
+        return result;
     }
     /**
      * @param {?} ctx
