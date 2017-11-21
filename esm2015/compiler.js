@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.0.2-82aace6
+ * @license Angular v5.0.2-b53ead4
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -567,7 +567,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.0.2-82aace6');
+const VERSION = new Version('5.0.2-b53ead4');
 
 /**
  * @fileoverview added by tsickle
@@ -21689,6 +21689,21 @@ class TypeCheckCompiler {
     }
 }
 const DYNAMIC_VAR_NAME = '_any';
+class TypeCheckLocalResolver {
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    getLocal(name) {
+        if (name === EventHandlerVars.event.name) {
+            // References to the event should not be type-checked.
+            // TODO(chuckj): determine a better type for the event.
+            return variable(DYNAMIC_VAR_NAME);
+        }
+        return null;
+    }
+}
+const defaultResolver = new TypeCheckLocalResolver();
 class ViewBuilder {
     /**
      * @param {?} options
@@ -21758,14 +21773,14 @@ class ViewBuilder {
         this.updates.forEach((expression) => {
             const { sourceSpan, context, value } = this.preprocessUpdateExpression(expression);
             const /** @type {?} */ bindingId = `${bindingCount++}`;
-            const /** @type {?} */ nameResolver = context === this.component ? this : null;
+            const /** @type {?} */ nameResolver = context === this.component ? this : defaultResolver;
             const { stmts, currValExpr } = convertPropertyBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId);
             stmts.push(new ExpressionStatement(currValExpr));
             viewStmts.push(...stmts.map((stmt) => applySourceSpanToStatementIfNeeded(stmt, sourceSpan)));
         });
         this.actions.forEach(({ sourceSpan, context, value }) => {
             const /** @type {?} */ bindingId = `${bindingCount++}`;
-            const /** @type {?} */ nameResolver = context === this.component ? this : null;
+            const /** @type {?} */ nameResolver = context === this.component ? this : defaultResolver;
             const { stmts } = convertActionBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId);
             viewStmts.push(...stmts.map((stmt) => applySourceSpanToStatementIfNeeded(stmt, sourceSpan)));
         });
