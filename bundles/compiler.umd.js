@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.1-69c53c3
+ * @license Angular v5.1.0-beta.1-2a9d2ba
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.1.0-beta.1-69c53c3
+ * @license Angular v5.1.0-beta.1-2a9d2ba
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -681,7 +681,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-beta.1-69c53c3');
+var VERSION = new Version('5.1.0-beta.1-2a9d2ba');
 
 /**
  * @fileoverview added by tsickle
@@ -26931,6 +26931,28 @@ var TypeCheckCompiler = /** @class */ (function () {
     return TypeCheckCompiler;
 }());
 var DYNAMIC_VAR_NAME = '_any';
+var TypeCheckLocalResolver = /** @class */ (function () {
+    function TypeCheckLocalResolver() {
+    }
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    TypeCheckLocalResolver.prototype.getLocal = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) {
+        if (name === EventHandlerVars.event.name) {
+            // References to the event should not be type-checked.
+            // TODO(chuckj): determine a better type for the event.
+            return variable(DYNAMIC_VAR_NAME);
+        }
+        return null;
+    };
+    return TypeCheckLocalResolver;
+}());
+var defaultResolver = new TypeCheckLocalResolver();
 var ViewBuilder = /** @class */ (function () {
     function ViewBuilder(options, reflector, externalReferenceVars, parent, component, isHostComponent, embeddedViewIndex, pipes, viewBuilderFactory) {
         this.options = options;
@@ -27005,7 +27027,7 @@ var ViewBuilder = /** @class */ (function () {
         this.updates.forEach(function (expression) {
             var _a = _this.preprocessUpdateExpression(expression), sourceSpan = _a.sourceSpan, context = _a.context, value = _a.value;
             var /** @type {?} */ bindingId = "" + bindingCount++;
-            var /** @type {?} */ nameResolver = context === _this.component ? _this : null;
+            var /** @type {?} */ nameResolver = context === _this.component ? _this : defaultResolver;
             var _b = convertPropertyBinding(nameResolver, variable(_this.getOutputVar(context)), value, bindingId), stmts = _b.stmts, currValExpr = _b.currValExpr;
             stmts.push(new ExpressionStatement(currValExpr));
             viewStmts.push.apply(viewStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
@@ -27013,7 +27035,7 @@ var ViewBuilder = /** @class */ (function () {
         this.actions.forEach(function (_a) {
             var sourceSpan = _a.sourceSpan, context = _a.context, value = _a.value;
             var /** @type {?} */ bindingId = "" + bindingCount++;
-            var /** @type {?} */ nameResolver = context === _this.component ? _this : null;
+            var /** @type {?} */ nameResolver = context === _this.component ? _this : defaultResolver;
             var stmts = convertActionBinding(nameResolver, variable(_this.getOutputVar(context)), value, bindingId).stmts;
             viewStmts.push.apply(viewStmts, stmts.map(function (stmt) { return applySourceSpanToStatementIfNeeded(stmt, sourceSpan); }));
         });
