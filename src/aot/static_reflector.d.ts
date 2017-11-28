@@ -54,10 +54,11 @@ export declare class StaticReflector implements CompileReflector {
      * @param name the name of the type.
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
-    private reportError(error, context, path?);
     /**
      * Simplify but discard any errors
      */
     private trySimplify(context, value);
     private getTypeMetadata(type);
+    private reportError(error, context, path?);
+    private error({message, summary, advise, position, context, value, symbol, chain}, reportingContext);
 }

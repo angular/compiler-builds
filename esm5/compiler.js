@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-beta.2-a53a040
+ * @license Angular v5.1.0-beta.2-24bf3e2
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -638,7 +638,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-beta.2-a53a040');
+var VERSION = new Version('5.1.0-beta.2-24bf3e2');
 
 /**
  * @fileoverview added by tsickle
@@ -30555,6 +30555,75 @@ function mergeAndValidateNgFiles(files) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * @record
+ */
+
+/**
+ * @record
+ */
+
+var FORMATTED_MESSAGE = 'ngFormattedMessage';
+/**
+ * @param {?} level
+ * @return {?}
+ */
+function indentStr(level) {
+    if (level <= 0)
+        return '';
+    if (level < 6)
+        return ['', ' ', '  ', '   ', '    ', '     '][level];
+    var /** @type {?} */ half = indentStr(Math.floor(level / 2));
+    return half + half + (level % 2 === 1 ? ' ' : '');
+}
+/**
+ * @param {?} chain
+ * @param {?=} indent
+ * @return {?}
+ */
+function formatChain(chain, indent) {
+    if (indent === void 0) { indent = 0; }
+    if (!chain)
+        return '';
+    var /** @type {?} */ position = chain.position ?
+        chain.position.fileName + "(" + (chain.position.line + 1) + "," + (chain.position.column + 1) + ")" :
+        '';
+    var /** @type {?} */ prefix = position && indent === 0 ? position + ": " : '';
+    var /** @type {?} */ postfix = position && indent !== 0 ? " at " + position : '';
+    var /** @type {?} */ message = "" + prefix + chain.message + postfix;
+    return "" + indentStr(indent) + message + ((chain.next && ('\n' + formatChain(chain.next, indent + 2))) || '');
+}
+/**
+ * @param {?} chain
+ * @return {?}
+ */
+function formattedError(chain) {
+    var /** @type {?} */ message = formatChain(chain) + '.';
+    var /** @type {?} */ error = /** @type {?} */ (syntaxError(message));
+    (/** @type {?} */ (error))[FORMATTED_MESSAGE] = true;
+    error.chain = chain;
+    error.position = chain.position;
+    return error;
+}
+/**
+ * @param {?} error
+ * @return {?}
+ */
+function isFormattedError(error) {
+    return !!(/** @type {?} */ (error))[FORMATTED_MESSAGE];
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var ANGULAR_CORE = '@angular/core';
 var ANGULAR_ROUTER = '@angular/router';
 var HIDDEN_KEY = /^\$.*\$$/;
@@ -30669,12 +30738,16 @@ var StaticReflector = /** @class */ (function () {
      */
     function (symbol) {
         var /** @type {?} */ resolvedSymbol = this.symbolResolver.resolveSymbol(symbol);
-        if (resolvedSymbol && resolvedSymbol.metadata instanceof StaticSymbol) {
-            return this.findSymbolDeclaration(resolvedSymbol.metadata);
+        if (resolvedSymbol) {
+            var /** @type {?} */ resolvedMetadata = resolvedSymbol.metadata;
+            if (resolvedMetadata && resolvedMetadata.__symbolic === 'resolved') {
+                resolvedMetadata = resolvedMetadata.symbol;
+            }
+            if (resolvedMetadata instanceof StaticSymbol) {
+                return this.findSymbolDeclaration(resolvedSymbol.metadata);
+            }
         }
-        else {
-            return symbol;
-        }
+        return symbol;
     };
     /**
      * @param {?} type
@@ -30706,8 +30779,7 @@ var StaticReflector = /** @class */ (function () {
                     var /** @type {?} */ requiredAnnotationTypes = /** @type {?} */ ((this.annotationForParentClassWithSummaryKind.get(/** @type {?} */ ((summary.type.summaryKind)))));
                     var /** @type {?} */ typeHasRequiredAnnotation = requiredAnnotationTypes.some(function (requiredType) { return ownAnnotations_1.some(function (ann) { return requiredType.isTypeOf(ann); }); });
                     if (!typeHasRequiredAnnotation) {
-                        this.reportError(syntaxError("Class " + type.name + " in " + type.filePath + " extends from a " + CompileSummaryKind[(/** @type {?} */ ((summary.type.summaryKind)))] + " in another compilation unit without duplicating the decorator. " +
-                            ("Please add a " + requiredAnnotationTypes.map(function (type) { return type.ngMetadataName; }).join(' or ') + " decorator to the class.")), type);
+                        this.reportError(formatMetadataError(metadataError("Class " + type.name + " in " + type.filePath + " extends from a " + CompileSummaryKind[(/** @type {?} */ ((summary.type.summaryKind)))] + " in another compilation unit without duplicating the decorator", undefined, "Please add a " + requiredAnnotationTypes.map(function (type) { return type.ngMetadataName; }).join(' or ') + " decorator to the class"), type), type);
                     }
                 }
             }
@@ -30967,26 +31039,6 @@ var StaticReflector = /** @class */ (function () {
         return this.symbolResolver.getStaticSymbol(declarationFile, name, members);
     };
     /**
-     * @param {?} error
-     * @param {?} context
-     * @param {?=} path
-     * @return {?}
-     */
-    StaticReflector.prototype.reportError = /**
-     * @param {?} error
-     * @param {?} context
-     * @param {?=} path
-     * @return {?}
-     */
-    function (error, context, path) {
-        if (this.errorRecorder) {
-            this.errorRecorder(error, (context && context.filePath) || path);
-        }
-        else {
-            throw error;
-        }
-    };
-    /**
      * Simplify but discard any errors
      * @param {?} context
      * @param {?} value
@@ -31018,10 +31070,10 @@ var StaticReflector = /** @class */ (function () {
      * @return {?}
      */
     function (context, value) {
-        var _this = this;
         var /** @type {?} */ self = this;
         var /** @type {?} */ scope = BindingScope.empty;
         var /** @type {?} */ calling = new Map();
+        var /** @type {?} */ rootContext = context;
         /**
          * @param {?} context
          * @param {?} value
@@ -31039,22 +31091,77 @@ var StaticReflector = /** @class */ (function () {
                 return resolvedSymbol ? resolvedSymbol.metadata : null;
             }
             /**
+             * @param {?} value
+             * @return {?}
+             */
+            function simplifyEagerly(value) {
+                return simplifyInContext(context, value, depth, 0);
+            }
+            /**
+             * @param {?} value
+             * @return {?}
+             */
+            function simplifyLazily(value) {
+                return simplifyInContext(context, value, depth, references + 1);
+            }
+            /**
+             * @param {?} nestedContext
+             * @param {?} value
+             * @return {?}
+             */
+            function simplifyNested(nestedContext, value) {
+                if (nestedContext === context) {
+                    // If the context hasn't changed let the exception propagate unmodified.
+                    return simplifyInContext(nestedContext, value, depth + 1, references);
+                }
+                try {
+                    return simplifyInContext(nestedContext, value, depth + 1, references);
+                }
+                catch (/** @type {?} */ e) {
+                    if (isMetadataError(e)) {
+                        // Propagate the message text up but add a message to the chain that explains how we got
+                        // here.
+                        // e.chain implies e.symbol
+                        var /** @type {?} */ summaryMsg = e.chain ? 'references \'' + /** @type {?} */ ((e.symbol)).name + '\'' : errorSummary(e);
+                        var /** @type {?} */ summary = "'" + nestedContext.name + "' " + summaryMsg;
+                        var /** @type {?} */ chain = { message: summary, position: e.position, next: e.chain };
+                        // TODO(chuckj): retrieve the position information indirectly from the collectors node
+                        // map if the metadata is from a .ts file.
+                        self.error({
+                            message: e.message,
+                            advise: e.advise,
+                            context: e.context, chain: chain,
+                            symbol: nestedContext
+                        }, context);
+                    }
+                    else {
+                        // It is probably an internal error.
+                        throw e;
+                    }
+                }
+            }
+            /**
              * @param {?} functionSymbol
              * @param {?} targetFunction
              * @param {?} args
+             * @param {?} targetExpression
              * @return {?}
              */
-            function simplifyCall(functionSymbol, targetFunction, args) {
+            function simplifyCall(functionSymbol, targetFunction, args, targetExpression) {
                 if (targetFunction && targetFunction['__symbolic'] == 'function') {
                     if (calling.get(functionSymbol)) {
-                        throw new Error('Recursion not supported');
+                        self.error({
+                            message: 'Recursion is not supported',
+                            summary: "called '" + functionSymbol.name + "' recursively",
+                            value: targetFunction
+                        }, functionSymbol);
                     }
                     try {
                         var /** @type {?} */ value_1 = targetFunction['value'];
                         if (value_1 && (depth != 0 || value_1.__symbolic != 'error')) {
                             var /** @type {?} */ parameters = targetFunction['parameters'];
                             var /** @type {?} */ defaults = targetFunction.defaults;
-                            args = args.map(function (arg) { return simplifyInContext(context, arg, depth + 1, references); })
+                            args = args.map(function (arg) { return simplifyNested(context, arg); })
                                 .map(function (arg) { return shouldIgnore(arg) ? undefined : arg; });
                             if (defaults && defaults.length > args.length) {
                                 args.push.apply(args, defaults.slice(args.length).map(function (value) { return simplify(value); }));
@@ -31068,7 +31175,7 @@ var StaticReflector = /** @class */ (function () {
                             var /** @type {?} */ result_1;
                             try {
                                 scope = functionScope.done();
-                                result_1 = simplifyInContext(functionSymbol, value_1, depth + 1, references);
+                                result_1 = simplifyNested(functionSymbol, value_1);
                             }
                             finally {
                                 scope = oldScope;
@@ -31086,7 +31193,20 @@ var StaticReflector = /** @class */ (function () {
                     // non-angular decorator, and we should just ignore it.
                     return IGNORE;
                 }
-                return simplify({ __symbolic: 'error', message: 'Function call not supported', context: functionSymbol });
+                var /** @type {?} */ position = undefined;
+                if (targetExpression && targetExpression.__symbolic == 'resolved') {
+                    var /** @type {?} */ line = targetExpression.line;
+                    var /** @type {?} */ character = targetExpression.character;
+                    var /** @type {?} */ fileName = targetExpression.fileName;
+                    if (fileName != null && line != null && character != null) {
+                        position = { fileName: fileName, line: line, column: character };
+                    }
+                }
+                self.error({
+                    message: FUNCTION_CALL_NOT_SUPPORTED,
+                    context: functionSymbol,
+                    value: targetFunction, position: position
+                }, context);
             }
             /**
              * @param {?} expression
@@ -31104,7 +31224,7 @@ var StaticReflector = /** @class */ (function () {
                         if (item && item.__symbolic === 'spread') {
                             // We call with references as 0 because we require the actual value and cannot
                             // tolerate a reference here.
-                            var /** @type {?} */ spreadArray = simplifyInContext(context, item.expression, depth, 0);
+                            var /** @type {?} */ spreadArray = simplifyEagerly(item.expression);
                             if (Array.isArray(spreadArray)) {
                                 for (var _b = 0, spreadArray_1 = spreadArray; _b < spreadArray_1.length; _b++) {
                                     var spreadItem = spreadArray_1[_b];
@@ -31132,7 +31252,7 @@ var StaticReflector = /** @class */ (function () {
                         var /** @type {?} */ staticSymbol = expression;
                         var /** @type {?} */ declarationValue = resolveReferenceValue(staticSymbol);
                         if (declarationValue != null) {
-                            return simplifyInContext(staticSymbol, declarationValue, depth + 1, references);
+                            return simplifyNested(staticSymbol, declarationValue);
                         }
                         else {
                             return staticSymbol;
@@ -31213,8 +31333,8 @@ var StaticReflector = /** @class */ (function () {
                                 }
                                 return null;
                             case 'index':
-                                var /** @type {?} */ indexTarget = simplifyInContext(context, expression['expression'], depth, 0);
-                                var /** @type {?} */ index = simplifyInContext(context, expression['index'], depth, 0);
+                                var /** @type {?} */ indexTarget = simplifyEagerly(expression['expression']);
+                                var /** @type {?} */ index = simplifyEagerly(expression['index']);
                                 if (indexTarget && isPrimitive(index))
                                     return indexTarget[index];
                                 return null;
@@ -31228,25 +31348,43 @@ var StaticReflector = /** @class */ (function () {
                                         self.getStaticSymbol(selectTarget.filePath, selectTarget.name, members);
                                     var /** @type {?} */ declarationValue = resolveReferenceValue(selectContext);
                                     if (declarationValue != null) {
-                                        return simplifyInContext(selectContext, declarationValue, depth + 1, references);
+                                        return simplifyNested(selectContext, declarationValue);
                                     }
                                     else {
                                         return selectContext;
                                     }
                                 }
                                 if (selectTarget && isPrimitive(member))
-                                    return simplifyInContext(selectContext, selectTarget[member], depth + 1, references);
+                                    return simplifyNested(selectContext, selectTarget[member]);
                                 return null;
                             case 'reference':
-                                // Note: This only has to deal with variable references,
-                                // as symbol references have been converted into StaticSymbols already
-                                // in the StaticSymbolResolver!
+                                // Note: This only has to deal with variable references, as symbol references have
+                                // been converted into 'resolved'
+                                // in the StaticSymbolResolver.
                                 var /** @type {?} */ name_1 = expression['name'];
                                 var /** @type {?} */ localValue = scope.resolve(name_1);
                                 if (localValue != BindingScope.missing) {
                                     return localValue;
                                 }
                                 break;
+                            case 'resolved':
+                                try {
+                                    return simplify(expression.symbol);
+                                }
+                                catch (/** @type {?} */ e) {
+                                    // If an error is reported evaluating the symbol record the position of the
+                                    // reference in the error so it can
+                                    // be reported in the error message generated from the exception.
+                                    if (isMetadataError(e) && expression.fileName != null &&
+                                        expression.line != null && expression.character != null) {
+                                        e.position = {
+                                            fileName: expression.fileName,
+                                            line: expression.line,
+                                            column: expression.character
+                                        };
+                                    }
+                                    throw e;
+                                }
                             case 'class':
                                 return context;
                             case 'function':
@@ -31266,27 +31404,33 @@ var StaticReflector = /** @class */ (function () {
                                     var /** @type {?} */ argExpressions = expression['arguments'] || [];
                                     var /** @type {?} */ converter = self.conversionMap.get(staticSymbol);
                                     if (converter) {
-                                        var /** @type {?} */ args = argExpressions
-                                            .map(function (arg) { return simplifyInContext(context, arg, depth + 1, references); })
+                                        var /** @type {?} */ args = argExpressions.map(function (arg) { return simplifyNested(context, arg); })
                                             .map(function (arg) { return shouldIgnore(arg) ? undefined : arg; });
                                         return converter(context, args);
                                     }
                                     else {
                                         // Determine if the function is one we can simplify.
                                         var /** @type {?} */ targetFunction = resolveReferenceValue(staticSymbol);
-                                        return simplifyCall(staticSymbol, targetFunction, argExpressions);
+                                        return simplifyCall(staticSymbol, targetFunction, argExpressions, expression['expression']);
                                     }
                                 }
                                 return IGNORE;
                             case 'error':
-                                var /** @type {?} */ message = produceErrorMessage(expression);
-                                if (expression['line']) {
-                                    message =
-                                        message + " (position " + (expression['line'] + 1) + ":" + (expression['character'] + 1) + " in the original .ts file)";
-                                    self.reportError(positionalError(message, context.filePath, expression['line'], expression['character']), context);
+                                var /** @type {?} */ message = expression.message;
+                                if (expression['line'] != null) {
+                                    self.error({
+                                        message: message,
+                                        context: expression.context,
+                                        value: expression,
+                                        position: {
+                                            fileName: expression['fileName'],
+                                            line: expression['line'],
+                                            column: expression['character']
+                                        }
+                                    }, context);
                                 }
                                 else {
-                                    self.reportError(new Error(message), context);
+                                    self.error({ message: message, context: expression.context }, context);
                                 }
                                 return IGNORE;
                             case 'ignore':
@@ -31304,35 +31448,27 @@ var StaticReflector = /** @class */ (function () {
                                     return simplify(value);
                                 }
                             }
-                            return simplifyInContext(context, value, depth, references + 1);
+                            return simplifyLazily(value);
                         }
                         return simplify(value);
                     });
                 }
                 return IGNORE;
             }
-            try {
-                return simplify(value);
+            return simplify(value);
+        }
+        var /** @type {?} */ result;
+        try {
+            result = simplifyInContext(context, value, 0, 0);
+        }
+        catch (/** @type {?} */ e) {
+            if (this.errorRecorder) {
+                this.reportError(e, context);
             }
-            catch (/** @type {?} */ e) {
-                var /** @type {?} */ members = context.members.length ? "." + context.members.join('.') : '';
-                var /** @type {?} */ message = e.message + ", resolving symbol " + context.name + members + " in " + context.filePath;
-                if (e.fileName) {
-                    throw positionalError(message, e.fileName, e.line, e.column);
-                }
-                throw syntaxError(message);
+            else {
+                throw formatMetadataError(e, context);
             }
         }
-        var /** @type {?} */ recordedSimplifyInContext = function (context, value) {
-            try {
-                return simplifyInContext(context, value, 0, 0);
-            }
-            catch (/** @type {?} */ e) {
-                _this.reportError(e, context);
-            }
-        };
-        var /** @type {?} */ result = this.errorRecorder ? recordedSimplifyInContext(context, value) :
-            simplifyInContext(context, value, 0, 0);
         if (shouldIgnore(result)) {
             return undefined;
         }
@@ -31351,46 +31487,176 @@ var StaticReflector = /** @class */ (function () {
         return resolvedSymbol && resolvedSymbol.metadata ? resolvedSymbol.metadata :
             { __symbolic: 'class' };
     };
+    /**
+     * @param {?} error
+     * @param {?} context
+     * @param {?=} path
+     * @return {?}
+     */
+    StaticReflector.prototype.reportError = /**
+     * @param {?} error
+     * @param {?} context
+     * @param {?=} path
+     * @return {?}
+     */
+    function (error, context, path) {
+        if (this.errorRecorder) {
+            this.errorRecorder(formatMetadataError(error, context), (context && context.filePath) || path);
+        }
+        else {
+            throw error;
+        }
+    };
+    /**
+     * @param {?} __0
+     * @param {?} reportingContext
+     * @return {?}
+     */
+    StaticReflector.prototype.error = /**
+     * @param {?} __0
+     * @param {?} reportingContext
+     * @return {?}
+     */
+    function (_a, reportingContext) {
+        var message = _a.message, summary = _a.summary, advise = _a.advise, position = _a.position, context = _a.context, value = _a.value, symbol = _a.symbol, chain = _a.chain;
+        this.reportError(metadataError(message, summary, advise, position, symbol, context, chain), reportingContext);
+    };
     return StaticReflector;
 }());
+var METADATA_ERROR = 'ngMetadataError';
 /**
- * @param {?} error
+ * @param {?} message
+ * @param {?=} summary
+ * @param {?=} advise
+ * @param {?=} position
+ * @param {?=} symbol
+ * @param {?=} context
+ * @param {?=} chain
  * @return {?}
  */
-function expandedMessage(error) {
-    switch (error.message) {
-        case 'Reference to non-exported class':
-            if (error.context && error.context.className) {
-                return "Reference to a non-exported class " + error.context.className + ". Consider exporting the class";
-            }
-            break;
-        case 'Variable not initialized':
-            return 'Only initialized variables and constants can be referenced because the value of this variable is needed by the template compiler';
-        case 'Destructuring not supported':
-            return 'Referencing an exported destructured variable or constant is not supported by the template compiler. Consider simplifying this to avoid destructuring';
-        case 'Could not resolve type':
-            if (error.context && error.context.typeName) {
-                return "Could not resolve type " + error.context.typeName;
-            }
-            break;
-        case 'Function call not supported':
-            var /** @type {?} */ prefix = error.context && error.context.name ? "Calling function '" + error.context.name + "', f" : 'F';
-            return prefix +
-                'unction calls are not supported. Consider replacing the function or lambda with a reference to an exported function';
-        case 'Reference to a local symbol':
-            if (error.context && error.context.name) {
-                return "Reference to a local (non-exported) symbol '" + error.context.name + "'. Consider exporting the symbol";
-            }
-            break;
-    }
-    return error.message;
+function metadataError(message, summary, advise, position, symbol, context, chain) {
+    var /** @type {?} */ error = /** @type {?} */ (syntaxError(message));
+    (/** @type {?} */ (error))[METADATA_ERROR] = true;
+    if (advise)
+        error.advise = advise;
+    if (position)
+        error.position = position;
+    if (summary)
+        error.summary = summary;
+    if (context)
+        error.context = context;
+    if (chain)
+        error.chain = chain;
+    if (symbol)
+        error.symbol = symbol;
+    return error;
 }
 /**
  * @param {?} error
  * @return {?}
  */
-function produceErrorMessage(error) {
-    return "Error encountered resolving symbol values statically. " + expandedMessage(error);
+function isMetadataError(error) {
+    return !!(/** @type {?} */ (error))[METADATA_ERROR];
+}
+var REFERENCE_TO_NONEXPORTED_CLASS = 'Reference to non-exported class';
+var VARIABLE_NOT_INITIALIZED = 'Variable not initialized';
+var DESTRUCTURE_NOT_SUPPORTED = 'Destructuring not supported';
+var COULD_NOT_RESOLVE_TYPE = 'Could not resolve type';
+var FUNCTION_CALL_NOT_SUPPORTED = 'Function call not supported';
+var REFERENCE_TO_LOCAL_SYMBOL = 'Reference to a local symbol';
+var LAMBDA_NOT_SUPPORTED = 'Lambda not supported';
+/**
+ * @param {?} message
+ * @param {?} context
+ * @return {?}
+ */
+function expandedMessage(message, context) {
+    switch (message) {
+        case REFERENCE_TO_NONEXPORTED_CLASS:
+            if (context && context.className) {
+                return "References to a non-exported class are not supported in decorators but " + context.className + " was referenced.";
+            }
+            break;
+        case VARIABLE_NOT_INITIALIZED:
+            return 'Only initialized variables and constants can be referenced in decorators because the value of this variable is needed by the template compiler';
+        case DESTRUCTURE_NOT_SUPPORTED:
+            return 'Referencing an exported destructured variable or constant is not supported in decorators and this value is needed by the template compiler';
+        case COULD_NOT_RESOLVE_TYPE:
+            if (context && context.typeName) {
+                return "Could not resolve type " + context.typeName;
+            }
+            break;
+        case FUNCTION_CALL_NOT_SUPPORTED:
+            if (context && context.name) {
+                return "Function calls are not supported in decorators but '" + context.name + "' was called";
+            }
+            return 'Function calls are not supported in decorators';
+        case REFERENCE_TO_LOCAL_SYMBOL:
+            if (context && context.name) {
+                return "Reference to a local (non-exported) symbols are not supported in decorators but '" + context.name + "' was referenced";
+            }
+            break;
+        case LAMBDA_NOT_SUPPORTED:
+            return "Function expressions are not supported in decorators";
+    }
+    return message;
+}
+/**
+ * @param {?} message
+ * @param {?} context
+ * @return {?}
+ */
+function messageAdvise(message, context) {
+    switch (message) {
+        case REFERENCE_TO_NONEXPORTED_CLASS:
+            if (context && context.className) {
+                return "Consider exporting '" + context.className + "'";
+            }
+            break;
+        case DESTRUCTURE_NOT_SUPPORTED:
+            return 'Consider simplifying to avoid destructuring';
+        case REFERENCE_TO_LOCAL_SYMBOL:
+            if (context && context.name) {
+                return "Consider exporting '" + context.name + "'";
+            }
+            break;
+        case LAMBDA_NOT_SUPPORTED:
+            return "Consider changing the function expression into an exported function";
+    }
+    return undefined;
+}
+/**
+ * @param {?} error
+ * @return {?}
+ */
+function errorSummary(error) {
+    if (error.summary) {
+        return error.summary;
+    }
+    switch (error.message) {
+        case REFERENCE_TO_NONEXPORTED_CLASS:
+            if (error.context && error.context.className) {
+                return "references non-exported class " + error.context.className;
+            }
+            break;
+        case VARIABLE_NOT_INITIALIZED:
+            return 'is not initialized';
+        case DESTRUCTURE_NOT_SUPPORTED:
+            return 'is a destructured variable';
+        case COULD_NOT_RESOLVE_TYPE:
+            return 'could not be resolved';
+        case FUNCTION_CALL_NOT_SUPPORTED:
+            if (error.context && error.context.name) {
+                return "calls '" + error.context.name + "'";
+            }
+            return "calls a function";
+        case REFERENCE_TO_LOCAL_SYMBOL:
+            if (error.context && error.context.name) {
+                return "references local variable " + error.context.name;
+            }
+            return "references a local variable";
+    }
+    return 'contains the error';
 }
 /**
  * @param {?} input
@@ -31470,18 +31736,39 @@ var PopulatedScope = /** @class */ (function (_super) {
     return PopulatedScope;
 }(BindingScope));
 /**
- * @param {?} message
- * @param {?} fileName
- * @param {?} line
- * @param {?} column
+ * @param {?} chain
+ * @param {?} advise
  * @return {?}
  */
-function positionalError(message, fileName, line, column) {
-    var /** @type {?} */ result = syntaxError(message);
-    (/** @type {?} */ (result)).fileName = fileName;
-    (/** @type {?} */ (result)).line = line;
-    (/** @type {?} */ (result)).column = column;
-    return result;
+function formatMetadataMessageChain(chain, advise) {
+    var /** @type {?} */ expanded = expandedMessage(chain.message, chain.context);
+    var /** @type {?} */ nesting = chain.symbol ? " in '" + chain.symbol.name + "'" : '';
+    var /** @type {?} */ message = "" + expanded + nesting;
+    var /** @type {?} */ position = chain.position;
+    var /** @type {?} */ next = chain.next ?
+        formatMetadataMessageChain(chain.next, advise) :
+        advise ? { message: advise } : undefined;
+    return { message: message, position: position, next: next };
+}
+/**
+ * @param {?} e
+ * @param {?} context
+ * @return {?}
+ */
+function formatMetadataError(e, context) {
+    if (isMetadataError(e)) {
+        // Produce a formatted version of the and leaving enough information in the original error
+        // to recover the formatting information to eventually produce a diagnostic error message.
+        var /** @type {?} */ position = e.position;
+        var /** @type {?} */ chain = {
+            message: "Error during template compile of '" + context.name + "'",
+            position: position,
+            next: { message: e.message, next: e.chain, context: e.context, symbol: e.symbol }
+        };
+        var /** @type {?} */ advise = e.advise || messageAdvise(e.message, e.context);
+        return formattedError(formatMetadataMessageChain(chain, advise));
+    }
+    return e;
 }
 
 /**
@@ -31659,9 +31946,9 @@ var StaticSymbolResolver = /** @class */ (function () {
         if (isGeneratedFile(staticSymbol.filePath)) {
             return null;
         }
-        var /** @type {?} */ resolvedSymbol = this.resolveSymbol(staticSymbol);
+        var /** @type {?} */ resolvedSymbol = unwrapResolvedMetadata(this.resolveSymbol(staticSymbol));
         while (resolvedSymbol && resolvedSymbol.metadata instanceof StaticSymbol) {
-            resolvedSymbol = this.resolveSymbol(resolvedSymbol.metadata);
+            resolvedSymbol = unwrapResolvedMetadata(this.resolveSymbol(resolvedSymbol.metadata));
         }
         return (resolvedSymbol && resolvedSymbol.metadata && resolvedSymbol.metadata.arity) || null;
     };
@@ -31770,7 +32057,7 @@ var StaticSymbolResolver = /** @class */ (function () {
         if (!baseResolvedSymbol) {
             return null;
         }
-        var /** @type {?} */ baseMetadata = baseResolvedSymbol.metadata;
+        var /** @type {?} */ baseMetadata = unwrapResolvedMetadata(baseResolvedSymbol.metadata);
         if (baseMetadata instanceof StaticSymbol) {
             return new ResolvedStaticSymbol(staticSymbol, this.getStaticSymbol(baseMetadata.filePath, baseMetadata.name, members));
         }
@@ -32004,6 +32291,18 @@ var StaticSymbolResolver = /** @class */ (function () {
             var /** @type {?} */ transformedMeta_1 = { __symbolic: 'class', arity: metadata.arity };
             return new ResolvedStaticSymbol(sourceSymbol, transformedMeta_1);
         }
+        var /** @type {?} */ _originalFileMemo;
+        var /** @type {?} */ getOriginalName = function () {
+            if (!_originalFileMemo) {
+                // Guess what hte original file name is from the reference. If it has a `.d.ts` extension
+                // replace it with `.ts`. If it already has `.ts` just leave it in place. If it doesn't have
+                // .ts or .d.ts, append `.ts'. Also, if it is in `node_modules`, trim the `node_module`
+                // location as it is not important to finding the file.
+                _originalFileMemo =
+                    topLevelPath.replace(/((\.ts)|(\.d\.ts)|)$/, '.ts').replace(/^.*node_modules[/\\]/, '');
+            }
+            return _originalFileMemo;
+        };
         var /** @type {?} */ self = this;
         var ReferenceTransformer = /** @class */ (function (_super) {
             __extends(ReferenceTransformer, _super);
@@ -32041,10 +32340,19 @@ var StaticSymbolResolver = /** @class */ (function () {
                         if (!filePath) {
                             return {
                                 __symbolic: 'error',
-                                message: "Could not resolve " + module + " relative to " + sourceSymbol.filePath + "."
+                                message: "Could not resolve " + module + " relative to " + sourceSymbol.filePath + ".",
+                                line: map["line"],
+                                character: map["character"],
+                                fileName: getOriginalName()
                             };
                         }
-                        return self.getStaticSymbol(filePath, name_1);
+                        return {
+                            __symbolic: 'resolved',
+                            symbol: self.getStaticSymbol(filePath, name_1),
+                            line: map["line"],
+                            character: map["character"],
+                            fileName: getOriginalName()
+                        };
                     }
                     else if (functionParams.indexOf(name_1) >= 0) {
                         // reference to a function parameter
@@ -32058,6 +32366,9 @@ var StaticSymbolResolver = /** @class */ (function () {
                         null;
                     }
                 }
+                else if (symbolic === 'error') {
+                    return __assign({}, map, { fileName: getOriginalName() });
+                }
                 else {
                     return _super.prototype.visitStringMap.call(this, map, functionParams);
                 }
@@ -32065,8 +32376,9 @@ var StaticSymbolResolver = /** @class */ (function () {
             return ReferenceTransformer;
         }(ValueTransformer));
         var /** @type {?} */ transformedMeta = visitValue(metadata, new ReferenceTransformer(), []);
-        if (transformedMeta instanceof StaticSymbol) {
-            return this.createExport(sourceSymbol, transformedMeta);
+        var /** @type {?} */ unwrappedTransformedMeta = unwrapResolvedMetadata(transformedMeta);
+        if (unwrappedTransformedMeta instanceof StaticSymbol) {
+            return this.createExport(sourceSymbol, unwrappedTransformedMeta);
         }
         return new ResolvedStaticSymbol(sourceSymbol, transformedMeta);
     };
@@ -32197,6 +32509,16 @@ var StaticSymbolResolver = /** @class */ (function () {
  */
 function unescapeIdentifier(identifier) {
     return identifier.startsWith('___') ? identifier.substr(1) : identifier;
+}
+/**
+ * @param {?} metadata
+ * @return {?}
+ */
+function unwrapResolvedMetadata(metadata) {
+    if (metadata && metadata.__symbolic === 'resolved') {
+        return metadata.symbol;
+    }
+    return metadata;
 }
 
 /**
@@ -34768,5 +35090,5 @@ var Extractor = /** @class */ (function () {
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, mergeAnalyzedFiles, GeneratedFile, toTypeScript, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map

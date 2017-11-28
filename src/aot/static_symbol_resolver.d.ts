@@ -121,3 +121,4 @@ export declare class StaticSymbolResolver {
     private resolveModule(module, containingFile?);
 }
 export declare function unescapeIdentifier(identifier: string): string;
+export declare function unwrapResolvedMetadata(metadata: any): any;
