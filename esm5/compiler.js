@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-6727336
+ * @license Angular v5.1.0-9dd60a5
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -638,7 +638,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-6727336');
+var VERSION = new Version('5.1.0-9dd60a5');
 
 /**
  * @fileoverview added by tsickle
@@ -10178,8 +10178,6 @@ var TAG_TO_PLACEHOLDER_NAMES = {
  * Creates unique names for placeholder with different content.
  *
  * Returns the same placeholder name when the content is identical.
- *
- * \@internal
  */
 var PlaceholderRegistry = /** @class */ (function () {
     function PlaceholderRegistry() {
