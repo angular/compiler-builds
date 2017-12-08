@@ -40,10 +40,14 @@ export declare class ConvertPropertyBindingResult {
     currValExpr: o.Expression;
     constructor(stmts: o.Statement[], currValExpr: o.Expression);
 }
+export declare enum BindingForm {
+    General = 0,
+    TrySimple = 1,
+}
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
  * is used in property binding. The expression has to be preprocessed via
  * `convertPropertyBindingBuiltins`.
  */
-export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string): ConvertPropertyBindingResult;
+export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string, form: BindingForm): ConvertPropertyBindingResult;
 export declare function temporaryDeclaration(bindingId: string, temporaryNumber: number): o.Statement;

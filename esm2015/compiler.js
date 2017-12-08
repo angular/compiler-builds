@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-ddada6e
+ * @license Angular v5.1.0-3ce3b4d
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -586,7 +586,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.1.0-ddada6e');
+const VERSION = new Version('5.1.0-3ce3b4d');
 
 /**
  * @fileoverview added by tsickle
@@ -1530,7 +1530,7 @@ class CompileDirectiveMetadata {
      * @param {?} __0
      * @return {?}
      */
-    static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
+    static create({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, host, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
         const /** @type {?} */ hostListeners = {};
         const /** @type {?} */ hostProperties = {};
         const /** @type {?} */ hostAttributes = {};
@@ -1579,6 +1579,7 @@ class CompileDirectiveMetadata {
             providers,
             viewProviders,
             queries,
+            guards,
             viewQueries,
             entryComponents,
             template,
@@ -1590,7 +1591,7 @@ class CompileDirectiveMetadata {
     /**
      * @param {?} __0
      */
-    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
+    constructor({ isHost, type, isComponent, selector, exportAs, changeDetection, inputs, outputs, hostListeners, hostProperties, hostAttributes, providers, viewProviders, queries, guards, viewQueries, entryComponents, template, componentViewType, rendererType, componentFactory }) {
         this.isHost = !!isHost;
         this.type = type;
         this.isComponent = isComponent;
@@ -1605,6 +1606,7 @@ class CompileDirectiveMetadata {
         this.providers = _normalizeArray(providers);
         this.viewProviders = _normalizeArray(viewProviders);
         this.queries = _normalizeArray(queries);
+        this.guards = guards;
         this.viewQueries = _normalizeArray(viewQueries);
         this.entryComponents = _normalizeArray(entryComponents);
         this.template = template;
@@ -1630,6 +1632,7 @@ class CompileDirectiveMetadata {
             providers: this.providers,
             viewProviders: this.viewProviders,
             queries: this.queries,
+            guards: this.guards,
             viewQueries: this.viewQueries,
             entryComponents: this.entryComponents,
             changeDetection: this.changeDetection,
@@ -3176,7 +3179,8 @@ class DirectiveResolver {
             const /** @type {?} */ metadata = findLast(typeMetadata, isDirectiveMetadata);
             if (metadata) {
                 const /** @type {?} */ propertyMetadata = this._reflector.propMetadata(type);
-                return this._mergeWithPropertyMetadata(metadata, propertyMetadata, type);
+                const /** @type {?} */ guards = this._reflector.guards(type);
+                return this._mergeWithPropertyMetadata(metadata, propertyMetadata, guards, type);
             }
         }
         if (throwIfNotFound) {
@@ -3187,10 +3191,11 @@ class DirectiveResolver {
     /**
      * @param {?} dm
      * @param {?} propertyMetadata
+     * @param {?} guards
      * @param {?} directiveType
      * @return {?}
      */
-    _mergeWithPropertyMetadata(dm, propertyMetadata, directiveType) {
+    _mergeWithPropertyMetadata(dm, propertyMetadata, guards, directiveType) {
         const /** @type {?} */ inputs = [];
         const /** @type {?} */ outputs = [];
         const /** @type {?} */ host = {};
@@ -3240,7 +3245,7 @@ class DirectiveResolver {
                 queries[propName] = query;
             }
         });
-        return this._merge(dm, inputs, outputs, host, queries, directiveType);
+        return this._merge(dm, inputs, outputs, host, queries, guards, directiveType);
     }
     /**
      * @param {?} def
@@ -3253,11 +3258,13 @@ class DirectiveResolver {
      */
     _dedupeBindings(bindings) {
         const /** @type {?} */ names = new Set();
+        const /** @type {?} */ publicNames = new Set();
         const /** @type {?} */ reversedResult = [];
         // go last to first to allow later entries to overwrite previous entries
         for (let /** @type {?} */ i = bindings.length - 1; i >= 0; i--) {
             const /** @type {?} */ binding = bindings[i];
             const /** @type {?} */ name = this._extractPublicName(binding);
+            publicNames.add(name);
             if (!names.has(name)) {
                 names.add(name);
                 reversedResult.push(binding);
@@ -3271,10 +3278,11 @@ class DirectiveResolver {
      * @param {?} outputs
      * @param {?} host
      * @param {?} queries
+     * @param {?} guards
      * @param {?} directiveType
      * @return {?}
      */
-    _merge(directive, inputs, outputs, host, queries, directiveType) {
+    _merge(directive, inputs, outputs, host, queries, guards, directiveType) {
         const /** @type {?} */ mergedInputs = this._dedupeBindings(directive.inputs ? directive.inputs.concat(inputs) : inputs);
         const /** @type {?} */ mergedOutputs = this._dedupeBindings(directive.outputs ? directive.outputs.concat(outputs) : outputs);
         const /** @type {?} */ mergedHost = directive.host ? Object.assign({}, directive.host, host) : host;
@@ -3311,7 +3319,7 @@ class DirectiveResolver {
                 host: mergedHost,
                 exportAs: directive.exportAs,
                 queries: mergedQueries,
-                providers: directive.providers
+                providers: directive.providers, guards
             });
         }
     }
@@ -12247,6 +12255,7 @@ class CompileMetadataResolver {
             providers: [],
             viewProviders: [],
             queries: [],
+            guards: {},
             viewQueries: [],
             componentViewType: hostViewType,
             rendererType: /** @type {?} */ ({ id: '__Host__', encapsulation: ViewEncapsulation.None, styles: [], data: {} }),
@@ -12282,6 +12291,7 @@ class CompileMetadataResolver {
                 providers: metadata.providers,
                 viewProviders: metadata.viewProviders,
                 queries: metadata.queries,
+                guards: metadata.guards,
                 viewQueries: metadata.viewQueries,
                 entryComponents: metadata.entryComponents,
                 componentViewType: metadata.componentViewType,
@@ -12414,6 +12424,7 @@ class CompileMetadataResolver {
             providers: providers || [],
             viewProviders: viewProviders || [],
             queries: queries || [],
+            guards: dirMeta.guards || {},
             viewQueries: viewQueries || [],
             entryComponents: entryComponentMetadata,
             componentViewType: nonNormalizedTemplateMetadata ? this.getComponentViewClass(directiveType) :
@@ -21105,6 +21116,16 @@ class ConvertPropertyBindingResult {
         this.currValExpr = currValExpr;
     }
 }
+/** @enum {number} */
+const BindingForm = {
+    // The general form of binding expression, supports all expressions.
+    General: 0,
+    // Try to generate a simple binding (no temporaries or statements)
+    // otherise generate a general binding
+    TrySimple: 1,
+};
+BindingForm[BindingForm.General] = "General";
+BindingForm[BindingForm.TrySimple] = "TrySimple";
 /**
  * Converts the given expression AST into an executable output AST, assuming the expression
  * is used in property binding. The expression has to be preprocessed via
@@ -21113,9 +21134,10 @@ class ConvertPropertyBindingResult {
  * @param {?} implicitReceiver
  * @param {?} expressionWithoutBuiltins
  * @param {?} bindingId
+ * @param {?} form
  * @return {?}
  */
-function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId) {
+function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId, form) {
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
@@ -21127,6 +21149,9 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
         for (let /** @type {?} */ i = 0; i < visitor.temporaryCount; i++) {
             stmts.push(temporaryDeclaration(bindingId, i));
         }
+    }
+    else if (form == BindingForm.TrySimple) {
+        return new ConvertPropertyBindingResult([], outputExpr);
     }
     stmts.push(currValExpr.set(outputExpr).toDeclStmt(null, [StmtModifier.Final]));
     return new ConvertPropertyBindingResult(stmts, currValExpr);
@@ -21982,17 +22007,18 @@ class TypeCheckCompiler {
      * @param {?} template
      * @param {?} usedPipes
      * @param {?} externalReferenceVars
+     * @param {?} ctx
      * @return {?}
      */
-    compileComponent(componentId, component, template, usedPipes, externalReferenceVars) {
+    compileComponent(componentId, component, template, usedPipes, externalReferenceVars, ctx) {
         const /** @type {?} */ pipes = new Map();
         usedPipes.forEach(p => pipes.set(p.name, p.type.reference));
         let /** @type {?} */ embeddedViewCount = 0;
-        const /** @type {?} */ viewBuilderFactory = (parent) => {
+        const /** @type {?} */ viewBuilderFactory = (parent, guards) => {
             const /** @type {?} */ embeddedViewIndex = embeddedViewCount++;
-            return new ViewBuilder(this.options, this.reflector, externalReferenceVars, parent, component.type.reference, component.isHost, embeddedViewIndex, pipes, viewBuilderFactory);
+            return new ViewBuilder(this.options, this.reflector, externalReferenceVars, parent, component.type.reference, component.isHost, embeddedViewIndex, pipes, guards, ctx, viewBuilderFactory);
         };
-        const /** @type {?} */ visitor = viewBuilderFactory(null);
+        const /** @type {?} */ visitor = viewBuilderFactory(null, []);
         visitor.visitAll([], template);
         return visitor.build(componentId);
     }
@@ -22023,9 +22049,11 @@ class ViewBuilder {
      * @param {?} isHostComponent
      * @param {?} embeddedViewIndex
      * @param {?} pipes
+     * @param {?} guards
+     * @param {?} ctx
      * @param {?} viewBuilderFactory
      */
-    constructor(options, reflector, externalReferenceVars, parent, component, isHostComponent, embeddedViewIndex, pipes, viewBuilderFactory) {
+    constructor(options, reflector, externalReferenceVars, parent, component, isHostComponent, embeddedViewIndex, pipes, guards, ctx, viewBuilderFactory) {
         this.options = options;
         this.reflector = reflector;
         this.externalReferenceVars = externalReferenceVars;
@@ -22034,6 +22062,8 @@ class ViewBuilder {
         this.isHostComponent = isHostComponent;
         this.embeddedViewIndex = embeddedViewIndex;
         this.pipes = pipes;
+        this.guards = guards;
+        this.ctx = ctx;
         this.viewBuilderFactory = viewBuilderFactory;
         this.refOutputVars = new Map();
         this.variables = [];
@@ -22062,6 +22092,22 @@ class ViewBuilder {
         return varName;
     }
     /**
+     * @param {?} ast
+     * @return {?}
+     */
+    getTypeGuardExpressions(ast) {
+        const /** @type {?} */ result = [...this.guards];
+        for (let /** @type {?} */ directive of ast.directives) {
+            for (let /** @type {?} */ input of directive.inputs) {
+                const /** @type {?} */ guard = directive.directive.guards[input.directiveName];
+                if (guard) {
+                    result.push({ guard, expression: /** @type {?} */ ({ context: this.component, value: input.value }) });
+                }
+            }
+        }
+        return result;
+    }
+    /**
      * @param {?} variables
      * @param {?} astNodes
      * @return {?}
@@ -22077,13 +22123,13 @@ class ViewBuilder {
      */
     build(componentId, targetStatements = []) {
         this.children.forEach((child) => child.build(componentId, targetStatements));
-        const /** @type {?} */ viewStmts = [variable(DYNAMIC_VAR_NAME).set(NULL_EXPR).toDeclStmt(DYNAMIC_TYPE)];
+        let /** @type {?} */ viewStmts = [variable(DYNAMIC_VAR_NAME).set(NULL_EXPR).toDeclStmt(DYNAMIC_TYPE)];
         let /** @type {?} */ bindingCount = 0;
         this.updates.forEach((expression) => {
             const { sourceSpan, context, value } = this.preprocessUpdateExpression(expression);
             const /** @type {?} */ bindingId = `${bindingCount++}`;
             const /** @type {?} */ nameResolver = context === this.component ? this : defaultResolver;
-            const { stmts, currValExpr } = convertPropertyBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId);
+            const { stmts, currValExpr } = convertPropertyBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId, BindingForm.General);
             stmts.push(new ExpressionStatement(currValExpr));
             viewStmts.push(...stmts.map((stmt) => applySourceSpanToStatementIfNeeded(stmt, sourceSpan)));
         });
@@ -22093,6 +22139,24 @@ class ViewBuilder {
             const { stmts } = convertActionBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId);
             viewStmts.push(...stmts.map((stmt) => applySourceSpanToStatementIfNeeded(stmt, sourceSpan)));
         });
+        if (this.guards.length) {
+            let /** @type {?} */ guardExpression = undefined;
+            for (const /** @type {?} */ guard of this.guards) {
+                const { context, value } = this.preprocessUpdateExpression(guard.expression);
+                const /** @type {?} */ bindingId = `${bindingCount++}`;
+                const /** @type {?} */ nameResolver = context === this.component ? this : defaultResolver;
+                // We only support support simple expressions and ignore others as they
+                // are unlikely to affect type narrowing.
+                const { stmts, currValExpr } = convertPropertyBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId, BindingForm.TrySimple);
+                if (stmts.length == 0) {
+                    const /** @type {?} */ callGuard = this.ctx.importExpr(guard.guard).callFn([currValExpr]);
+                    guardExpression = guardExpression ? guardExpression.and(callGuard) : callGuard;
+                }
+            }
+            if (guardExpression) {
+                viewStmts = [new IfStmt(guardExpression, viewStmts)];
+            }
+        }
         const /** @type {?} */ viewName = `_View_${componentId}_${this.embeddedViewIndex}`;
         const /** @type {?} */ viewFactory = new DeclareFunctionStmt(viewName, [], viewStmts);
         targetStatements.push(viewFactory);
@@ -22119,7 +22183,12 @@ class ViewBuilder {
         // for the context in any embedded view.
         // We keep this behaivor behind a flag for now.
         if (this.options.fullTemplateTypeCheck) {
-            const /** @type {?} */ childVisitor = this.viewBuilderFactory(this);
+            // Find any applicable type guards. For example, NgIf has a type guard on ngIf
+            // (see NgIf.ngIfTypeGuard) that can be used to indicate that a template is only
+            // stamped out if ngIf is truthy so any bindings in the template can assume that,
+            // if a nullable type is used for ngIf, that expression is not null or undefined.
+            const /** @type {?} */ guards = this.getTypeGuardExpressions(ast);
+            const /** @type {?} */ childVisitor = this.viewBuilderFactory(this, guards);
             this.children.push(childVisitor);
             childVisitor.visitAll(ast.variables, ast.children);
         }
@@ -23100,7 +23169,7 @@ class ViewBuilder$1 {
             const /** @type {?} */ exprs = expressions.map(({ sourceSpan, context, value }) => {
                 const /** @type {?} */ bindingId = `${updateBindingCount++}`;
                 const /** @type {?} */ nameResolver = context === COMP_VAR ? self : null;
-                const { stmts, currValExpr } = convertPropertyBinding(nameResolver, context, value, bindingId);
+                const { stmts, currValExpr } = convertPropertyBinding(nameResolver, context, value, bindingId, BindingForm.General);
                 updateStmts.push(...stmts.map((stmt) => applySourceSpanToStatementIfNeeded(stmt, sourceSpan)));
                 return applySourceSpanToExpressionIfNeeded(currValExpr, sourceSpan);
             });
@@ -25017,7 +25086,7 @@ class AotCompiler {
      */
     _createTypeCheckBlock(ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars) {
         const { template: parsedTemplate, pipes: usedPipes } = this._parseTemplate(compMeta, moduleMeta, directives);
-        ctx.statements.push(...this._typeCheckCompiler.compileComponent(componentId, compMeta, parsedTemplate, usedPipes, externalReferenceVars));
+        ctx.statements.push(...this._typeCheckCompiler.compileComponent(componentId, compMeta, parsedTemplate, usedPipes, externalReferenceVars, ctx));
     }
     /**
      * @param {?} analyzeResult
@@ -25675,6 +25744,7 @@ const IGNORE = {
 const USE_VALUE = 'useValue';
 const PROVIDE = 'provide';
 const REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data']);
+const TYPEGUARD_POSTFIX = 'TypeGuard';
 /**
  * @param {?} value
  * @return {?}
@@ -25702,6 +25772,7 @@ class StaticReflector {
         this.propertyCache = new Map();
         this.parameterCache = new Map();
         this.methodCache = new Map();
+        this.staticCache = new Map();
         this.conversionMap = new Map();
         this.annotationForParentClassWithSummaryKind = new Map();
         this.initializeConversionMap();
@@ -25912,6 +25983,20 @@ class StaticReflector {
     }
     /**
      * @param {?} type
+     * @return {?}
+     */
+    _staticMembers(type) {
+        let /** @type {?} */ staticMembers = this.staticCache.get(type);
+        if (!staticMembers) {
+            const /** @type {?} */ classMetadata = this.getTypeMetadata(type);
+            const /** @type {?} */ staticMemberData = classMetadata['statics'] || {};
+            staticMembers = Object.keys(staticMemberData);
+            this.staticCache.set(type, staticMembers);
+        }
+        return staticMembers;
+    }
+    /**
+     * @param {?} type
      * @param {?} classMetadata
      * @return {?}
      */
@@ -25937,6 +26022,23 @@ class StaticReflector {
             console.error(`Failed on type ${JSON.stringify(type)} with error ${e}`);
             throw e;
         }
+    }
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    guards(type) {
+        if (!(type instanceof StaticSymbol)) {
+            this.reportError(new Error(`guards received ${JSON.stringify(type)} which is not a StaticSymbol`), type);
+            return {};
+        }
+        const /** @type {?} */ staticMembers = this._staticMembers(type);
+        const /** @type {?} */ result = {};
+        for (let /** @type {?} */ name of staticMembers) {
+            result[name.substr(0, name.length - TYPEGUARD_POSTFIX.length)] =
+                this.getStaticSymbol(type.filePath, type.name, [name]);
+        }
+        return result;
     }
     /**
      * @param {?} type

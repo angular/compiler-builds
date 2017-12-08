@@ -17,6 +17,9 @@ export declare abstract class CompileReflector {
         [key: string]: any[];
     };
     abstract hasLifecycleHook(type: any, lcProperty: string): boolean;
+    abstract guards(typeOrFunc: any): {
+        [key: string]: any;
+    };
     abstract componentModuleUrl(type: any, cmpMetadata: Component): string;
     abstract resolveExternalReference(ref: o.ExternalReference): any;
 }

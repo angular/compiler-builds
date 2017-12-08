@@ -37,6 +37,9 @@ export interface Directive {
     queries?: {
         [key: string]: any;
     };
+    guards?: {
+        [key: string]: any;
+    };
 }
 export declare const createDirective: MetadataFactory<Directive>;
 export interface Component extends Directive {
