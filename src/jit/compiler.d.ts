@@ -10,7 +10,6 @@ import { CompileReflector } from '../compile_reflector';
 import { CompilerConfig } from '../config';
 import { Type } from '../core';
 import { CompileMetadataResolver } from '../metadata_resolver';
-import { HtmlParser } from '../ml_parser/html_parser';
 import { NgModuleCompiler } from '../ng_module_compiler';
 import { StyleCompiler } from '../style_compiler';
 import { SummaryResolver } from '../summary_resolver';
@@ -32,7 +31,6 @@ export interface ModuleWithComponentFactories {
  */
 export declare class JitCompiler {
     private _metadataResolver;
-    private _htmlParser;
     private _templateParser;
     private _styleCompiler;
     private _viewCompiler;
@@ -47,14 +45,15 @@ export declare class JitCompiler {
     private _compiledDirectiveWrapperCache;
     private _compiledNgModuleCache;
     private _sharedStylesheetCount;
-    constructor(_metadataResolver: CompileMetadataResolver, _htmlParser: HtmlParser, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _summaryResolver: SummaryResolver<Type>, _reflector: CompileReflector, _compilerConfig: CompilerConfig, _console: Console, getExtraNgModuleProviders: (ngModule: any) => CompileProviderMetadata[]);
+    private _addedAotSummaries;
+    constructor(_metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _ngModuleCompiler: NgModuleCompiler, _summaryResolver: SummaryResolver<Type>, _reflector: CompileReflector, _compilerConfig: CompilerConfig, _console: Console, getExtraNgModuleProviders: (ngModule: any) => CompileProviderMetadata[]);
     compileModuleSync(moduleType: Type): object;
     compileModuleAsync(moduleType: Type): Promise<object>;
     compileModuleAndAllComponentsSync(moduleType: Type): ModuleWithComponentFactories;
     compileModuleAndAllComponentsAsync(moduleType: Type): Promise<ModuleWithComponentFactories>;
-    getNgContentSelectors(component: Type): string[];
     getComponentFactory(component: Type): object;
     loadAotSummaries(summaries: () => any[]): void;
+    private _addAotSummaries(fn);
     hasAotSummary(ref: Type): boolean;
     private _filterJitIdentifiers(ids);
     private _compileModuleAndComponents(moduleType, isSync);
@@ -66,6 +65,7 @@ export declare class JitCompiler {
     private _createCompiledHostTemplate(compType, ngModule);
     private _createCompiledTemplate(compMeta, ngModule);
     private _compileTemplate(template);
+    private _parseTemplate(compMeta, ngModule, directiveIdentifiers);
     private _resolveStylesCompileResult(result, externalStylesheetsByModuleUrl);
     private _resolveAndEvalStylesCompileResult(result, externalStylesheetsByModuleUrl);
     private _interpretOrJit(sourceUrl, statements);

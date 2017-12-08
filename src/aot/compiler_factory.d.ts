@@ -9,7 +9,7 @@ export declare function createAotUrlResolver(host: {
 /**
  * Creates a new AotCompiler based on options and a host.
  */
-export declare function createAotCompiler(compilerHost: AotCompilerHost, options: AotCompilerOptions): {
+export declare function createAotCompiler(compilerHost: AotCompilerHost, options: AotCompilerOptions, errorCollector?: (error: any, type?: any) => void): {
     compiler: AotCompiler;
     reflector: StaticReflector;
 };

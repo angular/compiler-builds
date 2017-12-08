@@ -3,51 +3,8 @@
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define('@angular/compiler', ['exports'], factory) :
-	(factory((global.ng = global.ng || {}, global.ng.compiler = {})));
-}(this, (function (exports) { 'use strict';
+import { __assign, __extends } from 'tslib';
 
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-/* global Reflect, Promise */
-
-var extendStatics = Object.setPrototypeOf ||
-    ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-    function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-
-function __extends(d, b) {
-    extendStatics(d, b);
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-}
-
-var __assign = Object.assign || function __assign(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
-    }
-    return t;
-};
-
-/**
- * @license Angular v5.1.0-5a0076f
- * (c) 2010-2017 Google, Inc. https://angular.io/
- * License: MIT
- */
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
@@ -35055,228 +35012,81 @@ var Extractor = /** @class */ (function () {
     return Extractor;
 }());
 
-exports.core = core;
-exports.CompilerConfig = CompilerConfig;
-exports.preserveWhitespacesDefault = preserveWhitespacesDefault;
-exports.isLoweredSymbol = isLoweredSymbol;
-exports.createLoweredSymbol = createLoweredSymbol;
-exports.Identifiers = Identifiers;
-exports.JitCompiler = JitCompiler;
-exports.DirectiveResolver = DirectiveResolver;
-exports.PipeResolver = PipeResolver;
-exports.NgModuleResolver = NgModuleResolver;
-exports.DEFAULT_INTERPOLATION_CONFIG = DEFAULT_INTERPOLATION_CONFIG;
-exports.InterpolationConfig = InterpolationConfig;
-exports.NgModuleCompiler = NgModuleCompiler;
-exports.AssertNotNull = AssertNotNull;
-exports.BinaryOperator = BinaryOperator;
-exports.BinaryOperatorExpr = BinaryOperatorExpr;
-exports.BuiltinMethod = BuiltinMethod;
-exports.BuiltinVar = BuiltinVar;
-exports.CastExpr = CastExpr;
-exports.ClassStmt = ClassStmt;
-exports.CommaExpr = CommaExpr;
-exports.CommentStmt = CommentStmt;
-exports.ConditionalExpr = ConditionalExpr;
-exports.DeclareFunctionStmt = DeclareFunctionStmt;
-exports.DeclareVarStmt = DeclareVarStmt;
-exports.ExpressionStatement = ExpressionStatement;
-exports.ExternalExpr = ExternalExpr;
-exports.ExternalReference = ExternalReference;
-exports.FunctionExpr = FunctionExpr;
-exports.IfStmt = IfStmt;
-exports.InstantiateExpr = InstantiateExpr;
-exports.InvokeFunctionExpr = InvokeFunctionExpr;
-exports.InvokeMethodExpr = InvokeMethodExpr;
-exports.LiteralArrayExpr = LiteralArrayExpr;
-exports.LiteralExpr = LiteralExpr;
-exports.LiteralMapExpr = LiteralMapExpr;
-exports.NotExpr = NotExpr;
-exports.ReadKeyExpr = ReadKeyExpr;
-exports.ReadPropExpr = ReadPropExpr;
-exports.ReadVarExpr = ReadVarExpr;
-exports.ReturnStatement = ReturnStatement;
-exports.ThrowStmt = ThrowStmt;
-exports.TryCatchStmt = TryCatchStmt;
-exports.WriteKeyExpr = WriteKeyExpr;
-exports.WritePropExpr = WritePropExpr;
-exports.WriteVarExpr = WriteVarExpr;
-exports.StmtModifier = StmtModifier;
-exports.Statement = Statement;
-exports.collectExternalReferences = collectExternalReferences;
-exports.EmitterVisitorContext = EmitterVisitorContext;
-exports.ViewCompiler = ViewCompiler;
-exports.getParseErrors = getParseErrors;
-exports.isSyntaxError = isSyntaxError;
-exports.syntaxError = syntaxError;
-exports.Version = Version;
-exports.VERSION = VERSION;
-exports.TextAst = TextAst;
-exports.BoundTextAst = BoundTextAst;
-exports.AttrAst = AttrAst;
-exports.BoundElementPropertyAst = BoundElementPropertyAst;
-exports.BoundEventAst = BoundEventAst;
-exports.ReferenceAst = ReferenceAst;
-exports.VariableAst = VariableAst;
-exports.ElementAst = ElementAst;
-exports.EmbeddedTemplateAst = EmbeddedTemplateAst;
-exports.BoundDirectivePropertyAst = BoundDirectivePropertyAst;
-exports.DirectiveAst = DirectiveAst;
-exports.ProviderAst = ProviderAst;
-exports.ProviderAstType = ProviderAstType;
-exports.NgContentAst = NgContentAst;
-exports.PropertyBindingType = PropertyBindingType;
-exports.NullTemplateVisitor = NullTemplateVisitor;
-exports.RecursiveTemplateAstVisitor = RecursiveTemplateAstVisitor;
-exports.templateVisitAll = templateVisitAll;
-exports.identifierName = identifierName;
-exports.identifierModuleUrl = identifierModuleUrl;
-exports.viewClassName = viewClassName;
-exports.rendererTypeName = rendererTypeName;
-exports.hostViewClassName = hostViewClassName;
-exports.componentFactoryName = componentFactoryName;
-exports.CompileSummaryKind = CompileSummaryKind;
-exports.tokenName = tokenName;
-exports.tokenReference = tokenReference;
-exports.CompileStylesheetMetadata = CompileStylesheetMetadata;
-exports.CompileTemplateMetadata = CompileTemplateMetadata;
-exports.CompileDirectiveMetadata = CompileDirectiveMetadata;
-exports.CompilePipeMetadata = CompilePipeMetadata;
-exports.CompileNgModuleMetadata = CompileNgModuleMetadata;
-exports.TransitiveCompileNgModuleMetadata = TransitiveCompileNgModuleMetadata;
-exports.ProviderMeta = ProviderMeta;
-exports.flatten = flatten;
-exports.templateSourceUrl = templateSourceUrl;
-exports.sharedStylesheetJitUrl = sharedStylesheetJitUrl;
-exports.ngModuleJitUrl = ngModuleJitUrl;
-exports.templateJitUrl = templateJitUrl;
-exports.createAotUrlResolver = createAotUrlResolver;
-exports.createAotCompiler = createAotCompiler;
-exports.AotCompiler = AotCompiler;
-exports.analyzeNgModules = analyzeNgModules;
-exports.analyzeAndValidateNgModules = analyzeAndValidateNgModules;
-exports.analyzeFile = analyzeFile;
-exports.mergeAnalyzedFiles = mergeAnalyzedFiles;
-exports.GeneratedFile = GeneratedFile;
-exports.toTypeScript = toTypeScript;
-exports.formattedError = formattedError;
-exports.isFormattedError = isFormattedError;
-exports.StaticReflector = StaticReflector;
-exports.StaticSymbol = StaticSymbol;
-exports.StaticSymbolCache = StaticSymbolCache;
-exports.ResolvedStaticSymbol = ResolvedStaticSymbol;
-exports.StaticSymbolResolver = StaticSymbolResolver;
-exports.unescapeIdentifier = unescapeIdentifier;
-exports.unwrapResolvedMetadata = unwrapResolvedMetadata;
-exports.AotSummaryResolver = AotSummaryResolver;
-exports.AstPath = AstPath;
-exports.SummaryResolver = SummaryResolver;
-exports.JitSummaryResolver = JitSummaryResolver;
-exports.CompileReflector = CompileReflector;
-exports.createUrlResolverWithoutPackagePrefix = createUrlResolverWithoutPackagePrefix;
-exports.createOfflineCompileUrlResolver = createOfflineCompileUrlResolver;
-exports.UrlResolver = UrlResolver;
-exports.getUrlScheme = getUrlScheme;
-exports.ResourceLoader = ResourceLoader;
-exports.ElementSchemaRegistry = ElementSchemaRegistry;
-exports.Extractor = Extractor;
-exports.I18NHtmlParser = I18NHtmlParser;
-exports.MessageBundle = MessageBundle;
-exports.Serializer = Serializer;
-exports.Xliff = Xliff;
-exports.Xliff2 = Xliff2;
-exports.Xmb = Xmb;
-exports.Xtb = Xtb;
-exports.DirectiveNormalizer = DirectiveNormalizer;
-exports.ParserError = ParserError;
-exports.ParseSpan = ParseSpan;
-exports.AST = AST;
-exports.Quote = Quote;
-exports.EmptyExpr = EmptyExpr;
-exports.ImplicitReceiver = ImplicitReceiver;
-exports.Chain = Chain;
-exports.Conditional = Conditional;
-exports.PropertyRead = PropertyRead;
-exports.PropertyWrite = PropertyWrite;
-exports.SafePropertyRead = SafePropertyRead;
-exports.KeyedRead = KeyedRead;
-exports.KeyedWrite = KeyedWrite;
-exports.BindingPipe = BindingPipe;
-exports.LiteralPrimitive = LiteralPrimitive;
-exports.LiteralArray = LiteralArray;
-exports.LiteralMap = LiteralMap;
-exports.Interpolation = Interpolation;
-exports.Binary = Binary;
-exports.PrefixNot = PrefixNot;
-exports.NonNullAssert = NonNullAssert;
-exports.MethodCall = MethodCall;
-exports.SafeMethodCall = SafeMethodCall;
-exports.FunctionCall = FunctionCall;
-exports.ASTWithSource = ASTWithSource;
-exports.TemplateBinding = TemplateBinding;
-exports.NullAstVisitor = NullAstVisitor;
-exports.RecursiveAstVisitor = RecursiveAstVisitor;
-exports.AstTransformer = AstTransformer;
-exports.visitAstChildren = visitAstChildren;
-exports.TokenType = TokenType;
-exports.Lexer = Lexer;
-exports.Token = Token;
-exports.EOF = EOF;
-exports.isIdentifier = isIdentifier;
-exports.isQuote = isQuote;
-exports.SplitInterpolation = SplitInterpolation;
-exports.TemplateBindingParseResult = TemplateBindingParseResult;
-exports.Parser = Parser;
-exports._ParseAST = _ParseAST;
-exports.ERROR_COMPONENT_TYPE = ERROR_COMPONENT_TYPE;
-exports.CompileMetadataResolver = CompileMetadataResolver;
-exports.Text = Text;
-exports.Expansion = Expansion;
-exports.ExpansionCase = ExpansionCase;
-exports.Attribute = Attribute$1;
-exports.Element = Element;
-exports.Comment = Comment;
-exports.visitAll = visitAll;
-exports.RecursiveVisitor = RecursiveVisitor;
-exports.findNode = findNode;
-exports.ParseTreeResult = ParseTreeResult;
-exports.TreeError = TreeError;
-exports.HtmlParser = HtmlParser;
-exports.HtmlTagDefinition = HtmlTagDefinition;
-exports.getHtmlTagDefinition = getHtmlTagDefinition;
-exports.TagContentType = TagContentType;
-exports.splitNsName = splitNsName;
-exports.isNgContainer = isNgContainer;
-exports.isNgContent = isNgContent;
-exports.isNgTemplate = isNgTemplate;
-exports.getNsPrefix = getNsPrefix;
-exports.mergeNsAndName = mergeNsAndName;
-exports.NAMED_ENTITIES = NAMED_ENTITIES;
-exports.NGSP_UNICODE = NGSP_UNICODE;
-exports.debugOutputAstAsTypeScript = debugOutputAstAsTypeScript;
-exports.TypeScriptEmitter = TypeScriptEmitter;
-exports.ParseLocation = ParseLocation;
-exports.ParseSourceFile = ParseSourceFile;
-exports.ParseSourceSpan = ParseSourceSpan;
-exports.ParseErrorLevel = ParseErrorLevel;
-exports.ParseError = ParseError;
-exports.typeSourceSpan = typeSourceSpan;
-exports.DomElementSchemaRegistry = DomElementSchemaRegistry;
-exports.CssSelector = CssSelector;
-exports.SelectorMatcher = SelectorMatcher;
-exports.SelectorListContext = SelectorListContext;
-exports.SelectorContext = SelectorContext;
-exports.StylesCompileDependency = StylesCompileDependency;
-exports.CompiledStylesheet = CompiledStylesheet;
-exports.StyleCompiler = StyleCompiler;
-exports.TemplateParseError = TemplateParseError;
-exports.TemplateParseResult = TemplateParseResult;
-exports.TemplateParser = TemplateParser;
-exports.splitClasses = splitClasses;
-exports.createElementCssSelector = createElementCssSelector;
-exports.removeSummaryDuplicates = removeSummaryDuplicates;
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 
-Object.defineProperty(exports, '__esModule', { value: true });
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all APIs of the compiler package.
+ *
+ * <div class="callout is-critical">
+ *   <header>Unstable APIs</header>
+ *   <p>
+ *     All compiler apis are currently considered experimental and private!
+ *   </p>
+ *   <p>
+ *     We expect the APIs in this package to keep on changing. Do not rely on them.
+ *   </p>
+ * </div>
+ */
 
-})));
-//# sourceMappingURL=compiler.umd.js.map
+// This file only reexports content of the `src` folder. Keep it that way.
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all public APIs of this package.
+ */
+
+// This file only reexports content of the `src` folder. Keep it that way.
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+// This file is not used to build this module. It is only used during editing
+// by the TypeScript language service and during build for verification. `ngc`
+// replaces this file with production index.ts when it rewrites private symbol
+// names.
+
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+//# sourceMappingURL=compiler.js.map

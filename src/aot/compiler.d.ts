@@ -9,7 +9,6 @@ import { CompileNgModuleMetadata } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import { MessageBundle } from '../i18n/message_bundle';
 import { CompileMetadataResolver } from '../metadata_resolver';
-import { HtmlParser } from '../ml_parser/html_parser';
 import { NgModuleCompiler } from '../ng_module_compiler';
 import { OutputEmitter } from '../output/abstract_emitter';
 import { StyleCompiler } from '../style_compiler';
@@ -18,16 +17,18 @@ import { TemplateParser } from '../template_parser/template_parser';
 import { TypeCheckCompiler } from '../view_compiler/type_check_compiler';
 import { ViewCompiler } from '../view_compiler/view_compiler';
 import { AotCompilerHost } from './compiler_host';
+import { AotCompilerOptions } from './compiler_options';
 import { GeneratedFile } from './generated_file';
+import { LazyRoute } from './lazy_routes';
 import { StaticReflector } from './static_reflector';
 import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
 export declare class AotCompiler {
     private _config;
+    private _options;
     private _host;
     private _reflector;
     private _metadataResolver;
-    private _htmlParser;
     private _templateParser;
     private _styleCompiler;
     private _viewCompiler;
@@ -35,45 +36,54 @@ export declare class AotCompiler {
     private _ngModuleCompiler;
     private _outputEmitter;
     private _summaryResolver;
-    private _localeId;
-    private _translationFormat;
-    private _enableSummariesForJit;
     private _symbolResolver;
     private _templateAstCache;
-    constructor(_config: CompilerConfig, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _htmlParser: HtmlParser, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _localeId: string | null, _translationFormat: string | null, _enableSummariesForJit: boolean | null, _symbolResolver: StaticSymbolResolver);
+    private _analyzedFiles;
+    constructor(_config: CompilerConfig, _options: AotCompilerOptions, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     analyzeModulesSync(rootFiles: string[]): NgAnalyzedModules;
     analyzeModulesAsync(rootFiles: string[]): Promise<NgAnalyzedModules>;
-    emitAllStubs(analyzeResult: NgAnalyzedModules): GeneratedFile[];
-    emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
+    private _analyzeFile(fileName);
+    findGeneratedFileNames(fileName: string): string[];
+    emitBasicStub(genFileName: string, originalFileName?: string): GeneratedFile;
+    emitTypeCheckStub(genFileName: string, originalFileName: string): GeneratedFile | null;
+    loadFilesAsync(fileNames: string[]): Promise<NgAnalyzedModules>;
+    loadFilesSync(fileNames: string[]): NgAnalyzedModules;
+    private _createNgFactoryStub(outputCtx, file, emitFlags);
+    private _externalIdentifierReferences(references);
+    private _createTypeCheckBlock(ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars);
     emitMessageBundle(analyzeResult: NgAnalyzedModules, locale: string | null): MessageBundle;
-    private _compileStubFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules);
+    emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
     private _compileImplFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
     private _createSummary(srcFileName, directives, pipes, ngModules, injectables, ngFactoryCtx);
-    private _compileModule(outputCtx, ngModuleType);
+    private _compileModule(outputCtx, ngModule);
     private _compileComponentFactory(outputCtx, compMeta, ngModule, fileSuffix);
-    private _parseTemplate(compMeta, ngModule, directiveIdentifiers);
     private _compileComponent(outputCtx, compMeta, ngModule, directiveIdentifiers, componentStyles, fileSuffix);
-    private _compileComponentTypeCheckBlock(outputCtx, compMeta, ngModule, directiveIdentifiers);
+    private _parseTemplate(compMeta, ngModule, directiveIdentifiers);
     private _createOutputContext(genFilePath);
-    private _codegenStyles(srcFileUrl, compMeta, stylesheetMetadata, fileSuffix);
+    private _fileNameToModuleName(importedFilePath, containingFilePath);
+    private _codegenStyles(srcFileUrl, compMeta, stylesheetMetadata, isShimmed, fileSuffix);
     private _codegenSourceModule(srcFileUrl, ctx);
+    listLazyRoutes(entryRoute?: string, analyzedModules?: NgAnalyzedModules): LazyRoute[];
 }
 export interface NgAnalyzedModules {
     ngModules: CompileNgModuleMetadata[];
     ngModuleByPipeOrDirective: Map<StaticSymbol, CompileNgModuleMetadata>;
-    files: Array<{
-        srcUrl: string;
-        directives: StaticSymbol[];
-        pipes: StaticSymbol[];
-        ngModules: StaticSymbol[];
-        injectables: StaticSymbol[];
-    }>;
+    files: NgAnalyzedFile[];
     symbolsMissingModule?: StaticSymbol[];
+}
+export interface NgAnalyzedFile {
+    fileName: string;
+    directives: StaticSymbol[];
+    pipes: StaticSymbol[];
+    ngModules: CompileNgModuleMetadata[];
+    injectables: StaticSymbol[];
+    exportsNonSourceFiles: boolean;
 }
 export interface NgAnalyzeModulesHost {
     isSourceFile(filePath: string): boolean;
 }
-export declare function analyzeNgModules(programStaticSymbols: StaticSymbol[], host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
-export declare function analyzeAndValidateNgModules(programStaticSymbols: StaticSymbol[], host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
-export declare function extractProgramSymbols(staticSymbolResolver: StaticSymbolResolver, files: string[], host: NgAnalyzeModulesHost): StaticSymbol[];
+export declare function analyzeNgModules(fileNames: string[], host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
+export declare function analyzeAndValidateNgModules(fileNames: string[], host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
+export declare function analyzeFile(host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver, fileName: string): NgAnalyzedFile;
+export declare function mergeAnalyzedFiles(analyzedFiles: NgAnalyzedFile[]): NgAnalyzedModules;

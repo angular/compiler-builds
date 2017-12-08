@@ -17,7 +17,8 @@ export declare class StaticReflector implements CompileReflector {
     private methodCache;
     private conversionMap;
     private injectionToken;
-    private ROUTES;
+    private opaqueToken;
+    ROUTES: StaticSymbol;
     private ANALYZE_FOR_ENTRY_COMPONENTS;
     private annotationForParentClassWithSummaryKind;
     constructor(summaryResolver: SummaryResolver<StaticSymbol>, symbolResolver: StaticSymbolResolver, knownMetadataClasses?: {
@@ -30,7 +31,7 @@ export declare class StaticReflector implements CompileReflector {
         fn: any;
     }[], errorRecorder?: ((error: any, fileName?: string | undefined) => void) | undefined);
     componentModuleUrl(typeOrFunc: StaticSymbol): string;
-    resolveExternalReference(ref: o.ExternalReference): StaticSymbol;
+    resolveExternalReference(ref: o.ExternalReference, containingFile?: string): StaticSymbol;
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
     tryFindDeclaration(moduleUrl: string, name: string): StaticSymbol;
     findSymbolDeclaration(symbol: StaticSymbol): StaticSymbol;
@@ -53,10 +54,11 @@ export declare class StaticReflector implements CompileReflector {
      * @param name the name of the type.
      */
     getStaticSymbol(declarationFile: string, name: string, members?: string[]): StaticSymbol;
-    private reportError(error, context, path?);
     /**
      * Simplify but discard any errors
      */
     private trySimplify(context, value);
     private getTypeMetadata(type);
+    private reportError(error, context, path?);
+    private error({message, summary, advise, position, context, value, symbol, chain}, reportingContext);
 }

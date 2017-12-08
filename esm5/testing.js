@@ -3,43 +3,9 @@
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/compiler')) :
-	typeof define === 'function' && define.amd ? define('@angular/compiler/testing', ['exports', '@angular/compiler'], factory) :
-	(factory((global.ng = global.ng || {}, global.ng.compiler = global.ng.compiler || {}, global.ng.compiler.testing = {}),global.ng.compiler));
-}(this, (function (exports,_angular_compiler) { 'use strict';
+import { __extends } from 'tslib';
+import { DirectiveResolver, NgModuleResolver, PipeResolver, ResourceLoader, core } from '@angular/compiler';
 
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-
-THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions
-and limitations under the License.
-***************************************************************************** */
-/* global Reflect, Promise */
-
-var extendStatics = Object.setPrototypeOf ||
-    ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-    function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-
-function __extends(d, b) {
-    extendStatics(d, b);
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-}
-
-/**
- * @license Angular v5.1.0-5a0076f
- * (c) 2010-2017 Google, Inc. https://angular.io/
- * License: MIT
- */
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
@@ -210,7 +176,7 @@ var MockResourceLoader = /** @class */ (function (_super) {
         throw new Error("Unexpected request " + url);
     };
     return MockResourceLoader;
-}(_angular_compiler.ResourceLoader));
+}(ResourceLoader));
 var _PendingRequest = /** @class */ (function () {
     function _PendingRequest(url) {
         var _this = this;
@@ -334,7 +300,7 @@ var MockSchemaRegistry = /** @class */ (function () {
      * @return {?}
      */
     function (selector, property, isAttribute) {
-        return _angular_compiler.core.SecurityContext.NONE;
+        return core.SecurityContext.NONE;
     };
     /**
      * @param {?} attrName
@@ -469,7 +435,7 @@ var MockDirectiveResolver = /** @class */ (function (_super) {
         this._directives.set(type, metadata);
     };
     return MockDirectiveResolver;
-}(_angular_compiler.DirectiveResolver));
+}(DirectiveResolver));
 
 /**
  * @fileoverview added by tsickle
@@ -536,7 +502,7 @@ var MockNgModuleResolver = /** @class */ (function (_super) {
         return this._ngModules.get(type) || /** @type {?} */ ((_super.prototype.resolve.call(this, type, throwIfNotFound)));
     };
     return MockNgModuleResolver;
-}(_angular_compiler.NgModuleResolver));
+}(NgModuleResolver));
 
 /**
  * @fileoverview added by tsickle
@@ -605,15 +571,69 @@ var MockPipeResolver = /** @class */ (function (_super) {
         return metadata;
     };
     return MockPipeResolver;
-}(_angular_compiler.PipeResolver));
+}(PipeResolver));
 
-exports.MockResourceLoader = MockResourceLoader;
-exports.MockSchemaRegistry = MockSchemaRegistry;
-exports.MockDirectiveResolver = MockDirectiveResolver;
-exports.MockNgModuleResolver = MockNgModuleResolver;
-exports.MockPipeResolver = MockPipeResolver;
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all APIs of the compiler package.
+ *
+ * <div class="callout is-critical">
+ *   <header>Unstable APIs</header>
+ *   <p>
+ *     All compiler apis are currently considered experimental and private!
+ *   </p>
+ *   <p>
+ *     We expect the APIs in this package to keep on changing. Do not rely on them.
+ *   </p>
+ * </div>
+ */
 
-Object.defineProperty(exports, '__esModule', { value: true });
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @module
+ * @description
+ * Entry point for all public APIs of this package.
+ */
 
-})));
-//# sourceMappingURL=compiler-testing.umd.js.map
+// This file only reexports content of the `src` folder. Keep it that way.
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+// This file is not used to build this module. It is only used during editing
+// by the TypeScript language service and during build for verification. `ngc`
+// replaces this file with production index.ts when it rewrites private symbol
+// names.
+
+export { MockResourceLoader, MockSchemaRegistry, MockDirectiveResolver, MockNgModuleResolver, MockPipeResolver };
+//# sourceMappingURL=testing.js.map

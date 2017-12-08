@@ -37,6 +37,7 @@ export declare class AotSummaryResolver implements SummaryResolver<StaticSymbol>
     private summaryCache;
     private loadedFilePaths;
     private importAs;
+    private knownFileNameToModuleNames;
     constructor(host: AotSummaryResolverHost, staticSymbolCache: StaticSymbolCache);
     isLibraryFile(filePath: string): boolean;
     toSummaryFileName(filePath: string, referringSrcFileName: string): string;
@@ -44,6 +45,10 @@ export declare class AotSummaryResolver implements SummaryResolver<StaticSymbol>
     resolveSummary(staticSymbol: StaticSymbol): Summary<StaticSymbol> | null;
     getSymbolsOf(filePath: string): StaticSymbol[] | null;
     getImportAs(staticSymbol: StaticSymbol): StaticSymbol;
+    /**
+     * Converts a file path to a module name that can be used as an `import`.
+     */
+    getKnownModuleName(importedFilePath: string): string | null;
     addSummary(summary: Summary<StaticSymbol>): void;
     private _loadSummaryFile(filePath);
 }
