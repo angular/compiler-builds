@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-7363b3d
+ * @license Angular v5.1.0-70cd124
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -586,7 +586,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.1.0-7363b3d');
+const VERSION = new Version('5.1.0-70cd124');
 
 /**
  * @fileoverview added by tsickle
@@ -21469,6 +21469,13 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitMethodCall(ast, mode) {
+        if (ast.receiver instanceof ImplicitReceiver && ast.name == '$any') {
+            const /** @type {?} */ args = /** @type {?} */ (this.visitAll(ast.args, _Mode.Expression));
+            if (args.length != 1) {
+                throw new Error(`Invalid call to $any, expected 1 argument but received ${args.length || 'none'}`);
+            }
+            return (/** @type {?} */ (args[0])).cast(DYNAMIC_TYPE);
+        }
         const /** @type {?} */ leftMostSafe = this.leftMostSafeNode(ast);
         if (leftMostSafe) {
             return this.convertSafeAccess(ast, leftMostSafe, mode);
