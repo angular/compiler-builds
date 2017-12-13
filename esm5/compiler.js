@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-8c52088
+ * @license Angular v5.1.0-b3eb1db
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -638,7 +638,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-8c52088');
+var VERSION = new Version('5.1.0-b3eb1db');
 
 /**
  * @fileoverview added by tsickle
@@ -32718,13 +32718,15 @@ var AotSummaryResolver = /** @class */ (function () {
      * @return {?}
      */
     function (staticSymbol) {
-        staticSymbol.assertNoMembers();
-        var /** @type {?} */ summary = this.summaryCache.get(staticSymbol);
+        var /** @type {?} */ rootSymbol = staticSymbol.members.length ?
+            this.staticSymbolCache.get(staticSymbol.filePath, staticSymbol.name) :
+            staticSymbol;
+        var /** @type {?} */ summary = this.summaryCache.get(rootSymbol);
         if (!summary) {
             this._loadSummaryFile(staticSymbol.filePath);
             summary = /** @type {?} */ ((this.summaryCache.get(staticSymbol)));
         }
-        return summary || null;
+        return (rootSymbol === staticSymbol && summary) || null;
     };
     /**
      * @param {?} filePath
