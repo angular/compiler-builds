@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.0-7fd441e
+ * @license Angular v5.2.0-beta.0-57e0535
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.1.0-7fd441e
+ * @license Angular v5.2.0-beta.0-57e0535
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -681,7 +681,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.1.0-7fd441e');
+var VERSION = new Version('5.2.0-beta.0-57e0535');
 
 /**
  * @fileoverview added by tsickle
@@ -32761,13 +32761,15 @@ var AotSummaryResolver = /** @class */ (function () {
      * @return {?}
      */
     function (staticSymbol) {
-        staticSymbol.assertNoMembers();
-        var /** @type {?} */ summary = this.summaryCache.get(staticSymbol);
+        var /** @type {?} */ rootSymbol = staticSymbol.members.length ?
+            this.staticSymbolCache.get(staticSymbol.filePath, staticSymbol.name) :
+            staticSymbol;
+        var /** @type {?} */ summary = this.summaryCache.get(rootSymbol);
         if (!summary) {
             this._loadSummaryFile(staticSymbol.filePath);
             summary = /** @type {?} */ ((this.summaryCache.get(staticSymbol)));
         }
-        return summary || null;
+        return (rootSymbol === staticSymbol && summary) || null;
     };
     /**
      * @param {?} filePath
