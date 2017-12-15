@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-beta.0-2e7e935
+ * @license Angular v5.2.0-beta.0-05ff6c0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.2.0-beta.0-2e7e935
+ * @license Angular v5.2.0-beta.0-05ff6c0
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -681,7 +681,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.0-beta.0-2e7e935');
+var VERSION = new Version('5.2.0-beta.0-05ff6c0');
 
 /**
  * @fileoverview added by tsickle
@@ -13803,7 +13803,7 @@ var JIT_SUMMARY_NAME = /NgSummary$/;
 function ngfactoryFilePath(filePath, forceSourceFile) {
     if (forceSourceFile === void 0) { forceSourceFile = false; }
     var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath, forceSourceFile);
-    return urlWithSuffix[0] + ".ngfactory" + urlWithSuffix[1];
+    return urlWithSuffix[0] + ".ngfactory" + normalizeGenFileSuffix(urlWithSuffix[1]);
 }
 /**
  * @param {?} filePath
@@ -13834,6 +13834,13 @@ function splitTypescriptSuffix(path, forceSourceFile) {
         return [path.substring(0, lastDot), path.substring(lastDot)];
     }
     return [path, ''];
+}
+/**
+ * @param {?} srcFileSuffix
+ * @return {?}
+ */
+function normalizeGenFileSuffix(srcFileSuffix) {
+    return srcFileSuffix === '.tsx' ? '.ts' : srcFileSuffix;
 }
 /**
  * @param {?} fileName
@@ -29114,6 +29121,7 @@ var StaticSymbolResolver = /** @class */ (function () {
      * on an otherwise indirect dependency.
      *
      * @param {?} staticSymbol the symbol for which to generate a import symbol
+     * @param {?=} useSummaries
      * @return {?}
      */
     StaticSymbolResolver.prototype.getImportAs = /**
@@ -29124,12 +29132,14 @@ var StaticSymbolResolver = /** @class */ (function () {
      * on an otherwise indirect dependency.
      *
      * @param {?} staticSymbol the symbol for which to generate a import symbol
+     * @param {?=} useSummaries
      * @return {?}
      */
-    function (staticSymbol) {
+    function (staticSymbol, useSummaries) {
+        if (useSummaries === void 0) { useSummaries = true; }
         if (staticSymbol.members.length) {
             var /** @type {?} */ baseSymbol = this.getStaticSymbol(staticSymbol.filePath, staticSymbol.name);
-            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol);
+            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol, useSummaries);
             return baseImportAs ?
                 this.getStaticSymbol(baseImportAs.filePath, baseImportAs.name, staticSymbol.members) :
                 null;
@@ -29138,12 +29148,12 @@ var StaticSymbolResolver = /** @class */ (function () {
         if (summarizedFileName !== staticSymbol.filePath) {
             var /** @type {?} */ summarizedName = stripSummaryForJitNameSuffix(staticSymbol.name);
             var /** @type {?} */ baseSymbol = this.getStaticSymbol(summarizedFileName, summarizedName, staticSymbol.members);
-            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol);
+            var /** @type {?} */ baseImportAs = this.getImportAs(baseSymbol, useSummaries);
             return baseImportAs ?
                 this.getStaticSymbol(summaryForJitFileName(baseImportAs.filePath), summaryForJitName(baseImportAs.name), baseSymbol.members) :
                 null;
         }
-        var /** @type {?} */ result = this.summaryResolver.getImportAs(staticSymbol);
+        var /** @type {?} */ result = (useSummaries && this.summaryResolver.getImportAs(staticSymbol)) || null;
         if (!result) {
             result = /** @type {?} */ ((this.importAs.get(staticSymbol)));
         }
@@ -30504,7 +30514,7 @@ var AotCompiler = /** @class */ (function () {
                 genFileNames.push(summaryForJitFileName(file.fileName, true));
             }
         }
-        var /** @type {?} */ fileSuffix = splitTypescriptSuffix(file.fileName, true)[1];
+        var /** @type {?} */ fileSuffix = normalizeGenFileSuffix(splitTypescriptSuffix(file.fileName, true)[1]);
         file.directives.forEach(function (dirSymbol) {
             var /** @type {?} */ compMeta = /** @type {?} */ ((_this._metadataResolver.getNonNormalizedDirectiveMetadata(dirSymbol))).metadata;
             if (!compMeta.isComponent) {
@@ -30655,14 +30665,12 @@ var AotCompiler = /** @class */ (function () {
             var /** @type {?} */ externalReferences = ngModuleMeta.transitiveModule.directives.map(function (d) { return d.reference; }).concat(ngModuleMeta.transitiveModule.pipes.map(function (d) { return d.reference; }), ngModuleMeta.importedModules.map(function (m) { return m.type.reference; }), ngModuleMeta.exportedModules.map(function (m) { return m.type.reference; }), _this._externalIdentifierReferences([Identifiers.TemplateRef, Identifiers.ElementRef]));
             var /** @type {?} */ externalReferenceVars = new Map();
             externalReferences.forEach(function (ref, typeIndex) {
-                if (_this._host.isSourceFile(ref.filePath)) {
-                    externalReferenceVars.set(ref, "_decl" + ngModuleIndex + "_" + typeIndex);
-                }
+                externalReferenceVars.set(ref, "_decl" + ngModuleIndex + "_" + typeIndex);
             });
             externalReferenceVars.forEach(function (varName, reference) {
                 outputCtx.statements.push(variable(varName)
                     .set(NULL_EXPR.cast(DYNAMIC_TYPE))
-                    .toDeclStmt(expressionType(outputCtx.importExpr(reference))));
+                    .toDeclStmt(expressionType(outputCtx.importExpr(reference, /* typeParams */ null, /* useSummaries */ /* useSummaries */ false))));
             });
             if (emitFlags & StubEmitFlags.TypeCheck) {
                 // add the typecheck block for all components of the NgModule
@@ -30794,7 +30802,7 @@ var AotCompiler = /** @class */ (function () {
      */
     function (srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
         var _this = this;
-        var /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
+        var /** @type {?} */ fileSuffix = normalizeGenFileSuffix(splitTypescriptSuffix(srcFileUrl, true)[1]);
         var /** @type {?} */ generatedFiles = [];
         var /** @type {?} */ outputCtx = this._createOutputContext(ngfactoryFilePath(srcFileUrl, true));
         generatedFiles.push.apply(generatedFiles, this._createSummary(srcFileUrl, directives, pipes, ngModules, injectables, outputCtx));
@@ -31020,13 +31028,14 @@ var AotCompiler = /** @class */ (function () {
      */
     function (genFilePath) {
         var _this = this;
-        var /** @type {?} */ importExpr$$1 = function (symbol, typeParams) {
+        var /** @type {?} */ importExpr$$1 = function (symbol, typeParams, useSummaries) {
             if (typeParams === void 0) { typeParams = null; }
+            if (useSummaries === void 0) { useSummaries = true; }
             if (!(symbol instanceof StaticSymbol)) {
                 throw new Error("Internal error: unknown identifier " + JSON.stringify(symbol));
             }
             var /** @type {?} */ arity = _this._symbolResolver.getTypeArity(symbol) || 0;
-            var _a = _this._symbolResolver.getImportAs(symbol) || symbol, filePath = _a.filePath, name = _a.name, members = _a.members;
+            var _a = _this._symbolResolver.getImportAs(symbol, useSummaries) || symbol, filePath = _a.filePath, name = _a.name, members = _a.members;
             var /** @type {?} */ importModule = _this._fileNameToModuleName(filePath, genFilePath);
             // It should be good enough to compare filePath to genFilePath and if they are equal
             // there is a self reference. However, ngfactory files generate to .ts but their
