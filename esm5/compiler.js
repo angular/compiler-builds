@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-beta.0-d91ff17
+ * @license Angular v5.2.0-beta.0-a474276
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -638,7 +638,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.0-beta.0-d91ff17');
+var VERSION = new Version('5.2.0-beta.0-a474276');
 
 /**
  * @fileoverview added by tsickle
@@ -13760,7 +13760,7 @@ var JIT_SUMMARY_NAME = /NgSummary$/;
 function ngfactoryFilePath(filePath, forceSourceFile) {
     if (forceSourceFile === void 0) { forceSourceFile = false; }
     var /** @type {?} */ urlWithSuffix = splitTypescriptSuffix(filePath, forceSourceFile);
-    return urlWithSuffix[0] + ".ngfactory" + urlWithSuffix[1];
+    return urlWithSuffix[0] + ".ngfactory" + normalizeGenFileSuffix(urlWithSuffix[1]);
 }
 /**
  * @param {?} filePath
@@ -13791,6 +13791,13 @@ function splitTypescriptSuffix(path, forceSourceFile) {
         return [path.substring(0, lastDot), path.substring(lastDot)];
     }
     return [path, ''];
+}
+/**
+ * @param {?} srcFileSuffix
+ * @return {?}
+ */
+function normalizeGenFileSuffix(srcFileSuffix) {
+    return srcFileSuffix === '.tsx' ? '.ts' : srcFileSuffix;
 }
 /**
  * @param {?} fileName
@@ -30464,7 +30471,7 @@ var AotCompiler = /** @class */ (function () {
                 genFileNames.push(summaryForJitFileName(file.fileName, true));
             }
         }
-        var /** @type {?} */ fileSuffix = splitTypescriptSuffix(file.fileName, true)[1];
+        var /** @type {?} */ fileSuffix = normalizeGenFileSuffix(splitTypescriptSuffix(file.fileName, true)[1]);
         file.directives.forEach(function (dirSymbol) {
             var /** @type {?} */ compMeta = /** @type {?} */ ((_this._metadataResolver.getNonNormalizedDirectiveMetadata(dirSymbol))).metadata;
             if (!compMeta.isComponent) {
@@ -30752,7 +30759,7 @@ var AotCompiler = /** @class */ (function () {
      */
     function (srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
         var _this = this;
-        var /** @type {?} */ fileSuffix = splitTypescriptSuffix(srcFileUrl, true)[1];
+        var /** @type {?} */ fileSuffix = normalizeGenFileSuffix(splitTypescriptSuffix(srcFileUrl, true)[1]);
         var /** @type {?} */ generatedFiles = [];
         var /** @type {?} */ outputCtx = this._createOutputContext(ngfactoryFilePath(srcFileUrl, true));
         generatedFiles.push.apply(generatedFiles, this._createSummary(srcFileUrl, directives, pipes, ngModules, injectables, outputCtx));
