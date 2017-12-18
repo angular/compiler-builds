@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-beta.0-e48f477
+ * @license Angular v5.2.0-beta.0-82bcd83
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -586,7 +586,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.2.0-beta.0-e48f477');
+const VERSION = new Version('5.2.0-beta.0-82bcd83');
 
 /**
  * @fileoverview added by tsickle
@@ -21160,7 +21160,7 @@ function convertPropertyBinding(localResolver, implicitReceiver, expressionWitho
     else if (form == BindingForm.TrySimple) {
         return new ConvertPropertyBindingResult([], outputExpr);
     }
-    stmts.push(currValExpr.set(outputExpr).toDeclStmt(null, [StmtModifier.Final]));
+    stmts.push(currValExpr.set(outputExpr).toDeclStmt(DYNAMIC_TYPE, [StmtModifier.Final]));
     return new ConvertPropertyBindingResult(stmts, currValExpr);
 }
 /**
@@ -21463,7 +21463,12 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitLiteralPrimitive(ast, mode) {
-        return convertToStatementIfNeeded(mode, literal(ast.value));
+        // For literal values of null, undefined, true, or false allow type inteference
+        // to infer the type.
+        const /** @type {?} */ type = ast.value === null || ast.value === undefined || ast.value === true || ast.value === true ?
+            INFERRED_TYPE :
+            undefined;
+        return convertToStatementIfNeeded(mode, literal(ast.value, type));
     }
     /**
      * @param {?} name
@@ -22115,7 +22120,12 @@ class ViewBuilder {
             for (let /** @type {?} */ input of directive.inputs) {
                 const /** @type {?} */ guard = directive.directive.guards[input.directiveName];
                 if (guard) {
-                    result.push({ guard, expression: /** @type {?} */ ({ context: this.component, value: input.value }) });
+                    const /** @type {?} */ useIf = guard === 'UseIf';
+                    result.push({
+                        guard,
+                        useIf,
+                        expression: /** @type {?} */ ({ context: this.component, value: input.value })
+                    });
                 }
             }
         }
@@ -22163,8 +22173,8 @@ class ViewBuilder {
                 // are unlikely to affect type narrowing.
                 const { stmts, currValExpr } = convertPropertyBinding(nameResolver, variable(this.getOutputVar(context)), value, bindingId, BindingForm.TrySimple);
                 if (stmts.length == 0) {
-                    const /** @type {?} */ callGuard = this.ctx.importExpr(guard.guard).callFn([currValExpr]);
-                    guardExpression = guardExpression ? guardExpression.and(callGuard) : callGuard;
+                    const /** @type {?} */ guardClause = guard.useIf ? currValExpr : this.ctx.importExpr(guard.guard).callFn([currValExpr]);
+                    guardExpression = guardExpression ? guardExpression.and(guardClause) : guardClause;
                 }
             }
             if (guardExpression) {
@@ -25758,6 +25768,7 @@ const USE_VALUE = 'useValue';
 const PROVIDE = 'provide';
 const REFERENCE_SET = new Set([USE_VALUE, 'useFactory', 'data']);
 const TYPEGUARD_POSTFIX = 'TypeGuard';
+const USE_IF = 'UseIf';
 /**
  * @param {?} value
  * @return {?}
@@ -26048,8 +26059,18 @@ class StaticReflector {
         const /** @type {?} */ staticMembers = this._staticMembers(type);
         const /** @type {?} */ result = {};
         for (let /** @type {?} */ name of staticMembers) {
-            result[name.substr(0, name.length - TYPEGUARD_POSTFIX.length)] =
-                this.getStaticSymbol(type.filePath, type.name, [name]);
+            if (name.endsWith(TYPEGUARD_POSTFIX)) {
+                let /** @type {?} */ property = name.substr(0, name.length - TYPEGUARD_POSTFIX.length);
+                let /** @type {?} */ value;
+                if (property.endsWith(USE_IF)) {
+                    property = name.substr(0, property.length - USE_IF.length);
+                    value = USE_IF;
+                }
+                else {
+                    value = this.getStaticSymbol(type.filePath, type.name, [name]);
+                }
+                result[property] = value;
+            }
         }
         return result;
     }
