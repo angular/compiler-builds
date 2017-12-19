@@ -68,7 +68,7 @@ export declare class StaticSymbolResolver {
      *
      * @param staticSymbol the symbol for which to generate a import symbol
      */
-    getImportAs(staticSymbol: StaticSymbol): StaticSymbol | null;
+    getImportAs(staticSymbol: StaticSymbol, useSummaries?: boolean): StaticSymbol | null;
     /**
      * getResourcePath produces the path to the original location of the symbol and should
      * be used to determine the relative location of resource references recorded in
