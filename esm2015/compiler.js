@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-beta.0-f593552
+ * @license Angular v5.2.0-beta.0-135ead6
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -586,7 +586,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.2.0-beta.0-f593552');
+const VERSION = new Version('5.2.0-beta.0-135ead6');
 
 /**
  * @fileoverview added by tsickle
@@ -12497,12 +12497,13 @@ class CompileMetadataResolver {
     }
     /**
      * @param {?} moduleType
+     * @param {?=} alreadyCollecting
      * @return {?}
      */
-    getNgModuleSummary(moduleType) {
+    getNgModuleSummary(moduleType, alreadyCollecting = null) {
         let /** @type {?} */ moduleSummary = /** @type {?} */ (this._loadSummary(moduleType, CompileSummaryKind.NgModule));
         if (!moduleSummary) {
-            const /** @type {?} */ moduleMeta = this.getNgModuleMetadata(moduleType, false);
+            const /** @type {?} */ moduleMeta = this.getNgModuleMetadata(moduleType, false, alreadyCollecting);
             moduleSummary = moduleMeta ? moduleMeta.toSummary() : null;
             if (moduleSummary) {
                 this._summaryCache.set(moduleType, moduleSummary);
@@ -12534,9 +12535,10 @@ class CompileMetadataResolver {
     /**
      * @param {?} moduleType
      * @param {?=} throwIfNotFound
+     * @param {?=} alreadyCollecting
      * @return {?}
      */
-    getNgModuleMetadata(moduleType, throwIfNotFound = true) {
+    getNgModuleMetadata(moduleType, throwIfNotFound = true, alreadyCollecting = null) {
         moduleType = resolveForwardRef(moduleType);
         let /** @type {?} */ compileMeta = this._ngModuleCache.get(moduleType);
         if (compileMeta) {
@@ -12571,7 +12573,15 @@ class CompileMetadataResolver {
                 if (importedModuleType) {
                     if (this._checkSelfImport(moduleType, importedModuleType))
                         return;
-                    const /** @type {?} */ importedModuleSummary = this.getNgModuleSummary(importedModuleType);
+                    if (!alreadyCollecting)
+                        alreadyCollecting = new Set();
+                    if (alreadyCollecting.has(importedModuleType)) {
+                        this._reportError(syntaxError(`${this._getTypeDescriptor(importedModuleType)} '${stringifyType(importedType)}' is imported recursively by the module '${stringifyType(moduleType)}'.`), moduleType);
+                        return;
+                    }
+                    alreadyCollecting.add(importedModuleType);
+                    const /** @type {?} */ importedModuleSummary = this.getNgModuleSummary(importedModuleType, alreadyCollecting);
+                    alreadyCollecting.delete(importedModuleType);
                     if (!importedModuleSummary) {
                         this._reportError(syntaxError(`Unexpected ${this._getTypeDescriptor(importedType)} '${stringifyType(importedType)}' imported by the module '${stringifyType(moduleType)}'. Please add a @NgModule annotation.`), moduleType);
                         return;
@@ -12590,7 +12600,15 @@ class CompileMetadataResolver {
                     this._reportError(syntaxError(`Unexpected value '${stringifyType(exportedType)}' exported by the module '${stringifyType(moduleType)}'`), moduleType);
                     return;
                 }
-                const /** @type {?} */ exportedModuleSummary = this.getNgModuleSummary(exportedType);
+                if (!alreadyCollecting)
+                    alreadyCollecting = new Set();
+                if (alreadyCollecting.has(exportedType)) {
+                    this._reportError(syntaxError(`${this._getTypeDescriptor(exportedType)} '${stringify(exportedType)}' is exported recursively by the module '${stringifyType(moduleType)}'`), moduleType);
+                    return;
+                }
+                alreadyCollecting.add(exportedType);
+                const /** @type {?} */ exportedModuleSummary = this.getNgModuleSummary(exportedType, alreadyCollecting);
+                alreadyCollecting.delete(exportedType);
                 if (exportedModuleSummary) {
                     exportedModules.push(exportedModuleSummary);
                 }

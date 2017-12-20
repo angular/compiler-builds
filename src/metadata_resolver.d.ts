@@ -67,12 +67,12 @@ export declare class CompileMetadataResolver {
     isDirective(type: any): boolean;
     isPipe(type: any): boolean;
     isNgModule(type: any): boolean;
-    getNgModuleSummary(moduleType: any): cpl.CompileNgModuleSummary | null;
+    getNgModuleSummary(moduleType: any, alreadyCollecting?: Set<any> | null): cpl.CompileNgModuleSummary | null;
     /**
      * Loads the declared directives and pipes of an NgModule.
      */
     loadNgModuleDirectiveAndPipeMetadata(moduleType: any, isSync: boolean, throwIfNotFound?: boolean): Promise<any>;
-    getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean): cpl.CompileNgModuleMetadata | null;
+    getNgModuleMetadata(moduleType: any, throwIfNotFound?: boolean, alreadyCollecting?: Set<any> | null): cpl.CompileNgModuleMetadata | null;
     private _checkSelfImport(moduleType, importedModuleType);
     private _getTypeDescriptor(type);
     private _addTypeToModule(type, moduleType);
