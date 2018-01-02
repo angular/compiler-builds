@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-beta.1-bc7a6d7
+ * @license Angular v5.2.0-beta.1-3e47ea2
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.2.0-beta.1-bc7a6d7
+ * @license Angular v5.2.0-beta.1-3e47ea2
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -676,7 +676,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.0-beta.1-bc7a6d7');
+var VERSION = new Version('5.2.0-beta.1-3e47ea2');
 
 /**
  * @fileoverview added by tsickle
@@ -29719,7 +29719,7 @@ var StaticSymbolResolver = /** @class */ (function () {
             if (moduleMetadatas) {
                 var /** @type {?} */ maxVersion_1 = -1;
                 moduleMetadatas.forEach(function (md) {
-                    if (md['version'] > maxVersion_1) {
+                    if (md && md['version'] > maxVersion_1) {
                         maxVersion_1 = md['version'];
                         moduleMetadata = md;
                     }
