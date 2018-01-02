@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.1.2-66043e0
+ * @license Angular v5.1.2-48a1f32
  * (c) 2010-2017 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -586,7 +586,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.1.2-66043e0');
+const VERSION = new Version('5.1.2-48a1f32');
 
 /**
  * @fileoverview added by tsickle
@@ -24179,7 +24179,7 @@ class StaticSymbolResolver {
             if (moduleMetadatas) {
                 let /** @type {?} */ maxVersion = -1;
                 moduleMetadatas.forEach((md) => {
-                    if (md['version'] > maxVersion) {
+                    if (md && md['version'] > maxVersion) {
                         maxVersion = md['version'];
                         moduleMetadata = md;
                     }
