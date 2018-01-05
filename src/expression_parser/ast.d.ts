@@ -114,10 +114,14 @@ export declare class LiteralArray extends AST {
     constructor(span: ParseSpan, expressions: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
+export declare type LiteralMapKey = {
+    key: string;
+    quoted: boolean;
+};
 export declare class LiteralMap extends AST {
-    keys: any[];
+    keys: LiteralMapKey[];
     values: any[];
-    constructor(span: ParseSpan, keys: any[], values: any[]);
+    constructor(span: ParseSpan, keys: LiteralMapKey[], values: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 export declare class Interpolation extends AST {
