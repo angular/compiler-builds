@@ -1,6 +1,6 @@
 /**
- * @license Angular v5.2.0-beta.0-057b357
- * (c) 2010-2017 Google, Inc. https://angular.io/
+ * @license Angular v5.2.0-rc.0-d2808aa
+ * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
 import { __assign, __extends } from 'tslib';
@@ -631,14 +631,9 @@ var Version = /** @class */ (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * @module
- * @description
- * Entry point for all public APIs of the common package.
- */
-/**
  * \@stable
  */
-var VERSION = new Version('5.2.0-beta.0-057b357');
+var VERSION = new Version('5.2.0-rc.0-d2808aa');
 
 /**
  * @fileoverview added by tsickle
@@ -7382,13 +7377,6 @@ var SimpleExpressionChecker = /** @class */ (function () {
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
  */
 var ParseLocation = /** @class */ (function () {
     function ParseLocation(file, offset, line, col) {
@@ -15122,16 +15110,19 @@ var CompileMetadataResolver = /** @class */ (function () {
     };
     /**
      * @param {?} moduleType
+     * @param {?=} alreadyCollecting
      * @return {?}
      */
     CompileMetadataResolver.prototype.getNgModuleSummary = /**
      * @param {?} moduleType
+     * @param {?=} alreadyCollecting
      * @return {?}
      */
-    function (moduleType) {
+    function (moduleType, alreadyCollecting) {
+        if (alreadyCollecting === void 0) { alreadyCollecting = null; }
         var /** @type {?} */ moduleSummary = /** @type {?} */ (this._loadSummary(moduleType, CompileSummaryKind.NgModule));
         if (!moduleSummary) {
-            var /** @type {?} */ moduleMeta = this.getNgModuleMetadata(moduleType, false);
+            var /** @type {?} */ moduleMeta = this.getNgModuleMetadata(moduleType, false, alreadyCollecting);
             moduleSummary = moduleMeta ? moduleMeta.toSummary() : null;
             if (moduleSummary) {
                 this._summaryCache.set(moduleType, moduleSummary);
@@ -15175,16 +15166,19 @@ var CompileMetadataResolver = /** @class */ (function () {
     /**
      * @param {?} moduleType
      * @param {?=} throwIfNotFound
+     * @param {?=} alreadyCollecting
      * @return {?}
      */
     CompileMetadataResolver.prototype.getNgModuleMetadata = /**
      * @param {?} moduleType
      * @param {?=} throwIfNotFound
+     * @param {?=} alreadyCollecting
      * @return {?}
      */
-    function (moduleType, throwIfNotFound) {
+    function (moduleType, throwIfNotFound, alreadyCollecting) {
         var _this = this;
         if (throwIfNotFound === void 0) { throwIfNotFound = true; }
+        if (alreadyCollecting === void 0) { alreadyCollecting = null; }
         moduleType = resolveForwardRef(moduleType);
         var /** @type {?} */ compileMeta = this._ngModuleCache.get(moduleType);
         if (compileMeta) {
@@ -15219,7 +15213,15 @@ var CompileMetadataResolver = /** @class */ (function () {
                 if (importedModuleType) {
                     if (_this._checkSelfImport(moduleType, importedModuleType))
                         return;
-                    var /** @type {?} */ importedModuleSummary = _this.getNgModuleSummary(importedModuleType);
+                    if (!alreadyCollecting)
+                        alreadyCollecting = new Set();
+                    if (alreadyCollecting.has(importedModuleType)) {
+                        _this._reportError(syntaxError(_this._getTypeDescriptor(importedModuleType) + " '" + stringifyType(importedType) + "' is imported recursively by the module '" + stringifyType(moduleType) + "'."), moduleType);
+                        return;
+                    }
+                    alreadyCollecting.add(importedModuleType);
+                    var /** @type {?} */ importedModuleSummary = _this.getNgModuleSummary(importedModuleType, alreadyCollecting);
+                    alreadyCollecting.delete(importedModuleType);
                     if (!importedModuleSummary) {
                         _this._reportError(syntaxError("Unexpected " + _this._getTypeDescriptor(importedType) + " '" + stringifyType(importedType) + "' imported by the module '" + stringifyType(moduleType) + "'. Please add a @NgModule annotation."), moduleType);
                         return;
@@ -15238,7 +15240,15 @@ var CompileMetadataResolver = /** @class */ (function () {
                     _this._reportError(syntaxError("Unexpected value '" + stringifyType(exportedType) + "' exported by the module '" + stringifyType(moduleType) + "'"), moduleType);
                     return;
                 }
-                var /** @type {?} */ exportedModuleSummary = _this.getNgModuleSummary(exportedType);
+                if (!alreadyCollecting)
+                    alreadyCollecting = new Set();
+                if (alreadyCollecting.has(exportedType)) {
+                    _this._reportError(syntaxError(_this._getTypeDescriptor(exportedType) + " '" + stringify(exportedType) + "' is exported recursively by the module '" + stringifyType(moduleType) + "'"), moduleType);
+                    return;
+                }
+                alreadyCollecting.add(exportedType);
+                var /** @type {?} */ exportedModuleSummary = _this.getNgModuleSummary(exportedType, alreadyCollecting);
+                alreadyCollecting.delete(exportedType);
                 if (exportedModuleSummary) {
                     exportedModules.push(exportedModuleSummary);
                 }
@@ -29666,7 +29676,7 @@ var StaticSymbolResolver = /** @class */ (function () {
             if (moduleMetadatas) {
                 var /** @type {?} */ maxVersion_1 = -1;
                 moduleMetadatas.forEach(function (md) {
-                    if (md['version'] > maxVersion_1) {
+                    if (md && md['version'] > maxVersion_1) {
                         maxVersion_1 = md['version'];
                         moduleMetadata = md;
                     }
@@ -29750,13 +29760,6 @@ function unwrapResolvedMetadata(metadata) {
 /**
  * @fileoverview added by tsickle
  * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
  */
 /**
  * @param {?} srcFileName
@@ -35089,9 +35092,6 @@ var ResourceLoader = /** @class */ (function () {
  * found in the LICENSE file at https://angular.io/license
  */
 /**
- * Extract i18n messages from source code
- */
-/**
  * The host of the Extractor disconnects the implementation from TypeScript / other language
  * services and from underlying file systems.
  * @record
@@ -35192,21 +35192,6 @@ var Extractor = /** @class */ (function () {
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
- */
-/**
- * @module
- * @description
- * Entry point for all APIs of the compiler package.
- *
- * <div class="callout is-critical">
- *   <header>Unstable APIs</header>
- *   <p>
- *     All compiler apis are currently considered experimental and private!
- *   </p>
- *   <p>
- *     We expect the APIs in this package to keep on changing. Do not rely on them.
- *   </p>
- * </div>
  */
 
 // This file only reexports content of the `src` folder. Keep it that way.

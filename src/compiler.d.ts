@@ -72,3 +72,4 @@ export * from './style_compiler';
 export * from './template_parser/template_parser';
 export { ViewCompiler } from './view_compiler/view_compiler';
 export { getParseErrors, isSyntaxError, syntaxError, Version } from './util';
+export { SourceMap } from './output/source_map';
