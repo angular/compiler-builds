@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-908129e
+ * @license Angular v5.2.0-fc3e7e0
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.2.0-908129e
+ * @license Angular v5.2.0-fc3e7e0
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -676,7 +676,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.0-908129e');
+var VERSION = new Version('5.2.0-fc3e7e0');
 
 /**
  * @fileoverview added by tsickle
