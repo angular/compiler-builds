@@ -17,6 +17,7 @@ export declare class StaticReflector implements CompileReflector {
     private methodCache;
     private staticCache;
     private conversionMap;
+    private resolvedExternalReferences;
     private injectionToken;
     private opaqueToken;
     ROUTES: StaticSymbol;

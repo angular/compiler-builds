@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-7bdd9ae
+ * @license Angular v5.2.0-c32e833
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -633,7 +633,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.0-7bdd9ae');
+var VERSION = new Version('5.2.0-c32e833');
 
 /**
  * @fileoverview added by tsickle
@@ -31514,6 +31514,7 @@ var StaticReflector = /** @class */ (function () {
         this.methodCache = new Map();
         this.staticCache = new Map();
         this.conversionMap = new Map();
+        this.resolvedExternalReferences = new Map();
         this.annotationForParentClassWithSummaryKind = new Map();
         this.initializeConversionMap();
         knownMetadataClasses.forEach(function (kc) {
@@ -31548,11 +31549,21 @@ var StaticReflector = /** @class */ (function () {
      * @return {?}
      */
     function (ref, containingFile) {
+        var /** @type {?} */ key = undefined;
+        if (!containingFile) {
+            key = ref.moduleName + ":" + ref.name;
+            var /** @type {?} */ declarationSymbol_1 = this.resolvedExternalReferences.get(key);
+            if (declarationSymbol_1)
+                return declarationSymbol_1;
+        }
         var /** @type {?} */ refSymbol = this.symbolResolver.getSymbolByModule(/** @type {?} */ ((ref.moduleName)), /** @type {?} */ ((ref.name)), containingFile);
         var /** @type {?} */ declarationSymbol = this.findSymbolDeclaration(refSymbol);
         if (!containingFile) {
             this.symbolResolver.recordModuleNameForFileName(refSymbol.filePath, /** @type {?} */ ((ref.moduleName)));
             this.symbolResolver.recordImportAs(declarationSymbol, refSymbol);
+        }
+        if (key) {
+            this.resolvedExternalReferences.set(key, declarationSymbol);
         }
         return declarationSymbol;
     };
