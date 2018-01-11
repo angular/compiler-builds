@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-6a97b5b
+ * @license Angular v5.2.0-a931a41
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.2.0-6a97b5b
+ * @license Angular v5.2.0-a931a41
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -676,7 +676,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.0-6a97b5b');
+var VERSION = new Version('5.2.0-a931a41');
 
 /**
  * @fileoverview added by tsickle
@@ -29560,6 +29560,7 @@ var StaticSymbolResolver = /** @class */ (function () {
      * @return {?}
      */
     function (sourceSymbol, topLevelPath, topLevelSymbolNames, metadata) {
+        var _this = this;
         // For classes that don't have Angular summaries / metadata,
         // we only keep their arity, but nothing else
         // (e.g. their constructor parameters).
@@ -29578,7 +29579,8 @@ var StaticSymbolResolver = /** @class */ (function () {
                 // .ts or .d.ts, append `.ts'. Also, if it is in `node_modules`, trim the `node_module`
                 // location as it is not important to finding the file.
                 _originalFileMemo =
-                    topLevelPath.replace(/((\.ts)|(\.d\.ts)|)$/, '.ts').replace(/^.*node_modules[/\\]/, '');
+                    _this.host.getOutputName(topLevelPath.replace(/((\.ts)|(\.d\.ts)|)$/, '.ts')
+                        .replace(/^.*node_modules[/\\]/, ''));
             }
             return _originalFileMemo;
         };

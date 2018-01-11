@@ -36,6 +36,11 @@ export interface StaticSymbolResolverHost {
      * `path/to/containingFile.ts` containing `import {...} from 'module-name'`.
      */
     moduleNameToFileName(moduleName: string, containingFile?: string): string | null;
+    /**
+     * Get a file suitable for display to the user that should be relative to the project directory
+     * or the current directory.
+     */
+    getOutputName(filePath: string): string;
 }
 /**
  * This class is responsible for loading metadata per symbol,
