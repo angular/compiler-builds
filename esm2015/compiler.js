@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-6be9c04
+ * @license Angular v5.2.0-e64b1e9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -581,7 +581,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.2.0-6be9c04');
+const VERSION = new Version('5.2.0-e64b1e9');
 
 /**
  * @fileoverview added by tsickle
@@ -24138,7 +24138,8 @@ class StaticSymbolResolver {
                 // .ts or .d.ts, append `.ts'. Also, if it is in `node_modules`, trim the `node_module`
                 // location as it is not important to finding the file.
                 _originalFileMemo =
-                    topLevelPath.replace(/((\.ts)|(\.d\.ts)|)$/, '.ts').replace(/^.*node_modules[/\\]/, '');
+                    this.host.getOutputName(topLevelPath.replace(/((\.ts)|(\.d\.ts)|)$/, '.ts')
+                        .replace(/^.*node_modules[/\\]/, ''));
             }
             return _originalFileMemo;
         };
