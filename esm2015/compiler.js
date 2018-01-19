@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.1-af4eb00
+ * @license Angular v5.2.1-c828e56
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -581,7 +581,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.2.1-af4eb00');
+const VERSION = new Version('5.2.1-c828e56');
 
 /**
  * @fileoverview added by tsickle
@@ -9706,8 +9706,10 @@ const _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
 const _DEFAULT_SOURCE_LANG = 'en';
 const _PLACEHOLDER_TAG = 'x';
+const _MARKER_TAG = 'mrk';
 const _FILE_TAG = 'file';
 const _SOURCE_TAG = 'source';
+const _SEGMENT_SOURCE_TAG = 'seg-source';
 const _TARGET_TAG = 'target';
 const _UNIT_TAG = 'trans-unit';
 const _CONTEXT_GROUP_TAG = 'context-group';
@@ -9898,8 +9900,9 @@ class XliffParser {
                     }
                 }
                 break;
+            // ignore those tags
             case _SOURCE_TAG:
-                // ignore source message
+            case _SEGMENT_SOURCE_TAG:
                 break;
             case _TARGET_TAG:
                 const /** @type {?} */ innerTextStart = /** @type {?} */ ((element.startSourceSpan)).end.offset;
@@ -9971,7 +9974,7 @@ class XmlToI18n {
         this._errors = xmlIcu.errors;
         const /** @type {?} */ i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
             [] :
-            visitAll(this, xmlIcu.rootNodes);
+            [].concat(...visitAll(this, xmlIcu.rootNodes));
         return {
             i18nNodes: i18nNodes,
             errors: this._errors,
@@ -9995,10 +9998,12 @@ class XmlToI18n {
                 return new Placeholder('', nameAttr.value, /** @type {?} */ ((el.sourceSpan)));
             }
             this._addError(el, `<${_PLACEHOLDER_TAG}> misses the "id" attribute`);
+            return null;
         }
-        else {
-            this._addError(el, `Unexpected tag`);
+        if (el.name === _MARKER_TAG) {
+            return [].concat(...visitAll(this, el.children));
         }
+        this._addError(el, `Unexpected tag`);
         return null;
     }
     /**
@@ -10077,6 +10082,7 @@ const _XMLNS$1 = 'urn:oasis:names:tc:xliff:document:2.0';
 const _DEFAULT_SOURCE_LANG$1 = 'en';
 const _PLACEHOLDER_TAG$1 = 'ph';
 const _PLACEHOLDER_SPANNING_TAG = 'pc';
+const _MARKER_TAG$1 = 'mrk';
 const _XLIFF_TAG = 'xliff';
 const _SOURCE_TAG$1 = 'source';
 const _TARGET_TAG$1 = 'target';
@@ -10414,6 +10420,8 @@ class XmlToI18n$1 {
                     return nodes.concat(new Placeholder('', startId, el.sourceSpan), ...el.children.map(node => node.visit(this, null)), new Placeholder('', endId, el.sourceSpan));
                 }
                 break;
+            case _MARKER_TAG$1:
+                return [].concat(...visitAll(this, el.children));
             default:
                 this._addError(el, `Unexpected tag`);
         }
