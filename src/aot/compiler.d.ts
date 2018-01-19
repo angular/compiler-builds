@@ -20,6 +20,7 @@ import { AotCompilerHost } from './compiler_host';
 import { AotCompilerOptions } from './compiler_options';
 import { GeneratedFile } from './generated_file';
 import { LazyRoute } from './lazy_routes';
+import { PartialModule } from './partial_module';
 import { StaticReflector } from './static_reflector';
 import { StaticSymbol } from './static_symbol';
 import { StaticSymbolResolver } from './static_symbol_resolver';
@@ -53,6 +54,8 @@ export declare class AotCompiler {
     private _externalIdentifierReferences(references);
     private _createTypeCheckBlock(ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars);
     emitMessageBundle(analyzeResult: NgAnalyzedModules, locale: string | null): MessageBundle;
+    emitAllPartialModules({ngModuleByPipeOrDirective, files}: NgAnalyzedModules): PartialModule[];
+    private _emitPartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
     emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
     private _compileImplFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
     private _createSummary(srcFileName, directives, pipes, ngModules, injectables, ngFactoryCtx);

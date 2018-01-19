@@ -322,6 +322,7 @@ export declare enum StmtModifier {
     Final = 0,
     Private = 1,
     Exported = 2,
+    Static = 3,
 }
 export declare abstract class Statement {
     modifiers: StmtModifier[];
@@ -372,7 +373,8 @@ export declare class AbstractClassPart {
 }
 export declare class ClassField extends AbstractClassPart {
     name: string;
-    constructor(name: string, type?: Type | null, modifiers?: StmtModifier[] | null);
+    initializer: Expression | undefined;
+    constructor(name: string, type?: Type | null, modifiers?: StmtModifier[] | null, initializer?: Expression | undefined);
     isEquivalent(f: ClassField): boolean;
 }
 export declare class ClassMethod extends AbstractClassPart {
@@ -528,4 +530,5 @@ export declare function literalMap(values: {
 export declare function not(expr: Expression, sourceSpan?: ParseSourceSpan | null): NotExpr;
 export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSourceSpan | null): AssertNotNull;
 export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): FunctionExpr;
+export declare function ifStmt(condition: Expression, thenClause: Statement[], elseClause?: Statement[]): IfStmt;
 export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;

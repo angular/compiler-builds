@@ -14,6 +14,7 @@ export declare class CssSelector {
     setElement(element?: string | null): void;
     /** Gets a template string for an element that matches the selector. */
     getMatchingElementTemplate(): string;
+    getAttrs(): string[];
     addAttribute(name: string, value?: string): void;
     addClassName(name: string): void;
     toString(): string;
