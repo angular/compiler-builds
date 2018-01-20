@@ -91,8 +91,9 @@ export declare class BoundEventAst implements TemplateAst {
 export declare class ReferenceAst implements TemplateAst {
     name: string;
     value: CompileTokenMetadata;
+    originalValue: string;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, value: CompileTokenMetadata, sourceSpan: ParseSourceSpan);
+    constructor(name: string, value: CompileTokenMetadata, originalValue: string, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**

@@ -9,4 +9,5 @@ import { CompileDirectiveMetadata } from '../compile_metadata';
 import { CompileReflector } from '../compile_reflector';
 import { TemplateAst } from '../template_parser/template_ast';
 import { OutputContext } from '../util';
+export declare function compileDirective(outputCtx: OutputContext, directive: CompileDirectiveMetadata, reflector: CompileReflector): void;
 export declare function compileComponent(outputCtx: OutputContext, component: CompileDirectiveMetadata, template: TemplateAst[], reflector: CompileReflector): void;

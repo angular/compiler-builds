@@ -23,6 +23,8 @@ export declare class Identifiers {
     static elementStyle: o.ExternalReference;
     static containerCreate: o.ExternalReference;
     static containerEnd: o.ExternalReference;
+    static containerRefreshStart: o.ExternalReference;
+    static containerRefreshEnd: o.ExternalReference;
     static directiveCreate: o.ExternalReference;
     static text: o.ExternalReference;
     static directiveInput: o.ExternalReference;
@@ -38,6 +40,7 @@ export declare class Identifiers {
     static bind8: o.ExternalReference;
     static bind9: o.ExternalReference;
     static bindV: o.ExternalReference;
+    static memory: o.ExternalReference;
     static refreshComponent: o.ExternalReference;
     static directiveLifeCycle: o.ExternalReference;
     static injectElementRef: o.ExternalReference;

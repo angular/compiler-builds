@@ -22,9 +22,9 @@ export declare class ConstantPool {
     private literals;
     private injectorDefinitions;
     private directiveDefinitions;
-    private componentDefintions;
+    private componentDefinitions;
     private nextNameIndex;
-    getConstLiteral(literal: o.Expression): o.Expression;
+    getConstLiteral(literal: o.Expression, forceShared?: boolean): o.Expression;
     getDefinition(type: any, kind: DefinitionKind, ctx: OutputContext): o.Expression;
     /**
      * Produce a unique name.
