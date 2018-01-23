@@ -52,7 +52,7 @@ export declare const NUMBER_TYPE: BuiltinType;
 export declare const STRING_TYPE: BuiltinType;
 export declare const FUNCTION_TYPE: BuiltinType;
 export interface TypeVisitor {
-    visitBuiltintType(type: BuiltinType, context: any): any;
+    visitBuiltinType(type: BuiltinType, context: any): any;
     visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
@@ -235,7 +235,8 @@ export declare class FnParam {
 export declare class FunctionExpr extends Expression {
     params: FnParam[];
     statements: Statement[];
-    constructor(params: FnParam[], statements: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    name: string | null | undefined;
+    constructor(params: FnParam[], statements: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null | undefined);
     isEquivalent(e: Expression): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     toDeclStmt(name: string, modifiers?: StmtModifier[] | null): DeclareFunctionStmt;
@@ -477,7 +478,7 @@ export declare class AstTransformer implements StatementVisitor, ExpressionVisit
 export declare class RecursiveAstVisitor implements StatementVisitor, ExpressionVisitor {
     visitType(ast: Type, context: any): any;
     visitExpression(ast: Expression, context: any): any;
-    visitBuiltintType(type: BuiltinType, context: any): any;
+    visitBuiltinType(type: BuiltinType, context: any): any;
     visitExpressionType(type: ExpressionType, context: any): any;
     visitArrayType(type: ArrayType, context: any): any;
     visitMapType(type: MapType, context: any): any;
@@ -529,6 +530,6 @@ export declare function literalMap(values: {
 }[], type?: MapType | null): LiteralMapExpr;
 export declare function not(expr: Expression, sourceSpan?: ParseSourceSpan | null): NotExpr;
 export declare function assertNotNull(expr: Expression, sourceSpan?: ParseSourceSpan | null): AssertNotNull;
-export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): FunctionExpr;
+export declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null): FunctionExpr;
 export declare function ifStmt(condition: Expression, thenClause: Statement[], elseClause?: Statement[]): IfStmt;
 export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;

@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.9.9-6-beta.0-95fbb7d
+ * @license Angular v5.9.9-6-beta.0-8baff18
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.9.9-6-beta.0-95fbb7d
+ * @license Angular v5.9.9-6-beta.0-8baff18
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -683,7 +683,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.9.9-6-beta.0-95fbb7d');
+var VERSION = new Version('5.9.9-6-beta.0-8baff18');
 
 /**
  * @fileoverview added by tsickle
@@ -16217,7 +16217,7 @@ var BuiltinType = /** @class */ (function (_super) {
      * @return {?}
      */
     function (visitor, context) {
-        return visitor.visitBuiltintType(this, context);
+        return visitor.visitBuiltinType(this, context);
     };
     return BuiltinType;
 }(Type$1));
@@ -17225,10 +17225,11 @@ var FnParam = /** @class */ (function () {
 }());
 var FunctionExpr = /** @class */ (function (_super) {
     __extends(FunctionExpr, _super);
-    function FunctionExpr(params, statements, type, sourceSpan) {
+    function FunctionExpr(params, statements, type, sourceSpan, name) {
         var _this = _super.call(this, type, sourceSpan) || this;
         _this.params = params;
         _this.statements = statements;
+        _this.name = name;
         return _this;
     }
     /**
@@ -18451,7 +18452,7 @@ var RecursiveAstVisitor$1 = /** @class */ (function () {
      * @param {?} context
      * @return {?}
      */
-    RecursiveAstVisitor.prototype.visitBuiltintType = /**
+    RecursiveAstVisitor.prototype.visitBuiltinType = /**
      * @param {?} type
      * @param {?} context
      * @return {?}
@@ -19207,10 +19208,11 @@ function assertNotNull(expr, sourceSpan) {
  * @param {?} body
  * @param {?=} type
  * @param {?=} sourceSpan
+ * @param {?=} name
  * @return {?}
  */
-function fn(params, body, type, sourceSpan) {
-    return new FunctionExpr(params, body, type, sourceSpan);
+function fn(params, body, type, sourceSpan, name) {
+    return new FunctionExpr(params, body, type, sourceSpan, name);
 }
 /**
  * @param {?} condition
@@ -21850,11 +21852,18 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
      * @return {?}
      */
     function (ast, ctx) {
+        if (ast.name) {
+            ctx.print(ast, 'function ');
+            ctx.print(ast, ast.name);
+        }
         ctx.print(ast, "(");
         this._visitParams(ast.params, ctx);
         ctx.print(ast, ")");
         this._printColonType(ast.type, ctx, 'void');
-        ctx.println(ast, " => {");
+        if (!ast.name) {
+            ctx.print(ast, " => ");
+        }
+        ctx.println(ast, '{');
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
         ctx.decIndent();
@@ -21916,7 +21925,7 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
      * @param {?} ctx
      * @return {?}
      */
-    _TsEmitterVisitor.prototype.visitBuiltintType = /**
+    _TsEmitterVisitor.prototype.visitBuiltinType = /**
      * @param {?} type
      * @param {?} ctx
      * @return {?}
@@ -29275,7 +29284,6 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.bind6 = { name: 'ɵb6', moduleName: CORE$1 };
     Identifiers.bind7 = { name: 'ɵb7', moduleName: CORE$1 };
     Identifiers.bind8 = { name: 'ɵb8', moduleName: CORE$1 };
-    Identifiers.bind9 = { name: 'ɵb9', moduleName: CORE$1 };
     Identifiers.bindV = { name: 'ɵbV', moduleName: CORE$1 };
     Identifiers.memory = { name: 'ɵm', moduleName: CORE$1 };
     Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
@@ -29364,11 +29372,13 @@ function compileComponent(outputCtx, component, template, reflector) {
             });
         }
     }
-    // e.g. `factory: () => new MyApp(injectElementRef())`
+    // e.g. `factory: function MyApp_Factory() { return new MyApp(injectElementRef()); }`
     var /** @type {?} */ templateFactory = createFactory(component.type, outputCtx, reflector);
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
-    // e.g. `template: function(_ctx, _cm) {...}`
-    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, CONTEXT_NAME, ROOT_SCOPE.nestedScope())
+    // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
+    var /** @type {?} */ templateTypeName = component.type.reference.name;
+    var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
+    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, templateTypeName, templateName)
         .buildTemplateFunction(template);
     definitionMapValues.push({ key: 'template', value: templateFunctionExpression, quoted: false });
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
@@ -29423,8 +29433,6 @@ function interpolate(args) {
             return importExpr(Identifiers$1.bind7).callFn(args);
         case 17:
             return importExpr(Identifiers$1.bind8).callFn(args);
-        case 19:
-            return importExpr(Identifiers$1.bind9).callFn(args);
     }
     (args.length > 19 && args.length % 2 == 1) ||
         error("Invalid interpolation argument length " + args.length);
@@ -29497,13 +29505,16 @@ var BindingScope = /** @class */ (function () {
 }());
 var ROOT_SCOPE = new BindingScope(null).set('$event', '$event');
 var TemplateDefinitionBuilder = /** @class */ (function () {
-    function TemplateDefinitionBuilder(outputCtx, constantPool, contextParameter, bindingScope, level) {
+    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, bindingScope, level, contextName, templateName) {
         if (level === void 0) { level = 0; }
         this.outputCtx = outputCtx;
         this.constantPool = constantPool;
+        this.reflector = reflector;
         this.contextParameter = contextParameter;
         this.bindingScope = bindingScope;
         this.level = level;
+        this.contextName = contextName;
+        this.templateName = templateName;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._referenceIndex = 0;
@@ -29543,7 +29554,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         ], this._prefix.concat([
             // Creating mode (i.e. if (cm) { ... })
             ifStmt(variable(CREATION_MODE_FLAG), this._creationMode)
-        ], this._bindingMode, this._hostMode, this._refreshMode, this._postfix), INFERRED_TYPE);
+        ], this._bindingMode, this._hostMode, this._refreshMode, this._postfix), INFERRED_TYPE, null, this.templateName);
     };
     /**
      * @param {?} name
@@ -29719,7 +29730,16 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      */
     function (ast) {
         var /** @type {?} */ templateIndex = this.allocateDataSlot();
-        var /** @type {?} */ templateName = "C" + templateIndex + "Template";
+        var /** @type {?} */ templateRef = this.reflector.resolveExternalReference(Identifiers.TemplateRef);
+        var /** @type {?} */ templateDirective = ast.directives.find(function (directive) {
+            return directive.directive.type.diDeps.some(function (dependency) {
+                return dependency.token != null && (tokenReference(dependency.token) == templateRef);
+            });
+        });
+        var /** @type {?} */ contextName = this.contextName && templateDirective && templateDirective.directive.type.reference.name ?
+            this.contextName + "_" + templateDirective.directive.type.reference.name :
+            null;
+        var /** @type {?} */ templateName = contextName ? contextName + "_Template_" + templateIndex : "Template_" + templateIndex;
         var /** @type {?} */ templateContext = "ctx" + this.level;
         var _a = this._computeDirectivesArray(ast.directives), directivesArray = _a.directivesArray, directiveIndexMap = _a.directiveIndexMap;
         // e.g. C(1, C1Template)
@@ -29731,7 +29751,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // e.g. cr();
         this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.containerRefreshEnd);
         // Create the template function
-        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, templateContext, this.bindingScope.nestedScope(), this.level + 1);
+        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, contextName, templateName);
         var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     };
@@ -29906,7 +29926,7 @@ function createFactory(type, outputCtx, reflector) {
             unsupported('dependency without a token');
         }
     }
-    return fn([], [new ReturnStatement(new InstantiateExpr(outputCtx.importExpr(type.reference), args))], INFERRED_TYPE);
+    return fn([], [new ReturnStatement(new InstantiateExpr(outputCtx.importExpr(type.reference), args))], INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_Factory" : null);
 }
 /**
  * @template T
@@ -35045,7 +35065,7 @@ var AbstractJsEmitterVisitor = /** @class */ (function (_super) {
      * @return {?}
      */
     function (ast, ctx) {
-        ctx.print(ast, "function(");
+        ctx.print(ast, "function" + (ast.name ? ' ' + ast.name : '') + "(");
         this._visitParams(ast.params, ctx);
         ctx.println(ast, ") {");
         ctx.incIndent();

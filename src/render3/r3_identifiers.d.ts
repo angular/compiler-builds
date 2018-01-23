@@ -38,7 +38,6 @@ export declare class Identifiers {
     static bind6: o.ExternalReference;
     static bind7: o.ExternalReference;
     static bind8: o.ExternalReference;
-    static bind9: o.ExternalReference;
     static bindV: o.ExternalReference;
     static memory: o.ExternalReference;
     static refreshComponent: o.ExternalReference;
