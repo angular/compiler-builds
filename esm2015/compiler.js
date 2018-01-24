@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.9.9-6-beta.0-c7c5214
+ * @license Angular v5.9.9-6-beta.0-5f681f9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -588,7 +588,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.9.9-6-beta.0-c7c5214');
+const VERSION = new Version('5.9.9-6-beta.0-5f681f9');
 
 /**
  * @fileoverview added by tsickle
@@ -18735,10 +18735,11 @@ class ShadowCss {
      * @return {?}
      */
     shimCssText(cssText, selector, hostSelector = '') {
-        const /** @type {?} */ sourceMappingUrl = extractSourceMappingUrl(cssText);
+        const /** @type {?} */ commentsWithHash = extractCommentsWithHash(cssText);
         cssText = stripComments(cssText);
         cssText = this._insertDirectives(cssText);
-        return this._scopeCssText(cssText, selector, hostSelector) + sourceMappingUrl;
+        const /** @type {?} */ scopedCssText = this._scopeCssText(cssText, selector, hostSelector);
+        return [scopedCssText, ...commentsWithHash].join('\n');
     }
     /**
      * @param {?} cssText
@@ -19111,15 +19112,13 @@ const _commentRe = /\/\*\s*[\s\S]*?\*\//g;
 function stripComments(input) {
     return input.replace(_commentRe, '');
 }
-// all comments except inline source mapping
-const _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
+const _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=[\s\S]+?\*\//g;
 /**
  * @param {?} input
  * @return {?}
  */
-function extractSourceMappingUrl(input) {
-    const /** @type {?} */ matcher = input.match(_sourceMappingUrlRe);
-    return matcher ? matcher[0] : '';
+function extractCommentsWithHash(input) {
+    return input.match(_commentWithHashRe) || [];
 }
 const _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
 const _curlyRe = /([{}])/g;
