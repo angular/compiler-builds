@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.1-de6c644
+ * @license Angular v5.2.1-5423882
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.2.1-de6c644
+ * @license Angular v5.2.1-5423882
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -676,7 +676,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.1-de6c644');
+var VERSION = new Version('5.2.1-5423882');
 
 /**
  * @fileoverview added by tsickle
@@ -22870,11 +22870,10 @@ var ShadowCss = /** @class */ (function () {
      */
     function (cssText, selector, hostSelector) {
         if (hostSelector === void 0) { hostSelector = ''; }
-        var /** @type {?} */ commentsWithHash = extractCommentsWithHash(cssText);
+        var /** @type {?} */ sourceMappingUrl = extractSourceMappingUrl(cssText);
         cssText = stripComments(cssText);
         cssText = this._insertDirectives(cssText);
-        var /** @type {?} */ scopedCssText = this._scopeCssText(cssText, selector, hostSelector);
-        return [scopedCssText].concat(commentsWithHash).join('\n');
+        return this._scopeCssText(cssText, selector, hostSelector) + sourceMappingUrl;
     };
     /**
      * @param {?} cssText
@@ -23374,13 +23373,15 @@ var _commentRe = /\/\*\s*[\s\S]*?\*\//g;
 function stripComments(input) {
     return input.replace(_commentRe, '');
 }
-var _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=[\s\S]+?\*\//g;
+// all comments except inline source mapping
+var _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
 /**
  * @param {?} input
  * @return {?}
  */
-function extractCommentsWithHash(input) {
-    return input.match(_commentWithHashRe) || [];
+function extractSourceMappingUrl(input) {
+    var /** @type {?} */ matcher = input.match(_sourceMappingUrlRe);
+    return matcher ? matcher[0] : '';
 }
 var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
 var _curlyRe = /([{}])/g;
