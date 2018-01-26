@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.1-08aa54e
+ * @license Angular v6.0.0-beta.1-bbb8f38
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -588,7 +588,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.1-08aa54e');
+const VERSION = new Version('6.0.0-beta.1-bbb8f38');
 
 /**
  * @fileoverview added by tsickle
@@ -23968,6 +23968,10 @@ const TEMPORARY_NAME = '_t';
  */
 const REFERENCE_PREFIX = '_r';
 /**
+ * The name of the implicit context reference
+ */
+const IMPLICIT_REFERENCE = '$implicit';
+/**
  * @param {?} outputCtx
  * @param {?} directive
  * @param {?} reflector
@@ -24018,7 +24022,7 @@ function compileComponent(outputCtx, component, template, reflector) {
     const /** @type {?} */ templateTypeName = component.type.reference.name;
     const /** @type {?} */ templateName = templateTypeName ? `${templateTypeName}_Template` : null;
     const /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, templateTypeName, templateName)
-        .buildTemplateFunction(template);
+        .buildTemplateFunction(template, []);
     definitionMapValues.push({ key: 'template', value: templateFunctionExpression, quoted: false });
     const /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
     className || error(`Cannot resolver the name of ${component.type}`);
@@ -24176,9 +24180,23 @@ class TemplateDefinitionBuilder {
     }
     /**
      * @param {?} asts
+     * @param {?} variables
      * @return {?}
      */
-    buildTemplateFunction(asts) {
+    buildTemplateFunction(asts, variables) {
+        // Create variable bindings
+        for (const /** @type {?} */ variable$$1 of variables) {
+            const /** @type {?} */ variableName = variable$$1.name;
+            const /** @type {?} */ expression = variable(this.contextParameter).prop(variable$$1.value || IMPLICIT_REFERENCE);
+            const /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
+            const /** @type {?} */ declaration = variable(scopedName).set(expression).toDeclStmt(INFERRED_TYPE, [
+                StmtModifier.Final
+            ]);
+            // Add the reference to the local scope.
+            this.bindingScope.set(variableName, scopedName);
+            // Declare the local variable in binding mode
+            this._bindingMode.push(declaration);
+        }
         templateVisitAll(this, asts);
         return fn([
             new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
@@ -24326,7 +24344,7 @@ class TemplateDefinitionBuilder {
             for (const /** @type {?} */ input of directive.inputs) {
                 const /** @type {?} */ convertedBinding = convertPropertyBinding(this, implicit, input.value, this.bindingContext(), BindingForm.TrySimple, interpolate);
                 this._bindingMode.push(...convertedBinding.stmts);
-                this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(input.templateName), literal(nodeIndex), convertedBinding.currValExpr);
+                this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(nodeIndex), literal(input.templateName), importExpr(Identifiers$1.bind).callFn([convertedBinding.currValExpr]));
             }
             // e.g. TodoComponentDef.r(0, 0);
             this._refreshMode.push(this.definitionOf(directiveType, kind)
@@ -24358,7 +24376,7 @@ class TemplateDefinitionBuilder {
         this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.containerRefreshEnd);
         // Create the template function
         const /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, contextName, templateName);
-        const /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children);
+        const /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     }
     /**

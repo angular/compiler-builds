@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.1-08aa54e
+ * @license Angular v6.0.0-beta.1-bbb8f38
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-beta.1-08aa54e
+ * @license Angular v6.0.0-beta.1-bbb8f38
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -683,7 +683,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.1-08aa54e');
+var VERSION = new Version('6.0.0-beta.1-bbb8f38');
 
 /**
  * @fileoverview added by tsickle
@@ -29328,6 +29328,10 @@ var TEMPORARY_NAME = '_t';
  */
 var REFERENCE_PREFIX = '_r';
 /**
+ * The name of the implicit context reference
+ */
+var IMPLICIT_REFERENCE = '$implicit';
+/**
  * @param {?} outputCtx
  * @param {?} directive
  * @param {?} reflector
@@ -29378,7 +29382,7 @@ function compileComponent(outputCtx, component, template, reflector) {
     var /** @type {?} */ templateTypeName = component.type.reference.name;
     var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
     var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, templateTypeName, templateName)
-        .buildTemplateFunction(template);
+        .buildTemplateFunction(template, []);
     definitionMapValues.push({ key: 'template', value: templateFunctionExpression, quoted: false });
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
     className || error("Cannot resolver the name of " + component.type);
@@ -29540,13 +29544,29 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
     }
     /**
      * @param {?} asts
+     * @param {?} variables
      * @return {?}
      */
     TemplateDefinitionBuilder.prototype.buildTemplateFunction = /**
      * @param {?} asts
+     * @param {?} variables
      * @return {?}
      */
-    function (asts) {
+    function (asts, variables) {
+        // Create variable bindings
+        for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
+            var variable$$1 = variables_1[_i];
+            var /** @type {?} */ variableName = variable$$1.name;
+            var /** @type {?} */ expression = variable(this.contextParameter).prop(variable$$1.value || IMPLICIT_REFERENCE);
+            var /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
+            var /** @type {?} */ declaration = variable(scopedName).set(expression).toDeclStmt(INFERRED_TYPE, [
+                StmtModifier.Final
+            ]);
+            // Add the reference to the local scope.
+            this.bindingScope.set(variableName, scopedName);
+            // Declare the local variable in binding mode
+            this._bindingMode.push(declaration);
+        }
         templateVisitAll(this, asts);
         return fn([
             new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
@@ -29710,7 +29730,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 var input = _b[_a];
                 var /** @type {?} */ convertedBinding = convertPropertyBinding(this, implicit, input.value, this.bindingContext(), BindingForm.TrySimple, interpolate);
                 (_c = this._bindingMode).push.apply(_c, convertedBinding.stmts);
-                this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(input.templateName), literal(nodeIndex), convertedBinding.currValExpr);
+                this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(nodeIndex), literal(input.templateName), importExpr(Identifiers$1.bind).callFn([convertedBinding.currValExpr]));
             }
             // e.g. TodoComponentDef.r(0, 0);
             this._refreshMode.push(this.definitionOf(directiveType, kind)
@@ -29751,7 +29771,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.containerRefreshEnd);
         // Create the template function
         var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, contextName, templateName);
-        var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children);
+        var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     };
     /**
