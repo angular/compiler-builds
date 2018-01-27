@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.1-6245637
+ * @license Angular v6.0.0-beta.1-87754ad
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -588,7 +588,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.1-6245637');
+const VERSION = new Version('6.0.0-beta.1-87754ad');
 
 /**
  * @fileoverview added by tsickle
@@ -23979,6 +23979,8 @@ const IMPLICIT_REFERENCE = '$implicit';
  */
 function compileDirective(outputCtx, directive, reflector) {
     const /** @type {?} */ definitionMapValues = [];
+    // e.g. 'type: MyDirective`
+    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(directive.type.reference), quoted: false });
     // e.g. `factory: () => new MyApp(injectElementRef())`
     const /** @type {?} */ templateFactory = createFactory(directive.type, outputCtx, reflector);
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
@@ -23996,7 +23998,9 @@ function compileDirective(outputCtx, directive, reflector) {
  */
 function compileComponent(outputCtx, component, template, reflector) {
     const /** @type {?} */ definitionMapValues = [];
-    // e.g. `tag: 'my-app'
+    // e.g. `type: MyApp`
+    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(component.type.reference), quoted: false });
+    // e.g. `tag: 'my-app'`
     // This is optional and only included if the first selector of a component has element.
     const /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     const /** @type {?} */ firstSelector = selector && selector[0];
