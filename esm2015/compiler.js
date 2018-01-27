@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.1-d364117
+ * @license Angular v6.0.0-beta.1-5778bb8
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -588,7 +588,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.1-d364117');
+const VERSION = new Version('6.0.0-beta.1-5778bb8');
 
 /**
  * @fileoverview added by tsickle
@@ -23602,7 +23602,7 @@ class FixupExpression extends Expression {
      * @return {?}
      */
     visitExpression(visitor, context) {
-        this.resolved.visitExpression(visitor, context);
+        return this.resolved.visitExpression(visitor, context);
     }
     /**
      * @param {?} e
@@ -23979,6 +23979,8 @@ const IMPLICIT_REFERENCE = '$implicit';
  */
 function compileDirective(outputCtx, directive, reflector) {
     const /** @type {?} */ definitionMapValues = [];
+    // e.g. 'type: MyDirective`
+    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(directive.type.reference), quoted: false });
     // e.g. `factory: () => new MyApp(injectElementRef())`
     const /** @type {?} */ templateFactory = createFactory(directive.type, outputCtx, reflector);
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
@@ -23996,7 +23998,9 @@ function compileDirective(outputCtx, directive, reflector) {
  */
 function compileComponent(outputCtx, component, template, reflector) {
     const /** @type {?} */ definitionMapValues = [];
-    // e.g. `tag: 'my-app'
+    // e.g. `type: MyApp`
+    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(component.type.reference), quoted: false });
+    // e.g. `tag: 'my-app'`
     // This is optional and only included if the first selector of a component has element.
     const /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
     const /** @type {?} */ firstSelector = selector && selector[0];
@@ -24045,7 +24049,7 @@ function unsupported(feature) {
     if (this) {
         throw new Error(`Builder ${this.constructor.name} doesn't support ${feature} yet`);
     }
-    throw new Error(`Feature ${feature} is supported yet`);
+    throw new Error(`Feature ${feature} is not supported yet`);
 }
 const BINDING_INSTRUCTION_MAP = {
     [PropertyBindingType.Property]: Identifiers$1.elementProperty,
@@ -24492,7 +24496,8 @@ function createFactory(type, outputCtx, reflector) {
                 args.push(importExpr(Identifiers$1.injectViewContainerRef).callFn([]));
             }
             else {
-                args.push(importExpr(Identifiers$1.inject).callFn([outputCtx.importExpr(token)]));
+                const /** @type {?} */ value = token.identifier != null ? outputCtx.importExpr(tokenRef) : literal(tokenRef);
+                args.push(importExpr(Identifiers$1.inject).callFn([value]));
             }
         }
         else {
