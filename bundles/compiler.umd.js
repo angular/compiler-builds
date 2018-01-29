@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.1-72265f7
+ * @license Angular v6.0.0-beta.1-18174e5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-beta.1-72265f7
+ * @license Angular v6.0.0-beta.1-18174e5
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -683,7 +683,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.1-72265f7');
+var VERSION = new Version('6.0.0-beta.1-18174e5');
 
 /**
  * @fileoverview added by tsickle
@@ -29285,6 +29285,8 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.bind8 = { name: 'ɵb8', moduleName: CORE$1 };
     Identifiers.bindV = { name: 'ɵbV', moduleName: CORE$1 };
     Identifiers.memory = { name: 'ɵm', moduleName: CORE$1 };
+    Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
+    Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
     Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
     Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE$1 };
     Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
@@ -29385,21 +29387,13 @@ function compileComponent(outputCtx, component, template, reflector) {
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     var /** @type {?} */ templateTypeName = component.type.reference.name;
     var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
-    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, templateTypeName, templateName)
+    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName)
         .buildTemplateFunction(template, []);
     definitionMapValues.push({ key: 'template', value: templateFunctionExpression, quoted: false });
     var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
     className || error("Cannot resolver the name of " + component.type);
     // Create the partial class to be merged with the actual class.
     outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField('ngComponentDef', /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], /* initializer */ importExpr(Identifiers$1.defineComponent).callFn([literalMap(definitionMapValues)]))], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
-}
-/**
- * @template T
- * @param {?} arg
- * @return {?}
- */
-function unknown(arg) {
-    throw new Error("Builder " + this.constructor.name + " is unable to handle " + undefined + " yet");
 }
 /**
  * @param {?} feature
@@ -29512,7 +29506,7 @@ var BindingScope = /** @class */ (function () {
 }());
 var ROOT_SCOPE = new BindingScope(null).set('$event', '$event');
 var TemplateDefinitionBuilder = /** @class */ (function () {
-    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, bindingScope, level, contextName, templateName) {
+    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, bindingScope, level, ngContentSelectors, contextName, templateName) {
         if (level === void 0) { level = 0; }
         this.outputCtx = outputCtx;
         this.constantPool = constantPool;
@@ -29520,6 +29514,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this.contextParameter = contextParameter;
         this.bindingScope = bindingScope;
         this.level = level;
+        this.ngContentSelectors = ngContentSelectors;
         this.contextName = contextName;
         this.templateName = templateName;
         this._dataIndex = 0;
@@ -29532,10 +29527,9 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         this._hostMode = [];
         this._refreshMode = [];
         this._postfix = [];
+        this._projectionDefinitionIndex = 0;
         this.unsupported = unsupported;
         this.invalid = invalid$1;
-        // TODO(chuckj): Implement ng-content
-        this.visitNgContent = unknown;
         // These should be handled in the template or element directly.
         this.visitReference = invalid$1;
         this.visitVariable = invalid$1;
@@ -29571,6 +29565,26 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
             // Declare the local variable in binding mode
             this._bindingMode.push(declaration);
         }
+        // Collect content projections
+        if (this.ngContentSelectors && this.ngContentSelectors.length > 0) {
+            var /** @type {?} */ contentProjections = getContentProjection(asts, this.ngContentSelectors);
+            this._contentProjections = contentProjections;
+            if (contentProjections.size > 0) {
+                var /** @type {?} */ infos_1 = [];
+                Array.from(contentProjections.values()).forEach(function (info) {
+                    if (info.selector) {
+                        infos_1[info.index - 1] = info.selector;
+                    }
+                });
+                var /** @type {?} */ projectionIndex = this._projectionDefinitionIndex = this.allocateDataSlot();
+                var /** @type {?} */ parameters = [literal(projectionIndex)];
+                !infos_1.some(function (value) { return !value; }) || error("content project information skipped an index");
+                if (infos_1.length > 1) {
+                    parameters.push(this.outputCtx.constantPool.getConstLiteral(asLiteral(infos_1), /* forceShared */ /* forceShared */ true));
+                }
+                this.instruction.apply(this, [this._creationMode, null, Identifiers$1.projectionDef].concat(parameters));
+            }
+        }
         templateVisitAll(this, asts);
         return fn([
             new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
@@ -29588,6 +29602,24 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      * @return {?}
      */
     function (name) { return this.bindingScope.get(name); };
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitNgContent = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ info = /** @type {?} */ ((this._contentProjections.get(ast)));
+        info || error("Expected " + ast.sourceSpan + " to be included in content projection collection");
+        var /** @type {?} */ slot = this.allocateDataSlot();
+        var /** @type {?} */ parameters = [literal(slot), literal(this._projectionDefinitionIndex)];
+        if (info.index !== 0) {
+            parameters.push(literal(info.index));
+        }
+        this.instruction.apply(this, [this._creationMode, ast.sourceSpan, Identifiers$1.projection].concat(parameters));
+    };
     /**
      * @param {?} directives
      * @return {?}
@@ -29774,7 +29806,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // e.g. cr();
         this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.containerRefreshEnd);
         // Create the template function
-        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, contextName, templateName);
+        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName);
         var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     };
@@ -29966,6 +29998,82 @@ function invalid$1(arg) {
  */
 function findComponent(directives) {
     return directives.filter(function (directive) { return directive.directive.isComponent; })[0];
+}
+var ContentProjectionVisitor = /** @class */ (function (_super) {
+    __extends(ContentProjectionVisitor, _super);
+    function ContentProjectionVisitor(projectionMap, ngContentSelectors) {
+        var _this = _super.call(this) || this;
+        _this.projectionMap = projectionMap;
+        _this.ngContentSelectors = ngContentSelectors;
+        _this.index = 1;
+        return _this;
+    }
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    ContentProjectionVisitor.prototype.visitNgContent = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ selectorText = this.ngContentSelectors[ast.index];
+        selectorText != null || error("could not find selector for index " + ast.index + " in " + ast);
+        if (!selectorText || selectorText === '*') {
+            this.projectionMap.set(ast, { index: 0 });
+        }
+        else {
+            var /** @type {?} */ cssSelectors = CssSelector.parse(selectorText);
+            this.projectionMap.set(ast, { index: this.index++, selector: parseSelectorsToR3Selector(cssSelectors) });
+        }
+    };
+    return ContentProjectionVisitor;
+}(RecursiveTemplateAstVisitor));
+/**
+ * @param {?} asts
+ * @param {?} ngContentSelectors
+ * @return {?}
+ */
+function getContentProjection(asts, ngContentSelectors) {
+    var /** @type {?} */ projectIndexMap = new Map();
+    var /** @type {?} */ visitor = new ContentProjectionVisitor(projectIndexMap, ngContentSelectors);
+    templateVisitAll(visitor, asts);
+    return projectIndexMap;
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToSimpleSelector(selector) {
+    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? ['class'].concat(selector.classNames) : [];
+    return [selector.element].concat(selector.attrs, classes);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToR3Selector(selector) {
+    var /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
+    var /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length &&
+        parserSelectorToSimpleSelector(selector.notSelectors[0]);
+    return negative ? [positive, negative] : [positive, null];
+}
+/**
+ * @param {?} selectors
+ * @return {?}
+ */
+function parseSelectorsToR3Selector(selectors) {
+    return selectors.map(parserSelectorToR3Selector);
+}
+/**
+ * @param {?} value
+ * @return {?}
+ */
+function asLiteral(value) {
+    if (Array.isArray(value)) {
+        return literalArr(value.map(asLiteral));
+    }
+    return literal(value, INFERRED_TYPE);
 }
 var _a;
 

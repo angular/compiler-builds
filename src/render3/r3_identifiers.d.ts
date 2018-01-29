@@ -40,6 +40,8 @@ export declare class Identifiers {
     static bind8: o.ExternalReference;
     static bindV: o.ExternalReference;
     static memory: o.ExternalReference;
+    static projection: o.ExternalReference;
+    static projectionDef: o.ExternalReference;
     static refreshComponent: o.ExternalReference;
     static directiveLifeCycle: o.ExternalReference;
     static injectElementRef: o.ExternalReference;
