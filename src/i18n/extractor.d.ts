@@ -9,9 +9,14 @@ import { MessageBundle } from './message_bundle';
  */
 export interface ExtractorHost extends StaticSymbolResolverHost, AotSummaryResolverHost {
     /**
+     * Converts a path that refers to a resource into an absolute filePath
+     * that can be lateron used for loading the resource via `loadResource.
+     */
+    resourceNameToFileName(path: string, containingFile: string): string | null;
+    /**
      * Loads a resource (e.g. html / css)
      */
-    loadResource(path: string): Promise<string>;
+    loadResource(path: string): Promise<string> | string;
 }
 export declare class Extractor {
     host: ExtractorHost;

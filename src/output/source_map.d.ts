@@ -3,7 +3,7 @@ export declare type SourceMap = {
     file?: string;
     sourceRoot: string;
     sources: string[];
-    sourcesContent: string[];
+    sourcesContent: (string | null)[];
     mappings: string;
 };
 export declare class SourceMapGenerator {

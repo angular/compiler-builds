@@ -17,6 +17,7 @@ export declare class Message {
     meaning: string;
     description: string;
     id: string;
+    sources: MessageSpan[];
     /**
      * @param nodes message AST
      * @param placeholders maps placeholder names to static content
@@ -30,6 +31,13 @@ export declare class Message {
     }, placeholderToMessage: {
         [phName: string]: Message;
     }, meaning: string, description: string, id: string);
+}
+export interface MessageSpan {
+    filePath: string;
+    startLine: number;
+    startCol: number;
+    endLine: number;
+    endCol: number;
 }
 export interface Node {
     sourceSpan: ParseSourceSpan;
