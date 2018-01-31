@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.1-407b5cf
+ * @license Angular v6.0.0-beta.1-06d6c76
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -640,7 +640,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.1-407b5cf');
+var VERSION = new Version('6.0.0-beta.1-06d6c76');
 
 /**
  * @fileoverview added by tsickle
@@ -29215,7 +29215,6 @@ var Identifiers$1 = /** @class */ (function () {
     /* Methods */
     Identifiers.NEW_METHOD = 'n';
     Identifiers.HOST_BINDING_METHOD = 'h';
-    Identifiers.REFRESH_METHOD = 'r';
     /* Instructions */
     Identifiers.createElement = { name: 'ɵE', moduleName: CORE$1 };
     Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
@@ -29725,10 +29724,8 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 (_c = this._bindingMode).push.apply(_c, convertedBinding.stmts);
                 this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(nodeIndex), literal(input.templateName), importExpr(Identifiers$1.bind).callFn([convertedBinding.currValExpr]));
             }
-            // e.g. TodoComponentDef.r(0, 0);
-            this._refreshMode.push(this.definitionOf(directiveType, kind)
-                .callMethod(Identifiers$1.REFRESH_METHOD, [literal(directiveIndex), literal(nodeIndex)])
-                .toStmt());
+            // e.g. r(0, 0);
+            this.instruction(this._refreshMode, directive.sourceSpan, Identifiers$1.refreshComponent, literal(directiveIndex), literal(nodeIndex));
         }
         var _c;
     };

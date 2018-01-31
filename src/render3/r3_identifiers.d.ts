@@ -14,7 +14,6 @@ export declare const enum LifeCycleGuard {
 export declare class Identifiers {
     static NEW_METHOD: string;
     static HOST_BINDING_METHOD: string;
-    static REFRESH_METHOD: string;
     static createElement: o.ExternalReference;
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
