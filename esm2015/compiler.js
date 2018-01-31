@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.1-06d6c76
+ * @license Angular v6.0.0-beta.1-81306c1
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -588,7 +588,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.1-06d6c76');
+const VERSION = new Version('6.0.0-beta.1-81306c1');
 
 /**
  * @fileoverview added by tsickle
@@ -23900,6 +23900,7 @@ class Identifiers$1 {
 /* Methods */
 Identifiers$1.NEW_METHOD = 'n';
 Identifiers$1.HOST_BINDING_METHOD = 'h';
+Identifiers$1.REFRESH_METHOD = 'r';
 /* Instructions */
 Identifiers$1.createElement = { name: 'ɵE', moduleName: CORE$1 };
 Identifiers$1.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
@@ -24378,8 +24379,10 @@ class TemplateDefinitionBuilder {
                 this._bindingMode.push(...convertedBinding.stmts);
                 this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(nodeIndex), literal(input.templateName), importExpr(Identifiers$1.bind).callFn([convertedBinding.currValExpr]));
             }
-            // e.g. r(0, 0);
-            this.instruction(this._refreshMode, directive.sourceSpan, Identifiers$1.refreshComponent, literal(directiveIndex), literal(nodeIndex));
+            // e.g. TodoComponentDef.r(0, 0);
+            this._refreshMode.push(this.definitionOf(directiveType, kind)
+                .callMethod(Identifiers$1.REFRESH_METHOD, [literal(directiveIndex), literal(nodeIndex)])
+                .toStmt());
         }
     }
     /**
