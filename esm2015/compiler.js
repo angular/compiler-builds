@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.2-3cc1d76
+ * @license Angular v6.0.0-beta.2-1242839
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -588,7 +588,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.2-3cc1d76');
+const VERSION = new Version('6.0.0-beta.2-1242839');
 
 /**
  * @fileoverview added by tsickle
@@ -24074,9 +24074,9 @@ function interpolate(args) {
         case 17:
             return importExpr(Identifiers$1.bind8).callFn(args);
     }
-    (args.length >= 19 && args.length % 2 == 1) ||
+    (args.length > 19 && args.length % 2 == 1) ||
         error(`Invalid interpolation argument length ${args.length}`);
-    return importExpr(Identifiers$1.bindV).callFn([literalArr(args)]);
+    return importExpr(Identifiers$1.bindV).callFn(args);
 }
 class BindingScope {
     /**
