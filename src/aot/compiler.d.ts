@@ -5,9 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { CompileNgModuleMetadata } from '../compile_metadata';
+import { CompileInjectableMetadata, CompileNgModuleMetadata } from '../compile_metadata';
 import { CompilerConfig } from '../config';
 import { MessageBundle } from '../i18n/message_bundle';
+import { InjectableCompiler } from '../injectable_compiler';
 import { CompileMetadataResolver } from '../metadata_resolver';
 import { NgModuleCompiler } from '../ng_module_compiler';
 import { OutputEmitter } from '../output/abstract_emitter';
@@ -35,27 +36,38 @@ export declare class AotCompiler {
     private _viewCompiler;
     private _typeCheckCompiler;
     private _ngModuleCompiler;
+    private _injectableCompiler;
     private _outputEmitter;
     private _summaryResolver;
     private _symbolResolver;
     private _templateAstCache;
     private _analyzedFiles;
-    constructor(_config: CompilerConfig, _options: AotCompilerOptions, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _symbolResolver: StaticSymbolResolver);
+    private _analyzedFilesForInjectables;
+    constructor(_config: CompilerConfig, _options: AotCompilerOptions, _host: AotCompilerHost, _reflector: StaticReflector, _metadataResolver: CompileMetadataResolver, _templateParser: TemplateParser, _styleCompiler: StyleCompiler, _viewCompiler: ViewCompiler, _typeCheckCompiler: TypeCheckCompiler, _ngModuleCompiler: NgModuleCompiler, _injectableCompiler: InjectableCompiler, _outputEmitter: OutputEmitter, _summaryResolver: SummaryResolver<StaticSymbol>, _symbolResolver: StaticSymbolResolver);
     clearCache(): void;
     analyzeModulesSync(rootFiles: string[]): NgAnalyzedModules;
     analyzeModulesAsync(rootFiles: string[]): Promise<NgAnalyzedModules>;
     private _analyzeFile(fileName);
+    private _analyzeFileForInjectables(fileName);
     findGeneratedFileNames(fileName: string): string[];
     emitBasicStub(genFileName: string, originalFileName?: string): GeneratedFile;
     emitTypeCheckStub(genFileName: string, originalFileName: string): GeneratedFile | null;
-    loadFilesAsync(fileNames: string[]): Promise<NgAnalyzedModules>;
-    loadFilesSync(fileNames: string[]): NgAnalyzedModules;
+    loadFilesAsync(fileNames: string[], tsFiles: string[]): Promise<{
+        analyzedModules: NgAnalyzedModules;
+        analyzedInjectables: NgAnalyzedFileWithInjectables[];
+    }>;
+    loadFilesSync(fileNames: string[], tsFiles: string[]): {
+        analyzedModules: NgAnalyzedModules;
+        analyzedInjectables: NgAnalyzedFileWithInjectables[];
+    };
     private _createNgFactoryStub(outputCtx, file, emitFlags);
     private _externalIdentifierReferences(references);
     private _createTypeCheckBlock(ctx, componentId, moduleMeta, compMeta, directives, externalReferenceVars);
     emitMessageBundle(analyzeResult: NgAnalyzedModules, locale: string | null): MessageBundle;
     emitAllPartialModules({ngModuleByPipeOrDirective, files}: NgAnalyzedModules): PartialModule[];
     private _emitPartialModule(fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
+    emitAllPartialModules2(files: NgAnalyzedFileWithInjectables[]): PartialModule[];
+    private _emitPartialModule2(fileName, injectables);
     emitAllImpls(analyzeResult: NgAnalyzedModules): GeneratedFile[];
     private _compileImplFile(srcFileUrl, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables);
     private _createSummary(srcFileName, directives, pipes, ngModules, injectables, ngFactoryCtx);
@@ -75,12 +87,16 @@ export interface NgAnalyzedModules {
     files: NgAnalyzedFile[];
     symbolsMissingModule?: StaticSymbol[];
 }
+export interface NgAnalyzedFileWithInjectables {
+    fileName: string;
+    injectables: CompileInjectableMetadata[];
+}
 export interface NgAnalyzedFile {
     fileName: string;
     directives: StaticSymbol[];
     pipes: StaticSymbol[];
     ngModules: CompileNgModuleMetadata[];
-    injectables: StaticSymbol[];
+    injectables: CompileInjectableMetadata[];
     exportsNonSourceFiles: boolean;
 }
 export interface NgAnalyzeModulesHost {
@@ -89,4 +105,5 @@ export interface NgAnalyzeModulesHost {
 export declare function analyzeNgModules(fileNames: string[], host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
 export declare function analyzeAndValidateNgModules(fileNames: string[], host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver): NgAnalyzedModules;
 export declare function analyzeFile(host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver, fileName: string): NgAnalyzedFile;
+export declare function analyzeFileForInjectables(host: NgAnalyzeModulesHost, staticSymbolResolver: StaticSymbolResolver, metadataResolver: CompileMetadataResolver, fileName: string): NgAnalyzedFileWithInjectables;
 export declare function mergeAnalyzedFiles(analyzedFiles: NgAnalyzedFile[]): NgAnalyzedModules;

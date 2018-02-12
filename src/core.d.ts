@@ -103,13 +103,21 @@ export interface ModuleWithProviders {
     ngModule: Type;
     providers?: Provider[];
 }
+export interface Injectable {
+    scope?: Type | any;
+    useClass?: Type | any;
+    useExisting?: Type | any;
+    useValue?: any;
+    useFactory?: Type | any;
+    deps?: Array<Type | any[]>;
+}
+export declare const createInjectable: MetadataFactory<Injectable>;
 export interface SchemaMetadata {
     name: string;
 }
 export declare const CUSTOM_ELEMENTS_SCHEMA: SchemaMetadata;
 export declare const NO_ERRORS_SCHEMA: SchemaMetadata;
 export declare const createOptional: MetadataFactory<{}>;
-export declare const createInjectable: MetadataFactory<{}>;
 export declare const createSelf: MetadataFactory<{}>;
 export declare const createSkipSelf: MetadataFactory<{}>;
 export declare const createHost: MetadataFactory<{}>;
@@ -162,6 +170,7 @@ export declare const enum NodeFlags {
     TypeViewQuery = 134217728,
     StaticQuery = 268435456,
     DynamicQuery = 536870912,
+    TypeModuleProvider = 1073741824,
     CatQuery = 201326592,
     Types = 201347067,
 }
@@ -169,7 +178,16 @@ export declare const enum DepFlags {
     None = 0,
     SkipSelf = 1,
     Optional = 2,
+    Self = 4,
     Value = 8,
+}
+/** Injection flags for DI. */
+export declare const enum InjectFlags {
+    Default = 0,
+    /** Skip the node that is requesting injection. */
+    SkipSelf = 1,
+    /** Don't descend into ancestors of the node requesting injection. */
+    Self = 2,
 }
 export declare const enum ArgumentType {
     Inline = 0,

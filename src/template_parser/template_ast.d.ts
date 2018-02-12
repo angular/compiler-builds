@@ -179,7 +179,8 @@ export declare class ProviderAst implements TemplateAst {
     providerType: ProviderAstType;
     lifecycleHooks: LifecycleHooks[];
     sourceSpan: ParseSourceSpan;
-    constructor(token: CompileTokenMetadata, multiProvider: boolean, eager: boolean, providers: CompileProviderMetadata[], providerType: ProviderAstType, lifecycleHooks: LifecycleHooks[], sourceSpan: ParseSourceSpan);
+    readonly isModule: boolean;
+    constructor(token: CompileTokenMetadata, multiProvider: boolean, eager: boolean, providers: CompileProviderMetadata[], providerType: ProviderAstType, lifecycleHooks: LifecycleHooks[], sourceSpan: ParseSourceSpan, isModule: boolean);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 export declare enum ProviderAstType {

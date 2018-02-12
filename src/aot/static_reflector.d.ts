@@ -37,6 +37,7 @@ export declare class StaticReflector implements CompileReflector {
     findDeclaration(moduleUrl: string, name: string, containingFile?: string): StaticSymbol;
     tryFindDeclaration(moduleUrl: string, name: string): StaticSymbol;
     findSymbolDeclaration(symbol: StaticSymbol): StaticSymbol;
+    tryAnnotations(type: StaticSymbol): any[];
     annotations(type: StaticSymbol): any[];
     propMetadata(type: StaticSymbol): {
         [key: string]: any[];
