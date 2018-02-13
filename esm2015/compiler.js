@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.4-da6ab91
+ * @license Angular v5.2.4-1b8ea10
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -581,7 +581,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('5.2.4-da6ab91');
+const VERSION = new Version('5.2.4-1b8ea10');
 
 /**
  * @fileoverview added by tsickle
@@ -5708,7 +5708,8 @@ class _ParseAST {
             switch (operator) {
                 case '+':
                     this.advance();
-                    return this.parsePrefix();
+                    result = this.parsePrefix();
+                    return new Binary(this.span(start), '-', result, new LiteralPrimitive(new ParseSpan(start, start), 0));
                 case '-':
                     this.advance();
                     result = this.parsePrefix();
