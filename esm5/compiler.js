@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.3-20a900b
+ * @license Angular v6.0.0-beta.3-72f8abd
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -659,7 +659,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.3-20a900b');
+var VERSION = new Version('6.0.0-beta.3-72f8abd');
 
 /**
  * @fileoverview added by tsickle
@@ -6789,7 +6789,8 @@ var _ParseAST = /** @class */ (function () {
             switch (operator) {
                 case '+':
                     this.advance();
-                    return this.parsePrefix();
+                    result = this.parsePrefix();
+                    return new Binary(this.span(start), '-', result, new LiteralPrimitive(new ParseSpan(start, start), 0));
                 case '-':
                     this.advance();
                     result = this.parsePrefix();
