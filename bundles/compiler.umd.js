@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.4-1b8ea10
+ * @license Angular v5.2.4-c4f841f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v5.2.4-1b8ea10
+ * @license Angular v5.2.4-c4f841f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -676,7 +676,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.4-1b8ea10');
+var VERSION = new Version('5.2.4-c4f841f');
 
 /**
  * @fileoverview added by tsickle
@@ -6800,8 +6800,7 @@ var _ParseAST = /** @class */ (function () {
             switch (operator) {
                 case '+':
                     this.advance();
-                    result = this.parsePrefix();
-                    return new Binary(this.span(start), '-', result, new LiteralPrimitive(new ParseSpan(start, start), 0));
+                    return this.parsePrefix();
                 case '-':
                     this.advance();
                     result = this.parsePrefix();
