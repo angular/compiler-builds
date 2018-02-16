@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.4-d241532
+ * @license Angular v6.0.0-beta.4-f1a0632
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -659,7 +659,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.4-d241532');
+var VERSION = new Version('6.0.0-beta.4-f1a0632');
 
 /**
  * @fileoverview added by tsickle
@@ -1387,7 +1387,7 @@ var CompilerConfig = /** @class */ (function () {
  * @return {?}
  */
 function preserveWhitespacesDefault(preserveWhitespacesOption, defaultSetting) {
-    if (defaultSetting === void 0) { defaultSetting = true; }
+    if (defaultSetting === void 0) { defaultSetting = false; }
     return preserveWhitespacesOption === null ? defaultSetting : preserveWhitespacesOption;
 }
 
