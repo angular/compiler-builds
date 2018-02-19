@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.4-3ceee99
+ * @license Angular v6.0.0-beta.4-a8b5465
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -44,7 +44,7 @@ var __assign = Object.assign || function __assign(t) {
 };
 
 /**
- * @license Angular v6.0.0-beta.4-3ceee99
+ * @license Angular v6.0.0-beta.4-a8b5465
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -702,7 +702,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.4-3ceee99');
+var VERSION = new Version('6.0.0-beta.4-a8b5465');
 
 /**
  * @fileoverview added by tsickle
@@ -29488,7 +29488,7 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.interpolation7 = { name: 'ɵi7', moduleName: CORE$1 };
     Identifiers.interpolation8 = { name: 'ɵi8', moduleName: CORE$1 };
     Identifiers.interpolationV = { name: 'ɵiV', moduleName: CORE$1 };
-    Identifiers.memory = { name: 'ɵm', moduleName: CORE$1 };
+    Identifiers.load = { name: 'ɵld', moduleName: CORE$1 };
     Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
     Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
     Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
@@ -29912,7 +29912,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
                 // Generate the update temporary.
                 var /** @type {?} */ variableName = _this.bindingScope.freshReferenceName();
                 _this._bindingMode.push(variable(variableName, INFERRED_TYPE)
-                    .set(importExpr(Identifiers$1.memory).callFn([literal(slot)]))
+                    .set(importExpr(Identifiers$1.load).callFn([literal(slot)]))
                     .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
                 _this.bindingScope.set(reference.name, variableName);
                 return [reference.name, reference.originalValue];

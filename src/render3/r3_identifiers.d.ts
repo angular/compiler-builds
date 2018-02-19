@@ -38,7 +38,7 @@ export declare class Identifiers {
     static interpolation7: o.ExternalReference;
     static interpolation8: o.ExternalReference;
     static interpolationV: o.ExternalReference;
-    static memory: o.ExternalReference;
+    static load: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
     static refreshComponent: o.ExternalReference;
