@@ -14,6 +14,7 @@ export declare const enum LifeCycleGuard {
 export declare class Identifiers {
     static NEW_METHOD: string;
     static HOST_BINDING_METHOD: string;
+    static TRANSFORM_METHOD: string;
     static createElement: o.ExternalReference;
     static elementEnd: o.ExternalReference;
     static elementProperty: o.ExternalReference;
@@ -38,7 +39,13 @@ export declare class Identifiers {
     static interpolation7: o.ExternalReference;
     static interpolation8: o.ExternalReference;
     static interpolationV: o.ExternalReference;
+    static pipeBind1: o.ExternalReference;
+    static pipeBind2: o.ExternalReference;
+    static pipeBind3: o.ExternalReference;
+    static pipeBind4: o.ExternalReference;
+    static pipeBindV: o.ExternalReference;
     static load: o.ExternalReference;
+    static pipe: o.ExternalReference;
     static projection: o.ExternalReference;
     static projectionDef: o.ExternalReference;
     static refreshComponent: o.ExternalReference;
@@ -49,5 +56,6 @@ export declare class Identifiers {
     static inject: o.ExternalReference;
     static defineComponent: o.ExternalReference;
     static defineDirective: o.ExternalReference;
+    static definePipe: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
 }
