@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.6-49f074f
+ * @license Angular v6.0.0-beta.6-0451fd9
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -604,7 +604,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.6-49f074f');
+const VERSION = new Version('6.0.0-beta.6-0451fd9');
 
 /**
  * @fileoverview added by tsickle
@@ -12908,7 +12908,7 @@ class Statement {
 class DeclareVarStmt extends Statement {
     /**
      * @param {?} name
-     * @param {?} value
+     * @param {?=} value
      * @param {?=} type
      * @param {?=} modifiers
      * @param {?=} sourceSpan
@@ -12917,7 +12917,7 @@ class DeclareVarStmt extends Statement {
         super(modifiers, sourceSpan);
         this.name = name;
         this.value = value;
-        this.type = type || value.type;
+        this.type = type || (value && value.type) || null;
     }
     /**
      * @param {?} stmt
@@ -12925,7 +12925,7 @@ class DeclareVarStmt extends Statement {
      */
     isEquivalent(stmt) {
         return stmt instanceof DeclareVarStmt && this.name === stmt.name &&
-            this.value.isEquivalent(stmt.value);
+            (this.value ? !!stmt.value && this.value.isEquivalent(stmt.value) : !stmt.value);
     }
     /**
      * @param {?} visitor
@@ -13435,7 +13435,8 @@ class AstTransformer$1 {
      * @return {?}
      */
     visitDeclareVarStmt(stmt, context) {
-        return this.transformStmt(new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
+        const /** @type {?} */ value = stmt.value && stmt.value.visitExpression(this, context);
+        return this.transformStmt(new DeclareVarStmt(stmt.name, value, stmt.type, stmt.modifiers, stmt.sourceSpan), context);
     }
     /**
      * @param {?} stmt
@@ -13764,7 +13765,9 @@ class RecursiveAstVisitor$1 {
      * @return {?}
      */
     visitDeclareVarStmt(stmt, context) {
-        stmt.value.visitExpression(this, context);
+        if (stmt.value) {
+            stmt.value.visitExpression(this, context);
+        }
         if (stmt.type) {
             stmt.type.visitType(this, context);
         }
@@ -18183,8 +18186,10 @@ class _TsEmitterVisitor extends AbstractEmitterVisitor {
         }
         ctx.print(stmt, ` ${stmt.name}`);
         this._printColonType(stmt.type, ctx);
-        ctx.print(stmt, ` = `);
-        stmt.value.visitExpression(this, ctx);
+        if (stmt.value) {
+            ctx.print(stmt, ` = `);
+            stmt.value.visitExpression(this, ctx);
+        }
         ctx.println(stmt, `;`);
         return null;
     }
@@ -24580,6 +24585,8 @@ Identifiers$1.defineDirective = {
     moduleName: CORE$1,
 };
 Identifiers$1.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
+Identifiers$1.query = { name: 'ɵQ', moduleName: CORE$1 };
+Identifiers$1.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
 Identifiers$1.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
 
 /**
@@ -24624,7 +24631,7 @@ function compileDirective(outputCtx, directive, reflector) {
     // e.g. 'type: MyDirective`
     definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(directive.type.reference), quoted: false });
     // e.g. `factory: () => new MyApp(injectElementRef())`
-    const /** @type {?} */ templateFactory = createFactory(directive.type, outputCtx, reflector);
+    const /** @type {?} */ templateFactory = createFactory(directive.type, outputCtx, reflector, directive.queries);
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
     // e.g 'inputs: {a: 'a'}`
     if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
@@ -24667,13 +24674,18 @@ function compileComponent(outputCtx, component, pipes, template, reflector) {
         }
     }
     // e.g. `factory: function MyApp_Factory() { return new MyApp(injectElementRef()); }`
-    const /** @type {?} */ templateFactory = createFactory(component.type, outputCtx, reflector);
+    const /** @type {?} */ templateFactory = createFactory(component.type, outputCtx, reflector, component.queries);
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    // e.g `hostBindings: function MyApp_HostBindings { ... }
+    const /** @type {?} */ hostBindings = createHostBindingsFunction(component.type, outputCtx, component.queries);
+    if (hostBindings) {
+        definitionMapValues.push({ key: 'hostBindings', value: hostBindings, quoted: false });
+    }
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     const /** @type {?} */ templateTypeName = component.type.reference.name;
     const /** @type {?} */ templateName = templateTypeName ? `${templateTypeName}_Template` : null;
     const /** @type {?} */ pipeMap = new Map(pipes.map(pipe => [pipe.name, pipe]));
-    const /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap)
+    const /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries)
         .buildTemplateFunction(template, []);
     definitionMapValues.push({ key: 'template', value: templateFunctionExpression, quoted: false });
     // e.g `inputs: {a: 'a'}`
@@ -24838,8 +24850,9 @@ class TemplateDefinitionBuilder {
      * @param {?=} contextName
      * @param {?=} templateName
      * @param {?=} pipes
+     * @param {?=} viewQueries
      */
-    constructor(outputCtx, constantPool, reflector, contextParameter, bindingScope, level = 0, ngContentSelectors, contextName, templateName, pipes) {
+    constructor(outputCtx, constantPool, reflector, contextParameter, bindingScope, level = 0, ngContentSelectors, contextName, templateName, pipes, viewQueries) {
         this.outputCtx = outputCtx;
         this.constantPool = constantPool;
         this.reflector = reflector;
@@ -24850,6 +24863,7 @@ class TemplateDefinitionBuilder {
         this.contextName = contextName;
         this.templateName = templateName;
         this.pipes = pipes;
+        this.viewQueries = viewQueries;
         this._dataIndex = 0;
         this._bindingContext = 0;
         this._referenceIndex = 0;
@@ -24922,6 +24936,29 @@ class TemplateDefinitionBuilder {
                 }
                 this.instruction(this._creationMode, null, Identifiers$1.projectionDef, ...parameters);
             }
+        }
+        // Define and update any view queries
+        for (let /** @type {?} */ query of this.viewQueries) {
+            // e.g. r3.Q(0, SomeDirective, true);
+            const /** @type {?} */ querySlot = this.allocateDataSlot();
+            const /** @type {?} */ predicate = getQueryPredicate(query, this.outputCtx);
+            const /** @type {?} */ args = [
+                /* memoryIndex */ literal(querySlot, INFERRED_TYPE),
+                predicate,
+                /* descend */ literal(query.descendants, INFERRED_TYPE)
+            ];
+            if (query.read) {
+                args.push(this.outputCtx.importExpr(/** @type {?} */ ((query.read.identifier)).reference));
+            }
+            this.instruction(this._creationMode, null, Identifiers$1.query, ...args);
+            // (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
+            const /** @type {?} */ temporary = this.temp();
+            const /** @type {?} */ getQueryList = importExpr(Identifiers$1.load).callFn([literal(querySlot)]);
+            const /** @type {?} */ refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
+            const /** @type {?} */ updateDirective = variable(CONTEXT_NAME)
+                .prop(query.propertyName)
+                .set(query.first ? temporary.prop('first') : temporary);
+            this._bindingMode.push(refresh.and(updateDirective).toStmt());
         }
         templateVisitAll(this, asts);
         const /** @type {?} */ creationMode = this._creationMode.length > 0 ?
@@ -25117,7 +25154,7 @@ class TemplateDefinitionBuilder {
         // e.g. cr();
         this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.containerRefreshEnd);
         // Create the template function
-        const /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes);
+        const /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, []);
         const /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
         this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
     }
@@ -25176,9 +25213,7 @@ class TemplateDefinitionBuilder {
      */
     temp() {
         if (!this._temporaryAllocated) {
-            this._prefix.push(variable(TEMPORARY_NAME, DYNAMIC_TYPE, null)
-                .set(literal(undefined))
-                .toDeclStmt(DYNAMIC_TYPE));
+            this._prefix.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
             this._temporaryAllocated = true;
         }
         return variable(TEMPORARY_NAME);
@@ -25205,12 +25240,41 @@ class TemplateDefinitionBuilder {
     }
 }
 /**
+ * @param {?} query
+ * @param {?} outputCtx
+ * @return {?}
+ */
+function getQueryPredicate(query, outputCtx) {
+    let /** @type {?} */ predicate;
+    if (query.selectors.length > 1 || (query.selectors.length == 1 && query.selectors[0].value)) {
+        const /** @type {?} */ selectors = query.selectors.map(value => /** @type {?} */ (value.value));
+        selectors.some(value => !value) && error('Found a type among the string selectors expected');
+        predicate = outputCtx.constantPool.getConstLiteral(literalArr(selectors.map(value => literal(value))));
+    }
+    else if (query.selectors.length == 1) {
+        const /** @type {?} */ first = query.selectors[0];
+        if (first.identifier) {
+            predicate = outputCtx.importExpr(first.identifier.reference);
+        }
+        else {
+            error('Unexpected query form');
+            predicate = literal(null);
+        }
+    }
+    else {
+        error('Unexpected query form');
+        predicate = literal(null);
+    }
+    return predicate;
+}
+/**
  * @param {?} type
  * @param {?} outputCtx
  * @param {?} reflector
+ * @param {?} queries
  * @return {?}
  */
-function createFactory(type, outputCtx, reflector) {
+function createFactory(type, outputCtx, reflector, queries) {
     let /** @type {?} */ args = [];
     const /** @type {?} */ elementRef = reflector.resolveExternalReference(Identifiers.ElementRef);
     const /** @type {?} */ templateRef = reflector.resolveExternalReference(Identifiers.TemplateRef);
@@ -25243,7 +25307,61 @@ function createFactory(type, outputCtx, reflector) {
             unsupported('dependency without a token');
         }
     }
-    return fn([], [new ReturnStatement(new InstantiateExpr(outputCtx.importExpr(type.reference), args))], INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_Factory` : null);
+    const /** @type {?} */ queryDefinitions = [];
+    for (let /** @type {?} */ query of queries) {
+        const /** @type {?} */ predicate = getQueryPredicate(query, outputCtx);
+        // e.g. r3.Q(null, SomeDirective, false) or r3.Q(null, ['div'], false)
+        const /** @type {?} */ parameters = [
+            /* memoryIndex */ literal(null, INFERRED_TYPE),
+            predicate,
+            /* descend */ literal(query.descendants)
+        ];
+        if (query.read) {
+            parameters.push(outputCtx.importExpr(/** @type {?} */ ((query.read.identifier)).reference));
+        }
+        queryDefinitions.push(importExpr(Identifiers$1.query).callFn(parameters));
+    }
+    const /** @type {?} */ createInstance = new InstantiateExpr(outputCtx.importExpr(type.reference), args);
+    const /** @type {?} */ result = queryDefinitions.length > 0 ? literalArr([createInstance, ...queryDefinitions]) :
+        createInstance;
+    return fn([], [new ReturnStatement(result)], INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_Factory` : null);
+}
+/**
+ * @param {?} type
+ * @param {?} outputCtx
+ * @param {?} queries
+ * @return {?}
+ */
+function createHostBindingsFunction(type, outputCtx, queries) {
+    const /** @type {?} */ statements = [];
+    const /** @type {?} */ temporary = function () {
+        let /** @type {?} */ declared = false;
+        return () => {
+            if (!declared) {
+                statements.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
+                declared = true;
+            }
+            return variable(TEMPORARY_NAME);
+        };
+    }();
+    for (let /** @type {?} */ index = 0; index < queries.length; index++) {
+        const /** @type {?} */ query = queries[index];
+        // e.g. r3.qR(tmp = r3.ld(dirIndex)[1]) && (r3.ld(dirIndex)[0].someDir = tmp);
+        const /** @type {?} */ getDirectiveMemory = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+        // The query list is at the query index + 1 because the directive itself is in slot 0.
+        const /** @type {?} */ getQueryList = getDirectiveMemory.key(literal(index + 1));
+        const /** @type {?} */ assignToTemporary = temporary().set(getQueryList);
+        const /** @type {?} */ callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
+        const /** @type {?} */ updateDirective = getDirectiveMemory.key(literal(0, INFERRED_TYPE))
+            .prop(query.propertyName)
+            .set(query.first ? temporary().key(literal(0)) : temporary());
+        const /** @type {?} */ andExpression = callQueryRefresh.and(updateDirective);
+        statements.push(andExpression.toStmt());
+    }
+    if (statements.length > 0) {
+        return fn([new FnParam('dirIndex', NUMBER_TYPE), new FnParam('elIndex', NUMBER_TYPE)], statements, INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_HostBindings` : null);
+    }
+    return null;
 }
 class ValueConverter extends AstMemoryEfficientTransformer {
     /**
@@ -25429,7 +25547,7 @@ function compilePipe(outputCtx, pipe, reflector) {
     // e.g. 'type: MyPipe`
     definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
     // e.g. factory: function MyPipe_Factory() { return new MyPipe(); },
-    const /** @type {?} */ templateFactory = createFactory(pipe.type, outputCtx, reflector);
+    const /** @type {?} */ templateFactory = createFactory(pipe.type, outputCtx, reflector, []);
     definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
     // e.g. pure: true
     if (pipe.pure) {
@@ -29204,7 +29322,8 @@ class StatementInterpreter {
      * @return {?}
      */
     visitDeclareVarStmt(stmt, ctx) {
-        ctx.vars.set(stmt.name, stmt.value.visitExpression(this, ctx));
+        const /** @type {?} */ initialValue = stmt.value ? stmt.value.visitExpression(this, ctx) : undefined;
+        ctx.vars.set(stmt.name, initialValue);
         if (stmt.hasModifier(StmtModifier.Exported)) {
             ctx.exports.push(stmt.name);
         }
@@ -29726,8 +29845,11 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
      * @return {?}
      */
     visitDeclareVarStmt(stmt, ctx) {
-        ctx.print(stmt, `var ${stmt.name} = `);
-        stmt.value.visitExpression(this, ctx);
+        ctx.print(stmt, `var ${stmt.name}`);
+        if (stmt.value) {
+            ctx.print(stmt, ' = ');
+            stmt.value.visitExpression(this, ctx);
+        }
         ctx.println(stmt, `;`);
         return null;
     }

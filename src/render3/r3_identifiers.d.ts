@@ -67,5 +67,7 @@ export declare class Identifiers {
     static defineComponent: o.ExternalReference;
     static defineDirective: o.ExternalReference;
     static definePipe: o.ExternalReference;
+    static query: o.ExternalReference;
+    static queryRefresh: o.ExternalReference;
     static NgOnChangesFeature: o.ExternalReference;
 }

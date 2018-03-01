@@ -363,9 +363,9 @@ export declare abstract class Statement {
 }
 export declare class DeclareVarStmt extends Statement {
     name: string;
-    value: Expression;
+    value: Expression | undefined;
     type: Type | null;
-    constructor(name: string, value: Expression, type?: Type | null, modifiers?: StmtModifier[] | null, sourceSpan?: ParseSourceSpan | null);
+    constructor(name: string, value?: Expression | undefined, type?: Type | null, modifiers?: StmtModifier[] | null, sourceSpan?: ParseSourceSpan | null);
     isEquivalent(stmt: Statement): boolean;
     visitStatement(visitor: StatementVisitor, context: any): any;
 }
