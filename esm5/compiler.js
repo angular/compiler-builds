@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.6-ec445b5
+ * @license Angular v6.0.0-beta.6-49f074f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -659,7 +659,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('6.0.0-beta.6-ec445b5');
+var VERSION = new Version('6.0.0-beta.6-49f074f');
 
 /**
  * @fileoverview added by tsickle
@@ -14828,6 +14828,13 @@ var ReadVarExpr = /** @class */ (function (_super) {
         return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
     };
     /**
+     * @return {?}
+     */
+    ReadVarExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14875,6 +14882,13 @@ var WriteVarExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof WriteVarExpr && this.name === e.name && this.value.isEquivalent(e.value);
     };
+    /**
+     * @return {?}
+     */
+    WriteVarExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -14925,6 +14939,13 @@ var WriteKeyExpr = /** @class */ (function (_super) {
             this.index.isEquivalent(e.index) && this.value.isEquivalent(e.value);
     };
     /**
+     * @return {?}
+     */
+    WriteKeyExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -14960,6 +14981,13 @@ var WritePropExpr = /** @class */ (function (_super) {
         return e instanceof WritePropExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name && this.value.isEquivalent(e.value);
     };
+    /**
+     * @return {?}
+     */
+    WritePropExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -15013,6 +15041,13 @@ var InvokeMethodExpr = /** @class */ (function (_super) {
             this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
     };
     /**
+     * @return {?}
+     */
+    InvokeMethodExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -15047,6 +15082,13 @@ var InvokeFunctionExpr = /** @class */ (function (_super) {
         return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
             areAllEquivalent(this.args, e.args);
     };
+    /**
+     * @return {?}
+     */
+    InvokeFunctionExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -15083,6 +15125,13 @@ var InstantiateExpr = /** @class */ (function (_super) {
             areAllEquivalent(this.args, e.args);
     };
     /**
+     * @return {?}
+     */
+    InstantiateExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -15115,6 +15164,13 @@ var LiteralExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof LiteralExpr && this.value === e.value;
     };
+    /**
+     * @return {?}
+     */
+    LiteralExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return true; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -15151,6 +15207,13 @@ var ExternalExpr = /** @class */ (function (_super) {
         return e instanceof ExternalExpr && this.value.name === e.value.name &&
             this.value.moduleName === e.value.moduleName && this.value.runtime === e.value.runtime;
     };
+    /**
+     * @return {?}
+     */
+    ExternalExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -15197,6 +15260,13 @@ var ConditionalExpr = /** @class */ (function (_super) {
             this.trueCase.isEquivalent(e.trueCase) && nullSafeIsEquivalent(this.falseCase, e.falseCase);
     };
     /**
+     * @return {?}
+     */
+    ConditionalExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -15229,6 +15299,13 @@ var NotExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof NotExpr && this.condition.isEquivalent(e.condition);
     };
+    /**
+     * @return {?}
+     */
+    NotExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -15263,6 +15340,13 @@ var AssertNotNull = /** @class */ (function (_super) {
         return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
     };
     /**
+     * @return {?}
+     */
+    AssertNotNull.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -15295,6 +15379,13 @@ var CastExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof CastExpr && this.value.isEquivalent(e.value);
     };
+    /**
+     * @return {?}
+     */
+    CastExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -15349,6 +15440,13 @@ var FunctionExpr = /** @class */ (function (_super) {
             areAllEquivalent(this.statements, e.statements);
     };
     /**
+     * @return {?}
+     */
+    FunctionExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -15399,6 +15497,13 @@ var BinaryOperatorExpr = /** @class */ (function (_super) {
             this.lhs.isEquivalent(e.lhs) && this.rhs.isEquivalent(e.rhs);
     };
     /**
+     * @return {?}
+     */
+    BinaryOperatorExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -15433,6 +15538,13 @@ var ReadPropExpr = /** @class */ (function (_super) {
         return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name;
     };
+    /**
+     * @return {?}
+     */
+    ReadPropExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -15480,6 +15592,13 @@ var ReadKeyExpr = /** @class */ (function (_super) {
             this.index.isEquivalent(e.index);
     };
     /**
+     * @return {?}
+     */
+    ReadKeyExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -15512,6 +15631,13 @@ var LiteralArrayExpr = /** @class */ (function (_super) {
         _this.entries = entries;
         return _this;
     }
+    /**
+     * @return {?}
+     */
+    LiteralArrayExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return this.entries.every(function (e) { return e.isConstant(); }); };
     /**
      * @param {?} e
      * @return {?}
@@ -15580,6 +15706,13 @@ var LiteralMapExpr = /** @class */ (function (_super) {
         return e instanceof LiteralMapExpr && areAllEquivalent(this.entries, e.entries);
     };
     /**
+     * @return {?}
+     */
+    LiteralMapExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return this.entries.every(function (e) { return e.value.isConstant(); }); };
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -15612,6 +15745,13 @@ var CommaExpr = /** @class */ (function (_super) {
     function (e) {
         return e instanceof CommaExpr && areAllEquivalent(this.parts, e.parts);
     };
+    /**
+     * @return {?}
+     */
+    CommaExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
     /**
      * @param {?} visitor
      * @param {?} context
@@ -26470,7 +26610,7 @@ var BindingForm = {
     // The general form of binding expression, supports all expressions.
     General: 0,
     // Try to generate a simple binding (no temporaries or statements)
-    // otherise generate a general binding
+    // otherwise generate a general binding
     TrySimple: 1,
 };
 BindingForm[BindingForm.General] = "General";
@@ -26883,7 +27023,7 @@ var _AstToIrVisitor = /** @class */ (function () {
      * @return {?}
      */
     function (ast, mode) {
-        // For literal values of null, undefined, true, or false allow type inteference
+        // For literal values of null, undefined, true, or false allow type interference
         // to infer the type.
         var /** @type {?} */ type = ast.value === null || ast.value === undefined || ast.value === true || ast.value === true ?
             INFERRED_TYPE :
@@ -29346,6 +29486,13 @@ function elementEventFullName(target, name) {
  */
 var CONSTANT_PREFIX = '_c';
 /**
+ * Context to use when producing a key.
+ *
+ * This ensures we see the constant not the reference variable when producing
+ * a key.
+ */
+var KEY_CONTEXT = {};
+/**
  * A node that is a place-holder that allows the node to be replaced when the actual
  * node is known.
  *
@@ -29358,6 +29505,7 @@ var FixupExpression = /** @class */ (function (_super) {
     function FixupExpression(resolved) {
         var _this = _super.call(this, resolved.type) || this;
         _this.resolved = resolved;
+        _this.original = resolved;
         return _this;
     }
     /**
@@ -29371,7 +29519,14 @@ var FixupExpression = /** @class */ (function (_super) {
      * @return {?}
      */
     function (visitor, context) {
-        return this.resolved.visitExpression(visitor, context);
+        if (context === KEY_CONTEXT) {
+            // When producing a key we want to traverse the constant not the
+            // variable used to refer to it.
+            return this.original.visitExpression(visitor, context);
+        }
+        else {
+            return this.resolved.visitExpression(visitor, context);
+        }
     };
     /**
      * @param {?} e
@@ -29384,6 +29539,13 @@ var FixupExpression = /** @class */ (function (_super) {
     function (e) {
         return e instanceof FixupExpression && this.resolved.isEquivalent(e.resolved);
     };
+    /**
+     * @return {?}
+     */
+    FixupExpression.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return true; };
     /**
      * @param {?} expression
      * @return {?}
@@ -29407,6 +29569,7 @@ var ConstantPool = /** @class */ (function () {
     function ConstantPool() {
         this.statements = [];
         this.literals = new Map();
+        this.literalFactories = new Map();
         this.injectorDefinitions = new Map();
         this.directiveDefinitions = new Map();
         this.componentDefinitions = new Map();
@@ -29424,6 +29587,11 @@ var ConstantPool = /** @class */ (function () {
      * @return {?}
      */
     function (literal$$1, forceShared) {
+        if (literal$$1 instanceof LiteralExpr || literal$$1 instanceof FixupExpression) {
+            // Do no put simple literals into the constant pool or try to produce a constant for a
+            // reference to a constant.
+            return literal$$1;
+        }
         var /** @type {?} */ key = this.keyOf(literal$$1);
         var /** @type {?} */ fixup = this.literals.get(key);
         var /** @type {?} */ newValue = false;
@@ -29471,6 +29639,70 @@ var ConstantPool = /** @class */ (function () {
             fixup.fixup(variable(name_2));
         }
         return fixup;
+    };
+    /**
+     * @param {?} literal
+     * @return {?}
+     */
+    ConstantPool.prototype.getLiteralFactory = /**
+     * @param {?} literal
+     * @return {?}
+     */
+    function (literal$$1) {
+        // Create a pure function that builds an array of a mix of constant  and variable expressions
+        if (literal$$1 instanceof LiteralArrayExpr) {
+            var /** @type {?} */ argumentsForKey = literal$$1.entries.map(function (e) { return e.isConstant() ? e : literal(null); });
+            var /** @type {?} */ key = this.keyOf(literalArr(argumentsForKey));
+            return this._getLiteralFactory(key, literal$$1.entries, function (entries) { return literalArr(entries); });
+        }
+        else {
+            var /** @type {?} */ expressionForKey = literalMap(literal$$1.entries.map(function (e) {
+                return ({
+                    key: e.key,
+                    value: e.value.isConstant() ? e.value : literal(null),
+                    quoted: e.quoted
+                });
+            }));
+            var /** @type {?} */ key = this.keyOf(expressionForKey);
+            return this._getLiteralFactory(key, literal$$1.entries.map(function (e) { return e.value; }), function (entries) {
+                return literalMap(entries.map(function (value, index) {
+                    return ({
+                        key: literal$$1.entries[index].key,
+                        value: value,
+                        quoted: literal$$1.entries[index].quoted
+                    });
+                }));
+            });
+        }
+    };
+    /**
+     * @param {?} key
+     * @param {?} values
+     * @param {?} resultMap
+     * @return {?}
+     */
+    ConstantPool.prototype._getLiteralFactory = /**
+     * @param {?} key
+     * @param {?} values
+     * @param {?} resultMap
+     * @return {?}
+     */
+    function (key, values, resultMap) {
+        var _this = this;
+        var /** @type {?} */ literalFactory = this.literalFactories.get(key);
+        var /** @type {?} */ literalFactoryArguments = values.filter((function (e) { return !e.isConstant(); }));
+        if (!literalFactory) {
+            var /** @type {?} */ resultExpressions = values.map(function (e, index) { return e.isConstant() ? _this.getConstLiteral(e, true) : variable("a" + index); });
+            var /** @type {?} */ parameters = resultExpressions.filter(isVariable).map(function (e) { return new FnParam(/** @type {?} */ ((e.name)), DYNAMIC_TYPE); });
+            var /** @type {?} */ pureFunctionDeclaration = fn(parameters, [new ReturnStatement(resultMap(resultExpressions))], INFERRED_TYPE);
+            var /** @type {?} */ name_3 = this.freshName();
+            this.statements.push(variable(name_3).set(pureFunctionDeclaration).toDeclStmt(INFERRED_TYPE, [
+                StmtModifier.Final
+            ]));
+            literalFactory = variable(name_3);
+            this.literalFactories.set(key, literalFactory);
+        }
+        return { literalFactory: literalFactory, literalFactoryArguments: literalFactoryArguments };
     };
     /**
      * Produce a unique name.
@@ -29558,7 +29790,7 @@ var ConstantPool = /** @class */ (function () {
      * @return {?}
      */
     function (expression) {
-        return expression.visitExpression(new KeyVisitor(), null);
+        return expression.visitExpression(new KeyVisitor(), KEY_CONTEXT);
     };
     return ConstantPool;
 }());
@@ -29594,28 +29826,32 @@ var KeyVisitor = /** @class */ (function () {
     };
     /**
      * @param {?} ast
+     * @param {?} context
      * @return {?}
      */
     KeyVisitor.prototype.visitLiteralArrayExpr = /**
      * @param {?} ast
+     * @param {?} context
      * @return {?}
      */
-    function (ast) {
+    function (ast, context) {
         var _this = this;
-        return "[" + ast.entries.map(function (entry) { return entry.visitExpression(_this, null); }).join(',') + "]";
+        return "[" + ast.entries.map(function (entry) { return entry.visitExpression(_this, context); }).join(',') + "]";
     };
     /**
      * @param {?} ast
+     * @param {?} context
      * @return {?}
      */
     KeyVisitor.prototype.visitLiteralMapExpr = /**
      * @param {?} ast
+     * @param {?} context
      * @return {?}
      */
-    function (ast) {
+    function (ast, context) {
         var _this = this;
         var /** @type {?} */ mapEntry = function (entry) {
-            return entry.key + ":" + entry.value.visitExpression(_this, null);
+            return entry.key + ":" + entry.value.visitExpression(_this, context);
         };
         return "{" + ast.entries.map(mapEntry).join(',');
     };
@@ -29640,6 +29876,13 @@ var KeyVisitor = /** @class */ (function () {
  */
 function invalid(arg) {
     throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
+}
+/**
+ * @param {?} e
+ * @return {?}
+ */
+function isVariable(e) {
+    return e instanceof ReadVarExpr;
 }
 
 /**
@@ -29848,6 +30091,16 @@ var Identifiers$1 = /** @class */ (function () {
     Identifiers.interpolation7 = { name: 'ɵi7', moduleName: CORE$1 };
     Identifiers.interpolation8 = { name: 'ɵi8', moduleName: CORE$1 };
     Identifiers.interpolationV = { name: 'ɵiV', moduleName: CORE$1 };
+    Identifiers.pureFunction0 = { name: 'ɵf0', moduleName: CORE$1 };
+    Identifiers.pureFunction1 = { name: 'ɵf1', moduleName: CORE$1 };
+    Identifiers.pureFunction2 = { name: 'ɵf2', moduleName: CORE$1 };
+    Identifiers.pureFunction3 = { name: 'ɵf3', moduleName: CORE$1 };
+    Identifiers.pureFunction4 = { name: 'ɵf4', moduleName: CORE$1 };
+    Identifiers.pureFunction5 = { name: 'ɵf5', moduleName: CORE$1 };
+    Identifiers.pureFunction6 = { name: 'ɵf6', moduleName: CORE$1 };
+    Identifiers.pureFunction7 = { name: 'ɵf7', moduleName: CORE$1 };
+    Identifiers.pureFunction8 = { name: 'ɵf8', moduleName: CORE$1 };
+    Identifiers.pureFunctionV = { name: 'ɵfV', moduleName: CORE$1 };
     Identifiers.pipeBind1 = { name: 'ɵpb1', moduleName: CORE$1 };
     Identifiers.pipeBind2 = { name: 'ɵpb2', moduleName: CORE$1 };
     Identifiers.pipeBind3 = { name: 'ɵpb3', moduleName: CORE$1 };
@@ -30047,6 +30300,23 @@ function pipeBinding(args) {
             return Identifiers$1.pipeBindV;
     }
 }
+var pureFunctionIdentifiers = [
+    Identifiers$1.pureFunction0, Identifiers$1.pureFunction1, Identifiers$1.pureFunction2, Identifiers$1.pureFunction3, Identifiers$1.pureFunction4,
+    Identifiers$1.pureFunction5, Identifiers$1.pureFunction6, Identifiers$1.pureFunction7, Identifiers$1.pureFunction8
+];
+/**
+ * @param {?} outputContext
+ * @param {?} literal
+ * @return {?}
+ */
+function getLiteralFactory(outputContext, literal$$1) {
+    var _a = outputContext.constantPool.getLiteralFactory(literal$$1), literalFactory = _a.literalFactory, literalFactoryArguments = _a.literalFactoryArguments;
+    literalFactoryArguments.length > 0 || error("Expected arguments to a literal factory function");
+    var /** @type {?} */ pureFunctionIdent = pureFunctionIdentifiers[literalFactoryArguments.length] || Identifiers$1.pureFunctionV;
+    // Literal factories are pure functions that only need to be re-invoked when the parameters
+    // change.
+    return importExpr(pureFunctionIdent).callFn([literalFactory].concat(literalFactoryArguments));
+}
 var BindingScope = /** @class */ (function () {
     function BindingScope(parent) {
         this.parent = parent;
@@ -30149,18 +30419,17 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
         // These should be handled in the template or element directly
         this.visitDirective = invalid$1;
         this.visitDirectiveProperty = invalid$1;
-        this._pipeConverter =
-            new PipeConverter(function () { return _this.allocateDataSlot(); }, function (name, localName, slot, value) {
-                bindingScope.set(localName, value);
-                var /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
-                pipe || error("Could not find pipe " + name);
-                var /** @type {?} */ pipeDefinition = constantPool.getDefinition(pipe.type.reference, 3 /* Pipe */, outputCtx, /* forceShared */ /* forceShared */ true);
-                _this._creationMode.push(importExpr(Identifiers$1.pipe)
-                    .callFn([
-                    literal(slot), pipeDefinition, pipeDefinition.callMethod(Identifiers$1.NEW_METHOD, [])
-                ])
-                    .toStmt());
-            });
+        this._valueConverter = new ValueConverter(outputCtx, function () { return _this.allocateDataSlot(); }, function (name, localName, slot, value) {
+            bindingScope.set(localName, value);
+            var /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
+            pipe || error("Could not find pipe " + name);
+            var /** @type {?} */ pipeDefinition = constantPool.getDefinition(pipe.type.reference, 3 /* Pipe */, outputCtx, /* forceShared */ /* forceShared */ true);
+            _this._creationMode.push(importExpr(Identifiers$1.pipe)
+                .callFn([
+                literal(slot), pipeDefinition, pipeDefinition.callMethod(Identifiers$1.NEW_METHOD, [])
+            ])
+                .toStmt());
+        });
     }
     /**
      * @param {?} asts
@@ -30545,7 +30814,7 @@ var TemplateDefinitionBuilder = /** @class */ (function () {
      * @return {?}
      */
     function (implicit, value) {
-        var /** @type {?} */ pipesConvertedValue = value.visit(this._pipeConverter);
+        var /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
         var /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
         (_a = this._refreshMode).push.apply(_a, convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
@@ -30610,10 +30879,11 @@ function createFactory(type, outputCtx, reflector) {
     }
     return fn([], [new ReturnStatement(new InstantiateExpr(outputCtx.importExpr(type.reference), args))], INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_Factory" : null);
 }
-var PipeConverter = /** @class */ (function (_super) {
-    __extends(PipeConverter, _super);
-    function PipeConverter(allocateSlot, definePipe) {
+var ValueConverter = /** @class */ (function (_super) {
+    __extends(ValueConverter, _super);
+    function ValueConverter(outputCtx, allocateSlot, definePipe) {
         var _this = _super.call(this) || this;
+        _this.outputCtx = outputCtx;
         _this.allocateSlot = allocateSlot;
         _this.definePipe = definePipe;
         _this.pipeSlots = new Map();
@@ -30625,7 +30895,7 @@ var PipeConverter = /** @class */ (function (_super) {
      * @param {?} context
      * @return {?}
      */
-    PipeConverter.prototype.visitPipe = /**
+    ValueConverter.prototype.visitPipe = /**
      * @param {?} ast
      * @param {?} context
      * @return {?}
@@ -30645,7 +30915,51 @@ var PipeConverter = /** @class */ (function (_super) {
         var /** @type {?} */ args = this.visitAll(ast.args);
         return new FunctionCall(ast.span, target, [new LiteralPrimitive(ast.span, slot), value].concat(args));
     };
-    return PipeConverter;
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    ValueConverter.prototype.visitLiteralArray = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        return new BuiltinFunctionCall(ast.span, this.visitAll(ast.expressions), function (values) {
+            // If the literal has calculated (non-literal) elements  transform it into
+            // calls to literal factories that compose the literal and will cache intermediate
+            // values. Otherwise, just return an literal array that contains the values.
+            var /** @type {?} */ literal$$1 = literalArr(values);
+            return values.every(function (a) { return a.isConstant(); }) ?
+                _this.outputCtx.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(_this.outputCtx, literal$$1);
+        });
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    ValueConverter.prototype.visitLiteralMap = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        return new BuiltinFunctionCall(ast.span, this.visitAll(ast.values), function (values) {
+            // If the literal has calculated (non-literal) elements  transform it into
+            // calls to literal factories that compose the literal and will cache intermediate
+            // values. Otherwise, just return an literal array that contains the values.
+            var /** @type {?} */ literal$$1 = literalMap(values.map(function (value, index) { return ({ key: ast.keys[index].key, value: value, quoted: ast.keys[index].quoted }); }));
+            return values.every(function (a) { return a.isConstant(); }) ?
+                _this.outputCtx.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(_this.outputCtx, literal$$1);
+        });
+    };
+    return ValueConverter;
 }(AstMemoryEfficientTransformer));
 /**
  * @template T

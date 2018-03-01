@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.6-ec445b5
+ * @license Angular v6.0.0-beta.6-49f074f
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -604,7 +604,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.6-ec445b5');
+const VERSION = new Version('6.0.0-beta.6-49f074f');
 
 /**
  * @fileoverview added by tsickle
@@ -12134,6 +12134,10 @@ class ReadVarExpr extends Expression {
         return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12171,6 +12175,10 @@ class WriteVarExpr extends Expression {
     isEquivalent(e) {
         return e instanceof WriteVarExpr && this.name === e.name && this.value.isEquivalent(e.value);
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return false; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -12211,6 +12219,10 @@ class WriteKeyExpr extends Expression {
             this.index.isEquivalent(e.index) && this.value.isEquivalent(e.value);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12241,6 +12253,10 @@ class WritePropExpr extends Expression {
         return e instanceof WritePropExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name && this.value.isEquivalent(e.value);
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return false; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -12289,6 +12305,10 @@ class InvokeMethodExpr extends Expression {
             this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12317,6 +12337,10 @@ class InvokeFunctionExpr extends Expression {
         return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
             areAllEquivalent(this.args, e.args);
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return false; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -12347,6 +12371,10 @@ class InstantiateExpr extends Expression {
             areAllEquivalent(this.args, e.args);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12372,6 +12400,10 @@ class LiteralExpr extends Expression {
     isEquivalent(e) {
         return e instanceof LiteralExpr && this.value === e.value;
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return true; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -12401,6 +12433,10 @@ class ExternalExpr extends Expression {
         return e instanceof ExternalExpr && this.value.name === e.value.name &&
             this.value.moduleName === e.value.moduleName && this.value.runtime === e.value.runtime;
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return false; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -12445,6 +12481,10 @@ class ConditionalExpr extends Expression {
             this.trueCase.isEquivalent(e.trueCase) && nullSafeIsEquivalent(this.falseCase, e.falseCase);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12469,6 +12509,10 @@ class NotExpr extends Expression {
     isEquivalent(e) {
         return e instanceof NotExpr && this.condition.isEquivalent(e.condition);
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return false; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -12495,6 +12539,10 @@ class AssertNotNull extends Expression {
         return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12520,6 +12568,10 @@ class CastExpr extends Expression {
     isEquivalent(e) {
         return e instanceof CastExpr && this.value.isEquivalent(e.value);
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return false; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -12567,6 +12619,10 @@ class FunctionExpr extends Expression {
             areAllEquivalent(this.statements, e.statements);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12606,6 +12662,10 @@ class BinaryOperatorExpr extends Expression {
             this.lhs.isEquivalent(e.lhs) && this.rhs.isEquivalent(e.rhs);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12634,6 +12694,10 @@ class ReadPropExpr extends Expression {
         return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
             this.name === e.name;
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return false; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -12671,6 +12735,10 @@ class ReadKeyExpr extends Expression {
             this.index.isEquivalent(e.index);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return false; }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12696,6 +12764,10 @@ class LiteralArrayExpr extends Expression {
         super(type, sourceSpan);
         this.entries = entries;
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return this.entries.every(e => e.isConstant()); }
     /**
      * @param {?} e
      * @return {?}
@@ -12753,6 +12825,10 @@ class LiteralMapExpr extends Expression {
         return e instanceof LiteralMapExpr && areAllEquivalent(this.entries, e.entries);
     }
     /**
+     * @return {?}
+     */
+    isConstant() { return this.entries.every(e => e.value.isConstant()); }
+    /**
      * @param {?} visitor
      * @param {?} context
      * @return {?}
@@ -12777,6 +12853,10 @@ class CommaExpr extends Expression {
     isEquivalent(e) {
         return e instanceof CommaExpr && areAllEquivalent(this.parts, e.parts);
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return false; }
     /**
      * @param {?} visitor
      * @param {?} context
@@ -21635,7 +21715,7 @@ const BindingForm = {
     // The general form of binding expression, supports all expressions.
     General: 0,
     // Try to generate a simple binding (no temporaries or statements)
-    // otherise generate a general binding
+    // otherwise generate a general binding
     TrySimple: 1,
 };
 BindingForm[BindingForm.General] = "General";
@@ -21976,7 +22056,7 @@ class _AstToIrVisitor {
      * @return {?}
      */
     visitLiteralPrimitive(ast, mode) {
-        // For literal values of null, undefined, true, or false allow type inteference
+        // For literal values of null, undefined, true, or false allow type interference
         // to infer the type.
         const /** @type {?} */ type = ast.value === null || ast.value === undefined || ast.value === true || ast.value === true ?
             INFERRED_TYPE :
@@ -24007,6 +24087,13 @@ function elementEventFullName(target, name) {
  */
 const CONSTANT_PREFIX = '_c';
 /**
+ * Context to use when producing a key.
+ *
+ * This ensures we see the constant not the reference variable when producing
+ * a key.
+ */
+const KEY_CONTEXT = {};
+/**
  * A node that is a place-holder that allows the node to be replaced when the actual
  * node is known.
  *
@@ -24021,6 +24108,7 @@ class FixupExpression extends Expression {
     constructor(resolved) {
         super(resolved.type);
         this.resolved = resolved;
+        this.original = resolved;
     }
     /**
      * @param {?} visitor
@@ -24028,7 +24116,14 @@ class FixupExpression extends Expression {
      * @return {?}
      */
     visitExpression(visitor, context) {
-        return this.resolved.visitExpression(visitor, context);
+        if (context === KEY_CONTEXT) {
+            // When producing a key we want to traverse the constant not the
+            // variable used to refer to it.
+            return this.original.visitExpression(visitor, context);
+        }
+        else {
+            return this.resolved.visitExpression(visitor, context);
+        }
     }
     /**
      * @param {?} e
@@ -24037,6 +24132,10 @@ class FixupExpression extends Expression {
     isEquivalent(e) {
         return e instanceof FixupExpression && this.resolved.isEquivalent(e.resolved);
     }
+    /**
+     * @return {?}
+     */
+    isConstant() { return true; }
     /**
      * @param {?} expression
      * @return {?}
@@ -24055,6 +24154,7 @@ class ConstantPool {
     constructor() {
         this.statements = [];
         this.literals = new Map();
+        this.literalFactories = new Map();
         this.injectorDefinitions = new Map();
         this.directiveDefinitions = new Map();
         this.componentDefinitions = new Map();
@@ -24067,6 +24167,11 @@ class ConstantPool {
      * @return {?}
      */
     getConstLiteral(literal$$1, forceShared) {
+        if (literal$$1 instanceof LiteralExpr || literal$$1 instanceof FixupExpression) {
+            // Do no put simple literals into the constant pool or try to produce a constant for a
+            // reference to a constant.
+            return literal$$1;
+        }
         const /** @type {?} */ key = this.keyOf(literal$$1);
         let /** @type {?} */ fixup = this.literals.get(key);
         let /** @type {?} */ newValue = false;
@@ -24106,6 +24211,53 @@ class ConstantPool {
             fixup.fixup(variable(name));
         }
         return fixup;
+    }
+    /**
+     * @param {?} literal
+     * @return {?}
+     */
+    getLiteralFactory(literal$$1) {
+        // Create a pure function that builds an array of a mix of constant  and variable expressions
+        if (literal$$1 instanceof LiteralArrayExpr) {
+            const /** @type {?} */ argumentsForKey = literal$$1.entries.map(e => e.isConstant() ? e : literal(null));
+            const /** @type {?} */ key = this.keyOf(literalArr(argumentsForKey));
+            return this._getLiteralFactory(key, literal$$1.entries, entries => literalArr(entries));
+        }
+        else {
+            const /** @type {?} */ expressionForKey = literalMap(literal$$1.entries.map(e => ({
+                key: e.key,
+                value: e.value.isConstant() ? e.value : literal(null),
+                quoted: e.quoted
+            })));
+            const /** @type {?} */ key = this.keyOf(expressionForKey);
+            return this._getLiteralFactory(key, literal$$1.entries.map(e => e.value), entries => literalMap(entries.map((value, index) => ({
+                key: literal$$1.entries[index].key,
+                value,
+                quoted: literal$$1.entries[index].quoted
+            }))));
+        }
+    }
+    /**
+     * @param {?} key
+     * @param {?} values
+     * @param {?} resultMap
+     * @return {?}
+     */
+    _getLiteralFactory(key, values, resultMap) {
+        let /** @type {?} */ literalFactory = this.literalFactories.get(key);
+        const /** @type {?} */ literalFactoryArguments = values.filter((e => !e.isConstant()));
+        if (!literalFactory) {
+            const /** @type {?} */ resultExpressions = values.map((e, index) => e.isConstant() ? this.getConstLiteral(e, true) : variable(`a${index}`));
+            const /** @type {?} */ parameters = resultExpressions.filter(isVariable).map(e => new FnParam(/** @type {?} */ ((e.name)), DYNAMIC_TYPE));
+            const /** @type {?} */ pureFunctionDeclaration = fn(parameters, [new ReturnStatement(resultMap(resultExpressions))], INFERRED_TYPE);
+            const /** @type {?} */ name = this.freshName();
+            this.statements.push(variable(name).set(pureFunctionDeclaration).toDeclStmt(INFERRED_TYPE, [
+                StmtModifier.Final
+            ]));
+            literalFactory = variable(name);
+            this.literalFactories.set(key, literalFactory);
+        }
+        return { literalFactory, literalFactoryArguments };
     }
     /**
      * Produce a unique name.
@@ -24162,7 +24314,7 @@ class ConstantPool {
      * @return {?}
      */
     keyOf(expression) {
-        return expression.visitExpression(new KeyVisitor(), null);
+        return expression.visitExpression(new KeyVisitor(), KEY_CONTEXT);
     }
 }
 class KeyVisitor {
@@ -24193,17 +24345,19 @@ class KeyVisitor {
     }
     /**
      * @param {?} ast
+     * @param {?} context
      * @return {?}
      */
-    visitLiteralArrayExpr(ast) {
-        return `[${ast.entries.map(entry => entry.visitExpression(this, null)).join(',')}]`;
+    visitLiteralArrayExpr(ast, context) {
+        return `[${ast.entries.map(entry => entry.visitExpression(this, context)).join(',')}]`;
     }
     /**
      * @param {?} ast
+     * @param {?} context
      * @return {?}
      */
-    visitLiteralMapExpr(ast) {
-        const /** @type {?} */ mapEntry = (entry) => `${entry.key}:${entry.value.visitExpression(this, null)}`;
+    visitLiteralMapExpr(ast, context) {
+        const /** @type {?} */ mapEntry = (entry) => `${entry.key}:${entry.value.visitExpression(this, context)}`;
         return `{${ast.entries.map(mapEntry).join(',')}`;
     }
     /**
@@ -24222,6 +24376,13 @@ class KeyVisitor {
  */
 function invalid(arg) {
     throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${undefined}`);
+}
+/**
+ * @param {?} e
+ * @return {?}
+ */
+function isVariable(e) {
+    return e instanceof ReadVarExpr;
 }
 
 /**
@@ -24388,6 +24549,16 @@ Identifiers$1.interpolation6 = { name: 'ɵi6', moduleName: CORE$1 };
 Identifiers$1.interpolation7 = { name: 'ɵi7', moduleName: CORE$1 };
 Identifiers$1.interpolation8 = { name: 'ɵi8', moduleName: CORE$1 };
 Identifiers$1.interpolationV = { name: 'ɵiV', moduleName: CORE$1 };
+Identifiers$1.pureFunction0 = { name: 'ɵf0', moduleName: CORE$1 };
+Identifiers$1.pureFunction1 = { name: 'ɵf1', moduleName: CORE$1 };
+Identifiers$1.pureFunction2 = { name: 'ɵf2', moduleName: CORE$1 };
+Identifiers$1.pureFunction3 = { name: 'ɵf3', moduleName: CORE$1 };
+Identifiers$1.pureFunction4 = { name: 'ɵf4', moduleName: CORE$1 };
+Identifiers$1.pureFunction5 = { name: 'ɵf5', moduleName: CORE$1 };
+Identifiers$1.pureFunction6 = { name: 'ɵf6', moduleName: CORE$1 };
+Identifiers$1.pureFunction7 = { name: 'ɵf7', moduleName: CORE$1 };
+Identifiers$1.pureFunction8 = { name: 'ɵf8', moduleName: CORE$1 };
+Identifiers$1.pureFunctionV = { name: 'ɵfV', moduleName: CORE$1 };
 Identifiers$1.pipeBind1 = { name: 'ɵpb1', moduleName: CORE$1 };
 Identifiers$1.pipeBind2 = { name: 'ɵpb2', moduleName: CORE$1 };
 Identifiers$1.pipeBind3 = { name: 'ɵpb3', moduleName: CORE$1 };
@@ -24585,6 +24756,23 @@ function pipeBinding(args) {
             return Identifiers$1.pipeBindV;
     }
 }
+const pureFunctionIdentifiers = [
+    Identifiers$1.pureFunction0, Identifiers$1.pureFunction1, Identifiers$1.pureFunction2, Identifiers$1.pureFunction3, Identifiers$1.pureFunction4,
+    Identifiers$1.pureFunction5, Identifiers$1.pureFunction6, Identifiers$1.pureFunction7, Identifiers$1.pureFunction8
+];
+/**
+ * @param {?} outputContext
+ * @param {?} literal
+ * @return {?}
+ */
+function getLiteralFactory(outputContext, literal$$1) {
+    const { literalFactory, literalFactoryArguments } = outputContext.constantPool.getLiteralFactory(literal$$1);
+    literalFactoryArguments.length > 0 || error(`Expected arguments to a literal factory function`);
+    let /** @type {?} */ pureFunctionIdent = pureFunctionIdentifiers[literalFactoryArguments.length] || Identifiers$1.pureFunctionV;
+    // Literal factories are pure functions that only need to be re-invoked when the parameters
+    // change.
+    return importExpr(pureFunctionIdent).callFn([literalFactory, ...literalFactoryArguments]);
+}
 class BindingScope {
     /**
      * @param {?} parent
@@ -24684,18 +24872,17 @@ class TemplateDefinitionBuilder {
         // These should be handled in the template or element directly
         this.visitDirective = invalid$1;
         this.visitDirectiveProperty = invalid$1;
-        this._pipeConverter =
-            new PipeConverter(() => this.allocateDataSlot(), (name, localName, slot, value) => {
-                bindingScope.set(localName, value);
-                const /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
-                pipe || error(`Could not find pipe ${name}`);
-                const /** @type {?} */ pipeDefinition = constantPool.getDefinition(pipe.type.reference, 3 /* Pipe */, outputCtx, /* forceShared */ /* forceShared */ true);
-                this._creationMode.push(importExpr(Identifiers$1.pipe)
-                    .callFn([
-                    literal(slot), pipeDefinition, pipeDefinition.callMethod(Identifiers$1.NEW_METHOD, [])
-                ])
-                    .toStmt());
-            });
+        this._valueConverter = new ValueConverter(outputCtx, () => this.allocateDataSlot(), (name, localName, slot, value) => {
+            bindingScope.set(localName, value);
+            const /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
+            pipe || error(`Could not find pipe ${name}`);
+            const /** @type {?} */ pipeDefinition = constantPool.getDefinition(pipe.type.reference, 3 /* Pipe */, outputCtx, /* forceShared */ /* forceShared */ true);
+            this._creationMode.push(importExpr(Identifiers$1.pipe)
+                .callFn([
+                literal(slot), pipeDefinition, pipeDefinition.callMethod(Identifiers$1.NEW_METHOD, [])
+            ])
+                .toStmt());
+        });
     }
     /**
      * @param {?} asts
@@ -25002,7 +25189,7 @@ class TemplateDefinitionBuilder {
      * @return {?}
      */
     convertPropertyBinding(implicit, value) {
-        const /** @type {?} */ pipesConvertedValue = value.visit(this._pipeConverter);
+        const /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
         const /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
         this._refreshMode.push(...convertedPropertyBinding.stmts);
         return convertedPropertyBinding.currValExpr;
@@ -25058,13 +25245,15 @@ function createFactory(type, outputCtx, reflector) {
     }
     return fn([], [new ReturnStatement(new InstantiateExpr(outputCtx.importExpr(type.reference), args))], INFERRED_TYPE, null, type.reference.name ? `${type.reference.name}_Factory` : null);
 }
-class PipeConverter extends AstMemoryEfficientTransformer {
+class ValueConverter extends AstMemoryEfficientTransformer {
     /**
+     * @param {?} outputCtx
      * @param {?} allocateSlot
      * @param {?} definePipe
      */
-    constructor(allocateSlot, definePipe) {
+    constructor(outputCtx, allocateSlot, definePipe) {
         super();
+        this.outputCtx = outputCtx;
         this.allocateSlot = allocateSlot;
         this.definePipe = definePipe;
         this.pipeSlots = new Map();
@@ -25088,6 +25277,38 @@ class PipeConverter extends AstMemoryEfficientTransformer {
         const /** @type {?} */ value = ast.exp.visit(this);
         const /** @type {?} */ args = this.visitAll(ast.args);
         return new FunctionCall(ast.span, target, [new LiteralPrimitive(ast.span, slot), value, ...args]);
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralArray(ast, context) {
+        return new BuiltinFunctionCall(ast.span, this.visitAll(ast.expressions), values => {
+            // If the literal has calculated (non-literal) elements  transform it into
+            // calls to literal factories that compose the literal and will cache intermediate
+            // values. Otherwise, just return an literal array that contains the values.
+            const /** @type {?} */ literal$$1 = literalArr(values);
+            return values.every(a => a.isConstant()) ?
+                this.outputCtx.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(this.outputCtx, literal$$1);
+        });
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    visitLiteralMap(ast, context) {
+        return new BuiltinFunctionCall(ast.span, this.visitAll(ast.values), values => {
+            // If the literal has calculated (non-literal) elements  transform it into
+            // calls to literal factories that compose the literal and will cache intermediate
+            // values. Otherwise, just return an literal array that contains the values.
+            const /** @type {?} */ literal$$1 = literalMap(values.map((value, index) => ({ key: ast.keys[index].key, value, quoted: ast.keys[index].quoted })));
+            return values.every(a => a.isConstant()) ?
+                this.outputCtx.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(this.outputCtx, literal$$1);
+        });
     }
 }
 /**

@@ -52,3 +52,8 @@ export declare enum BindingForm {
  */
 export declare function convertPropertyBinding(localResolver: LocalResolver | null, implicitReceiver: o.Expression, expressionWithoutBuiltins: cdAst.AST, bindingId: string, form: BindingForm, interpolationFunction?: InterpolationFunction): ConvertPropertyBindingResult;
 export declare function temporaryDeclaration(bindingId: string, temporaryNumber: number): o.Statement;
+export declare class BuiltinFunctionCall extends cdAst.FunctionCall {
+    args: cdAst.AST[];
+    converter: BuiltinConverter;
+    constructor(span: cdAst.ParseSpan, args: cdAst.AST[], converter: BuiltinConverter);
+}

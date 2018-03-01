@@ -21,6 +21,7 @@ export declare const enum DefinitionKind {
 export declare class ConstantPool {
     statements: o.Statement[];
     private literals;
+    private literalFactories;
     private injectorDefinitions;
     private directiveDefinitions;
     private componentDefinitions;
@@ -28,6 +29,11 @@ export declare class ConstantPool {
     private nextNameIndex;
     getConstLiteral(literal: o.Expression, forceShared?: boolean): o.Expression;
     getDefinition(type: any, kind: DefinitionKind, ctx: OutputContext, forceShared?: boolean): o.Expression;
+    getLiteralFactory(literal: o.LiteralArrayExpr | o.LiteralMapExpr): {
+        literalFactory: o.Expression;
+        literalFactoryArguments: o.Expression[];
+    };
+    private _getLiteralFactory(key, values, resultMap);
     /**
      * Produce a unique name.
      *

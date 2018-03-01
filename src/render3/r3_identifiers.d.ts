@@ -39,6 +39,16 @@ export declare class Identifiers {
     static interpolation7: o.ExternalReference;
     static interpolation8: o.ExternalReference;
     static interpolationV: o.ExternalReference;
+    static pureFunction0: o.ExternalReference;
+    static pureFunction1: o.ExternalReference;
+    static pureFunction2: o.ExternalReference;
+    static pureFunction3: o.ExternalReference;
+    static pureFunction4: o.ExternalReference;
+    static pureFunction5: o.ExternalReference;
+    static pureFunction6: o.ExternalReference;
+    static pureFunction7: o.ExternalReference;
+    static pureFunction8: o.ExternalReference;
+    static pureFunctionV: o.ExternalReference;
     static pipeBind1: o.ExternalReference;
     static pipeBind2: o.ExternalReference;
     static pipeBind3: o.ExternalReference;
