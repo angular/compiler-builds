@@ -1,5 +1,5 @@
 /**
- * @license Angular v6.0.0-beta.6-0e311e3
+ * @license Angular v6.0.0-beta.6-dd53447
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -604,7 +604,7 @@ class Version {
 /**
  * \@stable
  */
-const VERSION = new Version('6.0.0-beta.6-0e311e3');
+const VERSION = new Version('6.0.0-beta.6-dd53447');
 
 /**
  * @fileoverview added by tsickle
@@ -14142,11 +14142,12 @@ class InjectableCompiler {
                     }
                 }
             }
+            const /** @type {?} */ tokenExpr = typeof token === 'string' ? literal(token) : ctx.importExpr(token);
             if (flags !== 0 /* Default */ || defaultValue !== undefined) {
-                args = [ctx.importExpr(token), literal(defaultValue), literal(flags)];
+                args = [tokenExpr, literal(defaultValue), literal(flags)];
             }
             else {
-                args = [ctx.importExpr(token)];
+                args = [tokenExpr];
             }
             return importExpr(Identifiers.inject).callFn(args);
         });
