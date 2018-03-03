@@ -80,7 +80,7 @@ export declare class CompileMetadataResolver {
     private _getIdentifierMetadata(type);
     isInjectable(type: any): boolean;
     getInjectableSummary(type: any): cpl.CompileTypeSummary;
-    private _getInjectableMetadata(type, dependencies?);
+    getInjectableMetadata(type: any, dependencies?: any[] | null, throwOnUnknownDeps?: boolean): cpl.CompileInjectableMetadata | null;
     private _getTypeMetadata(type, dependencies?, throwOnUnknownDeps?);
     private _getFactoryMetadata(factory, dependencies?);
     /**
@@ -97,6 +97,7 @@ export declare class CompileMetadataResolver {
     private _validateProvider(provider);
     private _getEntryComponentsFromProvider(provider, type?);
     private _getEntryComponentMetadata(dirType, throwIfNotFound?);
+    private _getInjectableTypeMetadata(type, dependencies?);
     getProviderMetadata(provider: cpl.ProviderMeta): cpl.CompileProviderMetadata;
     private _getQueriesMetadata(queries, isViewQuery, directiveType);
     private _queryVarBindings(selector);

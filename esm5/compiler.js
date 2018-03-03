@@ -1,5 +1,5 @@
 /**
- * @license Angular v5.2.0-2717a3e
+ * @license Angular v6.0.0-beta.6-371ec91
  * (c) 2010-2018 Google, Inc. https://angular.io/
  * License: MIT
  */
@@ -26,7 +26,7 @@ import { __assign, __extends } from 'tslib';
  */
 function Inject() { }
 var createInject = makeMetadataFactory('Inject', function (token) { return ({ token: token }); });
-var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc }); });
+var createInjectionToken = makeMetadataFactory('InjectionToken', function (desc) { return ({ _desc: desc, ngInjectableDef: undefined }); });
 /**
  * @record
  */
@@ -120,6 +120,14 @@ function ModuleWithProviders() { }
 /**
  * @record
  */
+function Injectable() { }
+var createInjectable = makeMetadataFactory('Injectable', function (injectable) {
+    if (injectable === void 0) { injectable = {}; }
+    return injectable;
+});
+/**
+ * @record
+ */
 function SchemaMetadata() { }
 var CUSTOM_ELEMENTS_SCHEMA = {
     name: 'custom-elements'
@@ -128,7 +136,6 @@ var NO_ERRORS_SCHEMA = {
     name: 'no-errors-schema'
 };
 var createOptional = makeMetadataFactory('Optional');
-var createInjectable = makeMetadataFactory('Injectable');
 var createSelf = makeMetadataFactory('Self');
 var createSkipSelf = makeMetadataFactory('SkipSelf');
 var createHost = makeMetadataFactory('Host');
@@ -185,6 +192,7 @@ var NodeFlags = {
     TypeViewQuery: 134217728,
     StaticQuery: 268435456,
     DynamicQuery: 536870912,
+    TypeModuleProvider: 1073741824,
     CatQuery: 201326592,
     // mutually exclusive values...
     Types: 201347067,
@@ -194,7 +202,16 @@ var DepFlags = {
     None: 0,
     SkipSelf: 1,
     Optional: 2,
+    Self: 4,
     Value: 8,
+};
+/** @enum {number} */
+var InjectFlags = {
+    Default: 0,
+    /** Skip the node that is requesting injection. */
+    SkipSelf: 1,
+    /** Don't descend into ancestors of the node requesting injection. */
+    Self: 2,
 };
 /** @enum {number} */
 var ArgumentType = { Inline: 0, Dynamic: 1, };
@@ -294,11 +311,12 @@ var core = Object.freeze({
 	NgModule: NgModule,
 	createNgModule: createNgModule,
 	ModuleWithProviders: ModuleWithProviders,
+	Injectable: Injectable,
+	createInjectable: createInjectable,
 	SchemaMetadata: SchemaMetadata,
 	CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
 	NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
 	createOptional: createOptional,
-	createInjectable: createInjectable,
 	createSelf: createSelf,
 	createSkipSelf: createSkipSelf,
 	createHost: createHost,
@@ -306,6 +324,7 @@ var core = Object.freeze({
 	SecurityContext: SecurityContext,
 	NodeFlags: NodeFlags,
 	DepFlags: DepFlags,
+	InjectFlags: InjectFlags,
 	ArgumentType: ArgumentType,
 	BindingFlags: BindingFlags,
 	QueryBindingType: QueryBindingType,
@@ -478,6 +497,13 @@ var SyncAsync = {
 };
 /**
  * @param {?} msg
+ * @return {?}
+ */
+function error(msg) {
+    throw new Error("Internal Error: " + msg);
+}
+/**
+ * @param {?} msg
  * @param {?=} parseErrors
  * @return {?}
  */
@@ -633,7 +659,7 @@ var Version = /** @class */ (function () {
 /**
  * \@stable
  */
-var VERSION = new Version('5.2.0-2717a3e');
+var VERSION = new Version('6.0.0-beta.6-371ec91');
 
 /**
  * @fileoverview added by tsickle
@@ -804,9 +830,10 @@ var BoundEventAst = /** @class */ (function () {
  * A reference declaration on an element (e.g. `let someName="expression"`).
  */
 var ReferenceAst = /** @class */ (function () {
-    function ReferenceAst(name, value, sourceSpan) {
+    function ReferenceAst(name, value, originalValue, sourceSpan) {
         this.name = name;
         this.value = value;
+        this.originalValue = originalValue;
         this.sourceSpan = sourceSpan;
     }
     /**
@@ -970,7 +997,7 @@ var DirectiveAst = /** @class */ (function () {
  * A provider declared on an element
  */
 var ProviderAst = /** @class */ (function () {
-    function ProviderAst(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan) {
+    function ProviderAst(token, multiProvider, eager, providers, providerType, lifecycleHooks, sourceSpan, isModule) {
         this.token = token;
         this.multiProvider = multiProvider;
         this.eager = eager;
@@ -978,6 +1005,7 @@ var ProviderAst = /** @class */ (function () {
         this.providerType = providerType;
         this.lifecycleHooks = lifecycleHooks;
         this.sourceSpan = sourceSpan;
+        this.isModule = isModule;
     }
     /**
      * @param {?} visitor
@@ -1359,7 +1387,7 @@ var CompilerConfig = /** @class */ (function () {
  * @return {?}
  */
 function preserveWhitespacesDefault(preserveWhitespacesOption, defaultSetting) {
-    if (defaultSetting === void 0) { defaultSetting = true; }
+    if (defaultSetting === void 0) { defaultSetting = false; }
     return preserveWhitespacesOption === null ? defaultSetting : preserveWhitespacesOption;
 }
 
@@ -1580,6 +1608,10 @@ function tokenReference(token) {
         return token.value;
     }
 }
+/**
+ * @record
+ */
+
 /**
  * @record
  */
@@ -5859,6 +5891,361 @@ var AstTransformer = /** @class */ (function () {
     };
     return AstTransformer;
 }());
+var AstMemoryEfficientTransformer = /** @class */ (function () {
+    function AstMemoryEfficientTransformer() {
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitImplicitReceiver = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return ast; };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitInterpolation = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions)
+            return new Interpolation(ast.span, ast.strings, expressions);
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitLiteralPrimitive = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return ast; };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitPropertyRead = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        if (receiver !== ast.receiver) {
+            return new PropertyRead(ast.span, receiver, ast.name);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitPropertyWrite = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        var /** @type {?} */ value = ast.value.visit(this);
+        if (receiver !== ast.receiver || value !== ast.value) {
+            return new PropertyWrite(ast.span, receiver, ast.name, value);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitSafePropertyRead = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        if (receiver !== ast.receiver) {
+            return new SafePropertyRead(ast.span, receiver, ast.name);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitMethodCall = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        if (receiver !== ast.receiver) {
+            return new MethodCall(ast.span, receiver, ast.name, this.visitAll(ast.args));
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitSafeMethodCall = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ receiver = ast.receiver.visit(this);
+        var /** @type {?} */ args = this.visitAll(ast.args);
+        if (receiver !== ast.receiver || args !== ast.args) {
+            return new SafeMethodCall(ast.span, receiver, ast.name, args);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitFunctionCall = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ target = ast.target && ast.target.visit(this);
+        var /** @type {?} */ args = this.visitAll(ast.args);
+        if (target !== ast.target || args !== ast.args) {
+            return new FunctionCall(ast.span, target, args);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitLiteralArray = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions) {
+            return new LiteralArray(ast.span, expressions);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitLiteralMap = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ values = this.visitAll(ast.values);
+        if (values !== ast.values) {
+            return new LiteralMap(ast.span, ast.keys, values);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitBinary = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ left = ast.left.visit(this);
+        var /** @type {?} */ right = ast.right.visit(this);
+        if (left !== ast.left || right !== ast.right) {
+            return new Binary(ast.span, ast.operation, left, right);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitPrefixNot = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expression = ast.expression.visit(this);
+        if (expression !== ast.expression) {
+            return new PrefixNot(ast.span, expression);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitNonNullAssert = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expression = ast.expression.visit(this);
+        if (expression !== ast.expression) {
+            return new NonNullAssert(ast.span, expression);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitConditional = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ condition = ast.condition.visit(this);
+        var /** @type {?} */ trueExp = ast.trueExp.visit(this);
+        var /** @type {?} */ falseExp = ast.falseExp.visit(this);
+        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== falseExp) {
+            return new Conditional(ast.span, condition, trueExp, falseExp);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitPipe = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ exp = ast.exp.visit(this);
+        var /** @type {?} */ args = this.visitAll(ast.args);
+        if (exp !== ast.exp || args !== ast.args) {
+            return new BindingPipe(ast.span, exp, ast.name, args);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitKeyedRead = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ obj = ast.obj.visit(this);
+        var /** @type {?} */ key = ast.key.visit(this);
+        if (obj !== ast.obj || key !== ast.key) {
+            return new KeyedRead(ast.span, obj, key);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitKeyedWrite = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ obj = ast.obj.visit(this);
+        var /** @type {?} */ key = ast.key.visit(this);
+        var /** @type {?} */ value = ast.value.visit(this);
+        if (obj !== ast.obj || key !== ast.key || value !== ast.value) {
+            return new KeyedWrite(ast.span, obj, key, value);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} asts
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitAll = /**
+     * @param {?} asts
+     * @return {?}
+     */
+    function (asts) {
+        var /** @type {?} */ res = new Array(asts.length);
+        var /** @type {?} */ modified = false;
+        for (var /** @type {?} */ i = 0; i < asts.length; ++i) {
+            var /** @type {?} */ original = asts[i];
+            var /** @type {?} */ value = original.visit(this);
+            res[i] = value;
+            modified = modified || value !== original;
+        }
+        return modified ? res : asts;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitChain = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions) {
+            return new Chain(ast.span, expressions);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstMemoryEfficientTransformer.prototype.visitQuote = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return ast; };
+    return AstMemoryEfficientTransformer;
+}());
 /**
  * @param {?} ast
  * @param {?} visitor
@@ -6757,7 +7144,8 @@ var _ParseAST = /** @class */ (function () {
             switch (operator) {
                 case '+':
                     this.advance();
-                    return this.parsePrefix();
+                    result = this.parsePrefix();
+                    return new Binary(this.span(start), '-', result, new LiteralPrimitive(new ParseSpan(start, start), 0));
                 case '-':
                     this.advance();
                     result = this.parsePrefix();
@@ -11602,8 +11990,10 @@ var _XMLNS = 'urn:oasis:names:tc:xliff:document:1.2';
 // TODO(vicb): make this a param (s/_/-/)
 var _DEFAULT_SOURCE_LANG = 'en';
 var _PLACEHOLDER_TAG = 'x';
+var _MARKER_TAG = 'mrk';
 var _FILE_TAG = 'file';
 var _SOURCE_TAG = 'source';
+var _SEGMENT_SOURCE_TAG = 'seg-source';
 var _TARGET_TAG = 'target';
 var _UNIT_TAG = 'trans-unit';
 var _CONTEXT_GROUP_TAG = 'context-group';
@@ -11864,8 +12254,9 @@ var XliffParser = /** @class */ (function () {
                     }
                 }
                 break;
+            // ignore those tags
             case _SOURCE_TAG:
-                // ignore source message
+            case _SEGMENT_SOURCE_TAG:
                 break;
             case _TARGET_TAG:
                 var /** @type {?} */ innerTextStart = /** @type {?} */ ((element.startSourceSpan)).end.offset;
@@ -11974,8 +12365,7 @@ var XmlToI18n = /** @class */ (function () {
         var /** @type {?} */ xmlIcu = new XmlParser().parse(message, url, true);
         this._errors = xmlIcu.errors;
         var /** @type {?} */ i18nNodes = this._errors.length > 0 || xmlIcu.rootNodes.length == 0 ?
-            [] :
-            visitAll(this, xmlIcu.rootNodes);
+            [] : [].concat.apply([], visitAll(this, xmlIcu.rootNodes));
         return {
             i18nNodes: i18nNodes,
             errors: this._errors,
@@ -12009,10 +12399,12 @@ var XmlToI18n = /** @class */ (function () {
                 return new Placeholder('', nameAttr.value, /** @type {?} */ ((el.sourceSpan)));
             }
             this._addError(el, "<" + _PLACEHOLDER_TAG + "> misses the \"id\" attribute");
+            return null;
         }
-        else {
-            this._addError(el, "Unexpected tag");
+        if (el.name === _MARKER_TAG) {
+            return [].concat.apply([], visitAll(this, el.children));
         }
+        this._addError(el, "Unexpected tag");
         return null;
     };
     /**
@@ -12117,6 +12509,7 @@ var _XMLNS$1 = 'urn:oasis:names:tc:xliff:document:2.0';
 var _DEFAULT_SOURCE_LANG$1 = 'en';
 var _PLACEHOLDER_TAG$1 = 'ph';
 var _PLACEHOLDER_SPANNING_TAG = 'pc';
+var _MARKER_TAG$1 = 'mrk';
 var _XLIFF_TAG = 'xliff';
 var _SOURCE_TAG$1 = 'source';
 var _TARGET_TAG$1 = 'target';
@@ -12572,6 +12965,8 @@ var XmlToI18n$1 = /** @class */ (function () {
                     return nodes.concat.apply(nodes, [new Placeholder('', startId, el.sourceSpan)].concat(el.children.map(function (node) { return node.visit(_this, null); }), [new Placeholder('', endId, el.sourceSpan)]));
                 }
                 break;
+            case _MARKER_TAG$1:
+                return [].concat.apply([], visitAll(this, el.children));
             default:
                 this._addError(el, "Unexpected tag");
         }
@@ -13736,6 +14131,3602 @@ function createSerializer(format) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var CORE = '@angular/core';
+var Identifiers = /** @class */ (function () {
+    function Identifiers() {
+    }
+    Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
+        name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
+        moduleName: CORE,
+    };
+    Identifiers.ElementRef = { name: 'ElementRef', moduleName: CORE };
+    Identifiers.NgModuleRef = { name: 'NgModuleRef', moduleName: CORE };
+    Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleName: CORE };
+    Identifiers.ChangeDetectorRef = {
+        name: 'ChangeDetectorRef',
+        moduleName: CORE,
+    };
+    Identifiers.QueryList = { name: 'QueryList', moduleName: CORE };
+    Identifiers.TemplateRef = { name: 'TemplateRef', moduleName: CORE };
+    Identifiers.CodegenComponentFactoryResolver = {
+        name: 'ɵCodegenComponentFactoryResolver',
+        moduleName: CORE,
+    };
+    Identifiers.ComponentFactoryResolver = {
+        name: 'ComponentFactoryResolver',
+        moduleName: CORE,
+    };
+    Identifiers.ComponentFactory = { name: 'ComponentFactory', moduleName: CORE };
+    Identifiers.ComponentRef = { name: 'ComponentRef', moduleName: CORE };
+    Identifiers.NgModuleFactory = { name: 'NgModuleFactory', moduleName: CORE };
+    Identifiers.createModuleFactory = {
+        name: 'ɵcmf',
+        moduleName: CORE,
+    };
+    Identifiers.moduleDef = {
+        name: 'ɵmod',
+        moduleName: CORE,
+    };
+    Identifiers.moduleProviderDef = {
+        name: 'ɵmpd',
+        moduleName: CORE,
+    };
+    Identifiers.RegisterModuleFactoryFn = {
+        name: 'ɵregisterModuleFactory',
+        moduleName: CORE,
+    };
+    Identifiers.inject = { name: 'inject', moduleName: CORE };
+    Identifiers.Injector = { name: 'Injector', moduleName: CORE };
+    Identifiers.defineInjectable = { name: 'defineInjectable', moduleName: CORE };
+    Identifiers.ViewEncapsulation = {
+        name: 'ViewEncapsulation',
+        moduleName: CORE,
+    };
+    Identifiers.ChangeDetectionStrategy = {
+        name: 'ChangeDetectionStrategy',
+        moduleName: CORE,
+    };
+    Identifiers.SecurityContext = {
+        name: 'SecurityContext',
+        moduleName: CORE,
+    };
+    Identifiers.LOCALE_ID = { name: 'LOCALE_ID', moduleName: CORE };
+    Identifiers.TRANSLATIONS_FORMAT = {
+        name: 'TRANSLATIONS_FORMAT',
+        moduleName: CORE,
+    };
+    Identifiers.inlineInterpolate = {
+        name: 'ɵinlineInterpolate',
+        moduleName: CORE,
+    };
+    Identifiers.interpolate = { name: 'ɵinterpolate', moduleName: CORE };
+    Identifiers.EMPTY_ARRAY = { name: 'ɵEMPTY_ARRAY', moduleName: CORE };
+    Identifiers.EMPTY_MAP = { name: 'ɵEMPTY_MAP', moduleName: CORE };
+    Identifiers.Renderer = { name: 'Renderer', moduleName: CORE };
+    Identifiers.viewDef = { name: 'ɵvid', moduleName: CORE };
+    Identifiers.elementDef = { name: 'ɵeld', moduleName: CORE };
+    Identifiers.anchorDef = { name: 'ɵand', moduleName: CORE };
+    Identifiers.textDef = { name: 'ɵted', moduleName: CORE };
+    Identifiers.directiveDef = { name: 'ɵdid', moduleName: CORE };
+    Identifiers.providerDef = { name: 'ɵprd', moduleName: CORE };
+    Identifiers.queryDef = { name: 'ɵqud', moduleName: CORE };
+    Identifiers.pureArrayDef = { name: 'ɵpad', moduleName: CORE };
+    Identifiers.pureObjectDef = { name: 'ɵpod', moduleName: CORE };
+    Identifiers.purePipeDef = { name: 'ɵppd', moduleName: CORE };
+    Identifiers.pipeDef = { name: 'ɵpid', moduleName: CORE };
+    Identifiers.nodeValue = { name: 'ɵnov', moduleName: CORE };
+    Identifiers.ngContentDef = { name: 'ɵncd', moduleName: CORE };
+    Identifiers.unwrapValue = { name: 'ɵunv', moduleName: CORE };
+    Identifiers.createRendererType2 = { name: 'ɵcrt', moduleName: CORE };
+    // type only
+    Identifiers.RendererType2 = {
+        name: 'RendererType2',
+        moduleName: CORE,
+    };
+    // type only
+    Identifiers.ViewDefinition = {
+        name: 'ɵViewDefinition',
+        moduleName: CORE,
+    };
+    Identifiers.createComponentFactory = { name: 'ɵccf', moduleName: CORE };
+    return Identifiers;
+}());
+/**
+ * @param {?} reference
+ * @return {?}
+ */
+function createTokenForReference(reference) {
+    return { identifier: { reference: reference } };
+}
+/**
+ * @param {?} reflector
+ * @param {?} reference
+ * @return {?}
+ */
+function createTokenForExternalReference(reflector, reference) {
+    return createTokenForReference(reflector.resolveExternalReference(reference));
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/** @enum {number} */
+var TypeModifier = {
+    Const: 0,
+};
+TypeModifier[TypeModifier.Const] = "Const";
+/**
+ * @abstract
+ */
+var Type$1 = /** @class */ (function () {
+    function Type(modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        this.modifiers = modifiers;
+        if (!modifiers) {
+            this.modifiers = [];
+        }
+    }
+    /**
+     * @param {?} modifier
+     * @return {?}
+     */
+    Type.prototype.hasModifier = /**
+     * @param {?} modifier
+     * @return {?}
+     */
+    function (modifier) { return /** @type {?} */ ((this.modifiers)).indexOf(modifier) !== -1; };
+    return Type;
+}());
+/** @enum {number} */
+var BuiltinTypeName = {
+    Dynamic: 0,
+    Bool: 1,
+    String: 2,
+    Int: 3,
+    Number: 4,
+    Function: 5,
+    Inferred: 6,
+};
+BuiltinTypeName[BuiltinTypeName.Dynamic] = "Dynamic";
+BuiltinTypeName[BuiltinTypeName.Bool] = "Bool";
+BuiltinTypeName[BuiltinTypeName.String] = "String";
+BuiltinTypeName[BuiltinTypeName.Int] = "Int";
+BuiltinTypeName[BuiltinTypeName.Number] = "Number";
+BuiltinTypeName[BuiltinTypeName.Function] = "Function";
+BuiltinTypeName[BuiltinTypeName.Inferred] = "Inferred";
+var BuiltinType = /** @class */ (function (_super) {
+    __extends(BuiltinType, _super);
+    function BuiltinType(name, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, modifiers) || this;
+        _this.name = name;
+        return _this;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    BuiltinType.prototype.visitType = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitBuiltinType(this, context);
+    };
+    return BuiltinType;
+}(Type$1));
+var ExpressionType = /** @class */ (function (_super) {
+    __extends(ExpressionType, _super);
+    function ExpressionType(value, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, modifiers) || this;
+        _this.value = value;
+        return _this;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ExpressionType.prototype.visitType = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitExpressionType(this, context);
+    };
+    return ExpressionType;
+}(Type$1));
+var ArrayType = /** @class */ (function (_super) {
+    __extends(ArrayType, _super);
+    function ArrayType(of, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, modifiers) || this;
+        _this.of = of;
+        return _this;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ArrayType.prototype.visitType = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitArrayType(this, context);
+    };
+    return ArrayType;
+}(Type$1));
+var MapType = /** @class */ (function (_super) {
+    __extends(MapType, _super);
+    function MapType(valueType, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, modifiers) || this;
+        _this.valueType = valueType || null;
+        return _this;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    MapType.prototype.visitType = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) { return visitor.visitMapType(this, context); };
+    return MapType;
+}(Type$1));
+var DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
+var INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
+var BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
+var INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
+var NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
+var STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
+var FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
+/**
+ * @record
+ */
+
+/** @enum {number} */
+var BinaryOperator = {
+    Equals: 0,
+    NotEquals: 1,
+    Identical: 2,
+    NotIdentical: 3,
+    Minus: 4,
+    Plus: 5,
+    Divide: 6,
+    Multiply: 7,
+    Modulo: 8,
+    And: 9,
+    Or: 10,
+    Lower: 11,
+    LowerEquals: 12,
+    Bigger: 13,
+    BiggerEquals: 14,
+};
+BinaryOperator[BinaryOperator.Equals] = "Equals";
+BinaryOperator[BinaryOperator.NotEquals] = "NotEquals";
+BinaryOperator[BinaryOperator.Identical] = "Identical";
+BinaryOperator[BinaryOperator.NotIdentical] = "NotIdentical";
+BinaryOperator[BinaryOperator.Minus] = "Minus";
+BinaryOperator[BinaryOperator.Plus] = "Plus";
+BinaryOperator[BinaryOperator.Divide] = "Divide";
+BinaryOperator[BinaryOperator.Multiply] = "Multiply";
+BinaryOperator[BinaryOperator.Modulo] = "Modulo";
+BinaryOperator[BinaryOperator.And] = "And";
+BinaryOperator[BinaryOperator.Or] = "Or";
+BinaryOperator[BinaryOperator.Lower] = "Lower";
+BinaryOperator[BinaryOperator.LowerEquals] = "LowerEquals";
+BinaryOperator[BinaryOperator.Bigger] = "Bigger";
+BinaryOperator[BinaryOperator.BiggerEquals] = "BiggerEquals";
+/**
+ * @template T
+ * @param {?} base
+ * @param {?} other
+ * @return {?}
+ */
+function nullSafeIsEquivalent(base, other) {
+    if (base == null || other == null) {
+        return base == other;
+    }
+    return base.isEquivalent(other);
+}
+/**
+ * @template T
+ * @param {?} base
+ * @param {?} other
+ * @return {?}
+ */
+function areAllEquivalent(base, other) {
+    var /** @type {?} */ len = base.length;
+    if (len !== other.length) {
+        return false;
+    }
+    for (var /** @type {?} */ i = 0; i < len; i++) {
+        if (!base[i].isEquivalent(other[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * @abstract
+ */
+var Expression = /** @class */ (function () {
+    function Expression(type, sourceSpan) {
+        this.type = type || null;
+        this.sourceSpan = sourceSpan || null;
+    }
+    /**
+     * @param {?} name
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.prop = /**
+     * @param {?} name
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (name, sourceSpan) {
+        return new ReadPropExpr(this, name, null, sourceSpan);
+    };
+    /**
+     * @param {?} index
+     * @param {?=} type
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.key = /**
+     * @param {?} index
+     * @param {?=} type
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (index, type, sourceSpan) {
+        return new ReadKeyExpr(this, index, type, sourceSpan);
+    };
+    /**
+     * @param {?} name
+     * @param {?} params
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.callMethod = /**
+     * @param {?} name
+     * @param {?} params
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (name, params, sourceSpan) {
+        return new InvokeMethodExpr(this, name, params, null, sourceSpan);
+    };
+    /**
+     * @param {?} params
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.callFn = /**
+     * @param {?} params
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (params, sourceSpan) {
+        return new InvokeFunctionExpr(this, params, null, sourceSpan);
+    };
+    /**
+     * @param {?} params
+     * @param {?=} type
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.instantiate = /**
+     * @param {?} params
+     * @param {?=} type
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (params, type, sourceSpan) {
+        return new InstantiateExpr(this, params, type, sourceSpan);
+    };
+    /**
+     * @param {?} trueCase
+     * @param {?=} falseCase
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.conditional = /**
+     * @param {?} trueCase
+     * @param {?=} falseCase
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (trueCase, falseCase, sourceSpan) {
+        if (falseCase === void 0) { falseCase = null; }
+        return new ConditionalExpr(this, trueCase, falseCase, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.equals = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Equals, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.notEquals = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.NotEquals, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.identical = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Identical, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.notIdentical = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.minus = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Minus, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.plus = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Plus, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.divide = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Divide, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.multiply = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Multiply, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.modulo = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Modulo, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.and = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.or = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Or, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.lower = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Lower, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.lowerEquals = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.LowerEquals, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.bigger = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Bigger, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.biggerEquals = /**
+     * @param {?} rhs
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.BiggerEquals, this, rhs, null, sourceSpan);
+    };
+    /**
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.isBlank = /**
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (sourceSpan) {
+        // Note: We use equals by purpose here to compare to null and undefined in JS.
+        // We use the typed null to allow strictNullChecks to narrow types.
+        return this.equals(TYPED_NULL_EXPR, sourceSpan);
+    };
+    /**
+     * @param {?} type
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    Expression.prototype.cast = /**
+     * @param {?} type
+     * @param {?=} sourceSpan
+     * @return {?}
+     */
+    function (type, sourceSpan) {
+        return new CastExpr(this, type, sourceSpan);
+    };
+    /**
+     * @return {?}
+     */
+    Expression.prototype.toStmt = /**
+     * @return {?}
+     */
+    function () { return new ExpressionStatement(this, null); };
+    return Expression;
+}());
+/** @enum {number} */
+var BuiltinVar = {
+    This: 0,
+    Super: 1,
+    CatchError: 2,
+    CatchStack: 3,
+};
+BuiltinVar[BuiltinVar.This] = "This";
+BuiltinVar[BuiltinVar.Super] = "Super";
+BuiltinVar[BuiltinVar.CatchError] = "CatchError";
+BuiltinVar[BuiltinVar.CatchStack] = "CatchStack";
+var ReadVarExpr = /** @class */ (function (_super) {
+    __extends(ReadVarExpr, _super);
+    function ReadVarExpr(name, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        if (typeof name === 'string') {
+            _this.name = name;
+            _this.builtin = null;
+        }
+        else {
+            _this.name = null;
+            _this.builtin = /** @type {?} */ (name);
+        }
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    ReadVarExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
+    };
+    /**
+     * @return {?}
+     */
+    ReadVarExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ReadVarExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitReadVarExpr(this, context);
+    };
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    ReadVarExpr.prototype.set = /**
+     * @param {?} value
+     * @return {?}
+     */
+    function (value) {
+        if (!this.name) {
+            throw new Error("Built in variable " + this.builtin + " can not be assigned to.");
+        }
+        return new WriteVarExpr(this.name, value, null, this.sourceSpan);
+    };
+    return ReadVarExpr;
+}(Expression));
+var WriteVarExpr = /** @class */ (function (_super) {
+    __extends(WriteVarExpr, _super);
+    function WriteVarExpr(name, value, type, sourceSpan) {
+        var _this = _super.call(this, type || value.type, sourceSpan) || this;
+        _this.name = name;
+        _this.value = value;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    WriteVarExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof WriteVarExpr && this.name === e.name && this.value.isEquivalent(e.value);
+    };
+    /**
+     * @return {?}
+     */
+    WriteVarExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    WriteVarExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitWriteVarExpr(this, context);
+    };
+    /**
+     * @param {?=} type
+     * @param {?=} modifiers
+     * @return {?}
+     */
+    WriteVarExpr.prototype.toDeclStmt = /**
+     * @param {?=} type
+     * @param {?=} modifiers
+     * @return {?}
+     */
+    function (type, modifiers) {
+        return new DeclareVarStmt(this.name, this.value, type, modifiers, this.sourceSpan);
+    };
+    return WriteVarExpr;
+}(Expression));
+var WriteKeyExpr = /** @class */ (function (_super) {
+    __extends(WriteKeyExpr, _super);
+    function WriteKeyExpr(receiver, index, value, type, sourceSpan) {
+        var _this = _super.call(this, type || value.type, sourceSpan) || this;
+        _this.receiver = receiver;
+        _this.index = index;
+        _this.value = value;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    WriteKeyExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof WriteKeyExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.index.isEquivalent(e.index) && this.value.isEquivalent(e.value);
+    };
+    /**
+     * @return {?}
+     */
+    WriteKeyExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    WriteKeyExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitWriteKeyExpr(this, context);
+    };
+    return WriteKeyExpr;
+}(Expression));
+var WritePropExpr = /** @class */ (function (_super) {
+    __extends(WritePropExpr, _super);
+    function WritePropExpr(receiver, name, value, type, sourceSpan) {
+        var _this = _super.call(this, type || value.type, sourceSpan) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        _this.value = value;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    WritePropExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof WritePropExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name && this.value.isEquivalent(e.value);
+    };
+    /**
+     * @return {?}
+     */
+    WritePropExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    WritePropExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitWritePropExpr(this, context);
+    };
+    return WritePropExpr;
+}(Expression));
+/** @enum {number} */
+var BuiltinMethod = {
+    ConcatArray: 0,
+    SubscribeObservable: 1,
+    Bind: 2,
+};
+BuiltinMethod[BuiltinMethod.ConcatArray] = "ConcatArray";
+BuiltinMethod[BuiltinMethod.SubscribeObservable] = "SubscribeObservable";
+BuiltinMethod[BuiltinMethod.Bind] = "Bind";
+var InvokeMethodExpr = /** @class */ (function (_super) {
+    __extends(InvokeMethodExpr, _super);
+    function InvokeMethodExpr(receiver, method, args, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.receiver = receiver;
+        _this.args = args;
+        if (typeof method === 'string') {
+            _this.name = method;
+            _this.builtin = null;
+        }
+        else {
+            _this.name = null;
+            _this.builtin = /** @type {?} */ (method);
+        }
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    InvokeMethodExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof InvokeMethodExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
+    };
+    /**
+     * @return {?}
+     */
+    InvokeMethodExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    InvokeMethodExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitInvokeMethodExpr(this, context);
+    };
+    return InvokeMethodExpr;
+}(Expression));
+var InvokeFunctionExpr = /** @class */ (function (_super) {
+    __extends(InvokeFunctionExpr, _super);
+    function InvokeFunctionExpr(fn, args, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.fn = fn;
+        _this.args = args;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    InvokeFunctionExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
+            areAllEquivalent(this.args, e.args);
+    };
+    /**
+     * @return {?}
+     */
+    InvokeFunctionExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    InvokeFunctionExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitInvokeFunctionExpr(this, context);
+    };
+    return InvokeFunctionExpr;
+}(Expression));
+var InstantiateExpr = /** @class */ (function (_super) {
+    __extends(InstantiateExpr, _super);
+    function InstantiateExpr(classExpr, args, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.classExpr = classExpr;
+        _this.args = args;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    InstantiateExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof InstantiateExpr && this.classExpr.isEquivalent(e.classExpr) &&
+            areAllEquivalent(this.args, e.args);
+    };
+    /**
+     * @return {?}
+     */
+    InstantiateExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    InstantiateExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitInstantiateExpr(this, context);
+    };
+    return InstantiateExpr;
+}(Expression));
+var LiteralExpr = /** @class */ (function (_super) {
+    __extends(LiteralExpr, _super);
+    function LiteralExpr(value, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.value = value;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    LiteralExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof LiteralExpr && this.value === e.value;
+    };
+    /**
+     * @return {?}
+     */
+    LiteralExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return true; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    LiteralExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitLiteralExpr(this, context);
+    };
+    return LiteralExpr;
+}(Expression));
+var ExternalExpr = /** @class */ (function (_super) {
+    __extends(ExternalExpr, _super);
+    function ExternalExpr(value, type, typeParams, sourceSpan) {
+        if (typeParams === void 0) { typeParams = null; }
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.value = value;
+        _this.typeParams = typeParams;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    ExternalExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ExternalExpr && this.value.name === e.value.name &&
+            this.value.moduleName === e.value.moduleName && this.value.runtime === e.value.runtime;
+    };
+    /**
+     * @return {?}
+     */
+    ExternalExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ExternalExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitExternalExpr(this, context);
+    };
+    return ExternalExpr;
+}(Expression));
+var ExternalReference = /** @class */ (function () {
+    function ExternalReference(moduleName, name, runtime) {
+        this.moduleName = moduleName;
+        this.name = name;
+        this.runtime = runtime;
+    }
+    return ExternalReference;
+}());
+var ConditionalExpr = /** @class */ (function (_super) {
+    __extends(ConditionalExpr, _super);
+    function ConditionalExpr(condition, trueCase, falseCase, type, sourceSpan) {
+        if (falseCase === void 0) { falseCase = null; }
+        var _this = _super.call(this, type || trueCase.type, sourceSpan) || this;
+        _this.condition = condition;
+        _this.falseCase = falseCase;
+        _this.trueCase = trueCase;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    ConditionalExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ConditionalExpr && this.condition.isEquivalent(e.condition) &&
+            this.trueCase.isEquivalent(e.trueCase) && nullSafeIsEquivalent(this.falseCase, e.falseCase);
+    };
+    /**
+     * @return {?}
+     */
+    ConditionalExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ConditionalExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitConditionalExpr(this, context);
+    };
+    return ConditionalExpr;
+}(Expression));
+var NotExpr = /** @class */ (function (_super) {
+    __extends(NotExpr, _super);
+    function NotExpr(condition, sourceSpan) {
+        var _this = _super.call(this, BOOL_TYPE, sourceSpan) || this;
+        _this.condition = condition;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    NotExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof NotExpr && this.condition.isEquivalent(e.condition);
+    };
+    /**
+     * @return {?}
+     */
+    NotExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    NotExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitNotExpr(this, context);
+    };
+    return NotExpr;
+}(Expression));
+var AssertNotNull = /** @class */ (function (_super) {
+    __extends(AssertNotNull, _super);
+    function AssertNotNull(condition, sourceSpan) {
+        var _this = _super.call(this, condition.type, sourceSpan) || this;
+        _this.condition = condition;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    AssertNotNull.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
+    };
+    /**
+     * @return {?}
+     */
+    AssertNotNull.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    AssertNotNull.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitAssertNotNullExpr(this, context);
+    };
+    return AssertNotNull;
+}(Expression));
+var CastExpr = /** @class */ (function (_super) {
+    __extends(CastExpr, _super);
+    function CastExpr(value, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.value = value;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    CastExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof CastExpr && this.value.isEquivalent(e.value);
+    };
+    /**
+     * @return {?}
+     */
+    CastExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    CastExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitCastExpr(this, context);
+    };
+    return CastExpr;
+}(Expression));
+var FnParam = /** @class */ (function () {
+    function FnParam(name, type) {
+        if (type === void 0) { type = null; }
+        this.name = name;
+        this.type = type;
+    }
+    /**
+     * @param {?} param
+     * @return {?}
+     */
+    FnParam.prototype.isEquivalent = /**
+     * @param {?} param
+     * @return {?}
+     */
+    function (param) { return this.name === param.name; };
+    return FnParam;
+}());
+var FunctionExpr = /** @class */ (function (_super) {
+    __extends(FunctionExpr, _super);
+    function FunctionExpr(params, statements, type, sourceSpan, name) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.params = params;
+        _this.statements = statements;
+        _this.name = name;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    FunctionExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof FunctionExpr && areAllEquivalent(this.params, e.params) &&
+            areAllEquivalent(this.statements, e.statements);
+    };
+    /**
+     * @return {?}
+     */
+    FunctionExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    FunctionExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitFunctionExpr(this, context);
+    };
+    /**
+     * @param {?} name
+     * @param {?=} modifiers
+     * @return {?}
+     */
+    FunctionExpr.prototype.toDeclStmt = /**
+     * @param {?} name
+     * @param {?=} modifiers
+     * @return {?}
+     */
+    function (name, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers, this.sourceSpan);
+    };
+    return FunctionExpr;
+}(Expression));
+var BinaryOperatorExpr = /** @class */ (function (_super) {
+    __extends(BinaryOperatorExpr, _super);
+    function BinaryOperatorExpr(operator, lhs, rhs, type, sourceSpan) {
+        var _this = _super.call(this, type || lhs.type, sourceSpan) || this;
+        _this.operator = operator;
+        _this.rhs = rhs;
+        _this.lhs = lhs;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    BinaryOperatorExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof BinaryOperatorExpr && this.operator === e.operator &&
+            this.lhs.isEquivalent(e.lhs) && this.rhs.isEquivalent(e.rhs);
+    };
+    /**
+     * @return {?}
+     */
+    BinaryOperatorExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    BinaryOperatorExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitBinaryOperatorExpr(this, context);
+    };
+    return BinaryOperatorExpr;
+}(Expression));
+var ReadPropExpr = /** @class */ (function (_super) {
+    __extends(ReadPropExpr, _super);
+    function ReadPropExpr(receiver, name, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.receiver = receiver;
+        _this.name = name;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    ReadPropExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.name === e.name;
+    };
+    /**
+     * @return {?}
+     */
+    ReadPropExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ReadPropExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitReadPropExpr(this, context);
+    };
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    ReadPropExpr.prototype.set = /**
+     * @param {?} value
+     * @return {?}
+     */
+    function (value) {
+        return new WritePropExpr(this.receiver, this.name, value, null, this.sourceSpan);
+    };
+    return ReadPropExpr;
+}(Expression));
+var ReadKeyExpr = /** @class */ (function (_super) {
+    __extends(ReadKeyExpr, _super);
+    function ReadKeyExpr(receiver, index, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.receiver = receiver;
+        _this.index = index;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    ReadKeyExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof ReadKeyExpr && this.receiver.isEquivalent(e.receiver) &&
+            this.index.isEquivalent(e.index);
+    };
+    /**
+     * @return {?}
+     */
+    ReadKeyExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ReadKeyExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitReadKeyExpr(this, context);
+    };
+    /**
+     * @param {?} value
+     * @return {?}
+     */
+    ReadKeyExpr.prototype.set = /**
+     * @param {?} value
+     * @return {?}
+     */
+    function (value) {
+        return new WriteKeyExpr(this.receiver, this.index, value, null, this.sourceSpan);
+    };
+    return ReadKeyExpr;
+}(Expression));
+var LiteralArrayExpr = /** @class */ (function (_super) {
+    __extends(LiteralArrayExpr, _super);
+    function LiteralArrayExpr(entries, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.entries = entries;
+        return _this;
+    }
+    /**
+     * @return {?}
+     */
+    LiteralArrayExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return this.entries.every(function (e) { return e.isConstant(); }); };
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    LiteralArrayExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof LiteralArrayExpr && areAllEquivalent(this.entries, e.entries);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    LiteralArrayExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitLiteralArrayExpr(this, context);
+    };
+    return LiteralArrayExpr;
+}(Expression));
+var LiteralMapEntry = /** @class */ (function () {
+    function LiteralMapEntry(key, value, quoted) {
+        this.key = key;
+        this.value = value;
+        this.quoted = quoted;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    LiteralMapEntry.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return this.key === e.key && this.value.isEquivalent(e.value);
+    };
+    return LiteralMapEntry;
+}());
+var LiteralMapExpr = /** @class */ (function (_super) {
+    __extends(LiteralMapExpr, _super);
+    function LiteralMapExpr(entries, type, sourceSpan) {
+        var _this = _super.call(this, type, sourceSpan) || this;
+        _this.entries = entries;
+        _this.valueType = null;
+        if (type) {
+            _this.valueType = type.valueType;
+        }
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    LiteralMapExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof LiteralMapExpr && areAllEquivalent(this.entries, e.entries);
+    };
+    /**
+     * @return {?}
+     */
+    LiteralMapExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return this.entries.every(function (e) { return e.value.isConstant(); }); };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    LiteralMapExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitLiteralMapExpr(this, context);
+    };
+    return LiteralMapExpr;
+}(Expression));
+var CommaExpr = /** @class */ (function (_super) {
+    __extends(CommaExpr, _super);
+    function CommaExpr(parts, sourceSpan) {
+        var _this = _super.call(this, parts[parts.length - 1].type, sourceSpan) || this;
+        _this.parts = parts;
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    CommaExpr.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof CommaExpr && areAllEquivalent(this.parts, e.parts);
+    };
+    /**
+     * @return {?}
+     */
+    CommaExpr.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return false; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    CommaExpr.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitCommaExpr(this, context);
+    };
+    return CommaExpr;
+}(Expression));
+/**
+ * @record
+ */
+
+var THIS_EXPR = new ReadVarExpr(BuiltinVar.This, null, null);
+var SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super, null, null);
+var CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError, null, null);
+var CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack, null, null);
+var NULL_EXPR = new LiteralExpr(null, null, null);
+var TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE, null);
+/** @enum {number} */
+var StmtModifier = {
+    Final: 0,
+    Private: 1,
+    Exported: 2,
+    Static: 3,
+};
+StmtModifier[StmtModifier.Final] = "Final";
+StmtModifier[StmtModifier.Private] = "Private";
+StmtModifier[StmtModifier.Exported] = "Exported";
+StmtModifier[StmtModifier.Static] = "Static";
+/**
+ * @abstract
+ */
+var Statement = /** @class */ (function () {
+    function Statement(modifiers, sourceSpan) {
+        this.modifiers = modifiers || [];
+        this.sourceSpan = sourceSpan || null;
+    }
+    /**
+     * @param {?} modifier
+     * @return {?}
+     */
+    Statement.prototype.hasModifier = /**
+     * @param {?} modifier
+     * @return {?}
+     */
+    function (modifier) { return /** @type {?} */ ((this.modifiers)).indexOf(modifier) !== -1; };
+    return Statement;
+}());
+var DeclareVarStmt = /** @class */ (function (_super) {
+    __extends(DeclareVarStmt, _super);
+    function DeclareVarStmt(name, value, type, modifiers, sourceSpan) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, modifiers, sourceSpan) || this;
+        _this.name = name;
+        _this.value = value;
+        _this.type = type || (value && value.type) || null;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    DeclareVarStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof DeclareVarStmt && this.name === stmt.name &&
+            (this.value ? !!stmt.value && this.value.isEquivalent(stmt.value) : !stmt.value);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    DeclareVarStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitDeclareVarStmt(this, context);
+    };
+    return DeclareVarStmt;
+}(Statement));
+var DeclareFunctionStmt = /** @class */ (function (_super) {
+    __extends(DeclareFunctionStmt, _super);
+    function DeclareFunctionStmt(name, params, statements, type, modifiers, sourceSpan) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, modifiers, sourceSpan) || this;
+        _this.name = name;
+        _this.params = params;
+        _this.statements = statements;
+        _this.type = type || null;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    DeclareFunctionStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof DeclareFunctionStmt && areAllEquivalent(this.params, stmt.params) &&
+            areAllEquivalent(this.statements, stmt.statements);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    DeclareFunctionStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitDeclareFunctionStmt(this, context);
+    };
+    return DeclareFunctionStmt;
+}(Statement));
+var ExpressionStatement = /** @class */ (function (_super) {
+    __extends(ExpressionStatement, _super);
+    function ExpressionStatement(expr, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.expr = expr;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    ExpressionStatement.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof ExpressionStatement && this.expr.isEquivalent(stmt.expr);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ExpressionStatement.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitExpressionStmt(this, context);
+    };
+    return ExpressionStatement;
+}(Statement));
+var ReturnStatement = /** @class */ (function (_super) {
+    __extends(ReturnStatement, _super);
+    function ReturnStatement(value, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.value = value;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    ReturnStatement.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof ReturnStatement && this.value.isEquivalent(stmt.value);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ReturnStatement.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitReturnStmt(this, context);
+    };
+    return ReturnStatement;
+}(Statement));
+var AbstractClassPart = /** @class */ (function () {
+    function AbstractClassPart(type, modifiers) {
+        this.modifiers = modifiers;
+        if (!modifiers) {
+            this.modifiers = [];
+        }
+        this.type = type || null;
+    }
+    /**
+     * @param {?} modifier
+     * @return {?}
+     */
+    AbstractClassPart.prototype.hasModifier = /**
+     * @param {?} modifier
+     * @return {?}
+     */
+    function (modifier) { return /** @type {?} */ ((this.modifiers)).indexOf(modifier) !== -1; };
+    return AbstractClassPart;
+}());
+var ClassField = /** @class */ (function (_super) {
+    __extends(ClassField, _super);
+    function ClassField(name, type, modifiers, initializer) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, type, modifiers) || this;
+        _this.name = name;
+        _this.initializer = initializer;
+        return _this;
+    }
+    /**
+     * @param {?} f
+     * @return {?}
+     */
+    ClassField.prototype.isEquivalent = /**
+     * @param {?} f
+     * @return {?}
+     */
+    function (f) { return this.name === f.name; };
+    return ClassField;
+}(AbstractClassPart));
+var ClassMethod = /** @class */ (function (_super) {
+    __extends(ClassMethod, _super);
+    function ClassMethod(name, params, body, type, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, type, modifiers) || this;
+        _this.name = name;
+        _this.params = params;
+        _this.body = body;
+        return _this;
+    }
+    /**
+     * @param {?} m
+     * @return {?}
+     */
+    ClassMethod.prototype.isEquivalent = /**
+     * @param {?} m
+     * @return {?}
+     */
+    function (m) {
+        return this.name === m.name && areAllEquivalent(this.body, m.body);
+    };
+    return ClassMethod;
+}(AbstractClassPart));
+var ClassGetter = /** @class */ (function (_super) {
+    __extends(ClassGetter, _super);
+    function ClassGetter(name, body, type, modifiers) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, type, modifiers) || this;
+        _this.name = name;
+        _this.body = body;
+        return _this;
+    }
+    /**
+     * @param {?} m
+     * @return {?}
+     */
+    ClassGetter.prototype.isEquivalent = /**
+     * @param {?} m
+     * @return {?}
+     */
+    function (m) {
+        return this.name === m.name && areAllEquivalent(this.body, m.body);
+    };
+    return ClassGetter;
+}(AbstractClassPart));
+var ClassStmt = /** @class */ (function (_super) {
+    __extends(ClassStmt, _super);
+    function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers, sourceSpan) {
+        if (modifiers === void 0) { modifiers = null; }
+        var _this = _super.call(this, modifiers, sourceSpan) || this;
+        _this.name = name;
+        _this.parent = parent;
+        _this.fields = fields;
+        _this.getters = getters;
+        _this.constructorMethod = constructorMethod;
+        _this.methods = methods;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    ClassStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof ClassStmt && this.name === stmt.name &&
+            nullSafeIsEquivalent(this.parent, stmt.parent) &&
+            areAllEquivalent(this.fields, stmt.fields) &&
+            areAllEquivalent(this.getters, stmt.getters) &&
+            this.constructorMethod.isEquivalent(stmt.constructorMethod) &&
+            areAllEquivalent(this.methods, stmt.methods);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ClassStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitDeclareClassStmt(this, context);
+    };
+    return ClassStmt;
+}(Statement));
+var IfStmt = /** @class */ (function (_super) {
+    __extends(IfStmt, _super);
+    function IfStmt(condition, trueCase, falseCase, sourceSpan) {
+        if (falseCase === void 0) { falseCase = []; }
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.condition = condition;
+        _this.trueCase = trueCase;
+        _this.falseCase = falseCase;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    IfStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof IfStmt && this.condition.isEquivalent(stmt.condition) &&
+            areAllEquivalent(this.trueCase, stmt.trueCase) &&
+            areAllEquivalent(this.falseCase, stmt.falseCase);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    IfStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitIfStmt(this, context);
+    };
+    return IfStmt;
+}(Statement));
+var CommentStmt = /** @class */ (function (_super) {
+    __extends(CommentStmt, _super);
+    function CommentStmt(comment, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.comment = comment;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    CommentStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) { return stmt instanceof CommentStmt; };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    CommentStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitCommentStmt(this, context);
+    };
+    return CommentStmt;
+}(Statement));
+var TryCatchStmt = /** @class */ (function (_super) {
+    __extends(TryCatchStmt, _super);
+    function TryCatchStmt(bodyStmts, catchStmts, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.bodyStmts = bodyStmts;
+        _this.catchStmts = catchStmts;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    TryCatchStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof TryCatchStmt && areAllEquivalent(this.bodyStmts, stmt.bodyStmts) &&
+            areAllEquivalent(this.catchStmts, stmt.catchStmts);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    TryCatchStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitTryCatchStmt(this, context);
+    };
+    return TryCatchStmt;
+}(Statement));
+var ThrowStmt = /** @class */ (function (_super) {
+    __extends(ThrowStmt, _super);
+    function ThrowStmt(error, sourceSpan) {
+        var _this = _super.call(this, null, sourceSpan) || this;
+        _this.error = error;
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    ThrowStmt.prototype.isEquivalent = /**
+     * @param {?} stmt
+     * @return {?}
+     */
+    function (stmt) {
+        return stmt instanceof TryCatchStmt && this.error.isEquivalent(stmt.error);
+    };
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    ThrowStmt.prototype.visitStatement = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        return visitor.visitThrowStmt(this, context);
+    };
+    return ThrowStmt;
+}(Statement));
+/**
+ * @record
+ */
+
+var AstTransformer$1 = /** @class */ (function () {
+    function AstTransformer() {
+    }
+    /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.transformExpr = /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    function (expr, context) { return expr; };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.transformStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) { return stmt; };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitReadVarExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return this.transformExpr(ast, context); };
+    /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitWriteVarExpr = /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    function (expr, context) {
+        return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
+    };
+    /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitWriteKeyExpr = /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    function (expr, context) {
+        return this.transformExpr(new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
+    };
+    /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitWritePropExpr = /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    function (expr, context) {
+        return this.transformExpr(new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitInvokeMethodExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var /** @type {?} */ method = ast.builtin || ast.name;
+        return this.transformExpr(new InvokeMethodExpr(ast.receiver.visitExpression(this, context), /** @type {?} */ ((method)), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitInvokeFunctionExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitInstantiateExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitLiteralExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return this.transformExpr(ast, context); };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitExternalExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitConditionalExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), /** @type {?} */ ((ast.falseCase)).visitExpression(this, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitNotExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new NotExpr(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitAssertNotNullExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new AssertNotNull(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitCastExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new CastExpr(ast.value.visitExpression(this, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitFunctionExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new FunctionExpr(ast.params, this.visitAllStatements(ast.statements, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitBinaryOperatorExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitReadPropExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitReadKeyExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitLiteralArrayExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context), ast.type, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitLiteralMapExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        var /** @type {?} */ entries = ast.entries.map(function (entry) {
+            return new LiteralMapEntry(entry.key, entry.value.visitExpression(_this, context), entry.quoted);
+        });
+        var /** @type {?} */ mapType = new MapType(ast.valueType, null);
+        return this.transformExpr(new LiteralMapExpr(entries, mapType, ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitCommaExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.transformExpr(new CommaExpr(this.visitAllExpressions(ast.parts, context), ast.sourceSpan), context);
+    };
+    /**
+     * @param {?} exprs
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitAllExpressions = /**
+     * @param {?} exprs
+     * @param {?} context
+     * @return {?}
+     */
+    function (exprs, context) {
+        var _this = this;
+        return exprs.map(function (expr) { return expr.visitExpression(_this, context); });
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitDeclareVarStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        var /** @type {?} */ value = stmt.value && stmt.value.visitExpression(this, context);
+        return this.transformStmt(new DeclareVarStmt(stmt.name, value, stmt.type, stmt.modifiers, stmt.sourceSpan), context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitDeclareFunctionStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(new DeclareFunctionStmt(stmt.name, stmt.params, this.visitAllStatements(stmt.statements, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitExpressionStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan), context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitReturnStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan), context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitDeclareClassStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        var _this = this;
+        var /** @type {?} */ parent = /** @type {?} */ ((stmt.parent)).visitExpression(this, context);
+        var /** @type {?} */ getters = stmt.getters.map(function (getter) {
+            return new ClassGetter(getter.name, _this.visitAllStatements(getter.body, context), getter.type, getter.modifiers);
+        });
+        var /** @type {?} */ ctorMethod = stmt.constructorMethod &&
+            new ClassMethod(stmt.constructorMethod.name, stmt.constructorMethod.params, this.visitAllStatements(stmt.constructorMethod.body, context), stmt.constructorMethod.type, stmt.constructorMethod.modifiers);
+        var /** @type {?} */ methods = stmt.methods.map(function (method) {
+            return new ClassMethod(method.name, method.params, _this.visitAllStatements(method.body, context), method.type, method.modifiers);
+        });
+        return this.transformStmt(new ClassStmt(stmt.name, parent, stmt.fields, getters, ctorMethod, methods, stmt.modifiers, stmt.sourceSpan), context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitIfStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan), context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitTryCatchStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan), context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitThrowStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan), context);
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitCommentStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        return this.transformStmt(stmt, context);
+    };
+    /**
+     * @param {?} stmts
+     * @param {?} context
+     * @return {?}
+     */
+    AstTransformer.prototype.visitAllStatements = /**
+     * @param {?} stmts
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmts, context) {
+        var _this = this;
+        return stmts.map(function (stmt) { return stmt.visitStatement(_this, context); });
+    };
+    return AstTransformer;
+}());
+var RecursiveAstVisitor$1 = /** @class */ (function () {
+    function RecursiveAstVisitor() {
+    }
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitType = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) { return ast; };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitExpression = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        if (ast.type) {
+            ast.type.visitType(this, context);
+        }
+        return ast;
+    };
+    /**
+     * @param {?} type
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitBuiltinType = /**
+     * @param {?} type
+     * @param {?} context
+     * @return {?}
+     */
+    function (type, context) { return this.visitType(type, context); };
+    /**
+     * @param {?} type
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitExpressionType = /**
+     * @param {?} type
+     * @param {?} context
+     * @return {?}
+     */
+    function (type, context) {
+        type.value.visitExpression(this, context);
+        return this.visitType(type, context);
+    };
+    /**
+     * @param {?} type
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitArrayType = /**
+     * @param {?} type
+     * @param {?} context
+     * @return {?}
+     */
+    function (type, context) { return this.visitType(type, context); };
+    /**
+     * @param {?} type
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitMapType = /**
+     * @param {?} type
+     * @param {?} context
+     * @return {?}
+     */
+    function (type, context) { return this.visitType(type, context); };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitReadVarExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitWriteVarExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.value.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitWriteKeyExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.receiver.visitExpression(this, context);
+        ast.index.visitExpression(this, context);
+        ast.value.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitWritePropExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.receiver.visitExpression(this, context);
+        ast.value.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitInvokeMethodExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.receiver.visitExpression(this, context);
+        this.visitAllExpressions(ast.args, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitInvokeFunctionExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.fn.visitExpression(this, context);
+        this.visitAllExpressions(ast.args, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitInstantiateExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.classExpr.visitExpression(this, context);
+        this.visitAllExpressions(ast.args, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitLiteralExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitExternalExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        if (ast.typeParams) {
+            ast.typeParams.forEach(function (type) { return type.visitType(_this, context); });
+        }
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitConditionalExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.condition.visitExpression(this, context);
+        ast.trueCase.visitExpression(this, context); /** @type {?} */
+        ((ast.falseCase)).visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitNotExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.condition.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitAssertNotNullExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.condition.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitCastExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.value.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitFunctionExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        this.visitAllStatements(ast.statements, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitBinaryOperatorExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.lhs.visitExpression(this, context);
+        ast.rhs.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitReadPropExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.receiver.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitReadKeyExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        ast.receiver.visitExpression(this, context);
+        ast.index.visitExpression(this, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitLiteralArrayExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        this.visitAllExpressions(ast.entries, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitLiteralMapExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        ast.entries.forEach(function (entry) { return entry.value.visitExpression(_this, context); });
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitCommaExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        this.visitAllExpressions(ast.parts, context);
+        return this.visitExpression(ast, context);
+    };
+    /**
+     * @param {?} exprs
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitAllExpressions = /**
+     * @param {?} exprs
+     * @param {?} context
+     * @return {?}
+     */
+    function (exprs, context) {
+        var _this = this;
+        exprs.forEach(function (expr) { return expr.visitExpression(_this, context); });
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitDeclareVarStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        if (stmt.value) {
+            stmt.value.visitExpression(this, context);
+        }
+        if (stmt.type) {
+            stmt.type.visitType(this, context);
+        }
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitDeclareFunctionStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        this.visitAllStatements(stmt.statements, context);
+        if (stmt.type) {
+            stmt.type.visitType(this, context);
+        }
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitExpressionStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        stmt.expr.visitExpression(this, context);
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitReturnStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        stmt.value.visitExpression(this, context);
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitDeclareClassStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        var _this = this;
+        /** @type {?} */ ((stmt.parent)).visitExpression(this, context);
+        stmt.getters.forEach(function (getter) { return _this.visitAllStatements(getter.body, context); });
+        if (stmt.constructorMethod) {
+            this.visitAllStatements(stmt.constructorMethod.body, context);
+        }
+        stmt.methods.forEach(function (method) { return _this.visitAllStatements(method.body, context); });
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitIfStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        stmt.condition.visitExpression(this, context);
+        this.visitAllStatements(stmt.trueCase, context);
+        this.visitAllStatements(stmt.falseCase, context);
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitTryCatchStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        this.visitAllStatements(stmt.bodyStmts, context);
+        this.visitAllStatements(stmt.catchStmts, context);
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitThrowStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        stmt.error.visitExpression(this, context);
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitCommentStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) { return stmt; };
+    /**
+     * @param {?} stmts
+     * @param {?} context
+     * @return {?}
+     */
+    RecursiveAstVisitor.prototype.visitAllStatements = /**
+     * @param {?} stmts
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmts, context) {
+        var _this = this;
+        stmts.forEach(function (stmt) { return stmt.visitStatement(_this, context); });
+    };
+    return RecursiveAstVisitor;
+}());
+/**
+ * @param {?} stmts
+ * @return {?}
+ */
+function findReadVarNames(stmts) {
+    var /** @type {?} */ visitor = new _ReadVarVisitor();
+    visitor.visitAllStatements(stmts, null);
+    return visitor.varNames;
+}
+var _ReadVarVisitor = /** @class */ (function (_super) {
+    __extends(_ReadVarVisitor, _super);
+    function _ReadVarVisitor() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.varNames = new Set();
+        return _this;
+    }
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    _ReadVarVisitor.prototype.visitDeclareFunctionStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        // Don't descend into nested functions
+        return stmt;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    _ReadVarVisitor.prototype.visitDeclareClassStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        // Don't descend into nested classes
+        return stmt;
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    _ReadVarVisitor.prototype.visitReadVarExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        if (ast.name) {
+            this.varNames.add(ast.name);
+        }
+        return null;
+    };
+    return _ReadVarVisitor;
+}(RecursiveAstVisitor$1));
+/**
+ * @param {?} stmts
+ * @return {?}
+ */
+function collectExternalReferences(stmts) {
+    var /** @type {?} */ visitor = new _FindExternalReferencesVisitor();
+    visitor.visitAllStatements(stmts, null);
+    return visitor.externalReferences;
+}
+var _FindExternalReferencesVisitor = /** @class */ (function (_super) {
+    __extends(_FindExternalReferencesVisitor, _super);
+    function _FindExternalReferencesVisitor() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.externalReferences = [];
+        return _this;
+    }
+    /**
+     * @param {?} e
+     * @param {?} context
+     * @return {?}
+     */
+    _FindExternalReferencesVisitor.prototype.visitExternalExpr = /**
+     * @param {?} e
+     * @param {?} context
+     * @return {?}
+     */
+    function (e, context) {
+        this.externalReferences.push(e.value);
+        return _super.prototype.visitExternalExpr.call(this, e, context);
+    };
+    return _FindExternalReferencesVisitor;
+}(RecursiveAstVisitor$1));
+/**
+ * @param {?} stmt
+ * @param {?} sourceSpan
+ * @return {?}
+ */
+function applySourceSpanToStatementIfNeeded(stmt, sourceSpan) {
+    if (!sourceSpan) {
+        return stmt;
+    }
+    var /** @type {?} */ transformer = new _ApplySourceSpanTransformer(sourceSpan);
+    return stmt.visitStatement(transformer, null);
+}
+/**
+ * @param {?} expr
+ * @param {?} sourceSpan
+ * @return {?}
+ */
+function applySourceSpanToExpressionIfNeeded(expr, sourceSpan) {
+    if (!sourceSpan) {
+        return expr;
+    }
+    var /** @type {?} */ transformer = new _ApplySourceSpanTransformer(sourceSpan);
+    return expr.visitExpression(transformer, null);
+}
+var _ApplySourceSpanTransformer = /** @class */ (function (_super) {
+    __extends(_ApplySourceSpanTransformer, _super);
+    function _ApplySourceSpanTransformer(sourceSpan) {
+        var _this = _super.call(this) || this;
+        _this.sourceSpan = sourceSpan;
+        return _this;
+    }
+    /**
+     * @param {?} obj
+     * @return {?}
+     */
+    _ApplySourceSpanTransformer.prototype._clone = /**
+     * @param {?} obj
+     * @return {?}
+     */
+    function (obj) {
+        var /** @type {?} */ clone = Object.create(obj.constructor.prototype);
+        for (var /** @type {?} */ prop in obj) {
+            clone[prop] = obj[prop];
+        }
+        return clone;
+    };
+    /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    _ApplySourceSpanTransformer.prototype.transformExpr = /**
+     * @param {?} expr
+     * @param {?} context
+     * @return {?}
+     */
+    function (expr, context) {
+        if (!expr.sourceSpan) {
+            expr = this._clone(expr);
+            expr.sourceSpan = this.sourceSpan;
+        }
+        return expr;
+    };
+    /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    _ApplySourceSpanTransformer.prototype.transformStmt = /**
+     * @param {?} stmt
+     * @param {?} context
+     * @return {?}
+     */
+    function (stmt, context) {
+        if (!stmt.sourceSpan) {
+            stmt = this._clone(stmt);
+            stmt.sourceSpan = this.sourceSpan;
+        }
+        return stmt;
+    };
+    return _ApplySourceSpanTransformer;
+}(AstTransformer$1));
+/**
+ * @param {?} name
+ * @param {?=} type
+ * @param {?=} sourceSpan
+ * @return {?}
+ */
+function variable(name, type, sourceSpan) {
+    return new ReadVarExpr(name, type, sourceSpan);
+}
+/**
+ * @param {?} id
+ * @param {?=} typeParams
+ * @param {?=} sourceSpan
+ * @return {?}
+ */
+function importExpr(id, typeParams, sourceSpan) {
+    if (typeParams === void 0) { typeParams = null; }
+    return new ExternalExpr(id, null, typeParams, sourceSpan);
+}
+/**
+ * @param {?} id
+ * @param {?=} typeParams
+ * @param {?=} typeModifiers
+ * @return {?}
+ */
+function importType(id, typeParams, typeModifiers) {
+    if (typeParams === void 0) { typeParams = null; }
+    if (typeModifiers === void 0) { typeModifiers = null; }
+    return id != null ? expressionType(importExpr(id, typeParams, null), typeModifiers) : null;
+}
+/**
+ * @param {?} expr
+ * @param {?=} typeModifiers
+ * @return {?}
+ */
+function expressionType(expr, typeModifiers) {
+    if (typeModifiers === void 0) { typeModifiers = null; }
+    return new ExpressionType(expr, typeModifiers);
+}
+/**
+ * @param {?} values
+ * @param {?=} type
+ * @param {?=} sourceSpan
+ * @return {?}
+ */
+function literalArr(values, type, sourceSpan) {
+    return new LiteralArrayExpr(values, type, sourceSpan);
+}
+/**
+ * @param {?} values
+ * @param {?=} type
+ * @return {?}
+ */
+function literalMap(values, type) {
+    if (type === void 0) { type = null; }
+    return new LiteralMapExpr(values.map(function (e) { return new LiteralMapEntry(e.key, e.value, e.quoted); }), type, null);
+}
+/**
+ * @param {?} expr
+ * @param {?=} sourceSpan
+ * @return {?}
+ */
+function not(expr, sourceSpan) {
+    return new NotExpr(expr, sourceSpan);
+}
+/**
+ * @param {?} expr
+ * @param {?=} sourceSpan
+ * @return {?}
+ */
+function assertNotNull(expr, sourceSpan) {
+    return new AssertNotNull(expr, sourceSpan);
+}
+/**
+ * @param {?} params
+ * @param {?} body
+ * @param {?=} type
+ * @param {?=} sourceSpan
+ * @param {?=} name
+ * @return {?}
+ */
+function fn(params, body, type, sourceSpan, name) {
+    return new FunctionExpr(params, body, type, sourceSpan, name);
+}
+/**
+ * @param {?} condition
+ * @param {?} thenClause
+ * @param {?=} elseClause
+ * @return {?}
+ */
+function ifStmt(condition, thenClause, elseClause) {
+    return new IfStmt(condition, thenClause, elseClause);
+}
+/**
+ * @param {?} value
+ * @param {?=} type
+ * @param {?=} sourceSpan
+ * @return {?}
+ */
+function literal(value, type, sourceSpan) {
+    return new LiteralExpr(value, type, sourceSpan);
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+var QUOTED_KEYS = '$quoted$';
+/**
+ * @param {?} ctx
+ * @param {?} value
+ * @param {?=} type
+ * @return {?}
+ */
+function convertValueToOutputAst(ctx, value, type) {
+    if (type === void 0) { type = null; }
+    return visitValue(value, new _ValueOutputAstTransformer(ctx), type);
+}
+var _ValueOutputAstTransformer = /** @class */ (function () {
+    function _ValueOutputAstTransformer(ctx) {
+        this.ctx = ctx;
+    }
+    /**
+     * @param {?} arr
+     * @param {?} type
+     * @return {?}
+     */
+    _ValueOutputAstTransformer.prototype.visitArray = /**
+     * @param {?} arr
+     * @param {?} type
+     * @return {?}
+     */
+    function (arr, type) {
+        var _this = this;
+        return literalArr(arr.map(function (value) { return visitValue(value, _this, null); }), type);
+    };
+    /**
+     * @param {?} map
+     * @param {?} type
+     * @return {?}
+     */
+    _ValueOutputAstTransformer.prototype.visitStringMap = /**
+     * @param {?} map
+     * @param {?} type
+     * @return {?}
+     */
+    function (map, type) {
+        var _this = this;
+        var /** @type {?} */ entries = [];
+        var /** @type {?} */ quotedSet = new Set(map && map[QUOTED_KEYS]);
+        Object.keys(map).forEach(function (key) {
+            entries.push(new LiteralMapEntry(key, visitValue(map[key], _this, null), quotedSet.has(key)));
+        });
+        return new LiteralMapExpr(entries, type);
+    };
+    /**
+     * @param {?} value
+     * @param {?} type
+     * @return {?}
+     */
+    _ValueOutputAstTransformer.prototype.visitPrimitive = /**
+     * @param {?} value
+     * @param {?} type
+     * @return {?}
+     */
+    function (value, type) { return literal(value, type); };
+    /**
+     * @param {?} value
+     * @param {?} type
+     * @return {?}
+     */
+    _ValueOutputAstTransformer.prototype.visitOther = /**
+     * @param {?} value
+     * @param {?} type
+     * @return {?}
+     */
+    function (value, type) {
+        if (value instanceof Expression) {
+            return value;
+        }
+        else {
+            return this.ctx.importExpr(value);
+        }
+    };
+    return _ValueOutputAstTransformer;
+}());
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @param {?} key
+ * @param {?} value
+ * @return {?}
+ */
+function mapEntry(key, value) {
+    return { key: key, value: value, quoted: false };
+}
+var InjectableCompiler = /** @class */ (function () {
+    function InjectableCompiler(reflector) {
+        this.reflector = reflector;
+    }
+    /**
+     * @param {?} deps
+     * @param {?} ctx
+     * @return {?}
+     */
+    InjectableCompiler.prototype.depsArray = /**
+     * @param {?} deps
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (deps, ctx) {
+        return deps.map(function (dep) {
+            var /** @type {?} */ token = dep;
+            var /** @type {?} */ defaultValue = undefined;
+            var /** @type {?} */ args = [token];
+            var /** @type {?} */ flags = 0;
+            if (Array.isArray(dep)) {
+                for (var /** @type {?} */ i = 0; i < dep.length; i++) {
+                    var /** @type {?} */ v = dep[i];
+                    if (v) {
+                        if (v.ngMetadataName === 'Optional') {
+                            defaultValue = null;
+                        }
+                        else if (v.ngMetadataName === 'SkipSelf') {
+                            flags |= 1 /* SkipSelf */;
+                        }
+                        else if (v.ngMetadataName === 'Self') {
+                            flags |= 2 /* Self */;
+                        }
+                        else if (v.ngMetadataName === 'Inject') {
+                            token = v.token;
+                        }
+                        else {
+                            token = v;
+                        }
+                    }
+                }
+            }
+            var /** @type {?} */ tokenExpr = typeof token === 'string' ? literal(token) : ctx.importExpr(token);
+            if (flags !== 0 /* Default */ || defaultValue !== undefined) {
+                args = [tokenExpr, literal(defaultValue), literal(flags)];
+            }
+            else {
+                args = [tokenExpr];
+            }
+            return importExpr(Identifiers.inject).callFn(args);
+        });
+    };
+    /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    InjectableCompiler.prototype.factoryFor = /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (injectable, ctx) {
+        var /** @type {?} */ retValue;
+        if (injectable.useExisting) {
+            retValue = importExpr(Identifiers.inject).callFn([ctx.importExpr(injectable.useExisting)]);
+        }
+        else if (injectable.useFactory) {
+            var /** @type {?} */ deps = injectable.deps || [];
+            if (deps.length > 0) {
+                retValue = ctx.importExpr(injectable.useFactory).callFn(this.depsArray(deps, ctx));
+            }
+            else {
+                return ctx.importExpr(injectable.useFactory);
+            }
+        }
+        else if (injectable.useValue) {
+            retValue = convertValueToOutputAst(ctx, injectable.useValue);
+        }
+        else {
+            var /** @type {?} */ clazz = injectable.useClass || injectable.symbol;
+            var /** @type {?} */ depArgs = this.depsArray(this.reflector.parameters(clazz), ctx);
+            retValue = new InstantiateExpr(ctx.importExpr(clazz), depArgs);
+        }
+        return fn([], [new ReturnStatement(retValue)], undefined, undefined, injectable.symbol.name + '_Factory');
+    };
+    /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    InjectableCompiler.prototype.injectableDef = /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (injectable, ctx) {
+        var /** @type {?} */ def = [
+            mapEntry('factory', this.factoryFor(injectable, ctx)),
+            mapEntry('token', ctx.importExpr(injectable.type.reference)),
+            mapEntry('scope', ctx.importExpr(/** @type {?} */ ((injectable.module)))),
+        ];
+        return importExpr(Identifiers.defineInjectable).callFn([literalMap(def)]);
+    };
+    /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    InjectableCompiler.prototype.compile = /**
+     * @param {?} injectable
+     * @param {?} ctx
+     * @return {?}
+     */
+    function (injectable, ctx) {
+        if (injectable.module) {
+            var /** @type {?} */ className = /** @type {?} */ ((identifierName(injectable.type)));
+            var /** @type {?} */ clazz = new ClassStmt(className, null, [
+                new ClassField('ngInjectableDef', INFERRED_TYPE, [StmtModifier.Static], this.injectableDef(injectable, ctx)),
+            ], [], new ClassMethod(null, [], []), []);
+            ctx.statements.push(clazz);
+        }
+    };
+    return InjectableCompiler;
+}());
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var STRIP_SRC_FILE_SUFFIXES = /(\.ts|\.d\.ts|\.js|\.jsx|\.tsx)$/;
 var GENERATED_FILE = /\.ngfactory\.|\.ngsummary\./;
 var JIT_SUMMARY_FILE = /\.ngsummary\./;
@@ -13840,131 +17831,6 @@ function isLoweredSymbol(name) {
  */
 function createLoweredSymbol(id) {
     return "\u0275" + id;
-}
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-var CORE = '@angular/core';
-var Identifiers = /** @class */ (function () {
-    function Identifiers() {
-    }
-    Identifiers.ANALYZE_FOR_ENTRY_COMPONENTS = {
-        name: 'ANALYZE_FOR_ENTRY_COMPONENTS',
-        moduleName: CORE,
-    };
-    Identifiers.ElementRef = { name: 'ElementRef', moduleName: CORE };
-    Identifiers.NgModuleRef = { name: 'NgModuleRef', moduleName: CORE };
-    Identifiers.ViewContainerRef = { name: 'ViewContainerRef', moduleName: CORE };
-    Identifiers.ChangeDetectorRef = {
-        name: 'ChangeDetectorRef',
-        moduleName: CORE,
-    };
-    Identifiers.QueryList = { name: 'QueryList', moduleName: CORE };
-    Identifiers.TemplateRef = { name: 'TemplateRef', moduleName: CORE };
-    Identifiers.CodegenComponentFactoryResolver = {
-        name: 'ɵCodegenComponentFactoryResolver',
-        moduleName: CORE,
-    };
-    Identifiers.ComponentFactoryResolver = {
-        name: 'ComponentFactoryResolver',
-        moduleName: CORE,
-    };
-    Identifiers.ComponentFactory = { name: 'ComponentFactory', moduleName: CORE };
-    Identifiers.ComponentRef = { name: 'ComponentRef', moduleName: CORE };
-    Identifiers.NgModuleFactory = { name: 'NgModuleFactory', moduleName: CORE };
-    Identifiers.createModuleFactory = {
-        name: 'ɵcmf',
-        moduleName: CORE,
-    };
-    Identifiers.moduleDef = {
-        name: 'ɵmod',
-        moduleName: CORE,
-    };
-    Identifiers.moduleProviderDef = {
-        name: 'ɵmpd',
-        moduleName: CORE,
-    };
-    Identifiers.RegisterModuleFactoryFn = {
-        name: 'ɵregisterModuleFactory',
-        moduleName: CORE,
-    };
-    Identifiers.Injector = { name: 'Injector', moduleName: CORE };
-    Identifiers.ViewEncapsulation = {
-        name: 'ViewEncapsulation',
-        moduleName: CORE,
-    };
-    Identifiers.ChangeDetectionStrategy = {
-        name: 'ChangeDetectionStrategy',
-        moduleName: CORE,
-    };
-    Identifiers.SecurityContext = {
-        name: 'SecurityContext',
-        moduleName: CORE,
-    };
-    Identifiers.LOCALE_ID = { name: 'LOCALE_ID', moduleName: CORE };
-    Identifiers.TRANSLATIONS_FORMAT = {
-        name: 'TRANSLATIONS_FORMAT',
-        moduleName: CORE,
-    };
-    Identifiers.inlineInterpolate = {
-        name: 'ɵinlineInterpolate',
-        moduleName: CORE,
-    };
-    Identifiers.interpolate = { name: 'ɵinterpolate', moduleName: CORE };
-    Identifiers.EMPTY_ARRAY = { name: 'ɵEMPTY_ARRAY', moduleName: CORE };
-    Identifiers.EMPTY_MAP = { name: 'ɵEMPTY_MAP', moduleName: CORE };
-    Identifiers.Renderer = { name: 'Renderer', moduleName: CORE };
-    Identifiers.viewDef = { name: 'ɵvid', moduleName: CORE };
-    Identifiers.elementDef = { name: 'ɵeld', moduleName: CORE };
-    Identifiers.anchorDef = { name: 'ɵand', moduleName: CORE };
-    Identifiers.textDef = { name: 'ɵted', moduleName: CORE };
-    Identifiers.directiveDef = { name: 'ɵdid', moduleName: CORE };
-    Identifiers.providerDef = { name: 'ɵprd', moduleName: CORE };
-    Identifiers.queryDef = { name: 'ɵqud', moduleName: CORE };
-    Identifiers.pureArrayDef = { name: 'ɵpad', moduleName: CORE };
-    Identifiers.pureObjectDef = { name: 'ɵpod', moduleName: CORE };
-    Identifiers.purePipeDef = { name: 'ɵppd', moduleName: CORE };
-    Identifiers.pipeDef = { name: 'ɵpid', moduleName: CORE };
-    Identifiers.nodeValue = { name: 'ɵnov', moduleName: CORE };
-    Identifiers.ngContentDef = { name: 'ɵncd', moduleName: CORE };
-    Identifiers.unwrapValue = { name: 'ɵunv', moduleName: CORE };
-    Identifiers.createRendererType2 = { name: 'ɵcrt', moduleName: CORE };
-    // type only
-    Identifiers.RendererType2 = {
-        name: 'RendererType2',
-        moduleName: CORE,
-    };
-    // type only
-    Identifiers.ViewDefinition = {
-        name: 'ɵViewDefinition',
-        moduleName: CORE,
-    };
-    Identifiers.createComponentFactory = { name: 'ɵccf', moduleName: CORE };
-    return Identifiers;
-}());
-/**
- * @param {?} reference
- * @return {?}
- */
-function createTokenForReference(reference) {
-    return { identifier: { reference: reference } };
-}
-/**
- * @param {?} reflector
- * @param {?} reference
- * @return {?}
- */
-function createTokenForExternalReference(reflector, reference) {
-    return createTokenForReference(reflector.resolveExternalReference(reference));
 }
 
 /**
@@ -14178,6 +18044,19 @@ var CssSelector = /** @class */ (function () {
         }
         return getHtmlTagDefinition(tagName).isVoid ? "<" + tagName + classAttr + attrs + "/>" :
             "<" + tagName + classAttr + attrs + "></" + tagName + ">";
+    };
+    /**
+     * @return {?}
+     */
+    CssSelector.prototype.getAttrs = /**
+     * @return {?}
+     */
+    function () {
+        var /** @type {?} */ result = [];
+        if (this.classNames.length > 0) {
+            result.push('class', this.classNames.join(' '));
+        }
+        return result.concat(this.attrs);
     };
     /**
      * @param {?} name
@@ -15471,7 +19350,7 @@ var CompileMetadataResolver = /** @class */ (function () {
      * @return {?}
      */
     function (type) {
-        var /** @type {?} */ annotations = this._reflector.annotations(type);
+        var /** @type {?} */ annotations = this._reflector.tryAnnotations(type);
         return annotations.some(function (ann) { return createInjectable.isTypeOf(ann); });
     };
     /**
@@ -15491,20 +19370,37 @@ var CompileMetadataResolver = /** @class */ (function () {
     /**
      * @param {?} type
      * @param {?=} dependencies
+     * @param {?=} throwOnUnknownDeps
      * @return {?}
      */
-    CompileMetadataResolver.prototype._getInjectableMetadata = /**
+    CompileMetadataResolver.prototype.getInjectableMetadata = /**
      * @param {?} type
      * @param {?=} dependencies
+     * @param {?=} throwOnUnknownDeps
      * @return {?}
      */
-    function (type, dependencies) {
+    function (type, dependencies, throwOnUnknownDeps) {
         if (dependencies === void 0) { dependencies = null; }
+        if (throwOnUnknownDeps === void 0) { throwOnUnknownDeps = true; }
         var /** @type {?} */ typeSummary = this._loadSummary(type, CompileSummaryKind.Injectable);
-        if (typeSummary) {
-            return typeSummary.type;
+        var /** @type {?} */ typeMetadata = typeSummary ?
+            typeSummary.type :
+            this._getTypeMetadata(type, dependencies, throwOnUnknownDeps);
+        var /** @type {?} */ annotations = this._reflector.annotations(type).filter(function (ann) { return createInjectable.isTypeOf(ann); });
+        if (annotations.length === 0) {
+            return null;
         }
-        return this._getTypeMetadata(type, dependencies);
+        var /** @type {?} */ meta = annotations[annotations.length - 1];
+        return {
+            symbol: type,
+            type: typeMetadata,
+            module: meta.scope || undefined,
+            useValue: meta.useValue,
+            useClass: meta.useClass,
+            useExisting: meta.useExisting,
+            useFactory: meta.useFactory,
+            deps: meta.deps,
+        };
     };
     /**
      * @param {?} type
@@ -15851,6 +19747,24 @@ var CompileMetadataResolver = /** @class */ (function () {
         return null;
     };
     /**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @return {?}
+     */
+    CompileMetadataResolver.prototype._getInjectableTypeMetadata = /**
+     * @param {?} type
+     * @param {?=} dependencies
+     * @return {?}
+     */
+    function (type, dependencies) {
+        if (dependencies === void 0) { dependencies = null; }
+        var /** @type {?} */ typeSummary = this._loadSummary(type, CompileSummaryKind.Injectable);
+        if (typeSummary) {
+            return typeSummary.type;
+        }
+        return this._getTypeMetadata(type, dependencies);
+    };
+    /**
      * @param {?} provider
      * @return {?}
      */
@@ -15864,7 +19778,8 @@ var CompileMetadataResolver = /** @class */ (function () {
         var /** @type {?} */ compileFactoryMetadata = /** @type {?} */ ((null));
         var /** @type {?} */ token = this._getTokenMetadata(provider.token);
         if (provider.useClass) {
-            compileTypeMetadata = this._getInjectableMetadata(provider.useClass, provider.dependencies);
+            compileTypeMetadata =
+                this._getInjectableTypeMetadata(provider.useClass, provider.dependencies);
             compileDeps = compileTypeMetadata.diDeps;
             if (provider.token === provider.useClass) {
                 // use the compileTypeMetadata as it contains information about lifecycleHooks...
@@ -15964,15 +19879,15 @@ var CompileMetadataResolver = /** @class */ (function () {
      * @param {?=} otherType
      * @return {?}
      */
-    function (error, type, otherType) {
+    function (error$$1, type, otherType) {
         if (this._errorCollector) {
-            this._errorCollector(error, type);
+            this._errorCollector(error$$1, type);
             if (otherType) {
-                this._errorCollector(error, otherType);
+                this._errorCollector(error$$1, otherType);
             }
         }
         else {
-            throw error;
+            throw error$$1;
         }
     };
     return CompileMetadataResolver;
@@ -16067,3085 +19982,9 @@ function stringifyType(type) {
  * @return {?}
  */
 function componentStillLoadingError(compType) {
-    var /** @type {?} */ error = Error("Can't compile synchronously as " + stringify(compType) + " is still being loaded!");
-    (/** @type {?} */ (error))[ERROR_COMPONENT_TYPE] = compType;
-    return error;
-}
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-/** @enum {number} */
-var TypeModifier = {
-    Const: 0,
-};
-TypeModifier[TypeModifier.Const] = "Const";
-/**
- * @abstract
- */
-var Type$1 = /** @class */ (function () {
-    function Type(modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        this.modifiers = modifiers;
-        if (!modifiers) {
-            this.modifiers = [];
-        }
-    }
-    /**
-     * @param {?} modifier
-     * @return {?}
-     */
-    Type.prototype.hasModifier = /**
-     * @param {?} modifier
-     * @return {?}
-     */
-    function (modifier) { return /** @type {?} */ ((this.modifiers)).indexOf(modifier) !== -1; };
-    return Type;
-}());
-/** @enum {number} */
-var BuiltinTypeName = {
-    Dynamic: 0,
-    Bool: 1,
-    String: 2,
-    Int: 3,
-    Number: 4,
-    Function: 5,
-    Inferred: 6,
-};
-BuiltinTypeName[BuiltinTypeName.Dynamic] = "Dynamic";
-BuiltinTypeName[BuiltinTypeName.Bool] = "Bool";
-BuiltinTypeName[BuiltinTypeName.String] = "String";
-BuiltinTypeName[BuiltinTypeName.Int] = "Int";
-BuiltinTypeName[BuiltinTypeName.Number] = "Number";
-BuiltinTypeName[BuiltinTypeName.Function] = "Function";
-BuiltinTypeName[BuiltinTypeName.Inferred] = "Inferred";
-var BuiltinType = /** @class */ (function (_super) {
-    __extends(BuiltinType, _super);
-    function BuiltinType(name, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers) || this;
-        _this.name = name;
-        return _this;
-    }
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    BuiltinType.prototype.visitType = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitBuiltintType(this, context);
-    };
-    return BuiltinType;
-}(Type$1));
-var ExpressionType = /** @class */ (function (_super) {
-    __extends(ExpressionType, _super);
-    function ExpressionType(value, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers) || this;
-        _this.value = value;
-        return _this;
-    }
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ExpressionType.prototype.visitType = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitExpressionType(this, context);
-    };
-    return ExpressionType;
-}(Type$1));
-var ArrayType = /** @class */ (function (_super) {
-    __extends(ArrayType, _super);
-    function ArrayType(of, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers) || this;
-        _this.of = of;
-        return _this;
-    }
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ArrayType.prototype.visitType = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitArrayType(this, context);
-    };
-    return ArrayType;
-}(Type$1));
-var MapType = /** @class */ (function (_super) {
-    __extends(MapType, _super);
-    function MapType(valueType, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers) || this;
-        _this.valueType = valueType || null;
-        return _this;
-    }
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    MapType.prototype.visitType = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) { return visitor.visitMapType(this, context); };
-    return MapType;
-}(Type$1));
-var DYNAMIC_TYPE = new BuiltinType(BuiltinTypeName.Dynamic);
-var INFERRED_TYPE = new BuiltinType(BuiltinTypeName.Inferred);
-var BOOL_TYPE = new BuiltinType(BuiltinTypeName.Bool);
-var INT_TYPE = new BuiltinType(BuiltinTypeName.Int);
-var NUMBER_TYPE = new BuiltinType(BuiltinTypeName.Number);
-var STRING_TYPE = new BuiltinType(BuiltinTypeName.String);
-var FUNCTION_TYPE = new BuiltinType(BuiltinTypeName.Function);
-/**
- * @record
- */
-
-/** @enum {number} */
-var BinaryOperator = {
-    Equals: 0,
-    NotEquals: 1,
-    Identical: 2,
-    NotIdentical: 3,
-    Minus: 4,
-    Plus: 5,
-    Divide: 6,
-    Multiply: 7,
-    Modulo: 8,
-    And: 9,
-    Or: 10,
-    Lower: 11,
-    LowerEquals: 12,
-    Bigger: 13,
-    BiggerEquals: 14,
-};
-BinaryOperator[BinaryOperator.Equals] = "Equals";
-BinaryOperator[BinaryOperator.NotEquals] = "NotEquals";
-BinaryOperator[BinaryOperator.Identical] = "Identical";
-BinaryOperator[BinaryOperator.NotIdentical] = "NotIdentical";
-BinaryOperator[BinaryOperator.Minus] = "Minus";
-BinaryOperator[BinaryOperator.Plus] = "Plus";
-BinaryOperator[BinaryOperator.Divide] = "Divide";
-BinaryOperator[BinaryOperator.Multiply] = "Multiply";
-BinaryOperator[BinaryOperator.Modulo] = "Modulo";
-BinaryOperator[BinaryOperator.And] = "And";
-BinaryOperator[BinaryOperator.Or] = "Or";
-BinaryOperator[BinaryOperator.Lower] = "Lower";
-BinaryOperator[BinaryOperator.LowerEquals] = "LowerEquals";
-BinaryOperator[BinaryOperator.Bigger] = "Bigger";
-BinaryOperator[BinaryOperator.BiggerEquals] = "BiggerEquals";
-/**
- * @template T
- * @param {?} base
- * @param {?} other
- * @return {?}
- */
-function nullSafeIsEquivalent(base, other) {
-    if (base == null || other == null) {
-        return base == other;
-    }
-    return base.isEquivalent(other);
-}
-/**
- * @template T
- * @param {?} base
- * @param {?} other
- * @return {?}
- */
-function areAllEquivalent(base, other) {
-    var /** @type {?} */ len = base.length;
-    if (len !== other.length) {
-        return false;
-    }
-    for (var /** @type {?} */ i = 0; i < len; i++) {
-        if (!base[i].isEquivalent(other[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-/**
- * @abstract
- */
-var Expression = /** @class */ (function () {
-    function Expression(type, sourceSpan) {
-        this.type = type || null;
-        this.sourceSpan = sourceSpan || null;
-    }
-    /**
-     * @param {?} name
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.prop = /**
-     * @param {?} name
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (name, sourceSpan) {
-        return new ReadPropExpr(this, name, null, sourceSpan);
-    };
-    /**
-     * @param {?} index
-     * @param {?=} type
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.key = /**
-     * @param {?} index
-     * @param {?=} type
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (index, type, sourceSpan) {
-        return new ReadKeyExpr(this, index, type, sourceSpan);
-    };
-    /**
-     * @param {?} name
-     * @param {?} params
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.callMethod = /**
-     * @param {?} name
-     * @param {?} params
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (name, params, sourceSpan) {
-        return new InvokeMethodExpr(this, name, params, null, sourceSpan);
-    };
-    /**
-     * @param {?} params
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.callFn = /**
-     * @param {?} params
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (params, sourceSpan) {
-        return new InvokeFunctionExpr(this, params, null, sourceSpan);
-    };
-    /**
-     * @param {?} params
-     * @param {?=} type
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.instantiate = /**
-     * @param {?} params
-     * @param {?=} type
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (params, type, sourceSpan) {
-        return new InstantiateExpr(this, params, type, sourceSpan);
-    };
-    /**
-     * @param {?} trueCase
-     * @param {?=} falseCase
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.conditional = /**
-     * @param {?} trueCase
-     * @param {?=} falseCase
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (trueCase, falseCase, sourceSpan) {
-        if (falseCase === void 0) { falseCase = null; }
-        return new ConditionalExpr(this, trueCase, falseCase, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.equals = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Equals, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.notEquals = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.NotEquals, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.identical = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Identical, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.notIdentical = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.minus = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Minus, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.plus = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Plus, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.divide = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Divide, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.multiply = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Multiply, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.modulo = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Modulo, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.and = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.or = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Or, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.lower = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Lower, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.lowerEquals = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.LowerEquals, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.bigger = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.Bigger, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.biggerEquals = /**
-     * @param {?} rhs
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (rhs, sourceSpan) {
-        return new BinaryOperatorExpr(BinaryOperator.BiggerEquals, this, rhs, null, sourceSpan);
-    };
-    /**
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.isBlank = /**
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (sourceSpan) {
-        // Note: We use equals by purpose here to compare to null and undefined in JS.
-        // We use the typed null to allow strictNullChecks to narrow types.
-        return this.equals(TYPED_NULL_EXPR, sourceSpan);
-    };
-    /**
-     * @param {?} type
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    Expression.prototype.cast = /**
-     * @param {?} type
-     * @param {?=} sourceSpan
-     * @return {?}
-     */
-    function (type, sourceSpan) {
-        return new CastExpr(this, type, sourceSpan);
-    };
-    /**
-     * @return {?}
-     */
-    Expression.prototype.toStmt = /**
-     * @return {?}
-     */
-    function () { return new ExpressionStatement(this, null); };
-    return Expression;
-}());
-/** @enum {number} */
-var BuiltinVar = {
-    This: 0,
-    Super: 1,
-    CatchError: 2,
-    CatchStack: 3,
-};
-BuiltinVar[BuiltinVar.This] = "This";
-BuiltinVar[BuiltinVar.Super] = "Super";
-BuiltinVar[BuiltinVar.CatchError] = "CatchError";
-BuiltinVar[BuiltinVar.CatchStack] = "CatchStack";
-var ReadVarExpr = /** @class */ (function (_super) {
-    __extends(ReadVarExpr, _super);
-    function ReadVarExpr(name, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        if (typeof name === 'string') {
-            _this.name = name;
-            _this.builtin = null;
-        }
-        else {
-            _this.name = null;
-            _this.builtin = /** @type {?} */ (name);
-        }
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    ReadVarExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof ReadVarExpr && this.name === e.name && this.builtin === e.builtin;
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ReadVarExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitReadVarExpr(this, context);
-    };
-    /**
-     * @param {?} value
-     * @return {?}
-     */
-    ReadVarExpr.prototype.set = /**
-     * @param {?} value
-     * @return {?}
-     */
-    function (value) {
-        if (!this.name) {
-            throw new Error("Built in variable " + this.builtin + " can not be assigned to.");
-        }
-        return new WriteVarExpr(this.name, value, null, this.sourceSpan);
-    };
-    return ReadVarExpr;
-}(Expression));
-var WriteVarExpr = /** @class */ (function (_super) {
-    __extends(WriteVarExpr, _super);
-    function WriteVarExpr(name, value, type, sourceSpan) {
-        var _this = _super.call(this, type || value.type, sourceSpan) || this;
-        _this.name = name;
-        _this.value = value;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    WriteVarExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof WriteVarExpr && this.name === e.name && this.value.isEquivalent(e.value);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    WriteVarExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitWriteVarExpr(this, context);
-    };
-    /**
-     * @param {?=} type
-     * @param {?=} modifiers
-     * @return {?}
-     */
-    WriteVarExpr.prototype.toDeclStmt = /**
-     * @param {?=} type
-     * @param {?=} modifiers
-     * @return {?}
-     */
-    function (type, modifiers) {
-        return new DeclareVarStmt(this.name, this.value, type, modifiers, this.sourceSpan);
-    };
-    return WriteVarExpr;
-}(Expression));
-var WriteKeyExpr = /** @class */ (function (_super) {
-    __extends(WriteKeyExpr, _super);
-    function WriteKeyExpr(receiver, index, value, type, sourceSpan) {
-        var _this = _super.call(this, type || value.type, sourceSpan) || this;
-        _this.receiver = receiver;
-        _this.index = index;
-        _this.value = value;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    WriteKeyExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof WriteKeyExpr && this.receiver.isEquivalent(e.receiver) &&
-            this.index.isEquivalent(e.index) && this.value.isEquivalent(e.value);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    WriteKeyExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitWriteKeyExpr(this, context);
-    };
-    return WriteKeyExpr;
-}(Expression));
-var WritePropExpr = /** @class */ (function (_super) {
-    __extends(WritePropExpr, _super);
-    function WritePropExpr(receiver, name, value, type, sourceSpan) {
-        var _this = _super.call(this, type || value.type, sourceSpan) || this;
-        _this.receiver = receiver;
-        _this.name = name;
-        _this.value = value;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    WritePropExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof WritePropExpr && this.receiver.isEquivalent(e.receiver) &&
-            this.name === e.name && this.value.isEquivalent(e.value);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    WritePropExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitWritePropExpr(this, context);
-    };
-    return WritePropExpr;
-}(Expression));
-/** @enum {number} */
-var BuiltinMethod = {
-    ConcatArray: 0,
-    SubscribeObservable: 1,
-    Bind: 2,
-};
-BuiltinMethod[BuiltinMethod.ConcatArray] = "ConcatArray";
-BuiltinMethod[BuiltinMethod.SubscribeObservable] = "SubscribeObservable";
-BuiltinMethod[BuiltinMethod.Bind] = "Bind";
-var InvokeMethodExpr = /** @class */ (function (_super) {
-    __extends(InvokeMethodExpr, _super);
-    function InvokeMethodExpr(receiver, method, args, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.receiver = receiver;
-        _this.args = args;
-        if (typeof method === 'string') {
-            _this.name = method;
-            _this.builtin = null;
-        }
-        else {
-            _this.name = null;
-            _this.builtin = /** @type {?} */ (method);
-        }
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    InvokeMethodExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof InvokeMethodExpr && this.receiver.isEquivalent(e.receiver) &&
-            this.name === e.name && this.builtin === e.builtin && areAllEquivalent(this.args, e.args);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    InvokeMethodExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitInvokeMethodExpr(this, context);
-    };
-    return InvokeMethodExpr;
-}(Expression));
-var InvokeFunctionExpr = /** @class */ (function (_super) {
-    __extends(InvokeFunctionExpr, _super);
-    function InvokeFunctionExpr(fn, args, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.fn = fn;
-        _this.args = args;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    InvokeFunctionExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof InvokeFunctionExpr && this.fn.isEquivalent(e.fn) &&
-            areAllEquivalent(this.args, e.args);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    InvokeFunctionExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitInvokeFunctionExpr(this, context);
-    };
-    return InvokeFunctionExpr;
-}(Expression));
-var InstantiateExpr = /** @class */ (function (_super) {
-    __extends(InstantiateExpr, _super);
-    function InstantiateExpr(classExpr, args, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.classExpr = classExpr;
-        _this.args = args;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    InstantiateExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof InstantiateExpr && this.classExpr.isEquivalent(e.classExpr) &&
-            areAllEquivalent(this.args, e.args);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    InstantiateExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitInstantiateExpr(this, context);
-    };
-    return InstantiateExpr;
-}(Expression));
-var LiteralExpr = /** @class */ (function (_super) {
-    __extends(LiteralExpr, _super);
-    function LiteralExpr(value, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.value = value;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    LiteralExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof LiteralExpr && this.value === e.value;
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    LiteralExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitLiteralExpr(this, context);
-    };
-    return LiteralExpr;
-}(Expression));
-var ExternalExpr = /** @class */ (function (_super) {
-    __extends(ExternalExpr, _super);
-    function ExternalExpr(value, type, typeParams, sourceSpan) {
-        if (typeParams === void 0) { typeParams = null; }
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.value = value;
-        _this.typeParams = typeParams;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    ExternalExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof ExternalExpr && this.value.name === e.value.name &&
-            this.value.moduleName === e.value.moduleName && this.value.runtime === e.value.runtime;
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ExternalExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitExternalExpr(this, context);
-    };
-    return ExternalExpr;
-}(Expression));
-var ExternalReference = /** @class */ (function () {
-    function ExternalReference(moduleName, name, runtime) {
-        this.moduleName = moduleName;
-        this.name = name;
-        this.runtime = runtime;
-    }
-    return ExternalReference;
-}());
-var ConditionalExpr = /** @class */ (function (_super) {
-    __extends(ConditionalExpr, _super);
-    function ConditionalExpr(condition, trueCase, falseCase, type, sourceSpan) {
-        if (falseCase === void 0) { falseCase = null; }
-        var _this = _super.call(this, type || trueCase.type, sourceSpan) || this;
-        _this.condition = condition;
-        _this.falseCase = falseCase;
-        _this.trueCase = trueCase;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    ConditionalExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof ConditionalExpr && this.condition.isEquivalent(e.condition) &&
-            this.trueCase.isEquivalent(e.trueCase) && nullSafeIsEquivalent(this.falseCase, e.falseCase);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ConditionalExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitConditionalExpr(this, context);
-    };
-    return ConditionalExpr;
-}(Expression));
-var NotExpr = /** @class */ (function (_super) {
-    __extends(NotExpr, _super);
-    function NotExpr(condition, sourceSpan) {
-        var _this = _super.call(this, BOOL_TYPE, sourceSpan) || this;
-        _this.condition = condition;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    NotExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof NotExpr && this.condition.isEquivalent(e.condition);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    NotExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitNotExpr(this, context);
-    };
-    return NotExpr;
-}(Expression));
-var AssertNotNull = /** @class */ (function (_super) {
-    __extends(AssertNotNull, _super);
-    function AssertNotNull(condition, sourceSpan) {
-        var _this = _super.call(this, condition.type, sourceSpan) || this;
-        _this.condition = condition;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    AssertNotNull.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof AssertNotNull && this.condition.isEquivalent(e.condition);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    AssertNotNull.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitAssertNotNullExpr(this, context);
-    };
-    return AssertNotNull;
-}(Expression));
-var CastExpr = /** @class */ (function (_super) {
-    __extends(CastExpr, _super);
-    function CastExpr(value, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.value = value;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    CastExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof CastExpr && this.value.isEquivalent(e.value);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    CastExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitCastExpr(this, context);
-    };
-    return CastExpr;
-}(Expression));
-var FnParam = /** @class */ (function () {
-    function FnParam(name, type) {
-        if (type === void 0) { type = null; }
-        this.name = name;
-        this.type = type;
-    }
-    /**
-     * @param {?} param
-     * @return {?}
-     */
-    FnParam.prototype.isEquivalent = /**
-     * @param {?} param
-     * @return {?}
-     */
-    function (param) { return this.name === param.name; };
-    return FnParam;
-}());
-var FunctionExpr = /** @class */ (function (_super) {
-    __extends(FunctionExpr, _super);
-    function FunctionExpr(params, statements, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.params = params;
-        _this.statements = statements;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    FunctionExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof FunctionExpr && areAllEquivalent(this.params, e.params) &&
-            areAllEquivalent(this.statements, e.statements);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    FunctionExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitFunctionExpr(this, context);
-    };
-    /**
-     * @param {?} name
-     * @param {?=} modifiers
-     * @return {?}
-     */
-    FunctionExpr.prototype.toDeclStmt = /**
-     * @param {?} name
-     * @param {?=} modifiers
-     * @return {?}
-     */
-    function (name, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        return new DeclareFunctionStmt(name, this.params, this.statements, this.type, modifiers, this.sourceSpan);
-    };
-    return FunctionExpr;
-}(Expression));
-var BinaryOperatorExpr = /** @class */ (function (_super) {
-    __extends(BinaryOperatorExpr, _super);
-    function BinaryOperatorExpr(operator, lhs, rhs, type, sourceSpan) {
-        var _this = _super.call(this, type || lhs.type, sourceSpan) || this;
-        _this.operator = operator;
-        _this.rhs = rhs;
-        _this.lhs = lhs;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    BinaryOperatorExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof BinaryOperatorExpr && this.operator === e.operator &&
-            this.lhs.isEquivalent(e.lhs) && this.rhs.isEquivalent(e.rhs);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    BinaryOperatorExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitBinaryOperatorExpr(this, context);
-    };
-    return BinaryOperatorExpr;
-}(Expression));
-var ReadPropExpr = /** @class */ (function (_super) {
-    __extends(ReadPropExpr, _super);
-    function ReadPropExpr(receiver, name, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.receiver = receiver;
-        _this.name = name;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    ReadPropExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof ReadPropExpr && this.receiver.isEquivalent(e.receiver) &&
-            this.name === e.name;
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ReadPropExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitReadPropExpr(this, context);
-    };
-    /**
-     * @param {?} value
-     * @return {?}
-     */
-    ReadPropExpr.prototype.set = /**
-     * @param {?} value
-     * @return {?}
-     */
-    function (value) {
-        return new WritePropExpr(this.receiver, this.name, value, null, this.sourceSpan);
-    };
-    return ReadPropExpr;
-}(Expression));
-var ReadKeyExpr = /** @class */ (function (_super) {
-    __extends(ReadKeyExpr, _super);
-    function ReadKeyExpr(receiver, index, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.receiver = receiver;
-        _this.index = index;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    ReadKeyExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof ReadKeyExpr && this.receiver.isEquivalent(e.receiver) &&
-            this.index.isEquivalent(e.index);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ReadKeyExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitReadKeyExpr(this, context);
-    };
-    /**
-     * @param {?} value
-     * @return {?}
-     */
-    ReadKeyExpr.prototype.set = /**
-     * @param {?} value
-     * @return {?}
-     */
-    function (value) {
-        return new WriteKeyExpr(this.receiver, this.index, value, null, this.sourceSpan);
-    };
-    return ReadKeyExpr;
-}(Expression));
-var LiteralArrayExpr = /** @class */ (function (_super) {
-    __extends(LiteralArrayExpr, _super);
-    function LiteralArrayExpr(entries, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.entries = entries;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    LiteralArrayExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof LiteralArrayExpr && areAllEquivalent(this.entries, e.entries);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    LiteralArrayExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitLiteralArrayExpr(this, context);
-    };
-    return LiteralArrayExpr;
-}(Expression));
-var LiteralMapEntry = /** @class */ (function () {
-    function LiteralMapEntry(key, value, quoted) {
-        this.key = key;
-        this.value = value;
-        this.quoted = quoted;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    LiteralMapEntry.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return this.key === e.key && this.value.isEquivalent(e.value);
-    };
-    return LiteralMapEntry;
-}());
-var LiteralMapExpr = /** @class */ (function (_super) {
-    __extends(LiteralMapExpr, _super);
-    function LiteralMapExpr(entries, type, sourceSpan) {
-        var _this = _super.call(this, type, sourceSpan) || this;
-        _this.entries = entries;
-        _this.valueType = null;
-        if (type) {
-            _this.valueType = type.valueType;
-        }
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    LiteralMapExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof LiteralMapExpr && areAllEquivalent(this.entries, e.entries);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    LiteralMapExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitLiteralMapExpr(this, context);
-    };
-    return LiteralMapExpr;
-}(Expression));
-var CommaExpr = /** @class */ (function (_super) {
-    __extends(CommaExpr, _super);
-    function CommaExpr(parts, sourceSpan) {
-        var _this = _super.call(this, parts[parts.length - 1].type, sourceSpan) || this;
-        _this.parts = parts;
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @return {?}
-     */
-    CommaExpr.prototype.isEquivalent = /**
-     * @param {?} e
-     * @return {?}
-     */
-    function (e) {
-        return e instanceof CommaExpr && areAllEquivalent(this.parts, e.parts);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    CommaExpr.prototype.visitExpression = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitCommaExpr(this, context);
-    };
-    return CommaExpr;
-}(Expression));
-/**
- * @record
- */
-
-var THIS_EXPR = new ReadVarExpr(BuiltinVar.This, null, null);
-var SUPER_EXPR = new ReadVarExpr(BuiltinVar.Super, null, null);
-var CATCH_ERROR_VAR = new ReadVarExpr(BuiltinVar.CatchError, null, null);
-var CATCH_STACK_VAR = new ReadVarExpr(BuiltinVar.CatchStack, null, null);
-var NULL_EXPR = new LiteralExpr(null, null, null);
-var TYPED_NULL_EXPR = new LiteralExpr(null, INFERRED_TYPE, null);
-/** @enum {number} */
-var StmtModifier = {
-    Final: 0,
-    Private: 1,
-    Exported: 2,
-};
-StmtModifier[StmtModifier.Final] = "Final";
-StmtModifier[StmtModifier.Private] = "Private";
-StmtModifier[StmtModifier.Exported] = "Exported";
-/**
- * @abstract
- */
-var Statement = /** @class */ (function () {
-    function Statement(modifiers, sourceSpan) {
-        this.modifiers = modifiers || [];
-        this.sourceSpan = sourceSpan || null;
-    }
-    /**
-     * @param {?} modifier
-     * @return {?}
-     */
-    Statement.prototype.hasModifier = /**
-     * @param {?} modifier
-     * @return {?}
-     */
-    function (modifier) { return /** @type {?} */ ((this.modifiers)).indexOf(modifier) !== -1; };
-    return Statement;
-}());
-var DeclareVarStmt = /** @class */ (function (_super) {
-    __extends(DeclareVarStmt, _super);
-    function DeclareVarStmt(name, value, type, modifiers, sourceSpan) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers, sourceSpan) || this;
-        _this.name = name;
-        _this.value = value;
-        _this.type = type || value.type;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    DeclareVarStmt.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) {
-        return stmt instanceof DeclareVarStmt && this.name === stmt.name &&
-            this.value.isEquivalent(stmt.value);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    DeclareVarStmt.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitDeclareVarStmt(this, context);
-    };
-    return DeclareVarStmt;
-}(Statement));
-var DeclareFunctionStmt = /** @class */ (function (_super) {
-    __extends(DeclareFunctionStmt, _super);
-    function DeclareFunctionStmt(name, params, statements, type, modifiers, sourceSpan) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers, sourceSpan) || this;
-        _this.name = name;
-        _this.params = params;
-        _this.statements = statements;
-        _this.type = type || null;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    DeclareFunctionStmt.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) {
-        return stmt instanceof DeclareFunctionStmt && areAllEquivalent(this.params, stmt.params) &&
-            areAllEquivalent(this.statements, stmt.statements);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    DeclareFunctionStmt.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitDeclareFunctionStmt(this, context);
-    };
-    return DeclareFunctionStmt;
-}(Statement));
-var ExpressionStatement = /** @class */ (function (_super) {
-    __extends(ExpressionStatement, _super);
-    function ExpressionStatement(expr, sourceSpan) {
-        var _this = _super.call(this, null, sourceSpan) || this;
-        _this.expr = expr;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    ExpressionStatement.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) {
-        return stmt instanceof ExpressionStatement && this.expr.isEquivalent(stmt.expr);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ExpressionStatement.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitExpressionStmt(this, context);
-    };
-    return ExpressionStatement;
-}(Statement));
-var ReturnStatement = /** @class */ (function (_super) {
-    __extends(ReturnStatement, _super);
-    function ReturnStatement(value, sourceSpan) {
-        var _this = _super.call(this, null, sourceSpan) || this;
-        _this.value = value;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    ReturnStatement.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) {
-        return stmt instanceof ReturnStatement && this.value.isEquivalent(stmt.value);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ReturnStatement.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitReturnStmt(this, context);
-    };
-    return ReturnStatement;
-}(Statement));
-var AbstractClassPart = /** @class */ (function () {
-    function AbstractClassPart(type, modifiers) {
-        this.modifiers = modifiers;
-        if (!modifiers) {
-            this.modifiers = [];
-        }
-        this.type = type || null;
-    }
-    /**
-     * @param {?} modifier
-     * @return {?}
-     */
-    AbstractClassPart.prototype.hasModifier = /**
-     * @param {?} modifier
-     * @return {?}
-     */
-    function (modifier) { return /** @type {?} */ ((this.modifiers)).indexOf(modifier) !== -1; };
-    return AbstractClassPart;
-}());
-var ClassField = /** @class */ (function (_super) {
-    __extends(ClassField, _super);
-    function ClassField(name, type, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, type, modifiers) || this;
-        _this.name = name;
-        return _this;
-    }
-    /**
-     * @param {?} f
-     * @return {?}
-     */
-    ClassField.prototype.isEquivalent = /**
-     * @param {?} f
-     * @return {?}
-     */
-    function (f) { return this.name === f.name; };
-    return ClassField;
-}(AbstractClassPart));
-var ClassMethod = /** @class */ (function (_super) {
-    __extends(ClassMethod, _super);
-    function ClassMethod(name, params, body, type, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, type, modifiers) || this;
-        _this.name = name;
-        _this.params = params;
-        _this.body = body;
-        return _this;
-    }
-    /**
-     * @param {?} m
-     * @return {?}
-     */
-    ClassMethod.prototype.isEquivalent = /**
-     * @param {?} m
-     * @return {?}
-     */
-    function (m) {
-        return this.name === m.name && areAllEquivalent(this.body, m.body);
-    };
-    return ClassMethod;
-}(AbstractClassPart));
-var ClassGetter = /** @class */ (function (_super) {
-    __extends(ClassGetter, _super);
-    function ClassGetter(name, body, type, modifiers) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, type, modifiers) || this;
-        _this.name = name;
-        _this.body = body;
-        return _this;
-    }
-    /**
-     * @param {?} m
-     * @return {?}
-     */
-    ClassGetter.prototype.isEquivalent = /**
-     * @param {?} m
-     * @return {?}
-     */
-    function (m) {
-        return this.name === m.name && areAllEquivalent(this.body, m.body);
-    };
-    return ClassGetter;
-}(AbstractClassPart));
-var ClassStmt = /** @class */ (function (_super) {
-    __extends(ClassStmt, _super);
-    function ClassStmt(name, parent, fields, getters, constructorMethod, methods, modifiers, sourceSpan) {
-        if (modifiers === void 0) { modifiers = null; }
-        var _this = _super.call(this, modifiers, sourceSpan) || this;
-        _this.name = name;
-        _this.parent = parent;
-        _this.fields = fields;
-        _this.getters = getters;
-        _this.constructorMethod = constructorMethod;
-        _this.methods = methods;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    ClassStmt.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) {
-        return stmt instanceof ClassStmt && this.name === stmt.name &&
-            nullSafeIsEquivalent(this.parent, stmt.parent) &&
-            areAllEquivalent(this.fields, stmt.fields) &&
-            areAllEquivalent(this.getters, stmt.getters) &&
-            this.constructorMethod.isEquivalent(stmt.constructorMethod) &&
-            areAllEquivalent(this.methods, stmt.methods);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ClassStmt.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitDeclareClassStmt(this, context);
-    };
-    return ClassStmt;
-}(Statement));
-var IfStmt = /** @class */ (function (_super) {
-    __extends(IfStmt, _super);
-    function IfStmt(condition, trueCase, falseCase, sourceSpan) {
-        if (falseCase === void 0) { falseCase = []; }
-        var _this = _super.call(this, null, sourceSpan) || this;
-        _this.condition = condition;
-        _this.trueCase = trueCase;
-        _this.falseCase = falseCase;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    IfStmt.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) {
-        return stmt instanceof IfStmt && this.condition.isEquivalent(stmt.condition) &&
-            areAllEquivalent(this.trueCase, stmt.trueCase) &&
-            areAllEquivalent(this.falseCase, stmt.falseCase);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    IfStmt.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitIfStmt(this, context);
-    };
-    return IfStmt;
-}(Statement));
-var CommentStmt = /** @class */ (function (_super) {
-    __extends(CommentStmt, _super);
-    function CommentStmt(comment, sourceSpan) {
-        var _this = _super.call(this, null, sourceSpan) || this;
-        _this.comment = comment;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    CommentStmt.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) { return stmt instanceof CommentStmt; };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    CommentStmt.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitCommentStmt(this, context);
-    };
-    return CommentStmt;
-}(Statement));
-var TryCatchStmt = /** @class */ (function (_super) {
-    __extends(TryCatchStmt, _super);
-    function TryCatchStmt(bodyStmts, catchStmts, sourceSpan) {
-        var _this = _super.call(this, null, sourceSpan) || this;
-        _this.bodyStmts = bodyStmts;
-        _this.catchStmts = catchStmts;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    TryCatchStmt.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) {
-        return stmt instanceof TryCatchStmt && areAllEquivalent(this.bodyStmts, stmt.bodyStmts) &&
-            areAllEquivalent(this.catchStmts, stmt.catchStmts);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    TryCatchStmt.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitTryCatchStmt(this, context);
-    };
-    return TryCatchStmt;
-}(Statement));
-var ThrowStmt = /** @class */ (function (_super) {
-    __extends(ThrowStmt, _super);
-    function ThrowStmt(error, sourceSpan) {
-        var _this = _super.call(this, null, sourceSpan) || this;
-        _this.error = error;
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    ThrowStmt.prototype.isEquivalent = /**
-     * @param {?} stmt
-     * @return {?}
-     */
-    function (stmt) {
-        return stmt instanceof TryCatchStmt && this.error.isEquivalent(stmt.error);
-    };
-    /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    ThrowStmt.prototype.visitStatement = /**
-     * @param {?} visitor
-     * @param {?} context
-     * @return {?}
-     */
-    function (visitor, context) {
-        return visitor.visitThrowStmt(this, context);
-    };
-    return ThrowStmt;
-}(Statement));
-/**
- * @record
- */
-
-var AstTransformer$1 = /** @class */ (function () {
-    function AstTransformer() {
-    }
-    /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.transformExpr = /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    function (expr, context) { return expr; };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.transformStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) { return stmt; };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitReadVarExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) { return this.transformExpr(ast, context); };
-    /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitWriteVarExpr = /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    function (expr, context) {
-        return this.transformExpr(new WriteVarExpr(expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
-    };
-    /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitWriteKeyExpr = /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    function (expr, context) {
-        return this.transformExpr(new WriteKeyExpr(expr.receiver.visitExpression(this, context), expr.index.visitExpression(this, context), expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
-    };
-    /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitWritePropExpr = /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    function (expr, context) {
-        return this.transformExpr(new WritePropExpr(expr.receiver.visitExpression(this, context), expr.name, expr.value.visitExpression(this, context), expr.type, expr.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitInvokeMethodExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        var /** @type {?} */ method = ast.builtin || ast.name;
-        return this.transformExpr(new InvokeMethodExpr(ast.receiver.visitExpression(this, context), /** @type {?} */ ((method)), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitInvokeFunctionExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new InvokeFunctionExpr(ast.fn.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitInstantiateExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new InstantiateExpr(ast.classExpr.visitExpression(this, context), this.visitAllExpressions(ast.args, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitLiteralExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) { return this.transformExpr(ast, context); };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitExternalExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitConditionalExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new ConditionalExpr(ast.condition.visitExpression(this, context), ast.trueCase.visitExpression(this, context), /** @type {?} */ ((ast.falseCase)).visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitNotExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new NotExpr(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitAssertNotNullExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new AssertNotNull(ast.condition.visitExpression(this, context), ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitCastExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new CastExpr(ast.value.visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitFunctionExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new FunctionExpr(ast.params, this.visitAllStatements(ast.statements, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitBinaryOperatorExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new BinaryOperatorExpr(ast.operator, ast.lhs.visitExpression(this, context), ast.rhs.visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitReadPropExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new ReadPropExpr(ast.receiver.visitExpression(this, context), ast.name, ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitReadKeyExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new ReadKeyExpr(ast.receiver.visitExpression(this, context), ast.index.visitExpression(this, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitLiteralArrayExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new LiteralArrayExpr(this.visitAllExpressions(ast.entries, context), ast.type, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitLiteralMapExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        var _this = this;
-        var /** @type {?} */ entries = ast.entries.map(function (entry) {
-            return new LiteralMapEntry(entry.key, entry.value.visitExpression(_this, context), entry.quoted);
-        });
-        var /** @type {?} */ mapType = new MapType(ast.valueType, null);
-        return this.transformExpr(new LiteralMapExpr(entries, mapType, ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitCommaExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.transformExpr(new CommaExpr(this.visitAllExpressions(ast.parts, context), ast.sourceSpan), context);
-    };
-    /**
-     * @param {?} exprs
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitAllExpressions = /**
-     * @param {?} exprs
-     * @param {?} context
-     * @return {?}
-     */
-    function (exprs, context) {
-        var _this = this;
-        return exprs.map(function (expr) { return expr.visitExpression(_this, context); });
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitDeclareVarStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        return this.transformStmt(new DeclareVarStmt(stmt.name, stmt.value.visitExpression(this, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitDeclareFunctionStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        return this.transformStmt(new DeclareFunctionStmt(stmt.name, stmt.params, this.visitAllStatements(stmt.statements, context), stmt.type, stmt.modifiers, stmt.sourceSpan), context);
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitExpressionStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        return this.transformStmt(new ExpressionStatement(stmt.expr.visitExpression(this, context), stmt.sourceSpan), context);
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitReturnStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        return this.transformStmt(new ReturnStatement(stmt.value.visitExpression(this, context), stmt.sourceSpan), context);
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitDeclareClassStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        var _this = this;
-        var /** @type {?} */ parent = /** @type {?} */ ((stmt.parent)).visitExpression(this, context);
-        var /** @type {?} */ getters = stmt.getters.map(function (getter) {
-            return new ClassGetter(getter.name, _this.visitAllStatements(getter.body, context), getter.type, getter.modifiers);
-        });
-        var /** @type {?} */ ctorMethod = stmt.constructorMethod &&
-            new ClassMethod(stmt.constructorMethod.name, stmt.constructorMethod.params, this.visitAllStatements(stmt.constructorMethod.body, context), stmt.constructorMethod.type, stmt.constructorMethod.modifiers);
-        var /** @type {?} */ methods = stmt.methods.map(function (method) {
-            return new ClassMethod(method.name, method.params, _this.visitAllStatements(method.body, context), method.type, method.modifiers);
-        });
-        return this.transformStmt(new ClassStmt(stmt.name, parent, stmt.fields, getters, ctorMethod, methods, stmt.modifiers, stmt.sourceSpan), context);
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitIfStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        return this.transformStmt(new IfStmt(stmt.condition.visitExpression(this, context), this.visitAllStatements(stmt.trueCase, context), this.visitAllStatements(stmt.falseCase, context), stmt.sourceSpan), context);
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitTryCatchStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        return this.transformStmt(new TryCatchStmt(this.visitAllStatements(stmt.bodyStmts, context), this.visitAllStatements(stmt.catchStmts, context), stmt.sourceSpan), context);
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitThrowStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        return this.transformStmt(new ThrowStmt(stmt.error.visitExpression(this, context), stmt.sourceSpan), context);
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitCommentStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        return this.transformStmt(stmt, context);
-    };
-    /**
-     * @param {?} stmts
-     * @param {?} context
-     * @return {?}
-     */
-    AstTransformer.prototype.visitAllStatements = /**
-     * @param {?} stmts
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmts, context) {
-        var _this = this;
-        return stmts.map(function (stmt) { return stmt.visitStatement(_this, context); });
-    };
-    return AstTransformer;
-}());
-var RecursiveAstVisitor$1 = /** @class */ (function () {
-    function RecursiveAstVisitor() {
-    }
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitType = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) { return ast; };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitExpression = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        if (ast.type) {
-            ast.type.visitType(this, context);
-        }
-        return ast;
-    };
-    /**
-     * @param {?} type
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitBuiltintType = /**
-     * @param {?} type
-     * @param {?} context
-     * @return {?}
-     */
-    function (type, context) { return this.visitType(type, context); };
-    /**
-     * @param {?} type
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitExpressionType = /**
-     * @param {?} type
-     * @param {?} context
-     * @return {?}
-     */
-    function (type, context) {
-        type.value.visitExpression(this, context);
-        return this.visitType(type, context);
-    };
-    /**
-     * @param {?} type
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitArrayType = /**
-     * @param {?} type
-     * @param {?} context
-     * @return {?}
-     */
-    function (type, context) { return this.visitType(type, context); };
-    /**
-     * @param {?} type
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitMapType = /**
-     * @param {?} type
-     * @param {?} context
-     * @return {?}
-     */
-    function (type, context) { return this.visitType(type, context); };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitReadVarExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitWriteVarExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.value.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitWriteKeyExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.receiver.visitExpression(this, context);
-        ast.index.visitExpression(this, context);
-        ast.value.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitWritePropExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.receiver.visitExpression(this, context);
-        ast.value.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitInvokeMethodExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.receiver.visitExpression(this, context);
-        this.visitAllExpressions(ast.args, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitInvokeFunctionExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.fn.visitExpression(this, context);
-        this.visitAllExpressions(ast.args, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitInstantiateExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.classExpr.visitExpression(this, context);
-        this.visitAllExpressions(ast.args, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitLiteralExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitExternalExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        var _this = this;
-        if (ast.typeParams) {
-            ast.typeParams.forEach(function (type) { return type.visitType(_this, context); });
-        }
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitConditionalExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.condition.visitExpression(this, context);
-        ast.trueCase.visitExpression(this, context); /** @type {?} */
-        ((ast.falseCase)).visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitNotExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.condition.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitAssertNotNullExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.condition.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitCastExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.value.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitFunctionExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        this.visitAllStatements(ast.statements, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitBinaryOperatorExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.lhs.visitExpression(this, context);
-        ast.rhs.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitReadPropExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.receiver.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitReadKeyExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        ast.receiver.visitExpression(this, context);
-        ast.index.visitExpression(this, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitLiteralArrayExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        this.visitAllExpressions(ast.entries, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitLiteralMapExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        var _this = this;
-        ast.entries.forEach(function (entry) { return entry.value.visitExpression(_this, context); });
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitCommaExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        this.visitAllExpressions(ast.parts, context);
-        return this.visitExpression(ast, context);
-    };
-    /**
-     * @param {?} exprs
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitAllExpressions = /**
-     * @param {?} exprs
-     * @param {?} context
-     * @return {?}
-     */
-    function (exprs, context) {
-        var _this = this;
-        exprs.forEach(function (expr) { return expr.visitExpression(_this, context); });
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitDeclareVarStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        stmt.value.visitExpression(this, context);
-        if (stmt.type) {
-            stmt.type.visitType(this, context);
-        }
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitDeclareFunctionStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        this.visitAllStatements(stmt.statements, context);
-        if (stmt.type) {
-            stmt.type.visitType(this, context);
-        }
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitExpressionStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        stmt.expr.visitExpression(this, context);
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitReturnStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        stmt.value.visitExpression(this, context);
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitDeclareClassStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        var _this = this;
-        /** @type {?} */ ((stmt.parent)).visitExpression(this, context);
-        stmt.getters.forEach(function (getter) { return _this.visitAllStatements(getter.body, context); });
-        if (stmt.constructorMethod) {
-            this.visitAllStatements(stmt.constructorMethod.body, context);
-        }
-        stmt.methods.forEach(function (method) { return _this.visitAllStatements(method.body, context); });
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitIfStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        stmt.condition.visitExpression(this, context);
-        this.visitAllStatements(stmt.trueCase, context);
-        this.visitAllStatements(stmt.falseCase, context);
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitTryCatchStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        this.visitAllStatements(stmt.bodyStmts, context);
-        this.visitAllStatements(stmt.catchStmts, context);
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitThrowStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        stmt.error.visitExpression(this, context);
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitCommentStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) { return stmt; };
-    /**
-     * @param {?} stmts
-     * @param {?} context
-     * @return {?}
-     */
-    RecursiveAstVisitor.prototype.visitAllStatements = /**
-     * @param {?} stmts
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmts, context) {
-        var _this = this;
-        stmts.forEach(function (stmt) { return stmt.visitStatement(_this, context); });
-    };
-    return RecursiveAstVisitor;
-}());
-/**
- * @param {?} stmts
- * @return {?}
- */
-function findReadVarNames(stmts) {
-    var /** @type {?} */ visitor = new _ReadVarVisitor();
-    visitor.visitAllStatements(stmts, null);
-    return visitor.varNames;
-}
-var _ReadVarVisitor = /** @class */ (function (_super) {
-    __extends(_ReadVarVisitor, _super);
-    function _ReadVarVisitor() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.varNames = new Set();
-        return _this;
-    }
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    _ReadVarVisitor.prototype.visitDeclareFunctionStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        // Don't descend into nested functions
-        return stmt;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    _ReadVarVisitor.prototype.visitDeclareClassStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        // Don't descend into nested classes
-        return stmt;
-    };
-    /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    _ReadVarVisitor.prototype.visitReadVarExpr = /**
-     * @param {?} ast
-     * @param {?} context
-     * @return {?}
-     */
-    function (ast, context) {
-        if (ast.name) {
-            this.varNames.add(ast.name);
-        }
-        return null;
-    };
-    return _ReadVarVisitor;
-}(RecursiveAstVisitor$1));
-/**
- * @param {?} stmts
- * @return {?}
- */
-function collectExternalReferences(stmts) {
-    var /** @type {?} */ visitor = new _FindExternalReferencesVisitor();
-    visitor.visitAllStatements(stmts, null);
-    return visitor.externalReferences;
-}
-var _FindExternalReferencesVisitor = /** @class */ (function (_super) {
-    __extends(_FindExternalReferencesVisitor, _super);
-    function _FindExternalReferencesVisitor() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.externalReferences = [];
-        return _this;
-    }
-    /**
-     * @param {?} e
-     * @param {?} context
-     * @return {?}
-     */
-    _FindExternalReferencesVisitor.prototype.visitExternalExpr = /**
-     * @param {?} e
-     * @param {?} context
-     * @return {?}
-     */
-    function (e, context) {
-        this.externalReferences.push(e.value);
-        return _super.prototype.visitExternalExpr.call(this, e, context);
-    };
-    return _FindExternalReferencesVisitor;
-}(RecursiveAstVisitor$1));
-/**
- * @param {?} stmt
- * @param {?} sourceSpan
- * @return {?}
- */
-function applySourceSpanToStatementIfNeeded(stmt, sourceSpan) {
-    if (!sourceSpan) {
-        return stmt;
-    }
-    var /** @type {?} */ transformer = new _ApplySourceSpanTransformer(sourceSpan);
-    return stmt.visitStatement(transformer, null);
-}
-/**
- * @param {?} expr
- * @param {?} sourceSpan
- * @return {?}
- */
-function applySourceSpanToExpressionIfNeeded(expr, sourceSpan) {
-    if (!sourceSpan) {
-        return expr;
-    }
-    var /** @type {?} */ transformer = new _ApplySourceSpanTransformer(sourceSpan);
-    return expr.visitExpression(transformer, null);
-}
-var _ApplySourceSpanTransformer = /** @class */ (function (_super) {
-    __extends(_ApplySourceSpanTransformer, _super);
-    function _ApplySourceSpanTransformer(sourceSpan) {
-        var _this = _super.call(this) || this;
-        _this.sourceSpan = sourceSpan;
-        return _this;
-    }
-    /**
-     * @param {?} obj
-     * @return {?}
-     */
-    _ApplySourceSpanTransformer.prototype._clone = /**
-     * @param {?} obj
-     * @return {?}
-     */
-    function (obj) {
-        var /** @type {?} */ clone = Object.create(obj.constructor.prototype);
-        for (var /** @type {?} */ prop in obj) {
-            clone[prop] = obj[prop];
-        }
-        return clone;
-    };
-    /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    _ApplySourceSpanTransformer.prototype.transformExpr = /**
-     * @param {?} expr
-     * @param {?} context
-     * @return {?}
-     */
-    function (expr, context) {
-        if (!expr.sourceSpan) {
-            expr = this._clone(expr);
-            expr.sourceSpan = this.sourceSpan;
-        }
-        return expr;
-    };
-    /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    _ApplySourceSpanTransformer.prototype.transformStmt = /**
-     * @param {?} stmt
-     * @param {?} context
-     * @return {?}
-     */
-    function (stmt, context) {
-        if (!stmt.sourceSpan) {
-            stmt = this._clone(stmt);
-            stmt.sourceSpan = this.sourceSpan;
-        }
-        return stmt;
-    };
-    return _ApplySourceSpanTransformer;
-}(AstTransformer$1));
-/**
- * @param {?} name
- * @param {?=} type
- * @param {?=} sourceSpan
- * @return {?}
- */
-function variable(name, type, sourceSpan) {
-    return new ReadVarExpr(name, type, sourceSpan);
-}
-/**
- * @param {?} id
- * @param {?=} typeParams
- * @param {?=} sourceSpan
- * @return {?}
- */
-function importExpr(id, typeParams, sourceSpan) {
-    if (typeParams === void 0) { typeParams = null; }
-    return new ExternalExpr(id, null, typeParams, sourceSpan);
-}
-/**
- * @param {?} id
- * @param {?=} typeParams
- * @param {?=} typeModifiers
- * @return {?}
- */
-function importType(id, typeParams, typeModifiers) {
-    if (typeParams === void 0) { typeParams = null; }
-    if (typeModifiers === void 0) { typeModifiers = null; }
-    return id != null ? expressionType(importExpr(id, typeParams, null), typeModifiers) : null;
-}
-/**
- * @param {?} expr
- * @param {?=} typeModifiers
- * @return {?}
- */
-function expressionType(expr, typeModifiers) {
-    if (typeModifiers === void 0) { typeModifiers = null; }
-    return new ExpressionType(expr, typeModifiers);
-}
-/**
- * @param {?} values
- * @param {?=} type
- * @param {?=} sourceSpan
- * @return {?}
- */
-function literalArr(values, type, sourceSpan) {
-    return new LiteralArrayExpr(values, type, sourceSpan);
-}
-/**
- * @param {?} values
- * @param {?=} type
- * @return {?}
- */
-function literalMap(values, type) {
-    if (type === void 0) { type = null; }
-    return new LiteralMapExpr(values.map(function (e) { return new LiteralMapEntry(e.key, e.value, e.quoted); }), type, null);
-}
-/**
- * @param {?} expr
- * @param {?=} sourceSpan
- * @return {?}
- */
-function not(expr, sourceSpan) {
-    return new NotExpr(expr, sourceSpan);
-}
-/**
- * @param {?} expr
- * @param {?=} sourceSpan
- * @return {?}
- */
-function assertNotNull(expr, sourceSpan) {
-    return new AssertNotNull(expr, sourceSpan);
-}
-/**
- * @param {?} params
- * @param {?} body
- * @param {?=} type
- * @param {?=} sourceSpan
- * @return {?}
- */
-function fn(params, body, type, sourceSpan) {
-    return new FunctionExpr(params, body, type, sourceSpan);
-}
-/**
- * @param {?} value
- * @param {?=} type
- * @param {?=} sourceSpan
- * @return {?}
- */
-function literal(value, type, sourceSpan) {
-    return new LiteralExpr(value, type, sourceSpan);
+    var /** @type {?} */ error$$1 = Error("Can't compile synchronously as " + stringify(compType) + " is still being loaded!");
+    (/** @type {?} */ (error$$1))[ERROR_COMPONENT_TYPE] = compType;
+    return error$$1;
 }
 
 /**
@@ -19501,7 +20340,7 @@ var ProviderElementContext = /** @class */ (function () {
                     result = dep;
                 }
                 else {
-                    result = dep.isOptional ? result = { isValue: true, value: null } : null;
+                    result = dep.isOptional ? { isValue: true, value: null } : null;
                 }
             }
         }
@@ -19522,9 +20361,9 @@ var NgModuleProviderAnalyzer = /** @class */ (function () {
         this._allProviders = new Map();
         ngModule.transitiveModule.modules.forEach(function (ngModuleType) {
             var /** @type {?} */ ngModuleProvider = { token: { identifier: ngModuleType }, useClass: ngModuleType };
-            _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders);
+            _resolveProviders([ngModuleProvider], ProviderAstType.PublicService, true, sourceSpan, _this._errors, _this._allProviders, /* isModule */ /* isModule */ true);
         });
-        _resolveProviders(ngModule.transitiveModule.providers.map(function (entry) { return entry.provider; }).concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders);
+        _resolveProviders(ngModule.transitiveModule.providers.map(function (entry) { return entry.provider; }).concat(extraProviders), ProviderAstType.PublicService, false, sourceSpan, this._errors, this._allProviders, /* isModule */ false);
     }
     /**
      * @return {?}
@@ -19642,16 +20481,7 @@ var NgModuleProviderAnalyzer = /** @class */ (function () {
                 foundLocal = true;
             }
         }
-        var /** @type {?} */ result = dep;
-        if (dep.isSelf && !foundLocal) {
-            if (dep.isOptional) {
-                result = { isValue: true, value: null };
-            }
-            else {
-                this._errors.push(new ProviderError("No provider for " + tokenName((/** @type {?} */ ((dep.token)))), requestorSourceSpan));
-            }
-        }
-        return result;
+        return dep;
     };
     return NgModuleProviderAnalyzer;
 }());
@@ -19679,7 +20509,7 @@ function _transformProvider(provider, _a) {
  */
 function _transformProviderAst(provider, _a) {
     var eager = _a.eager, providers = _a.providers;
-    return new ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.lifecycleHooks, provider.sourceSpan);
+    return new ProviderAst(provider.token, provider.multiProvider, provider.eager || eager, providers, provider.providerType, provider.lifecycleHooks, provider.sourceSpan, provider.isModule);
 }
 /**
  * @param {?} directives
@@ -19691,13 +20521,13 @@ function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
     var /** @type {?} */ providersByToken = new Map();
     directives.forEach(function (directive) {
         var /** @type {?} */ dirProvider = { token: { identifier: directive.type }, useClass: directive.type };
-        _resolveProviders([dirProvider], directive.isComponent ? ProviderAstType.Component : ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken);
+        _resolveProviders([dirProvider], directive.isComponent ? ProviderAstType.Component : ProviderAstType.Directive, true, sourceSpan, targetErrors, providersByToken, /* isModule */ /* isModule */ false);
     });
     // Note: directives need to be able to overwrite providers of a component!
     var /** @type {?} */ directivesWithComponentFirst = directives.filter(function (dir) { return dir.isComponent; }).concat(directives.filter(function (dir) { return !dir.isComponent; }));
     directivesWithComponentFirst.forEach(function (directive) {
-        _resolveProviders(directive.providers, ProviderAstType.PublicService, false, sourceSpan, targetErrors, providersByToken);
-        _resolveProviders(directive.viewProviders, ProviderAstType.PrivateService, false, sourceSpan, targetErrors, providersByToken);
+        _resolveProviders(directive.providers, ProviderAstType.PublicService, false, sourceSpan, targetErrors, providersByToken, /* isModule */ /* isModule */ false);
+        _resolveProviders(directive.viewProviders, ProviderAstType.PrivateService, false, sourceSpan, targetErrors, providersByToken, /* isModule */ /* isModule */ false);
     });
     return providersByToken;
 }
@@ -19708,9 +20538,10 @@ function _resolveProvidersFromDirectives(directives, sourceSpan, targetErrors) {
  * @param {?} sourceSpan
  * @param {?} targetErrors
  * @param {?} targetProvidersByToken
+ * @param {?} isModule
  * @return {?}
  */
-function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken) {
+function _resolveProviders(providers, providerType, eager, sourceSpan, targetErrors, targetProvidersByToken, isModule) {
     providers.forEach(function (provider) {
         var /** @type {?} */ resolvedProvider = targetProvidersByToken.get(tokenReference(provider.token));
         if (resolvedProvider != null && !!resolvedProvider.multiProvider !== !!provider.multi) {
@@ -19722,7 +20553,7 @@ function _resolveProviders(providers, providerType, eager, sourceSpan, targetErr
                 (/** @type {?} */ (provider.token.identifier)).lifecycleHooks :
                 [];
             var /** @type {?} */ isUseValue = !(provider.useClass || provider.useExisting || provider.useFactory);
-            resolvedProvider = new ProviderAst(provider.token, !!provider.multi, eager || isUseValue, [provider], providerType, lifecycleHooks, sourceSpan);
+            resolvedProvider = new ProviderAst(provider.token, !!provider.multi, eager || isUseValue, [provider], providerType, lifecycleHooks, sourceSpan, isModule);
             targetProvidersByToken.set(tokenReference(provider.token), resolvedProvider);
         }
         else {
@@ -19788,97 +20619,6 @@ function _addQueryToTokenMap(map, query) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var QUOTED_KEYS = '$quoted$';
-/**
- * @param {?} ctx
- * @param {?} value
- * @param {?=} type
- * @return {?}
- */
-function convertValueToOutputAst(ctx, value, type) {
-    if (type === void 0) { type = null; }
-    return visitValue(value, new _ValueOutputAstTransformer(ctx), type);
-}
-var _ValueOutputAstTransformer = /** @class */ (function () {
-    function _ValueOutputAstTransformer(ctx) {
-        this.ctx = ctx;
-    }
-    /**
-     * @param {?} arr
-     * @param {?} type
-     * @return {?}
-     */
-    _ValueOutputAstTransformer.prototype.visitArray = /**
-     * @param {?} arr
-     * @param {?} type
-     * @return {?}
-     */
-    function (arr, type) {
-        var _this = this;
-        return literalArr(arr.map(function (value) { return visitValue(value, _this, null); }), type);
-    };
-    /**
-     * @param {?} map
-     * @param {?} type
-     * @return {?}
-     */
-    _ValueOutputAstTransformer.prototype.visitStringMap = /**
-     * @param {?} map
-     * @param {?} type
-     * @return {?}
-     */
-    function (map, type) {
-        var _this = this;
-        var /** @type {?} */ entries = [];
-        var /** @type {?} */ quotedSet = new Set(map && map[QUOTED_KEYS]);
-        Object.keys(map).forEach(function (key) {
-            entries.push(new LiteralMapEntry(key, visitValue(map[key], _this, null), quotedSet.has(key)));
-        });
-        return new LiteralMapExpr(entries, type);
-    };
-    /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
-    _ValueOutputAstTransformer.prototype.visitPrimitive = /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
-    function (value, type) { return literal(value, type); };
-    /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
-    _ValueOutputAstTransformer.prototype.visitOther = /**
-     * @param {?} value
-     * @param {?} type
-     * @return {?}
-     */
-    function (value, type) {
-        if (value instanceof Expression) {
-            return value;
-        }
-        else {
-            return this.ctx.importExpr(value);
-        }
-    };
-    return _ValueOutputAstTransformer;
-}());
-
-/**
- * @fileoverview added by tsickle
- * @suppress {checkTypes} checked by tsc
- */
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 /**
  * @param {?} ctx
  * @param {?} providerAst
@@ -19891,6 +20631,9 @@ function providerDef(ctx, providerAst) {
     }
     if (providerAst.providerType === ProviderAstType.PrivateService) {
         flags |= 8192 /* PrivateProvider */;
+    }
+    if (providerAst.isModule) {
+        flags |= 1073741824 /* TypeModuleProvider */;
     }
     providerAst.lifecycleHooks.forEach(function (lifecycleHook) {
         // for regular providers, we only support ngOnDestroy
@@ -20013,7 +20756,7 @@ function tokenExpr(ctx, tokenMeta) {
  */
 function depDef(ctx, dep) {
     // Note: the following fields have already been normalized out by provider_analyzer:
-    // - isAttribute, isSelf, isHost
+    // - isAttribute, isHost
     var /** @type {?} */ expr = dep.isValue ? convertValueToOutputAst(ctx, dep.value) : tokenExpr(ctx, /** @type {?} */ ((dep.token)));
     var /** @type {?} */ flags = 0;
     if (dep.isSkipSelf) {
@@ -20021,6 +20764,9 @@ function depDef(ctx, dep) {
     }
     if (dep.isOptional) {
         flags |= 2 /* Optional */;
+    }
+    if (dep.isSelf) {
+        flags |= 4 /* Self */;
     }
     if (dep.isValue) {
         flags |= 8 /* Value */;
@@ -21388,6 +22134,7 @@ var TypeScriptEmitter = /** @class */ (function () {
      * @param {?=} preamble
      * @param {?=} emitSourceMaps
      * @param {?=} referenceFilter
+     * @param {?=} importFilter
      * @return {?}
      */
     TypeScriptEmitter.prototype.emitStatementsAndContext = /**
@@ -21396,12 +22143,13 @@ var TypeScriptEmitter = /** @class */ (function () {
      * @param {?=} preamble
      * @param {?=} emitSourceMaps
      * @param {?=} referenceFilter
+     * @param {?=} importFilter
      * @return {?}
      */
-    function (genFilePath, stmts, preamble, emitSourceMaps, referenceFilter) {
+    function (genFilePath, stmts, preamble, emitSourceMaps, referenceFilter, importFilter) {
         if (preamble === void 0) { preamble = ''; }
         if (emitSourceMaps === void 0) { emitSourceMaps = true; }
-        var /** @type {?} */ converter = new _TsEmitterVisitor(referenceFilter);
+        var /** @type {?} */ converter = new _TsEmitterVisitor(referenceFilter, importFilter);
         var /** @type {?} */ ctx = EmitterVisitorContext.createRoot();
         converter.visitAllStatements(stmts, ctx);
         var /** @type {?} */ preambleLines = preamble ? preamble.split('\n') : [];
@@ -21445,9 +22193,10 @@ var TypeScriptEmitter = /** @class */ (function () {
 }());
 var _TsEmitterVisitor = /** @class */ (function (_super) {
     __extends(_TsEmitterVisitor, _super);
-    function _TsEmitterVisitor(referenceFilter) {
+    function _TsEmitterVisitor(referenceFilter, importFilter) {
         var _this = _super.call(this, false) || this;
         _this.referenceFilter = referenceFilter;
+        _this.importFilter = importFilter;
         _this.typeExpression = 0;
         _this.importsWithPrefixes = new Map();
         _this.reexports = new Map();
@@ -21583,8 +22332,10 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
         }
         ctx.print(stmt, " " + stmt.name);
         this._printColonType(stmt.type, ctx);
-        ctx.print(stmt, " = ");
-        stmt.value.visitExpression(this, ctx);
+        if (stmt.value) {
+            ctx.print(stmt, " = ");
+            stmt.value.visitExpression(this, ctx);
+        }
         ctx.println(stmt, ";");
         return null;
     };
@@ -21677,8 +22428,15 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
             // comment out as a workaround for #10967
             ctx.print(null, "/*private*/ ");
         }
+        if (field.hasModifier(StmtModifier.Static)) {
+            ctx.print(null, 'static ');
+        }
         ctx.print(null, field.name);
         this._printColonType(field.type, ctx);
+        if (field.initializer) {
+            ctx.print(null, ' = ');
+            field.initializer.visitExpression(this, ctx);
+        }
         ctx.println(null, ";");
     };
     /**
@@ -21757,11 +22515,18 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
      * @return {?}
      */
     function (ast, ctx) {
+        if (ast.name) {
+            ctx.print(ast, 'function ');
+            ctx.print(ast, ast.name);
+        }
         ctx.print(ast, "(");
         this._visitParams(ast.params, ctx);
         ctx.print(ast, ")");
         this._printColonType(ast.type, ctx, 'void');
-        ctx.println(ast, " => {");
+        if (!ast.name) {
+            ctx.print(ast, " => ");
+        }
+        ctx.println(ast, '{');
         ctx.incIndent();
         this.visitAllStatements(ast.statements, ctx);
         ctx.decIndent();
@@ -21823,7 +22588,7 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
      * @param {?} ctx
      * @return {?}
      */
-    _TsEmitterVisitor.prototype.visitBuiltintType = /**
+    _TsEmitterVisitor.prototype.visitBuiltinType = /**
      * @param {?} type
      * @param {?} ctx
      * @return {?}
@@ -21961,7 +22726,7 @@ var _TsEmitterVisitor = /** @class */ (function (_super) {
             ctx.print(null, '(null as any)');
             return;
         }
-        if (moduleName) {
+        if (moduleName && (!this.importFilter || !this.importFilter(value))) {
             var /** @type {?} */ prefix = this.importsWithPrefixes.get(moduleName);
             if (prefix == null) {
                 prefix = "i" + this.importsWithPrefixes.size;
@@ -22820,10 +23585,11 @@ var ShadowCss = /** @class */ (function () {
      */
     function (cssText, selector, hostSelector) {
         if (hostSelector === void 0) { hostSelector = ''; }
-        var /** @type {?} */ sourceMappingUrl = extractSourceMappingUrl(cssText);
+        var /** @type {?} */ commentsWithHash = extractCommentsWithHash(cssText);
         cssText = stripComments(cssText);
         cssText = this._insertDirectives(cssText);
-        return this._scopeCssText(cssText, selector, hostSelector) + sourceMappingUrl;
+        var /** @type {?} */ scopedCssText = this._scopeCssText(cssText, selector, hostSelector);
+        return [scopedCssText].concat(commentsWithHash).join('\n');
     };
     /**
      * @param {?} cssText
@@ -23323,15 +24089,13 @@ var _commentRe = /\/\*\s*[\s\S]*?\*\//g;
 function stripComments(input) {
     return input.replace(_commentRe, '');
 }
-// all comments except inline source mapping
-var _sourceMappingUrlRe = /\/\*\s*#\s*sourceMappingURL=[\s\S]+?\*\//;
+var _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=[\s\S]+?\*\//g;
 /**
  * @param {?} input
  * @return {?}
  */
-function extractSourceMappingUrl(input) {
-    var /** @type {?} */ matcher = input.match(_sourceMappingUrlRe);
-    return matcher ? matcher[0] : '';
+function extractCommentsWithHash(input) {
+    return input.match(_commentWithHashRe) || [];
 }
 var _ruleRe = /(\s*)([^;\{\}]+?)(\s*)((?:{%BLOCK%}?\s*;?)|(?:\s*;))/g;
 var _curlyRe = /([{}])/g;
@@ -24447,8 +25211,8 @@ var BindingParser = /** @class */ (function () {
      */
     function (errors, sourceSpan) {
         for (var _i = 0, errors_1 = errors; _i < errors_1.length; _i++) {
-            var error = errors_1[_i];
-            this._reportError(error.message, sourceSpan);
+            var error$$1 = errors_1[_i];
+            this._reportError(error$$1.message, sourceSpan);
         }
     };
     /**
@@ -24596,10 +25360,10 @@ var warningCounts = {};
  * @return {?}
  */
 function warnOnlyOnce(warnings) {
-    return function (error) {
-        if (warnings.indexOf(error.msg) !== -1) {
-            warningCounts[error.msg] = (warningCounts[error.msg] || 0) + 1;
-            return warningCounts[error.msg] <= 1;
+    return function (error$$1) {
+        if (warnings.indexOf(error$$1.msg) !== -1) {
+            warningCounts[error$$1.msg] = (warningCounts[error$$1.msg] || 0) + 1;
+            return warningCounts[error$$1.msg] <= 1;
         }
         return true;
     };
@@ -24651,8 +25415,8 @@ var TemplateParser = /** @class */ (function () {
      */
     function (component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces) {
         var /** @type {?} */ result = this.tryParse(component, template, directives, pipes, schemas, templateUrl, preserveWhitespaces);
-        var /** @type {?} */ warnings = /** @type {?} */ ((result.errors)).filter(function (error) { return error.level === ParseErrorLevel.WARNING; }).filter(warnOnlyOnce([TEMPLATE_ATTR_DEPRECATION_WARNING, TEMPLATE_ELEMENT_DEPRECATION_WARNING]));
-        var /** @type {?} */ errors = /** @type {?} */ ((result.errors)).filter(function (error) { return error.level === ParseErrorLevel.ERROR; });
+        var /** @type {?} */ warnings = /** @type {?} */ ((result.errors)).filter(function (error$$1) { return error$$1.level === ParseErrorLevel.WARNING; }).filter(warnOnlyOnce([TEMPLATE_ATTR_DEPRECATION_WARNING, TEMPLATE_ELEMENT_DEPRECATION_WARNING]));
+        var /** @type {?} */ errors = /** @type {?} */ ((result.errors)).filter(function (error$$1) { return error$$1.level === ParseErrorLevel.ERROR; });
         if (warnings.length > 0) {
             this._console.warn("Template parse warnings:\n" + warnings.join('\n'));
         }
@@ -24797,8 +25561,8 @@ var TemplateParser = /** @class */ (function () {
                     existingReferences.push(name);
                 }
                 else {
-                    var /** @type {?} */ error = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, ParseErrorLevel.ERROR);
-                    errors.push(error);
+                    var /** @type {?} */ error$$1 = new TemplateParseError("Reference \"#" + name + "\" is defined several times", reference.sourceSpan, ParseErrorLevel.ERROR);
+                    errors.push(error$$1);
                 }
             });
         });
@@ -25213,7 +25977,7 @@ var TemplateParseVisitor = /** @class */ (function () {
             elementOrDirectiveRefs.forEach(function (elOrDirRef) {
                 if ((elOrDirRef.value.length === 0 && directive.isComponent) ||
                     (elOrDirRef.isReferenceToDirective(directive))) {
-                    targetReferences.push(new ReferenceAst(elOrDirRef.name, createTokenForReference(directive.type.reference), elOrDirRef.sourceSpan));
+                    targetReferences.push(new ReferenceAst(elOrDirRef.name, createTokenForReference(directive.type.reference), elOrDirRef.value, elOrDirRef.sourceSpan));
                     matchedReferences.add(elOrDirRef.name);
                 }
             });
@@ -25232,7 +25996,7 @@ var TemplateParseVisitor = /** @class */ (function () {
                 if (isTemplateElement) {
                     refToken = createTokenForExternalReference(_this.reflector, Identifiers.TemplateRef);
                 }
-                targetReferences.push(new ReferenceAst(elOrDirRef.name, refToken, elOrDirRef.sourceSpan));
+                targetReferences.push(new ReferenceAst(elOrDirRef.name, refToken, elOrDirRef.value, elOrDirRef.sourceSpan));
             }
         });
         return directiveAsts;
@@ -25774,9 +26538,10 @@ var ConvertActionBindingResult = /** @class */ (function () {
  * @param {?} implicitReceiver
  * @param {?} action
  * @param {?} bindingId
+ * @param {?=} interpolationFunction
  * @return {?}
  */
-function convertActionBinding(localResolver, implicitReceiver, action, bindingId) {
+function convertActionBinding(localResolver, implicitReceiver, action, bindingId, interpolationFunction) {
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
@@ -25802,7 +26567,7 @@ function convertActionBinding(localResolver, implicitReceiver, action, bindingId
             throw new Error("Illegal State: Actions are not allowed to contain pipes. Pipe: " + name);
         }
     }, action);
-    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId);
+    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction);
     var /** @type {?} */ actionStmts = [];
     flattenStatements(actionWithoutBuiltins.visit(visitor, _Mode.Statement), actionStmts);
     prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
@@ -25850,7 +26615,7 @@ var BindingForm = {
     // The general form of binding expression, supports all expressions.
     General: 0,
     // Try to generate a simple binding (no temporaries or statements)
-    // otherise generate a general binding
+    // otherwise generate a general binding
     TrySimple: 1,
 };
 BindingForm[BindingForm.General] = "General";
@@ -25864,15 +26629,16 @@ BindingForm[BindingForm.TrySimple] = "TrySimple";
  * @param {?} expressionWithoutBuiltins
  * @param {?} bindingId
  * @param {?} form
+ * @param {?=} interpolationFunction
  * @return {?}
  */
-function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId, form) {
+function convertPropertyBinding(localResolver, implicitReceiver, expressionWithoutBuiltins, bindingId, form, interpolationFunction) {
     if (!localResolver) {
         localResolver = new DefaultLocalResolver();
     }
     var /** @type {?} */ currValExpr = createCurrValueExpr(bindingId);
     var /** @type {?} */ stmts = [];
-    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId);
+    var /** @type {?} */ visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, interpolationFunction);
     var /** @type {?} */ outputExpr = expressionWithoutBuiltins.visit(visitor, _Mode.Expression);
     if (visitor.temporaryCount) {
         for (var /** @type {?} */ i = 0; i < visitor.temporaryCount; i++) {
@@ -26016,10 +26782,11 @@ var _BuiltinAstConverter = /** @class */ (function (_super) {
     return _BuiltinAstConverter;
 }(AstTransformer));
 var _AstToIrVisitor = /** @class */ (function () {
-    function _AstToIrVisitor(_localResolver, _implicitReceiver, bindingId) {
+    function _AstToIrVisitor(_localResolver, _implicitReceiver, bindingId, interpolationFunction) {
         this._localResolver = _localResolver;
         this._implicitReceiver = _implicitReceiver;
         this.bindingId = bindingId;
+        this.interpolationFunction = interpolationFunction;
         this._nodeMap = new Map();
         this._resultMap = new Map();
         this._currentTemporary = 0;
@@ -26182,6 +26949,9 @@ var _AstToIrVisitor = /** @class */ (function () {
             args.push(this._visit(ast.expressions[i], _Mode.Expression));
         }
         args.push(literal(ast.strings[ast.strings.length - 1]));
+        if (this.interpolationFunction) {
+            return this.interpolationFunction(args);
+        }
         return ast.expressions.length <= 9 ?
             importExpr(Identifiers.inlineInterpolate).callFn(args) :
             importExpr(Identifiers.interpolate).callFn([args[0], literalArr(args.slice(1))]);
@@ -26258,7 +27028,7 @@ var _AstToIrVisitor = /** @class */ (function () {
      * @return {?}
      */
     function (ast, mode) {
-        // For literal values of null, undefined, true, or false allow type inteference
+        // For literal values of null, undefined, true, or false allow type interference
         // to infer the type.
         var /** @type {?} */ type = ast.value === null || ast.value === undefined || ast.value === true || ast.value === true ?
             INFERRED_TYPE :
@@ -28719,6 +29489,418 @@ function elementEventFullName(target, name) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var CONSTANT_PREFIX = '_c';
+/**
+ * Context to use when producing a key.
+ *
+ * This ensures we see the constant not the reference variable when producing
+ * a key.
+ */
+var KEY_CONTEXT = {};
+/**
+ * A node that is a place-holder that allows the node to be replaced when the actual
+ * node is known.
+ *
+ * This allows the constant pool to change an expression from a direct reference to
+ * a constant to a shared constant. It returns a fix-up node that is later allowed to
+ * change the referenced expression.
+ */
+var FixupExpression = /** @class */ (function (_super) {
+    __extends(FixupExpression, _super);
+    function FixupExpression(resolved) {
+        var _this = _super.call(this, resolved.type) || this;
+        _this.resolved = resolved;
+        _this.original = resolved;
+        return _this;
+    }
+    /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    FixupExpression.prototype.visitExpression = /**
+     * @param {?} visitor
+     * @param {?} context
+     * @return {?}
+     */
+    function (visitor, context) {
+        if (context === KEY_CONTEXT) {
+            // When producing a key we want to traverse the constant not the
+            // variable used to refer to it.
+            return this.original.visitExpression(visitor, context);
+        }
+        else {
+            return this.resolved.visitExpression(visitor, context);
+        }
+    };
+    /**
+     * @param {?} e
+     * @return {?}
+     */
+    FixupExpression.prototype.isEquivalent = /**
+     * @param {?} e
+     * @return {?}
+     */
+    function (e) {
+        return e instanceof FixupExpression && this.resolved.isEquivalent(e.resolved);
+    };
+    /**
+     * @return {?}
+     */
+    FixupExpression.prototype.isConstant = /**
+     * @return {?}
+     */
+    function () { return true; };
+    /**
+     * @param {?} expression
+     * @return {?}
+     */
+    FixupExpression.prototype.fixup = /**
+     * @param {?} expression
+     * @return {?}
+     */
+    function (expression) {
+        this.resolved = expression;
+        this.shared = true;
+    };
+    return FixupExpression;
+}(Expression));
+/**
+ * A constant pool allows a code emitter to share constant in an output context.
+ *
+ * The constant pool also supports sharing access to ivy definitions references.
+ */
+var ConstantPool = /** @class */ (function () {
+    function ConstantPool() {
+        this.statements = [];
+        this.literals = new Map();
+        this.literalFactories = new Map();
+        this.injectorDefinitions = new Map();
+        this.directiveDefinitions = new Map();
+        this.componentDefinitions = new Map();
+        this.pipeDefinitions = new Map();
+        this.nextNameIndex = 0;
+    }
+    /**
+     * @param {?} literal
+     * @param {?=} forceShared
+     * @return {?}
+     */
+    ConstantPool.prototype.getConstLiteral = /**
+     * @param {?} literal
+     * @param {?=} forceShared
+     * @return {?}
+     */
+    function (literal$$1, forceShared) {
+        if (literal$$1 instanceof LiteralExpr || literal$$1 instanceof FixupExpression) {
+            // Do no put simple literals into the constant pool or try to produce a constant for a
+            // reference to a constant.
+            return literal$$1;
+        }
+        var /** @type {?} */ key = this.keyOf(literal$$1);
+        var /** @type {?} */ fixup = this.literals.get(key);
+        var /** @type {?} */ newValue = false;
+        if (!fixup) {
+            fixup = new FixupExpression(literal$$1);
+            this.literals.set(key, fixup);
+            newValue = true;
+        }
+        if ((!newValue && !fixup.shared) || (newValue && forceShared)) {
+            // Replace the expression with a variable
+            var /** @type {?} */ name_1 = this.freshName();
+            this.statements.push(variable(name_1).set(literal$$1).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+            fixup.fixup(variable(name_1));
+        }
+        return fixup;
+    };
+    /**
+     * @param {?} type
+     * @param {?} kind
+     * @param {?} ctx
+     * @param {?=} forceShared
+     * @return {?}
+     */
+    ConstantPool.prototype.getDefinition = /**
+     * @param {?} type
+     * @param {?} kind
+     * @param {?} ctx
+     * @param {?=} forceShared
+     * @return {?}
+     */
+    function (type, kind, ctx, forceShared) {
+        if (forceShared === void 0) { forceShared = false; }
+        var /** @type {?} */ definitions = this.definitionsOf(kind);
+        var /** @type {?} */ fixup = definitions.get(type);
+        var /** @type {?} */ newValue = false;
+        if (!fixup) {
+            var /** @type {?} */ property = this.propertyNameOf(kind);
+            fixup = new FixupExpression(ctx.importExpr(type).prop(property));
+            definitions.set(type, fixup);
+            newValue = true;
+        }
+        if ((!newValue && !fixup.shared) || (newValue && forceShared)) {
+            var /** @type {?} */ name_2 = this.freshName();
+            this.statements.push(variable(name_2).set(fixup.resolved).toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+            fixup.fixup(variable(name_2));
+        }
+        return fixup;
+    };
+    /**
+     * @param {?} literal
+     * @return {?}
+     */
+    ConstantPool.prototype.getLiteralFactory = /**
+     * @param {?} literal
+     * @return {?}
+     */
+    function (literal$$1) {
+        // Create a pure function that builds an array of a mix of constant  and variable expressions
+        if (literal$$1 instanceof LiteralArrayExpr) {
+            var /** @type {?} */ argumentsForKey = literal$$1.entries.map(function (e) { return e.isConstant() ? e : literal(null); });
+            var /** @type {?} */ key = this.keyOf(literalArr(argumentsForKey));
+            return this._getLiteralFactory(key, literal$$1.entries, function (entries) { return literalArr(entries); });
+        }
+        else {
+            var /** @type {?} */ expressionForKey = literalMap(literal$$1.entries.map(function (e) {
+                return ({
+                    key: e.key,
+                    value: e.value.isConstant() ? e.value : literal(null),
+                    quoted: e.quoted
+                });
+            }));
+            var /** @type {?} */ key = this.keyOf(expressionForKey);
+            return this._getLiteralFactory(key, literal$$1.entries.map(function (e) { return e.value; }), function (entries) {
+                return literalMap(entries.map(function (value, index) {
+                    return ({
+                        key: literal$$1.entries[index].key,
+                        value: value,
+                        quoted: literal$$1.entries[index].quoted
+                    });
+                }));
+            });
+        }
+    };
+    /**
+     * @param {?} key
+     * @param {?} values
+     * @param {?} resultMap
+     * @return {?}
+     */
+    ConstantPool.prototype._getLiteralFactory = /**
+     * @param {?} key
+     * @param {?} values
+     * @param {?} resultMap
+     * @return {?}
+     */
+    function (key, values, resultMap) {
+        var _this = this;
+        var /** @type {?} */ literalFactory = this.literalFactories.get(key);
+        var /** @type {?} */ literalFactoryArguments = values.filter((function (e) { return !e.isConstant(); }));
+        if (!literalFactory) {
+            var /** @type {?} */ resultExpressions = values.map(function (e, index) { return e.isConstant() ? _this.getConstLiteral(e, true) : variable("a" + index); });
+            var /** @type {?} */ parameters = resultExpressions.filter(isVariable).map(function (e) { return new FnParam(/** @type {?} */ ((e.name)), DYNAMIC_TYPE); });
+            var /** @type {?} */ pureFunctionDeclaration = fn(parameters, [new ReturnStatement(resultMap(resultExpressions))], INFERRED_TYPE);
+            var /** @type {?} */ name_3 = this.freshName();
+            this.statements.push(variable(name_3).set(pureFunctionDeclaration).toDeclStmt(INFERRED_TYPE, [
+                StmtModifier.Final
+            ]));
+            literalFactory = variable(name_3);
+            this.literalFactories.set(key, literalFactory);
+        }
+        return { literalFactory: literalFactory, literalFactoryArguments: literalFactoryArguments };
+    };
+    /**
+     * Produce a unique name.
+     *
+     * The name might be unique among different prefixes if any of the prefixes end in
+     * a digit so the prefix should be a constant string (not based on user input) and
+     * must not end in a digit.
+     */
+    /**
+     * Produce a unique name.
+     *
+     * The name might be unique among different prefixes if any of the prefixes end in
+     * a digit so the prefix should be a constant string (not based on user input) and
+     * must not end in a digit.
+     * @param {?} prefix
+     * @return {?}
+     */
+    ConstantPool.prototype.uniqueName = /**
+     * Produce a unique name.
+     *
+     * The name might be unique among different prefixes if any of the prefixes end in
+     * a digit so the prefix should be a constant string (not based on user input) and
+     * must not end in a digit.
+     * @param {?} prefix
+     * @return {?}
+     */
+    function (prefix) { return "" + prefix + this.nextNameIndex++; };
+    /**
+     * @param {?} kind
+     * @return {?}
+     */
+    ConstantPool.prototype.definitionsOf = /**
+     * @param {?} kind
+     * @return {?}
+     */
+    function (kind) {
+        switch (kind) {
+            case 2 /* Component */:
+                return this.componentDefinitions;
+            case 1 /* Directive */:
+                return this.directiveDefinitions;
+            case 0 /* Injector */:
+                return this.injectorDefinitions;
+            case 3 /* Pipe */:
+                return this.pipeDefinitions;
+        }
+        error("Unknown definition kind " + kind);
+        return this.componentDefinitions;
+    };
+    /**
+     * @param {?} kind
+     * @return {?}
+     */
+    ConstantPool.prototype.propertyNameOf = /**
+     * @param {?} kind
+     * @return {?}
+     */
+    function (kind) {
+        switch (kind) {
+            case 2 /* Component */:
+                return 'ngComponentDef';
+            case 1 /* Directive */:
+                return 'ngDirectiveDef';
+            case 0 /* Injector */:
+                return 'ngInjectorDef';
+            case 3 /* Pipe */:
+                return 'ngPipeDef';
+        }
+        error("Unknown definition kind " + kind);
+        return '<unknown>';
+    };
+    /**
+     * @return {?}
+     */
+    ConstantPool.prototype.freshName = /**
+     * @return {?}
+     */
+    function () { return this.uniqueName(CONSTANT_PREFIX); };
+    /**
+     * @param {?} expression
+     * @return {?}
+     */
+    ConstantPool.prototype.keyOf = /**
+     * @param {?} expression
+     * @return {?}
+     */
+    function (expression) {
+        return expression.visitExpression(new KeyVisitor(), KEY_CONTEXT);
+    };
+    return ConstantPool;
+}());
+var KeyVisitor = /** @class */ (function () {
+    function KeyVisitor() {
+        this.visitReadVarExpr = invalid;
+        this.visitWriteVarExpr = invalid;
+        this.visitWriteKeyExpr = invalid;
+        this.visitWritePropExpr = invalid;
+        this.visitInvokeMethodExpr = invalid;
+        this.visitInvokeFunctionExpr = invalid;
+        this.visitInstantiateExpr = invalid;
+        this.visitConditionalExpr = invalid;
+        this.visitNotExpr = invalid;
+        this.visitAssertNotNullExpr = invalid;
+        this.visitCastExpr = invalid;
+        this.visitFunctionExpr = invalid;
+        this.visitBinaryOperatorExpr = invalid;
+        this.visitReadPropExpr = invalid;
+        this.visitReadKeyExpr = invalid;
+        this.visitCommaExpr = invalid;
+    }
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    KeyVisitor.prototype.visitLiteralExpr = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        return "" + (typeof ast.value === 'string' ? '"' + ast.value + '"' : ast.value);
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    KeyVisitor.prototype.visitLiteralArrayExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        return "[" + ast.entries.map(function (entry) { return entry.visitExpression(_this, context); }).join(',') + "]";
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    KeyVisitor.prototype.visitLiteralMapExpr = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        var /** @type {?} */ mapEntry = function (entry) {
+            return entry.key + ":" + entry.value.visitExpression(_this, context);
+        };
+        return "{" + ast.entries.map(mapEntry).join(',');
+    };
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    KeyVisitor.prototype.visitExternalExpr = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        return ast.value.moduleName ? "EX:" + ast.value.moduleName + ":" + ast.value.name :
+            "EX:" + ast.value.runtime.name;
+    };
+    return KeyVisitor;
+}());
+/**
+ * @template T
+ * @param {?} arg
+ * @return {?}
+ */
+function invalid(arg) {
+    throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
+}
+/**
+ * @param {?} e
+ * @return {?}
+ */
+function isVariable(e) {
+    return e instanceof ReadVarExpr;
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 /**
  * A container for message extracted from the templates.
  */
@@ -28881,6 +30063,1167 @@ var MapPlaceholderNames = /** @class */ (function (_super) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var CORE$1 = '@angular/core';
+var Identifiers$1 = /** @class */ (function () {
+    function Identifiers() {
+    }
+    /* Methods */
+    Identifiers.NEW_METHOD = 'n';
+    Identifiers.HOST_BINDING_METHOD = 'h';
+    Identifiers.TRANSFORM_METHOD = 'transform';
+    /* Instructions */
+    Identifiers.createElement = { name: 'ɵE', moduleName: CORE$1 };
+    Identifiers.elementEnd = { name: 'ɵe', moduleName: CORE$1 };
+    Identifiers.elementProperty = { name: 'ɵp', moduleName: CORE$1 };
+    Identifiers.elementAttribute = { name: 'ɵa', moduleName: CORE$1 };
+    Identifiers.elementClass = { name: 'ɵk', moduleName: CORE$1 };
+    Identifiers.elementStyle = { name: 'ɵs', moduleName: CORE$1 };
+    Identifiers.containerCreate = { name: 'ɵC', moduleName: CORE$1 };
+    Identifiers.containerEnd = { name: 'ɵc', moduleName: CORE$1 };
+    Identifiers.containerRefreshStart = { name: 'ɵcR', moduleName: CORE$1 };
+    Identifiers.containerRefreshEnd = { name: 'ɵcr', moduleName: CORE$1 };
+    Identifiers.directiveCreate = { name: 'ɵD', moduleName: CORE$1 };
+    Identifiers.text = { name: 'ɵT', moduleName: CORE$1 };
+    Identifiers.directiveInput = { name: 'ɵi', moduleName: CORE$1 };
+    Identifiers.textCreateBound = { name: 'ɵt', moduleName: CORE$1 };
+    Identifiers.bind = { name: 'ɵb', moduleName: CORE$1 };
+    Identifiers.interpolation1 = { name: 'ɵi1', moduleName: CORE$1 };
+    Identifiers.interpolation2 = { name: 'ɵi2', moduleName: CORE$1 };
+    Identifiers.interpolation3 = { name: 'ɵi3', moduleName: CORE$1 };
+    Identifiers.interpolation4 = { name: 'ɵi4', moduleName: CORE$1 };
+    Identifiers.interpolation5 = { name: 'ɵi5', moduleName: CORE$1 };
+    Identifiers.interpolation6 = { name: 'ɵi6', moduleName: CORE$1 };
+    Identifiers.interpolation7 = { name: 'ɵi7', moduleName: CORE$1 };
+    Identifiers.interpolation8 = { name: 'ɵi8', moduleName: CORE$1 };
+    Identifiers.interpolationV = { name: 'ɵiV', moduleName: CORE$1 };
+    Identifiers.pureFunction0 = { name: 'ɵf0', moduleName: CORE$1 };
+    Identifiers.pureFunction1 = { name: 'ɵf1', moduleName: CORE$1 };
+    Identifiers.pureFunction2 = { name: 'ɵf2', moduleName: CORE$1 };
+    Identifiers.pureFunction3 = { name: 'ɵf3', moduleName: CORE$1 };
+    Identifiers.pureFunction4 = { name: 'ɵf4', moduleName: CORE$1 };
+    Identifiers.pureFunction5 = { name: 'ɵf5', moduleName: CORE$1 };
+    Identifiers.pureFunction6 = { name: 'ɵf6', moduleName: CORE$1 };
+    Identifiers.pureFunction7 = { name: 'ɵf7', moduleName: CORE$1 };
+    Identifiers.pureFunction8 = { name: 'ɵf8', moduleName: CORE$1 };
+    Identifiers.pureFunctionV = { name: 'ɵfV', moduleName: CORE$1 };
+    Identifiers.pipeBind1 = { name: 'ɵpb1', moduleName: CORE$1 };
+    Identifiers.pipeBind2 = { name: 'ɵpb2', moduleName: CORE$1 };
+    Identifiers.pipeBind3 = { name: 'ɵpb3', moduleName: CORE$1 };
+    Identifiers.pipeBind4 = { name: 'ɵpb4', moduleName: CORE$1 };
+    Identifiers.pipeBindV = { name: 'ɵpbV', moduleName: CORE$1 };
+    Identifiers.load = { name: 'ɵld', moduleName: CORE$1 };
+    Identifiers.pipe = { name: 'ɵPp', moduleName: CORE$1 };
+    Identifiers.projection = { name: 'ɵP', moduleName: CORE$1 };
+    Identifiers.projectionDef = { name: 'ɵpD', moduleName: CORE$1 };
+    Identifiers.refreshComponent = { name: 'ɵr', moduleName: CORE$1 };
+    Identifiers.directiveLifeCycle = { name: 'ɵl', moduleName: CORE$1 };
+    Identifiers.injectElementRef = { name: 'ɵinjectElementRef', moduleName: CORE$1 };
+    Identifiers.injectTemplateRef = { name: 'ɵinjectTemplateRef', moduleName: CORE$1 };
+    Identifiers.injectViewContainerRef = { name: 'ɵinjectViewContainerRef', moduleName: CORE$1 };
+    Identifiers.inject = { name: 'ɵinject', moduleName: CORE$1 };
+    Identifiers.defineComponent = { name: 'ɵdefineComponent', moduleName: CORE$1 };
+    Identifiers.defineDirective = {
+        name: 'ɵdefineDirective',
+        moduleName: CORE$1,
+    };
+    Identifiers.definePipe = { name: 'ɵdefinePipe', moduleName: CORE$1 };
+    Identifiers.query = { name: 'ɵQ', moduleName: CORE$1 };
+    Identifiers.queryRefresh = { name: 'ɵqR', moduleName: CORE$1 };
+    Identifiers.NgOnChangesFeature = { name: 'ɵNgOnChangesFeature', moduleName: CORE$1 };
+    return Identifiers;
+}());
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Name of the context parameter passed into a template function
+ */
+var CONTEXT_NAME = 'ctx';
+/**
+ * Name of the creation mode flag passed into a template function
+ */
+var CREATION_MODE_FLAG = 'cm';
+/**
+ * Name of the temporary to use during data binding
+ */
+var TEMPORARY_NAME = '_t';
+/**
+ * The prefix reference variables
+ */
+var REFERENCE_PREFIX = '_r';
+/**
+ * The name of the implicit context reference
+ */
+var IMPLICIT_REFERENCE = '$implicit';
+/**
+ * @param {?} outputCtx
+ * @param {?} directive
+ * @param {?} reflector
+ * @return {?}
+ */
+function compileDirective(outputCtx, directive, reflector) {
+    var /** @type {?} */ definitionMapValues = [];
+    // e.g. 'type: MyDirective`
+    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(directive.type.reference), quoted: false });
+    // e.g. `factory: () => new MyApp(injectElementRef())`
+    var /** @type {?} */ templateFactory = createFactory(directive.type, outputCtx, reflector, directive.queries);
+    definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    // e.g 'inputs: {a: 'a'}`
+    if (Object.getOwnPropertyNames(directive.inputs).length > 0) {
+        definitionMapValues.push({ key: 'inputs', quoted: false, value: mapToExpression(directive.inputs) });
+    }
+    var /** @type {?} */ className = /** @type {?} */ ((identifierName(directive.type)));
+    className || error("Cannot resolver the name of " + directive.type);
+    // Create the partial class to be merged with the actual class.
+    outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(/* name */ outputCtx.constantPool.propertyNameOf(1 /* Directive */), /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], /* initializer */ importExpr(Identifiers$1.defineDirective).callFn([literalMap(definitionMapValues)]))], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+}
+/**
+ * @param {?} outputCtx
+ * @param {?} component
+ * @param {?} pipes
+ * @param {?} template
+ * @param {?} reflector
+ * @return {?}
+ */
+function compileComponent(outputCtx, component, pipes, template, reflector) {
+    var /** @type {?} */ definitionMapValues = [];
+    // e.g. `type: MyApp`
+    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(component.type.reference), quoted: false });
+    // e.g. `tag: 'my-app'`
+    // This is optional and only included if the first selector of a component has element.
+    var /** @type {?} */ selector = component.selector && CssSelector.parse(component.selector);
+    var /** @type {?} */ firstSelector = selector && selector[0];
+    if (firstSelector && firstSelector.hasElementSelector()) {
+        definitionMapValues.push({ key: 'tag', value: literal(firstSelector.element), quoted: false });
+    }
+    // e.g. `attr: ["class", ".my.app"]
+    // This is optional an only included if the first selector of a component specifies attributes.
+    if (firstSelector) {
+        var /** @type {?} */ selectorAttributes = firstSelector.getAttrs();
+        if (selectorAttributes.length) {
+            definitionMapValues.push({
+                key: 'attrs',
+                value: outputCtx.constantPool.getConstLiteral(literalArr(selectorAttributes.map(function (value) { return value != null ? literal(value) : literal(undefined); })), /* forceShared */ true),
+                quoted: false
+            });
+        }
+    }
+    // e.g. `factory: function MyApp_Factory() { return new MyApp(injectElementRef()); }`
+    var /** @type {?} */ templateFactory = createFactory(component.type, outputCtx, reflector, component.queries);
+    definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    // e.g `hostBindings: function MyApp_HostBindings { ... }
+    var /** @type {?} */ hostBindings = createHostBindingsFunction(component.type, outputCtx, component.queries);
+    if (hostBindings) {
+        definitionMapValues.push({ key: 'hostBindings', value: hostBindings, quoted: false });
+    }
+    // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
+    var /** @type {?} */ templateTypeName = component.type.reference.name;
+    var /** @type {?} */ templateName = templateTypeName ? templateTypeName + "_Template" : null;
+    var /** @type {?} */ pipeMap = new Map(pipes.map(function (pipe) { return [pipe.name, pipe]; }));
+    var /** @type {?} */ templateFunctionExpression = new TemplateDefinitionBuilder(outputCtx, outputCtx.constantPool, reflector, CONTEXT_NAME, ROOT_SCOPE.nestedScope(), 0, /** @type {?} */ ((component.template)).ngContentSelectors, templateTypeName, templateName, pipeMap, component.viewQueries)
+        .buildTemplateFunction(template, []);
+    definitionMapValues.push({ key: 'template', value: templateFunctionExpression, quoted: false });
+    // e.g `inputs: {a: 'a'}`
+    if (Object.getOwnPropertyNames(component.inputs).length > 0) {
+        definitionMapValues.push({ key: 'inputs', quoted: false, value: mapToExpression(component.inputs) });
+    }
+    // e.g. `features: [NgOnChangesFeature(MyComponent)]`
+    var /** @type {?} */ features = [];
+    if (component.type.lifecycleHooks.some(function (lifecycle) { return lifecycle == LifecycleHooks.OnChanges; })) {
+        features.push(importExpr(Identifiers$1.NgOnChangesFeature, null, null).callFn([outputCtx.importExpr(component.type.reference)]));
+    }
+    if (features.length) {
+        definitionMapValues.push({ key: 'features', quoted: false, value: literalArr(features) });
+    }
+    var /** @type {?} */ className = /** @type {?} */ ((identifierName(component.type)));
+    className || error("Cannot resolver the name of " + component.type);
+    // Create the partial class to be merged with the actual class.
+    outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(/* name */ outputCtx.constantPool.propertyNameOf(2 /* Component */), /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], /* initializer */ importExpr(Identifiers$1.defineComponent).callFn([literalMap(definitionMapValues)]))], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+}
+/**
+ * @param {?} feature
+ * @return {?}
+ */
+function unsupported(feature) {
+    if (this) {
+        throw new Error("Builder " + this.constructor.name + " doesn't support " + feature + " yet");
+    }
+    throw new Error("Feature " + feature + " is not supported yet");
+}
+var BINDING_INSTRUCTION_MAP = (_a = {},
+    _a[PropertyBindingType.Property] = Identifiers$1.elementProperty,
+    _a[PropertyBindingType.Attribute] = Identifiers$1.elementAttribute,
+    _a[PropertyBindingType.Class] = Identifiers$1.elementClass,
+    _a[PropertyBindingType.Style] = Identifiers$1.elementStyle,
+    _a);
+/**
+ * @param {?} args
+ * @return {?}
+ */
+function interpolate(args) {
+    args = args.slice(1); // Ignore the length prefix added for render2
+    switch (args.length) {
+        case 3:
+            return importExpr(Identifiers$1.interpolation1).callFn(args);
+        case 5:
+            return importExpr(Identifiers$1.interpolation2).callFn(args);
+        case 7:
+            return importExpr(Identifiers$1.interpolation3).callFn(args);
+        case 9:
+            return importExpr(Identifiers$1.interpolation4).callFn(args);
+        case 11:
+            return importExpr(Identifiers$1.interpolation5).callFn(args);
+        case 13:
+            return importExpr(Identifiers$1.interpolation6).callFn(args);
+        case 15:
+            return importExpr(Identifiers$1.interpolation7).callFn(args);
+        case 17:
+            return importExpr(Identifiers$1.interpolation8).callFn(args);
+    }
+    (args.length >= 19 && args.length % 2 == 1) ||
+        error("Invalid interpolation argument length " + args.length);
+    return importExpr(Identifiers$1.interpolationV).callFn([literalArr(args)]);
+}
+/**
+ * @param {?} args
+ * @return {?}
+ */
+function pipeBinding(args) {
+    switch (args.length) {
+        case 0:
+            // The first parameter to pipeBind is always the value to be transformed followed
+            // by arg.length arguments so the total number of arguments to pipeBind are
+            // arg.length + 1.
+            return Identifiers$1.pipeBind1;
+        case 1:
+            return Identifiers$1.pipeBind2;
+        case 2:
+            return Identifiers$1.pipeBind3;
+        default:
+            return Identifiers$1.pipeBindV;
+    }
+}
+var pureFunctionIdentifiers = [
+    Identifiers$1.pureFunction0, Identifiers$1.pureFunction1, Identifiers$1.pureFunction2, Identifiers$1.pureFunction3, Identifiers$1.pureFunction4,
+    Identifiers$1.pureFunction5, Identifiers$1.pureFunction6, Identifiers$1.pureFunction7, Identifiers$1.pureFunction8
+];
+/**
+ * @param {?} outputContext
+ * @param {?} literal
+ * @return {?}
+ */
+function getLiteralFactory(outputContext, literal$$1) {
+    var _a = outputContext.constantPool.getLiteralFactory(literal$$1), literalFactory = _a.literalFactory, literalFactoryArguments = _a.literalFactoryArguments;
+    literalFactoryArguments.length > 0 || error("Expected arguments to a literal factory function");
+    var /** @type {?} */ pureFunctionIdent = pureFunctionIdentifiers[literalFactoryArguments.length] || Identifiers$1.pureFunctionV;
+    // Literal factories are pure functions that only need to be re-invoked when the parameters
+    // change.
+    return importExpr(pureFunctionIdent).callFn([literalFactory].concat(literalFactoryArguments));
+}
+var BindingScope = /** @class */ (function () {
+    function BindingScope(parent) {
+        this.parent = parent;
+        this.map = new Map();
+        this.referenceNameIndex = 0;
+    }
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    BindingScope.prototype.get = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) {
+        var /** @type {?} */ current = this;
+        while (current) {
+            var /** @type {?} */ value = current.map.get(name);
+            if (value != null) {
+                // Cache the value locally.
+                this.map.set(name, value);
+                return value;
+            }
+            current = current.parent;
+        }
+        return null;
+    };
+    /**
+     * @param {?} name
+     * @param {?} value
+     * @return {?}
+     */
+    BindingScope.prototype.set = /**
+     * @param {?} name
+     * @param {?} value
+     * @return {?}
+     */
+    function (name, value) {
+        !this.map.has(name) ||
+            error("The name " + name + " is already defined in scope to be " + this.map.get(name));
+        this.map.set(name, value);
+        return this;
+    };
+    /**
+     * @return {?}
+     */
+    BindingScope.prototype.nestedScope = /**
+     * @return {?}
+     */
+    function () { return new BindingScope(this); };
+    /**
+     * @return {?}
+     */
+    BindingScope.prototype.freshReferenceName = /**
+     * @return {?}
+     */
+    function () {
+        var /** @type {?} */ current = this;
+        // Find the top scope as it maintains the global reference count
+        while (current.parent)
+            current = current.parent;
+        return "" + REFERENCE_PREFIX + current.referenceNameIndex++;
+    };
+    return BindingScope;
+}());
+var ROOT_SCOPE = new BindingScope(null).set('$event', variable('$event'));
+var TemplateDefinitionBuilder = /** @class */ (function () {
+    function TemplateDefinitionBuilder(outputCtx, constantPool, reflector, contextParameter, bindingScope, level, ngContentSelectors, contextName, templateName, pipes, viewQueries) {
+        if (level === void 0) { level = 0; }
+        var _this = this;
+        this.outputCtx = outputCtx;
+        this.constantPool = constantPool;
+        this.reflector = reflector;
+        this.contextParameter = contextParameter;
+        this.bindingScope = bindingScope;
+        this.level = level;
+        this.ngContentSelectors = ngContentSelectors;
+        this.contextName = contextName;
+        this.templateName = templateName;
+        this.pipes = pipes;
+        this.viewQueries = viewQueries;
+        this._dataIndex = 0;
+        this._bindingContext = 0;
+        this._referenceIndex = 0;
+        this._temporaryAllocated = false;
+        this._prefix = [];
+        this._creationMode = [];
+        this._bindingMode = [];
+        this._hostMode = [];
+        this._refreshMode = [];
+        this._postfix = [];
+        this._projectionDefinitionIndex = 0;
+        this.unsupported = unsupported;
+        this.invalid = invalid$1;
+        // These should be handled in the template or element directly.
+        this.visitReference = invalid$1;
+        this.visitVariable = invalid$1;
+        this.visitEvent = invalid$1;
+        this.visitElementProperty = invalid$1;
+        this.visitAttr = invalid$1;
+        // These should be handled in the template or element directly
+        this.visitDirective = invalid$1;
+        this.visitDirectiveProperty = invalid$1;
+        this._valueConverter = new ValueConverter(outputCtx, function () { return _this.allocateDataSlot(); }, function (name, localName, slot, value) {
+            bindingScope.set(localName, value);
+            var /** @type {?} */ pipe = /** @type {?} */ ((pipes.get(name)));
+            pipe || error("Could not find pipe " + name);
+            var /** @type {?} */ pipeDefinition = constantPool.getDefinition(pipe.type.reference, 3 /* Pipe */, outputCtx, /* forceShared */ /* forceShared */ true);
+            _this._creationMode.push(importExpr(Identifiers$1.pipe)
+                .callFn([
+                literal(slot), pipeDefinition, pipeDefinition.callMethod(Identifiers$1.NEW_METHOD, [])
+            ])
+                .toStmt());
+        });
+    }
+    /**
+     * @param {?} asts
+     * @param {?} variables
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.buildTemplateFunction = /**
+     * @param {?} asts
+     * @param {?} variables
+     * @return {?}
+     */
+    function (asts, variables) {
+        // Create variable bindings
+        for (var _i = 0, variables_1 = variables; _i < variables_1.length; _i++) {
+            var variable$$1 = variables_1[_i];
+            var /** @type {?} */ variableName = variable$$1.name;
+            var /** @type {?} */ expression = variable(this.contextParameter).prop(variable$$1.value || IMPLICIT_REFERENCE);
+            var /** @type {?} */ scopedName = this.bindingScope.freshReferenceName();
+            var /** @type {?} */ declaration = variable(scopedName).set(expression).toDeclStmt(INFERRED_TYPE, [
+                StmtModifier.Final
+            ]);
+            // Add the reference to the local scope.
+            this.bindingScope.set(variableName, variable(scopedName));
+            // Declare the local variable in binding mode
+            this._bindingMode.push(declaration);
+        }
+        // Collect content projections
+        if (this.ngContentSelectors && this.ngContentSelectors.length > 0) {
+            var /** @type {?} */ contentProjections = getContentProjection(asts, this.ngContentSelectors);
+            this._contentProjections = contentProjections;
+            if (contentProjections.size > 0) {
+                var /** @type {?} */ infos_1 = [];
+                Array.from(contentProjections.values()).forEach(function (info) {
+                    if (info.selector) {
+                        infos_1[info.index - 1] = info.selector;
+                    }
+                });
+                var /** @type {?} */ projectionIndex = this._projectionDefinitionIndex = this.allocateDataSlot();
+                var /** @type {?} */ parameters = [literal(projectionIndex)];
+                !infos_1.some(function (value) { return !value; }) || error("content project information skipped an index");
+                if (infos_1.length > 1) {
+                    parameters.push(this.outputCtx.constantPool.getConstLiteral(asLiteral(infos_1), /* forceShared */ /* forceShared */ true));
+                }
+                this.instruction.apply(this, [this._creationMode, null, Identifiers$1.projectionDef].concat(parameters));
+            }
+        }
+        // Define and update any view queries
+        for (var _a = 0, _b = this.viewQueries; _a < _b.length; _a++) {
+            var query = _b[_a];
+            // e.g. r3.Q(0, SomeDirective, true);
+            var /** @type {?} */ querySlot = this.allocateDataSlot();
+            var /** @type {?} */ predicate = getQueryPredicate(query, this.outputCtx);
+            var /** @type {?} */ args = [
+                /* memoryIndex */ literal(querySlot, INFERRED_TYPE),
+                predicate,
+                /* descend */ literal(query.descendants, INFERRED_TYPE)
+            ];
+            if (query.read) {
+                args.push(this.outputCtx.importExpr(/** @type {?} */ ((query.read.identifier)).reference));
+            }
+            this.instruction.apply(this, [this._creationMode, null, Identifiers$1.query].concat(args));
+            // (r3.qR(tmp = r3.ɵld(0)) && (ctx.someDir = tmp));
+            var /** @type {?} */ temporary = this.temp();
+            var /** @type {?} */ getQueryList = importExpr(Identifiers$1.load).callFn([literal(querySlot)]);
+            var /** @type {?} */ refresh = importExpr(Identifiers$1.queryRefresh).callFn([temporary.set(getQueryList)]);
+            var /** @type {?} */ updateDirective = variable(CONTEXT_NAME)
+                .prop(query.propertyName)
+                .set(query.first ? temporary.prop('first') : temporary);
+            this._bindingMode.push(refresh.and(updateDirective).toStmt());
+        }
+        templateVisitAll(this, asts);
+        var /** @type {?} */ creationMode = this._creationMode.length > 0 ?
+            [ifStmt(variable(CREATION_MODE_FLAG), this._creationMode)] :
+            [];
+        return fn([
+            new FnParam(this.contextParameter, null), new FnParam(CREATION_MODE_FLAG, BOOL_TYPE)
+        ], this._prefix.concat(creationMode, this._bindingMode, this._hostMode, this._refreshMode, this._postfix), INFERRED_TYPE, null, this.templateName);
+    };
+    // LocalResolver
+    /**
+     * @param {?} name
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.getLocal = /**
+     * @param {?} name
+     * @return {?}
+     */
+    function (name) { return this.bindingScope.get(name); };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitNgContent = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ info = /** @type {?} */ ((this._contentProjections.get(ast)));
+        info || error("Expected " + ast.sourceSpan + " to be included in content projection collection");
+        var /** @type {?} */ slot = this.allocateDataSlot();
+        var /** @type {?} */ parameters = [literal(slot), literal(this._projectionDefinitionIndex)];
+        if (info.index !== 0) {
+            parameters.push(literal(info.index));
+        }
+        this.instruction.apply(this, [this._creationMode, ast.sourceSpan, Identifiers$1.projection].concat(parameters));
+    };
+    /**
+     * @param {?} directives
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype._computeDirectivesArray = /**
+     * @param {?} directives
+     * @return {?}
+     */
+    function (directives) {
+        var _this = this;
+        var /** @type {?} */ directiveIndexMap = new Map();
+        var /** @type {?} */ directiveExpressions = directives.filter(function (directive) { return !directive.directive.isComponent; }).map(function (directive) {
+            directiveIndexMap.set(directive.directive.type.reference, _this.allocateDataSlot());
+            return _this.typeReference(directive.directive.type.reference);
+        });
+        return {
+            directivesArray: directiveExpressions.length ?
+                this.constantPool.getConstLiteral(literalArr(directiveExpressions), /* forceShared */ /* forceShared */ true) :
+                literal(null),
+            directiveIndexMap: directiveIndexMap
+        };
+    };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitElement = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var _this = this;
+        var /** @type {?} */ bindingCount = 0;
+        var /** @type {?} */ elementIndex = this.allocateDataSlot();
+        var /** @type {?} */ componentIndex = undefined;
+        var /** @type {?} */ referenceDataSlots = new Map();
+        // Element creation mode
+        var /** @type {?} */ component = findComponent(ast.directives);
+        var /** @type {?} */ nullNode = literal(null, INFERRED_TYPE);
+        var /** @type {?} */ parameters = [literal(elementIndex)];
+        // Add component type or element tag
+        if (component) {
+            parameters.push(this.typeReference(component.directive.type.reference));
+            componentIndex = this.allocateDataSlot();
+        }
+        else {
+            parameters.push(literal(ast.name));
+        }
+        // Add attributes array
+        var /** @type {?} */ attributes = [];
+        for (var _i = 0, _a = ast.attrs; _i < _a.length; _i++) {
+            var attr = _a[_i];
+            attributes.push(literal(attr.name), literal(attr.value));
+        }
+        parameters.push(attributes.length > 0 ?
+            this.constantPool.getConstLiteral(literalArr(attributes), /* forceShared */ /* forceShared */ true) :
+            nullNode);
+        // Add directives array
+        var _b = this._computeDirectivesArray(ast.directives), directivesArray = _b.directivesArray, directiveIndexMap = _b.directiveIndexMap;
+        parameters.push(directiveIndexMap.size > 0 ? directivesArray : nullNode);
+        if (component && componentIndex != null) {
+            // Record the data slot for the component
+            directiveIndexMap.set(component.directive.type.reference, componentIndex);
+        }
+        // Add references array
+        if (ast.references && ast.references.length > 0) {
+            var /** @type {?} */ references = flatten(ast.references.map(function (reference) {
+                var /** @type {?} */ slot = _this.allocateDataSlot();
+                referenceDataSlots.set(reference.name, slot);
+                // Generate the update temporary.
+                var /** @type {?} */ variableName = _this.bindingScope.freshReferenceName();
+                _this._bindingMode.push(variable(variableName, INFERRED_TYPE)
+                    .set(importExpr(Identifiers$1.load).callFn([literal(slot)]))
+                    .toDeclStmt(INFERRED_TYPE, [StmtModifier.Final]));
+                _this.bindingScope.set(reference.name, variable(variableName));
+                return [reference.name, reference.originalValue];
+            })).map(function (value) { return literal(value); });
+            parameters.push(this.constantPool.getConstLiteral(literalArr(references), /* forceShared */ /* forceShared */ true));
+        }
+        else {
+            parameters.push(nullNode);
+        }
+        // Remove trailing null nodes as they are implied.
+        while (parameters[parameters.length - 1] === nullNode) {
+            parameters.pop();
+        }
+        // Generate the instruction create element instruction
+        this.instruction.apply(this, [this._creationMode, ast.sourceSpan, Identifiers$1.createElement].concat(parameters));
+        var /** @type {?} */ implicit = variable(this.contextParameter);
+        // Generate element input bindings
+        for (var _c = 0, _d = ast.inputs; _c < _d.length; _c++) {
+            var input = _d[_c];
+            if (input.isAnimation) {
+                this.unsupported('animations');
+            }
+            var /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
+            var /** @type {?} */ parameters_1 = [literal(elementIndex), literal(input.name), convertedBinding];
+            var /** @type {?} */ instruction = BINDING_INSTRUCTION_MAP[input.type];
+            if (instruction) {
+                // TODO(chuckj): runtime: security context?
+                this.instruction(this._bindingMode, input.sourceSpan, instruction, literal(elementIndex), literal(input.name), convertedBinding);
+            }
+            else {
+                this.unsupported("binding " + PropertyBindingType[input.type]);
+            }
+        }
+        // Generate directives input bindings
+        this._visitDirectives(ast.directives, implicit, elementIndex, directiveIndexMap);
+        // Traverse element child nodes
+        templateVisitAll(this, ast.children);
+        // Finish element construction mode.
+        this.instruction(this._creationMode, ast.endSourceSpan || ast.sourceSpan, Identifiers$1.elementEnd);
+    };
+    /**
+     * @param {?} directives
+     * @param {?} implicit
+     * @param {?} nodeIndex
+     * @param {?} directiveIndexMap
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype._visitDirectives = /**
+     * @param {?} directives
+     * @param {?} implicit
+     * @param {?} nodeIndex
+     * @param {?} directiveIndexMap
+     * @return {?}
+     */
+    function (directives, implicit, nodeIndex, directiveIndexMap) {
+        for (var _i = 0, directives_1 = directives; _i < directives_1.length; _i++) {
+            var directive = directives_1[_i];
+            var /** @type {?} */ directiveIndex = directiveIndexMap.get(directive.directive.type.reference);
+            // Creation mode
+            // e.g. D(0, TodoComponentDef.n(), TodoComponentDef);
+            var /** @type {?} */ directiveType = directive.directive.type.reference;
+            var /** @type {?} */ kind = directive.directive.isComponent ? 2 /* Component */ : 1;
+            // Note: *do not cache* calls to this.directiveOf() as the constant pool needs to know if the
+            // node is referenced multiple times to know that it must generate the reference into a
+            // temporary.
+            // Bindings
+            for (var _a = 0, _b = directive.inputs; _a < _b.length; _a++) {
+                var input = _b[_a];
+                var /** @type {?} */ convertedBinding = this.convertPropertyBinding(implicit, input.value);
+                this.instruction(this._bindingMode, directive.sourceSpan, Identifiers$1.elementProperty, literal(nodeIndex), literal(input.templateName), importExpr(Identifiers$1.bind).callFn([convertedBinding]));
+            }
+            // e.g. MyDirective.ngDirectiveDef.h(0, 0);
+            this._hostMode.push(this.definitionOf(directiveType, kind)
+                .callMethod(Identifiers$1.HOST_BINDING_METHOD, [literal(directiveIndex), literal(nodeIndex)])
+                .toStmt());
+            // e.g. r(0, 0);
+            this.instruction(this._refreshMode, directive.sourceSpan, Identifiers$1.refreshComponent, literal(directiveIndex), literal(nodeIndex));
+        }
+    };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitEmbeddedTemplate = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ templateIndex = this.allocateDataSlot();
+        var /** @type {?} */ templateRef = this.reflector.resolveExternalReference(Identifiers.TemplateRef);
+        var /** @type {?} */ templateDirective = ast.directives.find(function (directive) {
+            return directive.directive.type.diDeps.some(function (dependency) {
+                return dependency.token != null && (tokenReference(dependency.token) == templateRef);
+            });
+        });
+        var /** @type {?} */ contextName = this.contextName && templateDirective && templateDirective.directive.type.reference.name ?
+            this.contextName + "_" + templateDirective.directive.type.reference.name :
+            null;
+        var /** @type {?} */ templateName = contextName ? contextName + "_Template_" + templateIndex : "Template_" + templateIndex;
+        var /** @type {?} */ templateContext = "ctx" + this.level;
+        var _a = this._computeDirectivesArray(ast.directives), directivesArray = _a.directivesArray, directiveIndexMap = _a.directiveIndexMap;
+        // e.g. C(1, C1Template)
+        this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.containerCreate, literal(templateIndex), directivesArray, variable(templateName));
+        // e.g. Cr(1)
+        this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.containerRefreshStart, literal(templateIndex));
+        // Generate directives
+        this._visitDirectives(ast.directives, variable(this.contextParameter), templateIndex, directiveIndexMap);
+        // e.g. cr();
+        this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.containerRefreshEnd);
+        // Create the template function
+        var /** @type {?} */ templateVisitor = new TemplateDefinitionBuilder(this.outputCtx, this.constantPool, this.reflector, templateContext, this.bindingScope.nestedScope(), this.level + 1, this.ngContentSelectors, contextName, templateName, this.pipes, []);
+        var /** @type {?} */ templateFunctionExpr = templateVisitor.buildTemplateFunction(ast.children, ast.variables);
+        this._postfix.push(templateFunctionExpr.toDeclStmt(templateName, null));
+    };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitBoundText = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ nodeIndex = this.allocateDataSlot();
+        // Creation mode
+        this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(nodeIndex));
+        // Refresh mode
+        this.instruction(this._refreshMode, ast.sourceSpan, Identifiers$1.textCreateBound, literal(nodeIndex), this.bind(variable(CONTEXT_NAME), ast.value, ast.sourceSpan));
+    };
+    // TemplateAstVisitor
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.visitText = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        // Text is defined in creation mode only.
+        this.instruction(this._creationMode, ast.sourceSpan, Identifiers$1.text, literal(this.allocateDataSlot()), literal(ast.value));
+    };
+    /**
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.allocateDataSlot = /**
+     * @return {?}
+     */
+    function () { return this._dataIndex++; };
+    /**
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.bindingContext = /**
+     * @return {?}
+     */
+    function () { return "" + this._bindingContext++; };
+    /**
+     * @param {?} statements
+     * @param {?} span
+     * @param {?} reference
+     * @param {...?} params
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.instruction = /**
+     * @param {?} statements
+     * @param {?} span
+     * @param {?} reference
+     * @param {...?} params
+     * @return {?}
+     */
+    function (statements, span, reference) {
+        var params = [];
+        for (var _i = 3; _i < arguments.length; _i++) {
+            params[_i - 3] = arguments[_i];
+        }
+        statements.push(importExpr(reference, null, span).callFn(params, span).toStmt());
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.typeReference = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) { return this.outputCtx.importExpr(type); };
+    /**
+     * @param {?} type
+     * @param {?} kind
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.definitionOf = /**
+     * @param {?} type
+     * @param {?} kind
+     * @return {?}
+     */
+    function (type, kind) {
+        return this.constantPool.getDefinition(type, kind, this.outputCtx);
+    };
+    /**
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.temp = /**
+     * @return {?}
+     */
+    function () {
+        if (!this._temporaryAllocated) {
+            this._prefix.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
+            this._temporaryAllocated = true;
+        }
+        return variable(TEMPORARY_NAME);
+    };
+    /**
+     * @param {?} implicit
+     * @param {?} value
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.convertPropertyBinding = /**
+     * @param {?} implicit
+     * @param {?} value
+     * @return {?}
+     */
+    function (implicit, value) {
+        var /** @type {?} */ pipesConvertedValue = value.visit(this._valueConverter);
+        var /** @type {?} */ convertedPropertyBinding = convertPropertyBinding(this, implicit, pipesConvertedValue, this.bindingContext(), BindingForm.TrySimple, interpolate);
+        (_a = this._refreshMode).push.apply(_a, convertedPropertyBinding.stmts);
+        return convertedPropertyBinding.currValExpr;
+        var _a;
+    };
+    /**
+     * @param {?} implicit
+     * @param {?} value
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    TemplateDefinitionBuilder.prototype.bind = /**
+     * @param {?} implicit
+     * @param {?} value
+     * @param {?} sourceSpan
+     * @return {?}
+     */
+    function (implicit, value, sourceSpan) {
+        return this.convertPropertyBinding(implicit, value);
+    };
+    return TemplateDefinitionBuilder;
+}());
+/**
+ * @param {?} query
+ * @param {?} outputCtx
+ * @return {?}
+ */
+function getQueryPredicate(query, outputCtx) {
+    var /** @type {?} */ predicate;
+    if (query.selectors.length > 1 || (query.selectors.length == 1 && query.selectors[0].value)) {
+        var /** @type {?} */ selectors = query.selectors.map(function (value) { return (value.value); });
+        selectors.some(function (value) { return !value; }) && error('Found a type among the string selectors expected');
+        predicate = outputCtx.constantPool.getConstLiteral(literalArr(selectors.map(function (value) { return literal(value); })));
+    }
+    else if (query.selectors.length == 1) {
+        var /** @type {?} */ first = query.selectors[0];
+        if (first.identifier) {
+            predicate = outputCtx.importExpr(first.identifier.reference);
+        }
+        else {
+            error('Unexpected query form');
+            predicate = literal(null);
+        }
+    }
+    else {
+        error('Unexpected query form');
+        predicate = literal(null);
+    }
+    return predicate;
+}
+/**
+ * @param {?} type
+ * @param {?} outputCtx
+ * @param {?} reflector
+ * @param {?} queries
+ * @return {?}
+ */
+function createFactory(type, outputCtx, reflector, queries) {
+    var /** @type {?} */ args = [];
+    var /** @type {?} */ elementRef = reflector.resolveExternalReference(Identifiers.ElementRef);
+    var /** @type {?} */ templateRef = reflector.resolveExternalReference(Identifiers.TemplateRef);
+    var /** @type {?} */ viewContainerRef = reflector.resolveExternalReference(Identifiers.ViewContainerRef);
+    for (var _i = 0, _a = type.diDeps; _i < _a.length; _i++) {
+        var dependency = _a[_i];
+        if (dependency.isValue) {
+            unsupported('value dependencies');
+        }
+        if (dependency.isHost) {
+            unsupported('host dependencies');
+        }
+        var /** @type {?} */ token = dependency.token;
+        if (token) {
+            var /** @type {?} */ tokenRef = tokenReference(token);
+            if (tokenRef === elementRef) {
+                args.push(importExpr(Identifiers$1.injectElementRef).callFn([]));
+            }
+            else if (tokenRef === templateRef) {
+                args.push(importExpr(Identifiers$1.injectTemplateRef).callFn([]));
+            }
+            else if (tokenRef === viewContainerRef) {
+                args.push(importExpr(Identifiers$1.injectViewContainerRef).callFn([]));
+            }
+            else {
+                var /** @type {?} */ value = token.identifier != null ? outputCtx.importExpr(tokenRef) : literal(tokenRef);
+                args.push(importExpr(Identifiers$1.inject).callFn([value]));
+            }
+        }
+        else {
+            unsupported('dependency without a token');
+        }
+    }
+    var /** @type {?} */ queryDefinitions = [];
+    for (var _b = 0, queries_1 = queries; _b < queries_1.length; _b++) {
+        var query = queries_1[_b];
+        var /** @type {?} */ predicate = getQueryPredicate(query, outputCtx);
+        // e.g. r3.Q(null, SomeDirective, false) or r3.Q(null, ['div'], false)
+        var /** @type {?} */ parameters = [
+            /* memoryIndex */ literal(null, INFERRED_TYPE),
+            predicate,
+            /* descend */ literal(query.descendants)
+        ];
+        if (query.read) {
+            parameters.push(outputCtx.importExpr(/** @type {?} */ ((query.read.identifier)).reference));
+        }
+        queryDefinitions.push(importExpr(Identifiers$1.query).callFn(parameters));
+    }
+    var /** @type {?} */ createInstance = new InstantiateExpr(outputCtx.importExpr(type.reference), args);
+    var /** @type {?} */ result = queryDefinitions.length > 0 ? literalArr([createInstance].concat(queryDefinitions)) :
+        createInstance;
+    return fn([], [new ReturnStatement(result)], INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_Factory" : null);
+}
+/**
+ * @param {?} type
+ * @param {?} outputCtx
+ * @param {?} queries
+ * @return {?}
+ */
+function createHostBindingsFunction(type, outputCtx, queries) {
+    var /** @type {?} */ statements = [];
+    var /** @type {?} */ temporary = function () {
+        var /** @type {?} */ declared = false;
+        return function () {
+            if (!declared) {
+                statements.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
+                declared = true;
+            }
+            return variable(TEMPORARY_NAME);
+        };
+    }();
+    for (var /** @type {?} */ index = 0; index < queries.length; index++) {
+        var /** @type {?} */ query = queries[index];
+        // e.g. r3.qR(tmp = r3.ld(dirIndex)[1]) && (r3.ld(dirIndex)[0].someDir = tmp);
+        var /** @type {?} */ getDirectiveMemory = importExpr(Identifiers$1.load).callFn([variable('dirIndex')]);
+        // The query list is at the query index + 1 because the directive itself is in slot 0.
+        var /** @type {?} */ getQueryList = getDirectiveMemory.key(literal(index + 1));
+        var /** @type {?} */ assignToTemporary = temporary().set(getQueryList);
+        var /** @type {?} */ callQueryRefresh = importExpr(Identifiers$1.queryRefresh).callFn([assignToTemporary]);
+        var /** @type {?} */ updateDirective = getDirectiveMemory.key(literal(0, INFERRED_TYPE))
+            .prop(query.propertyName)
+            .set(query.first ? temporary().key(literal(0)) : temporary());
+        var /** @type {?} */ andExpression = callQueryRefresh.and(updateDirective);
+        statements.push(andExpression.toStmt());
+    }
+    if (statements.length > 0) {
+        return fn([new FnParam('dirIndex', NUMBER_TYPE), new FnParam('elIndex', NUMBER_TYPE)], statements, INFERRED_TYPE, null, type.reference.name ? type.reference.name + "_HostBindings" : null);
+    }
+    return null;
+}
+var ValueConverter = /** @class */ (function (_super) {
+    __extends(ValueConverter, _super);
+    function ValueConverter(outputCtx, allocateSlot, definePipe) {
+        var _this = _super.call(this) || this;
+        _this.outputCtx = outputCtx;
+        _this.allocateSlot = allocateSlot;
+        _this.definePipe = definePipe;
+        _this.pipeSlots = new Map();
+        return _this;
+    }
+    // AstMemoryEfficientTransformer
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    ValueConverter.prototype.visitPipe = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        // Allocate a slot to create the pipe
+        var /** @type {?} */ slot = this.pipeSlots.get(ast.name);
+        if (slot == null) {
+            slot = this.allocateSlot();
+            this.pipeSlots.set(ast.name, slot);
+        }
+        var /** @type {?} */ slotPseudoLocal = "PIPE:" + slot;
+        var /** @type {?} */ target = new PropertyRead(ast.span, new ImplicitReceiver(ast.span), slotPseudoLocal);
+        var /** @type {?} */ bindingId = pipeBinding(ast.args);
+        this.definePipe(ast.name, slotPseudoLocal, slot, importExpr(bindingId));
+        var /** @type {?} */ value = ast.exp.visit(this);
+        var /** @type {?} */ args = this.visitAll(ast.args);
+        return new FunctionCall(ast.span, target, [new LiteralPrimitive(ast.span, slot), value].concat(args));
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    ValueConverter.prototype.visitLiteralArray = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        return new BuiltinFunctionCall(ast.span, this.visitAll(ast.expressions), function (values) {
+            // If the literal has calculated (non-literal) elements  transform it into
+            // calls to literal factories that compose the literal and will cache intermediate
+            // values. Otherwise, just return an literal array that contains the values.
+            var /** @type {?} */ literal$$1 = literalArr(values);
+            return values.every(function (a) { return a.isConstant(); }) ?
+                _this.outputCtx.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(_this.outputCtx, literal$$1);
+        });
+    };
+    /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    ValueConverter.prototype.visitLiteralMap = /**
+     * @param {?} ast
+     * @param {?} context
+     * @return {?}
+     */
+    function (ast, context) {
+        var _this = this;
+        return new BuiltinFunctionCall(ast.span, this.visitAll(ast.values), function (values) {
+            // If the literal has calculated (non-literal) elements  transform it into
+            // calls to literal factories that compose the literal and will cache intermediate
+            // values. Otherwise, just return an literal array that contains the values.
+            var /** @type {?} */ literal$$1 = literalMap(values.map(function (value, index) { return ({ key: ast.keys[index].key, value: value, quoted: ast.keys[index].quoted }); }));
+            return values.every(function (a) { return a.isConstant(); }) ?
+                _this.outputCtx.constantPool.getConstLiteral(literal$$1, true) :
+                getLiteralFactory(_this.outputCtx, literal$$1);
+        });
+    };
+    return ValueConverter;
+}(AstMemoryEfficientTransformer));
+/**
+ * @template T
+ * @param {?} arg
+ * @return {?}
+ */
+function invalid$1(arg) {
+    throw new Error("Invalid state: Visitor " + this.constructor.name + " doesn't handle " + undefined);
+}
+/**
+ * @param {?} directives
+ * @return {?}
+ */
+function findComponent(directives) {
+    return directives.filter(function (directive) { return directive.directive.isComponent; })[0];
+}
+var ContentProjectionVisitor = /** @class */ (function (_super) {
+    __extends(ContentProjectionVisitor, _super);
+    function ContentProjectionVisitor(projectionMap, ngContentSelectors) {
+        var _this = _super.call(this) || this;
+        _this.projectionMap = projectionMap;
+        _this.ngContentSelectors = ngContentSelectors;
+        _this.index = 1;
+        return _this;
+    }
+    /**
+     * @param {?} ast
+     * @return {?}
+     */
+    ContentProjectionVisitor.prototype.visitNgContent = /**
+     * @param {?} ast
+     * @return {?}
+     */
+    function (ast) {
+        var /** @type {?} */ selectorText = this.ngContentSelectors[ast.index];
+        selectorText != null || error("could not find selector for index " + ast.index + " in " + ast);
+        if (!selectorText || selectorText === '*') {
+            this.projectionMap.set(ast, { index: 0 });
+        }
+        else {
+            var /** @type {?} */ cssSelectors = CssSelector.parse(selectorText);
+            this.projectionMap.set(ast, { index: this.index++, selector: parseSelectorsToR3Selector(cssSelectors) });
+        }
+    };
+    return ContentProjectionVisitor;
+}(RecursiveTemplateAstVisitor));
+/**
+ * @param {?} asts
+ * @param {?} ngContentSelectors
+ * @return {?}
+ */
+function getContentProjection(asts, ngContentSelectors) {
+    var /** @type {?} */ projectIndexMap = new Map();
+    var /** @type {?} */ visitor = new ContentProjectionVisitor(projectIndexMap, ngContentSelectors);
+    templateVisitAll(visitor, asts);
+    return projectIndexMap;
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToSimpleSelector(selector) {
+    var /** @type {?} */ classes = selector.classNames && selector.classNames.length ? ['class'].concat(selector.classNames) : [];
+    return [selector.element].concat(selector.attrs, classes);
+}
+/**
+ * @param {?} selector
+ * @return {?}
+ */
+function parserSelectorToR3Selector(selector) {
+    var /** @type {?} */ positive = parserSelectorToSimpleSelector(selector);
+    var /** @type {?} */ negative = selector.notSelectors && selector.notSelectors.length &&
+        parserSelectorToSimpleSelector(selector.notSelectors[0]);
+    return negative ? [positive, negative] : [positive, null];
+}
+/**
+ * @param {?} selectors
+ * @return {?}
+ */
+function parseSelectorsToR3Selector(selectors) {
+    return selectors.map(parserSelectorToR3Selector);
+}
+/**
+ * @param {?} value
+ * @return {?}
+ */
+function asLiteral(value) {
+    if (Array.isArray(value)) {
+        return literalArr(value.map(asLiteral));
+    }
+    return literal(value, INFERRED_TYPE);
+}
+/**
+ * @param {?} map
+ * @return {?}
+ */
+function mapToExpression(map) {
+    return literalMap(Object.getOwnPropertyNames(map).map(function (key) { return ({ key: key, quoted: false, value: literal(map[key]) }); }));
+}
+var _a;
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @param {?} outputCtx
+ * @param {?} pipe
+ * @param {?} reflector
+ * @return {?}
+ */
+function compilePipe(outputCtx, pipe, reflector) {
+    var /** @type {?} */ definitionMapValues = [];
+    // e.g. 'type: MyPipe`
+    definitionMapValues.push({ key: 'type', value: outputCtx.importExpr(pipe.type.reference), quoted: false });
+    // e.g. factory: function MyPipe_Factory() { return new MyPipe(); },
+    var /** @type {?} */ templateFactory = createFactory(pipe.type, outputCtx, reflector, []);
+    definitionMapValues.push({ key: 'factory', value: templateFactory, quoted: false });
+    // e.g. pure: true
+    if (pipe.pure) {
+        definitionMapValues.push({ key: 'pure', value: literal(true), quoted: false });
+    }
+    var /** @type {?} */ className = /** @type {?} */ ((identifierName(pipe.type)));
+    className || error("Cannot resolve the name of " + pipe.type);
+    outputCtx.statements.push(new ClassStmt(className, null, /* fields */ [new ClassField(/* name */ outputCtx.constantPool.propertyNameOf(3 /* Pipe */), /* type */ INFERRED_TYPE, /* modifiers */ [StmtModifier.Static], /* initializer */ importExpr(Identifiers$1.definePipe).callFn([literalMap(definitionMapValues)]))], /* getters */ [], /* constructorMethod */ new ClassMethod(null, [], []), /* methods */ []));
+}
+
+/**
+ * @fileoverview added by tsickle
+ * @suppress {checkTypes} checked by tsc
+ */
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var GeneratedFile = /** @class */ (function () {
     function GeneratedFile(srcFileUrl, genFileUrl, sourceOrStmts) {
         this.srcFileUrl = srcFileUrl;
@@ -29015,6 +31358,7 @@ function parseLazyRoute(route, reflector, module) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var TS = /^(?!.*\.d\.ts$).*\.ts$/;
 var ResolvedStaticSymbol = /** @class */ (function () {
     function ResolvedStaticSymbol(symbol, metadata) {
         this.symbol = symbol;
@@ -29523,7 +31867,8 @@ var StaticSymbolResolver = /** @class */ (function () {
         // (e.g. their constructor parameters).
         // We do this to prevent introducing deep imports
         // as we didn't generate .ngfactory.ts files with proper reexports.
-        if (this.summaryResolver.isLibraryFile(sourceSymbol.filePath) && metadata &&
+        var /** @type {?} */ isTsFile = TS.test(sourceSymbol.filePath);
+        if (this.summaryResolver.isLibraryFile(sourceSymbol.filePath) && !isTsFile && metadata &&
             metadata['__symbolic'] === 'class') {
             var /** @type {?} */ transformedMeta_1 = { __symbolic: 'class', arity: metadata.arity };
             return new ResolvedStaticSymbol(sourceSymbol, transformedMeta_1);
@@ -29655,12 +32000,12 @@ var StaticSymbolResolver = /** @class */ (function () {
      * @param {?=} path
      * @return {?}
      */
-    function (error, context, path) {
+    function (error$$1, context, path) {
         if (this.errorRecorder) {
-            this.errorRecorder(error, (context && context.filePath) || path);
+            this.errorRecorder(error$$1, (context && context.filePath) || path);
         }
         else {
-            throw error;
+            throw error$$1;
         }
     };
     /**
@@ -30388,7 +32733,7 @@ StubEmitFlags[StubEmitFlags.Basic] = "Basic";
 StubEmitFlags[StubEmitFlags.TypeCheck] = "TypeCheck";
 StubEmitFlags[StubEmitFlags.All] = "All";
 var AotCompiler = /** @class */ (function () {
-    function AotCompiler(_config, _options, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
+    function AotCompiler(_config, _options, _host, _reflector, _metadataResolver, _templateParser, _styleCompiler, _viewCompiler, _typeCheckCompiler, _ngModuleCompiler, _injectableCompiler, _outputEmitter, _summaryResolver, _symbolResolver) {
         this._config = _config;
         this._options = _options;
         this._host = _host;
@@ -30399,11 +32744,13 @@ var AotCompiler = /** @class */ (function () {
         this._viewCompiler = _viewCompiler;
         this._typeCheckCompiler = _typeCheckCompiler;
         this._ngModuleCompiler = _ngModuleCompiler;
+        this._injectableCompiler = _injectableCompiler;
         this._outputEmitter = _outputEmitter;
         this._summaryResolver = _summaryResolver;
         this._symbolResolver = _symbolResolver;
         this._templateAstCache = new Map();
         this._analyzedFiles = new Map();
+        this._analyzedFilesForInjectables = new Map();
     }
     /**
      * @return {?}
@@ -30459,6 +32806,22 @@ var AotCompiler = /** @class */ (function () {
             analyzedFile =
                 analyzeFile(this._host, this._symbolResolver, this._metadataResolver, fileName);
             this._analyzedFiles.set(fileName, analyzedFile);
+        }
+        return analyzedFile;
+    };
+    /**
+     * @param {?} fileName
+     * @return {?}
+     */
+    AotCompiler.prototype._analyzeFileForInjectables = /**
+     * @param {?} fileName
+     * @return {?}
+     */
+    function (fileName) {
+        var /** @type {?} */ analyzedFile = this._analyzedFilesForInjectables.get(fileName);
+        if (!analyzedFile) {
+            analyzedFile = analyzeFileForInjectables(this._host, this._symbolResolver, this._metadataResolver, fileName);
+            this._analyzedFilesForInjectables.set(fileName, analyzedFile);
         }
         return analyzedFile;
     };
@@ -30572,13 +32935,15 @@ var AotCompiler = /** @class */ (function () {
     };
     /**
      * @param {?} fileNames
+     * @param {?} tsFiles
      * @return {?}
      */
     AotCompiler.prototype.loadFilesAsync = /**
      * @param {?} fileNames
+     * @param {?} tsFiles
      * @return {?}
      */
-    function (fileNames) {
+    function (fileNames, tsFiles) {
         var _this = this;
         var /** @type {?} */ files = fileNames.map(function (fileName) { return _this._analyzeFile(fileName); });
         var /** @type {?} */ loadingPromises = [];
@@ -30587,17 +32952,25 @@ var AotCompiler = /** @class */ (function () {
                 return loadingPromises.push(_this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, false));
             });
         });
-        return Promise.all(loadingPromises).then(function (_) { return mergeAndValidateNgFiles(files); });
+        var /** @type {?} */ analyzedInjectables = tsFiles.map(function (tsFile) { return _this._analyzeFileForInjectables(tsFile); });
+        return Promise.all(loadingPromises).then(function (_) {
+            return ({
+                analyzedModules: mergeAndValidateNgFiles(files),
+                analyzedInjectables: analyzedInjectables,
+            });
+        });
     };
     /**
      * @param {?} fileNames
+     * @param {?} tsFiles
      * @return {?}
      */
     AotCompiler.prototype.loadFilesSync = /**
      * @param {?} fileNames
+     * @param {?} tsFiles
      * @return {?}
      */
-    function (fileNames) {
+    function (fileNames, tsFiles) {
         var _this = this;
         var /** @type {?} */ files = fileNames.map(function (fileName) { return _this._analyzeFile(fileName); });
         files.forEach(function (file) {
@@ -30605,7 +32978,11 @@ var AotCompiler = /** @class */ (function () {
                 return _this._metadataResolver.loadNgModuleDirectiveAndPipeMetadata(ngModule.type.reference, true);
             });
         });
-        return mergeAndValidateNgFiles(files);
+        var /** @type {?} */ analyzedInjectables = tsFiles.map(function (tsFile) { return _this._analyzeFileForInjectables(tsFile); });
+        return {
+            analyzedModules: mergeAndValidateNgFiles(files),
+            analyzedInjectables: analyzedInjectables,
+        };
     };
     /**
      * @param {?} outputCtx
@@ -30739,6 +33116,106 @@ var AotCompiler = /** @class */ (function () {
         return messageBundle;
     };
     /**
+     * @param {?} __0
+     * @return {?}
+     */
+    AotCompiler.prototype.emitAllPartialModules = /**
+     * @param {?} __0
+     * @return {?}
+     */
+    function (_a) {
+        var _this = this;
+        var ngModuleByPipeOrDirective = _a.ngModuleByPipeOrDirective, files = _a.files;
+        // Using reduce like this is a select many pattern (where map is a select pattern)
+        return files.reduce(function (r, file) {
+            r.push.apply(r, _this._emitPartialModule(file.fileName, ngModuleByPipeOrDirective, file.directives, file.pipes, file.ngModules, file.injectables));
+            return r;
+        }, []);
+    };
+    /**
+     * @param {?} fileName
+     * @param {?} ngModuleByPipeOrDirective
+     * @param {?} directives
+     * @param {?} pipes
+     * @param {?} ngModules
+     * @param {?} injectables
+     * @return {?}
+     */
+    AotCompiler.prototype._emitPartialModule = /**
+     * @param {?} fileName
+     * @param {?} ngModuleByPipeOrDirective
+     * @param {?} directives
+     * @param {?} pipes
+     * @param {?} ngModules
+     * @param {?} injectables
+     * @return {?}
+     */
+    function (fileName, ngModuleByPipeOrDirective, directives, pipes, ngModules, injectables) {
+        var _this = this;
+        var /** @type {?} */ classes = [];
+        var /** @type {?} */ context = this._createOutputContext(fileName);
+        // Process all components and directives
+        directives.forEach(function (directiveType) {
+            var /** @type {?} */ directiveMetadata = _this._metadataResolver.getDirectiveMetadata(directiveType);
+            if (directiveMetadata.isComponent) {
+                var /** @type {?} */ module = /** @type {?} */ ((ngModuleByPipeOrDirective.get(directiveType)));
+                module ||
+                    error("Cannot determine the module for component '" + identifierName(directiveMetadata.type) + "'");
+                var _a = _this._parseTemplate(directiveMetadata, module, module.transitiveModule.directives), parsedTemplate = _a.template, parsedPipes = _a.pipes;
+                compileComponent(context, directiveMetadata, parsedPipes, parsedTemplate, _this._reflector);
+            }
+            else {
+                compileDirective(context, directiveMetadata, _this._reflector);
+            }
+        });
+        pipes.forEach(function (pipeType) {
+            var /** @type {?} */ pipeMetadata = _this._metadataResolver.getPipeMetadata(pipeType);
+            if (pipeMetadata) {
+                compilePipe(context, pipeMetadata, _this._reflector);
+            }
+        });
+        injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
+        if (context.statements && context.statements.length > 0) {
+            return [{ fileName: fileName, statements: context.constantPool.statements.concat(context.statements) }];
+        }
+        return [];
+    };
+    /**
+     * @param {?} files
+     * @return {?}
+     */
+    AotCompiler.prototype.emitAllPartialModules2 = /**
+     * @param {?} files
+     * @return {?}
+     */
+    function (files) {
+        var _this = this;
+        // Using reduce like this is a select many pattern (where map is a select pattern)
+        return files.reduce(function (r, file) {
+            r.push.apply(r, _this._emitPartialModule2(file.fileName, file.injectables));
+            return r;
+        }, []);
+    };
+    /**
+     * @param {?} fileName
+     * @param {?} injectables
+     * @return {?}
+     */
+    AotCompiler.prototype._emitPartialModule2 = /**
+     * @param {?} fileName
+     * @param {?} injectables
+     * @return {?}
+     */
+    function (fileName, injectables) {
+        var _this = this;
+        var /** @type {?} */ context = this._createOutputContext(fileName);
+        injectables.forEach(function (injectable) { return _this._injectableCompiler.compile(injectable, context); });
+        if (context.statements && context.statements.length > 0) {
+            return [{ fileName: fileName, statements: context.constantPool.statements.concat(context.statements) }];
+        }
+        return [];
+    };
+    /**
      * @param {?} analyzeResult
      * @return {?}
      */
@@ -30852,8 +33329,8 @@ var AotCompiler = /** @class */ (function () {
             });
         }), injectables.map(function (ref) {
             return ({
-                summary: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))),
-                metadata: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref))).type
+                summary: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref.symbol))),
+                metadata: /** @type {?} */ ((_this._metadataResolver.getInjectableSummary(ref.symbol))).type
             });
         }));
         var /** @type {?} */ forJitOutputCtx = this._options.enableSummariesForJit ?
@@ -31025,7 +33502,7 @@ var AotCompiler = /** @class */ (function () {
             var /** @type {?} */ allTypeParams = suppliedTypeParams.concat(new Array(missingTypeParamsCount).fill(DYNAMIC_TYPE));
             return members.reduce(function (expr, memberName) { return expr.prop(memberName); }, /** @type {?} */ (importExpr(new ExternalReference(moduleName, name, null), allTypeParams)));
         };
-        return { statements: [], genFilePath: genFilePath, importExpr: importExpr$$1 };
+        return { statements: [], genFilePath: genFilePath, importExpr: importExpr$$1, constantPool: new ConstantPool() };
     };
     /**
      * @param {?} importedFilePath
@@ -31178,6 +33655,10 @@ function _stylesModuleUrl(stylesheetUrl, shim, suffix) {
  */
 
 /**
+ * @record
+ */
+
+/**
  * @param {?} fileNames
  * @param {?} host
  * @param {?} staticSymbolResolver
@@ -31280,7 +33761,10 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
                 }
                 else if (metadataResolver.isInjectable(symbol)) {
                     isNgSymbol = true;
-                    injectables.push(symbol);
+                    var /** @type {?} */ injectable = metadataResolver.getInjectableMetadata(symbol, null, false);
+                    if (injectable) {
+                        injectables.push(injectable);
+                    }
                 }
             }
             if (!isNgSymbol) {
@@ -31292,6 +33776,36 @@ function analyzeFile(host, staticSymbolResolver, metadataResolver, fileName) {
     return {
         fileName: fileName, directives: directives, pipes: pipes, ngModules: ngModules, injectables: injectables, exportsNonSourceFiles: exportsNonSourceFiles,
     };
+}
+/**
+ * @param {?} host
+ * @param {?} staticSymbolResolver
+ * @param {?} metadataResolver
+ * @param {?} fileName
+ * @return {?}
+ */
+function analyzeFileForInjectables(host, staticSymbolResolver, metadataResolver, fileName) {
+    var /** @type {?} */ injectables = [];
+    if (staticSymbolResolver.hasDecorators(fileName)) {
+        staticSymbolResolver.getSymbolsOf(fileName).forEach(function (symbol) {
+            var /** @type {?} */ resolvedSymbol = staticSymbolResolver.resolveSymbol(symbol);
+            var /** @type {?} */ symbolMeta = resolvedSymbol.metadata;
+            if (!symbolMeta || symbolMeta.__symbolic === 'error') {
+                return;
+            }
+            var /** @type {?} */ isNgSymbol = false;
+            if (symbolMeta.__symbolic === 'class') {
+                if (metadataResolver.isInjectable(symbol)) {
+                    isNgSymbol = true;
+                    var /** @type {?} */ injectable = metadataResolver.getInjectableMetadata(symbol, null, false);
+                    if (injectable) {
+                        injectables.push(injectable);
+                    }
+                }
+            }
+        });
+    }
+    return { fileName: fileName, injectables: injectables };
 }
 /**
  * @param {?} host
@@ -31455,18 +33969,18 @@ function formatChain(chain, indent) {
  */
 function formattedError(chain) {
     var /** @type {?} */ message = formatChain(chain) + '.';
-    var /** @type {?} */ error = /** @type {?} */ (syntaxError(message));
-    (/** @type {?} */ (error))[FORMATTED_MESSAGE] = true;
-    error.chain = chain;
-    error.position = chain.position;
-    return error;
+    var /** @type {?} */ error$$1 = /** @type {?} */ (syntaxError(message));
+    (/** @type {?} */ (error$$1))[FORMATTED_MESSAGE] = true;
+    error$$1.chain = chain;
+    error$$1.position = chain.position;
+    return error$$1;
 }
 /**
  * @param {?} error
  * @return {?}
  */
-function isFormattedError(error) {
-    return !!(/** @type {?} */ (error))[FORMATTED_MESSAGE];
+function isFormattedError(error$$1) {
+    return !!(/** @type {?} */ (error$$1))[FORMATTED_MESSAGE];
 }
 
 /**
@@ -31618,6 +34132,24 @@ var StaticReflector = /** @class */ (function () {
             }
         }
         return symbol;
+    };
+    /**
+     * @param {?} type
+     * @return {?}
+     */
+    StaticReflector.prototype.tryAnnotations = /**
+     * @param {?} type
+     * @return {?}
+     */
+    function (type) {
+        var /** @type {?} */ originalRecorder = this.errorRecorder;
+        this.errorRecorder = function (error$$1, fileName) { };
+        try {
+            return this.annotations(type);
+        }
+        finally {
+            this.errorRecorder = originalRecorder;
+        }
     };
     /**
      * @param {?} type
@@ -31900,13 +34432,13 @@ var StaticReflector = /** @class */ (function () {
      * @return {?}
      */
     function () {
+        this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Injectable'), createInjectable);
         this.injectionToken = this.findDeclaration(ANGULAR_CORE, 'InjectionToken');
         this.opaqueToken = this.findDeclaration(ANGULAR_CORE, 'OpaqueToken');
         this.ROUTES = this.tryFindDeclaration(ANGULAR_ROUTER, 'ROUTES');
         this.ANALYZE_FOR_ENTRY_COMPONENTS =
             this.findDeclaration(ANGULAR_CORE, 'ANALYZE_FOR_ENTRY_COMPONENTS');
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Host'), createHost);
-        this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Injectable'), createInjectable);
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Self'), createSelf);
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'SkipSelf'), createSkipSelf);
         this._registerDecoratorOrConstructor(this.findDeclaration(ANGULAR_CORE, 'Inject'), createInject);
@@ -31972,7 +34504,7 @@ var StaticReflector = /** @class */ (function () {
      */
     function (context, value) {
         var /** @type {?} */ originalRecorder = this.errorRecorder;
-        this.errorRecorder = function (error, fileName) { };
+        this.errorRecorder = function (error$$1, fileName) { };
         var /** @type {?} */ result = this.simplify(context, value);
         this.errorRecorder = originalRecorder;
         return result;
@@ -31991,7 +34523,7 @@ var StaticReflector = /** @class */ (function () {
      */
     function (context, value) {
         var /** @type {?} */ self = this;
-        var /** @type {?} */ scope = BindingScope.empty;
+        var /** @type {?} */ scope = BindingScope$1.empty;
         var /** @type {?} */ calling = new Map();
         var /** @type {?} */ rootContext = context;
         /**
@@ -32087,7 +34619,7 @@ var StaticReflector = /** @class */ (function () {
                                 args.push.apply(args, defaults.slice(args.length).map(function (value) { return simplify(value); }));
                             }
                             calling.set(functionSymbol, true);
-                            var /** @type {?} */ functionScope = BindingScope.build();
+                            var /** @type {?} */ functionScope = BindingScope$1.build();
                             for (var /** @type {?} */ i = 0; i < parameters.length; i++) {
                                 functionScope.define(parameters[i], args[i]);
                             }
@@ -32283,7 +34815,7 @@ var StaticReflector = /** @class */ (function () {
                                 // in the StaticSymbolResolver.
                                 var /** @type {?} */ name_2 = expression['name'];
                                 var /** @type {?} */ localValue = scope.resolve(name_2);
-                                if (localValue != BindingScope.missing) {
+                                if (localValue != BindingScope$1.missing) {
                                     return localValue;
                                 }
                                 break;
@@ -32419,12 +34951,12 @@ var StaticReflector = /** @class */ (function () {
      * @param {?=} path
      * @return {?}
      */
-    function (error, context, path) {
+    function (error$$1, context, path) {
         if (this.errorRecorder) {
-            this.errorRecorder(formatMetadataError(error, context), (context && context.filePath) || path);
+            this.errorRecorder(formatMetadataError(error$$1, context), (context && context.filePath) || path);
         }
         else {
-            throw error;
+            throw error$$1;
         }
     };
     /**
@@ -32455,28 +34987,28 @@ var METADATA_ERROR = 'ngMetadataError';
  * @return {?}
  */
 function metadataError(message, summary, advise, position, symbol, context, chain) {
-    var /** @type {?} */ error = /** @type {?} */ (syntaxError(message));
-    (/** @type {?} */ (error))[METADATA_ERROR] = true;
+    var /** @type {?} */ error$$1 = /** @type {?} */ (syntaxError(message));
+    (/** @type {?} */ (error$$1))[METADATA_ERROR] = true;
     if (advise)
-        error.advise = advise;
+        error$$1.advise = advise;
     if (position)
-        error.position = position;
+        error$$1.position = position;
     if (summary)
-        error.summary = summary;
+        error$$1.summary = summary;
     if (context)
-        error.context = context;
+        error$$1.context = context;
     if (chain)
-        error.chain = chain;
+        error$$1.chain = chain;
     if (symbol)
-        error.symbol = symbol;
-    return error;
+        error$$1.symbol = symbol;
+    return error$$1;
 }
 /**
  * @param {?} error
  * @return {?}
  */
-function isMetadataError(error) {
-    return !!(/** @type {?} */ (error))[METADATA_ERROR];
+function isMetadataError(error$$1) {
+    return !!(/** @type {?} */ (error$$1))[METADATA_ERROR];
 }
 var REFERENCE_TO_NONEXPORTED_CLASS = 'Reference to non-exported class';
 var VARIABLE_NOT_INITIALIZED = 'Variable not initialized';
@@ -32549,14 +35081,14 @@ function messageAdvise(message, context) {
  * @param {?} error
  * @return {?}
  */
-function errorSummary(error) {
-    if (error.summary) {
-        return error.summary;
+function errorSummary(error$$1) {
+    if (error$$1.summary) {
+        return error$$1.summary;
     }
-    switch (error.message) {
+    switch (error$$1.message) {
         case REFERENCE_TO_NONEXPORTED_CLASS:
-            if (error.context && error.context.className) {
-                return "references non-exported class " + error.context.className;
+            if (error$$1.context && error$$1.context.className) {
+                return "references non-exported class " + error$$1.context.className;
             }
             break;
         case VARIABLE_NOT_INITIALIZED:
@@ -32566,13 +35098,13 @@ function errorSummary(error) {
         case COULD_NOT_RESOLVE_TYPE:
             return 'could not be resolved';
         case FUNCTION_CALL_NOT_SUPPORTED:
-            if (error.context && error.context.name) {
-                return "calls '" + error.context.name + "'";
+            if (error$$1.context && error$$1.context.name) {
+                return "calls '" + error$$1.context.name + "'";
             }
             return "calls a function";
         case REFERENCE_TO_LOCAL_SYMBOL:
-            if (error.context && error.context.name) {
-                return "references local variable " + error.context.name;
+            if (error$$1.context && error$$1.context.name) {
+                return "references local variable " + error$$1.context.name;
             }
             return "references a local variable";
     }
@@ -32610,7 +35142,7 @@ function isPrimitive(o) {
 /**
  * @abstract
  */
-var BindingScope = /** @class */ (function () {
+var BindingScope$1 = /** @class */ (function () {
     function BindingScope() {
     }
     /**
@@ -32651,10 +35183,10 @@ var PopulatedScope = /** @class */ (function (_super) {
      * @return {?}
      */
     function (name) {
-        return this.bindings.has(name) ? this.bindings.get(name) : BindingScope.missing;
+        return this.bindings.has(name) ? this.bindings.get(name) : BindingScope$1.missing;
     };
     return PopulatedScope;
-}(BindingScope));
+}(BindingScope$1));
 /**
  * @param {?} chain
  * @param {?} advise
@@ -32922,7 +35454,7 @@ function createAotCompiler(compilerHost, options, errorCollector) {
     // TODO(vicb): do not pass options.i18nFormat here
     var /** @type {?} */ viewCompiler = new ViewCompiler(staticReflector);
     var /** @type {?} */ typeCheckCompiler = new TypeCheckCompiler(options, staticReflector);
-    var /** @type {?} */ compiler = new AotCompiler(config, options, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, typeCheckCompiler, new NgModuleCompiler(staticReflector), new TypeScriptEmitter(), summaryResolver, symbolResolver);
+    var /** @type {?} */ compiler = new AotCompiler(config, options, compilerHost, staticReflector, resolver, tmplParser, new StyleCompiler(urlResolver), viewCompiler, typeCheckCompiler, new NgModuleCompiler(staticReflector), new InjectableCompiler(staticReflector), new TypeScriptEmitter(), summaryResolver, symbolResolver);
     return { compiler: compiler, reflector: staticReflector };
 }
 
@@ -33158,7 +35690,8 @@ var StatementInterpreter = /** @class */ (function () {
      * @return {?}
      */
     function (stmt, ctx) {
-        ctx.vars.set(stmt.name, stmt.value.visitExpression(this, ctx));
+        var /** @type {?} */ initialValue = stmt.value ? stmt.value.visitExpression(this, ctx) : undefined;
+        ctx.vars.set(stmt.name, initialValue);
         if (stmt.hasModifier(StmtModifier.Exported)) {
             ctx.exports.push(stmt.name);
         }
@@ -33876,8 +36409,11 @@ var AbstractJsEmitterVisitor = /** @class */ (function (_super) {
      * @return {?}
      */
     function (stmt, ctx) {
-        ctx.print(stmt, "var " + stmt.name + " = ");
-        stmt.value.visitExpression(this, ctx);
+        ctx.print(stmt, "var " + stmt.name);
+        if (stmt.value) {
+            ctx.print(stmt, ' = ');
+            stmt.value.visitExpression(this, ctx);
+        }
         ctx.println(stmt, ";");
         return null;
     };
@@ -33932,7 +36468,7 @@ var AbstractJsEmitterVisitor = /** @class */ (function (_super) {
      * @return {?}
      */
     function (ast, ctx) {
-        ctx.print(ast, "function(");
+        ctx.print(ast, "function" + (ast.name ? ' ' + ast.name : '') + "(");
         this._visitParams(ast.params, ctx);
         ctx.println(ast, ") {");
         ctx.incIndent();
@@ -34711,7 +37247,7 @@ function createOutputContext() {
     var /** @type {?} */ importExpr$$1 = function (symbol) {
         return importExpr({ name: identifierName(symbol), moduleName: null, runtime: symbol });
     };
-    return { statements: [], genFilePath: '', importExpr: importExpr$$1 };
+    return { statements: [], genFilePath: '', importExpr: importExpr$$1, constantPool: new ConstantPool() };
 }
 
 /**
@@ -35244,5 +37780,5 @@ var Extractor = /** @class */ (function () {
 // replaces this file with production index.ts when it rewrites private symbol
 // names.
 
-export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
+export { core, CompilerConfig, preserveWhitespacesDefault, isLoweredSymbol, createLoweredSymbol, Identifiers, JitCompiler, DirectiveResolver, PipeResolver, NgModuleResolver, DEFAULT_INTERPOLATION_CONFIG, InterpolationConfig, NgModuleCompiler, AssertNotNull, BinaryOperator, BinaryOperatorExpr, BuiltinMethod, BuiltinVar, CastExpr, ClassField, ClassMethod, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, ExpressionStatement, ExternalExpr, ExternalReference, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, ThrowStmt, TryCatchStmt, WriteKeyExpr, WritePropExpr, WriteVarExpr, StmtModifier, Statement, collectExternalReferences, EmitterVisitorContext, ViewCompiler, getParseErrors, isSyntaxError, syntaxError, Version, VERSION, TextAst, BoundTextAst, AttrAst, BoundElementPropertyAst, BoundEventAst, ReferenceAst, VariableAst, ElementAst, EmbeddedTemplateAst, BoundDirectivePropertyAst, DirectiveAst, ProviderAst, ProviderAstType, NgContentAst, PropertyBindingType, NullTemplateVisitor, RecursiveTemplateAstVisitor, templateVisitAll, identifierName, identifierModuleUrl, viewClassName, rendererTypeName, hostViewClassName, componentFactoryName, CompileSummaryKind, tokenName, tokenReference, CompileStylesheetMetadata, CompileTemplateMetadata, CompileDirectiveMetadata, CompilePipeMetadata, CompileNgModuleMetadata, TransitiveCompileNgModuleMetadata, ProviderMeta, flatten, templateSourceUrl, sharedStylesheetJitUrl, ngModuleJitUrl, templateJitUrl, createAotUrlResolver, createAotCompiler, AotCompiler, analyzeNgModules, analyzeAndValidateNgModules, analyzeFile, analyzeFileForInjectables, mergeAnalyzedFiles, GeneratedFile, toTypeScript, formattedError, isFormattedError, StaticReflector, StaticSymbol, StaticSymbolCache, ResolvedStaticSymbol, StaticSymbolResolver, unescapeIdentifier, unwrapResolvedMetadata, AotSummaryResolver, AstPath, SummaryResolver, JitSummaryResolver, CompileReflector, createUrlResolverWithoutPackagePrefix, createOfflineCompileUrlResolver, UrlResolver, getUrlScheme, ResourceLoader, ElementSchemaRegistry, Extractor, I18NHtmlParser, MessageBundle, Serializer, Xliff, Xliff2, Xmb, Xtb, DirectiveNormalizer, ParserError, ParseSpan, AST, Quote, EmptyExpr, ImplicitReceiver, Chain, Conditional, PropertyRead, PropertyWrite, SafePropertyRead, KeyedRead, KeyedWrite, BindingPipe, LiteralPrimitive, LiteralArray, LiteralMap, Interpolation, Binary, PrefixNot, NonNullAssert, MethodCall, SafeMethodCall, FunctionCall, ASTWithSource, TemplateBinding, NullAstVisitor, RecursiveAstVisitor, AstTransformer, AstMemoryEfficientTransformer, visitAstChildren, TokenType, Lexer, Token, EOF, isIdentifier, isQuote, SplitInterpolation, TemplateBindingParseResult, Parser, _ParseAST, ERROR_COMPONENT_TYPE, CompileMetadataResolver, Text, Expansion, ExpansionCase, Attribute$1 as Attribute, Element, Comment, visitAll, RecursiveVisitor, findNode, ParseTreeResult, TreeError, HtmlParser, HtmlTagDefinition, getHtmlTagDefinition, TagContentType, splitNsName, isNgContainer, isNgContent, isNgTemplate, getNsPrefix, mergeNsAndName, NAMED_ENTITIES, NGSP_UNICODE, debugOutputAstAsTypeScript, TypeScriptEmitter, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseErrorLevel, ParseError, typeSourceSpan, DomElementSchemaRegistry, CssSelector, SelectorMatcher, SelectorListContext, SelectorContext, StylesCompileDependency, CompiledStylesheet, StyleCompiler, TemplateParseError, TemplateParseResult, TemplateParser, splitClasses, createElementCssSelector, removeSummaryDuplicates };
 //# sourceMappingURL=compiler.js.map

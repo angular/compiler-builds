@@ -91,8 +91,9 @@ export declare class BoundEventAst implements TemplateAst {
 export declare class ReferenceAst implements TemplateAst {
     name: string;
     value: CompileTokenMetadata;
+    originalValue: string;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, value: CompileTokenMetadata, sourceSpan: ParseSourceSpan);
+    constructor(name: string, value: CompileTokenMetadata, originalValue: string, sourceSpan: ParseSourceSpan);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 /**
@@ -178,7 +179,8 @@ export declare class ProviderAst implements TemplateAst {
     providerType: ProviderAstType;
     lifecycleHooks: LifecycleHooks[];
     sourceSpan: ParseSourceSpan;
-    constructor(token: CompileTokenMetadata, multiProvider: boolean, eager: boolean, providers: CompileProviderMetadata[], providerType: ProviderAstType, lifecycleHooks: LifecycleHooks[], sourceSpan: ParseSourceSpan);
+    readonly isModule: boolean;
+    constructor(token: CompileTokenMetadata, multiProvider: boolean, eager: boolean, providers: CompileProviderMetadata[], providerType: ProviderAstType, lifecycleHooks: LifecycleHooks[], sourceSpan: ParseSourceSpan, isModule: boolean);
     visit(visitor: TemplateAstVisitor, context: any): any;
 }
 export declare enum ProviderAstType {

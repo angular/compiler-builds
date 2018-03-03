@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { ConstantPool } from './constant_pool';
 import * as o from './output/output_ast';
 import { ParseError } from './parse_util';
 export declare function dashCaseToCamelCase(input: string): string;
@@ -35,6 +36,7 @@ export declare const SyncAsync: {
     then: <T, R>(value: SyncAsync<T>, cb: (value: T) => SyncAsync<R>) => SyncAsync<R>;
     all: <T>(syncAsyncValues: SyncAsync<T>[]) => SyncAsync<T[]>;
 };
+export declare function error(msg: string): never;
 export declare function syntaxError(msg: string, parseErrors?: ParseError[]): Error;
 export declare function isSyntaxError(error: Error): boolean;
 export declare function getParseErrors(error: Error): ParseError[];
@@ -43,6 +45,7 @@ export declare function utf8Encode(str: string): string;
 export interface OutputContext {
     genFilePath: string;
     statements: o.Statement[];
+    constantPool: ConstantPool;
     importExpr(reference: any, typeParams?: o.Type[] | null, useSummaries?: boolean): o.Expression;
 }
 export declare function stringify(token: any): string;
